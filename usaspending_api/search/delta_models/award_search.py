@@ -653,10 +653,10 @@ award_search_incremental_load_sql_string = [
     -- WHEN NOT MATCHED BY SOURCE THEN DELETE
     """,
     """
-    DELETE FROM rpt.award_search
+    DELETE FROM {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
     WHERE award_id IN (
       SELECT t.award_id
-      FROM rpt.award_search AS t
+      FROM {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS t
       LEFT ANTI JOIN int.awards AS s ON t.award_id = s.id
     );
     """,
