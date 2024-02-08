@@ -1,4 +1,4 @@
-from argparse import ArgumentError
+from argparse import ArgumentTypeError
 from django.core.management.base import BaseCommand
 from pyspark.sql import SparkSession
 
@@ -316,9 +316,9 @@ class Command(BaseCommand):
         load_query = table_spec["source_query"]
 
         if options["incremental"]:
-            if table_spec.get("source_query_incremental") is not None:
-                raise ArgumentError(
-                    "When performing incremental loads, `soruce_query_incremental` must be present in TABLE_SPEC"
+            if table_spec.get("source_query_incremental") is None:
+                raise ArgumentTypeError(
+                    "When performing incremental loads, `source_query_incremental` must be present in TABLE_SPEC"
                 )
             load_query = table_spec["source_query_incremental"]
 

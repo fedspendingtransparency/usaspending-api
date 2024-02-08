@@ -641,7 +641,7 @@ award_search_incremental_load_sql_string = [
     )
     """,
     f"""
-    MERGE INTO rpt.award_search AS t
+    MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS t
     USING (SELECT * FROM temp_award_search_view) AS s
     ON t.award_id = s.award_id
     WHEN MATCHED AND
