@@ -1,11 +1,12 @@
 import json
-from typing import OrderedDict
 
 import pytest
 from django.conf import settings
 from model_bakery import baker
 
+from usaspending_api.recipient.models import RecipientProfile
 from usaspending_api.references.v2.views.recipients import RecipientAutocompleteViewSet
+from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
 @pytest.fixture
@@ -44,6 +45,15 @@ def recipient_data_fixture(db):
         recipient_hash="9159db20-d2f7-42d4-88e2-a69759987520",
         uei="UEI-04",
         recipient_name="Superman",
+    )
+
+    baker.make(
+        "recipient.RecipientProfile",
+        id="05",
+        recipient_level="C",
+        recipient_hash="9159db20-d2f7-42d4-88e2-a69759987908",
+        uei="UEI-05",
+        recipient_name="sdfsdg",
     )
 
 
@@ -130,17 +140,27 @@ def test_create_es_search():
     assert view_set_instance._create_es_search(search_text, recipient_levels, limit).to_dict() == expected_query
 
 
-def test_query_elasticsearch():
+def test_query_elasticsearch(recipient_data_fixture, elasticsearch_recipient_index, monkeypatch):
+    client = elasticsearch_recipient_index.client
+    original_db_recipients_count = RecipientProfile.objects.count()
+    assert original_db_recipients_count == 5
+
+    setup_elasticsearch_test(monkeypatch, elasticsearch_recipient_index)
+    assert client.indices.exists(elasticsearch_recipient_index.index_name)
+
     view_set_instance = RecipientAutocompleteViewSet()
 
-    search_text = "test"
-    recipient_levels = ["C", "P"]
+    search_text = "sdfsdg"
+    recipient_levels = ["C"]
     limit = 1
-    query = view_set_instance._create_es_search(search_text, recipient_levels, limit)
 
-    hits_with_data = [OrderedDict([("recipient_name", "TEST-TEK"), ("uei", "TTBNMEDRBLB3"), ("recipient_level", "C")])]
+    elasticsearch_query = view_set_instance._create_es_search(search_text, recipient_levels, limit)
+    expected_result = view_set_instance._query_elasticsearch(elasticsearch_query)
 
-    assert view_set_instance._query_elasticsearch(query) == hits_with_data
+    response_actual = client.search(index=elasticsearch_recipient_index.index_name, body=elasticsearch_query.to_dict())
+    format_response_actual = view_set_instance._parse_elasticsearch_response(response_actual)
+
+    assert format_response_actual == expected_result
 
 
 def test_parse_elasticsearch_response():

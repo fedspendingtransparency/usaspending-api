@@ -37,10 +37,8 @@ class RecipientAutocompleteViewSet(APIView):
 
     @cache_response()
     def post(self, request: Request, format=None) -> Response:
-
         """
         Handle POST requests to the endpoint.
-
         Args:
             request: The request object containing data.
                 data:{
