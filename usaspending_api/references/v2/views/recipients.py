@@ -53,7 +53,6 @@ class RecipientAutocompleteViewSet(APIView):
         Returns:
             Returns a list of Recipients matching the input search_text and recipient_levels, if passed in.
         """
-
         search_text, recipient_levels = self._prepare_search_terms(request.data)
         limit = request.data["limit"]
         query = self._create_es_search(search_text, recipient_levels, limit)
@@ -61,8 +60,7 @@ class RecipientAutocompleteViewSet(APIView):
         response = OrderedDict([("count", len(results)), ("results", results), ("messages", [""])])
         return Response(response)
 
-    @staticmethod
-    def _prepare_search_terms(request_data: Dict[str, Union[str, List[str]]]) -> List[Union[str, List[str]]]:
+    def _prepare_search_terms(self, request_data: Dict[str, Union[str, List[str]]]) -> List[Union[str, List[str]]]:
         """
         Prepare search terms & recipient_levels from the request data.
 
@@ -75,8 +73,7 @@ class RecipientAutocompleteViewSet(APIView):
         fields = [request_data["search_text"], request_data.get("recipient_levels", [])]
         return [es_sanitize(field).upper() if isinstance(field, str) else field for field in fields]
 
-    @staticmethod
-    def _create_es_search(search_text: str, recipient_levels: List[str], limit: int) -> RecipientSearch:
+    def _create_es_search(self, search_text: str, recipient_levels: List[str], limit: int) -> RecipientSearch:
         """
         Create an Elasticsearch search query for recipient autocomplete.
 
@@ -114,8 +111,7 @@ class RecipientAutocompleteViewSet(APIView):
         query = RecipientSearch().query(query)[:limit]
         return query
 
-    @staticmethod
-    def _query_elasticsearch(query: RecipientSearch) -> List[Dict[str, Any]]:
+    def _query_elasticsearch(self, query: RecipientSearch) -> List[Dict[str, Any]]:
         """
         Query Elasticsearch with the given search query.
 
@@ -127,7 +123,6 @@ class RecipientAutocompleteViewSet(APIView):
         """
         hits = query.handle_execute()
         results = []
-        # if hits and hits["hits"]["total"]["value"] > 0:
         if (
             hits
             and "hits" in hits
@@ -135,11 +130,10 @@ class RecipientAutocompleteViewSet(APIView):
             and "value" in hits["hits"]["total"]
             and hits["hits"]["total"]["value"] > 0
         ):  # noqa: E501
-            results = RecipientAutocompleteViewSet._parse_elasticsearch_response(hits)
+            results = self._parse_elasticsearch_response(hits)
         return results
 
-    @staticmethod
-    def _parse_elasticsearch_response(hits: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _parse_elasticsearch_response(self, hits: Dict[str, Any]) -> List[Dict[str, Any]]:
         """
         Parse Elasticsearch response and extract relevant information.
 
