@@ -2,7 +2,8 @@ from collections import OrderedDict
 from datetime import datetime, timedelta, timezone
 
 import pytest
-from django.db.models import F
+from django.db.models import F, Q
+from django.db.models.functions import Upper
 from django.test import override_settings
 from elasticsearch import Elasticsearch
 from model_bakery import baker
@@ -29,7 +30,7 @@ from usaspending_api.etl.management.commands.elasticsearch_indexer import (
 from usaspending_api.etl.management.commands.elasticsearch_indexer import (
     parse_cli_args,
 )
-from usaspending_api.recipient.models import RecipientProfile
+from usaspending_api.recipient.models import RecipientProfile, StateData
 from usaspending_api.search.models import AwardSearch, TransactionSearch
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
@@ -171,16 +172,16 @@ def location_data_fixture(db):
         is_fpds=False,
         transaction_unique_id="TRANSACTION100",
         pop_country_name="UNITED STATES",
-        pop_state_name="California",
-        pop_city_name="Los Angeles",
-        pop_county_name="Los Angeles",
+        pop_state_name="CALIFORNIA",
+        pop_city_name="LOS ANGELES",
+        pop_county_name="LOS ANGELES",
         pop_zip5=90001,
         pop_congressional_code_current="34",
         pop_congressional_code="34",
         recipient_location_country_name="UNITED STATES",
-        recipient_location_state_name="Nevada",
-        recipient_location_city_name="Las Vegas",
-        recipient_location_county_name="Clark",
+        recipient_location_state_name="NEVADA",
+        recipient_location_city_name="LAS VEGAS",
+        recipient_location_county_name="CLARK",
         recipient_location_zip5=88901,
         recipient_location_congressional_code_current="01",
         recipient_location_congressional_code="01",
@@ -198,9 +199,29 @@ def location_data_fixture(db):
         pop_congressional_code_current=None,
         pop_congressional_code=None,
         recipient_location_country_name="UNITED STATES",
-        recipient_location_state_name="Texas",
-        recipient_location_city_name="Dallas",
-        recipient_location_county_name="Dallas",
+        recipient_location_state_name="TEXAS",
+        recipient_location_city_name="DALLAS",
+        recipient_location_county_name="DALLAS",
+        recipient_location_zip5=75001,
+        recipient_location_congressional_code_current="30",
+        recipient_location_congressional_code="30",
+    )
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=102,
+        is_fpds=False,
+        transaction_unique_id="TRANSACTION102",
+        pop_country_name="DENMARK",
+        pop_state_name=None,
+        pop_city_name=None,
+        pop_county_name=None,
+        pop_zip5=None,
+        pop_congressional_code_current=None,
+        pop_congressional_code=None,
+        recipient_location_country_name="UNITED STATES",
+        recipient_location_state_name="FAKE STATE",
+        recipient_location_city_name="FAKE CITY",
+        recipient_location_county_name="FAKE COUNTY",
         recipient_location_zip5=75001,
         recipient_location_congressional_code_current="30",
         recipient_location_congressional_code="30",
@@ -275,12 +296,26 @@ def test_create_and_load_new_location_index(location_data_fixture, elasticsearch
     # Ensure index is not yet created
     assert not client.indices.exists(elasticsearch_location_index.index_name)
 
-    pop_ts = TransactionSearch.objects.annotate(countries=F("pop_country_name"), states=F("pop_state_name")).values(
-        "countries", "states"
+    valid_state_names = StateData.objects.values_list(Upper("name"), flat=True)
+    pop_ts = (
+        TransactionSearch.objects.filter(
+            (Q(pop_country_name="UNITED STATES") & Q(pop_state_name__in=valid_state_names))
+            | ~(Q(pop_country_name="UNITED STATES") & Q(pop_state_name__isnull=False))
+        )
+        .annotate(countries=F("pop_country_name"), states=F("pop_state_name"))
+        .values("countries", "states")
     )
-    rl_ts = TransactionSearch.objects.annotate(
-        countries=F("recipient_location_country_name"), states=F("recipient_location_state_name")
-    ).values("countries", "states")
+    rl_ts = (
+        TransactionSearch.objects.filter(
+            (
+                Q(recipient_location_country_name="UNITED STATES")
+                & Q(recipient_location_state_name__in=valid_state_names)
+            )
+            | ~(Q(recipient_location_country_name="UNITED STATES") & Q(recipient_location_state_name__isnull=False))
+        )
+        .annotate(countries=F("recipient_location_country_name"), states=F("recipient_location_state_name"))
+        .values("countries", "states")
+    )
     original_db_locations_count = pop_ts.union(rl_ts).count()
 
     setup_elasticsearch_test(monkeypatch, elasticsearch_location_index)
