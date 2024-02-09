@@ -73,10 +73,13 @@ def access_s3_object(bucket_name: str, obj: "boto3.resources.factory.s3.ObjectSu
     return data
 
 
-def upload_download_file_to_s3(file_path):
+def upload_download_file_to_s3(file_path, sub_dir=None):
     bucket = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
     region = settings.USASPENDING_AWS_REGION
-    multipart_upload(bucket, region, str(file_path), file_path.name)
+    keyname = file_path.name
+    if sub_dir is not None:
+        keyname = f"{sub_dir}/{keyname}"
+    multipart_upload(bucket, region, str(file_path), keyname)
 
 
 def multipart_upload(bucketname, regionname, source_path, keyname):

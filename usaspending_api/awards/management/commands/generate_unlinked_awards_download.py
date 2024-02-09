@@ -128,7 +128,7 @@ class Command(BaseCommand):
         self.finalize_zip_contents()
         if self.upload:
             logger.info("Upload final zip file to S3")
-            upload_download_file_to_s3(self.zip_file_path)
+            upload_download_file_to_s3(self.zip_file_path, settings.UNLINKED_AWARDS_DOWNLOAD_REDIRECT_DIR)
             logger.info("Marking zip file for deletion in cleanup")
         else:
             logger.warn("Not uploading zip file to S3. Leaving file locally")

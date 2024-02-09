@@ -459,7 +459,7 @@ file_d1_sql_string = """
       rpt.transaction_search ts
     left outer join rpt.award_search ras on
       (ts.award_id = ras.award_id)
-    left join global_temp.financial_accounts_by_awards U0
+    left join int.financial_accounts_by_awards U0
       on U0.award_id = ts.award_id
     left outer join global_temp.treasury_appropriation_account U2 on
       U0.treasury_account_id = U2.treasury_account_identifier
