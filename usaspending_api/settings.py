@@ -2,13 +2,14 @@
 For more information on this file: https://docs.djangoproject.com/en/3.2/topics/settings/
 For the full list of settings and their values: https://docs.djangoproject.com/en/3.2/ref/settings/
 """
+import os
+from pathlib import Path
+
 import ddtrace
 import dj_database_url
-import os
-
 from django.db import DEFAULT_DB_ALIAS
 from django.utils.crypto import get_random_string
-from pathlib import Path
+
 from usaspending_api.config import CONFIG
 
 # All paths inside the project should be additive to REPO_DIR or APP_DIR
@@ -136,21 +137,31 @@ COVID19_DOWNLOAD_FILENAME_PREFIX = "COVID-19_Profile"
 ES_HOSTNAME = ""
 if not ES_HOSTNAME:
     ES_HOSTNAME = os.environ.get("ES_HOSTNAME")
+
 ES_AWARDS_ETL_VIEW_NAME = "award_delta_view"
 ES_AWARDS_MAX_RESULT_WINDOW = 50000
 ES_AWARDS_NAME_SUFFIX = "awards"
 ES_AWARDS_QUERY_ALIAS_PREFIX = "award-query"
 ES_AWARDS_WRITE_ALIAS = "award-load-alias"
+
 ES_COVID19_FABA_ETL_VIEW_NAME = "covid19_faba_view"
 ES_COVID19_FABA_MAX_RESULT_WINDOW = 50000
 ES_COVID19_FABA_NAME_SUFFIX = "covid19-faba"
 ES_COVID19_FABA_QUERY_ALIAS_PREFIX = "covid19-faba-query"
 ES_COVID19_FABA_WRITE_ALIAS = "covid19-faba-load-alias"
+
 ES_TRANSACTIONS_ETL_VIEW_NAME = "transaction_delta_view"
 ES_TRANSACTIONS_MAX_RESULT_WINDOW = 50000
 ES_TRANSACTIONS_NAME_SUFFIX = "transactions"
 ES_TRANSACTIONS_QUERY_ALIAS_PREFIX = "transaction-query"
 ES_TRANSACTIONS_WRITE_ALIAS = "transaction-load-alias"
+
+ES_RECIPIENTS_ETL_VIEW_NAME = "recipient_profile_delta_view"
+ES_RECIPIENTS_MAX_RESULT_WINDOW = 50000
+ES_RECIPIENTS_NAME_SUFFIX = "recipients"
+ES_RECIPIENTS_QUERY_ALIAS_PREFIX = "recipient-query"
+ES_RECIPIENTS_WRITE_ALIAS = "recipient-load-alias"
+
 ES_TIMEOUT = 90
 ES_REPOSITORY = ""
 ES_ROUTING_FIELD = "recipient_agg_key"

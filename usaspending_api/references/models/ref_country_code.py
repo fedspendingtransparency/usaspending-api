@@ -9,6 +9,7 @@ class RefCountryCode(models.Model):
     valid_code_indicator = models.TextField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
+    latest_population = models.BigIntegerField(null=True)
 
     class Meta:
         managed = True

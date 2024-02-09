@@ -289,34 +289,24 @@ List of filterable award types
 ## FieldNameObject (array)
 List of column names to request
 
-### Sample
-- `Action Date`
-- `Award ID`
-- `Award Type`
-- `Awarding Agency`
-- `Awarding Sub Agency`
-- `Mod`
-- `Recipient Name`
-- `Transaction Amount`
-
-### Default
-- `Action Date`
-- `Award ID`
-- `Award Type`
-- `Awarding Agency`
-- `Awarding Sub Agency`
-- `awarding_agency_id`
-- `Funding Agency`
-- `Funding Sub Agency`
-- `internal_id`
-- `generated_internal_id`
-- `Issued Date`
-- `Last Date to Order`
-- `Loan Value`
-- `Mod`
-- `Recipient Name`
-- `Subsidy Cost`
-- `Transaction Amount`
+- `Action Date` 
+- `Award ID` 
+- `Award Type` 
+- `Awarding Agency` 
+- `Awarding Sub Agency` 
+- `awarding_agency_id` 
+- `Funding Agency` 
+- `Funding Sub Agency` 
+- `internal_id` 
+- `generated_internal_id` 
+- `Issued Date` 
+- `Last Date to Order` 
+- `Loan Value` 
+- `Mod` 
+- `Recipient Name` 
+- `Subsidy Cost` 
+- `Transaction Amount` 
+- `def_codes`
 
 
 ## AdvancedFilterObject (object)
