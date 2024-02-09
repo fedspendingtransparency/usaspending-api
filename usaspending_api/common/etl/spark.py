@@ -704,11 +704,10 @@ def hadoop_copy_merge(
             merged_file_path = f"{parts_dir}.{file_format}"
             out_stream = fs.create(hadoop.fs.Path(merged_file_path), overwrite)
             out_stream.writeBytes(header + "\n")
-            part_files.append(f.getPath())
         finally:
             if out_stream is not None:
                 out_stream.close()
-        return
+        return [merged_file_path]
 
     part_files.sort(key=lambda f: str(f))  # put parts in order by part number for merging
     parts_batch_size = ceil(max_rows_per_merged_file / rows_per_part)
