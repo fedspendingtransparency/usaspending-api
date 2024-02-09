@@ -132,7 +132,7 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
         # The place to write intermediate data files to in s3
         s3_bucket_name = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
         s3_bucket_path = f"s3a://{s3_bucket_name}"
-        s3_bucket_sub_path = "temp_covid_download"
+        s3_bucket_sub_path = "temp_download"
         s3_destination_path = f"{s3_bucket_path}/{s3_bucket_sub_path}/{destination_file_name}"
         try:
             extra_conf = {

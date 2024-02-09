@@ -141,7 +141,7 @@ class Command(BaseCommand):
         return [
             (
                 f"{self.download_source_sql['unlinked_contracts_file_d1']}",
-                f"{self.agency_name}_UnlinkedContracts_{short_timestamp}",
+                f"{self.agency_name.replace(' ', '_')}_UnlinkedContracts_{short_timestamp}",
             )
         ]
 
