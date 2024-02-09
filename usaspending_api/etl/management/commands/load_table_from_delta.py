@@ -182,9 +182,6 @@ class Command(BaseCommand):
         source_delta_table = self.options["delta_table"]
         self.table_spec = TABLE_SPEC[source_delta_table]
 
-        # TODO - Check whether changes have reached threshold ignoring incremental
-        incremental = self.options["incremental"]
-
         # Delta side
         source_delta_table_name = self.options["alt_delta_name"] or source_delta_table
         self.source_delta_database = self.options["alt_delta_db"] or self.table_spec["destination_database"]
@@ -211,7 +208,7 @@ class Command(BaseCommand):
 
         updated_incrementally = False
 
-        if incremental:
+        if self.options["incremental"]:
             # Validate that necessary TABLE_SPEC fields are present for incremental loads
             if not ("incremental_delete_temp_schema" and "delta_table_load_version_key"):
                 self.logger.error(
@@ -326,10 +323,10 @@ class Command(BaseCommand):
         is based on the `incremental_parameter` parameter for the job.
 
         Args:
-            spark (SparkSession): the active SparkSession to work within
-            distinct_df (DataFrame): Dataframe containing changed records from table
+            spark: the active SparkSession to work within
+            distinct_df: Dataframe containing changed records from table
         Returns:
-            threshold_surpassed (bool): Whether or not the number of changes has exceeded the threshold
+            threshold_surpassed: Whether or not the number of changes has exceeded the threshold
         """
 
         threshold = self.options["incremental_threshold"]
@@ -358,9 +355,9 @@ class Command(BaseCommand):
         - If the corresponding Postgres table is partitioned, the temporary table will also be partitioned
 
         Args:
-            temp_schema (str): Destination schema in Postgres in which to create the temporary table
-            temp_table_suffix (str): String appended to table name to differentiate between tables
-            schema_override (dict): Key value pairs with column names and column types (respectively) to define
+            temp_schema: Destination schema in Postgres in which to create the temporary table
+            temp_table_suffix: String appended to table name to differentiate between tables
+            schema_override: Key value pairs with column names and column types (respectively) to define
                 the schema of the temporary table. If not provided, the table will be based on the schema of the
                 Delta table being copied from's corresponding Postgres table
         """
@@ -503,13 +500,13 @@ class Command(BaseCommand):
         reset the sequence value.
 
         Args:
-            spark (SparkSession): the active SparkSession to work within
-            df (DataFrame): Dataframe containing data to write to the table
-            qualified_temp_table (str): The fully qualified Postgres table name to write the data to (<schema>.<table_name>)
-            postgres_scheme_def (dict): Schema definition for Postgres table being written to in dictionary format. Key value
+            spark: the active SparkSession to work within
+            df: Dataframe containing data to write to the table
+            qualified_temp_table: The fully qualified Postgres table name to write the data to (<schema>.<table_name>)
+            postgres_scheme_def: Schema definition for Postgres table being written to in dictionary format. Key value
                 pairs contain column name and column types, respectively. Only used for JDBC insert strategy
-            delta_column_names (List[str]): List of Delta columns to read from Dataframe before writing to Postgres.
-            postgres_seq_last_value (int): Last value of the Postgres Sequence. This is provided, so it can be reset to this
+            delta_column_names: List of Delta columns to read from Dataframe before writing to Postgres.
+            postgres_seq_last_value: Last value of the Postgres Sequence. This is provided, so it can be reset to this
                 value in the case of an error
         """
 
@@ -582,15 +579,15 @@ class Command(BaseCommand):
         - which means the DB could be processing 8 COPY commands concurrently
 
         Args:
-            spark (SparkSession): the active SparkSession to work within
-            df (DataFrame): the source data, which will be written to CSV files before COPY to Postgres
-            delta_s3_path (str): the unique qualifier of the path in S3 to store temporary CSV files
-            qualified_temp_table (str): the name of the temp table (qualified with schema if needed) in the target Postgres DB
+            spark: the active SparkSession to work within
+            df: the source data, which will be written to CSV files before COPY to Postgres
+            delta_s3_path: the unique qualifier of the path in S3 to store temporary CSV files
+            qualified_temp_table: the name of the temp table (qualified with schema if needed) in the target Postgres DB
                 where the CSV data will be written to with COPY
-            ordered_col_names (List[str]): Ordered list of column names that must match the order of columns in the CSV
+            ordered_col_names: Ordered list of column names that must match the order of columns in the CSV
                 - The DataFrame should have its columns ordered by this
                 - And the COPY command should provide these cols so that COPY pulls the right data into the right cols
-            keep_csv_files (bool): Whether to prevent overwriting of these temporary CSV files by a subsequent write
+            keep_csv_files: Whether to prevent overwriting of these temporary CSV files by a subsequent write
                 to the same output path. Defaults to False. If True, this will instead put them in a timestamped
                 sub-folder of a "temp" folder. Be mindful of cleaning these up if setting to True. If False,
                 the same output path is used for each write and nukes-and-paves the files in that output path.
@@ -718,10 +715,10 @@ class Command(BaseCommand):
         - which means the DB could be processing 20*1000 = 20,000 INSERT statements concurrently
 
         Args:
-            df (DataFrame): the source data, which will be written to CSV files before COPY to Postgres
-            qualified_temp_table (str): the name of the temp table (qualified with schema if needed) in the target Postgres DB
+            df: the source data, which will be written to CSV files before COPY to Postgres
+            qualified_temp_table: the name of the temp table (qualified with schema if needed) in the target Postgres DB
                 where the CSV data will be written to with COPY
-            postgres_schema_def (Dict): Schema of table being written to
+            postgres_schema_def: Schema of table being written to
         """
         special_columns = {}
         col_type_mapping = list(postgres_schema_def.items())
