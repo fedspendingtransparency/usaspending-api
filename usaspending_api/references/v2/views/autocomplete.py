@@ -4,9 +4,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.helpers.generic_helper import deprecated_api_endpoint_message
 from usaspending_api.references.models import Cfda, Definition, NAICS, PSC
 from usaspending_api.references.v2.views.glossary import DefinitionSerializer
-from usaspending_api.search.models import AgencyAutocompleteMatview
+from usaspending_api.search.models import AgencyAutocompleteMatview, AgencyOfficeAutocompleteMatview
 
 
 class BaseAutocompleteViewSet(APIView):
@@ -81,7 +82,159 @@ class BaseAutocompleteViewSet(APIView):
             for agency in agencies[:limit]
         ]
 
-        return Response({"results": results})
+        results = {"results": results}
+        messages = results.get("messages", [])
+        deprecated_api_endpoint_message(messages)
+        results["messages"] = messages
+        return Response(results)
+
+    def agency_office_autocomplete(self, request):
+        """Returns a collection of agencies, sub-agencies, and offices that match the request."""
+
+        search_text, limit = self.get_request_payload(request)
+        # It's important to order by toptier fields so that results are deterministic between objects.
+        # For that reason we define one set of order by arguments to be re-used throughout this method.
+        order_by = ["-toptier_flag", Upper("toptier_name"), Upper("subtier_name")]
+
+        # Begin deriving toptier agency objects for response
+        toptier_agency_filter = Q(**{self.filter_field: True}) & (
+            Q(toptier_abbreviation__icontains=search_text) | Q(toptier_name__icontains=search_text)
+        )
+
+        toptier_agency_search_text_matches = (
+            AgencyOfficeAutocompleteMatview.objects.filter(toptier_agency_filter).order_by(*order_by).values().all()
+        )
+
+        toptier_agency_tracker = {}
+        subtiers_already_added = []
+        for toptier_agency in toptier_agency_search_text_matches:
+            # This key is created so that we can treat multiple records with the same
+            # toptier values as a single result
+            key = f'{toptier_agency["toptier_abbreviation"]}{toptier_agency["toptier_code"]}{toptier_agency["toptier_name"]}'
+            if key not in toptier_agency_tracker:
+                toptier_agency_tracker[key] = {}
+                toptier_result = self._agency_office_toptier_agency_response_object(toptier_agency)
+                toptier_agency_tracker[key] = toptier_result
+                # This list is reset so that we can track which subtiers have already
+                # been added to the results for the distinct pair of toptier values of the current iteration.
+                # It's needed because our mat view is at the office grain.
+                subtiers_already_added = []
+            if "subtier_agencies" not in toptier_agency_tracker[key]:
+                toptier_agency_tracker[key]["subtier_agencies"] = []
+            if "offices" not in toptier_agency_tracker[key]:
+                toptier_agency_tracker[key]["offices"] = []
+            subtier_result = self._agency_office_subtier_agency_response_object(toptier_agency)
+            sub_key = "".join(subtier_result)
+            if sub_key not in subtiers_already_added:
+                toptier_agency_tracker[key]["subtier_agencies"].append(subtier_result)
+                subtiers_already_added.append(sub_key)
+            if toptier_agency["office_name"] is not None and toptier_agency["office_code"] is not None:
+                office_result = self._agency_office_office_response_object(toptier_agency)
+                toptier_agency_tracker[key]["offices"].append(office_result)
+
+        toptier_agency_tracker = list(toptier_agency_tracker.values())[:limit]
+        toptier_agency_results = {"toptier_agency": toptier_agency_tracker}
+
+        # Begin deriving subteir agency objects for response
+        subtier_agency_filter = Q(**{self.filter_field: True}) & (
+            Q(subtier_abbreviation__icontains=search_text) | Q(subtier_name__icontains=search_text)
+        )
+
+        subtier_agency_search_text_matches = (
+            AgencyOfficeAutocompleteMatview.objects.filter(subtier_agency_filter).order_by(*order_by).values().all()
+        )
+
+        subtier_agency_tracker = {}
+        for subtier_agency in subtier_agency_search_text_matches:
+            # This key is created so that we can treat multiple records with the same
+            # subtier values as a single result
+            key = f'{subtier_agency["subtier_abbreviation"]}{subtier_agency["subtier_code"]}{subtier_agency["subtier_name"]}'
+            if key not in subtier_agency_tracker:
+                subtier_agency_tracker[key] = {}
+                subtier_result = self._agency_office_subtier_agency_response_object(subtier_agency)
+                subtier_agency_tracker[key] = subtier_result
+            if "offices" not in subtier_agency_tracker[key]:
+                subtier_agency_tracker[key]["offices"] = []
+            toptier_result = self._agency_office_toptier_agency_response_object(subtier_agency)
+            subtier_agency_tracker[key]["toptier_agency"] = toptier_result
+            if toptier_agency["office_name"] is not None and toptier_agency["office_code"] is not None:
+                office_result = self._agency_office_office_response_object(subtier_agency)
+                subtier_agency_tracker[key]["offices"].append(office_result)
+
+        subtier_agency_tracker = list(subtier_agency_tracker.values())[:limit]
+        subtier_agency_results = {"subtier_agency": subtier_agency_tracker}
+
+        # Begin deriving office objects for response
+        office_filter = Q(**{self.filter_field: True}) & (Q(office_name__icontains=search_text))
+
+        office_search_text_matches = (
+            AgencyOfficeAutocompleteMatview.objects.filter(office_filter).order_by(*order_by).values().all()
+        )
+
+        office_tracker = {}
+        for office in office_search_text_matches:
+            # This key is created so that we can treat multiple records with the same
+            # office values as a single result
+            key = office["office_code"] + office["office_name"]
+            if key not in office_tracker:
+                office_tracker[key] = {}
+                office_result = self._agency_office_office_response_object(office)
+                office_tracker[key] = office_result
+            subtier_result = self._agency_office_subtier_agency_response_object(office)
+            office_tracker[key]["subtier_agency"] = subtier_result
+            toptier_result = self._agency_office_toptier_agency_response_object(office)
+            office_tracker[key]["toptier_agency"] = toptier_result
+
+        office_tracker = list(office_tracker.values())[:limit]
+        office_results = {"office": office_tracker}
+
+        # Assemble all objects into the final response
+        results = {**toptier_agency_results, **subtier_agency_results, **office_results}
+
+        results = {"results": results}
+        results["messages"] = []
+        return Response(results)
+
+    def _agency_office_subtier_agency_response_object(self, record: dict) -> dict:
+        """Using the provided record, converts the subtier agency data
+        into an object for the api response.
+
+        Args:
+            record: The record to extract values from.
+        """
+        object = {
+            "abbreviation": record["subtier_abbreviation"],
+            "code": record["subtier_code"],
+            "name": record["subtier_name"],
+        }
+        return object
+
+    def _agency_office_toptier_agency_response_object(self, record: dict) -> dict:
+        """Using the provided record, converts the toptier agency data
+        into an object for the api response.
+
+        Args:
+            record: The record to extract values from.
+        """
+        object = {
+            "abbreviation": record["toptier_abbreviation"],
+            "code": record["toptier_code"],
+            "name": record["toptier_name"],
+        }
+        return object
+
+    def _agency_office_office_response_object(self, record: dict) -> dict:
+        """Using the provided record, converts the office data
+        into an object for the api response.
+
+        Args:
+            record: The record to extract values from.
+        """
+        object = {
+            "code": record["office_code"],
+            "name": record["office_name"],
+        }
+        return object
 
 
 class AwardingAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
@@ -95,6 +248,34 @@ class AwardingAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
     @cache_response()
     def post(self, request):
         return self.agency_autocomplete(request)
+
+
+class AwardingAgencyOfficeAutocompleteViewSet(BaseAutocompleteViewSet):
+    """
+    This route sends a request to the backend to retrieve awarding
+    agencies and offices matching the specified search text.
+    """
+
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/awarding_agency_office.md"
+    filter_field = "has_awarding_data"
+
+    @cache_response()
+    def post(self, request):
+        return self.agency_office_autocomplete(request)
+
+
+class FundingAgencyOfficeAutocompleteViewSet(BaseAutocompleteViewSet):
+    """
+    This route sends a request to the backend to retrieve funding
+    agencies and offices matching the specified search text.
+    """
+
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/funding_agency_office.md"
+    filter_field = "has_funding_data"
+
+    @cache_response()
+    def post(self, request):
+        return self.agency_office_autocomplete(request)
 
 
 class FundingAgencyAutocompleteViewSet(BaseAutocompleteViewSet):
@@ -207,7 +388,6 @@ class GlossaryAutocompleteViewSet(BaseAutocompleteViewSet):
 
     @cache_response()
     def post(self, request):
-
         search_text, limit = self.get_request_payload(request)
 
         queryset = Definition.objects.all()

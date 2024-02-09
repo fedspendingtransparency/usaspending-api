@@ -1,4 +1,4 @@
-from argparse import ArgumentError
+from argparse import ArgumentTypeError
 from django.core.management.base import BaseCommand
 from pyspark.sql import SparkSession
 
@@ -30,7 +30,7 @@ from usaspending_api.search.delta_models.award_search import (
     AWARD_SEARCH_COLUMNS,
     award_search_create_sql_string,
     award_search_incremental_load_sql_string,
-    award_search_load_sql_string,
+    award_search_overwrite_load_sql_string,
     AWARD_SEARCH_POSTGRES_COLUMNS,
     award_search_incremental_delete_temp_schema,
 )
@@ -60,7 +60,8 @@ TABLE_SPEC = {
     "award_search": {
         "model": AwardSearch,
         "is_from_broker": False,
-        "source_query": award_search_load_sql_string,
+        "source_query": award_search_overwrite_load_sql_string,
+        "source_query_incremental": award_search_incremental_load_sql_string,
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
@@ -326,9 +327,9 @@ class Command(BaseCommand):
         load_query = table_spec["source_query"]
 
         if options["incremental"]:
-            if not table_spec["source_query_incremental"]:
-                raise ArgumentError(
-                    "When performing incremental loads, `soruce_query_incremental` must be present in TABLE_SPEC"
+            if table_spec.get("source_query_incremental") is None:
+                raise ArgumentTypeError(
+                    "When performing incremental loads, `source_query_incremental` must be present in TABLE_SPEC"
                 )
             load_query = table_spec["source_query_incremental"]
 

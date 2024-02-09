@@ -643,7 +643,7 @@ award_search_incremental_load_sql_string = [
     )
     """,
     f"""
-    MERGE INTO rpt.award_search AS t
+    MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS t
     USING (SELECT * FROM temp_award_search_view) AS s
     ON t.award_id = s.award_id
     WHEN MATCHED AND
@@ -655,16 +655,16 @@ award_search_incremental_load_sql_string = [
     -- WHEN NOT MATCHED BY SOURCE THEN DELETE
     """,
     """
-    DELETE FROM rpt.award_search
+    DELETE FROM {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
     WHERE award_id IN (
       SELECT t.award_id
-      FROM rpt.award_search AS t
+      FROM {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS t
       LEFT ANTI JOIN int.awards AS s ON t.award_id = s.id
     );
     """,
 ]
 
-award_search_load_sql_string = f"""
+award_search_overwrite_load_sql_string = f"""
 INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
     (
         {",".join([col for col in AWARD_SEARCH_DELTA_COLUMNS])}

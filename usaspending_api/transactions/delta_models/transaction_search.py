@@ -25,6 +25,7 @@ TRANSACTION_SEARCH_COLUMNS = {
     "etl_update_date": {"delta": "TIMESTAMP", "postgres": "TIMESTAMP", "gold": False},
     "period_of_performance_start_date": {"delta": "DATE", "postgres": "DATE", "gold": False},
     "period_of_performance_current_end_date": {"delta": "DATE", "postgres": "DATE", "gold": False},
+    "initial_report_date": {"delta": "DATE", "postgres": "DATE", "gold": False},
     # Agencies
     "awarding_agency_code": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "awarding_toptier_agency_name": {"delta": "STRING", "postgres": "TEXT", "gold": False},
@@ -434,6 +435,10 @@ transaction_search_load_sql_string = rf"""
         GREATEST(transaction_normalized.update_date, awards.update_date) AS etl_update_date,
         transaction_normalized.period_of_performance_start_date,
         transaction_normalized.period_of_performance_current_end_date,
+        COALESCE(
+            CAST(transaction_fabs.created_at AS DATE),
+            CAST(transaction_fpds.initial_report_date AS DATE)
+        ) AS initial_report_date,
 
         -- Agencies
         COALESCE(transaction_fabs.awarding_agency_code, transaction_fpds.awarding_agency_code) AS awarding_agency_code,

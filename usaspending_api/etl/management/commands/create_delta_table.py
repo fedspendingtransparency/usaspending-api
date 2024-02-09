@@ -45,14 +45,12 @@ class Command(BaseCommand):
             "--alt-name",
             type=str,
             required=False,
-            help="An alternate delta table name for the created table, overriding the TABLE_SPEC destination_table "
-            "name",
+            help="An alternate delta table name for the created table, overriding the TABLE_SPEC destination_table name",
         )
         parser.add_argument(
             "--enable-cdf",
             action="store_true",
-            help="Whether or not the table will be created with the Change Data Feed feature enabled. (Databricks "
-            "Specific)",
+            help="Whether or not the table will be created with the Change Data Feed feature enabled. (Databricks Specific)",
         )
 
     def handle(self, *args, **options):
