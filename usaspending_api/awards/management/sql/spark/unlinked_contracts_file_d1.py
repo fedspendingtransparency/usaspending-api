@@ -468,7 +468,7 @@ file_d1_sql_string = """
     where
       ts.awarding_toptier_agency_name = {agency_name}
         and ts.type in ('A', 'B', 'C', 'D', 'IDV_A', 'IDV_B', 'IDV_B_A', 'IDV_B_B', 'IDV_B_C', 'IDV_C', 'IDV_D', 'IDV_E')
-        and ts.is_fpds = true
         -- In other words, this predicate is ensuring treasury_accounts_funding_this_award == null
         and U2.tas_rendering_label is null
+        and ts.is_fpds = true
 """

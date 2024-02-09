@@ -14,6 +14,7 @@ from usaspending_api.disaster.helpers.covid_download_csv_strategies import (
 )
 from enum import Enum
 from usaspending_api.awards.management.sql.spark.unlinked_contracts_file_d1 import file_d1_sql_string
+from usaspending_api.download.filestreaming.file_description import build_file_description, save_file_description
 
 
 class ComputeTypeEnum(Enum):
@@ -48,6 +49,7 @@ class Command(BaseCommand):
                 "unlinked_contracts_file_d1": file_d1_sql_string.format(agency_name=agency_name),
             },
             "download_to_csv_strategy": SparkToCSVStrategy(logger=logger),
+            "readme_path": Path(settings.UNLINKED_AWARDS_DOWNLOAD_README_FILE_PATH),
         },
     }
 
@@ -70,6 +72,7 @@ class Command(BaseCommand):
         """
         self.upload = not options["skip_upload"]
         self.compute_type_arg = options.get("compute_type")
+        self.readme_path = self.compute_types[self.compute_type_arg]["readme_path"]
 
         if self.compute_type_arg == ComputeTypeEnum.SPARK.value:
             extra_conf = {
@@ -106,41 +109,21 @@ class Command(BaseCommand):
     def _create_data_csv_dest_path(self, file_name) -> Path:
         return self.working_dir_path / file_name
 
-    def _create_sql_file(self, sql_file_name: str, sql: str):
-        """Creates a sql file from the specified sql.
-
-        Args:
-            sql_file_name: The name of the sql file that'll be generated
-            sql: The source sql to write to a file
-
-        Returns:
-            str: The path to the generated sql file
-        """
-        sql_file_path = self.working_dir_path / (sql_file_name + ".sql")
-        with open(sql_file_path, "w+") as fh:
-            fh.write(sql)
-        return sql_file_path
-
     def process_data_copy_jobs(self):
-        logger.info(f"Creating new unliked awards zip file: {self.zip_file_path}")
+        logger.info(f"Creating new unlinked awards download zip file: {self.zip_file_path}")
         self.filepaths_to_delete.append(self.zip_file_path)
 
-        for download_source, final_name in self.download_file_list:
-            # TODO: Try to create something that doesn't enforce a DownloadSource for all compute types
-            columns = download_source.columns(requested=None)
-            source_sql = generate_raw_quoted_query(download_source.row_emitter(columns))
-            sql_file_path = self._create_sql_file(f"{final_name}_sql", source_sql)
-
+        for sql_file, final_name in self.download_file_list:
             final_path = self._create_data_csv_dest_path(final_name)
             intermediate_data_file_path = final_path.parent / (final_path.name + "_temp")
             data_file_names, count = self.download_to_csv(
-                sql_file_path, final_path, final_name, str(intermediate_data_file_path)
+                sql_file, final_path, final_name, str(intermediate_data_file_path)
             )
-            self.filepaths_to_delete.append(sql_file_path)
             if count <= 0:
                 logger.warning(f"Empty data file generated: {final_path}!")
 
             self.filepaths_to_delete.extend(self.working_dir_path.glob(f"{final_path.stem}*"))
+
 
     def complete_zip_and_upload(self):
         self.finalize_zip_contents()
@@ -158,8 +141,7 @@ class Command(BaseCommand):
         short_timestamp = self.full_timestamp[:-6]
         return [
             (
-                # TODO: Try to create something that doesn't enforce a DownloadSource for all compute types
-                self.download_source_sql["unlinked_contracts_file_d1"],
+                f"{self.download_source_sql["unlinked_contracts_file_d1"]}",
                 f"{self.agency_name}_UnlinkedContracts_{short_timestamp}",
             )
         ]
@@ -170,6 +152,10 @@ class Command(BaseCommand):
             path.unlink()
 
     def finalize_zip_contents(self):
+        file_description = build_file_description(str(self.readme_path), dict())
+        file_description_path = save_file_description(
+            str(self.zip_file_path.parent), self.readme_path.name, file_description
+        )
         self.total_download_size = self.zip_file_path.stat().st_size
 
     def prep_filesystem(self):
