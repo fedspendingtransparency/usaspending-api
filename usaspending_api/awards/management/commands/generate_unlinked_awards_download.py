@@ -46,7 +46,7 @@ class Command(BaseCommand):
     compute_types = {
         ComputeTypeEnum.SPARK.value: {
             "source_sql_strategy": {
-                "unlinked_contracts_file_d1": file_d1_sql_string.format(agency_name="'" + "agency_name" + "'"),
+                "unlinked_contracts_file_d1": file_d1_sql_string.format(agency_name="'" + agency_name + "'"),
             },
             "download_to_csv_strategy": SparkToCSVStrategy(logger=logger),
             "readme_path": Path(settings.UNLINKED_AWARDS_DOWNLOAD_README_FILE_PATH),
