@@ -38,8 +38,8 @@ class SourceAssistanceTransaction(models.Model):
     business_funds_indicator = models.TextField(blank=True, null=True)
     business_types = models.TextField(blank=True, null=True)
     business_types_desc = models.TextField(blank=True, null=True)
-    cfda_number = models.TextField(blank=True, null=True, db_index=False)
-    cfda_title = models.TextField(blank=True, null=True)
+    assistance_listing_number = models.TextField(blank=True, null=True, db_index=False)
+    assistance_listing_title = models.TextField(blank=True, null=True)
     correction_delete_ind_desc = models.TextField(blank=True, null=True)
     correction_delete_indicatr = models.TextField(blank=True, null=True)
     created_at = NaiveTimestampField(

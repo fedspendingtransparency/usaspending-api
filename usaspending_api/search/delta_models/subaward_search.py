@@ -362,8 +362,8 @@ subaward_search_load_sql_string = fr"""
         bs.award_description,
         bs.naics,
         bs.naics_description,
-        bs.cfda_numbers,
-        bs.cfda_titles,
+        bs.assistance_listing_numbers AS cfda_numbers,
+        bs.assistance_listing_titles AS cfda_titles,
 
         -- Subaward Fields (from Broker)
         bs.subaward_type,
@@ -452,7 +452,7 @@ subaward_search_load_sql_string = fr"""
         bs.sub_funding_office_id,
         bs.sub_funding_office_name,
         bs.sub_naics,
-        bs.sub_cfda_numbers,
+        bs.sub_assistance_listing_numbers AS sub_cfda_numbers,
         bs.sub_dunsplus4,
         bs.sub_recovery_subcontract_amt,
         CAST(bs.sub_recovery_model_q1 AS BOOLEAN),
@@ -672,7 +672,7 @@ subaward_search_load_sql_string = fr"""
             ON fpds.product_or_service_code = psc.code
     LEFT OUTER JOIN
         global_temp.references_cfda AS cfda
-            ON cfda.program_number = split(bs.cfda_numbers, ',')[0]
+            ON cfda.program_number = split(bs.assistance_listing_numbers, ',')[0]
     LEFT OUTER JOIN state_fips AS pop_state_fips
         ON pop_state_fips.state_code = bs.place_of_perform_state_code
     LEFT OUTER JOIN state_fips AS rl_state_fips
