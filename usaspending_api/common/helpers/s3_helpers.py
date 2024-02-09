@@ -77,19 +77,20 @@ def upload_download_file_to_s3(file_path, sub_dir=None):
     bucket = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
     region = settings.USASPENDING_AWS_REGION
     keyname = file_path.name
-    if sub_dir is not None:
-        keyname = f"{sub_dir}/{keyname}"
-    multipart_upload(bucket, region, str(file_path), keyname)
+    multipart_upload(bucket, region, str(file_path), keyname, sub_dir)
 
 
-def multipart_upload(bucketname, regionname, source_path, keyname):
+def multipart_upload(bucketname, regionname, source_path, keyname, sub_dir=None):
     s3client = boto3.client("s3", region_name=regionname)
     source_size = Path(source_path).stat().st_size
     # Sets the chunksize at minimum ~5MB to sqrt(5MB) * sqrt(source size)
     bytes_per_chunk = max(int(math.sqrt(5242880) * math.sqrt(source_size)), 5242880)
     config = TransferConfig(multipart_chunksize=bytes_per_chunk)
     transfer = S3Transfer(s3client, config)
-    transfer.upload_file(source_path, bucketname, Path(keyname).name, extra_args={"ACL": "bucket-owner-full-control"})
+    file_name = Path(keyname).name
+    if sub_dir is not None:
+        file_name = f"{sub_dir}/{file_name}"
+    transfer.upload_file(source_path, bucketname, file_name, extra_args={"ACL": "bucket-owner-full-control"})
 
 
 def download_s3_object(
