@@ -124,7 +124,6 @@ class Command(BaseCommand):
 
             self.filepaths_to_delete.extend(self.working_dir_path.glob(f"{final_path.stem}*"))
 
-
     def complete_zip_and_upload(self):
         self.finalize_zip_contents()
         if self.upload:
@@ -141,7 +140,7 @@ class Command(BaseCommand):
         short_timestamp = self.full_timestamp[:-6]
         return [
             (
-                f"{self.download_source_sql["unlinked_contracts_file_d1"]}",
+                f"{self.download_source_sql['unlinked_contracts_file_d1']}",
                 f"{self.agency_name}_UnlinkedContracts_{short_timestamp}",
             )
         ]
