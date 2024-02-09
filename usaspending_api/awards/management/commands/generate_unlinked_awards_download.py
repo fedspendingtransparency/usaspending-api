@@ -12,9 +12,8 @@ from usaspending_api.common.helpers.spark_helpers import configure_spark_session
 from usaspending_api.disaster.helpers.covid_download_csv_strategies import (
     SparkToCSVStrategy,
 )
-from usaspending_api.download.filestreaming.download_source import DownloadSource
-from usaspending_api.download.lookups import VALUE_MAPPINGS
 from enum import Enum
+from usaspending_api.awards.management.sql.spark.unlinked_contracts_file_d1 import file_d1_sql_string
 
 
 class ComputeTypeEnum(Enum):
@@ -39,48 +38,14 @@ class Command(BaseCommand):
     agency_id = 37  # toptier id of Department of Veterans Affairs
     agency_name = "Department of Veterans Affairs"
 
-    # Unlinked Contracts (file d1) DownloadSource
-    download_type = "prime_awards"
-    filter_function = VALUE_MAPPINGS[download_type]["filter_function"]
-    download_type_table = VALUE_MAPPINGS[download_type]["table"]
-    filters = {
-        "prime_and_sub_award_types": {
-            "prime_awards": [
-                "IDV_A",
-                "IDV_B",
-                "IDV_B_A",
-                "IDV_B_B",
-                "IDV_B_C",
-                "IDV_C",
-                "IDV_D",
-                "IDV_E",
-                "A",
-                "B",
-                "C",
-                "D",
-            ]
-        },
-        "agencies": [{"type": "awarding", "tier": "toptier", "name": agency_name}],
-        "time_period": [{"start_date": "2023-10-01", "end_date": "2024-09-30", "date_type": "action_date"}],
-    }
-    extra_filters = {
-        f"{VALUE_MAPPINGS[download_type].get('is_fpds_join', '')}is_fpds": True,
-    }
-    queryset = filter_function(filters)
-    d1_source = DownloadSource(VALUE_MAPPINGS[download_type]["table_name"], "d1", download_type, agency_id, filters)
-    d1_source.queryset = queryset & download_type_table.objects.filter(**extra_filters)
-
     # KEY is the type of compute supported by this command
     # key's VALUE are the strategies required by the compute type
     # These strategies are used to change the behavior of this command
     #   at runtime.
     compute_types = {
-        # TODO: Try to create something that doesn't enforce a DownloadSource for all compute types
-        # source sql strategies are expected to be instances of DownloadSource
-        # for this particular use case
         ComputeTypeEnum.SPARK.value: {
             "source_sql_strategy": {
-                "unlinked_contracts_file_d1": d1_source,
+                "unlinked_contracts_file_d1": file_d1_sql_string.format(agency_name=agency_name),
             },
             "download_to_csv_strategy": SparkToCSVStrategy(logger=logger),
         },
