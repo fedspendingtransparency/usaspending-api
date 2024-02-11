@@ -23,7 +23,7 @@ from typing import List
 
 class AbstractToCSVStrategy(ABC):
     """A composable class that can be used according to the Strategy software design pattern.
-    The Covid-19 "to csv" strategy establishes the interface for a suite of download
+    The "to csv" strategy establishes the interface for a suite of download
     algorithms; which take data from a source and outputs the result set to a csv.
     Implement this abstract class by taking specific algorithms which pull data from a source,
     and outputs to a csv, and bundle them into separate classes called strategies which
@@ -41,7 +41,7 @@ class AbstractToCSVStrategy(ABC):
         destination_path: Path,
         destination_file_name: str,
         working_dir_path: Path,
-        covid_profile_download_zip_path: Path,
+        download_zip_path: Path,
     ) -> Tuple[List[str], int]:
         """
         Args:
@@ -49,7 +49,7 @@ class AbstractToCSVStrategy(ABC):
             destination_path: The absolute destination path of the generated data files as a string
             destination_file_name: The name of the file in destination path without a file extension
             working_dir_path: The working directory path as a string
-            covid_profile_download_zip_path: The path (as a string) to the covid profile download zip file
+            download_zip_path: The path (as a string) to the download zip file
 
         Returns:
             Returns a list of paths to the downloaded csv files and the total record count of all those files.
@@ -62,9 +62,7 @@ class PostgresToCSVStrategy(AbstractToCSVStrategy):
         super().__init__(*args, **kwargs)
         self._logger = logger
 
-    def download_to_csv(
-        self, source_sql, destination_path, destination_file_name, working_dir_path, covid_profile_download_zip_path
-    ):
+    def download_to_csv(self, source_sql, destination_path, destination_file_name, working_dir_path, download_zip_path):
         source_sql = Path(source_sql)
         start_time = time.perf_counter()
         self._logger.info(f"Downloading data to {destination_path}")
@@ -94,7 +92,7 @@ class PostgresToCSVStrategy(AbstractToCSVStrategy):
             zip_process = multiprocessing.Process(
                 target=split_and_zip_data_files,
                 args=(
-                    str(covid_profile_download_zip_path),
+                    str(download_zip_path),
                     temp_data_file_name,
                     str(destination_path),
                     self.file_format,
@@ -115,9 +113,7 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
         super().__init__(*args, **kwargs)
         self._logger = logger
 
-    def download_to_csv(
-        self, source_sql, destination_path, destination_file_name, working_dir_path, covid_profile_download_zip_path
-    ):
+    def download_to_csv(self, source_sql, destination_path, destination_file_name, working_dir_path, download_zip_path):
         # These imports are here for a reason.
         #   some strategies do not require spark
         #   we do not want to force all containers where
@@ -172,7 +168,7 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
             delete_s3_object(s3_bucket_name, s3_destination_path)
             if self.spark_created_by_command:
                 self.spark.stop()
-        append_files_to_zip_file(final_csv_data_file_locations, covid_profile_download_zip_path)
+        append_files_to_zip_file(final_csv_data_file_locations, download_zip_path)
         self._logger.info(f"Generated the following data csv files {final_csv_data_file_locations}")
         return final_csv_data_file_locations, record_count
 
@@ -186,7 +182,7 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
             s3_file_paths: A list of file paths to move from s3, name should
                 include s3a:// and bucket name
             s3_bucket_path: The bucket path, e.g. s3a:// + bucket name
-            s3_bucket_sub_path: The path to the s3 files in the bucket, exluding s3a:// + bucket name, e.g. temp_covid_directory/files
+            s3_bucket_sub_path: The path to the s3 files in the bucket, exluding s3a:// + bucket name, e.g. temp_directory/files
             destination_path_dir: The location to move those files from s3 to, must not include the
                 file name in the path. This path should be a diretory.
 

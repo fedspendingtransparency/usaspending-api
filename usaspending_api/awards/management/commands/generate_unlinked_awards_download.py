@@ -9,7 +9,7 @@ from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
 
 from usaspending_api.common.helpers.s3_helpers import upload_download_file_to_s3
 from usaspending_api.common.helpers.spark_helpers import configure_spark_session, get_active_spark_session
-from usaspending_api.disaster.helpers.covid_download_csv_strategies import (
+from usaspending_api.common.helpers.download_csv_strategies import (
     SparkToCSVStrategy,
 )
 from enum import Enum
