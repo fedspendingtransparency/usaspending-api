@@ -12,10 +12,10 @@ from usaspending_api.references.models import ToptierAgency
 
 class ListUnlinkedAwardsDownloadsViewSet(APIView):
     """
-    Returns a list of the current versions of generated archive files for a given fiscal year and agency.
+    Returns a list which contains links to the latest versions of unlinked awards files for an agency.
     """
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/bulk_download/list_monthly_files.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/bulk_download/list_unlinked_awards_files.md"
 
     s3_handler = S3Handler(
         bucket_name=settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME, redirect_dir=settings.MONTHLY_DOWNLOAD_S3_REDIRECT_DIR
