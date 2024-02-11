@@ -18,34 +18,27 @@ class ListUnlinkedAwardsDownloadsViewSet(APIView):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/bulk_download/list_unlinked_awards_files.md"
 
     s3_handler = S3Handler(
-        bucket_name=settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME, redirect_dir=settings.MONTHLY_DOWNLOAD_S3_REDIRECT_DIR
+        bucket_name=settings.BULK_DOWNLOAD_S3_BUCKET_NAME,
+        redirect_dir=settings.UNLINKED_AWARDS_DOWNLOAD_REDIRECT_DIR,
     )
 
-    # This is intentionally not cached so that the latest updates to these monthly generated files are always returned
+    # This is intentionally not cached so that the latest updates to these files are always returned
     def post(self, request):
-        """Return list of downloads that match the requested params"""
-        agency_id = request.data.get("agency", None)
-        fiscal_year = request.data.get("fiscal_year", None)
-        type_param = request.data.get("type", None)
+        """Return list of downloads that match the requested params."""
+        toptier_code = request.data.get("toptier_code", None)
 
         # Check required params
-        required_params = {"agency": agency_id, "fiscal_year": fiscal_year, "type": type_param}
+        required_params = {"toptier_code": toptier_code}
         for required, param_value in required_params.items():
             if param_value is None:
-                raise InvalidParameterException("Missing one or more required body parameters: {}".format(required))
+                raise InvalidParameterException(f"Missing one or more required body parameters: {required}")
 
-        # Capitalize type_param and retrieve agency information from agency ID
-        download_type = type_param.capitalize()
-        if agency_id == "all":
-            agency = {"toptier_code": "All", "name": "All", "abbreviation": None}
-        else:
-            agency_check = ToptierAgency.objects.filter(toptier_agency_id=agency_id).values(
-                "toptier_code", "name", "abbreviation"
-            )
-            if agency_check:
-                agency = agency_check[0]
-            else:
-                raise InvalidParameterException("{} agency not found".format(agency_id))
+        agency_check = ToptierAgency.objects.filter(toptier_code=toptier_code).values(
+            "toptier_code", "name", "abbreviation"
+        )
+        if not agency_check:
+            raise InvalidParameterException(f"Agency not found given the toptier code: {toptier_code}")
+        agency = agency_check[0]
 
         # Populate regex
         monthly_download_prefixes = f"FY{fiscal_year}_{agency['toptier_code']}_{download_type}"
