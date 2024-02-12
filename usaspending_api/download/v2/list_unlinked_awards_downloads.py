@@ -64,7 +64,6 @@ class ListUnlinkedAwardsDownloadsViewSet(APIView):
                 download_names.append(key)
 
         # Generate response
-        downloads = []
         latest_download_name = self._get_last_modified_file(download_names)
         identified_dowload = {
             "agency_name": agency["name"],
@@ -77,9 +76,8 @@ class ListUnlinkedAwardsDownloadsViewSet(APIView):
                 else None
             ),
         }
-        downloads.append(identified_dowload)
 
-        results = {"files": downloads, "messages": []}
+        results = {"file": identified_dowload, "messages": []}
         return Response(results)
 
     def _get_last_modified_file(self, download_files) -> Optional[str]:
