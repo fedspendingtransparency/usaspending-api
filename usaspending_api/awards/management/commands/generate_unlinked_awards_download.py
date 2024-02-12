@@ -149,10 +149,10 @@ class Command(BaseCommand):
                 f"{self.download_source_sql['unlinked_contracts_file_d1']}",
                 f"{self._agency_name}_UnlinkedContracts_{short_timestamp}",
             ),
-            # (
-            #     f"{self.download_source_sql['unlinked_assistance_file_d2']}",
-            #     f"{self._agency_name}_UnlinkedFinancialAssistance_{short_timestamp}",
-            # ),
+            (
+                f"{self.download_source_sql['unlinked_assistance_file_d2']}",
+                f"{self._agency_name}_UnlinkedFinancialAssistance_{short_timestamp}",
+            ),
         ]
 
     def cleanup(self):
