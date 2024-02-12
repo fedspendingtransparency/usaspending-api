@@ -155,6 +155,7 @@ class Command(BaseCommand):
         file_description_path = save_file_description(
             str(self.zip_file_path.parent), self.readme_path.name, file_description
         )
+        self.filepaths_to_delete.append(Path(file_description_path))
         self.total_download_size = self.zip_file_path.stat().st_size
 
     def prep_filesystem(self):

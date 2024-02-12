@@ -21,6 +21,7 @@ FILES = {
     "settings": settings.APP_DIR / "etl" / "es_config_objects.json",
     "transaction_template": settings.APP_DIR / "etl" / "es_transaction_template.json",
     "recipient_profile_template": settings.APP_DIR / "etl" / "es_recipient_profile_template.json",
+    "location_template": settings.APP_DIR / "etl" / "es_location_template.json",
 }
 
 
@@ -35,7 +36,7 @@ class Command(BaseCommand):
             "--load-type",
             type=str,
             help="Select which type of index to configure, current options are awards or transactions",
-            choices=["transaction", "award", "covid19-faba", "transactions", "awards", "recipient"],
+            choices=["transaction", "award", "covid19-faba", "transactions", "awards", "recipient", "location"],
             default="transaction",
         )
         parser.add_argument(
@@ -66,6 +67,10 @@ class Command(BaseCommand):
             self.index_pattern = f"*{settings.ES_RECIPIENTS_NAME_SUFFIX}"
             self.max_result_window = settings.ES_RECIPIENTS_MAX_RESULT_WINDOW
             self.template_name = "recipient_profile_template"
+        elif options["load_type"] == "location":
+            self.index_pattern = f"*{settings.ES_LOCATIONS_NAME_SUFFIX}"
+            self.max_result_window = settings.ES_LOCATIONS_MAX_RESULT_WINDOW
+            self.template_name = "location_template"
         else:
             raise RuntimeError(f"No config for {options['load_type']}")
 
