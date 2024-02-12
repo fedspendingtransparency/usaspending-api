@@ -14,6 +14,7 @@ from usaspending_api.common.helpers.download_csv_strategies import (
 from enum import Enum
 from usaspending_api.awards.management.sql.spark.unlinked_contracts_file_d1 import file_d1_sql_string
 from usaspending_api.download.filestreaming.file_description import build_file_description, save_file_description
+from usaspending_api.references.models.toptier_agency import ToptierAgency
 
 
 class ComputeTypeEnum(Enum):
@@ -32,11 +33,7 @@ class Command(BaseCommand):
     total_download_size = 0
     working_dir_path = Path(settings.CSV_LOCAL_PATH)
     full_timestamp = datetime.strftime(datetime.now(timezone.utc), "%Y-%m-%d_H%HM%MS%S%f")
-
-    # TODO REMOVE
-    # For testing purposes use VA
-    agency_id = 37  # toptier id of Department of Veterans Affairs
-    agency_name = "Department of Veterans Affairs"
+    _agency_name = None
 
     # KEY is the type of compute supported by this command
     # key's VALUE are the strategies required by the compute type
@@ -45,7 +42,7 @@ class Command(BaseCommand):
     compute_types = {
         ComputeTypeEnum.SPARK.value: {
             "source_sql_strategy": {
-                "unlinked_contracts_file_d1": file_d1_sql_string.format(agency_name="'" + agency_name + "'"),
+                "unlinked_contracts_file_d1": file_d1_sql_string,
             },
             "download_to_csv_strategy": SparkToCSVStrategy(logger=logger),
             "readme_path": Path(settings.UNLINKED_AWARDS_DOWNLOAD_README_FILE_PATH),
@@ -91,19 +88,26 @@ class Command(BaseCommand):
 
         self.download_csv_strategy = self.compute_types[self.compute_type_arg]["download_to_csv_strategy"]
         self.download_source_sql = self.compute_types[self.compute_type_arg]["source_sql_strategy"]
-        self.zip_file_path = (
-            self.working_dir_path / f"{self.agency_name.replace(' ', '_')}_unlinked_awards_{self.full_timestamp}.zip"
-        )
-        try:
-            self.prep_filesystem()
-            self.process_data_copy_jobs()
-            self.complete_zip_and_upload()
-        except Exception:
-            logger.exception("Exception encountered. See logs")
-            raise
-        finally:
-            # "best-effort" attempt to cleanup temp files after a failure. Isn't 100% effective
-            self.cleanup()
+
+        # Obtain the agencies to generate files for
+        toptier_agencies = ToptierAgency.objects.values("name").distinct()
+
+        for agency in toptier_agencies:
+            self._agency_name = agency["name"].replace(" ", "_")
+            self.download_source_sql = self.download_source_sql.format(agency["name"])
+            self.zip_file_path = (
+                self.working_dir_path / f"{self._agency_name.replace()}_unlinked_awards_{self.full_timestamp}.zip"
+            )
+            try:
+                self.prep_filesystem()
+                self.process_data_copy_jobs()
+                self.complete_zip_and_upload()
+            except Exception:
+                logger.exception("Exception encountered. See logs")
+                raise
+            finally:
+                # "best-effort" attempt to cleanup temp files after a failure. Isn't 100% effective
+                self.cleanup()
 
     def _create_data_csv_dest_path(self, file_name) -> Path:
         return self.working_dir_path / file_name
@@ -140,7 +144,7 @@ class Command(BaseCommand):
         return [
             (
                 f"{self.download_source_sql['unlinked_contracts_file_d1']}",
-                f"{self.agency_name.replace(' ', '_')}_UnlinkedContracts_{short_timestamp}",
+                f"{self._agency_name.replace(' ', '_')}_UnlinkedContracts_{short_timestamp}",
             )
         ]
 
