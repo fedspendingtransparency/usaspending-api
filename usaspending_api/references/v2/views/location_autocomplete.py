@@ -93,9 +93,13 @@ class LocationAutocompleteViewSet(APIView):
             "cities",
             "counties",
             "zip_codes",
-            "current_congressional_district",
-            "original_congressional_district",
+            "current_congressional_districts",
+            "original_congressional_districts",
         )
+
+        # Elasticsearch queries don't work well with the "-" character so we remove it from any searches, specifically
+        #   with Congressional districts in mind.
+        search_text = search_text.replace("-", "")
 
         query_string_query = ES_Q("query_string", query=f"*{search_text}*", fields=es_location_fields)
         multi_match_query = ES_Q("multi_match", query=search_text, fields=es_location_fields)
@@ -108,8 +112,8 @@ class LocationAutocompleteViewSet(APIView):
             "cities",
             "counties",
             "zip_codes",
-            "current_congressional_district",
-            "original_congressional_district",
+            "current_congressional_districts",
+            "original_congressional_districts",
         )
         search = search.highlight_options(order="score", pre_tags=[""], post_tags=[""])
 
@@ -165,7 +169,9 @@ class LocationAutocompleteViewSet(APIView):
         if len(es_results) > 0:
             current_cds = []
             for doc in es_results:
-                for current_cd in doc.meta.highlight.current_congressional_district:
+                for current_cd in doc.meta.highlight.current_congressional_districts:
+                    # Add the hyphen back to the Congressional districts to be consistent with other endpoints
+                    current_cd = f"{current_cd[:2]}-{current_cd[2:]}"
                     current_cds.append(
                         {"current_cd": current_cd, "state_name": doc.state_name, "country_name": doc.country_name}
                     )
@@ -177,7 +183,9 @@ class LocationAutocompleteViewSet(APIView):
         if len(es_results) > 0:
             original_cds = []
             for doc in es_results:
-                for original_cd in doc.meta.highlight.original_congressional_district:
+                for original_cd in doc.meta.highlight.original_congressional_districts:
+                    # Add the hyphen back to the Congressional districts to be consistent with other endpoints
+                    original_cd = f"{original_cd[:2]}-{original_cd[2:]}"
                     original_cds.append(
                         {"original_cd": original_cd, "state_name": doc.state_name, "country_name": doc.country_name}
                     )
