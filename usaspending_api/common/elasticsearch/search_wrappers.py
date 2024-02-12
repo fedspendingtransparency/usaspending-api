@@ -120,3 +120,11 @@ class RecipientSearch(_Search):
     @staticmethod
     def type_as_string():
         return "recipient_search"
+
+
+class LocationSearch(_Search):
+    _index_name = f"{settings.ES_LOCATIONS_QUERY_ALIAS_PREFIX}*"
+
+    @staticmethod
+    def type_as_string():
+        return "location_search"
