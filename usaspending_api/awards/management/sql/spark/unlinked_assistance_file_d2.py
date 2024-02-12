@@ -59,9 +59,7 @@ select
 	a.is_fpds,
 	ts.fiscal_year,
 	case
-		-- Belongs to quarterly submission so lets get the last period of the quarter
-                when ql.quarter_format_flag = true then ts.fiscal_quarter * 3
-		-- Period = 1 is submitted in Period = 2
+        when ql.quarter_format_flag = true then ts.fiscal_quarter * 3
 		when ts.fiscal_period = 1 then 2
 		else ts.fiscal_period
 	end as fiscal_period
@@ -116,9 +114,7 @@ where
 		a.is_fpds,
 		ts.fiscal_year,
 		case
-			-- Belongs to quarterly submission so lets get the last period of the quarter
-                when ql.quarter_format_flag = true then ts.fiscal_quarter * 3
-			-- Period = 1 is submitted in Period = 2
+            when ql.quarter_format_flag = true then ts.fiscal_quarter * 3
 			when ts.fiscal_period = 1 then 2
 			else ts.fiscal_period
 		end
