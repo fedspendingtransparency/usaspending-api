@@ -80,7 +80,6 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/bulk_download/awards/](/api/v2/bulk_download/awards/)|POST| Generates zip file for download of award data in CSV format |
 |[/api/v2/bulk_download/list_agencies/](/api/v2/bulk_download/list_agencies/)|POST| Lists all the agencies and the subagencies or federal accounts associated under specific agencies |
 |[/api/v2/bulk_download/list_monthly_files/](/api/v2/bulk_download/list_monthly_files/)|POST| Lists the monthly files associated with the requested params |
-|[/api/v2/bulk_download/list_unlinked_awards_files/](/api/v2/bulk_download/list_unlinked_awards_files/)|POST| Lists the unlinked awards files associated with the requested params |
 |[/api/v2/bulk_download/status/](/api/v2/bulk_download/status/)|GET| Returns the current status of a download job that that has been requested with the `v2/bulk_download/awards/` or `v2/bulk_download/transaction/` endpoint that same day. |
 |[/api/v2/disaster/agency/count/](/api/v2/disaster/agency/count/)|POST| Returns the count of Agencies which received disaster/emergency funding |
 |[/api/v2/disaster/agency/loans/](/api/v2/disaster/agency/loans/)|POST| Returns insights on the Agencies awarding loans from disaster/emergency funding |
