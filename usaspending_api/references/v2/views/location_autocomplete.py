@@ -175,8 +175,8 @@ class LocationAutocompleteViewSet(APIView):
 
         Example:
             [
-                {"city": "HOLDEN", "state_name": "LOUISIANA", "country_name": "UNITED STATES"},
-                {"city": "DENVER", "state_name": "COLORADO", "country_name": "UNITED STATES"}
+                {"city_name": "HOLDEN", "state_name": "LOUISIANA", "country_name": "UNITED STATES"},
+                {"city_name": "DENVER", "state_name": "COLORADO", "country_name": "UNITED STATES"}
             ]
         """
 
@@ -201,8 +201,8 @@ class LocationAutocompleteViewSet(APIView):
 
         Example:
             [
-                {"county": "GADSDEN", "state_name": "FLORIDA", "country_name": "UNITED STATES"},
-                {"county": "CAMDEN", "state_name": "GEORGIA", "country_name": "UNITED STATES"}
+                {"county_name": "GADSDEN", "state_name": "FLORIDA", "country_name": "UNITED STATES"},
+                {"county_name": "CAMDEN", "state_name": "GEORGIA", "country_name": "UNITED STATES"}
             ]
         """
 
