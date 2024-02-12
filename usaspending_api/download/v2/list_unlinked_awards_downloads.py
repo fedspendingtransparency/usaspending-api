@@ -1,5 +1,6 @@
-import boto3
 import re
+from typing import Optional
+import boto3
 
 from django.conf import settings
 from rest_framework.response import Response
@@ -9,7 +10,6 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.config import CONFIG
 from usaspending_api.download.filestreaming.s3_handler import S3Handler
 from usaspending_api.references.models import ToptierAgency
-import os
 
 
 class ListUnlinkedAwardsDownloadsViewSet(APIView):
@@ -43,7 +43,7 @@ class ListUnlinkedAwardsDownloadsViewSet(APIView):
 
         # Populate regex
         download_prefix = f"{agency['name'].replace(' ', '_')}_unlinked_awards"
-        download_regex = r"{}_.*.zip".format(download_prefix)
+        download_regex = r"{}_.*\.zip".format(download_prefix)
 
         # Retrieve and filter the files we need
         if not CONFIG.USE_AWS:
@@ -60,29 +60,45 @@ class ListUnlinkedAwardsDownloadsViewSet(APIView):
                 service_name="s3", region_name=CONFIG.AWS_REGION, endpoint_url=f"https://{CONFIG.AWS_S3_ENDPOINT}"
             )
         s3_bucket = s3_resource.Bucket(settings.BULK_DOWNLOAD_S3_BUCKET_NAME)
-
-        download_names = [key for key in s3_bucket.objects.filter(Prefix=download_prefix)]
+        download_names = []
+        for key in s3_bucket.objects.filter(Prefix=download_prefix):
+            if re.match(download_regex, key.key):
+                download_names.append(key)
 
         # Generate response
         downloads = []
-        # Best effort to identify the latest file by assuming the file with the latest last modified date
-        # is the latest file to have been generated
         latest_download_name = self._get_last_modified_file(download_names)
-        downloads.append(self._create_download_response_obj(latest_download_name, agency))
+        identified_dowload = {
+            "agency_name": agency["name"],
+            "toptier_code": agency["toptier_code"],
+            "agency_acronym": agency["abbreviation"],
+            "file_name": latest_download_name if latest_download_name is not None else None,
+            "url": (
+                self.s3_handler.get_simple_url(file_name=latest_download_name)
+                if latest_download_name is not None
+                else None
+            ),
+        }
+        downloads.append(identified_dowload)
 
         results = {"files": downloads, "messages": []}
         return Response(results)
 
-    def _create_download_response_obj(self, filename, agency):
-        return {
-            "agency_name": agency["name"],
-            "toptier_code": agency["toptier_code"],
-            "agency_acronym": agency["abbreviation"],
-            "file_name": filename,
-            "url": self.s3_handler.get_simple_url(file_name=filename),
-        }
+    def _get_last_modified_file(self, download_files) -> Optional[str]:
+        """Return the last modified file from the list of download files.
 
-    def _get_last_modified_file(self, download_files):
+        Args:
+            download_files (List[s3.ObjectSummary]): The files to identify the last modified file from.
+
+        Returns:
+            The file name of the last modified file.
+        """
+        # Best effort to identify the latest file by assuming the file with the latest last modified date
+        # is the latest file to have been generated
         get_last_modified = lambda obj: int(obj.last_modified.strftime("%s"))
-        last_added = [obj.key for obj in sorted(download_files, key=get_last_modified)][0]
-        return last_added
+        sorted_files = [obj.key for obj in sorted(download_files, key=get_last_modified, reverse=True)]
+        print(sorted_files)
+        last_added_file = None
+        if len(sorted_files) > 0:
+            last_added_file = sorted_files[0]
+        return last_added_file
