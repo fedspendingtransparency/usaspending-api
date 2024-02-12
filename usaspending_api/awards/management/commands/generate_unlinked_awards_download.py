@@ -35,6 +35,7 @@ class Command(BaseCommand):
     working_dir_path = Path(settings.CSV_LOCAL_PATH)
     full_timestamp = datetime.strftime(datetime.now(timezone.utc), "%Y-%m-%d_H%HM%MS%S%f")
     _agency_name = None
+    _toptier_code = None
 
     # KEY is the type of compute supported by this command
     # key's VALUE are the strategies required by the compute type
@@ -97,9 +98,7 @@ class Command(BaseCommand):
         for agency in toptier_agencies:
             self._agency_name = agency["name"].replace(" ", "_")
             self._toptier_code = agency["toptier_code"]
-            self.zip_file_path = (
-                self.working_dir_path / f"{self._agency_name}_unlinked_awards_{self.full_timestamp}.zip"
-            )
+
             try:
                 self.prep_filesystem()
                 self.process_data_copy_jobs()
@@ -115,10 +114,13 @@ class Command(BaseCommand):
         return self.working_dir_path / file_name
 
     def process_data_copy_jobs(self):
+        self.zip_file_path = self.working_dir_path / f"{self._agency_name}_unlinked_awards_{self.full_timestamp}.zip"
         logger.info(f"Creating new unlinked awards download zip file: {self.zip_file_path}")
         self.filepaths_to_delete.append(self.zip_file_path)
 
         for sql_file, final_name in self.download_file_list:
+            print(sql_file)
+            print(final_name)
             sql_file = sql_file.format(toptier_code="'" + self._toptier_code + "'")
             final_path = self._create_data_csv_dest_path(final_name)
             intermediate_data_file_path = final_path.parent / (final_path.name + "_temp")
@@ -157,6 +159,7 @@ class Command(BaseCommand):
 
     def cleanup(self):
         for path in self.filepaths_to_delete:
+            self.filepaths_to_delete.remove(path)
             logger.info(f"Removing {path}")
             path.unlink()
 
