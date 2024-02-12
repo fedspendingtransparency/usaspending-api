@@ -96,7 +96,7 @@ class Command(BaseCommand):
             self._agency_name = agency["name"].replace(" ", "_")
             self.download_source_sql["unlinked_contracts_file_d1"] = self.download_source_sql[
                 "unlinked_contracts_file_d1"
-            ].format(agency_name=agency["name"])
+            ].format(agency_name="'" + agency["name"] + "'")
             self.zip_file_path = (
                 self.working_dir_path / f"{self._agency_name}_unlinked_awards_{self.full_timestamp}.zip"
             )
