@@ -47,7 +47,6 @@ def get_endpoint_urls_doc_paths_and_docstrings(endpoint_prefixes=None):
                 results.append((cleaned, url))
 
     _traverse_urls("/", urls.urlpatterns)
-    print(results)
     return results
 
 
