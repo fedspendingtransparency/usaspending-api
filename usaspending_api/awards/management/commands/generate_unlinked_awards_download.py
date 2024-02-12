@@ -182,6 +182,7 @@ class Command(BaseCommand):
     def prep_filesystem(self, zip_file_path):
         if zip_file_path.exists():
             # Clean up a zip file that might exist from a prior attempt at this download
+            self.filepaths_to_delete.remove(zip_file_path)
             zip_file_path.unlink()
 
         if not zip_file_path.parent.exists():
