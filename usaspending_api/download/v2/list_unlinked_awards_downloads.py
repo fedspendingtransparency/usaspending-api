@@ -40,7 +40,15 @@ class ListUnlinkedAwardsDownloadsViewSet(APIView):
         agency = agency_check[0]
 
         # Populate regex
-        download_prefix = f"{agency['name'].replace(' ', '_')}_unlinked_awards"
+        agency_name = agency["name"].replace(" ", "_")
+        agency_name = agency_name.replace(".", "_")
+        agency_name = agency_name.replace("/", "_")
+        agency_name = agency_name.replace("(", "_")
+        agency_name = agency_name.replace(")", "_")
+        agency_name = agency_name.replace("-", "_")
+        agency_name = agency_name.replace("&", "_")
+        agency_name = agency_name.replace("'", "")
+        download_prefix = f"{agency_name}_UnlinkedAwards"
         download_regex = r"{}_.*\.zip".format(download_prefix)
 
         # Retrieve and filter the files we need
