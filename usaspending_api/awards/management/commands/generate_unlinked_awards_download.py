@@ -103,8 +103,16 @@ class Command(BaseCommand):
             df.write.format(source="delta").mode(saveMode="overwrite").saveAsTable(name=delta_table_name)
 
         for agency in toptier_agencies:
+            # Removing any abnormalities from the agency names
             self._agency_name = agency["name"].replace(" ", "_")
             self._agency_name = self._agency_name.replace(".", "_")
+            self._agency_name = self._agency_name.replace("/", "_")
+            self._agency_name = self._agency_name.replace("(", "_")
+            self._agency_namne = self._agency_name.replace(")", "_")
+            self._agency_namne = self._agency_name.replace("-", "_")
+            self._agency_namne = self._agency_name.replace("&", "_")
+            self._agency_namne = self._agency_name.replace("'", "")
+
             self._toptier_code = agency["toptier_code"]
             zip_file_path = self.working_dir_path / f"{self._agency_name}_unlinked_awards_{self.full_timestamp}.zip"
 
