@@ -148,7 +148,6 @@ class Command(BaseCommand):
         else:
             logger.warn("Not uploading zip file to S3. Leaving file locally")
             self.filepaths_to_delete.remove(zip_file_path)
-            logger.warn("Not creating database record")
 
     @property
     def download_file_list(self):
