@@ -9,7 +9,7 @@ Returns a list which contains links to the latest versions of unlinked awards fi
 
 + Request (application/json)
     + Attributes (object)
-        + `toptier_code`: (required, string)
+        + `toptier_code` (required, string)
             The toptier code of an agency (could be a CGAC or FREC) so only numeric character strings of length 3-4 are accepted.
     + Body
 
@@ -22,7 +22,6 @@ Returns a list which contains links to the latest versions of unlinked awards fi
         + `files` (required, array[File], fixed-type)
         + `messages` (required, array[string], fixed-type)
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
-
 
     + Body
 
