@@ -114,7 +114,7 @@ class Command(BaseCommand):
             self._agency_namne = self._agency_name.replace("'", "")
 
             self._toptier_code = agency["toptier_code"]
-            zip_file_path = self.working_dir_path / f"{self._agency_name}_unlinked_awards_{self.full_timestamp}.zip"
+            zip_file_path = self.working_dir_path / f"{self._agency_name}_UnlinkedAwards_{self.full_timestamp}.zip"
 
             try:
                 self.prep_filesystem(zip_file_path)
