@@ -42,6 +42,7 @@ class AbstractToCSVStrategy(ABC):
         destination_file_name: str,
         working_dir_path: Path,
         download_zip_path: Path,
+        source_df=None,
     ) -> Tuple[List[str], int]:
         """
         Args:
@@ -62,7 +63,9 @@ class PostgresToCSVStrategy(AbstractToCSVStrategy):
         super().__init__(*args, **kwargs)
         self._logger = logger
 
-    def download_to_csv(self, source_sql, destination_path, destination_file_name, working_dir_path, download_zip_path):
+    def download_to_csv(
+        self, source_sql, destination_path, destination_file_name, working_dir_path, download_zip_path, source_df=None
+    ):
         source_sql = Path(source_sql)
         start_time = time.perf_counter()
         self._logger.info(f"Downloading data to {destination_path}")
@@ -113,7 +116,9 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
         super().__init__(*args, **kwargs)
         self._logger = logger
 
-    def download_to_csv(self, source_sql, destination_path, destination_file_name, working_dir_path, download_zip_path):
+    def download_to_csv(
+        self, source_sql, destination_path, destination_file_name, working_dir_path, download_zip_path, source_df=None
+    ):
         # These imports are here for a reason.
         #   some strategies do not require spark
         #   we do not want to force all containers where
@@ -145,7 +150,10 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
             if not self.spark:
                 self.spark_created_by_command = True
                 self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)  # type: SparkSession
-            df = self.spark.sql(source_sql)
+            if source_df is not None:
+                df = source_df
+            else:
+                df = self.spark.sql(source_sql)
             record_count = write_csv_file(self.spark, df, parts_dir=s3_destination_path, logger=self._logger)
             # When combining these later, will prepend the extracted header to each resultant file.
             # The parts therefore must NOT have headers or the headers will show up in the data when combined.

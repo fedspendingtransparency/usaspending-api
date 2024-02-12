@@ -96,8 +96,15 @@ class Command(BaseCommand):
         # Obtain the agencies to generate files for
         toptier_agencies = ToptierAgency.objects.values("name", "toptier_code").distinct()
 
+        # load_delta_table
+        # Save queries as delta tables for efficiency
+        for delta_table_name, sql_file, final_name in self.download_file_list:
+            df = self.spark.sql(sql_file)
+            df.write.format(source="delta").mode(saveMode="overwrite").saveAsTable(name=delta_table_name)
+
         for agency in toptier_agencies:
             self._agency_name = agency["name"].replace(" ", "_")
+            self._agency_name = self._agency_name.replace(".", "_")
             self._toptier_code = agency["toptier_code"]
             zip_file_path = self.working_dir_path / f"{self._agency_name}_unlinked_awards_{self.full_timestamp}.zip"
 
@@ -119,14 +126,13 @@ class Command(BaseCommand):
         logger.info(f"Creating new unlinked awards download zip file: {zip_file_path}")
         self.filepaths_to_delete.append(zip_file_path)
 
-        for sql_file, final_name in self.download_file_list:
-            print(sql_file)
-            print(final_name)
-            sql_file = sql_file.format(toptier_code="'" + self._toptier_code + "'")
+        for delta_table_name, sql_file, final_name in self.download_file_list:
+            df = self.spark.sql(f"select * from {delta_table_name} where toptier_code = '{self._toptier_code}'")
+            sql_file = None
             final_path = self._create_data_csv_dest_path(final_name)
             intermediate_data_file_path = final_path.parent / (final_path.name + "_temp")
             data_file_names, count = self.download_to_csv(
-                sql_file, final_path, final_name, str(intermediate_data_file_path), zip_file_path
+                sql_file, final_path, final_name, str(intermediate_data_file_path), zip_file_path, df
             )
             if count <= 0:
                 logger.warning(f"Empty data file generated: {final_path}!")
@@ -149,10 +155,12 @@ class Command(BaseCommand):
         short_timestamp = self.full_timestamp[:-6]
         return [
             (
+                "unlinked_contracts_file_d1",
                 f"{self.download_source_sql['unlinked_contracts_file_d1']}",
                 f"{self._agency_name}_UnlinkedContracts_{short_timestamp}",
             ),
             (
+                "unlinked_assistance_file_d2",
                 f"{self.download_source_sql['unlinked_assistance_file_d2']}",
                 f"{self._agency_name}_UnlinkedFinancialAssistance_{short_timestamp}",
             ),
@@ -181,8 +189,8 @@ class Command(BaseCommand):
             zip_file_path.parent.mkdir()
 
     def download_to_csv(
-        self, source_sql, destination_path, destination_file_name, intermediate_data_filename, zip_file_path
+        self, source_sql, destination_path, destination_file_name, intermediate_data_filename, zip_file_path, source_df
     ):
         return self.download_csv_strategy.download_to_csv(
-            source_sql, destination_path, destination_file_name, self.working_dir_path, zip_file_path
+            source_sql, destination_path, destination_file_name, self.working_dir_path, zip_file_path, source_df
         )

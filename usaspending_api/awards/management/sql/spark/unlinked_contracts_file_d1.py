@@ -141,5 +141,4 @@ where
 		faba.award_id = vfd.award_id
       )
 	and is_fpds = true
-	and toptier_code = {toptier_code}
 """
