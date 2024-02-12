@@ -83,7 +83,7 @@ class BaseAutocompleteViewSet(APIView):
         ]
 
         results = {"results": results}
-        messages = results.get("messages", [])
+        messages = []
         deprecated_api_endpoint_message(messages)
         results["messages"] = messages
         return Response(results)

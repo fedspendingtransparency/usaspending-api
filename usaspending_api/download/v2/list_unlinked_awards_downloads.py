@@ -6,8 +6,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.config import CONFIG
 from usaspending_api.download.filestreaming.s3_handler import S3Handler
 from usaspending_api.references.models import ToptierAgency
+import os
 
 
 class ListUnlinkedAwardsDownloadsViewSet(APIView):
@@ -18,8 +20,7 @@ class ListUnlinkedAwardsDownloadsViewSet(APIView):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/bulk_download/list_unlinked_awards_files.md"
 
     s3_handler = S3Handler(
-        bucket_name=settings.BULK_DOWNLOAD_S3_BUCKET_NAME,
-        redirect_dir=settings.UNLINKED_AWARDS_DOWNLOAD_REDIRECT_DIR,
+        bucket_name=settings.BULK_DOWNLOAD_S3_BUCKET_NAME, redirect_dir=settings.UNLINKED_AWARDS_DOWNLOAD_REDIRECT_DIR
     )
 
     # This is intentionally not cached so that the latest updates to these files are always returned
@@ -36,55 +37,52 @@ class ListUnlinkedAwardsDownloadsViewSet(APIView):
         agency_check = ToptierAgency.objects.filter(toptier_code=toptier_code).values(
             "toptier_code", "name", "abbreviation"
         )
-        if not agency_check:
+        if not agency_check or len(agency_check.all()) == 0:
             raise InvalidParameterException(f"Agency not found given the toptier code: {toptier_code}")
         agency = agency_check[0]
 
         # Populate regex
-        monthly_download_prefixes = f"FY{fiscal_year}_{agency['toptier_code']}_{download_type}"
-        monthly_download_regex = r"{}_Full_.*\.zip".format(monthly_download_prefixes)
-        delta_download_prefixes = f"FY(All)_{agency['toptier_code']}_{download_type}"
-        delta_download_regex = r"FY\(All\)_{}_{}_Delta_.*\.zip".format(agency["toptier_code"], download_type)
+        download_prefix = f"{agency['name'].replace(' ', '_')}_unlinked_awards"
+        download_regex = r"{}_.*.zip".format(download_prefix)
 
         # Retrieve and filter the files we need
-        bucket = boto3.resource("s3", region_name=self.s3_handler.region).Bucket(self.s3_handler.bucketRoute)
-        monthly_download_names = list(
-            filter(
-                re.compile(monthly_download_regex).search,
-                [key.key for key in bucket.objects.filter(Prefix=monthly_download_prefixes)],
+        if not CONFIG.USE_AWS:
+            boto3_session = boto3.session.Session(
+                region_name=CONFIG.AWS_REGION,
+                aws_access_key_id=CONFIG.AWS_ACCESS_KEY.get_secret_value(),
+                aws_secret_access_key=CONFIG.AWS_SECRET_KEY.get_secret_value(),
             )
-        )
-        delta_download_names = list(
-            filter(
-                re.compile(delta_download_regex).search,
-                [key.key for key in bucket.objects.filter(Prefix=delta_download_prefixes)],
+            s3_resource = boto3_session.resource(
+                service_name="s3", region_name=CONFIG.AWS_REGION, endpoint_url=f"http://{CONFIG.AWS_S3_ENDPOINT}"
             )
-        )
+        else:
+            s3_resource = boto3.resource(
+                service_name="s3", region_name=CONFIG.AWS_REGION, endpoint_url=f"https://{CONFIG.AWS_S3_ENDPOINT}"
+            )
+        s3_bucket = s3_resource.Bucket(settings.BULK_DOWNLOAD_S3_BUCKET_NAME)
+
+        download_names = [key for key in s3_bucket.objects.filter(Prefix=download_prefix)]
 
         # Generate response
         downloads = []
-        for filename in monthly_download_names:
-            downloads.append(self.create_download_response_obj(filename, fiscal_year, type_param, agency))
-        for filename in delta_download_names:
-            downloads.append(self.create_download_response_obj(filename, None, type_param, agency, is_delta=True))
+        # Best effort to identify the latest file by assuming the file with the latest last modified date
+        # is the latest file to have been generated
+        latest_download_name = self._get_last_modified_file(download_names)
+        downloads.append(self._create_download_response_obj(latest_download_name, agency))
 
-        return Response({"monthly_files": downloads})
+        results = {"files": downloads, "messages": []}
+        return Response(results)
 
-    def create_download_response_obj(self, filename, fiscal_year, type_param, agency, is_delta=False):
-        """Return a"""
-        regex = r"(.*)_(.*)_Delta_(.*)\.zip" if is_delta else r"(.*)_(.*)_(.*)_Full_(.*)\.zip"
-        filename_data = re.findall(regex, filename)[0]
-
-        # Simply adds dashes for the date, 20180101 -> 2018-01-01, could also use strftime
-        unformatted_date = filename_data[2 if is_delta else 3]
-        updated_date = "-".join([unformatted_date[:4], unformatted_date[4:6], unformatted_date[6:]])
-
+    def _create_download_response_obj(self, filename, agency):
         return {
-            "fiscal_year": fiscal_year,
             "agency_name": agency["name"],
+            "toptier_code": agency["toptier_code"],
             "agency_acronym": agency["abbreviation"],
-            "type": type_param,
-            "updated_date": updated_date,
             "file_name": filename,
             "url": self.s3_handler.get_simple_url(file_name=filename),
         }
+
+    def _get_last_modified_file(self, download_files):
+        get_last_modified = lambda obj: int(obj.last_modified.strftime("%s"))
+        last_added = [obj.key for obj in sorted(download_files, key=get_last_modified)][0]
+        return last_added
