@@ -42,12 +42,9 @@ class Command(BaseCommand):
     #   at runtime.
     compute_types = {
         ComputeTypeEnum.SPARK.value: {
-            # "source_sql_strategy": {
-            #     "unlinked_contracts_file_d1": file_d1_sql_string,
-            #     "unlinked_assistance_file_d2": file_d2_sql_string,
-            # },
             "source_sql_strategy": {
                 "unlinked_contracts_file_d1": file_d1_sql_string,
+                "unlinked_assistance_file_d2": file_d2_sql_string,
             },
             "download_to_csv_strategy": SparkToCSVStrategy(logger=logger),
             "readme_path": Path(settings.UNLINKED_AWARDS_DOWNLOAD_README_FILE_PATH),
@@ -95,8 +92,7 @@ class Command(BaseCommand):
         self.download_source_sql = self.compute_types[self.compute_type_arg]["source_sql_strategy"]
 
         # Obtain the agencies to generate files for
-        # TODO: Remove filter as it's for testing purposes
-        toptier_agencies = ToptierAgency.objects.filter(toptier_code="036").values("name", "toptier_code").distinct()
+        toptier_agencies = ToptierAgency.objects.values("name", "toptier_code").distinct()
 
         for agency in toptier_agencies:
             self._agency_name = agency["name"].replace(" ", "_")
