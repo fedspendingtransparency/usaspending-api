@@ -5,7 +5,6 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from pathlib import Path
 from usaspending_api.common.etl.spark import create_ref_temp_views
-from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
 
 from usaspending_api.common.helpers.s3_helpers import upload_download_file_to_s3
 from usaspending_api.common.helpers.spark_helpers import configure_spark_session, get_active_spark_session
