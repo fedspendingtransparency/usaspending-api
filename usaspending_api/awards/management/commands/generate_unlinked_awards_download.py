@@ -98,11 +98,12 @@ class Command(BaseCommand):
         for agency in toptier_agencies:
             self._agency_name = agency["name"].replace(" ", "_")
             self._toptier_code = agency["toptier_code"]
+            zip_file_path = self.working_dir_path / f"{self._agency_name}_unlinked_awards_{self.full_timestamp}.zip"
 
             try:
-                self.prep_filesystem()
-                self.process_data_copy_jobs()
-                self.complete_zip_and_upload()
+                self.prep_filesystem(zip_file_path)
+                self.process_data_copy_jobs(zip_file_path)
+                self.complete_zip_and_upload(zip_file_path)
             except Exception:
                 logger.exception("Exception encountered. See logs")
                 raise
@@ -113,10 +114,9 @@ class Command(BaseCommand):
     def _create_data_csv_dest_path(self, file_name) -> Path:
         return self.working_dir_path / file_name
 
-    def process_data_copy_jobs(self):
-        self.zip_file_path = self.working_dir_path / f"{self._agency_name}_unlinked_awards_{self.full_timestamp}.zip"
-        logger.info(f"Creating new unlinked awards download zip file: {self.zip_file_path}")
-        self.filepaths_to_delete.append(self.zip_file_path)
+    def process_data_copy_jobs(self, zip_file_path):
+        logger.info(f"Creating new unlinked awards download zip file: {zip_file_path}")
+        self.filepaths_to_delete.append(zip_file_path)
 
         for sql_file, final_name in self.download_file_list:
             print(sql_file)
@@ -125,22 +125,22 @@ class Command(BaseCommand):
             final_path = self._create_data_csv_dest_path(final_name)
             intermediate_data_file_path = final_path.parent / (final_path.name + "_temp")
             data_file_names, count = self.download_to_csv(
-                sql_file, final_path, final_name, str(intermediate_data_file_path)
+                sql_file, final_path, final_name, str(intermediate_data_file_path), zip_file_path
             )
             if count <= 0:
                 logger.warning(f"Empty data file generated: {final_path}!")
 
             self.filepaths_to_delete.extend(self.working_dir_path.glob(f"{final_path.stem}*"))
 
-    def complete_zip_and_upload(self):
-        self.finalize_zip_contents()
+    def complete_zip_and_upload(self, zip_file_path):
+        self.finalize_zip_contents(zip_file_path)
         if self.upload:
             logger.info("Upload final zip file to S3")
-            upload_download_file_to_s3(self.zip_file_path, settings.UNLINKED_AWARDS_DOWNLOAD_REDIRECT_DIR)
+            upload_download_file_to_s3(zip_file_path, settings.UNLINKED_AWARDS_DOWNLOAD_REDIRECT_DIR)
             logger.info("Marking zip file for deletion in cleanup")
         else:
             logger.warn("Not uploading zip file to S3. Leaving file locally")
-            self.filepaths_to_delete.remove(self.zip_file_path)
+            self.filepaths_to_delete.remove(zip_file_path)
             logger.warn("Not creating database record")
 
     @property
@@ -163,23 +163,25 @@ class Command(BaseCommand):
             logger.info(f"Removing {path}")
             path.unlink()
 
-    def finalize_zip_contents(self):
+    def finalize_zip_contents(self, zip_file_path):
         file_description = build_file_description(str(self.readme_path), dict())
         file_description_path = save_file_description(
-            str(self.zip_file_path.parent), self.readme_path.name, file_description
+            str(zip_file_path.parent), self.readme_path.name, file_description
         )
         self.filepaths_to_delete.append(Path(file_description_path))
-        self.total_download_size = self.zip_file_path.stat().st_size
+        self.total_download_size = zip_file_path.stat().st_size
 
-    def prep_filesystem(self):
-        if self.zip_file_path.exists():
+    def prep_filesystem(self, zip_file_path):
+        if zip_file_path.exists():
             # Clean up a zip file that might exist from a prior attempt at this download
-            self.zip_file_path.unlink()
+            zip_file_path.unlink()
 
-        if not self.zip_file_path.parent.exists():
-            self.zip_file_path.parent.mkdir()
+        if not zip_file_path.parent.exists():
+            zip_file_path.parent.mkdir()
 
-    def download_to_csv(self, source_sql, destination_path, destination_file_name, intermediate_data_filename):
+    def download_to_csv(
+        self, source_sql, destination_path, destination_file_name, intermediate_data_filename, zip_file_path
+    ):
         return self.download_csv_strategy.download_to_csv(
-            source_sql, destination_path, destination_file_name, self.working_dir_path, self.zip_file_path
+            source_sql, destination_path, destination_file_name, self.working_dir_path, zip_file_path
         )
