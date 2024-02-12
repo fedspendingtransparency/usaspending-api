@@ -96,7 +96,7 @@ class Command(BaseCommand):
             self._agency_name = agency["name"].replace(" ", "_")
             self.download_source_sql = self.download_source_sql.format(agency["name"])
             self.zip_file_path = (
-                self.working_dir_path / f"{self._agency_name.replace()}_unlinked_awards_{self.full_timestamp}.zip"
+                self.working_dir_path / f"{self._agency_name}_unlinked_awards_{self.full_timestamp}.zip"
             )
             try:
                 self.prep_filesystem()
@@ -144,7 +144,7 @@ class Command(BaseCommand):
         return [
             (
                 f"{self.download_source_sql['unlinked_contracts_file_d1']}",
-                f"{self._agency_name.replace(' ', '_')}_UnlinkedContracts_{short_timestamp}",
+                f"{self._agency_name}_UnlinkedContracts_{short_timestamp}",
             )
         ]
 
