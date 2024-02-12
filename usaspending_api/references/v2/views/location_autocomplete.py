@@ -122,18 +122,64 @@ class LocationAutocompleteViewSet(APIView):
         return results
 
     def _format_country_results(self, es_results: List[Hit]) -> Union[List, None]:
+        """Format Elasticsearch results containing country matches
+
+        Args:
+            es_results: Elasticsearch results that contained a match in the `country_name` field
+
+        Returns:
+            A list containing all country names that matched the `search_text`
+
+        Example:
+            [
+                {"country_name": "DENMARK"},
+                {"country_name": "SWEDEN"}
+            ]
+        """
         if len(es_results) > 0:
             return [{"country_name": doc.country_name} for doc in es_results]
         else:
             return None
 
     def _format_state_results(self, es_results: List[Hit]) -> Union[List, None]:
+        """Format Elasticsearch results containing state matches
+
+        Args:
+            es_results: Elasticsearch results that contained a match in the `state_name` field
+
+        Returns:
+            A list containing all state names that matched the `search_text` along with the
+            country_name field.
+
+        Example:
+            [
+                {"state_name": "Missouri", "country_name": "UNITED STATES"},
+                {"state_name": "Mississippi", "country_name": "UNITED STATES"}
+            ]
+        """
+
         if len(es_results) > 0:
             return [{"state_name": doc.state_name, "country_name": doc.country_name} for doc in es_results]
         else:
             return None
 
     def _format_city_results(self, es_results: List[Hit]) -> Union[List, None]:
+        """Format Elasticsearch results containing city matches
+
+        Args:
+            es_results: Elasticsearch results that contained a match in the `cities` field
+
+        Returns:
+            A list containing all city names that matched the `search_text` along with the
+            state_name and country_name fields.
+
+        Example:
+            [
+                {"city": "HOLDEN", "state_name": "LOUISIANA", "country_name": "UNITED STATES"},
+                {"city": "DENVER", "state_name": "COLORADO", "country_name": "UNITED STATES"}
+            ]
+        """
+
         if len(es_results) > 0:
             cities = []
             for doc in es_results:
@@ -144,6 +190,22 @@ class LocationAutocompleteViewSet(APIView):
             return None
 
     def _format_county_results(self, es_results: List[Hit]) -> Union[List, None]:
+        """Format Elasticsearch results containing county matches
+
+        Args:
+            es_results: Elasticsearch results that contained a match in the `counties` field
+
+        Returns:
+            A list containing all county names that matched the `search_text` along with the
+            state_name and country_name fields.
+
+        Example:
+            [
+                {"county": "GADSDEN", "state_name": "FLORIDA", "country_name": "UNITED STATES"},
+                {"county": "CAMDEN", "state_name": "GEORGIA", "country_name": "UNITED STATES"}
+            ]
+        """
+
         if len(es_results) > 0:
             counties = []
             for doc in es_results:
@@ -156,6 +218,22 @@ class LocationAutocompleteViewSet(APIView):
             return None
 
     def _format_zip_code_results(self, es_results: List[Hit]) -> Union[List, None]:
+        """Format Elasticsearch results containing zip code matches
+
+        Args:
+            es_results: Elasticsearch results that contained a match in the `zip_codes` field
+
+        Returns:
+            A list containing all zip codes that matched the `search_text` along with the
+            state_name and country_name fields.
+
+        Example:
+            [
+                {"zip_code": "60123", "state_name": "ILLINOIS", "country_name": "UNITED STATES"},
+                {"zip_code": "61231", "state_name": "ILLINOIS", "country_name": "UNITED STATES"}
+            ]
+        """
+
         if len(es_results) > 0:
             zip_codes = []
             for doc in es_results:
@@ -166,6 +244,22 @@ class LocationAutocompleteViewSet(APIView):
             return None
 
     def _format_current_cd_results(self, es_results: List[Hit]) -> Union[List, None]:
+        """Format Elasticsearch results containing current congressional district matches
+
+        Args:
+            es_results: Elasticsearch results that contained a match in the `current_congressional_districts` field
+
+        Returns:
+            A list containing all current congressional districts that matched the `search_text` along with the
+            state_name and country_name fields.
+
+        Example:
+            [
+                {"current_cd": "TX-36", "state_name": "TEXAS", "country_name": "UNITED STATES"},
+                {"current_cd": "CA-36", "state_name": "CALIFORNIA", "country_name": "UNITED STATES"}
+            ]
+        """
+
         if len(es_results) > 0:
             current_cds = []
             for doc in es_results:
@@ -180,6 +274,22 @@ class LocationAutocompleteViewSet(APIView):
             return None
 
     def _format_original_cd_results(self, es_results: List[Hit]) -> Union[List, None]:
+        """Format Elasticsearch results containing original congressional district matches
+
+        Args:
+            es_results: Elasticsearch results that contained a match in the `original_congressional_districts` field
+
+        Returns:
+            A list containing all original congressional districts that matched the `search_text` along with the
+            state_name and country_name fields.
+
+        Example:
+            [
+                {"original_cd": "NY-36", "state_name": "NEW YORK", "country_name": "UNITED STATES"},
+                {"original_cd": "CA-36", "state_name": "CALIFORNIA", "country_name": "UNITED STATES"}
+            ]
+        """
+
         if len(es_results) > 0:
             original_cds = []
             for doc in es_results:
