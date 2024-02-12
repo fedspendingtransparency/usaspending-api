@@ -15,6 +15,7 @@ from enum import Enum
 from usaspending_api.awards.management.sql.spark.unlinked_contracts_file_d1 import file_d1_sql_string
 from usaspending_api.awards.management.sql.spark.unlinked_assistance_file_d2 import file_d2_sql_string
 from usaspending_api.download.filestreaming.file_description import build_file_description, save_file_description
+from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_file
 from usaspending_api.references.models.toptier_agency import ToptierAgency
 
 
@@ -168,7 +169,7 @@ class Command(BaseCommand):
         file_description_path = save_file_description(
             str(zip_file_path.parent), self.readme_path.name, file_description
         )
-        self.filepaths_to_delete.append(Path(file_description_path))
+        append_files_to_zip_file([file_description_path], str(zip_file_path))
         self.total_download_size = zip_file_path.stat().st_size
 
     def prep_filesystem(self, zip_file_path):
