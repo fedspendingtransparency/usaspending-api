@@ -95,10 +95,20 @@ class ListUnlinkedAwardsDownloadsViewSet(APIView):
         """
         # Best effort to identify the latest file by assuming the file with the latest last modified date
         # is the latest file to have been generated
-        get_last_modified = lambda obj: int(obj.last_modified.strftime("%s"))
-        sorted_files = [obj.key for obj in sorted(download_files, key=get_last_modified, reverse=True)]
-        print(sorted_files)
+        sorted_files = [obj.key for obj in sorted(download_files, key=self._get_last_modified_int, reverse=True)]
+
         last_added_file = None
         if len(sorted_files) > 0:
             last_added_file = sorted_files[0]
         return last_added_file
+
+    def _get_last_modified_int(self, file) -> int:
+        """Returns a number that can be used to sort files by the last modified date.
+
+        Args:
+            file: The file to retrieve the last modified date from.
+
+        Returns:
+            int: The number that represents the files last modified date.
+        """
+        return int(file.last_modified.strftime("%s"))
