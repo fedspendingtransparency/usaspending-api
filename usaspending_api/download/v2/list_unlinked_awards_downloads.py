@@ -17,8 +17,6 @@ class ListUnlinkedAwardsDownloadsViewSet(APIView):
     Returns a list which contains links to the latest versions of unlinked awards files for an agency.
     """
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/bulk_download/list_unlinked_awards_files.md"
-
     s3_handler = S3Handler(
         bucket_name=settings.BULK_DOWNLOAD_S3_BUCKET_NAME, redirect_dir=settings.UNLINKED_AWARDS_DOWNLOAD_REDIRECT_DIR
     )
