@@ -13,6 +13,7 @@ from usaspending_api.common.helpers.download_csv_strategies import (
 )
 from enum import Enum
 from usaspending_api.awards.management.sql.spark.unlinked_contracts_file_d1 import file_d1_sql_string
+from usaspending_api.awards.management.sql.spark.unlinked_assistance_file_d2 import file_d2_sql_string
 from usaspending_api.download.filestreaming.file_description import build_file_description, save_file_description
 from usaspending_api.references.models.toptier_agency import ToptierAgency
 
@@ -41,6 +42,10 @@ class Command(BaseCommand):
     #   at runtime.
     compute_types = {
         ComputeTypeEnum.SPARK.value: {
+            # "source_sql_strategy": {
+            #     "unlinked_contracts_file_d1": file_d1_sql_string,
+            #     "unlinked_assistance_file_d2": file_d2_sql_string,
+            # },
             "source_sql_strategy": {
                 "unlinked_contracts_file_d1": file_d1_sql_string,
             },
@@ -90,13 +95,12 @@ class Command(BaseCommand):
         self.download_source_sql = self.compute_types[self.compute_type_arg]["source_sql_strategy"]
 
         # Obtain the agencies to generate files for
-        toptier_agencies = ToptierAgency.objects.values("name").distinct()
+        # TODO: Remove filter as it's for testing purposes
+        toptier_agencies = ToptierAgency.objects.filter(toptier_code="036").values("name", "toptier_code").distinct()
 
         for agency in toptier_agencies:
             self._agency_name = agency["name"].replace(" ", "_")
-            self.download_source_sql["unlinked_contracts_file_d1"] = self.download_source_sql[
-                "unlinked_contracts_file_d1"
-            ].format(agency_name="'" + agency["name"] + "'")
+            self._toptier_code = agency["toptier_code"]
             self.zip_file_path = (
                 self.working_dir_path / f"{self._agency_name}_unlinked_awards_{self.full_timestamp}.zip"
             )
@@ -119,6 +123,7 @@ class Command(BaseCommand):
         self.filepaths_to_delete.append(self.zip_file_path)
 
         for sql_file, final_name in self.download_file_list:
+            sql_file = sql_file.format(toptier_code="'" + self._toptier_code + "'")
             final_path = self._create_data_csv_dest_path(final_name)
             intermediate_data_file_path = final_path.parent / (final_path.name + "_temp")
             data_file_names, count = self.download_to_csv(
@@ -147,7 +152,11 @@ class Command(BaseCommand):
             (
                 f"{self.download_source_sql['unlinked_contracts_file_d1']}",
                 f"{self._agency_name}_UnlinkedContracts_{short_timestamp}",
-            )
+            ),
+            # (
+            #     f"{self.download_source_sql['unlinked_assistance_file_d2']}",
+            #     f"{self._agency_name}_UnlinkedFinancialAssistance_{short_timestamp}",
+            # ),
         ]
 
     def cleanup(self):

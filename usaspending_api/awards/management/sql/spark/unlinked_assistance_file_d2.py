@@ -1,4 +1,4 @@
-file_d1_sql_string = """
+file_d2_sql_string = """
 with valid_file_c as (
 select
 	distinct
@@ -144,6 +144,6 @@ where
 	where
 		faba.award_id = vfd.award_id
       )
-	and is_fpds = true
+	and is_fpds = false
 	and toptier_code = {toptier_code}
 """
