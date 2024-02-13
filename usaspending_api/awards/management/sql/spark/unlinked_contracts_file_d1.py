@@ -2,7 +2,7 @@ file_d1_sql_string = """
     WITH valid_file_c AS (
     SELECT
         distinct
-		ta.toptier_code,
+        ta.toptier_code,
         faba.award_id,
         faba.distinct_award_key,
         CASE
@@ -37,7 +37,7 @@ file_d1_sql_string = """
     quarterly_flag AS (
     SELECT
         distinct
-		toptier_code,
+        toptier_code,
         fiscal_year,
         fiscal_quarter,
         quarter_format_flag
