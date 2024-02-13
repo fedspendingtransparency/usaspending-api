@@ -12,11 +12,11 @@ select
 	sum(rao.unlinked_assistance_c_awards + rao.unlinked_assistance_d_awards) as unlinked_assistance_award_count,
 	sum(rao.unlinked_procurement_c_awards + rao.unlinked_procurement_d_awards) + sum(rao.unlinked_assistance_c_awards + rao.unlinked_assistance_d_awards) as total_unlinked_awards
 from
-	vw_published_dabs_toptier_agency as pdta
-left join reporting_agency_overview rao
+	global_temp.published_dabs_toptier_agency as pdta
+left join global_temp.reporting_agency_overview rao
 on
 	rao.toptier_code = pdta.toptier_code
-left join submission_attributes sa
+left join global_temp.submission_attributes sa
 on
 	sa.toptier_code = pdta.toptier_code
 group by
