@@ -109,7 +109,9 @@ class Command(BaseCommand):
         # Save queries as delta tables for efficiency
         for delta_table_name, sql_file, final_name in self.download_file_list:
             df = self.spark.sql(sql_file)
-            df.write.format(source="delta").mode(saveMode="overwrite").saveAsTable(name=delta_table_name)
+            df.write.format(source="delta").mode(saveMode="overwrite").option("overwriteSchema", "True").saveAsTable(
+                name=delta_table_name
+            )
 
         for agency in toptier_agencies:
             agency_name = agency["name"]
