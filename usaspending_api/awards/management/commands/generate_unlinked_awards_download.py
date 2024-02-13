@@ -2,7 +2,7 @@ import logging
 
 from datetime import datetime, timezone
 from django.conf import settings
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from pathlib import Path
 from usaspending_api.common.etl.spark import create_ref_temp_views
 
@@ -98,6 +98,10 @@ class Command(BaseCommand):
                 self.spark_created_by_command = True
                 self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)
             create_ref_temp_views(self.spark)
+        else:
+            raise CommandError(
+                "Right now, only compute type {ComputeTypeEnum.SPARK.value} is supported by this command."
+            )
 
         self.download_csv_strategy = self.compute_types[self.compute_type_arg]["download_to_csv_strategy"]
         self.download_source_sql = self.compute_types[self.compute_type_arg]["source_sql_strategy"]
