@@ -1,4 +1,4 @@
-SUMmary_file = """
+summary_file = """
     WITH published_dabs_toptier_agency AS (
         SELECT distinct ta.toptier_code,
             ta.name
