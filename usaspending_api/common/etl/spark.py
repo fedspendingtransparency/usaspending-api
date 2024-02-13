@@ -43,8 +43,7 @@ from usaspending_api.references.models import (
     GTASSF133Balances,
     CGAC,
 )
-from usaspending_api.references.models.toptier_agency_published_dabs_view import ToptierAgencyPublishedDABSView
-from usaspending_api.reporting.models import ReportingAgencyOverview
+from usaspending_api.reporting.models import ReportingAgencyMissingTas, ReportingAgencyOverview
 from usaspending_api.submissions.models import SubmissionAttributes, DABSSubmissionWindowSchedule
 from usaspending_api.download.filestreaming.download_generation import EXCEL_ROW_LIMIT
 
@@ -73,6 +72,7 @@ _USAS_RDS_REF_TABLES = [
     ToptierAgency,
     TreasuryAppropriationAccount,
     ReportingAgencyOverview,
+    ReportingAgencyMissingTas,
 ]
 
 _BROKER_REF_TABLES = ["zips_grouped", "cd_state_grouped", "cd_zips_grouped", "cd_county_grouped", "cd_city_grouped"]
