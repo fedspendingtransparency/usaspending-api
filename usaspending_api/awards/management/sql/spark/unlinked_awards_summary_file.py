@@ -14,14 +14,14 @@ select
 from
 	vw_published_dabs_toptier_agency as pdta
 left join reporting_agency_overview rao
-	on
+on
 	rao.toptier_code = pdta.toptier_code
 left join submission_attributes sa
-	on
+on
 	sa.toptier_code = pdta.toptier_code
 group by
 	pdta.name,
-		pdta.toptier_code,
-		rao.fiscal_year,
-		rao.fiscal_period
+	pdta.toptier_code,
+	rao.fiscal_year,
+	rao.fiscal_period
 """
