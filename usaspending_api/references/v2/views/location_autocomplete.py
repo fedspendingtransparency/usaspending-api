@@ -28,10 +28,9 @@ class LocationAutocompleteViewSet(APIView):
     @cache_response()
     def post(self, request):
         es_results: ES_Response = self._query_elasticsearch(request.data["search_text"], request.data["limit"])
+        results = {}
 
         if len(es_results) > 0:
-            results = {}
-
             country_results = self._format_country_results(
                 list(filter(lambda x: "country_name" in dir(x.meta.highlight), es_results))
             )
@@ -69,12 +68,9 @@ class LocationAutocompleteViewSet(APIView):
             if current_cd_results is not None:
                 results["districts_current"] = current_cd_results
 
-            # Account for cases where there are multiple results in a single ES document
-            results_length = sum(len(x) for x in results.values())
-
-            return Response(OrderedDict([("count", results_length), ("results", results), ("messages", [""])]))
-        else:
-            return Response(OrderedDict([("count", len(es_results)), ("results", {}), ("messages", [""])]))
+        # Account for cases where there are multiple results in a single ES document
+        results_length = sum(len(x) for x in results.values())
+        return Response(OrderedDict([("count", results_length), ("results", results), ("messages", [""])]))
 
     def _query_elasticsearch(self, search_text: str, limit: int = 10) -> ES_Response:
         """Query Elasticsearch for any locations that match the provided `search_text` up to `limit` number of results.
