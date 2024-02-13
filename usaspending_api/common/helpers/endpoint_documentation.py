@@ -12,6 +12,9 @@ ENDPOINTS_MD = "usaspending_api/api_docs/markdown/endpoints.md"
 # This should match stuff like "|[display](url)|method|description|"
 ENDPOINT_PATTERN = re.compile(r"\|\s*\[[^\]]+\]\s*\((?P<url>[^)]+)\)\s*\|[^|]+\|[^|]+\|")
 
+# Add endpoints to this list to exclude them from endpoint documentation checks.
+# For example, we did not want to create an api contract for the `list_unlinked_awards_files` endpoint,
+# because of that decision we added that endpoint to the following list.
 _EXCLUDED_URLS = ["/api/v2/bulk_download/list_unlinked_awards_files"]
 
 
