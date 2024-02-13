@@ -648,17 +648,7 @@ award_search_incremental_load_sql_string = [
       ({" OR ".join([f"NOT (s.{col} <=> t.{col})" for col in AWARD_SEARCH_DELTA_COLUMNS])})
       THEN UPDATE SET *
     WHEN NOT MATCHED THEN INSERT *
-    -- The following line can replace the second delete after upgrading to Databricks runtime 12.1
-    -- https://docs.databricks.com/en/sql/language-manual/delta-merge-into.html
-    -- WHEN NOT MATCHED BY SOURCE THEN DELETE
-    """,
-    """
-    DELETE FROM {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
-    WHERE award_id IN (
-      SELECT t.award_id
-      FROM {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS t
-      LEFT ANTI JOIN int.awards AS s ON t.award_id = s.id
-    );
+    WHEN NOT MATCHED BY SOURCE THEN DELETE
     """,
 ]
 

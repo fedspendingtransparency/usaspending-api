@@ -43,7 +43,7 @@ from usaspending_api.etl.management.commands.create_delta_table import (
 _SCALA_VERSION = "2.12"
 _HADOOP_VERSION = "3.3.1"
 _SPARK_VERSION = "3.2.1"
-_DELTA_VERSION = "1.2.1"
+_DELTA_VERSION = "3.0.0"
 
 # List of Maven coordinates for required JAR files used by running code, which can be added to the driver and
 # executor class paths
@@ -55,7 +55,7 @@ SPARK_SESSION_JARS = [
     # COMPATIBLE with it (so that should not  be set as a dependent package by us)
     f"org.apache.hadoop:hadoop-aws:{_HADOOP_VERSION}",
     "org.postgresql:postgresql:42.2.23",
-    f"io.delta:delta-core_{_SCALA_VERSION}:{_DELTA_VERSION}",
+    f"io.delta:delta-spark_{_SCALA_VERSION}:{_DELTA_VERSION}",
 ]
 
 DELTA_LAKE_UNITTEST_SCHEMA_NAME = "unittest"
