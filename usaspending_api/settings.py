@@ -2,6 +2,7 @@
 For more information on this file: https://docs.djangoproject.com/en/3.2/topics/settings/
 For the full list of settings and their values: https://docs.djangoproject.com/en/3.2/ref/settings/
 """
+
 import os
 from pathlib import Path
 
@@ -81,6 +82,7 @@ BULK_DOWNLOAD_SQS_QUEUE_NAME = ""
 MONTHLY_DOWNLOAD_S3_BUCKET_NAME = ""
 MONTHLY_DOWNLOAD_S3_REDIRECT_DIR = "award_data_archive"
 BROKER_AGENCY_BUCKET_NAME = ""
+UNLINKED_AWARDS_DOWNLOAD_REDIRECT_DIR = "unlinked_awards_downloads"
 
 ############################################################
 # Note 2020/02/21
