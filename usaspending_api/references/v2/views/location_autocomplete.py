@@ -69,7 +69,10 @@ class LocationAutocompleteViewSet(APIView):
             if current_cd_results is not None:
                 results["districts_current"] = current_cd_results
 
-            return Response(OrderedDict([("count", len(es_results)), ("results", results), ("messages", [""])]))
+            # Account for cases where there are multiple results in a single ES document
+            results_length = sum(len(x) for x in results.values())
+
+            return Response(OrderedDict([("count", results_length), ("results", results), ("messages", [""])]))
         else:
             return Response(OrderedDict([("count", len(es_results)), ("results", {}), ("messages", [""])]))
 
