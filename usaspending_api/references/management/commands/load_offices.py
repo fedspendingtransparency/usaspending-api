@@ -18,8 +18,12 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         logger.info("Starting ETL script")
-        self.process_data()
-        logger.info("Office ETL finished successfully!")
+        try:
+            self.process_data()
+            logger.info("Office ETL finished successfully!")
+        except IntegrityError:
+            logger.warning("Unique constraint violated. Continuing with pipeline execution.")
+            raise SystemExit(3)  # Raise exit code 3 for unique constraint violation
 
     @transaction.atomic()
     def process_data(self):
@@ -37,24 +41,9 @@ class Command(BaseCommand):
         total_objs = [Office(**values) for values in office_values]
 
         logger.info("Loading new office records into database")
-
-        try:
-            new_rec_count = len(Office.objects.bulk_create(total_objs))
-            logger.info(f"Loaded: {new_rec_count:,} records")
-            logger.info("Committing transaction to database")
-        except IntegrityError:
-            logger.warning("Unique constraint violated during data loading. Pipeline continues to run.")
-            self.send_slack_message("Unique constraint violated during data loading. Pipeline continues to run.")
-
-    def send_slack_message(self, message):
-        payload = {"text": message}
-        try:
-            # need to add the url for the slack channel
-            response = requests.post("", json=payload)
-            response.raise_for_status()
-        except Exception as e:
-            logger.exception("Error sending message to Slack")
-            raise e
+        new_rec_count = len(Office.objects.bulk_create(total_objs))
+        logger.info(f"Loaded: {new_rec_count:,} records")
+        logger.info("Committing transaction to database")
 
     @property
     def broker_fetch_sql(self):
