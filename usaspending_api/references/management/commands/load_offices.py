@@ -1,5 +1,4 @@
 import logging
-import requests
 from datetime import datetime, timezone
 
 from django.core.management.base import BaseCommand
@@ -59,4 +58,4 @@ class Command(BaseCommand):
                 financial_assistance_funding_office
             FROM
                 office
-        """  # noqa: F541
+        """
