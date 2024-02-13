@@ -1,15 +1,13 @@
 import logging
-
-from datetime import datetime
-from datetime import timezone
+import requests
+from datetime import datetime, timezone
 
 from django.core.management.base import BaseCommand
-from django.db import connections, transaction
+from django.db import IntegrityError, connections, transaction
 
 from usaspending_api.common.operations_reporter import OpsReporter
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.references.models.office import Office
-
 
 logger = logging.getLogger("script")
 Reporter = OpsReporter(iso_start_datetime=datetime.now(timezone.utc).isoformat(), job_name="load_offices.py")
@@ -39,9 +37,24 @@ class Command(BaseCommand):
         total_objs = [Office(**values) for values in office_values]
 
         logger.info("Loading new office records into database")
-        new_rec_count = len(Office.objects.bulk_create(total_objs))
-        logger.info(f"Loaded: {new_rec_count:,} records")
-        logger.info("Committing transaction to database")
+
+        try:
+            new_rec_count = len(Office.objects.bulk_create(total_objs))
+            logger.info(f"Loaded: {new_rec_count:,} records")
+            logger.info("Committing transaction to database")
+        except IntegrityError:
+            logger.warning("Unique constraint violated during data loading. Pipeline continues to run.")
+            self.send_slack_message("Unique constraint violated during data loading. Pipeline continues to run.")
+
+    def send_slack_message(self, message):
+        payload = {"text": message}
+        try:
+            # need to add the url for the slack channel
+            response = requests.post("", json=payload)
+            response.raise_for_status()
+        except Exception as e:
+            logger.exception("Error sending message to Slack")
+            raise e
 
     @property
     def broker_fetch_sql(self):
@@ -57,4 +70,4 @@ class Command(BaseCommand):
                 financial_assistance_funding_office
             FROM
                 office
-        """
+        """  # noqa: F541
