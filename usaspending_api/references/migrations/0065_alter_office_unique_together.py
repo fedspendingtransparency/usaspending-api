@@ -9,8 +9,13 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AlterUniqueTogether(
-            name='Office',
-            unique_together={('agency_code', 'sub_tier_code', 'office_name', 'office_code')},
-        ),
+        migrations.RunSQL(
+            sql="""
+                ALTER TABLE office DROP CONSTRAINT IF EXISTS unique_agency_sub_tier_office;
+                ALTER TABLE office ADD CONSTRAINT unique_agency_sub_tier_office UNIQUE (agency_code, sub_tier_code, office_name, office_code);
+            """,
+            reverse_sql="""
+                ALTER TABLE office DROP CONSTRAINT IF EXISTS unique_agency_sub_tier_office;
+            """
+        )
     ]
