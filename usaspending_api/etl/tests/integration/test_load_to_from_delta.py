@@ -157,9 +157,9 @@ def load_delta_table_from_postgres(
         cmd_args += [f"--alt-db={alt_db}"]
     if alt_name:
         cmd_args += [f"--alt-name={alt_name}"]
-    
-    create_cmd_args=copy.deepcopy(cmd_args)
-    load_cmd_args=copy.deepcopy(cmd_args)
+
+    create_cmd_args = copy.deepcopy(cmd_args)
+    load_cmd_args = copy.deepcopy(cmd_args)
 
     if incremental:
         create_cmd_args += ["--enable-cdf"]
@@ -167,7 +167,7 @@ def load_delta_table_from_postgres(
 
     # make the table and load it
     if not skip_create:
-        call_command("create_delta_table", f"--spark-s3-bucket={s3_bucket}",  *create_cmd_args)
+        call_command("create_delta_table", f"--spark-s3-bucket={s3_bucket}", *create_cmd_args)
 
     call_command(load_command, *load_cmd_args)
 
@@ -188,7 +188,9 @@ def verify_delta_table_loaded_to_delta(
     create and load the given table and assert it was created and loaded as expected
     """
 
-    load_delta_table_from_postgres(delta_table_name, s3_bucket, alt_db, alt_name, load_command, incremental, skip_create)
+    load_delta_table_from_postgres(
+        delta_table_name, s3_bucket, alt_db, alt_name, load_command, incremental, skip_create
+    )
 
     if alt_name:
         expected_table_name = alt_name
@@ -200,7 +202,7 @@ def verify_delta_table_loaded_to_delta(
     if partition_column:
         # Sort columns is expected to be in list format, so it can support tables
         # uniquely identified by multiple columns. `partition_column` represents a single
-        # field, so we need to wrap it in a list. 
+        # field, so we need to wrap it in a list.
         sort_columns = [partition_column]
     else:
         # If partition_column doesn't exist, we must be using a load_query_to_delta TABLE_SPEC,
@@ -708,9 +710,10 @@ def test_load_table_to_from_delta_for_transaction_search_alt_db_and_name(
     #     spark_s3_bucket=s3_unittest_data_bucket,
     # )
 
+
 def _update_award_data():
-    # This updates award data to the conditions required for an insert, update, and delete during an incremental 
-    # update of award_search. 
+    # This updates award data to the conditions required for an insert, update, and delete during an incremental
+    # update of award_search.
     with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
         with connection.cursor() as cursor:
             # Update a basic field on awards
@@ -718,6 +721,7 @@ def _update_award_data():
 
             # Updating an award_id will trigger a delete and insert during incremental updates
             cursor.execute("UPDATE rpt.award_search SET award_id = 4 WHERE award_id = 3")
+
 
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_award_search(
@@ -742,7 +746,12 @@ def test_load_table_to_from_delta_for_award_search(
     )
     # Incremental Update - Fully Rewrite the table using an incremental load
     verify_delta_table_loaded_to_delta(
-        spark, "award_search", s3_unittest_data_bucket, load_command="load_query_to_delta", alt_name="award_search", incremental=True,
+        spark,
+        "award_search",
+        s3_unittest_data_bucket,
+        load_command="load_query_to_delta",
+        alt_name="award_search",
+        incremental=True,
     )
 
     verify_delta_table_loaded_from_delta(spark, "award_search", spark_s3_bucket=s3_unittest_data_bucket)
@@ -758,14 +767,19 @@ def test_load_table_to_from_delta_for_award_search(
 
     # Perform another incremental update and compare result. This time only changes are persisted
     verify_delta_table_loaded_to_delta(
-        spark, "award_search", s3_unittest_data_bucket, load_command="load_query_to_delta", incremental=True, skip_create=True
+        spark,
+        "award_search",
+        s3_unittest_data_bucket,
+        load_command="load_query_to_delta",
+        incremental=True,
+        skip_create=True,
     )
 
     # Test the incremental copy back from Delta to Postgres
     call_command("load_table_from_delta", "--delta-table", "award_search", "--incremental", incremental_threshold=2)
 
     with psycopg2.connect(get_database_dsn_string()) as new_psycopg2_conn:
-        with new_psycopg2_conn.cursor() as cursor: 
+        with new_psycopg2_conn.cursor() as cursor:
             cursor.execute("SELECT * from temp.award_search_temp_deletes")
             deletes = cursor.fetchall()
 
@@ -776,7 +790,10 @@ def test_load_table_to_from_delta_for_award_search(
             upserts = cursor.fetchall()
 
             assert len(upserts) == 2, "Expected exactly two Award Search records to be created/updated"
-            assert set([row[1] for row in upserts]) == {1, 4}, "The updated award_ids did not match the Awards updated in the test"
+            assert set([row[1] for row in upserts]) == {
+                1,
+                4,
+            }, "The updated award_ids did not match the Awards updated in the test"
 
 
 @mark.django_db(transaction=True)

@@ -39,7 +39,7 @@ def get_last_delta_table_load_versions(key: str):
 def update_last_live_load_version(key, version):
     DeltaTableLoadVersion.objects.update_or_create(
         delta_table_load_version_id=lookups.LOAD_VERSION_TYPE_DICT[key],
-        defaults={"last_version_copied_to_live": version}
+        defaults={"last_version_copied_to_live": version},
     )
 
 
