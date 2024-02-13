@@ -100,7 +100,7 @@ class Command(BaseCommand):
             create_ref_temp_views(self.spark)
         else:
             raise CommandError(
-                "Right now, only compute type {ComputeTypeEnum.SPARK.value} is supported by this command."
+                f"Right now, only compute type {ComputeTypeEnum.SPARK.value} is supported by this command."
             )
 
         self.download_csv_strategy = self.compute_types[self.compute_type_arg]["download_to_csv_strategy"]
