@@ -32,12 +32,18 @@ summary_file = """
     left join global_temp.reporting_agency_overview rao
     on
         rao.toptier_code = pdta.toptier_code
+        and pdta.fiscal_year = rao.fiscal_year
+        and pdta.fiscal_period = rao.fiscal_period
     left join global_temp.submission_attributes sa
     on
         sa.toptier_code = pdta.toptier_code
+        and pdta.reporting_fiscal_year = sa.fiscal_year
+        and pdta.reporting_fiscal_period = sa.fiscal_period
     left join global_temp.reporting_agency_missing_tas rmt
     on
         pdta.toptier_code = rmt.toptier_code
+        and pdta.fiscal_year = rmt.fiscal_year
+        and pdta.fiscal_period = rmt.fiscal_period
     group by
         pdta.name,
         pdta.toptier_code,
