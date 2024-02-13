@@ -13,6 +13,7 @@ from usaspending_api.common.helpers.download_csv_strategies import (
 )
 from enum import Enum
 from usaspending_api.awards.management.sql.spark.unlinked_contracts_file_d1 import file_d1_sql_string
+from usaspending_api.awards.management.sql.spark.unlinked_awards_summary_file import summary_file
 from usaspending_api.awards.management.sql.spark.unlinked_assistance_file_d2 import file_d2_sql_string
 from usaspending_api.download.filestreaming.file_description import build_file_description, save_file_description
 from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_file
@@ -45,6 +46,7 @@ class Command(BaseCommand):
     compute_types = {
         ComputeTypeEnum.SPARK.value: {
             "source_sql_strategy": {
+                "summary_file": summary_file,
                 "unlinked_contracts_file_d1": file_d1_sql_string,
                 "unlinked_assistance_file_d2": file_d2_sql_string,
             },
@@ -161,6 +163,11 @@ class Command(BaseCommand):
     def download_file_list(self):
         short_timestamp = self.full_timestamp[:-6]
         return [
+            (
+                "summary_file",
+                f"{self.download_source_sql['summary_file']}",
+                f"{self._agency_name}_UnlinkedAwardsSummary_{short_timestamp}",
+            ),
             (
                 "unlinked_contracts_file_d1",
                 f"{self.download_source_sql['unlinked_contracts_file_d1']}",
