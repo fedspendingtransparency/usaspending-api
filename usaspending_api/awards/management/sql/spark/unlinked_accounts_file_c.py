@@ -1,44 +1,44 @@
 file_c_sql_string = """
-    with valid_file_c as (
-    select
+    WITH valid_file_c AS (
+    SELECT
         distinct
-    ta.toptier_code,
+        ta.toptier_code,
         faba.piid,
         faba.fain,
         faba.uri,
         faba.award_id,
         faba.distinct_award_key,
-        case
-            when faba.piid is not null then true
-            else false
-        end as is_fpds,
-        sa.reporting_fiscal_year as fiscal_year,
-        sa.reporting_fiscal_quarter as fiscal_quarter,
-        sa.reporting_fiscal_period as fiscal_period,
+        CASE
+            WHEN faba.piid IS NOT NULL THEN true
+            ELSE false
+        END AS is_fpds,
+        sa.reporting_fiscal_year AS fiscal_year,
+        sa.reporting_fiscal_quarter AS fiscal_quarter,
+        sa.reporting_fiscal_period AS fiscal_period,
         sa.quarter_format_flag
-    from
-        int.financial_accounts_by_awards as faba
-    inner join
-    global_temp.submission_attributes as sa
-    on
+    FROM
+        int.financial_accounts_by_awards AS faba
+    INNER JOIN
+    global_temp.submission_attributes AS sa
+    ON
         faba.submission_id = sa.submission_id
-    inner join
-    global_temp.dabs_submission_window_schedule as dsws on
+    INNER JOIN
+    global_temp.dabs_submission_window_schedule AS dsws ON
         (
     sa.submission_window_id = dsws.id
-            and dsws.submission_reveal_date <= now()
+            and dsws.submission_reveal_date <= NOW()
     )
-    inner join
-    global_temp.treasury_appropriation_account as taa on
+    INNER JOIN
+    global_temp.treasury_appropriation_account AS taa ON
         (taa.treasury_account_identifier = faba.treasury_account_id)
-    inner join
-    global_temp.toptier_agency as ta on
+    INNER JOIN
+    global_temp.toptier_agency AS ta ON
         (taa.funding_toptier_agency_id = ta.toptier_agency_id)
-    where
-        faba.transaction_obligated_amount is not null
+    WHERE
+        faba.transaction_obligated_amount IS NOT NULL
         and sa.reporting_fiscal_year >= 2017
     )
-    select
+    SELECT
         toptier_code,
         piid,
         fain,
@@ -47,8 +47,8 @@ file_c_sql_string = """
         is_fpds,
         fiscal_year,
         fiscal_period
-    from
+    FROM
         valid_file_c
-    where
+    WHERE
         award_id is null
 """

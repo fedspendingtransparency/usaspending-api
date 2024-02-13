@@ -1,109 +1,108 @@
 file_d1_sql_string = """
-    with valid_file_c as (
-    select
+    WITH valid_file_c AS (
+    SELECT
         distinct
-    ta.toptier_code,
+		ta.toptier_code,
         faba.award_id,
         faba.distinct_award_key,
-        case
-            when faba.piid is not null then true
-            else false
-        end as is_fpds,
-        sa.reporting_fiscal_year as fiscal_year,
-        sa.reporting_fiscal_quarter as fiscal_quarter,
-        sa.reporting_fiscal_period as fiscal_period,
+        CASE
+            WHEN faba.piid IS NOT NULL THEN true
+            ELSE false
+        END AS is_fpds,
+        sa.reporting_fiscal_year AS fiscal_year,
+        sa.reporting_fiscal_quarter AS fiscal_quarter,
+        sa.reporting_fiscal_period AS fiscal_period,
         sa.quarter_format_flag
-    from
-        int.financial_accounts_by_awards as faba
-    inner join
-    global_temp.submission_attributes as sa
-    on
-        faba.submission_id = sa.submission_id
-    inner join
-    global_temp.dabs_submission_window_schedule as dsws on
+    FROM
+        int.financial_accounts_by_awards AS faba
+    INNER JOIN
+    global_temp.submission_attributes AS sa
+    ON faba.submission_id = sa.submission_id
+    INNER JOIN
+    global_temp.dabs_submission_window_schedule AS dsws ON
         (
     sa.submission_window_id = dsws.id
-            and dsws.submission_reveal_date <= now()
+            AND dsws.submission_reveal_date <= now()
     )
-    inner join
-    global_temp.treasury_appropriation_account as taa on
+    INNER JOIN
+    global_temp.treasury_appropriation_account AS taa ON
         (taa.treasury_account_identifier = faba.treasury_account_id)
-    inner join
-    global_temp.toptier_agency as ta on
+    INNER JOIN
+    global_temp.toptier_agency AS ta ON
         (taa.funding_toptier_agency_id = ta.toptier_agency_id)
-    where
-        faba.transaction_obligated_amount is not null
-        and sa.reporting_fiscal_year >= 2017
+    WHERE
+        faba.transaction_obligated_amount IS NOT NULL
+        AND sa.reporting_fiscal_year >= 2017
     ),
-    quarterly_flag as (
-    select
+    quarterly_flag AS (
+    SELECT
         distinct
-    toptier_code,
+		toptier_code,
         fiscal_year,
         fiscal_quarter,
         quarter_format_flag
-    from
+    FROM
         valid_file_c
-    where
+    WHERE
         quarter_format_flag = true
     ),
-    valid_file_d as (
-    select
+    valid_file_d AS (
+    SELECT
         fa.toptier_code,
-        a.award_id as award_id,
-        ts.detached_award_proc_unique as contract_transaction_unique_key,
-        ts.generated_unique_award_id as contract_award_unique_key,
-        ts.piid as award_id_piid,
-        ts.modification_number as modification_number,
-        ts.transaction_number as transaction_number,
+        a.award_id AS award_id,
+        ts.detached_award_proc_unique AS contract_transaction_unique_key,
+        ts.generated_unique_award_id AS contract_award_unique_key,
+        ts.piid AS award_id_piid,
+        ts.modification_number AS modification_number,
+        ts.transaction_number AS transaction_number,
         a.is_fpds,
         ts.fiscal_year,
-        case
-            when ql.quarter_format_flag = true then ts.fiscal_quarter * 3
-            when ts.fiscal_period = 1 then 2
-            else ts.fiscal_period
-        end as fiscal_period
-    from
-        rpt.award_search as a
-    inner join
+        CASE
+            WHEN ql.quarter_format_flag = true THEN ts.fiscal_quarter * 3
+            WHEN ts.fiscal_period = 1 THEN 2
+            ELSE ts.fiscal_period
+        END AS fiscal_period
+    FROM
+        rpt.award_search AS a
+    INNER JOIN
     (
-        select
+        SELECT
             *,
-            date_part('quarter', tn.action_date + interval '3' month) as fiscal_quarter,
-            date_part('month', tn.action_date + interval '3' month) as fiscal_period
-        from
-            rpt.transaction_search as tn
-        where
+            date_part('quarter', tn.action_date + interval '3' month) AS fiscal_quarter,
+            date_part('month', tn.action_date + interval '3' month) AS fiscal_period
+        FROM
+            rpt.transaction_search AS tn
+        WHERE
             tn.action_date >= '2016-10-01'
-            and tn.awarding_agency_id is not null
-    ) as ts on
+            AND tn.awarding_agency_id IS NOT NULL
+    ) AS ts ON
         (ts.award_id = a.award_id)
-    inner join lateral (
-        select
+    INNER JOIN lateral (
+        SELECT
             ta.toptier_code
-        from
-            global_temp.agency as ag
-        inner join global_temp.toptier_agency as ta on
+        FROM
+            global_temp.agency AS ag
+        INNER JOIN global_temp.toptier_agency AS ta ON
             (ag.toptier_agency_id = ta.toptier_agency_id)
-        where
+        WHERE
             ag.id = a.awarding_agency_id
-    ) as fa on
+    ) AS fa ON
         true
     left outer join
-    quarterly_flag as ql on
+    quarterly_flag AS ql ON
         (
     fa.toptier_code = ql.toptier_code
-            and ts.fiscal_year = ql.fiscal_year
-            and ts.fiscal_quarter = ql.fiscal_quarter
+            AND ts.fiscal_year = ql.fiscal_year
+            AND ts.fiscal_quarter = ql.fiscal_quarter
     )
-    where
+    WHERE
         (
-    (a.type in ('07', '08')
-            and a.total_subsidy_cost > 0)
-        or a.type not in ('07', '08')
+    (a.type IN ('07', '08')
+            AND a.total_subsidy_cost > 0)
+        OR a.type not IN ('07', '08')
     )
-            and a.certified_date >= '2016-10-01'
-        group by
+            AND a.certified_date >= '2016-10-01'
+        GROUP BY
             fa.toptier_code,
             a.award_id,
             ts.detached_award_proc_unique,
@@ -113,13 +112,13 @@ file_d1_sql_string = """
             ts.transaction_number,
             a.is_fpds,
             ts.fiscal_year,
-            case
-                when ql.quarter_format_flag = true then ts.fiscal_quarter * 3
-                when ts.fiscal_period = 1 then 2
-                else ts.fiscal_period
-            end
+            CASE
+                WHEN ql.quarter_format_flag = true THEN ts.fiscal_quarter * 3
+                WHEN ts.fiscal_period = 1 THEN 2
+                ELSE ts.fiscal_period
+            END
     )
-    select
+    SELECT
         toptier_code,
         award_id,
         contract_transaction_unique_key,
@@ -129,16 +128,16 @@ file_d1_sql_string = """
         transaction_number,
         fiscal_year,
         fiscal_period
-    from
-        valid_file_d as vfd
-    where
+    FROM
+        valid_file_d AS vfd
+    WHERE
         not exists (
-        select
+        SELECT
             1
-        from
-            int.financial_accounts_by_awards as faba
-        where
+        FROM
+            int.financial_accounts_by_awards AS faba
+        WHERE
             faba.award_id = vfd.award_id
     )
-        and is_fpds = true
+        AND is_fpds = true
 """
