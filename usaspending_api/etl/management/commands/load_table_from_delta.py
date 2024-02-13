@@ -233,10 +233,10 @@ class Command(BaseCommand):
 
             distinct_df = spark.sql(
                 f"""
-                SELECT * EXCEPT(_commit_timestamp, _commit_version, row_num) FROM (
+                SELECT * FROM (
                     SELECT * ,
                     ROW_NUMBER() OVER (PARTITION BY {', '.join(unique_identifiers)} ORDER BY _commit_version DESC) AS row_num
-                    FROM table_changes('{self.qualified_postgres_table}', {last_live_version})
+                    FROM table_changes('{self.qualified_postgres_table}', {last_live_version + 1})
                     WHERE _change_type in ('insert', 'update_postimage', 'delete')
                 ) WHERE row_num = 1
             """

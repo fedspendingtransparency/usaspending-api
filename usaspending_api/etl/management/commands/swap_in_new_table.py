@@ -8,11 +8,16 @@ from typing import List, OrderedDict, Optional
 from django.core.management import BaseCommand
 from django.db import connection, ProgrammingError, transaction
 
+from usaspending_api.broker.helpers.last_delta_table_load_version import (
+    get_last_delta_table_load_versions,
+    update_last_live_load_version,
+)
 from usaspending_api.common.helpers.sql_helpers import (
     ordered_dictionary_fetcher,
     is_table_partitioned,
     get_parent_partitioned_table,
 )
+from usaspending_api.etl.management.commands.load_query_to_delta import TABLE_SPEC
 
 logger = logging.getLogger("script")
 
@@ -197,6 +202,19 @@ class Command(BaseCommand):
                     )
                 else:
                     self.drop_old_table_sql(cursor)
+            
+            # If `delta_table_load_version_key` exists in the table_spec, this table could potentially be loaded incrementally,
+            # therefore we need to keep track of the last version of the table persisted to the live table. In this case, that
+            # would be the last version swapped from temp to live. The `last_version_to_staging` represents the last version
+            # either that was either fully copied to the temp table, or the last version incrementally copied to staging tables,
+            # so here we can use it as the new version copied to live.
+            table_spec = TABLE_SPEC.get(options['table'])
+            delta_table_load_version_key = table_spec["delta_table_load_version_key"] if table_spec is not None else None
+
+            if delta_table_load_version_key is not None:
+                last_version_to_staging, last_version_to_live = get_last_delta_table_load_versions(delta_table_load_version_key)
+                update_last_live_load_version(delta_table_load_version_key, last_version_to_staging)
+                
 
     def cleanup_old_data(self, cursor, old_suffix=None):
         """

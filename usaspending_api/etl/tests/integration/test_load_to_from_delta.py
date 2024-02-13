@@ -2,6 +2,7 @@
 
 NOTE: Uses Pytest Fixtures from immediate parent conftest.py: usaspending_api/etl/tests/conftest.py
 """
+import copy
 import json
 
 import psycopg2
@@ -17,6 +18,10 @@ from django.conf import settings
 from django.core.management import call_command
 from django.db import connection, connections, transaction, models
 
+from usaspending_api.broker.helpers.last_delta_table_load_version import (
+    get_last_delta_table_load_versions,
+    update_last_live_load_version,
+)
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.etl.award_helpers import update_awards
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
@@ -152,13 +157,19 @@ def load_delta_table_from_postgres(
         cmd_args += [f"--alt-db={alt_db}"]
     if alt_name:
         cmd_args += [f"--alt-name={alt_name}"]
+    
+    create_cmd_args=copy.deepcopy(cmd_args)
+    load_cmd_args=copy.deepcopy(cmd_args)
+
+    if incremental:
+        create_cmd_args += ["--enable-cdf"]
+        load_cmd_args += ["--incremental"]
 
     # make the table and load it
     if not skip_create:
-        call_command("create_delta_table", f"--spark-s3-bucket={s3_bucket}", *cmd_args)
-    if incremental:
-        cmd_args += ["--incremental" ]
-    call_command(load_command, *cmd_args)
+        call_command("create_delta_table", f"--spark-s3-bucket={s3_bucket}",  *create_cmd_args)
+
+    call_command(load_command, *load_cmd_args)
 
 
 def verify_delta_table_loaded_to_delta(
@@ -707,7 +718,6 @@ def _update_award_data():
 
             # Updating an award_id will trigger a delete and insert during incremental updates
             cursor.execute("UPDATE rpt.award_search SET award_id = 4 WHERE award_id = 3")
-            cursor.execute("UPDATE rpt.transaction_search SET award_id = 4 WHERE award_id = 3")
 
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_award_search(
@@ -730,22 +740,43 @@ def test_load_table_to_from_delta_for_award_search(
     verify_delta_table_loaded_to_delta(
         spark, "award_search", s3_unittest_data_bucket, load_command="load_query_to_delta"
     )
-    # Incremental Update
+    # Incremental Update - Fully Rewrite the table using an incremental load
     verify_delta_table_loaded_to_delta(
-        spark, "award_search", s3_unittest_data_bucket, load_command="load_query_to_delta", alt_name="award_search_inc", incremental=True,
+        spark, "award_search", s3_unittest_data_bucket, load_command="load_query_to_delta", alt_name="award_search", incremental=True,
     )
+
+    verify_delta_table_loaded_from_delta(spark, "award_search", spark_s3_bucket=s3_unittest_data_bucket)
+    verify_delta_table_loaded_from_delta(spark, "award_search", jdbc_inserts=True)  # test alt write strategy
+
+    # Update the last version loaded to live, so the incremental update will have a starting point
+    last_version_to_staging, last_version_to_live = get_last_delta_table_load_versions("award_search")
+    update_last_live_load_version("award_search", last_version_to_staging)
 
     # Insert, update, and delete Award data before running second incremental update
     _update_award_data()
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, ["awards", "transactions"])
 
-    # Perform another incremental update and compare results
+    # Perform another incremental update and compare result. This time only changes are persisted
     verify_delta_table_loaded_to_delta(
-        spark, "award_search", s3_unittest_data_bucket, load_command="load_query_to_delta", alt_name="award_search_inc", incremental=True, skip_create=True
+        spark, "award_search", s3_unittest_data_bucket, load_command="load_query_to_delta", incremental=True, skip_create=True
     )
 
-    verify_delta_table_loaded_from_delta(spark, "award_search", spark_s3_bucket=s3_unittest_data_bucket)
-    verify_delta_table_loaded_from_delta(spark, "award_search", jdbc_inserts=True)  # test alt write strategy
+    # Test the incremental copy back from Delta to Postgres
+    call_command("load_table_from_delta", "--delta-table", "award_search", "--incremental", incremental_threshold=2)
+
+    with psycopg2.connect(get_database_dsn_string()) as new_psycopg2_conn:
+        with new_psycopg2_conn.cursor() as cursor: 
+            cursor.execute("SELECT * from temp.award_search_temp_deletes")
+            deletes = cursor.fetchall()
+
+            assert len(deletes) == 1, "Expected exactly one Award Search record to be deleted"
+            assert deletes[0][0] == 3, "The award_id of the deleted Award Search record should be 3"
+
+            cursor.execute("SELECT * from temp.award_search_temp_upserts")
+            upserts = cursor.fetchall()
+
+            assert len(upserts) == 2, "Expected exactly two Award Search records to be created/updated"
+            assert set([row[1] for row in upserts]) == {1, 4}, "The updated award_ids did not match the Awards updated in the test"
 
 
 @mark.django_db(transaction=True)
