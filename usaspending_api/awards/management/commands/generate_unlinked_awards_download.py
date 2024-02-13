@@ -15,6 +15,7 @@ from enum import Enum
 from usaspending_api.awards.management.sql.spark.unlinked_contracts_file_d1 import file_d1_sql_string
 from usaspending_api.awards.management.sql.spark.unlinked_awards_summary_file import summary_file
 from usaspending_api.awards.management.sql.spark.unlinked_assistance_file_d2 import file_d2_sql_string
+from usaspending_api.awards.management.sql.spark.unlinked_accounts_file_c import file_c_sql_string
 from usaspending_api.download.filestreaming.file_description import build_file_description, save_file_description
 from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_file
 from usaspending_api.references.models.toptier_agency import ToptierAgency
@@ -49,6 +50,7 @@ class Command(BaseCommand):
                 "summary_file": summary_file,
                 "unlinked_contracts_file_d1": file_d1_sql_string,
                 "unlinked_assistance_file_d2": file_d2_sql_string,
+                "unlinked_accounts_file_c": file_c_sql_string,
             },
             "download_to_csv_strategy": SparkToCSVStrategy(logger=logger),
             "readme_path": Path(settings.UNLINKED_AWARDS_DOWNLOAD_README_FILE_PATH),
@@ -177,6 +179,11 @@ class Command(BaseCommand):
                 "unlinked_assistance_file_d2",
                 f"{self.download_source_sql['unlinked_assistance_file_d2']}",
                 f"{self._agency_name}_UnlinkedFinancialAssistance_{short_timestamp}",
+            ),
+            (
+                "unlinked_accounts_file_c",
+                f"{self.download_source_sql['unlinked_accounts_file_c']}",
+                f"{self._agency_name}_UnlinkedAccountsByAward_{short_timestamp}",
             ),
         ]
 
