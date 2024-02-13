@@ -29,7 +29,7 @@ summary_file = """
         pdta.toptier_code as toptier_code,
         rao.fiscal_year,
         rao.fiscal_period,
-        CAST(((sum(rao.total_budgetary_resources) / min(total_budgetary_resources)) * 100) as decimal(2,2)) as percent_of_total_federal_budget,
+        CAST(((sum(rao.total_budgetary_resources) / min(tbr.total_budgetary_resources)) * 100) as decimal(2,2)) as percent_of_total_federal_budget,
         max(sa.published_date) as most_recent_update,
         count(rmt.tas_rendering_label) as missing_tas_accounts_count,
         sum(rao.total_diff_approp_ocpa_obligated_amounts) as reporting_difference_in_obligations,
