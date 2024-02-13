@@ -72,7 +72,6 @@ _USAS_RDS_REF_TABLES = [
     SubtierAgency,
     ToptierAgency,
     TreasuryAppropriationAccount,
-    ToptierAgencyPublishedDABSView,
     ReportingAgencyOverview,
 ]
 
