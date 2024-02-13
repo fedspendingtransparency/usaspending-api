@@ -13,7 +13,7 @@ summary_file = """
         inner join global_temp.dabs_submission_window_schedule s on
             sa.submission_window_id = s.id
         where
-            s.submission_reveal_date <= now();
+            s.submission_reveal_date <= now()
     )
     select
         pdta.name as agency_name,
