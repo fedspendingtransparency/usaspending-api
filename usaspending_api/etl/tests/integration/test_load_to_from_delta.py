@@ -157,7 +157,7 @@ def load_delta_table_from_postgres(
     if not skip_create:
         call_command("create_delta_table", f"--spark-s3-bucket={s3_bucket}", *cmd_args)
     if incremental:
-        cmd_args += ["--incremental" ]
+        cmd_args += ["--incremental"]
     call_command(load_command, *cmd_args)
 
 
@@ -177,7 +177,9 @@ def verify_delta_table_loaded_to_delta(
     create and load the given table and assert it was created and loaded as expected
     """
 
-    load_delta_table_from_postgres(delta_table_name, s3_bucket, alt_db, alt_name, load_command, incremental, skip_create)
+    load_delta_table_from_postgres(
+        delta_table_name, s3_bucket, alt_db, alt_name, load_command, incremental, skip_create
+    )
 
     if alt_name:
         expected_table_name = alt_name
@@ -689,9 +691,10 @@ def test_load_table_to_from_delta_for_transaction_search_alt_db_and_name(
     #     spark_s3_bucket=s3_unittest_data_bucket,
     # )
 
+
 def _update_award_data():
-    # This updates award data to the conditions required for an insert, update, and delete during an incremental 
-    # update of award_search. 
+    # This updates award data to the conditions required for an insert, update, and delete during an incremental
+    # update of award_search.
     with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
         with connection.cursor() as cursor:
             # Update a basic field on awards
@@ -700,6 +703,7 @@ def _update_award_data():
             # Updating an award_id will trigger a delete and insert during incremental updates
             cursor.execute("UPDATE rpt.award_search SET award_id = 4 WHERE award_id = 3")
             cursor.execute("UPDATE rpt.transaction_search SET award_id = 4 WHERE award_id = 3")
+
 
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_award_search(
@@ -724,7 +728,12 @@ def test_load_table_to_from_delta_for_award_search(
     )
     # Incremental Update
     verify_delta_table_loaded_to_delta(
-        spark, "award_search", s3_unittest_data_bucket, load_command="load_query_to_delta", alt_name="award_search_inc", incremental=True,
+        spark,
+        "award_search",
+        s3_unittest_data_bucket,
+        load_command="load_query_to_delta",
+        alt_name="award_search_inc",
+        incremental=True,
     )
 
     # Insert, update, and delete Award data before running second incremental update
@@ -733,7 +742,13 @@ def test_load_table_to_from_delta_for_award_search(
 
     # Perform another incremental update and compare results
     verify_delta_table_loaded_to_delta(
-        spark, "award_search", s3_unittest_data_bucket, load_command="load_query_to_delta", alt_name="award_search_inc", incremental=True, skip_create=True
+        spark,
+        "award_search",
+        s3_unittest_data_bucket,
+        load_command="load_query_to_delta",
+        alt_name="award_search_inc",
+        incremental=True,
+        skip_create=True,
     )
 
     verify_delta_table_loaded_from_delta(spark, "award_search", spark_s3_bucket=s3_unittest_data_bucket)
