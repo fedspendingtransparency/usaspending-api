@@ -29,11 +29,12 @@ This route sends a request to the backend to retrieve locations matching the spe
 
 + Response 200 (application/json)
     + Attributes (object)
-        + `results` (required, array[Locations], fixed-type)
+        + `results` (required, Locations, fixed-type)
+        + `messages` (required, array[string], fixed-type) An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
     + Body
 
             {
-                "results": [
+                "results": {
                     "countries": [
                         {
                             "country_name": "Denmark"
@@ -59,7 +60,8 @@ This route sends a request to the backend to retrieve locations matching the spe
                             "country_name": "United States"
                         }
                     ]
-                ]
+                },
+                "messages": [""]
             }
 
 # Data Structures
@@ -82,8 +84,7 @@ This route sends a request to the backend to retrieve locations matching the spe
 
 ## CityMatch (object)
 + `city_name` (required, string)
-+ `state_name` (optional, string)
-    Optional, because foreign cities won't have a state associated with them.
++ `state_name` (required, string)
 + `country_name` (required, string)
 
 ## CountyMatch (object)
