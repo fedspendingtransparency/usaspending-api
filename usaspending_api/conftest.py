@@ -407,6 +407,24 @@ def elasticsearch_recipient_index(db):
         elastic_search_index.delete_index()
 
 
+@pytest.fixture
+def elasticsearch_location_index(db):
+    """
+    Add this fixture to your test if you intend to use the Elasticsearch
+    location index.  To use, create some mock database data then call
+    elasticsearch_location_index.update_index to populate Elasticsearch.
+
+    See test_demo_elasticsearch_tests.py for sample usage.
+    """
+    elastic_search_index = TestElasticSearchIndex("location")
+    with override_settings(
+        ES_LOCATIONS_QUERY_ALIAS_PREFIX=elastic_search_index.alias_prefix,
+        ES_LOCATIONS_WRITE_ALIAS=elastic_search_index.etl_config["write_alias"],
+    ):
+        yield elastic_search_index
+        elastic_search_index.delete_index()
+
+
 @pytest.fixture(scope="session")
 def broker_db_setup(django_db_setup, django_db_use_migrations, worker_id):
     """Fixture to use during a pytest session if you will run integration tests that requires an actual broker
