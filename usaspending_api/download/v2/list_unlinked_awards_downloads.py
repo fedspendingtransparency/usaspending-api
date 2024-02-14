@@ -5,7 +5,6 @@ import boto3
 from django.conf import settings
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from usaspending_api.awards.management.commands.generate_unlinked_awards_download import AGENCY_NAME_CHARS_TO_REPLACE
 
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.config import CONFIG
@@ -42,7 +41,7 @@ class ListUnlinkedAwardsDownloadsViewSet(APIView):
 
         # Populate regex
         agency_name = agency["name"]
-        for char in AGENCY_NAME_CHARS_TO_REPLACE:
+        for char in settings.UNLINKED_AWARDS_AGENCY_NAME_CHARS_TO_REPLACE:
             agency_name = agency_name.replace(char, "_")
 
         download_prefix = f"{agency_name}_UnlinkedAwards"

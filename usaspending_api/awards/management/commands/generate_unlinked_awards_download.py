@@ -27,11 +27,6 @@ class ComputeTypeEnum(Enum):
 
 logger = logging.getLogger("script")
 
-# This list contains any abnormal characters in agency names
-# This list is important to track which characters we need to replace in
-# the agency name before the name can be used in a file name
-AGENCY_NAME_CHARS_TO_REPLACE = [".", " ", "/", "(", ")", "-", "&", "'"]
-
 
 class Command(BaseCommand):
     help = "Assemble unlinked award by agency data into CSVs and Zip"
@@ -119,7 +114,7 @@ class Command(BaseCommand):
 
         for agency in toptier_agencies:
             agency_name = agency["name"]
-            for char in AGENCY_NAME_CHARS_TO_REPLACE:
+            for char in settings.UNLINKED_AWARDS_AGENCY_NAME_CHARS_TO_REPLACE:
                 agency_name = agency_name.replace(char, "_")
             self._agency_name = agency_name
 
