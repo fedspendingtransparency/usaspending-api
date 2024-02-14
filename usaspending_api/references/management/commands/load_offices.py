@@ -1,15 +1,12 @@
 import logging
-
-from datetime import datetime
-from datetime import timezone
+from datetime import datetime, timezone
 
 from django.core.management.base import BaseCommand
-from django.db import connections, transaction
+from django.db import IntegrityError, connections, transaction
 
 from usaspending_api.common.operations_reporter import OpsReporter
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.references.models.office import Office
-
 
 logger = logging.getLogger("script")
 Reporter = OpsReporter(iso_start_datetime=datetime.now(timezone.utc).isoformat(), job_name="load_offices.py")
@@ -20,8 +17,12 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         logger.info("Starting ETL script")
-        self.process_data()
-        logger.info("Office ETL finished successfully!")
+        try:
+            self.process_data()
+            logger.info("Office ETL finished successfully!")
+        except IntegrityError:
+            logger.warning("Unique constraint violated. Continuing with pipeline execution.")
+            raise SystemExit(3)  # Raise exit code 3 for unique constraint violation
 
     @transaction.atomic()
     def process_data(self):
