@@ -57,11 +57,11 @@ class ListUnlinkedAwardsDownloadsViewSet(APIView):
             s3_resource = boto3_session.resource(
                 service_name="s3", region_name=CONFIG.AWS_REGION, endpoint_url=f"http://{CONFIG.AWS_S3_ENDPOINT}"
             )
+            s3_bucket = s3_resource.Bucket(settings.BULK_DOWNLOAD_S3_BUCKET_NAME)
         else:
-            s3_resource = boto3.resource(
-                service_name="s3", region_name=CONFIG.AWS_REGION, endpoint_url=f"https://{CONFIG.AWS_S3_ENDPOINT}"
-            )
-        s3_bucket = s3_resource.Bucket(settings.BULK_DOWNLOAD_S3_BUCKET_NAME)
+            s3_resource = boto3.resource(service_name="s3", region_name=self.s3_handler.region)
+            s3_bucket = s3_resource.Bucket(self.s3_handler.bucketRoute)
+
         download_names = []
         for key in s3_bucket.objects.filter(Prefix=download_prefix):
             if re.match(download_regex, key.key):
