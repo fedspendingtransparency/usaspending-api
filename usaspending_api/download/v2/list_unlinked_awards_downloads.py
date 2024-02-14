@@ -7,7 +7,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.config import CONFIG
 from usaspending_api.download.filestreaming.s3_handler import S3Handler
 from usaspending_api.references.models import ToptierAgency
 
@@ -48,22 +47,10 @@ class ListUnlinkedAwardsDownloadsViewSet(APIView):
         download_regex = r"{}_.*\.zip".format(download_prefix)
 
         # Retrieve and filter the files we need
-        if not CONFIG.USE_AWS:
-            boto3_session = boto3.session.Session(
-                region_name=CONFIG.AWS_REGION,
-                aws_access_key_id=CONFIG.AWS_ACCESS_KEY.get_secret_value(),
-                aws_secret_access_key=CONFIG.AWS_SECRET_KEY.get_secret_value(),
-            )
-            s3_resource = boto3_session.resource(
-                service_name="s3", region_name=CONFIG.AWS_REGION, endpoint_url=f"http://{CONFIG.AWS_S3_ENDPOINT}"
-            )
-            s3_bucket = s3_resource.Bucket(settings.BULK_DOWNLOAD_S3_BUCKET_NAME)
-        else:
-            s3_resource = boto3.resource(service_name="s3", region_name=self.s3_handler.region)
-            s3_bucket = s3_resource.Bucket(self.s3_handler.bucketRoute)
+        bucket = boto3.resource("s3", region_name=self.s3_handler.region).Bucket(self.s3_handler.bucketRoute)
 
         download_names = []
-        for key in s3_bucket.objects.filter(Prefix=download_prefix):
+        for key in bucket.objects.filter(Prefix=download_prefix):
             if re.match(download_regex, key.key):
                 download_names.append(key)
 
