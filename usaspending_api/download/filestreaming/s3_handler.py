@@ -31,10 +31,7 @@ class S3Handler:
         """
         bucket_url = f"{settings.FILES_SERVER_BASE_URL}/{self.redirect_dir}/"
         env_dir = ""
-        if (
-            self.redirect_dir == settings.BULK_DOWNLOAD_S3_REDIRECT_DIR
-            or self.redirect_dir == settings.UNLINKED_AWARDS_DOWNLOAD_REDIRECT_DIR
-        ) and self.environment != "production":
+        if self.redirect_dir == settings.BULK_DOWNLOAD_S3_REDIRECT_DIR and self.environment != "production":
             # currently only downloads have a bucket per environment
             env_dir = f"{self.environment}/"
         generated = f"{bucket_url}{env_dir}{file_name}"
