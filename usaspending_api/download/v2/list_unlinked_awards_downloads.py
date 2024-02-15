@@ -8,7 +8,6 @@ from rest_framework.views import APIView
 
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.config import CONFIG
-from usaspending_api.download.filestreaming.s3_handler import S3Handler
 from usaspending_api.references.models import ToptierAgency
 
 
