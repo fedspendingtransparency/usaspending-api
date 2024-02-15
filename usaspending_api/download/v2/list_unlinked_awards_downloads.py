@@ -17,10 +17,6 @@ class ListUnlinkedAwardsDownloadsViewSet(APIView):
     Returns a list which contains links to the latest versions of unlinked awards files for an agency.
     """
 
-    s3_handler = S3Handler(
-        bucket_name=settings.BULK_DOWNLOAD_S3_BUCKET_NAME, redirect_dir=settings.UNLINKED_AWARDS_DOWNLOAD_REDIRECT_DIR
-    )
-
     # This is intentionally not cached so that the latest updates to these files are always returned
     def post(self, request):
         """Return list of downloads that match the requested params."""
@@ -60,7 +56,9 @@ class ListUnlinkedAwardsDownloadsViewSet(APIView):
             )
             s3_bucket = s3_resource.Bucket(settings.BULK_DOWNLOAD_S3_BUCKET_NAME)
         else:
-            s3_bucket = boto3.resource("s3", region_name=self.s3_handler.region).Bucket(self.s3_handler.bucketRoute)
+            s3_bucket = boto3.resource("s3", region_name=settings.USASPENDING_AWS_REGION).Bucket(
+                settings.BULK_DOWNLOAD_S3_BUCKET_NAME
+            )
 
         download_names = []
         for key in s3_bucket.objects.filter(Prefix=download_prefix):
@@ -75,9 +73,7 @@ class ListUnlinkedAwardsDownloadsViewSet(APIView):
             "agency_acronym": agency["abbreviation"],
             "file_name": latest_download_name if latest_download_name is not None else None,
             "url": (
-                self.s3_handler.get_simple_url(file_name=latest_download_name)
-                if latest_download_name is not None
-                else None
+                f"{settings.FILES_SERVER_BASE_URL}/{latest_download_name}" if latest_download_name is not None else None
             ),
         }
 
