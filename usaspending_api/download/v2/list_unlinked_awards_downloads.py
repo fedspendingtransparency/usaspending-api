@@ -17,6 +17,8 @@ class ListUnlinkedAwardsDownloadsViewSet(APIView):
     Returns a list which contains links to the latest versions of unlinked awards files for an agency.
     """
 
+    redirect_dir = settings.UNLINKED_AWARDS_DOWNLOAD_REDIRECT_DIR
+
     # This is intentionally not cached so that the latest updates to these files are always returned
     def post(self, request):
         """Return list of downloads that match the requested params."""
@@ -40,7 +42,7 @@ class ListUnlinkedAwardsDownloadsViewSet(APIView):
         for char in settings.UNLINKED_AWARDS_AGENCY_NAME_CHARS_TO_REPLACE:
             agency_name = agency_name.replace(char, "_")
 
-        download_prefix = f"{settings.UNLINKED_AWARDS_DOWNLOAD_REDIRECT_DIR}/{agency_name}_UnlinkedAwards"
+        download_prefix = f"{self.redirect_dir}/{agency_name}_UnlinkedAwards"
         download_regex = r"{}_.*\.zip".format(download_prefix)
         download_regex = r"{}_.*\.zip".format(download_prefix)
 
@@ -67,13 +69,16 @@ class ListUnlinkedAwardsDownloadsViewSet(APIView):
 
         # Generate response
         latest_download_name = self._get_last_modified_file(download_names)
+        latest_download_file_name = latest_download_name.replace(f"{self.redirect_dir}/", "")
         identified_dowload = {
             "agency_name": agency["name"],
             "toptier_code": agency["toptier_code"],
             "agency_acronym": agency["abbreviation"],
-            "file_name": latest_download_name if latest_download_name is not None else None,
+            "file_name": latest_download_file_name if latest_download_file_name is not None else None,
             "url": (
-                f"{settings.FILES_SERVER_BASE_URL}/{latest_download_name}" if latest_download_name is not None else None
+                f"{settings.FILES_SERVER_BASE_URL}/{self.redirect_dir}/{latest_download_file_name}"
+                if latest_download_name is not None
+                else None
             ),
         }
 
