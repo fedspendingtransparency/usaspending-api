@@ -69,15 +69,17 @@ class ListUnlinkedAwardsDownloadsViewSet(APIView):
 
         # Generate response
         latest_download_name = self._get_last_modified_file(download_names)
-        latest_download_file_name = latest_download_name.replace(f"{self.redirect_dir}/", "")
+        latest_download_file_name = (
+            latest_download_name.replace(f"{self.redirect_dir}/", "") if latest_download_name is not None else None
+        )
         identified_dowload = {
             "agency_name": agency["name"],
             "toptier_code": agency["toptier_code"],
             "agency_acronym": agency["abbreviation"],
-            "file_name": latest_download_file_name if latest_download_file_name is not None else None,
+            "file_name": latest_download_file_name,
             "url": (
                 f"{settings.FILES_SERVER_BASE_URL}/{self.redirect_dir}/{latest_download_file_name}"
-                if latest_download_name is not None
+                if latest_download_file_name is not None
                 else None
             ),
         }
