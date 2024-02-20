@@ -2,6 +2,7 @@
 For more information on this file: https://docs.djangoproject.com/en/3.2/topics/settings/
 For the full list of settings and their values: https://docs.djangoproject.com/en/3.2/ref/settings/
 """
+
 import os
 from pathlib import Path
 
@@ -81,6 +82,12 @@ BULK_DOWNLOAD_SQS_QUEUE_NAME = ""
 MONTHLY_DOWNLOAD_S3_BUCKET_NAME = ""
 MONTHLY_DOWNLOAD_S3_REDIRECT_DIR = "award_data_archive"
 BROKER_AGENCY_BUCKET_NAME = ""
+UNLINKED_AWARDS_DOWNLOAD_REDIRECT_DIR = "unlinked_awards_downloads"
+
+# This list contains any abnormal characters in agency names
+# This list is important to track which characters we need to replace in
+# the agency name before the name can be used in a file name
+UNLINKED_AWARDS_AGENCY_NAME_CHARS_TO_REPLACE = [".", " ", "/", "(", ")", "-", "&", "'"]
 
 ############################################################
 # Note 2020/02/21
@@ -131,6 +138,7 @@ IDV_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "idv_download_readme.txt"
 ASSISTANCE_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "AssistanceSummary_download_readme.txt")
 CONTRACT_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "ContractSummary_download_readme.txt")
 COVID19_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "COVID-19_download_readme.txt")
+UNLINKED_AWARDS_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "unlinked_awards_instructions_readme.txt")
 COVID19_DOWNLOAD_FILENAME_PREFIX = "COVID-19_Profile"
 
 # Elasticsearch
@@ -161,6 +169,12 @@ ES_RECIPIENTS_MAX_RESULT_WINDOW = 50000
 ES_RECIPIENTS_NAME_SUFFIX = "recipients"
 ES_RECIPIENTS_QUERY_ALIAS_PREFIX = "recipient-query"
 ES_RECIPIENTS_WRITE_ALIAS = "recipient-load-alias"
+
+ES_LOCATIONS_ETL_VIEW_NAME = "location_delta_view"
+ES_LOCATIONS_MAX_RESULT_WINDOW = 50000
+ES_LOCATIONS_NAME_SUFFIX = "locations"
+ES_LOCATIONS_QUERY_ALIAS_PREFIX = "location-query"
+ES_LOCATIONS_WRITE_ALIAS = "location-load-alias"
 
 ES_TIMEOUT = 90
 ES_REPOSITORY = ""

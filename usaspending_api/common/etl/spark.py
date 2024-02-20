@@ -4,6 +4,7 @@ Spark utility functions that could be used as stages or steps of an ETL job (aka
 NOTE: This is distinguished from the usaspending_api.common.helpers.spark_helpers module, which holds mostly boilerplate
 functions for setup and configuration of the spark environment
 """
+
 from itertools import chain
 from math import ceil
 from typing import List
@@ -42,6 +43,7 @@ from usaspending_api.references.models import (
     GTASSF133Balances,
     CGAC,
 )
+from usaspending_api.reporting.models import ReportingAgencyMissingTas, ReportingAgencyOverview
 from usaspending_api.submissions.models import SubmissionAttributes, DABSSubmissionWindowSchedule
 from usaspending_api.download.filestreaming.download_generation import EXCEL_ROW_LIMIT
 
@@ -69,6 +71,8 @@ _USAS_RDS_REF_TABLES = [
     SubtierAgency,
     ToptierAgency,
     TreasuryAppropriationAccount,
+    ReportingAgencyOverview,
+    ReportingAgencyMissingTas,
 ]
 
 _BROKER_REF_TABLES = ["zips_grouped", "cd_state_grouped", "cd_zips_grouped", "cd_county_grouped", "cd_city_grouped"]
@@ -491,21 +495,24 @@ def convert_array_cols_to_string(
                         ", ",
                         # NOTE: There does not seem to be a way to cast and enforce that array elements must be NON-NULL
                         #  So NULL array elements would be allowed with this transformation
-                        col(f.name).cast(ArrayType(StringType())) if not is_for_csv_export
-                        # When creating CSVs, quote elements and escape inner quotes with backslash
-                        else transform(
-                            col(f.name).cast(ArrayType(StringType())),
-                            lambda c: concat(
-                                lit('"'),
-                                # Special handling in case of data that already has either a quote " or backslash \
-                                # inside an array element
-                                # First replace any single backslash character \ with TWO \\ (an escaped backslash)
-                                # Then replace any quote " character with \" (escaped quote, inside a quoted array elem)
-                                # NOTE: these regexp_replace get sent down to a Java replaceAll, which will require
-                                #       FOUR backslashes to represent ONE
-                                regexp_replace(regexp_replace(c, "\\\\", "\\\\\\\\"), '"', '\\\\"'),
-                                lit('"'),
-                            ),
+                        (
+                            col(f.name).cast(ArrayType(StringType()))
+                            if not is_for_csv_export
+                            # When creating CSVs, quote elements and escape inner quotes with backslash
+                            else transform(
+                                col(f.name).cast(ArrayType(StringType())),
+                                lambda c: concat(
+                                    lit('"'),
+                                    # Special handling in case of data that already has either a quote " or backslash \
+                                    # inside an array element
+                                    # First replace any single backslash character \ with TWO \\ (an escaped backslash)
+                                    # Then replace any quote " character with \" (escaped quote, inside a quoted array elem)
+                                    # NOTE: these regexp_replace get sent down to a Java replaceAll, which will require
+                                    #       FOUR backslashes to represent ONE
+                                    regexp_replace(regexp_replace(c, "\\\\", "\\\\\\\\"), '"', '\\\\"'),
+                                    lit('"'),
+                                ),
+                            )
                         ),
                     ),
                     lit(arr_close_bracket),
@@ -703,7 +710,7 @@ def hadoop_copy_merge(
         finally:
             if out_stream is not None:
                 out_stream.close()
-        return
+        return [merged_file_path]
 
     part_files.sort(key=lambda f: str(f))  # put parts in order by part number for merging
     parts_batch_size = ceil(max_rows_per_merged_file / rows_per_part)

@@ -147,6 +147,8 @@ class TestElasticSearchIndex:
             upper_name = "TRANSACTIONS"
         elif self.index_type == "recipient":
             upper_name = "RECIPIENTS"
+        elif self.index_type == "location":
+            upper_name = "LOCATIONS"
         return getattr(settings, f"ES_{upper_name}_MAX_RESULT_WINDOW")
 
     def _add_contents(self, **options):
@@ -169,6 +171,10 @@ class TestElasticSearchIndex:
         elif self.index_type == "recipient":
             view_sql_file = f"{settings.ES_RECIPIENTS_ETL_VIEW_NAME}.sql"
             view_name = settings.ES_RECIPIENTS_ETL_VIEW_NAME
+            es_id = "id"
+        elif self.index_type == "location":
+            view_sql_file = f"{settings.ES_LOCATIONS_ETL_VIEW_NAME}.sql"
+            view_name = settings.ES_LOCATIONS_ETL_VIEW_NAME
             es_id = "id"
         else:
             raise Exception("Invalid index type")

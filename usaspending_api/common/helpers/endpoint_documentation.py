@@ -12,6 +12,11 @@ ENDPOINTS_MD = "usaspending_api/api_docs/markdown/endpoints.md"
 # This should match stuff like "|[display](url)|method|description|"
 ENDPOINT_PATTERN = re.compile(r"\|\s*\[[^\]]+\]\s*\((?P<url>[^)]+)\)\s*\|[^|]+\|[^|]+\|")
 
+# Add endpoints to this list to exclude them from endpoint documentation checks.
+# For example, we did not want to create an api contract for the `list_unlinked_awards_files` endpoint,
+# because of that decision we added that endpoint to the following list.
+_EXCLUDED_URLS = ["/api/v2/bulk_download/list_unlinked_awards_files"]
+
 
 def case_sensitive_file_exists(file_path):
     """
@@ -45,7 +50,6 @@ def get_endpoint_urls_doc_paths_and_docstrings(endpoint_prefixes=None):
                 results.append((cleaned, url))
 
     _traverse_urls("/", urls.urlpatterns)
-
     return results
 
 
@@ -86,7 +90,8 @@ def validate_docs(url, url_object, master_endpoint_list):
     messages = []
 
     if not hasattr(view, "endpoint_doc"):
-        messages.append("{} ({}) missing endpoint_doc property".format(qualified_name, url))
+        if url not in _EXCLUDED_URLS:
+            messages.append("{} ({}) missing endpoint_doc property".format(qualified_name, url))
     else:
         endpoint_doc = getattr(view, "endpoint_doc")
         if not endpoint_doc:
@@ -115,6 +120,7 @@ def validate_docs(url, url_object, master_endpoint_list):
         if re.fullmatch(pattern, endpoint):
             break
     else:
-        messages.append("No URL found in {} that matches {} ({})".format(ENDPOINTS_MD, url, qualified_name))
+        if url not in _EXCLUDED_URLS:
+            messages.append("No URL found in {} that matches {} ({})".format(ENDPOINTS_MD, url, qualified_name))
 
     return messages
