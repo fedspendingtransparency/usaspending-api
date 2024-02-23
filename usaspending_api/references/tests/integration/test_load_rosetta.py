@@ -50,12 +50,12 @@ def test_rosetta_fresh_load():
             {"raw": "C:fpds_data_dictionary_element", "display": "FPDS Data Dictionary Element"},
             {"raw": "D:grouping", "display": "Grouping"},
             {"raw": "E:domain_values", "display": "Domain Values"},
-            {"raw": "F:domain_values_code_description", "display": "Domain Values Code Description"},
-            {"raw": "G:award_file", "display": "Award File"},
+            {"raw": "F:domain_values_code_desc", "display": "Domain Values Code Desc"},
+            {"raw": "G:award_file_(no_time_stamp)", "display": "Award File (no time stamp)"},
             {"raw": "H:award_element", "display": "Award Element"},
-            {"raw": "I:subaward_file", "display": "Subaward File"},
+            {"raw": "I:subaward_file_(no_time_stamp)", "display": "Subaward File (no time stamp)"},
             {"raw": "J:subaward_element", "display": "Subaward Element"},
-            {"raw": "K:account_file", "display": "Account File"},
+            {"raw": "K:account_file_(no_time_stamp)", "display": "Account File (no time stamp)"},
             {"raw": "L:account_element", "display": "Account Element"},
             {"raw": "M:table", "display": "Table"},
             {"raw": "N:element", "display": "Element"},
@@ -65,7 +65,7 @@ def test_rosetta_fresh_load():
         ],
         "metadata": {
             "total_rows": 1,
-            "total_size": "61.22KB",
+            "total_size": "61.74KB",
             "total_columns": 17,
             "download_location": test_file_path,
         },
@@ -78,5 +78,7 @@ def test_rosetta_fresh_load():
     }
 
     actual_result = Rosetta.objects.filter(document_name="api_response").values("document")
+    print("Actual Result: ", actual_result)
+    print("Expected Result: ", expected_result)
 
     assert expected_result == actual_result[0]["document"]
