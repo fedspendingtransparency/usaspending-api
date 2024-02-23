@@ -21,12 +21,12 @@ EXCEL_COLUMNS = [
     "FPDS Data Dictionary Element",
     "Grouping",
     "Domain Values",
-    "Domain Values Code Description",
-    "Award File",
+    "Domain Values Code Desc",
+    "Award File (no time stamp)",
     "Award Element",
-    "Subaward File",
+    "Subaward File (no time stamp)",
     "Subaward Element",
-    "Account File",
+    "Account File (no time stamp)",
     "Account Element",
     "Table",
     "Element",
@@ -70,8 +70,13 @@ def extract_data_from_source_file(filepath: str) -> dict:
     file_size = filepath.stat().st_size
     wb = load_workbook(filename=str(filepath))
     sheet = wb["Public"]
-    last_column = get_column_letter(sheet.max_column)
+
+    # previously sheet.max_column was being used to get the last column however this can be sometimes unreliable
+    # opted for using the last column defined in EXCEL_COLUMNS as the max column to parse
+    last_excel_column_index = len(EXCEL_COLUMNS) - 1
+    last_column = get_column_letter(last_excel_column_index + 1)
     cell_range = "A2:{}2".format(last_column)
+
     headers = [{"column": cell.column, "value": cell.value} for cell in sheet[cell_range][0]]
 
     sections = []
@@ -112,7 +117,10 @@ def load_xlsx_data_to_model(rosetta_object: dict):
         "metadata": rosetta_object["metadata"],
         "sections": rosetta_object["sections"],
         "headers": [
-            {"display": header["value"], "raw": f"{header['column']}:{header['value'].lower().replace(' ','_')}"}
+            {
+                "display": header["value"],
+                "raw": f"{header['column']}:{header['value'].lower().replace(' ','_') if header['value'] is not None else ''}",
+            }
             for header in rosetta_object["headers"]
         ],
         "rows": list(row for row in rosetta_object["data"].values()),
