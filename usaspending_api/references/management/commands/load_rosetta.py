@@ -73,8 +73,7 @@ def extract_data_from_source_file(filepath: str) -> dict:
 
     # previously sheet.max_column was being used to get the last column however this can be sometimes unreliable
     # opted for using the last column defined in EXCEL_COLUMNS as the max column to parse
-    last_excel_column_index = len(EXCEL_COLUMNS) - 1
-    last_column = get_column_letter(last_excel_column_index + 1)
+    last_column = get_column_letter(len(EXCEL_COLUMNS))
     cell_range = "A2:{}2".format(last_column)
 
     headers = [{"column": cell.column, "value": cell.value} for cell in sheet[cell_range][0]]
