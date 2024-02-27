@@ -3,9 +3,10 @@ file_c_sql_string = """
     SELECT
         distinct
         ta.toptier_code,
-        faba.piid,
-        faba.fain,
-        faba.uri,
+        faba.piid as award_id_piid,
+        faba.fain as award_id_fain,
+        faba.uri as award_id_uri,
+        faba.parent_award_id as parent_award_id_piid,
         faba.award_id,
         faba.distinct_award_key,
         CASE
@@ -40,10 +41,12 @@ file_c_sql_string = """
     )
     SELECT
         toptier_code,
-        piid,
-        fain,
-        uri,
+        award_id_piid,
+        award_id_fain,
+        award_id_uri,
+        parent_award_id_piid,
         award_id,
+        distinct_award_key,
         is_fpds,
         fiscal_year,
         fiscal_period

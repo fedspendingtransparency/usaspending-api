@@ -10,7 +10,6 @@ from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
 from usaspending_api.common.helpers.s3_helpers import delete_s3_object, download_s3_object
 from usaspending_api.common.helpers.sql_helpers import read_sql_file_to_text
 from usaspending_api.download.filestreaming.download_generation import (
-    EXCEL_ROW_LIMIT,
     split_and_zip_data_files,
     wait_for_process,
     execute_psql,
@@ -154,7 +153,12 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
                 df = source_df
             else:
                 df = self.spark.sql(source_sql)
-            record_count = write_csv_file(self.spark, df, parts_dir=s3_destination_path, logger=self._logger)
+            record_count = write_csv_file(
+                self.spark,
+                df,
+                parts_dir=s3_destination_path,
+                logger=self._logger,
+            )
             # When combining these later, will prepend the extracted header to each resultant file.
             # The parts therefore must NOT have headers or the headers will show up in the data when combined.
             header = ",".join([_.name for _ in df.schema.fields])
@@ -163,7 +167,6 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
                 spark=self.spark,
                 parts_dir=s3_destination_path,
                 header=header,
-                max_rows_per_merged_file=EXCEL_ROW_LIMIT,
                 logger=self._logger,
             )
             final_csv_data_file_locations = self._move_data_csv_s3_to_local(
