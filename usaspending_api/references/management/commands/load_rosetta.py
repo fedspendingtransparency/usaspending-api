@@ -61,6 +61,10 @@ class Command(BaseCommand):
             logger.info("Script completed in {:.2f}s".format(perf_counter() - script_start_time))
         except Exception:
             logger.exception("Exception during file retrieval or parsing")
+            # Re-raising an exception because the iniital exception is thrown during this handling, it is logged,
+            # but the command continues on to exit gracefully with a exit code of 0 (success).
+            # This is causing our django-manage-ad-hoc command to be marked as success even
+            # if the Rosetta Dictionary fails to update
             raise SystemExit(1)
         finally:
             if local_filepath.exists():
