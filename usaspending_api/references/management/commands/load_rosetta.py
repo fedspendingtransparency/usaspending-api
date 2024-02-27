@@ -1,13 +1,13 @@
 import logging
-
 from collections import OrderedDict
+from pathlib import Path
+from time import perf_counter
+
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from openpyxl import load_workbook
 from openpyxl.utils import get_column_letter
-from pathlib import Path
-from time import perf_counter
 
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.references.models import Rosetta
@@ -61,6 +61,7 @@ class Command(BaseCommand):
             logger.info("Script completed in {:.2f}s".format(perf_counter() - script_start_time))
         except Exception:
             logger.exception("Exception during file retrieval or parsing")
+            raise SystemExit(1)
         finally:
             if local_filepath.exists():
                 local_filepath.unlink()
