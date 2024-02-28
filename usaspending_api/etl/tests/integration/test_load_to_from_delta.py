@@ -724,7 +724,6 @@ def _update_award_data():
             cursor.execute("UPDATE rpt.award_search SET award_id = 4 WHERE award_id = 3")
 
 
-
 @mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_award_search(
     spark, s3_unittest_data_bucket, populate_usas_data_and_recipients_from_broker, hive_unittest_metastore_db
