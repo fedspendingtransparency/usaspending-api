@@ -75,7 +75,9 @@ def extract_data_from_source_file(filepath: str) -> dict:
     file_size = filepath.stat().st_size
     wb = load_workbook(filename=str(filepath))
     sheet = wb["Public"]
-    last_column = get_column_letter(sheet.max_column)
+    # previously we were using sheet.max_column, however that can sometimes be unreliabled
+    # opted for hardcoding the last column to traverse, based on the columns defined in EXCEL_COLUMNS
+    last_column = get_column_letter(len(EXCEL_COLUMNS))
     cell_range = "A2:{}2".format(last_column)
     headers = [{"column": cell.column, "value": cell.value} for cell in sheet[cell_range][0]]
 
