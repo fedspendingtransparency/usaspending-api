@@ -648,7 +648,7 @@ def hadoop_copy_merge(
         header: A comma-separated list of field names, to be placed as the first row of every final CSV file.
             Individual part files must NOT therefore be created with their own header.
         parquet_merge_group_size: Final CSV data will be subdivided into numbered files. This indicates how many parquet files
-            should be combined into on numbered file.
+            should be combined into a numbered file.
         logger: The logger to use. If one note provided (e.g. to log to console or stdout) the underlying JVM-based
             Logger will be extracted from the ``spark`` ``SparkSession`` and used as the logger.
         file_format: The format of the part files and the format of the final merged file, e.g. "csv"
