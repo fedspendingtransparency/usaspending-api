@@ -35,8 +35,12 @@ def test_load_csv_file(
     # When combining these later, will prepend the extracted header to each resultant file.
     # The parts therefore must NOT have headers or the headers will show up in the data when combined.
     header = ",".join([_.name for _ in df.schema.fields])
-    write_csv_file(spark, df, parts_dir=bucket_path, logger=test_logger)  # write Delta to CSV in S3 using Spark
-    hadoop_copy_merge(spark, parts_dir=bucket_path, header=header, logger=test_logger)  # merge CSV parts into 1 file
+    write_csv_file(
+        spark, df, parts_dir=bucket_path, num_partitions=1, logger=test_logger
+    )  # write Delta to CSV in S3 using Spark
+    hadoop_copy_merge(
+        spark, parts_dir=bucket_path, parquet_merge_group_size=1, header=header, logger=test_logger
+    )  # merge CSV parts into 1 file
 
     file_ext = "csv"
     download_path = tmp_path / f"{file_timestamp}.{file_ext}"
