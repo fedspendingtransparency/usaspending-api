@@ -6,7 +6,6 @@ functions for setup and configuration of the spark environment
 """
 
 from itertools import chain
-from math import ceil
 from typing import List
 from pyspark.sql.functions import to_date, lit, expr, concat, concat_ws, col, regexp_replace, transform, when
 from pyspark.sql.types import StructType, DecimalType, StringType, ArrayType
@@ -713,7 +712,7 @@ def hadoop_copy_merge(
         return [merged_file_path]
 
     part_files.sort(key=lambda f: str(f))  # put parts in order by part number for merging
-    parts_batch_size = ceil(max_rows_per_merged_file / rows_per_part)
+    parts_batch_size = max_rows_per_merged_file // rows_per_part
     paths_to_merged_files = []
     for parts_file_group in _merge_grouper(part_files, parts_batch_size):
         part_suffix = f"_{str(parts_file_group.part).zfill(2)}" if parts_file_group.part else ""
