@@ -1,13 +1,13 @@
 import logging
-
 from collections import OrderedDict
+from pathlib import Path
+from time import perf_counter
+
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from openpyxl import load_workbook
 from openpyxl.utils import get_column_letter
-from pathlib import Path
-from time import perf_counter
 
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.references.models import Rosetta
@@ -61,6 +61,11 @@ class Command(BaseCommand):
             logger.info("Script completed in {:.2f}s".format(perf_counter() - script_start_time))
         except Exception:
             logger.exception("Exception during file retrieval or parsing")
+            # Re-raising an exception because the iniital exception is thrown during this handling, it is logged,
+            # but the command continues on to exit gracefully with a exit code of 0 (success).
+            # This is causing our django-manage-ad-hoc command to be marked as success even
+            # if the Rosetta Dictionary fails to update
+            raise SystemExit(1)
         finally:
             if local_filepath.exists():
                 local_filepath.unlink()
@@ -70,7 +75,9 @@ def extract_data_from_source_file(filepath: str) -> dict:
     file_size = filepath.stat().st_size
     wb = load_workbook(filename=str(filepath))
     sheet = wb["Public"]
-    last_column = get_column_letter(sheet.max_column)
+    # previously we were using sheet.max_column, however that can sometimes be unreliabled
+    # opted for hardcoding the last column to traverse, based on the columns defined in EXCEL_COLUMNS
+    last_column = get_column_letter(len(EXCEL_COLUMNS))
     cell_range = "A2:{}2".format(last_column)
     headers = [{"column": cell.column, "value": cell.value} for cell in sheet[cell_range][0]]
 
