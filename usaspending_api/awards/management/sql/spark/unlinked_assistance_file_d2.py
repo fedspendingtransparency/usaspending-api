@@ -51,8 +51,8 @@ file_d2_sql_string = """
     SELECT
         fa.toptier_code,
         a.award_id AS award_id,
-        ts.detached_award_proc_unique AS contract_transaction_unique_key,
-        ts.generated_unique_award_id AS contract_award_unique_key,
+        ts.detached_award_proc_unique AS assistance_transaction_unique_key,
+        ts.generated_unique_award_id AS assistance_award_unique_key,
         ts.piid AS award_id_piid,
         ts.modification_number AS modification_number,
         ts.transaction_number AS transaction_number,
@@ -122,8 +122,8 @@ file_d2_sql_string = """
     SELECT
         toptier_code,
         award_id,
-        contract_transaction_unique_key,
-        contract_award_unique_key,
+        assistance_transaction_unique_key,
+        assistance_award_unique_key,
         award_id_piid,
         modification_number,
         transaction_number,

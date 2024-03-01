@@ -32,8 +32,10 @@ summary_file = """
         MAX(sa.published_date) AS most_recent_update,
         COUNT(rmt.tas_rendering_label) AS missing_tas_accounts_count,
         SUM(rao.total_diff_approp_ocpa_obligated_amounts) AS reporting_difference_in_obligations,
-        SUM(rao.unlinked_procurement_c_awards + rao.unlinked_procurement_d_awards) AS unlinked_contract_award_count,
-        SUM(rao.unlinked_assistance_c_awards + rao.unlinked_assistance_d_awards) AS unlinked_assistance_award_count,
+        SUM(rao.unlinked_procurement_d_awards) as unlinked_contract_awards_in_contract_data,
+        SUM(rao.unlinked_procurement_c_awards) as unlinked_contract_awards_in_award_spending_breakdown_data,
+        SUM(rao.unlinked_assistance_d_awards) as unlinked_assistance_awards_in_financial_assistance_data,
+        SUM(rao.unlinked_assistance_c_awards) as unlinked_assistance_awards_in_award_spending_breakdown_data,
         SUM(rao.unlinked_procurement_c_awards + rao.unlinked_procurement_d_awards) + SUM(rao.unlinked_assistance_c_awards + rao.unlinked_assistance_d_awards) AS total_unlinked_awards
     FROM published_dabs_toptier_agency AS pdta
 
