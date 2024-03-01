@@ -2,20 +2,22 @@
 
 from django.db import migrations, models
 
+
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('references', '0064_add_latest_pop_col'),
+        ("references", "0064_add_latest_pop_col"),
     ]
 
-    operations = [
-        migrations.RunSQL(
-            sql="""
-                ALTER TABLE office DROP CONSTRAINT IF EXISTS unique_agency_sub_tier_office;
-                ALTER TABLE office ADD CONSTRAINT unique_agency_sub_tier_office UNIQUE (agency_code, sub_tier_code, office_name, office_code);
-            """,
-            reverse_sql="""
-                ALTER TABLE office DROP CONSTRAINT IF EXISTS unique_agency_sub_tier_office;
-            """
-        )
-    ]
+
+#     operations = [
+#         migrations.RunSQL(
+#             sql="""
+#                 ALTER TABLE office DROP CONSTRAINT IF EXISTS unique_agency_sub_tier_office;
+#                 ALTER TABLE office ADD CONSTRAINT unique_agency_sub_tier_office UNIQUE (agency_code, sub_tier_code, office_name, office_code);
+#             """,
+#             reverse_sql="""
+#                 ALTER TABLE office DROP CONSTRAINT IF EXISTS unique_agency_sub_tier_office;
+#             """
+#         )
+#     ]
