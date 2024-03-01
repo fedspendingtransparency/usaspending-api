@@ -36,7 +36,7 @@ def test_write_csv_file(
     hadoop_copy_merge(
         spark=spark,
         parts_dir=bucket_path,
-        parquet_merge_group_size=1,
+        part_merge_group_size=1,
         header="first_col, color, numeric_val",
         logger=logger,
     )

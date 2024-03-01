@@ -171,7 +171,7 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
                 parts_dir=s3_destination_path,
                 header=header,
                 logger=self._logger,
-                parquet_merge_group_size=1,
+                part_merge_group_size=1,
             )
             final_csv_data_file_locations = self._move_data_csv_s3_to_local(
                 s3_bucket_name, merged_file_paths, s3_bucket_path, s3_bucket_sub_path, destination_path_dir

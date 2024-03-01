@@ -634,20 +634,20 @@ def hadoop_copy_merge(
     spark: SparkSession,
     parts_dir: str,
     header: str,
-    parquet_merge_group_size: int,
+    part_merge_group_size: int,
     logger=None,
     file_format="csv",
 ) -> List[str]:
     """PySpark impl of Hadoop 2.x copyMerge() (deprecated in Hadoop 3.x)
     Merges files from a provided input directory and then redivides them
-        into multiple files based on a provided maximum row count parameter.
+        into multiple files based on merge group size.
     Args:
         spark: passed-in active SparkSession
         parts_dir: Path to the dir that contains the input parts files. The parts dir name
             determines the name of the merged files. Parts_dir cannot have a trailing slash.
         header: A comma-separated list of field names, to be placed as the first row of every final CSV file.
             Individual part files must NOT therefore be created with their own header.
-        parquet_merge_group_size: Final CSV data will be subdivided into numbered files. This indicates how many parquet files
+        part_merge_group_size: Final CSV data will be subdivided into numbered files. This indicates how many part files
             should be combined into a numbered file.
         logger: The logger to use. If one note provided (e.g. to log to console or stdout) the underlying JVM-based
             Logger will be extracted from the ``spark`` ``SparkSession`` and used as the logger.
@@ -708,7 +708,7 @@ def hadoop_copy_merge(
 
     part_files.sort(key=lambda f: str(f))  # put parts in order by part number for merging
     paths_to_merged_files = []
-    for parts_file_group in _merge_grouper(part_files, parquet_merge_group_size):
+    for parts_file_group in _merge_grouper(part_files, part_merge_group_size):
         part_suffix = f"_{str(parts_file_group.part).zfill(2)}" if parts_file_group.part else ""
         partial_merged_file = f"{parts_dir}.partial{part_suffix}"
         partial_merged_file_path = hadoop.fs.Path(partial_merged_file)
