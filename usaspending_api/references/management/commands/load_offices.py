@@ -48,14 +48,24 @@ class Command(BaseCommand):
     def broker_fetch_sql(self):
         return f"""
             SELECT
-                office_code,
-                office_name,
-                sub_tier_code,
-                agency_code,
-                contract_awards_office,
-                contract_funding_office,
-                financial_assistance_awards_office,
-                financial_assistance_funding_office
-            FROM
-                office
+                o.office_code,
+                o.office_name,
+                o.sub_tier_code,
+                o.agency_code,
+                o.contract_awards_office,
+                o.contract_funding_office,
+                o.financial_assistance_awards_office,
+                o.financial_assistance_funding_office
+            FROM office o
+
+            /* Begin left anti joins to ensure we are not loading any offices
+            that are not linked to transactions */
+            LEFT JOIN source_assistance_transaction sat
+            ON sat.awarding_office_code = o.office_code
+
+            LEFT JOIN source_procurement_transaction spt
+            ON spt.awarding_office_code = o.office_code
+
+            WHERE sat.awarding_office_code IS NOT NULL
+                AND spt.awarding_office_code IS NOT NULL
         """
