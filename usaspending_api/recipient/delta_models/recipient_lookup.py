@@ -36,11 +36,11 @@ TEMP_RECIPIENT_LOOKUP_COLUMNS = {
 unlinked_recipient_anti_join = """
     /* Begin left anti joins to ensure we are not loading any recipients
     that are not linked to transactions */
-    LEFT JOIN source_assistance_transaction sat
+    LEFT JOIN raw.source_assistance_transaction sat
     ON {sam_recipient_alias}.uei = sat.uei
         AND {sam_recipient_alias}.uei = sat.ultimate_parent_uei
 
-    LEFT JOIN source_procurement_transaction spt
+    LEFT JOIN raw.source_procurement_transaction spt
     ON {sam_recipient_alias}.uei = sat.awardee_or_recipient_uei
         AND {sam_recipient_alias}.uei = sat.ultimate_parent_uei
 """
