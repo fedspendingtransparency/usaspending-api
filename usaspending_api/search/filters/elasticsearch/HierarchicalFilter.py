@@ -20,7 +20,7 @@ class HierarchicalFilter:
                 if node.code not in [neg_node.code for neg_node in negative_nodes]
             ]
         )
-        negative_query = " OR ".join(
+        negative_query = " AND ".join(
             [
                 node.get_query()
                 for node in negative_nodes
