@@ -167,7 +167,7 @@ def load_delta_table_from_postgres(
 
     # make the table and load it
     if not skip_create:
-        call_command("create_delta_table", f"--spark-s3-bucket={s3_bucket}", *cmd_args)
+        call_command("create_delta_table", f"--spark-s3-bucket={s3_bucket}", *create_cmd_args)
     if incremental:
         cmd_args += ["--incremental"]
     call_command(load_command, *cmd_args)
@@ -751,7 +751,7 @@ def test_load_table_to_from_delta_for_award_search(
         "award_search",
         s3_unittest_data_bucket,
         load_command="load_query_to_delta",
-        alt_name="award_search_inc",
+        alt_name="award_search",
         incremental=True,
     )
 
@@ -772,7 +772,7 @@ def test_load_table_to_from_delta_for_award_search(
         "award_search",
         s3_unittest_data_bucket,
         load_command="load_query_to_delta",
-        alt_name="award_search_inc",
+        alt_name="award_search",
         incremental=True,
         skip_create=True,
     )
