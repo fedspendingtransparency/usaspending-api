@@ -214,7 +214,9 @@ class Command(BaseCommand):
                 self.logger.error(
                     f"Values are required for fields: `incremental_delete_temp_schema` and `delta_table_load_version_key`"
                 )
-                raise ArgumentTypeError(f"TABLE_SPEC configuration for {source_delta_table} is not sufficient for incremental loads")
+                raise ArgumentTypeError(
+                    f"TABLE_SPEC configuration for {source_delta_table} is not sufficient for incremental loads"
+                )
 
             # Retrieve information about which versions of the Delta Table have been loaded where. We'll use
             # the `last_live_version` to query changes because we want all the data that has not persisted
@@ -499,10 +501,7 @@ class Command(BaseCommand):
 
         strategy = "JDBC INSERTs" if self.options["jdbc_inserts"] else "SQL bulk COPY CSV"
 
-        self.logger.info(
-            f"LOAD (START): Loading dataframe to {qualified_temp_table} using {strategy} "
-            f"strategy"
-        )
+        self.logger.info(f"LOAD (START): Loading dataframe to {qualified_temp_table} using {strategy} " f"strategy")
 
         # Make sure that the column order defined in the Delta table schema matches
         # that of the Spark dataframe used to pull from the Postgres table. While not
@@ -534,11 +533,7 @@ class Command(BaseCommand):
                 self._set_sequence_value(self.table_spec["postgres_seq_name"], postgres_seq_last_value)
             raise Exception(exc)
 
-        self.logger.info(
-            f"LOAD (FINISH): Loaded dataframe to {qualified_temp_table} using {strategy} "
-            f"strategy"
-        )
-
+        self.logger.info(f"LOAD (FINISH): Loaded dataframe to {qualified_temp_table} using {strategy} " f"strategy")
 
     def _write_with_sql_bulk_copy_csv(
         self,
