@@ -5,6 +5,7 @@ import boto3
 import numpy as np
 import psycopg2
 
+from argparse import ArgumentTypeError
 from django import db
 from django.core.management.base import BaseCommand
 from math import ceil
@@ -184,20 +185,16 @@ class Command(BaseCommand):
 
         # Delta side
         source_delta_table_name = self.options["alt_delta_name"] or source_delta_table
-        self.source_delta_database = self.options["alt_delta_db"] or self.table_spec["destination_database"]
-        self.qualified_source_delta_table = f"{self.source_delta_database}.{source_delta_table_name}"
-        unique_identifiers = self.table_spec["unique_identifiers"]
+        source_delta_database = self.options["alt_delta_db"] or self.table_spec["destination_database"]
+        self.qualified_source_delta_table = f"{source_delta_database}.{source_delta_table_name}"
         delta_table_load_version_key = self.table_spec["delta_table_load_version_key"]
 
         # Postgres side
-        postgres_schema = self.table_spec["source_database"] or self.table_spec["swap_schema"]
+        postgres_schema = self.table_spec["swap_schema"]
         postgres_schema_def = self.table_spec["source_schema"]
-        self.postgres_table_name = self.table_spec["source_table"] or self.table_spec["swap_table"]
+        self.postgres_table_name = self.table_spec["swap_table"]
         self.qualified_postgres_table = f"{postgres_schema}.{self.postgres_table_name}"
         postgres_temp_schema = "temp"
-
-        # Used later for logging
-        strategy = "JDBC INSERTs" if self.options["jdbc_inserts"] else "SQL bulk COPY CSV"
 
         # Determine the latest version of the Delta Table at the time this command is running. This will later
         # be stored as the latest version written to the staging table, regardless of whether we update incrementally
@@ -217,6 +214,7 @@ class Command(BaseCommand):
                 self.logger.error(
                     f"Values are required for fields: `incremental_delete_temp_schema` and `delta_table_load_version_key`"
                 )
+                raise ArgumentTypeError(f"TABLE_SPEC configuration for {source_delta_table} is not sufficient for incremental loads")
 
             # Retrieve information about which versions of the Delta Table have been loaded where. We'll use
             # the `last_live_version` to query changes because we want all the data that has not persisted
@@ -230,13 +228,13 @@ class Command(BaseCommand):
             # This will be used to determine if the number of updated records exceeds the update threshold, and
             # (if not exceeding) it will serve as the basis for dataframes to be written to Postgres with incremental
             # changes.
-
+            unique_identifiers = self.table_spec["unique_identifiers"]
             distinct_df = spark.sql(
                 f"""
                 SELECT * FROM (
                     SELECT * ,
                     ROW_NUMBER() OVER (PARTITION BY {', '.join(unique_identifiers)} ORDER BY _commit_version DESC) AS row_num
-                    FROM table_changes('{self.qualified_postgres_table}', {last_live_version + 1})
+                    FROM table_changes('{self.qualified_source_delta_table}', {last_live_version + 1})
                     WHERE _change_type in ('insert', 'update_postimage', 'delete')
                 ) WHERE row_num = 1
             """
@@ -259,7 +257,6 @@ class Command(BaseCommand):
                 upsert_df = distinct_df.filter("_change_type IN ('insert', 'update_postimage')")
                 delete_df = distinct_df.filter("_change_type IN ('delete')")
 
-                # Call _write_to_postgres()
                 self._write_to_postgres(
                     spark, upsert_df, qualified_upsert_temp_table, postgres_schema_def, self.table_spec["column_names"]
                 )
@@ -283,10 +280,6 @@ class Command(BaseCommand):
             else:
                 postgres_seq_last_value = None
 
-            self.logger.info(
-                f"LOAD (START): Loading full Delta table {source_delta_table} to {qualified_temp_table} using {strategy} "
-                f"strategy"
-            )
             self._write_to_postgres(
                 spark,
                 df,
@@ -297,17 +290,11 @@ class Command(BaseCommand):
             )
 
             self.logger.info(
-                f"LOAD (FINISH): Loaded full Delta table {source_delta_table} to {qualified_temp_table} using {strategy} "
-                f"strategy"
+                f"Note: this has merely loaded the data from Delta. For various reasons, we've separated the"
+                f" metadata portion of the table download to a separate script. If not already done so,"
+                f" please run the following additional command to complete the process: "
+                f" 'copy_table_metadata --source-table {self.qualified_postgres_table} --dest-table {qualified_temp_table}'."
             )
-
-            if self.qualified_postgres_table:
-                self.logger.info(
-                    f"Note: this has merely loaded the data from Delta. For various reasons, we've separated the"
-                    f" metadata portion of the table download to a separate script. If not already done so,"
-                    f" please run the following additional command to complete the process: "
-                    f" 'copy_table_metadata --source-table {self.qualified_postgres_table} --dest-table {qualified_temp_table}'."
-                )
 
         if delta_table_load_version_key:
             update_last_staging_load_version(delta_table_load_version_key, last_update_version)
@@ -510,6 +497,13 @@ class Command(BaseCommand):
                 value in the case of an error
         """
 
+        strategy = "JDBC INSERTs" if self.options["jdbc_inserts"] else "SQL bulk COPY CSV"
+
+        self.logger.info(
+            f"LOAD (START): Loading dataframe to {qualified_temp_table} using {strategy} "
+            f"strategy"
+        )
+
         # Make sure that the column order defined in the Delta table schema matches
         # that of the Spark dataframe used to pull from the Postgres table. While not
         # always needed, this should help to prevent any future mismatch between the two.
@@ -539,6 +533,12 @@ class Command(BaseCommand):
                 )
                 self._set_sequence_value(self.table_spec["postgres_seq_name"], postgres_seq_last_value)
             raise Exception(exc)
+
+        self.logger.info(
+            f"LOAD (FINISH): Loaded dataframe to {qualified_temp_table} using {strategy} "
+            f"strategy"
+        )
+
 
     def _write_with_sql_bulk_copy_csv(
         self,
@@ -592,10 +592,10 @@ class Command(BaseCommand):
                 sub-folder of a "temp" folder. Be mindful of cleaning these up if setting to True. If False,
                 the same output path is used for each write and nukes-and-paves the files in that output path.
         """
-        csv_path = f"{CONFIG.SPARK_CSV_S3_PATH}/{self.source_delta_database}/{delta_s3_path}/"
+        csv_path = f"{CONFIG.SPARK_CSV_S3_PATH}/{delta_s3_path}/"
         if keep_csv_files:
             csv_path = (
-                f"{CONFIG.SPARK_CSV_S3_PATH}/temp/{self.source_delta_database}/{delta_s3_path}/"
+                f"{CONFIG.SPARK_CSV_S3_PATH}/temp/{delta_s3_path}/"
                 f"{datetime.strftime(datetime.utcnow(), '%Y%m%d%H%M%S')}/"
             )
         s3_bucket_with_csv_path = f"s3a://{spark_s3_bucket_name}/{csv_path}"
