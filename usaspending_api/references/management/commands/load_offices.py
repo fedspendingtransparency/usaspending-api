@@ -2,12 +2,12 @@ import logging
 from datetime import datetime, timezone
 
 from django.core.management.base import BaseCommand
-from django.db import IntegrityError, connections, transaction
+from django.db import DEFAULT_DB_ALIAS, IntegrityError, connections, transaction
 
 from usaspending_api.common.operations_reporter import OpsReporter
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.references.models.office import Office
-from django import db
+from django.db import connection
 
 logger = logging.getLogger("script")
 Reporter = OpsReporter(iso_start_datetime=datetime.now(timezone.utc).isoformat(), job_name="load_offices.py")
@@ -57,15 +57,15 @@ class Command(BaseCommand):
     def broker_fetch_sql(self):
         return f"""
             SELECT
-                o.office_code,
-                o.office_name,
-                o.sub_tier_code,
-                o.agency_code,
-                o.contract_awards_office,
-                o.contract_funding_office,
-                o.financial_assistance_awards_office,
-                o.financial_assistance_funding_office
-            FROM office o
+                office_code,
+                office_name,
+                sub_tier_code,
+                agency_code,
+                contract_awards_office,
+                contract_funding_office,
+                financial_assistance_awards_office,
+                financial_assistance_funding_office
+            FROM office
         """
 
     @property
