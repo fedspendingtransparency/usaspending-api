@@ -67,7 +67,7 @@ class Command(BaseCommand):
     @property
     def usas_unlinked_offices_sql(self):
         return """
-        DELETE FROM office WHERE office_code in (
+        DELETE FROM office WHERE office_code IN (
             SELECT DISTINCT o.office_code
 
             FROM office o
