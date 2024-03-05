@@ -1,20 +1,11 @@
-from copy import deepcopy
 import pytest
 
 from django.core.management import call_command
 from django.db import DEFAULT_DB_ALIAS
 from unittest.mock import MagicMock
-from model_bakery import baker
 
 from usaspending_api.etl.broker_etl_helpers import PhonyCursor
 from usaspending_api.references.models import Office
-
-
-_NEW_ASSIST_PROCURE = {
-    "awarding_office_code": "040ADV",
-    "awarding_office_code": "040897",
-    "awarding_office_code": "033103",
-}
 
 
 @pytest.mark.django_db
@@ -31,14 +22,6 @@ def test_load_offices(monkeypatch):
     }
 
     monkeypatch.setattr("usaspending_api.references.management.commands.load_offices.connections", mock_connections)
-
-    # Since changes to the source tables will go to the Postgres table first, use model baker to add new rows to
-    # Postgres table, and then push the updated table to Delta.
-    assist = deepcopy(_NEW_ASSIST_PROCURE)
-    baker.make("transactions.SourceAssistanceTransaction", **assist)
-
-    procure = deepcopy(_NEW_ASSIST_PROCURE)
-    baker.make("transactions.SourceProcurementTransaction", **procure)
 
     call_command("load_offices")
 
