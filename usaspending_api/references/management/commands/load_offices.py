@@ -48,9 +48,6 @@ class Command(BaseCommand):
         # Identify offices that do not correspond to any transactions, using only USAS DB
         with connections[DEFAULT_DB_ALIAS].cursor() as cursor:
             cursor.execute(self.usas_unlinked_offices_sql)
-            office_values = dictfetchall(broker_cursor)
-            for office_code in office_values:
-                Office.objects.filter(office_code=office_code["office_code"]).delete()
 
     @property
     def broker_fetch_sql(self):
