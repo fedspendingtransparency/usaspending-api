@@ -50,7 +50,6 @@ class Command(BaseCommand):
             cursor.execute(self.usas_unlinked_offices_sql)
             office_values = dictfetchall(broker_cursor)
             for office_code in office_values:
-                print(office_code)
                 Office.objects.filter(office_code=office_code["office_code"]).delete()
 
     @property
@@ -71,6 +70,7 @@ class Command(BaseCommand):
     @property
     def usas_unlinked_offices_sql(self):
         return """
+        DELETE FROM office WHERE office_code in (
             SELECT DISTINCT o.office_code
 
             FROM office o
@@ -83,6 +83,7 @@ class Command(BaseCommand):
             LEFT JOIN source_procurement_transaction spt
             ON spt.awarding_office_code = o.office_code
 
-            WHERE sat.awarding_office_code IS NULL
-                AND spt.awarding_office_code IS NULL
+            WHERE spt.awarding_office_code IS NOT NULL
+                OR sat.awarding_office_code IS NOT NULL
+        )
         """
