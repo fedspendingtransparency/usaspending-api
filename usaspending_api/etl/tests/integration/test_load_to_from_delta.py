@@ -7,7 +7,7 @@ import json
 
 import psycopg2
 import pytz
-from datetime import date, datetime
+from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Union
 
 from model_bakery import baker
@@ -28,9 +28,7 @@ from usaspending_api.etl.management.commands.create_delta_table import (
 from usaspending_api.etl.tests.integration.test_model import TestModel, TEST_TABLE_POSTGRES, TEST_TABLE_SPEC
 from usaspending_api.recipient.models import RecipientLookup
 from usaspending_api.tests.conftest_spark import create_and_load_all_delta_tables
-from model_bakery import baker
 from copy import deepcopy
-from datetime import datetime, date, timedelta, timezone
 
 _NEW_ASSIST = {
     "published_fabs_id": 6,
