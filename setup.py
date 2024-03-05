@@ -49,6 +49,7 @@ if __name__ == "__main__":
             "Programming Language :: Python",
             "Programming Language :: Python :: 3",
             "Programming Language :: Python :: 3.8",
+            "Programming Language :: Python :: 3.10",
             "Programming Language :: Python :: 3 :: Only",
         ],
     )
