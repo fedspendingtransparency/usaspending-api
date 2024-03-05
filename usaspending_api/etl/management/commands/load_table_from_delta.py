@@ -422,7 +422,7 @@ class Command(BaseCommand):
             cursor.execute(create_temp_sql)
             self.logger.info(f"{qualified_temp_table} created.")
 
-            if is_postgres_table_partitioned and partitions_sql:
+            if is_postgres_table_partitioned and len(partitions_sql) > 1:
                 for create_partition in partitions_sql:
                     self.logger.info(f"Creating partition of {qualified_temp_table} with SQL:\n{create_partition}")
                     cursor.execute(create_partition)
@@ -461,7 +461,12 @@ class Command(BaseCommand):
         sequence to help ensure we don't cross the threshold of values for an ID field as we reload a table every day.
         If the calling functions exits with an exception this will reset the sequence value to its previous next value.
 
-        Returns the previous value use by the sequence.
+        Args:
+            seq_name: Name of sequence to reset value for
+            val: Optional value to reset the sequence to. Defaults to 1
+
+        Returns:
+            last_value: the previous value use by the sequence.
         """
         new_seq_val = val if val else 1
         self.logger.info(f"Setting the Postgres sequence to {new_seq_val} for: {seq_name}")

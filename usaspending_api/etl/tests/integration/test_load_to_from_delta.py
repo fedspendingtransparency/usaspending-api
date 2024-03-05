@@ -200,7 +200,7 @@ def verify_delta_table_loaded_to_delta(
 
     # Resolve Column(s) to sort on in order to compare results
     partition_column = TABLE_SPEC[delta_table_name].get("partition_column")
-    if partition_column:
+    if partition_column is not None:
         # Sort columns is expected to be in list format, so it can support tables
         # uniquely identified by multiple columns. `partition_column` represents a single
         # field, so we need to wrap it in a list.
