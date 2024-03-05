@@ -370,7 +370,7 @@ def delete_transactions(
     task_id: str = "Sync DB Deletes",
     fabs_external_data_load_date_key: str = "fabs",
     fpds_external_data_load_date_key: str = "fpds",
-    spark: "pyspark.sql.SparkSession" = None,
+    spark: "pyspark.sql.SparkSession" = None,  # noqa
 ) -> int:
     """Delete all transactions in the Elasticsearch transactions index that were deleted in the source database and
     transactions that were recently modified and no longer have an `action_date` on or after FY2008 (2007-10-01), since
@@ -506,7 +506,7 @@ def _gather_deleted_transaction_keys(
 
 def _gather_modified_transactions_pre_fy2008(
     config: dict,
-    spark: "pyspark.sql.SparkSession" = None,
+    spark: "pyspark.sql.SparkSession" = None,  # noqa
     transactions_table: str = "transaction_search",
     days_delta: int = 3,
 ) -> list:
@@ -605,7 +605,9 @@ def _check_awards_for_deletes(
 
 
 def _check_awards_for_pre_fy2008(
-    spark: "pyspark.sql.SparkSession" = None, awards_table: str = "award_search", days_delta: int = 3
+    spark: "pyspark.sql.SparkSession" = None,  # noqa
+    awards_table: str = "award_search",
+    days_delta: int = 3
 ) -> list:
     """Find all awards that have been modified in the last `days_delta` day(s) that have an `action_date` prior to
         2007-10-01 (FY 2008) and delete them from Elasticsearch if they're present.
