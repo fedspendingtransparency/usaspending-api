@@ -67,5 +67,5 @@ class Command(BaseCommand):
             ON spt.awarding_office_code = o.office_code
 
             WHERE sat.awarding_office_code IS NOT NULL
-                AND spt.awarding_office_code IS NOT NULL
+                OR spt.awarding_office_code IS NOT NULL
         """
