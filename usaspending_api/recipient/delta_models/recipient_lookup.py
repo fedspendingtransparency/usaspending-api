@@ -38,11 +38,11 @@ unlinked_recipient_anti_join = """
     that are not linked to transactions */
     LEFT JOIN raw.published_fabs pf
     ON {sam_recipient_alias}.uei = pf.uei
-        AND {sam_recipient_alias}.uei = pf.ultimate_parent_uei
+        OR {sam_recipient_alias}.uei = pf.ultimate_parent_uei
 
     LEFT JOIN raw.detached_award_procurement dap
     ON {sam_recipient_alias}.uei = dap.awardee_or_recipient_uei
-        AND {sam_recipient_alias}.uei = dap.ultimate_parent_uei
+        OR {sam_recipient_alias}.uei = dap.ultimate_parent_uei
 """
 
 unlinked_recipient_anti_join_where_predicates = """
