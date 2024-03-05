@@ -7,6 +7,7 @@ from django.db import IntegrityError, connections, transaction
 from usaspending_api.common.operations_reporter import OpsReporter
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.references.models.office import Office
+from django import db
 
 logger = logging.getLogger("script")
 Reporter = OpsReporter(iso_start_datetime=datetime.now(timezone.utc).isoformat(), job_name="load_offices.py")
@@ -44,6 +45,14 @@ class Command(BaseCommand):
         logger.info(f"Loaded: {new_rec_count:,} records")
         logger.info("Committing transaction to database")
 
+        logger.info("Deleting all existing offices that are not linked to a transaction")
+        # Identify offices that do not correspond to any transactions, using only USAS DB
+        with db.connection.cursor() as cursor:
+            cursor.execute(self.usas_unlinked_offices_sql)
+            office_values = dictfetchall(broker_cursor)
+            for office_code in office_values["office_code"]:
+                Office.objects.filter(office_code=office_code).delete()
+
     @property
     def broker_fetch_sql(self):
         return f"""
@@ -56,6 +65,14 @@ class Command(BaseCommand):
                 o.contract_funding_office,
                 o.financial_assistance_awards_office,
                 o.financial_assistance_funding_office
+            FROM office o
+        """
+
+    @property
+    def usas_unlinked_offices_sql(self):
+        return """
+            SELECT DISTINCT o.office_code
+
             FROM office o
 
             /* Begin left anti joins to ensure we are not loading any offices
