@@ -778,7 +778,15 @@ def test_load_table_to_from_delta_for_award_search(
     )
 
     # Test the incremental copy back from Delta to Postgres
-    call_command("load_table_from_delta", "--delta-table", "award_search", "--incremental", incremental_threshold=2)
+    call_command(
+        "load_table_from_delta",
+        "--delta-table",
+        "award_search",
+        "--spark-s3-bucket",
+        s3_unittest_data_bucket,
+        "--incremental",
+        incremental_threshold=2,
+    )
 
     with psycopg2.connect(get_database_dsn_string()) as new_psycopg2_conn:
         with new_psycopg2_conn.cursor() as cursor:
