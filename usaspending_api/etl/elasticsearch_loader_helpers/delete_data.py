@@ -272,55 +272,11 @@ def delete_awards(
     deleted_tx_keys = _gather_deleted_transaction_keys(
         config, fabs_external_data_load_date_key, fpds_external_data_load_date_key
     )
-    # While extracting unique award keys, the lookup is on transactions and must match against the unique transaction id
-    award_keys = _lookup_deleted_award_keys(
-        client,
-        ES_TRANSACTIONS_UNIQUE_KEY_FIELD,
-        [*deleted_tx_keys],
-        config,
-        settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX + "-*",
-    )
-    award_keys = list(set(award_keys))  # get unique list of keys
-    award_keys_len = len(award_keys)
-    if award_keys_len == 0:
-        logger.info(
-            format_log(
-                "No related awards found for deletion. Zero transaction docs found from which to derive awards.",
-                action="Delete",
-                name=task_id,
-            )
-        )
-    else:
-        logger.info(
-            format_log(f"Derived {award_keys_len} award keys from transactions in ES", action="Delete", name=task_id)
-        )
 
-    deleted_award_kvs = _check_awards_for_deletes(award_keys, spark)
-    deleted_award_kvs_len = len(deleted_award_kvs)
-    if deleted_award_kvs_len == 0:
-        # In this case it could be an award's transaction was deleted, but not THE LAST transaction of that award.
-        # i.e. the deleted transaction's "siblings" are still in the DB and therefore the parent award should remain
-        logger.info(
-            format_log(
-                "No related awards found will be deleted. All derived awards are still in the DB.",
-                action="Delete",
-                name=task_id,
-            )
-        )
-    else:
-        logger.info(
-            format_log(
-                f"{deleted_award_kvs_len} awards no longer in the DB will be removed from ES",
-                action="Delete",
-                name=task_id,
-            )
-        )
-
-    # Recently updated awards with an `action_date` of pre-FY2008
+    # Recently updated awards (updated within the last 3 days) with an `action_date` before 2007-10-01
     updated_awards_pre_fy2008 = _check_awards_for_pre_fy2008(spark)
     updated_awards_pre_fy2008_len = len(updated_awards_pre_fy2008)
     if updated_awards_pre_fy2008_len == 0:
-        # In this case, none of the recently updated awards have an `action_date` before 2007-10-01.
         logger.info(
             format_log(
                 "None of the recently updated awards have an action_date prior to FY2008.",
@@ -344,8 +300,50 @@ def delete_awards(
             )
         )
 
-    if deleted_award_kvs_len == 0 and updated_awards_pre_fy2008_len == 0 and award_keys_len == 0:
-        # No awards to delete from ES due to transactions or action_date changes
+    # While extracting unique award keys, the lookup is on transactions and must match against the unique transaction id
+    award_keys = _lookup_deleted_award_keys(
+        client,
+        ES_TRANSACTIONS_UNIQUE_KEY_FIELD,
+        [*deleted_tx_keys],
+        config,
+        settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX + "-*",
+    )
+    award_keys = list(set(award_keys))  # get unique list of keys
+    award_keys_len = len(award_keys)
+    if award_keys_len == 0:
+        logger.info(
+            format_log(
+                "No related awards found for deletion. Zero transaction docs found from which to derive awards.",
+                action="Delete",
+                name=task_id,
+            )
+        )
+    else:
+        logger.info(
+            format_log(f"Derived {award_keys_len} award keys from transactions in ES", action="Delete", name=task_id)
+        )
+        deleted_award_kvs = _check_awards_for_deletes(award_keys, spark)
+        deleted_award_kvs_len = len(deleted_award_kvs)
+        if deleted_award_kvs_len == 0:
+            # In this case it could be an award's transaction was deleted, but not THE LAST transaction of that award.
+            # i.e. the deleted transaction's "siblings" are still in the DB and therefore the parent award should remain
+            logger.info(
+                format_log(
+                    "No related awards found will be deleted. All derived awards are still in the DB.",
+                    action="Delete",
+                    name=task_id,
+                )
+            )
+        else:
+            logger.info(
+                format_log(
+                    f"{deleted_award_kvs_len} awards no longer in the DB will be removed from ES",
+                    action="Delete",
+                    name=task_id,
+                )
+            )
+
+    if award_keys_len == 0 and updated_awards_pre_fy2008_len == 0:
         return 0
 
     values_list = list(

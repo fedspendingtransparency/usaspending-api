@@ -3,7 +3,6 @@ from datetime import datetime
 import pytest
 from model_bakery import baker
 
-from usaspending_api.common.helpers.spark_helpers import configure_spark_session
 from usaspending_api.etl.elasticsearch_loader_helpers.delete_data import (
     _check_awards_for_pre_fy2008,
 )
@@ -48,7 +47,7 @@ def test_find_modified_awards_before_fy2008_non_spark(award_search_data_fixture)
 
 
 @pytest.mark.django_db(transaction=True)
-def test_find_modified_awards_before_fy2008_spark(award_search_data_fixture):
+def test_find_modified_awards_before_fy2008_spark(spark, award_search_data_fixture):
     """Test that we can find any awards that PREVIOUSLY had an `action_date` on or after FY2008 (2007-10-01), but have
     have been recently updated to have an `action_date` before FY2008 now.
     """
@@ -62,16 +61,6 @@ def test_find_modified_awards_before_fy2008_spark(award_search_data_fixture):
         update_date=datetime.now(),
     )
 
-    extra_conf = {
-        # Config for Delta Lake tables and SQL. Need these to keep Dela table metadata in the metastore
-        "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension",
-        "spark.sql.catalog.spark_catalog": "org.apache.spark.sql.delta.catalog.DeltaCatalog",
-        # See comment below about old date and time values cannot be parsed without these
-        "spark.sql.legacy.parquet.datetimeRebaseModeInWrite": "LEGACY",  # for dates at/before 1900
-        "spark.sql.legacy.parquet.int96RebaseModeInWrite": "LEGACY",  # for timestamps at/before 1900
-        "spark.sql.jsonGenerator.ignoreNullFields": "false",  # keep nulls in our json
-    }
-    spark = configure_spark_session(**extra_conf)
     recently_modified_awards_before_fy2008 = _check_awards_for_pre_fy2008(spark)
 
     assert len(recently_modified_awards_before_fy2008) == 1
