@@ -17,7 +17,6 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         logger.info("Starting data load: Broker Static Data")
 
-        # External Data Load Date
         logger.info("Loading External Data Types...")
         new_rows = 0
 
@@ -32,7 +31,6 @@ class Command(BaseCommand):
 
         logger.info("Stored External Data Types, {} records added".format(new_rows))
 
-        # Delta Table Load Version
         logger.info("Loading Delta Table Load Versions...")
         new_rows = 0
 
