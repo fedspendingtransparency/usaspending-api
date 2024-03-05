@@ -2,6 +2,7 @@
 
 NOTE: Uses Pytest Fixtures from immediate parent conftest.py: usaspending_api/etl/tests/conftest.py
 """
+
 import json
 
 import psycopg2
@@ -16,6 +17,7 @@ from pytest import mark
 from django.conf import settings
 from django.core.management import call_command
 from django.db import connection, connections, transaction, models
+from usaspending_api.broker.helpers.last_load_date import update_last_load_date
 
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.etl.award_helpers import update_awards
@@ -26,6 +28,21 @@ from usaspending_api.etl.management.commands.create_delta_table import (
 from usaspending_api.etl.tests.integration.test_model import TestModel, TEST_TABLE_POSTGRES, TEST_TABLE_SPEC
 from usaspending_api.recipient.models import RecipientLookup
 from usaspending_api.tests.conftest_spark import create_and_load_all_delta_tables
+from model_bakery import baker
+from copy import deepcopy
+from datetime import datetime, date, timedelta, timezone
+
+_NEW_ASSIST = {
+    "published_fabs_id": 6,
+    "afa_generated_unique": "award_assist_0004_trans_0001",
+    "is_active": True,
+    "unique_award_key": "award_assist_0004",
+}
+_NEW_PROCURE = {
+    "detached_award_procurement_id": 6,
+    "detached_award_proc_unique": "award_procure_0004_trans_0001",
+    "unique_award_key": "award_procure_0004",
+}
 
 
 def _handle_string_cast(val: str) -> Union[str, dict, list]:
@@ -276,6 +293,26 @@ def verify_delta_table_loaded_from_delta(
 def test_load_table_to_from_delta_for_recipient_lookup(
     spark, s3_unittest_data_bucket, populate_usas_data_and_recipients_from_broker, hive_unittest_metastore_db
 ):
+    # Since changes to the source tables will go to the Postgres table first, use model baker to add new rows to
+    # Postgres table, and then push the updated table to Delta.
+    last_load_datetime = datetime.now(timezone.utc)
+    insert_datetime = last_load_datetime + timedelta(minutes=-15)
+    assist = deepcopy(_NEW_ASSIST)
+    assist.update(
+        {"action_date": insert_datetime.isoformat(), "created_at": insert_datetime, "updated_at": insert_datetime}
+    )
+    baker.make("transactions.SourceAssistanceTransaction", **assist)
+    update_last_load_date("source_assistance_transaction", last_load_datetime)
+    load_delta_table_from_postgres("published_fabs", s3_unittest_data_bucket)
+
+    procure = deepcopy(_NEW_PROCURE)
+    procure.update(
+        {"action_date": insert_datetime.isoformat(), "created_at": insert_datetime, "updated_at": insert_datetime}
+    )
+    baker.make("transactions.SourceProcurementTransaction", **procure)
+    update_last_load_date("source_procurement_transaction", last_load_datetime)
+    load_delta_table_from_postgres("detached_award_procurement", s3_unittest_data_bucket)
+
     ignore_fields = ["id", "update_date"]
     tables_to_load = ["sam_recipient", "transaction_fabs", "transaction_fpds", "transaction_normalized"]
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
@@ -388,6 +425,26 @@ def test_load_table_to_delta_for_published_fabs(spark, s3_unittest_data_bucket, 
 def test_load_table_to_from_delta_for_recipient_profile(
     spark, s3_unittest_data_bucket, populate_usas_data_and_recipients_from_broker, hive_unittest_metastore_db
 ):
+    # Since changes to the source tables will go to the Postgres table first, use model baker to add new rows to
+    # Postgres table, and then push the updated table to Delta.
+    last_load_datetime = datetime.now(timezone.utc)
+    insert_datetime = last_load_datetime + timedelta(minutes=-15)
+    assist = deepcopy(_NEW_ASSIST)
+    assist.update(
+        {"action_date": insert_datetime.isoformat(), "created_at": insert_datetime, "updated_at": insert_datetime}
+    )
+    baker.make("transactions.SourceAssistanceTransaction", **assist)
+    update_last_load_date("source_assistance_transaction", last_load_datetime)
+    load_delta_table_from_postgres("published_fabs", s3_unittest_data_bucket)
+
+    procure = deepcopy(_NEW_PROCURE)
+    procure.update(
+        {"action_date": insert_datetime.isoformat(), "created_at": insert_datetime, "updated_at": insert_datetime}
+    )
+    baker.make("transactions.SourceProcurementTransaction", **procure)
+    update_last_load_date("source_procurement_transaction", last_load_datetime)
+    load_delta_table_from_postgres("detached_award_procurement", s3_unittest_data_bucket)
+
     tables_to_load = [
         "awards",
         "financial_accounts_by_awards",
@@ -587,6 +644,26 @@ def test_load_table_to_from_delta_for_recipient_profile_testing(
 def test_load_table_to_from_delta_for_transaction_search(
     spark, s3_unittest_data_bucket, populate_usas_data_and_recipients_from_broker, hive_unittest_metastore_db
 ):
+    # Since changes to the source tables will go to the Postgres table first, use model baker to add new rows to
+    # Postgres table, and then push the updated table to Delta.
+    last_load_datetime = datetime.now(timezone.utc)
+    insert_datetime = last_load_datetime + timedelta(minutes=-15)
+    assist = deepcopy(_NEW_ASSIST)
+    assist.update(
+        {"action_date": insert_datetime.isoformat(), "created_at": insert_datetime, "updated_at": insert_datetime}
+    )
+    baker.make("transactions.SourceAssistanceTransaction", **assist)
+    update_last_load_date("source_assistance_transaction", last_load_datetime)
+    load_delta_table_from_postgres("published_fabs", s3_unittest_data_bucket)
+
+    procure = deepcopy(_NEW_PROCURE)
+    procure.update(
+        {"action_date": insert_datetime.isoformat(), "created_at": insert_datetime, "updated_at": insert_datetime}
+    )
+    baker.make("transactions.SourceProcurementTransaction", **procure)
+    update_last_load_date("source_procurement_transaction", last_load_datetime)
+    load_delta_table_from_postgres("detached_award_procurement", s3_unittest_data_bucket)
+
     tables_to_load = [
         "awards",
         "financial_accounts_by_awards",
@@ -687,6 +764,26 @@ def test_load_table_to_from_delta_for_transaction_search_alt_db_and_name(
 def test_load_table_to_from_delta_for_award_search(
     spark, s3_unittest_data_bucket, populate_usas_data_and_recipients_from_broker, hive_unittest_metastore_db
 ):
+    # Since changes to the source tables will go to the Postgres table first, use model baker to add new rows to
+    # Postgres table, and then push the updated table to Delta.
+    last_load_datetime = datetime.now(timezone.utc)
+    insert_datetime = last_load_datetime + timedelta(minutes=-15)
+    assist = deepcopy(_NEW_ASSIST)
+    assist.update(
+        {"action_date": insert_datetime.isoformat(), "created_at": insert_datetime, "updated_at": insert_datetime}
+    )
+    baker.make("transactions.SourceAssistanceTransaction", **assist)
+    update_last_load_date("source_assistance_transaction", last_load_datetime)
+    load_delta_table_from_postgres("published_fabs", s3_unittest_data_bucket)
+
+    procure = deepcopy(_NEW_PROCURE)
+    procure.update(
+        {"action_date": insert_datetime.isoformat(), "created_at": insert_datetime, "updated_at": insert_datetime}
+    )
+    baker.make("transactions.SourceProcurementTransaction", **procure)
+    update_last_load_date("source_procurement_transaction", last_load_datetime)
+    load_delta_table_from_postgres("detached_award_procurement", s3_unittest_data_bucket)
+
     tables_to_load = [
         "awards",
         "financial_accounts_by_awards",
