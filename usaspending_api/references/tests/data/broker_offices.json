@@ -28,27 +28,5 @@
       "financial_assistance_awards_office" : false,
       "financial_assistance_funding_office" : false
     }
-  ],
-  "SELECT awarding_office_code from source_procurement_transaction": [
-    {
-      "awarding_office_code" : "033103"
-    },
-    {
-      "awarding_office_code" : "040897"
-    },
-    {
-      "awarding_office_code" : "040ADV"
-    }
-  ],
-  "SELECT awarding_office_code from source_assistance_transaction": [
-    {
-      "awarding_office_code" : "033103"
-    },
-    {
-      "awarding_office_code" : "040897"
-    },
-    {
-      "awarding_office_code" : "040ADV"
-    }
   ]
 }

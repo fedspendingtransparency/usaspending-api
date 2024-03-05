@@ -47,7 +47,7 @@ class Command(BaseCommand):
 
         logger.info("Deleting all existing offices that are not linked to a transaction")
         # Identify offices that do not correspond to any transactions, using only USAS DB
-        with db.connection.cursor() as cursor:
+        with connections[DEFAULT_DB_ALIAS].cursor() as cursor:
             cursor.execute(self.usas_unlinked_offices_sql)
             office_values = dictfetchall(broker_cursor)
             for office_code in office_values:
