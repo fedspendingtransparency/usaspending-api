@@ -50,8 +50,8 @@ class Command(BaseCommand):
         with db.connection.cursor() as cursor:
             cursor.execute(self.usas_unlinked_offices_sql)
             office_values = dictfetchall(broker_cursor)
-            for office_code in office_values["office_code"]:
-                Office.objects.filter(office_code=office_code).delete()
+            for office_code in office_values:
+                Office.objects.filter(office_code=office_code["office_code"]).delete()
 
     @property
     def broker_fetch_sql(self):
