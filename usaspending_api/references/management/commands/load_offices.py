@@ -7,7 +7,6 @@ from django.db import DEFAULT_DB_ALIAS, IntegrityError, connections, transaction
 from usaspending_api.common.operations_reporter import OpsReporter
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.references.models.office import Office
-from django.db import connection
 
 logger = logging.getLogger("script")
 Reporter = OpsReporter(iso_start_datetime=datetime.now(timezone.utc).isoformat(), job_name="load_offices.py")
@@ -51,6 +50,7 @@ class Command(BaseCommand):
             cursor.execute(self.usas_unlinked_offices_sql)
             office_values = dictfetchall(broker_cursor)
             for office_code in office_values:
+                print(office_code)
                 Office.objects.filter(office_code=office_code["office_code"]).delete()
 
     @property
@@ -83,6 +83,6 @@ class Command(BaseCommand):
             LEFT JOIN source_procurement_transaction spt
             ON spt.awarding_office_code = o.office_code
 
-            WHERE sat.awarding_office_code IS NOT NULL
-                OR spt.awarding_office_code IS NOT NULL
+            WHERE sat.awarding_office_code IS NULL
+                AND spt.awarding_office_code IS NULL
         """
