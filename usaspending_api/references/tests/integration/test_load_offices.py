@@ -10,8 +10,11 @@ from usaspending_api.etl.broker_etl_helpers import PhonyCursor
 from usaspending_api.references.models import Office
 
 
-_NEW_ASSIST = {"awarding_office_code": "040ADV", "awarding_office_code": "040897", "awarding_office_code": "033103"}
-_NEW_PROCURE = {"awarding_office_code": "040ADV", "awarding_office_code": "040897", "awarding_office_code": "033103"}
+_NEW_ASSIST_PROCURE = {
+    "awarding_office_code": "040ADV",
+    "awarding_office_code": "040897",
+    "awarding_office_code": "033103",
+}
 
 
 @pytest.mark.django_db
@@ -31,10 +34,10 @@ def test_load_offices(monkeypatch):
 
     # Since changes to the source tables will go to the Postgres table first, use model baker to add new rows to
     # Postgres table, and then push the updated table to Delta.
-    assist = deepcopy(_NEW_ASSIST)
+    assist = deepcopy(_NEW_ASSIST_PROCURE)
     baker.make("transactions.SourceAssistanceTransaction", **assist)
 
-    procure = deepcopy(_NEW_PROCURE)
+    procure = deepcopy(_NEW_ASSIST_PROCURE)
     baker.make("transactions.SourceProcurementTransaction", **procure)
 
     call_command("load_offices")
