@@ -41,7 +41,7 @@ _NEW_PROCURE = {
     "detached_award_procurement_id": 6,
     "detached_award_proc_unique": "award_procure_0004_trans_0001",
     "unique_award_key": "award_procure_0004",
-    "uei": "CTKJDNGYLM97",
+    "awardee_or_recipient_uei": "CTKJDNGYLM97",
 }
 
 
