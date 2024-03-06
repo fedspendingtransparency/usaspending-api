@@ -1,5 +1,4 @@
-{"SELECT office_code, office_name, sub_tier_code, agency_code, contract_awards_office, contract_funding_office, financial_assistance_awards_office, financial_assistance_funding_office FROM office": [
-    {
+{"SELECT office_code, office_name, sub_tier_code, agency_code, contract_awards_office, contract_funding_office, financial_assistance_awards_office, financial_assistance_funding_office FROM office": [    {
       "office_code" : "033103",
       "office_name" : "LIBRARY OF CONGRESS FEDLINK",
       "sub_tier_code" : "0300",
