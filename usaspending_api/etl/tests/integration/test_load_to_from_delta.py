@@ -302,7 +302,6 @@ def test_load_table_to_from_delta_for_recipient_lookup(
         {"action_date": insert_datetime.isoformat(), "created_at": insert_datetime, "updated_at": insert_datetime}
     )
     baker.make("transactions.SourceAssistanceTransaction", **assist)
-    update_last_load_date("source_assistance_transaction", last_load_datetime)
     load_delta_table_from_postgres("published_fabs", s3_unittest_data_bucket)
 
     procure = deepcopy(_NEW_PROCURE)
@@ -310,7 +309,6 @@ def test_load_table_to_from_delta_for_recipient_lookup(
         {"action_date": insert_datetime.isoformat(), "created_at": insert_datetime, "updated_at": insert_datetime}
     )
     baker.make("transactions.SourceProcurementTransaction", **procure)
-    update_last_load_date("source_procurement_transaction", last_load_datetime)
     load_delta_table_from_postgres("detached_award_procurement", s3_unittest_data_bucket)
 
     ignore_fields = ["id", "update_date"]
@@ -434,7 +432,6 @@ def test_load_table_to_from_delta_for_recipient_profile(
         {"action_date": insert_datetime.isoformat(), "created_at": insert_datetime, "updated_at": insert_datetime}
     )
     baker.make("transactions.SourceAssistanceTransaction", **assist)
-    update_last_load_date("source_assistance_transaction", last_load_datetime)
     load_delta_table_from_postgres("published_fabs", s3_unittest_data_bucket)
 
     procure = deepcopy(_NEW_PROCURE)
@@ -442,7 +439,6 @@ def test_load_table_to_from_delta_for_recipient_profile(
         {"action_date": insert_datetime.isoformat(), "created_at": insert_datetime, "updated_at": insert_datetime}
     )
     baker.make("transactions.SourceProcurementTransaction", **procure)
-    update_last_load_date("source_procurement_transaction", last_load_datetime)
     load_delta_table_from_postgres("detached_award_procurement", s3_unittest_data_bucket)
 
     tables_to_load = [
@@ -653,7 +649,6 @@ def test_load_table_to_from_delta_for_transaction_search(
         {"action_date": insert_datetime.isoformat(), "created_at": insert_datetime, "updated_at": insert_datetime}
     )
     baker.make("transactions.SourceAssistanceTransaction", **assist)
-    update_last_load_date("source_assistance_transaction", last_load_datetime)
     load_delta_table_from_postgres("published_fabs", s3_unittest_data_bucket)
 
     procure = deepcopy(_NEW_PROCURE)
@@ -661,7 +656,6 @@ def test_load_table_to_from_delta_for_transaction_search(
         {"action_date": insert_datetime.isoformat(), "created_at": insert_datetime, "updated_at": insert_datetime}
     )
     baker.make("transactions.SourceProcurementTransaction", **procure)
-    update_last_load_date("source_procurement_transaction", last_load_datetime)
     load_delta_table_from_postgres("detached_award_procurement", s3_unittest_data_bucket)
 
     tables_to_load = [
@@ -773,7 +767,6 @@ def test_load_table_to_from_delta_for_award_search(
         {"action_date": insert_datetime.isoformat(), "created_at": insert_datetime, "updated_at": insert_datetime}
     )
     baker.make("transactions.SourceAssistanceTransaction", **assist)
-    update_last_load_date("source_assistance_transaction", last_load_datetime)
     load_delta_table_from_postgres("published_fabs", s3_unittest_data_bucket)
 
     procure = deepcopy(_NEW_PROCURE)
@@ -781,7 +774,6 @@ def test_load_table_to_from_delta_for_award_search(
         {"action_date": insert_datetime.isoformat(), "created_at": insert_datetime, "updated_at": insert_datetime}
     )
     baker.make("transactions.SourceProcurementTransaction", **procure)
-    update_last_load_date("source_procurement_transaction", last_load_datetime)
     load_delta_table_from_postgres("detached_award_procurement", s3_unittest_data_bucket)
 
     tables_to_load = [
