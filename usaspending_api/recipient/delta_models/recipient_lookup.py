@@ -219,7 +219,6 @@ recipient_lookup_load_sql_string_list = [
 
             JOIN temp_recipient_filter rf
             ON rf.recipient_hash = s.recipient_hash
-                OR rf.parent_recipient_hash = s.recipient_hash
         ),
         latest_tx AS (
             SELECT
@@ -305,8 +304,7 @@ recipient_lookup_load_sql_string_list = [
                 ) s
 
                 JOIN temp_recipient_filter rf
-                ON rf.recipient_hash = s.recipient_hash
-                    OR rf.parent_recipient_hash = s.recipient_hash
+                ON rf.parent_recipient_hash = s.recipient_hash
         ),
         latest_tx_parent AS (
             SELECT
@@ -392,7 +390,6 @@ recipient_lookup_load_sql_string_list = [
 
                 JOIN temp_recipient_filter rf
                 ON rf.recipient_hash = s.recipient_hash
-                    OR rf.parent_recipient_hash = s.recipient_hash
         ),
         latest_tx_no_name AS (
             SELECT
@@ -477,8 +474,7 @@ recipient_lookup_load_sql_string_list = [
                 ) s
 
                 JOIN temp_recipient_filter rf
-                ON rf.recipient_hash = s.recipient_hash
-                    OR rf.parent_recipient_hash = s.recipient_hash
+                ON rf.parent_recipient_hash = s.recipient_hash
         ),
         latest_tx_parent_no_name AS (
             SELECT
