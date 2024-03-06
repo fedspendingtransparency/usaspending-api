@@ -17,7 +17,6 @@ from pytest import mark
 from django.conf import settings
 from django.core.management import call_command
 from django.db import connection, connections, transaction, models
-from usaspending_api.broker.helpers.last_load_date import update_last_load_date
 
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.etl.award_helpers import update_awards
