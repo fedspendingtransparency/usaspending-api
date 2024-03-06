@@ -300,10 +300,6 @@ recipient_lookup_load_sql_string_list = [
                         ) AS row_num
                     FROM int.sam_recipient sr
 
-                    JOIN temp_recipient_filter rf
-                    ON rf.recipient_hash = sr.recipient_hash
-                        OR rf.parent_recipient_hash = sr.recipient_hash
-
                     WHERE COALESCE(sr.ultimate_parent_uei, sr.ultimate_parent_unique_ide) IS NOT NULL
                         AND sr.ultimate_parent_legal_enti IS NOT NULL
                 ) s
@@ -390,10 +386,6 @@ recipient_lookup_load_sql_string_list = [
                         ) AS row_num
                     FROM int.sam_recipient sr
 
-                    JOIN temp_recipient_filter rf
-                    ON rf.recipient_hash = sr.recipient_hash
-                        OR rf.parent_recipient_hash = sr.recipient_hash
-
                     WHERE COALESCE(sr.uei, sr.awardee_or_recipient_uniqu) IS NOT NULL
                         AND sr.legal_business_name IS NULL
                 ) s
@@ -479,10 +471,6 @@ recipient_lookup_load_sql_string_list = [
                                 sr.update_date DESC NULLS FIRST
                         ) AS row_num
                     FROM int.sam_recipient sr
-
-                    JOIN temp_recipient_filter rf
-                    ON rf.recipient_hash = sr.recipient_hash
-                        OR rf.parent_recipient_hash = sr.recipient_hash
 
                     WHERE COALESCE(sr.ultimate_parent_uei, sr.ultimate_parent_unique_ide) IS NOT NULL
                         AND sr.ultimate_parent_legal_enti IS NULL
