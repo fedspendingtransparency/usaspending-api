@@ -135,7 +135,15 @@ recipient_lookup_load_sql_string_list = [
                     )),
                     '^(\.{{{{8}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{12}}}})$',
                     '\$1-\$2-\$3-\$4-\$5'
-                ) AS recipient_hash
+                ) AS recipient_hash,
+                REGEXP_REPLACE(
+                    MD5(UPPER(
+                        CASE WHEN sr.ultimate_parent_uei IS NOT NULL THEN CONCAT('uei-', sr.ultimate_parent_uei)
+                        ELSE CONCAT('duns-', COALESCE(sr.ultimate_parent_unique_ide, '')) END
+                    )),
+                    '^(\.{{{{8}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{12}}}})$',
+                    '\$1-\$2-\$3-\$4-\$5'
+                ) AS parent_recipient_hash
 
             FROM int.sam_recipient sr
 
@@ -205,6 +213,7 @@ recipient_lookup_load_sql_string_list = [
 
             JOIN recipient_filter rf
             ON rf.recipient_hash = sr.recipient_hash
+                OR rf.parent_recipient_hash = sr.recipient_hash
 
             WHERE COALESCE(sr.uei, sr.awardee_or_recipient_uniqu) IS NOT NULL
                 AND sr.legal_business_name IS NOT NULL
@@ -288,6 +297,7 @@ recipient_lookup_load_sql_string_list = [
 
             JOIN recipient_filter rf
             ON rf.recipient_hash = sr.recipient_hash
+                OR rf.parent_recipient_hash = sr.recipient_hash
 
             WHERE COALESCE(sr.ultimate_parent_uei, sr.ultimate_parent_unique_ide) IS NOT NULL
                 AND sr.ultimate_parent_legal_enti IS NOT NULL
@@ -370,6 +380,7 @@ recipient_lookup_load_sql_string_list = [
 
             JOIN recipient_filter rf
             ON rf.recipient_hash = sr.recipient_hash
+                OR rf.parent_recipient_hash = sr.recipient_hash
 
             WHERE COALESCE(sr.uei, sr.awardee_or_recipient_uniqu) IS NOT NULL
                 AND sr.legal_business_name IS NULL
@@ -452,6 +463,7 @@ recipient_lookup_load_sql_string_list = [
 
             JOIN recipient_filter rf
             ON rf.recipient_hash = sr.recipient_hash
+                OR rf.parent_recipient_hash = sr.recipient_hash
 
             WHERE COALESCE(sr.ultimate_parent_uei, sr.ultimate_parent_unique_ide) IS NOT NULL
                 AND sr.ultimate_parent_legal_enti IS NULL
