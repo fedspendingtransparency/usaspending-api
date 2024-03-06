@@ -33,22 +33,6 @@ TEMP_RECIPIENT_LOOKUP_COLUMNS = {
     **{k: v for k, v in RPT_RECIPIENT_LOOKUP_DELTA_COLUMNS.items()},
 }
 
-unlinked_recipient_anti_join = """
-    /* Begin left anti joins to ensure we are not loading any recipients
-    that are not linked to transactions */
-    LEFT JOIN raw.published_fabs pf
-    ON {sam_recipient_alias}.uei = pf.uei
-        OR {sam_recipient_alias}.uei = pf.ultimate_parent_uei
-
-    LEFT JOIN raw.detached_award_procurement dap
-    ON {sam_recipient_alias}.uei = dap.awardee_or_recipient_uei
-        OR {sam_recipient_alias}.uei = dap.ultimate_parent_uei
-"""
-
-unlinked_recipient_anti_join_where_predicates = """
-AND NOT (pf.published_fabs_id IS NULL
-OR dap.detached_award_procurement_id IS NULL)
-"""
 
 recipient_lookup_create_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
@@ -139,6 +123,28 @@ recipient_lookup_load_sql_string_list = [
     )
     """,
     # -----
+    # Identify recipients that should be ingested
+    # -----
+    rf""" CREATE OR REPLACE TEMPORARY VIEW temp_recipient_filter AS (
+        SELECT
+            DISTINCT sr.recipient_hash
+
+            FROM int.sam_recipient sr
+
+            /* Begin left anti joins to ensure we are not loading any recipients
+            that are not linked to transactions */
+            LEFT JOIN raw.published_fabs pf
+            ON sr.uei = pf.uei
+                OR sr.uei = pf.ultimate_parent_uei
+
+            LEFT JOIN raw.detached_award_procurement dap
+            ON sr.uei = dap.awardee_or_recipient_uei
+                OR sr.uei = dap.ultimate_parent_uei
+
+            WHERE pf.published_fabs_id IS NOT NULL
+                OR dap.detached_award_procurement_id IS NOT NULL
+    )""",
+    # -----
     # Populate the temporary_restock_recipient_lookup table
     # -----
     rf"""
@@ -189,11 +195,11 @@ recipient_lookup_load_sql_string_list = [
                 ) AS row_num
             FROM int.sam_recipient sr
 
-            {unlinked_recipient_anti_join.format(sam_recipient_alias='sr')}
+            JOIN recipient_filter rf
+            ON rf.recipient_hash = sr.recipient_hash
 
             WHERE COALESCE(sr.uei, sr.awardee_or_recipient_uniqu) IS NOT NULL
                 AND sr.legal_business_name IS NOT NULL
-                {unlinked_recipient_anti_join_where_predicates}
         ),
         latest_tx AS (
             SELECT
@@ -272,11 +278,11 @@ recipient_lookup_load_sql_string_list = [
                 ) AS row_num
             FROM int.sam_recipient sr
 
-            {unlinked_recipient_anti_join.format(sam_recipient_alias='sr')}
+            JOIN recipient_filter rf
+            ON rf.recipient_hash = sr.recipient_hash
 
             WHERE COALESCE(sr.ultimate_parent_uei, sr.ultimate_parent_unique_ide) IS NOT NULL
                 AND sr.ultimate_parent_legal_enti IS NOT NULL
-                {unlinked_recipient_anti_join_where_predicates}
         ),
         latest_tx_parent AS (
             SELECT
@@ -354,11 +360,11 @@ recipient_lookup_load_sql_string_list = [
                 ) AS row_num
             FROM int.sam_recipient sr
 
-            {unlinked_recipient_anti_join.format(sam_recipient_alias='sr')}
+            JOIN recipient_filter rf
+            ON rf.recipient_hash = sr.recipient_hash
 
             WHERE COALESCE(sr.uei, sr.awardee_or_recipient_uniqu) IS NOT NULL
                 AND sr.legal_business_name IS NULL
-                {unlinked_recipient_anti_join_where_predicates}
         ),
         latest_tx_no_name AS (
             SELECT
@@ -436,11 +442,11 @@ recipient_lookup_load_sql_string_list = [
                 ) AS row_num
             FROM int.sam_recipient sr
 
-            {unlinked_recipient_anti_join.format(sam_recipient_alias='sr')}
+            JOIN recipient_filter rf
+            ON rf.recipient_hash = sr.recipient_hash
 
             WHERE COALESCE(sr.ultimate_parent_uei, sr.ultimate_parent_unique_ide) IS NOT NULL
                 AND sr.ultimate_parent_legal_enti IS NULL
-                {unlinked_recipient_anti_join_where_predicates}
         ),
         latest_tx_parent_no_name AS (
             SELECT
@@ -639,6 +645,7 @@ recipient_lookup_load_sql_string_list = [
     # Cleanup the temporary views;
     # this is mostly for test cases as the views are session based
     # -----
+    "DROP VIEW temp_recipient_filter",
     "DROP VIEW temp_transaction_recipients_view",
     "DROP VIEW temp_collect_recipients_view",
     "DROP VIEW temp_stale_recipients_removed_view",
