@@ -35,11 +35,13 @@ _NEW_ASSIST = {
     "afa_generated_unique": "award_assist_0004_trans_0001",
     "is_active": True,
     "unique_award_key": "award_assist_0004",
+    "uei": "CTKJDNGYLM97",
 }
 _NEW_PROCURE = {
     "detached_award_procurement_id": 6,
     "detached_award_proc_unique": "award_procure_0004_trans_0001",
     "unique_award_key": "award_procure_0004",
+    "uei": "CTKJDNGYLM97",
 }
 
 
