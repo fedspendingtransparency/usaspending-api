@@ -211,7 +211,7 @@ recipient_lookup_load_sql_string_list = [
                 ) AS row_num
             FROM int.sam_recipient sr
 
-            JOIN recipient_filter rf
+            JOIN temp_recipient_filter rf
             ON rf.recipient_hash = sr.recipient_hash
                 OR rf.parent_recipient_hash = sr.recipient_hash
 
@@ -295,7 +295,7 @@ recipient_lookup_load_sql_string_list = [
                 ) AS row_num
             FROM int.sam_recipient sr
 
-            JOIN recipient_filter rf
+            JOIN temp_recipient_filter rf
             ON rf.recipient_hash = sr.recipient_hash
                 OR rf.parent_recipient_hash = sr.recipient_hash
 
@@ -378,7 +378,7 @@ recipient_lookup_load_sql_string_list = [
                 ) AS row_num
             FROM int.sam_recipient sr
 
-            JOIN recipient_filter rf
+            JOIN temp_recipient_filter rf
             ON rf.recipient_hash = sr.recipient_hash
                 OR rf.parent_recipient_hash = sr.recipient_hash
 
@@ -461,7 +461,7 @@ recipient_lookup_load_sql_string_list = [
                 ) AS row_num
             FROM int.sam_recipient sr
 
-            JOIN recipient_filter rf
+            JOIN temp_recipient_filter rf
             ON rf.recipient_hash = sr.recipient_hash
                 OR rf.parent_recipient_hash = sr.recipient_hash
 
