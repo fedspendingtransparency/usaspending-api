@@ -127,7 +127,15 @@ recipient_lookup_load_sql_string_list = [
     # -----
     rf""" CREATE OR REPLACE TEMPORARY VIEW temp_recipient_filter AS (
         SELECT
-            DISTINCT sr.recipient_hash
+            DISTINCT
+                REGEXP_REPLACE(
+                    MD5(UPPER(
+                        CASE WHEN sr.uei IS NOT NULL THEN CONCAT('uei-', sr.uei)
+                        ELSE CONCAT('duns-', COALESCE(sr.awardee_or_recipient_uniqu, '')) END
+                    )),
+                    '^(\.{{{{8}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{12}}}})$',
+                    '\$1-\$2-\$3-\$4-\$5'
+                ) AS recipient_hash
 
             FROM int.sam_recipient sr
 
