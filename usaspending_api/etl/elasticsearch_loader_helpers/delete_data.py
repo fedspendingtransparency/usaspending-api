@@ -272,6 +272,7 @@ def delete_awards(
     deleted_tx_keys = _gather_deleted_transaction_keys(
         config, fabs_external_data_load_date_key, fpds_external_data_load_date_key
     )
+    deleted_award_kvs_len = 0
 
     # Recently updated awards (updated within the last 3 days) with an `action_date` before 2007-10-01
     updated_awards_pre_fy2008 = _check_awards_for_pre_fy2008(spark)
@@ -324,26 +325,27 @@ def delete_awards(
         )
         deleted_award_kvs = _check_awards_for_deletes(award_keys, spark)
         deleted_award_kvs_len = len(deleted_award_kvs)
-        if deleted_award_kvs_len == 0:
-            # In this case it could be an award's transaction was deleted, but not THE LAST transaction of that award.
-            # i.e. the deleted transaction's "siblings" are still in the DB and therefore the parent award should remain
-            logger.info(
-                format_log(
-                    "No related awards found will be deleted. All derived awards are still in the DB.",
-                    action="Delete",
-                    name=task_id,
-                )
-            )
-        else:
-            logger.info(
-                format_log(
-                    f"{deleted_award_kvs_len} awards no longer in the DB will be removed from ES",
-                    action="Delete",
-                    name=task_id,
-                )
-            )
 
-    if award_keys_len == 0 and updated_awards_pre_fy2008_len == 0:
+    if deleted_award_kvs_len == 0:
+        # In this case it could be an award's transaction was deleted, but not THE LAST transaction of that award.
+        # i.e. the deleted transaction's "siblings" are still in the DB and therefore the parent award should remain
+        logger.info(
+            format_log(
+                "No related awards found will be deleted. All derived awards are still in the DB.",
+                action="Delete",
+                name=task_id,
+            )
+        )
+    else:
+        logger.info(
+            format_log(
+                f"{deleted_award_kvs_len} awards no longer in the DB will be removed from ES",
+                action="Delete",
+                name=task_id,
+            )
+        )
+
+    if deleted_award_kvs_len == 0 and updated_awards_pre_fy2008_len == 0:
         return 0
 
     values_list = list(
@@ -570,6 +572,7 @@ def _check_awards_for_deletes(
     id_list: list, spark: "pyspark.sql.SparkSession" = None, awards_table: str = "vw_awards"  # noqa
 ) -> list:
     """Takes a list of award key values and returns them if they are NOT found in the awards DB table"""
+
     formatted_value_ids = ""
     for x in id_list:
         formatted_value_ids += "('" + x + "'),"
