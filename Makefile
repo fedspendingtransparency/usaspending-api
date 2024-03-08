@@ -25,7 +25,7 @@ endif
 # default ENV_CODE to lcl if not set
 ENV_CODE ?= lcl
 # default version if not set in .env or an env var
-PYTHON_VERSION ?= 3.10.0
+PYTHON_VERSION ?= 3.10.13
 venv_name := usaspending-api
 docker_compose_file := docker-compose.yml
 dockerfile_for_spark := Dockerfile.spark
@@ -151,7 +151,7 @@ clean-all: confirm-clean-all  ## Remove all tmp artifacts and artifacts created 
 ifeq ($(strip ${dry-run}),'false')
 	rm -f .python-version
 	rm -rf .venv
-	@git clean -xfd --exclude='\.env' --exclude='\.envrc' --exclude='\.idea/' --exclude='spark-warehouse/'
+	@git clean -xfd --exclude='\.env' --exclude='\.envrc' --exclude='\.idea/' --exclude='spark-warehouse/' --exclude='\.vscode/'
 	deactivate || true
 	#if command -v deactivate &> /dev/null; then deactivate; fi;
 else  # this is a dry-run, spit out what would be removed

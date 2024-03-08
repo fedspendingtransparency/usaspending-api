@@ -195,12 +195,12 @@ def django_db_setup(
     ``django.test.utils.setup_databases``, which is the actual method that needs to be wrapped and extended.
     """
     from django.test.utils import TimeKeeper, setup_databases, teardown_databases
-    from pytest_django.fixtures import _disable_native_migrations
+    from pytest_django.fixtures import _disable_migrations
 
     setup_databases_args = {}
 
     if not django_db_use_migrations:
-        _disable_native_migrations()
+        _disable_migrations()
 
     if django_db_keepdb and not django_db_createdb:
         setup_databases_args["keepdb"] = True
