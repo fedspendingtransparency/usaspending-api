@@ -399,11 +399,34 @@ def delete_transactions(
         config, fabs_external_data_load_date_key, fpds_external_data_load_date_key
     )
     if len(deleted_tx_keys) > 0:
+        logger.info(
+            format_log(
+                f"{len(deleted_tx_keys)} transactions no longer in the DB will be removed from ES", action="Delete"
+            )
+        )
         tx_keys_to_delete.extend(deleted_tx_keys.keys())
 
     pre_fy2008_transactions = _gather_modified_transactions_pre_fy2008(config, spark)
     if len(pre_fy2008_transactions) > 0:
+        logger.info(
+            format_log(
+                f"{len(pre_fy2008_transactions)} recently updated transactions have an action_date prior to FY2008.",
+                action="Delete",
+            )
+        )
+        logger.info(
+            format_log(
+                f"These {len(pre_fy2008_transactions)} pre-FY2008 transactions will be deleted from ES, if present.",
+                action="Delete",
+            )
+        )
         tx_keys_to_delete.extend([v for d in pre_fy2008_transactions for v in d.values()])
+    else:
+        logger.info(
+            format_log(
+                "None of the recently updated transactions have an action_date prior to FY2008.", action="Delete"
+            )
+        )
 
     if len(tx_keys_to_delete) == 0:
         logger.info(format_log("Nothing to delete", action="Delete"))
