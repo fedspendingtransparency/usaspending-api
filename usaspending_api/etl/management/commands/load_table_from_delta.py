@@ -274,7 +274,7 @@ class Command(BaseCommand):
             qualified_temp_table = self._prepare_temp_table(postgres_temp_schema, temp_table_suffix)
 
             # Read from Delta
-            df = spark.table(source_delta_table)
+            df = spark.table(self.qualified_source_delta_table)
 
             # Reset the sequence before load for a table if it exists
             if self.options["reset_sequence"] and self.table_spec.get("postgres_seq_name"):
