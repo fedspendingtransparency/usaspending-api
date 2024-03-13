@@ -76,11 +76,15 @@ class Command(BaseCommand):
             that are not linked to transactions */
             LEFT JOIN raw.source_assistance_transaction sat
             ON sat.awarding_office_code = o.office_code
+                OR sat.funding_office_code = o.office_code
 
             LEFT JOIN raw.source_procurement_transaction spt
             ON spt.awarding_office_code = o.office_code
+                OR spt.funding_office_code = o.office_code
 
             WHERE spt.awarding_office_code IS NULL
                 AND sat.awarding_office_code IS NULL
+                AND spt.funding_office_code IS NULL
+                AND sat.funding_office_code IS NULL
         )
         """
