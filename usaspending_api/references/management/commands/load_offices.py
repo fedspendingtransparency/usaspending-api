@@ -67,20 +67,20 @@ class Command(BaseCommand):
     @property
     def usas_unlinked_offices_sql(self):
         return """
-        DELETE FROM office WHERE office_code IN (
+        DELETE FROM public.office WHERE office_code IN (
             SELECT DISTINCT o.office_code
 
-            FROM office o
+            FROM public.office o
 
             /* Begin left anti joins to ensure we are not loading any offices
             that are not linked to transactions */
-            LEFT JOIN source_assistance_transaction sat
+            LEFT JOIN raw.source_assistance_transaction sat
             ON sat.awarding_office_code = o.office_code
 
-            LEFT JOIN source_procurement_transaction spt
+            LEFT JOIN raw.source_procurement_transaction spt
             ON spt.awarding_office_code = o.office_code
 
-            WHERE spt.awarding_office_code IS NOT NULL
-                OR sat.awarding_office_code IS NOT NULL
+            WHERE spt.awarding_office_code IS NULL
+                AND sat.awarding_office_code IS NULL
         )
         """
