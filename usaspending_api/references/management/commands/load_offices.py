@@ -56,6 +56,5 @@ class Command(BaseCommand):
                 contract_funding_office,
                 financial_assistance_awards_office,
                 financial_assistance_funding_office
-            FROM
-                office
+            FROM office
         """

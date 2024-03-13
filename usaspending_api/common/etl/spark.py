@@ -583,7 +583,8 @@ def write_csv_file(
     spark: SparkSession,
     df: DataFrame,
     parts_dir: str,
-    max_rows_per_merged_file=EXCEL_ROW_LIMIT,
+    num_partitions: int,
+    max_records_per_file=EXCEL_ROW_LIMIT,
     overwrite=True,
     logger=None,
 ) -> int:
@@ -591,10 +592,11 @@ def write_csv_file(
     Args:
         spark: passed-in active SparkSession
         df: the DataFrame wrapping the data source to be dumped to CSV.
-        parts_dir: Path to dir that will contain the outputted parts files from partitions
+            parts_dir: Path to dir that will contain the outputted parts files from partitions
+        num_partitions: Indicates the number of partitions to use when writing the Dataframe
         overwrite: Whether to replace the file CSV files if they already exist by that name
-        max_rows_per_merged_file: Suggestion to Spark of how many records to put in each written CSV file part,
-        if it will end up writing multiple files.
+        max_records_per_file: Suggestion to Spark of how many records to put in each written CSV file part,
+            if it will end up writing multiple files.
         logger: The logger to use. If one note provided (e.g. to log to console or stdout) the underlying JVM-based
             Logger will be extracted from the ``spark`` ``SparkSession`` and used as the logger.
     Returns:
@@ -610,9 +612,9 @@ def write_csv_file(
     start = time.time()
     logger.info(f"Writing source data DataFrame to csv part files for file {parts_dir}...")
     df_record_count = df.count()
-    df.write.options(
+    df.coalesce(num_partitions).write.options(
         # NOTE: this is a suggestion, to be used by Spark if partitions yield multiple files
-        maxRecordsPerFile=max_rows_per_merged_file,
+        maxRecordsPerFile=max_records_per_file,
     ).csv(
         path=parts_dir,
         header=False,
@@ -632,22 +634,21 @@ def hadoop_copy_merge(
     spark: SparkSession,
     parts_dir: str,
     header: str,
-    max_rows_per_merged_file=EXCEL_ROW_LIMIT,
+    part_merge_group_size: int,
     logger=None,
     file_format="csv",
 ) -> List[str]:
     """PySpark impl of Hadoop 2.x copyMerge() (deprecated in Hadoop 3.x)
     Merges files from a provided input directory and then redivides them
-        into multiple files based on a provided maximum row count parameter.
+        into multiple files based on merge group size.
     Args:
         spark: passed-in active SparkSession
         parts_dir: Path to the dir that contains the input parts files. The parts dir name
             determines the name of the merged files. Parts_dir cannot have a trailing slash.
         header: A comma-separated list of field names, to be placed as the first row of every final CSV file.
             Individual part files must NOT therefore be created with their own header.
-        max_rows_per_merged_file: Final CSV data will be subdivided into numbered files so that there is not more than
-            this many rows in any file written. Only if the total data exceeds this value will multiple files be
-                created with a pattern of ``{merged_file}_N.{extension}`` with N starting at 1.
+        part_merge_group_size: Final CSV data will be subdivided into numbered files. This indicates how many part files
+            should be combined into a numbered file.
         logger: The logger to use. If one note provided (e.g. to log to console or stdout) the underlying JVM-based
             Logger will be extracted from the ``spark`` ``SparkSession`` and used as the logger.
         file_format: The format of the part files and the format of the final merged file, e.g. "csv"
@@ -656,12 +657,6 @@ def hadoop_copy_merge(
         A list of file paths where each element in the list denotes a path to
             a merged file that was generated during the copy merge.
     """
-    #   If the interim output was written to disk per-partition,
-    #       how many rows were at most in each partition and therefore part file?
-    #       e.g. could be based on ``numPartitions`` param given to ``spark.jdbc.read(...)``. You need to calculate
-    #       this ahead of time as best as possible; it's used to determine how the part-files are combined or divided to
-    #       build up the final files that go in the .zip.
-    rows_per_part = CONFIG.SPARK_PARTITION_ROWS
     overwrite = True
     if not logger:
         logger = get_jvm_logger(spark)
@@ -712,9 +707,8 @@ def hadoop_copy_merge(
         return [merged_file_path]
 
     part_files.sort(key=lambda f: str(f))  # put parts in order by part number for merging
-    parts_batch_size = max_rows_per_merged_file // rows_per_part
     paths_to_merged_files = []
-    for parts_file_group in _merge_grouper(part_files, parts_batch_size):
+    for parts_file_group in _merge_grouper(part_files, part_merge_group_size):
         part_suffix = f"_{str(parts_file_group.part).zfill(2)}" if parts_file_group.part else ""
         partial_merged_file = f"{parts_dir}.partial{part_suffix}"
         partial_merged_file_path = hadoop.fs.Path(partial_merged_file)
