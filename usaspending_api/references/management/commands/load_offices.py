@@ -44,11 +44,6 @@ class Command(BaseCommand):
         logger.info(f"Loaded: {new_rec_count:,} records")
         logger.info("Committing transaction to database")
 
-        logger.info(f"Deleting all existing offices that are not linked to a transaction in {DEFAULT_DB_ALIAS}")
-        # Identify offices that do not correspond to any transactions, using only USAS DB
-        with connections[DEFAULT_DB_ALIAS].cursor() as cursor:
-            cursor.execute(self.usas_unlinked_offices_sql)
-
     @property
     def broker_fetch_sql(self):
         return f"""
@@ -62,29 +57,4 @@ class Command(BaseCommand):
                 financial_assistance_awards_office,
                 financial_assistance_funding_office
             FROM office
-        """
-
-    @property
-    def usas_unlinked_offices_sql(self):
-        return """
-        DELETE FROM public.office WHERE office_code IN (
-            SELECT DISTINCT o.office_code
-
-            FROM public.office o
-
-            /* Begin left anti joins to ensure we are not loading any offices
-            that are not linked to transactions */
-            LEFT JOIN raw.source_assistance_transaction sat
-            ON sat.awarding_office_code = o.office_code
-                OR sat.funding_office_code = o.office_code
-
-            LEFT JOIN raw.source_procurement_transaction spt
-            ON spt.awarding_office_code = o.office_code
-                OR spt.funding_office_code = o.office_code
-
-            WHERE spt.awarding_office_code IS NULL
-                AND sat.awarding_office_code IS NULL
-                AND spt.funding_office_code IS NULL
-                AND sat.funding_office_code IS NULL
-        )
         """
