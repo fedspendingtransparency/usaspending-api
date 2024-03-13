@@ -44,7 +44,7 @@ class Command(BaseCommand):
         logger.info(f"Loaded: {new_rec_count:,} records")
         logger.info("Committing transaction to database")
 
-        logger.info("Deleting all existing offices that are not linked to a transaction")
+        logger.info(f"Deleting all existing offices that are not linked to a transaction in {DEFAULT_DB_ALIAS}")
         # Identify offices that do not correspond to any transactions, using only USAS DB
         with connections[DEFAULT_DB_ALIAS].cursor() as cursor:
             cursor.execute(self.usas_unlinked_offices_sql)
