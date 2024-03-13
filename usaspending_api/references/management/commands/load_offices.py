@@ -2,7 +2,7 @@ import logging
 from datetime import datetime, timezone
 
 from django.core.management.base import BaseCommand
-from django.db import DEFAULT_DB_ALIAS, IntegrityError, connections, transaction
+from django.db import IntegrityError, connections, transaction
 
 from usaspending_api.common.operations_reporter import OpsReporter
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
