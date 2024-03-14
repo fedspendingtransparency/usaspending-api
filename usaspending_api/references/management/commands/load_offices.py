@@ -58,3 +58,33 @@ class Command(BaseCommand):
                 financial_assistance_funding_office
             FROM office
         """
+
+    @property
+    def usas_unlinked_offices_sql(self):
+        return """
+        DROP TABLE IF EXISTS temp_unique_office_codes_from_source;
+        CREATE TEMPORARY TABLE temp_unique_office_codes_from_source (
+            awarding_office_code TEXT,
+            funding_office_code TEXT,
+            UNIQUE (awarding_office_code, funding_office_code)
+        );
+        INSERT INTO temp_unique_office_codes_from_source
+        SELECT * FROM (
+                    SELECT DISTINCT awarding_office_code, funding_office_code FROM source_assistance_transaction
+                    UNION
+                    SELECT DISTINCT awarding_office_code, funding_office_code FROM source_procurement_transaction
+                ) s;
+        CREATE INDEX awarding_office_code_idx_temp ON temp_unique_office_codes_from_source (awarding_office_code);
+        CREATE INDEX funding_office_code_idx_temp ON temp_unique_office_codes_from_source (funding_office_code);
+        DELETE FROM office WHERE office_code IN (
+            SELECT DISTINCT office_code
+            FROM office AS o
+            LEFT JOIN temp_unique_office_codes_from_source s
+            ON s.awarding_office_code = o.office_code
+                OR s.funding_office_code = o.office_code
+
+            WHERE s.awarding_office_code IS NULL
+                AND s.funding_office_code IS NULL
+        );
+        DROP TABLE IF EXISTS temp_unique_office_codes_from_source;
+        """
