@@ -145,9 +145,11 @@ class PublishDates(PaginationMixin, AgencyBase):
             # If not a valid period for the fiscal year fallback to the agency name
             results = sorted(
                 self.get_agency_data(),
-                key=lambda x: x["periods"][pub_sort]["submission_dates"]["publication_date"]
-                if pub_sort is not None
-                else x["agency_name"],
+                key=lambda x: (
+                    x["periods"][pub_sort]["submission_dates"]["publication_date"]
+                    if pub_sort is not None
+                    else x["agency_name"]
+                ),
                 reverse=(self.pagination.sort_order == "desc"),
             )
         else:
