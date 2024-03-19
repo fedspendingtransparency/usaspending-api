@@ -12,6 +12,7 @@ Adding new imports to this module may inadvertently introduce a dependency that 
 
 As it stands, even if new imports are added to the modules it already imports, it could lead to a problem.
 """
+
 import boto3
 import gzip
 import logging
@@ -63,7 +64,6 @@ def _download_and_copy(
     gzipped: bool,
     partition_prefix: str = "",
 ):
-
     """Download a CSV file from S3 then COPY it into a Postgres table using the SQL bulk COPY command. The CSV should
     not include a header row with column names
     """

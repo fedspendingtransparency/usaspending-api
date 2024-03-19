@@ -14,6 +14,7 @@ Purpose:
     And populate FABS transaction table columns:
         - place_of_performance_scope
 """
+
 import logging
 import math
 import psycopg2

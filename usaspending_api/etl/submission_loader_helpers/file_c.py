@@ -69,7 +69,7 @@ class PublishedAwardFinancialIterator:
 
 
 class PublishedAwardFinancial:
-    """ Abstract away the messy details of how we retrieve and prepare published_award_financial rows. """
+    """Abstract away the messy details of how we retrieve and prepare published_award_financial rows."""
 
     def __init__(self, submission_attributes, db_cursor, chunk_size):
         self.submission_attributes = submission_attributes

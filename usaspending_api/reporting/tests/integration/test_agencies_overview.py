@@ -26,7 +26,7 @@ assurance_statement_3 = (
 
 @pytest.fixture
 def setup_test_data(db):
-    """ Insert data into DB for testing """
+    """Insert data into DB for testing"""
     baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_fiscal_year=CURRENT_FISCAL_YEAR,

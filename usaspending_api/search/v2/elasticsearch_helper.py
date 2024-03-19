@@ -27,7 +27,7 @@ def swap_keys(dictionary_):
 
 
 def format_for_frontend(response):
-    """ calls reverse key from TRANSACTIONS_LOOKUP """
+    """calls reverse key from TRANSACTIONS_LOOKUP"""
     response = [result["_source"] for result in response]
     return [swap_keys(result) for result in response]
 

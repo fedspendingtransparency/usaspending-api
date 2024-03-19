@@ -500,7 +500,7 @@ class Command(BaseCommand):
             raise SystemExit(1)
 
     def dependent_views(self, cursor):
-        """ Detects views that are dependent on the table to be swapped. """
+        """Detects views that are dependent on the table to be swapped."""
         detect_dep_view_sql = f"""
             SELECT
                 dependent_ns.nspname AS dep_view_schema,
@@ -622,9 +622,11 @@ class Command(BaseCommand):
             f"(source_suffix='{self.source_suffix}', dest_suffix='{self.dest_suffix}')"
         )
         temp_constr_specs = {
-            re.sub(rf"{self.source_suffix}$", self.dest_suffix, val["constraint_name"], count=1)
-            if val["is_nullable"]
-            else val["check_clause"]: {
+            (
+                re.sub(rf"{self.source_suffix}$", self.dest_suffix, val["constraint_name"], count=1)
+                if val["is_nullable"]
+                else val["check_clause"]
+            ): {
                 "constraint_type": val["constraint_type"],
                 "check_clause": val["check_clause"],
                 "unique_constraint_name": val["unique_constraint_name"],
@@ -632,9 +634,7 @@ class Command(BaseCommand):
             for val in temp_constraints
         }
         curr_constr_specs = {
-            val["constraint_name"]
-            if val["is_nullable"]
-            else val["check_clause"]: {
+            val["constraint_name"] if val["is_nullable"] else val["check_clause"]: {
                 "constraint_type": val["constraint_type"],
                 "check_clause": val["check_clause"],
                 "unique_constraint_name": val["unique_constraint_name"],
