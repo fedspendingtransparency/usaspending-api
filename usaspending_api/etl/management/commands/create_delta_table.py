@@ -1,4 +1,5 @@
 from django.core.management.base import BaseCommand
+from pyspark.sql import SparkSession
 
 from usaspending_api.config import CONFIG
 from usaspending_api.common.helpers.spark_helpers import (
@@ -63,7 +64,7 @@ class Command(BaseCommand):
         spark_created_by_command = False
         if not spark:
             spark_created_by_command = True
-            spark = configure_spark_session(**extra_conf, spark_context=spark)
+            spark = configure_spark_session(**extra_conf, spark_context=spark)  # type: SparkSession
 
         # Setup Logger
         logger = get_jvm_logger(spark)

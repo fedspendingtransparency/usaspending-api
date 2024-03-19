@@ -26,7 +26,6 @@ The process:
 
 Note that this loader ALWAYS performs a full reload.
 """
-
 import logging
 import os
 import psycopg2

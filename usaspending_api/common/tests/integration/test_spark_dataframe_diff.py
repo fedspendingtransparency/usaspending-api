@@ -1,5 +1,4 @@
 """Integration tests exercising the usaspending_api.common.etl.spark.py ETL utility functions"""
-
 import random
 import uuid
 

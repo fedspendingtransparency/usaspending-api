@@ -144,9 +144,9 @@ def spending_over_time_test_data():
                 award_id=award_id,
                 awarding_agency_id=awarding_agency_id,
                 business_categories=[f"business_category_1_{transaction_id}", f"business_category_2_{transaction_id}"],
-                transaction_description=(
-                    f"This is a test description {transaction_id}" if transaction_id % 2 == 0 else None
-                ),
+                transaction_description=f"This is a test description {transaction_id}"
+                if transaction_id % 2 == 0
+                else None,
                 federal_action_obligation=federal_action_obligation,
                 generated_pragmatic_obligation=federal_action_obligation,
                 award_amount=total_obligation,
@@ -212,9 +212,9 @@ def spending_over_time_test_data():
                 award_id=award_id,
                 awarding_agency_id=awarding_agency_id,
                 business_categories=[f"business_category_1_{transaction_id}", f"business_category_2_{transaction_id}"],
-                transaction_description=(
-                    f"This is a test description {transaction_id}" if transaction_id % 2 == 0 else None
-                ),
+                transaction_description=f"This is a test description {transaction_id}"
+                if transaction_id % 2 == 0
+                else None,
                 federal_action_obligation=federal_action_obligation,
                 generated_pragmatic_obligation=federal_action_obligation,
                 award_amount=total_obligation,

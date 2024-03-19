@@ -58,8 +58,8 @@ def test_logging_trace_spans(datadog_tracer: ddtrace.Tracer, caplog: LogCaptureF
         test_msg = f"a test message was logged during {test}"
         logger.warning(test_msg)
         # do things
-        x = 2**5
-        thirty_two_squares = [m for m in map(lambda y: y**2, range(x))]
+        x = 2 ** 5
+        thirty_two_squares = [m for m in map(lambda y: y ** 2, range(x))]
         assert thirty_two_squares[-1] == 961
     assert test_msg in caplog.text, "caplog.text did not seem to capture logging output during test"
     assert f"SPAN#{trace_id}" in caplog.text, "span marker not found in logging output"
@@ -87,8 +87,8 @@ def test_drop_key_on_trace_spans(datadog_tracer: ddtrace.Tracer, caplog: LogCapt
         test_msg = f"a test message was logged during {test}"
         logger.warning(test_msg)
         # do things
-        x = 2**5
-        thirty_two_squares = [m for m in map(lambda y: y**2, range(x))]
+        x = 2 ** 5
+        thirty_two_squares = [m for m in map(lambda y: y ** 2, range(x))]
         assert thirty_two_squares[-1] == 961
 
         # Drop this span so it is not sent to the server, and not logged by the trace logger
@@ -106,7 +106,7 @@ def test_drop_key_on_trace_spans(datadog_tracer: ddtrace.Tracer, caplog: LogCapt
         test_msg2 = f"a second test message was logged during {test}"
         logger.warning(test_msg2)
         # do things
-        x = 2**7
+        x = 2 ** 7
 
     assert test_msg in caplog.text, "caplog.text did not seem to capture logging output during test"
     assert f"SPAN#{trace_id1}" not in caplog.text, "span marker still logged when should have been dropped"
@@ -201,7 +201,7 @@ def _do_things_in_subproc(subproc_test_msg, q: mp.Queue):
         q.put(span_ids, block=True, timeout=5)
         logging.getLogger(f"{test}_logger").warning(subproc_test_msg)
         # do things
-        x = 2**5
-        thirty_two_squares = [m for m in map(lambda y: y**2, range(x))]
+        x = 2 ** 5
+        thirty_two_squares = [m for m in map(lambda y: y ** 2, range(x))]
         assert thirty_two_squares[-1] == 961
         logging.getLogger(f"{test}_logger").warning("DONE doing things in subproc")

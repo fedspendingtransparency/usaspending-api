@@ -4,7 +4,6 @@ Boilerplate helper functions for setup and configuration of the Spark environmen
 NOTE: This is distinguished from the usaspending_api.common.etl.spark module, which holds Spark utility functions that
 could be used as stages or steps of an ETL job (aka "data pipeline")
 """
-
 import inspect
 import logging
 import os
@@ -24,6 +23,7 @@ from pyspark.find_spark_home import _find_spark_home
 from pyspark.java_gateway import launch_gateway
 from pyspark.serializers import read_int, UTF8Deserializer
 from pyspark.sql import SparkSession
+from pyspark.sql.conf import RuntimeConfig
 from typing import Sequence, Set
 
 from usaspending_api.awards.delta_models.awards import AWARDS_COLUMNS
@@ -247,7 +247,7 @@ def configure_spark_session(
     # Now that the SparkSession was created, check whether certain provided config values were ignored if given a
     # pre-existing SparkContext, and error-out if so
     if spark_context:
-        built_conf = spark.conf
+        built_conf = spark.conf  # type: RuntimeConfig
         provided_conf_keys = [item[0] for item in conf.getAll()]
         non_modifiable_conf = [k for k in provided_conf_keys if not built_conf.isModifiable(k)]
         if non_modifiable_conf:
@@ -402,6 +402,7 @@ def get_broker_jdbc_url():
 
 
 def get_es_config():  # pragma: no cover -- will be used eventually
+
     """
     Get a base template of Elasticsearch configuration settings tailored to the specific environment setup being
     used
@@ -653,24 +654,24 @@ def clean_postgres_sql_for_spark_sql(
     """
     # Spark SQL does not like double-quoted identifiers
     spark_sql = postgres_sql_str.replace('"', "")
-    spark_sql = re.sub(rf"CREATE VIEW", rf"CREATE OR REPLACE TEMP VIEW", spark_sql, flags=re.IGNORECASE | re.MULTILINE)
+    spark_sql = re.sub(fr"CREATE VIEW", fr"CREATE OR REPLACE TEMP VIEW", spark_sql, flags=re.IGNORECASE | re.MULTILINE)
 
     # Treat these type casts as string in Spark SQL
     # NOTE: If replacing a ::JSON cast, be sure that the string data coming from delta is treated as needed (e.g. as
     # JSON or converted to JSON or a dict) on the receiving side, and not just left as a string
-    spark_sql = re.sub(rf"::text|::json", rf"::string", spark_sql, flags=re.IGNORECASE | re.MULTILINE)
+    spark_sql = re.sub(fr"::text|::json", fr"::string", spark_sql, flags=re.IGNORECASE | re.MULTILINE)
 
     if global_temp_view_proxies:
         for vw in global_temp_view_proxies:
             spark_sql = re.sub(
-                rf"FROM\s+{vw}", rf"FROM global_temp.{vw}", spark_sql, flags=re.IGNORECASE | re.MULTILINE
+                fr"FROM\s+{vw}", fr"FROM global_temp.{vw}", spark_sql, flags=re.IGNORECASE | re.MULTILINE
             )
             spark_sql = re.sub(
-                rf"JOIN\s+{vw}", rf"JOIN global_temp.{vw}", spark_sql, flags=re.IGNORECASE | re.MULTILINE
+                fr"JOIN\s+{vw}", fr"JOIN global_temp.{vw}", spark_sql, flags=re.IGNORECASE | re.MULTILINE
             )
 
     if identifier_replacements:
         for old, new in identifier_replacements.items():
-            spark_sql = re.sub(rf"(\s+|^){old}(\s+|$)", rf" {new} ", spark_sql, flags=re.IGNORECASE | re.MULTILINE)
+            spark_sql = re.sub(fr"(\s+|^){old}(\s+|$)", fr" {new} ", spark_sql, flags=re.IGNORECASE | re.MULTILINE)
 
     return spark_sql

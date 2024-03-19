@@ -3,7 +3,6 @@ spark components (docker-compose container services) are up and running and inte
 
 NOTE: Uses Pytest Fixtures from immediate parent conftest.py: usaspending_api/etl/tests/conftest.py
 """
-
 import logging
 import random
 import sys

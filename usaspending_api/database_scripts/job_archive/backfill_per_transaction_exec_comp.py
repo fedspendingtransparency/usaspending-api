@@ -16,7 +16,6 @@ Purpose:
         - officer_{1,5}_name
         - officer_{1,5}_amount
 """
-
 import logging
 import math
 import psycopg2

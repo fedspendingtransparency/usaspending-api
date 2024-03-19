@@ -16,7 +16,6 @@ Purpose:
     And ensure transactions are included in monthly archive delta files
         - transaction_delta
 """
-
 import logging
 import math
 import psycopg2

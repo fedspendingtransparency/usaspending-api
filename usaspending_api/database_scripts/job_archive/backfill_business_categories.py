@@ -19,7 +19,6 @@ Life expectancy:
     would recommend keeping it around for a few additional sprints for reference.
 
 """
-
 import asyncio
 import asyncpg
 import logging

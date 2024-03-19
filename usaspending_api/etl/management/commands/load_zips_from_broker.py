@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from django.core.management import BaseCommand, call_command
+from pyspark.sql import SparkSession
 
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
 from usaspending_api.common.etl.spark import create_ref_temp_views
@@ -48,7 +49,7 @@ class Command(BaseCommand):
         spark_created_by_command = False
         if not spark:
             spark_created_by_command = True
-            spark = configure_spark_session(**extra_conf, spark_context=spark)
+            spark = configure_spark_session(**extra_conf, spark_context=spark)  # type: SparkSession
 
         # Setup Logger
         logger = get_jvm_logger(spark)

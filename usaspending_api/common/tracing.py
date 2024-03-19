@@ -3,7 +3,6 @@ Module for Application Performance Monitoring and distributed tracing tools and 
 
 Specifically leveraging the Datadog tracing client.
 """
-
 import logging
 
 from ddtrace import tracer

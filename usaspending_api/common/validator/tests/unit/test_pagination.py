@@ -1,7 +1,6 @@
 """
 Some sanity checks for the pre-built TinyShield PAGINATION rules.
 """
-
 import pytest
 
 from copy import deepcopy

@@ -38,7 +38,7 @@ class FiscalYear(Func):
 
 
 class FiscalYearAndQuarter(Func):
-    """Generates a fiscal year and quarter string along the lines of FY2019Q1."""
+    """ Generates a fiscal year and quarter string along the lines of FY2019Q1. """
 
     function = "EXTRACT"
     template = (
@@ -49,7 +49,7 @@ class FiscalYearAndQuarter(Func):
 
 
 class CFDAs(Func):
-    """Generates the CFDAs string from the text array of JSON strings of cfdas."""
+    """ Generates the CFDAs string from the text array of JSON strings of cfdas. """
 
     function = "array_to_string"
     template = (

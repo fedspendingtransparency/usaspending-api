@@ -26,7 +26,6 @@ Account Breakdown by Award (C file):
            same FY that have TOA != 0
         2. Group by Federal Account
 """
-
 from datetime import timezone, datetime
 
 from django.db.models import (

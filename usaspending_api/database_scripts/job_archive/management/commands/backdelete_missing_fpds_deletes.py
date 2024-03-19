@@ -23,7 +23,6 @@ Life expectancy:
     BE SURE TO ALSO DELETE backdelete_missing_fpds_deletes.txt WHEN YOU DELETE THIS SCRIPT!
 
 """
-
 import logging
 
 from django.core.management.base import BaseCommand
