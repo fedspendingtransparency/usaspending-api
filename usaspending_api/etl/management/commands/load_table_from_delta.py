@@ -354,7 +354,7 @@ class Command(BaseCommand):
         temp_table_suffix_appendage = f"_{temp_table_suffix}"
         temp_table_name = f"{self.postgres_table_name}{temp_table_suffix_appendage}"
         qualified_temp_table = f"{temp_schema}.{temp_table_name}"
-
+        self.logger.info(temp_table_name)
         # Checking if the temp destination table already exists
         temp_dest_table_exists_sql = f"""
             SELECT EXISTS (
