@@ -13,6 +13,7 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, re_path
     2. Add a URL to urlpatterns:  re_path(r'^blog/', include('blog.urls'))
 """
+
 from django.conf.urls.static import static
 from django.urls import include, re_path
 from usaspending_api import settings

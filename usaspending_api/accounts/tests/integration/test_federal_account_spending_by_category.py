@@ -135,7 +135,7 @@ def test_federal_account_spending_by_category(client, financial_spending_data):
     assert "results" in resp.json()
     results = resp.json()["results"]
     assert len(results)
-    for (k, v) in results.items():
+    for k, v in results.items():
         assert isinstance(k, str)
         assert hasattr(v, "__pow__")  # is a number
 
