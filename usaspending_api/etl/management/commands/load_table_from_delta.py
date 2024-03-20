@@ -197,7 +197,7 @@ class Command(BaseCommand):
         else:
             temp_table_name = f"{delta_table_name}{temp_table_suffix_appendage}"
         temp_table = f"{temp_schema}.{temp_table_name}"
-
+        self.logger.info(temp_table_name)
         summary_msg = f"Copying delta table {delta_table} to a Postgres temp table {temp_table}."
         if postgres_table:
             summary_msg = f"{summary_msg} The temp table will be based on the postgres table {postgres_table}"
