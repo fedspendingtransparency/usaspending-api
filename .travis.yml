@@ -5,7 +5,7 @@ dist: bionic
 language: python
 
 python:
-  - '3.8'
+  - '3.10'
 
 cache: pip
 
@@ -55,7 +55,7 @@ jobs:
           - $TRAVIS_BUILD_DIR/usaspending_api.egg_info/
     before_install: ""  # override default to no-op
     install:
-    - travis_retry pip install setuptools==60.8.2
+    - travis_retry pip install setuptools==65.5.0
     - travis_retry pip install .[dev]
     - travis_retry pip install coveralls
     before_script: ""  # override default to no-op
