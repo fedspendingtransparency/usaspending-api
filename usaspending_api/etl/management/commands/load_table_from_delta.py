@@ -188,6 +188,7 @@ class Command(BaseCommand):
         source_delta_database = self.options["alt_delta_db"] or self.table_spec["destination_database"]
         self.qualified_source_delta_table = f"{source_delta_database}.{source_delta_table_name}"
         delta_table_load_version_key = self.table_spec["delta_table_load_version_key"]
+        incremental_delete_temp_schema = self.table_spec["incremental_delete_temp_schema"]
 
         # Postgres side
         postgres_schema = self.table_spec["swap_schema"]
@@ -207,7 +208,7 @@ class Command(BaseCommand):
 
         if self.options["incremental"]:
             # Validate that necessary TABLE_SPEC fields are present for incremental loads
-            if not ("incremental_delete_temp_schema" and "delta_table_load_version_key"):
+            if not (incremental_delete_temp_schema and delta_table_load_version_key):
                 self.logger.error(
                     f"TABLE_SPEC configuration for {source_delta_table} is not sufficient for incremental loads"
                 )
