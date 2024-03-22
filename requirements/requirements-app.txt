@@ -9,7 +9,7 @@ django-cors-headers==3.11.*
 django-debug-toolbar==3.4.*
 django-extensions==3.1.*
 django-spaghetti-and-meatballs==0.4.0
-Django==3.2.*
+Django==5.0.3
 django_cte==1.2.*
 djangorestframework==3.13.*
 docutils==0.15.2
