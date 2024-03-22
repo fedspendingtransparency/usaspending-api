@@ -1,3 +1,4 @@
+from argparse import ArgumentTypeError
 import json
 import logging
 import re
@@ -12,11 +13,13 @@ from usaspending_api.broker.helpers.last_delta_table_load_version import (
     get_last_delta_table_load_versions,
     update_last_live_load_version,
 )
+from usaspending_api.broker.lookups import LoadTrackerLoadTypeEnum, LoadTrackerStepEnum
 from usaspending_api.common.helpers.sql_helpers import (
     ordered_dictionary_fetcher,
     is_table_partitioned,
     get_parent_partitioned_table,
 )
+from usaspending_api.common.load_tracker import LoadTracker
 from usaspending_api.etl.management.commands.load_query_to_delta import TABLE_SPEC
 
 logger = logging.getLogger("script")
@@ -114,9 +117,18 @@ class Command(BaseCommand):
             "which old table you want to swap, just run a regular command instead, supplying --source-suffix and "
             "possibly --dest-suffix",
         )
+        parser.add_argument(
+            "--incremental",
+            action="store_true",
+            help="Instead of writing the full table to temporary tables in Postgres, use Change Data Feed to "
+            "determine changes, and write those to staging tables in Postgres.",
+        )
 
     def handle(self, *args, **options):
+        incremental_load = options["incremental"]
         is_undo = options["undo"]
+        self._validate_options(**options)
+        # TODO: PIPE-514 use strategies based on increment option
         if is_undo:
             old_table = self.get_most_recent_old_table(options["table"])
             old_suffix = re.sub(rf"{options['table']}_", "", old_table)
@@ -521,7 +533,7 @@ class Command(BaseCommand):
             raise SystemExit(1)
 
     def dependent_views(self, cursor):
-        """ Detects views that are dependent on the table to be swapped. """
+        """Detects views that are dependent on the table to be swapped."""
         detect_dep_view_sql = f"""
             SELECT
                 dependent_ns.nspname AS dep_view_schema,
@@ -643,9 +655,11 @@ class Command(BaseCommand):
             f"(source_suffix='{self.source_suffix}', dest_suffix='{self.dest_suffix}')"
         )
         temp_constr_specs = {
-            re.sub(rf"{self.source_suffix}$", self.dest_suffix, val["constraint_name"], count=1)
-            if val["is_nullable"]
-            else val["check_clause"]: {
+            (
+                re.sub(rf"{self.source_suffix}$", self.dest_suffix, val["constraint_name"], count=1)
+                if val["is_nullable"]
+                else val["check_clause"]
+            ): {
                 "constraint_type": val["constraint_type"],
                 "check_clause": val["check_clause"],
                 "unique_constraint_name": val["unique_constraint_name"],
@@ -653,9 +667,7 @@ class Command(BaseCommand):
             for val in temp_constraints
         }
         curr_constr_specs = {
-            val["constraint_name"]
-            if val["is_nullable"]
-            else val["check_clause"]: {
+            val["constraint_name"] if val["is_nullable"] else val["check_clause"]: {
                 "constraint_type": val["constraint_type"],
                 "check_clause": val["check_clause"],
                 "unique_constraint_name": val["unique_constraint_name"],
@@ -784,3 +796,20 @@ class Command(BaseCommand):
             if not old_table:
                 raise RuntimeError(f"Could not find any old tables matching: ~ {table_match} to undo the swap with.")
             return old_table
+
+    def _validate_options(self, options: dict) -> None:
+        """Validates the combination of options provided to this command. Will
+        raise an exception if any are invalid
+
+        Args:
+            options: The options
+        """
+        incremental_load = options["incremental"]
+        is_undo = options["undo"]
+        table = options["table"]
+        load_step = LoadTrackerStepEnum(f"{__name__}-{table}")
+        latest_load_tracker_load_type = LoadTracker.get_latest_load_tracker_type(load_step.value)
+        if latest_load_tracker_load_type == LoadTrackerLoadTypeEnum.INCREMENTAL_LOAD and is_undo:
+            raise ArgumentTypeError(
+                f"The load tracker table indicates the last load type for {table} was an {LoadTrackerLoadTypeEnum.INCREMENTAL_LOAD.value}. You cannot use the option undo when the last load was an {LoadTrackerLoadTypeEnum.INCREMENTAL_LOAD.value}"
+            )

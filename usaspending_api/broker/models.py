@@ -37,3 +37,38 @@ class DeltaTableLoadVersion(models.Model):
         managed = True
         # Schema is set to `public` in migration `0003_deltatableloadversion`
         db_table = "delta_table_load_version"
+
+
+class LoadTracker(models.Model):
+    load_tracker_id = models.AutoField(primary_key=True)
+    load_tracker_type = (
+        models.ForeignKey(null=False, on_delete=models.deletion.DO_NOTHING, to="broker.load_tracker_type"),
+    )
+    load_tracker_step = (
+        models.ForeignKey(null=False, on_delete=models.deletion.DO_NOTHING, to="broker.load_tracker_step"),
+    )
+    start_date_time = models.DateTimeField(auto_now=True, null=False)
+    end_date_time = models.DateTimeField(auto_now=True, null=True)
+    update_date = models.DateTimeField(auto_now=True, null=True)
+
+    class Meta:
+        managed = True
+        db_table = "load_tracker"
+
+
+class LoadTrackerStep(models.Model):
+    load_tracker_step_id = models.AutoField(primary_key=True)
+    name = models.TextField(blank=False, null=False)
+
+    class Meta:
+        managed = True
+        db_table = "load_tracker_step"
+
+
+class LoadTrackerLoadType(models.Model):
+    load_tracker_load_type_id = models.AutoField(primary_key=True)
+    name = models.TextField(blank=False, null=False)
+
+    class Meta:
+        managed = True
+        db_table = "load_tracker_load_type"
