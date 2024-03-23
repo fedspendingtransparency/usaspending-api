@@ -16,7 +16,6 @@ class Migration(migrations.Migration):
                 ("load_tracker_id", models.AutoField(primary_key=True, serialize=False)),
                 ("start_date_time", models.DateTimeField(auto_now=True)),
                 ("end_date_time", models.DateTimeField(auto_now=True, null=True)),
-                ("update_date", models.DateTimeField(auto_now=True, null=True)),
             ],
             options={
                 "db_table": "load_tracker",

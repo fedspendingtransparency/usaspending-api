@@ -23,6 +23,7 @@ from usaspending_api.common.load_tracker import LoadTracker
 from usaspending_api.etl.management.commands.load_query_to_delta import TABLE_SPEC
 
 logger = logging.getLogger("script")
+LOAD_STEP = __name__
 
 
 class Command(BaseCommand):
@@ -127,7 +128,18 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         incremental_load = options["incremental"]
         is_undo = options["undo"]
+        table = options["table"]
         self._validate_options(**options)
+        load_step = LoadTrackerStepEnum(f"{LOAD_STEP}-{table}")
+        if incremental_load:
+            load_type = LoadTrackerLoadTypeEnum.INCREMENTAL_LOAD
+        else:
+            load_type = LoadTrackerLoadTypeEnum.FULL_LOAD
+
+        # Instantiate a load tracker for the current job
+        load_tracker = LoadTracker(load_type, load_step)
+        load_tracker.start()
+
         # TODO: PIPE-514 use strategies based on increment option
         if is_undo:
             old_table = self.get_most_recent_old_table(options["table"])
@@ -230,6 +242,8 @@ class Command(BaseCommand):
                     delta_table_load_version_key
                 )
                 update_last_live_load_version(delta_table_load_version_key, last_version_to_staging)
+
+        load_tracker.end()
 
     def cleanup_old_data(self, cursor, old_suffix=None):
         """
@@ -807,7 +821,7 @@ class Command(BaseCommand):
         incremental_load = options["incremental"]
         is_undo = options["undo"]
         table = options["table"]
-        load_step = LoadTrackerStepEnum(f"{__name__}-{table}")
+        load_step = LoadTrackerStepEnum(f"{LOAD_STEP}-{table}")
         latest_load_tracker_load_type = LoadTracker.get_latest_load_tracker_type(load_step.value)
         if latest_load_tracker_load_type == LoadTrackerLoadTypeEnum.INCREMENTAL_LOAD and is_undo:
             raise ArgumentTypeError(

@@ -49,7 +49,6 @@ class LoadTracker(models.Model):
     )
     start_date_time = models.DateTimeField(auto_now=True, null=False)
     end_date_time = models.DateTimeField(auto_now=True, null=True)
-    update_date = models.DateTimeField(auto_now=True, null=True)
 
     class Meta:
         managed = True
