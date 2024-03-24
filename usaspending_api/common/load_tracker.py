@@ -10,7 +10,7 @@ class LoadTracker:
     def __init__(self, load_type: LoadTrackerLoadType, load_step: LoadTrackerStepEnum):
         self.load_step = LoadTracker.get_load_step(load_step)
         self.load_type = LoadTracker.get_load_type(load_type)
-        self._load_tracker = None
+        self._load_tracker: LoadTrackerModel = None
 
     def start(self):
         """Performs the necessary operations to start this LoadTracker."""
