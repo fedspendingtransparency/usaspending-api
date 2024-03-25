@@ -76,20 +76,105 @@ class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
         self._validate_options()
 
         table = self._options["table"]
-        postgres_temp_schema = "temp"
         # TODO: PIPE-513 developed a solution that forces this knowledge duplication hopefully that other implementation can be fixed in the future.
         # Fixing that other implementation would enable the suite of swap_in_new_table classes to not duplicate knowledge.
-        upsert_table_name = f"{postgres_temp_schema}_{table}"
-        delete_table_name = f"{postgres_temp_schema}_{table}"
-        qualified_upsert_postgres_table = f"{postgres_temp_schema}.{upsert_table_name}"
-        qualified_delete_postgres_table = f"{postgres_temp_schema}.{delete_table_name}"
-        temp_table_list = [qualified_upsert_postgres_table, qualified_delete_postgres_table]
+        upsert_table_name = f"{table}_temp_upserts"
+        delete_table_name = f"{table}_temp_deletes"
+        temp_table_list = [upsert_table_name, delete_table_name]
         with connection.cursor() as cursor:
+            # Go ahead and retrieve the schema for both table; used for some validation checks and the final swap
+            cursor.execute(
+                f"""
+                SELECT tablename, schemaname
+                FROM pg_tables
+                WHERE tablename = '{table}' OR tablename = '{delete_table_name}' OR tablename = '{upsert_table_name}'
+                UNION
+                SELECT matviewname AS tablename, schemaname
+                FROM pg_matviews
+                WHERE matviewname = '{table}' OR tablename = '{delete_table_name}' OR tablename = '{upsert_table_name}'
+            """
+            )
+            schemas_lookup = {table: schema for (table, schema) in cursor.fetchall()}
+
+            # Begin fetching schemas of the tables involved in this operation
+            curr_schema_name = schemas_lookup.get(table)
+            qualified_dest_table = f"{curr_schema_name}.{table}"
+            temp_schema_name = schemas_lookup.get(delete_table_name)
+
+            # We assume both temp tables have the same schema, but let's double check
+            if temp_schema_name != schemas_lookup.get(upsert_table_name):
+                raise ValueError(
+                    f"The temp tables by the names {delete_table_name} and {upsert_table_name} must reside in the same schema. Currently, they do not."
+                )
+
+            qualified_upsert_postgres_table = f"{temp_schema_name}.{upsert_table_name}"
+            qualified_delete_postgres_table = f"{temp_schema_name}.{delete_table_name}"
             self._validate_live_tables(cursor, table)
             self._validate_temp_tables(cursor, temp_table_list)
 
-        self._execute_upserts(cursor, qualified_upsert_postgres_table)
-        self._execute_deletes(cursor, qualified_delete_postgres_table)
+            self._execute_upserts(cursor, qualified_dest_table, qualified_upsert_postgres_table)
+            self._execute_deletes(cursor, qualified_dest_table, qualified_delete_postgres_table)
+
+            # Begin refreshing views
+            self.dep_views = self._dependent_views(cursor, curr_schema_name, table)
+            self.old_suffix = f"_old{datetime.utcnow().strftime('%Y%m%d%H%M%S')}"
+            # We only need to call this once, not per temp table. Right now we have more than one temp table
+            # so we are just arbitrarly using one of them.
+            self._create_new_views(cursor, table, temp_schema_name, upsert_table_name)
+            self._swap_dependent_views(cursor, temp_schema_name)
+            self._drop_old_views(cursor)
+
+    def _create_new_views(self, cursor, table, temp_schema_name, temp_table_name):
+        for dep_view in self.dep_views:
+            # Note: Despite pointing at the new temp table at first,
+            #       the recreated views will automatically update and stay pointed to it in the swap via postgres
+            self.logger.info(f"Recreating dependent view: {dep_view['dep_view_fullname']}")
+            dep_view_sql = dep_view["dep_view_sql"].replace(table, temp_table_name)
+            mv_s = "MATERIALIZED " if dep_view["is_matview"] else ""
+            cursor.execute(f"DROP {mv_s}VIEW IF EXISTS {temp_schema_name}.{dep_view['dep_view_name']};")
+            cursor.execute(f"CREATE {mv_s}VIEW {temp_schema_name}.{dep_view['dep_view_name']} " f"AS ({dep_view_sql});")
+
+    def _drop_old_views(self, cursor):
+        for dep_view in self.dep_views:
+            mv_s = "MATERIALIZED " if dep_view["is_matview"] else ""
+            self.logger.info(f"Dropping old dependent view: {dep_view['dep_view_fullname']}{self.old_suffix}")
+            cursor.execute(f"DROP {mv_s}VIEW {dep_view['dep_view_fullname']}{self.old_suffix};")
+
+    def _dependent_views(self, cursor, curr_schema_name, curr_table_name):
+        """Detects views that are dependent on the table to be swapped."""
+        cursor.execute(detect_dep_view_sql.format(curr_schema_name=curr_schema_name, curr_table_name=curr_table_name))
+        dep_views = ordered_dictionary_fetcher(cursor)
+        return dep_views
+
+    def _swap_dependent_views(self, cursor, temp_schema_name):
+        sql_view_template = "ALTER {mv_s}VIEW {old_view_schema}.{old_view_name} RENAME TO {new_view_name};"
+        for dep_view in self.dep_views:
+            # Coordinate the schema move and view renames in 1 atomic operation
+            # But don't have the transaction span more than 1 view at a time to avoid any potential deadlocks with
+            # ongoing queries
+            with transaction.atomic():
+                mv_s = "MATERIALIZED " if dep_view["is_matview"] else ""
+                view_rename_sql = [
+                    # 1. move temp suffixed view to the target schema
+                    f"ALTER {mv_s}VIEW {temp_schema_name}.{dep_view['dep_view_name']} "
+                    f"SET SCHEMA {dep_view['dep_view_schema']};",
+                    # 2. rename active view in target schema to have old suffix
+                    sql_view_template.format(
+                        mv_s=mv_s,
+                        old_view_schema=dep_view["dep_view_schema"],
+                        old_view_name=dep_view["dep_view_name"],
+                        new_view_name=f"{dep_view['dep_view_name']}{self.old_suffix}",
+                    ),
+                    # 3. rename temp view (now moved into target schema) to active name
+                    sql_view_template.format(
+                        mv_s=mv_s,
+                        old_view_schema=dep_view["dep_view_schema"],
+                        old_view_name=f"{dep_view['dep_view_name']}",
+                        new_view_name=dep_view["dep_view_name"],
+                    ),
+                ]
+                self.logger.info(f"Running view swap SQL in an atomic transaction:\n{pformat(view_rename_sql)}")
+                cursor.execute("\n".join(view_rename_sql))
 
     def _validate_options(self) -> None:
         """Validates the combination of options provided to this command. Will
@@ -143,7 +228,7 @@ class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
             if len(validation_results) == 0 or validation_results[0]["exists"] is False:
                 raise ValueError(f"Swap in new table command cannot proceed because {temp_table_name} does not exist.")
 
-    def _execute_upserts(self, cursor, qualified_upsert_postgres_table):
+    def _execute_upserts(self, cursor, qualified_dest_table, qualified_upsert_postgres_table):
         """Facilitates the process of upserting into the live tables from the temp tables."""
         load_datetime = datetime.now(timezone.utc)
         set_cols = [f"d.{col_name} = s.{col_name}" for col_name in AWARD_SEARCH_COLUMNS]
@@ -153,6 +238,7 @@ class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
         insert_value_list.extend([f"""'{load_datetime.isoformat(" ")}'"""] * 2)
         insert_values = ", ".join([value for value in insert_value_list])
         upsert_live_tables_sql.format(
+            dest_table=qualified_dest_table,
             upsert_temp_table=qualified_upsert_postgres_table,
             join_condition="d.generated_unique_award_id = s.generated_unique_award_id",
             set_cols={", ".join(set_cols)},
@@ -161,10 +247,12 @@ class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
         )
         cursor.execute(cursor)
 
-    def _execute_deletes(self, cursor, qualified_delete_postgres_table):
+    def _execute_deletes(self, cursor, qualified_dest_table, qualified_delete_postgres_table):
         """Facilitates the process of deleting from our live tables based on the temp tables."""
         delete_from_live_tables_sql.format(
-            delete_temp_table=qualified_delete_postgres_table, join_condition="d.award_id = s.award_id"
+            dest_table=qualified_dest_table,
+            delete_temp_table=qualified_delete_postgres_table,
+            join_condition="d.award_id = s.award_id",
         )
         cursor.execute(cursor)
 
@@ -238,7 +326,7 @@ class FullLoadSwapInTableStrategy(SwapInNewTableStrategy):
             schemas_lookup = {table: schema for (table, schema) in cursor.fetchall()}
             self.curr_schema_name = schemas_lookup.get(self.curr_table_name)
             self.temp_schema_name = schemas_lookup.get(self.temp_table_name)
-            self.dep_views = self._dependent_views(cursor)
+            self.dep_views = self._dependent_views(cursor, self.curr_schema_name, self.curr_table_name)
 
             self._validate_tables(cursor)
 

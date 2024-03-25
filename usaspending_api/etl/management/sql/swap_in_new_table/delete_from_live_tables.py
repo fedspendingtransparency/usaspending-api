@@ -1,5 +1,5 @@
 delete_from_live_tables_sql = """
-    MERGE INTO rpt.award_search d
+    MERGE INTO {dest_table} d
     USING {delete_temp_table} AS s
     ON {join_condition}
     WHEN MATCHED

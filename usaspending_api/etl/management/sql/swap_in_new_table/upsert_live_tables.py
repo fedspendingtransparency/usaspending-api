@@ -1,5 +1,5 @@
 upsert_live_tables_sql = """
-    MERGE INTO rpt.award_search d
+    MERGE INTO {dest_table} d
     USING {upsert_temp_table} AS s
     ON {join_condition}
     WHEN MATCHED
