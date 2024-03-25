@@ -8,7 +8,6 @@ from rest_framework.views import APIView
 
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.config import CONFIG
-from usaspending_api.download.filestreaming.s3_handler import S3Handler
 from usaspending_api.references.models import ToptierAgency
 
 
@@ -17,9 +16,7 @@ class ListUnlinkedAwardsDownloadsViewSet(APIView):
     Returns a list which contains links to the latest versions of unlinked awards files for an agency.
     """
 
-    s3_handler = S3Handler(
-        bucket_name=settings.BULK_DOWNLOAD_S3_BUCKET_NAME, redirect_dir=settings.UNLINKED_AWARDS_DOWNLOAD_REDIRECT_DIR
-    )
+    redirect_dir = settings.UNLINKED_AWARDS_DOWNLOAD_REDIRECT_DIR
 
     # This is intentionally not cached so that the latest updates to these files are always returned
     def post(self, request):
@@ -40,19 +37,16 @@ class ListUnlinkedAwardsDownloadsViewSet(APIView):
         agency = agency_check[0]
 
         # Populate regex
-        agency_name = agency["name"].replace(" ", "_")
-        agency_name = agency_name.replace(".", "_")
-        agency_name = agency_name.replace("/", "_")
-        agency_name = agency_name.replace("(", "_")
-        agency_name = agency_name.replace(")", "_")
-        agency_name = agency_name.replace("-", "_")
-        agency_name = agency_name.replace("&", "_")
-        agency_name = agency_name.replace("'", "")
-        download_prefix = f"{agency_name}_UnlinkedAwards"
+        agency_name = agency["name"]
+        for char in settings.UNLINKED_AWARDS_AGENCY_NAME_CHARS_TO_REPLACE:
+            agency_name = agency_name.replace(char, "_")
+
+        download_prefix = f"{self.redirect_dir}/{agency_name}_UnlinkedAwards"
+        download_regex = r"{}_.*\.zip".format(download_prefix)
         download_regex = r"{}_.*\.zip".format(download_prefix)
 
         # Retrieve and filter the files we need
-        if not CONFIG.USE_AWS:
+        if settings.IS_LOCAL:
             boto3_session = boto3.session.Session(
                 region_name=CONFIG.AWS_REGION,
                 aws_access_key_id=CONFIG.AWS_ACCESS_KEY.get_secret_value(),
@@ -61,11 +55,12 @@ class ListUnlinkedAwardsDownloadsViewSet(APIView):
             s3_resource = boto3_session.resource(
                 service_name="s3", region_name=CONFIG.AWS_REGION, endpoint_url=f"http://{CONFIG.AWS_S3_ENDPOINT}"
             )
+            s3_bucket = s3_resource.Bucket(settings.BULK_DOWNLOAD_S3_BUCKET_NAME)
         else:
-            s3_resource = boto3.resource(
-                service_name="s3", region_name=CONFIG.AWS_REGION, endpoint_url=f"https://{CONFIG.AWS_S3_ENDPOINT}"
+            s3_bucket = boto3.resource("s3", region_name=settings.USASPENDING_AWS_REGION).Bucket(
+                settings.BULK_DOWNLOAD_S3_BUCKET_NAME
             )
-        s3_bucket = s3_resource.Bucket(settings.BULK_DOWNLOAD_S3_BUCKET_NAME)
+
         download_names = []
         for key in s3_bucket.objects.filter(Prefix=download_prefix):
             if re.match(download_regex, key.key):
@@ -73,14 +68,17 @@ class ListUnlinkedAwardsDownloadsViewSet(APIView):
 
         # Generate response
         latest_download_name = self._get_last_modified_file(download_names)
+        latest_download_file_name = (
+            latest_download_name.replace(f"{self.redirect_dir}/", "") if latest_download_name is not None else None
+        )
         identified_dowload = {
             "agency_name": agency["name"],
             "toptier_code": agency["toptier_code"],
             "agency_acronym": agency["abbreviation"],
-            "file_name": latest_download_name if latest_download_name is not None else None,
+            "file_name": latest_download_file_name,
             "url": (
-                self.s3_handler.get_simple_url(file_name=latest_download_name)
-                if latest_download_name is not None
+                f"{settings.FILES_SERVER_BASE_URL}/{self.redirect_dir}/{latest_download_file_name}"
+                if latest_download_file_name is not None
                 else None
             ),
         }

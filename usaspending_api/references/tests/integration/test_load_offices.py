@@ -49,6 +49,5 @@ def test_load_offices(monkeypatch):
             ).order_by("office_code")
         ),
     }
-    print(actual_results)
 
     assert expected_results == actual_results

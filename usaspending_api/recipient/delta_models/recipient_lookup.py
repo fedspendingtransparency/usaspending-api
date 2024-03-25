@@ -33,6 +33,7 @@ TEMP_RECIPIENT_LOOKUP_COLUMNS = {
     **{k: v for k, v in RPT_RECIPIENT_LOOKUP_DELTA_COLUMNS.items()},
 }
 
+
 recipient_lookup_create_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
         {", ".join([f'{key} {val}' for key, val in RECIPIENT_LOOKUP_DELTA_COLUMNS.items()])}
@@ -124,56 +125,102 @@ recipient_lookup_load_sql_string_list = [
     )
     """,
     # -----
-    # Populate the temporary_restock_recipient_lookup table
+    # Identify recipients that should be ingested
     # -----
-    fr"""
-    CREATE OR REPLACE TEMPORARY VIEW temp_collect_recipients_view AS (
-        WITH latest_duns_sam AS (
-            SELECT
-                1 AS priority,
-                -- This regex is used to create a UUID formatted STRING since Spark does not
-                -- have a UUID type; all UUIDs have the format of 8-4-4-4-12
+    rf""" CREATE OR REPLACE TEMPORARY VIEW temp_recipient_filter AS (
+        SELECT
+            DISTINCT
                 REGEXP_REPLACE(
                     MD5(UPPER(
-                        CASE WHEN uei IS NOT NULL THEN CONCAT('uei-', uei)
-                        ELSE CONCAT('duns-', COALESCE(awardee_or_recipient_uniqu, '')) END
+                        CASE WHEN sr.uei IS NOT NULL THEN CONCAT('uei-', sr.uei)
+                        ELSE CONCAT('duns-', COALESCE(sr.awardee_or_recipient_uniqu, '')) END
                     )),
                     '^(\.{{{{8}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{12}}}})$',
                     '\$1-\$2-\$3-\$4-\$5'
                 ) AS recipient_hash,
                 REGEXP_REPLACE(
-                    MD5(UPPER(CONCAT('duns-', COALESCE(awardee_or_recipient_uniqu, '')))),
+                    MD5(UPPER(
+                        CASE WHEN sr.ultimate_parent_uei IS NOT NULL THEN CONCAT('uei-', sr.ultimate_parent_uei)
+                        ELSE CONCAT('duns-', COALESCE(sr.ultimate_parent_unique_ide, '')) END
+                    )),
                     '^(\.{{{{8}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{12}}}})$',
                     '\$1-\$2-\$3-\$4-\$5'
-                ) AS duns_recipient_hash,
-                UPPER(legal_business_name) AS legal_business_name,
-                awardee_or_recipient_uniqu AS duns,
-                uei,
-                'sam' AS source,
-                address_line_1,
-                address_line_2,
-                business_types_codes,
-                city,
-                congressional_district,
-                country_code,
-                ultimate_parent_unique_ide AS parent_duns,
-                UPPER(ultimate_parent_legal_enti) AS parent_legal_business_name,
-                ultimate_parent_uei AS parent_uei,
-                state,
-                zip4,
-                zip AS zip5,
-                update_date,
-                ARRAY() AS alternate_names,
-                ROW_NUMBER() OVER (
-                    PARTITION BY uei, awardee_or_recipient_uniqu
-                    -- Spark and Postgres handle NULL values in sorting different ways by default
-                    ORDER BY
-                        uei ASC NULLS LAST,
-                        awardee_or_recipient_uniqu ASC NULLS LAST,
-                        update_date DESC NULLS FIRST
-                ) AS row_num
-            FROM int.sam_recipient
-            WHERE COALESCE(uei, awardee_or_recipient_uniqu) IS NOT NULL AND legal_business_name IS NOT NULL
+                ) AS parent_recipient_hash
+
+            FROM int.sam_recipient sr
+
+            /* Begin left anti joins to ensure we are not loading any recipients
+            that are not linked to transactions */
+            LEFT JOIN raw.published_fabs pf
+            ON sr.uei = pf.uei
+                OR sr.uei = pf.ultimate_parent_uei
+
+            LEFT JOIN raw.detached_award_procurement dap
+            ON sr.uei = dap.awardee_or_recipient_uei
+                OR sr.uei = dap.ultimate_parent_uei
+
+            WHERE pf.published_fabs_id IS NOT NULL
+                OR dap.detached_award_procurement_id IS NOT NULL
+    )""",
+    # -----
+    # Populate the temporary_restock_recipient_lookup table
+    # -----
+    rf"""
+    CREATE OR REPLACE TEMPORARY VIEW temp_collect_recipients_view AS (
+        WITH latest_duns_sam AS (
+            SELECT s.*
+                FROM (
+                    SELECT
+                        1 AS priority,
+                        -- This regex is used to create a UUID formatted STRING since Spark does not
+                        -- have a UUID type; all UUIDs have the format of 8-4-4-4-12
+                        REGEXP_REPLACE(
+                            MD5(UPPER(
+                                CASE WHEN sr.uei IS NOT NULL THEN CONCAT('uei-', sr.uei)
+                                ELSE CONCAT('duns-', COALESCE(sr.awardee_or_recipient_uniqu, '')) END
+                            )),
+                            '^(\.{{{{8}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{12}}}})$',
+                            '\$1-\$2-\$3-\$4-\$5'
+                        ) AS recipient_hash,
+                        REGEXP_REPLACE(
+                            MD5(UPPER(CONCAT('duns-', COALESCE(sr.awardee_or_recipient_uniqu, '')))),
+                            '^(\.{{{{8}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{12}}}})$',
+                            '\$1-\$2-\$3-\$4-\$5'
+                        ) AS duns_recipient_hash,
+                        UPPER(sr.legal_business_name) AS legal_business_name,
+                        sr.awardee_or_recipient_uniqu AS duns,
+                        sr.uei,
+                        'sam' AS source,
+                        sr.address_line_1,
+                        sr.address_line_2,
+                        sr.business_types_codes,
+                        sr.city,
+                        sr.congressional_district,
+                        sr.country_code,
+                        sr.ultimate_parent_unique_ide AS parent_duns,
+                        UPPER(sr.ultimate_parent_legal_enti) AS parent_legal_business_name,
+                        sr.ultimate_parent_uei AS parent_uei,
+                        sr.state,
+                        sr.zip4,
+                        sr.zip AS zip5,
+                        sr.update_date,
+                        ARRAY() AS alternate_names,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY sr.uei, sr.awardee_or_recipient_uniqu
+                            -- Spark and Postgres handle NULL values in sorting different ways by default
+                            ORDER BY
+                                sr.uei ASC NULLS LAST,
+                                sr.awardee_or_recipient_uniqu ASC NULLS LAST,
+                                sr.update_date DESC NULLS FIRST
+                        ) AS row_num
+                    FROM int.sam_recipient sr
+
+                    WHERE COALESCE(sr.uei, sr.awardee_or_recipient_uniqu) IS NOT NULL
+                        AND sr.legal_business_name IS NOT NULL
+                ) s
+
+            JOIN temp_recipient_filter rf
+            ON rf.recipient_hash = s.recipient_hash
         ),
         latest_tx AS (
             SELECT
@@ -209,49 +256,57 @@ recipient_lookup_load_sql_string_list = [
             WHERE COALESCE(uei, awardee_or_recipient_uniqu) IS NOT NULL AND awardee_or_recipient_legal IS NOT NULL
         ),
         latest_duns_sam_parent AS (
-            SELECT
-                3 AS priority,
-                REGEXP_REPLACE(
-                    MD5(UPPER(
-                        CASE WHEN ultimate_parent_uei IS NOT NULL THEN CONCAT('uei-', ultimate_parent_uei)
-                        ELSE CONCAT('duns-', COALESCE(ultimate_parent_unique_ide, '')) END
-                    )),
-                    '^(\.{{{{8}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{12}}}})$',
-                    '\$1-\$2-\$3-\$4-\$5'
-                ) AS recipient_hash,
-                REGEXP_REPLACE(
-                    MD5(UPPER(CONCAT('duns-', COALESCE(ultimate_parent_unique_ide, '')))),
-                    '^(\.{{{{8}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{12}}}})$',
-                    '\$1-\$2-\$3-\$4-\$5'
-                ) AS duns_recipient_hash,
-                UPPER(ultimate_parent_legal_enti) AS legal_business_name,
-                ultimate_parent_unique_ide AS duns,
-                ultimate_parent_uei AS uei,
-                'sam-parent' AS source,
-                NULL AS address_line_1,
-                NULL AS address_line_2,
-                NULL AS business_types_codes,
-                NULL AS city,
-                NULL AS congressional_district,
-                NULL AS country_code,
-                ultimate_parent_unique_ide AS parent_duns,
-                UPPER(ultimate_parent_legal_enti) AS parent_legal_business_name,
-                ultimate_parent_uei AS parent_uei,
-                NULL AS state,
-                NULL AS zip4,
-                NULL AS zip5,
-                update_date,
-                ARRAY() AS alternate_names,
-                ROW_NUMBER() OVER (
-                    -- TODO: This should be swapped; left in place temporarily to match current
-                    PARTITION BY ultimate_parent_unique_ide, ultimate_parent_uei
-                    ORDER BY
-                        ultimate_parent_unique_ide ASC NULLS LAST,
-                        ultimate_parent_uei ASC NULLS LAST,
-                        update_date DESC NULLS LAST
-                ) AS row_num
-            FROM int.sam_recipient
-            WHERE COALESCE(ultimate_parent_uei, ultimate_parent_unique_ide) IS NOT NULL AND ultimate_parent_legal_enti IS NOT NULL
+            SELECT s.*
+                FROM (
+                    SELECT
+                        3 AS priority,
+                        REGEXP_REPLACE(
+                            MD5(UPPER(
+                                CASE WHEN sr.ultimate_parent_uei IS NOT NULL THEN CONCAT('uei-', sr.ultimate_parent_uei)
+                                ELSE CONCAT('duns-', COALESCE(sr.ultimate_parent_unique_ide, '')) END
+                            )),
+                            '^(\.{{{{8}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{12}}}})$',
+                            '\$1-\$2-\$3-\$4-\$5'
+                        ) AS recipient_hash,
+                        REGEXP_REPLACE(
+                            MD5(UPPER(CONCAT('duns-', COALESCE(sr.ultimate_parent_unique_ide, '')))),
+                            '^(\.{{{{8}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{12}}}})$',
+                            '\$1-\$2-\$3-\$4-\$5'
+                        ) AS duns_recipient_hash,
+                        UPPER(sr.ultimate_parent_legal_enti) AS legal_business_name,
+                        sr.ultimate_parent_unique_ide AS duns,
+                        sr.ultimate_parent_uei AS uei,
+                        'sam-parent' AS source,
+                        NULL AS address_line_1,
+                        NULL AS address_line_2,
+                        NULL AS business_types_codes,
+                        NULL AS city,
+                        NULL AS congressional_district,
+                        NULL AS country_code,
+                        sr.ultimate_parent_unique_ide AS parent_duns,
+                        UPPER(sr.ultimate_parent_legal_enti) AS parent_legal_business_name,
+                        sr.ultimate_parent_uei AS parent_uei,
+                        NULL AS state,
+                        NULL AS zip4,
+                        NULL AS zip5,
+                        sr.update_date,
+                        ARRAY() AS alternate_names,
+                        ROW_NUMBER() OVER (
+                            -- TODO: This should be swapped; left in place temporarily to match current
+                            PARTITION BY sr.ultimate_parent_unique_ide, sr.ultimate_parent_uei
+                            ORDER BY
+                                sr.ultimate_parent_unique_ide ASC NULLS LAST,
+                                sr.ultimate_parent_uei ASC NULLS LAST,
+                                sr.update_date DESC NULLS LAST
+                        ) AS row_num
+                    FROM int.sam_recipient sr
+
+                    WHERE COALESCE(sr.ultimate_parent_uei, sr.ultimate_parent_unique_ide) IS NOT NULL
+                        AND sr.ultimate_parent_legal_enti IS NOT NULL
+                ) s
+
+                JOIN temp_recipient_filter rf
+                ON rf.parent_recipient_hash = s.recipient_hash
         ),
         latest_tx_parent AS (
             SELECT
@@ -287,48 +342,56 @@ recipient_lookup_load_sql_string_list = [
             WHERE COALESCE(ultimate_parent_uei, ultimate_parent_unique_ide) IS NOT NULL AND ultimate_parent_legal_enti IS NOT NULL
         ),
         latest_duns_sam_no_name AS (
-            SELECT
-                5 AS priority,
-                REGEXP_REPLACE(
-                    MD5(UPPER(
-                        CASE WHEN uei IS NOT NULL THEN CONCAT('uei-', uei)
-                        ELSE CONCAT('duns-', COALESCE(awardee_or_recipient_uniqu, '')) END
-                    )),
-                    '^(\.{{{{8}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{12}}}})$',
-                    '\$1-\$2-\$3-\$4-\$5'
-                ) AS recipient_hash,
-                REGEXP_REPLACE(
-                    MD5(UPPER(CONCAT('duns-', COALESCE(awardee_or_recipient_uniqu, '')))),
-                    '^(\.{{{{8}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{12}}}})$',
-                    '\$1-\$2-\$3-\$4-\$5'
-                ) AS duns_recipient_hash,
-                UPPER(legal_business_name) AS legal_business_name,
-                awardee_or_recipient_uniqu AS duns,
-                uei,
-                'sam' AS source,
-                address_line_1,
-                address_line_2,
-                business_types_codes,
-                city,
-                congressional_district,
-                country_code,
-                ultimate_parent_unique_ide AS parent_duns,
-                UPPER(ultimate_parent_legal_enti) AS parent_legal_business_name,
-                ultimate_parent_uei AS parent_uei,
-                state,
-                zip4,
-                zip AS zip5,
-                update_date,
-                ARRAY() AS alternate_names,
-                ROW_NUMBER() OVER (
-                    PARTITION BY uei, awardee_or_recipient_uniqu
-                    ORDER BY
-                        uei ASC NULLS LAST,
-                        awardee_or_recipient_uniqu ASC NULLS LAST,
-                        update_date DESC NULLS FIRST
-                ) AS row_num
-            FROM int.sam_recipient
-            WHERE COALESCE(uei, awardee_or_recipient_uniqu) IS NOT NULL AND legal_business_name IS NULL
+            SELECT s.*
+                FROM (
+                    SELECT
+                        5 AS priority,
+                        REGEXP_REPLACE(
+                            MD5(UPPER(
+                                CASE WHEN sr.uei IS NOT NULL THEN CONCAT('uei-', sr.uei)
+                                ELSE CONCAT('duns-', COALESCE(sr.awardee_or_recipient_uniqu, '')) END
+                            )),
+                            '^(\.{{{{8}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{12}}}})$',
+                            '\$1-\$2-\$3-\$4-\$5'
+                        ) AS recipient_hash,
+                        REGEXP_REPLACE(
+                            MD5(UPPER(CONCAT('duns-', COALESCE(sr.awardee_or_recipient_uniqu, '')))),
+                            '^(\.{{{{8}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{12}}}})$',
+                            '\$1-\$2-\$3-\$4-\$5'
+                        ) AS duns_recipient_hash,
+                        UPPER(sr.legal_business_name) AS legal_business_name,
+                        sr.awardee_or_recipient_uniqu AS duns,
+                        sr.uei,
+                        'sam' AS source,
+                        sr.address_line_1,
+                        sr.address_line_2,
+                        sr.business_types_codes,
+                        sr.city,
+                        sr.congressional_district,
+                        sr.country_code,
+                        sr.ultimate_parent_unique_ide AS parent_duns,
+                        UPPER(sr.ultimate_parent_legal_enti) AS parent_legal_business_name,
+                        sr.ultimate_parent_uei AS parent_uei,
+                        sr.state,
+                        sr.zip4,
+                        sr.zip AS zip5,
+                        sr.update_date,
+                        ARRAY() AS alternate_names,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY sr.uei, sr.awardee_or_recipient_uniqu
+                            ORDER BY
+                                sr.uei ASC NULLS LAST,
+                                sr.awardee_or_recipient_uniqu ASC NULLS LAST,
+                                sr.update_date DESC NULLS FIRST
+                        ) AS row_num
+                    FROM int.sam_recipient sr
+
+                    WHERE COALESCE(sr.uei, sr.awardee_or_recipient_uniqu) IS NOT NULL
+                        AND sr.legal_business_name IS NULL
+                ) s
+
+                JOIN temp_recipient_filter rf
+                ON rf.recipient_hash = s.recipient_hash
         ),
         latest_tx_no_name AS (
             SELECT
@@ -364,48 +427,56 @@ recipient_lookup_load_sql_string_list = [
             WHERE COALESCE(uei, awardee_or_recipient_uniqu) IS NOT NULL AND awardee_or_recipient_legal IS NULL
         ),
         latest_duns_sam_parent_no_name AS (
-            SELECT
-                7 AS priority,
-                REGEXP_REPLACE(
-                    MD5(UPPER(
-                        CASE WHEN ultimate_parent_uei IS NOT NULL THEN CONCAT('uei-', ultimate_parent_uei)
-                        ELSE CONCAT('duns-', COALESCE(ultimate_parent_unique_ide, '')) END
-                    )),
-                    '^(\.{{{{8}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{12}}}})$',
-                    '\$1-\$2-\$3-\$4-\$5'
-                ) AS recipient_hash,
-                REGEXP_REPLACE(
-                    MD5(UPPER(CONCAT('duns-', COALESCE(ultimate_parent_unique_ide, '')))),
-                    '^(\.{{{{8}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{12}}}})$',
-                    '\$1-\$2-\$3-\$4-\$5'
-                ) AS duns_recipient_hash,
-                NULL AS legal_business_name,
-                ultimate_parent_unique_ide AS duns,
-                ultimate_parent_uei AS uei,
-                'sam-parent' AS source,
-                NULL AS address_line_1,
-                NULL AS address_line_2,
-                NULL AS business_types_codes,
-                NULL AS city,
-                NULL AS congressional_district,
-                NULL AS country_code,
-                ultimate_parent_unique_ide AS parent_duns,
-                NULL AS parent_legal_business_name,
-                ultimate_parent_uei AS parent_uei,
-                NULL AS state,
-                NULL AS zip4,
-                NULL AS zip5,
-                update_date,
-                ARRAY() AS alternate_names,
-                ROW_NUMBER() OVER (
-                    PARTITION BY ultimate_parent_uei, ultimate_parent_unique_ide
-                    ORDER BY
-                        ultimate_parent_uei ASC NULLS LAST,
-                        ultimate_parent_unique_ide ASC NULLS LAST,
-                        update_date DESC NULLS FIRST
-                ) AS row_num
-            FROM int.sam_recipient
-            WHERE COALESCE(ultimate_parent_uei, ultimate_parent_unique_ide) IS NOT NULL AND ultimate_parent_legal_enti IS NULL
+            SELECT s.*
+                FROM (
+                    SELECT
+                        7 AS priority,
+                        REGEXP_REPLACE(
+                            MD5(UPPER(
+                                CASE WHEN sr.ultimate_parent_uei IS NOT NULL THEN CONCAT('uei-', sr.ultimate_parent_uei)
+                                ELSE CONCAT('duns-', COALESCE(sr.ultimate_parent_unique_ide, '')) END
+                            )),
+                            '^(\.{{{{8}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{12}}}})$',
+                            '\$1-\$2-\$3-\$4-\$5'
+                        ) AS recipient_hash,
+                        REGEXP_REPLACE(
+                            MD5(UPPER(CONCAT('duns-', COALESCE(sr.ultimate_parent_unique_ide, '')))),
+                            '^(\.{{{{8}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{12}}}})$',
+                            '\$1-\$2-\$3-\$4-\$5'
+                        ) AS duns_recipient_hash,
+                        NULL AS legal_business_name,
+                        sr.ultimate_parent_unique_ide AS duns,
+                        sr.ultimate_parent_uei AS uei,
+                        'sam-parent' AS source,
+                        NULL AS address_line_1,
+                        NULL AS address_line_2,
+                        NULL AS business_types_codes,
+                        NULL AS city,
+                        NULL AS congressional_district,
+                        NULL AS country_code,
+                        sr.ultimate_parent_unique_ide AS parent_duns,
+                        NULL AS parent_legal_business_name,
+                        sr.ultimate_parent_uei AS parent_uei,
+                        NULL AS state,
+                        NULL AS zip4,
+                        NULL AS zip5,
+                        sr.update_date,
+                        ARRAY() AS alternate_names,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY sr.ultimate_parent_uei, sr.ultimate_parent_unique_ide
+                            ORDER BY
+                                sr.ultimate_parent_uei ASC NULLS LAST,
+                                sr.ultimate_parent_unique_ide ASC NULLS LAST,
+                                sr.update_date DESC NULLS FIRST
+                        ) AS row_num
+                    FROM int.sam_recipient sr
+
+                    WHERE COALESCE(sr.ultimate_parent_uei, sr.ultimate_parent_unique_ide) IS NOT NULL
+                        AND sr.ultimate_parent_legal_enti IS NULL
+                ) s
+
+                JOIN temp_recipient_filter rf
+                ON rf.parent_recipient_hash = s.recipient_hash
         ),
         latest_tx_parent_no_name AS (
             SELECT
@@ -514,7 +585,7 @@ recipient_lookup_load_sql_string_list = [
     # -----
     # Delete any cases of old recipients from where the recipient now has a UEI
     # -----
-    fr"""
+    rf"""
     CREATE OR REPLACE TEMPORARY VIEW temp_stale_recipients_removed_view AS (
         WITH uei_and_duns_recipients AS (
             SELECT duns_recipient_hash
@@ -539,7 +610,7 @@ recipient_lookup_load_sql_string_list = [
     # -----
     # Update the temporary_restock_recipient_lookup table to include any alternate names
     # -----
-    fr"""
+    rf"""
     CREATE OR REPLACE TEMPORARY VIEW temp_recipients_with_alt_names_view AS (
         WITH recipient_names (
             WITH alt_names AS (
@@ -590,7 +661,7 @@ recipient_lookup_load_sql_string_list = [
     # -----
     # Insert the temporary_restock_recipient_lookup table into recipient_lookup
     # -----
-    fr"""
+    rf"""
     INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
     (
         {",".join([col for col in RECIPIENT_LOOKUP_COLUMNS_WITHOUT_ID])}
@@ -604,6 +675,7 @@ recipient_lookup_load_sql_string_list = [
     # Cleanup the temporary views;
     # this is mostly for test cases as the views are session based
     # -----
+    "DROP VIEW temp_recipient_filter",
     "DROP VIEW temp_transaction_recipients_view",
     "DROP VIEW temp_collect_recipients_view",
     "DROP VIEW temp_stale_recipients_removed_view",
