@@ -21,9 +21,9 @@ from usaspending_api.common.helpers.spark_helpers import (
 )
 from usaspending_api.config import CONFIG
 from usaspending_api.etl.award_helpers import update_awards
-from usaspending_api.etl.management.commands.create_delta_table import (
-    LOAD_QUERY_TABLE_SPEC,
-    LOAD_TABLE_TABLE_SPEC,
+from usaspending_api.etl.management.helpers.table_specifications import (
+    DATABRICKS_GENERATED_TABLE_SPEC,
+    POSTGRES_GENERATED_TABLE_SPEC
 )
 
 # ==== Spark Automated Integration Test Fixtures ==== #
@@ -1264,9 +1264,9 @@ def populate_usas_data_and_recipients_from_broker(populate_usas_data, populate_b
 
 
 def create_and_load_all_delta_tables(spark: SparkSession, s3_bucket: str, tables_to_load: list):
-    load_query_tables = [val for val in tables_to_load if val in LOAD_QUERY_TABLE_SPEC]
-    load_table_tables = [val for val in tables_to_load if val in LOAD_TABLE_TABLE_SPEC]
-    for dest_table in load_table_tables + load_query_tables:
+    databricks_generated_tables = [val for val in tables_to_load if val in DATABRICKS_GENERATED_TABLE_SPEC]
+    postgres_generated_tables = [val for val in tables_to_load if val in POSTGRES_GENERATED_TABLE_SPEC]
+    for dest_table in databricks_generated_tables + postgres_generated_tables:
         if dest_table in [
             "awards",
             "transaction_fabs",
@@ -1283,7 +1283,7 @@ def create_and_load_all_delta_tables(spark: SparkSession, s3_bucket: str, tables
         else:
             call_command("create_delta_table", f"--destination-table={dest_table}", f"--spark-s3-bucket={s3_bucket}")
 
-    for dest_table in load_table_tables:
+    for dest_table in postgres_generated_tables:
         if dest_table in [
             "awards",
             "transaction_fabs",
@@ -1302,7 +1302,7 @@ def create_and_load_all_delta_tables(spark: SparkSession, s3_bucket: str, tables
                 f"--destination-table={dest_table}",
             )
 
-    for dest_table in load_query_tables:
+    for dest_table in databricks_generated_tables:
         call_command("load_query_to_delta", f"--destination-table={dest_table}")
 
     create_ref_temp_views(spark)

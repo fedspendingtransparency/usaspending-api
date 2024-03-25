@@ -29,7 +29,7 @@ from usaspending_api.common.helpers.spark_helpers import (
 from usaspending_api.config import CONFIG
 from usaspending_api.settings import DEFAULT_TEXT_SEARCH_CONFIG
 
-from usaspending_api.etl.management.commands.load_query_to_delta import TABLE_SPEC
+from usaspending_api.etl.management.helpers.table_specifications import DATABRICKS_GENERATED_TABLE_SPEC as TABLE_SPEC
 
 # Note: the `delta` type is not actually in Spark SQL. It's how we're temporarily storing the data before converting it
 #       to the proper postgres type, since pySpark doesn't automatically support this conversion.
