@@ -192,6 +192,7 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
             config=self.config,
             fabs_external_data_load_date_key="transaction_fabs",
             fpds_external_data_load_date_key="transaction_fpds",
+            spark=self.spark,
         )
         # Use the lesser of the fabs/fpds load dates as the es_deletes load date. This
         # ensures all records deleted since either job was run are taken into account

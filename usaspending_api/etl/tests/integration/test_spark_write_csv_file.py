@@ -32,10 +32,11 @@ def test_write_csv_file(
     bucket_name = s3_unittest_data_bucket
     obj_prefix = f"{CONFIG.SPARK_CSV_S3_PATH}/unit_test_csv_data/{file_timestamp}"
     bucket_path = f"s3a://{bucket_name}/{obj_prefix}"
-    write_csv_file(spark, df, parts_dir=bucket_path, logger=test_logger)
+    write_csv_file(spark, df, parts_dir=bucket_path, num_partitions=1, logger=test_logger)
     hadoop_copy_merge(
         spark=spark,
         parts_dir=bucket_path,
+        part_merge_group_size=1,
         header="first_col, color, numeric_val",
         logger=logger,
     )

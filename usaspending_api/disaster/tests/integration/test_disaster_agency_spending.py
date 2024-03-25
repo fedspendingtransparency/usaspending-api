@@ -2,7 +2,6 @@ import datetime
 
 import pytest
 from model_bakery import baker
-
 from rest_framework import status
 
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
@@ -119,6 +118,96 @@ def test_basic_success(client, disaster_account_data, elasticsearch_account_inde
     expected_totals = {"award_count": 7, "obligation": 22222220.0, "outlay": 200020022.0}
 
     assert resp.json()["totals"] == expected_totals
+
+
+@pytest.mark.django_db
+def test_award_type_sorting(client, disaster_account_data, elasticsearch_account_index, monkeypatch, helpers):
+    # Test sorting by description in descending order
+    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    bad_date_window = DABSSubmissionWindowSchedule.objects.get(id=2022071)
+    bad_date_window.submission_reveal_date = datetime.date(2020, 4, 15)
+    bad_date_window.save()
+    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
+    resp = helpers.post_for_spending_endpoint(
+        client, url, def_codes=["L", "M", "N", "O", "P"], spending_type="award", sort="description"
+    )
+
+    expected_results = [
+        {
+            "award_count": 3,
+            "children": [],
+            "code": "009",
+            "description": "Agency 009",
+            "id": 4,
+            "obligation": 22199998.0,
+            "outlay": 200000022.0,
+            "total_budgetary_resources": None,
+        },
+        {
+            "award_count": 2,
+            "children": [],
+            "code": "008",
+            "description": "Agency 008",
+            "id": 2,
+            "obligation": 22000.0,
+            "outlay": 20000.0,
+            "total_budgetary_resources": None,
+        },
+        {
+            "award_count": 2,
+            "children": [],
+            "code": "007",
+            "description": "Agency 007",
+            "id": 1,
+            "obligation": 222.0,
+            "outlay": 0.0,
+            "total_budgetary_resources": None,
+        },
+    ]
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()["results"] == expected_results
+
+    # Test sorting by description in ascending order
+    resp = helpers.post_for_spending_endpoint(
+        client, url, def_codes=["L", "M", "N", "O", "P"], spending_type="award", sort="description", order="asc"
+    )
+
+    expected_results = [
+        {
+            "award_count": 2,
+            "children": [],
+            "code": "007",
+            "description": "Agency 007",
+            "id": 1,
+            "obligation": 222.0,
+            "outlay": 0.0,
+            "total_budgetary_resources": None,
+        },
+        {
+            "award_count": 2,
+            "children": [],
+            "code": "008",
+            "description": "Agency 008",
+            "id": 2,
+            "obligation": 22000.0,
+            "outlay": 20000.0,
+            "total_budgetary_resources": None,
+        },
+        {
+            "award_count": 3,
+            "children": [],
+            "code": "009",
+            "description": "Agency 009",
+            "id": 4,
+            "obligation": 22199998.0,
+            "outlay": 200000022.0,
+            "total_budgetary_resources": None,
+        },
+    ]
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()["results"] == expected_results
 
 
 @pytest.mark.django_db

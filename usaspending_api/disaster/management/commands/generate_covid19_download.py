@@ -10,7 +10,7 @@ from usaspending_api.common.etl.spark import create_ref_temp_views
 
 from usaspending_api.common.helpers.s3_helpers import upload_download_file_to_s3
 from usaspending_api.common.helpers.spark_helpers import configure_spark_session, get_active_spark_session
-from usaspending_api.disaster.helpers.covid_download_csv_strategies import (
+from usaspending_api.common.helpers.download_csv_strategies import (
     PostgresToCSVStrategy,
     SparkToCSVStrategy,
 )

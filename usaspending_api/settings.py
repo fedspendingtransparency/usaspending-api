@@ -84,6 +84,11 @@ MONTHLY_DOWNLOAD_S3_REDIRECT_DIR = "award_data_archive"
 BROKER_AGENCY_BUCKET_NAME = ""
 UNLINKED_AWARDS_DOWNLOAD_REDIRECT_DIR = "unlinked_awards_downloads"
 
+# This list contains any abnormal characters in agency names
+# This list is important to track which characters we need to replace in
+# the agency name before the name can be used in a file name
+UNLINKED_AWARDS_AGENCY_NAME_CHARS_TO_REPLACE = [".", " ", "/", "(", ")", "-", "&", "'"]
+
 ############################################################
 # Note 2020/02/21
 # FPDS_BUCKET_NAME and DELETED_TRANSACTIONS_S3_BUCKET_NAME are used in different
@@ -133,6 +138,7 @@ IDV_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "idv_download_readme.txt"
 ASSISTANCE_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "AssistanceSummary_download_readme.txt")
 CONTRACT_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "ContractSummary_download_readme.txt")
 COVID19_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "COVID-19_download_readme.txt")
+UNLINKED_AWARDS_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "unlinked_awards_instructions_readme.txt")
 COVID19_DOWNLOAD_FILENAME_PREFIX = "COVID-19_Profile"
 
 # Elasticsearch

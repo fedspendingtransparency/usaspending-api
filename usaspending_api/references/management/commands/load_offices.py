@@ -1,15 +1,12 @@
 import logging
-
-from datetime import datetime
-from datetime import timezone
+from datetime import datetime, timezone
 
 from django.core.management.base import BaseCommand
-from django.db import connections, transaction
+from django.db import DEFAULT_DB_ALIAS, IntegrityError, connections, transaction
 
 from usaspending_api.common.operations_reporter import OpsReporter
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.references.models.office import Office
-
 
 logger = logging.getLogger("script")
 Reporter = OpsReporter(iso_start_datetime=datetime.now(timezone.utc).isoformat(), job_name="load_offices.py")
@@ -20,8 +17,12 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         logger.info("Starting ETL script")
-        self.process_data()
-        logger.info("Office ETL finished successfully!")
+        try:
+            self.process_data()
+            logger.info("Office ETL finished successfully!")
+        except IntegrityError:
+            logger.warning("Unique constraint violated. Continuing with pipeline execution.")
+            raise SystemExit(3)  # Raise exit code 3 for unique constraint violation
 
     @transaction.atomic()
     def process_data(self):
@@ -43,6 +44,11 @@ class Command(BaseCommand):
         logger.info(f"Loaded: {new_rec_count:,} records")
         logger.info("Committing transaction to database")
 
+        logger.info("Deleting all existing offices that are not linked to a transaction")
+        # Identify offices that do not correspond to any transactions, using only USAS DB
+        with connections[DEFAULT_DB_ALIAS].cursor() as cursor:
+            cursor.execute(self.usas_unlinked_offices_sql)
+
     @property
     def broker_fetch_sql(self):
         return f"""
@@ -55,6 +61,26 @@ class Command(BaseCommand):
                 contract_funding_office,
                 financial_assistance_awards_office,
                 financial_assistance_funding_office
-            FROM
-                office
+            FROM office
+        """
+
+    @property
+    def usas_unlinked_offices_sql(self):
+        return """
+        DELETE FROM office WHERE office_code IN (
+            SELECT DISTINCT o.office_code
+
+            FROM office o
+
+            /* Begin left anti joins to ensure we are not loading any offices
+            that are not linked to transactions */
+            LEFT JOIN source_assistance_transaction sat
+            ON sat.awarding_office_code = o.office_code
+
+            LEFT JOIN source_procurement_transaction spt
+            ON spt.awarding_office_code = o.office_code
+
+            WHERE spt.awarding_office_code IS NOT NULL
+                OR sat.awarding_office_code IS NOT NULL
+        )
         """

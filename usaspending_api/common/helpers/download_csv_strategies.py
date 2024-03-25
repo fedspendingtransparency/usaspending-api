@@ -23,7 +23,7 @@ from typing import List
 
 class AbstractToCSVStrategy(ABC):
     """A composable class that can be used according to the Strategy software design pattern.
-    The Covid-19 "to csv" strategy establishes the interface for a suite of download
+    The "to csv" strategy establishes the interface for a suite of download
     algorithms; which take data from a source and outputs the result set to a csv.
     Implement this abstract class by taking specific algorithms which pull data from a source,
     and outputs to a csv, and bundle them into separate classes called strategies which
@@ -41,7 +41,8 @@ class AbstractToCSVStrategy(ABC):
         destination_path: Path,
         destination_file_name: str,
         working_dir_path: Path,
-        covid_profile_download_zip_path: Path,
+        download_zip_path: Path,
+        source_df=None,
     ) -> Tuple[List[str], int]:
         """
         Args:
@@ -49,7 +50,7 @@ class AbstractToCSVStrategy(ABC):
             destination_path: The absolute destination path of the generated data files as a string
             destination_file_name: The name of the file in destination path without a file extension
             working_dir_path: The working directory path as a string
-            covid_profile_download_zip_path: The path (as a string) to the covid profile download zip file
+            download_zip_path: The path (as a string) to the download zip file
 
         Returns:
             Returns a list of paths to the downloaded csv files and the total record count of all those files.
@@ -63,7 +64,7 @@ class PostgresToCSVStrategy(AbstractToCSVStrategy):
         self._logger = logger
 
     def download_to_csv(
-        self, source_sql, destination_path, destination_file_name, working_dir_path, covid_profile_download_zip_path
+        self, source_sql, destination_path, destination_file_name, working_dir_path, download_zip_path, source_df=None
     ):
         source_sql = Path(source_sql)
         start_time = time.perf_counter()
@@ -94,7 +95,7 @@ class PostgresToCSVStrategy(AbstractToCSVStrategy):
             zip_process = multiprocessing.Process(
                 target=split_and_zip_data_files,
                 args=(
-                    str(covid_profile_download_zip_path),
+                    str(download_zip_path),
                     temp_data_file_name,
                     str(destination_path),
                     self.file_format,
@@ -116,7 +117,7 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
         self._logger = logger
 
     def download_to_csv(
-        self, source_sql, destination_path, destination_file_name, working_dir_path, covid_profile_download_zip_path
+        self, source_sql, destination_path, destination_file_name, working_dir_path, download_zip_path, source_df=None
     ):
         # These imports are here for a reason.
         #   some strategies do not require spark
@@ -132,7 +133,7 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
         # The place to write intermediate data files to in s3
         s3_bucket_name = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
         s3_bucket_path = f"s3a://{s3_bucket_name}"
-        s3_bucket_sub_path = "temp_covid_download"
+        s3_bucket_sub_path = "temp_download"
         s3_destination_path = f"{s3_bucket_path}/{s3_bucket_sub_path}/{destination_file_name}"
         try:
             extra_conf = {
@@ -149,8 +150,18 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
             if not self.spark:
                 self.spark_created_by_command = True
                 self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)  # type: SparkSession
-            df = self.spark.sql(source_sql)
-            record_count = write_csv_file(self.spark, df, parts_dir=s3_destination_path, logger=self._logger)
+            if source_df is not None:
+                df = source_df
+            else:
+                df = self.spark.sql(source_sql)
+            record_count = write_csv_file(
+                self.spark,
+                df,
+                parts_dir=s3_destination_path,
+                num_partitions=1,
+                max_records_per_file=EXCEL_ROW_LIMIT,
+                logger=self._logger,
+            )
             # When combining these later, will prepend the extracted header to each resultant file.
             # The parts therefore must NOT have headers or the headers will show up in the data when combined.
             header = ",".join([_.name for _ in df.schema.fields])
@@ -159,8 +170,8 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
                 spark=self.spark,
                 parts_dir=s3_destination_path,
                 header=header,
-                max_rows_per_merged_file=EXCEL_ROW_LIMIT,
                 logger=self._logger,
+                part_merge_group_size=1,
             )
             final_csv_data_file_locations = self._move_data_csv_s3_to_local(
                 s3_bucket_name, merged_file_paths, s3_bucket_path, s3_bucket_sub_path, destination_path_dir
@@ -172,7 +183,7 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
             delete_s3_object(s3_bucket_name, s3_destination_path)
             if self.spark_created_by_command:
                 self.spark.stop()
-        append_files_to_zip_file(final_csv_data_file_locations, covid_profile_download_zip_path)
+        append_files_to_zip_file(final_csv_data_file_locations, download_zip_path)
         self._logger.info(f"Generated the following data csv files {final_csv_data_file_locations}")
         return final_csv_data_file_locations, record_count
 
@@ -186,7 +197,7 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
             s3_file_paths: A list of file paths to move from s3, name should
                 include s3a:// and bucket name
             s3_bucket_path: The bucket path, e.g. s3a:// + bucket name
-            s3_bucket_sub_path: The path to the s3 files in the bucket, exluding s3a:// + bucket name, e.g. temp_covid_directory/files
+            s3_bucket_sub_path: The path to the s3 files in the bucket, exluding s3a:// + bucket name, e.g. temp_directory/files
             destination_path_dir: The location to move those files from s3 to, must not include the
                 file name in the path. This path should be a diretory.
 
