@@ -65,7 +65,7 @@ Returns transaction records which match the provided filters grouped by their pr
 
 + Response 200 (application/json)
     + Attributes (object)
-        + `results` (required, array[AwardGroup], fixed-type)
+        + `results` (required, array[AwardGroupResponse], fixed-type)
         + `page_metadata` (required, PageMetaDataObject, fixed-type)
         + `limit`: 10 (required, number)
 
