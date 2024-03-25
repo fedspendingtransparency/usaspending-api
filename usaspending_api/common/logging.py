@@ -1,4 +1,4 @@
-from datetime.datetime import now
+from datetime import datetime
 from django.utils.deprecation import MiddlewareMixin
 
 import logging
@@ -68,7 +68,7 @@ class LoggingMiddleware(MiddlewareMixin):
             "remote_addr": get_remote_addr(request),
             "host": request.get_host(),
             "method": request.method,
-            "timestamp": now().strftime("%m/%d/%y %H:%M:%S"),
+            "timestamp": datetime.now().strftime("%m/%d/%y %H:%M:%S"),
         }
 
         try:
@@ -137,7 +137,7 @@ class LoggingMiddleware(MiddlewareMixin):
         self.log["status_code"] = 500  # Unable to get status code from exception server return 500 as default
         self.log["response_ms"] = self.get_response_ms()
         self.log["status"] = "ERROR"
-        self.log["timestamp"] = now().strftime("%d/%m/%y %H:%M:%S")
+        self.log["timestamp"] = datetime.now().strftime("%d/%m/%y %H:%M:%S")
         self.log["traceback"] = traceback.format_exc()
 
         self.server_logger.error("%s", self.get_message_string(), extra=self.log)
