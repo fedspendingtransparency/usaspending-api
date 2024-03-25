@@ -1,4 +1,4 @@
-from datetime.timezone.utc import now
+from datetime.datetime import now
 from django.utils.deprecation import MiddlewareMixin
 
 import logging
