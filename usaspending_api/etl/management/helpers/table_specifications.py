@@ -74,7 +74,7 @@ from usaspending_api.transactions.delta_models import (
 from usaspending_api.transactions.models import SourceAssistanceTransaction
 from usaspending_api.transactions.models import SourceProcurementTransaction
 
-
+# These table specifications represent tables that are generated in Databricks and will be copied to Postgres
 DATABRICKS_GENERATED_TABLE_SPEC = {
     "award_search": {
         "model": AwardSearch,
@@ -285,6 +285,9 @@ DATABRICKS_GENERATED_TABLE_SPEC = {
     },
 }
 
+# These table specifications represent tables that are generated in Postgres and will be copied to Databricks.
+# Exception to this is `transaction_normalized`, `transaction_fpds`, and `transaction_fabs`. They are generated
+# in Databricks, but from a testing perspective, we consider them to be generated in Postgres
 POSTGRES_GENERATED_TABLE_SPEC = {
     "awards": {
         "model": Award,
