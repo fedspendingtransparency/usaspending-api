@@ -198,13 +198,6 @@ Returns transaction records which match the provided filters grouped by their pr
 
 ## Request Objects
 
-### PageMetaDataObject (object)
-+ `page`: 1 (required, number)
-+ `hasNext`: false (required, boolean)
-+ `hasPrevious`: false (required, boolean)
-+ `next` (required, number, nullable)
-+ `previous` (required, number, nullable)
-
 ### AdvancedFilterObject (object)
 + `keywords`: `lockheed` (required, array[string], fixed-type)
 + `award_type_codes` (required, FilterObjectAwardTypes, fixed-type)
@@ -405,3 +398,9 @@ List of column names to request
 + `Place of Performance` (required, string, nullable)
 + `Assistance Listing` (required, string, nullable)
 
+### PageMetaDataObject (object)
++ `page`: 1 (required, number)
++ `hasNext`: false (required, boolean)
++ `hasPrevious`: false (required, boolean)
++ `next` (required, number, nullable)
++ `previous` (required, number, nullable)
