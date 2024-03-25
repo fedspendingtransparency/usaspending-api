@@ -1,6 +1,6 @@
 from argparse import ArgumentError
 from datetime import datetime
-from broker.models import LoadTracker as LoadTrackerModel, LoadTrackerStep, LoadTrackerLoadType
+from usaspending_api.broker.models import LoadTracker as LoadTrackerModel, LoadTrackerStep, LoadTrackerLoadType
 from usaspending_api.broker.lookups import LoadTrackerStepEnum, LoadTrackerLoadTypeEnum
 from django.db.models import Max
 
