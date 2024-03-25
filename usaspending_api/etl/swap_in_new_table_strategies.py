@@ -1,18 +1,30 @@
 from abc import ABC, abstractmethod
 from argparse import ArgumentError
 from datetime import datetime, timezone
-from django.db import connection
+import json
+from pprint import pformat
+import re
+from django.db import ProgrammingError, connection, transaction
 import logging
+from usaspending_api.broker.helpers.last_delta_table_load_version import (
+    get_last_delta_table_load_versions,
+    update_last_live_load_version,
+)
+from usaspending_api.broker.lookups import LoadTrackerLoadTypeEnum, LoadTrackerStepEnum
 from usaspending_api.common.helpers.sql_helpers import (
+    get_parent_partitioned_table,
+    is_table_partitioned,
     ordered_dictionary_fetcher,
 )
 from usaspending_api.common.load_tracker import LoadTracker
 
 from django.core.management import BaseCommand
 from typing import List
+from usaspending_api.etl.management.commands.load_query_to_delta import TABLE_SPEC
 from usaspending_api.search.delta_models.award_search import AWARD_SEARCH_COLUMNS
 from usaspending_api.etl.management.sql.swap_in_new_table.upsert_live_tables import upsert_live_tables_sql
 from usaspending_api.etl.management.sql.swap_in_new_table.delete_from_live_tables import delete_from_live_tables_sql
+from usaspending_api.etl.management.sql.swap_in_new_table.dependent_views import detect_dep_view_sql
 
 
 class SwapInNewTableStrategy(ABC):
