@@ -23,7 +23,7 @@ from usaspending_api.config import CONFIG
 from usaspending_api.etl.award_helpers import update_awards
 from usaspending_api.etl.management.helpers.table_specifications import (
     DATABRICKS_GENERATED_TABLE_SPEC,
-    POSTGRES_GENERATED_TABLE_SPEC
+    POSTGRES_GENERATED_TABLE_SPEC,
 )
 
 # ==== Spark Automated Integration Test Fixtures ==== #
