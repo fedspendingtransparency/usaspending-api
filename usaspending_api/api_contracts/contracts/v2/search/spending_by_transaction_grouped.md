@@ -70,128 +70,129 @@ Returns transaction records which match the provided filters grouped by their pr
         + `limit`: 10 (required, number)
 
     + Body
-        {
-            "limit": 10,
-            "page_metadata": {
-                "page": 1,
-                "hasPrevious": false,
-                "hasNext": true,
-                "previous": null,
-                "next": 2
-            },
-            "results": [
-                {
-                    "Prime Award ID": "HSSCCG10J00265",
-                    "Matching Transaction Count": 4,
-                    "Matching Transaction Obligation": 49142818.18, 
-                    "children": [
-                        {
-                            "Awarding Sub Agency": "U.S. Citizenship and Immigration Services",
-                            "Award ID": "HSSCCG10J00265",
-                            "Awarding Agency": "Department of Homeland Security",
-                            "Action Date": "2012-06-20",
-                            "internal_id": "24261000",
-                            "Mod": "P00011",
-                            "Recipient Name": "LEIDOS, INC.",
-                            "Transaction Amount": "15639242.36",
-                            "generated_internal_id": "CONT_AWD_HSSCCG10J00265_7003_HSHQDC06D00026_7001",
-                            "Award Type": "DELIVERY ORDER"
-                        },
-                        {
-                            "Awarding Sub Agency": "U.S. Citizenship and Immigration Services",
-                            "Award ID": "HSSCCG10J00265",
-                            "Awarding Agency": "Department of Homeland Security",
-                            "Action Date": "2011-06-21",
-                            "internal_id": "24261000",
-                            "Mod": "P00008",
-                            "Recipient Name": "LEIDOS, INC.",
-                            "Transaction Amount": "15226100.09",
-                            "generated_internal_id": "CONT_AWD_HSSCCG10J00265_7003_HSHQDC06D00026_7001",
-                            "Award Type": "DELIVERY ORDER"
-                        },
-                        {
-                            "Awarding Sub Agency": "U.S. Citizenship and Immigration Services",
-                            "Award ID": "HSSCCG10J00265",
-                            "Awarding Agency": "Department of Homeland Security",
-                            "Action Date": "2013-06-25",
-                            "internal_id": "24261000",
-                            "Mod": "P00019",
-                            "Recipient Name": "LEIDOS, INC.",
-                            "Transaction Amount": "10497321.20",
-                            "generated_internal_id": "CONT_AWD_HSSCCG10J00265_7003_HSHQDC06D00026_7001",
-                            "Award Type": "DELIVERY ORDER"
-                        },
-                        {
-                            "Awarding Sub Agency": "U.S. Citizenship and Immigration Services",
-                            "Award ID": "HSSCCG10J00265",
-                            "Awarding Agency": "Department of Homeland Security",
-                            "Action Date": "2010-09-20",
-                            "internal_id": "24261000",
-                            "Mod": "0",
-                            "Recipient Name": "LEIDOS, INC.",
-                            "Transaction Amount": "7780154.53",
-                            "generated_internal_id": "CONT_AWD_HSSCCG10J00265_7003_HSHQDC06D00026_7001",
-                            "Award Type": "DELIVERY ORDER"
-                        }
-                    ]
+
+            {
+                "limit": 10,
+                "page_metadata": {
+                    "page": 1,
+                    "hasPrevious": false,
+                    "hasNext": true,
+                    "previous": null,
+                    "next": 2
                 },
-                {
-                    "Prime Award ID": "HHSM500201600013U",
-                    "Matching Transaction Count": 4,
-                    "Matching Transaction Obligation": 29207504.00, 
-                    "children": [
-                        {
-                            "Awarding Sub Agency": "Centers for Medicare and Medicaid Services",
-                            "Award ID": "HHSM500201600013U",
-                            "Awarding Agency": "Department of Health and Human Services",
-                            "Action Date": "2019-08-26",
-                            "internal_id": "23325500",
-                            "Mod": "P00006",
-                            "Recipient Name": "LEIDOS, INC.",
-                            "Transaction Amount": "8303064.00",
-                            "generated_internal_id": "CONT_AWD_HHSM500201600013U_7530_GS00Q09BGD0039_4735",
-                            "Award Type": "DELIVERY ORDER"
-                        },
-                        {
-                            "Awarding Sub Agency": "Centers for Medicare and Medicaid Services",
-                            "Award ID": "HHSM500201600013U",
-                            "Awarding Agency": "Department of Health and Human Services",
-                            "Action Date": "2018-08-27",
-                            "internal_id": "23325500",
-                            "Mod": "P00003",
-                            "Recipient Name": "LEIDOS, INC.",
-                            "Transaction Amount": "7964806.00",
-                            "generated_internal_id": "CONT_AWD_HHSM500201600013U_7530_GS00Q09BGD0039_4735",
-                            "Award Type": "DELIVERY ORDER"
-                        },
-                        {
-                            "Awarding Sub Agency": "Centers for Medicare and Medicaid Services",
-                            "Award ID": "HHSM500201600013U",
-                            "Awarding Agency": "Department of Health and Human Services",
-                            "Action Date": "2018-01-11",
-                            "internal_id": "23325500",
-                            "Mod": "P00002",
-                            "Recipient Name": "LEIDOS, INC.",
-                            "Transaction Amount": "6600114.00",
-                            "generated_internal_id": "CONT_AWD_HHSM500201600013U_7530_GS00Q09BGD0039_4735",
-                            "Award Type": "DELIVERY ORDER"
-                        },
-                        {
-                            "Awarding Sub Agency": "Centers for Medicare and Medicaid Services",
-                            "Award ID": "HHSM500201600013U",
-                            "Awarding Agency": "Department of Health and Human Services",
-                            "Action Date": "2017-07-06",
-                            "internal_id": "23325500",
-                            "Mod": "5",
-                            "Recipient Name": "LEIDOS, INC.",
-                            "Transaction Amount": "6339520.00",
-                            "generated_internal_id": "CONT_AWD_HHSM500201600013U_7530_GS00Q09BGD0039_4735",
-                            "Award Type": "DELIVERY ORDER"
-                        }
-                    ]
-                }
-            ]
-        }
+                "results": [
+                    {
+                        "Prime Award ID": "HSSCCG10J00265",
+                        "Matching Transaction Count": 4,
+                        "Matching Transaction Obligation": 49142818.18, 
+                        "children": [
+                            {
+                                "Awarding Sub Agency": "U.S. Citizenship and Immigration Services",
+                                "Award ID": "HSSCCG10J00265",
+                                "Awarding Agency": "Department of Homeland Security",
+                                "Action Date": "2012-06-20",
+                                "internal_id": "24261000",
+                                "Mod": "P00011",
+                                "Recipient Name": "LEIDOS, INC.",
+                                "Transaction Amount": "15639242.36",
+                                "generated_internal_id": "CONT_AWD_HSSCCG10J00265_7003_HSHQDC06D00026_7001",
+                                "Award Type": "DELIVERY ORDER"
+                            },
+                            {
+                                "Awarding Sub Agency": "U.S. Citizenship and Immigration Services",
+                                "Award ID": "HSSCCG10J00265",
+                                "Awarding Agency": "Department of Homeland Security",
+                                "Action Date": "2011-06-21",
+                                "internal_id": "24261000",
+                                "Mod": "P00008",
+                                "Recipient Name": "LEIDOS, INC.",
+                                "Transaction Amount": "15226100.09",
+                                "generated_internal_id": "CONT_AWD_HSSCCG10J00265_7003_HSHQDC06D00026_7001",
+                                "Award Type": "DELIVERY ORDER"
+                            },
+                            {
+                                "Awarding Sub Agency": "U.S. Citizenship and Immigration Services",
+                                "Award ID": "HSSCCG10J00265",
+                                "Awarding Agency": "Department of Homeland Security",
+                                "Action Date": "2013-06-25",
+                                "internal_id": "24261000",
+                                "Mod": "P00019",
+                                "Recipient Name": "LEIDOS, INC.",
+                                "Transaction Amount": "10497321.20",
+                                "generated_internal_id": "CONT_AWD_HSSCCG10J00265_7003_HSHQDC06D00026_7001",
+                                "Award Type": "DELIVERY ORDER"
+                            },
+                            {
+                                "Awarding Sub Agency": "U.S. Citizenship and Immigration Services",
+                                "Award ID": "HSSCCG10J00265",
+                                "Awarding Agency": "Department of Homeland Security",
+                                "Action Date": "2010-09-20",
+                                "internal_id": "24261000",
+                                "Mod": "0",
+                                "Recipient Name": "LEIDOS, INC.",
+                                "Transaction Amount": "7780154.53",
+                                "generated_internal_id": "CONT_AWD_HSSCCG10J00265_7003_HSHQDC06D00026_7001",
+                                "Award Type": "DELIVERY ORDER"
+                            }
+                        ]
+                    },
+                    {
+                        "Prime Award ID": "HHSM500201600013U",
+                        "Matching Transaction Count": 4,
+                        "Matching Transaction Obligation": 29207504.00, 
+                        "children": [
+                            {
+                                "Awarding Sub Agency": "Centers for Medicare and Medicaid Services",
+                                "Award ID": "HHSM500201600013U",
+                                "Awarding Agency": "Department of Health and Human Services",
+                                "Action Date": "2019-08-26",
+                                "internal_id": "23325500",
+                                "Mod": "P00006",
+                                "Recipient Name": "LEIDOS, INC.",
+                                "Transaction Amount": "8303064.00",
+                                "generated_internal_id": "CONT_AWD_HHSM500201600013U_7530_GS00Q09BGD0039_4735",
+                                "Award Type": "DELIVERY ORDER"
+                            },
+                            {
+                                "Awarding Sub Agency": "Centers for Medicare and Medicaid Services",
+                                "Award ID": "HHSM500201600013U",
+                                "Awarding Agency": "Department of Health and Human Services",
+                                "Action Date": "2018-08-27",
+                                "internal_id": "23325500",
+                                "Mod": "P00003",
+                                "Recipient Name": "LEIDOS, INC.",
+                                "Transaction Amount": "7964806.00",
+                                "generated_internal_id": "CONT_AWD_HHSM500201600013U_7530_GS00Q09BGD0039_4735",
+                                "Award Type": "DELIVERY ORDER"
+                            },
+                            {
+                                "Awarding Sub Agency": "Centers for Medicare and Medicaid Services",
+                                "Award ID": "HHSM500201600013U",
+                                "Awarding Agency": "Department of Health and Human Services",
+                                "Action Date": "2018-01-11",
+                                "internal_id": "23325500",
+                                "Mod": "P00002",
+                                "Recipient Name": "LEIDOS, INC.",
+                                "Transaction Amount": "6600114.00",
+                                "generated_internal_id": "CONT_AWD_HHSM500201600013U_7530_GS00Q09BGD0039_4735",
+                                "Award Type": "DELIVERY ORDER"
+                            },
+                            {
+                                "Awarding Sub Agency": "Centers for Medicare and Medicaid Services",
+                                "Award ID": "HHSM500201600013U",
+                                "Awarding Agency": "Department of Health and Human Services",
+                                "Action Date": "2017-07-06",
+                                "internal_id": "23325500",
+                                "Mod": "5",
+                                "Recipient Name": "LEIDOS, INC.",
+                                "Transaction Amount": "6339520.00",
+                                "generated_internal_id": "CONT_AWD_HHSM500201600013U_7530_GS00Q09BGD0039_4735",
+                                "Award Type": "DELIVERY ORDER"
+                            }
+                        ]
+                    }
+                ]
+            }
 
 # Data Structures
 
