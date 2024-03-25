@@ -11,7 +11,7 @@ django-extensions==3.1.*
 django-spaghetti-and-meatballs==0.4.0
 Django==5.0.3
 django_cte==1.2.*
-djangorestframework==3.13.*
+djangorestframework==3.15.*
 docutils==0.15.2
 drf-api-tracking==1.8.0
 drf-extensions==0.7.*
