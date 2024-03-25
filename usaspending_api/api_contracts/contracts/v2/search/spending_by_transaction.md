@@ -5,7 +5,7 @@ HOST: https://api.usaspending.gov
 
 ## POST
 
-Returns transaction records which match the keyword and award type code filters.
+Returns transaction records which match the provided filters.
 
 + Request (application/json)
     + Schema
@@ -208,48 +208,18 @@ Returns transaction records which match the keyword and award type code filters.
 
 # Data Structures
 
-## PageMetaDataObject (object)
+## Request Objects
+
+### PageMetaDataObject (object)
 + `page`: 1 (required, number)
 + `hasNext`: false (required, boolean)
 + `hasPrevious`: false (required, boolean)
 + `next` (required, number, nullable)
 + `previous` (required, number, nullable)
 
-## TransactionResponse (object)
-
-### Sample
-+ `Action Date`: `2018-05-21` (required, string, nullable)
-+ `Award ID`: `DTFAWA05C00031R` (required, string, nullable)
-+ `Award Type`: `INDEFINITE DELIVERY / INDEFINITE QUANTITY` (required, string, nullable)
-+ `Awarding Agency`: `Department of Transportation` (required, string, nullable)
-+ `Awarding Sub Agency`: `Federal Aviation Administration` (required, string, nullable)
-+ `internal_id`: `68856340` (required, string, nullable)
-+ `generated_internal_id`: `CONT_AWD_00013U_7090_KJ88_4735` (required, string, nullable)
-+ `Mod`: `P00206` (required, string, nullable)
-+ `Recipient Name`: `LEIDOS INNOVATIONS CORPORATION` (required, string, nullable)
-+ `Transaction Amount`: `40000000.00` (required, string, nullable)
-
-### Default
-+ `Action Date` (required, string, nullable)
-+ `Award ID` (required, string, nullable)
-+ `Award Type` (required, string, nullable)
-+ `Awarding Agency` (required, string, nullable)
-+ `Awarding Sub Agency` (required, string, nullable)
-+ `awarding_agency_id` (required, string, nullable)
-+ `Funding Agency` (required, string, nullable)
-+ `Funding Sub Agency` (required, string, nullable)
-+ `internal_id` (required, string, nullable)
-+ `generated_internal_id` (required, string, nullable)
-+ `Issued Date` (required, string, nullable)
-+ `Last Date to Order` (required, string, nullable)
-+ `Loan Value` (required, string, nullable)
-+ `Mod` (required, string, nullable)
-+ `Recipient Name` (required, string, nullable)
-+ `Subsidy Cost` (required, string, nullable)
-+ `Transaction Amount` (required, string, nullable)
-
 ### AdvancedFilterObject (object)
 + `keywords`: `lockheed` (required, array[string], fixed-type)
++ `time_period` (optional, array[TimePeriodObject], fixed-type)
 + `award_type_codes` (required, FilterObjectAwardTypes, fixed-type)
 + `place_of_performance_scope` (optional, enum[string])
     + Members
@@ -283,9 +253,6 @@ Returns transaction records which match the keyword and award type code filters.
     If the `def_codes` provided are in the COVID-19 or IIJA group, the query will only return transactions that meet two requirements:
     1. The transaction's associated prime award has at least one File C record with one of the supplied DEFCs.
     2. The matching DEFC's associated public law has an enactment date prior to the transaction's action_date.
-
-### TimePeriodObject (object)
-These fields are defined in the [TransactionSearchTimePeriodObject](../../../search_filters.md#transaction-search-time-period-object)
 
 ### LocationObject (object)
 These fields are defined in the [StandardLocationObject](../../../search_filters.md#standard-location-object)
@@ -336,10 +303,33 @@ These fields are defined in the [StandardLocationObject](../../../search_filters
 + `sub` (optional, string, nullable)
     Sub-Account Code - three digits
 
-## FilterObjectAwardTypes (array)
+###  TimePeriodObject
+
+**Description:**
+Search based on one or more date range using the transaction's `action_date` field. Dates should be in the following format: YYYY-MM-DD
+
+**Example**
+```
+{
+    "time_period": [
+        {
+            "start_date": "2016-10-01",
+            "end_date": "2017-09-30"
+        }
+    ]
+}
+```
+
+Request parameter description:
++ `start_date`: (required)
+    See [Time Period](#time-period)
++ `end_date`: (required)
+    See [Time Period](#time-period)
+
+### FilterObjectAwardTypes (array)
 List of filterable award types
 
-### Sample
+#### Sample
 - `IDV_A`
 - `IDV_B`
 - `IDV_B_A`
@@ -349,7 +339,7 @@ List of filterable award types
 - `IDV_D`
 - `IDV_E`
 
-### Default
+#### Default
 - `02`
 - `03`
 - `04`
@@ -377,9 +367,8 @@ List of filterable award types
 List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing.
 A list of current DEFC can be found [here.](https://files.usaspending.gov/reference_data/def_codes.csv)
 
-## FieldNameObject (array)
+### FieldNameObject (array)
 List of column names to request
-
 - `Action Date` 
 - `Award ID` 
 - `Award Type` 
@@ -398,3 +387,36 @@ List of column names to request
 - `Subsidy Cost` 
 - `Transaction Amount` 
 - `def_codes`
+
+## TransactionResponse (object)
+
+### Sample
++ `Action Date`: `2018-05-21` (required, string, nullable)
++ `Award ID`: `DTFAWA05C00031R` (required, string, nullable)
++ `Award Type`: `INDEFINITE DELIVERY / INDEFINITE QUANTITY` (required, string, nullable)
++ `Awarding Agency`: `Department of Transportation` (required, string, nullable)
++ `Awarding Sub Agency`: `Federal Aviation Administration` (required, string, nullable)
++ `internal_id`: `68856340` (required, string, nullable)
++ `generated_internal_id`: `CONT_AWD_00013U_7090_KJ88_4735` (required, string, nullable)
++ `Mod`: `P00206` (required, string, nullable)
++ `Recipient Name`: `LEIDOS INNOVATIONS CORPORATION` (required, string, nullable)
++ `Transaction Amount`: `40000000.00` (required, string, nullable)
+
+### Default
++ `Action Date` (required, string, nullable)
++ `Award ID` (required, string, nullable)
++ `Award Type` (required, string, nullable)
++ `Awarding Agency` (required, string, nullable)
++ `Awarding Sub Agency` (required, string, nullable)
++ `awarding_agency_id` (required, string, nullable)
++ `Funding Agency` (required, string, nullable)
++ `Funding Sub Agency` (required, string, nullable)
++ `internal_id` (required, string, nullable)
++ `generated_internal_id` (required, string, nullable)
++ `Issued Date` (required, string, nullable)
++ `Last Date to Order` (required, string, nullable)
++ `Loan Value` (required, string, nullable)
++ `Mod` (required, string, nullable)
++ `Recipient Name` (required, string, nullable)
++ `Subsidy Cost` (required, string, nullable)
++ `Transaction Amount` (required, string, nullable)
