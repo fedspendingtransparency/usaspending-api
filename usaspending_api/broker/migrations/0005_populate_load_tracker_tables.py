@@ -14,9 +14,9 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RunSQL(
             sql=[
-                f"INSERT INTO load_tracker_step(name) VALUES({LoadTrackerStepEnum.SWAP_IN_NEW_TABLE_AWARD_SEARCH.value}",
-                f"INSERT INTO load_tracker_type(name) VALUES({LoadTrackerLoadTypeEnum.INCREMENTAL_LOAD.value})",
-                f"INSERT INTO load_tracker_type(name) VALUES({LoadTrackerLoadTypeEnum.FULL_LOAD.value})",
+                f"INSERT INTO load_tracker_step(name) VALUES('{LoadTrackerStepEnum.SWAP_IN_NEW_TABLE_AWARD_SEARCH.value}')",
+                f"INSERT INTO load_tracker_type(name) VALUES('{LoadTrackerLoadTypeEnum.INCREMENTAL_LOAD.value}')",
+                f"INSERT INTO load_tracker_type(name) VALUES('{LoadTrackerLoadTypeEnum.FULL_LOAD.value}')",
             ]
         ),
     ]
