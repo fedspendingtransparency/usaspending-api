@@ -3,7 +3,7 @@ from datetime import datetime
 from usaspending_api.broker.models import LoadTracker as LoadTrackerModel, LoadTrackerStep, LoadTrackerLoadType
 from usaspending_api.broker.lookups import LoadTrackerStepEnum, LoadTrackerLoadTypeEnum
 from django.db.models import Max
-
+from typing import Optional
 
 class LoadTracker:
 
@@ -52,7 +52,7 @@ class LoadTracker:
         return load_type_record
 
     @staticmethod
-    def get_latest_load_tracker_type(load_step: LoadTrackerStepEnum) -> LoadTrackerLoadTypeEnum | None:
+    def get_latest_load_tracker_type(load_step: LoadTrackerStepEnum) -> Optional[LoadTrackerLoadTypeEnum]:
         """Returns the load tracker load type of the latest load tracker for the specified load tracker step.
         This function does not consider whether a load tracker step is done or not. In other words,
         if a load tracker record does not have an end date time but is the latest record for the load
