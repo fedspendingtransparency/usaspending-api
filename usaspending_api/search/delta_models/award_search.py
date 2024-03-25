@@ -144,6 +144,8 @@ AWARD_SEARCH_COLUMNS = {
     "total_outlays": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)"},
 }
 
+award_search_incremental_delete_temp_schema = {"award_id": "BIGINT NOT NULL"}
+
 AWARD_SEARCH_DELTA_COLUMNS = {k: v["delta"] for k, v in AWARD_SEARCH_COLUMNS.items()}
 AWARD_SEARCH_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in AWARD_SEARCH_COLUMNS.items()}
 
