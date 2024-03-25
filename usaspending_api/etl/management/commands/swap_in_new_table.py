@@ -1,5 +1,4 @@
-from argparse import ArgumentTypeError
-from typing import List, OrderedDict, Optional
+from typing import List, OrderedDict
 from django.core.management import BaseCommand
 from usaspending_api.broker.lookups import LoadTrackerLoadTypeEnum, LoadTrackerStepEnum
 from usaspending_api.common.load_tracker import LoadTracker

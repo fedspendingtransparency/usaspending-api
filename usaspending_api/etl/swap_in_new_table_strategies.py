@@ -108,7 +108,7 @@ class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
         """
         cursor.execute(validation_query)
         validation_results = ordered_dictionary_fetcher(cursor)
-        if len(validation_results) == 0 or validation_results[0]["exists"] == False:
+        if len(validation_results) == 0 or validation_results[0]["exists"] is False:
             raise ValueError(f"Swap in new table command cannot proceed because {table} does not exist.")
 
     def _validate_temp_tables(self, cursor, temp_table_list: List):
@@ -128,7 +128,7 @@ class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
             """
             cursor.execute(validation_query)
             validation_results = ordered_dictionary_fetcher(cursor)
-            if len(validation_results) == 0 or validation_results[0]["exists"] == False:
+            if len(validation_results) == 0 or validation_results[0]["exists"] is False:
                 raise ValueError(f"Swap in new table command cannot proceed because {temp_table_name} does not exist.")
 
     def _execute_upserts(self, cursor, qualified_upsert_postgres_table):
