@@ -286,10 +286,10 @@ These fields are defined in the [StandardLocationObject](../../../search_filters
 + `sub` (optional, string, nullable)
     Sub-Account Code - three digits
 
-## FilterObjectAwardTypes (array)
+### FilterObjectAwardTypes (array)
 List of filterable award types
 
-### Sample
+#### Sample
 - `IDV_A`
 - `IDV_B`
 - `IDV_B_A`
@@ -299,7 +299,7 @@ List of filterable award types
 - `IDV_D`
 - `IDV_E`
 
-### Default
+#### Default
 - `02`
 - `03`
 - `04`
