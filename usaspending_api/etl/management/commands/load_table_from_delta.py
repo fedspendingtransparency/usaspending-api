@@ -5,14 +5,18 @@ import boto3
 import numpy as np
 import psycopg2
 
+from argparse import ArgumentTypeError
 from django import db
 from django.core.management.base import BaseCommand
-from django.db.models import Model
 from math import ceil
 from pyspark.sql import SparkSession, DataFrame
 from typing import Dict, Optional, List
 from datetime import datetime
 
+from usaspending_api.broker.helpers.last_delta_table_load_version import (
+    get_last_delta_table_load_versions,
+    update_last_staging_load_version,
+)
 from usaspending_api.common.csv_stream_s3_to_pg import copy_csvs_from_s3_to_pg
 from usaspending_api.common.etl.spark import convert_array_cols_to_string
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
@@ -21,12 +25,11 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_active_spark_session,
     get_jdbc_connection_properties,
     get_usas_jdbc_url,
-    get_jvm_logger,
 )
 from usaspending_api.config import CONFIG
 from usaspending_api.settings import DEFAULT_TEXT_SEARCH_CONFIG
 
-from usaspending_api.etl.management.commands.create_delta_table import TABLE_SPEC
+from usaspending_api.etl.management.commands.load_query_to_delta import TABLE_SPEC
 
 # Note: the `delta` type is not actually in Spark SQL. It's how we're temporarily storing the data before converting it
 #       to the proper postgres type, since pySpark doesn't automatically support this conversion.
@@ -84,12 +87,6 @@ class Command(BaseCommand):
             "SQL bulk COPY command will be used, with the Delta table transformed to CSV files first.",
         )
         parser.add_argument(
-            "--recreate",
-            action="store_true",
-            help="Instead of truncating and reloading into an existing table, this forces the script to drop and"
-            "rebuild the table from scratch.",
-        )
-        parser.add_argument(
             "--keep-csv-files",
             action="store_true",
             help="Only valid/used when --jdbc-inserts is not provided. Whether to prevent overwriting of the temporary "
@@ -109,7 +106,22 @@ class Command(BaseCommand):
             "--reset-sequence",
             action="store_true",
             help="In the case of a Postgres sequence for the provided 'delta-table' the sequence will be reset to 1. "
-            "If the job fails for some unexpected reason then the sequence will be reset to the previous value.",
+            "If the job fails for some unexpected reason then the sequence will be reset to the previous value. "
+            "Should not be used with the incremental flag.",
+        )
+        parser.add_argument(
+            "--incremental",
+            action="store_true",
+            help="Instead of writing the full table to temporary tables in Postgres, use Change Data Feed to "
+            "determine changes, and write those to staging tables in Postgres.",
+        )
+        parser.add_argument(
+            "--incremental-threshold",
+            type=float,
+            default=0.5,
+            help="A percentage represented as a decimal controlling the threshold. When the ratio of changed records to "
+            "total records in the `delta_table` surpasses this threshold, this command will fall back on performing a "
+            "full table load, even if the `--incremental` flag is used.",
         )
 
     def _split_dfs(self, df, special_columns):
@@ -164,44 +176,185 @@ class Command(BaseCommand):
             spark = configure_spark_session(**extra_conf, spark_context=spark)  # type: SparkSession
 
         # Setup Logger
-        self.logger = get_jvm_logger(spark, __name__)
+        self.logger = logging.getLogger("script")
 
         # Resolve Parameters
-        delta_table = options["delta_table"]
-        recreate = options["recreate"]
-
-        table_spec = TABLE_SPEC[delta_table]
+        self.options = options
+        source_delta_table = self.options["delta_table"]
+        self.table_spec = TABLE_SPEC[source_delta_table]
 
         # Delta side
-        destination_database = options["alt_delta_db"] or table_spec["destination_database"]
-        delta_table_name = options["alt_delta_name"] or delta_table
-        delta_table = f"{destination_database}.{delta_table_name}" if destination_database else delta_table_name
+        source_delta_table_name = self.options["alt_delta_name"] or source_delta_table
+        source_delta_database = self.options["alt_delta_db"] or self.table_spec["destination_database"]
+        self.qualified_source_delta_table = f"{source_delta_database}.{source_delta_table_name}"
+        delta_table_load_version_key = self.table_spec["delta_table_load_version_key"]
+        incremental_delete_temp_schema = self.table_spec["incremental_delete_temp_schema"]
 
-        # Postgres side - source
-        postgres_table = None
-        postgres_model = table_spec["model"]
-        postgres_schema = table_spec["source_database"] or table_spec["swap_schema"]
-        postgres_table_name = table_spec["source_table"] or table_spec["swap_table"]
-        postgres_cols = table_spec["source_schema"]
-        column_names = table_spec.get("column_names")
-        tsvectors = table_spec.get("tsvectors") or {}
-        if postgres_table_name:
-            postgres_table = f"{postgres_schema}.{postgres_table_name}" if postgres_schema else postgres_table_name
+        # Postgres side
+        postgres_schema = self.table_spec["swap_schema"]
+        postgres_schema_def = self.table_spec["source_schema"]
+        self.postgres_table_name = self.table_spec["swap_table"]
+        self.qualified_postgres_table = f"{postgres_schema}.{self.postgres_table_name}"
+        postgres_temp_schema = "temp"
 
-        # Postgres side - temp
-        temp_schema = "temp"
-        temp_table_suffix = "temp"
-        temp_table_suffix_appendage = f"_{temp_table_suffix}" if {temp_table_suffix} else ""
-        if postgres_table:
-            temp_table_name = f"{postgres_table_name}{temp_table_suffix_appendage}"
-        else:
-            temp_table_name = f"{delta_table_name}{temp_table_suffix_appendage}"
-        temp_table = f"{temp_schema}.{temp_table_name}"
+        # Determine the latest version of the Delta Table at the time this command is running. This will later
+        # be stored as the latest version written to the staging table, regardless of whether we update incrementally
+        # or repopulate the entire table
+        last_update_version = (
+            spark.sql(f"DESCRIBE HISTORY {self.qualified_source_delta_table}").select("version").first()[0]
+        )
 
-        summary_msg = f"Copying delta table {delta_table} to a Postgres temp table {temp_table}."
-        if postgres_table:
-            summary_msg = f"{summary_msg} The temp table will be based on the postgres table {postgres_table}"
-        self.logger.info(summary_msg)
+        updated_incrementally = False
+
+        if self.options["incremental"]:
+            # Validate that necessary TABLE_SPEC fields are present for incremental loads
+            if not (incremental_delete_temp_schema and delta_table_load_version_key):
+                self.logger.error(
+                    f"TABLE_SPEC configuration for {source_delta_table} is not sufficient for incremental loads"
+                )
+                self.logger.error(
+                    f"Values are required for fields: `incremental_delete_temp_schema` and `delta_table_load_version_key`"
+                )
+                raise ArgumentTypeError(
+                    f"TABLE_SPEC configuration for {source_delta_table} is not sufficient for incremental loads"
+                )
+
+            # Retrieve information about which versions of the Delta Table have been loaded where. We'll use
+            # the `last_live_version` to query changes because we want all the data that has not persisted
+            # to the live table, regardless of what has been previously written to the staging table because it
+            # will be overwritten.
+            last_staging_version, last_live_version = get_last_delta_table_load_versions(delta_table_load_version_key)
+
+            # Create a Dataframe with a unique list of entities (based on the table's unique key) that have been
+            # updated since this command was last run. If an entity has been updated multiple times, the latest
+            # update will be selected. This utilizes Delta Lake's Change Data Feed feature.
+            # This will be used to determine if the number of updated records exceeds the update threshold, and
+            # (if not exceeding) it will serve as the basis for dataframes to be written to Postgres with incremental
+            # changes.
+            unique_identifiers = self.table_spec["unique_identifiers"]
+            distinct_df = spark.sql(
+                f"""
+                SELECT * FROM (
+                    SELECT * ,
+                    ROW_NUMBER() OVER (PARTITION BY {', '.join(unique_identifiers)} ORDER BY _commit_version DESC) AS row_num
+                    FROM table_changes('{self.qualified_source_delta_table}', {last_live_version + 1})
+                    WHERE _change_type IN ('insert', 'update_postimage', 'delete')
+                ) WHERE row_num = 1
+            """
+            )
+
+            if not self._surpassed_update_threshold(spark, distinct_df):
+                upsert_table_suffix = "temp_upserts"
+                delete_table_suffix = "temp_deletes"
+
+                # Upsert Schema (matches base table)
+                qualified_upsert_temp_table = self._prepare_temp_table(postgres_temp_schema, upsert_table_suffix)
+
+                # Delete Schema
+                delete_schema_def = self.table_spec["incremental_delete_temp_schema"]
+                qualified_delete_temp_table = self._prepare_temp_table(
+                    postgres_temp_schema, delete_table_suffix, schema_override=delete_schema_def
+                )
+
+                # Split the Dataframe into two based on the type of update that was made
+                upsert_df = distinct_df.filter("_change_type IN ('insert', 'update_postimage')")
+                delete_df = distinct_df.filter("_change_type IN ('delete')")
+
+                self._write_to_postgres(
+                    spark, upsert_df, qualified_upsert_temp_table, postgres_schema_def, self.table_spec["column_names"]
+                )
+                self._write_to_postgres(
+                    spark, delete_df, qualified_delete_temp_table, delete_schema_def, list(delete_schema_def)
+                )
+
+                updated_incrementally = True
+
+        if not updated_incrementally:
+            temp_table_suffix = "temp"
+
+            qualified_temp_table = self._prepare_temp_table(postgres_temp_schema, temp_table_suffix)
+
+            # Read from Delta
+            df = spark.table(self.qualified_source_delta_table)
+
+            # Reset the sequence before load for a table if it exists
+            if self.options["reset_sequence"] and self.table_spec.get("postgres_seq_name"):
+                postgres_seq_last_value = self._set_sequence_value(self.table_spec["postgres_seq_name"])
+            else:
+                postgres_seq_last_value = None
+
+            self._write_to_postgres(
+                spark,
+                df,
+                qualified_temp_table,
+                postgres_schema_def,
+                self.table_spec["column_names"],
+                postgres_seq_last_value,
+            )
+
+            self.logger.info(
+                f"Note: this has merely loaded the data from Delta. For various reasons, we've separated the"
+                f" metadata portion of the table download to a separate script. If not already done so,"
+                f" please run the following additional command to complete the process: "
+                f" 'copy_table_metadata --source-table {self.qualified_postgres_table} --dest-table {qualified_temp_table}'."
+            )
+
+        if delta_table_load_version_key:
+            update_last_staging_load_version(delta_table_load_version_key, last_update_version)
+
+        # We're done with spark at this point
+        if spark_created_by_command:
+            spark.stop()
+
+    def _surpassed_update_threshold(self, spark: SparkSession, df: DataFrame) -> bool:
+        """
+        Determines whether the number of records in the incoming DF exceeds the threshold of allowable
+        changes when compared to total number records in the table being copied. The threshold percentage
+        is based on the `incremental_parameter` parameter for the job.
+
+        Args:
+            spark: the active SparkSession to work within
+            distinct_df: Dataframe containing changed records from table
+        Returns:
+            threshold_surpassed: Whether or not the number of changes has exceeded the threshold
+        """
+
+        threshold = self.options["incremental_threshold"]
+        threshold_surpassed = False
+
+        total_record_count = spark.sql(f"SELECT COUNT(*) FROM {self.qualified_source_delta_table}").first()[0]
+
+        records_changed = df.count()
+
+        if records_changed / total_record_count > threshold:
+            self.logger.warning(f"Exceeded threshold of {threshold:.0%} for incremental updates")
+            self.logger.warning(f"---- Total Records  in  {self.qualified_source_delta_table}: {total_record_count}")
+            self.logger.warning(f"---- Records Changed in {self.qualified_source_delta_table}: {total_record_count}")
+            threshold_surpassed = True
+
+        return threshold_surpassed
+
+    def _prepare_temp_table(self, temp_schema: str, temp_table_suffix: str, schema_override=None):
+        """
+        Creates a temporary table in the Postgres database. This table will either be based on the
+        the Delta Table being copied from's corresponding Postgres table (`self.qualified_postgres_table`)
+        or a provided `schema_override` schema.
+
+        NOTES:
+        - If the temporary table already exists, it will be dropped and recreated.
+        - If the corresponding Postgres table is partitioned, the temporary table will also be partitioned
+
+        Args:
+            temp_schema: Destination schema in Postgres in which to create the temporary table
+            temp_table_suffix: String appended to table name to differentiate between tables
+            schema_override: Key value pairs with column names and column types (respectively) to define
+                the schema of the temporary table. If not provided, the table will be based on the schema of the
+                Delta table being copied from's corresponding Postgres table
+        """
+
+        temp_table_suffix_appendage = f"_{temp_table_suffix}"
+        temp_table_name = f"{self.postgres_table_name}{temp_table_suffix_appendage}"
+        qualified_temp_table = f"{temp_schema}.{temp_table_name}"
 
         # Checking if the temp destination table already exists
         temp_dest_table_exists_sql = f"""
@@ -215,172 +368,93 @@ class Command(BaseCommand):
             cursor.execute(temp_dest_table_exists_sql)
             temp_dest_table_exists = cursor.fetchone()[0]
 
-        # If it does, and we're recreating it, drop it first
-        if temp_dest_table_exists and recreate:
-            self.logger.info(f"{temp_table} exists and recreate argument provided. Dropping first.")
+        # If it does, drop it first
+        if temp_dest_table_exists:
+            self.logger.info(f"{qualified_temp_table} already exists. Dropping first.")
             # If the schema has changed and we need to do a complete reload, just drop the table and rebuild it
-            clear_table_sql = f"DROP TABLE {temp_table}"
+            clear_table_sql = f"DROP TABLE {qualified_temp_table}"
             with db.connection.cursor() as cursor:
                 cursor.execute(clear_table_sql)
-            self.logger.info(f"{temp_table} dropped.")
-            temp_dest_table_exists = False
-        make_new_table = not temp_dest_table_exists
+            self.logger.info(f"{qualified_temp_table} dropped.")
 
-        is_postgres_table_partitioned = table_spec.get("postgres_partition_spec") is not None
+        is_postgres_table_partitioned = self.table_spec.get("postgres_partition_spec") is not None
 
-        if postgres_table or postgres_cols:
-            # Recreate the table if it doesn't exist. Spark's df.write automatically does this but doesn't account for
-            # the extra metadata (indexes, constraints, defaults) which CREATE TABLE X LIKE Y accounts for.
-            # If there is no postgres_table to base it on, it just relies on spark to make it and work with delta table
-            if make_new_table:
-                partition_clause = ""
-                storage_parameters = "WITH (autovacuum_enabled=FALSE)"
-                partitions_sql = []
-                if is_postgres_table_partitioned:
-                    partition_clause = (
-                        f"PARTITION BY {table_spec['postgres_partition_spec']['partitioning_form']}"
-                        f"({', '.join(table_spec['postgres_partition_spec']['partition_keys'])})"
-                    )
-                    storage_parameters = ""
-                    partitions_sql = [
-                        (
-                            f"CREATE TABLE "
-                            # Below: e.g. my_tbl_temp -> my_tbl_part_temp
-                            f"{temp_table[:-len(temp_table_suffix_appendage)]}{pt['table_suffix']}{temp_table_suffix_appendage} "
-                            f"PARTITION OF {temp_table} {pt['partitioning_clause']} "
-                            f"{storage_parameters}"
-                        )
-                        for pt in table_spec["postgres_partition_spec"]["partitions"]
-                    ]
-                if postgres_table:
-                    create_temp_sql = f"""
-                        CREATE TABLE {temp_table} (
-                            LIKE {postgres_table} INCLUDING DEFAULTS INCLUDING GENERATED INCLUDING IDENTITY
-                        ) {partition_clause} {storage_parameters}
-                    """
-                elif postgres_cols:
-                    create_temp_sql = f"""
-                        CREATE TABLE {temp_table} (
-                            {", ".join([f'{key} {val}' for key, val in postgres_cols.items()])}
-                        ) {partition_clause} {storage_parameters}
-                    """
-                else:
-                    raise RuntimeError(
-                        "make_new_table=True but neither a postgres_table or postgres_cols are "
-                        "populated for the target delta table in the TABLE_SPEC"
-                    )
-                with db.connection.cursor() as cursor:
-                    self.logger.info(f"Creating {temp_table}")
-                    cursor.execute(create_temp_sql)
-                    self.logger.info(f"{temp_table} created.")
-
-                    if is_postgres_table_partitioned and partitions_sql:
-                        for create_partition in partitions_sql:
-                            self.logger.info(f"Creating partition of {temp_table} with SQL:\n{create_partition}")
-                            cursor.execute(create_partition)
-                            self.logger.info("Partition created.")
-
-                    # If there are vectors, add the triggers that will populate them based on other calls
-                    # NOTE: Undetermined whether tsvector triggers can be applied on partitioned tables,
-                    #       at the top-level virtual/partitioned table (versus having to apply on each partition)
-                    for tsvector_name, derived_from_cols in tsvectors.items():
-                        self.logger.info(
-                            f"To prevent any confusion or duplicates, dropping the trigger"
-                            f" tsvector_update_{tsvector_name} if it exists before potentially recreating it."
-                        )
-                        cursor.execute(f"DROP TRIGGER IF EXISTS tsvector_update_{tsvector_name} ON {temp_table}")
-
-                        self.logger.info(
-                            f"Adding tsvector trigger for column {tsvector_name}"
-                            f" based on the following columns: {derived_from_cols}"
-                        )
-                        derived_from_cols_str = ", ".join(derived_from_cols)
-                        tsvector_trigger_sql = f"""
-                            CREATE TRIGGER tsvector_update_{tsvector_name} BEFORE INSERT OR UPDATE
-                            ON {temp_table} FOR EACH ROW EXECUTE PROCEDURE
-                            tsvector_update_trigger({tsvector_name}, '{DEFAULT_TEXT_SEARCH_CONFIG}',
-                                                    {derived_from_cols_str})
-                        """
-                        cursor.execute(tsvector_trigger_sql)
-                        self.logger.info(f"tsvector trigger for column {tsvector_name} added.")
-
-        # Read from Delta
-        df = spark.table(delta_table)
-
-        # Make sure that the column order defined in the Delta table schema matches
-        # that of the Spark dataframe used to pull from the Postgres table. While not
-        # always needed, this should help to prevent any future mismatch between the two.
-        if column_names:
-            df = df.select(column_names)
-
-        # If we're working off an existing table, truncate before loading in all the data
-        if not make_new_table:
-            self.logger.info(f"Truncating existing table {temp_table}")
-            with db.connection.cursor() as cursor:
-                cursor.execute(f"TRUNCATE {temp_table}")
-                self.logger.info(f"{temp_table} truncated.")
-
-        # Reset the sequence before load for a table if it exists
-        if options["reset_sequence"] and table_spec.get("postgres_seq_name"):
-            postgres_seq_last_value = self._set_sequence_value(table_spec["postgres_seq_name"])
-        else:
-            postgres_seq_last_value = None
-
-        # Write to Postgres
-        use_jdbc_inserts = options["jdbc_inserts"]
-        strategy = "JDBC INSERTs" if use_jdbc_inserts else "SQL bulk COPY CSV"
-        self.logger.info(
-            f"LOAD (START): Loading data from Delta table {delta_table} to {temp_table} using {strategy} " f"strategy"
-        )
-
-        try:
-            if use_jdbc_inserts:
-                self._write_with_jdbc_inserts(
-                    spark,
-                    df,
-                    temp_table,
-                    split_df_by_special_cols=True,
-                    postgres_model=postgres_model,
-                    postgres_cols=postgres_cols,
-                    overwrite=False,
-                )
-            else:
-                if not column_names:
-                    raise RuntimeError("column_names None or empty, but are required to map CSV cols to table cols")
-                spark_s3_bucket_name = options["spark_s3_bucket"]
-                self._write_with_sql_bulk_copy_csv(
-                    spark,
-                    df,
-                    delta_db=destination_database,
-                    delta_table_name=delta_table_name,
-                    temp_table=temp_table,
-                    ordered_col_names=column_names,
-                    spark_s3_bucket_name=spark_s3_bucket_name,
-                    keep_csv_files=True if options["keep_csv_files"] else False,
-                )
-        except Exception as exc:
-            if postgres_seq_last_value:
-                self.logger.error(
-                    f"Command failed unexpectedly; resetting the sequence to previous value: {postgres_seq_last_value}"
-                )
-                self._set_sequence_value(table_spec["postgres_seq_name"], postgres_seq_last_value)
-            raise Exception(exc)
-
-        self.logger.info(
-            f"LOAD (FINISH): Loaded data from Delta table {delta_table} to {temp_table} using {strategy} " f"strategy"
-        )
-
-        # We're done with spark at this point
-        if spark_created_by_command:
-            spark.stop()
-
-        if postgres_table:
-            self.logger.info(
-                f"Note: this has merely loaded the data from Delta. For various reasons, we've separated the"
-                f" metadata portion of the table download to a separate script. If not already done so,"
-                f" please run the following additional command to complete the process: "
-                f" 'copy_table_metadata --source-table {postgres_table} --dest-table {temp_table}'."
+        # Create the temporary table. Spark's df.write automatically does this but doesn't account for
+        # the extra metadata (indexes, constraints, defaults) which CREATE TABLE X LIKE Y accounts for.
+        # If there is no qualified_postgres_table to base it on, it just relies on spark to make it and work with delta table
+        partition_clause = ""
+        storage_parameters = "WITH (autovacuum_enabled=FALSE)"
+        partitions_sql = []
+        if is_postgres_table_partitioned:
+            partition_clause = (
+                f"PARTITION BY {self.table_spec['postgres_partition_spec']['partitioning_form']}"
+                f"({', '.join(self.table_spec['postgres_partition_spec']['partition_keys'])})"
             )
+            storage_parameters = ""
+            partitions_sql = [
+                (
+                    f"CREATE TABLE "
+                    # Below: e.g. my_tbl_temp -> my_tbl_part_temp
+                    f"{qualified_temp_table[:-len(temp_table_suffix_appendage)]}{pt['table_suffix']}{temp_table_suffix_appendage} "
+                    f"PARTITION OF {qualified_temp_table} {pt['partitioning_clause']} "
+                    f"{storage_parameters}"
+                )
+                for pt in self.table_spec["postgres_partition_spec"]["partitions"]
+            ]
+        if schema_override:
+            create_temp_sql = f"""
+                CREATE TABLE {qualified_temp_table} (
+                    {", ".join([f'{key} {val}' for key, val in schema_override.items()])}
+                ) {partition_clause} {storage_parameters}
+            """
+        elif self.qualified_postgres_table:
+            create_temp_sql = f"""
+                CREATE TABLE {qualified_temp_table} (
+                    LIKE {self.qualified_postgres_table} INCLUDING DEFAULTS INCLUDING GENERATED INCLUDING IDENTITY
+                ) {partition_clause} {storage_parameters}
+            """
+        else:
+            raise RuntimeError(
+                "Neither a postgres_table or postgres_schema_def is populated for the target "
+                "delta table in the TABLE_SPEC and no schema override is provided"
+            )
+        with db.connection.cursor() as cursor:
+            self.logger.info(f"Creating {qualified_temp_table}")
+            cursor.execute(create_temp_sql)
+            self.logger.info(f"{qualified_temp_table} created.")
+
+            if is_postgres_table_partitioned and len(partitions_sql) > 1:
+                for create_partition in partitions_sql:
+                    self.logger.info(f"Creating partition of {qualified_temp_table} with SQL:\n{create_partition}")
+                    cursor.execute(create_partition)
+                    self.logger.info("Partition created.")
+
+            # If there are vectors, add the triggers that will populate them based on other calls
+            # NOTE: Undetermined whether tsvector triggers can be applied on partitioned tables,
+            #       at the top-level virtual/partitioned table (versus having to apply on each partition)
+            tsvectors = self.table_spec.get("tsvectors") or {}
+            for tsvector_name, derived_from_cols in tsvectors.items():
+                self.logger.info(
+                    f"To prevent any confusion or duplicates, dropping the trigger"
+                    f" tsvector_update_{tsvector_name} if it exists before potentially recreating it."
+                )
+                cursor.execute(f"DROP TRIGGER IF EXISTS tsvector_update_{tsvector_name} ON {qualified_temp_table}")
+
+                self.logger.info(
+                    f"Adding tsvector trigger for column {tsvector_name}"
+                    f" based on the following columns: {derived_from_cols}"
+                )
+                derived_from_cols_str = ", ".join(derived_from_cols)
+                tsvector_trigger_sql = f"""
+                    CREATE TRIGGER tsvector_update_{tsvector_name} BEFORE INSERT OR UPDATE
+                    ON {qualified_temp_table} FOR EACH ROW EXECUTE PROCEDURE
+                    tsvector_update_trigger({tsvector_name}, '{DEFAULT_TEXT_SEARCH_CONFIG}',
+                                            {derived_from_cols_str})
+                """
+                cursor.execute(tsvector_trigger_sql)
+                self.logger.info(f"tsvector trigger for column {tsvector_name} added.")
+
+        return qualified_temp_table
 
     def _set_sequence_value(self, seq_name: str, val: Optional[int] = None) -> int:
         """
@@ -388,7 +462,12 @@ class Command(BaseCommand):
         sequence to help ensure we don't cross the threshold of values for an ID field as we reload a table every day.
         If the calling functions exits with an exception this will reset the sequence value to its previous next value.
 
-        Returns the previous value use by the sequence.
+        Args:
+            seq_name: Name of sequence to reset value for
+            val: Optional value to reset the sequence to. Defaults to 1
+
+        Returns:
+            last_value: the previous value use by the sequence.
         """
         new_seq_val = val if val else 1
         self.logger.info(f"Setting the Postgres sequence to {new_seq_val} for: {seq_name}")
@@ -398,13 +477,76 @@ class Command(BaseCommand):
             cursor.execute(f"ALTER SEQUENCE IF EXISTS {seq_name} RESTART WITH {new_seq_val}")
         return last_value
 
+    def _write_to_postgres(
+        self,
+        spark: SparkSession,
+        df: DataFrame,
+        qualified_temp_table: str,
+        postgres_schema_def: dict,
+        delta_column_names: List[str],
+        postgres_seq_last_value=None,
+    ):
+        """
+        Writes to Postgres using one of two methods (JDBC inserts or Bulk Copy CSV) based on the `--jdbc-inserts` option
+        for this command. When the option is True, this method writes using the JDBC inserts strategy. When False, it
+        writes with the Bulk Copy CSV strategy.
+
+        If an error occurs during either, and a previous sequence value for the Postgres table is provided, it will
+        reset the sequence value.
+
+        Args:
+            spark: the active SparkSession to work within
+            df: Dataframe containing data to write to the table
+            qualified_temp_table: The fully qualified Postgres table name to write the data to (<schema>.<table_name>)
+            postgres_scheme_def: Schema definition for Postgres table being written to in dictionary format. Key value
+                pairs contain column name and column types, respectively. Only used for JDBC insert strategy
+            delta_column_names: List of Delta columns to read from Dataframe before writing to Postgres.
+            postgres_seq_last_value: Last value of the Postgres Sequence. This is provided, so it can be reset to this
+                value in the case of an error
+        """
+
+        strategy = "JDBC INSERTs" if self.options["jdbc_inserts"] else "SQL bulk COPY CSV"
+
+        self.logger.info(f"LOAD (START): Loading dataframe to {qualified_temp_table} using {strategy} " f"strategy")
+
+        # Make sure that the column order defined in the Delta table schema matches
+        # that of the Spark dataframe used to pull from the Postgres table. While not
+        # always needed, this should help to prevent any future mismatch between the two.
+        df = df.select(delta_column_names)
+
+        try:
+            if self.options["jdbc_inserts"]:
+                self._write_with_jdbc_inserts(
+                    df,
+                    qualified_temp_table,
+                    postgres_schema_def,
+                )
+            else:
+                self._write_with_sql_bulk_copy_csv(
+                    spark,
+                    df,
+                    delta_s3_path=qualified_temp_table,
+                    qualified_temp_table=qualified_temp_table,
+                    ordered_col_names=delta_column_names,
+                    spark_s3_bucket_name=self.options["spark_s3_bucket"],
+                    keep_csv_files=True if self.options["keep_csv_files"] else False,
+                )
+        except Exception as exc:
+            if postgres_seq_last_value:
+                self.logger.error(
+                    f"Command failed unexpectedly; resetting the sequence to previous value: {postgres_seq_last_value}"
+                )
+                self._set_sequence_value(self.table_spec["postgres_seq_name"], postgres_seq_last_value)
+            raise Exception(exc)
+
+        self.logger.info(f"LOAD (FINISH): Loaded dataframe to {qualified_temp_table} using {strategy} " f"strategy")
+
     def _write_with_sql_bulk_copy_csv(
         self,
         spark: SparkSession,
         df: DataFrame,
-        delta_db: str,
-        delta_table_name: str,
-        temp_table: str,
+        delta_s3_path: str,
+        qualified_temp_table: str,
         ordered_col_names: List[str],
         spark_s3_bucket_name: str,
         keep_csv_files=False,
@@ -438,24 +580,23 @@ class Command(BaseCommand):
         - which means the DB could be processing 8 COPY commands concurrently
 
         Args:
-            spark (SparkSession): the active SparkSession to work within
-            df (DataFrame): the source data, which will be written to CSV files before COPY to Postgres
-            delta_db (str): the Delta Lake database in which to find the Delta table as source of the DataFrame
-            delta_table_name (str): the Delta table used as source of the DataFrame
-            temp_table (str): the name of the temp table (qualified with schema if needed) in the target Postgres DB
+            spark: the active SparkSession to work within
+            df: the source data, which will be written to CSV files before COPY to Postgres
+            delta_s3_path: the unique qualifier of the path in S3 to store temporary CSV files
+            qualified_temp_table: the name of the temp table (qualified with schema if needed) in the target Postgres DB
                 where the CSV data will be written to with COPY
-            ordered_col_names (List[str]): Ordered list of column names that must match the order of columns in the CSV
+            ordered_col_names: Ordered list of column names that must match the order of columns in the CSV
                 - The DataFrame should have its columns ordered by this
                 - And the COPY command should provide these cols so that COPY pulls the right data into the right cols
-            keep_csv_files (bool): Whether to prevent overwriting of these temporary CSV files by a subsequent write
+            keep_csv_files: Whether to prevent overwriting of these temporary CSV files by a subsequent write
                 to the same output path. Defaults to False. If True, this will instead put them in a timestamped
                 sub-folder of a "temp" folder. Be mindful of cleaning these up if setting to True. If False,
                 the same output path is used for each write and nukes-and-paves the files in that output path.
         """
-        csv_path = f"{CONFIG.SPARK_CSV_S3_PATH}/{delta_db}/{delta_table_name}/"
+        csv_path = f"{CONFIG.SPARK_CSV_S3_PATH}/{delta_s3_path}/"
         if keep_csv_files:
             csv_path = (
-                f"{CONFIG.SPARK_CSV_S3_PATH}/temp/{delta_db}/{delta_table_name}/"
+                f"{CONFIG.SPARK_CSV_S3_PATH}/temp/{delta_s3_path}/"
                 f"{datetime.strftime(datetime.utcnow(), '%Y%m%d%H%M%S')}/"
             )
         s3_bucket_with_csv_path = f"s3a://{spark_s3_bucket_name}/{csv_path}"
@@ -508,7 +649,9 @@ class Command(BaseCommand):
         file_count = len(gzipped_csv_files)
         self.logger.info(f"LOAD: Finished dumping {file_count} CSV files in {s3_bucket_with_csv_path}")
 
-        self.logger.info(f"LOAD: Starting SQL bulk COPY of {file_count} CSV files to Postgres {temp_table} table")
+        self.logger.info(
+            f"LOAD: Starting SQL bulk COPY of {file_count} CSV files to Postgres {qualified_temp_table} table"
+        )
 
         db_dsn = get_database_dsn_string()
         with psycopg2.connect(dsn=db_dsn) as connection:
@@ -544,24 +687,22 @@ class Command(BaseCommand):
                 s3_bucket_name=s3_bucket_name,
                 s3_obj_keys=s3_obj_keys,
                 db_dsn=db_dsn,
-                target_pg_table=temp_table,
+                target_pg_table=qualified_temp_table,
                 ordered_col_names=ordered_col_names,
                 gzipped=True,
                 work_mem_override=_PG_WORK_MEM_FOR_LARGE_CSV_COPY,
             ),
         ).collect()
 
-        self.logger.info(f"LOAD: Finished SQL bulk COPY of {file_count} CSV files to Postgres {temp_table} table")
+        self.logger.info(
+            f"LOAD: Finished SQL bulk COPY of {file_count} CSV files to Postgres {qualified_temp_table} table"
+        )
 
     def _write_with_jdbc_inserts(
         self,
-        spark: SparkSession,
         df: DataFrame,
-        temp_table: str,
-        split_df_by_special_cols: bool = False,
-        postgres_model: Optional[Model] = None,
-        postgres_cols: Optional[Dict[str, str]] = None,
-        overwrite: bool = False,
+        qualified_temp_table: str,
+        postgres_schema_def: Dict,
     ):
         """
         Write-from-delta-to-postgres strategy that leverages the native Spark ``DataFrame.write.jdbc`` approach.
@@ -575,57 +716,31 @@ class Command(BaseCommand):
         - which means the DB could be processing 20*1000 = 20,000 INSERT statements concurrently
 
         Args:
-            spark (SparkSession): the active SparkSession to work within
-            df (DataFrame): the source data, which will be written to CSV files before COPY to Postgres
-            temp_table (str): the name of the temp table (qualified with schema if needed) in the target Postgres DB
+            df: the source data, which will be written to CSV files before COPY to Postgres
+            qualified_temp_table: the name of the temp table (qualified with schema if needed) in the target Postgres DB
                 where the CSV data will be written to with COPY
-            split_df_by_special_cols (bool): Whether the data provided in the DataFrame is known to have special
-                columns for which there is not a data type in Spark but there is in
-                Postgres (like JSON or UUID datatype), and so they need to be handled specially in disjoint subsets
-                of the DataFrame. Defaults to False
-            postgres_model (Optional[Model]): Django Model object for the target Postgres table
-            postgres_cols Optional[Dict[str, str]]): Mapping of target table col names to Postgres data type
-            overwrite (bool): Defaults to False. Controls whether the table should be truncated first before
-            INSERTing (if True), or if INSERTs should append on existing data in the table (if False). NOTE: The table
-            may already have been TRUNCATEd as part of the setup of this job before it gets to this step of writing
-            to it.
+            postgres_schema_def: Schema of table being written to
         """
         special_columns = {}
-        save_mode = "overwrite" if overwrite else "append"
+        col_type_mapping = list(postgres_schema_def.items())
 
-        # If we are taking control of destination table creation, and not letting Spark auto-create it based
+        # We are taking control of destination table creation, and not letting Spark auto-create it based
         # on inference from the source DataFrame's schema, there could be incompatible col data types that need
         # special handling. Get those columns and handle each.
-        if split_df_by_special_cols:
-            if postgres_model:
-                col_type_mapping = [(column.name, type(column)) for column in postgres_model._meta.get_fields()]
-            else:
-                col_type_mapping = list(postgres_cols.items())
-            for column_name, column_type in col_type_mapping:
-                if column_type in SPECIAL_TYPES_MAPPING:
-                    special_columns[column_name] = column_type
-            split_dfs = self._split_dfs(df, list(special_columns))
-            split_df_count = len(split_dfs)
-            if split_df_count > 1 and save_mode != "append":
-                raise RuntimeError(
-                    "Multiple DataFrame subsets need to be appended to the destination "
-                    "table back-to-back but the write was set to overwrite, which is incorrect."
-                )
-            for i, split_df in enumerate(split_dfs):
-                # Note: we're only appending here as we don't want to re-truncate or overwrite with multiple dataframes
-                self.logger.info(f"LOAD: Loading part {i + 1} of {split_df_count} (note: unequal part sizes)")
-                split_df.write.jdbc(
-                    url=get_usas_jdbc_url(),
-                    table=temp_table,
-                    mode=save_mode,
-                    properties=get_jdbc_connection_properties(),
-                )
-                self.logger.info(f"LOAD: Part {i + 1} of {split_df_count} loaded (note: unequal part sizes)")
-        else:
-            # Do it in one shot
-            df.write.jdbc(
+        for column_name, column_type in col_type_mapping:
+            if column_type in SPECIAL_TYPES_MAPPING:
+                special_columns[column_name] = column_type
+        self.logger.info(f"Special Columns: {special_columns}")
+        split_dfs = self._split_dfs(df, list(special_columns))
+        split_df_count = len(split_dfs)
+
+        for i, split_df in enumerate(split_dfs):
+            # Note: we're only appending here as we don't want to re-truncate or overwrite with multiple dataframes
+            self.logger.info(f"LOAD: Loading part {i + 1} of {split_df_count} (note: unequal part sizes)")
+            split_df.write.jdbc(
                 url=get_usas_jdbc_url(),
-                table=temp_table,
-                mode=save_mode,
+                table=qualified_temp_table,
+                mode="append",
                 properties=get_jdbc_connection_properties(),
             )
+            self.logger.info(f"LOAD: Part {i + 1} of {split_df_count} loaded (note: unequal part sizes)")

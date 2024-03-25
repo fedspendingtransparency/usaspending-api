@@ -32,7 +32,6 @@ TEST_TABLE_SPEC = {
         "source_table": "test_table",
         "source_database": "temp",
         "destination_database": "temp",
-        "swap_table": None,
         "swap_schema": None,
         "partition_column": "id",
         "partition_column_type": "numeric",
