@@ -237,7 +237,7 @@ class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
             upsert_temp_table=qualified_upsert_postgres_table,
             join_condition=self.join_condition,
             set_cols=", ".join(set_cols),
-            insert_col_names=", ".join([col_name for col_name in insert_col_name_list]),
+            insert_col_names=", ".join([f"s.{col_name}" for col_name in insert_col_name_list]),
             insert_values=insert_values,
         )
         cursor.execute(formatted_update_live_tables_sql)
