@@ -172,8 +172,8 @@ def load_delta_table_from_postgres(
     if alt_name:
         cmd_args += [f"--alt-name={alt_name}"]
 
-    create_cmd_args = copy.deepcopy(cmd_args)
-    load_cmd_args = copy.deepcopy(cmd_args)
+    create_cmd_args = deepcopy(cmd_args)
+    load_cmd_args = deepcopy(cmd_args)
 
     if incremental:
         create_cmd_args += ["--enable-cdf"]

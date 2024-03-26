@@ -19,7 +19,7 @@ from usaspending_api.etl.tests.integration.test_load_transactions_in_delta_looku
     TestInitialRunNoPostgresLoader as InitialRunNoPostgresLoader,  # Remove 'test' prefix to avoid pytest running these tests twice
 )
 from usaspending_api.config import CONFIG
-from usaspending_api.etl.management.commands.load_table_to_delta import TABLE_SPEC
+from usaspending_api.etl.management.helpers.table_specifications import POSTGRES_GENERATED_TABLE_SPEC as TABLE_SPEC
 
 
 class _TransactionFabsFpdsCore:

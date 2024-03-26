@@ -17,7 +17,7 @@ from usaspending_api.common.helpers.sql_helpers import (
     is_table_partitioned,
     get_parent_partitioned_table,
 )
-from usaspending_api.etl.management.commands.load_query_to_delta import TABLE_SPEC
+from usaspending_api.etl.management.helpers.table_specifications import DATABRICKS_GENERATED_TABLE_SPEC as TABLE_SPEC
 
 logger = logging.getLogger("script")
 

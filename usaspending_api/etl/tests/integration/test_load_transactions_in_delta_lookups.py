@@ -24,7 +24,7 @@ from usaspending_api.transactions.delta_models.transaction_fabs import TRANSACTI
 from usaspending_api.transactions.delta_models.transaction_fpds import TRANSACTION_FPDS_COLUMNS
 from usaspending_api.transactions.delta_models.transaction_normalized import TRANSACTION_NORMALIZED_COLUMNS
 from usaspending_api.config import CONFIG
-from usaspending_api.etl.management.commands.load_table_to_delta import TABLE_SPEC
+from usaspending_api.etl.management.helpers.table_specifications import POSTGRES_GENERATED_TABLE_SPEC as TABLE_SPEC
 
 _BEGINNING_OF_TIME = datetime(1970, 1, 1, tzinfo=timezone.utc)
 _INITIAL_DATETIME = datetime(2022, 10, 31, tzinfo=timezone.utc)
