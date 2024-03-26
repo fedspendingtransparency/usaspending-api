@@ -118,63 +118,14 @@ class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
             # Begin refreshing views
             self.dep_views = self._dependent_views(cursor, curr_schema_name, table)
             self.old_suffix = f"_old{datetime.utcnow().strftime('%Y%m%d%H%M%S')}"
-            # We only need to call this once, not per temp table. Right now we have more than one temp table
-            # so we are just arbitrarly using one of them.
-            self._create_new_views(cursor, table, temp_schema_name, upsert_table_name)
-            self._swap_dependent_views(cursor, temp_schema_name)
-            self._drop_old_views(cursor)
+            self._refresh_mat_views(cursor, )
 
-    def _create_new_views(self, cursor, table, temp_schema_name, temp_table_name):
+    def _refresh_mat_views(self, cursor):
         for dep_view in self.dep_views:
-            # Note: Despite pointing at the new temp table at first,
-            #       the recreated views will automatically update and stay pointed to it in the swap via postgres
-            self.logger.info(f"Recreating dependent view: {dep_view['dep_view_fullname']}")
-            dep_view_sql = dep_view["dep_view_sql"].replace(table, temp_table_name)
-            mv_s = "MATERIALIZED " if dep_view["is_matview"] else ""
-            cursor.execute(f"DROP {mv_s}VIEW IF EXISTS {temp_schema_name}.{dep_view['dep_view_name']};")
-            cursor.execute(f"CREATE {mv_s}VIEW {temp_schema_name}.{dep_view['dep_view_name']} " f"AS ({dep_view_sql});")
-
-    def _drop_old_views(self, cursor):
-        for dep_view in self.dep_views:
-            mv_s = "MATERIALIZED " if dep_view["is_matview"] else ""
-            self.logger.info(f"Dropping old dependent view: {dep_view['dep_view_fullname']}{self.old_suffix}")
-            cursor.execute(f"DROP {mv_s}VIEW {dep_view['dep_view_fullname']}{self.old_suffix};")
-
-    def _dependent_views(self, cursor, curr_schema_name, curr_table_name):
-        """Detects views that are dependent on the table to be swapped."""
-        cursor.execute(detect_dep_view_sql.format(curr_schema_name=curr_schema_name, curr_table_name=curr_table_name))
-        dep_views = ordered_dictionary_fetcher(cursor)
-        return dep_views
-
-    def _swap_dependent_views(self, cursor, temp_schema_name):
-        sql_view_template = "ALTER {mv_s}VIEW {old_view_schema}.{old_view_name} RENAME TO {new_view_name};"
-        for dep_view in self.dep_views:
-            # Coordinate the schema move and view renames in 1 atomic operation
-            # But don't have the transaction span more than 1 view at a time to avoid any potential deadlocks with
-            # ongoing queries
-            with transaction.atomic():
-                mv_s = "MATERIALIZED " if dep_view["is_matview"] else ""
-                view_rename_sql = [
-                    # 1. move temp suffixed view to the target schema
-                    f"ALTER {mv_s}VIEW {temp_schema_name}.{dep_view['dep_view_name']} "
-                    f"SET SCHEMA {dep_view['dep_view_schema']};",
-                    # 2. rename active view in target schema to have old suffix
-                    sql_view_template.format(
-                        mv_s=mv_s,
-                        old_view_schema=dep_view["dep_view_schema"],
-                        old_view_name=dep_view["dep_view_name"],
-                        new_view_name=f"{dep_view['dep_view_name']}{self.old_suffix}",
-                    ),
-                    # 3. rename temp view (now moved into target schema) to active name
-                    sql_view_template.format(
-                        mv_s=mv_s,
-                        old_view_schema=dep_view["dep_view_schema"],
-                        old_view_name=f"{dep_view['dep_view_name']}",
-                        new_view_name=dep_view["dep_view_name"],
-                    ),
-                ]
-                self.logger.info(f"Running view swap SQL in an atomic transaction:\n{pformat(view_rename_sql)}")
-                cursor.execute("\n".join(view_rename_sql))
+            if not dep_view["is_matview"]:
+                continue
+            self.logger.info(f"Refreshing dependent materialized views: {dep_view['dep_view_fullname']}")
+            cursor.execute(f"REFRESH MATERIALIZED VIEW CONCURRENTLY {dep_view['dep_view_fullname']}")
 
     def _validate_options(self) -> None:
         """Validates the combination of options provided to this command. Will
