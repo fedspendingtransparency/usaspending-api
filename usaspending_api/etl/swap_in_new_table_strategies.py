@@ -187,7 +187,7 @@ class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
         insert_value_list = insert_col_name_list[:-3]
         insert_value_list.extend(["NULL"])
         insert_value_list.extend([f"""'{load_datetime.isoformat(" ")}'"""] * 2)
-        insert_values = ", ".join([value for value in insert_value_list])
+        insert_values = ", ".join([f"s.{value}" for value in insert_value_list])
         upsert_live_tables_sql.format(
             dest_table=qualified_dest_table,
             upsert_temp_table=qualified_upsert_postgres_table,
@@ -196,7 +196,7 @@ class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
             insert_col_names=", ".join([col_name for col_name in insert_col_name_list]),
             insert_values=insert_values,
         )
-        cursor.execute(cursor)
+        cursor.execute(upsert_live_tables_sql)
 
     def _execute_deletes(self, cursor, qualified_dest_table, qualified_delete_postgres_table):
         """Facilitates the process of deleting from our live tables based on the temp tables."""
@@ -205,7 +205,7 @@ class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
             delete_temp_table=qualified_delete_postgres_table,
             join_condition="d.award_id = s.award_id",
         )
-        cursor.execute(cursor)
+        cursor.execute(delete_from_live_tables_sql)
 
 
 class FullLoadSwapInTableStrategy(SwapInNewTableStrategy):
