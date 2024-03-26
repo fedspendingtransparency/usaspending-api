@@ -223,7 +223,7 @@ class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
             join_condition=self.join_condition,
             null_column=self.null_column,
             set_cols=", ".join(set_cols),
-            insert_cols=", ".join([col_name for col_name in insert_col_name_list]),
+            insert_cols=", ".join([f"s.{col_name}" for col_name in insert_col_name_list]),
         )
         cursor.execute(formatted_insert_live_tables_sql)
 
