@@ -9,6 +9,7 @@ from usaspending_api.etl.swap_in_new_table_strategies import (
 
 LOAD_STEP = "swap_in_new_table-{table}"
 
+
 class Command(BaseCommand):
     help = """
     This command is used to load data to our live tables in Postgres. We support two different types of loads

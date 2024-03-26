@@ -60,7 +60,7 @@ class LoadTrackerLoadType(models.Model):
 class LoadTracker(models.Model):
     load_tracker_id = models.AutoField(primary_key=True)
     load_tracker_load_type = models.ForeignKey("LoadTrackerLoadType", on_delete=models.deletion.DO_NOTHING)
-    load_tracker_step =  models.ForeignKey("LoadTrackerStep", on_delete=models.deletion.DO_NOTHING)
+    load_tracker_step = models.ForeignKey("LoadTrackerStep", on_delete=models.deletion.DO_NOTHING)
     start_date_time = models.DateTimeField(auto_now=True, null=False)
     end_date_time = models.DateTimeField(auto_now=True, null=True)
 

@@ -29,6 +29,7 @@ from usaspending_api.etl.management.sql.swap_in_new_table.dependent_views import
 
 COLUMN_SPECS = {"award_search": AWARD_SEARCH_COLUMNS}
 
+
 class SwapInNewTableStrategy(ABC):
     """A composable class that can be used according to the Strategy software design pattern.
     This class establishes the common interface for a suite of strategies used by the swap in table
@@ -58,7 +59,6 @@ class SwapInNewTableStrategy(ABC):
 
 
 class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
-
     def __init__(self, django_command: BaseCommand, **swap_table_options: dict):
         """
         Args:
@@ -214,7 +214,7 @@ class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
             join_condition="d.generated_unique_award_id = s.generated_unique_award_id",
             null_column="d.generated_unique_award_id",
             set_cols=", ".join(set_cols),
-            insert_cols=", ".join([col_name for col_name in insert_col_name_list])
+            insert_cols=", ".join([col_name for col_name in insert_col_name_list]),
         )
         cursor.execute(formatted_insert_live_tables_sql)
 
@@ -603,7 +603,9 @@ class FullLoadSwapInTableStrategy(SwapInNewTableStrategy):
             for val in temp_constraints
         }
         curr_constr_specs = {
-            val["constraint_name"] if val["is_nullable"] else val["check_clause"]: {
+            val["constraint_name"]
+            if val["is_nullable"]
+            else val["check_clause"]: {
                 "constraint_type": val["constraint_type"],
                 "check_clause": val["check_clause"],
                 "unique_constraint_name": val["unique_constraint_name"],
