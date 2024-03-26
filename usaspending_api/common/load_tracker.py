@@ -5,8 +5,8 @@ from usaspending_api.broker.lookups import LoadTrackerStepEnum, LoadTrackerLoadT
 from django.db.models import Max
 from typing import Optional
 
-class LoadTracker:
 
+class LoadTracker:
     def __init__(self, load_type: LoadTrackerLoadType, load_step: LoadTrackerStepEnum):
         self.load_step = LoadTracker.get_load_step(load_step)
         self.load_type = LoadTracker.get_load_type(load_type)
@@ -16,7 +16,9 @@ class LoadTracker:
         """Performs the necessary operations to start this LoadTracker."""
         start_time = datetime.now()
         self._load_tracker = LoadTrackerModel.objects.create(
-            load_tracker_load_type_id=self.load_type.load_tracker_load_type_id, load_tracker_step_id=self.load_step.load_tracker_step_id, start_date_time=start_time
+            load_tracker_load_type_id=self.load_type.load_tracker_load_type_id,
+            load_tracker_step_id=self.load_step.load_tracker_step_id,
+            start_date_time=start_time,
         )
 
     def end(self):

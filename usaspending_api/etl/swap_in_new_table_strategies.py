@@ -28,6 +28,7 @@ from usaspending_api.etl.management.sql.swap_in_new_table.delete_from_live_table
 from usaspending_api.etl.management.sql.swap_in_new_table.dependent_views import detect_dep_view_sql
 
 
+
 class SwapInNewTableStrategy(ABC):
     """A composable class that can be used according to the Strategy software design pattern.
     This class establishes the common interface for a suite of strategies used by the swap in table
@@ -219,7 +220,7 @@ class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
             join_condition=self.join_condition,
             null_column=self.null_column,
             set_cols=", ".join(set_cols),
-            insert_cols=", ".join([col_name for col_name in insert_col_name_list])
+            insert_cols=", ".join([col_name for col_name in insert_col_name_list]),
         )
         cursor.execute(formatted_insert_live_tables_sql)
 
@@ -608,7 +609,9 @@ class FullLoadSwapInTableStrategy(SwapInNewTableStrategy):
             for val in temp_constraints
         }
         curr_constr_specs = {
-            val["constraint_name"] if val["is_nullable"] else val["check_clause"]: {
+            val["constraint_name"]
+            if val["is_nullable"]
+            else val["check_clause"]: {
                 "constraint_type": val["constraint_type"],
                 "check_clause": val["check_clause"],
                 "unique_constraint_name": val["unique_constraint_name"],
