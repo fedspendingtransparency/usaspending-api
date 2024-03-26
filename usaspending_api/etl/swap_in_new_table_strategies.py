@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from argparse import ArgumentError
-from datetime import datetime, timezone
+from datetime import datetime
 import json
 from pprint import pformat
 import re
@@ -20,12 +20,14 @@ from usaspending_api.common.load_tracker import LoadTracker
 
 from django.core.management import BaseCommand
 from typing import List
-from usaspending_api.etl.management.commands.load_query_to_delta import TABLE_SPEC
+from usaspending_api.etl.management.helpers.table_specifications import DATABRICKS_GENERATED_TABLE_SPEC as TABLE_SPEC
 from usaspending_api.search.delta_models.award_search import AWARD_SEARCH_COLUMNS
-from usaspending_api.etl.management.sql.swap_in_new_table.upsert_live_tables import upsert_live_tables_sql
+from usaspending_api.etl.management.sql.swap_in_new_table.update_live_tables import update_live_tables_sql
+from usaspending_api.etl.management.sql.swap_in_new_table.insert_to_live_tables import insert_to_live_tables_sql
 from usaspending_api.etl.management.sql.swap_in_new_table.delete_from_live_tables import delete_from_live_tables_sql
 from usaspending_api.etl.management.sql.swap_in_new_table.dependent_views import detect_dep_view_sql
 
+COLUMN_SPECS = {"award_search": AWARD_SEARCH_COLUMNS}
 
 class SwapInNewTableStrategy(ABC):
     """A composable class that can be used according to the Strategy software design pattern.
@@ -57,7 +59,7 @@ class SwapInNewTableStrategy(ABC):
 
 class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
 
-    def __init__(self, swap_table_options: dict, django_command: BaseCommand):
+    def __init__(self, django_command: BaseCommand, **swap_table_options: dict):
         """
         Args:
             swap_table_options: A collection of self._options that are used by the logic to
@@ -76,6 +78,7 @@ class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
         self._validate_options()
 
         table = self._options["table"]
+        self.columns = COLUMN_SPECS[table]
         # TODO: PIPE-513 developed a solution that forces this knowledge duplication hopefully that other implementation can be fixed in the future.
         # Fixing that other implementation would enable the suite of swap_in_new_table classes to not duplicate knowledge.
         upsert_table_name = f"{table}_temp_upserts"
@@ -91,7 +94,7 @@ class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
                 UNION
                 SELECT matviewname AS tablename, schemaname
                 FROM pg_matviews
-                WHERE matviewname = '{table}' OR tablename = '{delete_table_name}' OR tablename = '{upsert_table_name}'
+                WHERE matviewname = '{table}' OR matviewname = '{delete_table_name}' OR matviewname = '{upsert_table_name}'
             """
             )
             schemas_lookup = {table: schema for (table, schema) in cursor.fetchall()}
@@ -112,13 +115,19 @@ class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
             self._validate_live_tables(cursor, table)
             self._validate_temp_tables(cursor, temp_table_list)
 
-            self._execute_upserts(cursor, qualified_dest_table, qualified_upsert_postgres_table)
+            self._execute_updates(cursor, qualified_dest_table, qualified_upsert_postgres_table)
+            self._execute_inserts(cursor, qualified_dest_table, qualified_upsert_postgres_table)
             self._execute_deletes(cursor, qualified_dest_table, qualified_delete_postgres_table)
 
             # Begin refreshing views
             self.dep_views = self._dependent_views(cursor, curr_schema_name, table)
-            self.old_suffix = f"_old{datetime.utcnow().strftime('%Y%m%d%H%M%S')}"
-            self._refresh_mat_views(cursor, )
+            self._refresh_mat_views(cursor)
+
+    def _dependent_views(self, cursor, curr_schema_name, curr_table_name):
+        """Detects views that are dependent on the table to be swapped."""
+        cursor.execute(detect_dep_view_sql.format(curr_schema_name=curr_schema_name, curr_table_name=curr_table_name))
+        dep_views = ordered_dictionary_fetcher(cursor)
+        return dep_views
 
     def _refresh_mat_views(self, cursor):
         for dep_view in self.dep_views:
@@ -131,12 +140,12 @@ class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
         """Validates the combination of options provided to this command. Will
         raise an exception if any are invalid
         """
-        is_undo = self._options["undo"]
-        keep_old_data = self._options["keep-old-data"]
-        foreign_key = self._options["allow-foreign-key"]
-        if is_undo is not None or keep_old_data is not None or foreign_key is not None:
-            raise ArgumentError(
-                f"The swap in new table command is using the IncrementalLoadSwapInTableStrategy strategy class. IncrementalLoadSwapInTableStrategy does not support these options '--keep-old-data', '--undo', and '--allow-foreign-key'."
+        is_undo = self._options.get("undo", None)
+        keep_old_data = self._options.get("keep-old-data", None)
+        foreign_key = self._options.get("allow-foreign-key", None)
+        if is_undo is True or keep_old_data is not None or foreign_key is not None:
+            raise ValueError(
+                "The swap in new table command is using the IncrementalLoadSwapInTableStrategy strategy class. IncrementalLoadSwapInTableStrategy does not support these options '--keep-old-data', '--undo', and '--allow-foreign-key'."
             )
 
     def _validate_live_tables(self, cursor, table: str):
@@ -170,7 +179,7 @@ class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
                 SELECT EXISTS (
                 SELECT FROM pg_catalog.pg_class c
                 JOIN   pg_catalog.pg_namespace n ON n.oid = c.relnamespace
-                WHERE  c.relname = {temp_table_name}
+                WHERE  c.relname = '{temp_table_name}'
                 AND    c.relkind = 'r'
                 );
             """
@@ -179,29 +188,44 @@ class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
             if len(validation_results) == 0 or validation_results[0]["exists"] is False:
                 raise ValueError(f"Swap in new table command cannot proceed because {temp_table_name} does not exist.")
 
-    def _execute_upserts(self, cursor, qualified_dest_table, qualified_upsert_postgres_table):
-        """Facilitates the process of upserting into the live tables from the temp tables."""
-        set_cols = [f"d.{col_name} = s.{col_name}" for col_name in AWARD_SEARCH_COLUMNS]
-        insert_col_name_list = [col_name for col_name in AWARD_SEARCH_COLUMNS]
-        insert_values = ", ".join([f"s.{value}" for value in insert_col_name_list])
-        upsert_live_tables_sql.format(
+    def _execute_inserts(self, cursor, qualified_dest_table, qualified_upsert_postgres_table):
+        """Facilitates the process of inserting into our live tables from the temp tables."""
+        set_cols = [f"d.{col_name} = s.{col_name}" for col_name in self.columns]
+        insert_col_name_list = [col_name for col_name in self.columns]
+        formatted_insert_live_tables_sql = insert_to_live_tables_sql.format(
             dest_table=qualified_dest_table,
             upsert_temp_table=qualified_upsert_postgres_table,
             join_condition="d.generated_unique_award_id = s.generated_unique_award_id",
-            set_cols={", ".join(set_cols)},
+            null_column="d.generated_unique_award_id",
+            set_cols=", ".join(set_cols),
+            insert_cols=", ".join([col_name for col_name in insert_col_name_list])
+        )
+        cursor.execute(formatted_insert_live_tables_sql)
+
+    def _execute_updates(self, cursor, qualified_dest_table, qualified_upsert_postgres_table):
+        """Facilitates the process of updating our live tables from the temp tables."""
+        set_cols = [f"d.{col_name} = s.{col_name}" for col_name in self.columns]
+        insert_col_name_list = [col_name for col_name in self.columns]
+        insert_values = ", ".join([f"s.{value}" for value in insert_col_name_list])
+        formatted_update_live_tables_sql = update_live_tables_sql.format(
+            dest_table=qualified_dest_table,
+            upsert_temp_table=qualified_upsert_postgres_table,
+            join_condition="d.generated_unique_award_id = s.generated_unique_award_id",
+            set_cols=", ".join(set_cols),
             insert_col_names=", ".join([col_name for col_name in insert_col_name_list]),
             insert_values=insert_values,
         )
-        cursor.execute(upsert_live_tables_sql)
+        cursor.execute(formatted_update_live_tables_sql)
 
     def _execute_deletes(self, cursor, qualified_dest_table, qualified_delete_postgres_table):
         """Facilitates the process of deleting from our live tables based on the temp tables."""
-        delete_from_live_tables_sql.format(
+        formatted_delete_from_live_tables_sql = delete_from_live_tables_sql.format(
             dest_table=qualified_dest_table,
             delete_temp_table=qualified_delete_postgres_table,
             join_condition="d.award_id = s.award_id",
         )
-        cursor.execute(delete_from_live_tables_sql)
+        print(formatted_delete_from_live_tables_sql)
+        cursor.execute(formatted_delete_from_live_tables_sql)
 
 
 class FullLoadSwapInTableStrategy(SwapInNewTableStrategy):
@@ -225,7 +249,7 @@ class FullLoadSwapInTableStrategy(SwapInNewTableStrategy):
     ALTER TABLE for the rename would have blocked all activity and routed to the new table following the rename.
     """
 
-    def __init__(self, swap_table_options: dict, django_command: BaseCommand):
+    def __init__(self, django_command: BaseCommand, **swap_table_options: dict):
         """
         Args:
             swap_table_options: A collection of self._options that are used by the logic to

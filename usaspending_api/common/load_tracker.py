@@ -16,7 +16,7 @@ class LoadTracker:
         """Performs the necessary operations to start this LoadTracker."""
         start_time = datetime.now()
         self._load_tracker = LoadTrackerModel.objects.create(
-            load_tracker_type=self.load_type, load_tracker_step=self.load_step, start_date_time=start_time
+            load_tracker_load_type_id=self.load_type.load_tracker_load_type_id, load_tracker_step_id=self.load_step.load_tracker_step_id, start_date_time=start_time
         )
 
     def end(self):

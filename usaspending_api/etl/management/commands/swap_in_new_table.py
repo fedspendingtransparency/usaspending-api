@@ -7,8 +7,7 @@ from usaspending_api.etl.swap_in_new_table_strategies import (
     IncrementalLoadSwapInTableStrategy,
 )
 
-LOAD_STEP = __name__
-
+LOAD_STEP = "swap_in_new_table-{table}"
 
 class Command(BaseCommand):
     help = """
@@ -90,7 +89,7 @@ class Command(BaseCommand):
         incremental_load = options["incremental"]
         table = options["table"]
 
-        load_step = LoadTrackerStepEnum(f"{LOAD_STEP}-{table}")
+        load_step = LoadTrackerStepEnum(LOAD_STEP.format(table=table))
         if incremental_load:
             load_type = LoadTrackerLoadTypeEnum.INCREMENTAL_LOAD
             load_strategy = IncrementalLoadSwapInTableStrategy(django_command=self, **options)

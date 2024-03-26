@@ -39,22 +39,6 @@ class DeltaTableLoadVersion(models.Model):
         db_table = "delta_table_load_version"
 
 
-class LoadTracker(models.Model):
-    load_tracker_id = models.AutoField(primary_key=True)
-    load_tracker_type = (
-        models.ForeignKey(null=False, on_delete=models.deletion.DO_NOTHING, to="broker.load_tracker_type"),
-    )
-    load_tracker_step = (
-        models.ForeignKey(null=False, on_delete=models.deletion.DO_NOTHING, to="broker.load_tracker_step"),
-    )
-    start_date_time = models.DateTimeField(auto_now=True, null=False)
-    end_date_time = models.DateTimeField(auto_now=True, null=True)
-
-    class Meta:
-        managed = True
-        db_table = "load_tracker"
-
-
 class LoadTrackerStep(models.Model):
     load_tracker_step_id = models.AutoField(primary_key=True)
     name = models.TextField(blank=False, null=False)
@@ -71,3 +55,15 @@ class LoadTrackerLoadType(models.Model):
     class Meta:
         managed = True
         db_table = "load_tracker_load_type"
+
+
+class LoadTracker(models.Model):
+    load_tracker_id = models.AutoField(primary_key=True)
+    load_tracker_load_type = models.ForeignKey("LoadTrackerLoadType", on_delete=models.deletion.DO_NOTHING)
+    load_tracker_step =  models.ForeignKey("LoadTrackerStep", on_delete=models.deletion.DO_NOTHING)
+    start_date_time = models.DateTimeField(auto_now=True, null=False)
+    end_date_time = models.DateTimeField(auto_now=True, null=True)
+
+    class Meta:
+        managed = True
+        db_table = "load_tracker"
