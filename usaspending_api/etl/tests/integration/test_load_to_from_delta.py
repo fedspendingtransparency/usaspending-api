@@ -3,7 +3,6 @@
 NOTE: Uses Pytest Fixtures from immediate parent conftest.py: usaspending_api/etl/tests/conftest.py
 """
 
-import copy
 
 import json
 
@@ -175,8 +174,8 @@ def load_delta_table_from_postgres(
     if alt_name:
         cmd_args += [f"--alt-name={alt_name}"]
 
-    create_cmd_args = copy.deepcopy(cmd_args)
-    load_cmd_args = copy.deepcopy(cmd_args)
+    create_cmd_args = deepcopy(cmd_args)
+    load_cmd_args = deepcopy(cmd_args)
 
     if incremental:
         create_cmd_args += ["--enable-cdf"]

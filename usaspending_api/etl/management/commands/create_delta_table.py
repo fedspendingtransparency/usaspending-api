@@ -7,11 +7,11 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_jvm_logger,
     get_active_spark_session,
 )
-from usaspending_api.etl.management.commands.load_query_to_delta import TABLE_SPEC as LOAD_QUERY_TABLE_SPEC
-from usaspending_api.etl.management.commands.load_table_to_delta import TABLE_SPEC as LOAD_TABLE_TABLE_SPEC
+from usaspending_api.etl.management.helpers.table_specifications import DATABRICKS_GENERATED_TABLE_SPEC
+from usaspending_api.etl.management.helpers.table_specifications import POSTGRES_GENERATED_TABLE_SPEC
 
 
-TABLE_SPEC = {**LOAD_TABLE_TABLE_SPEC, **LOAD_QUERY_TABLE_SPEC}
+TABLE_SPEC = {**POSTGRES_GENERATED_TABLE_SPEC, **DATABRICKS_GENERATED_TABLE_SPEC}
 
 
 class Command(BaseCommand):
