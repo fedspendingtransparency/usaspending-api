@@ -5,7 +5,7 @@ HOST: https://api.usaspending.gov
 
 ## POST
 
-Returns transaction records which match the provided filters grouped by their prime award.
+Searches for transaction records based on a provided set of filters and groups them by their prime award.
 
 + Request (application/json)
     + Schema
@@ -17,19 +17,20 @@ Returns transaction records which match the provided filters grouped by their pr
 
     + Attributes (object)
         + `filters` (required, AdvancedFilterObject)
+            These filters are applied at the Transaction level (`children`). They will not affect the Prime Awards (`results`) themselves
         + `fields` (required, FieldNameObject)
             The field names to include for `children` objects (Transactions) the response.
         + `limit`: 5 (optional, number)
-            The number of results to include per page.
+            The number of `results` (Prime Awards) to include per page. The number of `children` (Transactions) objects will always be limited to 10
             + Default: 10
         + `page`: 1 (optional, number)
-            The page of results to return based on `limit`.
+            The page of `results` (Prime Awards) to return based on `limit`.
             + Default: 1
         + `sort`: `Prime Award ID` (required, string)
-            The field on which to order `results` objects (Awards) in the response.
+            The field on which to order `results` objects (Prime Awards) in the response. The `children` (Transaction) objects will always be #TODO (determine transaction sort)
             + Default: `Prime Award ID`
         + `order` (optional, enum[string])
-            The direction in which to order results. `asc` for ascending or `desc` for descending.
+            The direction in which to order `results` (Prime Awards). `asc` for ascending or `desc` for descending. The `children` (Transaction) objects will always be ordered `asc`
             + Default: `desc`
             + Members
                 + `asc`
@@ -356,6 +357,8 @@ List of column names to request
 + `Matching Transaction Count` (required, number)
 + `Matching Transaction Obligation` (required, number)
 + `children` (required, array[TransactionResponse], fixed-type)
+    Regardless of the number of matching Transactions associated with a Prime Award, only 10 at most will be included in this `children` section.
+    To retrieve more Transactions with the provided filters associated with the Award, use the [api/v2/search/spending_by_transaction/](./spending_by_transaction.md) endpoint with an additional filter for Award ID. 
 + `page_metadata` (required, PageMetaDataObject, fixed-type)
 + `limit`: 10 (required, number)
 
