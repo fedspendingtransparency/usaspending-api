@@ -181,13 +181,9 @@ class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
 
     def _execute_upserts(self, cursor, qualified_dest_table, qualified_upsert_postgres_table):
         """Facilitates the process of upserting into the live tables from the temp tables."""
-        load_datetime = datetime.now(timezone.utc)
         set_cols = [f"d.{col_name} = s.{col_name}" for col_name in AWARD_SEARCH_COLUMNS]
         insert_col_name_list = [col_name for col_name in AWARD_SEARCH_COLUMNS]
-        insert_value_list = insert_col_name_list[:-3]
-        insert_value_list.extend(["NULL"])
-        insert_value_list.extend([f"""'{load_datetime.isoformat(" ")}'"""] * 2)
-        insert_values = ", ".join([f"s.{value}" for value in insert_value_list])
+        insert_values = ", ".join([f"s.{value}" for value in insert_col_name_list])
         upsert_live_tables_sql.format(
             dest_table=qualified_dest_table,
             upsert_temp_table=qualified_upsert_postgres_table,
