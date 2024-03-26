@@ -7,11 +7,11 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_jvm_logger,
     get_active_spark_session,
 )
-from usaspending_api.etl.management.commands.load_query_to_delta import TABLE_SPEC as LOAD_QUERY_TABLE_SPEC
-from usaspending_api.etl.management.commands.load_table_to_delta import TABLE_SPEC as LOAD_TABLE_TABLE_SPEC
+from usaspending_api.etl.management.helpers.table_specifications import DATABRICKS_GENERATED_TABLE_SPEC
+from usaspending_api.etl.management.helpers.table_specifications import POSTGRES_GENERATED_TABLE_SPEC
 
 
-TABLE_SPEC = {**LOAD_TABLE_TABLE_SPEC, **LOAD_QUERY_TABLE_SPEC}
+TABLE_SPEC = {**POSTGRES_GENERATED_TABLE_SPEC, **DATABRICKS_GENERATED_TABLE_SPEC}
 
 
 class Command(BaseCommand):
@@ -45,8 +45,12 @@ class Command(BaseCommand):
             "--alt-name",
             type=str,
             required=False,
-            help="An alternate delta table name for the created table, overriding the TABLE_SPEC destination_table "
-            "name",
+            help="An alternate delta table name for the created table, overriding the TABLE_SPEC destination_table name",
+        )
+        parser.add_argument(
+            "--enable-cdf",
+            action="store_true",
+            help="Whether or not the table will be created with the Change Data Feed feature enabled. (Databricks Specific)",
         )
 
     def handle(self, *args, **options):
@@ -89,6 +93,7 @@ class Command(BaseCommand):
                 DESTINATION_DATABASE=destination_database,
                 SPARK_S3_BUCKET=spark_s3_bucket,
                 DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+                CHANGE_DATA_FEED=options["enable_cdf"],
             )
         )
 

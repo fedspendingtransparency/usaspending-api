@@ -24,7 +24,7 @@ from usaspending_api.transactions.delta_models.transaction_fabs import TRANSACTI
 from usaspending_api.transactions.delta_models.transaction_fpds import TRANSACTION_FPDS_COLUMNS
 from usaspending_api.transactions.delta_models.transaction_normalized import TRANSACTION_NORMALIZED_COLUMNS
 from usaspending_api.config import CONFIG
-from usaspending_api.etl.management.commands.load_table_to_delta import TABLE_SPEC
+from usaspending_api.etl.management.helpers.table_specifications import POSTGRES_GENERATED_TABLE_SPEC as TABLE_SPEC
 
 _BEGINNING_OF_TIME = datetime(1970, 1, 1, tzinfo=timezone.utc)
 _INITIAL_DATETIME = datetime(2022, 10, 31, tzinfo=timezone.utc)
@@ -290,7 +290,7 @@ class TestInitialRun:
                 try:
                     spark.sql(f"SELECT 1 FROM raw.{table_name}")
                 except pyspark.sql.utils.AnalysisException as e:
-                    if re.match(rf"Table or view not found: raw\.{table_name}", e.desc):
+                    if re.match(r"\[TABLE_OR_VIEW_NOT_FOUND\]", e.desc):
                         pass
                     else:
                         raise e
@@ -309,6 +309,7 @@ class TestInitialRun:
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=s3_unittest_data_bucket,
                 DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+                CHANGE_DATA_FEED=False,
             )
         )
         spark.sql(
@@ -317,6 +318,7 @@ class TestInitialRun:
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=s3_unittest_data_bucket,
                 DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+                CHANGE_DATA_FEED=False,
             )
         )
         call_command(
@@ -749,6 +751,7 @@ class TestInitialRunNoPostgresLoader:
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=s3_unittest_data_bucket,
                 DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+                CHANGE_DATA_FEED=False,
             )
         )
         spark.sql(
@@ -757,6 +760,7 @@ class TestInitialRunNoPostgresLoader:
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=s3_unittest_data_bucket,
                 DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+                CHANGE_DATA_FEED=False,
             )
         )
         spark.sql(
@@ -765,6 +769,7 @@ class TestInitialRunNoPostgresLoader:
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=s3_unittest_data_bucket,
                 DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+                CHANGE_DATA_FEED=False,
             )
         )
         spark.sql(
@@ -870,6 +875,7 @@ class TestInitialRunNoPostgresLoader:
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=s3_unittest_data_bucket,
                 DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+                CHANGE_DATA_FEED=False,
             )
         )
         spark.sql(
@@ -878,6 +884,7 @@ class TestInitialRunNoPostgresLoader:
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=s3_unittest_data_bucket,
                 DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+                CHANGE_DATA_FEED=False,
             )
         )
         load_dict_to_delta_table(
@@ -953,6 +960,7 @@ class TestTransactionIdLookup:
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=s3_unittest_data_bucket,
                 DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+                CHANGE_DATA_FEED=False,
             )
         )
         spark.sql(
@@ -961,6 +969,7 @@ class TestTransactionIdLookup:
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=s3_unittest_data_bucket,
                 DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+                CHANGE_DATA_FEED=False,
             )
         )
         load_dict_to_delta_table(
@@ -991,6 +1000,7 @@ class TestTransactionIdLookup:
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=s3_unittest_data_bucket,
                 DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+                CHANGE_DATA_FEED=False,
             )
         )
         spark.sql(
@@ -999,6 +1009,7 @@ class TestTransactionIdLookup:
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=s3_unittest_data_bucket,
                 DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+                CHANGE_DATA_FEED=False,
             )
         )
 
@@ -1047,6 +1058,7 @@ class TestTransactionIdLookup:
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=s3_data_bucket,
                 DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+                CHANGE_DATA_FEED=False,
             )
         )
         spark.sql(
@@ -1055,6 +1067,7 @@ class TestTransactionIdLookup:
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=s3_data_bucket,
                 DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+                CHANGE_DATA_FEED=False,
             )
         )
         load_dict_to_delta_table(
@@ -1252,6 +1265,7 @@ class TestAwardIdLookup:
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=s3_unittest_data_bucket,
                 DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+                CHANGE_DATA_FEED=False,
             )
         )
         spark.sql(
@@ -1260,6 +1274,7 @@ class TestAwardIdLookup:
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=s3_unittest_data_bucket,
                 DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+                CHANGE_DATA_FEED=False,
             )
         )
         load_dict_to_delta_table(
@@ -1290,6 +1305,7 @@ class TestAwardIdLookup:
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=s3_unittest_data_bucket,
                 DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+                CHANGE_DATA_FEED=False,
             )
         )
         spark.sql(
@@ -1298,6 +1314,7 @@ class TestAwardIdLookup:
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=s3_unittest_data_bucket,
                 DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+                CHANGE_DATA_FEED=False,
             )
         )
 
@@ -1346,6 +1363,7 @@ class TestAwardIdLookup:
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=s3_data_bucket,
                 DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+                CHANGE_DATA_FEED=False,
             )
         )
         spark.sql(
@@ -1354,6 +1372,7 @@ class TestAwardIdLookup:
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=s3_data_bucket,
                 DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+                CHANGE_DATA_FEED=False,
             )
         )
         load_dict_to_delta_table(

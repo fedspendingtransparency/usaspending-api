@@ -29,4 +29,6 @@ EXTERNAL_DATA_TYPE = [
     LookupType(206, "award_id_lookup", "Award IDs in Delta"),
 ]
 EXTERNAL_DATA_TYPE_DICT = {item.name: item.id for item in EXTERNAL_DATA_TYPE}
-EXTERNAL_DATA_TYPE_DICT_ID = {item.id: item.name for item in EXTERNAL_DATA_TYPE}
+
+DELTA_TABLE_LOAD_VERSION_TYPE = [LookupType(1, "award_search", "Award Search Gold Table")]
+LOAD_VERSION_TYPE_DICT = {item.name: item.id for item in DELTA_TABLE_LOAD_VERSION_TYPE}
