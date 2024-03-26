@@ -1,7 +1,7 @@
 delete_from_live_tables_sql = """
-MERGE INTO {dest_table} AS d
-USING {delete_temp_table} AS s
-ON {join_condition}
-WHEN MATCHED
-    THEN DELETE;
+DELETE FROM {dest_table}
+WHERE {delete_col} in (
+    SELECT {delete_col}
+        FROM {delete_temp_table}
+)
 """

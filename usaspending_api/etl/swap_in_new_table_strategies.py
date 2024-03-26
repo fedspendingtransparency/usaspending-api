@@ -27,7 +27,6 @@ from usaspending_api.etl.management.sql.swap_in_new_table.insert_to_live_tables 
 from usaspending_api.etl.management.sql.swap_in_new_table.delete_from_live_tables import delete_from_live_tables_sql
 from usaspending_api.etl.management.sql.swap_in_new_table.dependent_views import detect_dep_view_sql
 
-COLUMN_SPECS = {"award_search": AWARD_SEARCH_COLUMNS}
 
 class SwapInNewTableStrategy(ABC):
     """A composable class that can be used according to the Strategy software design pattern.
@@ -59,6 +58,8 @@ class SwapInNewTableStrategy(ABC):
 
 class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
 
+    TABLE_COLUMN_SPECS = {"award_search": {"cols": AWARD_SEARCH_COLUMNS, "delete_column": "award_id", "null_column": "d.generated_unique_award_id", "join_condition": "d.generated_unique_award_id = s.generated_unique_award_id"}}
+
     def __init__(self, django_command: BaseCommand, **swap_table_options: dict):
         """
         Args:
@@ -78,7 +79,11 @@ class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
         self._validate_options()
 
         table = self._options["table"]
-        self.columns = COLUMN_SPECS[table]
+        table_spec = self.TABLE_COLUMN_SPECS[table]
+        self.columns = table_spec["cols"]
+        self.delete_column = table_spec["delete_column"]
+        self.null_column = table_spec["null_column"]
+        self.join_condition = table_spec["join_condition"]
         # TODO: PIPE-513 developed a solution that forces this knowledge duplication hopefully that other implementation can be fixed in the future.
         # Fixing that other implementation would enable the suite of swap_in_new_table classes to not duplicate knowledge.
         upsert_table_name = f"{table}_temp_upserts"
@@ -211,8 +216,8 @@ class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
         formatted_insert_live_tables_sql = insert_to_live_tables_sql.format(
             dest_table=qualified_dest_table,
             upsert_temp_table=qualified_upsert_postgres_table,
-            join_condition="d.generated_unique_award_id = s.generated_unique_award_id",
-            null_column="d.generated_unique_award_id",
+            join_condition=self.join_condition,
+            null_column=self.null_column,
             set_cols=", ".join(set_cols),
             insert_cols=", ".join([col_name for col_name in insert_col_name_list])
         )
@@ -226,7 +231,7 @@ class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
         formatted_update_live_tables_sql = update_live_tables_sql.format(
             dest_table=qualified_dest_table,
             upsert_temp_table=qualified_upsert_postgres_table,
-            join_condition="d.generated_unique_award_id = s.generated_unique_award_id",
+            join_condition=self.join_condition,
             set_cols=", ".join(set_cols),
             insert_col_names=", ".join([col_name for col_name in insert_col_name_list]),
             insert_values=insert_values,
@@ -238,7 +243,7 @@ class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
         formatted_delete_from_live_tables_sql = delete_from_live_tables_sql.format(
             dest_table=qualified_dest_table,
             delete_temp_table=qualified_delete_postgres_table,
-            join_condition="d.award_id = s.award_id",
+            delete_col=self.delete_column
         )
         print(formatted_delete_from_live_tables_sql)
         cursor.execute(formatted_delete_from_live_tables_sql)
