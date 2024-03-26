@@ -56,6 +56,28 @@ class SwapInNewTableStrategy(ABC):
         """Facilitates the "swapping" of data between tables."""
         pass
 
+    def _dependent_views(self, cursor, curr_schema_name, curr_table_name):
+        """Detects views that are dependent on the table to be swapped."""
+        cursor.execute(detect_dep_view_sql.format(curr_schema_name=curr_schema_name, curr_table_name=curr_table_name))
+        dep_views = ordered_dictionary_fetcher(cursor)
+        return dep_views
+
+    def update_delta_table_version(self,):
+        # If `delta_table_load_version_key` exists in the table_spec, this table could potentially be loaded incrementally,
+        # therefore we need to keep track of the last version of the table persisted to the live table. In this case, that
+        # would be the last version swapped from temp to live. The `last_version_to_staging` represents the last version
+        # either that was either fully copied to the temp table, or the last version incrementally copied to staging tables,
+        # so here we can use it as the new version copied to live.
+        table_spec = TABLE_SPEC.get(self._options["table"])
+        delta_table_load_version_key = (
+            table_spec["delta_table_load_version_key"] if table_spec is not None else None
+        )
+
+        if delta_table_load_version_key is not None:
+            last_version_to_staging, last_version_to_live = get_last_delta_table_load_versions(
+                delta_table_load_version_key
+            )
+            update_last_live_load_version(delta_table_load_version_key, last_version_to_staging)
 
 class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
 
@@ -129,27 +151,8 @@ class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
             self.dep_views = self._dependent_views(cursor, curr_schema_name, table)
             self._refresh_mat_views(cursor)
 
-            # If `delta_table_load_version_key` exists in the table_spec, this table could potentially be loaded incrementally,
-            # therefore we need to keep track of the last version of the table persisted to the live table. In this case, that
-            # would be the last version swapped from temp to live. The `last_version_to_staging` represents the last version
-            # either that was either fully copied to the temp table, or the last version incrementally copied to staging tables,
-            # so here we can use it as the new version copied to live.
-            table_spec = TABLE_SPEC.get(self._options["table"])
-            delta_table_load_version_key = (
-                table_spec["delta_table_load_version_key"] if table_spec is not None else None
-            )
+            self.update_delta_table_versio()
 
-            if delta_table_load_version_key is not None:
-                last_version_to_staging, last_version_to_live = get_last_delta_table_load_versions(
-                    delta_table_load_version_key
-                )
-                update_last_live_load_version(delta_table_load_version_key, last_version_to_staging)
-
-    def _dependent_views(self, cursor, curr_schema_name, curr_table_name):
-        """Detects views that are dependent on the table to be swapped."""
-        cursor.execute(detect_dep_view_sql.format(curr_schema_name=curr_schema_name, curr_table_name=curr_table_name))
-        dep_views = ordered_dictionary_fetcher(cursor)
-        return dep_views
 
     def _refresh_mat_views(self, cursor):
         for dep_view in self.dep_views:
@@ -374,21 +377,7 @@ class FullLoadSwapInTableStrategy(SwapInNewTableStrategy):
                 else:
                     self._drop_old_table_sql(cursor)
 
-            # If `delta_table_load_version_key` exists in the table_spec, this table could potentially be loaded incrementally,
-            # therefore we need to keep track of the last version of the table persisted to the live table. In this case, that
-            # would be the last version swapped from temp to live. The `last_version_to_staging` represents the last version
-            # either that was either fully copied to the temp table, or the last version incrementally copied to staging tables,
-            # so here we can use it as the new version copied to live.
-            table_spec = TABLE_SPEC.get(self._options["table"])
-            delta_table_load_version_key = (
-                table_spec["delta_table_load_version_key"] if table_spec is not None else None
-            )
-
-            if delta_table_load_version_key is not None:
-                last_version_to_staging, last_version_to_live = get_last_delta_table_load_versions(
-                    delta_table_load_version_key
-                )
-                update_last_live_load_version(delta_table_load_version_key, last_version_to_staging)
+            self.update_delta_table_version()
 
     def _validate_options(self) -> None:
         """Validates the combination of options provided to this command. Will
@@ -417,12 +406,6 @@ class FullLoadSwapInTableStrategy(SwapInNewTableStrategy):
                 f"CREATE {mv_s}VIEW {self.temp_schema_name}.{dep_view['dep_view_name']}{self.source_suffix} "
                 f"AS ({dep_view_sql});"
             )
-
-    def _dependent_views(self, cursor, curr_schema_name, curr_table_name):
-        """Detects views that are dependent on the table to be swapped."""
-        cursor.execute(detect_dep_view_sql.format(curr_schema_name=curr_schema_name, curr_table_name=curr_table_name))
-        dep_views = ordered_dictionary_fetcher(cursor)
-        return dep_views
 
     def _validate_state_of_tables(self, cursor):
         self.logger.info(f"Running validation to swap: {self.curr_table_name} with {self.temp_table_name}")
