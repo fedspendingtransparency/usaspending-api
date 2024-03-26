@@ -229,7 +229,7 @@ class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
 
     def _execute_updates(self, cursor, qualified_dest_table, qualified_upsert_postgres_table):
         """Facilitates the process of updating our live tables from the temp tables."""
-        set_cols = [f"d.{col_name} = s.{col_name}" for col_name in self.columns]
+        set_cols = [f"{col_name} = s.{col_name}" for col_name in self.columns]
         insert_col_name_list = [col_name for col_name in self.columns]
         insert_values = ", ".join([f"s.{value}" for value in insert_col_name_list])
         formatted_update_live_tables_sql = update_live_tables_sql.format(
