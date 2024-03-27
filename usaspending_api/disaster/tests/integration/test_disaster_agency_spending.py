@@ -2,7 +2,6 @@ import datetime
 
 import pytest
 from model_bakery import baker
-
 from rest_framework import status
 
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
@@ -119,6 +118,261 @@ def test_basic_success(client, disaster_account_data, elasticsearch_account_inde
     expected_totals = {"award_count": 7, "obligation": 22222220.0, "outlay": 200020022.0}
 
     assert resp.json()["totals"] == expected_totals
+
+
+@pytest.mark.django_db
+def test_spending_by_agency_sorting(client, disaster_account_data, elasticsearch_account_index, monkeypatch, helpers):
+    # Test sorting by description in descending order
+    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    bad_date_window = DABSSubmissionWindowSchedule.objects.get(id=2022071)
+    bad_date_window.submission_reveal_date = datetime.date(2020, 4, 15)
+    bad_date_window.save()
+    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
+    resp = helpers.post_for_spending_endpoint(
+        client, url, def_codes=["L", "M", "N", "O", "P"], spending_type="award", sort="description"
+    )
+
+    expected_results = [
+        {
+            "award_count": 3,
+            "children": [],
+            "code": "009",
+            "description": "Agency 009",
+            "id": 4,
+            "obligation": 22199998.0,
+            "outlay": 200000022.0,
+            "total_budgetary_resources": None,
+        },
+        {
+            "award_count": 2,
+            "children": [],
+            "code": "008",
+            "description": "Agency 008",
+            "id": 2,
+            "obligation": 22000.0,
+            "outlay": 20000.0,
+            "total_budgetary_resources": None,
+        },
+        {
+            "award_count": 2,
+            "children": [],
+            "code": "007",
+            "description": "Agency 007",
+            "id": 1,
+            "obligation": 222.0,
+            "outlay": 0.0,
+            "total_budgetary_resources": None,
+        },
+    ]
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()["results"] == expected_results
+
+    # Test sorting by description in ascending order
+    resp = helpers.post_for_spending_endpoint(
+        client, url, def_codes=["L", "M", "N", "O", "P"], spending_type="award", sort="description", order="asc"
+    )
+
+    expected_results = [
+        {
+            "award_count": 2,
+            "children": [],
+            "code": "007",
+            "description": "Agency 007",
+            "id": 1,
+            "obligation": 222.0,
+            "outlay": 0.0,
+            "total_budgetary_resources": None,
+        },
+        {
+            "award_count": 2,
+            "children": [],
+            "code": "008",
+            "description": "Agency 008",
+            "id": 2,
+            "obligation": 22000.0,
+            "outlay": 20000.0,
+            "total_budgetary_resources": None,
+        },
+        {
+            "award_count": 3,
+            "children": [],
+            "code": "009",
+            "description": "Agency 009",
+            "id": 4,
+            "obligation": 22199998.0,
+            "outlay": 200000022.0,
+            "total_budgetary_resources": None,
+        },
+    ]
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()["results"] == expected_results
+
+
+@pytest.mark.django_db
+def test_spending_by_subtier_agency_sorting(
+    client, disaster_account_data, elasticsearch_award_index, monkeypatch, helpers
+):
+    # Test sorting by description in descending order
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    helpers.patch_datetime_now(monkeypatch, 2022, 12, 30)
+
+    resp = helpers.post_for_spending_endpoint(
+        client,
+        url,
+        award_type_codes=["A", "07", "02"],
+        def_codes=["O"],
+        spending_type="award",
+        sort="description",
+        order="desc",
+    )
+    expected_results = [
+        {
+            "id": 4,
+            "code": "009",
+            "description": "Agency 009",
+            "award_count": 1,
+            "obligation": 1000.0,
+            "outlay": 1000.0,
+            "children": [
+                {
+                    "id": 4,
+                    "code": "3008",
+                    "description": "Subtier 3008",
+                    "award_count": 1,
+                    "obligation": 1000.0,
+                    "outlay": 1000.0,
+                }
+            ],
+        },
+        {
+            "id": 2,
+            "code": "008",
+            "description": "Agency 008",
+            "award_count": 3,
+            "obligation": 21999998.0,
+            "outlay": 200000022.0,
+            "children": [
+                {
+                    "code": "2008",
+                    "award_count": 2,
+                    "description": "Subtier 2008",
+                    "id": 2,
+                    "obligation": 19999998.0,
+                    "outlay": 200000002.0,
+                },
+                {
+                    "code": "1008",
+                    "award_count": 1,
+                    "description": "Subtier 1008",
+                    "id": 2,
+                    "obligation": 2000000.0,
+                    "outlay": 20.0,
+                },
+            ],
+        },
+        {
+            "id": 1,
+            "code": "007",
+            "description": "Agency 007",
+            "award_count": 1,
+            "obligation": 2000.0,
+            "outlay": 20000.0,
+            "children": [
+                {
+                    "id": 1,
+                    "code": "1007",
+                    "description": "Subtier 1007",
+                    "award_count": 1,
+                    "obligation": 2000.0,
+                    "outlay": 20000.0,
+                }
+            ],
+        },
+    ]
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()["results"] == expected_results
+
+    # Test sorting by description in ascending order
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    helpers.patch_datetime_now(monkeypatch, 2022, 12, 30)
+
+    resp = helpers.post_for_spending_endpoint(
+        client,
+        url,
+        award_type_codes=["A", "07", "02"],
+        def_codes=["O"],
+        spending_type="award",
+        sort="description",
+        order="asc",
+    )
+    expected_results = [
+        {
+            "id": 1,
+            "code": "007",
+            "description": "Agency 007",
+            "award_count": 1,
+            "obligation": 2000.0,
+            "outlay": 20000.0,
+            "children": [
+                {
+                    "id": 1,
+                    "code": "1007",
+                    "description": "Subtier 1007",
+                    "award_count": 1,
+                    "obligation": 2000.0,
+                    "outlay": 20000.0,
+                }
+            ],
+        },
+        {
+            "id": 2,
+            "code": "008",
+            "description": "Agency 008",
+            "award_count": 3,
+            "obligation": 21999998.0,
+            "outlay": 200000022.0,
+            "children": [
+                {
+                    "code": "1008",
+                    "award_count": 1,
+                    "description": "Subtier 1008",
+                    "id": 2,
+                    "obligation": 2000000.0,
+                    "outlay": 20.0,
+                },
+                {
+                    "code": "2008",
+                    "award_count": 2,
+                    "description": "Subtier 2008",
+                    "id": 2,
+                    "obligation": 19999998.0,
+                    "outlay": 200000002.0,
+                },
+            ],
+        },
+        {
+            "id": 4,
+            "code": "009",
+            "description": "Agency 009",
+            "award_count": 1,
+            "obligation": 1000.0,
+            "outlay": 1000.0,
+            "children": [
+                {
+                    "id": 4,
+                    "code": "3008",
+                    "description": "Subtier 3008",
+                    "award_count": 1,
+                    "obligation": 1000.0,
+                    "outlay": 1000.0,
+                }
+            ],
+        },
+    ]
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()["results"] == expected_results
 
 
 @pytest.mark.django_db
