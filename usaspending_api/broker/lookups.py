@@ -4,6 +4,7 @@
 # here, in a file that can be used by the db setup scripts *and* the application
 # code.
 from collections import namedtuple
+from enum import Enum
 
 LookupType = namedtuple("LookupType", ["id", "name", "desc"])
 
@@ -32,3 +33,14 @@ EXTERNAL_DATA_TYPE_DICT = {item.name: item.id for item in EXTERNAL_DATA_TYPE}
 
 DELTA_TABLE_LOAD_VERSION_TYPE = [LookupType(1, "award_search", "Award Search Gold Table")]
 LOAD_VERSION_TYPE_DICT = {item.name: item.id for item in DELTA_TABLE_LOAD_VERSION_TYPE}
+
+
+class LoadTrackerStepEnum(Enum):
+    # NOTE: The values of members of this enum should always follow this pattern
+    # <django command name>-<table being loaded name>
+    SWAP_IN_NEW_TABLE_AWARD_SEARCH = "swap_in_new_table-award_search"
+
+
+class LoadTrackerLoadTypeEnum(Enum):
+    INCREMENTAL_LOAD = "Incremental Load"
+    FULL_LOAD = "Full Load"
