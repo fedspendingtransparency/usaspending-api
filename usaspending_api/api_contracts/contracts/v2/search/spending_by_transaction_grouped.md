@@ -27,7 +27,7 @@ Searches for transaction records based on a provided set of filters and groups t
             The page of `results` (Prime Awards) to return based on `limit`.
             + Default: 1
         + `sort`: `Prime Award ID` (required, string)
-            The field on which to order `results` objects (Prime Awards) in the response. The `children` (Transaction) objects will always be #TODO (determine transaction sort)
+            The field on which to order `results` objects (Prime Awards) in the response. The `children` (Transaction) object's sort will always be `Transaction Amount`
             + Default: `Prime Award ID`
         + `order` (optional, enum[string])
             The direction in which to order `results` (Prime Awards). `asc` for ascending or `desc` for descending. The `children` (Transaction) objects will always be ordered `asc`
