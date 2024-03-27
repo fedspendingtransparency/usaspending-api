@@ -28,7 +28,6 @@ from usaspending_api.etl.management.sql.swap_in_new_table.delete_from_live_table
 from usaspending_api.etl.management.sql.swap_in_new_table.dependent_views import detect_dep_view_sql
 
 
-
 class SwapInNewTableStrategy(ABC):
     """A composable class that can be used according to the Strategy software design pattern.
     This class establishes the common interface for a suite of strategies used by the swap in table
@@ -62,16 +61,16 @@ class SwapInNewTableStrategy(ABC):
         dep_views = ordered_dictionary_fetcher(cursor)
         return dep_views
 
-    def update_delta_table_version(self,):
+    def update_delta_table_version(
+        self,
+    ):
         # If `delta_table_load_version_key` exists in the table_spec, this table could potentially be loaded incrementally,
         # therefore we need to keep track of the last version of the table persisted to the live table. In this case, that
         # would be the last version swapped from temp to live. The `last_version_to_staging` represents the last version
         # either that was either fully copied to the temp table, or the last version incrementally copied to staging tables,
         # so here we can use it as the new version copied to live.
         table_spec = TABLE_SPEC.get(self._options["table"])
-        delta_table_load_version_key = (
-            table_spec["delta_table_load_version_key"] if table_spec is not None else None
-        )
+        delta_table_load_version_key = table_spec["delta_table_load_version_key"] if table_spec is not None else None
 
         if delta_table_load_version_key is not None:
             last_version_to_staging, last_version_to_live = get_last_delta_table_load_versions(
@@ -79,9 +78,17 @@ class SwapInNewTableStrategy(ABC):
             )
             update_last_live_load_version(delta_table_load_version_key, last_version_to_staging)
 
+
 class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
 
-    TABLE_COLUMN_SPECS = {"award_search": {"cols": AWARD_SEARCH_COLUMNS, "delete_column": "award_id", "null_column": "d.generated_unique_award_id", "join_condition": "d.generated_unique_award_id = s.generated_unique_award_id"}}
+    TABLE_COLUMN_SPECS = {
+        "award_search": {
+            "cols": AWARD_SEARCH_COLUMNS,
+            "delete_column": "award_id",
+            "null_column": "d.generated_unique_award_id",
+            "join_condition": "d.generated_unique_award_id = s.generated_unique_award_id",
+        }
+    }
 
     def __init__(self, django_command: BaseCommand, **swap_table_options: dict):
         """
@@ -152,7 +159,6 @@ class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
             self._refresh_mat_views(cursor)
 
             self.update_delta_table_versio()
-
 
     def _refresh_mat_views(self, cursor):
         for dep_view in self.dep_views:
@@ -247,7 +253,7 @@ class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
         formatted_delete_from_live_tables_sql = delete_from_live_tables_sql.format(
             dest_table=qualified_dest_table,
             delete_temp_table=qualified_delete_postgres_table,
-            delete_col=self.delete_column
+            delete_col=self.delete_column,
         )
         print(formatted_delete_from_live_tables_sql)
         cursor.execute(formatted_delete_from_live_tables_sql)
