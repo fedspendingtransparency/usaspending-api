@@ -313,6 +313,7 @@ def _configure_database_connection(environment_variable, test_options=None):
     config = dj_database_url.parse(os.environ.get(environment_variable), conn_max_age=CONNECTION_MAX_SECONDS)
     config["OPTIONS"] = {**config.setdefault("OPTIONS", {}), **default_options}
     config["TEST"] = {**test_options, "SERIALIZE": False}
+    config["DISABLE_SERVER_SIDE_CURSORS"] = True
     return config
 
 
