@@ -16,7 +16,7 @@ docutils==0.20.1
 drf-api-tracking==1.8.4
 drf-extensions==0.7.1
 elasticsearch-dsl==7.4.1
-elasticsearch==7.17.9
+elasticsearch==7.10.1
 et-xmlfile==1.1.0
 filelock==3.13.1
 fiscalyear==0.4.0
@@ -26,7 +26,7 @@ numpy==1.26.4
 openpyxl==3.1.2
 pandas==2.2.1
 psutil==5.9.8
-psycopg2-binary==2.9.*
+psycopg2==2.9.9
 py-gfm==2.0.0
 pydantic[dotenv]==1.10.*
 python-json-logger==2.0.7
