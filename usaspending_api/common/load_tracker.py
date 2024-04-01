@@ -1,4 +1,3 @@
-from argparse import ArgumentError
 from datetime import datetime
 from usaspending_api.broker.models import LoadTracker as LoadTrackerModel, LoadTrackerStep, LoadTrackerLoadType
 from usaspending_api.broker.lookups import LoadTrackerStepEnum, LoadTrackerLoadTypeEnum
@@ -38,7 +37,7 @@ class LoadTracker:
         """
         load_step_record = LoadTrackerStep.objects.filter(name=load_step.value).first()
         if load_step_record is None:
-            raise ArgumentError(f"A load step doest not exist for the specified load step {load_step.value}.")
+            raise ValueError(f"A load step does not exist for the specified load step {load_step.value}.")
         return load_step_record
 
     @staticmethod
@@ -50,7 +49,7 @@ class LoadTracker:
         """
         load_type_record = LoadTrackerLoadType.objects.filter(name=load_type.value).first()
         if load_type_record is None:
-            raise ArgumentError(f"A load type doest not exist for the specified load type {load_type.value}.")
+            raise ValueError(f"A load type does not exist for the specified load type {load_type.value}.")
         return load_type_record
 
     @staticmethod
@@ -68,22 +67,18 @@ class LoadTracker:
         """
         load_tracker_step_record = LoadTrackerStep.objects.filter(name=load_step.value).first()
         if load_tracker_step_record is None:
-            raise ArgumentError(f"No LoadTrackerStep record found for table name {load_step.value}")
-        load_tracker_record = (
-            LoadTracker.objects.filter(
+            raise ValueError(f"No LoadTrackerStep record found for table name {load_step.value}")
+        load_tracker_id = (
+            LoadTrackerModel.objects.filter(
                 load_tracker_step=load_tracker_step_record.load_tracker_step_id,
-            )
-            .aggregate(Max("load_tracker_id"))
-            .first()
-        )
-        if load_tracker_record is None:
+            ).aggregate(Max("load_tracker_id"))
+        )["load_tracker_id__max"]
+        if load_tracker_id is None:
             return None
 
-        latest_load_tracker_record = LoadTrackerModel.objects.filter(
-            load_tracker_id=load_tracker_record.load_tracker_id
-        ).first()
+        latest_load_tracker_record = LoadTrackerModel.objects.filter(load_tracker_id=load_tracker_id).first()
         load_type_enum = (
-            LoadTrackerLoadTypeEnum(latest_load_tracker_record.load_tracker_step.name)
+            LoadTrackerLoadTypeEnum(latest_load_tracker_record.load_tracker_load_type.name)
             if latest_load_tracker_record is not None
             else None
         )

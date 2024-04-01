@@ -1,16 +1,22 @@
 from abc import ABC, abstractmethod
-from argparse import ArgumentError
 from datetime import datetime
 import json
 from pprint import pformat
 import re
-from django.db import ProgrammingError, connection, transaction
+from django.db import (
+    ProgrammingError,
+    connection,
+    transaction,
+)
 import logging
 from usaspending_api.broker.helpers.last_delta_table_load_version import (
     get_last_delta_table_load_versions,
     update_last_live_load_version,
 )
-from usaspending_api.broker.lookups import LoadTrackerLoadTypeEnum, LoadTrackerStepEnum
+from usaspending_api.broker.lookups import (
+    LoadTrackerLoadTypeEnum,
+    LoadTrackerStepEnum,
+)
 from usaspending_api.common.helpers.sql_helpers import (
     get_parent_partitioned_table,
     is_table_partitioned,
@@ -20,12 +26,27 @@ from usaspending_api.common.load_tracker import LoadTracker
 
 from django.core.management import BaseCommand
 from typing import List
-from usaspending_api.etl.management.helpers.table_specifications import DATABRICKS_GENERATED_TABLE_SPEC as TABLE_SPEC
-from usaspending_api.search.delta_models.award_search import AWARD_SEARCH_COLUMNS
-from usaspending_api.etl.management.sql.swap_in_new_table.update_live_tables import update_live_tables_sql
-from usaspending_api.etl.management.sql.swap_in_new_table.insert_to_live_tables import insert_to_live_tables_sql
-from usaspending_api.etl.management.sql.swap_in_new_table.delete_from_live_tables import delete_from_live_tables_sql
-from usaspending_api.etl.management.sql.swap_in_new_table.dependent_views import detect_dep_view_sql
+from usaspending_api.etl.management.helpers.table_specifications import (
+    DATABRICKS_GENERATED_TABLE_SPEC as TABLE_SPEC,
+)
+from usaspending_api.search.delta_models.award_search import (
+    AWARD_SEARCH_COLUMNS,
+)
+from usaspending_api.etl.management.sql.swap_in_new_table.update_live_tables import (
+    update_live_tables_sql,
+)
+from usaspending_api.etl.management.sql.swap_in_new_table.insert_to_live_tables import (
+    insert_to_live_tables_sql,
+)
+from usaspending_api.etl.management.sql.swap_in_new_table.delete_from_live_tables import (
+    delete_from_live_tables_sql,
+)
+from usaspending_api.etl.management.sql.swap_in_new_table.dependent_views import (
+    detect_dep_view_sql,
+)
+
+
+logger = logging.getLogger("script")
 
 
 class SwapInNewTableStrategy(ABC):
@@ -34,8 +55,6 @@ class SwapInNewTableStrategy(ABC):
     Django command. Implement this abstract class by defining use case specific
     swap in new table behaviors and wrap those behaviors in a class that inherits from this base class.
     """
-
-    logger = logging.getLogger("script")
 
     def __init__(self):
         self._load_tracker: LoadTracker = None
@@ -57,7 +76,12 @@ class SwapInNewTableStrategy(ABC):
 
     def dependent_views(self, cursor, curr_schema_name, curr_table_name):
         """Detects views that are dependent on the table to be swapped."""
-        cursor.execute(detect_dep_view_sql.format(curr_schema_name=curr_schema_name, curr_table_name=curr_table_name))
+        cursor.execute(
+            detect_dep_view_sql.format(
+                curr_schema_name=curr_schema_name,
+                curr_table_name=curr_table_name,
+            )
+        )
         dep_views = ordered_dictionary_fetcher(cursor)
         return dep_views
 
@@ -73,10 +97,14 @@ class SwapInNewTableStrategy(ABC):
         delta_table_load_version_key = table_spec["delta_table_load_version_key"] if table_spec is not None else None
 
         if delta_table_load_version_key is not None:
-            last_version_to_staging, last_version_to_live = get_last_delta_table_load_versions(
-                delta_table_load_version_key
+            (
+                last_version_to_staging,
+                last_version_to_live,
+            ) = get_last_delta_table_load_versions(delta_table_load_version_key)
+            update_last_live_load_version(
+                delta_table_load_version_key,
+                last_version_to_staging,
             )
-            update_last_live_load_version(delta_table_load_version_key, last_version_to_staging)
 
 
 class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
@@ -90,7 +118,11 @@ class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
         }
     }
 
-    def __init__(self, django_command: BaseCommand, **swap_table_options: dict):
+    def __init__(
+        self,
+        django_command: BaseCommand,
+        **swap_table_options: dict,
+    ):
         """
         Args:
             swap_table_options: A collection of self._options that are used by the logic to
@@ -100,11 +132,12 @@ class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
         self._options = swap_table_options
         self._django_command = django_command
 
+    @transaction.atomic
     def swap_in_new_table(
         self,
     ):
         if self._load_tracker is None:
-            raise ValueError("LoadTracker property of this istance must be set before invoking swap in new table.")
+            raise ValueError("LoadTracker property of this instance must be set before invoking swap in new table.")
 
         self._validate_options()
 
@@ -115,10 +148,13 @@ class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
         self.null_column = table_spec["null_column"]
         self.join_condition = table_spec["join_condition"]
         # TODO: PIPE-513 developed a solution that forces this knowledge duplication hopefully that other implementation can be fixed in the future.
-            # Fixing that other implementation would enable the suite of swap_in_new_table classes to not duplicate knowledge.
+        # Fixing that other implementation would enable the suite of swap_in_new_table classes to not duplicate knowledge.
         upsert_table_name = f"{table}_temp_upserts"
         delete_table_name = f"{table}_temp_deletes"
-        temp_table_list = [upsert_table_name, delete_table_name]
+        temp_table_list = [
+            upsert_table_name,
+            delete_table_name,
+        ]
         with connection.cursor() as cursor:
             # Go ahead and retrieve the schema for both table; used for some validation checks and the final swap
             cursor.execute(
@@ -150,9 +186,21 @@ class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
             self._validate_live_tables(cursor, table)
             self._validate_temp_tables(cursor, temp_table_list)
 
-            self._execute_updates(cursor, qualified_dest_table, qualified_upsert_postgres_table)
-            self._execute_inserts(cursor, qualified_dest_table, qualified_upsert_postgres_table)
-            self._execute_deletes(cursor, qualified_dest_table, qualified_delete_postgres_table)
+            self._execute_updates(
+                cursor,
+                qualified_dest_table,
+                qualified_upsert_postgres_table,
+            )
+            self._execute_inserts(
+                cursor,
+                qualified_dest_table,
+                qualified_upsert_postgres_table,
+            )
+            self._execute_deletes(
+                cursor,
+                qualified_dest_table,
+                qualified_delete_postgres_table,
+            )
 
             # Begin refreshing views
             self.dep_views = self.dependent_views(cursor, curr_schema_name, table)
@@ -164,8 +212,8 @@ class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
         for dep_view in self.dep_views:
             if not dep_view["is_matview"]:
                 continue
-            self.logger.info(f"Refreshing dependent materialized views: {dep_view['dep_view_fullname']}")
-            cursor.execute(f"REFRESH MATERIALIZED VIEW CONCURRENTLY {dep_view['dep_view_fullname']}")
+            logger.info(f"Refreshing dependent materialized views: {dep_view['dep_view_fullname']}")
+            cursor.execute(f"REFRESH MATERIALIZED VIEW {dep_view['dep_view_fullname']}")
 
     def _validate_options(self) -> None:
         """Validates the combination of options provided to this command. Will
@@ -219,7 +267,12 @@ class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
             if len(validation_results) == 0 or validation_results[0]["exists"] is False:
                 raise ValueError(f"Swap in new table command cannot proceed because {temp_table_name} does not exist.")
 
-    def _execute_inserts(self, cursor, qualified_dest_table, qualified_upsert_postgres_table):
+    def _execute_inserts(
+        self,
+        cursor,
+        qualified_dest_table,
+        qualified_upsert_postgres_table,
+    ):
         """Facilitates the process of inserting into our live tables from the temp tables."""
         set_cols = [f"{col_name} = s.{col_name}" for col_name in self.columns]
         insert_col_name_list = [col_name for col_name in self.columns]
@@ -233,29 +286,34 @@ class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
         )
         cursor.execute(formatted_insert_live_tables_sql)
 
-    def _execute_updates(self, cursor, qualified_dest_table, qualified_upsert_postgres_table):
+    def _execute_updates(
+        self,
+        cursor,
+        qualified_dest_table,
+        qualified_upsert_postgres_table,
+    ):
         """Facilitates the process of updating our live tables from the temp tables."""
-        set_cols = [f"{col_name} = s.{col_name}" for col_name in self.columns]
         insert_col_name_list = [col_name for col_name in self.columns]
-        insert_values = ", ".join([f"s.{value}" for value in insert_col_name_list])
         formatted_update_live_tables_sql = update_live_tables_sql.format(
             dest_table=qualified_dest_table,
             upsert_temp_table=qualified_upsert_postgres_table,
             join_condition=self.join_condition,
-            set_cols=", ".join(set_cols),
-            insert_col_names=", ".join([f"s.{col_name}" for col_name in insert_col_name_list]),
-            insert_values=insert_values,
+            set_cols=", ".join([f"{col_name}=s.{col_name}" for col_name in insert_col_name_list]),
         )
         cursor.execute(formatted_update_live_tables_sql)
 
-    def _execute_deletes(self, cursor, qualified_dest_table, qualified_delete_postgres_table):
+    def _execute_deletes(
+        self,
+        cursor,
+        qualified_dest_table,
+        qualified_delete_postgres_table,
+    ):
         """Facilitates the process of deleting from our live tables based on the temp tables."""
         formatted_delete_from_live_tables_sql = delete_from_live_tables_sql.format(
             dest_table=qualified_dest_table,
             delete_temp_table=qualified_delete_postgres_table,
             delete_col=self.delete_column,
         )
-        print(formatted_delete_from_live_tables_sql)
         cursor.execute(formatted_delete_from_live_tables_sql)
 
 
@@ -280,7 +338,11 @@ class FullLoadSwapInTableStrategy(SwapInNewTableStrategy):
     ALTER TABLE for the rename would have blocked all activity and routed to the new table following the rename.
     """
 
-    def __init__(self, django_command: BaseCommand, **swap_table_options: dict):
+    def __init__(
+        self,
+        django_command: BaseCommand,
+        **swap_table_options: dict,
+    ):
         """
         Args:
             swap_table_options: A collection of self._options that are used by the logic to
@@ -292,7 +354,7 @@ class FullLoadSwapInTableStrategy(SwapInNewTableStrategy):
 
     def swap_in_new_table(self):
         if self._load_tracker is None:
-            raise ValueError("LoadTracker property of this istance must be set before invoking swap in new table.")
+            raise ValueError("LoadTracker property of this instance must be set before invoking swap in new table.")
 
         self._validate_options()
 
@@ -300,7 +362,7 @@ class FullLoadSwapInTableStrategy(SwapInNewTableStrategy):
         if is_undo:
             old_table = self._get_most_recent_old_table(self._options["table"])
             old_suffix = re.sub(rf"{self._options['table']}_", "", old_table)
-            self.logger.info(
+            logger.info(
                 f"Overwriting --source-suffix value of '{self._options['source_suffix']}' with '{old_suffix}' for undo."
             )
             self._options["source_suffix"] = old_suffix
@@ -328,27 +390,35 @@ class FullLoadSwapInTableStrategy(SwapInNewTableStrategy):
             schemas_lookup = {table: schema for (table, schema) in cursor.fetchall()}
             self.curr_schema_name = schemas_lookup.get(self.curr_table_name)
             self.temp_schema_name = schemas_lookup.get(self.temp_table_name)
-            self.dep_views = self.dependent_views(cursor, self.curr_schema_name, self.curr_table_name)
+            self.dep_views = self.dependent_views(
+                cursor,
+                self.curr_schema_name,
+                self.curr_table_name,
+            )
 
             self._validate_tables(cursor)
 
-            self.logger.info(
+            logger.info(
                 f"Starting swap procedures for table {self.temp_schema_name}.{self.temp_table_name} "
                 f"into {self.curr_schema_name}.{self.curr_table_name}"
             )
 
             # Check if we're dealing with a partitioned table, or a partition of a partitioned table
             self.is_temp_table_partitioned = is_table_partitioned(
-                table=f"{self.temp_schema_name}.{self.temp_table_name}", cursor=cursor
+                table=f"{self.temp_schema_name}.{self.temp_table_name}",
+                cursor=cursor,
             )
             self.temp_table_parent_partitioned_table = get_parent_partitioned_table(
-                table=f"{self.temp_schema_name}.{self.temp_table_name}", cursor=cursor
+                table=f"{self.temp_schema_name}.{self.temp_table_name}",
+                cursor=cursor,
             )
             self.is_curr_table_partitioned = is_table_partitioned(
-                table=f"{self.curr_schema_name}.{self.curr_table_name}", cursor=cursor
+                table=f"{self.curr_schema_name}.{self.curr_table_name}",
+                cursor=cursor,
             )
             self.curr_table_parent_partitioned_table = get_parent_partitioned_table(
-                table=f"{self.curr_schema_name}.{self.curr_table_name}", cursor=cursor
+                table=f"{self.curr_schema_name}.{self.curr_table_name}",
+                cursor=cursor,
             )
 
             # Make sure old and new are like-like in all ways
@@ -372,7 +442,7 @@ class FullLoadSwapInTableStrategy(SwapInNewTableStrategy):
             if not self._options["keep_old_data"]:
                 self._drop_old_views(cursor)
                 if self.curr_table_parent_partitioned_table:
-                    self.logger.info(
+                    logger.info(
                         f"'{self.curr_table_name}' is a partition of '{self.curr_table_parent_partitioned_table}' and "
                         f"will not be dropped. Swapped-out partitions are not deleted after the swap due to the risk "
                         f"of their live parent partitioned table still receiving traffic while having one of its "
@@ -391,10 +461,10 @@ class FullLoadSwapInTableStrategy(SwapInNewTableStrategy):
         """
         is_undo = self._options["undo"]
         table = self._options["table"]
-        load_step = LoadTrackerStepEnum(self._load_tracker.load_tracker_step.name)
-        latest_load_tracker_load_type = LoadTracker.get_latest_load_tracker_type(load_step.value)
-        if latest_load_tracker_load_type == LoadTrackerLoadTypeEnum.INCREMENTAL_LOAD and is_undo:
-            raise ArgumentError(
+        load_step = LoadTrackerStepEnum(self._load_tracker.load_step.name)
+        latest_load_tracker_load_type_enum = LoadTracker.get_latest_load_tracker_type(load_step)
+        if latest_load_tracker_load_type_enum == LoadTrackerLoadTypeEnum.INCREMENTAL_LOAD and is_undo:
+            raise ValueError(
                 f"The load tracker table indicates the last load type for {table} was an {LoadTrackerLoadTypeEnum.INCREMENTAL_LOAD.value}. You cannot use the option undo when the last load was an {LoadTrackerLoadTypeEnum.INCREMENTAL_LOAD.value}"
             )
 
@@ -402,7 +472,7 @@ class FullLoadSwapInTableStrategy(SwapInNewTableStrategy):
         for dep_view in self.dep_views:
             # Note: Despite pointing at the new temp table at first,
             #       the recreated views will automatically update and stay pointed to it in the swap via postgres
-            self.logger.info(f"Recreating dependent view: {dep_view['dep_view_fullname']}{self.source_suffix}")
+            logger.info(f"Recreating dependent view: {dep_view['dep_view_fullname']}{self.source_suffix}")
             dep_view_sql = dep_view["dep_view_sql"].replace(self.curr_table_name, self.temp_table_name)
             mv_s = "MATERIALIZED " if dep_view["is_matview"] else ""
             cursor.execute(
@@ -414,7 +484,7 @@ class FullLoadSwapInTableStrategy(SwapInNewTableStrategy):
             )
 
     def _validate_state_of_tables(self, cursor):
-        self.logger.info(f"Running validation to swap: {self.curr_table_name} with {self.temp_table_name}")
+        logger.info(f"Running validation to swap: {self.curr_table_name} with {self.temp_table_name}")
 
         self._validate_tables(cursor)
         if not self._options["allow_foreign_key"]:
@@ -431,7 +501,7 @@ class FullLoadSwapInTableStrategy(SwapInNewTableStrategy):
 
         if self.is_temp_table_partitioned and len(temp_indexes) == 0:
             # Assuming the parent partitioned table is just a shell and indexes are handled on child partitions
-            self.logger.info(
+            logger.info(
                 "Source temp table is a partitioned table with no indexes. Assuming that all/any "
                 "indexes are managed on the child partitions and skipping validation."
             )
@@ -440,14 +510,19 @@ class FullLoadSwapInTableStrategy(SwapInNewTableStrategy):
         self._django_command.query_result_lookup["temp_table_indexes"] = temp_indexes
         self._django_command.query_result_lookup["curr_table_indexes"] = curr_indexes
 
-        self.logger.info(
+        logger.info(
             f"Verifying that the indexes are the same except for suffixes in their name "
             f"(source_suffix='{self.source_suffix}', dest_suffix='{self.dest_suffix}')"
         )
 
         temp_index_specs = {}
         for val in temp_indexes:
-            tindexname = re.sub(rf"{self.source_suffix}$", self.dest_suffix, val["indexname"], count=1)
+            tindexname = re.sub(
+                rf"{self.source_suffix}$",
+                self.dest_suffix,
+                val["indexname"],
+                count=1,
+            )
             tindexdef = re.sub(
                 # Name ending in source suffix, that may be quoted (due to special chars like $), that are followed
                 # by whitespace or the end of the line
@@ -463,7 +538,11 @@ class FullLoadSwapInTableStrategy(SwapInNewTableStrategy):
         curr_index_specs = {}
         for val in curr_indexes:
             cindexname = val["indexname"]
-            cindexdef = re.sub(rf"{self.curr_schema_name}\.", f"{self.temp_schema_name}.", val["indexdef"])
+            cindexdef = re.sub(
+                rf"{self.curr_schema_name}\.",
+                f"{self.temp_schema_name}.",
+                val["indexdef"],
+            )
             if self.is_curr_table_partitioned:
                 cindexdef = re.sub("ON ONLY", "ON", cindexdef, flags=re.I)
             curr_index_specs[cindexname] = cindexdef
@@ -472,7 +551,12 @@ class FullLoadSwapInTableStrategy(SwapInNewTableStrategy):
         for idx, idx_def in temp_index_specs.items():
             if idx not in curr_index_specs:
                 differences.append(
-                    {"temp_index_name": idx, "curr_index_name": None, "temp_index_def": idx_def, "curr_index_def": None}
+                    {
+                        "temp_index_name": idx,
+                        "curr_index_name": None,
+                        "temp_index_def": idx_def,
+                        "curr_index_def": None,
+                    }
                 )
                 continue
             if idx_def not in curr_index_specs.values():
@@ -488,7 +572,12 @@ class FullLoadSwapInTableStrategy(SwapInNewTableStrategy):
         for idx, idx_def in curr_index_specs.items():
             if idx not in temp_index_specs:
                 differences.append(
-                    {"temp_index_name": None, "curr_index_name": idx, "temp_index_def": None, "curr_index_def": idx_def}
+                    {
+                        "temp_index_name": None,
+                        "curr_index_name": idx,
+                        "temp_index_def": None,
+                        "curr_index_def": idx_def,
+                    }
                 )
                 continue
             if idx_def not in temp_index_specs.values():
@@ -502,7 +591,7 @@ class FullLoadSwapInTableStrategy(SwapInNewTableStrategy):
                     differences.append(diff)
 
         if differences:
-            self.logger.error(
+            logger.error(
                 f"Indexes missing or differences found among the {len(curr_indexes)} current indexes "
                 f"in {self.curr_table_name} and the {len(temp_indexes)} indexes of {self.temp_table_name} "
                 f"table to be swapped in:\n{json.dumps(differences, indent=4)}"
@@ -510,7 +599,7 @@ class FullLoadSwapInTableStrategy(SwapInNewTableStrategy):
             raise SystemExit(1)
 
     def _validate_foreign_keys(self, cursor):
-        self.logger.info("Verifying that Foreign Key constraints are not found")
+        logger.info("Verifying that Foreign Key constraints are not found")
         cursor.execute(
             f"SELECT * FROM information_schema.table_constraints"
             f" WHERE table_name IN ('{self.temp_table_name}', '{self.curr_table_name}')"
@@ -518,7 +607,7 @@ class FullLoadSwapInTableStrategy(SwapInNewTableStrategy):
         )
         constraints = cursor.fetchall()
         if len(constraints) > 0:
-            self.logger.error(
+            logger.error(
                 f"Foreign Key constraints are not allowed on '{self.temp_table_name}' or '{self.curr_table_name}'."
                 " It is advised to not allow Foreign Key constraints on swapped tables to avoid potential deadlock."
                 " However, if needed they can be allowed with the `--allow-foreign-key` flag."
@@ -526,7 +615,7 @@ class FullLoadSwapInTableStrategy(SwapInNewTableStrategy):
             raise SystemExit(1)
 
     def _validate_constraints(self, cursor):
-        self.logger.info("Verifying that the same number of constraints exist for the old and new table")
+        logger.info("Verifying that the same number of constraints exist for the old and new table")
         cursor.execute(
             f"SELECT "
             f"     table_constraints.constraint_name,"
@@ -566,7 +655,7 @@ class FullLoadSwapInTableStrategy(SwapInNewTableStrategy):
 
         if self.is_temp_table_partitioned and len(temp_constraints) == 0:
             # Assuming the parent partitioned table is just a shell and constraints are handled on child partitions
-            self.logger.info(
+            logger.info(
                 "Source temp table is a partitioned table with no constraints. Assuming that all/any "
                 "constraints are managed on the child partitions and skipping validation."
             )
@@ -575,19 +664,30 @@ class FullLoadSwapInTableStrategy(SwapInNewTableStrategy):
         # NOT NULL constraints are created on a COLUMN not the TABLE, this means we do not control their name.
         # As a result, we verify that the same NOT NULL constraints exist on the tables but do not handle the swap.
         self._django_command.query_result_lookup["temp_table_constraints"] = list(
-            filter(lambda val: val["is_nullable"], temp_constraints)
+            filter(
+                lambda val: val["is_nullable"],
+                temp_constraints,
+            )
         )
         self._django_command.query_result_lookup["curr_table_constraints"] = list(
-            filter(lambda val: val["is_nullable"], curr_constraints)
+            filter(
+                lambda val: val["is_nullable"],
+                curr_constraints,
+            )
         )
 
-        self.logger.info(
+        logger.info(
             f"Verifying that the constraint are the same except for suffixes in their name "
             f"(source_suffix='{self.source_suffix}', dest_suffix='{self.dest_suffix}')"
         )
         temp_constr_specs = {
             (
-                re.sub(rf"{self.source_suffix}$", self.dest_suffix, val["constraint_name"], count=1)
+                re.sub(
+                    rf"{self.source_suffix}$",
+                    self.dest_suffix,
+                    val["constraint_name"],
+                    count=1,
+                )
                 if val["is_nullable"]
                 else val["check_clause"]
             ): {
@@ -598,9 +698,7 @@ class FullLoadSwapInTableStrategy(SwapInNewTableStrategy):
             for val in temp_constraints
         }
         curr_constr_specs = {
-            val["constraint_name"]
-            if val["is_nullable"]
-            else val["check_clause"]: {
+            (val["constraint_name"] if val["is_nullable"] else val["check_clause"]): {
                 "constraint_type": val["constraint_type"],
                 "check_clause": val["check_clause"],
                 "unique_constraint_name": val["unique_constraint_name"],
@@ -652,7 +750,7 @@ class FullLoadSwapInTableStrategy(SwapInNewTableStrategy):
                     differences.append(diff)
 
         if differences:
-            self.logger.error(
+            logger.error(
                 f"Constraints missing or differences found among the {len(curr_constraints)} current constraints "
                 f"in {self.curr_table_name} and the {len(temp_constraints)} constraints of {self.temp_table_name} "
                 f"table to be swapped in:\n{json.dumps(differences, indent=4)}"
@@ -660,7 +758,7 @@ class FullLoadSwapInTableStrategy(SwapInNewTableStrategy):
             raise SystemExit(1)
 
     def _validate_columns(self, cursor):
-        self.logger.info("Verifying that the same number of columns exist for the old and new table")
+        logger.info("Verifying that the same number of columns exist for the old and new table")
         columns_to_compare = [
             "pg_attribute.attname",  # column name
             "pg_attribute.atttypid",  # data type
@@ -689,20 +787,20 @@ class FullLoadSwapInTableStrategy(SwapInNewTableStrategy):
         )
         curr_columns = ordered_dictionary_fetcher(cursor)
         if len(temp_columns) != len(curr_columns):
-            self.logger.error(
+            logger.error(
                 f"The number of columns are different for the tables: {self.temp_table_name} and {self.curr_table_name}"
             )
             raise SystemExit(1)
 
-        self.logger.info("Verifying that the columns are the same")
+        logger.info("Verifying that the columns are the same")
         if temp_columns != curr_columns:
-            self.logger.error(
+            logger.error(
                 f"The column definitions are different for the tables: {self.temp_table_name} and {self.curr_table_name}"
             )
             raise SystemExit(1)
 
     def _validate_tables(self, cursor):
-        self.logger.info("Verifying that the current table exists")
+        logger.info("Verifying that the current table exists")
         cursor.execute(
             f"""
             SELECT schemaname, tablename FROM pg_tables WHERE tablename = '{self.curr_table_name}'
@@ -712,10 +810,10 @@ class FullLoadSwapInTableStrategy(SwapInNewTableStrategy):
         )
         curr_tables = cursor.fetchall()
         if len(curr_tables) == 0:
-            self.logger.error(f"There are no tables matching: {self.curr_table_name}")
+            logger.error(f"There are no tables matching: {self.curr_table_name}")
             raise SystemExit(1)
 
-        self.logger.info("Verifying that the temp table exists")
+        logger.info("Verifying that the temp table exists")
         cursor.execute(
             f"""
             SELECT schemaname, tablename FROM pg_tables WHERE tablename = '{self.temp_table_name}'
@@ -725,10 +823,10 @@ class FullLoadSwapInTableStrategy(SwapInNewTableStrategy):
         )
         temp_tables = cursor.fetchall()
         if len(temp_tables) == 0:
-            self.logger.error(f"There are no tables matching: {self.temp_table_name}")
+            logger.error(f"There are no tables matching: {self.temp_table_name}")
             raise SystemExit(1)
 
-        self.logger.info("Verifying duplicate tables don't exist across schemas")
+        logger.info("Verifying duplicate tables don't exist across schemas")
         cursor.execute(
             f"""
             WITH matched_tables AS (
@@ -744,7 +842,7 @@ class FullLoadSwapInTableStrategy(SwapInNewTableStrategy):
         table_count = cursor.fetchall()
         for table_name, count in table_count:
             if count > 1:
-                self.logger.error(f"There are currently duplicate tables for '{table_name}' in different schemas")
+                logger.error(f"There are currently duplicate tables for '{table_name}' in different schemas")
                 raise SystemExit(1)
 
     def _cleanup_old_data(self, cursor, old_suffix=None):
@@ -757,7 +855,7 @@ class FullLoadSwapInTableStrategy(SwapInNewTableStrategy):
         """
         if not old_suffix:
             old_suffix = self.old_suffix
-        self.logger.info(f"Dropping table {self.curr_table_name}{old_suffix} if it exists")
+        logger.info(f"Dropping table {self.curr_table_name}{old_suffix} if it exists")
         try:
             cursor.execute(f"DROP TABLE IF EXISTS {self.curr_table_name}{old_suffix} CASCADE;")
             return
@@ -769,7 +867,7 @@ class FullLoadSwapInTableStrategy(SwapInNewTableStrategy):
             raise f"First Error:\n{error_log}\nSecond Error: {str(e)}"
 
     def _swap_constraints_sql(self, cursor):
-        self.logger.info("Renaming constraints of the new and old tables")
+        logger.info("Renaming constraints of the new and old tables")
         temp_constraints = self._django_command.query_result_lookup["temp_table_constraints"]
         curr_constraints = self._django_command.query_result_lookup["curr_table_constraints"]
         rename_sql = []
@@ -779,17 +877,25 @@ class FullLoadSwapInTableStrategy(SwapInNewTableStrategy):
             new_name = f"{old_name}{self.old_suffix}"
             rename_sql.append(
                 sql_template.format(
-                    table_name=self.curr_table_name, old_constraint_name=old_name, new_constraint_name=new_name
+                    table_name=self.curr_table_name,
+                    old_constraint_name=old_name,
+                    new_constraint_name=new_name,
                 )
             )
         for val in temp_constraints:
             old_name = val["constraint_name"]
             new_name = re.sub(
-                rf"^(.*){self.source_suffix}$", rf"\g<1>{self.dest_suffix}", old_name, count=1, flags=re.I
+                rf"^(.*){self.source_suffix}$",
+                rf"\g<1>{self.dest_suffix}",
+                old_name,
+                count=1,
+                flags=re.I,
             )
             rename_sql.append(
                 sql_template.format(
-                    table_name=self.temp_table_name, old_constraint_name=old_name, new_constraint_name=new_name
+                    table_name=self.temp_table_name,
+                    old_constraint_name=old_name,
+                    new_constraint_name=new_name,
                 )
             )
 
@@ -797,7 +903,7 @@ class FullLoadSwapInTableStrategy(SwapInNewTableStrategy):
             cursor.execute("\n".join(rename_sql))
 
     def _swap_index_sql(self, cursor):
-        self.logger.info("Renaming indexes of the new and old tables")
+        logger.info("Renaming indexes of the new and old tables")
 
         # Some Postgres constraints (UNIQUE, PRIMARY, and EXCLUDE) are updated along with the index which means
         # there is no need to rename the index following the constraint
@@ -825,13 +931,27 @@ class FullLoadSwapInTableStrategy(SwapInNewTableStrategy):
         for val in curr_indexes:
             old_name = val["indexname"]
             new_name = f"{old_name}{self.old_suffix}"
-            rename_sql.append(sql_template.format(old_index_name=old_name, new_index_name=new_name))
+            rename_sql.append(
+                sql_template.format(
+                    old_index_name=old_name,
+                    new_index_name=new_name,
+                )
+            )
         for val in temp_indexes:
             old_name = val["indexname"]
             new_name = re.sub(
-                rf"^(.*){self.source_suffix}$", rf"\g<1>{self.dest_suffix}", old_name, count=1, flags=re.I
+                rf"^(.*){self.source_suffix}$",
+                rf"\g<1>{self.dest_suffix}",
+                old_name,
+                count=1,
+                flags=re.I,
             )
-            rename_sql.append(sql_template.format(old_index_name=old_name, new_index_name=new_name))
+            rename_sql.append(
+                sql_template.format(
+                    old_index_name=old_name,
+                    new_index_name=new_name,
+                )
+            )
 
         if rename_sql:
             cursor.execute("\n".join(rename_sql))
@@ -863,22 +983,26 @@ class FullLoadSwapInTableStrategy(SwapInNewTableStrategy):
                         new_view_name=dep_view["dep_view_name"],
                     ),
                 ]
-                self.logger.info(f"Running view swap SQL in an atomic transaction:\n{pformat(view_rename_sql)}")
+                logger.info(f"Running view swap SQL in an atomic transaction:\n{pformat(view_rename_sql)}")
                 cursor.execute("\n".join(view_rename_sql))
 
     @transaction.atomic
     def _swap_table(self, cursor):
-        self.logger.info("Renaming the new and old table")
+        logger.info("Renaming the new and old table")
         sql_table_template = "ALTER TABLE {old_table_name} RENAME TO {new_table_name};"
 
         table_rename_sql = [
             f"ALTER TABLE {self.temp_table_name} SET SCHEMA {self.curr_schema_name};",
             sql_table_template.format(
-                old_table_name=self.curr_table_name, new_table_name=f"{self.curr_table_name}{self.old_suffix}"
+                old_table_name=self.curr_table_name,
+                new_table_name=f"{self.curr_table_name}{self.old_suffix}",
             ),
-            sql_table_template.format(old_table_name=self.temp_table_name, new_table_name=f"{self.curr_table_name}"),
+            sql_table_template.format(
+                old_table_name=self.temp_table_name,
+                new_table_name=f"{self.curr_table_name}",
+            ),
         ]
-        self.logger.info(f"Running table swap SQL in an atomic transaction:\n{pformat(table_rename_sql)}")
+        logger.info(f"Running table swap SQL in an atomic transaction:\n{pformat(table_rename_sql)}")
         cursor.execute("\n".join(table_rename_sql))
 
     def _drop_old_table_sql(self, cursor):
@@ -887,7 +1011,7 @@ class FullLoadSwapInTableStrategy(SwapInNewTableStrategy):
 
     def _drop_old_table_metadata(self, cursor):
         # Instead of using CASCADE, all old constraints and indexes are dropped manually
-        self.logger.info("Manually dropping the old table metadata (constraints and indexes")
+        logger.info("Manually dropping the old table metadata (constraints and indexes")
         drop_sql = []
         indexes = self._django_command.query_result_lookup["curr_table_indexes"]
         constraints = self._django_command.query_result_lookup["curr_table_constraints"]
@@ -903,21 +1027,21 @@ class FullLoadSwapInTableStrategy(SwapInNewTableStrategy):
     def _drop_old_views(self, cursor):
         for dep_view in self.dep_views:
             mv_s = "MATERIALIZED " if dep_view["is_matview"] else ""
-            self.logger.info(f"Dropping old dependent view: {dep_view['dep_view_fullname']}{self.old_suffix}")
+            logger.info(f"Dropping old dependent view: {dep_view['dep_view_fullname']}{self.old_suffix}")
             cursor.execute(f"DROP {mv_s}VIEW {dep_view['dep_view_fullname']}{self.old_suffix};")
 
     def _analyze_temp_table(self, cursor):
         if not self.is_temp_table_partitioned:
-            self.logger.info(f"Running ANALYZE VERBOSE {self.temp_table_name}")
+            logger.info(f"Running ANALYZE VERBOSE {self.temp_table_name}")
             cursor.execute(f"ANALYZE VERBOSE {self.temp_table_name}")
         else:
-            self.logger.info(
+            logger.info(
                 f"Skipping ANALYZE VERBOSE {self.temp_table_name} because table is partitioned and ANALYZE "
                 f"should already be run against each partition, which should be swapped before it."
             )
 
     def _grant_privs_on_temp_table(self, cursor):
-        self.logger.info(f"GRANT SELECT ON {self.temp_table_name} TO readonly")
+        logger.info(f"GRANT SELECT ON {self.temp_table_name} TO readonly")
         cursor.execute(f"GRANT SELECT ON {self.temp_table_name} TO readonly")
 
     def _get_most_recent_old_table(self, table, old_table_suffix=None):

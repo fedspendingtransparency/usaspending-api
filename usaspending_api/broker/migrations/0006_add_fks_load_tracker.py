@@ -1,7 +1,5 @@
 from django.db import migrations, models
 
-from usaspending_api.broker.models import LoadTrackerLoadType, LoadTrackerStep
-
 
 class Migration(migrations.Migration):
 
@@ -11,13 +9,13 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.AddField(
-            model_name='loadtracker',
-            name='load_tracker_load_type',
+            model_name="loadtracker",
+            name="load_tracker_load_type",
             field=models.ForeignKey("LoadTrackerLoadType", on_delete=models.deletion.DO_NOTHING),
         ),
         migrations.AddField(
-            model_name='loadtracker',
-            name='load_tracker_step',
+            model_name="loadtracker",
+            name="load_tracker_step",
             field=models.ForeignKey("LoadTrackerStep", on_delete=models.deletion.DO_NOTHING),
         ),
     ]

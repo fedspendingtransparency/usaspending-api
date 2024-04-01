@@ -39,6 +39,12 @@ class LoadTrackerStepEnum(Enum):
     # NOTE: The values of members of this enum should always follow this pattern
     # <django command name>-<table being loaded name>
     SWAP_IN_NEW_TABLE_AWARD_SEARCH = "swap_in_new_table-award_search"
+    SWAP_IN_NEW_TABLE_TRANSACTION_SEARCH_FABS = "swap_in_new_table-transaction_search_fabs"
+    SWAP_IN_NEW_TABLE_TRANSACTION_SEARCH_FPDS = "swap_in_new_table-transaction_search_fpds"
+    SWAP_IN_NEW_TABLE_TRANSACTION_SEARCH = "swap_in_new_table-transaction_search"
+    # Tables used in our tests
+    SWAP_IN_NEW_TABLE_TEST_TABLE = "swap_in_new_table-test_table"
+    SWAP_IN_NEW_TABLE_TEST_TABLE_NOT_NULL = "swap_in_new_table-test_table_not_null"
 
 
 class LoadTrackerLoadTypeEnum(Enum):

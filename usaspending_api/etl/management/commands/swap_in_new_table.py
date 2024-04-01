@@ -82,7 +82,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--incremental",
             action="store_true",
-            defualt=False,
+            default=False,
             help="Instead of writing the full table to live tables in Postgres, use the incremental tables created "
             "earlier in the pipeline to load the live tables.",
         )

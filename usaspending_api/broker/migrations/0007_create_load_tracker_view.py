@@ -9,10 +9,10 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RunSQL(
-            sql=""""CREATE VIEW public.v_load_tracker AS (
+            sql="""CREATE VIEW public.v_load_tracker AS (
                 SELECT lt.*
-                       ,ltlt.*
-                       ,lts.*
+                       ,ltlt.name as load_tracker_load_type_name
+                       ,lts.name as load_tracker_step_name
 
                 FROM public.load_tracker lt
 
@@ -22,6 +22,6 @@ class Migration(migrations.Migration):
                 LEFT JOIN public.load_tracker_step lts
                 ON lt.load_tracker_step_id = lts.load_tracker_step_id
             )""",
-            reverse_sql="DROP VIEW IF EXISTS public.v_load_tracker"
+            reverse_sql="DROP VIEW IF EXISTS public.v_load_tracker",
         ),
     ]
