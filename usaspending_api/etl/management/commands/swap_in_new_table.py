@@ -82,8 +82,9 @@ class Command(BaseCommand):
         parser.add_argument(
             "--incremental",
             action="store_true",
-            help="Instead of writing the full table to temporary tables in Postgres, use Change Data Feed to "
-            "determine changes, and write those to staging tables in Postgres.",
+            defualt=False,
+            help="Instead of writing the full table to live tables in Postgres, use the incremental tables created "
+            "earlier in the pipeline to load the live tables.",
         )
 
     def handle(self, *args, **options):

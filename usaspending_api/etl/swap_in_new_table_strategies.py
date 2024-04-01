@@ -56,7 +56,7 @@ class SwapInNewTableStrategy(ABC):
         """Facilitates the "swapping" of data between tables."""
         pass
 
-    def _dependent_views(self, cursor, curr_schema_name, curr_table_name):
+    def dependent_views(self, cursor, curr_schema_name, curr_table_name):
         """Detects views that are dependent on the table to be swapped."""
         cursor.execute(detect_dep_view_sql.format(curr_schema_name=curr_schema_name, curr_table_name=curr_table_name))
         dep_views = ordered_dictionary_fetcher(cursor)
@@ -108,7 +108,7 @@ class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
         self.null_column = table_spec["null_column"]
         self.join_condition = table_spec["join_condition"]
         # TODO: PIPE-513 developed a solution that forces this knowledge duplication hopefully that other implementation can be fixed in the future.
-        # Fixing that other implementation would enable the suite of swap_in_new_table classes to not duplicate knowledge.
+            # Fixing that other implementation would enable the suite of swap_in_new_table classes to not duplicate knowledge.
         upsert_table_name = f"{table}_temp_upserts"
         delete_table_name = f"{table}_temp_deletes"
         temp_table_list = [upsert_table_name, delete_table_name]
@@ -148,10 +148,10 @@ class IncrementalLoadSwapInTableStrategy(SwapInNewTableStrategy):
             self._execute_deletes(cursor, qualified_dest_table, qualified_delete_postgres_table)
 
             # Begin refreshing views
-            self.dep_views = self._dependent_views(cursor, curr_schema_name, table)
+            self.dep_views = self.dependent_views(cursor, curr_schema_name, table)
             self._refresh_mat_views(cursor)
 
-            self.update_delta_table_versio()
+            self.update_delta_table_version()
 
 
     def _refresh_mat_views(self, cursor):
@@ -322,7 +322,7 @@ class FullLoadSwapInTableStrategy(SwapInNewTableStrategy):
             schemas_lookup = {table: schema for (table, schema) in cursor.fetchall()}
             self.curr_schema_name = schemas_lookup.get(self.curr_table_name)
             self.temp_schema_name = schemas_lookup.get(self.temp_table_name)
-            self.dep_views = self._dependent_views(cursor, self.curr_schema_name, self.curr_table_name)
+            self.dep_views = self.dependent_views(cursor, self.curr_schema_name, self.curr_table_name)
 
             self._validate_tables(cursor)
 
