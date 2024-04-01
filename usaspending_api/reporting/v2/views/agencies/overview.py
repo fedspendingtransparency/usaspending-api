@@ -1,10 +1,10 @@
-from django.db.models import Subquery, OuterRef, DecimalField, Func, F, Q, IntegerField, Value
+from django.db.models import DecimalField, F, Func, IntegerField, OuterRef, Q, Subquery, Value
 from rest_framework.response import Response
 
 from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
-from usaspending_api.references.models import ToptierAgencyPublishedDABSView, Agency
-from usaspending_api.reporting.models import ReportingAgencyOverview, ReportingAgencyTas, ReportingAgencyMissingTas
+from usaspending_api.references.models import Agency, ToptierAgencyPublishedDABSView
+from usaspending_api.reporting.models import ReportingAgencyMissingTas, ReportingAgencyOverview, ReportingAgencyTas
 from usaspending_api.submissions.models import SubmissionAttributes
 
 
@@ -156,29 +156,38 @@ class AgenciesOverview(PaginationMixin, AgencyBase):
             )
         )
 
-        formatted_results = sorted(
-            self.format_results(result_list),
-            key=lambda x: (
-                *(
-                    (
-                        (x["tas_account_discrepancies_totals"][self.pagination.sort_key] is None)
-                        == (self.pagination.sort_order == "asc"),
-                        x["tas_account_discrepancies_totals"][self.pagination.sort_key],
-                    )
-                    if (
-                        self.pagination.sort_key == "missing_tas_accounts_count"
-                        or self.pagination.sort_key == "tas_accounts_total"
-                        or self.pagination.sort_key == "tas_obligation_not_in_gtas_total"
-                    )
-                    else (
-                        (x[self.pagination.sort_key] is None) == (self.pagination.sort_order == "asc"),
-                        x[self.pagination.sort_key],
-                    )
+        # If we're sorting by `agency_name` then lowercase every name so that agencies like "Department of the Interior"
+        #   and "Department of the Treasury" are in the correct place and not just placed at the end of the list.
+        if self.pagination.sort_key == "agency_name":
+            formatted_results = sorted(
+                self.format_results(result_list),
+                key=lambda x: x["agency_name"].lower(),
+                reverse=(self.pagination.sort_order == "desc"),
+            )
+        else:
+            formatted_results = sorted(
+                self.format_results(result_list),
+                key=lambda x: (
+                    *(
+                        (
+                            (x["tas_account_discrepancies_totals"][self.pagination.sort_key] is None)
+                            == (self.pagination.sort_order == "asc"),
+                            x["tas_account_discrepancies_totals"][self.pagination.sort_key],
+                        )
+                        if (
+                            self.pagination.sort_key == "missing_tas_accounts_count"
+                            or self.pagination.sort_key == "tas_accounts_total"
+                            or self.pagination.sort_key == "tas_obligation_not_in_gtas_total"
+                        )
+                        else (
+                            (x[self.pagination.sort_key] is None) == (self.pagination.sort_order == "asc"),
+                            x[self.pagination.sort_key],
+                        )
+                    ),
+                    x["toptier_code"],
                 ),
-                x["toptier_code"],
-            ),
-            reverse=(self.pagination.sort_order == "desc"),
-        )
+                reverse=(self.pagination.sort_order == "desc"),
+            )
 
         return formatted_results
 

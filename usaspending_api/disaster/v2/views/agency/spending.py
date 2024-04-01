@@ -1,32 +1,32 @@
 import logging
 from decimal import Decimal
+from typing import List
 
 from django.contrib.postgres.fields import ArrayField
-from django.db.models import Case, DecimalField, F, IntegerField, Q, Sum, Value, When, Subquery, OuterRef, Func, Exists
+from django.db.models import Case, DecimalField, Exists, F, Func, IntegerField, OuterRef, Q, Subquery, Sum, Value, When
 from django.db.models.functions import Coalesce
 from django.views.decorators.csrf import csrf_exempt
 from django_cte import With
 from rest_framework.response import Response
-from typing import List
 
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.disaster.v2.views.disaster_base import (
     DisasterBase,
     FabaOutlayMixin,
-    latest_gtas_of_each_year_queryset,
     PaginationMixin,
     SpendingMixin,
+    latest_gtas_of_each_year_queryset,
 )
+from usaspending_api.disaster.v2.views.elasticsearch_account_base import ElasticsearchAccountDisasterBase
 from usaspending_api.disaster.v2.views.elasticsearch_base import (
     ElasticsearchDisasterBase,
     ElasticsearchSpendingPaginationMixin,
 )
-from usaspending_api.disaster.v2.views.elasticsearch_account_base import ElasticsearchAccountDisasterBase
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import Agency, ToptierAgency
-from usaspending_api.submissions.models import SubmissionAttributes
 from usaspending_api.search.v2.elasticsearch_helper import get_summed_value_as_float
+from usaspending_api.submissions.models import SubmissionAttributes
 
 logger = logging.getLogger(__name__)
 
@@ -253,6 +253,11 @@ class SpendingBySubtierAgencyViewSet(ElasticsearchSpendingPaginationMixin, Elast
                 children.append(self._build_json_result(child_bucket, child=True))
             result["children"] = children
             results.append(result)
+
+        if self.pagination.sort_key == "description":
+            results = sorted(
+                results, key=lambda val: val.get("description").lower(), reverse=self.pagination.sort_order == "desc"
+            )
 
         return results
 
