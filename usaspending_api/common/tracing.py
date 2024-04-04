@@ -9,7 +9,7 @@ import logging
 from ddtrace import tracer
 from ddtrace.constants import ANALYTICS_SAMPLE_RATE_KEY
 from ddtrace.ext import SpanTypes
-from ddtrace.ext.priority import USER_REJECT
+from ddtrace.constants import USER_REJECT
 from ddtrace.internal.writer import AgentWriter
 from ddtrace.span import Span
 from typing import Optional, Callable
