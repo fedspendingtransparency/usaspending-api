@@ -12,8 +12,10 @@ from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetche
 def test_old_table_exists_validation(caplog, monkeypatch):
     monkeypatch.setattr("usaspending_api.etl.swap_in_new_table_strategies.logger", logging.getLogger())
     with connection.cursor() as cursor:
-        # Need a connection so that migrations are executed
-        # Just executing some arbitrary sql to achieve that.
+        # There's some sort of race condition, probably, in the execution
+        # of this test module. Without this cursor and arbitrary select statement
+        # the test would intermittently fail. It would fail on missing records
+        # in the database that migrations are responsible for inserting.
         cursor.execute("SELECT * FROM pg_depend LIMIT 1")
     try:
         call_command("swap_in_new_table", "--table=test_table")
