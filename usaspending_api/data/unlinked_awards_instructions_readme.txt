@@ -19,7 +19,7 @@ see https://www.usaspending.gov/submission-statistics/data-sources?section=unlin
 
 The files included in this ZIP file will help agencies identify unlinked awards. The ZIP file includes the files:
 - Unlinked Contracts: [agency name]_UnlinkedContracts_[date/time generated]
-- Unlinked Finanacial Assistance Awards: [agency name]_UnlinkedFinancialAssistance_[date/time generated], generic file names for contacts, Financial
+- Unlinked Financial Assistance Awards: [agency name]_UnlinkedFinancialAssistance_[date/time generated], generic file names for contacts, Financial
 - Unlinked awards listed in File C: [agency name]_UnlinkedAccountsByAward_[date/time generated]
 - A summary of the data on the ASSP: [agency name]_UnlinkedAwardsSummary_[date/time generated]
 - These instructions: Unlinked Awards Instructions Readme
