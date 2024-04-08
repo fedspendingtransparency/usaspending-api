@@ -10,6 +10,7 @@ from usaspending_api.common.helpers.sql_helpers import is_table_partitioned, get
 
 logger = logging.getLogger(__name__)
 
+
 def swap_partitioned_table_with_partitions(apps, _):
     # Swap partitions first, then partition table
     call_command("swap_in_new_table", "--table=transaction_search_fabs", "--keep-old-data")
@@ -34,7 +35,7 @@ def undo_swap_partitioned_table_with_partitions(partition_names: List, assumed_p
             try_detach_partition(
                 partition_name=partition_name,
                 assumed_parent_partitioned_table=assumed_parent_partitioned_table,
-                cursor=cursor
+                cursor=cursor,
             )
             table_without_schema = re.sub(rf"^.*?\.(.*?)$", rf"\g<1>", partition_name)
             call_command("swap_in_new_table", f"--table={table_without_schema}", "--undo")
@@ -68,6 +69,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("search", "0023_partition_transaction_search_pt3_copy_metadata"),
+        ("broker", "0009_add_all_swap_in_new_table_test_steps"),
     ]
 
     operations = [
@@ -89,7 +91,7 @@ class Migration(migrations.Migration):
             code=swap_partitioned_table_with_partitions,
             reverse_code=lambda apps, _: undo_swap_partitioned_table_with_partitions(
                 partition_names=["rpt.transaction_search_fabs", "rpt.transaction_search_fpds"],
-                assumed_parent_partitioned_table="rpt.transaction_search"
+                assumed_parent_partitioned_table="rpt.transaction_search",
             ),
         ),
     ]
