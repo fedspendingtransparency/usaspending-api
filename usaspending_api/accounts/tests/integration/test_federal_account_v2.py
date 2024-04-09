@@ -85,33 +85,64 @@ def fixture_data(db):
     ta3 = baker.make("accounts.TreasuryAppropriationAccount", federal_account=fa3, tas_rendering_label="tas-label-3")
     ta4 = baker.make("accounts.TreasuryAppropriationAccount", federal_account=fa4, tas_rendering_label="tas-label-4")
 
+    dabs100 = baker.make(
+        "submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2017-11-01", submission_fiscal_year=2017
+    )
+    sub101 = baker.make(
+        "submissions.SubmissionAttributes",
+        submission_id="101",
+        reporting_fiscal_year=2017,
+        is_final_balances_for_fy=True,
+        submission_window_id=dabs100.id,
+        reporting_period_start="2017-06-01",
+    )
+    sub102 = baker.make(
+        "submissions.SubmissionAttributes",
+        submission_id="102",
+        reporting_fiscal_year=2017,
+        is_final_balances_for_fy=False,
+        submission_window_id=dabs100.id,
+        reporting_period_start="2017-06-01",
+    )
+    sub103 = baker.make(
+        "submissions.SubmissionAttributes",
+        submission_id="103",
+        reporting_fiscal_year=2017,
+        is_final_balances_for_fy=True,
+        submission_window_id=dabs100.id,
+        reporting_period_start="2017-06-01",
+    )
+
     baker.make(
         "accounts.AppropriationAccountBalances",
         final_of_fy=True,
         treasury_account_identifier=ta0,
         total_budgetary_resources_amount_cpe=1000,
-        submission__reporting_period_start="2017-06-01",
+        # submission__reporting_period_start="2017-06-01",
+        submission=sub101,
     )
+    # Will be filtered out because it's submission's "is_final_balances_for_fy" is False
     baker.make(
         "accounts.AppropriationAccountBalances",
-        final_of_fy=False,  # so filter it out
         treasury_account_identifier=ta0,
         total_budgetary_resources_amount_cpe=100,
         submission__reporting_period_start="2017-03-01",
+        submission=sub102,
     )
     baker.make(
         "accounts.AppropriationAccountBalances",
         final_of_fy=True,
         treasury_account_identifier=ta0,
         total_budgetary_resources_amount_cpe=2000,
-        submission__reporting_period_start="2017-06-01",
+        # submission__reporting_period_start="2017-06-01",
+        submission=sub101,
     )
     baker.make(
         "accounts.AppropriationAccountBalances",
         final_of_fy=True,
         treasury_account_identifier=ta1,
         total_budgetary_resources_amount_cpe=9000,
-        submission__reporting_period_start="2017-06-01",
+        submission=sub103,
     )
     baker.make(
         "accounts.AppropriationAccountBalances",
@@ -188,7 +219,6 @@ def fixture_data(db):
         is_final_balances_for_fy=True,
         submission_window_id=dabs99.id,
     )
-
     sub100 = baker.make(
         "submissions.SubmissionAttributes",
         submission_id="100",
@@ -505,9 +535,9 @@ def test_federal_account_dod_cgac(client, fixture_data):
     response_data = resp.json()
 
     assert len(response_data["results"]) == 6
-    assert "CGAC_DOD" in response_data["results"][0]["account_name"]
-    assert "CGAC_DOD" in response_data["results"][1]["account_name"]
-    assert "Something" in response_data["results"][2]["account_name"]
-    assert "Nothing1" in response_data["results"][3]["account_name"]
+    assert "Something" in response_data["results"][0]["account_name"]
+    assert "Nothing1" in response_data["results"][1]["account_name"]
+    assert "CGAC_DOD(NAVY)" in response_data["results"][2]["account_name"]
+    assert "CGAC_DOD" in response_data["results"][3]["account_name"]
     assert "Nothing2" in response_data["results"][4]["account_name"]
     assert "Custom 99" in response_data["results"][5]["account_name"]
