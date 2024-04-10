@@ -94,7 +94,6 @@ def fixture_data(db):
         reporting_fiscal_year=2017,
         is_final_balances_for_fy=True,
         submission_window_id=dabs100.id,
-        reporting_period_start="2017-06-01",
     )
     sub102 = baker.make(
         "submissions.SubmissionAttributes",
@@ -102,7 +101,6 @@ def fixture_data(db):
         reporting_fiscal_year=2017,
         is_final_balances_for_fy=False,
         submission_window_id=dabs100.id,
-        reporting_period_start="2017-06-01",
     )
     sub103 = baker.make(
         "submissions.SubmissionAttributes",
@@ -110,7 +108,6 @@ def fixture_data(db):
         reporting_fiscal_year=2017,
         is_final_balances_for_fy=True,
         submission_window_id=dabs100.id,
-        reporting_period_start="2017-06-01",
     )
 
     baker.make(
@@ -118,7 +115,6 @@ def fixture_data(db):
         final_of_fy=True,
         treasury_account_identifier=ta0,
         total_budgetary_resources_amount_cpe=1000,
-        # submission__reporting_period_start="2017-06-01",
         submission=sub101,
     )
     # Will be filtered out because it's submission's "is_final_balances_for_fy" is False
@@ -134,7 +130,6 @@ def fixture_data(db):
         final_of_fy=True,
         treasury_account_identifier=ta0,
         total_budgetary_resources_amount_cpe=2000,
-        # submission__reporting_period_start="2017-06-01",
         submission=sub101,
     )
     baker.make(
