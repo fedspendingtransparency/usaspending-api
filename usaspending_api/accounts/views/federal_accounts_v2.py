@@ -689,9 +689,7 @@ class FederalAccountsViewSet(APIView):
                 budgetary_resources=Subquery(
                     AppropriationAccountBalances.objects.filter(
                         submission__reporting_fiscal_year=fy,
-                        submission__submission_window__submission_reveal_date__lte=now(),
                         submission__is_final_balances_for_fy=True,
-                        submission__reporting_period_start__fy=fy,
                         treasury_account_identifier__federal_account_id=OuterRef("id"),
                     )
                     .annotate(the_sum=Func(F("total_budgetary_resources_amount_cpe"), function="SUM"))
