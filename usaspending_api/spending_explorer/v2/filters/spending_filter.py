@@ -64,7 +64,7 @@ def spending_filter(alt_set, queryset, filters, _type):
 
             # recipient
             elif key == "recipient":
-                alt_set = alt_set.filter(Q(award__latest_transaction_search__recipient_name_raw=value))
+                alt_set = alt_set.filter(Q(award__latest_transaction_search__recipient_name=value))
 
             # award, award_category
             elif key == "award" or key == "award_category":
