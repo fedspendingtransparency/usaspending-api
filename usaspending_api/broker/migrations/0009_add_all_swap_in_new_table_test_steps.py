@@ -9,6 +9,9 @@ class Migration(migrations.Migration):
     dependencies = [
         ("broker", "0008_add_all_swap_in_new_table_steps"),
     ]
+    run_before = [
+        ("search", "0024_partition_transaction_search_pt4_swap_in_partitioned_table"),
+    ]
 
     operations = [
         migrations.RunSQL(

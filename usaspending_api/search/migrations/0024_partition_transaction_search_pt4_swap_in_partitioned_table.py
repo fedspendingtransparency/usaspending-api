@@ -67,10 +67,7 @@ class Migration(migrations.Migration):
     # the migration steps need to be made non-atomic
     atomic = False
 
-    dependencies = [
-        ("search", "0023_partition_transaction_search_pt3_copy_metadata"),
-        ("broker", "0009_add_all_swap_in_new_table_test_steps"),
-    ]
+    dependencies = [("search", "0023_partition_transaction_search_pt3_copy_metadata")]
 
     operations = [
         # STEP 1: Align constraints between tables to be swapped.
