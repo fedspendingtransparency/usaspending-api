@@ -76,13 +76,9 @@ class Migration(migrations.Migration):
     it or load tracker migration have ran. This solves the problem of the dependency needing to
     exist when we run our test suite and the dependency not able to exist when deploying."""
     with connection.cursor() as cursor:
-        cursor.execute(
-            "SELECT EXISTS (SELECT FROM pg_tables WHERE  schemaname = 'public' AND tablename = 'load_tracker_step')"
-        )
+        cursor.execute("SELECT 1 FROM pg_tables WHERE  schemaname = 'public' AND tablename = 'load_tracker_step'")
         load_tracker_result = dictfetchall(cursor)
-        cursor.execute(
-            "SELECT EXISTS (SELECT FROM pg_tables WHERE  schemaname = 'rpt' AND tablename = 'transaction_search_fpds')"
-        )
+        cursor.execute("SELECT 1 FROM pg_tables WHERE  schemaname = 'rpt' AND tablename = 'transaction_search_fpds'")
         curr_migration_result = dictfetchall(cursor)
         if len(load_tracker_result) == 0 and len(curr_migration_result) == 0:
             dependencies.append(("broker", "0009_add_all_swap_in_new_table_test_steps"))
