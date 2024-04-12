@@ -7,6 +7,7 @@ from django.db import migrations, connection
 from typing import List
 
 from usaspending_api.common.helpers.sql_helpers import is_table_partitioned, get_parent_partitioned_table
+from usaspending_api.etl.broker_etl_helpers import dictfetchall
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +69,11 @@ class Migration(migrations.Migration):
     atomic = False
 
     dependencies = [("search", "0023_partition_transaction_search_pt3_copy_metadata")]
-
+    with connection.cursor() as cursor:
+        cursor.execute("select 1 from django_migrations dm where name = '0009_add_all_swap_in_new_table_test_steps'")
+        result = dictfetchall(cursor)
+        if len(result) == 0:
+            dependencies.append(("broker", "0009_add_all_swap_in_new_table_test_steps"))
     operations = [
         # STEP 1: Align constraints between tables to be swapped.
         migrations.RunSQL(

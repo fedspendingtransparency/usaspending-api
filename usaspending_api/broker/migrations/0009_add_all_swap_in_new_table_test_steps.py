@@ -2,9 +2,6 @@
 
 from django.db import migrations
 from usaspending_api.broker.lookups import LoadTrackerStepEnum
-from django.db import migrations, connection
-
-from usaspending_api.etl.broker_etl_helpers import dictfetchall
 
 
 class Migration(migrations.Migration):
@@ -12,16 +9,6 @@ class Migration(migrations.Migration):
     dependencies = [
         ("broker", "0008_add_all_swap_in_new_table_steps"),
     ]
-
-    with connection.cursor() as cursor:
-        cursor.execute(
-            "select 1 from django_migrations dm where name = '0024_partition_transaction_search_pt4_swap_in_partitioned_table'"
-        )
-        result = dictfetchall(cursor)
-        if len(result) != 0:
-            run_before = [
-                ("search", "0024_partition_transaction_search_pt4_swap_in_partitioned_table"),
-            ]
 
     operations = [
         migrations.RunSQL(
