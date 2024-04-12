@@ -69,11 +69,19 @@ class Migration(migrations.Migration):
     atomic = False
 
     dependencies = [("search", "0023_partition_transaction_search_pt3_copy_metadata")]
+    """This migration requires the load tracker migrations to have been ran.
+    When we run our test suite, all migrations run, when we run migrations in an environment, this migration has already ran.
+    This is important because it means we need to create this migration dependency in certain circumstances.
+    So the following makes it such that this migration will only depend on the load tracker migrations if neither
+    it or load tracker migration have ran. This solves the problem of the dependency needing to
+    exist when we run our test suite and the dependency not able to exist when deploying."""
     with connection.cursor() as cursor:
-        cursor.execute("select 1 from django_migrations dm where name = '0009_add_all_swap_in_new_table_test_steps'")
+        cursor.execute(
+            "select 1 from public.django_migrations dm where name = '0009_add_all_swap_in_new_table_test_steps'"
+        )
         load_tracker_result = dictfetchall(cursor)
         cursor.execute(
-            "select 1 from django_migrations dm where name = '0024_partition_transaction_search_pt4_swap_in_partitioned_table'"
+            "select 1 from public.django_migrations dm where name = '0024_partition_transaction_search_pt4_swap_in_partitioned_table'"
         )
         curr_migration_result = dictfetchall(cursor)
         if len(load_tracker_result) == 0 and len(curr_migration_result) == 0:
