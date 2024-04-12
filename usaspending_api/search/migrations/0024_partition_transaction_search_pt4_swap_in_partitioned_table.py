@@ -71,8 +71,13 @@ class Migration(migrations.Migration):
     dependencies = [("search", "0023_partition_transaction_search_pt3_copy_metadata")]
     with connection.cursor() as cursor:
         cursor.execute("select 1 from django_migrations dm where name = '0009_add_all_swap_in_new_table_test_steps'")
-        result = dictfetchall(cursor)
-        if len(result) == 0:
+        load_tracker_result = dictfetchall(cursor)
+        cursor.execute(
+            "select 1 from django_migrations dm where name = '0024_partition_transaction_search_pt4_swap_in_partitioned_table'"
+        )
+        curr_migration_result = dictfetchall(cursor)
+        print(curr_migration_result)
+        if len(load_tracker_result) == 0 and len(curr_migration_result) == 0:
             dependencies.append(("broker", "0009_add_all_swap_in_new_table_test_steps"))
     operations = [
         # STEP 1: Align constraints between tables to be swapped.
