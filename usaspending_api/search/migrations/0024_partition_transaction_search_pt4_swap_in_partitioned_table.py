@@ -77,11 +77,11 @@ class Migration(migrations.Migration):
     exist when we run our test suite and the dependency not able to exist when deploying."""
     with connection.cursor() as cursor:
         cursor.execute(
-            "select 1 from public.django_migrations dm where name = '0009_add_all_swap_in_new_table_test_steps'"
+            "SELECT EXISTS (SELECT FROM pg_tables WHERE  schemaname = 'public' AND tablename = 'load_tracker')"
         )
         load_tracker_result = dictfetchall(cursor)
         cursor.execute(
-            "select 1 from public.django_migrations dm where name = '0024_partition_transaction_search_pt4_swap_in_partitioned_table'"
+            "SELECT EXISTS (SELECT FROM pg_tables WHERE  schemaname = 'rpt' AND tablename = 'transaction_search_fpds')"
         )
         curr_migration_result = dictfetchall(cursor)
         if len(load_tracker_result) == 0 and len(curr_migration_result) == 0:
