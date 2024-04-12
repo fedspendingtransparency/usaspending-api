@@ -77,7 +77,7 @@ class Migration(migrations.Migration):
     exist when we run our test suite and the dependency not able to exist when deploying."""
     with connection.cursor() as cursor:
         cursor.execute(
-            "SELECT EXISTS (SELECT FROM pg_tables WHERE  schemaname = 'public' AND tablename = 'load_tracker')"
+            "SELECT EXISTS (SELECT FROM pg_tables WHERE  schemaname = 'public' AND tablename = 'load_tracker_step')"
         )
         load_tracker_result = dictfetchall(cursor)
         cursor.execute(
