@@ -65,7 +65,7 @@ Searches for subaward records based on a provided set of filters and groups them
     + Attributes (object)
         + `limit` (required, number)
         + `results` (required, array[AwardGroupResponse], fixed-type)
-        + `page_metadata` (PageMetadataObject)
+        + `page_metadata` (PageMetaDataObject)
         + `messages` (optional, array[string])
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
 
