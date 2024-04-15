@@ -16,7 +16,7 @@
     "aglio": "^2.3.0",
     "drafter": "^1.2.0",
     "drakov": "^1.0.4",
-    "dredd": "^15.4.24",
+    "dredd": "^14.1.0",
     "fs-extra": "^6.0.0",
     "micromatch": "^3.1.10",
     "node-glob": "^1.2.0"
