@@ -7,6 +7,7 @@ from django.db import migrations, connection
 from typing import List
 
 from usaspending_api.common.helpers.sql_helpers import is_table_partitioned, get_parent_partitioned_table
+from usaspending_api.etl.broker_etl_helpers import dictfetchall
 
 logger = logging.getLogger(__name__)
 
@@ -67,11 +68,20 @@ class Migration(migrations.Migration):
     # the migration steps need to be made non-atomic
     atomic = False
 
-    dependencies = [
-        ("search", "0023_partition_transaction_search_pt3_copy_metadata"),
-        ("broker", "0009_add_all_swap_in_new_table_test_steps"),
-    ]
-
+    dependencies = [("search", "0023_partition_transaction_search_pt3_copy_metadata")]
+    """This migration requires the load tracker migrations to have been ran.
+    When we run our test suite, all migrations run, when we run migrations in an environment, this migration has already ran.
+    This is important because it means we need to create this migration dependency in certain circumstances.
+    So the following makes it such that this migration will only depend on the load tracker migrations if neither
+    it or load tracker migration have ran. This solves the problem of the dependency needing to
+    exist when we run our test suite and the dependency not able to exist when deploying."""
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT 1 FROM pg_tables WHERE  schemaname = 'public' AND tablename = 'load_tracker_step'")
+        load_tracker_result = dictfetchall(cursor)
+        cursor.execute("SELECT 1 FROM pg_tables WHERE  schemaname = 'rpt' AND tablename = 'transaction_search_fpds'")
+        curr_migration_result = dictfetchall(cursor)
+        if len(load_tracker_result) == 0 and len(curr_migration_result) == 0:
+            dependencies.append(("broker", "0009_add_all_swap_in_new_table_test_steps"))
     operations = [
         # STEP 1: Align constraints between tables to be swapped.
         migrations.RunSQL(
