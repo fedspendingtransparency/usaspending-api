@@ -9,7 +9,7 @@
 FROM centos:7
 
 # Build ARGs
-ARG PYTHON_VERSION=3.8.16
+ARG PYTHON_VERSION=3.12.0
 
 WORKDIR /dockermount
 
