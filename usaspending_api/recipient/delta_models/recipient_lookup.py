@@ -637,15 +637,15 @@ recipient_lookup_load_sql_string_list = [
             FULL OUTER JOIN alt_parent_names AS apn ON an.recipient_hash = apn.recipient_hash
         )
         SELECT
-            {
-                ", ".join(
-                    [
-                        "temp_stale_recipients_removed_view." + val
-                        for val
-                        in set(RPT_RECIPIENT_LOOKUP_DELTA_COLUMNS) - {"alternate_names"}
-                    ]
-                )
-            },
+    {
+        ", ".join(
+            [
+                "temp_stale_recipients_removed_view." + val
+                for val
+                in set(RPT_RECIPIENT_LOOKUP_DELTA_COLUMNS) - {"alternate_names"}
+            ]
+        )
+    },
             COALESCE(
                 ARRAY_REMOVE(recipient_names.all_names, COALESCE(temp_stale_recipients_removed_view.legal_business_name, '')),
                 ARRAY()

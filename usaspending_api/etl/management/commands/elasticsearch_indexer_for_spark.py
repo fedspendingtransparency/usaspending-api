@@ -1,6 +1,5 @@
 import logging
 
-from pyspark.sql import SparkSession
 
 from usaspending_api.common.helpers.spark_helpers import get_active_spark_session, configure_spark_session
 from usaspending_api.etl.management.commands.elasticsearch_indexer import AbstractElasticsearchIndexer

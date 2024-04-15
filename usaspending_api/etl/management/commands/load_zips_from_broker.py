@@ -1,7 +1,6 @@
 from datetime import datetime
 
 from django.core.management import BaseCommand, call_command
-from pyspark.sql import SparkSession
 
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
 from usaspending_api.common.etl.spark import create_ref_temp_views

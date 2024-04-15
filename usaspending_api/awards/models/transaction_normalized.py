@@ -149,9 +149,9 @@ NORM_TO_TRANSACTION_SEARCH_COL_MAP = {
 vw_transaction_normalized_sql = f"""
     CREATE OR REPLACE VIEW rpt.vw_transaction_normalized AS
         SELECT
-            {(','+os.linesep+' '*12).join([
-                (v+(f'::{NORM_CASTED_COL_MAP[k]}' if k in NORM_CASTED_COL_MAP else '')).ljust(62)+' AS '+k.ljust(48)
-                for k, v in NORM_TO_TRANSACTION_SEARCH_COL_MAP.items()])}
+            {(',' + os.linesep + ' ' * 8).join([
+    (v + (f'::{NORM_CASTED_COL_MAP[k]}' if k in NORM_CASTED_COL_MAP else '')).ljust(62) + ' AS ' + k.ljust(48)
+    for k, v in NORM_TO_TRANSACTION_SEARCH_COL_MAP.items()])}
         FROM
             rpt.transaction_search;
 """

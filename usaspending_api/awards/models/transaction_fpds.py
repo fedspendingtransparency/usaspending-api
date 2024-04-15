@@ -364,9 +364,9 @@ FPDS_TO_TRANSACTION_SEARCH_COL_MAP = {
 vw_transaction_fpds_sql = f"""
     CREATE OR REPLACE VIEW rpt.vw_transaction_fpds AS
         SELECT
-            {(','+os.linesep+' '*12).join([
-                (v+(f'::{FPDS_CASTED_COL_MAP[k]}' if k in FPDS_CASTED_COL_MAP else '')).ljust(62)+' AS '+k.ljust(48)
-                for k, v in FPDS_TO_TRANSACTION_SEARCH_COL_MAP.items()])}
+            {(',' + os.linesep + ' ' * 12).join([
+    (v + (f'::{FPDS_CASTED_COL_MAP[k]}' if k in FPDS_CASTED_COL_MAP else '')).ljust(62) + ' AS ' + k.ljust(48)
+    for k, v in FPDS_TO_TRANSACTION_SEARCH_COL_MAP.items()])}
         FROM
             rpt.transaction_search
         WHERE

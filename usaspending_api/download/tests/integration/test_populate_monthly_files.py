@@ -315,7 +315,7 @@ def generate_assistance_data(fiscal_year, i):
     return [
         i + 100,
         i + 100,
-        f"fain{i+100}",
+        f"fain{i + 100}",
         "",  # "assistance_transaction_unique_key", "assistance_award_unique_key", "award_id_fain", "modification_number",
         "",
         "",
@@ -506,7 +506,7 @@ def monthly_download_data(db, monkeypatch):
             period_of_performance_current_end_date=datetime.datetime(fiscal_year, 5, 7),
             action_date=datetime.datetime(fiscal_year, 5, 7),
             federal_action_obligation=100,
-            modification_number=f"{i+100}",
+            modification_number=f"{i + 100}",
             transaction_description="a description",
             last_modified_date=datetime.datetime(fiscal_year, 5, 7),
             award_certified_date=datetime.datetime(fiscal_year, 5, 7),

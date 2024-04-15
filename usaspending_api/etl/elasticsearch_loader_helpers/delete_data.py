@@ -103,7 +103,7 @@ def delete_docs_by_unique_key(
             response = q.delete()
             # Some subtle errors come back on the response
             if response["timed_out"]:
-                msg = f"Delete request timed out on cluster after {int(response['took'])/1000:.2f}s"
+                msg = f"Delete request timed out on cluster after {int(response['took']) / 1000:.2f}s"
                 logger.error(format_log(msg=msg, action="Delete", name=task_id))
                 raise RuntimeError(msg)
             if response["failures"]:
@@ -114,7 +114,7 @@ def delete_docs_by_unique_key(
             logger.info(
                 format_log(
                     f"Deleted {response['deleted']:,} docs in ES from chunk of size {len(chunk_of_values):,} "
-                    f"in {int(response['took'])/1000:.2f}s, "
+                    f"in {int(response['took']) / 1000:.2f}s, "
                     f"and ignored {response['version_conflicts']:,} version conflicts",
                     action="Delete",
                     name=task_id,

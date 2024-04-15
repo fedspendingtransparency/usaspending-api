@@ -24,7 +24,6 @@ from pyspark.find_spark_home import _find_spark_home
 from pyspark.java_gateway import launch_gateway
 from pyspark.serializers import read_int, UTF8Deserializer
 from pyspark.sql import SparkSession
-from pyspark.sql.conf import RuntimeConfig
 from typing import Sequence, Set
 
 from usaspending_api.awards.delta_models.awards import AWARDS_COLUMNS

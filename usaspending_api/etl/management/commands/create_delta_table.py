@@ -1,5 +1,4 @@
 from django.core.management.base import BaseCommand
-from pyspark.sql import SparkSession
 
 from usaspending_api.config import CONFIG
 from usaspending_api.common.helpers.spark_helpers import (

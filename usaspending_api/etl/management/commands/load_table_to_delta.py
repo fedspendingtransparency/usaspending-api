@@ -1,5 +1,4 @@
 from django.core.management import BaseCommand
-from pyspark.sql import SparkSession
 
 from usaspending_api.awards.delta_models import (
     AWARDS_COLUMNS,

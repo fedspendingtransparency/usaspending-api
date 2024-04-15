@@ -220,7 +220,7 @@ class Command(BaseCommand):
             raise TimeoutError(f"Unable to complete ES search query in {self._es_client_config['timeout']} seconds")
         duplicated_docs = len(response["aggregations"][agg_name]["buckets"])
         msg = (
-            f"Thread#{get_ident()}: Partition {partition} query took {int(response['took'])/1000:.2f}s "
+            f"Thread#{get_ident()}: Partition {partition} query took {int(response['took']) / 1000:.2f}s "
             f"and found {duplicated_docs} _ids with more than 1 doc within partition"
         )
         if duplicated_docs == 0:
