@@ -60,7 +60,7 @@ def setup_test_data(db):
         quarter_format_flag=False,
         reporting_fiscal_year=CURRENT_FISCAL_YEAR,
         reporting_fiscal_period=CURRENT_LAST_PERIOD,
-        published_date=f"{CURRENT_FISCAL_YEAR}-{CURRENT_LAST_PERIOD+1:02}-07",
+        published_date=f"{CURRENT_FISCAL_YEAR}-{CURRENT_LAST_PERIOD + 1:02}-07",
         submission_window_id=dabs.id,
     )
     sub3 = baker.make(
@@ -70,7 +70,7 @@ def setup_test_data(db):
         quarter_format_flag=True,
         reporting_fiscal_year=CURRENT_FISCAL_YEAR,
         reporting_fiscal_period=CURRENT_LAST_PERIOD,
-        published_date=f"{CURRENT_FISCAL_YEAR}-{CURRENT_LAST_PERIOD+1:02}-07",
+        published_date=f"{CURRENT_FISCAL_YEAR}-{CURRENT_LAST_PERIOD + 1:02}-07",
         submission_window_id=dabs.id,
     )
     baker.make("references.Agency", id=1, toptier_agency_id=1, toptier_flag=True, _fill_optional=True)
@@ -253,7 +253,7 @@ def test_basic_success(setup_test_data, client, monkeypatch, helpers):
             "toptier_code": "987",
             "agency_id": 2,
             "current_total_budget_authority_amount": 100.0,
-            "recent_publication_date": f"{CURRENT_FISCAL_YEAR}-{CURRENT_LAST_PERIOD+1:02}-07T00:00:00Z",
+            "recent_publication_date": f"{CURRENT_FISCAL_YEAR}-{CURRENT_LAST_PERIOD + 1:02}-07T00:00:00Z",
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 18.6,
@@ -272,7 +272,7 @@ def test_basic_success(setup_test_data, client, monkeypatch, helpers):
             "toptier_code": "001",
             "agency_id": 3,
             "current_total_budget_authority_amount": 10.0,
-            "recent_publication_date": f"{CURRENT_FISCAL_YEAR}-{CURRENT_LAST_PERIOD+1:02}-07T00:00:00Z",
+            "recent_publication_date": f"{CURRENT_FISCAL_YEAR}-{CURRENT_LAST_PERIOD + 1:02}-07T00:00:00Z",
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 20.0,
@@ -339,7 +339,7 @@ def test_sort_by_agency_name(setup_test_data, client, monkeypatch, helpers):
             "toptier_code": "987",
             "agency_id": 2,
             "current_total_budget_authority_amount": 100.0,
-            "recent_publication_date": f"{CURRENT_FISCAL_YEAR}-{CURRENT_LAST_PERIOD+1:02}-07T00:00:00Z",
+            "recent_publication_date": f"{CURRENT_FISCAL_YEAR}-{CURRENT_LAST_PERIOD + 1:02}-07T00:00:00Z",
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 18.6,
@@ -358,7 +358,7 @@ def test_sort_by_agency_name(setup_test_data, client, monkeypatch, helpers):
             "toptier_code": "001",
             "agency_id": 3,
             "current_total_budget_authority_amount": 10.0,
-            "recent_publication_date": f"{CURRENT_FISCAL_YEAR}-{CURRENT_LAST_PERIOD+1:02}-07T00:00:00Z",
+            "recent_publication_date": f"{CURRENT_FISCAL_YEAR}-{CURRENT_LAST_PERIOD + 1:02}-07T00:00:00Z",
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 20.0,
@@ -384,7 +384,7 @@ def test_sort_by_agency_name(setup_test_data, client, monkeypatch, helpers):
             "toptier_code": "001",
             "agency_id": 3,
             "current_total_budget_authority_amount": 10.0,
-            "recent_publication_date": f"{CURRENT_FISCAL_YEAR}-{CURRENT_LAST_PERIOD+1:02}-07T00:00:00Z",
+            "recent_publication_date": f"{CURRENT_FISCAL_YEAR}-{CURRENT_LAST_PERIOD + 1:02}-07T00:00:00Z",
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 20.0,
@@ -403,7 +403,7 @@ def test_sort_by_agency_name(setup_test_data, client, monkeypatch, helpers):
             "toptier_code": "987",
             "agency_id": 2,
             "current_total_budget_authority_amount": 100.0,
-            "recent_publication_date": f"{CURRENT_FISCAL_YEAR}-{CURRENT_LAST_PERIOD+1:02}-07T00:00:00Z",
+            "recent_publication_date": f"{CURRENT_FISCAL_YEAR}-{CURRENT_LAST_PERIOD + 1:02}-07T00:00:00Z",
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 18.6,
@@ -449,7 +449,7 @@ def test_filter(setup_test_data, client, monkeypatch, helpers):
             "toptier_code": "987",
             "agency_id": 2,
             "current_total_budget_authority_amount": 100.0,
-            "recent_publication_date": f"{CURRENT_FISCAL_YEAR}-{CURRENT_LAST_PERIOD+1:02}-07T00:00:00Z",
+            "recent_publication_date": f"{CURRENT_FISCAL_YEAR}-{CURRENT_LAST_PERIOD + 1:02}-07T00:00:00Z",
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 18.6,
@@ -490,7 +490,7 @@ def test_pagination(setup_test_data, client, monkeypatch, helpers):
             "toptier_code": "987",
             "agency_id": 2,
             "current_total_budget_authority_amount": 100.0,
-            "recent_publication_date": f"{CURRENT_FISCAL_YEAR}-{CURRENT_LAST_PERIOD+1:02}-07T00:00:00Z",
+            "recent_publication_date": f"{CURRENT_FISCAL_YEAR}-{CURRENT_LAST_PERIOD + 1:02}-07T00:00:00Z",
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 18.6,
@@ -544,7 +544,7 @@ def test_pagination(setup_test_data, client, monkeypatch, helpers):
             "toptier_code": "001",
             "agency_id": 3,
             "current_total_budget_authority_amount": 10.0,
-            "recent_publication_date": f"{CURRENT_FISCAL_YEAR}-{CURRENT_LAST_PERIOD+1:02}-07T00:00:00Z",
+            "recent_publication_date": f"{CURRENT_FISCAL_YEAR}-{CURRENT_LAST_PERIOD + 1:02}-07T00:00:00Z",
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 20.0,
@@ -563,7 +563,7 @@ def test_pagination(setup_test_data, client, monkeypatch, helpers):
             "toptier_code": "987",
             "agency_id": 2,
             "current_total_budget_authority_amount": 100.0,
-            "recent_publication_date": f"{CURRENT_FISCAL_YEAR}-{CURRENT_LAST_PERIOD+1:02}-07T00:00:00Z",
+            "recent_publication_date": f"{CURRENT_FISCAL_YEAR}-{CURRENT_LAST_PERIOD + 1:02}-07T00:00:00Z",
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 18.6,
@@ -609,7 +609,7 @@ def test_pagination(setup_test_data, client, monkeypatch, helpers):
             "toptier_code": "987",
             "agency_id": 2,
             "current_total_budget_authority_amount": 100.0,
-            "recent_publication_date": f"{CURRENT_FISCAL_YEAR}-{CURRENT_LAST_PERIOD+1:02}-07T00:00:00Z",
+            "recent_publication_date": f"{CURRENT_FISCAL_YEAR}-{CURRENT_LAST_PERIOD + 1:02}-07T00:00:00Z",
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 18.6,
@@ -628,7 +628,7 @@ def test_pagination(setup_test_data, client, monkeypatch, helpers):
             "toptier_code": "001",
             "agency_id": 3,
             "current_total_budget_authority_amount": 10.0,
-            "recent_publication_date": f"{CURRENT_FISCAL_YEAR}-{CURRENT_LAST_PERIOD+1:02}-07T00:00:00Z",
+            "recent_publication_date": f"{CURRENT_FISCAL_YEAR}-{CURRENT_LAST_PERIOD + 1:02}-07T00:00:00Z",
             "recent_publication_date_certified": False,
             "tas_account_discrepancies_totals": {
                 "gtas_obligation_total": 20.0,

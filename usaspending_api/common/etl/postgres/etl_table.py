@@ -6,7 +6,7 @@ from usaspending_api.common.etl.postgres.primatives import ColumnOverrides, Data
 
 
 class ETLTable(ETLWritableObjectBase):
-    """ Represents a local permanent database table. """
+    """Represents a local permanent database table."""
 
     def __init__(
         self,
