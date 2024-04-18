@@ -21,7 +21,7 @@ Searches for subaward records based on a provided set of filters and groups them
         + `filters` (required, AdvancedFilterObject)
             These filters are applied at the Subaward level (`children`). They will not affect the Prime Awards (`results`) themselves
         + `fields` (required, SpendingBySubawardFields)
-            The field names to include for `children` objects (Subawards) the response.
+            The field names to include for `children` objects (Subawards) in the response.
         + `limit`: 5 (optional, number)
             The number of `results` (Prime Awards) to include per page. The number of `children` (Subawards) objects will always be limited to 10
             + Default: 10
