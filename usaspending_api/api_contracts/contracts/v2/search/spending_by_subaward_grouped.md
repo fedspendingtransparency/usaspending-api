@@ -227,27 +227,22 @@ A list of current DEFC can be found [here.](https://files.usaspending.gov/refere
 ### SubawardResponse (object)
 + `internal_id` (required, number)
 + `Sub-Award Amount` (optional, string)
-    Sub-Awards only
 + `Sub-Award Date` (optional, string)
-    Sub-Awards only
 + `Sub-Award ID` (optional, string)
-    Sub-Awards only
 + `Sub-Award Type` (optional, string)
-    Sub-Awards only
 + `Sub-Awardee Name` (optional, string)
-    Sub-Awards only
 + `Awarding Agency` (optional, string, nullable)
 + `Awarding Sub Agency` (optional, string, nullable)
 + `Prime Award ID` (optional, string, nullable)
-    Sub-Awards only, returns the ID (piid/fain/uri) of the prime award.
+    Returns the ID (piid/fain/uri) of the prime award.
 + `Prime Recipient Name` (optional, string, nullable)
-    Sub-Awards only, returns the name of the prime award's recipient.
+    Returns the name of the prime award's recipient.
 + `prime_award_recipient_id` (optional, string, nullable)
-    Sub-Awards only, return the recipient id of the prime award's recipient.
+    Returns the recipient id of the prime award's recipient.
 + `prime_award_internal_id` (optional, string, nullable)
-    Sub-Awards only, return the award id of the prime award.
+    Returns the award id of the prime award.
 + `prime_award_generated_internal_id` (optional, string)
-    Sub-Awards only, return the generated unique award id of the prime award.
+    Returns the generated unique award id of the prime award.
     
 
 ### PageMetaDataObject (object)
