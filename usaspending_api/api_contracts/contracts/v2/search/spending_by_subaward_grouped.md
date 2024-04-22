@@ -76,14 +76,22 @@ Searches for subaward records based on a provided set of filters and groups them
 ### SpendingBySubawardFields (array)
 The Spending by Subaward Grouped API can accept any of the following fields regardless of the supplied `award_type_codes` filter values. 
 - `Sub-Award ID`
-- `Sub-Award Type`
 - `Sub-Awardee Name`
-- `Sub-Award Date`
 - `Sub-Award Amount`
-- `Awarding Agency`
-- `Awarding Sub Agency`
+- `Sub-Award Date`
+- `Sub-Award Description`
+- `Sub-Awardee UEI`
+- `Sub-Awardee Location`
+- `Sub-Award Place of Performance`
+- `Sub-Award Type`
+- `Sub-Award NAICS`
+- `Sub-Award PSC`
+- `Sub-Award Assistance Listing`
 - `Prime Award ID`
 - `Prime Recipient Name`
+- `Prime Recipient Location`
+- `Awarding Agency`
+- `Awarding Sub Agency`
 - `prime_award_recipient_id`
 
 ## Filter Objects
