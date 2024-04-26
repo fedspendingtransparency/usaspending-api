@@ -45,6 +45,7 @@ from usaspending_api.references.models import (
 from usaspending_api.reporting.models import ReportingAgencyMissingTas, ReportingAgencyOverview
 from usaspending_api.submissions.models import SubmissionAttributes, DABSSubmissionWindowSchedule
 from usaspending_api.download.filestreaming.download_generation import EXCEL_ROW_LIMIT
+from math import ceil
 
 MAX_PARTITIONS = CONFIG.SPARK_MAX_PARTITIONS
 _USAS_RDS_REF_TABLES = [
@@ -612,10 +613,8 @@ def write_csv_file(
     start = time.time()
     logger.info(f"Writing source data DataFrame to csv part files for file {parts_dir}...")
     df_record_count = df.count()
-    df.repartition(num_partitions).write.options(
-        # NOTE: this is a suggestion, to be used by Spark if partitions yield multiple files
-        maxRecordsPerFile=max_records_per_file,
-    ).csv(
+    num_partitions_given_row_count = ceil(df_record_count / max_records_per_file)
+    df.repartition(num_partitions_given_row_count).write.csv(
         path=parts_dir,
         header=False,
         emptyValue="",  # "" creates the output of ,,, for null values to match behavior of previous Postgres job
