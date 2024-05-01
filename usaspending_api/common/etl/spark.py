@@ -612,7 +612,7 @@ def write_csv_file(
     start = time.time()
     logger.info(f"Writing source data DataFrame to csv part files for file {parts_dir}...")
     df_record_count = df.count()
-    df.coalesce(num_partitions).write.options(
+    df.repartition(num_partitions).write.options(
         # NOTE: this is a suggestion, to be used by Spark if partitions yield multiple files
         maxRecordsPerFile=max_records_per_file,
     ).csv(
