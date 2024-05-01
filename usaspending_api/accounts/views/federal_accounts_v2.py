@@ -2,15 +2,15 @@ import ast
 from collections import OrderedDict
 from typing import List
 
-from django.db.models import F, Q, Sum, OuterRef, Subquery, Func, DecimalField, Exists
+from django.db.models import DecimalField, Exists, F, Func, OuterRef, Q, Subquery, Sum
 from django.utils.dateparse import parse_date
 from django.utils.functional import cached_property
 from django_cte import With
+from fiscalyear import FiscalDateTime
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from fiscalyear import FiscalDateTime
 from usaspending_api.accounts.models import AppropriationAccountBalances, FederalAccount, TreasuryAppropriationAccount
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -688,8 +688,8 @@ class FederalAccountsViewSet(APIView):
                 account_number=F("federal_account_code"),
                 budgetary_resources=Subquery(
                     AppropriationAccountBalances.objects.filter(
-                        final_of_fy=True,
-                        submission__reporting_period_start__fy=fy,
+                        submission__reporting_fiscal_year=fy,
+                        submission__is_final_balances_for_fy=True,
                         treasury_account_identifier__federal_account_id=OuterRef("id"),
                     )
                     .annotate(the_sum=Func(F("total_budgetary_resources_amount_cpe"), function="SUM"))

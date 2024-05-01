@@ -1,9 +1,9 @@
-import pytest
+from datetime import datetime, timezone
 
+import pytest
 from django.conf import settings
 from model_bakery import baker
 from rest_framework import status
-from datetime import datetime, timezone
 
 url = "/api/v2/reporting/agencies/overview/"
 
@@ -306,6 +306,138 @@ def test_basic_success(setup_test_data, client, monkeypatch, helpers):
         },
     ]
     assert response["results"] == expected_results
+
+
+def test_sort_by_agency_name(setup_test_data, client, monkeypatch, helpers):
+    helpers.mock_current_fiscal_year(monkeypatch)
+
+    # Sort by `agency_name` in ascending order
+    resp = client.get(f"{url}?sort=agency_name&order=asc")
+    expected_results = [
+        {
+            "agency_name": "Test Agency",
+            "abbreviation": "ABC",
+            "toptier_code": "123",
+            "agency_id": 1,
+            "current_total_budget_authority_amount": None,
+            "recent_publication_date": None,
+            "recent_publication_date_certified": False,
+            "tas_account_discrepancies_totals": {
+                "gtas_obligation_total": None,
+                "tas_accounts_total": None,
+                "tas_obligation_not_in_gtas_total": None,
+                "missing_tas_accounts_count": None,
+            },
+            "obligation_difference": None,
+            "unlinked_contract_award_count": None,
+            "unlinked_assistance_award_count": None,
+            "assurance_statement_url": None,
+        },
+        {
+            "agency_name": "Test Agency 2",
+            "abbreviation": "XYZ",
+            "toptier_code": "987",
+            "agency_id": 2,
+            "current_total_budget_authority_amount": 100.0,
+            "recent_publication_date": f"{CURRENT_FISCAL_YEAR}-{CURRENT_LAST_PERIOD+1:02}-07T00:00:00Z",
+            "recent_publication_date_certified": False,
+            "tas_account_discrepancies_totals": {
+                "gtas_obligation_total": 18.6,
+                "tas_accounts_total": 100.00,
+                "tas_obligation_not_in_gtas_total": 12.0,
+                "missing_tas_accounts_count": 1,
+            },
+            "obligation_difference": 0.0,
+            "unlinked_contract_award_count": 40,
+            "unlinked_assistance_award_count": 60,
+            "assurance_statement_url": assurance_statement_2,
+        },
+        {
+            "agency_name": "Test Agency 3",
+            "abbreviation": "AAA",
+            "toptier_code": "001",
+            "agency_id": 3,
+            "current_total_budget_authority_amount": 10.0,
+            "recent_publication_date": f"{CURRENT_FISCAL_YEAR}-{CURRENT_LAST_PERIOD+1:02}-07T00:00:00Z",
+            "recent_publication_date_certified": False,
+            "tas_account_discrepancies_totals": {
+                "gtas_obligation_total": 20.0,
+                "tas_accounts_total": 100.00,
+                "tas_obligation_not_in_gtas_total": 0.0,
+                "missing_tas_accounts_count": 0,
+            },
+            "obligation_difference": 10.0,
+            "unlinked_contract_award_count": 400,
+            "unlinked_assistance_award_count": 600,
+            "assurance_statement_url": assurance_statement_3,
+        },
+    ]
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()["results"] == expected_results
+
+    # Sort by `agency_name` in descending order
+    resp = client.get(f"{url}?sort=agency_name&order=desc")
+    expected_results = [
+        {
+            "agency_name": "Test Agency 3",
+            "abbreviation": "AAA",
+            "toptier_code": "001",
+            "agency_id": 3,
+            "current_total_budget_authority_amount": 10.0,
+            "recent_publication_date": f"{CURRENT_FISCAL_YEAR}-{CURRENT_LAST_PERIOD+1:02}-07T00:00:00Z",
+            "recent_publication_date_certified": False,
+            "tas_account_discrepancies_totals": {
+                "gtas_obligation_total": 20.0,
+                "tas_accounts_total": 100.00,
+                "tas_obligation_not_in_gtas_total": 0.0,
+                "missing_tas_accounts_count": 0,
+            },
+            "obligation_difference": 10.0,
+            "unlinked_contract_award_count": 400,
+            "unlinked_assistance_award_count": 600,
+            "assurance_statement_url": assurance_statement_3,
+        },
+        {
+            "agency_name": "Test Agency 2",
+            "abbreviation": "XYZ",
+            "toptier_code": "987",
+            "agency_id": 2,
+            "current_total_budget_authority_amount": 100.0,
+            "recent_publication_date": f"{CURRENT_FISCAL_YEAR}-{CURRENT_LAST_PERIOD+1:02}-07T00:00:00Z",
+            "recent_publication_date_certified": False,
+            "tas_account_discrepancies_totals": {
+                "gtas_obligation_total": 18.6,
+                "tas_accounts_total": 100.00,
+                "tas_obligation_not_in_gtas_total": 12.0,
+                "missing_tas_accounts_count": 1,
+            },
+            "obligation_difference": 0.0,
+            "unlinked_contract_award_count": 40,
+            "unlinked_assistance_award_count": 60,
+            "assurance_statement_url": assurance_statement_2,
+        },
+        {
+            "agency_name": "Test Agency",
+            "abbreviation": "ABC",
+            "toptier_code": "123",
+            "agency_id": 1,
+            "current_total_budget_authority_amount": None,
+            "recent_publication_date": None,
+            "recent_publication_date_certified": False,
+            "tas_account_discrepancies_totals": {
+                "gtas_obligation_total": None,
+                "tas_accounts_total": None,
+                "tas_obligation_not_in_gtas_total": None,
+                "missing_tas_accounts_count": None,
+            },
+            "obligation_difference": None,
+            "unlinked_contract_award_count": None,
+            "unlinked_assistance_award_count": None,
+            "assurance_statement_url": None,
+        },
+    ]
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()["results"] == expected_results
 
 
 def test_filter(setup_test_data, client, monkeypatch, helpers):
