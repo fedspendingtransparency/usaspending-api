@@ -167,24 +167,29 @@ class TransactionSummaryVisualizationViewSet(APIView):
 @api_transformations(api_version=API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
 class SpendingByTransactionCountVisualizaitonViewSet(APIView):
     """
-    This route takes keyword search fields, and returns the fields of the searched term.
+    This route takes transaction search fields, and returns the transaction counts of the searched term.
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_transaction_count.md"
 
     @cache_response()
     def post(self, request):
-        models = [
-            {
-                "name": "keywords",
-                "key": "filters|keywords",
-                "type": "array",
-                "array_type": "text",
-                "text_type": "search",
-                "optional": False,
-                "text_min": 3,
-            }
-        ]
+        models = []
+        models.extend(copy.deepcopy(AWARD_FILTER))
+        for m in models:
+            if m["name"] == "award_type_codes":
+                m["optional"] = False
+            elif m["name"] == "keywords":
+                m["optional"] = True
+            elif m["name"] == "keyword":
+                m["optional"] = True
         validated_payload = TinyShield(models).block(request.data)
-        results = spending_by_transaction_count(validated_payload)
+        if "keywords" in validated_payload["filters"]:
+            validated_payload["filters"]["keyword_search"] = [
+                es_minimal_sanitize(x) for x in validated_payload["filters"]["keywords"]
+            ]
+            validated_payload["filters"].pop("keywords")
+        filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(validated_payload["filters"])
+        search = TransactionSearch().filter(filter_query)
+        results = spending_by_transaction_count(search)
         return Response({"results": results})

@@ -50,7 +50,7 @@ def test_spending_by_transaction_count_success(client, monkeypatch, transaction_
 
     resp_results = resp.data.get("results", {})
     assert resp.status_code == status.HTTP_200_OK
-    assert len(resp_results) == 0
+    assert len(resp_results) > 0
     assert resp_results["contracts"] == 0
 
     # Test that `keyword` can be used
