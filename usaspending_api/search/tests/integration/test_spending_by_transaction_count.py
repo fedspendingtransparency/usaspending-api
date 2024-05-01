@@ -34,7 +34,7 @@ def test_spending_by_transaction_count_success(client, monkeypatch, transaction_
     resp = client.post(
         ENDPOINT,
         content_type="application/json",
-        data=json.dumps({"filters": {"keyword": "DEV-10812", "award_type_codes": ["A"]}}),
+        data=json.dumps({"filters": {"keywords": ["DEV-10812"], "award_type_codes": ["A"]}}),
     )
 
     resp_results = resp.data.get("results", {})
@@ -45,13 +45,37 @@ def test_spending_by_transaction_count_success(client, monkeypatch, transaction_
     resp = client.post(
         ENDPOINT,
         content_type="application/json",
-        data=json.dumps({"filters": {"keyword": "DEV-10812", "award_type_codes": ["B"]}}),
+        data=json.dumps({"filters": {"keywords": ["DEV-10812"], "award_type_codes": ["B"]}}),
     )
 
     resp_results = resp.data.get("results", {})
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp_results) == 0
     assert resp_results["contracts"] == 0
+
+    # Test that `keyword` can be used
+    resp = client.post(
+        ENDPOINT,
+        content_type="application/json",
+        data=json.dumps({"filters": {"keyword": "DEV-10812", "award_type_codes": ["A"]}}),
+    )
+
+    resp_results = resp.data.get("results", {})
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp_results) > 0
+    assert resp_results["contracts"] == 1
+
+    # Test that `keyword` or `keywords` is not required
+    resp = client.post(
+        ENDPOINT,
+        content_type="application/json",
+        data=json.dumps({"filters": {"award_type_codes": ["A"]}}),
+    )
+
+    resp_results = resp.data.get("results", {})
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp_results) > 0
+    assert resp_results["contracts"] == 1
 
 
 @pytest.mark.django_db
