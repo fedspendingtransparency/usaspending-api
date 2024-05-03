@@ -26,10 +26,7 @@ ES_MAX_BATCH_BYTES = 20 * 1024 * 1024
 # Aiming for a batch that yields each ES cluster data-node handling max 100-400 doc entries per vCPU per request
 # Ex: 3-data-node cluster of i3.large.elasticsearch = 2 vCPU * 3 nodes = 6 vCPU: 300*6 = 1800 doc batches
 # Ex: 5-data-node cluster of i3.xlarge.elasticsearch = 4 vCPU * 5 nodes = 20 vCPU: 300*20 = 6000 doc batches
-ES_BATCH_ENTRIES = 4000
-# Setting this lower than 4,000 because the COVID19-FABA index is exceeding the http.max_content_length
-#   limit due to an Award with lots of FABA records
-ES_BATCH_ENTRIES_COVID_FABA = 3000
+ES_BATCH_ENTRIES = 1000
 
 
 def load_data(worker: TaskSpec, records: List[dict], client: Elasticsearch) -> Tuple[int, int]:
@@ -90,7 +87,7 @@ def streaming_post_to_es(
             client,
             actions=chunk,
             # chunk_size=ES_BATCH_ENTRIES,
-            chunk_size=ES_BATCH_ENTRIES_COVID_FABA if "covid19-faba" in index_name.lower() else ES_BATCH_ENTRIES,
+            chunk_size=ES_BATCH_ENTRIES,
             max_chunk_bytes=ES_MAX_BATCH_BYTES,
             max_retries=10,
             index=index_name,
