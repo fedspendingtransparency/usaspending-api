@@ -1,12 +1,11 @@
 import logging
-
-from elasticsearch import Elasticsearch, helpers
 from time import perf_counter
 from typing import List, Tuple
 
+from elasticsearch import Elasticsearch, helpers
+
 from usaspending_api.etl.elasticsearch_loader_helpers.delete_data import delete_docs_by_unique_key
 from usaspending_api.etl.elasticsearch_loader_helpers.utilities import TaskSpec, format_log
-
 
 logger = logging.getLogger("script")
 
@@ -28,11 +27,14 @@ ES_MAX_BATCH_BYTES = 20 * 1024 * 1024
 # Ex: 3-data-node cluster of i3.large.elasticsearch = 2 vCPU * 3 nodes = 6 vCPU: 300*6 = 1800 doc batches
 # Ex: 5-data-node cluster of i3.xlarge.elasticsearch = 4 vCPU * 5 nodes = 20 vCPU: 300*20 = 6000 doc batches
 ES_BATCH_ENTRIES = 4000
+# Setting this lower than 4,000 because the COVID19-FABA index is exceeding the http.max_content_length
+#   limit due to an Award with lots of FABA records
+ES_BATCH_ENTRIES_COVID_FABA = 3000
 
 
 def load_data(worker: TaskSpec, records: List[dict], client: Elasticsearch) -> Tuple[int, int]:
     start = perf_counter()
-    logger.info(format_log(f"Starting Index operation", name=worker.name, action="Index"))
+    logger.info(format_log("Starting Index operation", name=worker.name, action="Index"))
     success, failed = streaming_post_to_es(
         client, records, worker.index, worker.name, delete_before_index=worker.is_incremental
     )
@@ -87,7 +89,8 @@ def streaming_post_to_es(
         for ok, item in helpers.streaming_bulk(
             client,
             actions=chunk,
-            chunk_size=ES_BATCH_ENTRIES,
+            # chunk_size=ES_BATCH_ENTRIES,
+            chunk_size=ES_BATCH_ENTRIES_COVID_FABA if "covid19-faba" in index_name.lower() else ES_BATCH_ENTRIES,
             max_chunk_bytes=ES_MAX_BATCH_BYTES,
             max_retries=10,
             index=index_name,
