@@ -321,22 +321,6 @@
         "scaling_factor": 100,
         "type": "scaled_float"
       }
-    },
-    "type": "nested"
-  },
-  "generated_unique_award_id": {
-    "type": "keyword"
-  },
-  "total_loan_value": {
-    "scaling_factor": 100,
-    "type": "scaled_float"
-  },
-  "obligated_sum": {
-    "scaling_factor": 100,
-    "type": "scaled_float"
-  },
-  "outlay_sum": {
-    "scaling_factor": 100,
-    "type": "scaled_float"
+    }
   }
 }
