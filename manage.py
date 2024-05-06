@@ -13,6 +13,8 @@ if __name__ == "__main__":
         # exceptions on Python
         try:
             import django  # noqa
+
+            django.setup()
         except ImportError:
             raise ImportError(
                 "Couldn't import Django. Are you sure it's installed and "
