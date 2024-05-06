@@ -16,7 +16,6 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     format_log,
     toggle_refresh_off,
     transform_award_data,
-    transform_covid19_faba_data,
     transform_transaction_data,
 )
 from usaspending_api.etl.elasticsearch_loader_helpers.controller import (
@@ -328,7 +327,7 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             "base_table": "financial_accounts_by_awards",
             "base_table_id": "financial_accounts_by_awards_id",
             "create_award_type_aliases": False,
-            "data_transform_func": transform_covid19_faba_data,
+            "data_transform_func": None,
             "data_type": "covid19-faba",
             "execute_sql_func": execute_sql_statement,
             "extra_null_partition": True,
