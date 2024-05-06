@@ -86,9 +86,8 @@ def streaming_post_to_es(
         for ok, item in helpers.streaming_bulk(
             client,
             actions=chunk,
-            # chunk_size=ES_BATCH_ENTRIES,
             chunk_size=ES_BATCH_ENTRIES,
-            max_chunk_bytes=ES_MAX_BATCH_BYTES,
+            # max_chunk_bytes=ES_MAX_BATCH_BYTES,
             max_retries=10,
             index=index_name,
         ):
