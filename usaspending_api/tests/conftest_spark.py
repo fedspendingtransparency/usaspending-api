@@ -42,7 +42,7 @@ from usaspending_api.etl.management.commands.create_delta_table import (
 #    https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-app-versions-6.x.html
 _SCALA_VERSION = "2.12"
 _HADOOP_VERSION = "3.3.1"
-_SPARK_VERSION = "3.2.1"
+_SPARK_VERSION = "3.5.1"
 _DELTA_VERSION = "1.2.1"
 
 # List of Maven coordinates for required JAR files used by running code, which can be added to the driver and
