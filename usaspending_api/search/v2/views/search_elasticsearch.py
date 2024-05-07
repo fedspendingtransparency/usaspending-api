@@ -157,7 +157,7 @@ class SpendingByTransactionGroupedVisualizationViewSet(APIView):
         models.extend(copy.deepcopy(PAGINATION))
         for m in models:
             if m["name"] in ("keywords", "award_type_codes", "sort"):
-                m["optional"] = True
+                m["optional"] = False
         validated_payload = TinyShield(models).block(request.data)
 
         record_num = (validated_payload["page"] - 1) * validated_payload["limit"]
