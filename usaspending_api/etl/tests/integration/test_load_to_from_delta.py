@@ -577,7 +577,7 @@ def test_load_table_to_delta_timezone_aware(spark, monkeypatch, s3_unittest_data
             assert dt_from_db.tzinfo is not None
             # Can't use traditional time zone names with tzname() since pyscopg2 uses its own time zone infos.
             # Use psycopg2 tzinfo name and then compare their delta
-            assert dt_from_db.tzname() == "-10"
+            assert dt_from_db.tzname() == "UTC-10:00"
             assert dt_from_db.utcoffset().total_seconds() == -36000.0
 
     # Now with that DB data committed, and with the DB set to HST TIME ZONE, do a Spark read
