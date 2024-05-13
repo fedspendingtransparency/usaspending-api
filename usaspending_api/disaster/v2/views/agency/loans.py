@@ -1,16 +1,17 @@
 import logging
 from decimal import Decimal
+from typing import List
 
 from django.contrib.postgres.fields import ArrayField
-from django.db.models import F, Value, IntegerField, Subquery, OuterRef
+from django.db.models import F, IntegerField, OuterRef, Subquery, Value
 from django.views.decorators.csrf import csrf_exempt
-from typing import List
+
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.disaster.v2.views.disaster_base import (
     DisasterBase,
-    LoansPaginationMixin,
-    LoansMixin,
     FabaOutlayMixin,
+    LoansMixin,
+    LoansPaginationMixin,
 )
 from usaspending_api.disaster.v2.views.elasticsearch_account_base import ElasticsearchAccountDisasterBase
 from usaspending_api.disaster.v2.views.elasticsearch_base import (
@@ -52,11 +53,11 @@ class LoansByAgencyViewSet(LoansPaginationMixin, ElasticsearchAccountDisasterBas
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/agency/loans.md"
     required_filters = ["def_codes", "query"]
     query_fields = ["funding_toptier_agency_name.contains"]
-    agg_key = "financial_accounts_by_award.funding_toptier_agency_id"  # primary (tier-1) aggregation key
+    agg_key = "funding_toptier_agency_id"  # primary (tier-1) aggregation key
     nested_nonzero_fields = {"obligation": "transaction_obligated_amount", "outlay": "gross_outlay_amount_by_award_cpe"}
     top_hits_fields = [
-        "financial_accounts_by_award.funding_toptier_agency_code",
-        "financial_accounts_by_award.funding_toptier_agency_name",
+        "funding_toptier_agency_code",
+        "funding_toptier_agency_name",
     ]
 
     @cache_response()
@@ -159,9 +160,11 @@ class LoansBySubtierAgencyViewSet(ElasticsearchLoansPaginationMixin, Elasticsear
             "award_count": int(bucket.get("doc_count", 0)),
             **{
                 column: get_summed_value_as_float(
-                    bucket.get("nested", {}).get("filtered_aggs", {})
-                    if column != "face_value_of_loan"
-                    else bucket.get("nested", {}).get("filtered_aggs", {}).get("reverse_nested"),
+                    (
+                        bucket.get("nested", {}).get("filtered_aggs", {})
+                        if column != "face_value_of_loan"
+                        else bucket.get("nested", {}).get("filtered_aggs", {}).get("reverse_nested")
+                    ),
                     self.sum_column_mapping[column],
                 )
                 for column in self.sum_column_mapping
