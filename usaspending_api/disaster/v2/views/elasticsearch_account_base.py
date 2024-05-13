@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 from elasticsearch_dsl import A
 from elasticsearch_dsl import Q as ES_Q
@@ -23,7 +23,7 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
     nested_nonzero_fields: Dict[str, str] = []
     query_fields: List[str]
     sub_agg_group_name: str = "sub_group_by_sub_agg_key"  # name used for the tier-2 aggregation group
-    sub_agg_key: str = None  # will drive including of a sub-bucket-aggregation if overridden by subclasses
+    sub_agg_key: Union[str, None] = None  # will drive including of a sub-bucket-aggregation if overridden by subclasses
     sub_top_hits_fields: List[str]  # list used for top_hits sub aggregation
     top_hits_fields: List[str]  # list used for the top_hits aggregation
 
@@ -34,7 +34,7 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
         return Response(self.perform_elasticsearch_search())
 
     def perform_elasticsearch_search(self, loans=False) -> Response:
-        filters = {f"nested_{key}": val for key, val in self.filters.items() if key != "award_type_codes"}
+        filters = {key: val for key, val in self.filters.items() if key != "award_type_codes"}
         if self.filters.get("award_type_codes") is not None:
             filters["award_type_codes"] = self.filters["award_type_codes"]
         # Need to update the value of "query" to have the fields to search on
@@ -80,6 +80,7 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
         """
         Using the provided ES_Q object creates an AccountSearch object with the necessary applied aggregations.
         """
+
         # No need to continue if there is no result
         if self.bucket_count == 0:
             return None
@@ -89,38 +90,34 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
         # Create the aggregations
         financial_accounts_agg = A("nested", path="financial_accounts_by_award")
         if "query" in self.filters:
-            terms = ES_Q(
-                "terms", **{"financial_accounts_by_award.disaster_emergency_fund_code": self.filters.get("def_codes")}
-            )
+            terms = ES_Q("terms", **{"disaster_emergency_fund_code": self.filters.get("def_codes")})
             query = ES_Q(
                 "multi_match",
                 query=self.filters["query"],
                 type="phrase_prefix",
-                fields=[f"financial_accounts_by_award.{query}" for query in self.query_fields],
+                fields=[f"{query}" for query in self.query_fields],
             )
             filter_agg_query = ES_Q("bool", should=[terms, query], minimum_should_match=2)
         else:
-            filter_agg_query = ES_Q(
-                "terms", **{"financial_accounts_by_award.disaster_emergency_fund_code": self.filters.get("def_codes")}
-            )
+            filter_agg_query = ES_Q("terms", **{"disaster_emergency_fund_code": self.filters.get("def_codes")})
         filtered_aggs = A("filter", filter_agg_query)
         group_by_dim_agg = A("terms", field=self.agg_key, size=self.bucket_count)
         dim_metadata = A(
             "top_hits",
             size=1,
-            sort=[{"financial_accounts_by_award.update_date": {"order": "desc"}}],
+            sort=[{"update_date": {"order": "desc"}}],
             _source={"includes": self.top_hits_fields},
         )
         sum_covid_outlay = A(
             "sum",
-            script="""doc['financial_accounts_by_award.is_final_balances_for_fy'].value ? (
-             ( doc['financial_accounts_by_award.gross_outlay_amount_by_award_cpe'].size() > 0 ? doc['financial_accounts_by_award.gross_outlay_amount_by_award_cpe'].value : 0)
-              + (doc['financial_accounts_by_award.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe'].size() > 0 ? doc['financial_accounts_by_award.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe'].value : 0)
-              + (doc['financial_accounts_by_award.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe'].size() > 0 ? doc['financial_accounts_by_award.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe'].value : 0) ) : 0""",
+            script="""doc['is_final_balances_for_fy'].value ? (
+             ( doc['gross_outlay_amount_by_award_cpe'].size() > 0 ? doc['gross_outlay_amount_by_award_cpe'].value : 0)
+              + (doc['ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe'].size() > 0 ? doc['ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe'].value : 0)
+              + (doc['ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe'].size() > 0 ? doc['ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe'].value : 0) ) : 0""",
         )
-        sum_covid_obligation = A("sum", field="financial_accounts_by_award.transaction_obligated_amount")
+        sum_covid_obligation = A("sum", field="transaction_obligated_amount")
         count_awards_by_dim = A("reverse_nested", **{})
-        award_count = A("value_count", field="financial_account_distinct_award_key")
+        award_count = A("value_count", field="financial_account_distinct_award_key.keyword")
         loan_value = A("sum", field="total_loan_value")
 
         # Apply the aggregations
@@ -167,18 +164,18 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
         sub_dim_metadata = A(
             "top_hits",
             size=1,
-            sort=[{"financial_accounts_by_award.update_date": {"order": "desc"}}],
+            sort=[{"update_date": {"order": "desc"}}],
             _source={"includes": self.sub_top_hits_fields},
         )
         sub_sum_covid_outlay = A(
             "sum",
-            script="""doc['financial_accounts_by_award.is_final_balances_for_fy'].value ? ( ( doc['financial_accounts_by_award.gross_outlay_amount_by_award_cpe'].size() > 0 ? doc['financial_accounts_by_award.gross_outlay_amount_by_award_cpe'].value : 0)
-             + (doc['financial_accounts_by_award.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe'].size() > 0 ? doc['financial_accounts_by_award.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe'].value : 0)
-             + (doc['financial_accounts_by_award.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe'].size() > 0 ? doc['financial_accounts_by_award.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe'].value : 0) ) : 0""",
+            script="""doc['is_final_balances_for_fy'].value ? ( ( doc['gross_outlay_amount_by_award_cpe'].size() > 0 ? doc['gross_outlay_amount_by_award_cpe'].value : 0)
+             + (doc['ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe'].size() > 0 ? doc['ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe'].value : 0)
+             + (doc['ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe'].size() > 0 ? doc['ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe'].value : 0) ) : 0""",
         )
-        sub_sum_covid_obligation = A("sum", field="financial_accounts_by_award.transaction_obligated_amount")
+        sub_sum_covid_obligation = A("sum", field="transaction_obligated_amount")
         sub_count_awards_by_dim = A("reverse_nested", **{})
-        sub_award_count = A("value_count", field="financial_account_distinct_award_key")
+        sub_award_count = A("value_count", field="financial_account_distinct_award_key.keyword")
         loan_value = A("sum", field="total_loan_value")
 
         sub_group_by_sub_agg_key.metric("dim_metadata", sub_dim_metadata).metric(
