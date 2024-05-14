@@ -45,7 +45,12 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
         # Ensure that Awards with File C records that cancel out are not taken into consideration;
         # The records that fall into this criteria share the same DEF Code and that is how the outlay and
         # obligation sum for the Award is able to be used even though the Award can have multiple DEFC
-        filters["nonzero_fields"] = ["obligated_sum", "outlay_sum"]
+        filters["nonzero_fields"] = [
+            "transaction_obligated_amount",
+            "gross_outlay_amount_by_award_cpe",
+            "ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe",
+            "ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe",
+        ]
         self.filter_query = QueryWithFilters.generate_accounts_elasticsearch_query(filters)
 
         # using a set value here as doing an extra ES query is detrimental to performance
@@ -88,7 +93,6 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
         # Create the initial search using filters
         search = AccountSearch().filter(self.filter_query)
         # Create the aggregations
-        financial_accounts_agg = A("nested", path="financial_accounts_by_award")
         if "query" in self.filters:
             terms = ES_Q("terms", **{"disaster_emergency_fund_code": self.filters.get("def_codes")})
             query = ES_Q(
@@ -99,7 +103,7 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
             )
             filter_agg_query = ES_Q("bool", should=[terms, query], minimum_should_match=2)
         else:
-            filter_agg_query = ES_Q("terms", **{"disaster_emergency_fund_code": self.filters.get("def_codes")})
+            filter_agg_query = ES_Q("terms", **{"disaster_emergency_fund_code.keyword": self.filters.get("def_codes")})
         filtered_aggs = A("filter", filter_agg_query)
         group_by_dim_agg = A("terms", field=self.agg_key, size=self.bucket_count)
         dim_metadata = A(
@@ -116,17 +120,14 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
               + (doc['ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe'].size() > 0 ? doc['ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe'].value : 0) ) : 0""",
         )
         sum_covid_obligation = A("sum", field="transaction_obligated_amount")
-        count_awards_by_dim = A("reverse_nested", **{})
-        award_count = A("value_count", field="financial_account_distinct_award_key.keyword")
+        award_count = A("value_count", field="financial_account_distinct_award_key")
         loan_value = A("sum", field="total_loan_value")
 
         # Apply the aggregations
-        search.aggs.bucket(self.agg_group_name, financial_accounts_agg).bucket("filtered_aggs", filtered_aggs).bucket(
-            "group_by_dim_agg", group_by_dim_agg
-        ).metric("dim_metadata", dim_metadata).metric("sum_transaction_obligated_amount", sum_covid_obligation).metric(
+        search.aggs.bucket("filtered_aggs", filtered_aggs).bucket("group_by_dim_agg", group_by_dim_agg).metric(
+            "dim_metadata", dim_metadata
+        ).metric("sum_transaction_obligated_amount", sum_covid_obligation).metric(
             "sum_gross_outlay_amount_by_award_cpe", sum_covid_outlay
-        ).bucket(
-            "count_awards_by_dim", count_awards_by_dim
         ).metric(
             "award_count", award_count
         ).metric(
