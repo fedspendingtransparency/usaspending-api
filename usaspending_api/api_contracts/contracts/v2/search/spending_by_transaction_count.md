@@ -17,7 +17,6 @@ Returns the counts of transaction records which match the keyword grouped by awa
 
     + Attributes (object)
         + `filters` (required, AdvancedFilterObject)
-            Must at least provide `award_type_codes` in filters object.
     + Body
 
 
@@ -60,4 +59,4 @@ Returns the counts of transaction records which match the keyword grouped by awa
 # Data Structures
 
 ### AdvancedFilterObject (object)
-The filters available are defined in [AdvancedFilterObject](./spending_by_transaction.md#advanced-filter-object). The one difference is that `keywords` is not required.
+The filters available are defined in [AdvancedFilterObject](./spending_by_transaction.md#advanced-filter-object). The only difference is that the `keywords` and `award_type_codes` filters are not required.

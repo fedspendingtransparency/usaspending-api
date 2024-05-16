@@ -76,11 +76,3 @@ def test_spending_by_transaction_count_success(client, monkeypatch, transaction_
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp_results) > 0
     assert resp_results["contracts"] == 1
-
-
-@pytest.mark.django_db
-def test_spending_by_transaction_count_failure(client):
-
-    # Missing required filter fields test
-    resp = client.post(ENDPOINT, content_type="application/json", data=json.dumps({"filters": {}}))
-    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
