@@ -3,6 +3,7 @@ import datetime
 
 from django.core.management import call_command
 from django.db import connections, DEFAULT_DB_ALIAS
+from pytest import mark
 from decimal import Decimal
 from usaspending_api.transactions.models import SourceAssistanceTransaction
 
@@ -132,6 +133,7 @@ VALUES
         assert cursor.fetchall()[0][0] == 0
 
 
+@mark.django_db(databases=["data_broker", "default"])
 def test_data_transfer_from_broker(load_broker_data):
     call_command("transfer_assistance_records", "--reload-all")
     table = SourceAssistanceTransaction().table_name
@@ -253,6 +255,7 @@ def test_data_transfer_from_broker(load_broker_data):
         )
 
 
+@mark.django_db(databases=["data_broker", "default"])
 def test_correction_overwrites_when_afa_casing_is_different(load_broker_data):
     """Verify that if a correction comes in for a FABS record that has the same case-INSENSITIVE afa_generated_unique
     key, but in fact has different letter-casing than the original, that it will STILL replace the record and put its

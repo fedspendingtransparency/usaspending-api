@@ -288,7 +288,7 @@ def verify_delta_table_loaded_from_delta(
     )
 
 
-@mark.django_db(transaction=True)
+@mark.django_db(databases=["data_broker", "default"], transaction=True)
 def test_load_table_to_from_delta_for_recipient_lookup(
     spark, s3_unittest_data_bucket, populate_usas_data_and_recipients_from_broker, hive_unittest_metastore_db
 ):
@@ -418,7 +418,7 @@ def test_load_table_to_delta_for_published_fabs(spark, s3_unittest_data_bucket, 
     verify_delta_table_loaded_to_delta(spark, "published_fabs", s3_unittest_data_bucket)
 
 
-@mark.django_db(transaction=True)
+@mark.django_db(databases=["data_broker", "default"], transaction=True)
 def test_load_table_to_from_delta_for_recipient_profile(
     spark, s3_unittest_data_bucket, populate_usas_data_and_recipients_from_broker, hive_unittest_metastore_db
 ):
@@ -635,7 +635,7 @@ def test_load_table_to_from_delta_for_recipient_profile_testing(
     )
 
 
-@mark.django_db(transaction=True)
+@mark.django_db(databases=["data_broker", "default"], transaction=True)
 def test_load_table_to_from_delta_for_transaction_search(
     spark, s3_unittest_data_bucket, populate_usas_data_and_recipients_from_broker, hive_unittest_metastore_db
 ):
@@ -753,7 +753,7 @@ def test_load_table_to_from_delta_for_transaction_search_alt_db_and_name(
     # )
 
 
-@mark.django_db(transaction=True)
+@mark.django_db(databases=["data_broker", "default"], transaction=True)
 def test_load_table_to_from_delta_for_award_search(
     spark, s3_unittest_data_bucket, populate_usas_data_and_recipients_from_broker, hive_unittest_metastore_db
 ):
@@ -795,7 +795,7 @@ def test_load_table_to_from_delta_for_award_search(
     verify_delta_table_loaded_from_delta(spark, "award_search", jdbc_inserts=True)  # test alt write strategy
 
 
-@mark.django_db(transaction=True)
+@mark.django_db(databases=["data_broker", "default"], transaction=True)
 def test_load_table_to_delta_for_sam_recipient(spark, s3_unittest_data_bucket, populate_broker_data):
     expected_data = [
         {

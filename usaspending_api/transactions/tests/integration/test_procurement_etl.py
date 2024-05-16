@@ -4,6 +4,7 @@ import datetime
 from django.core.management import call_command
 from django.db import connections, DEFAULT_DB_ALIAS
 from decimal import Decimal
+from pytest import mark
 from usaspending_api.transactions.models import SourceProcurementTransaction
 
 
@@ -131,6 +132,7 @@ def load_broker_data(db, broker_db_setup, broker_server_dblink_setup):
         assert cursor.fetchall()[0][0] == 0
 
 
+@mark.django_db(databases=["data_broker", "default"])
 def test_data_transfer_from_broker(load_broker_data):
     call_command("transfer_procurement_records", "--reload-all")
     table = SourceProcurementTransaction().table_name
