@@ -216,12 +216,7 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
             return {"totals": totals, "results": []}
         response = search.handle_execute()
         response = response.aggs.to_dict()
-        buckets = (
-            response.get(self.agg_group_name, {})
-            .get("filtered_aggs", {})
-            .get("group_by_dim_agg", {})
-            .get("buckets", [])
-        )
+        buckets = response.get("filtered_aggs", {}).get("group_by_dim_agg", {}).get("buckets", [])
         results = self.build_elasticsearch_result(buckets)
         totals = self.build_totals(results, loans)
         sorted_results = self.sort_results(results)
