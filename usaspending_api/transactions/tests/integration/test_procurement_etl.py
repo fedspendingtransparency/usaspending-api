@@ -132,7 +132,7 @@ def load_broker_data(db, broker_db_setup, broker_server_dblink_setup):
         assert cursor.fetchall()[0][0] == 0
 
 
-@mark.django_db(databases=["data_broker", "default"])
+@mark.django_db(databases=["data_broker", "default"], transaction=True)
 def test_data_transfer_from_broker(load_broker_data):
     call_command("transfer_procurement_records", "--reload-all")
     table = SourceProcurementTransaction().table_name
