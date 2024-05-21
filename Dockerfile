@@ -35,13 +35,15 @@ RUN tar xzf Python-${PYTHON_VERSION}.tgz
 WORKDIR /usr/src/Python-${PYTHON_VERSION}
 RUN ./configure --enable-optimizations
 RUN make altinstall
-#RUN ln -sf /usr/local/bin/python`echo ${PYTHON_VERSION} | awk -F. '{short_version=$1 FS $2; print short_version}'` /usr/bin/python3
+RUN ln -sf /usr/local/bin/python`echo ${PYTHON_VERSION} | awk -F. '{short_version=$1 FS $2; print short_version}'` /usr/bin/python3
 RUN echo "$(python3 --version)"
 
 ##### Copy python packaged
 WORKDIR /dockermount
 COPY requirements/ /dockermount/requirements/
-RUN python3.10 -m pip install -r requirements/requirements.txt
+RUN python3 -m pip install -r requirements/requirements.txt
+
+RUN python3 -m pip install -r requirements/requirements-server.txt ansible==2.9.15 awscli
 
 ##### Copy the rest of the project files into the container
 COPY . /dockermount
