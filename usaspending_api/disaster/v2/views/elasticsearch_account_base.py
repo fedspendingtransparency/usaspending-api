@@ -20,7 +20,7 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
     bucket_count: int
     filter_query: ES_Q
     has_children: bool = False
-    nested_nonzero_fields: Dict[str, str] = []
+    nonzero_fields: Dict[str, str] = []
     query_fields: List[str]
     sub_agg_group_name: str = "sub_group_by_sub_agg_key"  # name used for the tier-2 aggregation group
     sub_agg_key: Union[str, None] = None  # will drive including of a sub-bucket-aggregation if overridden by subclasses
@@ -103,15 +103,20 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
             )
             filter_agg_query = ES_Q("bool", should=[terms, query], minimum_should_match=2)
         else:
-            filter_agg_query = ES_Q("terms", **{"disaster_emergency_fund_code.keyword": self.filters.get("def_codes")})
+            filter_agg_query = ES_Q("terms", **{"disaster_emergency_fund_code": self.filters.get("def_codes")})
         filtered_aggs = A("filter", filter_agg_query)
         group_by_dim_agg = A("terms", field=self.agg_key, size=self.bucket_count)
+        # Group the FABA records by their Award key
+        # This is done since the FABA records are no longer nested under their parent Award in the same document
+        group_by_awards_agg = A("terms", field="financial_account_distinct_award_key.keyword")
         dim_metadata = A(
             "top_hits",
             size=1,
             sort=[{"update_date": {"order": "desc"}}],
             _source={"includes": self.top_hits_fields},
         )
+        # Fields to include for each Award
+        award_metadata = A("top_hits", size=1, _source={"includes": "total_loan_value"})
         sum_covid_outlay = A(
             "sum",
             script="""doc['is_final_balances_for_fy'].value ? (
@@ -120,18 +125,16 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
               + (doc['ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe'].size() > 0 ? doc['ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe'].value : 0) ) : 0""",
         )
         sum_covid_obligation = A("sum", field="transaction_obligated_amount")
-        award_count = A("value_count", field="financial_account_distinct_award_key")
-        loan_value = A("sum", field="total_loan_value")
 
         # Apply the aggregations
         search.aggs.bucket("filtered_aggs", filtered_aggs).bucket("group_by_dim_agg", group_by_dim_agg).metric(
             "dim_metadata", dim_metadata
         ).metric("sum_transaction_obligated_amount", sum_covid_obligation).metric(
             "sum_gross_outlay_amount_by_award_cpe", sum_covid_outlay
-        ).metric(
-            "award_count", award_count
-        ).metric(
-            "sum_loan_value", loan_value
+        ).bucket(
+            "group_by_awards", group_by_awards_agg
+        ).bucket(
+            "award_metadata", award_metadata
         )
 
         # Apply sub-aggregation for children if applicable
