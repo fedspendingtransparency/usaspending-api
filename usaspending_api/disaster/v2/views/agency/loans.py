@@ -54,7 +54,7 @@ class LoansByAgencyViewSet(LoansPaginationMixin, ElasticsearchAccountDisasterBas
     required_filters = ["def_codes", "query"]
     query_fields = ["funding_toptier_agency_name.contains"]
     agg_key = "funding_toptier_agency_id"  # primary (tier-1) aggregation key
-    nested_nonzero_fields = {"obligation": "transaction_obligated_amount", "outlay": "gross_outlay_amount_by_award_cpe"}
+    nonzero_fields = {"obligation": "transaction_obligated_amount", "outlay": "gross_outlay_amount_by_award_cpe"}
     top_hits_fields = [
         "funding_toptier_agency_code",
         "funding_toptier_agency_name",
@@ -78,12 +78,22 @@ class LoansByAgencyViewSet(LoansPaginationMixin, ElasticsearchAccountDisasterBas
             "description": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["funding_toptier_agency_name"],
             "children": [],
             # the count of distinct awards contributing to the totals
-            "award_count": int(bucket["count_awards_by_dim"]["award_count"]["value"]),
+            "award_count": len(bucket["group_by_awards"]["buckets"]),
             **{
                 key: Decimal(bucket.get(f"sum_{val}", {"value": 0})["value"])
-                for key, val in self.nested_nonzero_fields.items()
+                for key, val in self.nonzero_fields.items()
             },
-            "face_value_of_loan": bucket["count_awards_by_dim"]["sum_loan_value"]["value"],
+            # Remove all of the `false` elements from the list of loan values (`None` in this case) and then
+            #   sum all of those values together for an ultimate loan value.
+            "face_value_of_loan": sum(
+                filter(
+                    None,
+                    [
+                        award["award_metadata"]["hits"]["hits"][0]["_source"]["total_loan_value"]
+                        for award in bucket["group_by_awards"]["buckets"]
+                    ],
+                )
+            ),
         }
 
     @property
