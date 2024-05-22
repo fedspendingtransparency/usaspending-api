@@ -1,0 +1,22 @@
+{
+    "settings": {
+      "index.mapping.ignore_malformed": true,
+      "index.max_result_window": null,
+      "index.refresh_interval": -1,
+      "index": {
+        "number_of_shards": 5,
+        "number_of_replicas": 0
+      },
+      "analysis": {
+        "analyzer": {
+          "contains_analyzer": {
+            "type": "custom",
+            "tokenizer": "ngram",
+            "filter": [
+              "uppercase"
+            ]
+          }
+        }
+      }
+    }
+}
