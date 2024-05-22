@@ -24,7 +24,6 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     create_award_type_aliases,
     execute_sql_statement,
     transform_award_data,
-    transform_covid19_faba_data,
     transform_transaction_data,
 )
 from usaspending_api.etl.elasticsearch_loader_helpers.index_config import create_load_alias
@@ -189,22 +188,6 @@ class TestElasticSearchIndex:
                 records = transform_award_data(self.worker, records)
             elif self.index_type == "transaction":
                 records = transform_transaction_data(self.worker, records)
-            elif self.index_type == "covid19-faba":
-                records = transform_covid19_faba_data(
-                    TaskSpec(
-                        name="worker",
-                        index=self.index_name,
-                        sql=view_sql_file,
-                        view=view_name,
-                        base_table="financial_accounts_by_awards",
-                        base_table_id="financial_accounts_by_awards_id",
-                        field_for_es_id="financial_account_distinct_award_key",
-                        primary_key="award_id",
-                        partition_number=1,
-                        is_incremental=False,
-                    ),
-                    records,
-                )
 
         for record in records:
             # Special cases where we convert array of JSON to an array of strings to avoid nested types
