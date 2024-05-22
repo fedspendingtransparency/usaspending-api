@@ -83,16 +83,13 @@ class LoansByAgencyViewSet(LoansPaginationMixin, ElasticsearchAccountDisasterBas
                 key: Decimal(bucket.get(f"sum_{val}", {"value": 0})["value"])
                 for key, val in self.nonzero_fields.items()
             },
-            # Remove all of the `false` elements from the list of loan values (`None` in this case) and then
-            #   sum all of those values together for an ultimate loan value.
+            # Sum all of the loan values together and exclude the `None` values
             "face_value_of_loan": sum(
-                filter(
-                    None,
-                    [
-                        award["award_metadata"]["hits"]["hits"][0]["_source"]["total_loan_value"]
-                        for award in bucket["group_by_awards"]["buckets"]
-                    ],
-                )
+                [
+                    float(award["award_metadata"]["hits"]["hits"][0]["_source"]["total_loan_value"])
+                    for award in bucket["group_by_awards"]["buckets"]
+                    if award["award_metadata"]["hits"]["hits"][0]["_source"]["total_loan_value"] is not None
+                ],
             ),
         }
 
