@@ -1,22 +1,22 @@
-from typing import List
 from decimal import Decimal
+from typing import List
 
-from django.db.models import Q, Sum, F, Value, DecimalField, Case, When, OuterRef, Subquery, Func, IntegerField
+from django.db.models import Case, DecimalField, F, Func, IntegerField, OuterRef, Q, Subquery, Sum, Value, When
 from django.db.models.functions import Coalesce
 from rest_framework.response import Response
 
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
-from usaspending_api.disaster.v2.views.federal_account.federal_account_result import FedAcctResults, FedAccount, TAS
 from usaspending_api.disaster.v2.views.disaster_base import (
     FabaOutlayMixin,
-    latest_gtas_of_each_year_queryset,
     PaginationMixin,
     SpendingMixin,
+    latest_gtas_of_each_year_queryset,
 )
-from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.disaster.v2.views.elasticsearch_account_base import ElasticsearchAccountDisasterBase
+from usaspending_api.disaster.v2.views.federal_account.federal_account_result import TAS, FedAccount, FedAcctResults
+from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 
 
 def construct_response(results: list, pagination: Pagination):
@@ -37,7 +37,7 @@ class SpendingViewSet(SpendingMixin, FabaOutlayMixin, ElasticsearchAccountDisast
     """Returns disaster spending by federal account."""
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/federal_account/spending.md"
-    agg_key = "financial_accounts_by_award.treasury_account_id"  # primary (tier-1) aggregation key
+    agg_key = "treasury_account_id"  # primary (tier-1) aggregation key
     nested_nonzero_fields = {"obligation": "transaction_obligated_amount", "outlay": "gross_outlay_amount_by_award_cpe"}
     query_fields = [
         "federal_account_symbol",
@@ -50,11 +50,11 @@ class SpendingViewSet(SpendingMixin, FabaOutlayMixin, ElasticsearchAccountDisast
         "treasury_account_title.contains",
     ]
     top_hits_fields = [
-        "financial_accounts_by_award.federal_account_symbol",
-        "financial_accounts_by_award.federal_account_title",
-        "financial_accounts_by_award.treasury_account_symbol",
-        "financial_accounts_by_award.treasury_account_title",
-        "financial_accounts_by_award.federal_account_id",
+        "federal_account_symbol",
+        "federal_account_title",
+        "treasury_account_symbol",
+        "treasury_account_title",
+        "federal_account_id",
     ]
 
     @cache_response()
@@ -116,7 +116,7 @@ class SpendingViewSet(SpendingMixin, FabaOutlayMixin, ElasticsearchAccountDisast
             "code": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["treasury_account_symbol"],
             "description": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["treasury_account_title"],
             # the count of distinct awards contributing to the totals
-            "award_count": int(bucket["count_awards_by_dim"]["award_count"]["value"]),
+            "award_count": len(bucket["group_by_awards"]["buckets"]),
             **{
                 key: Decimal(bucket.get(f"sum_{val}", {"value": 0})["value"])
                 for key, val in self.nested_nonzero_fields.items()
