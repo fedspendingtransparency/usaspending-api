@@ -62,15 +62,15 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, E
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/agency/spending.md"
     required_filters = ["def_codes", "award_type_codes", "query"]
-    nested_nonzero_fields = {"obligation": "transaction_obligated_amount", "outlay": "gross_outlay_amount_by_award_cpe"}
+    nonzero_fields = {"obligation": "transaction_obligated_amount", "outlay": "gross_outlay_amount_by_award_cpe"}
     query_fields = [
         "funding_toptier_agency_name",
         "funding_toptier_agency_name.contains",
     ]
-    agg_key = "financial_accounts_by_award.funding_toptier_agency_id"  # primary (tier-1) aggregation key
+    agg_key = "funding_toptier_agency_id"  # primary (tier-1) aggregation key
     top_hits_fields = [
-        "financial_accounts_by_award.funding_toptier_agency_code",
-        "financial_accounts_by_award.funding_toptier_agency_name",
+        "funding_toptier_agency_code",
+        "funding_toptier_agency_name",
     ]
 
     @cache_response()
@@ -108,10 +108,10 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, E
             "description": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["funding_toptier_agency_name"],
             "children": [],
             # the count of distinct awards contributing to the totals
-            "award_count": int(bucket["count_awards_by_dim"]["award_count"]["value"]),
+            "award_count": len(bucket["group_by_awards"]["buckets"]),
             **{
                 key: Decimal(bucket.get(f"sum_{val}", {"value": 0})["value"])
-                for key, val in self.nested_nonzero_fields.items()
+                for key, val in self.nonzero_fields.items()
             },
             "total_budgetary_resources": None,
         }
