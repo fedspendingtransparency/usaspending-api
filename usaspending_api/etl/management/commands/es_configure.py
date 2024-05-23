@@ -70,8 +70,8 @@ class Command(BaseCommand):
             self.max_result_window = settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW
             self.template_name = "transaction_template"
         elif options["load_type"] == "subaward":
-            self.index_pattern = f"*{settings.ES_TRANSACTIONS_NAME_SUFFIX}"
-            self.max_result_window = settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW
+            self.index_pattern = f"*{settings.ES_SUBAWARD_NAME_SUFFIX}"
+            self.max_result_window = settings.ES_SUBAWARD_MAX_RESULT_WINDOW
             self.template_name = "subaward_template"
         elif options["load_type"] == "covid19-faba":
             self.index_pattern = f"*{settings.ES_COVID19_FABA_NAME_SUFFIX}"

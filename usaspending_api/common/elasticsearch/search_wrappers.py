@@ -106,6 +106,9 @@ class AwardSearch(_Search):
         return "award_search"
 
 
+# TODO: DEV-10976 Add subaward
+
+
 class AccountSearch(_Search):
     _index_name = f"{settings.ES_COVID19_FABA_QUERY_ALIAS_PREFIX}*"
 

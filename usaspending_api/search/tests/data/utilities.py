@@ -4,6 +4,7 @@ from django.conf import settings
 
 
 def setup_elasticsearch_test(monkeypatch, index_fixture, **options):
+    # TODO: DEV-10976 Add subaward
     if index_fixture.index_type == "award":
         search_wrapper = "AwardSearch"
         query_alias = settings.ES_AWARDS_QUERY_ALIAS_PREFIX

@@ -29,6 +29,7 @@ from usaspending_api.etl.elasticsearch_loader_helpers.index_config import (
     ES_LOCATION_UNIQUE_KEY_FIELD,
     ES_RECIPIENT_UNIQUE_KEY_FIELD,
     ES_TRANSACTIONS_UNIQUE_KEY_FIELD,
+    ES_SUBAWARD_UNIQUE_KEY_FIELD,
 )
 
 logger = logging.getLogger("script")
@@ -301,6 +302,27 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             "stored_date_key": "es_awards",
             "unique_key_field": ES_AWARDS_UNIQUE_KEY_FIELD,
             "write_alias": settings.ES_AWARDS_WRITE_ALIAS,
+        }
+    elif arg_parse_options["load_type"] == "subaward":
+        config = {
+            # "base_table": "awards",
+            # "base_table_id": "id",
+            # "create_award_type_aliases": True,
+            # "data_transform_func": transform_award_data,
+            # "data_type": "award",
+            # "execute_sql_func": execute_sql_statement,
+            # "extra_null_partition": False,
+            # "field_for_es_id": "award_id",
+            # "initial_datetime": default_datetime,
+            "max_query_size": settings.ES_SUBAWARD_MAX_RESULT_WINDOW,
+            # "optional_predicate": """WHERE "update_date" >= '{starting_date}'""",
+            # "primary_key": "award_id",
+            "query_alias_prefix": settings.ES_SUBAWARD_QUERY_ALIAS_PREFIX,
+            "required_index_name": settings.ES_SUBAWARD_NAME_SUFFIX,
+            # "sql_view": settings.ES_AWARDS_ETL_VIEW_NAME,
+            # "stored_date_key": "es_awards",
+            "unique_key_field": ES_SUBAWARD_UNIQUE_KEY_FIELD,
+            # "write_alias": settings.ES_AWARDS_WRITE_ALIAS,
         }
     elif arg_parse_options["load_type"] == "transaction":
         config = {
