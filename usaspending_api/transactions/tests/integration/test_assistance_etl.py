@@ -17,12 +17,12 @@ NUMBER_OF_SOURCE_RECORDS = 101
 
 @pytest.fixture()
 def load_broker_data(db, broker_db_setup, broker_server_dblink_setup):
-    
-    # THe fixture that populates the broker tables is scoped session however that is 
-    # conflicting with our tests which purge the database after every test. 
-    # So we have to repopulate them before running tests. 
+
+    # THe fixture that populates the broker tables is scoped session however that is
+    # conflicting with our tests which purge the database after every test.
+    # So we have to repopulate them before running tests.
     # `name` and `external_data_type_id` must match those in `usaspending.broker.lookups`
-    
+
     edt = baker.make(
         "broker.ExternalDataType",
         name="source_assistance_transaction",
@@ -32,7 +32,6 @@ def load_broker_data(db, broker_db_setup, broker_server_dblink_setup):
     baker.make(
         "broker.ExternalDataLoadDate", last_load_date=_INITIAL_SOURCE_TABLE_LOAD_DATETIME, external_data_type=edt
     )
-
 
     insert_test_data = f"""
 INSERT INTO "{BROKER_TABLE}"

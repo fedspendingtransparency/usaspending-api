@@ -18,11 +18,11 @@ NUMBER_OF_RECORDS = 100
 @pytest.fixture()
 def load_broker_data(db, broker_db_setup, broker_server_dblink_setup):
 
-    # THe fixture that populates the broker tables is scoped session however that is 
-    # conflicting with our tests which purge the database after every test. 
-    # So we have to repopulate them before running tests. 
+    # THe fixture that populates the broker tables is scoped session however that is
+    # conflicting with our tests which purge the database after every test.
+    # So we have to repopulate them before running tests.
     # `name` and `external_data_type_id` must match those in `usaspending.broker.lookups`
-    
+
     edt = baker.make(
         "broker.ExternalDataType",
         name="source_procurement_transaction",
