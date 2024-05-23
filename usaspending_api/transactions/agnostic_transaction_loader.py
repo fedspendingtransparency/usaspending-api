@@ -156,8 +156,10 @@ class AgnosticTransactionLoader:
         with psycopg2.connect(dsn=get_broker_dsn_string()) as connection:
             with connection.cursor("usaspending_data_transfer") as cursor:
                 cursor.execute(sql.strip("\n"))
+                #fetchmany returns a list of tuples that can be iterated via next()
                 while True:
-                    id_list = [id[0] for id in cursor.fetchmany(size=self.chunk_size)]
+                    tuples = cursor.fetchmany(size=self.chunk_size)
+                    id_list = [id[0] for id in tuples]
                     if not id_list:
                         break
                     for broker_id in id_list:
