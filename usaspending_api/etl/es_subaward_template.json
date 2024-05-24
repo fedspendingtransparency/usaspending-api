@@ -74,14 +74,6 @@
               }
             }
           },
-          "awarding_subtier_agency_code": {
-            "type": "text",
-            "fields": {
-              "keyword": {
-                "type": "keyword"
-              }
-            }
-          },
           "awarding_office_name": {
             "type": "text",
             "fields": {
@@ -98,6 +90,31 @@
               }
             }
           },
+          "awarding_subtier_agency_name": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          },
+          "awarding_subtier_agency_abbreviation": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          },
+          "awarding_subtier_agency_code": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          },
+
           "funding_agency_id": {
             "type": "integer"
           },
@@ -117,14 +134,6 @@
               }
             }
           },
-          "funding_subtier_agency_code": {
-            "type": "text",
-            "fields": {
-              "keyword": {
-                "type": "keyword"
-              }
-            }
-          },
           "funding_office_name": {
             "type": "text",
             "fields": {
@@ -134,6 +143,30 @@
             }
           },
           "funding_office_code": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          },
+          "funding_subtier_agency_name": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          },
+          "funding_subtier_agency_abbreviation": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          },
+          "funding_subtier_agency_code": {
             "type": "text",
             "fields": {
               "keyword": {
@@ -202,20 +235,17 @@
               }
             }
           },
-          "recipient_location_congressional_code": {
-            "type": "keyword"
-          },
-          "recipient_location_congressional_code_current": {
-            "type": "keyword"
-          },
           "recipient_location_foreign_posta": {
             "type": "text"
           },
           "recipient_location_city_name": {
             "type": "text"
           },
-          "recipient_location_address_line1": {
-            "type": "text"
+          "recipient_location_congressional_code": {
+            "type": "keyword"
+          },
+          "recipient_location_congressional_code_current": {
+            "type": "keyword"
           },
           "business_types": {
             "type": "keyword"
@@ -245,12 +275,6 @@
               }
             }
           },
-          "pop_congressional_code": {
-            "type": "keyword"
-          },
-          "pop_congressional_code_current": {
-            "type": "keyword"
-          },
           "pop_city_name": {
             "type": "text",
             "fields": {
@@ -262,10 +286,16 @@
           "pop_street": {
             "type": "text"
           },
+          "pop_congressional_code": {
+            "type": "keyword"
+          },
+          "pop_congressional_code_current": {
+            "type": "keyword"
+          },
           "award_description": {
             "type": "text"
           },
-          "naics_code": {
+          "naics": {
             "type": "text",
             "fields": {
               "keyword": {
@@ -388,9 +418,6 @@
           "sub_recipient_location_city_name": {
             "type": "text"
           },
-          "sub_recipient_location_address_line1": {
-            "type": "text"
-          },
           "sub_business_types": {
             "type": "keyword"
           },
@@ -436,7 +463,7 @@
           "sub_pop_street": {
             "type": "text"
           },
-          "sub_award_description": {
+          "subaward_description": {
             "type": "text"
           },
           "date_submitted": {
@@ -472,22 +499,6 @@
               }
             }
           },
-          "awarding_subtier_agency_name": {
-            "type": "text",
-            "fields": {
-              "keyword": {
-                "type": "keyword"
-              }
-            }
-          },
-          "awarding_subtier_agency_abbreviation": {
-            "type": "text",
-            "fields": {
-              "keyword": {
-                "type": "keyword"
-              }
-            }
-          },
           "funding_toptier_agency_name": {
             "type": "text",
             "fields": {
@@ -497,22 +508,6 @@
             }
           },
           "funding_toptier_agency_abbreviation": {
-            "type": "text",
-            "fields": {
-              "keyword": {
-                "type": "keyword"
-              }
-            }
-          },
-          "funding_subtier_agency_name": {
-            "type": "text",
-            "fields": {
-              "keyword": {
-                "type": "keyword"
-              }
-            }
-          },
-          "funding_subtier_agency_abbreviation": {
             "type": "text",
             "fields": {
               "keyword": {
@@ -565,25 +560,6 @@
           },
           "product_or_service_description": {
             "type": "text"
-          },
-          "recipient_location_county_code": {
-            "type": "keyword"
-          },
-          "recipient_location_county_name": {
-            "type": "text",
-            "fields": {
-              "keyword": {
-                "type": "keyword"
-              }
-            }
-          },
-          "recipient_location_zip5": {
-            "type": "text",
-            "fields": {
-              "keyword": {
-                "type": "keyword"
-              }
-            }
           }
         }
     }
