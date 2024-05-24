@@ -53,6 +53,8 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
             identifier_replacements["transaction_search"] = "rpt.transaction_search"
         elif self.config["load_type"] == "award":
             identifier_replacements["award_search"] = "rpt.award_search"
+        elif self.config["load_type"] == "subaward":
+            identifier_replacements = None
         elif self.config["load_type"] == "covid19-faba":
             identifier_replacements["financial_accounts_by_awards"] = "int.financial_accounts_by_awards"
             identifier_replacements["vw_awards"] = "int.awards"
