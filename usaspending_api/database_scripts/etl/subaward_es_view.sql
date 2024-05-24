@@ -2,8 +2,6 @@ DROP VIEW IF EXISTS subaward_es_view;
 
 CREATE VIEW subaward_es_view AS
 SELECT
-	broker_created_at,
-	broker_updated_at,
 	broker_subaward_id,
 	unique_award_key,
 	award_piid_fain,
@@ -89,7 +87,6 @@ SELECT
 	sub_place_of_perform_city_name AS sub_pop_city_name,
 	sub_place_of_perform_street AS sub_pop_street,
 	subaward_description,
-	date_submitted,
 	prime_award_group,
 	prime_award_type,
 	latest_transaction_id,

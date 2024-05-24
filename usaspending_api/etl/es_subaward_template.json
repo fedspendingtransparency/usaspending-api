@@ -21,14 +21,6 @@
     },
     "mappings": {
         "properties": {
-            "broker_created_at": {
-                "type": "date",
-                "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
-                },
-            "broker_updated_at": {
-                "type": "date",
-                "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
-                },
           "broker_subaward_id": {
             "type": "integer"
           },
@@ -114,7 +106,6 @@
               }
             }
           },
-
           "funding_agency_id": {
             "type": "integer"
           },
@@ -465,10 +456,6 @@
           },
           "subaward_description": {
             "type": "text"
-          },
-          "date_submitted": {
-            "type": "date",
-            "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
           },
           "prime_award_group": {
             "type": "keyword"
