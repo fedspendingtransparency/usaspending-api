@@ -3,7 +3,7 @@ import datetime
 
 from model_bakery import baker
 from django.core.management import call_command
-from django.db import connections, DEFAULT_DB_ALIAS, transaction
+from django.db import connections, DEFAULT_DB_ALIAS
 from pytest import mark
 from decimal import Decimal
 from usaspending_api.transactions.models import SourceAssistanceTransaction
@@ -142,7 +142,6 @@ VALUES
     with connections["data_broker"].cursor() as cursor:
         cursor.execute(insert_test_data)
         cursor.execute(f"SELECT COUNT(*) FROM {BROKER_TABLE}")
-        transaction.atomic()
         assert cursor.fetchall()[0][0] == NUMBER_OF_SOURCE_RECORDS
 
     yield
@@ -150,13 +149,11 @@ VALUES
     with connections["data_broker"].cursor() as cursor:
         cursor.execute(f"TRUNCATE {BROKER_TABLE}")
         cursor.execute(f"SELECT COUNT(*) FROM {BROKER_TABLE}")
-        transaction.atomic()
         assert cursor.fetchall()[0][0] == 0
 
 
 @mark.django_db(databases=["data_broker", "default"], transaction=True)
 def test_data_transfer_from_broker(load_broker_data):
-    transaction.atomic()
     call_command("transfer_assistance_records", "--reload-all")
     table = SourceAssistanceTransaction().table_name
 
@@ -275,8 +272,6 @@ def test_data_transfer_from_broker(load_broker_data):
             "funding-opportunity-number",
             123456,
         )
-
-    print("DID we make it?")
 
 
 @mark.django_db(databases=["data_broker", "default"], transaction=True)
