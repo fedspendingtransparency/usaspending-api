@@ -51,7 +51,7 @@ class CFDAViewSet(APIView):
         while not cdfas and remaining_tries:
             remaining_tries -= 1
             response = post(
-                "https://apply07.grants.gov/grantsws/rest/opportunities/search/cfda/totals",
+                settings.GRANTS_URL,
                 headers={"Authorization": f"APIKEY={settings.GRANTS_API_KEY}"},
             )
             if response.status_code != 200:
