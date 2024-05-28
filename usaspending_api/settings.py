@@ -188,6 +188,7 @@ ES_ROUTING_FIELD = "recipient_agg_key"
 
 # Grants API
 GRANTS_API_KEY = os.environ.get("GRANTS_API_KEY")
+GRANTS_URL = "https://apply07.grants.gov/grantsws/rest/opportunities/search/cfda/totals"
 
 # Applications https://docs.djangoproject.com/en/3.2/ref/settings/#installed-apps
 INSTALLED_APPS = [
