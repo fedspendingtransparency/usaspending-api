@@ -232,8 +232,6 @@ class PostgresElasticsearchIndexerController(AbstractElasticsearchIndexerControl
         last_db_delete_time = get_earliest_load_date(["fabs", "fpds"])
         update_last_load_date("es_deletes", last_db_delete_time)
 
-        # TODO: DEV-10976 deletes method?
-
     def cleanup(self) -> None:
         pass
 

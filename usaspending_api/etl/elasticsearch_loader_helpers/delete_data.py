@@ -166,9 +166,6 @@ def _is_allowed_key_field_type(client: Elasticsearch, key_field: str, index: str
     return False
 
 
-# TODO: DEV-10976 add subaward delete functionality
-
-
 def _lookup_deleted_award_keys(
     client: Elasticsearch,
     lookup_key: str,

@@ -307,7 +307,6 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
         config = {
             "base_table": "subaward_search",
             "base_table_id": "broker_subaward_id",
-            # TODO: DEV-10976 Maybe set to true for column subaward_type
             "create_award_type_aliases": False,
             "data_transform_func": None,
             "data_type": "subaward",
