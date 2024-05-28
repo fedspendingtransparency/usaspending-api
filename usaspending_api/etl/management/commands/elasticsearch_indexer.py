@@ -29,6 +29,7 @@ from usaspending_api.etl.elasticsearch_loader_helpers.index_config import (
     ES_LOCATION_UNIQUE_KEY_FIELD,
     ES_RECIPIENT_UNIQUE_KEY_FIELD,
     ES_TRANSACTIONS_UNIQUE_KEY_FIELD,
+    ES_SUBAWARD_UNIQUE_KEY_FIELD,
 )
 
 logger = logging.getLogger("script")
@@ -77,7 +78,7 @@ class AbstractElasticsearchIndexer(ABC, BaseCommand):
             type=str,
             required=True,
             help="Select which data the ETL will process.",
-            choices=["transaction", "award", "covid19-faba", "recipient", "location"],
+            choices=["transaction", "award", "covid19-faba", "recipient", "location", "subaward"],
         )
         parser.add_argument(
             "--processes",
@@ -301,6 +302,27 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             "stored_date_key": "es_awards",
             "unique_key_field": ES_AWARDS_UNIQUE_KEY_FIELD,
             "write_alias": settings.ES_AWARDS_WRITE_ALIAS,
+        }
+    elif arg_parse_options["load_type"] == "subaward":
+        config = {
+            "base_table": "subaward_search",
+            "base_table_id": "broker_subaward_id",
+            "create_award_type_aliases": False,
+            "data_transform_func": None,
+            "data_type": "subaward",
+            "execute_sql_func": execute_sql_statement,
+            "extra_null_partition": False,
+            "field_for_es_id": "broker_subaward_id",
+            "initial_datetime": default_datetime,
+            "max_query_size": settings.ES_SUBAWARD_MAX_RESULT_WINDOW,
+            # "optional_predicate": """WHERE "update_date" >= '{starting_date}'""",
+            "primary_key": "broker_subaward_id",
+            "query_alias_prefix": settings.ES_SUBAWARD_QUERY_ALIAS_PREFIX,
+            "required_index_name": settings.ES_SUBAWARD_NAME_SUFFIX,
+            "sql_view": settings.ES_SUBAWARD_ETL_VIEW_NAME,
+            # "stored_date_key": "es_awards",
+            "unique_key_field": ES_SUBAWARD_UNIQUE_KEY_FIELD,
+            "write_alias": settings.ES_SUBAWARD_WRITE_ALIAS,
         }
     elif arg_parse_options["load_type"] == "transaction":
         config = {
