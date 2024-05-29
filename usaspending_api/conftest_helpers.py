@@ -162,7 +162,7 @@ class TestElasticSearchIndex:
         elif self.index_type == "covid19-faba":
             view_sql_file = f"{settings.ES_COVID19_FABA_ETL_VIEW_NAME}.sql"
             view_name = settings.ES_COVID19_FABA_ETL_VIEW_NAME
-            es_id = "financial_account_distinct_award_key"
+            es_id = "financial_accounts_by_awards_id"
         elif self.index_type == "transaction":
             view_sql_file = f"{settings.ES_TRANSACTIONS_ETL_VIEW_NAME}.sql"
             view_name = settings.ES_TRANSACTIONS_ETL_VIEW_NAME
