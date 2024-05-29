@@ -242,7 +242,11 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
 
                 Default value: execute_sql_statement
 
-            extra_null_partition:
+            extra_null_partition: Used when indexing nested parent-child records to prevent indexing issues.
+                Note: This should only be set to `True` when the data is grouped in a parent-child style, where child
+                    records are grouped by the `primary_key` value within a parent record. It is imperative that only
+                    1 indexing operation is performed per parent document which encompasses all of its nested child
+                    documents. Subsequent indexing of the same parent document will overwrite the prior document.
 
             field_for_es_id: Field that will be used as the `id` value in the Elasticsearch index.
 
@@ -330,12 +334,12 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             "data_transform_func": None,
             "data_type": "covid19-faba",
             "execute_sql_func": execute_sql_statement,
-            "extra_null_partition": True,
-            "field_for_es_id": "financial_account_distinct_award_key",
+            "extra_null_partition": False,
+            "field_for_es_id": "financial_accounts_by_awards_id",
             "initial_datetime": datetime.strptime("2020-04-01+0000", "%Y-%m-%d%z"),
             "max_query_size": settings.ES_COVID19_FABA_MAX_RESULT_WINDOW,
             "optional_predicate": "",
-            "primary_key": "award_id",
+            "primary_key": "financial_accounts_by_awards_id",
             "query_alias_prefix": settings.ES_COVID19_FABA_QUERY_ALIAS_PREFIX,
             "required_index_name": settings.ES_COVID19_FABA_NAME_SUFFIX,
             "sql_view": settings.ES_COVID19_FABA_ETL_VIEW_NAME,
