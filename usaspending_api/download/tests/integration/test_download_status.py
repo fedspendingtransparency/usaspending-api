@@ -3,6 +3,7 @@ import pytest
 import random
 
 from model_bakery import baker
+from pytest import mark
 from rest_framework import status
 from unittest.mock import Mock
 
@@ -182,6 +183,7 @@ def test_download_assistance_status(client, download_test_data):
     assert resp.json()["total_columns"] == 4
 
 
+@mark.django_db(databases=["db_download", "default"])
 def test_download_awards_status(client, download_test_data, monkeypatch, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
@@ -300,6 +302,7 @@ def test_download_idv_status(client, download_test_data):
     assert resp.json()["total_columns"] == 5
 
 
+@mark.django_db(databases=["db_download", "default"], transaction=True)
 def test_download_transactions_status(client, download_test_data, monkeypatch, elasticsearch_transaction_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
@@ -349,6 +352,7 @@ def test_download_transactions_status(client, download_test_data, monkeypatch, e
     assert resp.json()["total_columns"] == 3
 
 
+@mark.django_db(databases=["db_download", "default"], transaction=True)
 def test_download_transactions_limit(client, download_test_data, monkeypatch, elasticsearch_transaction_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
