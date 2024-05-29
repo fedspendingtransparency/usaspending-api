@@ -38,9 +38,9 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
         if self.filters.get("award_type_codes") is not None:
             filters["award_type_codes"] = self.filters["award_type_codes"]
         # Need to update the value of "query" to have the fields to search on
-        query = filters.pop("nested_query", None)
-        if query:
-            filters["nested_query"] = {"text": query, "fields": self.query_fields}
+        query_text = filters.pop("query", None)
+        if query_text:
+            filters["query"] = {"text": query_text, "fields": self.query_fields}
 
         # Ensure that Awards with File C records that cancel out are not taken into consideration;
         # The records that fall into this criteria share the same DEF Code and that is how the outlay and
