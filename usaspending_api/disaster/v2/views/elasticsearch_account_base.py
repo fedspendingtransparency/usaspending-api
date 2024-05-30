@@ -103,7 +103,7 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
             )
             filter_agg_query = ES_Q("bool", should=[terms, query], minimum_should_match=2)
         else:
-            filter_agg_query = ES_Q("terms", **{"disaster_emergency_fund_code.keyword": self.filters.get("def_codes")})
+            filter_agg_query = ES_Q("terms", **{"disaster_emergency_fund_code": self.filters.get("def_codes")})
         filtered_aggs = A("filter", filter_agg_query)
         group_by_dim_agg = A("terms", field=self.agg_key, size=self.bucket_count)
         # Group the FABA records by their Award key
