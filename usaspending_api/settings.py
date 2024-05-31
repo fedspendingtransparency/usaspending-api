@@ -152,6 +152,12 @@ ES_AWARDS_NAME_SUFFIX = "awards"
 ES_AWARDS_QUERY_ALIAS_PREFIX = "award-query"
 ES_AWARDS_WRITE_ALIAS = "award-load-alias"
 
+ES_SUBAWARD_ETL_VIEW_NAME = "subaward_es_view"
+ES_SUBAWARD_NAME_SUFFIX = "subaward"
+ES_SUBAWARD_MAX_RESULT_WINDOW = 50000
+ES_SUBAWARD_QUERY_ALIAS_PREFIX = "subaward-query"
+ES_SUBAWARD_WRITE_ALIAS = "subaward-load-alias"
+
 ES_COVID19_FABA_ETL_VIEW_NAME = "covid19_faba_view"
 ES_COVID19_FABA_MAX_RESULT_WINDOW = 50000
 ES_COVID19_FABA_NAME_SUFFIX = "covid19-faba"
@@ -182,6 +188,7 @@ ES_ROUTING_FIELD = "recipient_agg_key"
 
 # Grants API
 GRANTS_API_KEY = os.environ.get("GRANTS_API_KEY")
+GRANTS_URL = "https://apply07.grants.gov/grantsws/rest/opportunities/search/cfda/totals"
 
 # Applications https://docs.djangoproject.com/en/3.2/ref/settings/#installed-apps
 INSTALLED_APPS = [
