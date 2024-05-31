@@ -320,6 +320,10 @@
       "ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe": {
         "scaling_factor": 100,
         "type": "scaled_float"
+      },
+      "total_loan_value": {
+        "scaling_factor": 100,
+        "type": "scaled_float"
       }
     }
   }
