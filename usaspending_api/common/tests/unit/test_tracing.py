@@ -53,7 +53,9 @@ def test_logging_trace_spans(datadog_tracer: ddtrace.Tracer, caplog: LogCaptureF
         resource=f"{test}_resource",
         span_type=SpanTypes.TEST,
     ) as span:
+
         trace_id = span.trace_id
+
         logger = logging.getLogger(f"{test}_logger")
         test_msg = f"a test message was logged during {test}"
         logger.warning(test_msg)
@@ -61,6 +63,7 @@ def test_logging_trace_spans(datadog_tracer: ddtrace.Tracer, caplog: LogCaptureF
         x = 2**5
         thirty_two_squares = [m for m in map(lambda y: y**2, range(x))]
         assert thirty_two_squares[-1] == 961
+
     assert test_msg in caplog.text, "caplog.text did not seem to capture logging output during test"
     assert f"SPAN#{trace_id}" in caplog.text, "span marker not found in logging output"
     assert f"TRACE#{trace_id}" in caplog.text, "trace marker not found in logging output"
