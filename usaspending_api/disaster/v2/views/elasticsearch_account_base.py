@@ -108,7 +108,7 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
         group_by_dim_agg = A("terms", field=self.agg_key, size=self.bucket_count)
         # Group the FABA records by their Award key
         # This is done since the FABA records are no longer nested under their parent Award in the same document
-        group_by_awards_agg = A("terms", field="financial_account_distinct_award_key.keyword")
+        group_by_awards_agg = A("terms", field="financial_account_distinct_award_key")
         dim_metadata = A(
             "top_hits",
             size=1,
