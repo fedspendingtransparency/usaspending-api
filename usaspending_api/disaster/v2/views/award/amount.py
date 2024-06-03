@@ -101,10 +101,8 @@ class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
         if award_type_filter:
             is_procurement = award_type_filter == "procurement"
             exists_query = ES_Q("exists", field="piid")
-            nested_query = ES_Q(
-                query=ES_Q("bool", **{f"must{'' if is_procurement else '_not'}": exists_query}),
-            )
-            filter_query.must.append(nested_query)
+            procurement_query = ES_Q("bool", **{f"must{'' if is_procurement else '_not'}": exists_query})
+            filter_query.must.append(procurement_query)
 
         return filter_query
 
