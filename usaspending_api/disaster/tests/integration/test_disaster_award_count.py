@@ -1,5 +1,4 @@
 import pytest
-
 from rest_framework import status
 
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
@@ -63,11 +62,15 @@ def test_multiple_faba_per_award(
 def test_multiple_faba_per_award_that_cancel_out(
     client, monkeypatch, multiple_file_c_to_same_award_that_cancel_out, helpers, elasticsearch_account_index
 ):
+    # It was decided that if all of an Award's child FABA records cancel each other out ($0 in obligations and outlays)
+    #   then that Award should still be counted since there WAS disaster spending on the child FABA records.
+    # Awards with child FABA records that have always had $0 in obligations and outlays are still exlcuded since they
+    #   never had disaster spending.
     setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     helpers.reset_dabs_cache()
     resp = _default_post(client, helpers)
-    assert resp.data["count"] == 0
+    assert resp.data["count"] == 1
 
 
 @pytest.mark.django_db
