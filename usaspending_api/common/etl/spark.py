@@ -297,7 +297,7 @@ def load_delta_table(
     # NOTE: Best to (only?) use .saveAsTable(name=<delta_table>) rather than .insertInto(tableName=<delta_table>)
     # ... The insertInto does not seem to align/merge columns from DataFrame to table columns (defaults to column order)
     save_mode = "overwrite" if overwrite else "append"
-    source_df.write.format(source="delta").mode(saveMode=save_mode).saveAsTable(name=delta_table_name)
+    source_df.write.format(source="delta").mode(saveMode=save_mode).option("mode", "PERMISSIVE").saveAsTable(name=delta_table_name)
     logger.info(f"LOAD (FINISH): Loaded data into Delta table {delta_table_name}")
 
 
