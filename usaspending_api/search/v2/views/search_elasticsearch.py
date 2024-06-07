@@ -319,9 +319,7 @@ class SpendingByTransactionCountVisualizationViewSet(APIView):
         models = []
         models.extend(copy.deepcopy(AWARD_FILTER))
         for m in models:
-            if m["name"] == "award_type_codes":
-                m["optional"] = False
-            elif m["name"] == "keywords":
+            if m["name"] == "keywords":
                 m["optional"] = True
             elif m["name"] == "keyword":
                 m["optional"] = True

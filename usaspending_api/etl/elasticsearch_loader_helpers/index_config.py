@@ -14,6 +14,7 @@ ES_TRANSACTIONS_UNIQUE_KEY_FIELD = "generated_unique_transaction_id"
 ES_COVID19_FABA_UNIQUE_KEY_FIELD = ""
 ES_RECIPIENT_UNIQUE_KEY_FIELD = "recipient_hash"
 ES_LOCATION_UNIQUE_KEY_FIELD = ""
+ES_SUBAWARD_UNIQUE_KEY_FIELD = "broker_subaward_id"
 
 
 def create_index(index, client):
