@@ -1,23 +1,24 @@
-from typing import List
 from decimal import Decimal
+from typing import List
 
 from django.db.models import F
+
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.disaster.v2.views.disaster_base import (
-    LoansPaginationMixin,
-    LoansMixin,
     FabaOutlayMixin,
+    LoansMixin,
+    LoansPaginationMixin,
 )
 from usaspending_api.disaster.v2.views.elasticsearch_account_base import ElasticsearchAccountDisasterBase
 
 
 class LoansViewSet(LoansMixin, LoansPaginationMixin, FabaOutlayMixin, ElasticsearchAccountDisasterBase):
-    """ Returns loan disaster spending by federal account. """
+    """Returns loan disaster spending by federal account."""
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/federal_account/loans.md"
-    agg_key = "financial_accounts_by_award.treasury_account_id"  # primary (tier-1) aggregation key
-    nested_nonzero_fields = {"obligation": "transaction_obligated_amount", "outlay": "gross_outlay_amount_by_award_cpe"}
+    agg_key = "treasury_account_id"  # primary (tier-1) aggregation key
+    nonzero_fields = {"obligation": "transaction_obligated_amount", "outlay": "gross_outlay_amount_by_award_cpe"}
     query_fields = [
         "federal_account_symbol",
         "federal_account_symbol.contains",
@@ -29,11 +30,11 @@ class LoansViewSet(LoansMixin, LoansPaginationMixin, FabaOutlayMixin, Elasticsea
         "treasury_account_title.contains",
     ]
     top_hits_fields = [
-        "financial_accounts_by_award.federal_account_symbol",
-        "financial_accounts_by_award.federal_account_title",
-        "financial_accounts_by_award.treasury_account_symbol",
-        "financial_accounts_by_award.treasury_account_title",
-        "financial_accounts_by_award.federal_account_id",
+        "federal_account_symbol",
+        "federal_account_title",
+        "treasury_account_symbol",
+        "treasury_account_title",
+        "federal_account_id",
     ]
 
     @cache_response()
@@ -88,12 +89,19 @@ class LoansViewSet(LoansMixin, LoansPaginationMixin, FabaOutlayMixin, Elasticsea
             "code": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["treasury_account_symbol"],
             "description": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["treasury_account_title"],
             # the count of distinct awards contributing to the totals
-            "award_count": int(bucket["count_awards_by_dim"]["award_count"]["value"]),
+            "award_count": len(bucket["group_by_awards"]["buckets"]),
             **{
                 key: Decimal(bucket.get(f"sum_{val}", {"value": 0})["value"])
-                for key, val in self.nested_nonzero_fields.items()
+                for key, val in self.nonzero_fields.items()
             },
-            "face_value_of_loan": bucket["count_awards_by_dim"]["sum_loan_value"]["value"],
+            # Sum all of the loan values together and exclude the `None` values
+            "face_value_of_loan": sum(
+                [
+                    float(award["award_metadata"]["hits"]["hits"][0]["_source"]["total_loan_value"])
+                    for award in bucket["group_by_awards"]["buckets"]
+                    if award["award_metadata"]["hits"]["hits"][0]["_source"]["total_loan_value"] is not None
+                ],
+            ),
             "parent_data": [
                 bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["federal_account_title"],
                 bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["federal_account_symbol"],

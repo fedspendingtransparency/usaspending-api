@@ -11,7 +11,7 @@ logger = logging.getLogger("script")
 
 ES_AWARDS_UNIQUE_KEY_FIELD = "generated_unique_award_id"
 ES_TRANSACTIONS_UNIQUE_KEY_FIELD = "generated_unique_transaction_id"
-ES_COVID19_FABA_UNIQUE_KEY_FIELD = "distinct_award_key"
+ES_COVID19_FABA_UNIQUE_KEY_FIELD = ""
 ES_RECIPIENT_UNIQUE_KEY_FIELD = "recipient_hash"
 ES_LOCATION_UNIQUE_KEY_FIELD = ""
 ES_SUBAWARD_UNIQUE_KEY_FIELD = "broker_subaward_id"

@@ -1,9 +1,10 @@
 from abc import abstractmethod
-from typing import List, Optional, Dict
+from typing import Dict, List, Optional
 
 from django.conf import settings
 from django.utils.functional import cached_property
-from elasticsearch_dsl import Q as ES_Q, A
+from elasticsearch_dsl import A
+from elasticsearch_dsl import Q as ES_Q
 from rest_framework.request import Request
 from rest_framework.response import Response
 
@@ -81,14 +82,6 @@ class ElasticsearchDisasterBase(DisasterBase):
         if query:
             self.filters["query"] = {"text": query, "fields": self.query_fields}
         self.filter_query = QueryWithFilters.generate_awards_elasticsearch_query(self.filters)
-
-        # Ensure that only non-zero values are taken into consideration
-        # TODO: Refactor to use new NonzeroFields filter in QueryWithFilters
-        non_zero_queries = []
-        for field in self.sum_column_mapping.values():
-            non_zero_queries.append(ES_Q("range", **{field: {"gt": 0}}))
-            non_zero_queries.append(ES_Q("range", **{field: {"lt": 0}}))
-        self.filter_query.must.append(ES_Q("bool", should=non_zero_queries, minimum_should_match=1))
 
         self.bucket_count = get_number_of_unique_terms_for_awards(
             self.filter_query, f"{self.agg_key.replace('.keyword', '')}.hash"
