@@ -1,15 +1,14 @@
-from decimal import Decimal
 from typing import List
+from decimal import Decimal
 
-from django.db.models import F, Min, TextField, Value
+from django.db.models import F, Value, TextField, Min
 from django.db.models.functions import Cast
-
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.orm_helpers import ConcatAll
 from usaspending_api.disaster.v2.views.disaster_base import (
-    FabaOutlayMixin,
-    LoansMixin,
     LoansPaginationMixin,
+    LoansMixin,
+    FabaOutlayMixin,
 )
 from usaspending_api.disaster.v2.views.elasticsearch_account_base import ElasticsearchAccountDisasterBase
 from usaspending_api.references.models import ObjectClass
@@ -19,8 +18,8 @@ class ObjectClassLoansViewSet(LoansMixin, FabaOutlayMixin, LoansPaginationMixin,
     """Provides insights on the Object Classes' loans from disaster/emergency funding per the requested filters"""
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/object_class/loans.md"
-    agg_key = "object_class"  # primary (tier-1) aggregation key
-    nonzero_fields = {"obligation": "transaction_obligated_amount", "outlay": "gross_outlay_amount_by_award_cpe"}
+    agg_key = "financial_accounts_by_award.object_class"  # primary (tier-1) aggregation key
+    nested_nonzero_fields = {"obligation": "transaction_obligated_amount", "outlay": "gross_outlay_amount_by_award_cpe"}
     query_fields = [
         "major_object_class_name",
         "major_object_class_name.contains",
@@ -28,11 +27,11 @@ class ObjectClassLoansViewSet(LoansMixin, FabaOutlayMixin, LoansPaginationMixin,
         "object_class_name.contains",
     ]
     top_hits_fields = [
-        "object_class_id",
-        "major_object_class_name",
-        "major_object_class",
-        "object_class_name",
-        "object_class",
+        "financial_accounts_by_award.object_class_id",
+        "financial_accounts_by_award.major_object_class_name",
+        "financial_accounts_by_award.major_object_class",
+        "financial_accounts_by_award.object_class_name",
+        "financial_accounts_by_award.object_class",
     ]
 
     @cache_response()
@@ -81,13 +80,7 @@ class ObjectClassLoansViewSet(LoansMixin, FabaOutlayMixin, LoansPaginationMixin,
                     # the count of distinct awards contributing to the totals
                     "obligation": temp_results[result["id"]]["obligation"] + result["obligation"],
                     "outlay": temp_results[result["id"]]["outlay"] + result["outlay"],
-                    "face_value_of_loan": sum(
-                        [
-                            float(award["award_metadata"]["hits"]["hits"][0]["_source"]["total_loan_value"])
-                            for award in bucket["group_by_awards"]["buckets"]
-                            if award["award_metadata"]["hits"]["hits"][0]["_source"]["total_loan_value"] is not None
-                        ],
-                    ),
+                    "face_value_of_loan": bucket["count_awards_by_dim"]["sum_loan_value"]["value"],
                     "children": temp_results[result["id"]]["children"] + result["children"],
                 }
             else:
@@ -114,18 +107,12 @@ class ObjectClassLoansViewSet(LoansMixin, FabaOutlayMixin, LoansPaginationMixin,
             "code": bucket["key"],
             "description": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["object_class_name"],
             # the count of distinct awards contributing to the totals
-            "award_count": len(bucket["group_by_awards"]["buckets"]),
+            "award_count": int(bucket["count_awards_by_dim"]["award_count"]["value"]),
             **{
                 key: Decimal(bucket.get(f"sum_{val}", {"value": 0})["value"])
-                for key, val in self.nonzero_fields.items()
+                for key, val in self.nested_nonzero_fields.items()
             },
-            "face_value_of_loan": sum(
-                [
-                    float(award["award_metadata"]["hits"]["hits"][0]["_source"]["total_loan_value"])
-                    for award in bucket["group_by_awards"]["buckets"]
-                    if award["award_metadata"]["hits"]["hits"][0]["_source"]["total_loan_value"] is not None
-                ],
-            ),
+            "face_value_of_loan": bucket["count_awards_by_dim"]["sum_loan_value"]["value"],
             "parent_data": [
                 bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["major_object_class_name"],
                 bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["major_object_class"],
