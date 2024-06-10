@@ -44,4 +44,5 @@ def test_failed_insert():
     with pytest.raises(IntegrityError):
         call_command("load_bureau_title_lookup", path=bad_data_path)
 
+    # Ensure previously loaded data still exists
     assert BureauTitleLookup.objects.count() == 4
