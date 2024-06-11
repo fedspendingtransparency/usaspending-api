@@ -1,7 +1,7 @@
 import pytest
 
 from django.core.management import call_command
-from django.db.utils import IntegrityError 
+from django.db.utils import IntegrityError
 
 from usaspending_api import settings
 from usaspending_api.references.models.bureau_title_lookup import BureauTitleLookup
@@ -31,6 +31,7 @@ def test_happy_path():
     # Ensure that CSV row with "999" aid is not loaded
     lookup_4_count = BureauTitleLookup.objects.filter(federal_account_code="999-9999").count()
     assert lookup_4_count == 0
+
 
 @pytest.mark.django_db
 def test_failed_insert():
