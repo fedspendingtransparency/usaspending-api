@@ -1,23 +1,23 @@
-from decimal import Decimal
 from typing import List
+from decimal import Decimal
 
 from django.db.models import Case, DecimalField, F, IntegerField, Min, Q, Sum, TextField, Value, When
-from django.db.models.functions import Cast, Coalesce
+from django.db.models.functions import Coalesce, Cast
 from rest_framework.response import Response
 
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
-from usaspending_api.disaster.v2.views.disaster_base import (
-    FabaOutlayMixin,
-    PaginationMixin,
-    SpendingMixin,
-)
 from usaspending_api.disaster.v2.views.elasticsearch_account_base import ElasticsearchAccountDisasterBase
 from usaspending_api.disaster.v2.views.object_class.object_class_result import (
+    ObjectClassResults,
     MajorClass,
     ObjectClass,
-    ObjectClassResults,
+)
+from usaspending_api.disaster.v2.views.disaster_base import (
+    PaginationMixin,
+    SpendingMixin,
+    FabaOutlayMixin,
 )
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 
@@ -43,8 +43,8 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/object_class/spending.md"
 
     # Defined for the Elasticsearch implementation of Spending by Award
-    agg_key = "object_class"  # primary (tier-1) aggregation key
-    nonzero_fields = {"obligation": "transaction_obligated_amount", "outlay": "gross_outlay_amount_by_award_cpe"}
+    agg_key = "financial_accounts_by_award.object_class"  # primary (tier-1) aggregation key
+    nested_nonzero_fields = {"obligation": "transaction_obligated_amount", "outlay": "gross_outlay_amount_by_award_cpe"}
     query_fields = [
         "major_object_class_name",
         "major_object_class_name.contains",
@@ -52,10 +52,10 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
         "object_class_name.contains",
     ]
     top_hits_fields = [
-        "object_class_id",
-        "major_object_class_name",
-        "object_class_name",
-        "major_object_class",
+        "financial_accounts_by_award.object_class_id",
+        "financial_accounts_by_award.major_object_class_name",
+        "financial_accounts_by_award.object_class_name",
+        "financial_accounts_by_award.major_object_class",
     ]
 
     @cache_response()
@@ -176,10 +176,10 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
             "code": bucket["key"],
             "description": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["object_class_name"],
             # the count of distinct awards contributing to the totals
-            "award_count": len(bucket["group_by_awards"]["buckets"]),
+            "award_count": int(bucket["count_awards_by_dim"]["award_count"]["value"]),
             **{
                 key: Decimal(bucket.get(f"sum_{val}", {"value": 0})["value"])
-                for key, val in self.nonzero_fields.items()
+                for key, val in self.nested_nonzero_fields.items()
             },
             "parent_data": [
                 bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["major_object_class_name"],

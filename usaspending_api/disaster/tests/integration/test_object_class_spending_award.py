@@ -1,5 +1,6 @@
 import pytest
 from model_bakery import baker
+
 from rest_framework import status
 
 from usaspending_api.disaster.tests.fixtures.object_class_data import major_object_class_with_children
@@ -186,12 +187,9 @@ def test_outlay_calculations(client, elasticsearch_account_index, basic_faba_wit
 
 
 @pytest.mark.django_db
-def test_negated_values(client, elasticsearch_account_index, basic_faba_with_object_class, monkeypatch, helpers):
-    # It was decided that if all of an Award's child FABA records cancel each other out ($0 in obligations and outlays)
-    #   then that Award should still be counted since there WAS disaster spending on the child FABA records.
-    # Awards with child FABA records that have always had $0 in obligations and outlays are still exlcuded since they
-    #   never had disaster spending.
-
+def test_filter_out_negated_values(
+    client, elasticsearch_account_index, basic_faba_with_object_class, monkeypatch, helpers
+):
     oc = major_object_class_with_children("001", [1])
     baker.make("references.DisasterEmergencyFundCode", code="L", group_name=COVID_19_GROUP_NAME),
     baker.make(
@@ -229,31 +227,11 @@ def test_negated_values(client, elasticsearch_account_index, basic_faba_with_obj
     helpers.reset_dabs_cache()
 
     resp = helpers.post_for_spending_endpoint(client, url, query="001 name", def_codes=["L"], spending_type="award")
-    expected_response = [
-        {
-            "award_count": 1,
-            "children": [
-                {
-                    "award_count": 1,
-                    "code": "0001",
-                    "description": "0001 name",
-                    "id": "1",
-                    "obligation": 0.0,
-                    "outlay": 0.0,
-                }
-            ],
-            "code": "001",
-            "description": "001 name",
-            "id": "001",
-            "obligation": 0.0,
-            "outlay": 0.0,
-        }
-    ]
 
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.json()["results"] == expected_response
+    assert resp.json()["results"] == []
 
-    expected_totals = {"award_count": 1, "obligation": 0, "outlay": 0}
+    expected_totals = {"award_count": 0, "obligation": 0, "outlay": 0}
     assert resp.json()["totals"] == expected_totals
 
 

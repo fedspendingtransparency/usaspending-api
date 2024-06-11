@@ -753,4 +753,5 @@ class QueryWithFilters:
 
     @classmethod
     def generate_accounts_elasticsearch_query(cls, filters: dict, **options) -> ES_Q:
+        options = {**options, "nested_path": "financial_accounts_by_award"}
         return cls._generate_elasticsearch_query(filters, _QueryType.ACCOUNTS, **options)

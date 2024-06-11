@@ -1,4 +1,5 @@
 import pytest
+
 from rest_framework import status
 
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
@@ -94,18 +95,13 @@ def test_award_amount_on_sum_non_zero_outlay(
 def test_award_amount_on_sum_zero_toa(
     client, monkeypatch, multiple_file_c_to_same_award_that_cancel_out, helpers, elasticsearch_account_index
 ):
-    # It was decided that if all of an Award's child FABA records cancel each other out ($0 in obligations and outlays)
-    #   then that Award should still be counted since there WAS disaster spending on the child FABA records.
-    # Awards with child FABA records that have always had $0 in obligations and outlays are still exlcuded since they
-    #   never had disaster spending.
-
     setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     helpers.reset_dabs_cache()
 
     resp = helpers.post_for_amount_endpoint(client, url, ["M"], None)
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.data["award_count"] == 1
+    assert resp.data["award_count"] == 0
     assert resp.data["outlay"] == 0.0
     assert resp.data["obligation"] == 0.0
 
