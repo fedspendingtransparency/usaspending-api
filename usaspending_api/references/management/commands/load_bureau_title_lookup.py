@@ -53,7 +53,7 @@ class Command(BaseCommand):
                 main_acct = row[1].strip().zfill(4)
                 bureau_title = row[23].strip()
                 federal_account_code = f"{aid}-{main_acct}"
-                type = row[44].strip()
+                type = row[44].strip().upper()
 
                 # Rows with a type of "DUMMY" or an Agency id of "999" represent
                 # test bureaus that should not be ingested.
