@@ -104,26 +104,29 @@ class PSCFilterTree(FilterTree):
             )
         return sorted(retval, key=lambda x: x["id"])
 
-    def tier_2_search(self, ancestor_array, filter_string, lower_tier_nodes=None) -> list:
-        filters = [
+    def build_base_filters() -> list:
+        return [
             Q(
                 Q(Q(length=2) & ~Q(code__startswith=PSC_GROUPS["Research and Development"]["terms"][0]))
                 | Q(Q(length=3) & Q(code__startswith=PSC_GROUPS["Research and Development"]["terms"][0]))
             )
         ]
-        query = Q()
+
+    def build_ancestor_query(ancestor_array: list, query: Q) -> Q:
         if ancestor_array:
             parent = ancestor_array[-1]
             if len(parent) > 3:
                 query |= Q(code__iregex=PSC_GROUPS.get(parent, {}).get("pattern") or "(?!)")
             else:
                 query |= Q(code__startswith=parent)
+        return query
+    
+    def build_lower_tier_query(lower_tier_nodes: list, query: Q) -> Q:
         if lower_tier_nodes:
             lower_tier_codes = [
                 (
                     node["id"][:2]
-                    if node["id"][:2]
-                    == "AU"  # `AU` is a special case, it skips the length=3 codes, unlike other R&D PSCs
+                    if node["id"][:2] == "AU"  # `AU` is a special case, it skips the length=3 codes, unlike other R&D PSCs
                     or node["id"][0] not in PSC_GROUPS["Research and Development"]["terms"]
                     else node["id"][:3]
                 )
@@ -132,20 +135,37 @@ class PSCFilterTree(FilterTree):
             lower_tier_codes = list(dict.fromkeys(lower_tier_codes))
             for code in lower_tier_codes:
                 query |= Q(code=code)
+        return query
+    
+    def build_filter_string_query(filter_string: str, query: Q) -> Q:
         if filter_string:
             query |= Q(Q(code__icontains=filter_string) | Q(description__icontains=filter_string))
+        return query
+    
+    def build_ancestors(object: PSC) -> list:
+        ancestors = []
+        if object.code.isdigit():
+            ancestors.append("Product")
+        elif object.code[0] in PSC_GROUPS["Research and Development"]["terms"]:
+            ancestors.append("Research and Development")
+            ancestors.append(object.code[:2])
+        else:
+            ancestors.append("Service")
+            ancestors.append(object.code[:1])
+        return ancestors
+
+    def tier_2_search(self, ancestor_array, filter_string, lower_tier_nodes=None) -> list:
+        filters = self.build_base_filters()
+
+        query = Q()
+        query = self.build_ancestor_query(ancestor_array, query)
+        query = self.build_lower_tier_query(lower_tier_nodes, query)
+        query = self.build_filter_string_query(filter_string, query)
         filters.append(query)
+
         retval = []
         for object in PSC.objects.filter(*filters):
-            ancestors = []
-            if object.code.isdigit():
-                ancestors.append("Product")
-            elif object.code[0] in PSC_GROUPS["Research and Development"]["terms"]:
-                ancestors.append("Research and Development")
-                ancestors.append(object.code[:2])
-            else:
-                ancestors.append("Service")
-                ancestors.append(object.code[:1])
+            ancestors = self.build_ancestors(object)
             retval.append(
                 {
                     "id": object.code,
