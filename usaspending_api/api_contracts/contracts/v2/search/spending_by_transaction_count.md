@@ -17,11 +17,20 @@ Returns the counts of transaction records which match the keyword grouped by awa
 
     + Attributes (object)
         + `filters` (required, AdvancedFilterObject)
-        The `keywords` filter is mandatory for this endpoint
     + Body
 
 
-            {"filters":{"keywords":["test"]}}
+            {
+                "filters": {
+                    "keywords": ["test"],
+                    "award_type_codes": [
+                        "A",
+                        "B",
+                        "C",
+                        "D"
+                    ]
+                }
+            }
 
 + Response 200 (application/json)
     + Attributes (object)
@@ -49,5 +58,5 @@ Returns the counts of transaction records which match the keyword grouped by awa
 
 # Data Structures
 
-## AdvancedFilterObject (object)
-+ `keywords`: [[`lockheed`]] (required, array[string], fixed-type)
+### AdvancedFilterObject (object)
+The filters available are defined in [AdvancedFilterObject](./spending_by_transaction.md#advanced-filter-object). The only difference is that the `keywords` and `award_type_codes` filters are not required.

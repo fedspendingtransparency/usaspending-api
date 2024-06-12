@@ -54,18 +54,27 @@ def get_total_results(keyword):
         return None
 
 
-def spending_by_transaction_count(request_data):
-    keyword = request_data["filters"]["keywords"]
+def spending_by_transaction_count(search_query):
+    group_by_agg_key_values = {
+        "filters": {category: {"terms": {"type": types}} for category, types in INDEX_ALIASES_TO_AWARD_TYPES.items()}
+    }
+    aggs = A("filters", **group_by_agg_key_values)
+    search_query.aggs.bucket("types", aggs)
+    query_response = search_query.handle_execute()
+
+    results = None
+    if query_response is not None:
+        results = query_response["aggregations"]["types"]["buckets"]
+
+    if results is None:
+        return None
+
     response = {}
-    results = get_total_results(keyword)
     for category in INDEX_ALIASES_TO_AWARD_TYPES.keys():
-        if results is not None:
-            if category == "directpayments":
-                response["direct_payments"] = results[category]["doc_count"]
-            else:
-                response[category] = results[category]["doc_count"]
+        if category == "directpayments":
+            response["direct_payments"] = results[category]["doc_count"]
         else:
-            return results
+            response[category] = results[category]["doc_count"]
     return response
 
 

@@ -719,7 +719,6 @@ class QueryWithFilters:
                 list_pointer.extend(query)
             else:
                 list_pointer.append(query)
-
         nested_query = ES_Q("nested", path="financial_accounts_by_award", query=ES_Q("bool", must=nested_must_queries))
         if must_queries and nested_must_queries:
             must_queries.append(nested_query)
