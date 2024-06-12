@@ -120,13 +120,14 @@ class PSCFilterTree(FilterTree):
             else:
                 query |= Q(code__startswith=parent)
         return query
-    
+
     def build_lower_tier_query(lower_tier_nodes: list, query: Q) -> Q:
         if lower_tier_nodes:
             lower_tier_codes = [
                 (
                     node["id"][:2]
-                    if node["id"][:2] == "AU"  # `AU` is a special case, it skips the length=3 codes, unlike other R&D PSCs
+                    if node["id"][:2]
+                    == "AU"  # `AU` is a special case, it skips the length=3 codes, unlike other R&D PSCs
                     or node["id"][0] not in PSC_GROUPS["Research and Development"]["terms"]
                     else node["id"][:3]
                 )
@@ -136,12 +137,12 @@ class PSCFilterTree(FilterTree):
             for code in lower_tier_codes:
                 query |= Q(code=code)
         return query
-    
+
     def build_filter_string_query(filter_string: str, query: Q) -> Q:
         if filter_string:
             query |= Q(Q(code__icontains=filter_string) | Q(description__icontains=filter_string))
         return query
-    
+
     def build_ancestors(object: PSC) -> list:
         ancestors = []
         if object.code.isdigit():
