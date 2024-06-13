@@ -17,7 +17,7 @@ Returns transaction records which match the provided filters.
 
     + Attributes (object)
         + `filters` (required, AdvancedFilterObject)
-            Need to provide `keywords` and `award_type_codes`
+            Need to provide `award_type_codes`
         + `fields` (required, FieldNameObject)
             The field names to include in the response
         + `limit`: 5 (optional, number)
@@ -369,23 +369,23 @@ A list of current DEFC can be found [here.](https://files.usaspending.gov/refere
 
 ### FieldNameObject (array)
 List of column names to request
-- `Action Date` 
-- `Award ID` 
-- `Award Type` 
-- `Awarding Agency` 
-- `Awarding Sub Agency` 
-- `awarding_agency_id` 
-- `Funding Agency` 
-- `Funding Sub Agency` 
-- `internal_id` 
-- `generated_internal_id` 
-- `Issued Date` 
-- `Last Date to Order` 
-- `Loan Value` 
-- `Mod` 
-- `Recipient Name` 
-- `Subsidy Cost` 
-- `Transaction Amount` 
+- `Action Date`
+- `Award ID`
+- `Award Type`
+- `Awarding Agency`
+- `Awarding Sub Agency`
+- `awarding_agency_id`
+- `Funding Agency`
+- `Funding Sub Agency`
+- `internal_id`
+- `generated_internal_id`
+- `Issued Date`
+- `Last Date to Order`
+- `Loan Value`
+- `Mod`
+- `Recipient Name`
+- `Subsidy Cost`
+- `Transaction Amount`
 - `def_codes`
 
 ## TransactionResponse (object)
