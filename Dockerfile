@@ -27,6 +27,8 @@ RUN rpm --import https://download.postgresql.org/pub/repos/yum/keys/RPM-GPG-KEY-
 RUN dnf -y install https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm
 RUN dnf -qy module disable postgresql
 RUN dnf -y install postgresql13
+RUN dnf -y install postgresql13-devel
+
 
 ##### Building python 3.x
 WORKDIR /usr/src
