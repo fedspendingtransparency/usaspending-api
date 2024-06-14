@@ -19,8 +19,12 @@ RUN sed -i '/mirrorlist/s/^/#/g' /etc/yum.repos.d/Rocky-*
 
 RUN dnf -y update
 # sqlite-devel added as prerequisite for coverage python lib, used by pytest-cov plugin
-RUN dnf -y install gcc openssl-devel bzip2-devel libffi-devel zlib-devel wget make perl
+RUN dnf -y install gcc openssl-devel bzip2-devel libffi-devel zlib-devel wget make
 RUN dnf -y groupinstall "Development Tools"
+
+RUN dnf install epel-release -y
+RUN dnf --enablerepo=powertools install perl-IPC-Run -y
+
 
 ##### Install PostgreSQL 13 client (psql)
 RUN rpm --import https://download.postgresql.org/pub/repos/yum/keys/RPM-GPG-KEY-PGDG-AARCH64-RHEL8
