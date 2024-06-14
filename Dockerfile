@@ -43,12 +43,12 @@ RUN ./configure --enable-optimizations
 RUN make altinstall
 RUN ln -sf /usr/local/bin/python`echo ${PYTHON_VERSION} | awk -F. '{short_version=$1 FS $2; print short_version}'` /usr/bin/python3
 RUN echo "$(python3 --version)"
-RUN export PATH=$PATH:/usr/pgsql-13/bin
+RUN 
 
 ##### Copy python packaged
 WORKDIR /dockermount
 COPY requirements/ /dockermount/requirements/
-RUN python3 -m pip install -r requirements/requirements.txt
+RUN export PATH=$PATH:/usr/pgsql-13/bin && python3 -m pip install -r requirements/requirements.txt
 
 RUN python3 -m pip install -r requirements/requirements-server.txt ansible==2.9.15 awscli
 
