@@ -2,6 +2,7 @@ import csv
 import logging
 
 from django.core.management.base import BaseCommand
+from django.db import transaction
 from django.utils.text import slugify
 
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
@@ -25,6 +26,7 @@ class Command(BaseCommand):
             default="https://max.omb.gov/maxportal/assets/public/treasury/FMS_GWA_EXPORT_APPN.csv",
         )
 
+    @transaction.atomic
     def handle(self, *args, **options):
         path = options["path"]
         logger.info("Downloading Bureau Title Lookups")
@@ -51,9 +53,11 @@ class Command(BaseCommand):
                 main_acct = row[1].strip().zfill(4)
                 bureau_title = row[23].strip()
                 federal_account_code = f"{aid}-{main_acct}"
+                type = row[44].strip().upper()
 
-                # Some rows may be labeled as `DUMMY` and should be skipped
-                if row[44].strip() == "DUMMY":
+                # Rows with a type of "DUMMY" or an Agency id of "999" represent
+                # test bureaus that should not be ingested.
+                if type == "DUMMY" or aid == "999":
                     continue
 
                 bureau_title_lookup = BureauTitleLookup(
