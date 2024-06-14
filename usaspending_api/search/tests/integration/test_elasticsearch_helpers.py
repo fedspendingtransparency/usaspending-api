@@ -3,11 +3,14 @@ import itertools
 import pytest
 from model_bakery import baker
 
+from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
+from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 from usaspending_api.search.v2.elasticsearch_helper import (
     spending_by_transaction_count,
     get_download_ids,
 )
+from usaspending_api.search.v2.es_sanitization import es_minimal_sanitize
 
 
 @pytest.fixture
@@ -90,7 +93,11 @@ def test_spending_by_transaction_count(monkeypatch, transaction_type_data, elast
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     request_data = {"filters": {"keywords": ["pop tart"]}}
-    results = spending_by_transaction_count(request_data)
+    request_data["filters"]["keyword_search"] = [es_minimal_sanitize(x) for x in request_data["filters"]["keywords"]]
+    request_data["filters"].pop("keywords")
+    filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(request_data["filters"])
+    search = TransactionSearch().filter(filter_query)
+    results = spending_by_transaction_count(search)
     expected_results = {"contracts": 1, "grants": 1, "idvs": 1, "loans": 1, "direct_payments": 1, "other": 1}
     assert results == expected_results
 
