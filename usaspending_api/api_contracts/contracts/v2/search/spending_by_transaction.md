@@ -218,7 +218,7 @@ Returns transaction records which match the provided filters.
 + `previous` (required, number, nullable)
 
 ### AdvancedFilterObject (object)
-+ `keywords`: `lockheed` (required, array[string], fixed-type)
++ `keywords`: `lockheed` (optional, array[string], fixed-type)
 + `time_period` (optional, array[TimePeriodObject], fixed-type)
 + `award_type_codes` (required, FilterObjectAwardTypes, fixed-type)
 + `place_of_performance_scope` (optional, enum[string])
