@@ -9,6 +9,7 @@ class _QueryType(Enum):
     TRANSACTIONS = "transactions"
     AWARDS = "awards"
     ACCOUNTS = "accounts"
+    SUBAWARDS = "subawards"
 
 
 class _Filter(metaclass=ABCMeta):
@@ -31,5 +32,5 @@ class _Filter(metaclass=ABCMeta):
     def generate_elasticsearch_query(
         cls, filter_values: Union[str, list, dict], query_type: _QueryType, **options
     ) -> Union[ES_Q, List[ES_Q]]:
-        """ Returns a Q object used to query Elasticsearch. """
+        """Returns a Q object used to query Elasticsearch."""
         pass

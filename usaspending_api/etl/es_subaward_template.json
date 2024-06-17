@@ -547,6 +547,9 @@
           },
           "product_or_service_description": {
             "type": "text"
+          },
+          "treasury_account_identifiers": {
+            "type": "keyword"
           }
         }
     }

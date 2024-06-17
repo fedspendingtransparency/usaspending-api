@@ -101,7 +101,8 @@ SELECT
 	type_set_aside,
 	extent_competed,
 	product_or_service_code,
-	product_or_service_description
+	product_or_service_description,
+    treasury_account_identifiers
 FROM
 	rpt.subaward_search
 WHERE action_date >= '2007-10-01';

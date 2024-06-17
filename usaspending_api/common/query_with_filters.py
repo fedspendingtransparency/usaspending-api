@@ -6,6 +6,7 @@ from typing import List, Tuple
 from django.conf import settings
 from elasticsearch_dsl import Q as ES_Q
 
+from usaspending_api.accounts.helpers import TAS_COMPONENT_TO_FIELD_MAPPING
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.api_helper import (
     DUPLICATE_DISTRICT_LOCATION_PARAMETERS,
@@ -746,6 +747,10 @@ class QueryWithFilters:
     @classmethod
     def generate_awards_elasticsearch_query(cls, filters: dict, **options) -> ES_Q:
         return cls._generate_elasticsearch_query(filters, _QueryType.AWARDS, **options)
+
+    @classmethod
+    def generate_subawards_elasticsearch_query(cls, filters: dict, **options) -> ES_Q:
+        return cls._generate_elasticsearch_query(filters, _QueryType.SUBAWARDS, **options)
 
     @classmethod
     def generate_transactions_elasticsearch_query(cls, filters: dict, **options) -> ES_Q:

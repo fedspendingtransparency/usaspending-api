@@ -106,6 +106,14 @@ class AwardSearch(_Search):
         return "award_search"
 
 
+class SubawardSearch(_Search):
+    _index_name = f"{settings.ES_SUBAWARD_QUERY_ALIAS_PREFIX}*"
+
+    @staticmethod
+    def type_as_string():
+        return "subaward_search"
+
+
 class AccountSearch(_Search):
     _index_name = f"{settings.ES_COVID19_FABA_QUERY_ALIAS_PREFIX}*"
 
