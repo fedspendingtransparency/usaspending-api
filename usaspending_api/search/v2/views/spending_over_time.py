@@ -227,7 +227,6 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         # this is where we create different filter_queries based on different filters [idv_d, idv_e, and etc.. ]
         # then we aggregate those results
         # Generate separate filter queries for each obligation type
-        obligation_breakdown_results = {"overall": overall_results}
         for obligation_type, codes in OBLIGATION_TYPE_TO_CODES.items():
             if any(code in user_input_filters['award_type_codes'] for code in codes):
                 # Create a specific filter for the current obligation type
