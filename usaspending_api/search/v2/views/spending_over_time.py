@@ -155,9 +155,9 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         aggregated_amount = bucket.get("sum_as_dollars", {"value": 0})["value"]
         return {"aggregated_amount": aggregated_amount, "time_period": time_period}
 
-    # in this function we are justing taking the elasticsearch aggregate response and looping through the 
+    # in this function we are justing taking the elasticsearch aggregate response and looping through the
     # buckets to create a results object for each time interval
-    # the breakdown for the aggregated values based on award types should be done before this. 
+    # the breakdown for the aggregated values based on award types should be done before this.
     def build_elasticsearch_result(self, agg_response: AggResponse, time_periods: list) -> list:
         results = []
         min_date, max_date = min_and_max_from_date_ranges(time_periods)
@@ -181,12 +181,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 results.append(parsed_bucket)
                 parsed_bucket = None
             else:
-                results.append(
-                    {
-                        "aggregated_amount": 0, 
-                        "time_period": time_period
-                    }
-                )
+                results.append({"aggregated_amount": 0, "time_period": time_period})
 
         return results
 
@@ -223,17 +218,21 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         obligation_breakdown_results = {
             "overall": overall_results,
         }
-            
+
         # this is where we create different filter_queries based on different filters [idv_d, idv_e, and etc.. ]
         # then we aggregate those results
         # Generate separate filter queries for each obligation type
         for obligation_type, codes in OBLIGATION_TYPE_TO_CODES.items():
-            if any(code in user_input_filters['award_type_codes'] for code in codes):
+            if any(code in user_input_filters["award_type_codes"] for code in codes):
                 # Create a specific filter for the current obligation type
                 specific_filters = copy.deepcopy(self.filters)
-                specific_filters['award_type_codes'] = [code for code in codes if code in user_input_filters['award_type_codes']]
+                specific_filters["award_type_codes"] = [
+                    code for code in codes if code in user_input_filters["award_type_codes"]
+                ]
 
-                specific_filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(specific_filters, **filter_options)
+                specific_filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(
+                    specific_filters, **filter_options
+                )
                 specific_search = TransactionSearch().filter(specific_filter_query)
                 self.apply_elasticsearch_aggregations(specific_search)
                 specific_response = specific_search.handle_execute()
@@ -252,14 +251,18 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             for obligation_type in OBLIGATION_TYPE_TO_CODES.keys():
                 if obligation_type in obligation_breakdown_results:
                     matching_result = next(
-                        (res for res in obligation_breakdown_results[obligation_type] if res["time_period"] == overall_result["time_period"]),
-                        {"aggregated_amount": 0}
+                        (
+                            res
+                            for res in obligation_breakdown_results[obligation_type]
+                            if res["time_period"] == overall_result["time_period"]
+                        ),
+                        {"aggregated_amount": 0},
                     )
                     combined_result[obligation_type] = matching_result["aggregated_amount"]
                     total_obligations += matching_result["aggregated_amount"]
                 else:
                     combined_result[obligation_type] = 0
-            combined_result["Values_add_up"] = (total_obligations == overall_result["aggregated_amount"])
+            combined_result["Values_add_up"] = total_obligations == overall_result["aggregated_amount"]
             final_results.append(combined_result)
 
         print("stop right here so we can inspect final_results!!!!")

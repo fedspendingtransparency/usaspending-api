@@ -56,6 +56,12 @@ This endpoint returns a list of aggregated award amounts grouped by time period 
 + `time_period` (required, TimePeriodGroup)
 + `aggregated_amount` (required, number)
     The aggregate award amount for this time period and the given filters.
++ `contract_obligations` (optional, number)
++ `loan_obligations` (optional, number)
++ `idv_obligations` (optional, number)
++ `grant_obligations` (optional, number)
++ `direct_payment_obligations` (optional, number)
++ `other_obligations` (optional, number)
 
 ## TimePeriodGroup (object)
 + `fiscal_year` (required, string)
