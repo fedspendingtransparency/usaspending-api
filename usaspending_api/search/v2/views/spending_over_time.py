@@ -41,6 +41,7 @@ logger = logging.getLogger(__name__)
 
 API_VERSION = settings.API_VERSION
 GROUPING_LOOKUP = {
+    "calendar_year": "calendar_year",
     "quarter": "quarter",
     "q": "quarter",
     "fiscal_year": "fiscal_year",
@@ -154,6 +155,9 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         aggregated_amount = bucket.get("sum_as_dollars", {"value": 0})["value"]
         return {"aggregated_amount": aggregated_amount, "time_period": time_period}
 
+    # in this function we are justing taking the elasticsearch aggregate response and looping through the 
+    # buckets to create a results object for each time interval
+    # the breakdown for the aggregated values based on award types should be done before this. 
     def build_elasticsearch_result(self, agg_response: AggResponse, time_periods: list) -> list:
         results = []
         min_date, max_date = min_and_max_from_date_ranges(time_periods)
@@ -166,7 +170,9 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 parsed_bucket = self.parse_elasticsearch_bucket(date_buckets.pop(0))
 
             time_period = {"fiscal_year": str(fiscal_date["fiscal_year"])}
-            if self.group == "quarter":
+            if self.group == "calendar_year":
+                time_period = {"calendar_year": str(fiscal_date["calendar_year"])}
+            elif self.group == "quarter":
                 time_period["quarter"] = str(fiscal_date["fiscal_quarter"])
             elif self.group == "month":
                 time_period["month"] = str(fiscal_date["fiscal_month"])
@@ -175,7 +181,12 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 results.append(parsed_bucket)
                 parsed_bucket = None
             else:
-                results.append({"aggregated_amount": 0, "time_period": time_period})
+                results.append(
+                    {
+                        "aggregated_amount": 0, 
+                        "time_period": time_period
+                    }
+                )
 
         return results
 
@@ -188,11 +199,72 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             time_period_obj=time_period_obj, query_type=_QueryType.TRANSACTIONS
         )
         filter_options["time_period_obj"] = new_awards_only_decorator
+
+        user_input_filters = copy.deepcopy(self.filters)  # Copy of the original filters
+
+        # Generate the overall filter query (aggregated results for all the codes.)
         filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(self.filters, **filter_options)
         search = TransactionSearch().filter(filter_query)
         self.apply_elasticsearch_aggregations(search)
         response = search.handle_execute()
-        return self.build_elasticsearch_result(response.aggs, time_periods)
+        overall_results = self.build_elasticsearch_result(response.aggs, time_periods)
+
+        # Mapping of obligation types to their corresponding codes
+        OBLIGATION_TYPE_TO_CODES = {
+            "contract_obligations": ["A", "B", "C", "D"],
+            "idv_obligations": ["IDV_A", "IDV_B", "IDV_B_A", "IDV_B_B", "IDV_B_C", "IDV_C", "IDV_D", "IDV_E"],
+            "grant_obligations": ["02", "03", "04", "05"],
+            "direct_payment_obligations": ["06", "10"],
+            "loan_obligations": ["07", "08"],
+            "other_obligations": ["09", "11", "-1"],
+        }
+
+        # Initialize a dictionary to hold the results for each obligation type
+        obligation_breakdown_results = {
+            "overall": overall_results,
+        }
+            
+        # this is where we create different filter_queries based on different filters [idv_d, idv_e, and etc.. ]
+        # then we aggregate those results
+        # Generate separate filter queries for each obligation type
+        obligation_breakdown_results = {"overall": overall_results}
+        for obligation_type, codes in OBLIGATION_TYPE_TO_CODES.items():
+            if any(code in user_input_filters['award_type_codes'] for code in codes):
+                # Create a specific filter for the current obligation type
+                specific_filters = copy.deepcopy(self.filters)
+                specific_filters['award_type_codes'] = [code for code in codes if code in user_input_filters['award_type_codes']]
+
+                specific_filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(specific_filters, **filter_options)
+                specific_search = TransactionSearch().filter(specific_filter_query)
+                self.apply_elasticsearch_aggregations(specific_search)
+                specific_response = specific_search.handle_execute()
+                specific_results = self.build_elasticsearch_result(specific_response.aggs, time_periods)
+
+                obligation_breakdown_results[obligation_type] = specific_results
+
+        # Combine the results into the final format
+        final_results = []
+        for overall_result in overall_results:
+            combined_result = {
+                "aggregated_amount": overall_result["aggregated_amount"],
+                "time_period": overall_result["time_period"],
+            }
+            total_obligations = 0
+            for obligation_type in OBLIGATION_TYPE_TO_CODES.keys():
+                if obligation_type in obligation_breakdown_results:
+                    matching_result = next(
+                        (res for res in obligation_breakdown_results[obligation_type] if res["time_period"] == overall_result["time_period"]),
+                        {"aggregated_amount": 0}
+                    )
+                    combined_result[obligation_type] = matching_result["aggregated_amount"]
+                    total_obligations += matching_result["aggregated_amount"]
+                else:
+                    combined_result[obligation_type] = 0
+            combined_result["Values_add_up"] = (total_obligations == overall_result["aggregated_amount"])
+            final_results.append(combined_result)
+
+        print("stop right here so we can inspect final_results!!!!")
+        return final_results
 
     @cache_response()
     def post(self, request: Request) -> Response:
@@ -224,6 +296,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 columns={"aggregated_amount": "aggregated_amount"},
             )
         else:
+            # this is where we make the call to retrieve the data/results.
             results = self.query_elasticsearch_for_prime_awards(time_periods)
 
         raw_response = OrderedDict(

@@ -20,6 +20,7 @@ This endpoint returns a list of aggregated award amounts grouped by time period 
     + Attributes (object)
         + `group` (required, enum[string])
             + Members
+                + `calendar_year`
                 + `fiscal_year`
                 + `quarter`
                 + `month`
