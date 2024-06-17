@@ -50,7 +50,8 @@ logger = logging.getLogger(__name__)
 
 API_VERSION = settings.API_VERSION
 GROUPING_LOOKUP = {
-    "calendar_year": "calendar_year",
+    "calendar_year": "year",
+    "cy": "year",
     "quarter": "quarter",
     "q": "quarter",
     "fiscal_year": "fiscal_year",
@@ -140,7 +141,8 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         # Putting the aggregations together; in order for the aggregations to the correct structure they
         # unfortunately need to be one after the other. This allows for nested aggregations as opposed to sibling.
-        search.aggs.bucket("group_by_time_period", group_by_time_period_agg).metric(
+        search.aggs.bucket("group_by_time_period", group_by_time_period_agg)
+        search.aggs["group_by_time_period"].bucket("group_by_category", "terms", field="award_category").metric(
             "sum_as_cents", sum_as_cents_agg
         ).pipeline("sum_as_dollars", sum_as_dollars_agg)
 
@@ -152,17 +154,57 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         It should be noted that `key_as_string` is the name given by `date_histogram` to represent the key
         for each bucket which is a date as a string.
         """
+
+        # extract the current time period
         key_as_date = datetime.strptime(bucket["key_as_string"], "%Y-%m-%d")
         time_period = {"fiscal_year": str(key_as_date.year)}
+
+        # extract the categorical breakdown
+        categories_breakdown = bucket["group_by_category"]["buckets"]
+
+        # Initialize a dictionary to hold the query results for each obligation type
+        category_dictionary = {
+            "Contract_Obligations": 0,
+            "Direct_Obligations": 0,
+            "Grant_Obligations": 0,
+            "Idv_Obligations": 0,
+            "Loan_Obligations": 0,
+            "Other_Obligations": 0
+        }
+
+        for category in categories_breakdown:
+            if category["key"] == "contract":
+                category_dictionary['Contract_Obligations'] = category.get("sum_as_dollars", {"value": 0})["value"]
+            elif category["key"] == "direct payment":
+                category_dictionary['Direct_Obligations'] = category.get("sum_as_dollars", {"value": 0})["value"]
+            elif category["key"] == "grant":
+                category_dictionary['Grant_Obligations'] = category.get("sum_as_dollars", {"value": 0})["value"]
+            elif category["key"] == "idv":
+                category_dictionary['Idv_Obligations'] = category.get("sum_as_dollars", {"value": 0})["value"]
+            elif category["key"] == "loans":
+                category_dictionary['Loan_Obligations'] = category.get("sum_as_dollars", {"value": 0})["value"]
+            elif category["key"] == "other":
+                category_dictionary['Other_Obligations'] += category.get("sum_as_dollars", {"value": 0})["value"]
+            elif category["key"] == "insurance":
+                category_dictionary['Other_Obligations'] += category.get("sum_as_dollars", {"value": 0})["value"]
+
+        aggregated_amount = sum(category_dictionary[item] for item in category_dictionary)
 
         if self.group == "quarter":
             quarter = (key_as_date.month - 1) // 3 + 1
             time_period["quarter"] = str(quarter)
         elif self.group == "month":
             time_period["month"] = str(key_as_date.month)
+        
+        response_object = {
+            "aggregated_amount": aggregated_amount,
+            "time_period": time_period,
+        }
 
-        aggregated_amount = bucket.get("sum_as_dollars", {"value": 0})["value"]
-        return {"aggregated_amount": aggregated_amount, "time_period": time_period}
+        # Update the response object with the contents of category_dictionary
+        response_object.update(category_dictionary)
+
+        return response_object
 
     def build_elasticsearch_result(self, agg_response: AggResponse, time_periods: list) -> list:
         """
@@ -195,20 +237,6 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         return results
 
-    def get_obligation_type_to_codes(self) -> dict:
-        """
-        Create a mapping of obligation types to their corresponding codes
-        using the imported mappings.
-        """
-        return {
-            "contract_obligations": list(contract_type_mapping.keys()),
-            "idv_obligations": list(idv_type_mapping.keys()),
-            "grant_obligations": list(grant_type_mapping.keys()),
-            "direct_payment_obligations": list(direct_payment_type_mapping.keys()),
-            "loan_obligations": list(loan_type_mapping.keys()),
-            "other_obligations": list(other_type_mapping.keys()),
-        }
-
     def query_elasticsearch_for_prime_awards(self, time_periods: list) -> list:
         filter_options = {}
         time_period_obj = TransactionSearchTimePeriod(
@@ -226,61 +254,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         response = search.handle_execute()
         overall_results = self.build_elasticsearch_result(response.aggs, time_periods)
 
-        # Mapping of obligation types to their corresponding codes
-        OBLIGATION_TYPE_TO_CODES = self.get_obligation_type_to_codes()
-
-        # Initialize a dictionary to hold the query results for each obligation type
-        obligation_breakdown_results = {
-            "overall": overall_results,
-        }
-
-        # Generate separate filter queries for each obligation type
-        user_input_filters = copy.deepcopy(self.filters)  # Copy of the original filters
-        for obligation_type, codes in OBLIGATION_TYPE_TO_CODES.items():
-            if any(code in user_input_filters["award_type_codes"] for code in codes):
-                # Create a specific filter for the current obligation type
-                specific_filters = copy.deepcopy(self.filters)
-                specific_filters["award_type_codes"] = [
-                    code for code in codes if code in user_input_filters["award_type_codes"]
-                ]
-
-                specific_filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(
-                    specific_filters, **filter_options
-                )
-                
-                specific_search = TransactionSearch().filter(specific_filter_query)
-                self.apply_elasticsearch_aggregations(specific_search)
-                specific_response = specific_search.handle_execute()
-                specific_results = self.build_elasticsearch_result(specific_response.aggs, time_periods)
-
-                obligation_breakdown_results[obligation_type] = specific_results
-
-        # Combine the results into the final format
-        final_results = []
-        for overall_result in overall_results:
-            combined_result = {
-                "aggregated_amount": overall_result["aggregated_amount"],
-                "time_period": overall_result["time_period"],
-            }
-            total_obligations = 0
-            for obligation_type in OBLIGATION_TYPE_TO_CODES.keys():
-                if obligation_type in obligation_breakdown_results:
-                    matching_result = next(
-                        (
-                            res
-                            for res in obligation_breakdown_results[obligation_type]
-                            if res["time_period"] == overall_result["time_period"]
-                        ),
-                        {"aggregated_amount": 0},
-                    )
-                    combined_result[obligation_type] = matching_result["aggregated_amount"]
-                    total_obligations += matching_result["aggregated_amount"]
-                else:
-                    combined_result[obligation_type] = 0
-            combined_result["Values_add_up"] = total_obligations == overall_result["aggregated_amount"]
-            final_results.append(combined_result)
-
-        return final_results
+        return overall_results
 
     @cache_response()
     def post(self, request: Request) -> Response:
