@@ -37,14 +37,6 @@ from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.search.filters.elasticsearch.filter import _QueryType
 from usaspending_api.search.filters.time_period.query_types import TransactionSearchTimePeriod
 
-from usaspending_api.awards.v2.lookups.lookups import (
-    contract_type_mapping,
-    direct_payment_type_mapping,
-    grant_type_mapping,
-    idv_type_mapping,
-    loan_type_mapping,
-    other_type_mapping,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -169,24 +161,24 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             "Grant_Obligations": 0,
             "Idv_Obligations": 0,
             "Loan_Obligations": 0,
-            "Other_Obligations": 0
+            "Other_Obligations": 0,
         }
 
         for category in categories_breakdown:
             if category["key"] == "contract":
-                category_dictionary['Contract_Obligations'] = category.get("sum_as_dollars", {"value": 0})["value"]
+                category_dictionary["Contract_Obligations"] = category.get("sum_as_dollars", {"value": 0})["value"]
             elif category["key"] == "direct payment":
-                category_dictionary['Direct_Obligations'] = category.get("sum_as_dollars", {"value": 0})["value"]
+                category_dictionary["Direct_Obligations"] = category.get("sum_as_dollars", {"value": 0})["value"]
             elif category["key"] == "grant":
-                category_dictionary['Grant_Obligations'] = category.get("sum_as_dollars", {"value": 0})["value"]
+                category_dictionary["Grant_Obligations"] = category.get("sum_as_dollars", {"value": 0})["value"]
             elif category["key"] == "idv":
-                category_dictionary['Idv_Obligations'] = category.get("sum_as_dollars", {"value": 0})["value"]
+                category_dictionary["Idv_Obligations"] = category.get("sum_as_dollars", {"value": 0})["value"]
             elif category["key"] == "loans":
-                category_dictionary['Loan_Obligations'] = category.get("sum_as_dollars", {"value": 0})["value"]
+                category_dictionary["Loan_Obligations"] = category.get("sum_as_dollars", {"value": 0})["value"]
             elif category["key"] == "other":
-                category_dictionary['Other_Obligations'] += category.get("sum_as_dollars", {"value": 0})["value"]
+                category_dictionary["Other_Obligations"] += category.get("sum_as_dollars", {"value": 0})["value"]
             elif category["key"] == "insurance":
-                category_dictionary['Other_Obligations'] += category.get("sum_as_dollars", {"value": 0})["value"]
+                category_dictionary["Other_Obligations"] += category.get("sum_as_dollars", {"value": 0})["value"]
 
         aggregated_amount = sum(category_dictionary[item] for item in category_dictionary)
 
@@ -195,7 +187,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             time_period["quarter"] = str(quarter)
         elif self.group == "month":
             time_period["month"] = str(key_as_date.month)
-        
+
         response_object = {
             "aggregated_amount": aggregated_amount,
             "time_period": time_period,
