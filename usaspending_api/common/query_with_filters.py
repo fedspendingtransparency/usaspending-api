@@ -41,11 +41,21 @@ class _Keywords(_Filter):
             "description",
             "recipient_uei",
             "parent_uei",
+            "sub_awardee_or_recipient_uniqu",
+            "product_or_service_code",
+            "sub_awardee_or_recipient_uei",
+            "sub_ultimate_parent_unique_ide",
+            "sub_ultimate_parent_uei",
         ]
         for filter_value in filter_values:
-            query = es_sanitize(filter_value) + "*"
-            if "\\" in es_sanitize(filter_value):
-                query = es_sanitize(filter_value) + r"\*"
+            query = es_sanitize(filter_value)
+            if query_type != _QueryType.SUBAWARDS:
+                query = query + "*"
+                if "\\" in es_sanitize(filter_value):
+                    query = es_sanitize(filter_value) + r"\*"
+            else:
+                query = query.upper()
+
             keyword_queries.append(ES_Q("query_string", query=query, default_operator="AND", fields=fields))
 
         return ES_Q("dis_max", queries=keyword_queries)
@@ -71,6 +81,7 @@ class _KeywordSearch(_Filter):
             "recipient_unique_id",
             "parent_recipient_unique_id",
             "description",
+            "award_description",
             "cfda_number",
             "cfda_title",
             "awarding_toptier_agency_name",
@@ -98,6 +109,11 @@ class _KeywordSearch(_Filter):
             "modification_number",
             "recipient_uei",
             "parent_uei",
+            "sub_awardee_or_recipient_uniqu",
+            "product_or_service_code",
+            "sub_awardee_or_recipient_uei",
+            "sub_ultimate_parent_unique_ide",
+            "sub_ultimate_parent_uei",
         ]
         for filter_value in filter_values:
             keyword_queries.append(ES_Q("query_string", query=filter_value, default_operator="OR", fields=fields))
@@ -508,6 +524,23 @@ class _DisasterEmergencyFundCodes(_Filter):
         return covid_es_queries, iija_es_queries
 
     @classmethod
+    def _generate_covid_iija_es_queries_subawards(cls, def_code_field, covid_filters, iija_filters):
+        covid_es_queries = [
+            ES_Q("match", **{def_code_field: def_code})
+            & ES_Q("range", **{"sub_action_date": {"gte": datetime.strftime(enactment_date, "%Y-%m-%d")}})
+            for def_code, enactment_date in covid_filters.items()
+        ]
+        iija_es_queries = [
+            ES_Q("match", **{def_code_field: def_code})
+            & ES_Q("range", **{"sub_action_date": {"gte": datetime.strftime(enactment_date, "%Y-%m-%d")}})
+            for def_code, enactment_date in iija_filters.items()
+        ]
+        print(covid_es_queries)
+        print(iija_es_queries)
+
+        return covid_es_queries, iija_es_queries
+
+    @classmethod
     def _generate_covid_iija_es_queries_other(cls, def_code_field, covid_filters, iija_filters):
         covid_es_queries = [ES_Q("match", **{def_code_field: def_code}) for def_code in covid_filters.keys()]
         iija_es_queries = [ES_Q("match", **{def_code_field: def_code}) for def_code in iija_filters.keys()]
@@ -554,6 +587,22 @@ class _DisasterEmergencyFundCodes(_Filter):
         # Filter on the `disaster_emergency_fund_code` AND `action_date` values for transactions
         if query_type == _QueryType.TRANSACTIONS:
             covid_es_queries, iija_es_queries = cls._generate_covid_iija_es_queries_transactions(
+                def_code_field, covid_filters, iija_filters
+            )
+
+            if covid_es_queries or iija_es_queries:
+                covid_iija_queries = covid_es_queries + iija_es_queries
+                def_codes_query.append(
+                    ES_Q(
+                        "bool",
+                        should=covid_iija_queries,
+                        minimum_should_match=1,
+                    )
+                )
+
+        # Filter on the `disaster_emergency_fund_code` AND `sub_action_date` values for subawards
+        elif query_type == _QueryType.SUBAWARDS:
+            covid_es_queries, iija_es_queries = cls._generate_covid_iija_es_queries_subawards(
                 def_code_field, covid_filters, iija_filters
             )
 

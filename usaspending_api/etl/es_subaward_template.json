@@ -297,7 +297,7 @@
           "naics_description": {
             "type": "text"
           },
-          "cfda_numbers": {
+          "cfda_number": {
             "type": "text",
             "eager_global_ordinals": true,
             "fields": {
@@ -349,7 +349,7 @@
             "type": "text"
           },
           "sub_awardee_or_recipient_uei": {
-            "type": "text"
+            "type": "keyword"
           },
           "sub_awardee_or_recipient_legal": {
             "type": "text"
@@ -549,6 +549,15 @@
             "type": "text"
           },
           "treasury_account_identifiers": {
+            "type": "keyword"
+          },
+          "sub_ultimate_parent_unique_ide": {
+            "type": "keyword"
+          },
+          "sub_ultimate_parent_uei": {
+            "type": "keyword"
+          },
+          "disaster_emergency_fund_codes": {
             "type": "keyword"
           }
         }
