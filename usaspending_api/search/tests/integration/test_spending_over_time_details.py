@@ -159,24 +159,18 @@ def get_spending_over_time_url():
 def confirm_proper_ordering(group, results):
     fiscal_year, period = 0.00, 0.00
     for result in results:
-        assert (
-            int(result["time_period"]["fiscal_year"]) >= fiscal_year
-        ), "Fiscal Year is out of order!"
+        assert int(result["time_period"]["fiscal_year"]) >= fiscal_year, "Fiscal Year is out of order!"
         if int(result["time_period"]["fiscal_year"]) > fiscal_year:
             fiscal_year = int(result["time_period"]["fiscal_year"])
             period = 0.00
         if group != "fiscal_year":
-            assert (
-                int(result["time_period"]["fiscal_year"]) >= period
-            ), "{} is out of order!".format(group)
+            assert int(result["time_period"]["fiscal_year"]) >= period, "{} is out of order!".format(group)
             if int(result["time_period"][group]) > period:
                 period = int(result["time_period"][group])
 
 
 @pytest.mark.django_db(transaction=True)
-def test_spending_over_time_fy_ordering(
-    client, monkeypatch, elasticsearch_transaction_index, populate_models
-):
+def test_spending_over_time_fy_ordering(client, monkeypatch, elasticsearch_transaction_index, populate_models):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     group = "fiscal_year"
@@ -202,7 +196,7 @@ def test_spending_over_time_fy_ordering(
                 "Grant_Obligations": 0,
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
-                "Other_Obligations": 0
+                "Other_Obligations": 0,
             },
             {
                 "aggregated_amount": 110.00,
@@ -212,7 +206,7 @@ def test_spending_over_time_fy_ordering(
                 "Grant_Obligations": 0,
                 "Idv_Obligations": 110.0,
                 "Loan_Obligations": 0,
-                "Other_Obligations": 0
+                "Other_Obligations": 0,
             },
             {
                 "aggregated_amount": 120.00,
@@ -222,7 +216,7 @@ def test_spending_over_time_fy_ordering(
                 "Grant_Obligations": 0,
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 120.0,
-                "Other_Obligations": 0
+                "Other_Obligations": 0,
             },
             {
                 "aggregated_amount": 130.00,
@@ -232,7 +226,7 @@ def test_spending_over_time_fy_ordering(
                 "Grant_Obligations": 0,
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
-                "Other_Obligations": 130.0
+                "Other_Obligations": 130.0,
             },
             {
                 "aggregated_amount": 140.00,
@@ -242,7 +236,7 @@ def test_spending_over_time_fy_ordering(
                 "Grant_Obligations": 140.0,
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
-                "Other_Obligations": 0
+                "Other_Obligations": 0,
             },
             {
                 "aggregated_amount": 150.00,
@@ -252,7 +246,7 @@ def test_spending_over_time_fy_ordering(
                 "Grant_Obligations": 150.0,
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
-                "Other_Obligations": 0
+                "Other_Obligations": 0,
             },
             {
                 "aggregated_amount": 160.00,
@@ -262,7 +256,7 @@ def test_spending_over_time_fy_ordering(
                 "Grant_Obligations": 160.0,
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
-                "Other_Obligations": 0
+                "Other_Obligations": 0,
             },
             {
                 "aggregated_amount": 170.00,
@@ -272,7 +266,7 @@ def test_spending_over_time_fy_ordering(
                 "Grant_Obligations": 0,
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 170.0,
-                "Other_Obligations": 0
+                "Other_Obligations": 0,
             },
             {
                 "aggregated_amount": 0.00,
@@ -282,7 +276,7 @@ def test_spending_over_time_fy_ordering(
                 "Grant_Obligations": 0,
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
-                "Other_Obligations": 0
+                "Other_Obligations": 0,
             },
         ],
         "messages": [get_time_period_message()],
@@ -302,9 +296,7 @@ def test_spending_over_time_fy_ordering(
 
 
 @pytest.mark.django_db(transaction=True)
-def test_spending_over_time_default_date_type(
-    client, monkeypatch, elasticsearch_transaction_index, populate_models
-):
+def test_spending_over_time_default_date_type(client, monkeypatch, elasticsearch_transaction_index, populate_models):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     group = "fiscal_year"
@@ -349,9 +341,7 @@ def test_spending_over_time_default_date_type(
 
 
 @pytest.mark.django_db
-def test_spending_over_time_month_ordering(
-    client, monkeypatch, elasticsearch_transaction_index, populate_models
-):
+def test_spending_over_time_month_ordering(client, monkeypatch, elasticsearch_transaction_index, populate_models):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     group = "month"
@@ -530,9 +520,7 @@ def test_spending_over_time_month_ordering(
 
 
 @pytest.mark.django_db
-def test_spending_over_time_funny_dates_ordering(
-    client, monkeypatch, elasticsearch_transaction_index, populate_models
-):
+def test_spending_over_time_funny_dates_ordering(client, monkeypatch, elasticsearch_transaction_index, populate_models):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     group = "month"
