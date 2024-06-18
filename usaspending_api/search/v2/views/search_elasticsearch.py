@@ -54,7 +54,7 @@ class SpendingByTransactionVisualizationViewSet(APIView):
         models.extend(copy.deepcopy(AWARD_FILTER))
         models.extend(copy.deepcopy(PAGINATION))
         for m in models:
-            if m["name"] in ("keywords", "award_type_codes", "sort"):
+            if m["name"] in ("award_type_codes", "sort"):
                 m["optional"] = False
         validated_payload = TinyShield(models).block(request.data)
 
