@@ -42,8 +42,8 @@ logger = logging.getLogger(__name__)
 
 API_VERSION = settings.API_VERSION
 GROUPING_LOOKUP = {
-    "calendar_year": "year",
-    "cy": "year",
+    "calendar_year": "calendar_year",
+    "cy": "calendar_year",
     "quarter": "quarter",
     "q": "quarter",
     "fiscal_year": "fiscal_year",
@@ -119,13 +119,17 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         Takes in an instance of the elasticsearch-dsl.Search object and applies the necessary
         aggregations in a specific order to get expected results.
         """
-        interval = "year" if self.group == "fiscal_year" else self.group
+        interval = "year" if (self.group == "fiscal_year" or self.group == "calendar_year") else self.group
 
         # The individual aggregations that are needed; with two different sum aggregations to handle issues with
         # summing together floats.
-        group_by_time_period_agg = A(
-            "date_histogram", field="fiscal_action_date", interval=interval, format="yyyy-MM-dd"
-        )
+        group_by_time_period_agg = None
+        if self.group == "calendar_year":
+            group_by_time_period_agg = A("date_histogram", field="action_date", interval=interval, format="yyyy-MM-dd")
+        else:
+            group_by_time_period_agg = A(
+                "date_histogram", field="fiscal_action_date", interval=interval, format="yyyy-MM-dd"
+            )
         sum_as_cents_agg = A("sum", field="generated_pragmatic_obligation", script={"source": "_value * 100"})
         sum_as_dollars_agg = A(
             "bucket_script", buckets_path={"sum_as_cents": "sum_as_cents"}, script="params.sum_as_cents / 100"
@@ -149,7 +153,11 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         # extract the current time period
         key_as_date = datetime.strptime(bucket["key_as_string"], "%Y-%m-%d")
-        time_period = {"fiscal_year": str(key_as_date.year)}
+        time_period = {}
+        if self.group == "calendar_year":
+            time_period["calendar_year"] = str(key_as_date.year)
+        else:
+            time_period["fiscal_year"] = str(key_as_date.year)
 
         # extract the categorical breakdown
         categories_breakdown = bucket["group_by_category"]["buckets"]
@@ -180,13 +188,13 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             elif category["key"] == "insurance":
                 category_dictionary["Other_Obligations"] += category.get("sum_as_dollars", {"value": 0})["value"]
 
-        aggregated_amount = sum(category_dictionary[item] for item in category_dictionary)
-
         if self.group == "quarter":
             quarter = (key_as_date.month - 1) // 3 + 1
             time_period["quarter"] = str(quarter)
         elif self.group == "month":
             time_period["month"] = str(key_as_date.month)
+
+        aggregated_amount = sum(category_dictionary[item] for item in category_dictionary)
 
         response_object = {
             "aggregated_amount": aggregated_amount,
@@ -213,14 +221,17 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             if date_buckets and parsed_bucket is None:
                 parsed_bucket = self.parse_elasticsearch_bucket(date_buckets.pop(0))
 
-            time_period = {"fiscal_year": str(fiscal_date["fiscal_year"])}
             if self.group == "calendar_year":
                 time_period = {"calendar_year": str(fiscal_date["calendar_year"])}
-            elif self.group == "quarter":
+            else:
+                time_period = {"fiscal_year": str(fiscal_date["fiscal_year"])}
+
+            if self.group == "quarter":
                 time_period["quarter"] = str(fiscal_date["fiscal_quarter"])
             elif self.group == "month":
                 time_period["month"] = str(fiscal_date["fiscal_month"])
 
+            # example_timeperiod = datetime.strptime(bucket["key_as_string"], "%Y-%m-%d")
             if parsed_bucket is not None and time_period == parsed_bucket["time_period"]:
                 results.append(parsed_bucket)
                 parsed_bucket = None
@@ -272,12 +283,17 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         current_fy = generate_fiscal_year(datetime.now(timezone.utc))
         if self.group == "fiscal_year":
             end_date = "{}-09-30".format(current_fy)
+        elif self.group == "calendar_year":
+            date = datetime.now(timezone.utc)  # current date
+            end_date = f"{date.year}-12-31"  # last day of current year
         else:
             current_fiscal_month = generate_fiscal_month(datetime.now(timezone.utc))
             days_in_month = monthrange(current_fy, current_fiscal_month)[1]
             end_date = f"{current_fy}-{current_fiscal_month}-{days_in_month}"
 
         default_time_period = {"start_date": settings.API_SEARCH_MIN_DATE, "end_date": end_date}
+
+        # if time periods have been passed in use those, otherwise use the one calculated above
         time_periods = self.filters.get("time_period", [default_time_period])
 
         if self.subawards:

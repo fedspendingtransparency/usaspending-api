@@ -121,39 +121,57 @@ def dates_are_fiscal_year_bookends(start, end):
 def generate_fiscal_date_range(min_date: datetime, max_date: datetime, frequency: str) -> list:
     """
     Using a min date, max date, and a frequency indicator generates a list of dictionaries that contain
-    the fiscal year, fiscal quarter, and fiscal month.
+    the fiscal year, fiscal quarter, and fiscal month, or calendar year.
     """
     if frequency == "fiscal_year":
         interval = 12
     elif frequency == "quarter":
         interval = 3
+    elif frequency == "calendar_year":
+        interval = 12
     else:  # month
         interval = 1
 
     date_range = []
     current_date = min_date
+
     while current_date <= max_date:
-        date_range.append(
-            {
+        date_info = {}
+        if frequency == "calendar_year":
+            date_info["calendar_year"] = current_date.year
+        else:
+            date_info = {
                 "fiscal_year": generate_fiscal_year(current_date),
                 "fiscal_quarter": generate_fiscal_quarter(current_date),
                 "fiscal_month": generate_fiscal_month(current_date),
             }
-        )
+
+        date_range.append(date_info)
         current_date = current_date + relativedelta(months=interval)
 
-    # check if max_date is in new period
-    final_period = {
-        "fiscal_year": generate_fiscal_year(max_date),
-        "fiscal_quarter": generate_fiscal_quarter(max_date),
-        "fiscal_month": generate_fiscal_month(max_date),
-    }
-    if final_period["fiscal_year"] > date_range[-1]["fiscal_year"]:
-        date_range.append(final_period)
-    elif interval == 3 and final_period["fiscal_quarter"] != date_range[-1]["fiscal_quarter"]:
-        date_range.append(final_period)
-    elif interval == 1 and final_period != date_range[-1]:
-        date_range.append(final_period)
+    # Check if max_date is in new period
+    final_period = {}
+
+    if frequency == "calendar_year":
+        final_period["calendar_year"] = current_date.year
+        if (
+            frequency == "calendar_year"
+            and final_period["calendar_year"] != date_range[-1].get("calendar_year")
+            and final_period["calendar_year"] <= max_date.year
+        ):
+            date_range.append(final_period)
+    else:
+        final_period = {
+            "fiscal_year": generate_fiscal_year(max_date),
+            "fiscal_quarter": generate_fiscal_quarter(max_date),
+            "fiscal_month": generate_fiscal_month(max_date),
+        }
+        if final_period["fiscal_year"] > date_range[-1]["fiscal_year"]:
+            date_range.append(final_period)
+        elif interval == 3 and final_period["fiscal_quarter"] != date_range[-1]["fiscal_quarter"]:
+            date_range.append(final_period)
+        elif interval == 1 and final_period != date_range[-1]:
+            date_range.append(final_period)
 
     return date_range
 
