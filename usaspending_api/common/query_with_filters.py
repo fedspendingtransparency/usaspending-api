@@ -6,7 +6,6 @@ from typing import List, Tuple
 from django.conf import settings
 from elasticsearch_dsl import Q as ES_Q
 
-from usaspending_api.accounts.helpers import TAS_COMPONENT_TO_FIELD_MAPPING
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.api_helper import (
     DUPLICATE_DISTRICT_LOCATION_PARAMETERS,

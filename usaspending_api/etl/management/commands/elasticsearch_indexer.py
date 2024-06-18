@@ -372,7 +372,6 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             "base_table_id": "id",
             "create_award_type_aliases": False,
             "data_transform_func": None,
-            "data_type": "subaward",
             "data_type": "recipient",
             "execute_sql_func": execute_sql_statement,
             "extra_null_partition": False,
