@@ -225,7 +225,18 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 results.append(parsed_bucket)
                 parsed_bucket = None
             else:
-                results.append({"aggregated_amount": 0, "time_period": time_period})
+                results.append(
+                    {
+                        "aggregated_amount": 0,
+                        "time_period": time_period,
+                        "Contract_Obligations": 0,
+                        "Direct_Obligations": 0,
+                        "Grant_Obligations": 0,
+                        "Idv_Obligations": 0,
+                        "Loan_Obligations": 0,
+                        "Other_Obligations": 0,
+                    }
+                )
 
         return results
 
