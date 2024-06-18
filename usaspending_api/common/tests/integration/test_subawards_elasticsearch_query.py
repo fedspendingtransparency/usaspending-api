@@ -98,6 +98,7 @@ def subaward_test_data_fixture(db):
         award=award_search3,
         sub_action_date="2020-01-01",
         action_date="2020-01-01",
+        prime_award_type="05",
     )
 
 
@@ -191,6 +192,16 @@ def test_defc_and_date_filters(client, monkeypatch, elasticsearch_subaward_index
 def test_cfda_numbers_filters(client, monkeypatch, elasticsearch_subaward_index, subaward_test_data_fixture):
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     filters = {"program_numbers": ["17.277"]}
+    filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(filters)
+    search = SubawardSearch().filter(filter_query)
+    results = search.handle_execute()
+    assert len(results) == 1
+
+
+@pytest.mark.django_db
+def test_award_type_code_filters(client, monkeypatch, elasticsearch_subaward_index, subaward_test_data_fixture):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
+    filters = {"award_type_codes": ["05"]}
     filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(filters)
     search = SubawardSearch().filter(filter_query)
     results = search.handle_execute()

@@ -178,8 +178,12 @@ class _AwardTypeCodes(_Filter):
         award_type_codes_query = []
 
         for filter_value in filter_values:
-            award_type_codes_query.append(ES_Q("match", type=filter_value))
-
+            if query_type == _QueryType.SUBAWARDS:
+                type_ = "prime_award_type"
+            else:
+                type_ = "type"
+            award_type_codes_query.append(ES_Q("match", **{type_: filter_value}))
+        print(award_type_codes_query)
         return ES_Q("bool", should=award_type_codes_query, minimum_should_match=1)
 
 
