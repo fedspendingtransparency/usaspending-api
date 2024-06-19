@@ -68,6 +68,7 @@ def subaward_test_data_fixture(db):
         cfda_numbers="17.277, 17.286",
         sub_legal_entity_country_code="USA",
         sub_legal_entity_zip5="00501",
+        subaward_amount="9002",
     )
     baker.make(
         "search.SubawardSearch",
@@ -80,6 +81,7 @@ def subaward_test_data_fixture(db):
         sub_action_date="2020-04-01",
         action_date="2020-04-01",
         sub_legal_entity_zip5="00501",
+        subaward_amount="9014",
     )
     baker.make(
         "search.SubawardSearch",
@@ -242,6 +244,16 @@ def test_recipient_locations_text_filters(
     assert len(results) == 1
 
     filters = {"recipient_locations": [{"country": "USA", "zip": "00501"}, {"country": "USA", "zip": "10000"}]}
+    filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(filters)
+    search = SubawardSearch().filter(filter_query)
+    results = search.handle_execute()
+    assert len(results) == 2
+
+
+@pytest.mark.django_db
+def test_award_amounts_filters(client, monkeypatch, elasticsearch_subaward_index, subaward_test_data_fixture):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
+    filters = {"award_amounts": [{"lower_bound": 9001}, {"uppder_bound": 9014}]}
     filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(filters)
     search = SubawardSearch().filter(filter_query)
     results = search.handle_execute()
