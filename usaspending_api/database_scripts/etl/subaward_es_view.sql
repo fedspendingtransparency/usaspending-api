@@ -71,6 +71,8 @@ SELECT
 	s.sub_legal_entity_country_name AS sub_recipient_location_country_name,
 	s.sub_legal_entity_state_code AS sub_recipient_location_state_code,
 	s.sub_legal_entity_state_name AS sub_recipient_location_state_name,
+    s.sub_legal_entity_county_code AS sub_recipient_location_county_code,
+    s.sub_legal_entity_zip5 AS sub_recipient_location_zip5,
 	s.sub_legal_entity_zip AS sub_recipient_location_zip,
 	s.sub_legal_entity_congressional AS sub_recipient_location_congressional_code,
 	s.sub_legal_entity_congressional_current AS sub_recipient_location_congressional_code_current,

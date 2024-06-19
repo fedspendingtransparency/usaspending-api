@@ -359,7 +359,12 @@ class _RecipientLocations(_Filter):
                     raise InvalidParameterException(INCOMPATIBLE_DISTRICT_LOCATION_PARAMETERS)
                 if location_value is not None:
                     location_value = location_value.upper()
-                    location_query.append(ES_Q("match", **{f"recipient_location_{location_key}": location_value}))
+                    if query_type == _QueryType.SUBAWARDS:
+                        location_query.append(
+                            ES_Q("match", **{f"sub_recipient_location_{location_key}": location_value})
+                        )
+                    else:
+                        location_query.append(ES_Q("match", **{f"recipient_location_{location_key}": location_value}))
 
             recipient_locations_query.append(ES_Q("bool", must=location_query))
 

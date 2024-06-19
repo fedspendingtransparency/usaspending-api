@@ -389,6 +389,23 @@
               }
             }
           },
+          "sub_recipient_location_county_code": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          },
+
+          "sub_recipient_location_zip5": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          },
           "sub_recipient_location_zip": {
             "type": "text",
             "fields": {

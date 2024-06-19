@@ -66,6 +66,8 @@ def subaward_test_data_fixture(db):
         sub_action_date="2018-01-01",
         action_date="2018-01-01",
         cfda_numbers="17.277, 17.286",
+        sub_legal_entity_country_code="USA",
+        sub_legal_entity_zip5="00501",
     )
     baker.make(
         "search.SubawardSearch",
@@ -77,6 +79,7 @@ def subaward_test_data_fixture(db):
         award=award_search2,
         sub_action_date="2020-04-01",
         action_date="2020-04-01",
+        sub_legal_entity_zip5="00501",
     )
     baker.make(
         "search.SubawardSearch",
@@ -88,6 +91,8 @@ def subaward_test_data_fixture(db):
         award=award_search3,
         sub_action_date="2022-01-01",
         action_date="2022-01-01",
+        sub_legal_entity_country_code="USA",
+        sub_legal_entity_zip5="10000",
     )
     baker.make(
         "search.SubawardSearch",
@@ -219,6 +224,24 @@ def test_recipient_search_text_filters(client, monkeypatch, elasticsearch_subawa
     assert len(results) == 1
 
     filters = {"recipient_search_text": ["QQQQQQQQQQQQ", "CCCCCCCCCCCC"]}
+    filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(filters)
+    search = SubawardSearch().filter(filter_query)
+    results = search.handle_execute()
+    assert len(results) == 2
+
+
+@pytest.mark.django_db
+def test_recipient_locations_text_filters(
+    client, monkeypatch, elasticsearch_subaward_index, subaward_test_data_fixture
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
+    filters = {"recipient_locations": [{"country": "USA", "zip": "00501"}]}
+    filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(filters)
+    search = SubawardSearch().filter(filter_query)
+    results = search.handle_execute()
+    assert len(results) == 1
+
+    filters = {"recipient_locations": [{"country": "USA", "zip": "00501"}, {"country": "USA", "zip": "10000"}]}
     filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(filters)
     search = SubawardSearch().filter(filter_query)
     results = search.handle_execute()
