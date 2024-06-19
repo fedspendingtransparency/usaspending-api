@@ -121,22 +121,23 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         """
         interval = "year" if (self.group == "fiscal_year" or self.group == "calendar_year") else self.group
 
-        # The individual aggregations that are needed; with two different sum aggregations to handle issues with
-        # summing together floats.
-        group_by_time_period_agg = None
-        if self.group == "calendar_year":
-            group_by_time_period_agg = A("date_histogram", field="action_date", interval=interval, format="yyyy-MM-dd")
-        else:
-            group_by_time_period_agg = A(
-                "date_histogram", field="fiscal_action_date", interval=interval, format="yyyy-MM-dd"
-            )
+        """
+        The individual aggregations that are needed; with two different sum aggregations to handle issues with
+        summing together floats.
+        """
+        field = "action_date" if self.group == "calendar_year" else "fiscal_action_date"
+        group_by_time_period_agg = A("date_histogram", field=field, interval=interval, format="yyyy-MM-dd")
         sum_as_cents_agg = A("sum", field="generated_pragmatic_obligation", script={"source": "_value * 100"})
         sum_as_dollars_agg = A(
             "bucket_script", buckets_path={"sum_as_cents": "sum_as_cents"}, script="params.sum_as_cents / 100"
         )
 
-        # Putting the aggregations together; in order for the aggregations to the correct structure they
-        # unfortunately need to be one after the other. This allows for nested aggregations as opposed to sibling.
+        """
+        Putting the aggregations together; in order for the aggregations to the correct structure they
+        unfortunately need to be one after the other. This allows for nested aggregations as opposed to sibling.
+        We also add another aggregation breakdown where inside the "group_by_time_period" bucket, we further group
+        by Category, which returns us buckets talling up the award data for a given award type
+        """
         search.aggs.bucket("group_by_time_period", group_by_time_period_agg)
         search.aggs["group_by_time_period"].bucket("group_by_category", "terms", field="award_category").metric(
             "sum_as_cents", sum_as_cents_agg
@@ -150,19 +151,25 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         It should be noted that `key_as_string` is the name given by `date_histogram` to represent the key
         for each bucket which is a date as a string.
         """
-
-        # extract the current time period
-        key_as_date = datetime.strptime(bucket["key_as_string"], "%Y-%m-%d")
+        
+        """
+        Default time_period is set to "fiscal_year", however "quarter" and "month" also includes
+        "fiscal_year" in the response object. When "calendar_year" is passed in as a group filter
+        for the API, do not have to worry about any other time period.
+        """
         time_period = {}
-        if self.group == "calendar_year":
-            time_period["calendar_year"] = str(key_as_date.year)
-        else:
-            time_period["fiscal_year"] = str(key_as_date.year)
+        key_as_date = datetime.strptime(bucket["key_as_string"], "%Y-%m-%d")
+        time_period["calendar_year" if self.group == "calendar_year" else "fiscal_year"] = str(key_as_date.year)
+        if self.group == "quarter":
+            quarter = (key_as_date.month - 1) // 3 + 1
+            time_period["quarter"] = str(quarter)
+        elif self.group == "month":
+            time_period["month"] = str(key_as_date.month)
 
-        # extract the categorical breakdown
+        # The given time_period bucket contains buckets for the differnt categories, so extracting those. 
         categories_breakdown = bucket["group_by_category"]["buckets"]
 
-        # Initialize a dictionary to hold the query results for each obligation type
+        # Initialize a dictionary to hold the query results for each obligation type.
         category_dictionary = {
             "Contract_Obligations": 0,
             "Direct_Obligations": 0,
@@ -172,6 +179,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             "Other_Obligations": 0,
         }
 
+        # Populate the category dictionary based on the award breakdown for a given bucket.
         for category in categories_breakdown:
             if category["key"] == "contract":
                 category_dictionary["Contract_Obligations"] = category.get("sum_as_dollars", {"value": 0})["value"]
@@ -188,12 +196,6 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             elif category["key"] == "insurance":
                 category_dictionary["Other_Obligations"] += category.get("sum_as_dollars", {"value": 0})["value"]
 
-        if self.group == "quarter":
-            quarter = (key_as_date.month - 1) // 3 + 1
-            time_period["quarter"] = str(quarter)
-        elif self.group == "month":
-            time_period["month"] = str(key_as_date.month)
-
         aggregated_amount = sum(category_dictionary[item] for item in category_dictionary)
 
         response_object = {
@@ -201,9 +203,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             "time_period": time_period,
         }
 
-        # Update the response object with the contents of category_dictionary
         response_object.update(category_dictionary)
-
         return response_object
 
     def build_elasticsearch_result(self, agg_response: AggResponse, time_periods: list) -> list:
@@ -211,8 +211,22 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         In this function we are justing taking the elasticsearch aggregate response and looping through the
         buckets to create a results object for each time interval
         """
+
         results = []
         min_date, max_date = min_and_max_from_date_ranges(time_periods)
+        
+        """
+        Using a min_date, max_date, and a frequency indicator generates either a list of dictionaries
+        containing fiscal year information (fiscal year, fiscal quarter, and fiscal month) or a list 
+        of dictionaries containing calendar year information (calendar year). The following are the format
+        of fiscal_date_range based on the frequency:
+            * "calendar_year" returns a list of dictionaries containing {calendar year}
+            * "fiscal_year" returns list of dictionaries containing {fiscal year}
+            * "quarter" returns a list of dictionaries containing {fiscal year and quarter}
+            * "month" returns a list of dictionaries containg {fiscal year and month}
+        NOTE the generate_fiscal_date_range() can also generate non fiscal date range (calendar ranges) as well.
+        """
+        #the generate_fiscal_date_range() can also generate non fiscal date range (calendar ranges) as well.
         fiscal_date_range = generate_fiscal_date_range(min_date, max_date, self.group)
         date_buckets = agg_response.group_by_time_period.buckets
         parsed_bucket = None
