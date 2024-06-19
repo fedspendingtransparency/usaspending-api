@@ -105,7 +105,9 @@ SELECT
     s.treasury_account_identifiers,
     s.sub_ultimate_parent_unique_ide,
     s.sub_ultimate_parent_uei,
-    a.disaster_emergency_fund_codes
+    a.disaster_emergency_fund_codes,
+    a.recipient_hash,
+    a.parent_uei
 FROM
 	rpt.subaward_search s
 LEFT JOIN rpt.award_search a

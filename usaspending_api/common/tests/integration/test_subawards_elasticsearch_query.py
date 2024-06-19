@@ -46,6 +46,7 @@ def subaward_test_data_fixture(db):
         award_id=222,
         generated_unique_award_id="UNIQUE_AWARD_ID_2",
         disaster_emergency_fund_codes=["A", "L"],
+        recipient_name="Desmond",
     )
     award_search3 = baker.make(
         "search.AwardSearch",
@@ -206,3 +207,19 @@ def test_award_type_code_filters(client, monkeypatch, elasticsearch_subaward_ind
     search = SubawardSearch().filter(filter_query)
     results = search.handle_execute()
     assert len(results) == 1
+
+
+@pytest.mark.django_db
+def test_recipient_search_text_filters(client, monkeypatch, elasticsearch_subaward_index, subaward_test_data_fixture):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
+    filters = {"recipient_search_text": ["QQQQQQQQQQQQ"]}
+    filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(filters)
+    search = SubawardSearch().filter(filter_query)
+    results = search.handle_execute()
+    assert len(results) == 1
+
+    filters = {"recipient_search_text": ["QQQQQQQQQQQQ", "CCCCCCCCCCCC"]}
+    filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(filters)
+    search = SubawardSearch().filter(filter_query)
+    results = search.handle_execute()
+    assert len(results) == 2

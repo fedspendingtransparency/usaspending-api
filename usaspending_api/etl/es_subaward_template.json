@@ -559,6 +559,22 @@
           },
           "disaster_emergency_fund_codes": {
             "type": "keyword"
+          },
+          "recipient_hash": {
+            "type": "keyword",
+            "fields": {
+              "hash": {
+                "type": "murmur3"
+              }
+            }
+          },
+          "parent_uei": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
           }
         }
     }
