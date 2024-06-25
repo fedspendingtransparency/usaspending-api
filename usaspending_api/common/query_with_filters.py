@@ -459,7 +459,7 @@ class _AwardAmounts(_Filter):
         for filter_value in filter_values:
             lower_bound = filter_value.get("lower_bound")
             upper_bound = filter_value.get("upper_bound")
-            award_amounts_query.append(ES_Q("range", {f"{filter_field}": {"gte": lower_bound, "lte": upper_bound}}))
+            award_amounts_query.append(ES_Q("range", **{filter_field: {"gte": lower_bound, "lte": upper_bound}}))
         return ES_Q("bool", should=award_amounts_query, minimum_should_match=1)
 
 
