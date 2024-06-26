@@ -7,6 +7,7 @@ SELECT
 	s.award_piid_fain,
 	s.parent_award_id,
 	s.award_id,
+    a.display_award_id,
 	s.award_amount,
 	s.action_date,
 	s.fy,
