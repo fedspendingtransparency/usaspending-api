@@ -40,11 +40,21 @@ class _Keywords(_Filter):
             "description",
             "recipient_uei",
             "parent_uei",
+            "sub_awardee_or_recipient_uniqu",
+            "product_or_service_code",
+            "sub_awardee_or_recipient_uei",
+            "sub_ultimate_parent_unique_ide",
+            "sub_ultimate_parent_uei",
         ]
         for filter_value in filter_values:
-            query = es_sanitize(filter_value) + "*"
-            if "\\" in es_sanitize(filter_value):
-                query = es_sanitize(filter_value) + r"\*"
+            query = es_sanitize(filter_value)
+            if query_type != _QueryType.SUBAWARDS:
+                query = query + "*"
+                if "\\" in es_sanitize(filter_value):
+                    query = es_sanitize(filter_value) + r"\*"
+            else:
+                query = query.upper()
+
             keyword_queries.append(ES_Q("query_string", query=query, default_operator="AND", fields=fields))
 
         return ES_Q("dis_max", queries=keyword_queries)
@@ -70,6 +80,7 @@ class _KeywordSearch(_Filter):
             "recipient_unique_id",
             "parent_recipient_unique_id",
             "description",
+            "award_description",
             "cfda_number",
             "cfda_title",
             "awarding_toptier_agency_name",
@@ -97,6 +108,11 @@ class _KeywordSearch(_Filter):
             "modification_number",
             "recipient_uei",
             "parent_uei",
+            "sub_awardee_or_recipient_uniqu",
+            "product_or_service_code",
+            "sub_awardee_or_recipient_uei",
+            "sub_ultimate_parent_unique_ide",
+            "sub_ultimate_parent_uei",
         ]
         for filter_value in filter_values:
             keyword_queries.append(ES_Q("query_string", query=filter_value, default_operator="OR", fields=fields))
@@ -162,8 +178,11 @@ class _AwardTypeCodes(_Filter):
         award_type_codes_query = []
 
         for filter_value in filter_values:
-            award_type_codes_query.append(ES_Q("match", type=filter_value))
-
+            if query_type == _QueryType.SUBAWARDS:
+                type_ = "prime_award_type"
+            else:
+                type_ = "type"
+            award_type_codes_query.append(ES_Q("match", **{type_: filter_value}))
         return ES_Q("bool", should=award_type_codes_query, minimum_should_match=1)
 
 
@@ -227,31 +246,39 @@ class _RecipientSearchText(_Filter):
     @classmethod
     def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType, **options) -> ES_Q:
         recipient_search_query = []
-        fields = ["recipient_name"]
 
         for filter_value in filter_values:
-            upper_recipient_string = es_sanitize(filter_value.upper())
-            query = es_sanitize(upper_recipient_string) + "*"
-            if "\\" in es_sanitize(upper_recipient_string):
-                query = es_sanitize(upper_recipient_string) + r"\*"
+            if query_type == _QueryType.SUBAWARDS:
+                fields = ["sub_awardee_or_recipient_legal"]
+                upper_recipient_string = es_sanitize(filter_value.upper())
+                query = es_sanitize(upper_recipient_string)
+                recipient_unique_id_field = "sub_awardee_or_recipient_uniqu"
+                recipient_uei_field = "sub_awardee_or_recipient_uei"
+            else:
+                fields = ["recipient_name"]
+                upper_recipient_string = es_sanitize(filter_value.upper())
+                query = es_sanitize(upper_recipient_string) + "*"
+                if "\\" in es_sanitize(upper_recipient_string):
+                    query = es_sanitize(upper_recipient_string) + r"\*"
+                recipient_unique_id_field = "recipient_unique_id"
+                recipient_uei_field = "recipient_uei"
 
             recipient_name_query = ES_Q("query_string", query=query, default_operator="AND", fields=fields)
 
             if len(upper_recipient_string) == 9 and upper_recipient_string[:5].isnumeric():
-                recipient_duns_query = ES_Q("match", recipient_unique_id=upper_recipient_string)
+                recipient_duns_query = ES_Q("match", **{recipient_unique_id_field: upper_recipient_string})
                 recipient_search_query.append(ES_Q("dis_max", queries=[recipient_name_query, recipient_duns_query]))
             if len(upper_recipient_string) == 12:
-                recipient_uei_query = ES_Q("match", recipient_uei=upper_recipient_string)
+                recipient_uei_query = ES_Q("match", **{recipient_uei_field: upper_recipient_string})
                 recipient_search_query.append(ES_Q("dis_max", queries=[recipient_name_query, recipient_uei_query]))
             # If the recipient name ends with a period, then add a regex query to find results ending with a
             #   period and results with a period in the same location but with characters following it.
             # Example: A query for COMPANY INC. will return both COMPANY INC. and COMPANY INC.XYZ
-            if upper_recipient_string.endswith("."):
+            if upper_recipient_string.endswith(".") and query_type != _QueryType.SUBAWARDS:
                 recipient_search_query.append(recipient_name_query)
                 recipient_search_query.append(
                     ES_Q({"regexp": {"recipient_name.keyword": f"{upper_recipient_string.rstrip('.')}\\..*"}})
                 )
-
             else:
                 recipient_search_query.append(recipient_name_query)
 
@@ -264,6 +291,12 @@ class _RecipientId(_Filter):
     @classmethod
     def generate_elasticsearch_query(cls, filter_value: str, query_type: _QueryType, **options) -> ES_Q:
         recipient_hash = filter_value[:-2]
+        if query_type == _QueryType.SUBAWARDS:
+            # Subawards did not support "recipient_id" before migrating to elastic search
+            # so this behavior is honored here.
+            raise InvalidParameterException(
+                f"Invalid filter: {_RecipientId.underscore_name} is not supported for subaward queries."
+            )
         if filter_value.endswith("P"):
             return ES_Q("match", parent_recipient_hash=recipient_hash)
         elif filter_value.endswith("C"):
@@ -316,7 +349,12 @@ class _RecipientLocations(_Filter):
                     raise InvalidParameterException(INCOMPATIBLE_DISTRICT_LOCATION_PARAMETERS)
                 if location_value is not None:
                     location_value = location_value.upper()
-                    location_query.append(ES_Q("match", **{f"recipient_location_{location_key}": location_value}))
+                    if query_type == _QueryType.SUBAWARDS:
+                        location_query.append(
+                            ES_Q("match", **{f"sub_recipient_location_{location_key}": location_value})
+                        )
+                    else:
+                        location_query.append(ES_Q("match", **{f"recipient_location_{location_key}": location_value}))
 
             recipient_locations_query.append(ES_Q("bool", must=location_query))
 
@@ -372,8 +410,12 @@ class _PlaceOfPerformanceLocations(_Filter):
                 "congressional_code_current": district_current,
                 "congressional_code": district_original,
                 "city_name__keyword": filter_value.get("city"),
-                "zip5": filter_value.get("zip"),
             }
+
+            if query_type == _QueryType.SUBAWARDS:
+                location_lookup["zip"] = filter_value.get("zip")
+            else:
+                location_lookup["zip5"] = filter_value.get("zip")
 
             for location_key, location_value in location_lookup.items():
                 _PlaceOfPerformanceLocations._validate_district(
@@ -382,7 +424,10 @@ class _PlaceOfPerformanceLocations(_Filter):
 
                 if location_value is not None:
                     location_value = location_value.upper()
-                    location_query.append(ES_Q("match", **{f"pop_{location_key}": location_value}))
+                    if query_type == _QueryType.SUBAWARDS:
+                        location_query.append(ES_Q("match", **{f"sub_pop_{location_key}": location_value}))
+                    else:
+                        location_query.append(ES_Q("match", **{f"pop_{location_key}": location_value}))
             pop_locations_query.append(ES_Q("bool", must=location_query))
 
         return ES_Q("bool", should=pop_locations_query, minimum_should_match=1)
@@ -403,10 +448,15 @@ class _AwardAmounts(_Filter):
     @classmethod
     def generate_elasticsearch_query(cls, filter_values: List[dict], query_type: _QueryType, **options) -> ES_Q:
         award_amounts_query = []
+        if query_type == _QueryType.SUBAWARDS:
+            filter_field = "subaward_amount"
+        else:
+            filter_field = "award_amount"
+
         for filter_value in filter_values:
             lower_bound = filter_value.get("lower_bound")
             upper_bound = filter_value.get("upper_bound")
-            award_amounts_query.append(ES_Q("range", award_amount={"gte": lower_bound, "lte": upper_bound}))
+            award_amounts_query.append(ES_Q("range", **{filter_field: {"gte": lower_bound, "lte": upper_bound}}))
         return ES_Q("bool", should=award_amounts_query, minimum_should_match=1)
 
 
@@ -507,6 +557,21 @@ class _DisasterEmergencyFundCodes(_Filter):
         return covid_es_queries, iija_es_queries
 
     @classmethod
+    def _generate_covid_iija_es_queries_subawards(cls, def_code_field, covid_filters, iija_filters):
+        covid_es_queries = [
+            ES_Q("match", **{def_code_field: def_code})
+            & ES_Q("range", **{"sub_action_date": {"gte": datetime.strftime(enactment_date, "%Y-%m-%d")}})
+            for def_code, enactment_date in covid_filters.items()
+        ]
+        iija_es_queries = [
+            ES_Q("match", **{def_code_field: def_code})
+            & ES_Q("range", **{"sub_action_date": {"gte": datetime.strftime(enactment_date, "%Y-%m-%d")}})
+            for def_code, enactment_date in iija_filters.items()
+        ]
+
+        return covid_es_queries, iija_es_queries
+
+    @classmethod
     def _generate_covid_iija_es_queries_other(cls, def_code_field, covid_filters, iija_filters):
         covid_es_queries = [ES_Q("match", **{def_code_field: def_code}) for def_code in covid_filters.keys()]
         iija_es_queries = [ES_Q("match", **{def_code_field: def_code}) for def_code in iija_filters.keys()]
@@ -553,6 +618,22 @@ class _DisasterEmergencyFundCodes(_Filter):
         # Filter on the `disaster_emergency_fund_code` AND `action_date` values for transactions
         if query_type == _QueryType.TRANSACTIONS:
             covid_es_queries, iija_es_queries = cls._generate_covid_iija_es_queries_transactions(
+                def_code_field, covid_filters, iija_filters
+            )
+
+            if covid_es_queries or iija_es_queries:
+                covid_iija_queries = covid_es_queries + iija_es_queries
+                def_codes_query.append(
+                    ES_Q(
+                        "bool",
+                        should=covid_iija_queries,
+                        minimum_should_match=1,
+                    )
+                )
+
+        # Filter on the `disaster_emergency_fund_code` AND `sub_action_date` values for subawards
+        elif query_type == _QueryType.SUBAWARDS:
+            covid_es_queries, iija_es_queries = cls._generate_covid_iija_es_queries_subawards(
                 def_code_field, covid_filters, iija_filters
             )
 
@@ -746,6 +827,10 @@ class QueryWithFilters:
     @classmethod
     def generate_awards_elasticsearch_query(cls, filters: dict, **options) -> ES_Q:
         return cls._generate_elasticsearch_query(filters, _QueryType.AWARDS, **options)
+
+    @classmethod
+    def generate_subawards_elasticsearch_query(cls, filters: dict, **options) -> ES_Q:
+        return cls._generate_elasticsearch_query(filters, _QueryType.SUBAWARDS, **options)
 
     @classmethod
     def generate_transactions_elasticsearch_query(cls, filters: dict, **options) -> ES_Q:
