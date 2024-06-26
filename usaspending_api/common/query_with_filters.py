@@ -183,7 +183,6 @@ class _AwardTypeCodes(_Filter):
             else:
                 type_ = "type"
             award_type_codes_query.append(ES_Q("match", **{type_: filter_value}))
-        print(award_type_codes_query)
         return ES_Q("bool", should=award_type_codes_query, minimum_should_match=1)
 
 
@@ -571,8 +570,6 @@ class _DisasterEmergencyFundCodes(_Filter):
             & ES_Q("range", **{"sub_action_date": {"gte": datetime.strftime(enactment_date, "%Y-%m-%d")}})
             for def_code, enactment_date in iija_filters.items()
         ]
-        print(covid_es_queries)
-        print(iija_es_queries)
 
         return covid_es_queries, iija_es_queries
 
