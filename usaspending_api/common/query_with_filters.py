@@ -249,7 +249,7 @@ class _RecipientSearchText(_Filter):
 
         for filter_value in filter_values:
             if query_type == _QueryType.SUBAWARDS:
-                fields = ["sub_awardee_or_recipient_uniqu", "sub_awardee_or_recipient_uei"]
+                fields = ["sub_awardee_or_recipient_legal"]
                 upper_recipient_string = es_sanitize(filter_value.upper())
                 query = es_sanitize(upper_recipient_string)
                 recipient_unique_id_field = "sub_awardee_or_recipient_uniqu"
