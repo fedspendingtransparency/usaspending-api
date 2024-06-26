@@ -410,8 +410,12 @@ class _PlaceOfPerformanceLocations(_Filter):
                 "congressional_code_current": district_current,
                 "congressional_code": district_original,
                 "city_name__keyword": filter_value.get("city"),
-                "zip5": filter_value.get("zip"),
             }
+
+            if query_type == _QueryType.SUBAWARDS:
+                location_lookup["zip"] = filter_value.get("zip")
+            else:
+                location_lookup["zip5"] = filter_value.get("zip")
 
             for location_key, location_value in location_lookup.items():
                 _PlaceOfPerformanceLocations._validate_district(
@@ -420,7 +424,10 @@ class _PlaceOfPerformanceLocations(_Filter):
 
                 if location_value is not None:
                     location_value = location_value.upper()
-                    location_query.append(ES_Q("match", **{f"pop_{location_key}": location_value}))
+                    if query_type == _QueryType.SUBAWARDS:
+                        location_query.append(ES_Q("match", **{f"sub_pop_{location_key}": location_value}))
+                    else:
+                        location_query.append(ES_Q("match", **{f"pop_{location_key}": location_value}))
             pop_locations_query.append(ES_Q("bool", must=location_query))
 
         return ES_Q("bool", should=pop_locations_query, minimum_should_match=1)

@@ -449,6 +449,9 @@
           "sub_pop_state_name": {
             "type": "keyword"
           },
+          "sub_pop_county_code": {
+            "type": "keyword"
+          },
           "sub_pop_zip": {
             "type": "text",
             "fields": {

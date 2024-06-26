@@ -84,6 +84,7 @@ SELECT
 	s.sub_place_of_perform_country_name AS sub_pop_country_name,
 	s.sub_place_of_perform_state_code AS sub_pop_state_code,
 	s.sub_place_of_perform_state_name AS sub_pop_state_name,
+    s.sub_place_of_perform_county_code AS sub_pop_county_code,
 	s.sub_place_of_performance_zip AS sub_pop_zip,
 	s.sub_place_of_perform_congressio AS sub_pop_congressional_code,
 	s.sub_place_of_performance_congressional_current AS sub_pop_congressional_code_current,
