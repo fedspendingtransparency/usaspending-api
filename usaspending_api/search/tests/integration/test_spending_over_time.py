@@ -5,8 +5,13 @@ import datetime
 from rest_framework import status
 from model_bakery import baker
 
-from usaspending_api.common.helpers.fiscal_year_helpers import generate_fiscal_month, generate_fiscal_year
-from usaspending_api.search.tests.data.search_filters_test_data import non_legacy_filters
+from usaspending_api.common.helpers.fiscal_year_helpers import (
+    generate_fiscal_month,
+    generate_fiscal_year,
+)
+from usaspending_api.search.tests.data.search_filters_test_data import (
+    non_legacy_filters,
+)
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 from usaspending_api.search.v2.views.spending_over_time import GROUPING_LOOKUP
 
@@ -83,7 +88,11 @@ def spending_over_time_test_data():
             f"epoa=taa_epoa_{transaction_id}"
             f"a=taa_a_{transaction_id}"
         ]
-        baker.make("awards.FinancialAccountsByAwards", award_id=award_id, treasury_account_id=treasury_account_id)
+        baker.make(
+            "awards.FinancialAccountsByAwards",
+            award_id=award_id,
+            treasury_account_id=treasury_account_id,
+        )
 
         # Awarding Agency
         baker.make(
@@ -130,7 +139,11 @@ def spending_over_time_test_data():
         )
 
         # Ref Country Code
-        baker.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")
+        baker.make(
+            "references.RefCountryCode",
+            country_code="USA",
+            country_name="UNITED STATES",
+        )
 
         # FPDS / FABS
         if is_fpds:
@@ -143,7 +156,10 @@ def spending_over_time_test_data():
                 fiscal_action_date=fiscal_action_date,
                 award_id=award_id,
                 awarding_agency_id=awarding_agency_id,
-                business_categories=[f"business_category_1_{transaction_id}", f"business_category_2_{transaction_id}"],
+                business_categories=[
+                    f"business_category_1_{transaction_id}",
+                    f"business_category_2_{transaction_id}",
+                ],
                 transaction_description=f"This is a test description {transaction_id}"
                 if transaction_id % 2 == 0
                 else None,
@@ -199,7 +215,9 @@ def spending_over_time_test_data():
                 description=f"naics_description_{transaction_id}",
             )
             baker.make(
-                "references.PSC", code=str(transaction_id).zfill(4), description=f"psc_description_{transaction_id}"
+                "references.PSC",
+                code=str(transaction_id).zfill(4),
+                description=f"psc_description_{transaction_id}",
             )
         else:
             baker.make(
@@ -211,7 +229,10 @@ def spending_over_time_test_data():
                 fiscal_action_date=fiscal_action_date,
                 award_id=award_id,
                 awarding_agency_id=awarding_agency_id,
-                business_categories=[f"business_category_1_{transaction_id}", f"business_category_2_{transaction_id}"],
+                business_categories=[
+                    f"business_category_1_{transaction_id}",
+                    f"business_category_2_{transaction_id}",
+                ],
                 transaction_description=f"This is a test description {transaction_id}"
                 if transaction_id % 2 == 0
                 else None,
@@ -285,7 +306,9 @@ def test_spending_over_time_failure(client, monkeypatch, elasticsearch_transacti
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     resp = client.post(
-        "/api/v2/search/spending_over_time/", content_type="application/json", data=json.dumps({"group": "fiscal_year"})
+        "/api/v2/search/spending_over_time/",
+        content_type="application/json",
+        data=json.dumps({"group": "fiscal_year"}),
     )
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
@@ -468,10 +491,26 @@ def _test_correct_response_for_agencies(client):
                 "group": "fiscal_year",
                 "filters": {
                     "agencies": [
-                        {"type": "awarding", "tier": "toptier", "name": "toptier_awarding_agency_agency_name_4"},
-                        {"type": "awarding", "tier": "subtier", "name": "subtier_awarding_agency_agency_name_4"},
-                        {"type": "funding", "tier": "toptier", "name": "toptier_funding_agency_agency_name_4"},
-                        {"type": "funding", "tier": "subtier", "name": "subtier_funding_agency_agency_name_4"},
+                        {
+                            "type": "awarding",
+                            "tier": "toptier",
+                            "name": "toptier_awarding_agency_agency_name_4",
+                        },
+                        {
+                            "type": "awarding",
+                            "tier": "subtier",
+                            "name": "subtier_awarding_agency_agency_name_4",
+                        },
+                        {
+                            "type": "funding",
+                            "tier": "toptier",
+                            "name": "toptier_funding_agency_agency_name_4",
+                        },
+                        {
+                            "type": "funding",
+                            "tier": "subtier",
+                            "name": "subtier_funding_agency_agency_name_4",
+                        },
                     ],
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
@@ -564,9 +603,21 @@ def _test_correct_response_for_pop_location(client):
                 "group": "fiscal_year",
                 "filters": {
                     "place_of_performance_locations": [
-                        {"country": "USA", "state": "pop_state_code_2", "city": "pop_city_name_2"},
-                        {"country": "USA", "state": "pop_state_code_12", "county": "012"},
-                        {"country": "USA", "state": "pop_state_code_18", "district_original": "18"},
+                        {
+                            "country": "USA",
+                            "state": "pop_state_code_2",
+                            "city": "pop_city_name_2",
+                        },
+                        {
+                            "country": "USA",
+                            "state": "pop_state_code_12",
+                            "county": "012",
+                        },
+                        {
+                            "country": "USA",
+                            "state": "pop_state_code_18",
+                            "district_original": "18",
+                        },
                         {"country": "USA", "zip": "pop_zip5_19"},
                     ],
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
@@ -602,9 +653,17 @@ def _test_correct_response_for_recipient_location(client):
                 "group": "fiscal_year",
                 "filters": {
                     "recipient_locations": [
-                        {"country": "USA", "state": "le_state_code_4", "city": "le_city_name_4"},
+                        {
+                            "country": "USA",
+                            "state": "le_state_code_4",
+                            "city": "le_city_name_4",
+                        },
                         {"country": "USA", "state": "le_state_code_7", "county": "007"},
-                        {"country": "USA", "state": "le_state_code_17", "district_original": "17"},
+                        {
+                            "country": "USA",
+                            "state": "le_state_code_17",
+                            "district_original": "17",
+                        },
                         {"country": "USA", "zip": "le_zip5_20"},
                     ],
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
@@ -639,7 +698,11 @@ def _test_correct_response_for_recipient_search_text(client):
             {
                 "group": "fiscal_year",
                 "filters": {
-                    "recipient_search_text": ["recipient_name_10", "recipient_name_14", "000000020"],
+                    "recipient_search_text": [
+                        "recipient_name_10",
+                        "recipient_name_14",
+                        "000000020",
+                    ],
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
             }
@@ -672,7 +735,10 @@ def _test_correct_response_for_recipient_type_names(client):
             {
                 "group": "fiscal_year",
                 "filters": {
-                    "recipient_type_names": ["business_category_1_3", "business_category_2_8"],
+                    "recipient_type_names": [
+                        "business_category_1_3",
+                        "business_category_2_8",
+                    ],
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
             }
@@ -742,7 +808,11 @@ def _test_correct_response_for_cfda_program(client):
             {
                 "group": "fiscal_year",
                 "filters": {
-                    "program_numbers": ["cfda_number_11", "cfda_number_21", "cfda_number_25"],
+                    "program_numbers": [
+                        "cfda_number_11",
+                        "cfda_number_21",
+                        "cfda_number_25",
+                    ],
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
             }
@@ -880,7 +950,11 @@ def _test_correct_response_for_set_aside_type_codes(client):
             {
                 "group": "fiscal_year",
                 "filters": {
-                    "set_aside_type_codes": ["type_set_aside_16", "type_set_aside_26", "type_set_aside_28"],
+                    "set_aside_type_codes": [
+                        "type_set_aside_16",
+                        "type_set_aside_26",
+                        "type_set_aside_28",
+                    ],
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
             }
@@ -913,7 +987,11 @@ def _test_correct_response_for_set_extent_competed_type_codes(client):
             {
                 "group": "fiscal_year",
                 "filters": {
-                    "extent_competed_type_codes": ["extent_competed_4", "extent_competed_24", "extent_competed_26"],
+                    "extent_competed_type_codes": [
+                        "extent_competed_4",
+                        "extent_competed_24",
+                        "extent_competed_26",
+                    ],
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
             }
@@ -979,7 +1057,9 @@ def test_failure_with_invalid_filters(client, monkeypatch, elasticsearch_transac
 
     # Fails with no filters
     resp = client.post(
-        "/api/v2/search/spending_over_time", content_type="application/json", data=json.dumps({"group": "fiscal_year"})
+        "/api/v2/search/spending_over_time",
+        content_type="application/json",
+        data=json.dumps({"group": "fiscal_year"}),
     )
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
     assert resp.json().get("detail") == "Missing request parameters: filters", "Expected to fail with missing filters"
@@ -1007,7 +1087,7 @@ def test_failure_with_invalid_group(client, monkeypatch, elasticsearch_transacti
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
     assert (
         resp.json().get("detail")
-        == "Field 'group' is outside valid values ['quarter', 'q', 'fiscal_year', 'fy', 'month', 'm']"
+        == "Field 'group' is outside valid values ['calendar_year', 'cy', 'quarter', 'q', 'fiscal_year', 'fy', 'month', 'm']"
     ), "Expected to fail with invalid group"
 
     # Fails with no group
@@ -1031,17 +1111,32 @@ def test_defc_date_filter(client, monkeypatch, elasticsearch_transaction_index):
         earliest_public_law_enactment_date="2020-03-06",
     )
     baker.make("accounts.FederalAccount", id=99)
-    baker.make("accounts.TreasuryAppropriationAccount", federal_account_id=99, treasury_account_identifier=99)
     baker.make(
-        "awards.FinancialAccountsByAwards", pk=1, award_id=99, disaster_emergency_fund=defc1, treasury_account_id=99
+        "accounts.TreasuryAppropriationAccount",
+        federal_account_id=99,
+        treasury_account_identifier=99,
     )
-    baker.make("search.AwardSearch", award_id=99, total_obligation=20, piid="0001", action_date="2020-01-01")
+    baker.make(
+        "awards.FinancialAccountsByAwards",
+        pk=1,
+        award_id=99,
+        disaster_emergency_fund=defc1,
+        treasury_account_id=99,
+    )
+    baker.make(
+        "search.AwardSearch",
+        award_id=99,
+        total_obligation=20,
+        piid="0001",
+        action_date="2020-01-01",
+    )
     baker.make(
         "search.TransactionSearch",
         transaction_id=99,
         action_date="2020-04-02",
         fiscal_action_date="2020-04-02",
         fiscal_year=2020,
+        award_category="direct payment",
         federal_action_obligation=10,
         generated_pragmatic_obligation=10,
         award_amount=20,
@@ -1071,7 +1166,16 @@ def test_defc_date_filter(client, monkeypatch, elasticsearch_transaction_index):
         data=json.dumps({"group": "fiscal_year", "filters": {"def_codes": ["L"]}}),
     )
     assert resp.status_code == status.HTTP_200_OK
-    assert {"aggregated_amount": 10, "time_period": {"fiscal_year": "2020"}} in resp.json().get("results")
+    assert {
+        "aggregated_amount": 10,
+        "time_period": {"fiscal_year": "2020"},
+        "Contract_Obligations": 0,
+        "Direct_Obligations": 10.0,
+        "Grant_Obligations": 0,
+        "Idv_Obligations": 0,
+        "Loan_Obligations": 0,
+        "Other_Obligations": 0,
+    } in resp.json().get("results")
 
 
 @pytest.mark.django_db
@@ -1098,6 +1202,7 @@ def test_transactions_defc_date_filter(client, monkeypatch, elasticsearch_transa
         action_date="2020-04-02",
         fiscal_action_date="2020-04-02",
         generated_pragmatic_obligation=10,
+        award_category="grant",
         disaster_emergency_fund_codes=["L"],
     )
 
@@ -1108,6 +1213,7 @@ def test_transactions_defc_date_filter(client, monkeypatch, elasticsearch_transa
         action_date="2019-01-01",
         fiscal_action_date="2019-01-01",
         generated_pragmatic_obligation=22,
+        award_category="grant",
         disaster_emergency_fund_codes=["L"],
     )
 
@@ -1117,6 +1223,7 @@ def test_transactions_defc_date_filter(client, monkeypatch, elasticsearch_transa
         action_date="2018-06-06",
         fiscal_action_date="2018-06-06",
         generated_pragmatic_obligation=30,
+        award_category="loan",
         disaster_emergency_fund_codes=["A"],
     )
 
@@ -1127,6 +1234,7 @@ def test_transactions_defc_date_filter(client, monkeypatch, elasticsearch_transa
         action_date="2020-01-01",
         fiscal_action_date="2020-01-01",
         generated_pragmatic_obligation=40,
+        award_category="loan",
         disaster_emergency_fund_codes=["A"],
     )
 
