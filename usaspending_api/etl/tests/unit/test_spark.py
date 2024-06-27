@@ -1,11 +1,11 @@
-from usaspending_api.etl.management.commands.load_query_to_delta import TABLE_SPEC as LOAD_QUERY_TABLE_SPEC
-from usaspending_api.etl.management.commands.load_table_to_delta import TABLE_SPEC as LOAD_TABLE_TABLE_SPEC
+from usaspending_api.etl.management.helpers.table_specifications import DATABRICKS_GENERATED_TABLE_SPEC
+from usaspending_api.etl.management.helpers.table_specifications import POSTGRES_GENERATED_TABLE_SPEC
 
 
 def test_table_spec_consistency():
     table_spec_config_groups = {
-        "LOAD_QUERY_TABLE_SPEC": LOAD_QUERY_TABLE_SPEC,
-        "LOAD_TABLE_TABLE_SPEC": LOAD_TABLE_TABLE_SPEC,
+        "LOAD_QUERY_TABLE_SPEC": DATABRICKS_GENERATED_TABLE_SPEC,
+        "LOAD_TABLE_TABLE_SPEC": POSTGRES_GENERATED_TABLE_SPEC,
     }
     for table_spec_group_name, table_spec_config_group in table_spec_config_groups.items():
         unioned_table_spec_keys = set()

@@ -1,7 +1,6 @@
-import logging
-
 from model_bakery import baker
 from pytest import mark
+import logging
 
 from django.core.management import call_command
 from django.db import connection
@@ -11,7 +10,13 @@ from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetche
 
 @mark.django_db()
 def test_old_table_exists_validation(caplog, monkeypatch):
-    monkeypatch.setattr("usaspending_api.etl.management.commands.swap_in_new_table.logger", logging.getLogger())
+    monkeypatch.setattr("usaspending_api.etl.swap_in_new_table_strategies.logger", logging.getLogger())
+    with connection.cursor() as cursor:
+        # There's some sort of race condition, probably, in the execution
+        # of this test module. Without this cursor and arbitrary select statement
+        # the test would intermittently fail. It would fail on missing records
+        # in the database that migrations are responsible for inserting.
+        cursor.execute("SELECT * FROM pg_depend LIMIT 1")
     try:
         call_command("swap_in_new_table", "--table=test_table")
     except SystemExit:
@@ -22,7 +27,8 @@ def test_old_table_exists_validation(caplog, monkeypatch):
 
 @mark.django_db()
 def test_new_table_exists_validation(caplog, monkeypatch):
-    monkeypatch.setattr("usaspending_api.etl.management.commands.swap_in_new_table.logger", logging.getLogger())
+    monkeypatch.setattr("usaspending_api.etl.swap_in_new_table_strategies.logger", logging.getLogger())
+
     with connection.cursor() as cursor:
         cursor.execute("CREATE TABLE test_table (col1 TEXT)")
     try:
@@ -35,7 +41,7 @@ def test_new_table_exists_validation(caplog, monkeypatch):
 
 @mark.django_db()
 def test_duplicate_table_validation(caplog, monkeypatch):
-    monkeypatch.setattr("usaspending_api.etl.management.commands.swap_in_new_table.logger", logging.getLogger())
+    monkeypatch.setattr("usaspending_api.etl.swap_in_new_table_strategies.logger", logging.getLogger())
     # Test the current table duplicate check
     with connection.cursor() as cursor:
         cursor.execute(
@@ -83,7 +89,7 @@ def test_duplicate_table_validation(caplog, monkeypatch):
 
 @mark.django_db()
 def test_index_validation(caplog, monkeypatch):
-    monkeypatch.setattr("usaspending_api.etl.management.commands.swap_in_new_table.logger", logging.getLogger())
+    monkeypatch.setattr("usaspending_api.etl.swap_in_new_table_strategies.logger", logging.getLogger())
     with connection.cursor() as cursor:
         # Test that the same number of indexes exist on the old and new table
         cursor.execute(
@@ -133,7 +139,7 @@ def test_index_validation(caplog, monkeypatch):
 
 @mark.django_db()
 def test_constraint_validation(caplog, monkeypatch):
-    monkeypatch.setattr("usaspending_api.etl.management.commands.swap_in_new_table.logger", logging.getLogger())
+    monkeypatch.setattr("usaspending_api.etl.swap_in_new_table_strategies.logger", logging.getLogger())
     with connection.cursor() as cursor:
         # Test that Foreign Keys are not allowed by default
         cursor.execute(
@@ -238,7 +244,7 @@ def test_constraint_validation(caplog, monkeypatch):
 
 @mark.django_db()
 def test_column_validation(caplog, monkeypatch):
-    monkeypatch.setattr("usaspending_api.etl.management.commands.swap_in_new_table.logger", logging.getLogger())
+    monkeypatch.setattr("usaspending_api.etl.swap_in_new_table_strategies.logger", logging.getLogger())
     with connection.cursor() as cursor:
         # Test that two tables with different number of columns will fail
         cursor.execute(
@@ -271,7 +277,7 @@ def test_column_validation(caplog, monkeypatch):
             assert False, "No exception was raised"
 
 
-@mark.django_db(transaction=True)
+@mark.django_db()
 def test_happy_path():
     # Create the Award records for testing with Foreign Keys
     for i in range(2, 7):
