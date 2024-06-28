@@ -412,40 +412,48 @@ class SpendingByAwardVisualizationViewSet(APIView):
             if row.get("COVID-19 Obligations"):
                 row["COVID-19 Obligations"] = sum(
                     [
-                        x["obligation"]
-                        if (self.filters.get("def_codes") is not None and x["defc"] in self.filters["def_codes"])
-                        or self.filters.get("def_codes") is None
-                        else 0
+                        (
+                            x["obligation"]
+                            if (self.filters.get("def_codes") is not None and x["defc"] in self.filters["def_codes"])
+                            or self.filters.get("def_codes") is None
+                            else 0
+                        )
                         for x in row.get("COVID-19 Obligations")
                     ]
                 )
             if row.get("COVID-19 Outlays"):
                 row["COVID-19 Outlays"] = sum(
                     [
-                        x["outlay"]
-                        if (self.filters.get("def_codes") is not None and x["defc"] in self.filters["def_codes"])
-                        or self.filters.get("def_codes") is None
-                        else 0
+                        (
+                            x["outlay"]
+                            if (self.filters.get("def_codes") is not None and x["defc"] in self.filters["def_codes"])
+                            or self.filters.get("def_codes") is None
+                            else 0
+                        )
                         for x in row.get("COVID-19 Outlays")
                     ]
                 )
             if row.get("Infrastructure Obligations"):
                 row["Infrastructure Obligations"] = sum(
                     [
-                        x["obligation"]
-                        if (self.filters.get("def_codes") is not None and x["defc"] in self.filters["def_codes"])
-                        or self.filters.get("def_codes") is None
-                        else 0
+                        (
+                            x["obligation"]
+                            if (self.filters.get("def_codes") is not None and x["defc"] in self.filters["def_codes"])
+                            or self.filters.get("def_codes") is None
+                            else 0
+                        )
                         for x in row.get("Infrastructure Obligations")
                     ]
                 )
             if row.get("Infrastructure Outlays"):
                 row["Infrastructure Outlays"] = sum(
                     [
-                        x["outlay"]
-                        if (self.filters.get("def_codes") is not None and x["defc"] in self.filters["def_codes"])
-                        or self.filters.get("def_codes") is None
-                        else 0
+                        (
+                            x["outlay"]
+                            if (self.filters.get("def_codes") is not None and x["defc"] in self.filters["def_codes"])
+                            or self.filters.get("def_codes") is None
+                            else 0
+                        )
                         for x in row.get("Infrastructure Outlays")
                     ]
                 )

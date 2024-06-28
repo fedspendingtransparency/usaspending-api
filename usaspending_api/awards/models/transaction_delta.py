@@ -15,6 +15,7 @@ a fresher timestamp.
 
 The monthly delta process will handle the rest.
 """
+
 from datetime import datetime, timezone
 from django.db import models, transaction
 from django.db.utils import IntegrityError

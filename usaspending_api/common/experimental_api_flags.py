@@ -7,6 +7,7 @@ in Production.
 EXPERIMENTAL_API_HEADER - HTTP Header expected to access experimental functionality.
 ELASTICSEARCH_HEADER_VALUE - Value expected to access Elasticsearch functionality on specific endpoints.
 """
+
 import json
 import logging
 import requests

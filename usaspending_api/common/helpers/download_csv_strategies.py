@@ -124,7 +124,6 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
         #   we do not want to force all containers where
         #   other strategies run to have pyspark installed when the strategy
         #   doesn't require it.
-        from pyspark.sql import SparkSession
         from usaspending_api.common.etl.spark import hadoop_copy_merge, write_csv_file
         from usaspending_api.common.helpers.spark_helpers import configure_spark_session, get_active_spark_session
 
@@ -149,7 +148,7 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
             self.spark_created_by_command = False
             if not self.spark:
                 self.spark_created_by_command = True
-                self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)  # type: SparkSession
+                self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)
             if source_df is not None:
                 df = source_df
             else:

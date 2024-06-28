@@ -167,7 +167,7 @@ def test_federal_account_spending_over_time(client, financial_spending_data):
     simple_results = resp.json()["results"]
     assert len(simple_results)
     for result in simple_results:
-        for (k, v) in result.items():
+        for k, v in result.items():
             assert isinstance(k, str)
             assert hasattr(v, "__pow__") or k == "time_period"  # is a number
     assert simple_results[0]["outlay"] == 2000000

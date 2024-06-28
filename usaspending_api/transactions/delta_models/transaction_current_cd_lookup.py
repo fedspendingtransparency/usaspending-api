@@ -7,7 +7,7 @@ TRANSACTION_CURRENT_CD_LOOKUP_COLUMNS = {
 }
 TRANSACTION_CURRENT_CD_LOOKUP_DELTA_COLUMNS = {k: v["delta"] for k, v in TRANSACTION_CURRENT_CD_LOOKUP_COLUMNS.items()}
 
-transaction_current_cd_lookup_create_sql_string = fr"""
+transaction_current_cd_lookup_create_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
         {", ".join([f'{key} {val}' for key, val in TRANSACTION_CURRENT_CD_LOOKUP_DELTA_COLUMNS.items()])}
     )
@@ -15,7 +15,7 @@ transaction_current_cd_lookup_create_sql_string = fr"""
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
 """
 
-transaction_current_cd_lookup_load_sql_string = fr"""
+transaction_current_cd_lookup_load_sql_string = rf"""
     WITH cd_city_grouped_rownum AS (
       SELECT
         *,

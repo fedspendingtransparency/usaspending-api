@@ -104,7 +104,7 @@ PUBLISHED_FABS_COLUMNS = {
 PUBLISHED_FABS_DELTA_COLUMNS = {k: v["delta"] for k, v in PUBLISHED_FABS_COLUMNS.items()}
 PUBLISHED_FABS_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in PUBLISHED_FABS_COLUMNS.items()}
 
-published_fabs_create_sql_string = fr"""
+published_fabs_create_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
         {", ".join([f'{key} {val}' for key, val in PUBLISHED_FABS_DELTA_COLUMNS.items()])}
     )
