@@ -21,7 +21,7 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
 from usaspending_api.common.helpers.fiscal_year_helpers import (
     bolster_missing_time_periods,
-    generate_fiscal_date_range,
+    generate_date_range,
     generate_fiscal_month,
     generate_fiscal_year,
 )
@@ -208,30 +208,29 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
     def build_elasticsearch_result(self, agg_response: AggResponse, time_periods: list) -> list:
         """
-        In this function we are justing taking the elasticsearch aggregate response and looping through the
-        buckets to create a results object for each time interval
+        In this function we are just taking the elasticsearch aggregate response and looping through the
+        buckets to create a results object for each time interval.
+
+        Using a min_date, max_date, and a frequency indicator generates either a list of dictionaries
+        containing fiscal year information (fiscal year, fiscal quarter, and fiscal month) or a list
+        of dictionaries containing calendar year information (calendar year). The following are the format
+        of date_range based on the frequency:
+            * "calendar_year" returns a list of dictionaries containing {calendar year}
+            * "fiscal_year" returns list of dictionaries containing {fiscal year}
+            * "quarter" returns a list of dictionaries containing {fiscal year and quarter}
+            * "month" returns a list of dictionaries containg {fiscal year and month}
+        NOTE the generate_date_range() can also generate non fiscal date range (calendar ranges) as well.
         """
 
         results = []
         min_date, max_date = min_and_max_from_date_ranges(time_periods)
 
-        """
-        Using a min_date, max_date, and a frequency indicator generates either a list of dictionaries
-        containing fiscal year information (fiscal year, fiscal quarter, and fiscal month) or a list
-        of dictionaries containing calendar year information (calendar year). The following are the format
-        of fiscal_date_range based on the frequency:
-            * "calendar_year" returns a list of dictionaries containing {calendar year}
-            * "fiscal_year" returns list of dictionaries containing {fiscal year}
-            * "quarter" returns a list of dictionaries containing {fiscal year and quarter}
-            * "month" returns a list of dictionaries containg {fiscal year and month}
-        NOTE the generate_fiscal_date_range() can also generate non fiscal date range (calendar ranges) as well.
-        """
-        # the generate_fiscal_date_range() can also generate non fiscal date range (calendar ranges) as well.
-        fiscal_date_range = generate_fiscal_date_range(min_date, max_date, self.group)
+        # the generate_date_range() can also generate non fiscal date range (calendar ranges) as well.
+        date_range = generate_date_range(min_date, max_date, self.group)
         date_buckets = agg_response.group_by_time_period.buckets
         parsed_bucket = None
 
-        for fiscal_date in fiscal_date_range:
+        for fiscal_date in date_range:
             if date_buckets and parsed_bucket is None:
                 parsed_bucket = self.parse_elasticsearch_bucket(date_buckets.pop(0))
 

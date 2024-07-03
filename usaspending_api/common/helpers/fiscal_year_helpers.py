@@ -118,7 +118,7 @@ def dates_are_fiscal_year_bookends(start, end):
     return False
 
 
-def generate_fiscal_date_range(min_date: datetime, max_date: datetime, frequency: str) -> list:
+def generate_date_range(min_date: datetime, max_date: datetime, frequency: str) -> list:
     """
     Using a min date, max date, and a frequency indicator generates a list of dictionaries that contain
     the fiscal year, fiscal quarter, and fiscal month, or calendar year.
