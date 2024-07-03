@@ -143,6 +143,8 @@ class TestElasticSearchIndex:
             upper_name = "AWARDS"
         elif self.index_type == "covid19-faba":
             upper_name = "COVID19_FABA"
+        elif self.index_type == "subaward":
+            upper_name = "SUBAWARD"
         elif self.index_type == "transaction":
             upper_name = "TRANSACTIONS"
         elif self.index_type == "recipient":
@@ -160,6 +162,10 @@ class TestElasticSearchIndex:
             view_sql_file = f"{settings.ES_AWARDS_ETL_VIEW_NAME}.sql"
             view_name = settings.ES_AWARDS_ETL_VIEW_NAME
             es_id = f"{self.index_type}_id"
+        elif self.index_type == "subaward":
+            view_sql_file = f"{settings.ES_SUBAWARD_ETL_VIEW_NAME}.sql"
+            view_name = settings.ES_SUBAWARD_ETL_VIEW_NAME
+            es_id = "broker_subaward_id"
         elif self.index_type == "covid19-faba":
             view_sql_file = f"{settings.ES_COVID19_FABA_ETL_VIEW_NAME}.sql"
             view_name = settings.ES_COVID19_FABA_ETL_VIEW_NAME
@@ -231,6 +237,8 @@ class TestElasticSearchIndex:
             required_suffix = "-" + settings.ES_AWARDS_NAME_SUFFIX
         elif self.index_type == "transaction":
             required_suffix = "-" + settings.ES_TRANSACTIONS_NAME_SUFFIX
+        elif self.index_type == "subaward":
+            required_suffix = "-" + settings.ES_SUBAWARD_NAME_SUFFIX
         elif self.index_type == "covid19-faba":
             required_suffix = "-" + settings.ES_COVID19_FABA_NAME_SUFFIX
         elif self.index_type == "recipient":
