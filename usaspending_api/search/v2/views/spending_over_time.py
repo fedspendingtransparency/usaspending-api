@@ -151,7 +151,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         It should be noted that `key_as_string` is the name given by `date_histogram` to represent the key
         for each bucket which is a date as a string.
         """
-        
+
         """
         Default time_period is set to "fiscal_year", however "quarter" and "month" also includes
         "fiscal_year" in the response object. When "calendar_year" is passed in as a group filter
@@ -166,7 +166,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         elif self.group == "month":
             time_period["month"] = str(key_as_date.month)
 
-        # The given time_period bucket contains buckets for the differnt categories, so extracting those. 
+        # The given time_period bucket contains buckets for the differnt categories, so extracting those.
         categories_breakdown = bucket["group_by_category"]["buckets"]
 
         # Initialize a dictionary to hold the query results for each obligation type.
@@ -214,10 +214,10 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         results = []
         min_date, max_date = min_and_max_from_date_ranges(time_periods)
-        
+
         """
         Using a min_date, max_date, and a frequency indicator generates either a list of dictionaries
-        containing fiscal year information (fiscal year, fiscal quarter, and fiscal month) or a list 
+        containing fiscal year information (fiscal year, fiscal quarter, and fiscal month) or a list
         of dictionaries containing calendar year information (calendar year). The following are the format
         of fiscal_date_range based on the frequency:
             * "calendar_year" returns a list of dictionaries containing {calendar year}
@@ -226,7 +226,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             * "month" returns a list of dictionaries containg {fiscal year and month}
         NOTE the generate_fiscal_date_range() can also generate non fiscal date range (calendar ranges) as well.
         """
-        #the generate_fiscal_date_range() can also generate non fiscal date range (calendar ranges) as well.
+        # the generate_fiscal_date_range() can also generate non fiscal date range (calendar ranges) as well.
         fiscal_date_range = generate_fiscal_date_range(min_date, max_date, self.group)
         date_buckets = agg_response.group_by_time_period.buckets
         parsed_bucket = None
