@@ -194,7 +194,6 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             if key in category_map:
                 category_dictionary[category_map[key]] += category.get("sum_as_dollars", {"value": 0})["value"]
 
-
         aggregated_amount = sum(category_dictionary.values())
         response_object = {
             "aggregated_amount": aggregated_amount,

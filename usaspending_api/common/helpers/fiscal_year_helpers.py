@@ -131,11 +131,13 @@ def generate_date_range(min_date: datetime, max_date: datetime, frequency: str) 
         if frequency == "calendar_year":
             date_range.append({"calendar_year": current_date.year})
         else:
-            date_range.append({
-                "fiscal_year": generate_fiscal_year(current_date),
-                "fiscal_quarter": generate_fiscal_quarter(current_date),
-                "fiscal_month": generate_fiscal_month(current_date),
-            })
+            date_range.append(
+                {
+                    "fiscal_year": generate_fiscal_year(current_date),
+                    "fiscal_quarter": generate_fiscal_quarter(current_date),
+                    "fiscal_month": generate_fiscal_month(current_date),
+                }
+            )
 
         current_date += relativedelta(months=interval)
 
