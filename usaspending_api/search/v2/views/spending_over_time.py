@@ -150,9 +150,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         It should be noted that `key_as_string` is the name given by `date_histogram` to represent the key
         for each bucket which is a date as a string.
-        """
 
-        """
         Default time_period is set to "fiscal_year", however "quarter" and "month" also includes
         "fiscal_year" in the response object. When "calendar_year" is passed in as a group filter
         for the API, do not have to worry about any other time period.
@@ -179,31 +177,31 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             "Other_Obligations": 0,
         }
 
+        # Mapping of category keys to their corresponding obligation types.
+        category_map = {
+            "contract": "Contract_Obligations",
+            "direct payment": "Direct_Obligations",
+            "grant": "Grant_Obligations",
+            "idv": "Idv_Obligations",
+            "loans": "Loan_Obligations",
+            "other": "Other_Obligations",
+            "insurance": "Other_Obligations",
+        }
+
         # Populate the category dictionary based on the award breakdown for a given bucket.
         for category in categories_breakdown:
-            if category["key"] == "contract":
-                category_dictionary["Contract_Obligations"] = category.get("sum_as_dollars", {"value": 0})["value"]
-            elif category["key"] == "direct payment":
-                category_dictionary["Direct_Obligations"] = category.get("sum_as_dollars", {"value": 0})["value"]
-            elif category["key"] == "grant":
-                category_dictionary["Grant_Obligations"] = category.get("sum_as_dollars", {"value": 0})["value"]
-            elif category["key"] == "idv":
-                category_dictionary["Idv_Obligations"] = category.get("sum_as_dollars", {"value": 0})["value"]
-            elif category["key"] == "loans":
-                category_dictionary["Loan_Obligations"] = category.get("sum_as_dollars", {"value": 0})["value"]
-            elif category["key"] == "other":
-                category_dictionary["Other_Obligations"] += category.get("sum_as_dollars", {"value": 0})["value"]
-            elif category["key"] == "insurance":
-                category_dictionary["Other_Obligations"] += category.get("sum_as_dollars", {"value": 0})["value"]
+            key = category["key"]
+            if key in category_map:
+                category_dictionary[category_map[key]] += category.get("sum_as_dollars", {"value": 0})["value"]
 
-        aggregated_amount = sum(category_dictionary[item] for item in category_dictionary)
 
+        aggregated_amount = sum(category_dictionary.values())
         response_object = {
             "aggregated_amount": aggregated_amount,
             "time_period": time_period,
+            **category_dictionary,
         }
 
-        response_object.update(category_dictionary)
         return response_object
 
     def build_elasticsearch_result(self, agg_response: AggResponse, time_periods: list) -> list:
@@ -225,7 +223,6 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         results = []
         min_date, max_date = min_and_max_from_date_ranges(time_periods)
 
-        # the generate_date_range() can also generate non fiscal date range (calendar ranges) as well.
         date_range = generate_date_range(min_date, max_date, self.group)
         date_buckets = agg_response.group_by_time_period.buckets
         parsed_bucket = None
@@ -244,7 +241,6 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             elif self.group == "month":
                 time_period["month"] = str(fiscal_date["fiscal_month"])
 
-            # example_timeperiod = datetime.strptime(bucket["key_as_string"], "%Y-%m-%d")
             if parsed_bucket is not None and time_period == parsed_bucket["time_period"]:
                 results.append(parsed_bucket)
                 parsed_bucket = None
@@ -274,7 +270,6 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         )
         filter_options["time_period_obj"] = new_awards_only_decorator
 
-        # Generate the overall filter query (aggregated results for all the codes.)
         filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(self.filters, **filter_options)
         search = TransactionSearch().filter(filter_query)
         self.apply_elasticsearch_aggregations(search)
@@ -318,7 +313,6 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 columns={"aggregated_amount": "aggregated_amount"},
             )
         else:
-            # this is where we make the call to retrieve the data/results.
             results = self.query_elasticsearch_for_prime_awards(time_periods)
 
         raw_response = OrderedDict(

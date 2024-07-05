@@ -123,31 +123,21 @@ def generate_date_range(min_date: datetime, max_date: datetime, frequency: str) 
     Using a min date, max date, and a frequency indicator generates a list of dictionaries that contain
     the fiscal year, fiscal quarter, and fiscal month, or calendar year.
     """
-    if frequency == "fiscal_year":
-        interval = 12
-    elif frequency == "quarter":
-        interval = 3
-    elif frequency == "calendar_year":
-        interval = 12
-    else:  # month
-        interval = 1
-
+    interval = {"fiscal_year": 12, "quarter": 3, "calendar_year": 12, "month": 1}.get(frequency, 1)
     date_range = []
     current_date = min_date
 
     while current_date <= max_date:
-        date_info = {}
         if frequency == "calendar_year":
-            date_info["calendar_year"] = current_date.year
+            date_range.append({"calendar_year": current_date.year})
         else:
-            date_info = {
+            date_range.append({
                 "fiscal_year": generate_fiscal_year(current_date),
                 "fiscal_quarter": generate_fiscal_quarter(current_date),
                 "fiscal_month": generate_fiscal_month(current_date),
-            }
+            })
 
-        date_range.append(date_info)
-        current_date = current_date + relativedelta(months=interval)
+        current_date += relativedelta(months=interval)
 
     # Check if max_date is in new period
     final_period = {}
