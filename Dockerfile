@@ -27,11 +27,13 @@ RUN dnf --enablerepo=powertools install perl-IPC-Run -y
 
 
 ##### Install PostgreSQL 13 client (psql)
-RUN rpm --import https://download.postgresql.org/pub/repos/yum/keys/RPM-GPG-KEY-PGDG-AARCH64-RHEL8
-RUN dnf -y install https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm
-RUN dnf -qy module disable postgresql
-RUN dnf -y install postgresql13
-RUN dnf -y install postgresql13-devel
+## Import and install not working on local BAH computers
+#RUN rpm --import https://download.postgresql.org/pub/repos/yum/keys/RPM-GPG-KEY-PGDG-AARCH64-RHEL8
+#RUN dnf -y install https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+
+RUN dnf -y module enable postgresql:13
+RUN dnf -y install postgresql
+RUN dnf -y install postgresql-devel
 
 
 ##### Building python 3.x
