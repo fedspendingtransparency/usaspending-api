@@ -12,7 +12,6 @@ from usaspending_api.common.helpers.generic_helper import get_pagination_metadat
 from usaspending_api.disaster.models import CovidFABASpending
 from usaspending_api.disaster.v2.views.disaster_base import (
     DisasterBase,
-    FabaOutlayMixin,
     LoansMixin,
     LoansPaginationMixin,
 )
@@ -46,19 +45,19 @@ def route_agency_loans_backend(**initkwargs):
     return route_agency_loans_backend
 
 
-class LoansByAgencyViewSet(LoansPaginationMixin, DisasterBase, LoansMixin, FabaOutlayMixin):
+class LoansByAgencyViewSet(LoansPaginationMixin, DisasterBase, LoansMixin):
     """
     This endpoint provides insights on the Agencies awarding loans from
     disaster/emergency funding per the requested filters.
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/agency/loans.md"
-    required_filters = ["def_codes", "query"]  # Filters that will NOT be stripped from request
-    loan_award_types = ["07", "08"]
+    # Filters that will NOT be stripped from request (only `def_codes` is actually REQUIRED)
+    required_filters = ["def_codes", "query"]
 
     @cache_response()
     def post(self, request):
-        # self.filters.update({"award_type_codes": ["07", "08"]})
+        self.filters.update({"award_type_codes": ["07", "08"]})
 
         covid_faba_spending_by_toptier_agency = self._get_agency_covid_faba_spending()
         json_result = self._build_json_result(covid_faba_spending_by_toptier_agency)
@@ -73,7 +72,7 @@ class LoansByAgencyViewSet(LoansPaginationMixin, DisasterBase, LoansMixin, FabaO
 
         queryset = (
             CovidFABASpending.objects.filter(spending_level="subtier_agency")
-            .filter(award_type__in=self.loan_award_types)
+            .filter(award_type__in=self.filters["award_type_codes"])
             .filter(DEFC__in=self.filters["def_codes"])
             .values("funding_toptier_agency_id", "funding_toptier_agency_code", "funding_toptier_agency_name")
             .annotate(
