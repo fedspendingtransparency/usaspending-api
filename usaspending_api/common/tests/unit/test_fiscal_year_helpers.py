@@ -182,7 +182,7 @@ def test_get_quarter_from_period():
     assert fyh.get_quarter_from_period({"hello": "there"}) is None
 
 
-def test_generate_fiscal_date_range():
+def test_generate_date_range():
     # 2-day range that crosses all boundaries
     start = date(2020, 9, 30)
     end = date(2020, 10, 1)
@@ -190,9 +190,9 @@ def test_generate_fiscal_date_range():
         {"fiscal_year": 2020, "fiscal_quarter": 4, "fiscal_month": 12},
         {"fiscal_year": 2021, "fiscal_quarter": 1, "fiscal_month": 1},
     ]
-    assert fyh.generate_fiscal_date_range(start, end, "fiscal_year") == expected
-    assert fyh.generate_fiscal_date_range(start, end, "quarter") == expected
-    assert fyh.generate_fiscal_date_range(start, end, "anything") == expected
+    assert fyh.generate_date_range(start, end, "fiscal_year") == expected
+    assert fyh.generate_date_range(start, end, "quarter") == expected
+    assert fyh.generate_date_range(start, end, "anything") == expected
 
     # check within FY
     start = date(2019, 10, 2)
@@ -200,19 +200,19 @@ def test_generate_fiscal_date_range():
     expected = [
         {"fiscal_year": 2020, "fiscal_quarter": 1, "fiscal_month": 1},
     ]
-    assert fyh.generate_fiscal_date_range(start, end, "fiscal_year") == expected
+    assert fyh.generate_date_range(start, end, "fiscal_year") == expected
 
     expected.append({"fiscal_year": 2020, "fiscal_quarter": 2, "fiscal_month": 4})
     expected.append({"fiscal_year": 2020, "fiscal_quarter": 3, "fiscal_month": 7})
     expected.append({"fiscal_year": 2020, "fiscal_quarter": 4, "fiscal_month": 10})
-    assert fyh.generate_fiscal_date_range(start, end, "quarter") == expected
+    assert fyh.generate_date_range(start, end, "quarter") == expected
 
     # 1-day period
     start = end = date(2021, 6, 23)
     expected = [{"fiscal_year": 2021, "fiscal_quarter": 3, "fiscal_month": 9}]
-    assert fyh.generate_fiscal_date_range(start, end, "fiscal_year") == expected
-    assert fyh.generate_fiscal_date_range(start, end, "quarter") == expected
-    assert fyh.generate_fiscal_date_range(start, end, "anything") == expected
+    assert fyh.generate_date_range(start, end, "fiscal_year") == expected
+    assert fyh.generate_date_range(start, end, "quarter") == expected
+    assert fyh.generate_date_range(start, end, "anything") == expected
 
 
 def test_create_full_time_periods():
