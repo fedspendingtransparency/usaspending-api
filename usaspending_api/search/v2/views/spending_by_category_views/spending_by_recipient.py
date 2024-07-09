@@ -72,7 +72,7 @@ class RecipientViewSet(AbstractSpendingByCategoryViewSet):
         # Get the current recipient info
         current_recipient_info = {}
         recipient_info_query = RecipientLookup.objects.filter(recipient_hash__in=recipient_hashes).values(
-            "duns", "legal_business_name", "recipient_hash"
+            "duns", "legal_business_name", "recipient_hash", "uei"
         )
         for recipient_info in recipient_info_query.all():
             current_recipient_info[str(recipient_info["recipient_hash"])] = recipient_info
@@ -91,7 +91,8 @@ class RecipientViewSet(AbstractSpendingByCategoryViewSet):
                     "name": (
                         recipient_info["legal_business_name"] if recipient_info.get("legal_business_name") else None
                     ),
-                    "code": recipient_info.get("duns") or "Recipient not provided",
+                    "code": recipient_info.get("duns") if recipient_info.get("duns") else None,
+                    "uei": recipient_info.get("uei") if recipient_info.get("uei") else None,
                 }
             )
 

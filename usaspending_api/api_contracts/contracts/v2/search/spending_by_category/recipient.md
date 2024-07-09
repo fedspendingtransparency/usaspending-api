@@ -70,13 +70,15 @@ This endpoint returns a list of the top results of Recipients sorted by the tota
                         "amount": 46069068318.25,
                         "recipient_id": null,
                         "name": "MULTIPLE RECIPIENTS",
-                        "code": null
+                        "code": null,
+                        "uei": null
                     },
                     {
                         "amount": 17388378311.33,
                         "recipient_id": "005a8812-bab5-2780-533b-b62c33271882-C",
                         "name": "LOCKHEED MARTIN CORPORATION",
-                        "code": "008016958"
+                        "code": "008016958",
+                        "uei": null
                     }
                 ],
                 "messages": [
@@ -92,8 +94,9 @@ This endpoint returns a list of the top results of Recipients sorted by the tota
     The id is the database key.
 + `name` (required, string, nullable)
 + `code` (required, string, nullable)
-    `code` is a user-displayable code (such as a program activity or NAICS code, but **not** a database ID). When no such code is relevant, return a `null`.
+    The Recipient's DUNS code. If it doesn't have a DUNS code, this field will be null.
 + `amount` (required, number)
++ `uei` (required, string, nullable)
 
 ## PageMetadataObject (object)
 + `page` (required, number)
