@@ -3,7 +3,21 @@ from decimal import Decimal
 from typing import List
 
 from django.contrib.postgres.fields import ArrayField
-from django.db.models import Case, DecimalField, Exists, F, Func, IntegerField, OuterRef, Q, Subquery, Sum, Value, When
+from django.db.models import (
+    Case,
+    DecimalField,
+    Exists,
+    F,
+    Func,
+    IntegerField,
+    OuterRef,
+    Q,
+    QuerySet,
+    Subquery,
+    Sum,
+    Value,
+    When,
+)
 from django.db.models.functions import Coalesce
 from django.views.decorators.csrf import csrf_exempt
 from django_cte import With
@@ -11,6 +25,7 @@ from rest_framework.response import Response
 
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
+from usaspending_api.disaster.models import CovidFABASpending
 from usaspending_api.disaster.v2.views.disaster_base import (
     DisasterBase,
     FabaOutlayMixin,
@@ -18,7 +33,6 @@ from usaspending_api.disaster.v2.views.disaster_base import (
     SpendingMixin,
     latest_gtas_of_each_year_queryset,
 )
-from usaspending_api.disaster.v2.views.elasticsearch_account_base import ElasticsearchAccountDisasterBase
 from usaspending_api.disaster.v2.views.elasticsearch_base import (
     ElasticsearchDisasterBase,
     ElasticsearchSpendingPaginationMixin,
@@ -57,26 +71,20 @@ def route_agency_spending_backend(**initkwargs):
     return route_agency_spending_backend
 
 
-class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, ElasticsearchAccountDisasterBase):
+class SpendingByAgencyViewSet(FabaOutlayMixin, PaginationMixin, DisasterBase, SpendingMixin):
     """Returns disaster spending by agency."""
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/agency/spending.md"
     required_filters = ["def_codes", "award_type_codes", "query"]
-    nested_nonzero_fields = {"obligation": "transaction_obligated_amount", "outlay": "gross_outlay_amount_by_award_cpe"}
-    query_fields = [
-        "funding_toptier_agency_name",
-        "funding_toptier_agency_name.contains",
-    ]
-    agg_key = "financial_accounts_by_award.funding_toptier_agency_id"  # primary (tier-1) aggregation key
-    top_hits_fields = [
-        "financial_accounts_by_award.funding_toptier_agency_code",
-        "financial_accounts_by_award.funding_toptier_agency_name",
-    ]
 
     @cache_response()
     def post(self, request):
         if self.spending_type == "award":
-            return self.perform_elasticsearch_search()
+            covid_faba_agency_spending = self._get_agency_covid_faba_spending()
+            json_result = self._build_json_result(covid_faba_agency_spending)
+            sorted_json_result = self._sort_json_result(json_result)
+
+            return Response(sorted_json_result)
         else:
             results = self.total_queryset
             extra_columns = ["total_budgetary_resources"]
@@ -95,26 +103,100 @@ class SpendingByAgencyViewSet(PaginationMixin, SpendingMixin, FabaOutlayMixin, E
             }
         )
 
-    def build_elasticsearch_result(self, info_buckets: List[dict]) -> List[dict]:
-        results = []
-        for bucket in info_buckets:
-            results.append(self._build_json_result(bucket))
-        return results
+    def _get_agency_covid_faba_spending(self) -> QuerySet:
+        """Query the covid_faba_spending table and return COVID-19 FABA spending grouped by toptier agencies
 
-    def _build_json_result(self, bucket: dict):
-        return {
-            "id": int(bucket["key"]),
-            "code": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["funding_toptier_agency_code"],
-            "description": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["funding_toptier_agency_name"],
-            "children": [],
-            # the count of distinct awards contributing to the totals
-            "award_count": int(bucket["count_awards_by_dim"]["award_count"]["value"]),
-            **{
-                key: Decimal(bucket.get(f"sum_{val}", {"value": 0})["value"])
-                for key, val in self.nested_nonzero_fields.items()
-            },
-            "total_budgetary_resources": None,
+        Returns:
+            Database rows grouped by their toptier agencies and their spending amounts summed up.
+        """
+
+        queryset = (
+            CovidFABASpending.objects.filter(spending_level="subtier_agency")
+            .filter(DEFC__in=self.filters["def_codes"])
+            .values("funding_toptier_agency_id", "funding_toptier_agency_code", "funding_toptier_agency_name")
+            .annotate(
+                award_count=Sum(Coalesce("award_count", 0)),
+                obligation_sum=Sum(Coalesce("obligation_sum", Decimal(0))),
+                outlay_sum=Sum(Coalesce("outlay_sum", Decimal(0))),
+                face_value_of_loan=Sum(Coalesce("face_value_of_loan", Decimal(0))),
+            )
+        )
+
+        if self.query:
+            queryset = queryset.filter(funding_toptier_agency_name__icontains=self.query)
+
+        if self.filters.get("award_type_codes"):
+            queryset = queryset.filter(award_type__in=self.filters["award_type_codes"])
+
+        return queryset
+
+    def _build_json_result(self, queryset: List[dict]) -> dict:
+        """Build the JSON response that will be returned for this endpoint.
+
+        Args:
+            queryset: Database query results.
+
+        Returns:
+            Formatted JSON response.
+        """
+
+        response = {}
+
+        results = [
+            {
+                "id": int(row["funding_toptier_agency_id"]),
+                "code": row["funding_toptier_agency_code"],
+                "description": row["funding_toptier_agency_name"],
+                "children": [],  # This type of spending will never have children
+                "award_count": int(row["award_count"]),
+                "obligation": Decimal(row["obligation_sum"]),
+                "outlay": Decimal(row["outlay_sum"]),
+                "total_budgetary_resources": None,
+            }
+            for row in queryset
+        ]
+
+        response["totals"] = {
+            "obligation": sum(result["obligation"] for result in results),
+            "outlay": sum(result["outlay"] for result in results),
+            "award_count": sum(result["award_count"] for result in results),
         }
+        response["results"] = results[self.pagination.lower_limit : self.pagination.upper_limit]
+        response["page_metadata"] = get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
+
+        return response
+
+    def _sort_json_result(self, json_result: dict) -> dict:
+        """Sort the JSON by the appropriate field and in the appropriate order before returning it.
+
+        Args:
+            json_result: Unsorted JSON result.
+
+        Returns:
+            Sorted JSON result.
+        """
+
+        if self.pagination.sort_key == "description":
+            json_result["results"] = sorted(
+                json_result["results"],
+                key=lambda val: val.get("description", "id").lower(),
+                reverse=self.pagination.sort_order == "desc",
+            )
+        # Convert `code` fields to integer during the sort process so they sort correctly
+        elif self.pagination.sort_key == "code":
+            json_result["results"] = sorted(
+                json_result["results"],
+                key=lambda val: int(val.get("code", "id").lower()),
+                reverse=self.pagination.sort_order == "desc",
+            )
+        else:
+            json_result["results"] = sorted(
+                json_result["results"],
+                key=lambda val: val.get(self.pagination.sort_key, "id"),
+                reverse=self.pagination.sort_order == "desc",
+            )
+
+        return json_result
 
     @property
     def total_queryset(self):
