@@ -35,7 +35,7 @@ urlpatterns = [
     re_path(r"^funding_subagency", FundingSubagencyViewSet.as_view()),
     re_path(r"^naics", NAICSViewSet.as_view()),
     re_path(r"^psc", PSCViewSet.as_view()),
-    re_path(r"^recipient$", RecipientViewSet.as_view()),
+    re_path(r"^recipient/?$", RecipientViewSet.as_view()),
     re_path(r"^recipient_duns", RecipientDunsViewSet.as_view()),
     re_path(r"^state_territory", StateTerritoryViewSet.as_view()),
 ]
