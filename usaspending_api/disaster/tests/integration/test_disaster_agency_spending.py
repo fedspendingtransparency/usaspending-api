@@ -1,7 +1,10 @@
+import datetime
+
 import pytest
 from rest_framework import status
 
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
+from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
 url = "/api/v2/disaster/agency/spending/"
 
@@ -9,6 +12,9 @@ url = "/api/v2/disaster/agency/spending/"
 @pytest.mark.django_db
 def test_basic_success(client, disaster_account_data, monkeypatch, helpers):
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+    bad_date_window = DABSSubmissionWindowSchedule.objects.get(id=2022071)
+    bad_date_window.submission_reveal_date = datetime.date(2020, 4, 15)
+    bad_date_window.save()
 
     resp = helpers.post_for_spending_endpoint(
         client, url, def_codes=["L", "M", "N", "O", "P"], spending_type="total", sort="description"
@@ -84,9 +90,9 @@ def test_basic_success(client, disaster_account_data, monkeypatch, helpers):
             "code": "008",
             "description": "Agency 008",
             "children": [],
-            "award_count": 2,
-            "obligation": 22000.0,
-            "outlay": 20000.0,
+            "award_count": 151,
+            "obligation": 3110.99,
+            "outlay": 21110.88,
             "total_budgetary_resources": None,
         },
         {
@@ -103,7 +109,7 @@ def test_basic_success(client, disaster_account_data, monkeypatch, helpers):
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
 
-    expected_totals = {"award_count": 7, "obligation": 22222220.0, "outlay": 200020022.0}
+    expected_totals = {"award_count": 156, "obligation": 22203330.99, "outlay": 200021132.88}
     assert resp.json()["totals"] == expected_totals
 
 
@@ -127,13 +133,13 @@ def test_spending_by_agency_sorting(client, disaster_account_data, monkeypatch, 
             "total_budgetary_resources": None,
         },
         {
-            "award_count": 2,
+            "award_count": 151,
             "children": [],
             "code": "008",
             "description": "Agency 008",
             "id": 2,
-            "obligation": 22000.0,
-            "outlay": 20000.0,
+            "obligation": 3110.99,
+            "outlay": 21110.88,
             "total_budgetary_resources": None,
         },
         {
@@ -166,13 +172,13 @@ def test_spending_by_agency_sorting(client, disaster_account_data, monkeypatch, 
             "total_budgetary_resources": None,
         },
         {
-            "award_count": 2,
+            "award_count": 151,
             "children": [],
             "code": "008",
             "description": "Agency 008",
             "id": 2,
-            "obligation": 22000.0,
-            "outlay": 20000.0,
+            "obligation": 3110.99,
+            "outlay": 21110.88,
             "total_budgetary_resources": None,
         },
         {
@@ -616,9 +622,9 @@ def test_query_search(client, disaster_account_data, monkeypatch, helpers):
             "code": "008",
             "description": "Agency 008",
             "children": [],
-            "award_count": 1,
-            "obligation": 2000.0,
-            "outlay": 20000.0,
+            "award_count": 151,
+            "obligation": 3110.99,
+            "outlay": 21110.88,
             "total_budgetary_resources": None,
         }
     ]
@@ -641,8 +647,8 @@ def test_outlay_calculation(client, disaster_account_data, monkeypatch, helpers)
             "description": "Agency 008",
             "children": [],
             "award_count": 1,
-            "obligation": 1.0,
-            "outlay": 91.0,
+            "obligation": 2000.0,
+            "outlay": 20000.0,
             "total_budgetary_resources": None,
         }
     ]
