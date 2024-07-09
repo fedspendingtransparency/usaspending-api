@@ -1,5 +1,6 @@
-import pytest
 import datetime
+
+import pytest
 from model_bakery import baker
 
 
@@ -833,4 +834,56 @@ def disaster_account_data():
         prior_year_paid_obligation_recoveries=98324,
         fiscal_period=8,
         fiscal_year=2022,
+    )
+
+    # covid_faba_spending table
+    # Included loan type award
+    baker.make(
+        "disaster.CovidFABASpending",
+        spending_level="subtier_agency",
+        funding_toptier_agency_id=2,
+        funding_toptier_agency_code="008",
+        funding_toptier_agency_name="Agency 008",
+        funding_subtier_agency_id=1008,
+        funding_subtier_agency_code="1008",
+        funding_subtier_agency_name="Subtier 1008",
+        DEFC="L",
+        award_type="07",
+        award_count=1,
+        obligation_sum=2000.0,
+        outlay_sum=20000.0,
+        face_value_of_loan=333.0,
+    )
+    # Excluded non-loan type awards
+    baker.make(
+        "disaster.CovidFABASpending",
+        spending_level="subtier_agency",
+        funding_toptier_agency_id=2,
+        funding_toptier_agency_code="008",
+        funding_toptier_agency_name="Agency 008",
+        funding_subtier_agency_id=1008,
+        funding_subtier_agency_code="1008",
+        funding_subtier_agency_name="Subtier 1008",
+        DEFC="M",
+        award_type="02",
+        award_count=100,
+        obligation_sum=111.0,
+        outlay_sum=222.0,
+        face_value_of_loan=None,
+    )
+    baker.make(
+        "disaster.CovidFABASpending",
+        spending_level="subtier_agency",
+        funding_toptier_agency_id=2,
+        funding_toptier_agency_code="008",
+        funding_toptier_agency_name="Agency 008",
+        funding_subtier_agency_id=1008,
+        funding_subtier_agency_code="1008",
+        funding_subtier_agency_name="Subtier 1008",
+        DEFC="N",
+        award_type="IDV_A",
+        award_count=50,
+        obligation_sum=999.99,
+        outlay_sum=888.88,
+        face_value_of_loan=None,
     )
