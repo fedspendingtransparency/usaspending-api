@@ -84,7 +84,7 @@ class LoansByAgencyViewSet(LoansPaginationMixin, DisasterBase, LoansMixin):
         )
 
         if self.query:
-            queryset = queryset.filter(funding_toptier_agency_name__icontains=self.filters["query"])
+            queryset = queryset.filter(funding_toptier_agency_name__icontains=self.query)
 
         return queryset
 
