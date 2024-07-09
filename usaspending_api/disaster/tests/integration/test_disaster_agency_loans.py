@@ -1,8 +1,7 @@
 import pytest
-
 from rest_framework import status
-from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
+from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 url = "/api/v2/disaster/agency/loans/"
 
@@ -39,10 +38,7 @@ def test_basic_success(client, disaster_account_data, elasticsearch_account_inde
 
 
 @pytest.mark.django_db
-def test_award_type_codes(
-    client, disaster_account_data, elasticsearch_award_index, monkeypatch, helpers, elasticsearch_account_index
-):
-    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
+def test_award_type_codes(client, disaster_account_data, elasticsearch_award_index, monkeypatch, helpers):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
 
