@@ -94,7 +94,7 @@ This endpoint returns a list of the top results of Recipients sorted by the tota
     The id is the database key.
 + `name` (required, string, nullable)
 + `code` (required, string, nullable)
-    `code` is a user-displayable code (such as a program activity or DUNS code, but **not** a database ID). When no such code is relevant, return a `null`.
+    The Recipient's DUNS code. If it doesn't have a DUNS code, this field will be null.
 + `amount` (required, number)
 + `uei` (required, string, nullable)
 
