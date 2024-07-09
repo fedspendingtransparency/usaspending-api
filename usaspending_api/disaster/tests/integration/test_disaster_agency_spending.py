@@ -1,25 +1,15 @@
-import datetime
-
 import pytest
-from model_bakery import baker
 from rest_framework import status
 
-from usaspending_api.accounts.models import TreasuryAppropriationAccount
-from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
-from usaspending_api.submissions.models import DABSSubmissionWindowSchedule, SubmissionAttributes
 
 url = "/api/v2/disaster/agency/spending/"
 
 
 @pytest.mark.django_db
-def test_basic_success(client, disaster_account_data, elasticsearch_account_index, monkeypatch, helpers):
-
+def test_basic_success(client, disaster_account_data, monkeypatch, helpers):
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
-    bad_date_window = DABSSubmissionWindowSchedule.objects.get(id=2022071)
-    bad_date_window.submission_reveal_date = datetime.date(2020, 4, 15)
-    bad_date_window.save()
-    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
+
     resp = helpers.post_for_spending_endpoint(
         client, url, def_codes=["L", "M", "N", "O", "P"], spending_type="total", sort="description"
     )
@@ -55,7 +45,6 @@ def test_basic_success(client, disaster_account_data, elasticsearch_account_inde
             "total_budgetary_resources": 0.0,
         },
     ]
-
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
 
@@ -75,7 +64,6 @@ def test_basic_success(client, disaster_account_data, elasticsearch_account_inde
             "total_budgetary_resources": 0.0,
         }
     ]
-
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
 
@@ -116,18 +104,13 @@ def test_basic_success(client, disaster_account_data, elasticsearch_account_inde
     assert resp.json()["results"] == expected_results
 
     expected_totals = {"award_count": 7, "obligation": 22222220.0, "outlay": 200020022.0}
-
     assert resp.json()["totals"] == expected_totals
 
 
 @pytest.mark.django_db
-def test_spending_by_agency_sorting(client, disaster_account_data, elasticsearch_account_index, monkeypatch, helpers):
+def test_spending_by_agency_sorting(client, disaster_account_data, monkeypatch, helpers):
     # Test sorting by description in descending order
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
-    bad_date_window = DABSSubmissionWindowSchedule.objects.get(id=2022071)
-    bad_date_window.submission_reveal_date = datetime.date(2020, 4, 15)
-    bad_date_window.save()
-    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
     resp = helpers.post_for_spending_endpoint(
         client, url, def_codes=["L", "M", "N", "O", "P"], spending_type="award", sort="description"
     )
@@ -164,7 +147,6 @@ def test_spending_by_agency_sorting(client, disaster_account_data, elasticsearch
             "total_budgetary_resources": None,
         },
     ]
-
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
 
@@ -172,7 +154,6 @@ def test_spending_by_agency_sorting(client, disaster_account_data, elasticsearch
     resp = helpers.post_for_spending_endpoint(
         client, url, def_codes=["L", "M", "N", "O", "P"], spending_type="award", sort="description", order="asc"
     )
-
     expected_results = [
         {
             "award_count": 2,
@@ -205,7 +186,6 @@ def test_spending_by_agency_sorting(client, disaster_account_data, elasticsearch
             "total_budgetary_resources": None,
         },
     ]
-
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
 
@@ -624,10 +604,9 @@ def test_missing_spending_type(client, monkeypatch, generic_account_data, helper
 
 
 @pytest.mark.django_db
-def test_query_search(client, disaster_account_data, elasticsearch_account_index, monkeypatch, helpers):
+def test_query_search(client, disaster_account_data, monkeypatch, helpers):
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
 
-    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
     resp = helpers.post_for_spending_endpoint(
         client, url, query="Agency 008", def_codes=["L", "M", "N", "O", "P"], spending_type="award"
     )
@@ -649,24 +628,9 @@ def test_query_search(client, disaster_account_data, elasticsearch_account_index
 
 
 @pytest.mark.django_db
-def test_outlay_calculation(client, disaster_account_data, elasticsearch_account_index, monkeypatch, helpers):
+def test_outlay_calculation(client, disaster_account_data, monkeypatch, helpers):
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
-    defc_l = DisasterEmergencyFundCode.objects.get(code="L")
-    tas = TreasuryAppropriationAccount.objects.get(account_title="TA 2")
-    sub = SubmissionAttributes.objects.get(toptier_code="008", reporting_fiscal_year=2022, reporting_fiscal_period=8)
-    baker.make(
-        "awards.FinancialAccountsByAwards",
-        treasury_account=tas,
-        submission=sub,
-        disaster_emergency_fund=defc_l,
-        transaction_obligated_amount=1,
-        gross_outlay_amount_by_award_cpe=100,
-        award_id=1,
-        distinct_award_key=1,
-        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=-3,
-        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=-6,
-    )
-    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
+
     resp = helpers.post_for_spending_endpoint(
         client, url, query="Agency 008", def_codes=["L"], spending_type="award", sort="outlay"
     )
