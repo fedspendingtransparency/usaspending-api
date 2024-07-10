@@ -10,48 +10,55 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_jvm_logger,
 )
 from usaspending_api.config import CONFIG
+from usaspending_api.disaster.delta_models import (
+    COVID_FABA_SPENDING_DELTA_COLUMNS,
+    COVID_FABA_SPENDING_POSTGRES_COLUMNS,
+    covid_faba_spending_create_sql_string,
+    covid_faba_spending_load_sql_strings,
+)
+from usaspending_api.disaster.models import CovidFABASpending
 from usaspending_api.recipient.delta_models import (
-    recipient_lookup_load_sql_string_list,
     RECIPIENT_LOOKUP_POSTGRES_COLUMNS,
-    recipient_profile_create_sql_string,
-    recipient_profile_load_sql_strings,
     RECIPIENT_PROFILE_POSTGRES_COLUMNS,
-    rpt_recipient_lookup_create_sql_string,
     RPT_RECIPIENT_LOOKUP_DELTA_COLUMNS,
+    RPT_RECIPIENT_PROFILE_DELTA_COLUMNS,
     SAM_RECIPIENT_COLUMNS,
     SAM_RECIPIENT_POSTGRES_COLUMNS,
+    recipient_lookup_load_sql_string_list,
+    recipient_profile_create_sql_string,
+    recipient_profile_load_sql_strings,
+    rpt_recipient_lookup_create_sql_string,
     sam_recipient_create_sql_string,
     sam_recipient_load_sql_string,
-    RPT_RECIPIENT_PROFILE_DELTA_COLUMNS,
 )
 from usaspending_api.recipient.models import RecipientLookup, RecipientProfile
 from usaspending_api.search.delta_models.award_search import (
     AWARD_SEARCH_COLUMNS,
-    award_search_create_sql_string,
-    award_search_load_sql_string,
     AWARD_SEARCH_POSTGRES_COLUMNS,
     AWARD_SEARCH_POSTGRES_GOLD_COLUMNS,
+    award_search_create_sql_string,
+    award_search_load_sql_string,
 )
 from usaspending_api.search.delta_models.subaward_search import (
     SUBAWARD_SEARCH_COLUMNS,
-    subaward_search_create_sql_string,
-    subaward_search_load_sql_string,
     SUBAWARD_SEARCH_POSTGRES_COLUMNS,
     SUBAWARD_SEARCH_POSTGRES_VECTORS,
+    subaward_search_create_sql_string,
+    subaward_search_load_sql_string,
 )
 from usaspending_api.search.models import AwardSearch, SubawardSearch, SummaryStateView, TransactionSearch
 from usaspending_api.transactions.delta_models import (
-    transaction_search_create_sql_string,
-    transaction_search_load_sql_string,
-    transaction_current_cd_lookup_create_sql_string,
-    transaction_current_cd_lookup_load_sql_string,
+    SUMMARY_STATE_VIEW_COLUMNS,
+    SUMMARY_STATE_VIEW_POSTGRES_COLUMNS,
+    TRANSACTION_CURRENT_CD_LOOKUP_COLUMNS,
     TRANSACTION_SEARCH_POSTGRES_COLUMNS,
     TRANSACTION_SEARCH_POSTGRES_GOLD_COLUMNS,
-    TRANSACTION_CURRENT_CD_LOOKUP_COLUMNS,
-    SUMMARY_STATE_VIEW_COLUMNS,
     summary_state_view_create_sql_string,
     summary_state_view_load_sql_string,
-    SUMMARY_STATE_VIEW_POSTGRES_COLUMNS,
+    transaction_current_cd_lookup_create_sql_string,
+    transaction_current_cd_lookup_load_sql_string,
+    transaction_search_create_sql_string,
+    transaction_search_load_sql_string,
 )
 
 TABLE_SPEC = {
@@ -262,6 +269,26 @@ TABLE_SPEC = {
         "column_names": list(SUBAWARD_SEARCH_COLUMNS),
         "postgres_seq_name": None,
         "tsvectors": SUBAWARD_SEARCH_POSTGRES_VECTORS,
+        "postgres_partition_spec": None,
+    },
+    "covid_faba_spending": {
+        "model": CovidFABASpending,
+        "is_from_broker": False,
+        "source_query": covid_faba_spending_load_sql_strings,
+        "source_database": None,
+        "source_table": None,
+        "destination_database": "rpt",
+        "swap_table": "covid_faba_spending",
+        "swap_schema": "rpt",
+        "partition_column": "id",
+        "partition_column_type": "numeric",
+        "is_partition_column_unique": False,
+        "delta_table_create_sql": covid_faba_spending_create_sql_string,
+        "source_schema": COVID_FABA_SPENDING_POSTGRES_COLUMNS,
+        "custom_schema": None,
+        "column_names": list(COVID_FABA_SPENDING_DELTA_COLUMNS),
+        "postgres_seq_name": None,
+        "tsvectors": None,
         "postgres_partition_spec": None,
     },
 }

@@ -20,6 +20,7 @@ This endpoint returns a list of aggregated award amounts grouped by time period 
     + Attributes (object)
         + `group` (required, enum[string])
             + Members
+                + `calendar_year`
                 + `fiscal_year`
                 + `quarter`
                 + `month`
@@ -42,6 +43,7 @@ This endpoint returns a list of aggregated award amounts grouped by time period 
     + Attributes (object)
         + `group` (required, enum[string])
             + Members
+                + `calendar_year`
                 + `fiscal_year`
                 + `quarter`
                 + `month`
@@ -55,13 +57,21 @@ This endpoint returns a list of aggregated award amounts grouped by time period 
 + `time_period` (required, TimePeriodGroup)
 + `aggregated_amount` (required, number)
     The aggregate award amount for this time period and the given filters.
++ `contract_obligations` (required, number)
++ `loan_obligations` (required, number)
++ `idv_obligations` (required, number)
++ `grant_obligations` (required, number)
++ `direct_payment_obligations` (required, number)
++ `other_obligations` (required, number)
 
 ## TimePeriodGroup (object)
-+ `fiscal_year` (required, string)
++ `calendar_year` (optional, string)
+    Depending on the grouping, either `calendar_year` or `fiscal_year` will always be returned.
++ `fiscal_year` (optional, string)
 + `quarter` (optional, string)
-    Excluded when grouping by `fiscal_year` or `month`.
+    Excluded when grouping by `fiscal_year` or `month` or `calendar_year`.
 + `month` (optional, string)
-    Excluded when grouping by `fiscal_year` or `quarter`.
+    Excluded when grouping by `fiscal_year` or `quarter` or `calendar_year`.
 
 
 ## Filter Objects

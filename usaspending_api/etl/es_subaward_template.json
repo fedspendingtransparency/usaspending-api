@@ -36,6 +36,9 @@
           "award_id": {
             "type": "keyword"
           },
+          "display_award_id": {
+            "type": "keyword"
+          },
           "award_amount": {
             "type": "scaled_float",
             "scaling_factor": 100
@@ -297,7 +300,7 @@
           "naics_description": {
             "type": "text"
           },
-          "cfda_numbers": {
+          "cfda_number": {
             "type": "text",
             "eager_global_ordinals": true,
             "fields": {
@@ -349,7 +352,7 @@
             "type": "text"
           },
           "sub_awardee_or_recipient_uei": {
-            "type": "text"
+            "type": "keyword"
           },
           "sub_awardee_or_recipient_legal": {
             "type": "text"
@@ -382,6 +385,23 @@
             }
           },
           "sub_recipient_location_state_name": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          },
+          "sub_recipient_location_county_code": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          },
+
+          "sub_recipient_location_zip5": {
             "type": "text",
             "fields": {
               "keyword": {
@@ -427,6 +447,9 @@
             "type": "keyword"
           },
           "sub_pop_state_name": {
+            "type": "keyword"
+          },
+          "sub_pop_county_code": {
             "type": "keyword"
           },
           "sub_pop_zip": {
@@ -547,6 +570,34 @@
           },
           "product_or_service_description": {
             "type": "text"
+          },
+          "treasury_account_identifiers": {
+            "type": "keyword"
+          },
+          "sub_ultimate_parent_unique_ide": {
+            "type": "keyword"
+          },
+          "sub_ultimate_parent_uei": {
+            "type": "keyword"
+          },
+          "disaster_emergency_fund_codes": {
+            "type": "keyword"
+          },
+          "recipient_hash": {
+            "type": "keyword",
+            "fields": {
+              "hash": {
+                "type": "murmur3"
+              }
+            }
+          },
+          "parent_uei": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
           }
         }
     }
