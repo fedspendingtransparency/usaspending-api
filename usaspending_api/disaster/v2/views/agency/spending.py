@@ -112,7 +112,7 @@ class SpendingByAgencyViewSet(FabaOutlayMixin, PaginationMixin, DisasterBase, Sp
 
         queryset = (
             CovidFABASpending.objects.filter(spending_level="subtier_agency")
-            .filter(DEFC__in=self.filters["def_codes"])
+            .filter(defc__in=self.filters["def_codes"])
             .values("funding_toptier_agency_id", "funding_toptier_agency_code", "funding_toptier_agency_name")
             .annotate(
                 award_count=Sum(Coalesce("award_count", 0)),

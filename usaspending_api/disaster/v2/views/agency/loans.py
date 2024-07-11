@@ -73,7 +73,7 @@ class LoansByAgencyViewSet(LoansPaginationMixin, DisasterBase, LoansMixin):
         queryset = (
             CovidFABASpending.objects.filter(spending_level="subtier_agency")
             .filter(award_type__in=self.filters["award_type_codes"])
-            .filter(DEFC__in=self.filters["def_codes"])
+            .filter(defc__in=self.filters["def_codes"])
             .values("funding_toptier_agency_id", "funding_toptier_agency_code", "funding_toptier_agency_name")
             .annotate(
                 award_count=Sum("award_count"),
