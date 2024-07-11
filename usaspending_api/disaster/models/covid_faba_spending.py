@@ -26,7 +26,7 @@ class CovidFABASpending(models.Model):
     funding_object_class_name = models.TextField(null=True)
 
     defc = models.TextField()
-    award_type = models.TextField()
+    award_type = models.TextField(null=True)
     award_count = models.IntegerField()
     obligation_sum = models.DecimalField(null=True, max_digits=23, decimal_places=2)
     outlay_sum = models.DecimalField(null=True, max_digits=23, decimal_places=2)
