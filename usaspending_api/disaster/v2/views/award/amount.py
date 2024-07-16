@@ -5,7 +5,11 @@ from elasticsearch_dsl import A
 from elasticsearch_dsl import Q as ES_Q
 from rest_framework.response import Response
 
-from usaspending_api.awards.v2.lookups.lookups import loan_type_mapping
+from usaspending_api.awards.v2.lookups.lookups import (
+    assistance_type_mapping,
+    loan_type_mapping,
+    procurement_type_mapping,
+)
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.aggregation_helpers import create_count_aggregation
 from usaspending_api.common.elasticsearch.search_wrappers import AccountSearch
@@ -43,6 +47,8 @@ class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
         if all(x in self.filters for x in ["award_type_codes", "award_type"]):
             raise UnprocessableEntityException("Cannot provide both 'award_type_codes' and 'award_type'")
 
+        award_type = self.filters.get("award_type")
+
         queryset = (
             CovidFABASpending.objects.filter(spending_level="awards")
             .filter(defc__in=self.filters["def_codes"])
@@ -56,6 +62,11 @@ class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
 
         if self.award_type_codes:
             queryset = queryset.filter(award_type__in=self.award_type_codes)
+
+        if award_type and award_type.lower() == "procurement":
+            queryset = queryset.filter(award_type__in=procurement_type_mapping.keys())
+        elif award_type and award_type.lower() == "assistance":
+            queryset = queryset.filter(award_type__in=assistance_type_mapping.keys())
 
         result = {
             "award_count": sum([row.total_award_count for row in queryset]),
