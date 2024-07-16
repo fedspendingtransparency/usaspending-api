@@ -1,5 +1,4 @@
 import pytest
-
 from model_bakery import baker
 
 from usaspending_api.references.models.disaster_emergency_fund_code import DisasterEmergencyFundCode
@@ -252,6 +251,52 @@ def generic_account_data():
         total_budgetary_resources_cpe=394368.87,
         deobligations_or_recoveries_or_refunds_from_prior_year_cpe=999.99,
         prior_year_paid_obligation_recoveries=888.88,
+    )
+    baker.make(
+        "disaster.CovidFABASpending",
+        spending_level="awards",
+        defc="L",
+        award_type="A",
+        award_count=1,
+        outlay_sum=222.0,
+        obligation_sum=200.0,
+    )
+    baker.make(
+        "disaster.CovidFABASpending",
+        spending_level="awards",
+        defc="N",
+        award_type="09",
+        award_count=1,
+        outlay_sum=100.0,
+        obligation_sum=2.0,
+    )
+    baker.make(
+        "disaster.CovidFABASpending",
+        spending_level="awards",
+        defc="N",
+        award_type="A",
+        award_count=2,
+        outlay_sum=334.0,
+        obligation_sum=4.0,
+    )
+    baker.make(
+        "disaster.CovidFABASpending",
+        spending_level="awards",
+        defc="O",
+        award_type="10",
+        award_count=1,
+        outlay_sum=234.0,
+        obligation_sum=2.0,
+    )
+    baker.make(
+        "disaster.CovidFABASpending",
+        spending_level="awards",
+        defc="P",
+        award_type="07",
+        award_count=2,
+        outlay_sum=334.0,
+        obligation_sum=4.0,
+        face_value_of_loan=7777.0,
     )
 
 
