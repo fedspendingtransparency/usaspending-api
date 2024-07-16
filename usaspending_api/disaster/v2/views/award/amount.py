@@ -58,16 +58,18 @@ class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
             queryset = queryset.filter(award_type__in=self.award_type_codes)
 
         result = {
-            "award_count": sum([row["total_award_count"] for row in queryset]),
-            "obligation": sum([row["total_obligation_sum"] for row in queryset]),
-            "outlay": sum([row["total_outlay_sum"] for row in queryset]),
+            "award_count": sum([row.total_award_count for row in queryset]),
+            "obligation": sum([row.total_obligation_sum for row in queryset]),
+            "outlay": sum([row.total_outlay_sum for row in queryset]),
         }
 
         # Add face_value_of_loan if any loan award types were included in the request
         if self.award_type_codes and any(
             award_type in loan_type_mapping.keys() for award_type in self.award_type_codes
         ):
-            result["face_value_of_loan"] = sum([row["total_face_value_of_loan"] for row in queryset])
+            result["face_value_of_loan"] = sum(
+                [row.total_face_value_of_loan for row in queryset if row.total_face_value_of_loan is not None]
+            )
 
         if self.count_only:
             return Response({"count": result["award_count"]})
