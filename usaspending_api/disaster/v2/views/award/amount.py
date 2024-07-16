@@ -1,6 +1,8 @@
 from copy import deepcopy
 
-from elasticsearch_dsl import Q as ES_Q, A
+from django.db.models import Sum
+from elasticsearch_dsl import A
+from elasticsearch_dsl import Q as ES_Q
 from rest_framework.response import Response
 
 from usaspending_api.awards.v2.lookups.lookups import loan_type_mapping
@@ -10,7 +12,8 @@ from usaspending_api.common.elasticsearch.search_wrappers import AccountSearch
 from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator import TinyShield
-from usaspending_api.disaster.v2.views.disaster_base import DisasterBase, AwardTypeMixin, FabaOutlayMixin
+from usaspending_api.disaster.models import CovidFABASpending
+from usaspending_api.disaster.v2.views.disaster_base import AwardTypeMixin, DisasterBase, FabaOutlayMixin
 from usaspending_api.search.v2.elasticsearch_helper import get_summed_value_as_float
 
 
@@ -40,13 +43,32 @@ class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
         if all(x in self.filters for x in ["award_type_codes", "award_type"]):
             raise UnprocessableEntityException("Cannot provide both 'award_type_codes' and 'award_type'")
 
-        self.nonzero_fields = ["obligated_sum", "outlay_sum"]
+        queryset = (
+            CovidFABASpending.objects.filter(spending_level="awards")
+            .filter(defc__in=self.filters["def_codes"])
+            .annotate(
+                total_award_count=Sum("award_count"),
+                total_obligation_sum=Sum("obligation_sum"),
+                total_outlay_sum=Sum("outlay_sum"),
+                total_face_value_of_loan=Sum("face_value_of_loan"),
+            )
+        )
 
-        if self.award_type_codes and set(self.award_type_codes) <= set(loan_type_mapping.keys()):
-            self.nonzero_fields.append("total_loan_value")
+        if self.award_type_codes:
+            queryset = queryset.filter(award_type__in=self.award_type_codes)
 
-        search = self.build_elasticsearch_search()
-        result = self.build_result(search)
+        result = {
+            "award_count": sum([row["total_award_count"] for row in queryset]),
+            "obligation": sum([row["total_obligation_sum"] for row in queryset]),
+            "outlay": sum([row["total_outlay_sum"] for row in queryset]),
+        }
+
+        # Add face_value_of_loan if any loan award types were included in the request
+        if self.award_type_codes and any(
+            award_type in loan_type_mapping.keys() for award_type in self.award_type_codes
+        ):
+            result["face_value_of_loan"] = sum([row["total_face_value_of_loan"] for row in queryset])
+
         if self.count_only:
             return Response({"count": result["award_count"]})
         else:
