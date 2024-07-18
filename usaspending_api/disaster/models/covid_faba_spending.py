@@ -34,4 +34,4 @@ class CovidFABASpending(models.Model):
 
     class Meta:
         managed = True
-        db_table = "covid_faba_spending"
+        db_table = '"rpt"."covid_faba_spending"'
