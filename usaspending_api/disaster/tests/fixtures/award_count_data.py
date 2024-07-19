@@ -184,9 +184,6 @@ def _faba_for_award(award, id=1, negative=False, outlay_based=False):
     )
 
 
-def _populate_covid_faba_spending_table(): ...
-
-
 @pytest.fixture()
 def basic_covid_faba_spending_data(defc_codes):
     baker.make(
