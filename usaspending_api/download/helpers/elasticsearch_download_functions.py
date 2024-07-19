@@ -10,15 +10,23 @@ from django.conf import settings
 from django.db.models import QuerySet
 from elasticsearch_dsl import A
 
-from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, TransactionSearch
+from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, SubawardSearch, TransactionSearch
 from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.download.models import DownloadJob
 from usaspending_api.download.models.download_job_lookup import DownloadJobLookup
 from usaspending_api.download.helpers import write_to_download_log as write_to_log
 from usaspending_api.search.filters.elasticsearch.filter import _QueryType
-from usaspending_api.search.models import AwardSearch as DBAwardSearch, TransactionSearch as DBTransactionSearch
-from usaspending_api.search.filters.time_period.query_types import AwardSearchTimePeriod, TransactionSearchTimePeriod
+from usaspending_api.search.models import (
+    AwardSearch as DBAwardSearch,
+    SubawardSearch as DBSubawardSearch,
+    TransactionSearch as DBTransactionSearch,
+)
+from usaspending_api.search.filters.time_period.query_types import (
+    AwardSearchTimePeriod,
+    SubawardSearchTimePeriod,
+    TransactionSearchTimePeriod,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -179,6 +187,32 @@ class TransactionsElasticsearchDownload(_ElasticsearchDownload):
         )
         filter_options["time_period_obj"] = new_awards_only_decorator
         base_queryset = DBTransactionSearch.objects.all()
+        cls._populate_download_lookups(filters, download_job, **filter_options)
+        queryset = base_queryset.extra(
+            tables=["download_job_lookup"],
+            where=[
+                '"download_job_lookup"."download_job_id" = %s '
+                'AND "download_job_lookup"."lookup_id" = "transaction_search"."transaction_id"'
+            ],
+            params=[download_job.download_job_id],
+        )
+
+        return queryset
+
+
+class SubawardsElasticsearchDownload(_ElasticsearchDownload):
+    _source_field = "broker_subaward_id"
+    _filter_query_func = QueryWithFilters.generate_subawards_elasticsearch_query
+    _search_type = SubawardSearch
+
+    @classmethod
+    def query(cls, filters: dict, download_job: DownloadJob) -> QuerySet:
+        filter_options = {}
+        time_period_obj = SubawardSearchTimePeriod(
+            default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_MIN_DATE
+        )
+        filter_options["time_period_obj"] = time_period_obj
+        base_queryset = DBSubawardSearch.objects.all()
         cls._populate_download_lookups(filters, download_job, **filter_options)
         queryset = base_queryset.extra(
             tables=["download_job_lookup"],

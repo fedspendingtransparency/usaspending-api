@@ -95,13 +95,13 @@ class AwardDownloadValidator(DownloadValidatorBase):
 
     def _handle_keyword_search_download(self):
         # Overriding all other filters if the keyword filter is provided in year-constraint download
-        self._json_request["filters"] = {"elasticsearch_keyword": self._json_request["filters"]["keywords"]}
+        self._json_request["filters"] = {"transaction_keyword_search": self._json_request["filters"]["keywords"]}
 
         self.tinyshield_models.extend(
             [
                 {
-                    "name": "elasticsearch_keyword",
-                    "key": "filters|elasticsearch_keyword",
+                    "name": "transaction_keyword_search",
+                    "key": "filters|transaction_keyword_search",
                     "type": "array",
                     "array_type": "text",
                     "text_type": "search",
@@ -340,7 +340,12 @@ class AwardDownloadValidator(DownloadValidatorBase):
                     "key": "download_types",
                     "type": "array",
                     "array_type": "enum",
-                    "enum_values": ["elasticsearch_awards", "sub_awards", "elasticsearch_transactions", "prime_awards"],
+                    "enum_values": [
+                        "elasticsearch_awards",
+                        "elasticsearch_sub_awards",
+                        "elasticsearch_transactions",
+                        "prime_awards",
+                    ],
                 },
             ]
         )

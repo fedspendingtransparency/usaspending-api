@@ -119,7 +119,7 @@ def subaward_filter(filters, for_downloads=False):
 
         key_list = [
             "keywords",
-            "elasticsearch_keyword",
+            "transaction_keyword_search",
             "time_period",
             "award_type_codes",
             "prime_and_sub_award_types",
@@ -183,7 +183,7 @@ def subaward_filter(filters, for_downloads=False):
 
             queryset = queryset.filter(filter_obj)
 
-        elif key == "elasticsearch_keyword":
+        elif key == "transaction_keyword_search":
             keyword = value
             transaction_ids = elasticsearch_helper.get_download_ids(keyword=keyword, field="transaction_id")
             # flatten IDs
