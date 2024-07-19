@@ -1,5 +1,4 @@
 COVID_FABA_SPENDING_COLUMNS = {
-    "id": {"delta": "LONG", "postgres": "BIGINT NOT NULL"},
     "spending_level": {"delta": "STRING", "postgres": "TEXT"},
     "funding_toptier_agency_id": {"delta": "STRING", "postgres": "TEXT"},
     "funding_toptier_agency_code": {"delta": "STRING", "postgres": "TEXT"},

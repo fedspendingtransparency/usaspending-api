@@ -2,7 +2,6 @@ from django.db import models
 
 
 class CovidFABASpending(models.Model):
-    id = models.BigAutoField(primary_key=True)
     spending_level = models.TextField()
 
     funding_toptier_agency_id = models.TextField(null=True)
