@@ -97,16 +97,16 @@ VALUE_MAPPINGS = {
         "annotations_function": transaction_search_annotations,
     },
     # SubAward Level
-    # "sub_awards": {
-    #     "source_type": "award",
-    #     "table": SubawardSearch,
-    #     "table_name": "subaward_search",
-    #     "type_name": "Subawards",
-    #     "download_name": "{agency}{type}_Subawards_{timestamp}",
-    #     "is_fpds_join": "latest_transaction__",
-    #     "filter_function": subaward_download,
-    #     "annotations_function": subaward_annotations,
-    # },
+    "sub_awards": {
+        "source_type": "award",
+        "table": SubawardSearch,
+        "table_name": "subaward_search",
+        "type_name": "Subawards",
+        "download_name": "{agency}{type}_Subawards_{timestamp}",
+        "is_fpds_join": "latest_transaction__",
+        "filter_function": subaward_download,
+        "annotations_function": subaward_annotations,
+    },
     "elasticsearch_sub_awards": {
         "source_type": "award",
         "table": SubawardSearch,

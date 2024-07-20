@@ -30,34 +30,41 @@ class _SubawardsKeywords(_Filter):
         keyword_queries = []
 
         def keyword_parse(keyword):
-            query = ES_Q("match", keyword_ts_vector=keyword) | ES_Q("match", award_ts_vector=keyword)
+            queries = []
+            queries.append(ES_Q("match", sub_awardee_or_recipient_legal=keyword))
+            queries.append(ES_Q("match", product_or_service_description=keyword))
+            queries.append(ES_Q("match", subaward_description=keyword))
+            queries.append(ES_Q("match", award_piid_fain=keyword))
+            queries.append(ES_Q("match", subaward_number=keyword))
             if len(keyword) == 4 and PSC.objects.filter(code=keyword).exists():
-                query |= ES_Q("match", product_or_service_code=keyword)
-            return ES_Q("bool", should=query, minimum_should_match=1)
+                queries.append(ES_Q("match", product_or_service_code=keyword))
+            return ES_Q("bool", should=queries, minimum_should_match=1)
 
         keyword_queries = []
         for keyword in filter_values:
-            curr_query = []
-            curr_query.append(keyword_parse(keyword))
+            curr_queries = []
+            curr_queries.append(keyword_parse(keyword))
 
             # Search for DUNS
-            potential_duns = list(filter((lambda x: len(x) == 9), keyword))
-            dun_query = ES_Q("terms", sub_awardee_or_recipient_uniqu=[dun for dun in potential_duns]) | ES_Q(
-                "terms", sub_ultimate_parent_unique_ide=[dun for dun in potential_duns]
-            )
-            curr_query.append(dun_query)
+            potential_duns = keyword if len(keyword) == 9 else None
+            potential_duns_queries = []
+            if potential_duns is not None:
+                potential_duns_queries.append(ES_Q("match", sub_awardee_or_recipient_uniqu=potential_duns))
+                potential_duns_queries.append(ES_Q("match", sub_ultimate_parent_unique_ide=potential_duns))
+                dun_query = ES_Q("bool", should=potential_duns_queries, minimum_should_match=1)
+                curr_queries.append(dun_query)
 
             # Search for UEI
-            potential_ueis = list(filter((lambda x: len(x) == 12), keyword))
-            potential_ueis = [uei.upper() for uei in potential_ueis]
-            uei_query = ES_Q("terms", sub_awardee_or_recipient_uei=[uei for uei in potential_ueis]) | ES_Q(
-                "terms", sub_ultimate_parent_uei=[uei for uei in potential_ueis]
-            )
-            curr_query.append(uei_query)
+            potential_uei = keyword.upper() if len(keyword) == 12 else None
+            if potential_uei is not None:
+                uei_query = ES_Q("match", sub_awardee_or_recipient_uei=potential_uei) | ES_Q(
+                    "match", sub_ultimate_parent_uei=potential_uei
+                )
+                curr_queries.append(uei_query)
+            curr_query = ES_Q("bool", should=curr_queries, minimum_should_match=1)
+            keyword_queries.append(curr_query)
 
-            keyword_queries.append(ES_Q("bool", should=curr_query, minimum_should_match=1))
-
-        return ES_Q("bool", must=keyword_queries)
+        return ES_Q("dis_max", queries=keyword_queries)
 
 
 class _Keywords(_Filter):

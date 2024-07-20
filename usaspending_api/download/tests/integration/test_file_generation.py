@@ -51,17 +51,20 @@ def test_get_elasticsearch_transactions_csv_sources(db):
 
 
 def test_get_sub_awards_csv_sources(db):
-    original = VALUE_MAPPINGS["sub_awards"]["filter_function"]
-    VALUE_MAPPINGS["sub_awards"]["filter_function"] = MagicMock(returned_value="")
+    original = VALUE_MAPPINGS["elasticsearch_sub_awards"]["filter_function"]
+    VALUE_MAPPINGS["elasticsearch_sub_awards"]["filter_function"] = MagicMock(returned_value="")
     csv_sources = download_generation.get_download_sources(
-        {"download_types": ["sub_awards"], "filters": {"award_type_codes": list(award_type_mapping.keys())}}
+        {
+            "download_types": ["elasticsearch_sub_awards"],
+            "filters": {"award_type_codes": list(award_type_mapping.keys())},
+        }
     )
     assert len(csv_sources) == 2
-    VALUE_MAPPINGS["sub_awards"]["filter_function"] = original
+    VALUE_MAPPINGS["elasticsearch_sub_awards"]["filter_function"] = original
     assert csv_sources[0].file_type == "d1"
-    assert csv_sources[0].source_type == "sub_awards"
+    assert csv_sources[0].source_type == "elasticsearch_sub_awards"
     assert csv_sources[1].file_type == "d2"
-    assert csv_sources[1].source_type == "sub_awards"
+    assert csv_sources[1].source_type == "elasticsearch_sub_awards"
 
 
 def test_idv_orders_csv_sources(db):
