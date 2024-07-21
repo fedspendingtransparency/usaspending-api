@@ -60,7 +60,7 @@ def subaward_test_data_fixture(db):
         generated_unique_award_id="UNIQUE_AWARD_ID_4",
     )
 
-    psc_1 = baker.make("PSC", code="1234")
+    baker.make("PSC", code="1234")
 
     baker.make(
         "search.SubawardSearch",

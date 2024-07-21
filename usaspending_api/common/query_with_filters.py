@@ -24,7 +24,6 @@ logger = logging.getLogger(__name__)
 
 
 class _SubawardsKeywords(_Filter):
-
     @classmethod
     def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType, **options) -> ES_Q:
         keyword_queries = []
