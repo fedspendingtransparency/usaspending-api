@@ -920,7 +920,11 @@ class QueryWithFilters:
 
     @classmethod
     def generate_subawards_elasticsearch_query(cls, filters: dict, **options) -> ES_Q:
-        return cls._generate_elasticsearch_query(filters, _QueryType.SUBAWARDS, **options)
+        cls.filter_lookup[_Keywords.underscore_name] = _SubawardsKeywords
+        cls.filter_lookup[_SubawardsPrimeSubAwardTypes.underscore_name] = _SubawardsPrimeSubAwardTypes
+        resp = cls._generate_elasticsearch_query(filters, _QueryType.SUBAWARDS, **options)
+        cls.filter_lookup[_Keywords.underscore_name] = _Keywords
+        return resp
 
     @classmethod
     def generate_transactions_elasticsearch_query(cls, filters: dict, **options) -> ES_Q:
@@ -930,9 +934,3 @@ class QueryWithFilters:
     def generate_accounts_elasticsearch_query(cls, filters: dict, **options) -> ES_Q:
         options = {**options, "nested_path": "financial_accounts_by_award"}
         return cls._generate_elasticsearch_query(filters, _QueryType.ACCOUNTS, **options)
-
-
-class SubawardsQueryWithFilters(QueryWithFilters):
-    filter_lookup = QueryWithFilters.filter_lookup
-    filter_lookup[_Keywords.underscore_name] = _SubawardsKeywords
-    filter_lookup[_SubawardsPrimeSubAwardTypes.underscore_name] = _SubawardsPrimeSubAwardTypes
