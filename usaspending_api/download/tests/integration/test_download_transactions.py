@@ -130,8 +130,11 @@ def test_download_transactions_without_columns(
 
 
 @pytest.mark.django_db(transaction=True)
-def test_download_transactions_with_columns(client, monkeypatch, download_test_data, elasticsearch_transaction_index):
+def test_download_transactions_with_columns(
+    client, monkeypatch, download_test_data, elasticsearch_transaction_index, elasticsearch_subaward_index
+):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string(settings.DOWNLOAD_DB_ALIAS))
 
     resp = client.post(
