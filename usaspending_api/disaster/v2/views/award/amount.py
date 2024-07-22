@@ -60,12 +60,12 @@ class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
             )
         )
 
-        if self.award_type_codes:
+        if self.award_type_codes is not None:
             queryset = queryset.filter(award_type__in=self.award_type_codes)
 
-        if award_type and award_type.lower() == "procurement":
+        if award_type is not None and award_type.lower() == "procurement":
             queryset = queryset.filter(award_type__in=procurement_type_mapping.keys())
-        elif award_type and award_type.lower() == "assistance":
+        elif award_type is not None and award_type.lower() == "assistance":
             queryset = queryset.filter(award_type__in=assistance_type_mapping.keys())
 
         result = {
@@ -75,7 +75,7 @@ class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
         }
 
         # Add face_value_of_loan if any loan award types were included in the request
-        if self.award_type_codes and any(
+        if self.award_type_codes is not None and any(
             award_type in loan_type_mapping.keys() for award_type in self.award_type_codes
         ):
             result["face_value_of_loan"] = sum(
@@ -88,7 +88,7 @@ class AmountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
             return Response(result)
 
     def build_elasticsearch_search(self) -> AccountSearch:
-        if self.award_type_codes:
+        if self.award_type_codes is not None:
             count_field = "award_id"
         else:
             count_field = "financial_account_distinct_award_key"
