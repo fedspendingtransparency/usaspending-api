@@ -122,10 +122,10 @@ class SpendingByAgencyViewSet(FabaOutlayMixin, PaginationMixin, DisasterBase, Sp
             )
         )
 
-        if self.query:
+        if self.query is not None:
             queryset = queryset.filter(funding_toptier_agency_name__icontains=self.query)
 
-        if self.filters.get("award_type_codes"):
+        if self.filters.get("award_type_codes") is not None:
             queryset = queryset.filter(award_type__in=self.filters["award_type_codes"])
 
         return queryset
