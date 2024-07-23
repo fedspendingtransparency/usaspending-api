@@ -83,7 +83,7 @@ class RecipientAutocompleteViewSet(APIView):
         Returns:
             An Elasticsearch search query.
         """
-        es_recipient_search_fields = ["recipient_name", "uei"]
+        es_recipient_search_fields = ["recipient_name", "uei", "duns"]
 
         query = ES_Q(
             "bool",
@@ -151,6 +151,7 @@ class RecipientAutocompleteViewSet(APIView):
                         ("recipient_name", recipient["recipient_name"]),
                         ("uei", recipient["uei"]),
                         ("recipient_level", recipient["recipient_level"]),
+                        ("duns", recipient["duns"]),
                     ]
                 )
             )
