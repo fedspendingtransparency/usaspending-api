@@ -13,9 +13,7 @@ from usaspending_api.search.v2.es_sanitization import es_sanitize
 
 models = [
     {"name": "search_text", "key": "search_text", "type": "text", "text_type": "search", "optional": False},
-    {"name": "limit", 
-     "key": "limit", 
-     "type": "integer", "max": 500, "optional": True, "default": 10},
+    {"name": "limit", "key": "limit", "type": "integer", "max": 500, "optional": True, "default": 10},
     {
         "name": "recipient_levels",
         "key": "recipient_levels",
@@ -81,7 +79,9 @@ class RecipientAutocompleteViewSet(APIView):
         fields = [request_data["search_text"], request_data.get("recipient_levels", []), request_data.get("duns")]
         return [es_sanitize(field).upper() if isinstance(field, str) else field for field in fields]
 
-    def _create_es_search(self, search_text: str, recipient_levels: List[str], duns: str, limit: int) -> RecipientSearch:
+    def _create_es_search(
+        self, search_text: str, recipient_levels: List[str], duns: str, limit: int
+    ) -> RecipientSearch:
         """
         Create an Elasticsearch search query for recipient autocomplete.
 
