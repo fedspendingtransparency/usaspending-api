@@ -218,7 +218,7 @@ class SubawardsElasticsearchDownload(_ElasticsearchDownload):
             tables=["download_job_lookup"],
             where=[
                 '"download_job_lookup"."download_job_id" = %s '
-                'AND "download_job_lookup"."lookup_id" = "transaction_search"."transaction_id"'
+                'AND "download_job_lookup"."lookup_id" = "subaward_search"."broker_subaward_id"'
             ],
             params=[download_job.download_job_id],
         )
