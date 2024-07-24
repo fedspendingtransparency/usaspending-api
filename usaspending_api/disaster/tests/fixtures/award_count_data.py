@@ -1,5 +1,4 @@
 import pytest
-
 from model_bakery import baker
 
 from usaspending_api.references.models import DisasterEmergencyFundCode
@@ -182,4 +181,17 @@ def _faba_for_award(award, id=1, negative=False, outlay_based=False):
         transaction_obligated_amount=(-7 if negative else 7) if not outlay_based else 0,
         gross_outlay_amount_by_award_cpe=(-7 if negative else 7) if outlay_based else 0,
         distinct_award_key=f"piid {id}|same parent award|fain {id}|uri {id}".upper(),
+    )
+
+
+@pytest.fixture()
+def basic_covid_faba_spending_data(defc_codes):
+    baker.make(
+        "disaster.CovidFABASpending",
+        spending_level="awards",
+        defc="M",
+        award_type="A",
+        award_count=1,
+        obligation_sum=100,
+        outlay_sum=100,
     )
