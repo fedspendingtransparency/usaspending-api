@@ -24,6 +24,8 @@ logger = logging.getLogger(__name__)
 
 
 class _SubawardsKeywords(_Filter):
+    """Intended for subawards' Querytype that makes keyword queries compatible with Subawards."""
+
     @classmethod
     def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType, **options) -> ES_Q:
         keyword_queries = []
@@ -166,6 +168,8 @@ class _KeywordSearch(_Filter):
 
 
 class _TransactionKeywordSearch(_Filter):
+    """Intended for subawards' Querytype that makes this query compatible with Subawards."""
+
     underscore_name = "transaction_keyword_search"
 
     @classmethod
@@ -252,6 +256,8 @@ class _AwardTypeCodes(_Filter):
 
 
 class _SubawardsPrimeSubAwardTypes(_Filter):
+    """Intended for subawards' Querytype that makes this query compatible with Subawards."""
+
     underscore_name = "prime_and_sub_award_types"
 
     @classmethod
