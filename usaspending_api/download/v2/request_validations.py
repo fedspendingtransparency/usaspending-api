@@ -285,7 +285,7 @@ class AwardDownloadValidator(DownloadValidatorBase):
             final_award_filters["prime_and_sub_award_types"]["prime_awards"] = custom_award_filters["prime_award_types"]
 
         if custom_award_filters.get("sub_award_types"):
-            self._json_request["download_types"].append("sub_awards")
+            self._json_request["download_types"].append("elasticsearch_sub_awards")
             final_award_filters["prime_and_sub_award_types"]["sub_awards"] = custom_award_filters["sub_award_types"]
 
         if "agency" in custom_award_filters:
