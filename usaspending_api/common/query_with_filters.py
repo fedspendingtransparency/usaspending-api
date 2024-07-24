@@ -389,8 +389,8 @@ class _RecipientScope(_Filter):
     @classmethod
     def generate_elasticsearch_query(cls, filter_value: str, query_type: _QueryType, **options) -> ES_Q:
         if query_type == _QueryType.SUBAWARDS:
-            recipient_scope_query = ES_Q("match", sub_legal_entity_country_code="USA") | ES_Q(
-                "match", sub_legal_entity_country_name="UNITED STATES"
+            recipient_scope_query = ES_Q("match", sub_recipient_location_country_code="USA") | ES_Q(
+                "match", sub_recipient_location_country_name="UNITED STATES"
             )
         else:
             recipient_scope_query = ES_Q("match", recipient_location_country_code="USA")
@@ -463,8 +463,8 @@ class _PlaceOfPerformanceScope(_Filter):
     @classmethod
     def generate_elasticsearch_query(cls, filter_value: str, query_type: _QueryType, **options) -> ES_Q:
         if query_type == _QueryType.SUBAWARDS:
-            pop_scope_query = ES_Q("match", sub_place_of_perform_country_co="USA") | ES_Q(
-                "match", sub_place_of_perform_country_name="UNITED STATES"
+            pop_scope_query = ES_Q("match", sub_pop_country_code="USA") | ES_Q(
+                "match", sub_pop_country_name="UNITED STATES"
             )
         else:
             # If an ES record has a pop_country_code of "USA" OR if it has any value for the pop_state_code field
