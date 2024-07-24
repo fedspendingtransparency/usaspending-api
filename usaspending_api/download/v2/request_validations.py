@@ -721,7 +721,7 @@ class DisasterDownloadValidator(DownloadValidatorBase):
                     "gtas_balances",
                     "object_class_program_activity",
                     "elasticsearch_awards",
-                    "sub_awards",
+                    "elasticsearch_sub_awards",
                 ],
                 "include_data_dictionary": True,
                 "include_file_description": {
