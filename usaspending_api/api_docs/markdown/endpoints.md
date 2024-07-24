@@ -65,6 +65,7 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/autocomplete/glossary/](/api/v2/autocomplete/glossary/)|POST| Returns glossary terms matching provided search text |
 |[/api/v2/autocomplete/naics/](/api/v2/autocomplete/naics/)|POST| Returns NAICS objects matching the specified search text |
 |[/api/v2/autocomplete/psc/](/api/v2/autocomplete/psc/)|POST| Returns product or service (PSC) codes and their descriptions based on a search string. This may be the 4-character PSC code or a description string. |
+|[/api/v2/autocomplete/program_activity/](/api/v2/autocomplete/program_activity/)|POST| Returns program activities and their names based on a search string. This may be the 4-character program activity code or a name string.
 |[/api/v2/autocomplete/location](/api/v2/autocomplete/location)|POST| Returns locations based on search text |
 |[/api/v2/award_spending/recipient/](/api/v2/award_spending/recipient/?fiscal_year=2016&awarding_agency_id=183)|GET| Returns all award spending by recipient for a given fiscal year and agency id |
 |[/api/v2/awards/<AWARD_ID\>/](/api/v2/awards/CONT_IDV_TMHQ10C0040_2044/)|GET| Returns details about specific award |

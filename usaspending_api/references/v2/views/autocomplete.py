@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.generic_helper import deprecated_api_endpoint_message
-from usaspending_api.references.models import Cfda, Definition, NAICS, PSC
+from usaspending_api.references.models import Cfda, Definition, NAICS, PSC, RefProgramActivity
 from usaspending_api.references.v2.views.glossary import DefinitionSerializer
 from usaspending_api.search.models import AgencyAutocompleteMatview, AgencyOfficeAutocompleteMatview
 
@@ -378,6 +378,26 @@ class PSCAutocompleteViewSet(BaseAutocompleteViewSet):
 
         return Response({"results": list(queryset.values("product_or_service_code", "psc_description")[:limit])})
 
+class ProgramActivityAutocompleteViewSet(BaseAutocompleteViewSet):
+    """
+    This route sends a request to the backend to retrieve program activities and their names based
+    on a search string. This may be the 4-character program activity code or a name string.
+    """
+
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/program_activity.md"
+
+    @cache_response()
+    def post(self, request):
+        search_text, limit = self.get_request_payload(request)
+
+        queryset = RefProgramActivity.objects.all()
+
+        if len(search_text) == 4 and queryset.filter(program_activity_code=search_text.upper()).exists():
+            queryset = queryset.filter(program_activity_code=search_text.upper())
+        else:
+            queryset = queryset.filter(program_activity_name__icontains=search_text)
+
+        return Response({"results": list(queryset.values("program_activity_code", "program_activity_name")[:limit])})
 
 class GlossaryAutocompleteViewSet(BaseAutocompleteViewSet):
     """
