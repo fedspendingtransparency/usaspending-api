@@ -104,6 +104,7 @@ TABLE_SPEC = {
         "tsvectors": None,
         "postgres_partition_spec": None,
     },
+
     "recipient_lookup": {
         "model": RecipientLookup,
         "is_from_broker": False,
