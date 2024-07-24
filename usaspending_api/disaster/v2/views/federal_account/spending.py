@@ -51,25 +51,6 @@ class SpendingViewSet(SpendingMixin, FabaOutlayMixin, ElasticsearchAccountDisast
     """Returns disaster spending by federal account."""
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/federal_account/spending.md"
-    agg_key = "financial_accounts_by_award.treasury_account_id"  # primary (tier-1) aggregation key
-    nested_nonzero_fields = {"obligation": "transaction_obligated_amount", "outlay": "gross_outlay_amount_by_award_cpe"}
-    query_fields = [
-        "federal_account_symbol",
-        "federal_account_symbol.contains",
-        "federal_account_title",
-        "federal_account_title.contains",
-        "treasury_account_symbol",
-        "treasury_account_symbol.contains",
-        "treasury_account_title",
-        "treasury_account_title.contains",
-    ]
-    top_hits_fields = [
-        "financial_accounts_by_award.federal_account_symbol",
-        "financial_accounts_by_award.federal_account_title",
-        "financial_accounts_by_award.treasury_account_symbol",
-        "financial_accounts_by_award.treasury_account_title",
-        "financial_accounts_by_award.federal_account_id",
-    ]
 
     @cache_response()
     def post(self, request):
@@ -79,8 +60,7 @@ class SpendingViewSet(SpendingMixin, FabaOutlayMixin, ElasticsearchAccountDisast
             json_result = self._build_json_result(account_db_results)
             sorted_json_result = self._sort_json_result(json_result)
 
-            return sorted_json_result
-            # return self.perform_elasticsearch_search()
+            return Response(sorted_json_result)
         else:
             results = list(self.total_queryset)
             extra_columns = ["total_budgetary_resources"]
@@ -92,7 +72,7 @@ class SpendingViewSet(SpendingMixin, FabaOutlayMixin, ElasticsearchAccountDisast
 
     def _get_covid_faba_spending(self) -> QuerySet:
         queryset = (
-            CovidFABASpending.objects.filter(spending_type="treasury_account")
+            CovidFABASpending.objects.filter(spending_level="treasury_account")
             .filter(defc__in=self.filters["def_codes"])
             .values(
                 "funding_federal_account_id",
