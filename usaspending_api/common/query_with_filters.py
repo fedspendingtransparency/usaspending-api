@@ -264,7 +264,7 @@ class _SubawardsPrimeSubAwardTypes(_Filter):
     def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType, **options) -> ES_Q:
         award_type_codes_query = []
 
-        award_types = filter_values.get("sub_awards")
+        award_types = filter_values.get("elasticsearch_sub_awards")
         for type in award_types:
             award_type_codes_query.append(ES_Q("match", **{"prime_award_group": type}))
         return ES_Q("bool", should=award_type_codes_query, minimum_should_match=1)
