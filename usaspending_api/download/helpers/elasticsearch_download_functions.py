@@ -37,7 +37,7 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
     _search_type = None
 
     @classmethod
-    def _get_download_ids_generator(cls, search: Union[AwardSearch, TransactionSearch], size: int):
+    def _get_download_ids_generator(cls, search: Union[AwardSearch, TransactionSearch, SubawardSearch], size: int):
         """
         Takes an AwardSearch or TransactionSearch object (that specifies the index, filter, and source) and returns
         a generator that yields list of IDs in chunksize SIZE.
