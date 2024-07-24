@@ -1,7 +1,8 @@
 from abc import abstractmethod
-from typing import List, Optional, Dict
+from typing import Dict, List, Optional
 
-from elasticsearch_dsl import Q as ES_Q, A
+from elasticsearch_dsl import A
+from elasticsearch_dsl import Q as ES_Q
 from rest_framework.response import Response
 
 from usaspending_api.common.cache_decorator import cache_response
@@ -229,11 +230,20 @@ class ElasticsearchAccountDisasterBase(DisasterBase):
         return {"totals": totals, "results": sorted_results}
 
     def sort_results(self, results: List[dict]) -> List[dict]:
-        sorted_parents = sorted(
-            results,
-            key=lambda val: val.get(self.pagination.sort_key, "id"),
-            reverse=self.pagination.sort_order == "desc",
-        )
+        # Add a sort specifically for agency names so that the agency names that contain "of the" are
+        #   sorted correctly and not just at the end of the list of agencies
+        if self.pagination.sort_key == "description":
+            sorted_parents = sorted(
+                results,
+                key=lambda val: val.get("description", "id").lower(),
+                reverse=self.pagination.sort_order == "desc",
+            )
+        else:
+            sorted_parents = sorted(
+                results,
+                key=lambda val: val.get(self.pagination.sort_key, "id"),
+                reverse=self.pagination.sort_order == "desc",
+            )
 
         if self.has_children:
             for parent in sorted_parents:

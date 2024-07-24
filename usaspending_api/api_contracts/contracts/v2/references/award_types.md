@@ -88,3 +88,4 @@ This endpoint returns a JSON object representing the grouping of award types.
 ## DirectPaymentTypes (object)
 + `06` (required, string) - Direct Payment for Specified Use
 + `10` (required, string) - Direct Payment with Unrestricted Use
++ `-1` (required, string) - Not Specified

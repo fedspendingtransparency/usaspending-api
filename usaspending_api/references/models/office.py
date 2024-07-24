@@ -4,7 +4,7 @@ from django.db import models
 class Office(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
-    office_code = models.TextField(null=False)
+    office_code = models.TextField(null=False, unique=True)
     office_name = models.TextField(null=True)
     sub_tier_code = models.TextField(null=False)
     agency_code = models.TextField(null=False)

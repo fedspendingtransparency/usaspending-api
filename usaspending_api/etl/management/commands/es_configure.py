@@ -1,10 +1,10 @@
 import json
 import logging
 import subprocess
+from time import perf_counter
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from time import perf_counter
 
 logger = logging.getLogger("script")
 
@@ -20,6 +20,9 @@ FILES = {
     "covid19_faba_template": settings.APP_DIR / "etl" / "es_covid19_faba_template.json",
     "settings": settings.APP_DIR / "etl" / "es_config_objects.json",
     "transaction_template": settings.APP_DIR / "etl" / "es_transaction_template.json",
+    "subaward_template": settings.APP_DIR / "etl" / "es_subaward_template.json",
+    "recipient_profile_template": settings.APP_DIR / "etl" / "es_recipient_profile_template.json",
+    "location_template": settings.APP_DIR / "etl" / "es_location_template.json",
 }
 
 
@@ -34,7 +37,16 @@ class Command(BaseCommand):
             "--load-type",
             type=str,
             help="Select which type of index to configure, current options are awards or transactions",
-            choices=["transaction", "award", "covid19-faba", "transactions", "awards"],
+            choices=[
+                "transaction",
+                "award",
+                "covid19-faba",
+                "transactions",
+                "awards",
+                "recipient",
+                "location",
+                "subaward",
+            ],
             default="transaction",
         )
         parser.add_argument(
@@ -57,10 +69,22 @@ class Command(BaseCommand):
             self.index_pattern = f"*{settings.ES_TRANSACTIONS_NAME_SUFFIX}"
             self.max_result_window = settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW
             self.template_name = "transaction_template"
+        elif options["load_type"] == "subaward":
+            self.index_pattern = f"*{settings.ES_SUBAWARD_NAME_SUFFIX}"
+            self.max_result_window = settings.ES_SUBAWARD_MAX_RESULT_WINDOW
+            self.template_name = "subaward_template"
         elif options["load_type"] == "covid19-faba":
             self.index_pattern = f"*{settings.ES_COVID19_FABA_NAME_SUFFIX}"
             self.max_result_window = settings.ES_COVID19_FABA_MAX_RESULT_WINDOW
             self.template_name = "covid19_faba_template"
+        elif options["load_type"] == "recipient":
+            self.index_pattern = f"*{settings.ES_RECIPIENTS_NAME_SUFFIX}"
+            self.max_result_window = settings.ES_RECIPIENTS_MAX_RESULT_WINDOW
+            self.template_name = "recipient_profile_template"
+        elif options["load_type"] == "location":
+            self.index_pattern = f"*{settings.ES_LOCATIONS_NAME_SUFFIX}"
+            self.max_result_window = settings.ES_LOCATIONS_MAX_RESULT_WINDOW
+            self.template_name = "location_template"
         else:
             raise RuntimeError(f"No config for {options['load_type']}")
 

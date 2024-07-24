@@ -1,34 +1,33 @@
 import os
-
 from builtins import Exception
 from datetime import datetime, timezone
+from pathlib import Path
+from string import Template
 
 from django.conf import settings
 from django.core.management import call_command
-from django.core.serializers.json import json, DjangoJSONEncoder
-from django.db import connection, DEFAULT_DB_ALIAS
+from django.core.serializers.json import DjangoJSONEncoder, json
+from django.db import DEFAULT_DB_ALIAS, connection
 from elasticsearch import Elasticsearch
-from pathlib import Path
-from string import Template
 from pytest import Session
 
-from usaspending_api.etl.elasticsearch_loader_helpers.index_config import create_load_alias
-from usaspending_api.common.sqs.sqs_handler import (
-    UNITTEST_FAKE_QUEUE_NAME,
-    _FakeUnitTestFileBackedSQSQueue,
-    _FakeStatelessLoggingSQSDeadLetterQueue,
-    UNITTEST_FAKE_DEAD_LETTER_QUEUE_NAME,
-)
 from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetcher
 from usaspending_api.common.helpers.text_helpers import generate_random_string
+from usaspending_api.common.sqs.sqs_handler import (
+    UNITTEST_FAKE_DEAD_LETTER_QUEUE_NAME,
+    UNITTEST_FAKE_QUEUE_NAME,
+    _FakeStatelessLoggingSQSDeadLetterQueue,
+    _FakeUnitTestFileBackedSQSQueue,
+)
 from usaspending_api.etl.elasticsearch_loader_helpers import (
+    TaskSpec,
     create_award_type_aliases,
     execute_sql_statement,
-    TaskSpec,
     transform_award_data,
     transform_covid19_faba_data,
     transform_transaction_data,
 )
+from usaspending_api.etl.elasticsearch_loader_helpers.index_config import create_load_alias
 
 
 def is_pytest_xdist_parallel_sessions() -> bool:
@@ -144,8 +143,14 @@ class TestElasticSearchIndex:
             upper_name = "AWARDS"
         elif self.index_type == "covid19-faba":
             upper_name = "COVID19_FABA"
+        elif self.index_type == "subaward":
+            upper_name = "SUBAWARD"
         elif self.index_type == "transaction":
             upper_name = "TRANSACTIONS"
+        elif self.index_type == "recipient":
+            upper_name = "RECIPIENTS"
+        elif self.index_type == "location":
+            upper_name = "LOCATIONS"
         return getattr(settings, f"ES_{upper_name}_MAX_RESULT_WINDOW")
 
     def _add_contents(self, **options):
@@ -157,6 +162,10 @@ class TestElasticSearchIndex:
             view_sql_file = f"{settings.ES_AWARDS_ETL_VIEW_NAME}.sql"
             view_name = settings.ES_AWARDS_ETL_VIEW_NAME
             es_id = f"{self.index_type}_id"
+        elif self.index_type == "subaward":
+            view_sql_file = f"{settings.ES_SUBAWARD_ETL_VIEW_NAME}.sql"
+            view_name = settings.ES_SUBAWARD_ETL_VIEW_NAME
+            es_id = "broker_subaward_id"
         elif self.index_type == "covid19-faba":
             view_sql_file = f"{settings.ES_COVID19_FABA_ETL_VIEW_NAME}.sql"
             view_name = settings.ES_COVID19_FABA_ETL_VIEW_NAME
@@ -165,6 +174,14 @@ class TestElasticSearchIndex:
             view_sql_file = f"{settings.ES_TRANSACTIONS_ETL_VIEW_NAME}.sql"
             view_name = settings.ES_TRANSACTIONS_ETL_VIEW_NAME
             es_id = f"{self.index_type}_id"
+        elif self.index_type == "recipient":
+            view_sql_file = f"{settings.ES_RECIPIENTS_ETL_VIEW_NAME}.sql"
+            view_name = settings.ES_RECIPIENTS_ETL_VIEW_NAME
+            es_id = "id"
+        elif self.index_type == "location":
+            view_sql_file = f"{settings.ES_LOCATIONS_ETL_VIEW_NAME}.sql"
+            view_name = settings.ES_LOCATIONS_ETL_VIEW_NAME
+            es_id = "id"
         else:
             raise Exception("Invalid index type")
 
@@ -220,8 +237,12 @@ class TestElasticSearchIndex:
             required_suffix = "-" + settings.ES_AWARDS_NAME_SUFFIX
         elif self.index_type == "transaction":
             required_suffix = "-" + settings.ES_TRANSACTIONS_NAME_SUFFIX
+        elif self.index_type == "subaward":
+            required_suffix = "-" + settings.ES_SUBAWARD_NAME_SUFFIX
         elif self.index_type == "covid19-faba":
             required_suffix = "-" + settings.ES_COVID19_FABA_NAME_SUFFIX
+        elif self.index_type == "recipient":
+            required_suffix = "-" + settings.ES_RECIPIENTS_NAME_SUFFIX
         return (
             f"test-{datetime.now(timezone.utc).strftime('%Y-%m-%d-%H-%M-%S-%f')}"
             f"-{generate_random_string()}"

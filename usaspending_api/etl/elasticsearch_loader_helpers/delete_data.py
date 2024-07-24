@@ -1,25 +1,23 @@
 import logging
+from time import perf_counter
+from typing import Any, Dict, List, Optional, Union
 
 import pandas as pd
-
 from django.conf import settings
-from time import perf_counter
-from typing import Optional, Dict, Union, Any
-
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search
 from elasticsearch_dsl.mapping import Mapping
 
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date, get_latest_load_date
-from usaspending_api.common.helpers.s3_helpers import retrieve_s3_bucket_object_list, access_s3_object
+from usaspending_api.common.helpers.s3_helpers import access_s3_object, retrieve_s3_bucket_object_list
 from usaspending_api.etl.elasticsearch_loader_helpers.index_config import (
     ES_AWARDS_UNIQUE_KEY_FIELD,
     ES_TRANSACTIONS_UNIQUE_KEY_FIELD,
 )
 from usaspending_api.etl.elasticsearch_loader_helpers.utilities import (
+    chunks,
     execute_sql_statement,
     format_log,
-    chunks,
 )
 
 logger = logging.getLogger("script")
@@ -243,7 +241,9 @@ def delete_awards(
     fpds_external_data_load_date_key: str = "fpds",
     spark: "pyspark.sql.SparkSession" = None,  # noqa
 ) -> int:
-    """Delete all awards in the Elasticsearch awards index that were deleted in the source database.
+    """Delete all awards in the Elasticsearch awards index that were deleted in the source database and awards
+    the were recently modified and no longer have an `action_date` on or after FY2008 (2007-10-01), since we
+    don't support searching awards before this date.
 
     This performs the deletes of award documents in ES in a series of batches, as there could be many. Millions of
     awards deleted may take a prohibitively long time, and it could be better to just re-index all documents from
@@ -272,6 +272,37 @@ def delete_awards(
     deleted_tx_keys = _gather_deleted_transaction_keys(
         config, fabs_external_data_load_date_key, fpds_external_data_load_date_key
     )
+    awards_to_delete = []
+    deleted_award_kvs_len = 0
+
+    # Recently updated awards (updated within the last 3 days) with an `action_date` before 2007-10-01
+    updated_awards_pre_fy2008 = _check_awards_for_pre_fy2008(spark)
+    updated_awards_pre_fy2008_len = len(updated_awards_pre_fy2008)
+    if updated_awards_pre_fy2008_len == 0:
+        logger.info(
+            format_log(
+                "None of the recently updated awards have an action_date prior to FY2008.",
+                action="Delete",
+                name=task_id,
+            )
+        )
+    else:
+        logger.info(
+            format_log(
+                f"{updated_awards_pre_fy2008_len} recently updated awards have an action_date prior to FY2008.",
+                action="Delete",
+                name=task_id,
+            )
+        )
+        logger.info(
+            format_log(
+                f"These {updated_awards_pre_fy2008_len} pre-FY2008 awards will be deleted from ES, if present.",
+                action="Delete",
+                name=task_id,
+            )
+        )
+        awards_to_delete.extend([v for d in updated_awards_pre_fy2008 for v in d.values()])
+
     # While extracting unique award keys, the lookup is on transactions and must match against the unique transaction id
     award_keys = _lookup_deleted_award_keys(
         client,
@@ -285,40 +316,46 @@ def delete_awards(
     if award_keys_len == 0:
         logger.info(
             format_log(
-                f"No related awards found for deletion. Zero transaction docs found from which to derive awards.",
+                "No related awards found for deletion. Zero transaction docs found from which to derive awards.",
                 action="Delete",
                 name=task_id,
             )
         )
-        return 0
-    logger.info(
-        format_log(f"Derived {award_keys_len} award keys from transactions in ES", action="Delete", name=task_id)
-    )
+    else:
+        logger.info(
+            format_log(f"Derived {award_keys_len} award keys from transactions in ES", action="Delete", name=task_id)
+        )
+        deleted_award_kvs = _check_awards_for_deletes(award_keys, spark)
+        deleted_award_kvs_len = len(deleted_award_kvs)
 
-    deleted_award_kvs = _check_awards_for_deletes(award_keys, spark)
-    deleted_award_kvs_len = len(deleted_award_kvs)
     if deleted_award_kvs_len == 0:
         # In this case it could be an award's transaction was deleted, but not THE LAST transaction of that award.
         # i.e. the deleted transaction's "siblings" are still in the DB and therefore the parent award should remain
         logger.info(
             format_log(
-                f"No related awards found will be deleted. All derived awards are still in the DB.",
+                "No related awards found will be deleted. All derived awards are still in the DB.",
                 action="Delete",
                 name=task_id,
             )
         )
-        return 0
-    logger.info(
-        format_log(
-            f"{deleted_award_kvs_len} awards no longer in the DB will be removed from ES", action="Delete", name=task_id
+    else:
+        logger.info(
+            format_log(
+                f"{deleted_award_kvs_len} awards no longer in the DB will be removed from ES",
+                action="Delete",
+                name=task_id,
+            )
         )
-    )
+        awards_to_delete.extend([v for d in deleted_award_kvs for v in d.values()])
 
-    values_list = [v for d in deleted_award_kvs for v in d.values()]
+    if len(awards_to_delete) == 0:
+        logger.info(format_log("Nothing to delete", action="Delete"))
+        return 0
+
     return delete_docs_by_unique_key(
         client,
         key=config["unique_key_field"],
-        value_list=values_list,
+        value_list=awards_to_delete,
         task_id=task_id,
         index=config["index_name"],
         delete_chunk_size=config["partition_size"],
@@ -331,8 +368,11 @@ def delete_transactions(
     task_id: str = "Sync DB Deletes",
     fabs_external_data_load_date_key: str = "fabs",
     fpds_external_data_load_date_key: str = "fpds",
+    spark: "pyspark.sql.SparkSession" = None,  # noqa
 ) -> int:
-    """Delete all transactions in the Elasticsearch transactions index that were deleted in the source database.
+    """Delete all transactions in the Elasticsearch transactions index that were deleted in the source database and
+    transactions that were recently modified and no longer have an `action_date` on or after FY2008 (2007-10-01), since
+    we don't support searching transactions before this date.
 
     This performs the deletes of transaction documents in ES in a series of batches, as there could be many. Millions of
     transactions deleted may take a prohibitively long time, and it could be better to just re-index all documents from
@@ -352,13 +392,50 @@ def delete_transactions(
 
     Returns: Number of ES docs deleted in the index
     """
+
+    tx_keys_to_delete = []
+
     deleted_tx_keys = _gather_deleted_transaction_keys(
         config, fabs_external_data_load_date_key, fpds_external_data_load_date_key
     )
+    if len(deleted_tx_keys) > 0:
+        logger.info(
+            format_log(
+                f"{len(deleted_tx_keys)} transactions no longer in the DB will be removed from ES", action="Delete"
+            )
+        )
+        tx_keys_to_delete.extend(deleted_tx_keys.keys())
+
+    pre_fy2008_transactions = _gather_modified_transactions_pre_fy2008(config, spark)
+    if len(pre_fy2008_transactions) > 0:
+        logger.info(
+            format_log(
+                f"{len(pre_fy2008_transactions)} recently updated transactions have an action_date prior to FY2008.",
+                action="Delete",
+            )
+        )
+        logger.info(
+            format_log(
+                f"These {len(pre_fy2008_transactions)} pre-FY2008 transactions will be deleted from ES, if present.",
+                action="Delete",
+            )
+        )
+        tx_keys_to_delete.extend([v for d in pre_fy2008_transactions for v in d.values()])
+    else:
+        logger.info(
+            format_log(
+                "None of the recently updated transactions have an action_date prior to FY2008.", action="Delete"
+            )
+        )
+
+    if len(tx_keys_to_delete) == 0:
+        logger.info(format_log("Nothing to delete", action="Delete"))
+        return 0
+
     return delete_docs_by_unique_key(
         client,
         key=config["unique_key_field"],
-        value_list=[*deleted_tx_keys],
+        value_list=tx_keys_to_delete,
         task_id="Sync DB Deletes",
         index=config["index_name"],
         delete_chunk_size=config["partition_size"],
@@ -381,10 +458,10 @@ def _gather_deleted_transaction_keys(
     """
 
     if not config["process_deletes"]:
-        logger.info(format_log(f"Skipping the S3 CSV fetch for deleted transactions", action="Delete"))
+        logger.info(format_log("Skipping the S3 CSV fetch for deleted transactions", action="Delete"))
         return None
 
-    logger.info(format_log(f"Gathering all deleted transactions from S3", action="Delete"))
+    logger.info(format_log("Gathering all deleted transactions from S3", action="Delete"))
     start = perf_counter()
 
     bucket_objects = retrieve_s3_bucket_object_list(bucket_name=config["s3_bucket"])
@@ -449,10 +526,83 @@ def _gather_deleted_transaction_keys(
     return deleted_keys
 
 
+def _gather_modified_transactions_pre_fy2008(
+    config: dict,
+    spark: "pyspark.sql.SparkSession" = None,  # noqa
+    transactions_table: str = "rpt.transaction_search",
+    days_delta: int = 3,
+) -> Union[List[Dict], List]:
+    """Find all transactions that have been modified in the last `days_delta` day(s) that have an `action_date` prior to
+        2007-10-01 (FY 2008) and delete them from Elasticsearch if they're present.
+    This is for the cases where a transaction was originally created with a valid `action_date` value
+        (2007-10-01 or later), but has since been updated to have an invalid `action_date` (pre 2007-10-01)
+
+    Args:
+        config: Collection of key-value pairs that encapsulates runtime arguments for this ES management task.
+        spark: Spark session. Defaults to None.
+        transactions_table: Database table with transactions. Defaults to "transaction_search".
+        days_delta: How many days to go back when checking for "recently" updated transactions. Defaults to 3.
+
+    Returns:
+        List of dictionaries in the format of {"generated_unique_transaction_id": <unique transaction id>} for
+        Transactions that have been updated in the past `days_delta` days or an empty list.
+    """
+
+    results = []
+
+    if not config["process_deletes"]:
+        logger.info(format_log("Skipping the FY2008 check for modified transactions", action="Delete"))
+        return results
+
+    pre_fy2008_transactions_sql = """
+        SELECT
+            CASE
+                WHEN detached_award_proc_unique IS NOT NULL
+                THEN concat('CONT_TX_', detached_award_proc_unique)
+                WHEN afa_generated_unique IS NOT NULL
+                THEN CONCAT('ASST_TX_', afa_generated_unique)
+            END AS generated_unique_transaction_id
+        FROM
+            {transactions_table}
+        WHERE
+            etl_update_date > CURRENT_DATE - {days_delta}
+            AND
+            action_date < '2007-10-01'
+        """
+
+    if spark:
+        results = [
+            row.asDict()
+            for row in spark.sql(
+                pre_fy2008_transactions_sql.format(transactions_table=transactions_table, days_delta=days_delta)
+            ).collect()
+        ]
+    else:
+        results = execute_sql_statement(
+            pre_fy2008_transactions_sql.format(transactions_table=transactions_table, days_delta=days_delta),
+            results=True,
+        )
+
+    if len(results) > 0:
+        logger.info(
+            format_log(
+                f"{len(results)} recently updated transactions have an action_date before FY2008.", action="Delete"
+            )
+        )
+        logger.info(
+            format_log(
+                f"These {len(results)} pre-FY2008 transactions will be deleted from ES, if present.", action="Delete"
+            )
+        )
+
+    return results
+
+
 def _check_awards_for_deletes(
     id_list: list, spark: "pyspark.sql.SparkSession" = None, awards_table: str = "vw_awards"  # noqa
 ) -> list:
     """Takes a list of award key values and returns them if they are NOT found in the awards DB table"""
+
     formatted_value_ids = ""
     for x in id_list:
         formatted_value_ids += "('" + x + "'),"
@@ -472,6 +622,50 @@ def _check_awards_for_deletes(
     else:
         results = execute_sql_statement(
             sql.format(ids=formatted_value_ids[:-1], awards_table=awards_table), results=True
+        )
+
+    return results
+
+
+def _check_awards_for_pre_fy2008(
+    spark: "pyspark.sql.SparkSession" = None, awards_table: str = "rpt.award_search", days_delta: int = 3  # noqa
+) -> Union[List[Dict], List]:
+    """Find all awards that have been modified in the last `days_delta` day(s) that have an `action_date` prior to
+        2007-10-01 (FY 2008) and delete them from Elasticsearch if they're present.
+    This is for the cases where an award was originally created with a valid `action_date` value (2007-10-01 or later),
+        but has since been updated to have an invalid `action_date` (pre 2007-10-01)
+
+    Args:
+        spark: Spark session. Defaults to None.
+        awards_table: Database table with awards. Defaults to "award_search".
+        days_delta: How many days to go back when checking for "recently" updated awards. Defaults to 3.
+
+    Returns:
+        List of dictionaries in the format of {"generated_unique_award_id": <unique award id>} for Awards that have been
+        updated in the past `days_delta` days or an empty list.
+    """
+
+    pre_fy2008_awards_sql = """
+        SELECT
+            generated_unique_award_id
+        FROM
+            {awards_table}
+        WHERE
+            update_date > CURRENT_DATE - {days_delta}
+            AND
+            action_date < '2007-10-01'
+        """
+
+    if spark:
+        results = [
+            row.asDict()
+            for row in spark.sql(
+                pre_fy2008_awards_sql.format(awards_table=awards_table, days_delta=days_delta)
+            ).collect()
+        ]
+    else:
+        results = execute_sql_statement(
+            pre_fy2008_awards_sql.format(awards_table=awards_table, days_delta=days_delta), results=True
         )
 
     return results

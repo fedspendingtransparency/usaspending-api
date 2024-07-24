@@ -1,16 +1,12 @@
 import logging
-
 from ssl import CERT_NONE
-from typing import Optional, Union, Callable
+from typing import Callable, Optional, Union
 
 from django.conf import settings
+from elasticsearch import ConnectionError, ConnectionTimeout, Elasticsearch, NotFoundError, TransportError
 from elasticsearch.connection import create_ssl_context
 from elasticsearch_dsl import Search
 from elasticsearch_dsl.response import Response
-from elasticsearch import ConnectionError, Elasticsearch
-from elasticsearch import ConnectionTimeout
-from elasticsearch import NotFoundError
-from elasticsearch import TransportError
 
 logger = logging.getLogger("console")
 
@@ -110,9 +106,33 @@ class AwardSearch(_Search):
         return "award_search"
 
 
+class SubawardSearch(_Search):
+    _index_name = f"{settings.ES_SUBAWARD_QUERY_ALIAS_PREFIX}*"
+
+    @staticmethod
+    def type_as_string():
+        return "subaward_search"
+
+
 class AccountSearch(_Search):
     _index_name = f"{settings.ES_COVID19_FABA_QUERY_ALIAS_PREFIX}*"
 
     @staticmethod
     def type_as_string():
         return "account_search"
+
+
+class RecipientSearch(_Search):
+    _index_name = f"{settings.ES_RECIPIENTS_QUERY_ALIAS_PREFIX}*"
+
+    @staticmethod
+    def type_as_string():
+        return "recipient_search"
+
+
+class LocationSearch(_Search):
+    _index_name = f"{settings.ES_LOCATIONS_QUERY_ALIAS_PREFIX}*"
+
+    @staticmethod
+    def type_as_string():
+        return "location_search"

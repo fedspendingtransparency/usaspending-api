@@ -15,14 +15,14 @@ from model_bakery import baker
 from pytest_django.fixtures import _set_suffix_to_test_databases
 from pytest_django.lazy_django import skip_if_no_django
 from xdist.plugin import (
-    pytest_xdist_auto_num_workers,
-    is_xdist_worker,
     get_xdist_worker_id,
+    is_xdist_worker,
+    pytest_xdist_auto_num_workers,
 )
 
 from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import (
-    ensure_view_exists,
     ensure_business_categories_functions_exist,
+    ensure_view_exists,
 )
 from usaspending_api.common.helpers.generic_helper import generate_matviews
 from usaspending_api.common.helpers.sql_helpers import (
@@ -39,10 +39,10 @@ from usaspending_api.config import CONFIG
 from usaspending_api.conftest_helpers import (
     TestElasticSearchIndex,
     ensure_broker_server_dblink_exists,
+    is_pytest_xdist_master_process,
+    is_safe_for_xdist_setup_or_teardown,
     remove_unittest_queue_data_files,
     transform_xdist_worker_id_to_django_test_db_id,
-    is_safe_for_xdist_setup_or_teardown,
-    is_pytest_xdist_master_process,
 )
 
 # Compose ALL fixtures from conftest_spark
@@ -101,10 +101,10 @@ def pytest_sessionfinish(session, exitstatus):
     worker_id = get_xdist_worker_id(session)
     if is_safe_for_xdist_setup_or_teardown(session, worker_id):
         if is_pytest_xdist_master_process(session):
-            print(f"\nRunning pytest_sessionfinish while exiting the xdist 'master' process", file=sys.__stderr__)
+            print("\nRunning pytest_sessionfinish while exiting the xdist 'master' process", file=sys.__stderr__)
         else:
             print(
-                f"\nRunning pytest_sessionfinish in single process execution (no xdist parallel test sessions)",
+                "\nRunning pytest_sessionfinish in single process execution (no xdist parallel test sessions)",
                 file=sys.__stderr__,
             )
         # Add cleanup below
@@ -194,7 +194,7 @@ def django_db_setup(
     More work could be put into trying to patch, replace, or wrap implementation of
     ``django.test.utils.setup_databases``, which is the actual method that needs to be wrapped and extended.
     """
-    from django.test.utils import setup_databases, teardown_databases, TimeKeeper
+    from django.test.utils import TimeKeeper, setup_databases, teardown_databases
     from pytest_django.fixtures import _disable_native_migrations
 
     setup_databases_args = {}
@@ -372,6 +372,22 @@ def elasticsearch_award_index(db):
 
 
 @pytest.fixture
+def elasticsearch_subaward_index(db):
+    """
+    Add this fixture to your test if you intend to use the Elasticsearch
+    subaward index.  To use, create some mock database data then call
+    elasticsearch_subaward_index.update_index to populate Elasticsearch.
+    """
+    elastic_search_index = TestElasticSearchIndex("subaward")
+    with override_settings(
+        ES_SUBAWARD_QUERY_ALIAS_PREFIX=elastic_search_index.alias_prefix,
+        ES_SUBAWARD_WRITE_ALIAS=elastic_search_index.etl_config["write_alias"],
+    ):
+        yield elastic_search_index
+        elastic_search_index.delete_index()
+
+
+@pytest.fixture
 def elasticsearch_account_index(db):
     """
     Add this fixture to your test if you intend to use the Elasticsearch
@@ -384,6 +400,42 @@ def elasticsearch_account_index(db):
     with override_settings(
         ES_COVID19_FABA_QUERY_ALIAS_PREFIX=elastic_search_index.alias_prefix,
         ES_COVID19_FABA_WRITE_ALIAS=elastic_search_index.etl_config["write_alias"],
+    ):
+        yield elastic_search_index
+        elastic_search_index.delete_index()
+
+
+@pytest.fixture
+def elasticsearch_recipient_index(db):
+    """
+    Add this fixture to your test if you intend to use the Elasticsearch
+    recipient index.  To use, create some mock database data then call
+    elasticsearch_recipient_index.update_index to populate Elasticsearch.
+
+    See test_demo_elasticsearch_tests.py for sample usage.
+    """
+    elastic_search_index = TestElasticSearchIndex("recipient")
+    with override_settings(
+        ES_RECIPIENTS_QUERY_ALIAS_PREFIX=elastic_search_index.alias_prefix,
+        ES_RECIPIENTS_WRITE_ALIAS=elastic_search_index.etl_config["write_alias"],
+    ):
+        yield elastic_search_index
+        elastic_search_index.delete_index()
+
+
+@pytest.fixture
+def elasticsearch_location_index(db):
+    """
+    Add this fixture to your test if you intend to use the Elasticsearch
+    location index.  To use, create some mock database data then call
+    elasticsearch_location_index.update_index to populate Elasticsearch.
+
+    See test_demo_elasticsearch_tests.py for sample usage.
+    """
+    elastic_search_index = TestElasticSearchIndex("location")
+    with override_settings(
+        ES_LOCATIONS_QUERY_ALIAS_PREFIX=elastic_search_index.alias_prefix,
+        ES_LOCATIONS_WRITE_ALIAS=elastic_search_index.etl_config["write_alias"],
     ):
         yield elastic_search_index
         elastic_search_index.delete_index()

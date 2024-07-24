@@ -1,10 +1,9 @@
 import logging
-
-from django.conf import settings
 from math import ceil
 from time import perf_counter
-from typing import Tuple, List
+from typing import List, Tuple
 
+from django.conf import settings
 from pyspark.sql import SparkSession
 
 from usaspending_api.broker.helpers.last_load_date import get_earliest_load_date, update_last_load_date
@@ -12,16 +11,15 @@ from usaspending_api.common.elasticsearch.client import instantiate_elasticsearc
 from usaspending_api.common.etl.spark import build_ref_table_name_list, create_ref_temp_views
 from usaspending_api.common.helpers.spark_helpers import clean_postgres_sql_for_spark_sql
 from usaspending_api.etl.elasticsearch_loader_helpers import (
+    TaskSpec,
     count_of_records_to_process_in_delta,
     delete_awards,
     delete_transactions,
-    load_data,
     format_log,
+    load_data,
     obtain_extract_all_partitions_sql,
-    TaskSpec,
 )
 from usaspending_api.etl.elasticsearch_loader_helpers.controller import AbstractElasticsearchIndexerController
-
 
 logger = logging.getLogger("script")
 
@@ -55,9 +53,17 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
             identifier_replacements["transaction_search"] = "rpt.transaction_search"
         elif self.config["load_type"] == "award":
             identifier_replacements["award_search"] = "rpt.award_search"
+        elif self.config["load_type"] == "subaward":
+            identifier_replacements = None
         elif self.config["load_type"] == "covid19-faba":
             identifier_replacements["financial_accounts_by_awards"] = "int.financial_accounts_by_awards"
             identifier_replacements["vw_awards"] = "int.awards"
+        elif self.config["load_type"] == "recipient":
+            identifier_replacements["recipient_profile"] = "rpt.recipient_profile"
+        elif self.config["load_type"] == "location":
+            # Replace the Postgres regex operator with the Databricks regex operator
+            identifier_replacements["~"] = "rlike"
+            identifier_replacements["state_data"] = "global_temp.state_data"
         else:
             raise ValueError(
                 f"Unrecognized load_type {self.config['load_type']}, or this function does not yet support it"
@@ -188,6 +194,7 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
             config=self.config,
             fabs_external_data_load_date_key="transaction_fabs",
             fpds_external_data_load_date_key="transaction_fpds",
+            spark=self.spark,
         )
         # Use the lesser of the fabs/fpds load dates as the es_deletes load date. This
         # ensures all records deleted since either job was run are taken into account
@@ -207,8 +214,10 @@ def transform_and_load_partition(task: TaskSpec, partition_data) -> List[Tuple[i
 
     client = instantiate_elasticsearch_client()
     try:
-        extracted_data = [row.asDict() for row in partition_data]
-        records = task.transform_func(task, extracted_data)
+        if task.transform_func is not None:
+            records = task.transform_func(task, [row.asDict() for row in partition_data])
+        else:
+            records = [row.asDict() for row in partition_data]
         if len(records) > 0:
             success, fail = load_data(task, records, client)
         else:

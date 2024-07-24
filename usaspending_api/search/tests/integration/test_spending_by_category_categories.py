@@ -887,18 +887,20 @@ def test_category_recipient_awards(recipient_test_data, monkeypatch, elasticsear
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 15, "name": "MULTIPLE RECIPIENTS", "code": "Recipient not provided", "recipient_id": None},
+            {"amount": 15, "name": "MULTIPLE RECIPIENTS", "code": None, "recipient_id": None, "uei": None},
             {
                 "amount": 11,
                 "name": "JOHN DOE",
                 "code": "1234JD4321",
                 "recipient_id": "0b54895d-2393-ea12-48e3-deae990614d9-C",
+                "uei": None,
             },
             {
                 "amount": 2,
                 "name": "UNIVERSITY OF PAWNEE",
                 "code": "00UOP00",
                 "recipient_id": "2af2a5a5-3126-2c76-3681-dec2cf148f1a-P",
+                "uei": None,
             },
         ],
         "messages": [get_time_period_message()],

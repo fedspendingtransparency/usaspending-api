@@ -1,24 +1,21 @@
-import pytest
-
 from collections import OrderedDict
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
+
+import pytest
+from django.db.models import F, Q
+from django.db.models.functions import Upper
 from django.test import override_settings
 from elasticsearch import Elasticsearch
 from model_bakery import baker
 
-from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensure_view_exists
-from usaspending_api.conftest_helpers import TestElasticSearchIndex
-from usaspending_api.etl.elasticsearch_loader_helpers import set_final_index_config
 from usaspending_api.awards.models import Award, TransactionNormalized
+from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensure_view_exists
 from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
-from usaspending_api.etl.elasticsearch_loader_helpers.index_config import ES_AWARDS_UNIQUE_KEY_FIELD
-from usaspending_api.etl.management.commands.elasticsearch_indexer import (
-    Command as ElasticsearchIndexerCommand,
-    parse_cli_args,
-)
+from usaspending_api.conftest_helpers import TestElasticSearchIndex
 from usaspending_api.etl.elasticsearch_loader_helpers import (
     delete_awards,
     delete_transactions,
+    set_final_index_config,
 )
 from usaspending_api.etl.elasticsearch_loader_helpers.controller import PostgresElasticsearchIndexerController
 from usaspending_api.etl.elasticsearch_loader_helpers.delete_data import (
@@ -26,7 +23,15 @@ from usaspending_api.etl.elasticsearch_loader_helpers.delete_data import (
     _lookup_deleted_award_keys,
     delete_docs_by_unique_key,
 )
-from usaspending_api.search.models import TransactionSearch, AwardSearch
+from usaspending_api.etl.elasticsearch_loader_helpers.index_config import ES_AWARDS_UNIQUE_KEY_FIELD
+from usaspending_api.etl.management.commands.elasticsearch_indexer import (
+    Command as ElasticsearchIndexerCommand,
+)
+from usaspending_api.etl.management.commands.elasticsearch_indexer import (
+    parse_cli_args,
+)
+from usaspending_api.recipient.models import RecipientProfile, StateData
+from usaspending_api.search.models import AwardSearch, TransactionSearch
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
@@ -131,6 +136,101 @@ def award_data_fixture(db):
     baker.make("awards.FinancialAccountsByAwards", financial_accounts_by_awards_id=1, award_id=1, treasury_account_id=1)
 
 
+@pytest.fixture
+def recipient_data_fixture(db):
+    baker.make(
+        "recipient.RecipientProfile",
+        id="01",
+        recipient_level="C",
+        recipient_hash="521bb024-054c-4c81-8615-372f81629664",
+        uei="UEI-01",
+        recipient_name="Recipient 1",
+    )
+    baker.make(
+        "recipient.RecipientProfile",
+        id="02",
+        recipient_level="P",
+        recipient_hash="a70b86c3-5a12-4623-963b-9d96c4810163",
+        uei="UEI-02",
+        recipient_name="Recipient 2",
+    )
+    baker.make(
+        "recipient.RecipientProfile",
+        id="03",
+        recipient_level="R",
+        recipient_hash="9159db20-d2f7-42d4-88e2-a69759987520",
+        uei="UEI-03",
+        recipient_name="Recipient 3",
+    )
+
+
+@pytest.fixture
+def location_data_fixture(db):
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=100,
+        is_fpds=False,
+        transaction_unique_id="TRANSACTION100",
+        pop_country_name="UNITED STATES",
+        pop_state_name="CALIFORNIA",
+        pop_city_name="LOS ANGELES",
+        pop_county_name="LOS ANGELES",
+        pop_zip5=90001,
+        pop_congressional_code_current="34",
+        pop_congressional_code="34",
+        recipient_location_country_name="UNITED STATES",
+        recipient_location_state_name="NEVADA",
+        recipient_location_city_name="LAS VEGAS",
+        recipient_location_county_name="CLARK",
+        recipient_location_zip5=88901,
+        recipient_location_congressional_code_current="01",
+        recipient_location_congressional_code="01",
+    )
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=101,
+        is_fpds=False,
+        transaction_unique_id="TRANSACTION101",
+        pop_country_name="DENMARK",
+        pop_state_name=None,
+        pop_city_name=None,
+        pop_county_name=None,
+        pop_zip5=None,
+        pop_congressional_code_current=None,
+        pop_congressional_code=None,
+        recipient_location_country_name="UNITED STATES",
+        recipient_location_state_name="TEXAS",
+        recipient_location_city_name="DALLAS",
+        recipient_location_county_name="DALLAS",
+        recipient_location_zip5=75001,
+        recipient_location_congressional_code_current="30",
+        recipient_location_congressional_code="30",
+    )
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=102,
+        is_fpds=False,
+        transaction_unique_id="TRANSACTION102",
+        pop_country_name="DENMARK",
+        pop_state_name=None,
+        pop_city_name=None,
+        pop_county_name=None,
+        pop_zip5=None,
+        pop_congressional_code_current=None,
+        pop_congressional_code=None,
+        recipient_location_country_name="UNITED STATES",
+        recipient_location_state_name="FAKE STATE",
+        recipient_location_city_name="FAKE CITY",
+        recipient_location_county_name="FAKE COUNTY",
+        recipient_location_zip5=75001,
+        recipient_location_congressional_code_current="30",
+        recipient_location_congressional_code="30",
+    )
+    baker.make("recipient.StateData", id=1, fips="06", code="CA", name="California", type="state", year=2024)
+    baker.make("recipient.StateData", id=2, fips="32", code="NV", name="Nevada", type="state", year=2024)
+    baker.make("recipient.StateData", id=3, fips="48", code="TX", name="Texas", type="state", year=2024)
+
+
 def mock_execute_sql(sql, results, verbosity=None):
     """SQL method is being mocked here since the `execute_sql_statement` used
     doesn't use the same DB connection to avoid multiprocessing errors
@@ -169,6 +269,60 @@ def test_create_and_load_new_award_index(award_data_fixture, elasticsearch_award
     assert client.indices.exists(elasticsearch_award_index.index_name)
     es_award_docs = client.count(index=elasticsearch_award_index.index_name)["count"]
     assert es_award_docs == original_db_awards_count
+
+
+def test_create_and_load_new_recipient_index(recipient_data_fixture, elasticsearch_recipient_index, monkeypatch):
+    """Test the `elasticsearch_indexer` Django management command to create and load a new recipients index."""
+
+    client = elasticsearch_recipient_index.client
+
+    # Ensure index is not yet created
+    assert not client.indices.exists(elasticsearch_recipient_index.index_name)
+
+    original_db_recipients_count = RecipientProfile.objects.count()
+
+    setup_elasticsearch_test(monkeypatch, elasticsearch_recipient_index)
+    assert client.indices.exists(elasticsearch_recipient_index.index_name)
+
+    es_recipient_docs = client.count(index=elasticsearch_recipient_index.index_name)["count"]
+    assert es_recipient_docs == original_db_recipients_count
+
+
+def test_create_and_load_new_location_index(location_data_fixture, elasticsearch_location_index, monkeypatch):
+    """Test the `elasticsearch_indexer` Django management command to create and load a new locations index"""
+
+    client: Elasticsearch = elasticsearch_location_index.client
+
+    # Ensure index is not yet created
+    assert not client.indices.exists(elasticsearch_location_index.index_name)
+
+    valid_state_names = StateData.objects.values_list(Upper("name"), flat=True)
+    pop_ts = (
+        TransactionSearch.objects.filter(
+            (Q(pop_country_name="UNITED STATES") & Q(pop_state_name__in=valid_state_names))
+            | ~(Q(pop_country_name="UNITED STATES") & Q(pop_state_name__isnull=False))
+        )
+        .annotate(countries=F("pop_country_name"), states=F("pop_state_name"))
+        .values("countries", "states")
+    )
+    rl_ts = (
+        TransactionSearch.objects.filter(
+            (
+                Q(recipient_location_country_name="UNITED STATES")
+                & Q(recipient_location_state_name__in=valid_state_names)
+            )
+            | ~(Q(recipient_location_country_name="UNITED STATES") & Q(recipient_location_state_name__isnull=False))
+        )
+        .annotate(countries=F("recipient_location_country_name"), states=F("recipient_location_state_name"))
+        .values("countries", "states")
+    )
+    original_db_locations_count = pop_ts.union(rl_ts).count()
+
+    setup_elasticsearch_test(monkeypatch, elasticsearch_location_index)
+    assert client.indices.exists(elasticsearch_location_index.index_name)
+
+    es_location_docs = client.count(index=elasticsearch_location_index.index_name)["count"]
+    assert es_location_docs == original_db_locations_count
 
 
 def test_create_and_load_new_transaction_index(award_data_fixture, elasticsearch_transaction_index, monkeypatch):

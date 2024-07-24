@@ -1,15 +1,12 @@
 import logging
-
-from datetime import datetime
-from datetime import timezone
+from datetime import datetime, timezone
 
 from django.core.management.base import BaseCommand
-from django.db import connections, transaction
+from django.db import IntegrityError, connections, transaction
 
 from usaspending_api.common.operations_reporter import OpsReporter
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.references.models.office import Office
-
 
 logger = logging.getLogger("script")
 Reporter = OpsReporter(iso_start_datetime=datetime.now(timezone.utc).isoformat(), job_name="load_offices.py")
@@ -20,8 +17,12 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         logger.info("Starting ETL script")
-        self.process_data()
-        logger.info("Office ETL finished successfully!")
+        try:
+            self.process_data()
+            logger.info("Office ETL finished successfully!")
+        except IntegrityError:
+            logger.warning("Unique constraint violated. Continuing with pipeline execution.")
+            raise SystemExit(3)  # Raise exit code 3 for unique constraint violation
 
     @transaction.atomic()
     def process_data(self):
@@ -55,6 +56,35 @@ class Command(BaseCommand):
                 contract_funding_office,
                 financial_assistance_awards_office,
                 financial_assistance_funding_office
-            FROM
-                office
+            FROM office
+        """
+
+    @property
+    def usas_unlinked_offices_sql(self):
+        return """
+        DROP TABLE IF EXISTS temp_unique_office_codes_from_source;
+        CREATE TEMPORARY TABLE temp_unique_office_codes_from_source (
+            awarding_office_code TEXT,
+            funding_office_code TEXT,
+            UNIQUE (awarding_office_code, funding_office_code)
+        );
+        INSERT INTO temp_unique_office_codes_from_source
+        SELECT * FROM (
+                    SELECT DISTINCT awarding_office_code, funding_office_code FROM source_assistance_transaction
+                    UNION
+                    SELECT DISTINCT awarding_office_code, funding_office_code FROM source_procurement_transaction
+                ) s;
+        CREATE INDEX awarding_office_code_idx_temp ON temp_unique_office_codes_from_source (awarding_office_code);
+        CREATE INDEX funding_office_code_idx_temp ON temp_unique_office_codes_from_source (funding_office_code);
+        DELETE FROM office WHERE office_code IN (
+            SELECT DISTINCT office_code
+            FROM office AS o
+            LEFT JOIN temp_unique_office_codes_from_source s
+            ON s.awarding_office_code = o.office_code
+                OR s.funding_office_code = o.office_code
+
+            WHERE s.awarding_office_code IS NULL
+                AND s.funding_office_code IS NULL
+        );
+        DROP TABLE IF EXISTS temp_unique_office_codes_from_source;
         """
