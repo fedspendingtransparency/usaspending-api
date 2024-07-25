@@ -150,38 +150,6 @@ services:
       DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
       DOWNLOAD_DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
 
-  # usaspending-es:
-  #   profiles:
-  #     - usaspending  # must pass --profile usaspending to docker-compose for this to come up
-  #     - test
-  #     - ci
-  #   image: opensearchproject/opensearch:1.0.0  # replace with your desired version
-  #   container_name: usaspending-es
-  #   environment:
-  #     - node.name=usaspending-es
-  #     - cluster.name=usaspending
-  #     - discovery.seed_hosts=usaspending-es
-  #     - cluster.initial_master_nodes=usaspending-es
-  #     - bootstrap.memory_lock=true
-  #     - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m" # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
-  #   ulimits:
-  #     memlock:
-  #       soft: -1
-  #       hard: -1
-  #     nofile:
-  #       soft: 65536 # maximum number of open files for the OpenSearch user, set to at least 65536 on modern systems
-  #       hard: 65536
-  #   volumes:
-  #     - usaspending-es:/usr/share/opensearch/data
-  #   ports:
-  #     - 9200:9200
-  #     - 9600:9600 # required for Performance Analyzer
-  #   command: |
-  #     /bin/bash -c "
-  #       bin/opensearch-plugin install mapper-murmur3 && 
-  #       bin/opensearch
-  #     "
-
   usaspending-es:
     profiles:
       - usaspending  # must pass --profile usaspending to docker-compose for this to come up
@@ -196,6 +164,7 @@ services:
       - cluster.initial_master_nodes=usaspending-es
       - bootstrap.memory_lock=true
       - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m" # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
+      - plugins.security.ssl.http.enabled=false # Use this to Disable SSL for HTTP connections
     ulimits:
       memlock:
         soft: -1
@@ -209,14 +178,14 @@ services:
       - 9200:9200
       - 9600:9600 # required for Performance Analyzer
 
-  usaspending-kibana-es:
+  usaspending-opensearch-dashboards:
     profiles:
       - usaspending  # must pass --profile usaspending to docker-compose for this to come up
-    image: opensearchproject/opensearch-dashboards:2.9.0     #docker.elastic.co/kibana/kibana-oss:7.1.1
-    container_name: usaspending-opensearch-dashboards      #usaspending-kibana-es
-    # ELASTICSEARCH_HOSTS should match the port for "usaspending-es"; value will need to be updated if using Windows
+    image: opensearchproject/opensearch-dashboards:2.9.0 
+    container_name: usaspending-opensearch-dashboards 
+    # OPENSEARCH_HOSTS should match the port for "usaspending-es"; value will need to be updated if using Windows
     environment:
-      - OPENSEARCH_HOSTS="http://docker.for.mac.localhost:9200"    #ELASTICSEARCH_HOSTS="http://docker.for.mac.localhost:9200"
+      - OPENSEARCH_HOSTS="http://usaspending-es:9200" #OPENSEARCH_HOSTS="http://docker.for.mac.localhost:9200"
     ports:
       - 5601:5601
 
