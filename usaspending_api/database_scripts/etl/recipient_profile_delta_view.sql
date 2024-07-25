@@ -6,6 +6,8 @@ SELECT
   "recipient_hash",
   "recipient_name",
   "uei",
-  "recipient_level"
+  "recipient_level",
+  "recipient_unique_id" AS "duns"
 FROM
-  "recipient_profile"
+  "recipient_profile";
+
