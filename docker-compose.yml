@@ -165,6 +165,7 @@ services:
       - bootstrap.memory_lock=true
       - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m" # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
       - plugins.security.ssl.http.enabled=false # Use this to Disable SSL for HTTP connections
+      - opensearch.security.disable=true # Disable security for local testing
     ulimits:
       memlock:
         soft: -1
@@ -186,6 +187,8 @@ services:
     # OPENSEARCH_HOSTS should match the port for "usaspending-es"; value will need to be updated if using Windows
     environment:
       - OPENSEARCH_HOSTS="http://usaspending-es:9200" #OPENSEARCH_HOSTS="http://docker.for.mac.localhost:9200"
+      - OPENSEARCH_USERNAME=admin
+      - OPENSEARCH_PASSWORD=admin
     ports:
       - 5601:5601
 
