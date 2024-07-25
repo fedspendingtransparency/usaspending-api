@@ -6,6 +6,7 @@ from usaspending_api.references.models.disaster_emergency_fund_code import Disas
 
 @pytest.fixture
 def covid_faba_spending_data():
+    # Loan type awards
     baker.make(
         "disaster.CovidFABASpending",
         spending_level="treasury_account",
@@ -38,6 +39,39 @@ def covid_faba_spending_data():
         outlay_sum=333.0,
         face_value_of_loan=4444.0,
     )
+
+    # Non-loan type awards
+    baker.make(
+        "disaster.CovidFABASpending",
+        spending_level="treasury_account",
+        funding_federal_account_id="21",
+        funding_federal_account_code="000-0000",
+        funding_federal_account_name="gifts",
+        funding_treasury_account_id=22,
+        funding_treasury_account_code="2020/99",
+        funding_treasury_account_name="flowers",
+        defc="M",
+        award_type="A",
+        award_count=1,
+        obligation_sum=100.0,
+        outlay_sum=111.0,
+    )
+    baker.make(
+        "disaster.CovidFABASpending",
+        spending_level="treasury_account",
+        funding_federal_account_id="21",
+        funding_federal_account_code="000-0000",
+        funding_federal_account_name="gifts",
+        funding_treasury_account_id=23,
+        funding_treasury_account_code="2020/98",
+        funding_treasury_account_name="evergreens",
+        defc="L",
+        award_type="B",
+        award_count=1,
+        obligation_sum=200.0,
+        outlay_sum=222.0,
+    )
+
     baker.make(
         "references.DisasterEmergencyFundCode",
         code="L",

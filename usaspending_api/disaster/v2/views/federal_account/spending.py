@@ -28,16 +28,27 @@ from usaspending_api.disaster.v2.views.disaster_base import (
     SpendingMixin,
     latest_gtas_of_each_year_queryset,
 )
-from usaspending_api.disaster.v2.views.elasticsearch_account_base import ElasticsearchAccountDisasterBase
-from usaspending_api.disaster.v2.views.federal_account.federal_account_result import TAS, FedAccount, FedAcctResults
-from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.disaster.v2.views.elasticsearch_account_base import (
+    ElasticsearchAccountDisasterBase,
+)
+from usaspending_api.disaster.v2.views.federal_account.federal_account_result import (
+    TAS,
+    FedAccount,
+    FedAcctResults,
+)
+from usaspending_api.financial_activities.models import (
+    FinancialAccountsByProgramActivityObjectClass,
+)
 
 
 def construct_response(results: list, pagination: Pagination):
     FederalAccounts = FedAcctResults()
     for row in results:
         FA = FedAccount(
-            id=row.pop("fa_id"), code=row.pop("fa_code"), award_count=0, description=row.pop("fa_description")
+            id=row.pop("fa_id"),
+            code=row.pop("fa_code"),
+            award_count=0,
+            description=row.pop("fa_description"),
         )
         FederalAccounts[FA].include(TAS(**row))
 
@@ -107,17 +118,18 @@ class SpendingViewSet(SpendingMixin, FabaOutlayMixin, ElasticsearchAccountDisast
             Formatted JSON response.
         """
 
-        response = {"totals": {"obligation": 0, "outlay": 0, "award_count": 0}, "results": []}
-
-        parent_lookup = {}
-        child_lookup = {}
+        results = {}
+        response = {
+            "totals": {"obligation": 0, "outlay": 0, "award_count": 0},
+            "results": [],
+        }
 
         for row in queryset:
-            parent_federal_account_id = int(row["funding_federal_account_id"])
+            parent_fa_id = int(row["funding_federal_account_id"])
 
-            if parent_federal_account_id not in parent_lookup.keys():
-                parent_lookup[parent_federal_account_id] = {
-                    "id": parent_federal_account_id,
+            if results.get(parent_fa_id) is None:
+                results[parent_fa_id] = {
+                    "id": parent_fa_id,
                     "code": row["funding_federal_account_code"],
                     "description": row["funding_federal_account_name"],
                     "award_count": 0,
@@ -128,41 +140,26 @@ class SpendingViewSet(SpendingMixin, FabaOutlayMixin, ElasticsearchAccountDisast
                     "children": [],
                 }
 
-            if parent_federal_account_id not in child_lookup.keys():
-                child_lookup[parent_federal_account_id] = [
-                    {
-                        "id": int(row["funding_treasury_account_id"]),
-                        "code": row["funding_treasury_account_code"],
-                        "description": row["funding_treasury_account_name"],
-                        "award_count": int(row["award_count"]),
-                        "obligation": Decimal(row["obligation_sum"]),
-                        "outlay": Decimal(row["outlay_sum"]),
-                    }
-                ]
-            else:
-                child_lookup[parent_federal_account_id].append(
-                    {
-                        "id": int(row["funding_treasury_account_id"]),
-                        "code": row["funding_treasury_account_code"],
-                        "description": row["funding_treasury_account_name"],
-                        "award_count": int(row["award_count"]),
-                        "obligation": Decimal(row["obligation_sum"]),
-                        "outlay": Decimal(row["outlay_sum"]),
-                    }
-                )
+            results[parent_fa_id]["children"].append(
+                {
+                    "id": int(row["funding_treasury_account_id"]),
+                    "code": row["funding_treasury_account_code"],
+                    "description": row["funding_treasury_account_name"],
+                    "award_count": int(row["award_count"]),
+                    "obligation": Decimal(row["obligation_sum"]),
+                    "outlay": Decimal(row["outlay_sum"]),
+                    "total_budgetary_resources": None,  # This spending_type doesn't have TBR
+                }
+            )
+            results[parent_fa_id]["obligation"] += Decimal(row["obligation_sum"])
+            results[parent_fa_id]["outlay"] += Decimal(row["outlay_sum"])
+            results[parent_fa_id]["award_count"] += row["award_count"]
 
             response["totals"]["obligation"] += Decimal(row["obligation_sum"])
             response["totals"]["outlay"] += Decimal(row["outlay_sum"])
             response["totals"]["award_count"] += row["award_count"]
 
-        for parent_account_id, children in child_lookup.items():
-            for child_ta_account in children:
-                parent_lookup[parent_account_id]["children"].append(child_ta_account)
-                parent_lookup[parent_account_id]["award_count"] += child_ta_account["award_count"]
-                parent_lookup[parent_account_id]["obligation"] += child_ta_account["obligation"]
-                parent_lookup[parent_account_id]["outlay"] += child_ta_account["outlay"]
-
-        response["results"] = list(parent_lookup.values())
+        response["results"] = list(results.values())
 
         response["page_metadata"] = get_pagination_metadata(
             len(response["results"]), self.pagination.limit, self.pagination.page
@@ -264,12 +261,17 @@ class SpendingViewSet(SpendingMixin, FabaOutlayMixin, ElasticsearchAccountDisast
                     .annotate(
                         amount=Func("total_budgetary_resources_cpe", function="Sum"),
                         unobligated_balance=Func(
-                            "budget_authority_unobligated_balance_brought_forward_cpe", function="Sum"
+                            "budget_authority_unobligated_balance_brought_forward_cpe",
+                            function="Sum",
                         ),
-                        deobligation=Func("deobligations_or_recoveries_or_refunds_from_prior_year_cpe", function="Sum"),
+                        deobligation=Func(
+                            "deobligations_or_recoveries_or_refunds_from_prior_year_cpe",
+                            function="Sum",
+                        ),
                         prior_year=Func("prior_year_paid_obligation_recoveries", function="Sum"),
                         unobligated_adjustments=Func(
-                            "adjustments_to_unobligated_balance_brought_forward_fyb", function="Sum"
+                            "adjustments_to_unobligated_balance_brought_forward_fyb",
+                            function="Sum",
                         ),
                     )
                     .annotate(
