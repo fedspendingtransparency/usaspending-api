@@ -25,8 +25,8 @@ class CovidFABASpending(models.Model):
     funding_object_class_code = models.TextField(null=True)
     funding_object_class_name = models.TextField(null=True)
 
-    DEFC = models.TextField()
-    award_type = models.TextField()
+    defc = models.TextField()
+    award_type = models.TextField(null=True)
     award_count = models.IntegerField()
     obligation_sum = models.DecimalField(null=True, max_digits=23, decimal_places=2)
     outlay_sum = models.DecimalField(null=True, max_digits=23, decimal_places=2)
@@ -34,4 +34,4 @@ class CovidFABASpending(models.Model):
 
     class Meta:
         managed = True
-        db_table = "covid_faba_spending"
+        db_table = '"rpt"."covid_faba_spending"'
