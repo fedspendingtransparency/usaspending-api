@@ -378,6 +378,7 @@ class PSCAutocompleteViewSet(BaseAutocompleteViewSet):
 
         return Response({"results": list(queryset.values("product_or_service_code", "psc_description")[:limit])})
 
+
 class ProgramActivityAutocompleteViewSet(BaseAutocompleteViewSet):
     """
     This route sends a request to the backend to retrieve program activities and their names based
@@ -398,6 +399,7 @@ class ProgramActivityAutocompleteViewSet(BaseAutocompleteViewSet):
             queryset = queryset.filter(program_activity_name__icontains=search_text)
 
         return Response({"results": list(queryset.values("program_activity_code", "program_activity_name")[:limit])})
+
 
 class GlossaryAutocompleteViewSet(BaseAutocompleteViewSet):
     """
