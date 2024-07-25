@@ -7,7 +7,7 @@ This endpoint is used by the Recipient autocomplete filter on the Advanced Searc
 
 ## POST
 
-This route sends a request to the backend to retrieve recipients matching the specified search text. The endpoint will search for `search_text` in the `recipient_name` and `uei` fields. The `recipient_levels` value can also be included to further filter results, but is not required. The endpoint also supports further querying the data based on the `duns` field but it also not required. 
+This route sends a request to the backend to retrieve recipients matching the specified search text. The endpoint will search for `search_text` in the `recipient_name` and `uei` fields. The `recipient_levels` value can also be included to further filter results, but is not required.
 
 + Request (application/json)
     + Schema

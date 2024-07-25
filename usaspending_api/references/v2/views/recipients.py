@@ -118,7 +118,6 @@ class RecipientAutocompleteViewSet(APIView):
             query = ES_Q("bool", must=[ES_Q("bool", should=recipient_should_clause), ES_Q("bool", should=query)])
 
         if duns:
-            # Add a must clause for the duns field if it is provided
             query = ES_Q("bool", must=[query, ES_Q("match", duns=duns)])
 
         query = RecipientSearch().query(query)[:limit]
@@ -166,7 +165,7 @@ class RecipientAutocompleteViewSet(APIView):
                         ("recipient_name", recipient["recipient_name"]),
                         ("uei", recipient["uei"]),
                         ("recipient_level", recipient["recipient_level"]),
-                        ("duns", recipient["duns"]),
+                        ("duns", recipient["duns"] if "duns" in recipient else None),
                     ]
                 )
             )
