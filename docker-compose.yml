@@ -187,8 +187,8 @@ services:
     # OPENSEARCH_HOSTS should match the port for "usaspending-es"; value will need to be updated if using Windows
     environment:
       - OPENSEARCH_HOSTS="http://usaspending-es:9200" #OPENSEARCH_HOSTS="http://docker.for.mac.localhost:9200"
-      - OPENSEARCH_USERNAME=admin
-      - OPENSEARCH_PASSWORD=admin
+      # - OPENSEARCH_USERNAME=admin # Use this to test locally/change as required
+      # - OPENSEARCH_PASSWORD=admin # Use this to test locally/change as required
     ports:
       - 5601:5601
 
