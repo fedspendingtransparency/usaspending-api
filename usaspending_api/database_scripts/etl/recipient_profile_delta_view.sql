@@ -9,5 +9,5 @@ SELECT
   recipient_level,
   recipient_unique_id AS duns
 FROM
-  recipient_profile;
+  rpt.recipient_profile;
 
