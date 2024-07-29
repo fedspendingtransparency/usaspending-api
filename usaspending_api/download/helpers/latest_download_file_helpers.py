@@ -12,7 +12,6 @@ def get_last_modified_download_file_by_prefix(download_prefix: str) -> Optional[
         download_prefix: The prefix to filter files on in the bulk download bucket
     Returns:
         The file name of the last modified file.
-
     """
     download_regex = r"{}.*\.zip".format(download_prefix)
 
@@ -28,7 +27,9 @@ def get_last_modified_download_file_by_prefix(download_prefix: str) -> Optional[
         )
         s3_bucket = s3_resource.Bucket(CONFIG.BULK_DOWNLOAD_S3_BUCKET_NAME)
     else:
-        s3_bucket = boto3.resource("s3", region_name=settings.USASPENDING_AWS_REGION).Bucket(CONFIG.BULK_DOWNLOAD_S3_BUCKET_NAME)
+        s3_bucket = boto3.resource("s3", region_name=settings.USASPENDING_AWS_REGION).Bucket(
+            CONFIG.BULK_DOWNLOAD_S3_BUCKET_NAME
+        )
 
     download_names = []
     for key in s3_bucket.objects.filter(Prefix=download_prefix):
@@ -36,6 +37,7 @@ def get_last_modified_download_file_by_prefix(download_prefix: str) -> Optional[
             download_names.append(key)
 
     return get_last_modified_file(download_names)
+
 
 def get_last_modified_file(download_files) -> Optional[str]:
     """Return the last modified file from the list of download files.

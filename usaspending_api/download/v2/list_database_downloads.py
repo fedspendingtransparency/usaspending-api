@@ -2,8 +2,12 @@ from django.conf import settings
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from usaspending_api.download.helpers.latest_download_file_helpers import get_last_modified_download_file_by_prefix, remove_file_prefix_if_exists
+from usaspending_api.download.helpers.latest_download_file_helpers import (
+    get_last_modified_download_file_by_prefix,
+    remove_file_prefix_if_exists,
+)
 from usaspending_api.common.cache_decorator import cache_response
+
 
 class ListDatabaseDownloadsViewSet(APIView):
     """
@@ -14,7 +18,6 @@ class ListDatabaseDownloadsViewSet(APIView):
 
     @cache_response()
     def get(self, request):
-        """Return list of downloads that match the requested params."""
 
         full_download_prefix = f"{self.redirect_dir}/usaspending-db_"
         latest_full_download_name = get_last_modified_download_file_by_prefix(full_download_prefix)
@@ -30,7 +33,6 @@ class ListDatabaseDownloadsViewSet(APIView):
             "messages": [],
         }
         return Response(results)
-
 
     def _structure_file_response(self, file_name):
         return {
