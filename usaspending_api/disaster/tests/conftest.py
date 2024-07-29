@@ -21,6 +21,7 @@ from usaspending_api.disaster.tests.fixtures.award_count_data import (
 from usaspending_api.disaster.tests.fixtures.cfda_data import cfda_awards_and_transactions
 from usaspending_api.disaster.tests.fixtures.disaster_account_data import disaster_account_data
 from usaspending_api.disaster.tests.fixtures.federal_account_data import (
+    covid_faba_spending_data,
     generic_account_data,
     unlinked_faba_account_data,
 )
@@ -130,4 +131,5 @@ __all__ = [
     "year_2_gtas_covid_2",
     "year_2_gtas_non_covid",
     "basic_covid_faba_spending_data",
+    "covid_faba_spending_data",
 ]

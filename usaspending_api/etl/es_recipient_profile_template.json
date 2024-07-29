@@ -53,6 +53,18 @@
       },
       "recipient_level": {
         "type": "keyword"
+      },
+      "duns": {
+        "type": "text",
+        "fields": {
+          "contains": {
+            "type": "text",
+            "analyzer": "contains_analyzer"
+          },
+          "keyword": {
+            "type": "keyword"
+          }
+        }
       }
     }
   }
