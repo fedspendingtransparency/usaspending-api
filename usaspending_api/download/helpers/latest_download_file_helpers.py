@@ -1,8 +1,10 @@
 import re
 import boto3
-from typing import Optional
-from usaspending_api.config import CONFIG
+
 from django.conf import settings
+from typing import Optional
+
+from usaspending_api.config import CONFIG
 
 
 def get_last_modified_download_file_by_prefix(download_prefix: str) -> Optional[str]:
