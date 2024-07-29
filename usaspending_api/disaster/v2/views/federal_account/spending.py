@@ -21,7 +21,6 @@ from rest_framework.response import Response
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
-from usaspending_api.disaster.models import CovidFABASpending
 from usaspending_api.disaster.v2.views.disaster_base import (
     FabaOutlayMixin,
     PaginationMixin,
@@ -67,46 +66,32 @@ class SpendingViewSet(SpendingMixin, FabaOutlayMixin, ElasticsearchAccountDisast
     def post(self, request):
         if self.spending_type == "award":
             self.has_children = True
-            account_db_results = self._get_covid_faba_spending()
+            account_db_results = self.get_covid_faba_spending(
+                spending_level="treasury_account",
+                def_codes=self.filters["def_codes"],
+                columns_to_return=[
+                    "funding_federal_account_id",
+                    "funding_federal_account_code",
+                    "funding_federal_account_name",
+                    "funding_treasury_account_id",
+                    "funding_treasury_account_code",
+                    "funding_treasury_account_name",
+                ],
+                search_query=self.query,
+                search_query_fields=["funding_federal_account_name", "funding_treasury_account_name"],
+            )
             json_result = self._build_json_result(account_db_results)
-            sorted_json_result = self._sort_json_result(json_result)
-
+            sorted_json_result = self.sort_json_result(
+                json_result, self.pagination.sort_key, self.pagination.sort_order, has_children=self.has_children
+            )
             return Response(sorted_json_result)
         else:
             results = list(self.total_queryset)
             extra_columns = ["total_budgetary_resources"]
-
         response = construct_response(results, self.pagination)
         response["totals"] = self.accumulate_total_values(results, extra_columns)
 
         return Response(response)
-
-    def _get_covid_faba_spending(self) -> QuerySet:
-        queryset = (
-            CovidFABASpending.objects.filter(spending_level="treasury_account")
-            .filter(defc__in=self.filters["def_codes"])
-            .values(
-                "funding_federal_account_id",
-                "funding_federal_account_code",
-                "funding_federal_account_name",
-                "funding_treasury_account_id",
-                "funding_treasury_account_code",
-                "funding_treasury_account_name",
-            )
-            .annotate(
-                award_count=Sum("award_count"),
-                obligation_sum=Sum("obligation_sum"),
-                outlay_sum=Sum("outlay_sum"),
-            )
-        )
-
-        if self.query is not None:
-            queryset = queryset.filter(
-                Q(funding_federal_account_name__icontains=self.query)
-                | Q(funding_treasury_account_name__icontains=self.query)
-            )
-
-        return queryset
 
     def _build_json_result(self, queryset: List[QuerySet]) -> dict:
         """Build the JSON response that will be returned for this endpoint.
@@ -123,10 +108,8 @@ class SpendingViewSet(SpendingMixin, FabaOutlayMixin, ElasticsearchAccountDisast
             "totals": {"obligation": 0, "outlay": 0, "award_count": 0},
             "results": [],
         }
-
         for row in queryset:
             parent_fa_id = int(row["funding_federal_account_id"])
-
             if results.get(parent_fa_id) is None:
                 results[parent_fa_id] = {
                     "id": parent_fa_id,
@@ -135,11 +118,9 @@ class SpendingViewSet(SpendingMixin, FabaOutlayMixin, ElasticsearchAccountDisast
                     "award_count": 0,
                     "obligation": Decimal(0),
                     "outlay": Decimal(0),
-                    # This type of response never has a TBR value
-                    "total_budgetary_resources": None,
+                    "total_budgetary_resources": None,  # This type of response never has a TBR value
                     "children": [],
                 }
-
             results[parent_fa_id]["children"].append(
                 {
                     "id": int(row["funding_treasury_account_id"]),
@@ -154,53 +135,14 @@ class SpendingViewSet(SpendingMixin, FabaOutlayMixin, ElasticsearchAccountDisast
             results[parent_fa_id]["obligation"] += Decimal(row["obligation_sum"])
             results[parent_fa_id]["outlay"] += Decimal(row["outlay_sum"])
             results[parent_fa_id]["award_count"] += row["award_count"]
-
             response["totals"]["obligation"] += Decimal(row["obligation_sum"])
             response["totals"]["outlay"] += Decimal(row["outlay_sum"])
             response["totals"]["award_count"] += row["award_count"]
-
         response["results"] = list(results.values())
-
         response["page_metadata"] = get_pagination_metadata(
             len(response["results"]), self.pagination.limit, self.pagination.page
         )
-
         return response
-
-    def _sort_json_result(self, json_result: dict) -> dict:
-        """Sort the JSON by the appropriate field and in the appropriate order before returning it.
-
-        Args:
-            json_result: Unsorted JSON result.
-
-        Returns:
-            Sorted JSON result.
-        """
-
-        if self.pagination.sort_key == "description":
-            sorted_parents = sorted(
-                json_result["results"],
-                key=lambda val: val.get("description", "id").lower(),
-                reverse=self.pagination.sort_order == "desc",
-            )
-        else:
-            sorted_parents = sorted(
-                json_result["results"],
-                key=lambda val: val.get(self.pagination.sort_key, "id"),
-                reverse=self.pagination.sort_order == "desc",
-            )
-
-        if self.has_children:
-            for parent in sorted_parents:
-                parent["children"] = sorted(
-                    parent.get("children", []),
-                    key=lambda val: val.get(self.pagination.sort_key, "id"),
-                    reverse=self.pagination.sort_order == "desc",
-                )
-
-        json_result["results"] = sorted_parents
-
-        return json_result
 
     @property
     def total_queryset(self):
