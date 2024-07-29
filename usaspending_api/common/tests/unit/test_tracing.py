@@ -9,7 +9,7 @@ from logging.handlers import QueueHandler
 from _pytest.logging import LogCaptureFixture
 from ddtrace.ext import SpanTypes
 
-from usaspending_api.common.tracing import DatadogEagerlyDropTraceFilter, DatadogLoggingTraceFilter, SubprocessTrace
+from usaspending_api.common.tracing import OpenTelemetryEagerlyDropTraceFilter, OpenTelemetryLoggingTraceFilter, SubprocessTrace
 
 
 @pytest.fixture

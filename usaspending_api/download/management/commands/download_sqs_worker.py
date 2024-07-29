@@ -1,9 +1,12 @@
 import logging
 import time
 import traceback
-from ddtrace import tracer
-from ddtrace.ext import SpanTypes
-from ddtrace.constants import ANALYTICS_SAMPLE_RATE_KEY
+
+from opentelemetry import trace
+from opentelemetry.trace import SpanKind
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchExportSpanProcessor
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 
 from django.core.management.base import BaseCommand
 
@@ -20,15 +23,22 @@ from usaspending_api.download.helpers.monthly_helpers import download_job_to_log
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.models.download_job import DownloadJob
 
+# Initialize OpenTelemetry
+tracer_provider = TracerProvider()
+trace.set_tracer_provider(tracer_provider)
+otlp_exporter = OTLPSpanExporter(
+    endpoint="your_otlp_endpoint",
+    insecure=True
+)
+span_processor = BatchExportSpanProcessor(otlp_exporter)
+tracer_provider.add_span_processor(span_processor)
+
 logger = logging.getLogger(__name__)
 JOB_TYPE = "USAspendingDownloader"
 
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        # Configure Tracer to drop traces of polls of the queue that have been flagged as uninteresting
-        DatadogEagerlyDropTraceFilter.activate()
-
         queue = get_sqs_queue()
         log_job_message(logger=logger, message="Starting SQS polling", job_type=JOB_TYPE)
 
@@ -37,12 +47,13 @@ class Command(BaseCommand):
         while keep_polling:
 
             # Start a Datadog Trace for this poll iter to capture activity in APM
-            with tracer.trace(
-                name=f"job.{JOB_TYPE}", service="bulk-download", resource=queue.url, span_type=SpanTypes.WORKER
+            with tracer_provider.get_tracer(__name__).start_as_current_span(
+                name=f"job.{JOB_TYPE}", 
+                attributes={"service": "bulk-download", "resource": queue.url, "span_type": SpanKind.WORKER}
             ) as span:
                 # Set True to add trace to App Analytics:
                 # - https://docs.datadoghq.com/tracing/app_analytics/?tab=python#custom-instrumentation
-                span.set_tag(ANALYTICS_SAMPLE_RATE_KEY, 1.0)
+                span.set_attribute("analytics_sample_rate", 1.0)
 
                 # Setup dispatcher that coordinates job activity on SQS
                 dispatcher = SQSWorkDispatcher(
@@ -70,8 +81,6 @@ class Command(BaseCommand):
                     _handle_queue_error(exc)
 
                 if not message_found:
-                    # Flag the the Datadog trace for dropping, since no trace-worthy activity happened on this poll
-                    DatadogEagerlyDropTraceFilter.drop(span)
 
                     # When you receive an empty response from the queue, wait before trying again
                     time.sleep(1)
@@ -81,10 +90,9 @@ class Command(BaseCommand):
 
 
 def download_service_app(download_job_id):
-    with SubprocessTrace(
+    with tracer_provider.get_tracer(__name__).start_as_current_span(
         name=f"job.{JOB_TYPE}.download",
-        service="bulk-download",
-        span_type=SpanTypes.WORKER,
+        attributes={"service": "bulk-download", "span_type": SpanKind.WORKER}
     ) as span:
         download_job = _retrieve_download_job_from_db(download_job_id)
         download_job_details = download_job_to_log_dict(download_job)
@@ -95,7 +103,7 @@ def download_service_app(download_job_id):
             job_id=download_job_id,
             other_params=download_job_details,
         )
-        span.set_tags(download_job_details)
+        span.set_attributes(download_job_details)
         generate_download(download_job=download_job)
 
 

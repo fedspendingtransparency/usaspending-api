@@ -6,12 +6,38 @@ For the full list of settings and their values: https://docs.djangoproject.com/e
 import os
 from pathlib import Path
 
-import ddtrace
 import dj_database_url
 from django.db import DEFAULT_DB_ALIAS
 from django.utils.crypto import get_random_string
 
 from usaspending_api.config import CONFIG
+
+from opentelemetry import trace
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from opentelemetry.instrumentation.django import DjangoInstrumentor
+
+# Set up the OpenTelemetry tracer provider
+trace.set_tracer_provider(TracerProvider())
+
+# Set up the OTLP exporter
+otlp_exporter = OTLPSpanExporter(
+    endpoint=os.getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "0.0.0.0:4317"),
+)
+span_processor = BatchSpanProcessor(otlp_exporter)
+trace.get_tracer_provider().add_span_processor(span_processor)
+
+# Optionally, add a console exporter for debugging
+console_exporter = ConsoleSpanExporter()
+trace.get_tracer_provider().add_span_processor(BatchSpanProcessor(console_exporter))
+
+# Instrument Django
+DjangoInstrumentor().instrument()
+
+# Optionally, set other OpenTelemetry configurations
+service_name = os.getenv("OTEL_SERVICE_NAME", "your-service-name")
+os.environ["OTEL_RESOURCE_ATTRIBUTES"] = f"service.name={service_name}"
 
 # All paths inside the project should be additive to REPO_DIR or APP_DIR
 APP_DIR = Path(__file__).resolve().parent
@@ -56,7 +82,7 @@ SECRET_KEY = get_random_string(length=12)
 DEBUG = os.environ.get("DJANGO_DEBUG", "").lower() in ["true", "1", "yes"]
 
 HOST = "localhost:3000"
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 
 # Define local flag to affect location of downloads
 IS_LOCAL = True
@@ -229,40 +255,6 @@ INSTALLED_APPS = [
 ]
 
 INTERNAL_IPS = ()
-
-# Replace below param with enabled=True during env-deploys to turn on
-ddtrace.tracer.configure(enabled=False)
-if ddtrace.tracer.enabled:
-    ddtrace.config.django["service_name"] = "api"
-    ddtrace.config.django["analytics_enabled"] = True  # capture APM "Traces" & "Analyzed Spans" in App Analytics
-    ddtrace.config.django["analytics_sample_rate"] = 1.0  # Including 100% of traces in sample
-    ddtrace.config.django["trace_query_string"] = True
-    # Distributed tracing only needed if picking up disjoint traces by HTTP Header value
-    ddtrace.config.django["distributed_tracing_enabled"] = False
-    # Trace HTTP Request or Response Headers listed in this whitelist
-    ddtrace.config.trace_headers(
-        [
-            "content-length",  # req and resp
-            "content-type",  # req and resp
-            "host",
-            "origin",
-            "referer",
-            "ua-is-bot",
-            "user-agent",
-            "x-forwarded-for",
-            "x-requested-with",
-            # Response Headers
-            "allow",
-            "cache-trace",
-            "is-dynamically-rendered",
-            "key",  # cache key
-            "strict-transport-security",
-        ]
-    )
-    # patch_all() captures traces from integrated components' libraries by patching them. See:
-    # - http://pypi.datadoghq.com/trace/docs/advanced_usage.html#patch-all
-    # - Integrated Libs: http://pypi.datadoghq.com/trace/docs/index.html#supported-libraries
-    ddtrace.patch_all()
 
 DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": lambda request: DEBUG}
 

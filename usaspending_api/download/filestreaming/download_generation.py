@@ -14,9 +14,11 @@ import tempfile
 import time
 import traceback
 
+
+from opentelemetry import trace
+from opentelemetry.trace import SpanKind
+
 from datetime import datetime, timezone
-from ddtrace import tracer
-from ddtrace.ext import SpanTypes
 from django.conf import settings
 
 from usaspending_api.download.models.download_job_lookup import DownloadJobLookup
@@ -47,6 +49,8 @@ JOB_TYPE = "USAspendingDownloader"
 
 logger = logging.getLogger(__name__)
 
+# Get a Tracer instance
+tracer = trace.get_tracer(__name__)
 
 def generate_download(download_job: DownloadJob, origination: Optional[str] = None):
     """Create data archive files from the download job object"""
@@ -61,7 +65,7 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
     file_format = json_request.get("file_format")
     request_type = json_request.get("request_type")
 
-    span = tracer.current_span()
+    span = tracer.start_span(name=f"generate_download_{request_type}")
     if span and request_type:
         span.resource = request_type
 
@@ -132,14 +136,14 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
             name=f"job.{JOB_TYPE}.download.s3",
             service="bulk-download",
             resource=f"s3://{settings.BULK_DOWNLOAD_S3_BUCKET_NAME}",
-            span_type=SpanTypes.WORKER,
+            span_type=SpanKind.WORKER,
         ) as span, tracer.trace(
             name="s3.command",
             service="aws.s3",
             resource=".".join(
                 [multipart_upload.__module__, (multipart_upload.__qualname__ or multipart_upload.__name__)]
             ),
-            span_type=SpanTypes.WEB,
+            span_type=SpanKind.WEB,
         ) as s3_span:
             # NOTE: Traces still not auto-picking-up aws.s3 service upload activity
             # Could be that the patches for boto and botocore don't cover the newer boto3 S3Transfer upload approach
@@ -438,7 +442,7 @@ def split_and_zip_data_files(zip_file_path, source_path, data_file_name, file_fo
     with SubprocessTrace(
         name=f"job.{JOB_TYPE}.download.zip",
         service="bulk-download",
-        span_type=SpanTypes.WORKER,
+        span_type=SpanKind.WORKER,
         source_path=source_path,
         zip_file_path=zip_file_path,
     ) as span:
@@ -679,15 +683,15 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
         name=f"job.{JOB_TYPE}.download.psql",
         service="bulk-download",
         resource=download_sql,
-        span_type=SpanTypes.SQL,
+        span_type=SpanKind.SQL,
         source_path=source_path,
     ), tracer.trace(
         name="postgres.query",
         service=f"{settings.DOWNLOAD_DB_ALIAS}db",
         resource=download_sql,
-        span_type=SpanTypes.SQL,
+        span_type=SpanKind.SQL,
     ), tracer.trace(
-        name="postgres.query", service="postgres", resource=download_sql, span_type=SpanTypes.SQL
+        name="postgres.query", service="postgres", resource=download_sql, span_type=SpanKind.SQL
     ):
         try:
             log_time = time.perf_counter()
