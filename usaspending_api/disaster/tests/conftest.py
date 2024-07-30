@@ -27,6 +27,10 @@ from usaspending_api.disaster.tests.fixtures.federal_account_data import (
 )
 from usaspending_api.disaster.tests.fixtures.helpers import helpers
 from usaspending_api.disaster.tests.fixtures.object_class_data import (
+    basic_fa_by_object_class_with_multpile_object_class,
+    basic_fa_by_object_class_with_multpile_object_class_of_same_code,
+    basic_fa_by_object_class_with_object_class,
+    basic_fa_by_object_class_with_object_class_but_no_obligations,
     basic_faba_with_object_class,
 )
 from usaspending_api.disaster.tests.fixtures.object_class_loan_data import basic_object_class_faba_with_loan_value
@@ -114,4 +118,8 @@ __all__ = [
     "year_2_gtas_non_covid",
     "basic_covid_faba_spending_data",
     "covid_faba_spending_data",
+    "basic_fa_by_object_class_with_object_class",
+    "basic_fa_by_object_class_with_multpile_object_class",
+    "basic_fa_by_object_class_with_multpile_object_class_of_same_code",
+    "basic_fa_by_object_class_with_object_class_but_no_obligations",
 ]
