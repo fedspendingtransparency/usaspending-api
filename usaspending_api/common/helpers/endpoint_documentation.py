@@ -17,7 +17,7 @@ ENDPOINT_PATTERN = re.compile(r"\|\s*\[[^\]]+\]\s*\((?P<url>[^)]+)\)\s*\|[^|]+\|
 # because of that decision we added that endpoint to the following list.
 _EXCLUDED_URLS = [
     "/api/v2/bulk_download/list_unlinked_awards_files",
-    "/api/v2/bulk_download/list_database_download_files/",
+    "/api/v2/bulk_download/list_database_download_files",
 ]
 
 
