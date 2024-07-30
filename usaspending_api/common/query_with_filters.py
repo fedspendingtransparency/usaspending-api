@@ -168,7 +168,7 @@ class _KeywordSearch(_Filter):
 
 
 class _TransactionKeywordSearch(_Filter):
-    """Intended for subawards' Querytype that makes this query compatible with Subawards."""
+    """Intended for subawards' and awards' Querytype that makes this query compatible with Subawards and Awards."""
 
     underscore_name = "transaction_keyword_search"
 
@@ -929,6 +929,7 @@ class QueryWithFilters:
         cls.filter_lookup[_SubawardsPrimeSubAwardTypes.underscore_name] = _SubawardsPrimeSubAwardTypes
         resp = cls._generate_elasticsearch_query(filters, _QueryType.SUBAWARDS, **options)
         cls.filter_lookup[_Keywords.underscore_name] = _Keywords
+        del cls.filter_lookup[_SubawardsPrimeSubAwardTypes.underscore_name]
         return resp
 
     @classmethod
