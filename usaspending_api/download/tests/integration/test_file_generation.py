@@ -54,7 +54,10 @@ def test_get_sub_awards_csv_sources(db):
     original = VALUE_MAPPINGS["sub_awards"]["filter_function"]
     VALUE_MAPPINGS["sub_awards"]["filter_function"] = MagicMock(returned_value="")
     csv_sources = download_generation.get_download_sources(
-        {"download_types": ["sub_awards"], "filters": {"award_type_codes": list(award_type_mapping.keys())}}
+        {
+            "download_types": ["sub_awards"],
+            "filters": {"award_type_codes": list(award_type_mapping.keys())},
+        }
     )
     assert len(csv_sources) == 2
     VALUE_MAPPINGS["sub_awards"]["filter_function"] = original
