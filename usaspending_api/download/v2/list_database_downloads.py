@@ -2,7 +2,7 @@ from django.conf import settings
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from usaspending_api.download.helpers.latest_download_file_helpers import (
+from usaspending_api.download.helpers.download_file_helpers import (
     get_last_modified_download_file_by_prefix,
     remove_file_prefix_if_exists,
 )
@@ -34,7 +34,14 @@ class ListDatabaseDownloadsViewSet(APIView):
         }
         return Response(results)
 
-    def _structure_file_response(self, file_name):
+    def _structure_file_response(self, file_name: str):
+        """Accepts a file_name and builds a reponse dictionary containing a file_name and a constructed
+        url based on application settings. If no file_name is provided, url will be None
+        Args:
+            file_name: Name of file used to construct dictionary.
+        Returns:
+            Dictionary containing file_name and url information.
+        """
         return {
             "file_name": file_name,
             "url": (
