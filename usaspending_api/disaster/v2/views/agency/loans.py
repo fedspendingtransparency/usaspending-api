@@ -3,13 +3,12 @@ from decimal import Decimal
 from typing import List
 
 from django.contrib.postgres.fields import ArrayField
-from django.db.models import F, IntegerField, OuterRef, QuerySet, Subquery, Sum, Value
+from django.db.models import F, IntegerField, OuterRef, Subquery, Value
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.response import Response
 
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
-from usaspending_api.disaster.models import CovidFABASpending
 from usaspending_api.disaster.v2.views.disaster_base import (
     DisasterBase,
     LoansMixin,
@@ -59,34 +58,27 @@ class LoansByAgencyViewSet(LoansPaginationMixin, DisasterBase, LoansMixin):
     def post(self, request):
         self.filters.update({"award_type_codes": ["07", "08"]})
 
-        covid_faba_spending_by_toptier_agency = self._get_agency_covid_faba_spending()
+        covid_faba_spending_by_toptier_agency = self.get_covid_faba_spending(
+            spending_level="subtier_agency",
+            def_codes=self.filters["def_codes"],
+            columns_to_return=[
+                "funding_toptier_agency_id",
+                "funding_toptier_agency_code",
+                "funding_toptier_agency_name",
+            ],
+            award_types=self.filters["award_type_codes"],
+            search_query=self.query,
+            search_query_fields="funding_toptier_agency_name",
+        )
         json_result = self._build_json_result(covid_faba_spending_by_toptier_agency)
-        sorted_json_result = self._sort_json_result(json_result)
-
-        return Response(sorted_json_result)
-
-    def _get_agency_covid_faba_spending(self) -> QuerySet:
-        """
-        Query the covid_faba_spending table and return COVID-19 FABA spending grouped by toptier agencies
-        """
-
-        queryset = (
-            CovidFABASpending.objects.filter(spending_level="subtier_agency")
-            .filter(award_type__in=self.filters["award_type_codes"])
-            .filter(defc__in=self.filters["def_codes"])
-            .values("funding_toptier_agency_id", "funding_toptier_agency_code", "funding_toptier_agency_name")
-            .annotate(
-                award_count=Sum("award_count"),
-                obligation_sum=Sum("obligation_sum"),
-                outlay_sum=Sum("outlay_sum"),
-                face_value_of_loan=Sum("face_value_of_loan"),
-            )
+        sorted_json_result = self.sort_json_result(
+            data_to_sort=json_result,
+            sort_key=self.pagination.sort_key,
+            sort_order=self.pagination.sort_order,
+            has_children=False,
         )
 
-        if self.query is not None:
-            queryset = queryset.filter(funding_toptier_agency_name__icontains=self.query)
-
-        return queryset
+        return Response(sorted_json_result)
 
     def _build_json_result(self, queryset: List[dict]) -> dict:
         """Build the JSON response that will be returned for this endpoint.
@@ -124,31 +116,6 @@ class LoansByAgencyViewSet(LoansPaginationMixin, DisasterBase, LoansMixin):
         response["page_metadata"] = get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
 
         return response
-
-    def _sort_json_result(self, json_result: dict) -> dict:
-        """Sort the JSON by the appropriate field and in the appropriate order before returning it.
-
-        Args:
-            json_result: Unsorted JSON result.
-
-        Returns:
-            Sorted JSON result.
-        """
-
-        if self.pagination.sort_key == "description":
-            json_result["results"] = sorted(
-                json_result["results"],
-                key=lambda val: val.get("description", "id").lower(),
-                reverse=self.pagination.sort_order == "desc",
-            )
-        else:
-            json_result["results"] = sorted(
-                json_result["results"],
-                key=lambda val: val.get(self.pagination.sort_key, "id"),
-                reverse=self.pagination.sort_order == "desc",
-            )
-
-        return json_result
 
     @property
     def queryset(self):
