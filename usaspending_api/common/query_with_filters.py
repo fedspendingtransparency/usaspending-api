@@ -1,6 +1,7 @@
 import copy
 import itertools
 import logging
+import re
 from datetime import datetime
 from typing import List, Tuple
 
@@ -330,6 +331,7 @@ class _RecipientSearchText(_Filter):
     @classmethod
     def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType, **options) -> ES_Q:
         recipient_search_query = []
+        words_to_escape = ["AND", "OR"]  # These need to be escaped to be included as text to be searched for
 
         for filter_value in filter_values:
             if query_type == _QueryType.SUBAWARDS:
@@ -347,6 +349,9 @@ class _RecipientSearchText(_Filter):
                 recipient_unique_id_field = "recipient_unique_id"
                 recipient_uei_field = "recipient_uei"
 
+            for special_word in words_to_escape:
+                    if len(re.findall(rf"\b{special_word}\b", query)) > 0:
+                        query = re.sub(rf"\b{special_word}\b", rf"\\{special_word}", query)
             recipient_name_query = ES_Q("query_string", query=query, default_operator="AND", fields=fields)
 
             if len(upper_recipient_string) == 9 and upper_recipient_string[:5].isnumeric():
