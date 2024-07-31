@@ -18,6 +18,16 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExport
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.instrumentation.django import DjangoInstrumentor
 
+############################################################
+# ==== [Open Telemetry Configuration] ====
+
+# Instrument Django
+DjangoInstrumentor().instrument()
+
+# Optionally, set other OpenTelemetry configurations
+service_name = os.getenv("OTEL_SERVICE_NAME", "usaspending-api")
+os.environ["OTEL_RESOURCE_ATTRIBUTES"] = f"service.name={service_name}"
+
 # Set up the OpenTelemetry tracer provider
 trace.set_tracer_provider(TracerProvider())
 
@@ -32,12 +42,7 @@ trace.get_tracer_provider().add_span_processor(span_processor)
 console_exporter = ConsoleSpanExporter()
 trace.get_tracer_provider().add_span_processor(BatchSpanProcessor(console_exporter))
 
-# Instrument Django
-DjangoInstrumentor().instrument()
-
-# Optionally, set other OpenTelemetry configurations
-service_name = os.getenv("OTEL_SERVICE_NAME", "your-service-name")
-os.environ["OTEL_RESOURCE_ATTRIBUTES"] = f"service.name={service_name}"
+############################################################
 
 # All paths inside the project should be additive to REPO_DIR or APP_DIR
 APP_DIR = Path(__file__).resolve().parent

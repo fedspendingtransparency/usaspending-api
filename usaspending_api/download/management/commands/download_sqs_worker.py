@@ -26,10 +26,7 @@ from usaspending_api.download.models.download_job import DownloadJob
 # Initialize OpenTelemetry
 tracer_provider = TracerProvider()
 trace.set_tracer_provider(tracer_provider)
-otlp_exporter = OTLPSpanExporter(
-    endpoint="your_otlp_endpoint",
-    insecure=True
-)
+otlp_exporter = OTLPSpanExporter(endpoint="your_otlp_endpoint", insecure=True)
 span_processor = BatchExportSpanProcessor(otlp_exporter)
 tracer_provider.add_span_processor(span_processor)
 
@@ -48,8 +45,8 @@ class Command(BaseCommand):
 
             # Start a Datadog Trace for this poll iter to capture activity in APM
             with tracer_provider.get_tracer(__name__).start_as_current_span(
-                name=f"job.{JOB_TYPE}", 
-                attributes={"service": "bulk-download", "resource": queue.url, "span_type": SpanKind.WORKER}
+                name=f"job.{JOB_TYPE}",
+                attributes={"service": "bulk-download", "resource": queue.url, "span_type": SpanKind.WORKER},
             ) as span:
                 # Set True to add trace to App Analytics:
                 # - https://docs.datadoghq.com/tracing/app_analytics/?tab=python#custom-instrumentation
@@ -91,8 +88,7 @@ class Command(BaseCommand):
 
 def download_service_app(download_job_id):
     with tracer_provider.get_tracer(__name__).start_as_current_span(
-        name=f"job.{JOB_TYPE}.download",
-        attributes={"service": "bulk-download", "span_type": SpanKind.WORKER}
+        name=f"job.{JOB_TYPE}.download", attributes={"service": "bulk-download", "span_type": SpanKind.WORKER}
     ) as span:
         download_job = _retrieve_download_job_from_db(download_job_id)
         download_job_details = download_job_to_log_dict(download_job)

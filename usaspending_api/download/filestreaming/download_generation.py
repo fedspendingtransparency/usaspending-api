@@ -52,6 +52,7 @@ logger = logging.getLogger(__name__)
 # Get a Tracer instance
 tracer = trace.get_tracer(__name__)
 
+
 def generate_download(download_job: DownloadJob, origination: Optional[str] = None):
     """Create data archive files from the download job object"""
 

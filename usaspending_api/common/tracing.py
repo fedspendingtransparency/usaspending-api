@@ -32,7 +32,6 @@ trace.get_tracer_provider().add_span_processor(BatchSpanProcessor(console_export
 tracer = trace.get_tracer_provider().get_tracer(__name__)
 
 
-
 class OpenTelemetryEagerlyDropTraceFilter:
     """
     A trace filter that eagerly drops a trace by marking it as ERROR if a sentinel value is present.
@@ -49,6 +48,7 @@ class OpenTelemetryEagerlyDropTraceFilter:
     def drop(cls, span: trace.Span):
         span.set_status(Status(StatusCode.ERROR))
         span.set_attribute(cls.EAGERLY_DROP_TRACE_KEY, True)
+
 
 class SubprocessTrace:
     """
@@ -88,6 +88,7 @@ class SubprocessTrace:
                 self.span.set_status(Status(StatusCode.ERROR, str(exc_val)))
             self.span.end()
 
+
 class OpenTelemetryLoggingTraceFilter:
     """Debugging utility filter that can log trace spans"""
 
@@ -95,7 +96,6 @@ class OpenTelemetryLoggingTraceFilter:
 
     @classmethod
     def activate(cls):
-        # No equivalent function to append filters in OpenTelemetry, add logic where necessary
         pass
 
     def process_trace(self, trace):
