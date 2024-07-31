@@ -22,7 +22,7 @@ class RowLimitedAwardDownloadViewSet(BaseDownloadViewSet):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/download/awards.md"
 
     def post(self, request):
-        request.data["award_levels"] = ["elasticsearch_awards", "sub_awards"]
+        request.data["award_levels"] = ["elasticsearch_awards", "elasticsearch_sub_awards"]
         request.data["constraint_type"] = "row_count"
         return BaseDownloadViewSet.post(self, request, validator_type=AwardDownloadValidator)
 
@@ -71,7 +71,7 @@ class RowLimitedTransactionDownloadViewSet(BaseDownloadViewSet):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/download/transactions.md"
 
     def post(self, request):
-        request.data["award_levels"] = ["elasticsearch_transactions", "sub_awards"]
+        request.data["award_levels"] = ["elasticsearch_transactions", "elasticsearch_sub_awards"]
         request.data["constraint_type"] = "row_count"
         return BaseDownloadViewSet.post(self, request, validator_type=AwardDownloadValidator)
 

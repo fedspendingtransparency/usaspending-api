@@ -18,6 +18,7 @@ def recipient_data_fixture(db):
         recipient_hash="521bb024-054c-4c81-8615-372f81629664",
         uei="UEI-01",
         recipient_name="Spiderman",
+        recipient_unique_id="hero1",  # aka duns
     )
 
     baker.make(
@@ -27,6 +28,7 @@ def recipient_data_fixture(db):
         recipient_hash="a70b86c3-5a12-4623-963b-9d96c4810163",
         uei="UEI-02",
         recipient_name="Batman",
+        recipient_unique_id="hero2",
     )
 
     baker.make(
@@ -36,6 +38,7 @@ def recipient_data_fixture(db):
         recipient_hash="a70b86c3-5a12-4623-963b-9d96c4810345",
         uei="UEI-03",
         recipient_name="Batman",
+        recipient_unique_id="hero3",
     )
 
     baker.make(
@@ -45,6 +48,7 @@ def recipient_data_fixture(db):
         recipient_hash="9159db20-d2f7-42d4-88e2-a69759987520",
         uei="UEI-04",
         recipient_name="Superman",
+        recipient_unique_id="hero4",
     )
 
     baker.make(
@@ -54,6 +58,7 @@ def recipient_data_fixture(db):
         recipient_hash="9159db20-d2f7-42d4-88e2-a69759987908",
         uei="UEI-05",
         recipient_name="sdfsdg",
+        recipient_unique_id="hero5",
     )
 
 

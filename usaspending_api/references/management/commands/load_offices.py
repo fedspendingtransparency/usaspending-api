@@ -2,7 +2,7 @@ import logging
 from datetime import datetime, timezone
 
 from django.core.management.base import BaseCommand
-from django.db import IntegrityError, connections, transaction
+from django.db import DEFAULT_DB_ALIAS, IntegrityError, connections, transaction
 
 from usaspending_api.common.operations_reporter import OpsReporter
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
@@ -43,6 +43,11 @@ class Command(BaseCommand):
         new_rec_count = len(Office.objects.bulk_create(total_objs))
         logger.info(f"Loaded: {new_rec_count:,} records")
         logger.info("Committing transaction to database")
+
+        logger.info(f"Deleting all existing offices that are not linked to a transaction in {DEFAULT_DB_ALIAS}")
+        # Identify offices that do not correspond to any transactions, using only USAS DB
+        with connections[DEFAULT_DB_ALIAS].cursor() as cursor:
+            cursor.execute(self.usas_unlinked_offices_sql)
 
     @property
     def broker_fetch_sql(self):
