@@ -53,6 +53,7 @@ logger = logging.getLogger(__name__)
 trace.set_tracer_provider(TracerProvider())
 tracer = trace.get_tracer_provider().get_tracer(__name__)
 
+
 def generate_download(download_job: DownloadJob, origination: Optional[str] = None):
     """Create data archive files from the download job object"""
 
@@ -136,13 +137,21 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
         with tracer.start_as_current_span(
             name=f"job.{JOB_TYPE}.download.s3",
             kind=SpanKind.INTERNAL,
-            attributes={"service.name": "bulk-download", "resource.name": f"s3://{settings.BULK_DOWNLOAD_S3_BUCKET_NAME}", "span.type": "WORKER"},
+            attributes={
+                "service.name": "bulk-download",
+                "resource.name": f"s3://{settings.BULK_DOWNLOAD_S3_BUCKET_NAME}",
+                "span.type": "WORKER",
+            },
         ) as span, tracer.start_as_current_span(
             name="s3.command",
             kind=SpanKind.SERVER,
-            attributes={"service.name": "aws.s3", "resource.name": ".".join(
-                [multipart_upload.__module__, (multipart_upload.__qualname__ or multipart_upload.__name__)]
-            ), "span.type": "WEB"},
+            attributes={
+                "service.name": "aws.s3",
+                "resource.name": ".".join(
+                    [multipart_upload.__module__, (multipart_upload.__qualname__ or multipart_upload.__name__)]
+                ),
+                "span.type": "WEB",
+            },
         ) as s3_span:
             # NOTE: Traces still not auto-picking-up aws.s3 service upload activity
             # Could be that the patches for boto and botocore don't cover the newer boto3 S3Transfer upload approach

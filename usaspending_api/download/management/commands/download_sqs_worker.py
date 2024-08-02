@@ -5,8 +5,6 @@ import traceback
 from opentelemetry import trace
 from opentelemetry.trace import SpanKind
 from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchExportSpanProcessor
-from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 
 from django.core.management.base import BaseCommand
 
@@ -16,7 +14,6 @@ from usaspending_api.common.sqs.sqs_work_dispatcher import (
     QueueWorkerProcessError,
     QueueWorkDispatcherError,
 )
-from usaspending_api.common.tracing import DatadogEagerlyDropTraceFilter, SubprocessTrace
 from usaspending_api.download.filestreaming.download_generation import generate_download
 from usaspending_api.common.sqs.sqs_job_logging import log_job_message
 from usaspending_api.download.helpers.monthly_helpers import download_job_to_log_dict
@@ -26,9 +23,6 @@ from usaspending_api.download.models.download_job import DownloadJob
 # Initialize OpenTelemetry
 tracer_provider = TracerProvider()
 trace.set_tracer_provider(tracer_provider)
-otlp_exporter = OTLPSpanExporter(endpoint="your_otlp_endpoint", insecure=True)
-span_processor = BatchExportSpanProcessor(otlp_exporter)
-tracer_provider.add_span_processor(span_processor)
 
 logger = logging.getLogger(__name__)
 JOB_TYPE = "USAspendingDownloader"
@@ -88,7 +82,7 @@ class Command(BaseCommand):
 
 def download_service_app(download_job_id):
     with tracer_provider.get_tracer(__name__).start_as_current_span(
-        name=f"job.{JOB_TYPE}.download", attributes={"service": "bulk-download", "span_type": SpanKind.WORKER}
+        name=f"job.{JOB_TYPE}.download", attributes={"service": "bulk-download", "span_type": SpanKind.Server}
     ) as span:
         download_job = _retrieve_download_job_from_db(download_job_id)
         download_job_details = download_job_to_log_dict(download_job)
