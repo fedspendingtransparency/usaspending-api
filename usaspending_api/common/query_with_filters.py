@@ -350,8 +350,8 @@ class _RecipientSearchText(_Filter):
                 recipient_uei_field = "recipient_uei"
 
             for special_word in words_to_escape:
-                    if len(re.findall(rf"\b{special_word}\b", query)) > 0:
-                        query = re.sub(rf"\b{special_word}\b", rf"\\{special_word}", query)
+                if len(re.findall(rf"\b{special_word}\b", query)) > 0:
+                    query = re.sub(rf"\b{special_word}\b", rf"\\{special_word}", query)
             recipient_name_query = ES_Q("query_string", query=query, default_operator="AND", fields=fields)
 
             if len(upper_recipient_string) == 9 and upper_recipient_string[:5].isnumeric():
