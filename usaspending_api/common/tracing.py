@@ -6,11 +6,13 @@ Specifically leveraging the Grafana Open Telemetry tracing client.
 from opentelemetry import trace
 from opentelemetry.trace import SpanKind
 from opentelemetry.sdk.trace import TracerProvider, ReadableSpan, SpanProcessor
+
 # from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
 # from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.trace.status import Status, StatusCode
 from typing import Optional, Callable
 import logging
+
 # import os
 
 
