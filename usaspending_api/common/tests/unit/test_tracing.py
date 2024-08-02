@@ -26,7 +26,7 @@ from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 
 
 # # Initialize the tracer provider and exporter for testing
-provider = TracerProvider(resource=Resource.create({SERVICE_NAME: "my-service"}))
+provider = TracerProvider(resource=Resource.create({SERVICE_NAME: "usaspending-api"}))
 exporter = ConsoleSpanExporter()
 span_processor = SimpleSpanProcessor(exporter)
 provider.add_span_processor(span_processor)
@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.fixture
-def otel_tracer_fixture():
+def otel_tracer_fixture() -> trace:
     """Fixture to temporarily enable the OpenTelemetry Tracer during a test"""
     yield otel_tracer
 
@@ -63,115 +63,114 @@ def caplog(caplog):
         logger.propagate = False
 
 
-def test_logging_trace_spans(caplog):
+def test_logging_trace_spans_basic(caplog: LogCaptureFixture):
     caplog.set_level(logging.DEBUG, logger.name)
     test = f"{inspect.stack()[0][3]}"
     with otel_tracer.start_as_current_span(
         name=f"{test}_operation",
         kind=SpanKind.INTERNAL,
-        attributes={"service.name": f"{test}_service", "resource.name": f"{test}_resource", "span.type": "test"},
+        attributes={"service.name": f"{test}_service", "resource.name": f"{test}_resource", "span.type": "TEST"},
     ) as span:
         trace_id = span.get_span_context().trace_id
         span_id = span.get_span_context().span_id
         logger.info(f"Test log message with trace id: {trace_id}")
+        log_span_id = f"The corresponding span id: {span_id}"
+        logger.warning(log_span_id)
 
     log_output = caplog.text
+    assert f"trace id: {trace_id}" in log_output, "trace_id not found in logging output"
+    assert f"span id: {span_id}" in log_output, "span_id not found in logging output"
+
+
+def test_logging_trace_spans(otel_tracer_fixture, caplog: LogCaptureFixture):
+    """Test the OpenTelemetryLoggingTraceFilter can actually capture trace span data in log output"""
+
+    # Enable log output for this logger for the duration of this test
+    caplog.set_level(logging.DEBUG, OpenTelemetryLoggingTraceFilter._log.name)
+    OpenTelemetryLoggingTraceFilter.activate()
+
+    test = f"{inspect.stack()[0][3]}"
+    with otel_tracer_fixture.start_as_current_span(
+        name=f"{test}_operation",
+        kind=SpanKind.INTERNAL, 
+        attributes={
+            "service.name": f"{test}_service",
+            "resource.name": f"{test}_resource",
+            "span.type": "TEST" 
+        }
+    ) as span:
+        trace_id = span.get_span_context().trace_id
+        span_id = span.get_span_context().span_id
+        logger = logging.getLogger(f"{test}_logger")
+        test_msg = f"a test message was logged during {test}"
+        logger.warning(test_msg)
+        # do things
+        x = 2 ** 5
+        thirty_two_squares = [m for m in map(lambda y: y ** 2, range(x))]
+        assert thirty_two_squares[-1] == 961
+
+    log_output = caplog.text
+    assert test_msg in log_output, "caplog.text did not seem to capture logging output during test"
     assert f"trace_id={trace_id}" in log_output, "trace_id not found in logging output"
+    assert f"span_id={span_id}" in log_output, "span_id not found in logging output"
+    assert f"{span.name}_attributes" in log_output, "traced resource not found in logging output"
 
+def test_drop_key_on_trace_spans(otel_tracer_fixture: trace, caplog: LogCaptureFixture):
+    """Test that traces that have any span with the key that marks them for dropping, are not logged, but those that
+    do not have this marker, are still logged"""
 
-# # In your test setup
-# def test_logging_trace_spans(caplog):
-#     caplog.set_level(logging.DEBUG, logger.name)
-#     with otel_tracer.start_as_current_span("test_logging_trace_spans") as span:
-#         trace_id = span.get_span_context().trace_id
-#         span_id = span.get_span_context().span_id
-#         logger.info(f"Test log message with trace id: {trace_id}")
+    # Enable log output for this logger for duration of this test
+    caplog.set_level(logging.DEBUG, OpenTelemetryLoggingTraceFilter._log.name)
+    test = f"{inspect.stack()[0][3]}"
+    OpenTelemetryLoggingTraceFilter.activate()
+    OpenTelemetryEagerlyDropTraceFilter.activate()
+    with otel_tracer_fixture.start_as_current_span(
+        name=f"{test}_operation",
+        kind=SpanKind.INTERNAL, 
+        attributes={
+            "service.name": f"{test}_service",
+            "resource.name": f"{test}_resource",
+            "span.type": "TEST" 
+        }
+    ) as span:
+        trace_id1 = span.trace_id
+        logger = logging.getLogger(f"{test}_logger")
+        test_msg = f"a test message was logged during {test}"
+        logger.warning(test_msg)
+        # do things
+        x = 2 ** 5
+        thirty_two_squares = [m for m in map(lambda y: y ** 2, range(x))]
+        assert thirty_two_squares[-1] == 961
 
-#     log_output = caplog.text
-#     assert f"trace_id={trace_id}" in log_output, "trace_id not found in logging output"
+        # Drop this span so it is not sent to the server, and not logged by the trace logger
+        OpenTelemetryEagerlyDropTraceFilter.drop(span)
 
-# def test_logging_trace_spans(otel_tracer_fixture, caplog: LogCaptureFixture):
-#     """Test the OpenTelemetryLoggingTraceFilter can actually capture trace span data in log output"""
+    # Do another trace, that is NOT dropped
+    with otel_tracer_fixture.start_as_current_span(
+        name=f"{test}_operation2",
+        kind=SpanKind.INTERNAL, 
+        attributes={
+            "service.name": f"{test}_service2",
+            "resource.name": f"{test}_resource2",
+            "span.type": "TEST" 
+        }
+    ) as span2:
+        trace_id2 = span2.trace_id
+        logger = logging.getLogger(f"{test}_logger")
+        test_msg2 = f"a second test message was logged during {test}"
+        logger.warning(test_msg2)
+        # do things
+        x = 2 ** 7
 
-#     # Enable log output for this logger for duration of this test
-#     caplog.set_level(logging.DEBUG, OpenTelemetryLoggingTraceFilter._log.name)
-#     test = f"{inspect.stack()[0][3]}"
-#     OpenTelemetryLoggingTraceFilter.activate()
-#     with otel_tracer_fixture.start_as_current_span(
-#         name=f"{test}_operation",
-#         kind=SpanKind.INTERNAL,  # Kind of span. INTERNAL is the default, can be omitted
-#         attributes={
-#             "service.name": f"{test}_service",
-#             "resource.name": f"{test}_resource",
-#             "span.type": "test"  # Custom attribute to indicate span type
-#         }
-#     ) as span:
-#         trace_id = span.get_span_context().trace_id
-#         span_id = span.get_span_context().span_id
-#         logger = logging.getLogger(f"{test}_logger")
-#         test_msg = f"a test message was logged during {test}"
-#         logger.warning(test_msg)
-#         # do things
-#         x = 2 ** 5
-#         thirty_two_squares = [m for m in map(lambda y: y ** 2, range(x))]
-#         assert thirty_two_squares[-1] == 961
-
-#     log_output = caplog.text
-#     assert test_msg in log_output, "caplog.text did not seem to capture logging output during test"
-#     assert f"trace_id={trace_id}" in log_output, "trace_id not found in logging output"
-#     assert f"span_id={span_id}" in log_output, "span_id not found in logging output"
-#     assert f"resource {test}_resource" in log_output, "traced resource not found in logging output"
-
-# def test_drop_key_on_trace_spans(datadog_tracer: ddtrace.Tracer, caplog: LogCaptureFixture):
-#     """Test that traces that have any span with the key that marks them for dropping, are not logged, but those that
-#     do not have this marker, are still logged"""
-
-#     # Enable log output for this logger for duration of this test
-#     caplog.set_level(logging.DEBUG, DatadogLoggingTraceFilter._log.name)
-#     test = f"{inspect.stack()[0][3]}"
-#     DatadogLoggingTraceFilter.activate()
-#     DatadogEagerlyDropTraceFilter.activate()
-#     with ddtrace.tracer.trace(
-#         name=f"{test}_operation",
-#         service=f"{test}_service",
-#         resource=f"{test}_resource",
-#         span_type=SpanTypes.TEST,
-#     ) as span:
-#         trace_id1 = span.trace_id
-#         logger = logging.getLogger(f"{test}_logger")
-#         test_msg = f"a test message was logged during {test}"
-#         logger.warning(test_msg)
-#         # do things
-#         x = 2 ** 5
-#         thirty_two_squares = [m for m in map(lambda y: y ** 2, range(x))]
-#         assert thirty_two_squares[-1] == 961
-
-#         # Drop this span so it is not sent to the server, and not logged by the trace logger
-#         DatadogEagerlyDropTraceFilter.drop(span)
-
-#     # Do another trace, that is NOT dropped
-#     with ddtrace.tracer.trace(
-#         name=f"{test}_operation2",
-#         service=f"{test}_service2",
-#         resource=f"{test}_resource2",
-#         span_type=SpanTypes.TEST,
-#     ) as span2:
-#         trace_id2 = span2.trace_id
-#         logger = logging.getLogger(f"{test}_logger")
-#         test_msg2 = f"a second test message was logged during {test}"
-#         logger.warning(test_msg2)
-#         # do things
-#         x = 2 ** 7
-
-#     assert test_msg in caplog.text, "caplog.text did not seem to capture logging output during test"
-#     assert f"SPAN#{trace_id1}" not in caplog.text, "span marker still logged when should have been dropped"
-#     assert f"TRACE#{trace_id1}" not in caplog.text, "trace marker still logged when should have been dropped"
-#     assert f"resource {test}_resource" in caplog.text, "traced resource still logged when should have been dropped"
-#     assert test_msg2 in caplog.text
-#     assert f"SPAN#{trace_id2}" in caplog.text, "span marker not found in logging output"
-#     assert f"TRACE#{trace_id2}" in caplog.text, "trace marker not found in logging output"
-#     assert f"resource {test}_resource2" in caplog.text, "traced resource not found in logging output"
-#     assert DatadogEagerlyDropTraceFilter.EAGERLY_DROP_TRACE_KEY not in caplog.text
+    assert test_msg in caplog.text, "caplog.text did not seem to capture logging output during test"
+    # assert f"SPAN#{trace_id1}" not in caplog.text, "span marker still logged when should have been dropped"
+    # assert f"TRACE#{trace_id1}" not in caplog.text, "trace marker still logged when should have been dropped"
+    # assert f"resource {test}_resource" in caplog.text, "traced resource still logged when should have been dropped"
+    # assert test_msg2 in caplog.text
+    # assert f"SPAN#{trace_id2}" in caplog.text, "span marker not found in logging output"
+    # assert f"TRACE#{trace_id2}" in caplog.text, "trace marker not found in logging output"
+    # assert f"resource {test}_resource2" in caplog.text, "traced resource not found in logging output"
+    # assert DatadogEagerlyDropTraceFilter.EAGERLY_DROP_TRACE_KEY not in caplog.text
 
 
 # def test_subprocess_trace(datadog_tracer: ddtrace.Tracer, caplog: LogCaptureFixture):
