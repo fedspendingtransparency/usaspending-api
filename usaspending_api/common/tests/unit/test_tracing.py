@@ -1,10 +1,10 @@
 import inspect
 
 import logging
-import multiprocessing as mp
+# import multiprocessing as mp
 import pytest
 
-from logging.handlers import QueueHandler
+# from logging.handlers import QueueHandler
 from _pytest.logging import LogCaptureFixture
 
 from opentelemetry import trace
@@ -17,11 +17,10 @@ from opentelemetry.sdk.trace.export import SimpleSpanProcessor, ConsoleSpanExpor
 from usaspending_api.common.tracing import (
     OpenTelemetryEagerlyDropTraceFilter,
     OpenTelemetryLoggingTraceFilter,
-    SubprocessTrace,
+    # SubprocessTrace,
 )
 
-from opentelemetry.sdk.trace import Tracer
-from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+# from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 
 
@@ -92,12 +91,8 @@ def test_logging_trace_spans(otel_tracer_fixture, caplog: LogCaptureFixture):
     test = f"{inspect.stack()[0][3]}"
     with otel_tracer_fixture.start_as_current_span(
         name=f"{test}_operation",
-        kind=SpanKind.INTERNAL, 
-        attributes={
-            "service.name": f"{test}_service",
-            "resource.name": f"{test}_resource",
-            "span.type": "TEST" 
-        }
+        kind=SpanKind.INTERNAL,
+        attributes={"service.name": f"{test}_service", "resource.name": f"{test}_resource", "span.type": "TEST"},
     ) as span:
         trace_id = span.get_span_context().trace_id
         span_id = span.get_span_context().span_id
@@ -115,6 +110,7 @@ def test_logging_trace_spans(otel_tracer_fixture, caplog: LogCaptureFixture):
     assert f"span_id={span_id}" in log_output, "span_id not found in logging output"
     assert f"{span.name}_attributes" in log_output, "traced resource not found in logging output"
 
+
 def test_drop_key_on_trace_spans(otel_tracer_fixture: trace, caplog: LogCaptureFixture):
     """Test that traces that have any span with the key that marks them for dropping, are not logged, but those that
     do not have this marker, are still logged"""
@@ -126,12 +122,8 @@ def test_drop_key_on_trace_spans(otel_tracer_fixture: trace, caplog: LogCaptureF
     OpenTelemetryEagerlyDropTraceFilter.activate()
     with otel_tracer_fixture.start_as_current_span(
         name=f"{test}_operation",
-        kind=SpanKind.INTERNAL, 
-        attributes={
-            "service.name": f"{test}_service",
-            "resource.name": f"{test}_resource",
-            "span.type": "TEST" 
-        }
+        kind=SpanKind.INTERNAL,
+        attributes={"service.name": f"{test}_service", "resource.name": f"{test}_resource", "span.type": "TEST"},
     ) as span:
         trace_id1 = span.trace_id
         logger = logging.getLogger(f"{test}_logger")
@@ -148,12 +140,8 @@ def test_drop_key_on_trace_spans(otel_tracer_fixture: trace, caplog: LogCaptureF
     # Do another trace, that is NOT dropped
     with otel_tracer_fixture.start_as_current_span(
         name=f"{test}_operation2",
-        kind=SpanKind.INTERNAL, 
-        attributes={
-            "service.name": f"{test}_service2",
-            "resource.name": f"{test}_resource2",
-            "span.type": "TEST" 
-        }
+        kind=SpanKind.INTERNAL,
+        attributes={"service.name": f"{test}_service2", "resource.name": f"{test}_resource2", "span.type": "TEST"},
     ) as span2:
         trace_id2 = span2.trace_id
         logger = logging.getLogger(f"{test}_logger")
