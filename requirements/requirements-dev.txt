@@ -14,8 +14,3 @@ pytest-cov==4.1.*
 pytest-django==4.2.*  # Going > 4.2 yields multi-db errors
 pytest-pretty==1.2.*
 pytest-xdist==3.3.*
-opentelemetry-distro==0.47b0
-opentelemetry-exporter-otlp==1.16.0
-# Need to run 'opentelemetry-bootstrap -a install' command and it is a CLI tool and should be run seperately
-# The command reads through the list of packages installed in your active site-packages folder, 
-# and installs the corresponding instrumentation libraries for these packages,
