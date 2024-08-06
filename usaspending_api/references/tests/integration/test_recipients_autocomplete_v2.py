@@ -66,11 +66,11 @@ def test_prepare_search_terms():
     view_set_instance = RecipientAutocompleteViewSet()
 
     request_data_with_levels = {"search_text": "test", "recipient_levels": ["C", "P"]}
-    expected_result_with_levels = ["TEST", ["C", "P"]]
+    expected_result_with_levels = ["TEST", ["C", "P"], None]
     assert view_set_instance._prepare_search_terms(request_data_with_levels) == expected_result_with_levels
 
     request_data_without_levels = {"search_text": "test"}
-    expected_result_without_levels = ["TEST", []]
+    expected_result_without_levels = ["TEST", [], None]
     assert view_set_instance._prepare_search_terms(request_data_without_levels) == expected_result_without_levels
 
 
@@ -80,41 +80,59 @@ def test_create_es_search():
     search_text = "test"
     recipient_levels = ["C", "P"]
     limit = 20
+    duns = "testing"
+
     expected_query = {
         "query": {
             "bool": {
                 "must": [
                     {
                         "bool": {
-                            "should": [
+                            "must": [
                                 {
                                     "bool": {
                                         "should": [
-                                            {"match": {"recipient_level": "C"}},
-                                            {"match": {"recipient_level": "P"}},
-                                        ],
-                                        "minimum_should_match": 1,
+                                            {
+                                                "bool": {
+                                                    "minimum_should_match": 1,
+                                                    "should": [
+                                                        {"match": {"recipient_level": "C"}},
+                                                        {"match": {"recipient_level": "P"}},
+                                                    ],
+                                                }
+                                            }
+                                        ]
                                     }
-                                }
-                            ]
-                        }
-                    },
-                    {
-                        "bool": {
-                            "should": [
+                                },
                                 {
                                     "bool": {
                                         "should": [
-                                            {"query_string": {"query": "test", "fields": ["recipient_name", "uei"]}},
-                                            {"match": {"recipient_name": "test"}},
-                                            {"match": {"uei": "test"}},
-                                        ],
-                                        "minimum_should_match": 1,
+                                            {
+                                                "bool": {
+                                                    "minimum_should_match": 1,
+                                                    "should": [
+                                                        {
+                                                            "query_string": {
+                                                                "fields": [
+                                                                    "recipient_name",
+                                                                    "uei",
+                                                                    "duns",
+                                                                ],
+                                                                "query": "test",
+                                                            }
+                                                        },
+                                                        {"match": {"recipient_name": "test"}},
+                                                        {"match": {"uei": "test"}},
+                                                    ],
+                                                }
+                                            }
+                                        ]
                                     }
-                                }
+                                },
                             ]
                         }
                     },
+                    {"match": {"duns": "testing"}},
                 ]
             }
         },
@@ -122,27 +140,32 @@ def test_create_es_search():
         "size": 20,
     }
 
-    assert view_set_instance._create_es_search(search_text, recipient_levels, limit).to_dict() == expected_query
+    assert view_set_instance._create_es_search(search_text, recipient_levels, duns, limit).to_dict() == expected_query
 
     search_text = "test"
     recipient_levels = []
     limit = 20
+    duns = None
     expected_query = {
         "query": {
             "bool": {
+                "minimum_should_match": 1,
                 "should": [
-                    {"query_string": {"query": "test", "fields": ["recipient_name", "uei"]}},
+                    {
+                        "query_string": {
+                            "fields": ["recipient_name", "uei", "duns"],
+                            "query": "test",
+                        }
+                    },
                     {"match": {"recipient_name": "test"}},
                     {"match": {"uei": "test"}},
                 ],
-                "minimum_should_match": 1,
             }
         },
         "from": 0,
         "size": 20,
     }
-
-    assert view_set_instance._create_es_search(search_text, recipient_levels, limit).to_dict() == expected_query
+    assert view_set_instance._create_es_search(search_text, recipient_levels, duns, limit).to_dict() == expected_query
 
 
 def test_query_elasticsearch(recipient_data_fixture, elasticsearch_recipient_index, monkeypatch):
@@ -158,8 +181,9 @@ def test_query_elasticsearch(recipient_data_fixture, elasticsearch_recipient_ind
     search_text = "sdfsdg"
     recipient_levels = ["C"]
     limit = 1
+    duns = None
 
-    elasticsearch_query = view_set_instance._create_es_search(search_text, recipient_levels, limit)
+    elasticsearch_query = view_set_instance._create_es_search(search_text, recipient_levels, duns, limit)
     expected_result = view_set_instance._query_elasticsearch(elasticsearch_query)
 
     response_actual = client.search(index=elasticsearch_recipient_index.index_name, body=elasticsearch_query.to_dict())
@@ -174,7 +198,7 @@ def test_parse_elasticsearch_response():
     hits_with_data = {
         "hits": {"hits": [{"_source": {"recipient_name": "Test", "uei": "UEI-01", "recipient_level": "C"}}]}
     }
-    expected_results = [{"recipient_name": "Test", "uei": "UEI-01", "recipient_level": "C"}]
+    expected_results = [{"recipient_name": "Test", "uei": "UEI-01", "recipient_level": "C", "duns": None}]
     assert view_set_instance._parse_elasticsearch_response(hits_with_data) == expected_results
 
     hits_without_data = {"hits": {"hits": []}}

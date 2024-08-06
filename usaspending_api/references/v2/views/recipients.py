@@ -23,6 +23,13 @@ models = [
         "items": {"type": "string"},
         "optional": True,
     },
+    {
+        "name": "duns",
+        "key": "duns",
+        "type": "text",
+        "text_type": "search",
+        "optional": True,
+    },
 ]
 
 
@@ -45,15 +52,16 @@ class RecipientAutocompleteViewSet(APIView):
                     "search_text": str
                     "recipient_levels": [""] (optional)
                     "limit": int (optional)
+                    "duns": string (optional)
                 }
             format: The format of the response (default=None).
 
         Returns:
             Returns a list of Recipients matching the input search_text and recipient_levels, if passed in.
         """
-        search_text, recipient_levels = self._prepare_search_terms(request.data)
+        search_text, recipient_levels, duns = self._prepare_search_terms(request.data)
         limit = request.data["limit"]
-        query = self._create_es_search(search_text, recipient_levels, limit)
+        query = self._create_es_search(search_text, recipient_levels, duns, limit)
         results = self._query_elasticsearch(query)
         response = OrderedDict([("count", len(results)), ("results", results), ("messages", [""])])
         return Response(response)
@@ -68,22 +76,25 @@ class RecipientAutocompleteViewSet(APIView):
         Returns:
             A list containing the sanitized search text and recipient levels.
         """
-        fields = [request_data["search_text"], request_data.get("recipient_levels", [])]
+        fields = [request_data["search_text"], request_data.get("recipient_levels", []), request_data.get("duns")]
         return [es_sanitize(field).upper() if isinstance(field, str) else field for field in fields]
 
-    def _create_es_search(self, search_text: str, recipient_levels: List[str], limit: int) -> RecipientSearch:
+    def _create_es_search(
+        self, search_text: str, recipient_levels: List[str], duns: str, limit: int
+    ) -> RecipientSearch:
         """
         Create an Elasticsearch search query for recipient autocomplete.
 
         Args:
             search_text: The search text entered by the user.
             recipient_levels: The list of recipient levels to filter by.
+            duns: Any specific duns key specified by the user.
             limit: The maximum number of results to return.
 
         Returns:
             An Elasticsearch search query.
         """
-        es_recipient_search_fields = ["recipient_name", "uei"]
+        es_recipient_search_fields = ["recipient_name", "uei", "duns"]
 
         query = ES_Q(
             "bool",
@@ -105,6 +116,9 @@ class RecipientAutocompleteViewSet(APIView):
             ]
             # if there are recipient levels, then any of the options from the recipient levels as well as the search text should match  # noqa: E501
             query = ES_Q("bool", must=[ES_Q("bool", should=recipient_should_clause), ES_Q("bool", should=query)])
+
+        if duns:
+            query = ES_Q("bool", must=[query, ES_Q("match", duns=duns)])
 
         query = RecipientSearch().query(query)[:limit]
         return query
@@ -151,6 +165,7 @@ class RecipientAutocompleteViewSet(APIView):
                         ("recipient_name", recipient["recipient_name"]),
                         ("uei", recipient["uei"]),
                         ("recipient_level", recipient["recipient_level"]),
+                        ("duns", recipient["duns"] if "duns" in recipient else None),
                     ]
                 )
             )
