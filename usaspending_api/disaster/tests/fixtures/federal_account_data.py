@@ -1,8 +1,104 @@
 import pytest
-
 from model_bakery import baker
 
 from usaspending_api.references.models.disaster_emergency_fund_code import DisasterEmergencyFundCode
+
+
+@pytest.fixture
+def covid_faba_spending_data():
+    # Loan type awards
+    baker.make(
+        "disaster.CovidFABASpending",
+        spending_level="treasury_account",
+        funding_federal_account_id="21",
+        funding_federal_account_code="000-0000",
+        funding_federal_account_name="gifts",
+        funding_treasury_account_id=23,
+        funding_treasury_account_code="2020/98",
+        funding_treasury_account_name="evergreens",
+        defc="L",
+        award_type="07",
+        award_count=1,
+        obligation_sum=1.0,
+        outlay_sum=1.0,
+        face_value_of_loan=3333.0,
+    )
+    baker.make(
+        "disaster.CovidFABASpending",
+        spending_level="treasury_account",
+        funding_federal_account_id="21",
+        funding_federal_account_code="000-0000",
+        funding_federal_account_name="gifts",
+        funding_treasury_account_id=24,
+        funding_treasury_account_code="2020/52",
+        funding_treasury_account_name="ferns",
+        defc="L",
+        award_type="08",
+        award_count=1,
+        obligation_sum=3.0,
+        outlay_sum=333.0,
+        face_value_of_loan=4444.0,
+    )
+
+    # Non-loan type awards
+    baker.make(
+        "disaster.CovidFABASpending",
+        spending_level="treasury_account",
+        funding_federal_account_id="21",
+        funding_federal_account_code="000-0000",
+        funding_federal_account_name="gifts",
+        funding_treasury_account_id=22,
+        funding_treasury_account_code="2020/99",
+        funding_treasury_account_name="flowers",
+        defc="M",
+        award_type="A",
+        award_count=1,
+        obligation_sum=100.0,
+        outlay_sum=111.0,
+    )
+    baker.make(
+        "disaster.CovidFABASpending",
+        spending_level="treasury_account",
+        funding_federal_account_id="21",
+        funding_federal_account_code="000-0000",
+        funding_federal_account_name="gifts",
+        funding_treasury_account_id=23,
+        funding_treasury_account_code="2020/98",
+        funding_treasury_account_name="evergreens",
+        defc="L",
+        award_type="B",
+        award_count=1,
+        obligation_sum=200.0,
+        outlay_sum=222.0,
+    )
+
+    baker.make(
+        "references.DisasterEmergencyFundCode",
+        code="L",
+        public_law="Law for code L",
+    )
+    baker.make(
+        "references.DisasterEmergencyFundCode",
+        code="M",
+        public_law="Law for code M",
+    )
+    baker.make(
+        "references.DisasterEmergencyFundCode",
+        code="N",
+        public_law="Law for code N",
+    )
+    baker.make(
+        "references.DisasterEmergencyFundCode",
+        code="O",
+        public_law="Law for code O",
+    )
+    baker.make(
+        "references.DisasterEmergencyFundCode",
+        code="P",
+        public_law="Law for code P",
+    )
+    baker.make("references.DisasterEmergencyFundCode", code="A", public_law="Law for code A")
+    baker.make("references.DisasterEmergencyFundCode", code="9", public_law="Law for code 9")
 
 
 @pytest.fixture
@@ -252,6 +348,52 @@ def generic_account_data():
         total_budgetary_resources_cpe=394368.87,
         deobligations_or_recoveries_or_refunds_from_prior_year_cpe=999.99,
         prior_year_paid_obligation_recoveries=888.88,
+    )
+    baker.make(
+        "disaster.CovidFABASpending",
+        spending_level="awards",
+        defc="L",
+        award_type="A",
+        award_count=1,
+        outlay_sum=222.0,
+        obligation_sum=200.0,
+    )
+    baker.make(
+        "disaster.CovidFABASpending",
+        spending_level="awards",
+        defc="N",
+        award_type="09",
+        award_count=1,
+        outlay_sum=100.0,
+        obligation_sum=2.0,
+    )
+    baker.make(
+        "disaster.CovidFABASpending",
+        spending_level="awards",
+        defc="N",
+        award_type="A",
+        award_count=2,
+        outlay_sum=334.0,
+        obligation_sum=4.0,
+    )
+    baker.make(
+        "disaster.CovidFABASpending",
+        spending_level="awards",
+        defc="O",
+        award_type="10",
+        award_count=1,
+        outlay_sum=234.0,
+        obligation_sum=2.0,
+    )
+    baker.make(
+        "disaster.CovidFABASpending",
+        spending_level="awards",
+        defc="P",
+        award_type="07",
+        award_count=2,
+        outlay_sum=334.0,
+        obligation_sum=4.0,
+        face_value_of_loan=7777.0,
     )
 
 

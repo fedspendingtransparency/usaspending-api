@@ -1,4 +1,5 @@
 COVID_FABA_SPENDING_COLUMNS = {
+    "id": {"delta": "INTEGER", "postgres": "INTEGER NOT NULL"},
     "spending_level": {"delta": "STRING", "postgres": "TEXT"},
     "funding_toptier_agency_id": {"delta": "STRING", "postgres": "TEXT"},
     "funding_toptier_agency_code": {"delta": "STRING", "postgres": "TEXT"},
@@ -18,7 +19,7 @@ COVID_FABA_SPENDING_COLUMNS = {
     "funding_object_class_id": {"delta": "INTEGER", "postgres": "INTEGER"},
     "funding_object_class_code": {"delta": "STRING", "postgres": "TEXT"},
     "funding_object_class_name": {"delta": "STRING", "postgres": "TEXT"},
-    "DEFC": {"delta": "STRING", "postgres": "TEXT"},
+    "defc": {"delta": "STRING", "postgres": "TEXT"},
     "award_type": {"delta": "STRING", "postgres": "TEXT"},
     "award_count": {"delta": "LONG", "postgres": "LONG"},
     "obligation_sum": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
@@ -64,7 +65,7 @@ covid_faba_spending_load_sql_strings = [
             NULL AS funding_object_class_id,
             NULL AS funding_object_class_code,
             NULL AS funding_object_class_name,
-            DEFC,
+            defc,
             award_type,
             COUNT(generated_unique_award_id) AS award_count,
             SUM(obligation_sum) AS obligation_sum,
@@ -79,7 +80,7 @@ covid_faba_spending_load_sql_strings = [
                 sub_a.subtier_agency_id AS funding_subtier_agency_id,
                 sub_a.subtier_code AS funding_subtier_agency_code,
                 sub_a.name AS funding_subtier_agency_name,
-                faba.disaster_emergency_fund_code AS DEFC,
+                faba.disaster_emergency_fund_code AS defc,
                 awd.type AS award_type,
                 awd.generated_unique_award_id,
                 SUM(COALESCE(faba.transaction_obligated_amount, 0)) AS obligation_sum,
@@ -154,7 +155,7 @@ covid_faba_spending_load_sql_strings = [
             funding_subtier_agency_id,
             funding_subtier_agency_code,
             funding_subtier_agency_name,
-            DEFC,
+            defc,
             award_type
     );
     """,
@@ -183,7 +184,7 @@ covid_faba_spending_load_sql_strings = [
             NULL AS funding_object_class_id,
             NULL AS funding_object_class_code,
             NULL AS funding_object_class_name,
-            DEFC,
+            defc,
             award_type,
             COUNT(generated_unique_award_id) AS award_count,
             SUM(obligation_sum) AS obligation_sum,
@@ -198,7 +199,7 @@ covid_faba_spending_load_sql_strings = [
                 taa.treasury_account_identifier AS funding_treasury_account_id,
                 taa.tas_rendering_label AS funding_treasury_account_code,
                 taa.account_title AS funding_treasury_account_name,
-                faba.disaster_emergency_fund_code AS DEFC,
+                faba.disaster_emergency_fund_code AS defc,
                 awd.type AS award_type,
                 awd.generated_unique_award_id,
                 SUM(COALESCE(faba.transaction_obligated_amount, 0)) AS obligation_sum,
@@ -266,7 +267,7 @@ covid_faba_spending_load_sql_strings = [
             funding_treasury_account_id,
             funding_treasury_account_code,
             funding_treasury_account_name,
-            DEFC,
+            defc,
             award_type
     );
     """,
@@ -295,7 +296,7 @@ covid_faba_spending_load_sql_strings = [
             funding_object_class_id,
             funding_object_class_code,
             funding_object_class_name,
-            DEFC,
+            defc,
             award_type,
             COUNT(generated_unique_award_id) as award_count,
             SUM(obligation_sum) as obligation_sum,
@@ -309,7 +310,7 @@ covid_faba_spending_load_sql_strings = [
                 oc.id AS funding_object_class_id,
                 oc.object_class AS funding_object_class_code,
                 oc.object_class_name AS funding_object_class_name,
-                faba.disaster_emergency_fund_code AS DEFC,
+                faba.disaster_emergency_fund_code AS defc,
                 awd.type AS award_type,
                 awd.generated_unique_award_id,
                 SUM(COALESCE(faba.transaction_obligated_amount, 0)) AS obligation_sum,
@@ -365,7 +366,87 @@ covid_faba_spending_load_sql_strings = [
             funding_object_class_id,
             funding_object_class_code,
             funding_object_class_name,
-            DEFC,
+            defc,
+            award_type
+    );
+    """,
+    #   --------------------------------------------------------------------------------
+    #     -- Create a temporary view of Covid FABA spending by award type and DEFC
+    #   --------------------------------------------------------------------------------
+    """
+    CREATE TEMPORARY VIEW covid_faba_spending_awards_view AS (
+        SELECT
+            "awards" AS spending_level,
+            NULL AS funding_toptier_agency_id,
+            NULL AS funding_toptier_agency_code,
+            NULL AS funding_toptier_agency_name,
+            NULL AS funding_subtier_agency_id,
+            NULL AS funding_subtier_agency_code,
+            NULL AS funding_subtier_agency_name,
+            NULL AS funding_federal_account_id,
+            NULL AS funding_federal_account_code,
+            NULL AS funding_federal_account_name,
+            NULL AS funding_treasury_account_id,
+            NULL AS funding_treasury_account_code,
+            NULL AS funding_treasury_account_name,
+            NULL AS funding_major_object_class_id,
+            NULL AS funding_major_object_class_code,
+            NULL AS funding_major_object_class_name,
+            NULL AS funding_object_class_id,
+            NULL AS funding_object_class_code,
+            NULL AS funding_object_class_name,
+            defc,
+            award_type,
+            COUNT(generated_unique_award_id) AS award_count,
+            SUM(obligation_sum) AS obligation_sum,
+            SUM(outlay_sum) AS outlay_sum,
+            SUM(face_value_of_loan) AS face_value_of_loan
+        FROM (
+            SELECT
+                faba.disaster_emergency_fund_code AS defc,
+                awd.type AS award_type,
+                awd.generated_unique_award_id,
+                SUM(COALESCE(faba.transaction_obligated_amount, 0)) AS obligation_sum,
+                SUM(CASE
+                        WHEN sa.is_final_balances_for_fy = TRUE
+                            THEN
+                                COALESCE(gross_outlay_amount_by_award_cpe, 0)
+                                +
+                                COALESCE(ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe, 0)
+                                +
+                                COALESCE(ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe, 0)
+                        ELSE 0
+                    END) AS outlay_sum,
+                FIRST(awd.total_loan_value) AS face_value_of_loan
+            FROM
+                int.financial_accounts_by_awards faba
+            JOIN global_temp.submission_attributes sa
+                ON sa.reporting_period_start >= to_date('2020-04-01')	AND sa.submission_id = faba.submission_id
+            JOIN global_temp.disaster_emergency_fund_code defc
+                ON	defc.group_name = 'covid_19' AND defc.code = faba.disaster_emergency_fund_code
+            JOIN global_temp.dabs_submission_window_schedule dabs
+                ON dabs.submission_reveal_date <= now() AND dabs.id = sa.submission_window_id
+            LEFT JOIN int.awards awd
+                ON awd.id = faba.award_id
+            WHERE
+                defc.group_name = 'covid_19'
+                AND
+                (
+                    faba.transaction_obligated_amount != 0
+                    OR
+                    faba.gross_outlay_amount_by_award_cpe != 0
+                    OR
+                    faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe != 0
+                    OR
+                    faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe != 0
+                )
+            GROUP BY
+                faba.disaster_emergency_fund_code,
+                awd.type,
+                awd.generated_unique_award_id
+        )
+        GROUP BY
+            defc,
             award_type
     );
     """,
@@ -374,13 +455,23 @@ covid_faba_spending_load_sql_strings = [
     (
         {",".join(list(COVID_FABA_SPENDING_POSTGRES_COLUMNS))}
     )
-    SELECT * FROM covid_faba_spending_agency_view
-    UNION ALL
-    SELECT * FROM covid_faba_spending_account_view
-    UNION ALL
-    SELECT * FROM covid_faba_spending_object_class_view;
+    WITH covid_faba_spending_views AS (
+        SELECT * FROM covid_faba_spending_agency_view
+        UNION ALL
+        SELECT * FROM covid_faba_spending_account_view
+        UNION ALL
+        SELECT * FROM covid_faba_spending_object_class_view
+        UNION ALL
+        SELECT * FROM covid_faba_spending_awards_view
+    )
+    SELECT
+        ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS id,
+        *
+    FROM
+        covid_faba_spending_views;
     """,
     """DROP VIEW covid_faba_spending_agency_view;""",
     """DROP VIEW covid_faba_spending_account_view;""",
     """DROP VIEW covid_faba_spending_object_class_view;""",
+    """DROP VIEW covid_faba_spending_awards_view;""",
 ]

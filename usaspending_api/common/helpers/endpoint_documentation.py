@@ -15,7 +15,10 @@ ENDPOINT_PATTERN = re.compile(r"\|\s*\[[^\]]+\]\s*\((?P<url>[^)]+)\)\s*\|[^|]+\|
 # Add endpoints to this list to exclude them from endpoint documentation checks.
 # For example, we did not want to create an api contract for the `list_unlinked_awards_files` endpoint,
 # because of that decision we added that endpoint to the following list.
-_EXCLUDED_URLS = ["/api/v2/bulk_download/list_unlinked_awards_files"]
+_EXCLUDED_URLS = [
+    "/api/v2/bulk_download/list_unlinked_awards_files",
+    "/api/v2/bulk_download/list_database_download_files",
+]
 
 
 def case_sensitive_file_exists(file_path):

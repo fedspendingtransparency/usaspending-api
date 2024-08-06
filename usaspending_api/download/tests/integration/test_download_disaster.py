@@ -434,7 +434,10 @@ def awards_and_transactions():
 
 
 @pytest.mark.django_db(transaction=True)
-def test_csv_download_success(client, monkeypatch, awards_and_transactions, elasticsearch_award_index):
+def test_csv_download_success(
+    client, monkeypatch, awards_and_transactions, elasticsearch_award_index, elasticsearch_subaward_index
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
@@ -457,7 +460,10 @@ def test_csv_download_success(client, monkeypatch, awards_and_transactions, elas
 
 
 @pytest.mark.django_db(transaction=True)
-def test_tsv_download_success(client, monkeypatch, awards_and_transactions, elasticsearch_award_index):
+def test_tsv_download_success(
+    client, monkeypatch, awards_and_transactions, elasticsearch_award_index, elasticsearch_subaward_index
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     resp = _post(client, def_codes=["L"], file_format="tsv")
@@ -469,7 +475,10 @@ def test_tsv_download_success(client, monkeypatch, awards_and_transactions, elas
 
 
 @pytest.mark.django_db(transaction=True)
-def test_pstxt_download_success(client, monkeypatch, awards_and_transactions, elasticsearch_award_index):
+def test_pstxt_download_success(
+    client, monkeypatch, awards_and_transactions, elasticsearch_award_index, elasticsearch_subaward_index
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     resp = _post(client, def_codes=["L"], file_format="pstxt")
