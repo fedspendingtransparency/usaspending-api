@@ -14,9 +14,11 @@ import tempfile
 import time
 import traceback
 
+from opentelemetry import trace
+from opentelemetry.trace import SpanKind
+from opentelemetry.sdk.trace import TracerProvider
+
 from datetime import datetime, timezone
-from ddtrace import tracer
-from ddtrace.ext import SpanTypes
 from django.conf import settings
 
 from usaspending_api.download.models.download_job_lookup import DownloadJobLookup
@@ -47,6 +49,10 @@ JOB_TYPE = "USAspendingDownloader"
 
 logger = logging.getLogger(__name__)
 
+# Set up the OpenTelemetry tracer provider
+trace.set_tracer_provider(TracerProvider())
+tracer = trace.get_tracer_provider().get_tracer(__name__)
+
 
 def generate_download(download_job: DownloadJob, origination: Optional[str] = None):
     """Create data archive files from the download job object"""
@@ -61,7 +67,7 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
     file_format = json_request.get("file_format")
     request_type = json_request.get("request_type")
 
-    span = tracer.current_span()
+    span = tracer.start_span(name=f"generate_download_{request_type}")
     if span and request_type:
         span.resource = request_type
 
@@ -128,26 +134,32 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
 
     # push file to S3 bucket, if not local
     if not settings.IS_LOCAL:
-        with tracer.trace(
+        with tracer.start_as_current_span(
             name=f"job.{JOB_TYPE}.download.s3",
-            service="bulk-download",
-            resource=f"s3://{settings.BULK_DOWNLOAD_S3_BUCKET_NAME}",
-            span_type=SpanTypes.WORKER,
-        ) as span, tracer.trace(
+            kind=SpanKind.INTERNAL,
+            attributes={
+                "service.name": "bulk-download",
+                "resource.name": f"s3://{settings.BULK_DOWNLOAD_S3_BUCKET_NAME}",
+                "span.type": "WORKER",
+            },
+        ) as span, tracer.start_as_current_span(
             name="s3.command",
-            service="aws.s3",
-            resource=".".join(
-                [multipart_upload.__module__, (multipart_upload.__qualname__ or multipart_upload.__name__)]
-            ),
-            span_type=SpanTypes.WEB,
+            kind=SpanKind.SERVER,
+            attributes={
+                "service.name": "aws.s3",
+                "resource.name": ".".join(
+                    [multipart_upload.__module__, (multipart_upload.__qualname__ or multipart_upload.__name__)]
+                ),
+                "span.type": "WEB",
+            },
         ) as s3_span:
             # NOTE: Traces still not auto-picking-up aws.s3 service upload activity
             # Could be that the patches for boto and botocore don't cover the newer boto3 S3Transfer upload approach
-            span.set_tag("file_name", file_name)
+            span.set_attribute("file_name", file_name)
             try:
                 bucket = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
                 region = settings.USASPENDING_AWS_REGION
-                s3_span.set_tags({"bucket": bucket, "region": region, "file": zip_file_path})
+                s3_span.set_attributes({"bucket": bucket, "region": region, "file": zip_file_path})
                 start_uploading = time.perf_counter()
                 multipart_upload(bucket, region, zip_file_path, os.path.basename(zip_file_path))
                 write_to_log(
@@ -444,7 +456,7 @@ def split_and_zip_data_files(zip_file_path, source_path, data_file_name, file_fo
     with SubprocessTrace(
         name=f"job.{JOB_TYPE}.download.zip",
         service="bulk-download",
-        span_type=SpanTypes.WORKER,
+        span_type=SpanKind.INTERNAL,
         source_path=source_path,
         zip_file_path=zip_file_path,
     ) as span:
@@ -464,7 +476,7 @@ def split_and_zip_data_files(zip_file_path, source_path, data_file_name, file_fo
                 row_limit=EXCEL_ROW_LIMIT,
                 output_name_template=output_template,
             )
-            span.set_tag("file_parts", len(list_of_files))
+            span.set_attribute("file_parts", len(list_of_files))
 
             msg = f"Partitioning data into {len(list_of_files)} files took {time.perf_counter() - log_time:.4f}s"
             write_to_log(message=msg, download_job=download_job)
@@ -685,15 +697,15 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
         name=f"job.{JOB_TYPE}.download.psql",
         service="bulk-download",
         resource=download_sql,
-        span_type=SpanTypes.SQL,
+        span_type=SpanKind.INTERNAL,
         source_path=source_path,
-    ), tracer.trace(
+    ), tracer.start_as_current_span(
         name="postgres.query",
         service=f"{settings.DOWNLOAD_DB_ALIAS}db",
         resource=download_sql,
-        span_type=SpanTypes.SQL,
-    ), tracer.trace(
-        name="postgres.query", service="postgres", resource=download_sql, span_type=SpanTypes.SQL
+        span_type=SpanKind.INTERNAL,
+    ), tracer.start_as_current_span(
+        name="postgres.query", service="postgres", resource=download_sql, span_type=SpanKind.INTERNAL
     ):
         try:
             log_time = time.perf_counter()
