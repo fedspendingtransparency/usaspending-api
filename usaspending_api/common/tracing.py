@@ -5,54 +5,45 @@ Specifically leveraging the Grafana Open Telemetry tracing client.
 """
 from opentelemetry import trace
 from opentelemetry.trace import SpanKind
-from opentelemetry.sdk.trace import TracerProvider, ReadableSpan, SpanProcessor
+# from opentelemetry.sdk.trace import ReadableSpan, SpanProcessor
 
-# from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
-# from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
 from opentelemetry.trace.status import Status, StatusCode
 from typing import Optional, Callable
 import logging
 
-# import os
-
-
+# The tracer provider should only be set up once, typically in the settings or a dedicated setup module
 _logger = logging.getLogger(__name__)
-
-# Set up the OpenTelemetry tracer provider
-trace.set_tracer_provider(TracerProvider())
 tracer = trace.get_tracer_provider().get_tracer(__name__)
 
-# otlp exporter to send spans to url
-# otlp_exporter = OTLPSpanExporter(
-#     endpoint=os.getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "0.0.0.0:4317"),
-# )
-# span_processor = BatchSpanProcessor(otlp_exporter)
-# trace.get_tracer_provider().add_span_processor(span_processor)
+############################################################
 
-# Console exporter for debugging
-# console_exporter = ConsoleSpanExporter()
-# console_span_processor = BatchSpanProcessor(console_exporter)
-# trace.get_tracer_provider().add_span_processor(console_span_processor)
+# CUSTOM CONSOLE EXPORTER for debugging
+# class LoggingSpanProcessor(SpanProcessor):
+#     def on_end(self, span: ReadableSpan) -> None:
+#         trace_id = span.context.trace_id
+#         span_id = span.context.span_id
+#         logger = logging.getLogger(__name__)
+#         logger.info(f"Span ended: trace_id={trace_id}, span_id={span_id}, {span.name}_attributes={span.attributes}")
 
-
-class LoggingSpanProcessor(SpanProcessor):
-    def on_end(self, span: ReadableSpan) -> None:
-        trace_id = span.context.trace_id
-        span_id = span.context.span_id
-        logger = logging.getLogger(__name__)
-        logger.info(f"Span ended: trace_id={trace_id}, span_id={span_id}, {span.name}_attributes={span.attributes}")
-
-    def force_flush(self, timeout_millis: int = 30000) -> bool:
-        return True
+#     def force_flush(self, timeout_millis: int = 30000) -> bool:
+#         return True
 
 
-logging_span_processor = LoggingSpanProcessor()
-trace.get_tracer_provider().add_span_processor(logging_span_processor)
+# logging_span_processor = LoggingSpanProcessor()
+# trace.get_tracer_provider().add_span_processor(logging_span_processor)
 
+############################################################
+
+# DEFAULT CONSOLE EXPORTER for debugging
+console_exporter = ConsoleSpanExporter()
+trace.get_tracer_provider().add_span_processor(BatchSpanProcessor(console_exporter))
+
+############################################################
 
 def _activate_trace_filter(filter_class: Callable) -> None:
     if not hasattr(tracer, "_filters"):
-        _logger.warning("Datadog tracer client no longer has attribute '_filters' on which to append a span filter")
+        _logger.warning("OpenTelemetry does not support direct filter activation on tracer")
     else:
         if tracer._filters:
             tracer._filters.append(filter_class())

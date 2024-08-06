@@ -14,8 +14,8 @@ from usaspending_api.config import CONFIG
 
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
-from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.instrumentation.django import DjangoInstrumentor
 
 ############################################################
@@ -28,19 +28,23 @@ DjangoInstrumentor().instrument()
 service_name = os.getenv("OTEL_SERVICE_NAME", "usaspending-api")
 os.environ["OTEL_RESOURCE_ATTRIBUTES"] = f"service.name={service_name}"
 
-# Set up the OpenTelemetry tracer provider
+# # Set up the OpenTelemetry tracer provider
 trace.set_tracer_provider(TracerProvider())
 
 # Set up the OTLP exporter
+# Check out https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/
+# for more exporter configuration
 otlp_exporter = OTLPSpanExporter(
     endpoint=os.getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "0.0.0.0:4317"),
+    insecure=True
 )
 span_processor = BatchSpanProcessor(otlp_exporter)
 trace.get_tracer_provider().add_span_processor(span_processor)
 
-# Optionally, add a console exporter for debugging
-console_exporter = ConsoleSpanExporter()
-trace.get_tracer_provider().add_span_processor(BatchSpanProcessor(console_exporter))
+# Define additional settings for OpenTelemetry integration
+TRACER = trace.get_tracer_provider().get_tracer(__name__)
+OTEL_EXPORTER_OTLP_TRACES_ENDPOINT = os.getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "0.0.0.0:4317")
+OTEL_RESOURCE_ATTRIBUTES = f"service.name={service_name}"
 
 ############################################################
 
@@ -87,7 +91,7 @@ SECRET_KEY = get_random_string(length=12)
 DEBUG = os.environ.get("DJANGO_DEBUG", "").lower() in ["true", "1", "yes"]
 
 HOST = "localhost:3000"
-ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+ALLOWED_HOSTS = ["*"]
 
 # Define local flag to affect location of downloads
 IS_LOCAL = True
