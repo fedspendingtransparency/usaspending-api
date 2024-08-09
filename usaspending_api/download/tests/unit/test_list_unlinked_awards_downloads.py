@@ -1,7 +1,23 @@
 import datetime
 from unittest.mock import MagicMock
+import requests
+
 
 from usaspending_api.download.helpers.download_file_helpers import get_last_modified_file
+
+def test_url_correct():
+    url = "https://api.usaspending.gov/api/v2/bulk_download/list_unlinked_awards_files/"
+    request_body = {
+    "toptier_code": "072"}
+    response = requests.post(url, json=request_body)
+
+    assert response.status_code == 201
+    #not sure if this is the right status code for this API endpoint
+    assert response.headers["Content-Type"] == "application/json; charset=UTF-8"
+
+    data = response.json()
+    assert "id" in data 
+    assert data["file"["url"]] == "https://files.usaspending.gov/unlinked_awards_downloads/unlinked_awards_downloads/Agency_for_International_Development_UnlinkedAwards_2024-08-06_H09M35S39364372.zip"
 
 
 def test_get_last_modified_file():
