@@ -24,7 +24,11 @@ class ReadReplicaRouter:
         """
         if model in [FilterHash, DownloadJob]:
             return self.writable_database
-        return self.read_replicas[0]
+
+        if len(self.read_replicas) > 0:
+            return self.read_replicas[0]
+        else:
+            return self.writable_database
 
     def db_for_write(self, model, **hints) -> str:
         return self.writable_database
