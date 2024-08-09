@@ -17,16 +17,16 @@ class ReadReplicaRouter:
     def __init__(self):
         self.usaspending_databases = [self.writable_database] + self.read_replicas
 
-    def db_for_read(self, model, **hints):
+    def db_for_read(self, model, **hints) -> str:
         """
         FilterHash and DownloadJob are writable tables so always read from source (default) to
         mitigate replication lag.  Otherwise, choose a connection randomly.
         """
         if model in [FilterHash, DownloadJob]:
             return self.writable_database
-        return self.read_replicas
+        return self.read_replicas[0]
 
-    def db_for_write(self, model, **hints):
+    def db_for_write(self, model, **hints) -> str:
         return self.writable_database
 
     def allow_relation(self, obj1, obj2, **hints):
