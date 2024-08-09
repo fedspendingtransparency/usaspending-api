@@ -8,12 +8,27 @@
 
 FROM centos:7
 
+# Connection in container is slow, prevent slow mirrors from being excluded
+RUN echo "timeout=300" >> /etc/yum.conf
+RUN echo "minrate=100" >> /etc/yum.conf
+
+ENV HTTP_PROXY=http://j1proxy.frb.org:8080
+
+ENV HTTPS_PROXY=http://j1proxy.frb.org:8080
+
+ENV NO_PROXY=".frb.org,.frb.pvt,localhost,*.docker.internal,fsbclrep003.frbkc.private,10.116.43.239"
+
+ 
+
 # Build ARGs
 ARG PYTHON_VERSION=3.8.16
 
 WORKDIR /dockermount
 
-RUN yum -y update && yum clean all
+RUN yum clean all 
+
+RUN yum -y update 
+
 # sqlite-devel added as prerequisite for coverage python lib, used by pytest-cov plugin
 RUN yum -y install wget gcc openssl-devel bzip2-devel libffi libffi-devel zlib-devel sqlite-devel xz-devel
 RUN yum -y groupinstall "Development Tools"

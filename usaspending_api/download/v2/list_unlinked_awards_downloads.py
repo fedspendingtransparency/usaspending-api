@@ -43,7 +43,8 @@ class ListUnlinkedAwardsDownloadsViewSet(APIView):
 
         download_prefix = f"{self.redirect_dir}/{agency_name}_UnlinkedAwards_"
         latest_download_name = get_last_modified_download_file_by_prefix(download_prefix)
-        latest_download_file_name = remove_file_prefix_if_exists(latest_download_name, f"{self.redirect_dir}/")
+        latest_download_file_name = remove_file_prefix_if_exists(latest_download_name)
+        
 
         identified_download = {
             "agency_name": agency["name"],
