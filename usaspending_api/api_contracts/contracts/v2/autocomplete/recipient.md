@@ -32,10 +32,6 @@ This route sends a request to the backend to retrieve recipients matching the sp
                             "type": "string"
                         },
                         "description": "An array of recipient levels to filter results. E.g., ['P', 'R']"
-                    },
-                    "duns":{
-                        "type": "string",
-                        "description": "The specific duns value to filter by. E.g. '001013197' "
                     }
                 },
                 "required": ["search_text"]
@@ -45,7 +41,6 @@ This route sends a request to the backend to retrieve recipients matching the sp
         + `limit` (optional, number)
         + `search_text` (required, string)
         + `recipient_levels` (optional, array[string])
-        + `duns` (optional, string)
     + Body
 
             {
