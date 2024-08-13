@@ -154,7 +154,7 @@ class RecipientAutocompleteViewSet(APIView):
                         ("recipient_name", recipient["recipient_name"]),
                         ("uei", recipient["uei"]),
                         ("recipient_level", recipient["recipient_level"]),
-                        ("duns", recipient["duns"] if "duns" in recipient else None),
+                        ("duns", recipient.duns),
                     ]
                 )
             )

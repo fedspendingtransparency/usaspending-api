@@ -57,22 +57,22 @@ This route sends a request to the backend to retrieve recipients matching the sp
             {
                 "results": [
                     {
-                        "recipient_name": "ABC Holdings Inc.",
+                        "recipient_name": "LOCKHEED MARTIN",
                         "recipient_level": "P",
-                        "uei": "ABCDEF12345"
-                        "duns": null
+                        "uei": "PUETYBNR91Z3"
+                        "duns": "956973523"
                     },
                     {
-                        "recipient_name": "ABC Holdings Inc.",
-                        "recipient_level": "R",
-                        "uei": "ABCDEF12345",
-                        "duns": null
-                    },
-                    {
-                        "recipient_name": "XYZ Holdings",
+                        "recipient_name": "LOCKHEED MARTIN",
                         "recipient_level": "C",
-                        "uei": "ASDFGH67890",
-                        "duns": null
+                        "uei": "PUETYBNR91Z3",
+                        "duns": "956973523"
+                    },
+                    {
+                        "recipient_name": "LOCKHEED MARTIN",
+                        "recipient_level": "R",
+                        "uei": "null",
+                        "duns": "null"
                     }
                 ]
             }
