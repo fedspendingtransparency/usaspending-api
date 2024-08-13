@@ -54,6 +54,13 @@ def subaward_test_data_fixture(db):
         generated_unique_award_id="UNIQUE_AWARD_ID_3",
         disaster_emergency_fund_codes=["Z"],
     )
+    award_search4 = baker.make(
+        "search.AwardSearch",
+        award_id=444,
+        generated_unique_award_id="UNIQUE_AWARD_ID_4",
+    )
+
+    baker.make("PSC", code="1234")
 
     baker.make(
         "search.SubawardSearch",
@@ -69,6 +76,7 @@ def subaward_test_data_fixture(db):
         sub_legal_entity_country_code="USA",
         sub_legal_entity_zip5="00501",
         subaward_amount="9002",
+        product_or_service_code="1234",
     )
     baker.make(
         "search.SubawardSearch",
@@ -108,16 +116,79 @@ def subaward_test_data_fixture(db):
         action_date="2020-01-01",
         prime_award_type="05",
     )
+    baker.make(
+        "search.SubawardSearch",
+        broker_subaward_id=5,
+        sub_awardee_or_recipient_uniqu="11234",
+        sub_ultimate_parent_unique_ide="112340",
+        subaward_description="99999",
+        award=award_search4,
+        sub_action_date="2018-01-01",
+        action_date="2018-01-01",
+        cfda_numbers="17.287",
+        sub_legal_entity_country_code="GMR",
+        sub_legal_entity_zip5="12345",
+    )
+    baker.make(
+        "search.SubawardSearch",
+        broker_subaward_id=6,
+        sub_awardee_or_recipient_uniqu="112",
+        sub_ultimate_parent_unique_ide="1120",
+        award_piid_fain="333",
+        award=award_search4,
+        sub_action_date="2018-01-01",
+        action_date="2018-01-01",
+        cfda_numbers="17.287",
+        sub_legal_entity_country_code="GMR",
+        sub_legal_entity_zip5="12345",
+    )
+    baker.make(
+        "search.SubawardSearch",
+        broker_subaward_id=7,
+        sub_awardee_or_recipient_uniqu="1123",
+        sub_ultimate_parent_unique_ide="11230",
+        sub_awardee_or_recipient_legal="88888",
+        product_or_service_description="88888",
+        award=award_search4,
+        sub_action_date="2018-01-01",
+        action_date="2018-01-01",
+        cfda_numbers="17.287",
+        sub_legal_entity_country_code="GMR",
+        sub_legal_entity_zip5="12345",
+    )
+
+
+@pytest.mark.django_db
+def test_keyword_filter_keywords(client, monkeypatch, elasticsearch_subaward_index, subaward_test_data_fixture):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
+    filters = {"keywords": ["99999", "88888", "333"]}
+    filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(filters)
+    search = SubawardSearch().filter(filter_query)
+    results = search.handle_execute()
+    print(results)
+    assert len(results) == 3
 
 
 @pytest.mark.django_db
 def test_keyword_filter_duns(client, monkeypatch, elasticsearch_subaward_index, subaward_test_data_fixture):
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
-    filters = {"keywords": ["111111111", "222222222", "333"]}
+    filters = {"keywords": ["111111111", "222222220"]}
     filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(filters)
     search = SubawardSearch().filter(filter_query)
     results = search.handle_execute()
+    print(results)
     assert len(results) == 2
+
+
+@pytest.mark.django_db
+def test_keyword_filter_psc(client, monkeypatch, elasticsearch_subaward_index, subaward_test_data_fixture):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
+    filters = {"keywords": ["1234"]}
+    filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(filters)
+    search = SubawardSearch().filter(filter_query)
+    results = search.handle_execute()
+    print(results)
+    assert len(results) == 1
 
 
 @pytest.mark.django_db
