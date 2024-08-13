@@ -109,6 +109,7 @@ SELECT
     s.treasury_account_identifiers,
     s.sub_ultimate_parent_unique_ide,
     s.sub_ultimate_parent_uei,
+    s.sub_ultimate_parent_legal_enti,
     a.disaster_emergency_fund_codes,
     a.recipient_hash,
     a.parent_uei
