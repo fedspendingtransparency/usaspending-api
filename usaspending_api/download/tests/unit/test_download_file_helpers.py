@@ -31,8 +31,15 @@ def test_get_last_modified_int():
 
 
 def test_remove_file_prefix_if_exists():
-    result = remove_file_prefix_if_exists("prefix/file.zip", "prefix")
+    result = remove_file_prefix_if_exists("prefix/file.zip", "prefix/")
     assert result == "file.zip"
+
+    result = remove_file_prefix_if_exists("prefix/file.zip", "prefix")
+    assert result == "/file.zip"
+
+    # Example of what happens when the regex doesn't match
+    result = remove_file_prefix_if_exists("prefix/file.zip", "prefix//")
+    assert result == "prefix/file.zip"
 
     result = remove_file_prefix_if_exists("file.zip", "prefix")
     assert result == "file.zip"
