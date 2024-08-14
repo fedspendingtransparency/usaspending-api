@@ -72,7 +72,7 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
                 "name": agency_info.get("name"),
                 "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
                 "agency_name": agency_info.get("toptier_agency")
-                #TODO: need to add here 
+                #TODO: need to add the new fields here
             }
             # Only returns a non-null value if the agency has a profile page -
             # meaning it is an agency that has at least one submission.
