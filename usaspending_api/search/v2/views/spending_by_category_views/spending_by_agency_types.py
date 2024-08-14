@@ -7,6 +7,7 @@ from typing import List
 from django.utils.text import slugify
 
 from usaspending_api.references.models import ToptierAgencyPublishedDABSView, ToptierAgency, SubtierAgency
+from usaspending_api.references.models.agency import Agency
 from usaspending_api.search.helpers.spending_by_category_helpers import fetch_agency_tier_id_by_agency
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_category import (
     Category,
@@ -48,6 +49,19 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
             agency_code = agency_info.pop("agency_code")
             current_agency_info[agency_code] = agency_info
 
+            agencies = Agency.objects.filter(subtier_agency__subtier_code=agency_code)
+            id = agencies.values("toptier_agency")
+            toptier = ToptierAgency.objects.filter(toptier_code__in=id).values("toptier_agency_id","name","toptier_code")
+            for toptier_info in toptier.all():
+                toptier_code = toptier_info.pop("toptier_code")
+                current_agency_info[toptier_code] = toptier_info
+
+
+            
+            # toptier_agency_name = Agency.objects.filter(subtier_agency__subtier_code=agency_code).values("toptier_agency")
+
+            # current_agency_info["toptier_agency"] = toptier_agency_name
+
         # Build out the results
         results = []
         for bucket in agency_info_buckets:
@@ -57,6 +71,8 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
                 "code": agency_info.get("code"),
                 "name": agency_info.get("name"),
                 "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
+                "agency_name": agency_info.get("toptier_agency")
+                #need to add here 
             }
             # Only returns a non-null value if the agency has a profile page -
             # meaning it is an agency that has at least one submission.

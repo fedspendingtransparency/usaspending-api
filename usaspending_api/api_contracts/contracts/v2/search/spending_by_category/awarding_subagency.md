@@ -93,6 +93,11 @@ This endpoint returns a list of the top results of Awarding Subagencies sorted b
 + `code` (required, string, nullable)
     `code` is a user-displayable code (such as a program activity or NAICS code, but **not** a database ID). When no such code is relevant, return a `null`.
 + `amount` (required, number)
++ `subagency_slug` has the slugify'd version of the agency name when they have at least one submission 
++ `agency_slug`
++ `agency_id`
++ `agency_code`
++ `agency_name`
 
 ## PageMetadataObject (object)
 + `page` (required, number)
