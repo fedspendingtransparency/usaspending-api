@@ -56,7 +56,7 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
                 toptier_code = toptier_info.pop("toptier_code")
                 current_agency_info[toptier_code] = toptier_info
 
-
+ 
             
             # toptier_agency_name = Agency.objects.filter(subtier_agency__subtier_code=agency_code).values("toptier_agency")
 
@@ -72,7 +72,7 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
                 "name": agency_info.get("name"),
                 "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
                 "agency_name": agency_info.get("toptier_agency")
-                #need to add here 
+                #TODO: need to add here 
             }
             # Only returns a non-null value if the agency has a profile page -
             # meaning it is an agency that has at least one submission.
