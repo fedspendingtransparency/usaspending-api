@@ -1,10 +1,10 @@
 import json
-
 from datetime import datetime, timezone
-from typing import Optional, Type, List
+from typing import List, Optional, Type
 
 from django.conf import settings
-from django.db.models import QuerySet, Max
+from django.db import connections
+from django.db.models import Max, QuerySet
 from rest_framework.exceptions import NotFound
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -12,7 +12,7 @@ from rest_framework.views import APIView
 
 from usaspending_api.broker.lookups import EXTERNAL_DATA_TYPE_DICT
 from usaspending_api.broker.models import ExternalDataLoadDate
-from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
+from usaspending_api.common.api_versioning import API_TRANSFORM_FUNCTIONS, api_transformations
 from usaspending_api.common.helpers.dict_helpers import order_nested_object
 from usaspending_api.common.sqs.sqs_handler import get_sqs_queue
 from usaspending_api.download.download_utils import create_unique_filename, log_new_download_job
@@ -22,6 +22,7 @@ from usaspending_api.download.helpers import write_to_download_log as write_to_l
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.models.download_job import DownloadJob
 from usaspending_api.download.v2.request_validations import DownloadValidatorBase
+from usaspending_api.routers.replicas import ReadReplicaRouter
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
 
@@ -171,7 +172,17 @@ def get_file_path(file_name: str) -> str:
 
 
 def get_download_job(file_name: str) -> DownloadJob:
-    download_job = DownloadJob.objects.filter(file_name=file_name).first()
+    # If we have a read replicas connection defined, then use that connection for querying the download_job
+    #    table, otherwise use the default connection
+    read_replica = ReadReplicaRouter.read_replicas[0]
+
+    db_connections = connections.__dict__["_settings"]
+
+    if read_replica in db_connections.keys():
+        download_job = DownloadJob.objects.using(read_replica).filter(file_name=file_name).first()
+    else:
+        download_job = DownloadJob.objects.filter(file_name=file_name).first()
+
     if not download_job:
         raise NotFound(f"Download job with filename {file_name} does not exist.")
     return download_job
