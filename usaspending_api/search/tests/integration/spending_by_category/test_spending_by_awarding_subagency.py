@@ -54,8 +54,6 @@ def test_additional_fields_response(client, monkeypatch, elasticsearch_transacti
         "results": [{"amount": 10.0, "name": "Awarding Subtier Agency 5", "code": "SA5", "id": 1005, "agency_id": 2003, "agency_code": "TA3", "agency_name": "Awarding Toptier Agency 3"}],
         "messages": [get_time_period_message()],
     }
-  
-
 
 @pytest.mark.django_db
 def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, basic_award, subagency_award):
