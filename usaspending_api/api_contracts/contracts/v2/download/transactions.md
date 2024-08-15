@@ -126,7 +126,6 @@ This route sends a request to the backend to begin generating a zipfile of trans
 + `award_type_codes` (optional, array[string])
 + `agencies` (optional, array[Agency], fixed-type)
 + `contract_pricing_type_codes` (optional, array[string])
-+ `elasticsearch_keyword` (optional, string)
 + `extent_competed_type_codes` (optional, array[string])
 + `federal_account_ids` (optional, array[string])
 + `keywords` (optional, array[string])

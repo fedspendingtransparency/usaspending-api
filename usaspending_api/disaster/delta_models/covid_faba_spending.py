@@ -1,4 +1,5 @@
 COVID_FABA_SPENDING_COLUMNS = {
+    "id": {"delta": "INTEGER", "postgres": "INTEGER NOT NULL"},
     "spending_level": {"delta": "STRING", "postgres": "TEXT"},
     "funding_toptier_agency_id": {"delta": "STRING", "postgres": "TEXT"},
     "funding_toptier_agency_code": {"delta": "STRING", "postgres": "TEXT"},
@@ -454,13 +455,20 @@ covid_faba_spending_load_sql_strings = [
     (
         {",".join(list(COVID_FABA_SPENDING_POSTGRES_COLUMNS))}
     )
-    SELECT * FROM covid_faba_spending_agency_view
-    UNION ALL
-    SELECT * FROM covid_faba_spending_account_view
-    UNION ALL
-    SELECT * FROM covid_faba_spending_object_class_view
-    UNION ALL
-    SELECT * FROM covid_faba_spending_awards_view;
+    WITH covid_faba_spending_views AS (
+        SELECT * FROM covid_faba_spending_agency_view
+        UNION ALL
+        SELECT * FROM covid_faba_spending_account_view
+        UNION ALL
+        SELECT * FROM covid_faba_spending_object_class_view
+        UNION ALL
+        SELECT * FROM covid_faba_spending_awards_view
+    )
+    SELECT
+        ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS id,
+        *
+    FROM
+        covid_faba_spending_views;
     """,
     """DROP VIEW covid_faba_spending_agency_view;""",
     """DROP VIEW covid_faba_spending_account_view;""",
