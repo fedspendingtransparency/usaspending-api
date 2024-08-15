@@ -580,9 +580,6 @@
           "sub_ultimate_parent_uei": {
             "type": "keyword"
           },
-          "sub_ultimate_parent_legal_enti": {
-            "type": "keyword"
-          },
           "disaster_emergency_fund_codes": {
             "type": "keyword"
           },
