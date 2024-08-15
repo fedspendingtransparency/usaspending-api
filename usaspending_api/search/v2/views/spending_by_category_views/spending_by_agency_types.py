@@ -40,27 +40,48 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
             agency_info_query = ToptierAgency.objects.filter(
                 toptier_code__in=code_list, agency__toptier_flag=True
             ).annotate(id=F("agency__id"), agency_code=F("toptier_code"), code=F("abbreviation"))
+
+            agency_info_query = agency_info_query.values("agency_code", "id", "code", "name")
+            for agency_info in agency_info_query.all():
+                agency_code = agency_info.pop("agency_code")
+                current_agency_info[agency_code] = agency_info
+
         else:
             agency_info_query = SubtierAgency.objects.filter(subtier_code__in=code_list).annotate(
                 id=F("agency__id"), agency_code=F("subtier_code"), code=F("abbreviation")
             )
-        agency_info_query = agency_info_query.values("agency_code", "id", "code", "name")
-        for agency_info in agency_info_query.all():
-            agency_code = agency_info.pop("agency_code")
-            current_agency_info[agency_code] = agency_info
+            #this is the list of all the subtier agencies that is returned in the elastic search and adds some fields in id, agency code and code 
+            # code -> SA[#]
+            # agency_code -> 300[#]
+            # id -> 100[#]
 
-            agencies = Agency.objects.filter(subtier_agency__subtier_code=agency_code)
-            id = agencies.values("toptier_agency")
-            toptier = ToptierAgency.objects.filter(toptier_code__in=id).values(
-                "toptier_agency_id", "name", "toptier_code"
-            )
-            for toptier_info in toptier.all():
-                toptier_code = toptier_info.pop("toptier_code")
-                current_agency_info[toptier_code] = toptier_info
+            
+            agency_info_query = agency_info_query.values("agency_code", "id", "code", "name")
+            #this says that we are only looking at these three columns of the table 
 
-            # toptier_agency_name = Agency.objects.filter(subtier_agency__subtier_code=agency_code).values("toptier_agency")
+            for agency_info in agency_info_query.all():
+                #now we are looping through all of the different rows in the table 
 
-            # current_agency_info["toptier_agency"] = toptier_agency_name
+                agency_code = agency_info.pop("agency_code")
+                #now we are getting the subtier_code which is 300[#]
+                current_agency_info[agency_code] = agency_info
+                #and by looking this number up in a dict we can get all of that rows associated information 
+
+                #now we need to find the toptier agency associated with the subtier agency 
+                #we need agency name: Awarding Toptier Agency [#]
+                #we need agency code: 00[#]
+                #we need agency id: 200[#]
+
+
+                toptier_agency_info_query = Agency.objects.filter(subtier_agency__subtier_code=agency_code).order_by("-update_date").first().annotate(top_id=F("toptier__toptier_agency_id"), top_code=F("toptier__toptier_ code"),
+                                                                                                                                                      top_name=F("toptier__name"), agency_code=F("subtier__subtier_code"))
+                
+                toptier_agency_info_query = toptier_agency_info_query.values("top_id","top_code","top_name","agency_code")
+
+                for toptier_agency_info in toptier_agency_info_query:
+                    agency_code = toptier_agency_info.pop("agency_code")
+
+                    current_agency_info[agency_code].append(toptier_agency_info) 
 
         # Build out the results
         results = []
@@ -71,7 +92,9 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
                 "code": agency_info.get("code"),
                 "name": agency_info.get("name"),
                 "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
-                "agency_name": agency_info.get("toptier_agency"),
+                "agency_name": agency_info.get("top_name"),
+                "agency_id": agency_code.get("top_id"),
+                "agency_code": agency_code.get("top_code")
                 # TODO: need to add the new fields here to follow the AC bc desmond said so
             }
             # Only returns a non-null value if the agency has a profile page -

@@ -32,38 +32,29 @@ def test_additional_fields_response(client, monkeypatch, elasticsearch_transacti
     resp = client.post(
         "/api/v2/search/spending_by_category/awarding_subagency",
         content_type="application/json",
-        data=json.dumps(
-            {
-                "filters": {
-                    "agencies": [
-                        {
-                            "type": "Awarding",
-                            "tier": "subtier",
-                            "name": "Awarding Subtier Agency 1",
-                            "toptier_name": "Awarding Toptier Agency 1",
-                        }
-                    ]
-                }
+        data={
+            "filters": {
+                "time_period": [{"start_date": "2018-10-01", "end_date": "2020-09-30"}],
+                "agencies": [
+                    {
+                        "type": "awarding",
+                        "tier": "subtier",
+                        "name": "Awarding Subtier Agency 5",
+                        "toptier_name": "Awarding Toptier Agency 3",
+                    }
+                ],
             }
-        ),
+        },
     )
-    expected_response = {
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.data == {
         "category": "awarding_subagency",
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
-        "results": [
-            {"amount": 5.0, "name": "Awarding Subtier Agency 1", "code": "SA1", "id": 1001, "agency_id": 2001, "agency_code": "TA1", "agency_name": "Awarding Toptier Agency 1"}
-        ],
+        "results": [{"amount": 10.0, "name": "Awarding Subtier Agency 5", "code": "SA5", "id": 1005, "agency_id": 2003, "agency_code": "TA3", "agency_name": "Awarding Toptier Agency 3"}],
         "messages": [get_time_period_message()],
     }
-    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
-    print(resp.json()["results"])
-    assert resp.json()["results"]["name"] == expected_response["results"]["name"]
-    assert resp.json()["results"]["code"] == expected_response["results"]["code"]
-    assert resp.json()["results"]["id"] == expected_response["results"]["id"]
-    assert resp.json()["results"]["agency_id"] == expected_response["results"]["agency_id"]
-    assert resp.json()["results"]["agency_code"] == expected_response["results"]["agency_code"]
-    assert resp.json()["results"]["agency_name"] == expected_response["results"]["agency_name"]
+  
 
 
 @pytest.mark.django_db
