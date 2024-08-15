@@ -25,6 +25,43 @@ def test_success_with_all_filters(client, monkeypatch, elasticsearch_transaction
 
 
 @pytest.mark.django_db
+def test_additional_fields_response(client, monkeypatch, elasticsearch_transaction_index, basic_award, subagency_award):
+
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
+    resp = client.post(
+        "/api/v2/search/spending_by_category/awarding_subagency",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "filters": {
+                    "agencies": [
+                        {
+                            "type": "Awarding",
+                            "tier": "subtier",
+                            "name": "Awarding Subtier Agency 1",
+                            "toptier_name": "Awarding Toptier Agency 1",
+                        }
+                    ]
+                }
+            }
+        ),
+    )
+    expected_response = {
+        "category": "awarding_subagency",
+        "limit": 10,
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "results": [
+            {"amount": 10.0, "name": "Awarding Subtier Agency 5", "code": "SA5", "id": 1005},
+            {"amount": 5.0, "name": "Awarding Subtier Agency 1", "code": "SA1", "id": 1001},
+        ],
+        "messages": [get_time_period_message()],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+    assert resp.json() == expected_response
+
+
+@pytest.mark.django_db
 def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, basic_award, subagency_award):
 
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
