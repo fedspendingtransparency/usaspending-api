@@ -57,6 +57,7 @@ def test_additional_fields_response(client, monkeypatch, elasticsearch_transacti
         "messages": [get_time_period_message()],
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+    print(resp.json()["results"])
     assert resp.json()["results"]["name"] == expected_response["results"]["name"]
     assert resp.json()["results"]["code"] == expected_response["results"]["code"]
     assert resp.json()["results"]["id"] == expected_response["results"]["id"]
