@@ -154,7 +154,7 @@ def subaward_filter(filters, for_downloads=False):
                 # keyword_ts_vector = recipient_name + psc_description + subaward_description
                 # award_ts_vector = piid + fain + uri + subaward_number
                 filter_obj = Q(keyword_ts_vector=keyword) | Q(award_ts_vector=keyword)
-                # Commenting out until NAICS is associated with subawards in DAIMS 1.3.1
+                # Commenting out until NAICS is associated with subawards in GSDM 1.3.1
                 # if keyword.isnumeric():
                 #     filter_obj |= Q(naics_code__contains=keyword)
                 if len(keyword) == 4 and PSC.objects.filter(code__iexact=keyword).exists():
