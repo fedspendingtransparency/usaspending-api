@@ -1,5 +1,5 @@
 """
-This is a map of code enumerations, extracted from the GSDM.
+This is a map of code enumerations, extracted from the GSDM
 
 Each should be named following this pattern:
     - For a field that is unique among all models, <field>_map
