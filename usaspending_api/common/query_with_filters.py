@@ -1,5 +1,7 @@
 import copy
+import itertools
 import logging
+import re
 from datetime import datetime
 from typing import List, Tuple
 
@@ -12,6 +14,7 @@ from usaspending_api.common.helpers.api_helper import (
     INCOMPATIBLE_DISTRICT_LOCATION_PARAMETERS,
 )
 from usaspending_api.references.models import DisasterEmergencyFundCode
+from usaspending_api.references.models.psc import PSC
 from usaspending_api.search.filters.elasticsearch.filter import _Filter, _QueryType
 from usaspending_api.search.filters.elasticsearch.naics import NaicsCodes
 from usaspending_api.search.filters.elasticsearch.psc import PSCCodes
@@ -19,6 +22,51 @@ from usaspending_api.search.filters.elasticsearch.tas import TasCodes, TreasuryA
 from usaspending_api.search.v2.es_sanitization import es_sanitize
 
 logger = logging.getLogger(__name__)
+
+
+class _SubawardsKeywords(_Filter):
+    """Intended for subawards' Querytype that makes keyword queries compatible with Subawards."""
+
+    @classmethod
+    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType, **options) -> ES_Q:
+        keyword_queries = []
+
+        def keyword_parse(keyword):
+            queries = []
+            queries.append(ES_Q("match", sub_awardee_or_recipient_legal=keyword))
+            queries.append(ES_Q("match", product_or_service_description=keyword))
+            queries.append(ES_Q("match", subaward_description=keyword))
+            queries.append(ES_Q("match", award_piid_fain=keyword))
+            queries.append(ES_Q("match", subaward_number=keyword))
+            if len(keyword) == 4 and PSC.objects.filter(code=keyword).exists():
+                queries.append(ES_Q("match", product_or_service_code=keyword))
+            return ES_Q("bool", should=queries, minimum_should_match=1)
+
+        keyword_queries = []
+        for keyword in filter_values:
+            curr_queries = []
+            curr_queries.append(keyword_parse(keyword))
+
+            # Search for DUNS
+            potential_duns = keyword if len(keyword) == 9 else None
+            potential_duns_queries = []
+            if potential_duns is not None:
+                potential_duns_queries.append(ES_Q("match", sub_awardee_or_recipient_uniqu=potential_duns))
+                potential_duns_queries.append(ES_Q("match", sub_ultimate_parent_unique_ide=potential_duns))
+                dun_query = ES_Q("bool", should=potential_duns_queries, minimum_should_match=1)
+                curr_queries.append(dun_query)
+
+            # Search for UEI
+            potential_uei = keyword.upper() if len(keyword) == 12 else None
+            if potential_uei is not None:
+                uei_query = ES_Q("match", sub_awardee_or_recipient_uei=potential_uei) | ES_Q(
+                    "match", sub_ultimate_parent_uei=potential_uei
+                )
+                curr_queries.append(uei_query)
+            curr_query = ES_Q("bool", should=curr_queries, minimum_should_match=1)
+            keyword_queries.append(curr_query)
+
+        return ES_Q("dis_max", queries=keyword_queries)
 
 
 class _Keywords(_Filter):
@@ -120,6 +168,28 @@ class _KeywordSearch(_Filter):
         return ES_Q("dis_max", queries=keyword_queries)
 
 
+class _TransactionKeywordSearch(_Filter):
+    """Intended for subawards' and awards' Querytype that makes this query compatible with Subawards and Awards."""
+
+    underscore_name = "transaction_keyword_search"
+
+    @classmethod
+    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType, **options) -> ES_Q:
+        from usaspending_api.search.v2 import elasticsearch_helper
+
+        transaction_id_queries = []
+        for keyword in filter_values:
+            transaction_ids = elasticsearch_helper.get_download_ids(keyword=keyword, field="transaction_id")
+            transaction_ids = list(itertools.chain.from_iterable(transaction_ids))
+            logger.info("Found {} transactions based on keyword: {}".format(len(transaction_ids), keyword))
+            for transaction_id in transaction_ids:
+                transaction_id_queries.append(
+                    ES_Q("match", latest_transaction_id=str(transaction_id), minimum_should_match=1)
+                )
+
+        return ES_Q("bool", must=transaction_id_queries) & ~ES_Q("match", latest_transaction__keyword="NULL")
+
+
 class _TimePeriods(_Filter):
     underscore_name = "time_period"
 
@@ -186,6 +256,21 @@ class _AwardTypeCodes(_Filter):
         return ES_Q("bool", should=award_type_codes_query, minimum_should_match=1)
 
 
+class _SubawardsPrimeSubAwardTypes(_Filter):
+    """Intended for subawards' Querytype that makes this query compatible with Subawards."""
+
+    underscore_name = "prime_and_sub_award_types"
+
+    @classmethod
+    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType, **options) -> ES_Q:
+        award_type_codes_query = []
+
+        award_types = filter_values.get("elasticsearch_sub_awards")
+        for type in award_types:
+            award_type_codes_query.append(ES_Q("match", **{"prime_award_group": type}))
+        return ES_Q("bool", should=award_type_codes_query, minimum_should_match=1)
+
+
 class _Agencies(_Filter):
     underscore_name = "agencies"
 
@@ -246,6 +331,7 @@ class _RecipientSearchText(_Filter):
     @classmethod
     def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType, **options) -> ES_Q:
         recipient_search_query = []
+        words_to_escape = ["AND", "OR"]  # These need to be escaped to be included as text to be searched for
 
         for filter_value in filter_values:
             if query_type == _QueryType.SUBAWARDS:
@@ -265,6 +351,9 @@ class _RecipientSearchText(_Filter):
                 parent_recipient_unique_id_field = "parent_recipient_unique_id"
                 parent_uei_field = "parent_uei"
 
+            for special_word in words_to_escape:
+                if len(re.findall(rf"\b{special_word}\b", query)) > 0:
+                    query = re.sub(rf"\b{special_word}\b", rf"\\{special_word}", query)
             recipient_name_query = ES_Q("query_string", query=query, default_operator="AND", fields=fields)
 
             if len(upper_recipient_string) == 9 and upper_recipient_string[:5].isnumeric():
@@ -328,7 +417,12 @@ class _RecipientScope(_Filter):
 
     @classmethod
     def generate_elasticsearch_query(cls, filter_value: str, query_type: _QueryType, **options) -> ES_Q:
-        recipient_scope_query = ES_Q("match", recipient_location_country_code="USA")
+        if query_type == _QueryType.SUBAWARDS:
+            recipient_scope_query = ES_Q("match", sub_recipient_location_country_code="USA") | ES_Q(
+                "match", sub_recipient_location_country_name="UNITED STATES"
+            )
+        else:
+            recipient_scope_query = ES_Q("match", recipient_location_country_code="USA")
 
         if filter_value == "domestic":
             return recipient_scope_query
@@ -397,10 +491,15 @@ class _PlaceOfPerformanceScope(_Filter):
 
     @classmethod
     def generate_elasticsearch_query(cls, filter_value: str, query_type: _QueryType, **options) -> ES_Q:
-        # If an ES record has a pop_country_code of "USA" OR if it has any value for the pop_state_code field
-        #   then it's considered domestic. Since we only support domestic states/territories then any
-        #   pop_state_code value means the pop_country_code would be "USA".
-        pop_scope_query = ES_Q("match", pop_country_code="USA") | ES_Q("exists", field="pop_state_code")
+        if query_type == _QueryType.SUBAWARDS:
+            pop_scope_query = ES_Q("match", sub_pop_country_code="USA") | ES_Q(
+                "match", sub_pop_country_name="UNITED STATES"
+            )
+        else:
+            # If an ES record has a pop_country_code of "USA" OR if it has any value for the pop_state_code field
+            #   then it's considered domestic. Since we only support domestic states/territories then any
+            #   pop_state_code value means the pop_country_code would be "USA".
+            pop_scope_query = ES_Q("match", pop_country_code="USA") | ES_Q("exists", field="pop_state_code")
 
         if filter_value == "domestic":
             return pop_scope_query
@@ -747,6 +846,7 @@ class QueryWithFilters:
     filter_lookup = {
         _Keywords.underscore_name: _Keywords,
         _KeywordSearch.underscore_name: _KeywordSearch,
+        _TransactionKeywordSearch.underscore_name: _TransactionKeywordSearch,
         _TimePeriods.underscore_name: _TimePeriods,
         _AwardTypeCodes.underscore_name: _AwardTypeCodes,
         _Agencies.underscore_name: _Agencies,
@@ -848,7 +948,12 @@ class QueryWithFilters:
 
     @classmethod
     def generate_subawards_elasticsearch_query(cls, filters: dict, **options) -> ES_Q:
-        return cls._generate_elasticsearch_query(filters, _QueryType.SUBAWARDS, **options)
+        cls.filter_lookup[_Keywords.underscore_name] = _SubawardsKeywords
+        cls.filter_lookup[_SubawardsPrimeSubAwardTypes.underscore_name] = _SubawardsPrimeSubAwardTypes
+        resp = cls._generate_elasticsearch_query(filters, _QueryType.SUBAWARDS, **options)
+        cls.filter_lookup[_Keywords.underscore_name] = _Keywords
+        del cls.filter_lookup[_SubawardsPrimeSubAwardTypes.underscore_name]
+        return resp
 
     @classmethod
     def generate_transactions_elasticsearch_query(cls, filters: dict, **options) -> ES_Q:

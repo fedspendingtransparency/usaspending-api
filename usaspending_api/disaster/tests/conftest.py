@@ -21,6 +21,7 @@ from usaspending_api.disaster.tests.fixtures.award_count_data import (
 from usaspending_api.disaster.tests.fixtures.cfda_data import cfda_awards_and_transactions
 from usaspending_api.disaster.tests.fixtures.disaster_account_data import disaster_account_data
 from usaspending_api.disaster.tests.fixtures.federal_account_data import (
+    covid_faba_spending_data,
     generic_account_data,
     unlinked_faba_account_data,
 )
@@ -31,14 +32,8 @@ from usaspending_api.disaster.tests.fixtures.object_class_data import (
     basic_fa_by_object_class_with_object_class,
     basic_fa_by_object_class_with_object_class_but_no_obligations,
     basic_faba_with_object_class,
-    faba_with_object_class_and_two_awards,
-    faba_with_two_object_classes_and_two_awards,
 )
-from usaspending_api.disaster.tests.fixtures.object_class_loan_data import (
-    basic_object_class_faba_with_loan_value,
-    basic_object_class_multiple_faba_with_loan_value_with_single_object_class,
-    basic_object_class_multiple_faba_with_loan_value_with_two_object_classes,
-)
+from usaspending_api.disaster.tests.fixtures.object_class_loan_data import basic_object_class_faba_with_loan_value
 from usaspending_api.disaster.tests.fixtures.overview_data import (
     basic_faba,
     basic_ref_data,
@@ -77,14 +72,8 @@ __all__ = [
     "award_count_submission",
     "award_with_no_outlays",
     "basic_award",
-    "basic_fa_by_object_class_with_object_class",
-    "basic_fa_by_object_class_with_object_class_but_no_obligations",
-    "basic_fa_by_object_class_with_multpile_object_class",
-    "basic_fa_by_object_class_with_multpile_object_class_of_same_code",
     "basic_faba_with_object_class",
     "basic_object_class_faba_with_loan_value",
-    "basic_object_class_multiple_faba_with_loan_value_with_single_object_class",
-    "basic_object_class_multiple_faba_with_loan_value_with_two_object_classes",
     "cfda_awards_and_transactions",
     "double_fpds_awards_with_distinct_recipients",
     "double_fpds_awards_with_same_recipients",
@@ -106,8 +95,6 @@ __all__ = [
     "faba_with_toptier_agencies_that_cancel_out_in_outlay",
     "faba_with_non_covid_values",
     "faba_with_values",
-    "faba_with_object_class_and_two_awards",
-    "faba_with_two_object_classes_and_two_awards",
     "fabs_award_with_old_submission",
     "fabs_award_with_quarterly_submission",
     "fabs_award_with_unclosed_submission",
@@ -130,4 +117,9 @@ __all__ = [
     "year_2_gtas_covid_2",
     "year_2_gtas_non_covid",
     "basic_covid_faba_spending_data",
+    "covid_faba_spending_data",
+    "basic_fa_by_object_class_with_object_class",
+    "basic_fa_by_object_class_with_multpile_object_class",
+    "basic_fa_by_object_class_with_multpile_object_class_of_same_code",
+    "basic_fa_by_object_class_with_object_class_but_no_obligations",
 ]

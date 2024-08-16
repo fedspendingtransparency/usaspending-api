@@ -12,7 +12,6 @@ from django.db.models import (
     IntegerField,
     OuterRef,
     Q,
-    QuerySet,
     Subquery,
     Sum,
     Value,
@@ -25,7 +24,6 @@ from rest_framework.response import Response
 
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
-from usaspending_api.disaster.models import CovidFABASpending
 from usaspending_api.disaster.v2.views.disaster_base import (
     DisasterBase,
     FabaOutlayMixin,
@@ -80,9 +78,25 @@ class SpendingByAgencyViewSet(FabaOutlayMixin, PaginationMixin, DisasterBase, Sp
     @cache_response()
     def post(self, request):
         if self.spending_type == "award":
-            covid_faba_agency_spending = self._get_agency_covid_faba_spending()
+            covid_faba_agency_spending = self.get_covid_faba_spending(
+                spending_level="subtier_agency",
+                def_codes=self.filters["def_codes"],
+                columns_to_return=[
+                    "funding_toptier_agency_id",
+                    "funding_toptier_agency_code",
+                    "funding_toptier_agency_name",
+                ],
+                award_types=self.filters.get("award_type_codes"),
+                search_query=self.query,
+                search_query_fields=["funding_toptier_agency_name"],
+            )
             json_result = self._build_json_result(covid_faba_agency_spending)
-            sorted_json_result = self._sort_json_result(json_result)
+            sorted_json_result = self.sort_json_result(
+                data_to_sort=json_result,
+                sort_key=self.pagination.sort_key,
+                sort_order=self.pagination.sort_order,
+                has_children=False,
+            )
 
             return Response(sorted_json_result)
         else:
@@ -102,33 +116,6 @@ class SpendingByAgencyViewSet(FabaOutlayMixin, PaginationMixin, DisasterBase, Sp
                 "page_metadata": get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page),
             }
         )
-
-    def _get_agency_covid_faba_spending(self) -> QuerySet:
-        """Query the covid_faba_spending table and return COVID-19 FABA spending grouped by toptier agencies
-
-        Returns:
-            Database rows grouped by their toptier agencies and their spending amounts summed up.
-        """
-
-        queryset = (
-            CovidFABASpending.objects.filter(spending_level="subtier_agency")
-            .filter(defc__in=self.filters["def_codes"])
-            .values("funding_toptier_agency_id", "funding_toptier_agency_code", "funding_toptier_agency_name")
-            .annotate(
-                award_count=Sum(Coalesce("award_count", 0)),
-                obligation_sum=Sum(Coalesce("obligation_sum", Decimal(0))),
-                outlay_sum=Sum(Coalesce("outlay_sum", Decimal(0))),
-                face_value_of_loan=Sum(Coalesce("face_value_of_loan", Decimal(0))),
-            )
-        )
-
-        if self.query is not None:
-            queryset = queryset.filter(funding_toptier_agency_name__icontains=self.query)
-
-        if self.filters.get("award_type_codes") is not None:
-            queryset = queryset.filter(award_type__in=self.filters["award_type_codes"])
-
-        return queryset
 
     def _build_json_result(self, queryset: List[dict]) -> dict:
         """Build the JSON response that will be returned for this endpoint.
@@ -165,38 +152,6 @@ class SpendingByAgencyViewSet(FabaOutlayMixin, PaginationMixin, DisasterBase, Sp
         response["page_metadata"] = get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
 
         return response
-
-    def _sort_json_result(self, json_result: dict) -> dict:
-        """Sort the JSON by the appropriate field and in the appropriate order before returning it.
-
-        Args:
-            json_result: Unsorted JSON result.
-
-        Returns:
-            Sorted JSON result.
-        """
-
-        if self.pagination.sort_key == "description":
-            json_result["results"] = sorted(
-                json_result["results"],
-                key=lambda val: val.get("description", "id").lower(),
-                reverse=self.pagination.sort_order == "desc",
-            )
-        # Convert `code` fields to integer during the sort process so they sort correctly
-        elif self.pagination.sort_key == "code":
-            json_result["results"] = sorted(
-                json_result["results"],
-                key=lambda val: int(val.get("code", "id").lower()),
-                reverse=self.pagination.sort_order == "desc",
-            )
-        else:
-            json_result["results"] = sorted(
-                json_result["results"],
-                key=lambda val: val.get(self.pagination.sort_key, "id"),
-                reverse=self.pagination.sort_order == "desc",
-            )
-
-        return json_result
 
     @property
     def total_queryset(self):
