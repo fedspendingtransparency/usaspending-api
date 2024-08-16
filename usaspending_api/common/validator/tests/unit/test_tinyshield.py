@@ -1,4 +1,5 @@
 import copy
+from mock import patch
 import pytest
 
 from usaspending_api.common.exceptions import UnprocessableEntityException
@@ -105,7 +106,7 @@ FILTER_OBJ = {
 }
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture()
 def tinyshield():
     """We want this test to fail if either AWARD_FILTERS has an invalid model,
     OR if the logic of the check_models function has been corrupted.
@@ -230,3 +231,44 @@ def test_any_rule():
     # Test with required 'value' missing.
     with pytest.raises(UnprocessableEntityException):
         TinyShield(models).block({"another_value": 2})
+
+
+@patch("usaspending_api.common.validator.tinyshield.TinyShield.check_models")
+def test_enforce_object_keys_min(check_models_patch):
+    model = {
+        "name": "program_activities",
+        "type": "array",
+        "array_type": "object",
+        "object_keys_min": 1,
+        "object_keys": {
+            "name": {
+                "type": "text",
+            },
+            "code": {
+                "type": "integer",
+            },
+        },
+    }
+    tiny_shield = TinyShield(model)
+
+    # Test success
+    data = {"program_activities": [{"code": "123"}]}
+    tiny_shield.enforce_object_keys_min(data, model)
+
+    data = {"program_activities": [{"code": "123"}, {"name": "desmond"}]}
+    tiny_shield.enforce_object_keys_min(data, model)
+
+    # Test failure
+    with pytest.raises(
+        UnprocessableEntityException,
+        match="Required number of minimum object keys is not met.",
+    ):
+        data = {"program_activities": [{"code": "123"}, {}]}
+        tiny_shield.enforce_object_keys_min(data, model)
+
+    with pytest.raises(
+        UnprocessableEntityException,
+        match="The object provided has no children. If the object is used it needs at least one child.",
+    ):
+        data = {"program_activities": []}
+        tiny_shield.enforce_object_keys_min(data, model)

@@ -48,6 +48,7 @@ VALIDATORS = {
 
 # Decorator
 
+
 # Note: Because we are using class based views, this is the only way to create a decorator that takes arguments.
 # With CBVs, the 'post' function receives an instance of the CBV itself, rather than a request object
 # As a result, this decorator specifies that it decorates the 'post' function using the method_decorator
@@ -359,3 +360,15 @@ class TinyShield:
             else:
                 mydict[level] = {}
                 self.recurse_append(struct, mydict[level], data)
+
+    def enforce_object_keys_min(self, data, rule):
+        """Ensures that the children of an object array have the minimum number of
+        required keys.
+        """
+        object_keys_min = rule.get("object_keys_min", 0)
+        object_ = data[rule["name"]]
+        if len(object_) == 0:
+            raise UnprocessableEntityException("The object provided has no children. If the object is used it needs at least one child.")
+        for child in object_:
+            if len(child) < object_keys_min:
+                raise UnprocessableEntityException("Required number of minimum object keys is not met.")
