@@ -71,9 +71,20 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
                 # we need agency code: 00[#]
                 # we need agency id: 200[#]
 
-                toptier_agency_info_query = Agency.objects.filter(subtier_agency__subtier_code=agency_code).order_by("-update_date").first().annotate(top_id=F("toptier__toptier_agency_id"), top_code=F("toptier__toptier_ code"),
-                                                                                                                                                      top_name=F("toptier__name"), agency_code=F("subtier__subtier_code"))
-                toptier_agency_info_query = toptier_agency_info_query.values("top_id" , "top_code" , "top_name" , "agency_code")
+                toptier_agency_info_query = (
+                    Agency.objects.filter(subtier_agency__subtier_code=agency_code)
+                    .order_by("-update_date")
+                    .first()
+                    .annotate(
+                        top_id=F("toptier__toptier_agency_id"),
+                        top_code=F("toptier__toptier_ code"),
+                        top_name=F("toptier__name"),
+                        agency_code=F("subtier__subtier_code"),
+                    )
+                )
+                toptier_agency_info_query = toptier_agency_info_query.values(
+                    "top_id", "top_code", "top_name", "agency_code"
+                )
 
                 for toptier_agency_info in toptier_agency_info_query:
                     agency_code = toptier_agency_info.pop("agency_code")
@@ -91,7 +102,7 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
                 "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
                 "agency_name": agency_info.get("top_name"),
                 "agency_id": agency_code.get("top_id"),
-                "agency_code": agency_code.get("top_code")
+                "agency_code": agency_code.get("top_code"),
                 # TODO: need to add the new fields here to follow the AC bc desmond said so
             }
             # Only returns a non-null value if the agency has a profile page -
