@@ -334,6 +334,10 @@ class _RecipientSearchText(_Filter):
         words_to_escape = ["AND", "OR"]  # These need to be escaped to be included as text to be searched for
 
         for filter_value in filter_values:
+
+            parent_recipient_unique_id_field = None
+            parent_uei_field = None
+
             if query_type == _QueryType.SUBAWARDS:
                 fields = ["sub_awardee_or_recipient_legal"]
                 upper_recipient_string = es_sanitize(filter_value.upper())
@@ -359,7 +363,7 @@ class _RecipientSearchText(_Filter):
             if len(upper_recipient_string) == 9 and upper_recipient_string[:5].isnumeric():
                 recipient_duns_query = ES_Q("match", **{recipient_unique_id_field: upper_recipient_string})
                 recipient_search_query.append(ES_Q("dis_max", queries=[recipient_name_query, recipient_duns_query]))
-                if "parent_recipient_unique_id_field" in locals():
+                if "parent_recipient_unique_id_field" is not None:
                     parent_recipient_duns_query = ES_Q(
                         "match", **{parent_recipient_unique_id_field: upper_recipient_string}
                     )
@@ -371,7 +375,7 @@ class _RecipientSearchText(_Filter):
             if len(upper_recipient_string) == 12:
                 recipient_uei_query = ES_Q("match", **{recipient_uei_field: upper_recipient_string})
                 recipient_search_query.append(ES_Q("dis_max", queries=[recipient_name_query, recipient_uei_query]))
-                if "parent_uei_field" in locals():
+                if "parent_uei_field" is not None:
                     parent_recipient_uei_query = ES_Q("match", **{parent_uei_field: upper_recipient_string})
                     recipient_search_query.append(
                         ES_Q("dis_max", queries=[recipient_name_query, parent_recipient_uei_query])
