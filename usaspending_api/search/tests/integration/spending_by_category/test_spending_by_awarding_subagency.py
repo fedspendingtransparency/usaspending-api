@@ -7,6 +7,7 @@ from usaspending_api.common.helpers.generic_helper import get_time_period_messag
 from usaspending_api.search.tests.data.search_filters_test_data import non_legacy_filters
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
+
 @pytest.mark.django_db
 def test_success_with_all_filters(client, monkeypatch, elasticsearch_transaction_index, basic_award):
     """
@@ -21,6 +22,7 @@ def test_success_with_all_filters(client, monkeypatch, elasticsearch_transaction
         data=json.dumps({"filters": non_legacy_filters()}),
     )
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+
 
 @pytest.mark.django_db
 def test_additional_fields_response(client, monkeypatch, elasticsearch_transaction_index, basic_award, subagency_award):
@@ -49,9 +51,20 @@ def test_additional_fields_response(client, monkeypatch, elasticsearch_transacti
         "category": "awarding_subagency",
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
-        "results": [{"amount": 10.0, "name": "Awarding Subtier Agency 5", "code": "SA5", "id": 1005, "agency_id": 2003, "agency_code": "TA3", "agency_name": "Awarding Toptier Agency 3"}],
+        "results": [
+            {
+                "amount": 10.0,
+                "name": "Awarding Subtier Agency 5",
+                "code": "SA5",
+                "id": 1005,
+                "agency_id": 2003,
+                "agency_code": "TA3",
+                "agency_name": "Awarding Toptier Agency 3",
+            }
+        ],
         "messages": [get_time_period_message()],
     }
+
 
 @pytest.mark.django_db
 def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, basic_award, subagency_award):
@@ -75,6 +88,7 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
     assert resp.json() == expected_response
+
 
 @pytest.mark.django_db
 def test_filtering_subtier_with_toptier(
@@ -107,6 +121,7 @@ def test_filtering_subtier_with_toptier(
         "results": [{"amount": 10.0, "name": "Awarding Subtier Agency 5", "code": "SA5", "id": 1005}],
         "messages": [get_time_period_message()],
     }
+
 
 @pytest.mark.django_db
 def test_filtering_subtier_with_bogus_toptier(
