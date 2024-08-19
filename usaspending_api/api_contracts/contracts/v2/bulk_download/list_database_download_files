@@ -1,0 +1,37 @@
+FORMAT: 1A
+HOST: https://api.usaspending.gov
+
+# List Database Download Files [/api/v2/bulk_download/list_monthly_files/]
+
+## GET
+
+This route gets the file name and url for the full and subset download file.
+
++ Request (application/json)
+
+
++ Response 200 (application/json)
+    + Attributes (object)
+        + `full_download_file`:
+            + `file_name` (required, string)
+                Is the name of the zipfile containing CSVs that will be generated (file_name is timestamp followed by `_transactions` or `_awards`).
+            + `url` (required, string)
+                The URL for the file.
+        + `subset_download_file`:
+            + `file_name` (required, string)
+                Is the name of the zipfile containing CSVs that will be generated (file_name is timestamp followed by `_transactions` or `_awards`).
+            + `url` (required, string)
+                The URL for the file.
+    + Body
+
+         {
+            "full_download_file": {
+                "file_name": null,
+                "url": null
+            },
+            "subset_download_file": {
+                "file_name": null,
+                "url": null
+            },
+            "messages": []
+        }
