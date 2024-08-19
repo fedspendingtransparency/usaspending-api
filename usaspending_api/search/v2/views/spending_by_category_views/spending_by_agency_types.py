@@ -110,9 +110,9 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
             results.append(result)
 
             if self.agency_type == AgencyType.AWARDING_SUBTIER or self.agency_type == AgencyType.FUNDING_SUBTIER:
-                result["agency_name"] = (agency_info.get("top_name"),)
-                result["agency_id"] = (agency_info.get("top_id"),)
-                result["agency_code"] = (agency_info.get("top_code"),)
+                result["agency_name"] = (agency_info.get("top_name"))
+                result["agency_id"] = (agency_info.get("top_id"))
+                result["agency_code"] = (agency_info.get("top_code"))
             results.append(result)
         return results
 
