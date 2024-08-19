@@ -11,7 +11,7 @@ SUMMARY_STATE_VIEW_COLUMNS = {
     "original_loan_subsidy_cost": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
     "face_value_loan_guarantee": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
     "counts": {"delta": "LONG", "postgres": "BIGINT"},
-    "total_outlays": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"}
+    "total_outlays": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
 }
 
 SUMMARY_STATE_VIEW_DELTA_COLUMNS = {k: v["delta"] for k, v in SUMMARY_STATE_VIEW_COLUMNS.items()}
@@ -105,7 +105,7 @@ summary_state_view_load_sql_string = fr"""
         ) AS total_outlays
     FROM
         int.transaction_normalized
-    JOIN	
+    JOIN
         rpt.award_search as2 ON (transaction_normalized.award_id = as2.award_id)
     LEFT OUTER JOIN
         int.transaction_fpds ON (transaction_normalized.id = transaction_fpds.transaction_id)
