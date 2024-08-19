@@ -342,6 +342,44 @@ def test_spending_by_award_count_program_activity_subawards(
     assert resp.status_code == status.HTTP_200_OK
     assert expected_response == resp.data, "Unexpected or missing content!"
 
+    test_payload = {
+        "subawards": True,
+        "filters": {
+            "program_activities": [{"name": "program_activity_123"}, {"code": "123"}],
+        },
+    }
+
+    expected_response = {
+        "results": {"subcontracts": 1, "subgrants": 1},
+        "messages": [get_time_period_message()],
+    }
+
+    resp = client.post(
+        get_spending_by_award_count_url(), content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.data, "Unexpected or missing content!"
+
+    test_payload = {
+        "subawards": True,
+        "filters": {
+            "program_activities": [{"name": "program_activity_123", "code": "321"}],
+        },
+    }
+
+    expected_response = {
+        "results": {"subcontracts": 0, "subgrants": 0},
+        "messages": [get_time_period_message()],
+    }
+
+    resp = client.post(
+        get_spending_by_award_count_url(), content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.data, "Unexpected or missing content!"
+
 
 @pytest.mark.django_db
 def test_spending_by_award_count_program_activity(client, monkeypatch, elasticsearch_award_index, award_data_fixture):

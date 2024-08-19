@@ -361,18 +361,15 @@ def subaward_filter(filters, for_downloads=False):
             queryset = queryset.filter(DefCodes.build_def_codes_filter(value))
 
         elif key == "program_activities":
-            award_ids_filtered_by_program_activities = FinancialAccountsByAwards.objects.filter(
-                award_id=OuterRef("award_id"), program_activity_id__isnull=False
-            )
+            query_filter_predicates = [Q(program_activity_id__isnull=False)]
+            award_ids_filtered_by_program_activities = []
             for program_activity in value:
                 if "name" in program_activity:
-                    award_ids_filtered_by_program_activities.filter(
-                        program_activity__program_activity_name=program_activity["name"]
-                    )
+                    query_filter_predicates.append(Q(program_activity__program_activity_name=program_activity["name"]))
                 if "code" in program_activity:
-                    award_ids_filtered_by_program_activities.filter(
-                        program_activity__program_activity_code=program_activity["code"]
-                    )
-            award_ids_filtered_by_program_activities = award_ids_filtered_by_program_activities.values("award_id")
+                    query_filter_predicates.append(Q(program_activity__program_activity_code=program_activity["code"]))
+                filter_ = FinancialAccountsByAwards.objects.filter(*query_filter_predicates)
+                award_ids_filtered_by_program_activities.extend(list(filter_.values_list("award_id", flat=True)))
+
             queryset &= SubawardSearch.objects.filter(award_id__in=award_ids_filtered_by_program_activities)
     return queryset
