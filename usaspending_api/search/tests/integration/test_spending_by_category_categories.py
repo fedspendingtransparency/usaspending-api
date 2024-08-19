@@ -850,7 +850,19 @@ def test_category_funding_subagency_awards(agency_test_data, monkeypatch, elasti
         "category": "funding_subagency",
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
-        "results": [{"amount": 15, "name": "Funding Subtier Agency 2", "code": "SA2", "id": 1002}],
+        "results": [
+            {
+                "amount": 15,
+                "name": "Funding Subtier Agency 2",
+                "code": "SA2",
+                "id": 1002,
+                "subagency_slug": "Funding-Subtier-Agency-2",
+                "agency_id": 2002,
+                "agency_code": "TA2",
+                "agency_name": "Funding Toptier Agency 2",
+                "agency_slug": "Funding-Toptier-Agency-2",
+            }
+        ],
         "messages": [get_time_period_message()],
     }
 

@@ -50,45 +50,23 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
             agency_info_query = SubtierAgency.objects.filter(subtier_code__in=code_list).annotate(
                 id=F("agency__id"), agency_code=F("subtier_code"), code=F("abbreviation")
             )
-            # this is the list of all the subtier agencies that is returned in the elastic search and adds some fields in id, agency code and code
-            # code -> SA[#]
-            # agency_code -> 300[#]
-            # id -> 100[#]
 
             agency_info_query = agency_info_query.values("agency_code", "id", "code", "name", "subtier_agency_id")
-            # this says that we are only looking at these three columns of the table
 
             for agency_info in agency_info_query.all():
-                # now we are looping through all of the different rows in the table
 
                 agency_code = agency_info.pop("agency_code")
-                # now we are getting the subtier_code which is 300[#]
                 current_agency_info[agency_code] = agency_info
-                # and by looking this number up in a dict we can get all of that rows associated information
-
                 subtier_id = agency_info.get("subtier_agency_id")
-
-                # now we need to find the toptier agency associated with the subtier agency
-                # we need agency name: Awarding Toptier Agency [#]
-                # we need agency code: 00[#]
-                # we need agency id: 200[#]
-
                 toptier_agency_info_query = Agency.objects.filter(subtier_agency=subtier_id)
-                # using the subtier primary key, filter the agency to find the respective agency object
-
                 toptier_agency_info_query = toptier_agency_info_query.values("toptier_agency")
-                # the only value we need from the agency object is the toptier agency value
 
                 for toptier_info in toptier_agency_info_query.all():
                     top_id = toptier_info.pop("toptier_agency")
-                    # we need to get this value (in case there are multiple toptier agencies)
-
                     toptier_query = ToptierAgency.objects.filter(topier_agency_id=top_id).annotate(
                         top_id=F("toptier_agency_id"), top_code=F("toptier_ code"), top_name=F("name")
                     )
-
                     toptier_query = toptier_query.values("top_id", "top_code", "top_name")
-
                     current_agency_info[agency_code].append(toptier_query)
 
         # Build out the results
@@ -100,20 +78,22 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
                 "code": agency_info.get("code"),
                 "name": agency_info.get("name"),
                 "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
-                # TODO: need to add the new fields here to follow the AC bc desmond said so
             }
             # Only returns a non-null value if the agency has a profile page -
             # meaning it is an agency that has at least one submission.
             if self.agency_type == AgencyType.AWARDING_TOPTIER:
                 submission = ToptierAgencyPublishedDABSView.objects.filter(agency_id=agency_info.get("id")).first()
                 result["agency_slug"] = slugify(agency_info.get("name")) if submission is not None else None
-            results.append(result)
 
             if self.agency_type == AgencyType.AWARDING_SUBTIER or self.agency_type == AgencyType.FUNDING_SUBTIER:
-                result["agency_name"] = (agency_info.get("top_name"))
-                result["agency_id"] = (agency_info.get("top_id"))
-                result["agency_code"] = (agency_info.get("top_code"))
+                result["agency_name"] = agency_info.get("top_name")
+                result["agency_id"] = agency_info.get("top_id")
+                result["agency_code"] = agency_info.get("top_code")
+                result["agency_slug"] = slugify(agency_info.get("top_name")) if submission is not None else None
+                result["subagency_slug"] = slugify(agency_info.get("name")) if submission is not None else None
+
             results.append(result)
+
         return results
 
     def query_django_for_subawards(self, base_queryset: QuerySet) -> List[dict]:
