@@ -57,11 +57,11 @@ def test_additional_fields_response(client, monkeypatch, elasticsearch_transacti
                 "name": "Awarding Subtier Agency 5",
                 "code": "SA5",
                 "id": 1005,
-                "subagency_slug": "Awarding-Subtier-Agency-5"
+                "subagency_slug": "Awarding-Subtier-Agency-5",
                 "agency_id": 2003,
                 "agency_code": "TA3",
                 "agency_name": "Awarding Toptier Agency 3",
-                "agency_slug": "Awarding-Toptier-Agency-3"
+                "agency_slug": "Awarding-Toptier-Agency-3",
             }
         ],
         "messages": [get_time_period_message()],
