@@ -100,9 +100,6 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
                 "code": agency_info.get("code"),
                 "name": agency_info.get("name"),
                 "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
-                "agency_name": agency_info.get("top_name"),
-                "agency_id": agency_info.get("top_id"),
-                "agency_code": agency_info.get("top_code"),
                 # TODO: need to add the new fields here to follow the AC bc desmond said so
             }
             # Only returns a non-null value if the agency has a profile page -
@@ -110,6 +107,12 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
             if self.agency_type == AgencyType.AWARDING_TOPTIER:
                 submission = ToptierAgencyPublishedDABSView.objects.filter(agency_id=agency_info.get("id")).first()
                 result["agency_slug"] = slugify(agency_info.get("name")) if submission is not None else None
+            results.append(result)
+
+            if self.agency_type == AgencyType.AWARDING_SUBTIER or self.agency_type == AgencyType.FUNDING_SUBTIER:
+                result["agency_name"] = (agency_info.get("top_name"),)
+                result["agency_id"] = (agency_info.get("top_id"),)
+                result["agency_code"] = (agency_info.get("top_code"),)
             results.append(result)
         return results
 
