@@ -107,7 +107,6 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
             if self.agency_type == AgencyType.AWARDING_TOPTIER:
                 submission = ToptierAgencyPublishedDABSView.objects.filter(agency_id=agency_info.get("id")).first()
                 result["agency_slug"] = slugify(agency_info.get("name")) if submission is not None else None
-            results.append(result)
 
             if self.agency_type == AgencyType.AWARDING_SUBTIER or self.agency_type == AgencyType.FUNDING_SUBTIER:
                 result["agency_name"] = (agency_info.get("top_name"),)
