@@ -64,7 +64,7 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
                 for toptier_info in toptier_agency_info_query.all():
                     top_id = toptier_info.pop("toptier_agency")
                     toptier_query = ToptierAgency.objects.filter(toptier_agency_id=top_id).annotate(
-                        top_id=F("toptier_agency_id"), top_code=F("toptier_ code"), top_name=F("name")
+                        top_id=F("toptier_agency_id"), top_code=F("toptier_code"), top_name=F("name")
                     )
                     toptier_query = toptier_query.values("top_id", "top_code", "top_name")
                     current_agency_info[agency_code].append(toptier_query)
