@@ -11,6 +11,7 @@ SUMMARY_STATE_VIEW_COLUMNS = {
     "original_loan_subsidy_cost": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
     "face_value_loan_guarantee": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
     "counts": {"delta": "LONG", "postgres": "BIGINT"},
+    "total_outlays": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"}
 }
 
 SUMMARY_STATE_VIEW_DELTA_COLUMNS = {k: v["delta"] for k, v in SUMMARY_STATE_VIEW_COLUMNS.items()}
@@ -29,7 +30,15 @@ summary_state_view_load_sql_string = fr"""
     (
         {",".join([col for col in SUMMARY_STATE_VIEW_COLUMNS])}
     )
-    SELECT
+    WITH matching_awards AS (
+        SELECT
+            as2.award_id,
+            as2.total_outlays
+        FROM
+            rpt.award_search as2
+        WHERE
+            as2.action_date >= '2007-10-01'
+    ) SELECT
         -- TODO: Update the "duh" field to determine uniqueness by leveraging the GROUP BY fields
         REGEXP_REPLACE(
             MD5(
@@ -87,17 +96,29 @@ summary_state_view_load_sql_string = fr"""
                 0
             ) AS NUMERIC(23, 2)
         ) AS face_value_loan_guarantee,
-        COUNT(*) AS counts
+        COUNT(*) AS counts,
+        CAST(
+            COALESCE(
+                SUM(matching_awards.total_outlays),
+                0
+            ) AS NUMERIC(23, 2)
+        ) AS total_outlays
     FROM
         int.transaction_normalized
+    JOIN	
+        rpt.award_search as2 ON (transaction_normalized.award_id = as2.award_id)
     LEFT OUTER JOIN
         int.transaction_fpds ON (transaction_normalized.id = transaction_fpds.transaction_id)
     LEFT OUTER JOIN
         int.transaction_fabs ON (transaction_normalized.id = transaction_fabs.transaction_id)
+    LEFT JOIN
+        matching_awards ON (
+            matching_awards.award_id = transaction_normalized.award_id
+            AND COALESCE(transaction_fpds.place_of_perform_country_c, transaction_fabs.place_of_perform_country_c, 'USA') = 'USA'
+            AND COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code) IS NOT NULL
+        )
     WHERE
         transaction_normalized.action_date >= '2007-10-01'
-        AND COALESCE(transaction_fpds.place_of_perform_country_c, transaction_fabs.place_of_perform_country_c, 'USA') = 'USA'
-        AND COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code) IS NOT NULL
     GROUP BY
         transaction_normalized.action_date,
         transaction_normalized.fiscal_year,
