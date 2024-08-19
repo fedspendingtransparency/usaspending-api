@@ -33,7 +33,7 @@ def award_data_fixture(db):
         type="07",
         uri=None,
     )
-    baker.make(
+    award2 = baker.make(
         "search.AwardSearch",
         category="idvs",
         date_signed="2009-12-10",
@@ -197,6 +197,19 @@ def award_data_fixture(db):
         program_activity_id=ref_program_activity1.id,
     )
 
+    ref_program_activity2 = baker.make(
+        "references.RefProgramActivity",
+        id=2,
+        program_activity_code=2,
+        program_activity_name="program_activity_2",
+    )
+    baker.make(
+        "awards.FinancialAccountsByAwards",
+        financial_accounts_by_awards_id=2,
+        award_id=award2.award_id,
+        program_activity_id=ref_program_activity2.id,
+    )
+
 
 def get_spending_by_award_count_url():
     return "/api/v2/search/spending_by_award_count/"
@@ -304,7 +317,9 @@ def test_spending_by_award_count_new_awards_only(client, monkeypatch, elasticsea
 
 
 @pytest.mark.django_db
-def test_spending_by_award_count_subawards(client, monkeypatch, elasticsearch_award_index, award_data_fixture):
+def test_spending_by_award_count_program_activity_subawards(
+    client, monkeypatch, elasticsearch_award_index, award_data_fixture
+):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     # Program Activites filter test
@@ -317,6 +332,88 @@ def test_spending_by_award_count_subawards(client, monkeypatch, elasticsearch_aw
 
     expected_response = {
         "results": {"subcontracts": 1, "subgrants": 1},
+        "messages": [get_time_period_message()],
+    }
+
+    resp = client.post(
+        get_spending_by_award_count_url(), content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.data, "Unexpected or missing content!"
+
+
+@pytest.mark.django_db
+def test_spending_by_award_count_program_activity(client, monkeypatch, elasticsearch_award_index, award_data_fixture):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    # Program Activites filter test
+    test_payload = {
+        "subawards": False,
+        "filters": {
+            "program_activities": [{"name": "program_activity_123"}],
+        },
+    }
+
+    expected_response = {
+        "results": {"contracts": 0, "direct_payments": 0, "grants": 0, "idvs": 0, "loans": 1, "other": 0},
+        "messages": [get_time_period_message()],
+    }
+
+    resp = client.post(
+        get_spending_by_award_count_url(), content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.data, "Unexpected or missing content!"
+
+    test_payload = {
+        "subawards": False,
+        "filters": {
+            "program_activities": [{"name": "program_activity_123", "code": "321"}],
+        },
+    }
+
+    expected_response = {
+        "results": {"contracts": 0, "direct_payments": 0, "grants": 0, "idvs": 0, "loans": 0, "other": 0},
+        "messages": [get_time_period_message()],
+    }
+
+    resp = client.post(
+        get_spending_by_award_count_url(), content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.data, "Unexpected or missing content!"
+
+    test_payload = {
+        "subawards": False,
+        "filters": {
+            "program_activities": [{"name": "program_activity_123", "code": "123"}],
+        },
+    }
+
+    expected_response = {
+        "results": {"contracts": 0, "direct_payments": 0, "grants": 0, "idvs": 0, "loans": 1, "other": 0},
+        "messages": [get_time_period_message()],
+    }
+
+    resp = client.post(
+        get_spending_by_award_count_url(), content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.data, "Unexpected or missing content!"
+
+    test_payload = {
+        "subawards": False,
+        "filters": {
+            "program_activities": [{"name": "program_activity_123"}, {"code": "123"}],
+        },
+    }
+
+    expected_response = {
+        "results": {"contracts": 0, "direct_payments": 0, "grants": 0, "idvs": 0, "loans": 1, "other": 0},
         "messages": [get_time_period_message()],
     }
 

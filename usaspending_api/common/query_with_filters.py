@@ -7,7 +7,9 @@ from typing import List, Tuple
 
 from django.conf import settings
 from elasticsearch_dsl import Q as ES_Q
+from django.db.models import Q
 
+from usaspending_api.awards.models.financial_accounts_by_awards import FinancialAccountsByAwards
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.api_helper import (
     DUPLICATE_DISTRICT_LOCATION_PARAMETERS,
@@ -596,6 +598,31 @@ class _ProgramNumbers(_Filter):
         return ES_Q("bool", should=programs_numbers_query, minimum_should_match=1)
 
 
+class _ProgramActivities(_Filter):
+    underscore_name = "program_activities"
+
+    @classmethod
+    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType, **options) -> ES_Q:
+        award_id_match_query = []
+        for filter_value in filter_values:
+            query_filter_predicates = [Q(program_activity_id__isnull=False)]
+
+            if "name" in filter_value:
+                query_filter_predicates.append(Q(program_activity__program_activity_name=filter_value["name"]))
+            if "code" in filter_value:
+                query_filter_predicates.append(Q(program_activity__program_activity_code=filter_value["code"]))
+            award_ids_filtered_by_program_activities = FinancialAccountsByAwards.objects.filter(
+                *query_filter_predicates
+            )
+            award_ids = list(award_ids_filtered_by_program_activities.values_list("award_id", flat=True))
+
+            for id in award_ids:
+                award_id_match_query.append(ES_Q("query_string", query=id, fields=["award_id"], default_operator="OR"))
+        if len(award_id_match_query) == 0:
+            return ~ES_Q()
+        return award_id_match_query
+
+
 class _ContractPricingTypeCodes(_Filter):
     underscore_name = "contract_pricing_type_codes"
 
@@ -850,6 +877,7 @@ class QueryWithFilters:
         _DisasterEmergencyFundCodes.underscore_name: _DisasterEmergencyFundCodes,
         _QueryText.underscore_name: _QueryText,
         _NonzeroFields.underscore_name: _NonzeroFields,
+        _ProgramActivities.underscore_name: _ProgramActivities,
     }
 
     nested_filter_lookup = {
