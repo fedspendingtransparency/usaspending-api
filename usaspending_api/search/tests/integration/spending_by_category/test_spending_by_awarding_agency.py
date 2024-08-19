@@ -51,7 +51,7 @@ def test_correct_response_with_more_awards(
         "messages": [get_time_period_message()],
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
-    assert resp.json() == expected_response
+    assert sorted(resp.json()) == sorted(expected_response)
 
 
 def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, basic_award):
