@@ -39,6 +39,19 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
 
     @cache_response()
     def post(self, request):
+        program_activities_rule = {
+            "name": "program_activities",
+            "type": "array",
+            "key": "filter|program_activities",
+            "array_type": "object",
+            "object_keys_min": 1,
+            "object_keys": {
+                "name": {"type": "text", "text_type": "search"},
+                "code": {
+                    "type": "integer",
+                },
+            },
+        }
         models = [
             {"name": "subawards", "key": "subawards", "type": "boolean", "default": False},
             {
@@ -55,11 +68,27 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
                 "array_type": "integer",
                 "array_max": maxsize,
             },
+            {
+                "name": "program_activities",
+                "type": "array",
+                "key": "filters|program_activities",
+                "array_type": "object",
+                "object_keys_min": 1,
+                "object_keys": {
+                    "name": {"type": "text", "text_type": "search"},
+                    "code": {
+                        "type": "integer",
+                    },
+                },
+            },
         ]
         models.extend(copy.deepcopy(AWARD_FILTER_NO_RECIPIENT_ID))
         models.extend(copy.deepcopy(PAGINATION))
         self.original_filters = request.data.get("filters")
-        json_request = TinyShield(models).block(request.data)
+        tiny_shield = TinyShield(models)
+
+        json_request = tiny_shield.block(request.data)
+        tiny_shield.enforce_object_keys_min(request.data, program_activities_rule)
         subawards = json_request["subawards"]
         filters = json_request.get("filters", None)
         if filters is None:
@@ -78,9 +107,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
 
         raw_response = {
             "results": results,
-            "messages": get_generic_filters_message(
-                self.original_filters.keys(), [elem["name"] for elem in AWARD_FILTER_NO_RECIPIENT_ID]
-            ),
+            "messages": get_generic_filters_message(self.original_filters.keys(), [elem["name"] for elem in models]),
         }
 
         return Response(raw_response)

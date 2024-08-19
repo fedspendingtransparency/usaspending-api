@@ -18,7 +18,7 @@ def award_data_fixture(db):
     baker.make("search.TransactionSearch", transaction_id=765432107, action_date="2013-09-17")
     baker.make("search.TransactionSearch", transaction_id=876543210, action_date="2013-09-17")
     baker.make("search.TransactionSearch", transaction_id=987654321, action_date="2013-09-17")
-    baker.make(
+    award1 = baker.make(
         "search.AwardSearch",
         category="loans",
         date_signed="2012-09-10",
@@ -168,6 +168,34 @@ def award_data_fixture(db):
         type="A",
         uri=None,
     )
+    baker.make("awards.FinancialAccountsByAwards", financial_accounts_by_awards_id=1, award_id=award1.award_id)
+
+    baker.make(
+        "search.SubawardSearch",
+        broker_subaward_id=1,
+        award=award1,
+        sub_action_date="2023-01-01",
+        prime_award_group="grant",
+    )
+    baker.make(
+        "search.SubawardSearch",
+        broker_subaward_id=2,
+        award=award1,
+        sub_action_date="2023-01-01",
+        prime_award_group="procurement",
+    )
+    ref_program_activity1 = baker.make(
+        "references.RefProgramActivity",
+        id=1,
+        program_activity_code=123,
+        program_activity_name="program_activity_123",
+    )
+    baker.make(
+        "awards.FinancialAccountsByAwards",
+        financial_accounts_by_awards_id=1,
+        award_id=award1.award_id,
+        program_activity_id=ref_program_activity1.id,
+    )
 
 
 def get_spending_by_award_count_url():
@@ -264,6 +292,31 @@ def test_spending_by_award_count_new_awards_only(client, monkeypatch, elasticsea
 
     expected_response = {
         "results": {"contracts": 0, "direct_payments": 0, "grants": 0, "idvs": 0, "loans": 0, "other": 0},
+        "messages": [get_time_period_message()],
+    }
+
+    resp = client.post(
+        get_spending_by_award_count_url(), content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.data, "Unexpected or missing content!"
+
+
+@pytest.mark.django_db
+def test_spending_by_award_count_subawards(client, monkeypatch, elasticsearch_award_index, award_data_fixture):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    # Program Activites filter test
+    test_payload = {
+        "subawards": True,
+        "filters": {
+            "program_activities": [{"name": "program_activity_123"}],
+        },
+    }
+
+    expected_response = {
+        "results": {"subcontracts": 1, "subgrants": 1},
         "messages": [get_time_period_message()],
     }
 

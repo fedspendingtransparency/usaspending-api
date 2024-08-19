@@ -252,10 +252,10 @@ def test_enforce_object_keys_min(check_models_patch):
     tiny_shield = TinyShield(model)
 
     # Test success
-    data = {"program_activities": [{"code": "123"}]}
+    data = {"filters": {"program_activities": [{"code": "123"}]}}
     tiny_shield.enforce_object_keys_min(data, model)
 
-    data = {"program_activities": [{"code": "123"}, {"name": "desmond"}]}
+    data = {"filters": {"program_activities": [{"code": "123"}, {"name": "desmond"}]}}
     tiny_shield.enforce_object_keys_min(data, model)
 
     # Test failure
@@ -263,12 +263,12 @@ def test_enforce_object_keys_min(check_models_patch):
         UnprocessableEntityException,
         match="Required number of minimum object keys is not met.",
     ):
-        data = {"program_activities": [{"code": "123"}, {}]}
+        data = {"filters": {"program_activities": [{"code": "123"}, {}]}}
         tiny_shield.enforce_object_keys_min(data, model)
 
     with pytest.raises(
         UnprocessableEntityException,
         match="The object provided has no children. If the object is used it needs at least one child.",
     ):
-        data = {"program_activities": []}
+        data = {"filters": {"program_activities": []}}
         tiny_shield.enforce_object_keys_min(data, model)

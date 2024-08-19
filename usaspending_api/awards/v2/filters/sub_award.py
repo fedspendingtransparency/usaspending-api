@@ -4,6 +4,7 @@ import logging
 from django.db.models import Exists, OuterRef, Q
 
 from usaspending_api.awards.models import TransactionNormalized
+from usaspending_api.awards.models.financial_accounts_by_awards import FinancialAccountsByAwards
 from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset, total_obligation_queryset
 from usaspending_api.awards.v2.filters.location_filter_geocode import ALL_FOREIGN_COUNTRIES, create_nested_object
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -142,6 +143,7 @@ def subaward_filter(filters, for_downloads=False):
             TasCodes.underscore_name,
             TreasuryAccounts.underscore_name,
             "def_codes",
+            "program_activities",
         ]
 
         if key not in key_list:
@@ -358,4 +360,19 @@ def subaward_filter(filters, for_downloads=False):
         elif key == "def_codes":
             queryset = queryset.filter(DefCodes.build_def_codes_filter(value))
 
+        elif key == "program_activities":
+            award_ids_filtered_by_program_activities = FinancialAccountsByAwards.objects.filter(
+                award_id=OuterRef("award_id"), program_activity_id__isnull=False
+            )
+            for program_activity in value:
+                if "name" in program_activity:
+                    award_ids_filtered_by_program_activities.filter(
+                        program_activity__program_activity_name=program_activity["name"]
+                    )
+                if "code" in program_activity:
+                    award_ids_filtered_by_program_activities.filter(
+                        program_activity__program_activity_code=program_activity["code"]
+                    )
+            award_ids_filtered_by_program_activities = award_ids_filtered_by_program_activities.values("award_id")
+            queryset &= SubawardSearch.objects.filter(award_id__in=award_ids_filtered_by_program_activities)
     return queryset
