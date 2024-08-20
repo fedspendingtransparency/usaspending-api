@@ -884,7 +884,7 @@ def test_category_funding_subagency_awards(agency_test_data, monkeypatch, elasti
                 "agency_id": 2002,
                 "agency_code": "002",
                 "agency_name": "Funding Toptier Agency 2",
-                "agency_slug": "funding-toptier-agency-2",
+                "agency_slug": "funding-toptier-agency-2"
             }
         ],
         "messages": [get_time_period_message()],
