@@ -786,7 +786,7 @@ def test_category_awarding_subagency_awards(agency_test_data, monkeypatch, elast
                 "id": 1001,
                 "subagency_slug": "awarding-subtier-agency-1",
                 "agency_id": 2001,
-                "agency_code": "TA1",
+                "agency_code": "001",
                 "agency_name": "Awarding Toptier Agency 1",
                 "agency_slug": "awarding-toptier-agency-1",
             }
@@ -815,7 +815,7 @@ def test_category_awarding_subagency_subawards(agency_test_data):
                 "id": 1005,
                 "subagency_slug": "awarding-subtier-agency-5",
                 "agency_id": 2003,
-                "agency_code": "TA3",
+                "agency_code": "003",
                 "agency_name": "Awarding Toptier Agency 3",
                 "agency_slug": "awarding-toptier-agency-3",
             }
@@ -882,7 +882,7 @@ def test_category_funding_subagency_awards(agency_test_data, monkeypatch, elasti
                 "id": 1002,
                 "subagency_slug": "funding-subtier-agency-2",
                 "agency_id": 2002,
-                "agency_code": "TA2",
+                "agency_code": "002",
                 "agency_name": "Funding Toptier Agency 2",
                 "agency_slug": "funding-toptier-agency-2",
             }
