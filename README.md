@@ -110,7 +110,7 @@ _Alternatively, to download a fully populuated production snapshot of the databa
 
 _**Executing individual data-loaders** to load in data is also possible, but requires more familiarity with those ad-hoc scripts and commands, and also requires an external data source (DATA Broker DB, or external file, etc.) from which to load the data._
 
-- For details on loading reference data, Data Accountability Broker Submission, and current USAspending data into the API, see [loading_data.md](loading_data.md).
+- For details on loading reference data, Data Accountability Broker Submissions, and current USAspending data into the API, see [loading_data.md](loading_data.md).
 - For details on how our data loaders modify incoming data, see [data_reformatting.md](data_reformatting.md).
 
 ### Elasticsearch Setup
