@@ -57,8 +57,9 @@ def obtain_state_totals(fips, year=None, award_type_codes=None, subawards=False)
                 total=Sum("generated_pragmatic_obligation"),
                 distinct_awards=StringAggWithDefault("distinct_awards", ","),
                 total_face_value_loan_amount=Sum("face_value_loan_guarantee"),
+                outlay_total=Sum("total_outlays")
             )
-            .values("distinct_awards", "pop_state_code", "total", "total_face_value_loan_amount")
+            .values("distinct_awards", "pop_state_code", "total", "total_face_value_loan_amount", "outlay_total")
         )
 
     try:
@@ -68,6 +69,7 @@ def obtain_state_totals(fips, year=None, award_type_codes=None, subawards=False)
             "total": row["total"],
             "count": len(set(row["distinct_awards"].split(","))),
             "total_face_value_loan_amount": row["total_face_value_loan_amount"],
+            "total_outlays": row["outlay_total"]
         }
         return result
     except IndexError:
@@ -79,6 +81,7 @@ def obtain_state_totals(fips, year=None, award_type_codes=None, subawards=False)
         "pop_state_code": None,
         "total": 0,
         "total_face_value_loan_amount": 0,
+        "total_outlays":0
     }
 
 
@@ -94,8 +97,9 @@ def get_all_states(year=None, award_type_codes=None, subawards=False):
             .annotate(
                 total=Sum("generated_pragmatic_obligation"),
                 distinct_awards=StringAggWithDefault("distinct_awards", ","),
+                outlay_total=Sum("total_outlays")
             )
-            .values("pop_state_code", "total", "distinct_awards")
+            .values("pop_state_code", "total", "distinct_awards", "outlay_total")
         )
 
         results = [
@@ -103,6 +107,7 @@ def get_all_states(year=None, award_type_codes=None, subawards=False):
                 "pop_state_code": row["pop_state_code"],
                 "total": row["total"],
                 "count": len(set(row["distinct_awards"].split(","))),
+                "total_outlays": row["outlay_total"]
             }
             for row in list(queryset)
         ]
@@ -171,6 +176,7 @@ class StateMetaDataViewSet(APIView):
             "total_face_value_loan_amount": state_aggregates["total_face_value_loan_amount"],
             "total_face_value_loan_prime_awards": state_loans["count"],
             "award_amount_per_capita": amt_per_capita,
+            "total_outlays": state_aggregates["total_outlays"]
             # Commented out for now
             # 'total_subaward_amount': total_subaward_amount,
             # 'total_subawards': total_subaward_count,
