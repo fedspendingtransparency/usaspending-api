@@ -778,7 +778,19 @@ def test_category_awarding_subagency_awards(agency_test_data, monkeypatch, elast
         "category": "awarding_subagency",
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
-        "results": [{"amount": 15, "name": "Awarding Subtier Agency 1", "code": "SA1", "id": 1001}],
+        "results": [
+            {
+                "amount": 15.0,
+                "name": "Awarding Subtier Agency 1",
+                "code": "SA1",
+                "id": 1001,
+                "subagency_slug": "awarding-subtier-agency-1",
+                "agency_id": 2001,
+                "agency_code": "TA1",
+                "agency_name": "Awarding Toptier Agency 1",
+                "agency_slug": "awarding-toptier-agency-1",
+            }
+        ],
         "messages": [get_time_period_message()],
     }
 
@@ -795,7 +807,19 @@ def test_category_awarding_subagency_subawards(agency_test_data):
         "category": "awarding_subagency",
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
-        "results": [{"amount": 150, "name": "Awarding Subtier Agency 3", "code": "SA3", "id": 1003}],
+        "results": [
+            {
+                "amount": 150.0,
+                "name": "Awarding Subtier Agency 5",
+                "code": "SA5",
+                "id": 1005,
+                "subagency_slug": "awarding-subtier-agency-5",
+                "agency_id": 2003,
+                "agency_code": "TA3",
+                "agency_name": "Awarding Toptier Agency 3",
+                "agency_slug": "awarding-toptier-agency-3",
+            }
+        ],
         "messages": [get_time_period_message()],
     }
 
@@ -856,11 +880,11 @@ def test_category_funding_subagency_awards(agency_test_data, monkeypatch, elasti
                 "name": "Funding Subtier Agency 2",
                 "code": "SA2",
                 "id": 1002,
-                "subagency_slug": "Funding-Subtier-Agency-2",
+                "subagency_slug": "funding-subtier-agency-2",
                 "agency_id": 2002,
                 "agency_code": "TA2",
                 "agency_name": "Funding Toptier Agency 2",
-                "agency_slug": "Funding-Toptier-Agency-2",
+                "agency_slug": "funding-toptier-agency-2",
             }
         ],
         "messages": [get_time_period_message()],

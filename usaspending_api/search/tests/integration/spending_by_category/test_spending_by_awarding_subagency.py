@@ -57,11 +57,11 @@ def test_additional_fields_response(client, monkeypatch, elasticsearch_transacti
                 "name": "Awarding Subtier Agency 5",
                 "code": "SA5",
                 "id": 1005,
-                "subagency_slug": "Awarding-Subtier-Agency-5",
+                "subagency_slug": "awarding-subtier-agency-5",
                 "agency_id": 2003,
                 "agency_code": "TA3",
                 "agency_name": "Awarding Toptier Agency 3",
-                "agency_slug": "Awarding-Toptier-Agency-3",
+                "agency_slug": "awarding-toptier-agency-3",
             }
         ],
         "messages": [get_time_period_message()],
@@ -83,8 +83,28 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 10.0, "name": "Awarding Subtier Agency 5", "code": "SA5", "id": 1005},
-            {"amount": 5.0, "name": "Awarding Subtier Agency 1", "code": "SA1", "id": 1001},
+            {
+                "amount": 10.0,
+                "name": "Awarding Subtier Agency 5",
+                "code": "SA5",
+                "id": 1005,
+                "subagency_slug": "awarding-subtier-agency-5",
+                "agency_id": 2003,
+                "agency_code": "TA3",
+                "agency_name": "Awarding Toptier Agency 3",
+                "agency_slug": "awarding-toptier-agency-3",
+            },
+            {
+                "amount": 5.0,
+                "name": "Awarding Subtier Agency 1",
+                "code": "SA1",
+                "id": 1001,
+                "subagency_slug": "awarding-subtier-agency-1",
+                "agency_id": 2001,
+                "agency_code": "TA1",
+                "agency_name": "Awarding Toptier Agency 1",
+                "agency_slug": "awarding-toptier-agency-1",
+            },
         ],
         "messages": [get_time_period_message()],
     }
@@ -120,7 +140,19 @@ def test_filtering_subtier_with_toptier(
         "category": "awarding_subagency",
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
-        "results": [{"amount": 10.0, "name": "Awarding Subtier Agency 5", "code": "SA5", "id": 1005}],
+        "results": [
+            {
+                "amount": 10.0,
+                "name": "Awarding Subtier Agency 5",
+                "code": "SA5",
+                "id": 1005,
+                "subagency_slug": "awarding-subtier-agency-5",
+                "agency_id": 2003,
+                "agency_code": "TA3",
+                "agency_name": "Awarding Toptier Agency 3",
+                "agency_slug": "awarding-toptier-agency-3",
+            }
+        ],
         "messages": [get_time_period_message()],
     }
 
@@ -213,7 +245,19 @@ def test_correct_response_with_date_type(client, monkeypatch, elasticsearch_tran
         "category": "awarding_subagency",
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
-        "results": [{"amount": 10.0, "name": "Awarding Subtier Agency 5", "code": "SA5", "id": 1005}],
+        "results": [
+            {
+                "amount": 10.0,
+                "name": "Awarding Subtier Agency 5",
+                "code": "SA5",
+                "id": 1005,
+                "subagency_slug": "awarding-subtier-agency-5",
+                "agency_id": 2003,
+                "agency_code": "TA3",
+                "agency_name": "Awarding Toptier Agency 3",
+                "agency_slug": "awarding-toptier-agency-3",
+            }
+        ],
         "messages": [get_time_period_message()],
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
@@ -281,7 +325,19 @@ def test_correct_response_with_new_awards_only(client, monkeypatch, elasticsearc
         "category": "awarding_subagency",
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
-        "results": [{"amount": 10.0, "name": "Awarding Subtier Agency 5", "code": "SA5", "id": 1005}],
+        "results": [
+            {
+                "amount": 10.0,
+                "name": "Awarding Subtier Agency 5",
+                "code": "SA5",
+                "id": 1005,
+                "subagency_slug": "awarding-subtier-agency-5",
+                "agency_id": 2003,
+                "agency_code": "TA3",
+                "agency_name": "Awarding Toptier Agency 3",
+                "agency_slug": "awarding-toptier-agency-3",
+            }
+        ],
         "messages": [get_time_period_message()],
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"

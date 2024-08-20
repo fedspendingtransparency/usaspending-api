@@ -91,8 +91,7 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
                 result["agency_name"] = agency_info.get("top_name")
                 result["agency_id"] = agency_info.get("top_id")
                 result["agency_code"] = agency_info.get("top_code")
-                submission = ToptierAgencyPublishedDABSView.objects.filter(agency_id=agency_info.get("id")).first()
-                result["agency_slug"] = slugify(agency_info.get("top_name")) if submission is not None else None
+                result["agency_slug"] = slugify(agency_info.get("top_name"))
                 result["subagency_slug"] = slugify(agency_info.get("name"))
 
             results.append(result)
