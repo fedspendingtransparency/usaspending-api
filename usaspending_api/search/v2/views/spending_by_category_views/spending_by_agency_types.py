@@ -57,6 +57,7 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
 
                 agency_code = agency_info.pop("agency_code")
                 current_agency_info[agency_code] = {"subtier_info": agency_info}
+
                 subtier_id = agency_info.get("subtier_agency_id")
                 toptier_agency_info_query = Agency.objects.filter(subtier_agency=subtier_id)
                 toptier_agency_info_query = toptier_agency_info_query.values("toptier_agency")
@@ -67,7 +68,8 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
                         top_id=F("toptier_agency_id"), top_code=F("toptier_code"), top_name=F("name")
                     )
                     toptier_info = toptier_query.values("top_id", "top_code", "top_name").all()
-                    current_agency_info[agency_code].update(toptier_info)
+                    for toptier_row in toptier_info:
+                        current_agency_info[agency_code].update(toptier_row)
 
         # Build out the results
         results = []
