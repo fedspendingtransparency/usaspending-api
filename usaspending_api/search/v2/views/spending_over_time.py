@@ -32,7 +32,7 @@ from usaspending_api.common.helpers.generic_helper import (
 )
 from usaspending_api.common.helpers.orm_helpers import FiscalMonth, FiscalQuarter
 from usaspending_api.common.query_with_filters import QueryWithFilters
-from usaspending_api.common.validator.award_filter import AWARD_FILTER, AWARD_FILTER_W_FILTERS
+from usaspending_api.common.validator.award_filter import AWARD_FILTER_W_FILTERS
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.search.filters.elasticsearch.filter import _QueryType

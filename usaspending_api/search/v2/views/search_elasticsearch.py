@@ -14,7 +14,11 @@ from usaspending_api.common.exceptions import (
 )
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata, get_generic_filters_message
 from usaspending_api.common.query_with_filters import QueryWithFilters
-from usaspending_api.common.validator.award_filter import AWARD_FILTER, AWARD_FILTER_NO_RECIPIENT_ID
+from usaspending_api.common.validator.award_filter import (
+    AWARD_FILTER,
+    AWARD_FILTER_NO_RECIPIENT_ID,
+    AWARD_FILTER_W_FILTERS,
+)
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.search.v2.elasticsearch_helper import (
@@ -41,6 +45,21 @@ class SpendingByTransactionVisualizationViewSet(APIView):
 
     @cache_response()
     def post(self, request):
+        program_activities_rule = [
+            {
+                "name": "program_activities",
+                "type": "array",
+                "key": "filters|program_activities",
+                "array_type": "object",
+                "object_keys_min": 1,
+                "object_keys": {
+                    "name": {"type": "text", "text_type": "search"},
+                    "code": {
+                        "type": "integer",
+                    },
+                },
+            }
+        ]
         models = [
             {
                 "name": "fields",
@@ -51,12 +70,17 @@ class SpendingByTransactionVisualizationViewSet(APIView):
                 "optional": False,
             }
         ]
-        models.extend(copy.deepcopy(AWARD_FILTER))
+        models.extend(copy.deepcopy(AWARD_FILTER_W_FILTERS))
         models.extend(copy.deepcopy(PAGINATION))
+        models.extend(copy.deepcopy(program_activities_rule))
+        self.models = models
         for m in models:
             if m["name"] in ("award_type_codes", "sort"):
                 m["optional"] = False
-        validated_payload = TinyShield(models).block(request.data)
+        tiny_shield = TinyShield(models)
+        validated_payload = tiny_shield.block(request.data)
+        if "filters" in validated_payload and "program_activities" in validated_payload["filters"]:
+            tiny_shield.enforce_object_keys_min(validated_payload, program_activities_rule[0])
 
         record_num = (validated_payload["page"] - 1) * validated_payload["limit"]
         if record_num >= settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW:
@@ -127,9 +151,7 @@ class SpendingByTransactionVisualizationViewSet(APIView):
             "limit": request["limit"],
             "results": results[: request["limit"]],
             "page_metadata": metadata,
-            "messages": get_generic_filters_message(
-                request["filters"].keys(), [elem["name"] for elem in AWARD_FILTER_NO_RECIPIENT_ID]
-            ),
+            "messages": get_generic_filters_message(request["filters"].keys(), [elem["name"] for elem in self.models]),
         }
 
 
