@@ -1,11 +1,9 @@
 import pytest
-
 from model_bakery import baker
 from rest_framework import status
 
 from usaspending_api.search.models import TransactionSearch
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
-
 
 url = "/api/v2/agency/{toptier_code}/obligations_by_award_category/{filter}"
 
@@ -236,7 +234,7 @@ def test_alternate_agency(client, monkeypatch, transaction_search_1, elasticsear
 
 
 @pytest.mark.django_db
-def test_invalid_agency(client, monkeypatch, transaction_search_1, elasticsearch_account_index):
+def test_invalid_agency(client, monkeypatch, transaction_search_1):
     resp = client.get(url.format(toptier_code="XXX", filter="?fiscal_year=2021"))
     assert resp.status_code == status.HTTP_404_NOT_FOUND
 
