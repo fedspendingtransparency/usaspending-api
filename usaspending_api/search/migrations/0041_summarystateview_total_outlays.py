@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.AddField(
-            model_name='summarystateview',
+            model_name='SummaryStateView',
             name='total_outlays',
             field=models.DecimalField(decimal_places=2, max_digits=23, null=True),
         ),
