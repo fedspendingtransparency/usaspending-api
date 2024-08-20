@@ -68,19 +68,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
                 "array_type": "integer",
                 "array_max": maxsize,
             },
-            {
-                "name": "program_activities",
-                "type": "array",
-                "key": "filters|program_activities",
-                "array_type": "object",
-                "object_keys_min": 1,
-                "object_keys": {
-                    "name": {"type": "text", "text_type": "search"},
-                    "code": {
-                        "type": "integer",
-                    },
-                },
-            },
+            program_activities_rule,
         ]
         models.extend(copy.deepcopy(AWARD_FILTER_NO_RECIPIENT_ID))
         models.extend(copy.deepcopy(PAGINATION))

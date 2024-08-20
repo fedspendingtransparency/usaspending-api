@@ -2,6 +2,7 @@ import copy
 from ast import literal_eval
 
 from sys import maxsize
+from typing import List
 from django.conf import settings
 from django.db.models import F
 from django.utils.text import slugify
@@ -92,7 +93,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
     def post(self, request):
         """Return all awards matching the provided filters and limits"""
         self.original_filters = request.data.get("filters")
-        json_request = self.validate_request_data(request.data)
+        json_request, models = self.validate_request_data(request.data)
         self.is_subaward = json_request["subawards"]
         self.constants = GLOBAL_MAP["subaward"] if self.is_subaward else GLOBAL_MAP["award"]
         filters = json_request.get("filters", {})
@@ -108,7 +109,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         }
 
         if self.if_no_intersection():  # Like an exception, but API response is a HTTP 200 with a JSON payload
-            return Response(self.populate_response(results=[], has_next=False))
+            return Response(self.populate_response(results=[], has_next=False, models=models))
 
         raise_if_award_types_not_valid_subset(self.filters["award_type_codes"], self.is_subaward)
         raise_if_sort_key_not_valid(
@@ -116,7 +117,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         )
 
         if self.is_subaward:
-            raw_response = self.create_response_for_subawards(self.construct_queryset())
+            raw_response = self.create_response_for_subawards(self.construct_queryset(), models)
         else:
             self.last_record_unique_id = json_request.get("last_record_unique_id")
             self.last_record_sort_value = json_request.get("last_record_sort_value")
@@ -126,6 +127,19 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
     @staticmethod
     def validate_request_data(request_data):
+        program_activities_rule = {
+            "name": "program_activities",
+            "type": "array",
+            "key": "filters|program_activities",
+            "array_type": "object",
+            "object_keys_min": 1,
+            "object_keys": {
+                "name": {"type": "text", "text_type": "search"},
+                "code": {
+                    "type": "integer",
+                },
+            },
+        }
         models = [
             {"name": "fields", "key": "fields", "type": "array", "array_type": "text", "text_type": "search", "min": 1},
             {"name": "subawards", "key": "subawards", "type": "boolean", "default": False},
@@ -158,14 +172,16 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 "required": False,
                 "allow_nulls": True,
             },
+            program_activities_rule,
         ]
         models.extend(copy.deepcopy(AWARD_FILTER_NO_RECIPIENT_ID))
         models.extend(copy.deepcopy(PAGINATION))
         for m in models:
             if m["name"] in ("award_type_codes", "fields"):
                 m["optional"] = False
-
-        return TinyShield(models).block(request_data)
+        tiny_shield = TinyShield(models)
+        tiny_shield.enforce_object_keys_min(request_data, program_activities_rule)
+        return tiny_shield.block(request_data), models
 
     def if_no_intersection(self):
         # "Special case" behavior: there will never be results when the website provides this value
@@ -179,7 +195,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         queryset = self.custom_queryset_order_by(queryset, sort_by_fields, self.pagination["sort_order"])
         return queryset.values(*list(database_fields))[self.pagination["lower_bound"] : self.pagination["upper_bound"]]
 
-    def create_response_for_subawards(self, queryset):
+    def create_response_for_subawards(self, queryset, models):
         results = []
         rows = list(queryset)
         for record in rows[: self.pagination["limit"]]:
@@ -199,7 +215,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         results = self.add_award_generated_id_field(results)
 
-        return self.populate_response(results=results, has_next=len(rows) > self.pagination["limit"])
+        return self.populate_response(results=results, has_next=len(rows) > self.pagination["limit"], models=models)
 
     def add_award_generated_id_field(self, records):
         """Obtain the generated_unique_award_id and add to response"""
@@ -261,14 +277,12 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         return queryset.order_by(*order_by_list)
 
-    def populate_response(self, results: list, has_next: bool) -> dict:
+    def populate_response(self, results: list, has_next: bool, models: List[dict]) -> dict:
         return {
             "limit": self.pagination["limit"],
             "results": results,
             "page_metadata": {"page": self.pagination["page"], "hasNext": has_next},
-            "messages": get_generic_filters_message(
-                self.original_filters.keys(), [elem["name"] for elem in AWARD_FILTER_NO_RECIPIENT_ID]
-            ),
+            "messages": get_generic_filters_message(self.original_filters.keys(), [elem["name"] for elem in models]),
         }
 
     def query_elasticsearch(self) -> list:
