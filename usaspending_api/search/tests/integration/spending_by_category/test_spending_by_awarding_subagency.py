@@ -47,6 +47,37 @@ def test_additional_fields_response(client, monkeypatch, elasticsearch_transacti
         },
     )
     assert resp.status_code == status.HTTP_200_OK
+
+    expected_response = {
+        "category": "awarding_subagency",
+        "limit": 10,
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "results": [
+            {
+                "amount": 10.0,
+                "name": "Awarding Subtier Agency 5",
+                "code": "SA5",
+                "id": 1005,
+                "subagency_slug": "awarding-subtier-agency-5",
+                "agency_id": 2003,
+                "agency_code": "003",
+                "agency_name": "Awarding Toptier Agency 3",
+                "agency_slug": "awarding-toptier-agency-3",
+            }
+        ],
+        "messages": [get_time_period_message()],
+    }
+
+    assert expected_response["results"]["amount"] == resp.data["results"]["amount"]
+    assert expected_response["results"]["name"] == resp.data["results"]["name"]
+    assert expected_response["results"]["code"] == resp.data["results"]["code"]
+    assert expected_response["results"]["id"] == resp.data["results"]["id"]
+    assert expected_response["results"]["subagency_slug"] == resp.data["results"]["subagency_slug"]
+    assert expected_response["results"]["agency_id"] == resp.data["results"]["agency_id"]
+    assert expected_response["results"]["agency_code"] == resp.data["results"]["agency_code"]
+    assert expected_response["results"]["agency_name"] == resp.data["results"]["agency_name"]
+    assert expected_response["results"]["agency_slug"] == resp.data["results"]["agency_slug"]
+
     assert resp.data == {
         "category": "awarding_subagency",
         "limit": 10,
@@ -261,6 +292,17 @@ def test_correct_response_with_date_type(client, monkeypatch, elasticsearch_tran
         "messages": [get_time_period_message()],
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+
+    assert expected_response["results"]["amount"] == resp.json()["results"]["amount"]
+    assert expected_response["results"]["name"] == resp.json()["results"]["name"]
+    assert expected_response["results"]["code"] == resp.json()["results"]["code"]
+    assert expected_response["results"]["id"] == resp.json()["results"]["id"]
+    assert expected_response["results"]["subagency_slug"] == resp.json()["results"]["subagency_slug"]
+    assert expected_response["results"]["agency_id"] == resp.json()["results"]["agency_id"]
+    assert expected_response["results"]["agency_code"] == resp.json()["results"]["agency_code"]
+    assert expected_response["results"]["agency_name"] == resp.json()["results"]["agency_name"]
+    assert expected_response["results"]["agency_slug"] == resp.json()["results"]["agency_slug"]
+
     assert resp.json() == expected_response
 
 
