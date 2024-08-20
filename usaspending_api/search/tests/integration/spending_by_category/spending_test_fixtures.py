@@ -121,7 +121,7 @@ def _setup_agency(id, subtiers, special_name):
 def awards_and_transactions(db):
     # Awards
     award1 = baker.make("search.AwardSearch", award_id=1, latest_transaction_id=10, action_date="2020-01-01")
-    award2 = baker.make("search.AwardSearch", award_id=2, latest_transaction_id=20, action_date="2020-01-01")
+    baker.make("search.AwardSearch", award_id=2, latest_transaction_id=20, action_date="2020-01-01")
     baker.make("search.AwardSearch", award_id=3, latest_transaction_id=30, action_date="2020-01-01")
     baker.make("search.AwardSearch", award_id=4, latest_transaction_id=40, action_date="2020-01-01")
     baker.make("search.AwardSearch", award_id=5, latest_transaction_id=50, action_date="2020-01-01")
@@ -180,7 +180,7 @@ def awards_and_transactions(db):
     baker.make(
         "search.TransactionSearch",
         transaction_id=10,
-        award_id=1,
+        award_id=award1.award_id,
         federal_action_obligation=5,
         generated_pragmatic_obligation=5,
         action_date="2020-01-01",
@@ -218,6 +218,8 @@ def awards_and_transactions(db):
         recipient_unique_id=None,
         recipient_uei=None,
         federal_accounts=[fa1],
+        award_category="grant",
+        fiscal_year="2020",
     )
     baker.make(
         "search.TransactionSearch",
@@ -542,6 +544,8 @@ def awards_and_transactions(db):
         sub_place_of_perform_country_co="USA",
         sub_legal_entity_country_code="USA",
         sub_action_date="2020-01-07",
+        prime_award_group="grant",
+        sub_fiscal_year=2020,
     )
 
     # References State Data

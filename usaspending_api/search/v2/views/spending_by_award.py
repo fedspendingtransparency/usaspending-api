@@ -180,7 +180,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
             if m["name"] in ("award_type_codes", "fields"):
                 m["optional"] = False
         tiny_shield = TinyShield(models)
-        tiny_shield.enforce_object_keys_min(request_data, program_activities_rule)
+        if "filters" in request_data and "program_activities" in request_data["filters"]:
+            tiny_shield.enforce_object_keys_min(request_data, program_activities_rule)
         return tiny_shield.block(request_data), models
 
     def if_no_intersection(self):

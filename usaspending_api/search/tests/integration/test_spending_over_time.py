@@ -46,6 +46,13 @@ def spending_over_time_test_data():
         grant_award_type = ["02", "03", "04", "05"][i % 4]
         is_fpds = i % 2 == 0
 
+        ref_program_activity = baker.make(
+            "references.RefProgramActivity",
+            id=i,
+            program_activity_code=i,
+            program_activity_name=f"program_activity_{i}",
+        )
+
         # Award
         baker.make(
             "search.AwardSearch",
@@ -92,6 +99,7 @@ def spending_over_time_test_data():
             "awards.FinancialAccountsByAwards",
             award_id=award_id,
             treasury_account_id=treasury_account_id,
+            program_activity_id=ref_program_activity.id,
         )
 
         # Awarding Agency
@@ -160,9 +168,9 @@ def spending_over_time_test_data():
                     f"business_category_1_{transaction_id}",
                     f"business_category_2_{transaction_id}",
                 ],
-                transaction_description=f"This is a test description {transaction_id}"
-                if transaction_id % 2 == 0
-                else None,
+                transaction_description=(
+                    f"This is a test description {transaction_id}" if transaction_id % 2 == 0 else None
+                ),
                 award_category="direct payment",
                 federal_action_obligation=federal_action_obligation,
                 generated_pragmatic_obligation=federal_action_obligation,
@@ -234,9 +242,9 @@ def spending_over_time_test_data():
                     f"business_category_1_{transaction_id}",
                     f"business_category_2_{transaction_id}",
                 ],
-                transaction_description=f"This is a test description {transaction_id}"
-                if transaction_id % 2 == 0
-                else None,
+                transaction_description=(
+                    f"This is a test description {transaction_id}" if transaction_id % 2 == 0 else None
+                ),
                 award_category="loans",
                 federal_action_obligation=federal_action_obligation,
                 generated_pragmatic_obligation=federal_action_obligation,
@@ -277,6 +285,16 @@ def spending_over_time_test_data():
                 pop_congressional_code=f"{transaction_id:02d}",
                 pop_city_name=f"POP_CITY_NAME{transaction_id}",
                 tas_components=tas_components,
+            )
+            baker.make(
+                "search.SubawardSearch",
+                broker_subaward_id=i,
+                award_id=award_id,
+                sub_action_date="2011-05-05",
+                prime_award_group="grant",
+                prime_award_type="07",
+                subaward_number=i,
+                subaward_amount=(i + 1) * 2,
             )
 
 
@@ -3202,3 +3220,113 @@ def test_transactions_defc_date_filter(client, monkeypatch, elasticsearch_transa
         "Loan_Obligations": 0,
         "Other_Obligations": 0,
     } in resp.json().get("results")
+
+
+# @pytest.mark.django_db
+# def test_spending_over_time_program_activity_subawards(
+#     client, monkeypatch, elasticsearch_award_index, awards_and_transactions
+# ):
+#     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+#     resp = client.post(
+#         "/api/v2/search/spending_over_time",
+#         content_type="application/json",
+#         data=json.dumps(
+#             {
+#                 "subawards": True,
+#                 "group": "fiscal_year",
+#                 "filters": {
+#                     "program_activities": [{"name": "program_activity_123"}],
+#                     "time_period": [{"start_date": "2019-01-05", "end_date": "2021-01-08"}],
+#                 },
+#             }
+#         ),
+#     )
+#     expected_result = [
+#         {
+#             "aggregated_amount": 0,
+#             "time_period": {"fiscal_year": "2019"},
+#         },
+#         {
+#             "aggregated_amount": 54321.0,
+#             "time_period": {"fiscal_year": "2020"},
+#         },
+#         {"aggregated_amount": 0, "time_period": {"fiscal_year": "2021"}},
+#     ]
+#     assert resp.status_code == status.HTTP_200_OK
+#     assert resp.json().get("results") == expected_result, "Set Aside Type Codes filter does not match expected result"
+
+
+@pytest.mark.django_db
+def test_spending_over_time_program_activity(client, monkeypatch, elasticsearch_transaction_index):
+    award1 = baker.make("search.AwardSearch", award_id=1, latest_transaction_id=99, action_date="2020-04-02")
+    ref_program_activity1 = baker.make(
+        "references.RefProgramActivity",
+        id=1,
+        program_activity_code=123,
+        program_activity_name="program_activity_123",
+    )
+    baker.make(
+        "awards.FinancialAccountsByAwards",
+        financial_accounts_by_awards_id=1,
+        award_id=award1.award_id,
+        program_activity_id=ref_program_activity1.id,
+    )
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=99,
+        award=award1,
+        action_date="2020-04-02",
+        fiscal_action_date="2020-04-02",
+        award_category="grant",
+        generated_pragmatic_obligation=10,
+    )
+
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+    resp = client.post(
+        "/api/v2/search/spending_over_time",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "subawards": False,
+                "group": "fiscal_year",
+                "filters": {
+                    "program_activities": [{"name": "program_activity_123"}],
+                    "time_period": [{"start_date": "2019-01-05", "end_date": "2021-01-08"}],
+                },
+            }
+        ),
+    )
+    expected_result = [
+        {
+            "aggregated_amount": 0,
+            "Contract_Obligations": 0,
+            "Direct_Obligations": 0,
+            "Grant_Obligations": 0,
+            "Idv_Obligations": 0,
+            "Loan_Obligations": 0,
+            "Other_Obligations": 0,
+            "time_period": {"fiscal_year": "2019"},
+        },
+        {
+            "aggregated_amount": 10.0,
+            "Contract_Obligations": 0,
+            "Direct_Obligations": 0,
+            "Grant_Obligations": 10.0,
+            "Idv_Obligations": 0,
+            "Loan_Obligations": 0,
+            "Other_Obligations": 0,
+            "time_period": {"fiscal_year": "2020"},
+        },
+        {
+            "aggregated_amount": 0,
+            "Contract_Obligations": 0,
+            "Direct_Obligations": 0,
+            "Grant_Obligations": 0,
+            "Idv_Obligations": 0,
+            "Loan_Obligations": 0,
+            "Other_Obligations": 0,
+            "time_period": {"fiscal_year": "2021"},
+        },
+    ]
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json().get("results") == expected_result, "Set Aside Type Codes filter does not match expected result"
