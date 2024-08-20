@@ -21,7 +21,7 @@ from usaspending_api.common.helpers.generic_helper import (
     get_generic_filters_message,
 )
 from usaspending_api.common.query_with_filters import QueryWithFilters
-from usaspending_api.common.validator.award_filter import AWARD_FILTER
+from usaspending_api.common.validator.award_filter import AWARD_FILTER_W_FILTERS
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.references.abbreviations import code_to_state, fips_to_code, pad_codes
 from usaspending_api.references.models import PopCongressionalDistrict, PopCounty, RefCountryCode
@@ -67,6 +67,21 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
     @cache_response()
     def post(self, request: Request) -> Response:
+        program_activities_rule = [
+            {
+                "name": "program_activities",
+                "type": "array",
+                "key": "filters|program_activities",
+                "object_keys_min": 1,
+                "array_type": "object",
+                "object_keys": {
+                    "name": {"type": "text", "text_type": "search"},
+                    "code": {
+                        "type": "integer",
+                    },
+                },
+            }
+        ]
         models = [
             {"name": "subawards", "key": "subawards", "type": "boolean", "default": False},
             {
@@ -91,9 +106,12 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                 "text_type": "search",
             },
         ]
-        models.extend(copy.deepcopy(AWARD_FILTER))
+        models.extend(copy.deepcopy(AWARD_FILTER_W_FILTERS))
+        models.extend(copy.deepcopy(program_activities_rule))
         original_filters = request.data.get("filters")
-        json_request = TinyShield(models).block(request.data)
+        tiny_shield = TinyShield(models)
+        json_request = tiny_shield.block(request.data)
+        tiny_shield.enforce_object_keys_min(request.data, program_activities_rule[0])
 
         agg_key_dict = {
             "county": "county_agg_key",
@@ -204,7 +222,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             "scope": json_request["scope"],
             "geo_layer": self.geo_layer.value,
             "results": result,
-            "messages": get_generic_filters_message(original_filters.keys(), [elem["name"] for elem in AWARD_FILTER]),
+            "messages": get_generic_filters_message(original_filters.keys(), [elem["name"] for elem in models]),
         }
 
         return Response(raw_response)
