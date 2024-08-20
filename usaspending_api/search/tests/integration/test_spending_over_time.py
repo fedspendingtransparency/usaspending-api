@@ -3222,38 +3222,38 @@ def test_transactions_defc_date_filter(client, monkeypatch, elasticsearch_transa
     } in resp.json().get("results")
 
 
-# @pytest.mark.django_db
-# def test_spending_over_time_program_activity_subawards(
-#     client, monkeypatch, elasticsearch_award_index, awards_and_transactions
-# ):
-#     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
-#     resp = client.post(
-#         "/api/v2/search/spending_over_time",
-#         content_type="application/json",
-#         data=json.dumps(
-#             {
-#                 "subawards": True,
-#                 "group": "fiscal_year",
-#                 "filters": {
-#                     "program_activities": [{"name": "program_activity_123"}],
-#                     "time_period": [{"start_date": "2019-01-05", "end_date": "2021-01-08"}],
-#                 },
-#             }
-#         ),
-#     )
-#     expected_result = [
-#         {
-#             "aggregated_amount": 0,
-#             "time_period": {"fiscal_year": "2019"},
-#         },
-#         {
-#             "aggregated_amount": 54321.0,
-#             "time_period": {"fiscal_year": "2020"},
-#         },
-#         {"aggregated_amount": 0, "time_period": {"fiscal_year": "2021"}},
-#     ]
-#     assert resp.status_code == status.HTTP_200_OK
-#     assert resp.json().get("results") == expected_result, "Set Aside Type Codes filter does not match expected result"
+@pytest.mark.django_db
+def test_spending_over_time_program_activity_subawards(
+    client, monkeypatch, elasticsearch_award_index, awards_and_transactions
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    resp = client.post(
+        "/api/v2/search/spending_over_time",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "subawards": True,
+                "group": "fiscal_year",
+                "filters": {
+                    "program_activities": [{"name": "program_activity_123"}],
+                    "time_period": [{"start_date": "2019-01-05", "end_date": "2021-01-08"}],
+                },
+            }
+        ),
+    )
+    expected_result = [
+        {
+            "aggregated_amount": 0,
+            "time_period": {"fiscal_year": "2019"},
+        },
+        {
+            "aggregated_amount": 54321.0,
+            "time_period": {"fiscal_year": "2020"},
+        },
+        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2021"}},
+    ]
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json().get("results") == expected_result, "Set Aside Type Codes filter does not match expected result"
 
 
 @pytest.mark.django_db
