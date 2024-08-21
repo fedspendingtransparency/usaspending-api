@@ -24,7 +24,7 @@ command. Any reveal dates on schedules with a 'due date' in the past are not upd
 
 It is logically intended to be the "next day" after the DABS submission deadline communicated to
 Agency Submitters. That deadline is exactly midnight Pacific Time on the schedule communicated to
-Agency Submitters as part of the DAIMS documentation.
+Agency Submitters as part of the GSDM documentation.
 
 For simplification, Broker data in the submission_window_schedule table only stores the UTC date
 part (with zeroed-time) of the above deadline.
