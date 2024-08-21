@@ -913,7 +913,19 @@ def test_category_funding_subagency_subawards(agency_test_data):
         "category": "funding_subagency",
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
-        "results": [{"amount": 150, "name": "Funding Subtier Agency 4", "code": "SA4", "id": 1004}],
+        "results": [
+            {
+                "amount": 150,
+                "name": "Funding Subtier Agency 4",
+                "code": "SA4",
+                "id": 1004,
+                "subagency_slug": "funding-subtier-agency-4",
+                "agency_id": 2004,
+                "agency_code": "TA4",
+                "agency_name": "Funding Toptier Agency 4",
+                "agency_slug": "funding-toptier-agency-4",
+            }
+        ],
         "messages": [get_time_period_message()],
     }
 
