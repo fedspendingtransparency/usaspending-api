@@ -301,7 +301,6 @@ class SpendingOverTimeVisualizationViewSet(APIView):
     def post(self, request: Request) -> Response:
         self.original_filters = request.data.get("filters")
         json_request, models = self.validate_request_data(request.data)
-        print(json_request)
         self.group = GROUPING_LOOKUP[json_request["group"]]
         self.subawards = json_request["subawards"]
         self.filters = json_request["filters"]
