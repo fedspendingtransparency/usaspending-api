@@ -2103,7 +2103,7 @@ def test_spending_by_geo_program_activity_subawards(
 
 
 @pytest.mark.django_db
-def test_spending_by_award_program_activity(client, monkeypatch, elasticsearch_award_index, awards_and_transactions):
+def test_spending_by_geo_program_activity(client, monkeypatch, elasticsearch_award_index, awards_and_transactions):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     # Program Activites filter test

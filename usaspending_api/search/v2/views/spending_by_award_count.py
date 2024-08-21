@@ -42,7 +42,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         program_activities_rule = {
             "name": "program_activities",
             "type": "array",
-            "key": "filter|program_activities",
+            "key": "filters|program_activities",
             "array_type": "object",
             "object_keys_min": 1,
             "object_keys": {
@@ -76,8 +76,8 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         tiny_shield = TinyShield(models)
 
         json_request = tiny_shield.block(request.data)
-        if "filters" in request.data and "program_activities" in request.data["filters"]:
-            tiny_shield.enforce_object_keys_min(request.data, program_activities_rule)
+        if "filters" in json_request and "program_activities" in json_request["filters"]:
+            tiny_shield.enforce_object_keys_min(json_request, program_activities_rule)
         subawards = json_request["subawards"]
         filters = json_request.get("filters", None)
         if filters is None:
