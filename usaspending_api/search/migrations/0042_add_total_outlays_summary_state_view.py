@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('search', '0040_initial_mv_agency_office_autocomplete'),
+        ('search', '0041_add_parent_recipient_name'),
     ]
 
     operations = [
