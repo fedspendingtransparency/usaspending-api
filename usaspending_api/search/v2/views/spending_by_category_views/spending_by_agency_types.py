@@ -57,7 +57,6 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
 
                 agency_code = agency_info.pop("agency_code")
                 current_agency_info[agency_code] = agency_info
-
                 subtier_id = agency_info.get("subtier_agency_id")
                 toptier_agency_info_query = Agency.objects.filter(subtier_agency=subtier_id)
                 toptier_agency_info_query = toptier_agency_info_query.values("toptier_agency")
