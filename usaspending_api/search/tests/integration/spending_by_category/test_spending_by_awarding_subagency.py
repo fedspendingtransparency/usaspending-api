@@ -295,7 +295,7 @@ def test_correct_response_with_date_type(client, monkeypatch, elasticsearch_tran
 
     assert resp.json()["results"] == expected_response["results"]
 
-    assert expected_response["results"][0]["amount"] == resp.json()["results"]["amount"]
+    # assert expected_response["results"][0]["amount"] == resp.json()["results"]["amount"]
     # assert expected_response["results"]["name"] == resp.json()["results"]["name"]
     # assert expected_response["results"]["code"] == resp.json()["results"]["code"]
     # assert expected_response["results"]["id"] == resp.json()["results"]["id"]
