@@ -2103,20 +2103,23 @@ def test_spending_by_geo_program_activity_subawards(
 
 
 @pytest.mark.django_db
-def test_spending_by_geo_program_activity(client, monkeypatch, elasticsearch_award_index, awards_and_transactions):
-    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+def test_spending_by_geo_program_activity(
+    client, monkeypatch, elasticsearch_transaction_index, awards_and_transactions
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     # Program Activites filter test
     test_payload = {
         "subawards": False,
-        "scope": "recipient_location",
+        "scope": "place_of_performance",
         "geo_layer": "country",
-        "geo_layer_filters": ["USA"],
-        "filters": {"program_activities": [{"name": "program_activity_123"}]},
+        "filters": {
+            "program_activities": [{"name": "program_activity_123"}],
+        },
     }
     expected_response = [
         {
-            "aggregated_amount": 10,
+            "aggregated_amount": 5.0,
             "display_name": "United States",
             "population": None,
             "per_capita": None,
@@ -2132,7 +2135,7 @@ def test_spending_by_geo_program_activity(client, monkeypatch, elasticsearch_awa
 
     test_payload = {
         "subawards": False,
-        "scope": "recipient_location",
+        "scope": "place_of_performance",
         "geo_layer": "country",
         "geo_layer_filters": ["USA"],
         "filters": {"program_activities": [{"name": "program_activity_1234"}]},
@@ -2148,7 +2151,7 @@ def test_spending_by_geo_program_activity(client, monkeypatch, elasticsearch_awa
 
     test_payload = {
         "subawards": False,
-        "scope": "recipient_location",
+        "scope": "place_of_performance",
         "geo_layer": "country",
         "geo_layer_filters": ["USA"],
         "filters": {
@@ -2157,7 +2160,7 @@ def test_spending_by_geo_program_activity(client, monkeypatch, elasticsearch_awa
     }
     expected_response = [
         {
-            "aggregated_amount": 10,
+            "aggregated_amount": 5.0,
             "display_name": "United States",
             "population": None,
             "per_capita": None,
@@ -2173,7 +2176,7 @@ def test_spending_by_geo_program_activity(client, monkeypatch, elasticsearch_awa
 
     test_payload = {
         "subawards": False,
-        "scope": "recipient_location",
+        "scope": "place_of_performance",
         "geo_layer": "country",
         "geo_layer_filters": ["USA"],
         "filters": {

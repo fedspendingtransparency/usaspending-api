@@ -111,8 +111,8 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         original_filters = request.data.get("filters")
         tiny_shield = TinyShield(models)
         json_request = tiny_shield.block(request.data)
-        if "filters" in request.data and "program_activities" in request.data["filters"]:
-            tiny_shield.enforce_object_keys_min(request.data, program_activities_rule[0])
+        if "filters" in json_request and "program_activities" in json_request["filters"]:
+            tiny_shield.enforce_object_keys_min(json_request, program_activities_rule[0])
 
         agg_key_dict = {
             "county": "county_agg_key",
@@ -603,7 +603,6 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             return []
         response = search.handle_execute()
         results_dict = self.build_elasticsearch_result(response.aggs.to_dict())
-
         if self.geo_layer_filters:
             filtered_shape_codes = set(self.geo_layer_filters) & set(results_dict.keys())
             results = [results_dict[shape_code] for shape_code in filtered_shape_codes]

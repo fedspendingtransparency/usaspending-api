@@ -180,7 +180,7 @@ def awards_and_transactions(db):
     baker.make(
         "search.TransactionSearch",
         transaction_id=10,
-        award_id=award1.award_id,
+        award_id=1,
         federal_action_obligation=5,
         generated_pragmatic_obligation=5,
         action_date="2020-01-01",
