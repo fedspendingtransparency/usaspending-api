@@ -30,15 +30,7 @@ summary_state_view_load_sql_string = fr"""
     (
         {",".join([col for col in SUMMARY_STATE_VIEW_COLUMNS])}
     )
-    WITH matching_awards AS (
-        SELECT
-            as2.award_id,
-            as2.total_outlays
-        FROM
-            rpt.award_search as2
-        WHERE
-            as2.action_date >= '2007-10-01'
-    ) SELECT
+    SELECT
         -- TODO: Update the "duh" field to determine uniqueness by leveraging the GROUP BY fields
         REGEXP_REPLACE(
             MD5(
@@ -112,7 +104,15 @@ summary_state_view_load_sql_string = fr"""
     LEFT OUTER JOIN
         int.transaction_fabs ON (transaction_normalized.id = transaction_fabs.transaction_id)
     LEFT JOIN
-        matching_awards ON (
+        (
+            SELECT
+                as2.award_id,
+                as2.total_outlays
+            FROM
+                rpt.award_search as2
+            WHERE
+                as2.action_date >= '2007-10-01'
+        ) AS matching_awards ON (
             matching_awards.award_id = transaction_normalized.award_id
             AND COALESCE(transaction_fpds.place_of_perform_country_c, transaction_fabs.place_of_perform_country_c, 'USA') = 'USA'
             AND COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code) IS NOT NULL
