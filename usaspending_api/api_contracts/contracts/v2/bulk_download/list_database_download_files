@@ -8,7 +8,7 @@ HOST: https://api.usaspending.gov
 This route gets the file name and url for the full and subset download file.
 
 + Request (application/json)
-
+    None
 
 + Response 200 (application/json)
     + Attributes (object)
