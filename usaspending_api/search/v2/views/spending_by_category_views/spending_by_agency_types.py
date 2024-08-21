@@ -115,15 +115,21 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
             )
             row["id"] = fetch_agency_tier_id_by_agency(agency_name=row["name"], is_subtier=is_subtier)
             if is_subtier:
-                toptier_agency_info_query = Agency.objects.filter(subtier_agency=row["id"]).annotate(top_id=F("toptier__toptier_agency_id"), top_code=F("toptier__toptier_code"), top_name=F("toptier__name"))
-                toptier_agency_info_query = toptier_agency_info_query.values("toptier_agency","top_id", "top_code", "top_name")
+                toptier_agency_info_query = Agency.objects.filter(subtier_agency=row["id"])
+                toptier_agency_info_query = toptier_agency_info_query.values("toptier_agency")
 
                 for toptier_info in toptier_agency_info_query.all():
-                    row["agency_id"] = toptier_info.get("top_id")
-                    row["agency_code"] = toptier_info.get("top_code")
-                    row["agency_name"] = toptier_info.get("top_name")
-                    row["agency_slug"] = slugify(toptier_info.get("top_name"))
-                    row["subagency_slug"] = slugify(row.get(f"{self.agency_type.value}_agency_name"))
+                    top_id = toptier_info.pop("toptier_agency")
+                    toptier_query = ToptierAgency.objects.filter(toptier_agency_id=top_id).annotate(
+                        top_id=F("toptier_agency_id"), top_code=F("toptier_code"), top_name=F("name")
+                    )
+                    toptier_info = toptier_query.values("top_id", "top_code", "top_name").all()
+                    for toptier_row in toptier_info:
+                        row["agency_id"] = toptier_row.get("top_id")
+                        row["agency_code"] = toptier_row.get("top_code")
+                        row["agency_name"] = toptier_row.get("top_name")
+                        row["agency_slug"] = slugify(toptier_row.get("top_name"))
+                        row["subagency_slug"] = slugify(row.get(f"{self.agency_type.value}_agency_name"))
 
             row.pop(f"{self.agency_type.value}_agency_name")
             row.pop(f"{self.agency_type.value}_agency_abbreviation")
