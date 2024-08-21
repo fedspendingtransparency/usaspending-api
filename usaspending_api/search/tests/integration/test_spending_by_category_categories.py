@@ -815,7 +815,7 @@ def test_category_awarding_subagency_subawards(agency_test_data):
                 "id": 1003,
                 "subagency_slug": "awarding-subtier-agency-3",
                 "agency_id": 2003,
-                "agency_code": "003",
+                "agency_code": "TA3",
                 "agency_name": "Awarding Toptier Agency 3",
                 "agency_slug": "awarding-toptier-agency-3",
             }

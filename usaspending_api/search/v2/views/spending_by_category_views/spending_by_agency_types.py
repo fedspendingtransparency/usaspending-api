@@ -78,7 +78,7 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
                 "id": agency_info.get("id"),
                 "code": agency_info.get("code"),
                 "name": agency_info.get("name"),
-                "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100")
+                "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
             }
             # Only returns a non-null value if the agency has a profile page -
             # meaning it is an agency that has at least one submission.
@@ -101,9 +101,9 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
         django_filters = {f"{self.agency_type.value}_agency_name__isnull": False}
         django_values = [f"{self.agency_type.value}_agency_name", f"{self.agency_type.value}_agency_abbreviation"]
         queryset = self.common_db_query(base_queryset, django_filters, django_values).annotate(
-            name=F(f"{self.agency_type.value}_agency_name"), code=F(f"{self.agency_type.value}_agency_abbreviation"),
+            name=F(f"{self.agency_type.value}_agency_name"),
+            code=F(f"{self.agency_type.value}_agency_abbreviation"),
         )
-
 
         lower_limit = self.pagination.lower_limit
         upper_limit = self.pagination.upper_limit
@@ -113,25 +113,35 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
             is_subtier = (
                 self.agency_type == AgencyType.AWARDING_SUBTIER or self.agency_type == AgencyType.FUNDING_SUBTIER
             )
+            print(row)
             row["id"] = fetch_agency_tier_id_by_agency(agency_name=row["name"], is_subtier=is_subtier)
-            if is_subtier:
-                toptier_agency_info_query = Agency.objects.filter(subtier_agency=row["id"])
+            print(row)
+            print(row["id"])
+
+            if self.agency_type == AgencyType.AWARDING_SUBTIER or self.agency_type == AgencyType.FUNDING_SUBTIER:
+                print("entered")
+                toptier_agency_info_query = Agency.objects.filter(id=row["id"])
                 toptier_agency_info_query = toptier_agency_info_query.values("toptier_agency")
 
                 for toptier_info in toptier_agency_info_query.all():
                     top_id = toptier_info.pop("toptier_agency")
+                    print("entered 2")
                     toptier_query = ToptierAgency.objects.filter(toptier_agency_id=top_id).annotate(
                         top_id=F("toptier_agency_id"), top_code=F("toptier_code"), top_name=F("name")
                     )
                     toptier_info = toptier_query.values("top_id", "top_code", "top_name").all()
                     for toptier_row in toptier_info:
+                        print("entered 3")
                         row["agency_id"] = toptier_row.get("top_id")
                         row["agency_code"] = toptier_row.get("top_code")
                         row["agency_name"] = toptier_row.get("top_name")
+                        print(toptier_row.get("top_id"))
                         row["agency_slug"] = slugify(toptier_row.get("top_name"))
                         row["subagency_slug"] = slugify(row.get(f"{self.agency_type.value}_agency_name"))
+                        print(row)
 
             row.pop(f"{self.agency_type.value}_agency_name")
+            print(row)
             row.pop(f"{self.agency_type.value}_agency_abbreviation")
 
         return query_results
