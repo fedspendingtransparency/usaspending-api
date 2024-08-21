@@ -4,6 +4,7 @@ import logging
 from calendar import monthrange
 from collections import OrderedDict
 from datetime import datetime, timezone
+from typing import Tuple
 
 from django.conf import settings
 from django.db.models import Sum, F
@@ -31,7 +32,7 @@ from usaspending_api.common.helpers.generic_helper import (
 )
 from usaspending_api.common.helpers.orm_helpers import FiscalMonth, FiscalQuarter
 from usaspending_api.common.query_with_filters import QueryWithFilters
-from usaspending_api.common.validator.award_filter import AWARD_FILTER
+from usaspending_api.common.validator.award_filter import AWARD_FILTER_W_FILTERS
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.search.filters.elasticsearch.filter import _QueryType
@@ -62,7 +63,22 @@ class SpendingOverTimeVisualizationViewSet(APIView):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_over_time.md"
 
     @staticmethod
-    def validate_request_data(json_data: dict) -> dict:
+    def validate_request_data(json_data: dict) -> Tuple[dict, dict]:
+        program_activities_rule = [
+            {
+                "name": "program_activities",
+                "type": "array",
+                "key": "filters|program_activities",
+                "object_keys_min": 1,
+                "array_type": "object",
+                "object_keys": {
+                    "name": {"type": "text", "text_type": "search"},
+                    "code": {
+                        "type": "integer",
+                    },
+                },
+            }
+        ]
         models = [
             {"name": "subawards", "key": "subawards", "type": "boolean", "default": False},
             {
@@ -74,14 +90,18 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 "optional": False,  # allow to be optional in the future
             },
         ]
-        models.extend(copy.deepcopy(AWARD_FILTER))
+        models.extend(copy.deepcopy(AWARD_FILTER_W_FILTERS))
+        models.extend(copy.deepcopy(program_activities_rule))
         models.extend(copy.deepcopy(PAGINATION))
-        validated_data = TinyShield(models).block(json_data)
+        tiny_shield = TinyShield(models)
+        validated_data = tiny_shield.block(json_data)
+        if "filters" in validated_data and "program_activities" in validated_data["filters"]:
+            tiny_shield.enforce_object_keys_min(validated_data, program_activities_rule[0])
 
         if validated_data.get("filters", None) is None:
             raise InvalidParameterException("Missing request parameters: filters")
 
-        return validated_data
+        return validated_data, models
 
     def database_data_layer_for_subawards(self) -> tuple:
         queryset = subaward_filter(self.filters)
@@ -280,7 +300,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
     @cache_response()
     def post(self, request: Request) -> Response:
         self.original_filters = request.data.get("filters")
-        json_request = self.validate_request_data(request.data)
+        json_request, models = self.validate_request_data(request.data)
         self.group = GROUPING_LOOKUP[json_request["group"]]
         self.subawards = json_request["subawards"]
         self.filters = json_request["filters"]
@@ -320,7 +340,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 ("results", results),
                 (
                     "messages",
-                    get_generic_filters_message(self.original_filters.keys(), [elem["name"] for elem in AWARD_FILTER]),
+                    get_generic_filters_message(self.original_filters.keys(), [elem["name"] for elem in models]),
                 ),
             ]
         )
