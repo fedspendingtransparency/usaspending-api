@@ -890,16 +890,6 @@ def test_category_funding_subagency_awards(agency_test_data, monkeypatch, elasti
         "messages": [get_time_period_message()],
     }
 
-    # assert expected_response["results"][0]["amount"] == spending_by_category_logic["results"]["amount"]
-    # assert expected_response["results"]["name"] == spending_by_category_logic["results"]["name"]
-    # assert expected_response["results"]["code"] == spending_by_category_logic["results"]["code"]
-    # assert expected_response["results"]["id"] == spending_by_category_logic["results"]["id"]
-    # assert expected_response["results"]["subagency_slug"] == spending_by_category_logic["results"]["subagency_slug"]
-    # assert expected_response["results"]["agency_id"] == spending_by_category_logic["results"]["agency_id"]
-    # assert expected_response["results"]["agency_code"] == spending_by_category_logic["results"]["agency_code"]
-    # assert expected_response["results"]["agency_name"] == spending_by_category_logic["results"]["agency_name"]
-    # assert expected_response["results"]["agency_slug"] == spending_by_category_logic["results"]["agency_slug"]
-
     assert expected_response == spending_by_category_logic
 
 
