@@ -1,5 +1,5 @@
 """
-This is a map of code enumerations, extracted from the DAIMS.
+This is a map of code enumerations, extracted from the GSDM
 
 Each should be named following this pattern:
     - For a field that is unique among all models, <field>_map
@@ -47,8 +47,8 @@ change_reasons = {
     "X": "Terminate for Cause",
 }
 
-daims_maps = {
-    # D1, D2 DAIMS MAPS - These are found in awards.models unless noted
+gsdm_maps = {
+    # D1, D2 GSDM MAPS - These are found in awards.models unless noted
     # This map is an example of how to have TWO different maps for the same field, on the same object, separated by a
     # case.
     "TransactionNormalized.action_type_map": {
