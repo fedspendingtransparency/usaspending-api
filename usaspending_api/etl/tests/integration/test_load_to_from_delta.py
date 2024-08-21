@@ -837,6 +837,7 @@ def test_load_table_to_delta_for_summary_state_view(
         "transaction_fabs",
         "transaction_fpds",
         "transaction_normalized",
+        "award_search"
     ]
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
     verify_delta_table_loaded_to_delta(
