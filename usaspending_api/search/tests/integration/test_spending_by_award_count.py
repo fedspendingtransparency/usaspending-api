@@ -338,7 +338,6 @@ def test_spending_by_award_count_program_activity_subawards(
     resp = client.post(
         get_spending_by_award_count_url(), content_type="application/json", data=json.dumps(test_payload)
     )
-    print(resp.data)
     assert resp.status_code == status.HTTP_200_OK
     assert expected_response == resp.data, "Unexpected or missing content!"
 
