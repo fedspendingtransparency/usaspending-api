@@ -68,7 +68,7 @@ def test_additional_fields_response(client, monkeypatch, elasticsearch_transacti
         "messages": [get_time_period_message()],
     }
 
-    assert expected_response["results"][0]["amount"] == resp.data["results"]["amount"]
+    assert expected_response["results"][0]["amount"] == resp.data["results"][0]["amount"]
     # assert expected_response["results"]["name"] == resp.data["results"]["name"]
     # assert expected_response["results"]["code"] == resp.data["results"]["code"]
     # assert expected_response["results"]["id"] == resp.data["results"]["id"]
