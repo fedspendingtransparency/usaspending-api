@@ -17,6 +17,8 @@ class SummaryStateView(models.Model):
     face_value_loan_guarantee = models.DecimalField(max_digits=23, decimal_places=2)
     counts = models.BigIntegerField()
 
+    testing_field = models.TextField(null=True, blank=True)
+
     class Meta:
         managed = True
         db_table = "summary_state_view"

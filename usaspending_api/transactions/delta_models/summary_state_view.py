@@ -11,12 +11,13 @@ SUMMARY_STATE_VIEW_COLUMNS = {
     "original_loan_subsidy_cost": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
     "face_value_loan_guarantee": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
     "counts": {"delta": "LONG", "postgres": "BIGINT"},
+    "testing_field": {"delta": "STRING", "postgres": "TEXT"},
 }
 
 SUMMARY_STATE_VIEW_DELTA_COLUMNS = {k: v["delta"] for k, v in SUMMARY_STATE_VIEW_COLUMNS.items()}
 SUMMARY_STATE_VIEW_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in SUMMARY_STATE_VIEW_COLUMNS.items()}
 
-summary_state_view_create_sql_string = fr"""
+summary_state_view_create_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
         {", ".join([f'{key} {val}' for key, val in SUMMARY_STATE_VIEW_DELTA_COLUMNS.items()])}
     )
@@ -24,7 +25,7 @@ summary_state_view_create_sql_string = fr"""
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
 """
 
-summary_state_view_load_sql_string = fr"""
+summary_state_view_load_sql_string = rf"""
     INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
     (
         {",".join([col for col in SUMMARY_STATE_VIEW_COLUMNS])}
@@ -87,7 +88,8 @@ summary_state_view_load_sql_string = fr"""
                 0
             ) AS NUMERIC(23, 2)
         ) AS face_value_loan_guarantee,
-        COUNT(*) AS counts
+        COUNT(*) AS counts,
+        'placeholder text' AS testing_field
     FROM
         int.transaction_normalized
     LEFT OUTER JOIN
