@@ -4,11 +4,12 @@ from django.db.models import QuerySet, F
 from enum import Enum
 from typing import List
 
-from usaspending_api.references.models import Cfda, PSC, NAICS
+from usaspending_api.references.models import Cfda, PSC, NAICS, DisasterEmergencyFundCode
 from usaspending_api.search.helpers.spending_by_category_helpers import (
     fetch_cfda_id_title_by_number,
     fetch_psc_description_by_code,
     fetch_naics_description_from_code,
+    fetch_defc_title_by_code,
 )
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_category import (
     Category,
@@ -20,6 +21,7 @@ class IndustryCodeType(Enum):
     CFDA = "cfda_number"
     PSC = "product_or_service_code"
     NAICS = "naics_code"
+    DEFC = "disaster_emergency_fund_codes"
 
 
 class AbstractIndustryCodeViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta):
@@ -51,13 +53,19 @@ class AbstractIndustryCodeViewSet(AbstractSpendingByCategoryViewSet, metaclass=A
                 )
                 .values("code", "name")
             )
-        else:
+        elif self.industry_code_type == IndustryCodeType.NAICS:
             industry_info_query = (
                 NAICS.objects.filter(code__in=code_list)
                 .annotate(
                     # doesn't have ID, set to None
                     name=F("description"),
                 )
+                .values("code", "name")
+            )
+        else:
+            industry_info_query = (
+                DisasterEmergencyFundCode.objects.filter(code__in=code_list)
+                .annotate(name=F("title"))
                 .values("code", "name")
             )
         for industry_info in industry_info_query.all():
@@ -100,6 +108,9 @@ class AbstractIndustryCodeViewSet(AbstractSpendingByCategoryViewSet, metaclass=A
             elif self.industry_code_type == IndustryCodeType.NAICS:
                 row["id"] = None
                 row["name"] = fetch_naics_description_from_code(row["code"], row.get("name"))
+            elif self.industry_code_type == IndustryCodeType.DEFC:
+                row["id"] = None
+                row["name"] = fetch_defc_title_by_code(row["code"])
             row.pop(self.industry_code_type.value)
 
         return query_results
@@ -136,3 +147,14 @@ class PSCViewSet(AbstractIndustryCodeViewSet):
 
     industry_code_type = IndustryCodeType.PSC
     category = Category(name="psc", agg_key="psc_agg_key")
+
+
+class DEFCViewSet(AbstractIndustryCodeViewSet):
+    """
+    This route takes award filters and returns spending by DEFC.
+    """
+
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/defc.md"
+
+    industry_code_type = IndustryCodeType.DEFC
+    category = Category(name="defc", agg_key="defc_agg_key")

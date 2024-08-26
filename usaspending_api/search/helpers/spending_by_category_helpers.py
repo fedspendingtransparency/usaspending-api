@@ -2,7 +2,7 @@ import logging
 from typing import Tuple, Optional
 
 from usaspending_api.recipient.models import StateData
-from usaspending_api.references.models import Agency, Cfda, PSC, RefCountryCode, NAICS
+from usaspending_api.references.models import Agency, Cfda, PSC, RefCountryCode, NAICS, DisasterEmergencyFundCode
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +28,15 @@ def fetch_cfda_id_title_by_number(cfda_number: str) -> Optional[Tuple[int, str]]
         logger.warning("{} not found for cfda_number: {}".format(",".join(columns), cfda_number))
         return None, None
     return result[columns[0]], result[columns[1]]
+
+
+def fetch_defc_title_by_code(defc_code: str) -> Optional[str]:
+    columns = ["title"]
+    result = DisasterEmergencyFundCode.objects.filter(code=defc_code).values(*columns).first()
+    if not result:
+        logger.warning("{} not found for defc_code: {}".format(",".join(columns), defc_code))
+        return None
+    return result[columns[0]]
 
 
 def fetch_psc_description_by_code(psc_code: str) -> Optional[str]:
