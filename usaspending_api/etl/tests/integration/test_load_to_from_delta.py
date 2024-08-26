@@ -880,4 +880,4 @@ def test_load_table_to_delta_for_summary_state_view(
         spark, "summary_state_view", s3_unittest_data_bucket, load_command="load_query_to_delta"
     )
     # Lastly, check using verify_delta_table_loaded_from_delta function which will run the load_table_from_delta command
-    # verify_delta_table_loaded_from_delta(spark, "summary_state_view", spark_s3_bucket=s3_unittest_data_bucket)
+    verify_delta_table_loaded_from_delta(spark, "summary_state_view", spark_s3_bucket=s3_unittest_data_bucket)
