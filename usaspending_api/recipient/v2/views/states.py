@@ -57,7 +57,7 @@ def obtain_state_totals(fips, year=None, award_type_codes=None, subawards=False)
                 total=Sum("generated_pragmatic_obligation"),
                 distinct_awards=StringAggWithDefault("distinct_awards", ","),
                 total_face_value_loan_amount=Sum("face_value_loan_guarantee"),
-                outlay_total=Sum("total_outlays")
+                outlay_total=Sum("total_outlays"),
             )
             .values("distinct_awards", "pop_state_code", "total", "total_face_value_loan_amount", "outlay_total")
         )
@@ -69,20 +69,14 @@ def obtain_state_totals(fips, year=None, award_type_codes=None, subawards=False)
             "total": row["total"],
             "count": len(set(row["distinct_awards"].split(","))),
             "total_face_value_loan_amount": row["total_face_value_loan_amount"],
-            "total_outlays": row["outlay_total"]
+            "total_outlays": row["outlay_total"],
         }
         return result
     except IndexError:
         # would prefer to catch an index error gracefully if the SQL query produces 0 rows
         logger.warning("No results found for FIPS {} with filters: {}".format(fips, filters))
 
-    return {
-        "count": 0,
-        "pop_state_code": None,
-        "total": 0,
-        "total_face_value_loan_amount": 0,
-        "total_outlays":0
-    }
+    return {"count": 0, "pop_state_code": None, "total": 0, "total_face_value_loan_amount": 0, "total_outlays": 0}
 
 
 def get_all_states(year=None, award_type_codes=None, subawards=False):
@@ -97,7 +91,7 @@ def get_all_states(year=None, award_type_codes=None, subawards=False):
             .annotate(
                 total=Sum("generated_pragmatic_obligation"),
                 distinct_awards=StringAggWithDefault("distinct_awards", ","),
-                outlay_total=Sum("total_outlays")
+                outlay_total=Sum("total_outlays"),
             )
             .values("pop_state_code", "total", "distinct_awards", "outlay_total")
         )
@@ -107,7 +101,7 @@ def get_all_states(year=None, award_type_codes=None, subawards=False):
                 "pop_state_code": row["pop_state_code"],
                 "total": row["total"],
                 "count": len(set(row["distinct_awards"].split(","))),
-                "total_outlays": row["outlay_total"]
+                "total_outlays": row["outlay_total"],
             }
             for row in list(queryset)
         ]
@@ -212,7 +206,14 @@ class StateAwardBreakdownViewSet(APIView):
         results = []
         for award_type, award_type_codes in _all_award_types_mappings.items():
             result = obtain_state_totals(fips, year=year, award_type_codes=award_type_codes)
-            results.append({"type": award_type, "amount": result["total"], "count": result["count"]})
+            results.append(
+                {
+                    "type": award_type,
+                    "amount": result["total"],
+                    "count": result["count"],
+                    "total_outlays": result["total_outlays"],
+                }
+            )
         return Response(results)
 
 
