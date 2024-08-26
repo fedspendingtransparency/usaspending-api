@@ -3,7 +3,7 @@
 We load data from two primary sources:
 
 1. The current production [USAspending website](https://www.usaspending.gov) (aka, _legacy USAspending_). This provides us with historic data about contract and financial assistance spending.  
-2. The [DATA Broker](https://broker.usaspending.gov), which provides us with agency DATA Act submissions.
+2. The [Data Broker](https://broker.usaspending.gov), which provides us with agency DATA Act submissions.
 
 Generally, data will be imported as-is. In some cases, however, we reformat the data to ensure that it's consistent and usable.
 
@@ -13,7 +13,7 @@ Making sure our location-related fields are as robust and accurate as possible p
 
 ### State, County, and City
 
-**Data Source:** USAspending history and DATA Broker  
+**Data Source:** USAspending history and Data Broker  
 **Code:** `references/models.py`
 
 We attempt to match incoming records that have partial location data to already-stored unique combinations of _state code_, _state name_, _city code_, _county code_, and _county name_.
@@ -29,7 +29,7 @@ If a legacy USAspending record doesn't have a country code, we attempt to find o
 
 ### Canonicalizing location text fields
 
-**Data Source:** USAspending history and DATA Broker  
+**Data Source:** USAspending history and Data Broker  
 **Code:** `references/helpers.py`
 
 Text fields in location records are stored in a standard format to avoid
@@ -56,7 +56,7 @@ In these cases, we extract the code to use in our data load. We then use that co
 
 ## Awarding and Funding Agencies
 
-**Data Source:** DATA Broker  
+**Data Source:** Data Broker  
 **Code:** `etl/management/commands/load_submission.py`
 
 In most cases, records about award transactions contain the CGAC code of the awarding and funding agencies (_i.e._, the code that identifies the high-level, top tier agency, sometimes called _department_). These records also contain the _subtier code_ of the awarding and funding agencies.
@@ -72,7 +72,7 @@ If a legacy USAspending contract record has a string description of the award ty
 
 ## Awards
 
-**Data Source:** USAspending history and DATA Broker  
+**Data Source:** USAspending history and Data Broker  
 **Code:** `awards/models.py`
 
 Currently, award-level data coming from both legacy USAspending records and data broker submissions represents transactional information. In other words, we receive information about individual spending events against an award, but no records that represent the award itself.
@@ -81,19 +81,19 @@ To make it easier for users to see the lifespan of an award, we create award rec
 
 ## Federal Accounts
 
-**Data Source:** DATA Broker  
+**Data Source:** Data Broker  
 **Code:** `accounts/models.py`
 
-Agencies submit financial information to the DATA Broker by Treasury Account Symbol (TAS). In addition to displaying financial data for each individual TAS, USAspending groups financial data by federal account. Each federal account contains multiple individual TAS.
+Agencies submit financial information to Data Broker by Treasury Account Symbol (TAS). In addition to displaying financial data for each individual TAS, USAspending groups financial data by federal account. Each federal account contains multiple individual TAS.
 
 To create federal account records, we use a unique combination of TAS agency identifier (AID) and main account code. The title that we assign to each federal account is the title of its child TAS with the most recent ending period of availability.
 
 ## Annual and Quarterly Balances
 
-**Data Source:** DATA Broker  
+**Data Source:** Data Broker  
 **Code:** `accounts/models.py` and `financial_activities/models.py`
 
-Agencies submit financial data to the data broker on a quarterly basis. These numbers (total outlays, for example) are cumulative for the fiscal year of the submission. In other words, quarter three numbers represent all financial activity for quarters one, two, and three.
+Agencies submit financial data to data broker on a quarterly basis. These numbers (total outlays, for example) are cumulative for the fiscal year of the submission. In other words, quarter three numbers represent all financial activity for quarters one, two, and three.
 
 All annual financial data displayed on USAspending represents the latest set of numbers reported for the fiscal year. Tables and charts that show quarterly data represent activity during that period only. We derive quarterly numbers during the submission load process by taking the submission's numbers and subtracting the totals from the most recent previous submission in the same fiscal year.
 

@@ -21,7 +21,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='FinancialAccountsByProgramActivityObjectClass',
             fields=[
-                ('data_source', models.TextField(choices=[('USA', 'USAspending'), ('DBR', 'DATA Act Broker')], help_text='The source of this entry, either Data Broker (DBR) or USASpending (USA)', null=True)),
+                ('data_source', models.TextField(choices=[('USA', 'USAspending'), ('DBR', 'Data Broker')], help_text='The source of this entry, either Data Broker (DBR) or USASpending (USA)', null=True)),
                 ('financial_accounts_by_program_activity_object_class_id', models.AutoField(primary_key=True, serialize=False)),
                 ('ussgl480100_undelivered_orders_obligations_unpaid_fyb', models.DecimalField(decimal_places=2, max_digits=23)),
                 ('ussgl480100_undelivered_orders_obligations_unpaid_cpe', models.DecimalField(decimal_places=2, max_digits=23)),
@@ -78,7 +78,7 @@ class Migration(migrations.Migration):
             name='TasProgramActivityObjectClassQuarterly',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('data_source', models.TextField(choices=[('USA', 'USAspending'), ('DBR', 'DATA Act Broker')], help_text='The source of this entry, either Data Broker (DBR) or USASpending (USA)', null=True)),
+                ('data_source', models.TextField(choices=[('USA', 'USAspending'), ('DBR', 'Data Broker')], help_text='The source of this entry, either Data Broker (DBR) or USASpending (USA)', null=True)),
                 ('ussgl480100_undelivered_orders_obligations_unpaid_fyb', models.DecimalField(decimal_places=2, max_digits=23)),
                 ('ussgl480100_undelivered_orders_obligations_unpaid_cpe', models.DecimalField(decimal_places=2, max_digits=23)),
                 ('ussgl483100_undelivered_orders_oblig_transferred_unpaid_cpe', models.DecimalField(decimal_places=2, max_digits=23)),

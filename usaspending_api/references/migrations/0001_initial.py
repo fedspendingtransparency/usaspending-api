@@ -33,7 +33,7 @@ class Migration(migrations.Migration):
             name='Cfda',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('data_source', models.TextField(choices=[('USA', 'USAspending'), ('DBR', 'DATA Act Broker')], help_text='The source of this entry, either Data Broker (DBR) or USASpending (USA)', null=True)),
+                ('data_source', models.TextField(choices=[('USA', 'USAspending'), ('DBR', 'Data Broker')], help_text='The source of this entry, either Data Broker (DBR) or USASpending (USA)', null=True)),
                 ('program_number', models.TextField(db_index=True, unique=True)),
                 ('program_title', models.TextField(blank=True, null=True)),
                 ('popular_name', models.TextField(blank=True, null=True)),
@@ -161,7 +161,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='LegalEntity',
             fields=[
-                ('data_source', models.TextField(choices=[('USA', 'USAspending'), ('DBR', 'DATA Act Broker')], help_text='The source of this entry, either Data Broker (DBR) or USASpending (USA)', null=True)),
+                ('data_source', models.TextField(choices=[('USA', 'USAspending'), ('DBR', 'Data Broker')], help_text='The source of this entry, either Data Broker (DBR) or USASpending (USA)', null=True)),
                 ('legal_entity_id', models.BigAutoField(db_index=True, primary_key=True, serialize=False)),
                 ('recipient_name', models.TextField(blank=True, null=True, verbose_name='Recipient Name')),
                 ('parent_recipient_unique_id', models.TextField(blank=True, db_index=True, null=True, verbose_name='Parent DUNS Number')),
@@ -286,7 +286,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Location',
             fields=[
-                ('data_source', models.TextField(choices=[('USA', 'USAspending'), ('DBR', 'DATA Act Broker')], help_text='The source of this entry, either Data Broker (DBR) or USASpending (USA)', null=True)),
+                ('data_source', models.TextField(choices=[('USA', 'USAspending'), ('DBR', 'Data Broker')], help_text='The source of this entry, either Data Broker (DBR) or USASpending (USA)', null=True)),
                 ('location_id', models.BigAutoField(primary_key=True, serialize=False)),
                 ('location_country_code', models.TextField(blank=True, null=True, verbose_name='Location Country Code')),
                 ('country_name', models.TextField(blank=True, null=True, verbose_name='Country Name')),

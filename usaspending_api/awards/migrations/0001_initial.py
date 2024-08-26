@@ -22,7 +22,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Award',
             fields=[
-                ('data_source', models.TextField(choices=[('USA', 'USAspending'), ('DBR', 'DATA Act Broker')], help_text='The source of this entry, either Data Broker (DBR) or USASpending (USA)', null=True)),
+                ('data_source', models.TextField(choices=[('USA', 'USAspending'), ('DBR', 'Data Broker')], help_text='The source of this entry, either Data Broker (DBR) or USASpending (USA)', null=True)),
                 ('id', models.BigAutoField(primary_key=True, serialize=False)),
                 ('type', models.TextField(db_index=True, help_text='The mechanism used to distribute funding. The federal government can distribute funding in several forms. These award types include contracts, grants, loans, and direct payments.', null=True, verbose_name='Award Type')),
                 ('type_description', models.TextField(blank=True, help_text='The plain text description of the type of the award', null=True, verbose_name='Award Type Description')),
@@ -221,7 +221,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='FinancialAccountsByAwards',
             fields=[
-                ('data_source', models.TextField(choices=[('USA', 'USAspending'), ('DBR', 'DATA Act Broker')], help_text='The source of this entry, either Data Broker (DBR) or USASpending (USA)', null=True)),
+                ('data_source', models.TextField(choices=[('USA', 'USAspending'), ('DBR', 'Data Broker')], help_text='The source of this entry, either Data Broker (DBR) or USASpending (USA)', null=True)),
                 ('financial_accounts_by_awards_id', models.AutoField(primary_key=True, serialize=False)),
                 ('piid', models.TextField(blank=True, null=True)),
                 ('parent_award_id', models.TextField(blank=True, null=True)),

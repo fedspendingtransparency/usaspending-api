@@ -15,7 +15,7 @@ logger = logging.getLogger("script")
 
 class Command(BaseCommand):
     """
-    This command will load a single submission from the DATA Act broker. If we've already loaded the specified broker
+    This command will load a single submission from Data Broker. If we've already loaded the specified broker
     submisison, this command will remove the existing records before loading them again.
     """
 
@@ -23,7 +23,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--file", dest="fpds_csv", nargs="+", type=str, help="the data broker submission id to load"
+            "--file", dest="fpds_csv", nargs="+", type=str, help="data broker submission id to load"
         )
 
         parser.add_argument(
