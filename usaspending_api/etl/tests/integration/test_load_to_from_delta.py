@@ -186,7 +186,18 @@ def verify_delta_table_loaded_to_delta(
     create and load the given table and assert it was created and loaded as expected
     """
 
-    load_delta_table_from_postgres(delta_table_name, s3_bucket, alt_db, alt_name, load_command)
+    if delta_table_name == "summary_state_view":
+        cmd_args = [f"--destination-table={delta_table_name}"]
+        if alt_db:
+            cmd_args += [f"--alt-db={alt_db}"]
+        if alt_name:
+            cmd_args += [f"--alt-name={alt_name}"]
+
+        # Create the table and load the query to delta
+        call_command("create_delta_table", f"--spark-s3-bucket={s3_bucket}", *cmd_args)
+        call_command(load_command, *cmd_args)
+    else:
+        load_delta_table_from_postgres(delta_table_name, s3_bucket, alt_db, alt_name, load_command)
 
     if alt_name:
         expected_table_name = alt_name
@@ -198,7 +209,12 @@ def verify_delta_table_loaded_to_delta(
         # get the postgres data to compare
         model = TABLE_SPEC[delta_table_name]["model"]
         is_from_broker = TABLE_SPEC[delta_table_name]["is_from_broker"]
-        if model:
+        if delta_table_name == "summary_state_view":
+            dummy_query = f"SELECT * from {expected_table_name}"
+            if partition_col is not None:
+                dummy_query = f"{dummy_query} ORDER BY {partition_col}"
+            dummy_data = [row.asDict() for row in spark.sql(dummy_query).collect()]
+        elif model:
             dummy_query = model.objects
             if partition_col is not None:
                 dummy_query = dummy_query.order_by(partition_col)
@@ -831,10 +847,37 @@ def test_load_table_to_delta_for_sam_recipient(spark, s3_unittest_data_bucket, p
 )
 @mark.django_db(transaction=True)
 def test_load_table_to_delta_for_summary_state_view(
-    spark, s3_unittest_data_bucket, populate_usas_data, hive_unittest_metastore_db
+    spark, s3_unittest_data_bucket, populate_usas_data_and_recipients_from_broker, hive_unittest_metastore_db
 ):
+
+    # We need the award_search table to create the summary_state_view in delta
+    # And in order to create the award_search table, we need the following
+    load_delta_table_from_postgres("published_fabs", s3_unittest_data_bucket)
+    load_delta_table_from_postgres("detached_award_procurement", s3_unittest_data_bucket)
+
+    tables_to_load = [
+        "awards",
+        "financial_accounts_by_awards",
+        "recipient_lookup",
+        "recipient_profile",
+        "sam_recipient",
+        "transaction_current_cd_lookup",
+        "transaction_fabs",
+        "transaction_fpds",
+        "transaction_normalized",
+        "zips",
+    ]
+    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
+    verify_delta_table_loaded_to_delta(
+        spark, "award_search", s3_unittest_data_bucket, load_command="load_query_to_delta"
+    )
+
+    # We now want to load the award_search table that we created above along with other tables needed to create award_search
+    # Then create the summay_state_view table and populate it using the load_query_to_delta command
     tables_to_load = ["transaction_fabs", "transaction_fpds", "transaction_normalized", "award_search"]
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
     verify_delta_table_loaded_to_delta(
         spark, "summary_state_view", s3_unittest_data_bucket, load_command="load_query_to_delta"
     )
+    # Lastly, check using verify_delta_table_loaded_from_delta function which will run the load_table_from_delta command
+    # verify_delta_table_loaded_from_delta(spark, "summary_state_view", spark_s3_bucket=s3_unittest_data_bucket)
