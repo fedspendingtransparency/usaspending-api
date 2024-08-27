@@ -19,16 +19,16 @@ OUTSIDE_OF_LATEST = datetime.datetime(TODAY.year - 2, TODAY.month, TODAY.day)
 CURRENT_FISCAL_YEAR = generate_fiscal_year(TODAY)
 
 EXPECTED_STATE = {
-    "name": "Test State",  # done
-    "code": "TS",  # done
-    "fips": "01",  # done
-    "type": "state",  # done
+    "name": "Test State",
+    "code": "TS",
+    "fips": "01",
+    "type": "state",
     "population": 100000,
     "pop_year": CURRENT_FISCAL_YEAR,
     "pop_source": "Census 2010 Pop",
-    "median_household_income": 50000,  # done
+    "median_household_income": 50000,
     "mhi_year": CURRENT_FISCAL_YEAR - 2,
-    "mhi_source": "Census 2010 MHI",  # done
+    "mhi_source": "Census 2010 MHI",
     "total_prime_amount": 100000,  # refers to generated pragmatic obligations
     "total_prime_awards": 1,  # refers to the count in summary_state_view
     "total_face_value_loan_amount": 0,  # refers to face value loan guarantee
@@ -262,6 +262,23 @@ def state_view_data(db, monkeypatch):
     )
 
     baker.make(
+        "search.SummaryStateView",
+        duh="c9f0f895-f8b7-4c9e-9366-d5b832fd3531",
+        action_date=datetime.datetime(2020, 4, 1),
+        fiscal_year=CURRENT_FISCAL_YEAR - 2,
+        type="B",
+        distinct_awards="2",
+        pop_country_code="USA",
+        pop_state_code="AB",
+        generated_pragmatic_obligation=15,
+        federal_action_obligation=0,
+        original_loan_subsidy_cost=0,
+        face_value_loan_guarantee=0,
+        counts=1,
+        total_outlays=0,
+    )
+
+    baker.make(
         "search.TransactionSearch",
         transaction_id=5,
         award_id=award_old.award_id,
@@ -295,6 +312,23 @@ def state_view_loan_data(db, monkeypatch):
     award_old = baker.make("search.AwardSearch", award_id=1, type="07")
     award_old2 = baker.make("search.AwardSearch", award_id=2, type="08")
     award_cur = baker.make("search.AwardSearch", award_id=3, type="07")
+
+    baker.make(
+        "search.SummaryStateView",
+        duh="d3d94468-1d0f-46d9-bf13-5a5b7f51bc16",
+        action_date=datetime.datetime(2020, 4, 1),
+        fiscal_year=CURRENT_FISCAL_YEAR - 2,
+        type="07",
+        distinct_awards="1,2",
+        pop_country_code="USA",
+        pop_state_code="AB",
+        generated_pragmatic_obligation=25,
+        federal_action_obligation=0,
+        original_loan_subsidy_cost=0,
+        face_value_loan_guarantee=1511,
+        counts=1,
+        total_outlays=0,
+    )
 
     baker.make(
         "search.TransactionSearch",

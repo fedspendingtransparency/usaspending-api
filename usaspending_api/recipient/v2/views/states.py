@@ -47,11 +47,15 @@ def validate_fips(fips):
 
 def obtain_state_totals(fips, year=None, award_type_codes=None, subawards=False):
 
-    fiscal_year = year if year != "latest" else generate_fiscal_year(datetime.now())
-    filters = {
-        "pop_state_code": VALID_FIPS[fips]["code"],
-        "fiscal_year": fiscal_year,
-    }
+    # Determine the fiscal year filter based on the provided year
+    if year == "latest":
+        filters = {"fiscal_year": generate_fiscal_year(datetime.now())}
+    elif year == "all":
+        filters = {}  # No fiscal year filter; this will include all years
+    else:
+        filters = {"fiscal_year": year}
+
+    filters["pop_state_code"] = VALID_FIPS[fips]["code"]
 
     if award_type_codes:
         filters["type__in"] = award_type_codes
