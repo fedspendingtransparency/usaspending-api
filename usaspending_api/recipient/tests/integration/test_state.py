@@ -145,6 +145,23 @@ def state_data(db):
     )
 
     baker.make(
+        "search.SummaryStateView",
+        duh="1679091c-5a88-4c2e-a3d7-7395e4d1f9d7",
+        action_date=datetime.datetime(2020, 4, 1),
+        fiscal_year=CURRENT_FISCAL_YEAR - 2,
+        type="A",
+        distinct_awards="2",
+        pop_country_code="USA",
+        pop_state_code="TS",
+        generated_pragmatic_obligation=100000,
+        federal_action_obligation=0,
+        original_loan_subsidy_cost=0,
+        face_value_loan_guarantee=0,
+        counts=1,
+        total_outlays=0,
+    )
+
+    baker.make(
         "search.TransactionSearch",
         transaction_id=1,
         award=award_old,
@@ -265,7 +282,7 @@ def state_view_data(db, monkeypatch):
         "search.SummaryStateView",
         duh="c9f0f895-f8b7-4c9e-9366-d5b832fd3531",
         action_date=datetime.datetime(2020, 4, 1),
-        fiscal_year=CURRENT_FISCAL_YEAR - 2,
+        fiscal_year=CURRENT_FISCAL_YEAR,
         type="B",
         distinct_awards="2",
         pop_country_code="USA",
@@ -407,35 +424,35 @@ def test_state_metadata_success(client, state_data):
 @pytest.mark.django_db
 def test_state_years_success(client, state_data):
     # test future year
-    # expected_response = EXPECTED_STATE.copy()
-    # expected_response.update(
-    #     {
-    #         "pop_year": CURRENT_FISCAL_YEAR,
-    #         "mhi_year": CURRENT_FISCAL_YEAR - 2,
-    #         "total_prime_amount": 0,
-    #         "total_prime_awards": 0,
-    #         "award_amount_per_capita": 0,
-    #     }
-    # )
-    # resp = client.get(state_metadata_endpoint("01", "3000"))
-    # assert resp.status_code == status.HTTP_200_OK
-    # assert resp.data == expected_response
+    expected_response = EXPECTED_STATE.copy()
+    expected_response.update(
+        {
+            "pop_year": CURRENT_FISCAL_YEAR,
+            "mhi_year": CURRENT_FISCAL_YEAR - 2,
+            "total_prime_amount": 0,
+            "total_prime_awards": 0,
+            "award_amount_per_capita": 0,
+        }
+    )
+    resp = client.get(state_metadata_endpoint("01", "3000"))
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.data == expected_response
 
     # # test old year
-    # expected_response = EXPECTED_STATE.copy()
-    # expected_response.update(
-    #     {
-    #         "pop_year": CURRENT_FISCAL_YEAR - 2,
-    #         "mhi_year": CURRENT_FISCAL_YEAR - 2,
-    #         "population": 50000,
-    #         "total_prime_amount": 0,
-    #         "total_prime_awards": 0,
-    #         "award_amount_per_capita": 0,
-    #     }
-    # )
-    # resp = client.get(state_metadata_endpoint("01", "2000"))
-    # assert resp.status_code == status.HTTP_200_OK
-    # assert resp.data == expected_response
+    expected_response = EXPECTED_STATE.copy()
+    expected_response.update(
+        {
+            "pop_year": CURRENT_FISCAL_YEAR - 2,
+            "mhi_year": CURRENT_FISCAL_YEAR - 2,
+            "population": 50000,
+            "total_prime_amount": 0,
+            "total_prime_awards": 0,
+            "award_amount_per_capita": 0,
+        }
+    )
+    resp = client.get(state_metadata_endpoint("01", "2000"))
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.data == expected_response
 
     # test older year
     expected_response = EXPECTED_STATE.copy()
@@ -452,14 +469,14 @@ def test_state_years_success(client, state_data):
     assert resp.data == expected_response
 
     # # test latest year
-    # expected_response = EXPECTED_STATE.copy()
-    # expected_response.update({"pop_year": CURRENT_FISCAL_YEAR, "mhi_year": CURRENT_FISCAL_YEAR - 2})
-    # resp = client.get(state_metadata_endpoint("01", "latest"))
-    # assert resp.status_code == status.HTTP_200_OK
-    # assert resp.data == expected_response
+    expected_response = EXPECTED_STATE.copy()
+    expected_response.update({"pop_year": CURRENT_FISCAL_YEAR, "mhi_year": CURRENT_FISCAL_YEAR - 2})
+    resp = client.get(state_metadata_endpoint("01", "latest"))
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.data == expected_response
 
 
-@pytest.mark.django_db()
+# @pytest.mark.django_db()
 def test_state_current_all_years_success(client, state_data):
     # test all years
     expected_response = EXPECTED_STATE.copy()
