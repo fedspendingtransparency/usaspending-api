@@ -30,11 +30,11 @@ def fetch_cfda_id_title_by_number(cfda_number: str) -> Optional[Tuple[int, str]]
     return result[columns[0]], result[columns[1]]
 
 
-def fetch_defc_title_by_code(defc_code: str) -> Optional[str]:
+def fetch_defc_title_by_code(def_code: str) -> Optional[str]:
     columns = ["title"]
-    result = DisasterEmergencyFundCode.objects.filter(code=defc_code).values(*columns).first()
+    result = DisasterEmergencyFundCode.objects.filter(code=def_code).values(*columns).first()
     if not result:
-        logger.warning("{} not found for defc_code: {}".format(",".join(columns), defc_code))
+        logger.warning("{} not found for defc_code: {}".format(",".join(columns), def_code))
         return None
     return result[columns[0]]
 
