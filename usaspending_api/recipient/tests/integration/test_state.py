@@ -29,9 +29,9 @@ EXPECTED_STATE = {
     "median_household_income": 50000,
     "mhi_year": CURRENT_FISCAL_YEAR - 2,
     "mhi_source": "Census 2010 MHI",
-    "total_prime_amount": 100000,  # refers to generated pragmatic obligations
-    "total_prime_awards": 1,  # refers to the count in summary_state_view
-    "total_face_value_loan_amount": 0,  # refers to face value loan guarantee
+    "total_prime_amount": 100000,
+    "total_prime_awards": 1,
+    "total_face_value_loan_amount": 0,
     "total_face_value_loan_prime_awards": 0,
     "award_amount_per_capita": 1,
 }
