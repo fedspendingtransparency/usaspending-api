@@ -9,13 +9,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from usaspending_api.common.helpers.orm_helpers import StringAggWithDefault
-from usaspending_api.awards.v2.filters.search import matview_search_filter
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.fiscal_year_helpers import generate_fiscal_year
 from usaspending_api.recipient.models import StateData
-from usaspending_api.recipient.v2.helpers import reshape_filters, validate_year
+from usaspending_api.recipient.v2.helpers import validate_year
 from usaspending_api.search.models import SummaryStateView
 
 logger = logging.getLogger(__name__)
@@ -47,11 +46,23 @@ def validate_fips(fips):
 
 
 def obtain_state_totals(fips, year=None, award_type_codes=None, subawards=False):
-    filters = reshape_filters(state_code=VALID_FIPS[fips]["code"], year=year, award_type_codes=award_type_codes)
+
+    # Determine the fiscal year filter based on the provided year
+    if year == "latest":
+        filters = {"fiscal_year": generate_fiscal_year(datetime.now())}
+    elif year == "all":
+        filters = {}  # No fiscal year filter; this will include all years
+    else:
+        filters = {"fiscal_year": year}
+
+    filters["pop_state_code"] = VALID_FIPS[fips]["code"]
+
+    if award_type_codes:
+        filters["type__in"] = award_type_codes
 
     if not subawards:
         queryset = (
-            matview_search_filter(filters, SummaryStateView)
+            SummaryStateView.objects.filter(**filters)
             .values("pop_state_code")
             .annotate(
                 total=Sum("generated_pragmatic_obligation"),
@@ -61,6 +72,8 @@ def obtain_state_totals(fips, year=None, award_type_codes=None, subawards=False)
             )
             .values("distinct_awards", "pop_state_code", "total", "total_face_value_loan_amount", "outlay_total")
         )
+        # if award_type_codes is not None and type(award_type_codes) == list:
+        #     queryset = queryset.filter(type__in = award_type_codes)
 
     try:
         row = list(queryset)[0]
@@ -86,13 +99,16 @@ def obtain_state_totals(fips, year=None, award_type_codes=None, subawards=False)
 
 
 def get_all_states(year=None, award_type_codes=None, subawards=False):
-    filters = reshape_filters(year=year, award_type_codes=award_type_codes)
+    fiscal_year = year if year != "latest" else generate_fiscal_year(datetime.now())
+    filters = {"fiscal_year": fiscal_year, "pop_country_code": "USA", "pop_state_code__isnull": False}
+
+    if award_type_codes:
+        filters["type__in"] = award_type_codes
 
     if not subawards:
         # calculate award total filtered by state
         queryset = (
-            matview_search_filter(filters, SummaryStateView)
-            .filter(pop_state_code__isnull=False, pop_country_code="USA")
+            SummaryStateView.objects.filter(**filters)
             .values("pop_state_code")
             .annotate(
                 total=Sum("generated_pragmatic_obligation"),

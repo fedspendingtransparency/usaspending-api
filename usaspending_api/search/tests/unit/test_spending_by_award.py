@@ -309,7 +309,12 @@ def test_populate_response():
         "page_metadata": {"page": 1, "hasNext": True},
         "messages": [get_time_period_message()],
     }
-    assert view.populate_response(results=["item 1", "item 2"], has_next=True) == expected_dictionary
+    assert (
+        view.populate_response(results=["item 1", "item 2"], has_next=True, models=[{"name": "award_type_codes"}])
+        == expected_dictionary
+    )
 
     expected_dictionary["results"] = []
-    assert view.populate_response(results=[], has_next=True) == expected_dictionary
+    assert (
+        view.populate_response(results=[], has_next=True, models=[{"name": "award_type_codes"}]) == expected_dictionary
+    )

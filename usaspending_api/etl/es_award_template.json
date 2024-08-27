@@ -659,6 +659,14 @@
             "type": "keyword"
           }
         }
+      },
+      "parent_recipient_name": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
       }
     }
   }
