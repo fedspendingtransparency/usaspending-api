@@ -90,7 +90,8 @@ This endpoint should return a an aggregate list of DEFC's sorted by the total am
 + `id` (required, number)
     The id is the database key.
 + `name` (required, string, nullable)
-+ `defc` (required, string, nullable)
++ `code` (required, string, nullable)
+    `code` is a user-displayable code (such as a program activity or NAICS code, but **not** a database ID). When no such code is relevant, return a `null`.
 + `amount` (required, number)
 
 ## PageMetadataObject (object)

@@ -34,7 +34,7 @@ def fetch_defc_title_by_code(def_code: str) -> Optional[str]:
     columns = ["title"]
     result = DisasterEmergencyFundCode.objects.filter(code=def_code).values(*columns).first()
     if not result:
-        logger.warning("{} not found for defc_code: {}".format(",".join(columns), def_code))
+        logger.warning("{} not found for def_code: {}".format(",".join(columns), def_code))
         return None
     return result[columns[0]]
 
