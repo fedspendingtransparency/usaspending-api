@@ -95,7 +95,7 @@ This endpoint returns a list of the top results of Funding Subagencies sorted by
 + `amount` (required, number)
 + `subagency_slug` (optional, string)
 + `agency_id` (optional,number)
-+ `agency_code`(optional, string)
++ `agency_abbreviation`(optional, string)
 + `agency_name`(optional, string)
 + `agency_slug`(optional, string)
 

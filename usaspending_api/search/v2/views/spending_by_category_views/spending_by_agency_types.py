@@ -64,9 +64,9 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
                 for toptier_info in toptier_agency_info_query.all():
                     top_id = toptier_info.pop("toptier_agency")
                     toptier_query = ToptierAgency.objects.filter(toptier_agency_id=top_id).annotate(
-                        top_id=F("toptier_agency_id"), top_code=F("toptier_code"), top_name=F("name")
+                        top_id=F("toptier_agency_id"), top_abbreviation=F("abbreviation"), top_name=F("name")
                     )
-                    toptier_info = toptier_query.values("top_id", "top_code", "top_name").all()
+                    toptier_info = toptier_query.values("top_id", "top_abbreviation", "top_name").all()
                     for toptier_row in toptier_info:
                         current_agency_info[agency_code].update(toptier_row)
 
@@ -89,7 +89,7 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
             if self.agency_type == AgencyType.AWARDING_SUBTIER or self.agency_type == AgencyType.FUNDING_SUBTIER:
                 result["agency_name"] = agency_info.get("top_name")
                 result["agency_id"] = agency_info.get("top_id")
-                result["agency_code"] = agency_info.get("top_code")
+                result["agency_abbreviation"] = agency_info.get("top_abbreviation")
                 result["agency_slug"] = slugify(agency_info.get("top_name"))
                 result["subagency_slug"] = slugify(agency_info.get("name"))
 
@@ -125,13 +125,13 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
                     top_id = toptier_info.pop("toptier_agency")
 
                     toptier_query = ToptierAgency.objects.filter(toptier_agency_id=top_id).annotate(
-                        top_id=F("toptier_agency_id"), top_code=F("toptier_code"), top_name=F("name")
+                        top_id=F("toptier_agency_id"), top_abbreviation=F("abbreviation"), top_name=F("name")
                     )
                     toptier_info = toptier_query.values("top_id", "top_code", "top_name").all()
                     for toptier_row in toptier_info:
 
                         row["agency_id"] = toptier_row.get("top_id")
-                        row["agency_code"] = toptier_row.get("top_code")
+                        row["agency_abbreviation"] = toptier_row.get("top_abbreviation")
                         row["agency_name"] = toptier_row.get("top_name")
 
                         row["agency_slug"] = slugify(toptier_row.get("top_name"))
