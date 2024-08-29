@@ -25,7 +25,9 @@ summary_state_view_create_sql_string = fr"""
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
 """
 
-summary_state_view_load_sql_string = fr"""
+summary_state_view_load_sql_string = [
+    fr"""
+    -- Step 1: Populate the summary_state_view table with initial values and set total_outlays to 0
     INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
     (
         {",".join([col for col in SUMMARY_STATE_VIEW_COLUMNS])}
@@ -89,36 +91,17 @@ summary_state_view_load_sql_string = fr"""
             ) AS NUMERIC(23, 2)
         ) AS face_value_loan_guarantee,
         COUNT(*) AS counts,
-        CAST(
-            COALESCE(
-                SUM(matching_awards.total_outlays),
-                0
-            ) AS NUMERIC(23, 2)
-        ) AS total_outlays
+        NULL AS total_outlays  -- Default value for new column
     FROM
         int.transaction_normalized
-    JOIN
-        rpt.award_search as2 ON (transaction_normalized.award_id = as2.award_id)
     LEFT OUTER JOIN
         int.transaction_fpds ON (transaction_normalized.id = transaction_fpds.transaction_id)
     LEFT OUTER JOIN
         int.transaction_fabs ON (transaction_normalized.id = transaction_fabs.transaction_id)
-    LEFT JOIN
-        (
-            SELECT
-                as2.award_id,
-                as2.total_outlays
-            FROM
-                rpt.award_search as2
-            WHERE
-                as2.action_date >= '2007-10-01'
-        ) AS matching_awards ON (
-            matching_awards.award_id = transaction_normalized.award_id
-            AND COALESCE(transaction_fpds.place_of_perform_country_c, transaction_fabs.place_of_perform_country_c, 'USA') = 'USA'
-            AND COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code) IS NOT NULL
-        )
     WHERE
         transaction_normalized.action_date >= '2007-10-01'
+        AND COALESCE(transaction_fpds.place_of_perform_country_c, transaction_fabs.place_of_perform_country_c, 'USA') = 'USA'
+        AND COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code) IS NOT NULL
     GROUP BY
         transaction_normalized.action_date,
         transaction_normalized.fiscal_year,
@@ -132,4 +115,50 @@ summary_state_view_load_sql_string = fr"""
             transaction_fpds.place_of_performance_state,
             transaction_fabs.place_of_perfor_state_code
         )
-"""
+    """,
+    # -----
+    # Unnest the distinct awards from summary_state_view table
+    # -----
+    fr"""
+    CREATE OR REPLACE TEMPORARY VIEW split_awards AS (
+        SELECT
+            ssv.duh,
+            explode(split(ssv.distinct_awards, ',')) AS award_id,
+            ssv.pop_country_code,
+            ssv.pop_state_code
+        FROM
+           {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} ssv
+    );
+    """,
+    # -----
+    # Using the award_id's from split_award's map them to award_search table
+    # and get matching awards
+    # -----
+    fr"""
+    CREATE OR REPLACE TEMPORARY VIEW matching_awards AS (
+        SELECT
+            sa.duh,
+            COALESCE(SUM(as2.total_outlays), NULL) AS calculated_total_outlays
+        FROM
+            split_awards sa
+        JOIN
+            rpt.award_search as2 ON CAST(sa.award_id AS BIGINT) = as2.award_id
+        WHERE
+            as2.action_date >= '2007-10-01'
+            AND as2.pop_country_code = sa.pop_country_code
+            AND as2.pop_state_code = sa.pop_state_code
+        GROUP BY
+            sa.duh
+    );
+    """,
+    # -----
+    # Update the summary_state_view.total_outlays with calculated values
+    # -----
+    fr"""
+    MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} ssv
+    USING matching_awards ma
+    ON ssv.duh = ma.duh
+    WHEN MATCHED THEN
+    UPDATE SET ssv.total_outlays = ma.calculated_total_outlays;
+    """,
+]
