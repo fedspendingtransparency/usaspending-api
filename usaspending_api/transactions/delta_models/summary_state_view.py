@@ -116,7 +116,6 @@ summary_state_view_load_sql_string = [
             transaction_fabs.place_of_perfor_state_code
         )
     """,
-
     # -----
     # Unnest the distinct awards from summary_state_view table
     # -----
@@ -131,7 +130,6 @@ summary_state_view_load_sql_string = [
            {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} ssv
     );
     """,
-
     # -----
     # Using the award_id's from split_award's map them to award_search table
     # and get matching awards
@@ -153,7 +151,6 @@ summary_state_view_load_sql_string = [
             sa.duh
     );
     """,
-
     # -----
     # Update the summary_state_view.total_outlays with calculated values
     # -----
@@ -163,5 +160,5 @@ summary_state_view_load_sql_string = [
     ON ssv.duh = ma.duh
     WHEN MATCHED THEN
     UPDATE SET ssv.total_outlays = ma.calculated_total_outlays;
-    """
+    """,
 ]
