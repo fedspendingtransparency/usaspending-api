@@ -91,7 +91,7 @@ summary_state_view_load_sql_string = [
             ) AS NUMERIC(23, 2)
         ) AS face_value_loan_guarantee,
         COUNT(*) AS counts,
-        0 AS total_outlays  -- Default value for new column
+        NULL AS total_outlays  -- Default value for new column
     FROM
         int.transaction_normalized
     LEFT OUTER JOIN
@@ -138,7 +138,7 @@ summary_state_view_load_sql_string = [
     CREATE OR REPLACE TEMPORARY VIEW matching_awards AS (
         SELECT
             sa.duh,
-            COALESCE(SUM(as2.total_outlays), 0) AS calculated_total_outlays
+            COALESCE(SUM(as2.total_outlays), NULL) AS calculated_total_outlays
         FROM
             split_awards sa
         JOIN
