@@ -264,10 +264,8 @@ def test_spending_by_transaction_grouped_sorting(
             }
         ),
     )
-    print(resp.data)
     resp_results = resp.data.get("results", {})
     assert resp.status_code == status.HTTP_200_OK
-    print(resp_results)
     assert len(resp_results) == 2
     assert resp_results[0]["Prime Award ID"] == "BOI1243L98AS"
     assert resp_results[0]["Matching Transaction Count"] == 2
