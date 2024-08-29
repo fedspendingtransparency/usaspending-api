@@ -115,50 +115,5 @@ summary_state_view_load_sql_string = [
             transaction_fpds.place_of_performance_state,
             transaction_fabs.place_of_perfor_state_code
         )
-    """,
-    # -----
-    # Unnest the distinct awards from summary_state_view table
-    # -----
-    fr"""
-    CREATE OR REPLACE TEMPORARY VIEW split_awards AS (
-        SELECT
-            ssv.duh,
-            explode(split(ssv.distinct_awards, ',')) AS award_id,
-            ssv.pop_country_code,
-            ssv.pop_state_code
-        FROM
-           {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} ssv
-    );
-    """,
-    # -----
-    # Using the award_id's from split_award's map them to award_search table
-    # and get matching awards
-    # -----
-    fr"""
-    CREATE OR REPLACE TEMPORARY VIEW matching_awards AS (
-        SELECT
-            sa.duh,
-            COALESCE(SUM(as2.total_outlays), NULL) AS calculated_total_outlays
-        FROM
-            split_awards sa
-        JOIN
-            rpt.award_search as2 ON CAST(sa.award_id AS BIGINT) = as2.award_id
-        WHERE
-            as2.action_date >= '2007-10-01'
-            AND as2.pop_country_code = sa.pop_country_code
-            AND as2.pop_state_code = sa.pop_state_code
-        GROUP BY
-            sa.duh
-    );
-    """,
-    # -----
-    # Update the summary_state_view.total_outlays with calculated values
-    # -----
-    fr"""
-    MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} ssv
-    USING matching_awards ma
-    ON ssv.duh = ma.duh
-    WHEN MATCHED THEN
-    UPDATE SET ssv.total_outlays = ma.calculated_total_outlays;
-    """,
+    """
 ]
