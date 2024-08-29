@@ -34,7 +34,7 @@ EXPECTED_STATE = {
     "total_face_value_loan_amount": 0,
     "total_face_value_loan_prime_awards": 0,
     "award_amount_per_capita": 1,
-    "total_outlays":0
+    "total_outlays": 0,
 }
 EXPECTED_DISTRICT = EXPECTED_STATE.copy()
 EXPECTED_DISTRICT.update(
@@ -525,13 +525,7 @@ def test_state_metadata_failure(client, state_data):
 @pytest.mark.django_db
 def test_obtain_state_totals(state_view_data):
     result = obtain_state_totals("01", str(generate_fiscal_year(OUTSIDE_OF_LATEST)), ["A"])
-    expected = {
-        "pop_state_code": "AB",
-        "total": 10,
-        "count": 1,
-        "total_face_value_loan_amount": 0,
-        "total_outlays":0
-    }
+    expected = {"pop_state_code": "AB", "total": 10, "count": 1, "total_face_value_loan_amount": 0, "total_outlays": 0}
     assert result == expected
 
 
@@ -543,7 +537,7 @@ def test_obtain_state_totals_loan_agg(state_view_loan_data):
         "total": 25,
         "count": 2,
         "total_face_value_loan_amount": 1511,
-        "total_outlays":0
+        "total_outlays": 0,
     }
     assert result == expected
 
@@ -552,13 +546,7 @@ def test_obtain_state_totals_loan_agg(state_view_loan_data):
 def test_obtain_state_totals_none(state_view_data, monkeypatch):
     monkeypatch.setattr("usaspending_api.recipient.v2.views.states.VALID_FIPS", {"02": {"code": "No State"}})
     result = obtain_state_totals("02")
-    expected = {
-        "pop_state_code": None,
-        "total": 0,
-        "count": 0,
-        "total_face_value_loan_amount": 0,
-        "total_outlays":0
-    }
+    expected = {"pop_state_code": None, "total": 0, "count": 0, "total_face_value_loan_amount": 0, "total_outlays": 0}
 
     assert result == expected
 
