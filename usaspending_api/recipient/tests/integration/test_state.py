@@ -94,6 +94,74 @@ def state_data(db):
     award_old2 = baker.make("search.AwardSearch", award_id=2, type="08")
 
     baker.make(
+        "search.SummaryStateView",
+        duh="c81e728d-9d4c-2f63-6f06-7f89cc14862c",
+        action_date=datetime.datetime(2020, 4, 1),
+        fiscal_year=CURRENT_FISCAL_YEAR,
+        type="A",
+        distinct_awards="1",
+        pop_country_code="USA",
+        pop_state_code="TS",
+        generated_pragmatic_obligation=100000,
+        federal_action_obligation=0,
+        original_loan_subsidy_cost=0,
+        face_value_loan_guarantee=0,
+        counts=1,
+        total_outlays=0,
+    )
+
+    baker.make(
+        "search.SummaryStateView",
+        duh="eccbc87e-4b5c-e2fe-2830-8fd9f2a7baf3",
+        action_date=datetime.datetime(2020, 4, 1),
+        fiscal_year=CURRENT_FISCAL_YEAR,
+        type="A",
+        distinct_awards="1",
+        pop_country_code="USA",
+        pop_state_code="TT",
+        generated_pragmatic_obligation=1000,
+        federal_action_obligation=0,
+        original_loan_subsidy_cost=0,
+        face_value_loan_guarantee=0,
+        counts=1,
+        total_outlays=0,
+    )
+
+    baker.make(
+        "search.SummaryStateView",
+        duh="c4ca4238-a0b9-2382-0dcc-509a6f75849b",
+        action_date=datetime.datetime(2020, 4, 1),
+        fiscal_year=CURRENT_FISCAL_YEAR,
+        type="A",
+        distinct_awards="1",
+        pop_country_code="USA",
+        pop_state_code="TD",
+        generated_pragmatic_obligation=1000,
+        federal_action_obligation=0,
+        original_loan_subsidy_cost=0,
+        face_value_loan_guarantee=0,
+        counts=1,
+        total_outlays=0,
+    )
+
+    baker.make(
+        "search.SummaryStateView",
+        duh="1679091c-5a88-4c2e-a3d7-7395e4d1f9d7",
+        action_date=datetime.datetime(2020, 4, 1),
+        fiscal_year=CURRENT_FISCAL_YEAR - 2,
+        type="A",
+        distinct_awards="2",
+        pop_country_code="USA",
+        pop_state_code="TS",
+        generated_pragmatic_obligation=100000,
+        federal_action_obligation=0,
+        original_loan_subsidy_cost=0,
+        face_value_loan_guarantee=0,
+        counts=1,
+        total_outlays=0,
+    )
+
+    baker.make(
         "search.TransactionSearch",
         transaction_id=1,
         award=award_old,
@@ -194,6 +262,40 @@ def state_view_data(db, monkeypatch):
     award_cur = baker.make("search.AwardSearch", award_id=2, type="B")
 
     baker.make(
+        "search.SummaryStateView",
+        duh="6512bd43-d9cb-476c-918d-f3a2ef1a850a",
+        action_date=datetime.datetime(2020, 4, 1),
+        fiscal_year=CURRENT_FISCAL_YEAR - 2,
+        type="A",
+        distinct_awards="1",
+        pop_country_code="USA",
+        pop_state_code="AB",
+        generated_pragmatic_obligation=10,
+        federal_action_obligation=0,
+        original_loan_subsidy_cost=0,
+        face_value_loan_guarantee=0,
+        counts=1,
+        total_outlays=0,
+    )
+
+    baker.make(
+        "search.SummaryStateView",
+        duh="c9f0f895-f8b7-4c9e-9366-d5b832fd3531",
+        action_date=datetime.datetime(2020, 4, 1),
+        fiscal_year=CURRENT_FISCAL_YEAR,
+        type="B",
+        distinct_awards="2",
+        pop_country_code="USA",
+        pop_state_code="AB",
+        generated_pragmatic_obligation=15,
+        federal_action_obligation=0,
+        original_loan_subsidy_cost=0,
+        face_value_loan_guarantee=0,
+        counts=1,
+        total_outlays=0,
+    )
+
+    baker.make(
         "search.TransactionSearch",
         transaction_id=5,
         award_id=award_old.award_id,
@@ -227,6 +329,23 @@ def state_view_loan_data(db, monkeypatch):
     award_old = baker.make("search.AwardSearch", award_id=1, type="07")
     award_old2 = baker.make("search.AwardSearch", award_id=2, type="08")
     award_cur = baker.make("search.AwardSearch", award_id=3, type="07")
+
+    baker.make(
+        "search.SummaryStateView",
+        duh="d3d94468-1d0f-46d9-bf13-5a5b7f51bc16",
+        action_date=datetime.datetime(2020, 4, 1),
+        fiscal_year=CURRENT_FISCAL_YEAR - 2,
+        type="07",
+        distinct_awards="1,2",
+        pop_country_code="USA",
+        pop_state_code="AB",
+        generated_pragmatic_obligation=25,
+        federal_action_obligation=0,
+        original_loan_subsidy_cost=0,
+        face_value_loan_guarantee=1511,
+        counts=1,
+        total_outlays=0,
+    )
 
     baker.make(
         "search.TransactionSearch",
@@ -291,7 +410,7 @@ def test_state_metadata_success(client, state_data):
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data == EXPECTED_STATE
 
-    # test small request - district
+    # # test small request - district
     resp = client.get(state_metadata_endpoint("02"))
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data == EXPECTED_DISTRICT
@@ -319,7 +438,7 @@ def test_state_years_success(client, state_data):
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data == expected_response
 
-    # test old year
+    # # test old year
     expected_response = EXPECTED_STATE.copy()
     expected_response.update(
         {
@@ -349,7 +468,7 @@ def test_state_years_success(client, state_data):
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data == expected_response
 
-    # test latest year
+    # # test latest year
     expected_response = EXPECTED_STATE.copy()
     expected_response.update({"pop_year": CURRENT_FISCAL_YEAR, "mhi_year": CURRENT_FISCAL_YEAR - 2})
     resp = client.get(state_metadata_endpoint("01", "latest"))
@@ -357,7 +476,7 @@ def test_state_years_success(client, state_data):
     assert resp.data == expected_response
 
 
-@pytest.mark.django_db()
+# @pytest.mark.django_db()
 def test_state_current_all_years_success(client, state_data):
     # test all years
     expected_response = EXPECTED_STATE.copy()

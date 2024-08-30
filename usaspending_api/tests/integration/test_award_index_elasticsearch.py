@@ -73,6 +73,12 @@ def award_data_fixture(db):
         tas_paths="{aid=097main=4930ata=sub=000bpoa=epoa=a=X}",
         funding_toptier_agency_name="Department of Transportation",
         disaster_emergency_fund_codes="{L}",
+        recipient_name="GENERAL MOTORS CORPORATION",
+        parent_recipient_name="PARENT GENERAL MOTORS CORPORATION",
+        recipient_uei="GVAKTC49BNJ8",
+        parent_uei="GVAKTC49BNJ8",
+        recipient_unique_id="005356613",
+        parent_recipient_unique_id="005356613",
     )
     baker.make(
         "search.AwardSearch",
@@ -283,6 +289,29 @@ def test_recipient_location(award_data_fixture, elasticsearch_award_index):
     query["query"]["bool"]["filter"]["bool"]["minimum_should_match"] = 3
     response = client.search(index=elasticsearch_award_index.index_name, body=query)
     assert response["hits"]["total"]["value"] == 0
+
+
+@pytest.mark.django_db
+def test_parent_fields(award_data_fixture, elasticsearch_award_index):
+    elasticsearch_award_index.update_index()
+    should = {"match": {"parent_recipient_name": "PARENT GENERAL MOTORS CORPORATION"}}
+    query = create_query(should)
+    query["query"]["bool"]["filter"]["bool"]["minimum_should_match"] = 1
+    client = elasticsearch_award_index.client
+    response = client.search(index=elasticsearch_award_index.index_name, body=query)
+    assert response["hits"]["total"]["value"] == 1
+
+    should = {"match": {"parent_uei": "GVAKTC49BNJ8"}}
+    query = create_query(should)
+    query["query"]["bool"]["filter"]["bool"]["minimum_should_match"] = 1
+    response = client.search(index=elasticsearch_award_index.index_name, body=query)
+    assert response["hits"]["total"]["value"] == 1
+
+    should = {"match": {"parent_recipient_unique_id": "005356613"}}
+    query = create_query(should)
+    query["query"]["bool"]["filter"]["bool"]["minimum_should_match"] = 1
+    response = client.search(index=elasticsearch_award_index.index_name, body=query)
+    assert response["hits"]["total"]["value"] == 1
 
 
 @pytest.mark.django_db
