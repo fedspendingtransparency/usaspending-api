@@ -394,11 +394,11 @@ def state_view_loan_data(db, monkeypatch):
 @pytest.fixture()
 def state_breakdown_result():
     expected_result = [
-        {"type": "contracts", "amount": 0, "count": 0},
-        {"type": "direct_payments", "amount": 0, "count": 0},
-        {"type": "grants", "amount": 0, "count": 0},
-        {"type": "loans", "amount": 0, "count": 0},
-        {"type": "other_financial_assistance", "amount": 0, "count": 0},
+        {"type": "contracts", "amount": 0, "total_outlays": 0, "count": 0},
+        {"type": "direct_payments", "amount": 0, "total_outlays": 0, "count": 0},
+        {"type": "grants", "amount": 0, "total_outlays": 0, "count": 0},
+        {"type": "loans", "amount": 0, "total_outlays": 0, "count": 0},
+        {"type": "other_financial_assistance", "amount": 0, "total_outlays": 0, "count": 0},
     ]
 
     return expected_result
@@ -557,7 +557,7 @@ def test_state_breakdown_success_state(client, state_view_data, state_breakdown_
     sorted_resp = sort_breakdown_response(resp.data)
 
     expected = state_breakdown_result
-    expected[0] = {"type": "contracts", "amount": 25, "count": 2}
+    expected[0] = {"type": "contracts", "amount": 25.00, "total_outlays": 0, "count": 2}
 
     assert resp.status_code == status.HTTP_200_OK
     assert sorted_resp == expected
@@ -569,7 +569,7 @@ def test_state_breakdown_success_year(client, state_view_data, state_breakdown_r
     sorted_resp = sort_breakdown_response(resp.data)
 
     expected = state_breakdown_result
-    expected[0] = {"type": "contracts", "amount": 15, "count": 1}
+    expected[0] = {"type": "contracts", "amount": 15, "total_outlays": 0, "count": 1}
 
     assert resp.status_code == status.HTTP_200_OK
     assert sorted_resp == expected
