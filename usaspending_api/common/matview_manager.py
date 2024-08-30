@@ -33,14 +33,6 @@ MATERIALIZED_VIEWS = OrderedDict(
             },
         ),
         (
-            "summary_state_view",
-            {
-                "model": mv.SummaryStateView,
-                "json_filepath": str(JSON_DIR / "summary_state_view.json"),
-                "sql_filename": "summary_state_view.sql",
-            },
-        ),
-        (
             "tas_autocomplete_matview",
             {
                 "model": TASAutocompleteMatview,
