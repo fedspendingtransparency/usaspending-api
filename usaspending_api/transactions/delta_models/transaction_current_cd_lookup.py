@@ -29,6 +29,14 @@ transaction_current_cd_lookup_load_sql_string = rf"""
             congressional_district_no
         FROM cd_city_grouped_rownum
         WHERE row_num = 1
+    ),
+    single_cd_states AS (
+        SELECT
+            rpcd.state_abbreviation
+        FROM
+            global_temp.ref_population_cong_district rpcd
+        WHERE
+            rpcd.congressional_district = '00'
     )
     INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
     (
@@ -40,11 +48,9 @@ transaction_current_cd_lookup_load_sql_string = rf"""
             WHEN (
                 COALESCE(transaction_fpds.legal_entity_state_code, transaction_fabs.legal_entity_state_code) IN (
                     SELECT
-                        rpcd.state_abbreviation
+                        scds.state_abbreviation
                     FROM
-                        global_temp.ref_population_cong_district rpcd
-                    WHERE
-                        rpcd.congressional_district = '00'
+                        single_cd_states scds
                 )
             )
             THEN '00'
@@ -58,11 +64,9 @@ transaction_current_cd_lookup_load_sql_string = rf"""
             WHEN (
                 COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code) IN (
                     SELECT
-                        rpcd.state_abbreviation
+                        scds.state_abbreviation
                     FROM
-                        global_temp.ref_population_cong_district rpcd
-                    WHERE
-                        rpcd.congressional_district = '00'
+                        single_cd_states scds
                 )
             )
             THEN '00'
