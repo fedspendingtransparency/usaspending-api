@@ -91,13 +91,14 @@ This endpoint returns a list of the top results of Awarding Subagencies sorted b
     The id is the database key.
 + `name` (required, string, nullable)
 + `code` (required, string, nullable)
-    `code` is a user-displayable code (such as a program activity or NAICS code, but **not** a database ID). When no such code is relevant, return a `null`.
+    `code` is a user-displayable code (such as a program activity or NAICS code, but **not** a database ID). When no such code is relevant, return a `null`. This `code` refers to the subtier agency abbreviation.
 + `amount` (required, number)
-+ `subagency_slug` (optional, string)
-+ `agency_id` (optional,number)
-+ `agency_abbreviation`(optional, string)
-+ `agency_name`(optional, string)
-+ `agency_slug`(optional, string)
++ `subagency_slug` (required, string)
++ `agency_id` (required,number)
++ `agency_abbreviation`(required, string)
+    The `agency_abbreviation` refers to the abbreviation for the toptier agency associated with the subtier agency.
++ `agency_name`(required, string)
++ `agency_slug`(required, string)
 
 ## PageMetadataObject (object)
 + `page` (required, number)
