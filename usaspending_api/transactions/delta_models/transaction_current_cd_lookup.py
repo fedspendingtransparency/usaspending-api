@@ -45,15 +45,7 @@ transaction_current_cd_lookup_load_sql_string = rf"""
     SELECT
         transaction_normalized.id AS transaction_id,
         (CASE
-            WHEN (
-                COALESCE(transaction_fpds.legal_entity_state_code, transaction_fabs.legal_entity_state_code) IN (
-                    SELECT
-                        scds.state_abbreviation
-                    FROM
-                        single_cd_states scds
-                )
-            )
-            THEN '00'
+            WHEN (rl_single_cd_states.state_abbreviation IS NOT NULL) THEN '00'
             WHEN (
                 COALESCE(transaction_fpds.legal_entity_country_code, transaction_fabs.legal_entity_country_code) <> 'USA'
             ) THEN NULL
@@ -61,15 +53,7 @@ transaction_current_cd_lookup_load_sql_string = rf"""
         END) AS recipient_location_congressional_code_current,
         -- Congressional District '90' represents multiple congressional districts
         (CASE
-            WHEN (
-                COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code) IN (
-                    SELECT
-                        scds.state_abbreviation
-                    FROM
-                        single_cd_states scds
-                )
-            )
-            THEN '00'
+            WHEN (pop_single_cd_states.state_abbreviation IS NOT NULL) THEN '00'
             WHEN (
                 UPPER(transaction_fabs.place_of_performance_scope) = 'FOREIGN'
                 OR transaction_fpds.place_of_perform_country_c <> 'USA'
@@ -155,5 +139,13 @@ transaction_current_cd_lookup_load_sql_string = rf"""
         global_temp.cd_county_grouped rl_cd_county_grouped ON (
             rl_cd_county_grouped.county_number=LPAD(CAST(CAST(REGEXP_EXTRACT(COALESCE(transaction_fpds.legal_entity_county_code, transaction_fabs.legal_entity_county_code), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 3, '0')
             AND rl_cd_county_grouped.state_abbreviation=COALESCE(transaction_fpds.legal_entity_state_code, transaction_fabs.legal_entity_state_code)
+        )
+    LEFT OUTER JOIN
+        single_cd_states rl_single_cd_states ON (
+            rl_single_cd_states.state_abbreviation=COALESCE(transaction_fpds.legal_entity_state_code, transaction_fabs.legal_entity_state_code)
+        )
+    LEFT OUTER JOIN
+        single_cd_states pop_single_cd_states ON (
+            pop_single_cd_states.state_abbreviation=COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code)
         )
 """
