@@ -56,16 +56,16 @@ transaction_current_cd_lookup_load_sql_string = rf"""
         -- Congressional District '90' represents multiple congressional districts
         (CASE
             WHEN (
-				COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code) IN (
-					SELECT
+                COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code) IN (
+                    SELECT
                         rpcd.state_abbreviation
                     FROM
                         global_temp.ref_population_cong_district rpcd
                     WHERE
                         rpcd.congressional_district = '00'
-				)
+                )
             )
-			THEN '00'
+            THEN '00'
             WHEN (
                 UPPER(transaction_fabs.place_of_performance_scope) = 'FOREIGN'
                 OR transaction_fpds.place_of_perform_country_c <> 'USA'
