@@ -92,28 +92,57 @@ class AbstractIndustryCodeViewSet(AbstractSpendingByCategoryViewSet, metaclass=A
         django_filters = {f"{self.industry_code_type.value}__isnull": False}
         django_values = [self.industry_code_type.value]
 
-        queryset = self.common_db_query(base_queryset, django_filters, django_values).annotate(
-            code=F(self.industry_code_type.value)
-        )
+        if self.industry_code_type == IndustryCodeType.DEFC:
+            django_filters = {f"award__disaster_emergency_fund_codes__isnull": False}
+            django_values = ["award__disaster_emergency_fund_codes"]
+            queryset = self.common_db_query(base_queryset, django_filters, django_values).annotate(
+                code=F("award__disaster_emergency_fund_codes")
+            )
+        else:
+            queryset = self.common_db_query(base_queryset, django_filters, django_values).annotate(
+                code=F(self.industry_code_type.value)
+            )
+
         lower_limit = self.pagination.lower_limit
         upper_limit = self.pagination.upper_limit
         query_results = list(queryset[lower_limit:upper_limit])
 
-        for row in query_results:
-            if self.industry_code_type == IndustryCodeType.CFDA:
-                row["id"], row["name"] = fetch_cfda_id_title_by_number(row["code"])
-            elif self.industry_code_type == IndustryCodeType.PSC:
-                row["id"] = None
-                row["name"] = fetch_psc_description_by_code(row["code"])
-            elif self.industry_code_type == IndustryCodeType.NAICS:
-                row["id"] = None
-                row["name"] = fetch_naics_description_from_code(row["code"], row.get("name"))
-            elif self.industry_code_type == IndustryCodeType.DEFC:
-                row["id"] = None
-                row["name"] = fetch_defc_title_by_code(row["code"])
-            row.pop(self.industry_code_type.value)
+        # Custom filter for DEFC
+        output_map = {}
+        # Iterate over each of the codes within the results
+        for grouping in query_results:
+            for defc in grouping["code"]:
+                # If we've already defined the code in the output map, increment it.
+                # Otherwise initialize it as the result amount
+                if defc in output_map:
+                    output_map[defc] += grouping["amount"]
+                else:
+                    output_map[defc] = grouping["amount"]
+        print(output_map)
 
-        return query_results
+        if self.industry_code_type == IndustryCodeType.DEFC:
+            transformed_list = [
+                {
+                    "id": None,
+                    "name": fetch_defc_title_by_code(key),
+                    "code": key,
+                    "amount": value,
+                }
+                for idx, (key, value) in enumerate(output_map.items())
+            ]
+            return transformed_list
+        else:
+            for row in query_results:
+                if self.industry_code_type == IndustryCodeType.CFDA:
+                    row["id"], row["name"] = fetch_cfda_id_title_by_number(row["code"])
+                elif self.industry_code_type == IndustryCodeType.PSC:
+                    row["id"] = None
+                    row["name"] = fetch_psc_description_by_code(row["code"])
+                elif self.industry_code_type == IndustryCodeType.NAICS:
+                    row["id"] = None
+                    row["name"] = fetch_naics_description_from_code(row["code"], row.get("name"))
+                row.pop(self.industry_code_type.value)
+            return query_results
 
 
 class CfdaViewSet(AbstractIndustryCodeViewSet):
