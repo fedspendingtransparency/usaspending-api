@@ -11,6 +11,7 @@ SUMMARY_STATE_VIEW_COLUMNS = {
     "original_loan_subsidy_cost": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
     "face_value_loan_guarantee": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
     "counts": {"delta": "LONG", "postgres": "BIGINT"},
+    "total_outlays": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
 }
 
 SUMMARY_STATE_VIEW_DELTA_COLUMNS = {k: v["delta"] for k, v in SUMMARY_STATE_VIEW_COLUMNS.items()}
@@ -24,7 +25,9 @@ summary_state_view_create_sql_string = fr"""
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
 """
 
-summary_state_view_load_sql_string = fr"""
+summary_state_view_load_sql_string = [
+    fr"""
+    -- Step 1: Populate the summary_state_view table with initial values and set total_outlays to 0
     INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
     (
         {",".join([col for col in SUMMARY_STATE_VIEW_COLUMNS])}
@@ -87,7 +90,8 @@ summary_state_view_load_sql_string = fr"""
                 0
             ) AS NUMERIC(23, 2)
         ) AS face_value_loan_guarantee,
-        COUNT(*) AS counts
+        COUNT(*) AS counts,
+        NULL AS total_outlays  -- Default value for new column
     FROM
         int.transaction_normalized
     LEFT OUTER JOIN
@@ -111,4 +115,5 @@ summary_state_view_load_sql_string = fr"""
             transaction_fpds.place_of_performance_state,
             transaction_fabs.place_of_perfor_state_code
         )
-"""
+    """
+]
