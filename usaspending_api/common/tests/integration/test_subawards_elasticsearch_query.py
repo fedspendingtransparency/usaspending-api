@@ -165,7 +165,6 @@ def test_keyword_filter_keywords(client, monkeypatch, elasticsearch_subaward_ind
     filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(filters)
     search = SubawardSearch().filter(filter_query)
     results = search.handle_execute()
-    print(results)
     assert len(results) == 3
 
 
@@ -176,7 +175,6 @@ def test_keyword_filter_duns(client, monkeypatch, elasticsearch_subaward_index, 
     filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(filters)
     search = SubawardSearch().filter(filter_query)
     results = search.handle_execute()
-    print(results)
     assert len(results) == 2
 
 
@@ -187,7 +185,6 @@ def test_keyword_filter_psc(client, monkeypatch, elasticsearch_subaward_index, s
     filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(filters)
     search = SubawardSearch().filter(filter_query)
     results = search.handle_execute()
-    print(results)
     assert len(results) == 1
 
 
