@@ -16,6 +16,7 @@ from usaspending_api.search.v2.views.spending_by_category_views.spending_by_indu
     CfdaViewSet,
     PSCViewSet,
     NAICSViewSet,
+    DEFCViewSet,
 )
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_locations import (
     CountyViewSet,
@@ -133,6 +134,33 @@ def cfda_test_data(db):
     )
 
     baker.make("references.Cfda", id=1, program_number="CFDA1234", program_title="CFDA TITLE 1234")
+
+
+@pytest.fixture
+def defc_test_data(db):
+    baker.make(
+        "search.SubawardSearch",
+        broker_subaward_id=1,
+        award_id=1,
+        subaward_amount=1,
+        code="1234",
+        title="disaster subawards",
+    )
+
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=2,
+        award_id=2,
+        is_fpds=False,
+        federal_action_obligation=1,
+        generated_pragmatic_obligation=1,
+        action_date="2020-01-02",
+        fiscal_action_date="2020-04-02",
+        code="1234",
+        title="disaster awards",
+    )
+
+    baker.make("references.DEFC", id=1, title="disaster")
 
 
 @pytest.fixture
@@ -1001,6 +1029,42 @@ def test_category_cfda_subawards(cfda_test_data):
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [{"amount": 2, "code": "CFDA1234", "name": "CFDA TITLE 1234", "id": 1}],
+        "messages": [get_time_period_message()],
+    }
+
+    assert expected_response == spending_by_category_logic
+
+
+@pytest.mark.django_db
+def test_category_defc_subawards(defc_test_data):
+    test_payload = {"category": "defc", "subawards": True, "page": 1, "limit": 50}
+
+    spending_by_category_logic = DEFCViewSet().perform_search(test_payload, {})
+
+    expected_response = {
+        "category": "defc",
+        "limit": 50,
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "results": [{"amount": 1, "code": 1234, "name": "disaster subawards", "id": None}],
+        "messages": [get_time_period_message()],
+    }
+
+    assert expected_response == spending_by_category_logic
+
+
+@pytest.mark.django_db
+def test_category_defc_awards(defc_test_data, monkeypatch, elasticsearch_transaction_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
+    test_payload = {"category": "defc", "subawards": False, "page": 1, "limit": 50}
+
+    spending_by_category_logic = DEFCViewSet().perform_search(test_payload, {})
+
+    expected_response = {
+        "category": "defc",
+        "limit": 50,
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "results": [{"amount": 2, "code": 1234, "name": "disaster awards", "id": None}],
         "messages": [get_time_period_message()],
     }
 

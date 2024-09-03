@@ -107,20 +107,18 @@ class AbstractIndustryCodeViewSet(AbstractSpendingByCategoryViewSet, metaclass=A
         upper_limit = self.pagination.upper_limit
         query_results = list(queryset[lower_limit:upper_limit])
 
-        # Custom filter for DEFC
-        output_map = {}
-        # Iterate over each of the codes within the results
-        for grouping in query_results:
-            for defc in grouping["code"]:
-                # If we've already defined the code in the output map, increment it.
-                # Otherwise initialize it as the result amount
-                if defc in output_map:
-                    output_map[defc] += grouping["amount"]
-                else:
-                    output_map[defc] = grouping["amount"]
-        print(output_map)
-
         if self.industry_code_type == IndustryCodeType.DEFC:
+            # Custom filter for DEFC
+            output_map = {}
+            # Iterate over each of the codes within the results
+            for grouping in query_results:
+                for defc in grouping["code"]:
+                    # If we've already defined the code in the output map, increment it.
+                    # Otherwise initialize it as the result amount
+                    if defc in output_map:
+                        output_map[defc] += grouping["amount"]
+                    else:
+                        output_map[defc] = grouping["amount"]
             transformed_list = [
                 {
                     "id": None,

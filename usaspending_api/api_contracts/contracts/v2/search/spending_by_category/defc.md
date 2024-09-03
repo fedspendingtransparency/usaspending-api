@@ -26,23 +26,25 @@ This endpoint should return a an aggregate list of DEFC's sorted by the total am
                 Determines whether Prime Awards or Sub Awards are searched
 
     + Body
-    {
-        "category": "defc",
-        "filters": {
-            "award_type_codes": [
-                "A",
-                "B",
-                "C",
-                "D"
-            ],
-            "time_period": [
-                {
-                    "start_date": "2019-09-28",
-                    "end_date": "2020-09-28"
+
+
+            {
+                "category": "defc",
+                "filters": {
+                    "award_type_codes": [
+                        "A",
+                        "B",
+                        "C",
+                        "D"
+                    ],
+                    "time_period": [
+                        {
+                            "start_date": "2019-09-28",
+                            "end_date": "2020-09-28"
+                        }
+                    ]
                 }
-            ]
-        }
-    }
+            }
 
 + Response 200 (application/json)
     + Attributes (object)
