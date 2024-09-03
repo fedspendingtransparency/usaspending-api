@@ -4,7 +4,6 @@ from rest_framework.views import APIView
 
 from usaspending_api.download.helpers.download_file_helpers import (
     get_last_modified_download_file_by_prefix,
-    remove_file_prefix_if_exists,
 )
 from usaspending_api.common.cache_decorator import cache_response
 
