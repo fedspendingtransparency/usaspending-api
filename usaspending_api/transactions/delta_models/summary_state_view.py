@@ -121,7 +121,7 @@ summary_state_view_load_sql_string = [
     CREATE OR REPLACE TEMPORARY VIEW award_outlay_sums AS (
         SELECT
             faba.award_id,
-            YEAR(faba.certified_date + interval '3 months') AS award_fiscal_year,
+            sa.reporting_fiscal_year AS award_fiscal_year,
             SUM(faba.gross_outlay_amount_by_award_cpe) AS total_gross_outlay_amount_by_award_cpe,
             SUM(faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe) AS total_ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe,
             SUM(faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe) AS total_ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe
@@ -129,7 +129,7 @@ summary_state_view_load_sql_string = [
         INNER JOIN global_temp.submission_attributes sa
             ON faba.submission_id = sa.submission_id
         WHERE sa.is_final_balances_for_fy = TRUE
-        GROUP BY faba.award_id, YEAR(faba.certified_date + interval '3 months')
+        GROUP BY faba.award_id, sa.reporting_fiscal_year
     );
     """,
     # -----
