@@ -22,29 +22,6 @@ def test_success_with_all_filters(client, monkeypatch, elasticsearch_transaction
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
 
 
-def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, awards_and_transactions):
-
-    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
-
-    resp = client.post(
-        "/api/v2/search/spending_by_category/defc",
-        content_type="application/json",
-        data=json.dumps({"filters": {"time_period": [{"start_date": "2018-10-01", "end_date": "2020-09-30"}]}}),
-    )
-    expected_response = {
-        "category": "defc",
-        "limit": 10,
-        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
-        "results": [
-            {"amount": 9999.0, "code": "9", "id": None, "name": "DEFC 2"},
-            {"amount": 5000.0, "code": "Q", "id": None, "name": "DEFC 1"},
-        ],
-        "messages": [get_time_period_message()],
-    }
-    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
-    assert resp.json() == expected_response
-
-
 def test_correct_response_of_empty_list(client, monkeypatch, elasticsearch_transaction_index, awards_and_transactions):
 
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)

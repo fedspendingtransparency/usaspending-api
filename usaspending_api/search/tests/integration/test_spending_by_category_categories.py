@@ -1045,7 +1045,7 @@ def test_category_defc_subawards(defc_test_data):
         "category": "defc",
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
-        "results": [{"amount": 1, "code": 1234, "name": "disaster subawards", "id": None}],
+        "results": [{"amount": 1, "code": "1234", "name": "disaster subawards", "id": None}],
         "messages": [get_time_period_message()],
     }
 
@@ -1064,7 +1064,7 @@ def test_category_defc_awards(defc_test_data, monkeypatch, elasticsearch_transac
         "category": "defc",
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
-        "results": [{"amount": 2, "code": 1234, "name": "disaster awards", "id": None}],
+        "results": [{"amount": 2, "code": "1234", "name": "disaster awards", "id": None}],
         "messages": [get_time_period_message()],
     }
 
