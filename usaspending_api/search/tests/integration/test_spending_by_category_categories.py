@@ -143,8 +143,7 @@ def defc_test_data(db):
         broker_subaward_id=1,
         award_id=1,
         subaward_amount=1,
-        code="1234",
-        title="disaster subawards",
+        disaster_emergency_fund_codes="1234",
     )
 
     baker.make(
@@ -156,11 +155,11 @@ def defc_test_data(db):
         generated_pragmatic_obligation=1,
         action_date="2020-01-02",
         fiscal_action_date="2020-04-02",
-        code="1234",
-        title="disaster awards",
+        disaster_emergency_fund_codes="1234",
     )
 
-    baker.make("references.DEFC", id=1, title="disaster")
+    baker.make("references.DEFC", title="disaster awards")
+    baker.make("references.DEFC", title="disaster subawards")
 
 
 @pytest.fixture
