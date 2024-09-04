@@ -210,7 +210,9 @@ def test_recipient_search_matches_found(client, monkeypatch, recipient_data_fixt
         assert entry["recipient_name"].lower().find("superman") > -1
 
 
-def test_recipient_partial_search_matches_found(client, monkeypatch, recipient_data_fixture, elasticsearch_recipient_index):
+def test_recipient_partial_search_matches_found(
+    client, monkeypatch, recipient_data_fixture, elasticsearch_recipient_index
+):
     monkeypatch.setattr(
         "usaspending_api.common.elasticsearch.search_wrappers.RecipientSearch._index_name",
         settings.ES_RECIPIENTS_QUERY_ALIAS_PREFIX,
