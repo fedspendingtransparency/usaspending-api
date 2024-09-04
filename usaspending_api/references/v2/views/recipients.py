@@ -87,16 +87,19 @@ class RecipientAutocompleteViewSet(APIView):
         """
         es_recipient_search_fields = ["recipient_name", "uei", "duns"]
 
-        query = ES_Q(
-            "bool",
-            should=[
-                ES_Q("query_string", query=search_text, fields=es_recipient_search_fields),
-                ES_Q("match", recipient_name=search_text),
-                ES_Q("match", uei=search_text),
-                ES_Q("match", duns=search_text),
-            ],
-            minimum_should_match=1,
-        )
+        # query = ES_Q(
+        #     "bool",
+        #     should=[
+        #         ES_Q("query_string", query=f"*{search_text}*", fields=es_recipient_search_fields),
+        #         ES_Q("match", recipient_name=search_text),
+        #         ES_Q("match", uei=search_text),
+        #         ES_Q("match", duns=search_text),
+        #     ],
+        #     minimum_should_match=1,
+        # )
+        query_string_query = ES_Q("query_string", query=f"*{search_text}*", fields=es_recipient_search_fields)
+        multi_match_query = ES_Q("multi_match", query=search_text, fields=es_recipient_search_fields)
+        query = ES_Q("bool", should=[query_string_query, multi_match_query], minimum_should_match=1)
 
         if recipient_levels:
             recipient_should_clause = [

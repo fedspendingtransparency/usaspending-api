@@ -210,6 +210,19 @@ def test_recipient_search_matches_found(client, monkeypatch, recipient_data_fixt
         assert entry["recipient_name"].lower().find("superman") > -1
 
 
+def test_recipient_partial_search_matches_found(client, monkeypatch, recipient_data_fixture, elasticsearch_recipient_index):
+    monkeypatch.setattr(
+        "usaspending_api.common.elasticsearch.search_wrappers.RecipientSearch._index_name",
+        settings.ES_RECIPIENTS_QUERY_ALIAS_PREFIX,
+    )
+    elasticsearch_recipient_index.update_index()
+    body = {"search_text": "super", "recipient_levels": ["R"], "limit": 20}
+    response = client.post("/api/v2/autocomplete/recipient", content_type="application/json", data=json.dumps(body))
+    assert response.data["count"] == 1
+    for entry in response.data["results"]:
+        assert entry["recipient_name"].lower().find("superman") > -1
+
+
 def test_recipient_search_multiple_recipient_levels(
     client, monkeypatch, recipient_data_fixture, elasticsearch_recipient_index
 ):
