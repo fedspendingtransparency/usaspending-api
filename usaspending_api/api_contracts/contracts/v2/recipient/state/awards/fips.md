@@ -29,3 +29,5 @@ This endpoint returns the award amounts and totals, based on award type, of a sp
     The aggregate value of awards of this type.
 + `count`: 4 (required, number)
     The number of awards of this type.
++ `total_outlays`: 16572454209.94 (required, number)
+    The total outlays of awards of this type.
