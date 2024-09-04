@@ -114,7 +114,6 @@ summary_state_view_load_sql_string = [
             transaction_fabs.place_of_perfor_state_code
         )
     """,
-
     # -----
     # Using the file_C records, create a temporary view to sum the award total outlays by year
     # -----
@@ -133,7 +132,6 @@ summary_state_view_load_sql_string = [
         GROUP BY faba.award_id, YEAR(faba.certified_date + interval '3 months')
     );
     """,
-
     # -----
     # Create the Second Temporary View for Coalescing the Summed Values
     # -----
@@ -151,7 +149,6 @@ summary_state_view_load_sql_string = [
             OR total_ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe IS NOT NULL
     );
     """,
-
     # -----
     # Unnest the distinct awards from summary_state_view table to get distinct award_id's
     # -----
@@ -164,7 +161,6 @@ summary_state_view_load_sql_string = [
            {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} ssv
     );
     """,
-
     # -----
     # Join split_awards with award_total_outlays to get total_outlays for each award_id
     # -----
@@ -183,7 +179,6 @@ summary_state_view_load_sql_string = [
             split_awards.duh
     );
     """,
-
     # -----
     # Update the summary_state_view.total_outlays with calculated values
     # -----
@@ -193,5 +188,5 @@ summary_state_view_load_sql_string = [
     ON ssv.duh = aoa.duh
     WHEN MATCHED THEN
     UPDATE SET ssv.total_outlays = aoa.aggregated_total_outlays;
-    """
+    """,
 ]
