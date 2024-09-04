@@ -156,8 +156,8 @@ def defc_test_data(db):
         fiscal_action_date="2020-04-02",
     )
 
-    baker.make("references.DEFC", id="1234", title="disaster awards")
-    baker.make("references.DEFC", id="1234", title="disaster subawards")
+    baker.make("references.DisasterEmergencyFundCode", id="1234", title="disaster awards")
+    baker.make("references.DisasterEmergencyFundCode", id="1234", title="disaster subawards")
 
 
 @pytest.fixture
