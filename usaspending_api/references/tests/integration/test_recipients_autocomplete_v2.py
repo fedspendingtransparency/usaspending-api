@@ -104,26 +104,20 @@ def test_create_es_search():
                         "bool": {
                             "should": [
                                 {
-                                    "bool": {
-                                        "minimum_should_match": 1,
-                                        "should": [
-                                            {
-                                                "query_string": {
-                                                    "fields": [
-                                                        "recipient_name",
-                                                        "uei",
-                                                        "duns",
-                                                    ],
-                                                    "query": "test",
-                                                }
-                                            },
-                                            {"match": {"recipient_name": "test"}},
-                                            {"match": {"uei": "test"}},
-                                            {"match": {"duns": "test"}},
+                                    "query_string": {
+                                        "fields": [
+                                            "recipient_name",
+                                            "uei",
+                                            "duns",
                                         ],
+                                        "query": "test",
                                     }
-                                }
-                            ]
+                                },
+                                {"match": {"recipient_name": "test"}},
+                                {"match": {"uei": "test"}},
+                                {"match": {"duns": "test"}},
+                            ],
+                            "minimum_should_match": 1,
                         }
                     },
                 ]
