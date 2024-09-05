@@ -6,8 +6,8 @@ from datetime import datetime
 from typing import List, Tuple
 
 from django.conf import settings
-from elasticsearch_dsl import Q as ES_Q
 from django.db.models import Q
+from elasticsearch_dsl import Q as ES_Q
 
 from usaspending_api.awards.models.financial_accounts_by_awards import FinancialAccountsByAwards
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -641,10 +641,9 @@ class _ProgramActivities(_Filter):
             for id in award_ids:
                 if id is not None:
                     award_id_match_query.append(ES_Q("match", award_id=id))
-                    
         if len(award_id_match_query) == 0:
             return ~ES_Q()
-        return award_id_match_query
+        return ES_Q("bool", should=award_id_match_query)
 
 
 class _ContractPricingTypeCodes(_Filter):
