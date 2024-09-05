@@ -138,6 +138,9 @@ def cfda_test_data(db):
 
 @pytest.fixture
 def defc_test_data(db):
+    baker.make("search.AwardSearch", award_id=1, latest_transaction_id=1)
+    baker.make("search.AwardSearch", award_id=2, latest_transaction_id=2)
+
     baker.make(
         "search.SubawardSearch",
         broker_subaward_id=1,
