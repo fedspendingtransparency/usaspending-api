@@ -101,7 +101,6 @@ summary_state_view_load_sql_string = [
         AND COALESCE(transaction_fpds.place_of_perform_country_c, transaction_fabs.place_of_perform_country_c, 'USA') = 'USA'
         AND COALESCE(transaction_fpds.place_of_performance_state, transaction_fabs.place_of_perfor_state_code) IS NOT NULL
     GROUP BY
-        transaction_normalized.action_date,
         transaction_normalized.fiscal_year,
         transaction_normalized.type,
         COALESCE(
