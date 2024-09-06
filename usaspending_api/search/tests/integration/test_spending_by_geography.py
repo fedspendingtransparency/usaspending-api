@@ -2101,6 +2101,39 @@ def test_spending_by_geo_program_activity_subawards(
     assert resp.status_code == status.HTTP_200_OK
     assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
 
+@pytest.mark.django_db
+def test_spending_by_geo_program_activity_name_case(client, monkeypatch, elasticsearch_transaction_index, awards_and_transactions
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
+    # Program Activites filter test
+    test_payload = {
+        "subawards": False,
+        "scope": "place_of_performance",
+        "geo_layer": "country",
+        "filters": {
+            "program_activities": [{"name": "ProGram_aCtiVty_123"}],
+        },
+    }
+    expected_response = [
+        {
+            "aggregated_amount": 5.0,
+            "display_name": "United States",
+            "population": None,
+            "per_capita": None,
+            "shape_code": "USA",
+        },
+    ]
+    resp = client.post(
+        "/api/v2/search/spending_by_geography", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
+
+
+
+
 
 @pytest.mark.django_db
 def test_spending_by_geo_program_activity(
