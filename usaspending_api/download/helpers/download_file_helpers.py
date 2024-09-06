@@ -28,6 +28,7 @@ def get_last_modified_download_file_by_prefix(download_prefix: str) -> Optional[
             service_name="s3", region_name=CONFIG.AWS_REGION, endpoint_url=f"http://{CONFIG.AWS_S3_ENDPOINT}"
         )
         s3_bucket = s3_resource.Bucket(settings.DATABASE_DOWNLOAD_S3_BUCKET_NAME)
+        
     else:
         s3_bucket = boto3.resource("s3", region_name=settings.USASPENDING_AWS_REGION).Bucket(
             settings.DATABASE_DOWNLOAD_S3_BUCKET_NAME
