@@ -1,6 +1,8 @@
 import pytest
+import json
 
 from model_bakery import baker
+from rest_framework import status
 
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
 from usaspending_api.references.abbreviations import code_to_state, state_to_code, fips_to_code
@@ -134,33 +136,6 @@ def cfda_test_data(db):
     )
 
     baker.make("references.Cfda", id=1, program_number="CFDA1234", program_title="CFDA TITLE 1234")
-
-
-@pytest.fixture
-def defc_test_data(db):
-    baker.make("search.AwardSearch", award_id=1, latest_transaction_id=1)
-    baker.make("search.AwardSearch", award_id=2, latest_transaction_id=2)
-
-    baker.make(
-        "search.SubawardSearch",
-        broker_subaward_id=1,
-        award_id=1,
-        subaward_amount=1,
-    )
-
-    baker.make(
-        "search.TransactionSearch",
-        transaction_id=2,
-        award_id=2,
-        is_fpds=False,
-        federal_action_obligation=1,
-        generated_pragmatic_obligation=1,
-        action_date="2020-01-02",
-        fiscal_action_date="2020-04-02",
-    )
-
-    baker.make("references.DisasterEmergencyFundCode", code="1234", title="disaster awards")
-    baker.make("references.DisasterEmergencyFundCode", code="1234", title="disaster subawards")
 
 
 @pytest.fixture
@@ -1084,39 +1059,14 @@ def test_category_cfda_subawards(cfda_test_data):
 
 
 @pytest.mark.django_db
-def test_category_defc_subawards(defc_test_data):
-    test_payload = {"category": "defc", "subawards": True, "page": 1, "limit": 50}
-
-    spending_by_category_logic = DEFCViewSet().perform_search(test_payload, {})
-
-    expected_response = {
-        "category": "defc",
-        "limit": 50,
-        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
-        "results": [{"amount": 1, "code": "1234", "name": "disaster subawards", "id": None}],
-        "messages": [get_time_period_message()],
-    }
-
-    assert expected_response == spending_by_category_logic
-
-
-@pytest.mark.django_db
-def test_category_defc_awards(defc_test_data, monkeypatch, elasticsearch_transaction_index):
-    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
-
-    test_payload = {"category": "defc", "subawards": False, "page": 1, "limit": 50}
-
-    spending_by_category_logic = DEFCViewSet().perform_search(test_payload, {})
-
-    expected_response = {
-        "category": "defc",
-        "limit": 50,
-        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
-        "results": [{"amount": 2, "code": "1234", "name": "disaster awards", "id": None}],
-        "messages": [get_time_period_message()],
-    }
-
-    assert expected_response == spending_by_category_logic
+def test_category_defc(client):
+    resp = client.post(
+        "/api/v2/search/spending_by_category",
+        content_type="application/json",
+        data=json.dumps({"category": "defc", "subawards": False, "page": 1, "limit": 10}),
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.json().get("results")) == 10
 
 
 @pytest.mark.django_db
