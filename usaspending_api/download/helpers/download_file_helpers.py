@@ -11,7 +11,7 @@ def get_last_modified_download_file(download_prefix: str, bucket_name: str) -> O
     """Return the last modified bulk download file from the bulk download bucket
     based on the provided file prefix.
     Args:
-        bucket_name: The AWS bucket name in which to search for the file 
+        bucket_name: The AWS bucket name in which to search for the file
         download_prefix: The prefix to filter files on in the bulk download bucket
     Returns:
         The file name of the last modified file.
