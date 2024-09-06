@@ -21,7 +21,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='AppropriationAccountBalances',
             fields=[
-                ('data_source', models.TextField(choices=[('USA', 'USAspending'), ('DBR', 'Data Broker')], help_text='The source of this entry, either Data Broker (DBR) or USASpending (USA)', null=True)),
+                ('data_source', models.TextField(choices=[('USA', 'USAspending'), ('DBR', 'DATA Act Broker')], help_text='The source of this entry, either Data Broker (DBR) or USASpending (USA)', null=True)),
                 ('appropriation_account_balances_id', models.AutoField(primary_key=True, serialize=False)),
                 ('budget_authority_unobligated_balance_brought_forward_fyb', models.DecimalField(blank=True, decimal_places=2, max_digits=23, null=True)),
                 ('adjustments_to_unobligated_balance_brought_forward_cpe', models.DecimalField(decimal_places=2, max_digits=23)),
@@ -59,7 +59,7 @@ class Migration(migrations.Migration):
             name='AppropriationAccountBalancesQuarterly',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('data_source', models.TextField(choices=[('USA', 'USAspending'), ('DBR', 'Data Broker')], help_text='The source of this entry, either Data Broker (DBR) or USASpending (USA)', null=True)),
+                ('data_source', models.TextField(choices=[('USA', 'USAspending'), ('DBR', 'DATA Act Broker')], help_text='The source of this entry, either Data Broker (DBR) or USASpending (USA)', null=True)),
                 ('budget_authority_unobligated_balance_brought_forward_fyb', models.DecimalField(blank=True, decimal_places=2, max_digits=23, null=True)),
                 ('adjustments_to_unobligated_balance_brought_forward_cpe', models.DecimalField(decimal_places=2, max_digits=23)),
                 ('budget_authority_appropriated_amount_cpe', models.DecimalField(decimal_places=2, max_digits=23)),
@@ -112,7 +112,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='TreasuryAppropriationAccount',
             fields=[
-                ('data_source', models.TextField(choices=[('USA', 'USAspending'), ('DBR', 'Data Broker')], help_text='The source of this entry, either Data Broker (DBR) or USASpending (USA)', null=True)),
+                ('data_source', models.TextField(choices=[('USA', 'USAspending'), ('DBR', 'DATA Act Broker')], help_text='The source of this entry, either Data Broker (DBR) or USASpending (USA)', null=True)),
                 ('treasury_account_identifier', models.AutoField(primary_key=True, serialize=False)),
                 ('tas_rendering_label', models.TextField(blank=True, null=True)),
                 ('allocation_transfer_agency_id', models.TextField(blank=True, null=True)),
