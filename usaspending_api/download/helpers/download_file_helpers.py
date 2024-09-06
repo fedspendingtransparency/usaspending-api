@@ -31,9 +31,7 @@ def get_last_modified_download_file(download_prefix: str, bucket_name: str) -> O
         s3_bucket = s3_resource.Bucket(bucket_name)
 
     else:
-        s3_bucket = boto3.resource("s3", region_name=settings.USASPENDING_AWS_REGION).Bucket(
-           bucket_name
-        )
+        s3_bucket = boto3.resource("s3", region_name=settings.USASPENDING_AWS_REGION).Bucket(bucket_name)
 
     download_names = []
     for key in s3_bucket.objects.filter(Prefix=download_prefix):
