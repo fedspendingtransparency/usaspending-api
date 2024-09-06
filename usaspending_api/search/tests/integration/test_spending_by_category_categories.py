@@ -18,7 +18,6 @@ from usaspending_api.search.v2.views.spending_by_category_views.spending_by_indu
     CfdaViewSet,
     PSCViewSet,
     NAICSViewSet,
-    DEFCViewSet,
 )
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_locations import (
     CountyViewSet,
