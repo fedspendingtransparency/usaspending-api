@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.download.helpers.download_file_helpers import (
-    get_last_modified_download_file_by_prefix,
+    get_last_modified_download_file,
     remove_file_prefix_if_exists,
 )
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -42,7 +42,7 @@ class ListUnlinkedAwardsDownloadsViewSet(APIView):
             agency_name = agency_name.replace(char, "_")
 
         download_prefix = f"{self.redirect_dir}/{agency_name}_UnlinkedAwards_"
-        latest_download_name = get_last_modified_download_file_by_prefix(download_prefix)
+        latest_download_name = get_last_modified_download_file(download_prefix, settings.BULK_DOWNLOAD_S3_BUCKET_NAME)
         latest_download_file_name = remove_file_prefix_if_exists(latest_download_name, f"{self.redirect_dir}/")
 
         identified_download = {

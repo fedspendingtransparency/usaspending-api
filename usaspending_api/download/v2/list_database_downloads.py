@@ -3,10 +3,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from usaspending_api.download.helpers.download_file_helpers import (
-    get_last_modified_download_file_by_prefix,
+    get_last_modified_download_file,
 )
 from usaspending_api.common.cache_decorator import cache_response
-
 
 class ListDatabaseDownloadsViewSet(APIView):
     """
@@ -19,10 +18,10 @@ class ListDatabaseDownloadsViewSet(APIView):
     def get(self, request):
 
         full_download_prefix = "usaspending-db_"
-        latest_full_download_name = get_last_modified_download_file_by_prefix(full_download_prefix)
+        latest_full_download_name = get_last_modified_download_file(full_download_prefix,settings.DATABASE_DOWNLOAD_S3_BUCKET_NAME)
 
         subset_download_prefix = "usaspending-db-subset_"
-        latest_subset_download_name = get_last_modified_download_file_by_prefix(subset_download_prefix)
+        latest_subset_download_name = get_last_modified_download_file(subset_download_prefix, settings.DATABASE_DOWNLOAD_S3_BUCKET_NAME)
 
         results = {
             "full_download_file": self._structure_file_response(latest_full_download_name),

@@ -7,7 +7,7 @@ from typing import Optional
 from usaspending_api.config import CONFIG
 
 
-def get_last_modified_download_file_by_prefix(download_prefix: str) -> Optional[str]:
+def get_last_modified_download_file(download_prefix: str, bucket_name: str) -> Optional[str]:
     """Return the last modified bulk download file from the bulk download bucket
     based on the provided file prefix.
     Args:
@@ -27,11 +27,11 @@ def get_last_modified_download_file_by_prefix(download_prefix: str) -> Optional[
         s3_resource = boto3_session.resource(
             service_name="s3", region_name=CONFIG.AWS_REGION, endpoint_url=f"http://{CONFIG.AWS_S3_ENDPOINT}"
         )
-        s3_bucket = s3_resource.Bucket(settings.DATABASE_DOWNLOAD_S3_BUCKET_NAME)
-        
+        s3_bucket = s3_resource.Bucket(bucket_name)
+
     else:
         s3_bucket = boto3.resource("s3", region_name=settings.USASPENDING_AWS_REGION).Bucket(
-            settings.DATABASE_DOWNLOAD_S3_BUCKET_NAME
+           bucket_name
         )
 
     download_names = []
