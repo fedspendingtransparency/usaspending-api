@@ -8,6 +8,7 @@ from usaspending_api.download.helpers.download_file_helpers import (
 )
 from usaspending_api.common.cache_decorator import cache_response
 
+
 class ListDatabaseDownloadsViewSet(APIView):
     """
     Returns information about the latest full and subset database download files.
@@ -19,7 +20,7 @@ class ListDatabaseDownloadsViewSet(APIView):
     def get(self, request):
 
         full_download_prefix = "usaspending-db_"
-        latest_full_download_name = get_last_modified_download_file(full_download_prefix,CONFIG.DATABASE_DOWNLOAD_S3_BUCKET_NAME)
+        latest_full_download_name = get_last_modified_download_file(full_download_prefix, CONFIG.DATABASE_DOWNLOAD_S3_BUCKET_NAME)
 
         subset_download_prefix = "usaspending-db-subset_"
         latest_subset_download_name = get_last_modified_download_file(subset_download_prefix, CONFIG.DATABASE_DOWNLOAD_S3_BUCKET_NAME)
