@@ -222,7 +222,14 @@ class StateAwardBreakdownViewSet(APIView):
         results = []
         for award_type, award_type_codes in _all_award_types_mappings.items():
             result = obtain_state_totals(fips, year=year, award_type_codes=award_type_codes)
-            results.append({"type": award_type, "amount": result["total"], "count": result["count"]})
+            results.append(
+                {
+                    "type": award_type,
+                    "amount": result["total"],
+                    "count": result["count"],
+                    "total_outlays": result["total_outlays"],
+                }
+            )
         return Response(results)
 
 

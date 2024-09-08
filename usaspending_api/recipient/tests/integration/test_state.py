@@ -97,7 +97,6 @@ def state_data(db):
     baker.make(
         "search.SummaryStateView",
         duh="c81e728d-9d4c-2f63-6f06-7f89cc14862c",
-        action_date=datetime.datetime(2020, 4, 1),
         fiscal_year=CURRENT_FISCAL_YEAR,
         type="A",
         distinct_awards="1",
@@ -114,7 +113,6 @@ def state_data(db):
     baker.make(
         "search.SummaryStateView",
         duh="eccbc87e-4b5c-e2fe-2830-8fd9f2a7baf3",
-        action_date=datetime.datetime(2020, 4, 1),
         fiscal_year=CURRENT_FISCAL_YEAR,
         type="A",
         distinct_awards="1",
@@ -131,7 +129,6 @@ def state_data(db):
     baker.make(
         "search.SummaryStateView",
         duh="c4ca4238-a0b9-2382-0dcc-509a6f75849b",
-        action_date=datetime.datetime(2020, 4, 1),
         fiscal_year=CURRENT_FISCAL_YEAR,
         type="A",
         distinct_awards="1",
@@ -148,7 +145,6 @@ def state_data(db):
     baker.make(
         "search.SummaryStateView",
         duh="1679091c-5a88-4c2e-a3d7-7395e4d1f9d7",
-        action_date=datetime.datetime(2020, 4, 1),
         fiscal_year=CURRENT_FISCAL_YEAR - 2,
         type="A",
         distinct_awards="2",
@@ -265,7 +261,6 @@ def state_view_data(db, monkeypatch):
     baker.make(
         "search.SummaryStateView",
         duh="6512bd43-d9cb-476c-918d-f3a2ef1a850a",
-        action_date=datetime.datetime(2020, 4, 1),
         fiscal_year=CURRENT_FISCAL_YEAR - 2,
         type="A",
         distinct_awards="1",
@@ -282,7 +277,6 @@ def state_view_data(db, monkeypatch):
     baker.make(
         "search.SummaryStateView",
         duh="c9f0f895-f8b7-4c9e-9366-d5b832fd3531",
-        action_date=datetime.datetime(2020, 4, 1),
         fiscal_year=CURRENT_FISCAL_YEAR,
         type="B",
         distinct_awards="2",
@@ -334,7 +328,6 @@ def state_view_loan_data(db, monkeypatch):
     baker.make(
         "search.SummaryStateView",
         duh="d3d94468-1d0f-46d9-bf13-5a5b7f51bc16",
-        action_date=datetime.datetime(2020, 4, 1),
         fiscal_year=CURRENT_FISCAL_YEAR - 2,
         type="07",
         distinct_awards="1,2",
@@ -394,11 +387,11 @@ def state_view_loan_data(db, monkeypatch):
 @pytest.fixture()
 def state_breakdown_result():
     expected_result = [
-        {"type": "contracts", "amount": 0, "count": 0},
-        {"type": "direct_payments", "amount": 0, "count": 0},
-        {"type": "grants", "amount": 0, "count": 0},
-        {"type": "loans", "amount": 0, "count": 0},
-        {"type": "other_financial_assistance", "amount": 0, "count": 0},
+        {"type": "contracts", "amount": 0, "total_outlays": 0, "count": 0},
+        {"type": "direct_payments", "amount": 0, "total_outlays": 0, "count": 0},
+        {"type": "grants", "amount": 0, "total_outlays": 0, "count": 0},
+        {"type": "loans", "amount": 0, "total_outlays": 0, "count": 0},
+        {"type": "other_financial_assistance", "amount": 0, "total_outlays": 0, "count": 0},
     ]
 
     return expected_result
@@ -557,7 +550,7 @@ def test_state_breakdown_success_state(client, state_view_data, state_breakdown_
     sorted_resp = sort_breakdown_response(resp.data)
 
     expected = state_breakdown_result
-    expected[0] = {"type": "contracts", "amount": 25, "count": 2}
+    expected[0] = {"type": "contracts", "amount": 25.00, "total_outlays": 0, "count": 2}
 
     assert resp.status_code == status.HTTP_200_OK
     assert sorted_resp == expected
@@ -569,7 +562,7 @@ def test_state_breakdown_success_year(client, state_view_data, state_breakdown_r
     sorted_resp = sort_breakdown_response(resp.data)
 
     expected = state_breakdown_result
-    expected[0] = {"type": "contracts", "amount": 15, "count": 1}
+    expected[0] = {"type": "contracts", "amount": 15, "total_outlays": 0, "count": 1}
 
     assert resp.status_code == status.HTTP_200_OK
     assert sorted_resp == expected
