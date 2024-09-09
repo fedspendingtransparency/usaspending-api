@@ -2101,8 +2101,10 @@ def test_spending_by_geo_program_activity_subawards(
     assert resp.status_code == status.HTTP_200_OK
     assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
 
+
 @pytest.mark.django_db
-def test_spending_by_geo_program_activity_name_case(client, monkeypatch, elasticsearch_transaction_index, awards_and_transactions
+def test_spending_by_geo_program_activity_name_case(
+    client, monkeypatch, elasticsearch_transaction_index, awards_and_transactions
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
@@ -2130,9 +2132,6 @@ def test_spending_by_geo_program_activity_name_case(client, monkeypatch, elastic
 
     assert resp.status_code == status.HTTP_200_OK
     assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
-
-
-
 
 
 @pytest.mark.django_db
