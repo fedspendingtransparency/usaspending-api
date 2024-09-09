@@ -152,8 +152,14 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
             sum_bucket_sort = sum_aggregations["sum_bucket_truncate"]
             group_by_agg_key_values = {"order": {"sum_field": "desc"}}
         else:
+            # Because DEFC values are single character, they do not need to be hashed
+            if self.category.name == "defc":
+                agg_key  = f"{self.category.agg_key}"
+            else:
+                agg_key = f"{self.category.agg_key}.hash"
+            
             # Get count of unique buckets; terminate early if there are no buckets matching criteria
-            bucket_count = get_number_of_unique_terms_for_transactions(filter_query, f"{self.category.agg_key}.hash")
+            bucket_count = get_number_of_unique_terms_for_transactions(filter_query, agg_key)
             if bucket_count == 0:
                 return None
             else:

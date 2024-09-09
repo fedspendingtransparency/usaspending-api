@@ -190,4 +190,4 @@ class DEFCViewSet(AbstractIndustryCodeViewSet):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/defc.md"
 
     industry_code_type = IndustryCodeType.DEFC
-    category = Category(name="defc", agg_key="defc_agg_key")
+    category = Category(name="defc", agg_key=f"{industry_code_type.value}.keyword")
