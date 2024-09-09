@@ -2,9 +2,9 @@ from django.conf import settings
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from usaspending_api.config import CONFIG
 from usaspending_api.download.helpers.download_file_helpers import (
-    get_last_modified_download_file_by_prefix,
-    remove_file_prefix_if_exists,
+    get_last_modified_download_file,
 )
 from usaspending_api.common.cache_decorator import cache_response
 
@@ -19,13 +19,15 @@ class ListDatabaseDownloadsViewSet(APIView):
     @cache_response()
     def get(self, request):
 
-        full_download_prefix = f"{self.redirect_dir}/usaspending-db_"
-        latest_full_download_name = get_last_modified_download_file_by_prefix(full_download_prefix)
-        latest_full_download_name = remove_file_prefix_if_exists(latest_full_download_name, f"{self.redirect_dir}/")
+        full_download_prefix = "usaspending-db_"
+        latest_full_download_name = get_last_modified_download_file(
+            full_download_prefix, CONFIG.DATABASE_DOWNLOAD_S3_BUCKET_NAME
+        )
 
-        subset_download_prefix = f"{self.redirect_dir}/usaspending-db-subset_"
-        latest_subset_download_name = get_last_modified_download_file_by_prefix(subset_download_prefix)
-        latest_subset_download_name = remove_file_prefix_if_exists(latest_subset_download_name, f"{self.redirect_dir}/")
+        subset_download_prefix = "usaspending-db-subset_"
+        latest_subset_download_name = get_last_modified_download_file(
+            subset_download_prefix, CONFIG.DATABASE_DOWNLOAD_S3_BUCKET_NAME
+        )
 
         results = {
             "full_download_file": self._structure_file_response(latest_full_download_name),
