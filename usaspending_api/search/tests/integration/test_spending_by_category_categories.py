@@ -1,6 +1,8 @@
 import pytest
+import json
 
 from model_bakery import baker
+from rest_framework import status
 
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
 from usaspending_api.references.abbreviations import code_to_state, state_to_code, fips_to_code
@@ -1053,6 +1055,28 @@ def test_category_cfda_subawards(cfda_test_data):
     }
 
     assert expected_response == spending_by_category_logic
+
+
+@pytest.mark.django_db
+def test_category_defc_subawards(client):
+    resp = client.post(
+        "/api/v2/search/spending_by_category",
+        content_type="application/json",
+        data=json.dumps({"category": "defc", "subawards": True, "page": 1, "limit": 10}),
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.json().get("results")) == 0
+
+
+@pytest.mark.django_db
+def test_category_defc_awards(client):
+    resp = client.post(
+        "/api/v2/search/spending_by_category",
+        content_type="application/json",
+        data=json.dumps({"category": "defc", "subawards": False, "page": 1, "limit": 10}),
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.json().get("results")) == 0
 
 
 @pytest.mark.django_db
