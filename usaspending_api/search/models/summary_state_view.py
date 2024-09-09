@@ -3,6 +3,7 @@ from django.db import models
 
 class SummaryStateView(models.Model):
     duh = models.UUIDField(primary_key=True, help_text="Deterministic Unique Hash")
+    action_date = models.DateField()
     fiscal_year = models.IntegerField()
     type = models.TextField()
     distinct_awards = models.TextField()
@@ -15,7 +16,6 @@ class SummaryStateView(models.Model):
     original_loan_subsidy_cost = models.DecimalField(max_digits=23, decimal_places=2)
     face_value_loan_guarantee = models.DecimalField(max_digits=23, decimal_places=2)
     counts = models.BigIntegerField()
-    total_outlays = models.DecimalField(max_digits=23, decimal_places=2, default= 0.00, null=False)
 
     class Meta:
         managed = True
