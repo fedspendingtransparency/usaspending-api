@@ -3,7 +3,6 @@ from django.db import models
 
 class SummaryStateView(models.Model):
     duh = models.UUIDField(primary_key=True, help_text="Deterministic Unique Hash")
-    action_date = models.DateField()
     fiscal_year = models.IntegerField()
     type = models.TextField()
     distinct_awards = models.TextField()
