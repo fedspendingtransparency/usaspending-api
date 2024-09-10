@@ -67,17 +67,13 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         original_filters = request.data.get("filters")
         validated_payload = TinyShield(models).block(request.data)
 
-        # Custom logic to support Subawards search for DEFC
+        # Because Subawards and Transactions are associated with DEFCs via their Prime Award, which contains a list of all DEFCs from its associated File C records, we need to limit results to records with a sub_action_date and action_date, respectively, earlier than the enactment date of the public law for each DEFC. This provides a more accurate breakdown of funds by DEFC. This can be accomplished by simply adding an extra filter for all DEFCs because DEFC filtering logic already takes this into account in query_with_filters.py. Because we are grouping by DEFC, it is safe to filter down to only records that include one.
         # Check if it's the Spending by DEFC endpoint
         if self.category.name == "defc":
-            # Get list of defc
-            def_codes = list(DisasterEmergencyFundCode.objects.values_list("code", flat=True))
-            # Add the filter
-            if original_filters is None:
-                validated_payload["filters"] = {}
+            # Get the list of DEFCs and add the filter if it doesn't already exist
+            if "def_codes" not in validated_payload["filters"]:
+                def_codes = list(DisasterEmergencyFundCode.objects.values_list("code", flat=True))
                 validated_payload["filters"]["def_codes"] = def_codes
-            else:
-                validated_payload["def_codes"] = def_codes
 
         raw_response = self.perform_search(validated_payload, original_filters)
 
