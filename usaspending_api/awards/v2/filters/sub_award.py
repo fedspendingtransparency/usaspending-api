@@ -365,7 +365,9 @@ def subaward_filter(filters, for_downloads=False):
             award_ids_filtered_by_program_activities = []
             for program_activity in value:
                 if "name" in program_activity:
-                    query_filter_predicates.append(Q(program_activity__program_activity_name=program_activity["name"]))
+                    query_filter_predicates.append(
+                        Q(program_activity__program_activity_name=program_activity["name"].upper())
+                    )
                 if "code" in program_activity:
                     query_filter_predicates.append(Q(program_activity__program_activity_code=program_activity["code"]))
                 filter_ = FinancialAccountsByAwards.objects.filter(*query_filter_predicates)

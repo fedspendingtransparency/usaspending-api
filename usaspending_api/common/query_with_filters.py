@@ -643,7 +643,7 @@ class _ProgramActivities(_Filter):
                     award_id_match_query.append(ES_Q("match", award_id=id))
         if len(award_id_match_query) == 0:
             return ~ES_Q()
-        return ES_Q("bool", should=award_id_match_query)
+        return ES_Q("bool", should=award_id_match_query, minimum_should_match=1)
 
 
 class _ContractPricingTypeCodes(_Filter):
