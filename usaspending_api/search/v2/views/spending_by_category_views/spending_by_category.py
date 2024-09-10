@@ -25,6 +25,7 @@ from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
+from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.search.v2.elasticsearch_helper import (
     get_number_of_unique_terms_for_transactions,
     get_scaled_sum_aggregations,
@@ -65,6 +66,18 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
 
         original_filters = request.data.get("filters")
         validated_payload = TinyShield(models).block(request.data)
+
+        # Custom logic to support Subawards search for DEFC
+        # Check if it's the Spending by DEFC endpoint
+        if self.category.name == "defc":
+            # Get list of defc
+            def_codes = list(DisasterEmergencyFundCode.objects.values_list("code", flat=True))
+            # Add the filter
+            if original_filters is None:
+                validated_payload["filters"] = {}
+                validated_payload["filters"]["def_codes"] = def_codes
+            else:
+                validated_payload["def_codes"] = def_codes
 
         raw_response = self.perform_search(validated_payload, original_filters)
 
