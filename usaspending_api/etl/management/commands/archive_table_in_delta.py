@@ -16,15 +16,16 @@ from usaspending_api.common.helpers.spark_helpers import (
 from usaspending_api.download.delta_models.download_job import download_job_create_sql_string
 
 TABLE_SPEC = {
-    "download_job" : {
+    "download_job": {
         "destination_database": "arc",
         "destination_table": "download_job",
         "archive_date_field": "update_date",
         "source_table": "download_job",
         "source_database": "public",
-        "delta_table_create_sql": download_job_create_sql_string, 
+        "delta_table_create_sql": download_job_create_sql_string,
     }
 }
+
 
 class Command(BaseCommand):
 
@@ -95,7 +96,7 @@ class Command(BaseCommand):
         archive_date_field = table_spec["archive_date_field"]
 
         archive_date = datetime.now() - timedelta(days=archive_period)
-        archive_date_string = archive_date.strftime('%Y-%m-%d')
+        archive_date_string = archive_date.strftime("%Y-%m-%d")
 
         # Set the database that will be interacted with for all Delta Lake table Spark-based activity
         logger.info(f"Using Spark Database: {destination_database}")
@@ -110,7 +111,9 @@ class Command(BaseCommand):
             raise ValueError("JDBC URL given is not in postgres JDBC URL format (e.g. jdbc:postgresql://...")
 
         # Retrieve data from Postgres
-        query_with_predicate = f"(SELECT * FROM {qualified_source_table} WHERE {archive_date_field} < '{archive_date_string}') AS tmp"
+        query_with_predicate = (
+            f"(SELECT * FROM {qualified_source_table} WHERE {archive_date_field} < '{archive_date_string}') AS tmp"
+        )
 
         df = spark.read.jdbc(
             url=jdbc_url,
@@ -123,10 +126,12 @@ class Command(BaseCommand):
         archived_count = df.count()
         logger.info(f"Archived {archived_count} records from the {qualified_source_table}")
 
-        # Delete data from 
+        # Delete data from
         with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
             with connection.cursor() as cursor:
-                cursor.execute(f"DELETE FROM {qualified_source_table} WHERE {archive_date_field} < '{archive_date_string}'")
+                cursor.execute(
+                    f"DELETE FROM {qualified_source_table} WHERE {archive_date_field} < '{archive_date_string}'"
+                )
                 deleted_count = cursor.rowcount
 
         logger.info(f"Deleted {deleted_count} records from the {qualified_source_table} table")
@@ -134,4 +139,3 @@ class Command(BaseCommand):
         # Shut down spark
         if spark_created_by_command:
             spark.stop()
-
