@@ -45,6 +45,7 @@ class RecipientAutocompleteViewSet(APIView):
                     "search_text": str
                     "recipient_levels": [""] (optional)
                     "limit": int (optional)
+                    "duns": string (optional)
                 }
             format: The format of the response (default=None).
 
@@ -78,22 +79,16 @@ class RecipientAutocompleteViewSet(APIView):
         Args:
             search_text: The search text entered by the user.
             recipient_levels: The list of recipient levels to filter by.
+            duns: Any specific duns key specified by the user.
             limit: The maximum number of results to return.
 
         Returns:
             An Elasticsearch search query.
         """
-        es_recipient_search_fields = ["recipient_name", "uei"]
-
-        query = ES_Q(
-            "bool",
-            should=[
-                ES_Q("query_string", query=search_text, fields=es_recipient_search_fields),
-                ES_Q("match", recipient_name=search_text),
-                ES_Q("match", uei=search_text),
-            ],
-            minimum_should_match=1,
-        )
+        es_recipient_search_fields = ["recipient_name", "uei", "duns"]
+        query_string_query = ES_Q("query_string", query=f"*{search_text}*", fields=es_recipient_search_fields)
+        multi_match_query = ES_Q("multi_match", query=search_text, fields=es_recipient_search_fields)
+        query = ES_Q("bool", should=[query_string_query, multi_match_query], minimum_should_match=1)
 
         if recipient_levels:
             recipient_should_clause = [
@@ -151,6 +146,7 @@ class RecipientAutocompleteViewSet(APIView):
                         ("recipient_name", recipient["recipient_name"]),
                         ("uei", recipient["uei"]),
                         ("recipient_level", recipient["recipient_level"]),
+                        ("duns", recipient["duns"] if "duns" in recipient else None),
                     ]
                 )
             )

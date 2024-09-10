@@ -25,6 +25,7 @@ from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
+from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.search.v2.elasticsearch_helper import (
     get_number_of_unique_terms_for_transactions,
     get_scaled_sum_aggregations,
@@ -65,6 +66,22 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
 
         original_filters = request.data.get("filters")
         validated_payload = TinyShield(models).block(request.data)
+
+        # Because Subawards and Transactions are associated with DEFCs via their Prime Award, which
+        # contains a list of all DEFCs from its associated File C records, we need to limit results
+        # to records with a sub_action_date and action_date, respectively, earlier than the enactment date
+        # of the public law for each DEFC. This provides a more accurate breakdown of funds by DEFC.
+        # This can be accomplished by simply adding an extra filter for all DEFCs because DEFC filtering
+        # logic already takes this into account in query_with_filters.py. Because we are grouping by DEFC,
+        # it is safe to filter down to only records that include one.
+        # Check if it's the Spending by DEFC endpoint
+        if self.category.name == "defc":
+            # Get the list of DEFCs and add the filter if it doesn't already exist
+            if "filters" not in validated_payload:
+                validated_payload["filters"] = {}
+            if "def_codes" not in validated_payload["filters"]:
+                def_codes = list(DisasterEmergencyFundCode.objects.values_list("code", flat=True))
+                validated_payload["filters"]["def_codes"] = def_codes
 
         raw_response = self.perform_search(validated_payload, original_filters)
 
