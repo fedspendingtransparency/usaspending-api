@@ -2114,7 +2114,7 @@ def test_spending_by_geo_program_activity_name_case(
         "scope": "place_of_performance",
         "geo_layer": "country",
         "filters": {
-            "program_activities": [{"name": "ProGram_aCtiVty_123"}],
+            "program_activities": [{"name": "ProGram_aCtiVity_123"}],
         },
     }
     expected_response = [
