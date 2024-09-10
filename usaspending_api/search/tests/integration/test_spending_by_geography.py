@@ -2064,7 +2064,7 @@ def test_spending_by_geo_program_activity_subawards(
         "geo_layer": "country",
         "geo_layer_filters": ["USA"],
         "filters": {
-            "program_activities": [{"name": "program_activity_123"}, {"code": "123"}],
+            "program_activities": [{"name": "program_activity_123"}],
         },
     }
     expected_response = [
@@ -2089,7 +2089,7 @@ def test_spending_by_geo_program_activity_subawards(
         "geo_layer": "country",
         "geo_layer_filters": ["USA"],
         "filters": {
-            "program_activities": [{"name": "program_activity_123", "code": "321"}],
+            "program_activities": [{"name": "program_activity_12345"}],
         },
     }
     expected_response = []
@@ -2187,7 +2187,7 @@ def test_spending_by_geo_program_activity(
         "geo_layer": "country",
         "geo_layer_filters": ["USA"],
         "filters": {
-            "program_activities": [{"name": "program_activity_123"}, {"code": "123"}],
+            "program_activities": [{"name": "program_activity_123"}],
         },
     }
     expected_response = [
@@ -2212,7 +2212,7 @@ def test_spending_by_geo_program_activity(
         "geo_layer": "country",
         "geo_layer_filters": ["USA"],
         "filters": {
-            "program_activities": [{"name": "program_activity_123", "code": "321"}],
+            "program_activities": [{"name": "program_activity_12345"}],
         },
     }
     expected_response = []
