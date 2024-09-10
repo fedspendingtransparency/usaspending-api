@@ -89,7 +89,7 @@ summary_state_view_load_sql_string = [
             ) AS NUMERIC(23, 2)
         ) AS face_value_loan_guarantee,
         COUNT(*) AS counts,
-        NULL AS total_outlays  -- Default value for new column
+        0 AS total_outlays  -- Default value for new column
     FROM
         int.transaction_normalized
     LEFT OUTER JOIN
