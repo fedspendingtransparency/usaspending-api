@@ -34,7 +34,7 @@ class Award(DataSourceTrackedModel):
 
     Much of the award record data (for example, awarding_agency, funding_agency,
     type) is automatically populated from info in the award's child transactions.
-    These updates happen in our USAspending and data act broker load processes:
+    These updates happen in our USAspending and data broker load processes:
     see ETL\award_helpers.py for details.
     """
 
