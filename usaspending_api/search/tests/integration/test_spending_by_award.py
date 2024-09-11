@@ -195,7 +195,7 @@ def award_data_fixture(db):
         "references.RefProgramActivity",
         id=1,
         program_activity_code=123,
-        program_activity_name="program_activity_123",
+        program_activity_name="PROGRAM_ACTIVITY_123",
     )
     baker.make(
         "awards.FinancialAccountsByAwards",
@@ -208,7 +208,7 @@ def award_data_fixture(db):
         "references.RefProgramActivity",
         id=2,
         program_activity_code=2,
-        program_activity_name="program_activity_2",
+        program_activity_name="PROGRAM_ACTIVITY_2",
     )
     baker.make(
         "awards.FinancialAccountsByAwards",
