@@ -7,36 +7,23 @@
 # See docker-compose.yml file and README.md for docker-compose information
 
 FROM rockylinux:8
-
 # Build ARGs
 ARG PYTHON_VERSION=3.10.12
-
 WORKDIR /dockermount
-
 # update to use centos official mirrors only
 RUN sed -i '/#baseurl/s/^#//g' /etc/yum.repos.d/Rocky-*
 RUN sed -i '/mirrorlist/s/^/#/g' /etc/yum.repos.d/Rocky-*
-
 RUN dnf -y update
-# sqlite-devel added as prerequisite for coverage python lib, used by pytest-cov plugin
 RUN dnf -y install gcc openssl-devel bzip2-devel libffi-devel zlib-devel wget make
 RUN dnf -y groupinstall "Development Tools"
-
 RUN dnf install epel-release -y
 RUN dnf --enablerepo=powertools install perl-IPC-Run -y
-
-
-##### Install PostgreSQL 13 client (psql)
-## Import and install not working on local BAH computers
-#RUN rpm --import https://download.postgresql.org/pub/repos/yum/keys/RPM-GPG-KEY-PGDG-AARCH64-RHEL8
-#RUN dnf -y install https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm
-
 RUN dnf -y module enable postgresql:13
-RUN dnf -y install postgresql
-RUN dnf -y install postgresql-devel
-
-
-##### Building python 3.x
+RUN dnf -y install postgresql postgresql-devel
+# Enable powertools repository and install necessary math libraries
+RUN dnf config-manager --set-enabled powertools
+RUN dnf -y install openblas-devel atlas-devel
+# Build Python
 WORKDIR /usr/src
 RUN wget --quiet https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz
 RUN tar xzf Python-${PYTHON_VERSION}.tgz
@@ -45,18 +32,18 @@ RUN ./configure --enable-optimizations
 RUN make altinstall
 RUN ln -sf /usr/local/bin/python`echo ${PYTHON_VERSION} | awk -F. '{short_version=$1 FS $2; print short_version}'` /usr/bin/python3
 RUN echo "$(python3 --version)"
-
-##### Copy python packaged
+# Upgrade pip and install numpy separately to avoid compilation issues
+RUN python3 -m pip install --upgrade pip
+RUN python3 -m pip install numpy
+# Install remaining requirements
 WORKDIR /dockermount
 COPY requirements/ /dockermount/requirements/
-RUN export PATH=$PATH:/usr/pgsql-13/bin && python3 -m pip install -r requirements/requirements.txt
-
+RUN python3 -m pip install -r requirements/requirements.txt
+# Install additional requirements
 RUN python3 -m pip install -r requirements/requirements-server.txt ansible==2.9.15 awscli
-
-##### Copy the rest of the project files into the container
+# Copy the rest of the project files into the container
 COPY . /dockermount
-
-##### Ensure Python STDOUT gets sent to container logs
+# Ensure Python STDOUT gets sent to container logs
 ENV PYTHONUNBUFFERED=1
 
 
