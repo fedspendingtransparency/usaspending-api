@@ -63,6 +63,7 @@ def transform_transaction_data(worker: TaskSpec, records: List[dict]) -> List[di
         "funding_toptier_agency_agg_key": lambda x: x["funding_agency_code"],
         "naics_agg_key": lambda x: x["naics_code"],
         "psc_agg_key": lambda x: x["product_or_service_code"],
+        "defc_agg_key": lambda x: x["disaster_emergency_fund_codes"],
         "pop_country_agg_key": lambda x: x["pop_country_code"],
         "pop_state_agg_key": lambda x: x["pop_state_code"],
         "pop_county_agg_key": funcs.pop_county_agg_key,

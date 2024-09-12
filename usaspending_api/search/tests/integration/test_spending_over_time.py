@@ -1,9 +1,9 @@
-import json
-import pytest
 import datetime
+import json
 
-from rest_framework import status
+import pytest
 from model_bakery import baker
+from rest_framework import status
 
 from usaspending_api.common.helpers.fiscal_year_helpers import (
     generate_fiscal_month,
@@ -3263,7 +3263,7 @@ def test_spending_over_time_program_activity(client, monkeypatch, elasticsearch_
         "references.RefProgramActivity",
         id=1,
         program_activity_code=123,
-        program_activity_name="program_activity_123",
+        program_activity_name="PROGRAM_ACTIVITY_123",
     )
     baker.make(
         "awards.FinancialAccountsByAwards",

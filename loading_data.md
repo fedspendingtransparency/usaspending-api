@@ -37,7 +37,7 @@ To load certified submission data from the broker, you will need a read-only (or
 
     DATA_BROKER_DATABASE_URL=postgres://user:password@url:5432/data_broker
 
-To load a submission from the data broker database:
+To load a submission from data broker database:
 
     python manage.py load_submission [submission_id]
 
