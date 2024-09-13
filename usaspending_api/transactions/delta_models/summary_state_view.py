@@ -47,7 +47,12 @@ summary_state_view_load_sql_string = [
         transaction_normalized.type,
         CONCAT_WS(
             ',',
-            SORT_ARRAY(COLLECT_SET(transaction_normalized.award_id))
+            COLLECT_SET(
+                CASE
+                    WHEN transaction_normalized.id = awards.latest_transaction_id THEN transaction_normalized.award_id
+                    ELSE NULL
+                END
+            )
         ) AS distinct_awards,
         COALESCE(
             transaction_fpds.place_of_perform_country_c,
@@ -96,6 +101,8 @@ summary_state_view_load_sql_string = [
         int.transaction_fpds ON (transaction_normalized.id = transaction_fpds.transaction_id)
     LEFT OUTER JOIN
         int.transaction_fabs ON (transaction_normalized.id = transaction_fabs.transaction_id)
+    INNER JOIN
+        int.awards ON (transaction_normalized.award_id = awards.id)
     WHERE
         transaction_normalized.action_date >= '2007-10-01'
         AND COALESCE(transaction_fpds.place_of_perform_country_c, transaction_fabs.place_of_perform_country_c, 'USA') = 'USA'
