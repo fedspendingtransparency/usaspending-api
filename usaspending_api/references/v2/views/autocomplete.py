@@ -2,10 +2,11 @@ from django.db.models import Case, F, IntegerField, Q, When
 from django.db.models.functions import Upper
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.generic_helper import deprecated_api_endpoint_message
-from usaspending_api.references.models import Cfda, Definition, NAICS, PSC, RefProgramActivity
+from usaspending_api.references.models import NAICS, PSC, Cfda, Definition, RefProgramActivity
 from usaspending_api.references.v2.views.glossary import DefinitionSerializer
 from usaspending_api.search.models import AgencyAutocompleteMatview, AgencyOfficeAutocompleteMatview
 
@@ -391,7 +392,7 @@ class ProgramActivityAutocompleteViewSet(BaseAutocompleteViewSet):
     def post(self, request):
         search_text, limit = self.get_request_payload(request)
 
-        queryset = RefProgramActivity.objects.all()
+        queryset = RefProgramActivity.objects.distinct("program_activity_code", "program_activity_name")
 
         if len(search_text) == 4 and queryset.filter(program_activity_code=search_text.upper()).exists():
             queryset = queryset.filter(program_activity_code=search_text.upper())

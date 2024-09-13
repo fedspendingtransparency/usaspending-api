@@ -108,7 +108,7 @@ _Alternatively, to download a fully populuated production snapshot of the databa
 
 - Recreate matviews with the command documented in the previous section if this is done
 
-_**Executing individual data-loaders** to load in data is also possible, but requires more familiarity with those ad-hoc scripts and commands, and also requires an external data source (DATA Broker DB, or external file, etc.) from which to load the data._
+_**Executing individual data-loaders** to load in data is also possible, but requires more familiarity with those ad-hoc scripts and commands, and also requires an external data source (Data Broker DB, or external file, etc.) from which to load the data._
 
 - For details on loading reference data, Data Accountability Broker Submissions, and current USAspending data into the API, see [loading_data.md](loading_data.md).
 - For details on how our data loaders modify incoming data, see [data_reformatting.md](data_reformatting.md).

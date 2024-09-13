@@ -1,13 +1,12 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Spending By Awarding Subagency [/api/v2/search/spending_by_category/awarding_subagency/]
+# Spending By DEFC [/api/v2/search/spending_by_category/defc/]
 
 This endpoint supports the advanced search page and allow for complex filtering for specific subsets of spending data.
 
 ## POST
-
-This endpoint returns a list of the top results of Awarding Subagencies sorted by the total amounts in descending order.
+This endpoint should return a an aggregate list of DEFC's sorted by the total amounts in descending order.
 
 + Request (application/json)
     + Schema
@@ -16,39 +15,42 @@ This endpoint returns a list of the top results of Awarding Subagencies sorted b
                 "$schema": "http://json-schema.org/draft-04/schema#",
                 "type": "object"
             }
-
     + Attributes (object)
-        + `filters` (required, AdvancedFilterObject)
-            The filters to find with said category
-        + `limit` (optional, number)
-            The number of results to include per page
-        + `page` (optional, number)
-            The page of results to return based on the limit
-        + `subawards` (optional, boolean)
-            Determines whether Prime Awards or Sub Awards are searched
+            + `filters` (required, AdvancedFilterObject)
+                The filters to find with said category
+            + `limit`: 5 (optional, number)
+                The number of results to include per page
+            + `page`: 1 (optional, number)
+                The page of results to return based on the limit
+            + `subawards` (optional, boolean)
+                Determines whether Prime Awards or Sub Awards are searched
+
     + Body
 
 
             {
+                "category": "defc",
                 "filters": {
-                    "recipient_id": "1c3edaaa-611b-840c-bf2b-fd34df49f21f-P",
+                    "award_type_codes": [
+                        "A",
+                        "B",
+                        "C",
+                        "D"
+                    ],
                     "time_period": [
                         {
                             "start_date": "2019-09-28",
                             "end_date": "2020-09-28"
                         }
                     ]
-                },
-                "category": "awarding_subagency",
-                "limit": 5,
-                "page": 1
+                }
             }
 
 + Response 200 (application/json)
     + Attributes (object)
-        + `category`: `awarding_subagency` (required, string)
+        + `category`: `defc` (required, string)
         + `results` (required, array[CategoryResult], fixed-type)
-        + `limit` (required, number)
+        + `limit`: 10 (required, number)
         + `page_metadata` (PageMetadataObject)
         + `messages` (optional, array[string])
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
@@ -56,7 +58,7 @@ This endpoint returns a list of the top results of Awarding Subagencies sorted b
 
 
             {
-                "category": "awarding_subagency",
+                "category": "defc",
                 "limit": 10,
                 "page_metadata": {
                     "page": 1,
@@ -67,16 +69,16 @@ This endpoint returns a list of the top results of Awarding Subagencies sorted b
                 },
                 "results": [
                     {
-                        "amount": 442057334610.11,
-                        "name": "Centers for Medicare and Medicaid Services",
-                        "code": "CMS",
-                        "id": 831
+                       "amount": 563059.48,
+                       "code": "1",
+                       "id": null,
+                       "name": "Infrastructure Investment and Jobs Act",
                     },
                     {
-                        "amount": 284418429693.37,
-                        "name": "Social Security Administration",
-                        "code": "SSA",
-                        "id": 539
+                       "amount": 1250000.00,
+                       "code": "7",
+                       "id": null,
+                       "name": "Bipartisan Safer Communities Act",
                     }
                 ],
                 "messages": [
@@ -91,14 +93,8 @@ This endpoint returns a list of the top results of Awarding Subagencies sorted b
     The id is the database key.
 + `name` (required, string, nullable)
 + `code` (required, string, nullable)
-    `code` is a user-displayable code (such as a program activity or NAICS code, but **not** a database ID). When no such code is relevant, return a `null`. This `code` refers to the subtier agency abbreviation.
+    `code` is a user-displayable code (such as a program activity or NAICS code, but **not** a database ID). When no such code is relevant, return a `null`.
 + `amount` (required, number)
-+ `subagency_slug` (required, string)
-+ `agency_id` (required,number)
-+ `agency_abbreviation`(required, string)
-    The `agency_abbreviation` refers to the abbreviation for the toptier agency associated with the subtier agency.
-+ `agency_name`(required, string)
-+ `agency_slug`(required, string)
 
 ## PageMetadataObject (object)
 + `page` (required, number)
@@ -114,7 +110,7 @@ This endpoint returns a list of the top results of Awarding Subagencies sorted b
         + `foreign`
 + `place_of_performance_locations` (optional, array[LocationObject], fixed-type)
 + `agencies` (optional, array[AgencyObject], fixed-type)
-+ `recipient_search_text`: [`Hampton`] (optional, array[string])
++ `recipient_search_text`: [`Hampton`, `Roads`] (optional, array[string])
 + `recipient_id` (optional, string)
     A unique identifier for the recipient which includes the recipient hash and level.
 + `recipient_scope` (optional, enum[string])
@@ -122,7 +118,7 @@ This endpoint returns a list of the top results of Awarding Subagencies sorted b
         + `domestic`
         + `foreign`
 + `recipient_locations` (optional, array[LocationObject], fixed-type)
-+ `recipient_type_names`: [`category_business`] (optional, array[string])
++ `recipient_type_names`: [`category_business`, `sole_proprietorship`] (optional, array[string])
 + `award_type_codes` (optional, FilterObjectAwardTypes)
 + `award_ids`: [`SPE30018FLGFZ`, `SPE30018FLJFN`] (optional, array[string])
     Award IDs surrounded by double quotes (e.g. `"SPE30018FLJFN"`) will perform exact matches as opposed to the default, fuzzier full text matches.  Useful for Award IDs that contain spaces or other word delimiters.
@@ -161,10 +157,7 @@ These fields are defined in the [StandardLocationObject](../../../../search_filt
     + Members
         + `toptier`
         + `subtier`
-+ `name`: `Office of Inspector General` (required, string)
-+ `toptier_name`: `Department of the Treasury` (optional, string)
-    Only applicable when `tier` is `subtier`.  Ignored when `tier` is `toptier`.  Provides a means by which to scope subtiers with common names to a
-    specific toptier.  For example, several agencies have an "Office of Inspector General".  If not provided, subtiers may span more than one toptier.
++ `name`: `Department of Defense` (required, string)
 
 ### AwardAmounts (object)
 + `lower_bound` (optional, number)

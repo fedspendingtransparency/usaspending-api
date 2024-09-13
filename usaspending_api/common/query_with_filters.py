@@ -6,8 +6,8 @@ from datetime import datetime
 from typing import List, Tuple
 
 from django.conf import settings
-from elasticsearch_dsl import Q as ES_Q
 from django.db.models import Q
+from elasticsearch_dsl import Q as ES_Q
 
 from usaspending_api.awards.models.financial_accounts_by_awards import FinancialAccountsByAwards
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -630,19 +630,20 @@ class _ProgramActivities(_Filter):
             query_filter_predicates = [Q(program_activity_id__isnull=False)]
 
             if "name" in filter_value:
-                query_filter_predicates.append(Q(program_activity__program_activity_name=filter_value["name"]))
+                query_filter_predicates.append(Q(program_activity__program_activity_name=filter_value["name"].upper()))
             if "code" in filter_value:
                 query_filter_predicates.append(Q(program_activity__program_activity_code=filter_value["code"]))
             award_ids_filtered_by_program_activities = FinancialAccountsByAwards.objects.filter(
                 *query_filter_predicates
             )
-            award_ids = list(award_ids_filtered_by_program_activities.values_list("award_id", flat=True))
+            award_ids = set(award_ids_filtered_by_program_activities.values_list("award_id", flat=True))
 
             for id in award_ids:
-                award_id_match_query.append(ES_Q("query_string", query=id, fields=["award_id"], default_operator="OR"))
+                if id is not None:
+                    award_id_match_query.append(ES_Q("match", award_id=id))
         if len(award_id_match_query) == 0:
             return ~ES_Q()
-        return award_id_match_query
+        return ES_Q("bool", should=award_id_match_query, minimum_should_match=1)
 
 
 class _ContractPricingTypeCodes(_Filter):
