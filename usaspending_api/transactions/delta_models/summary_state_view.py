@@ -114,78 +114,77 @@ summary_state_view_load_sql_string = [
         )
     """,
     # -----
-    # Using the file_C records, create a temporary view to sum the award total outlays by year
+    # Build a list of Award Outlays by Fiscal Year using the File C table
     # -----
-    r"""
-    CREATE OR REPLACE TEMPORARY VIEW award_outlay_sums AS (
-        SELECT
-            faba.award_id,
-            sa.reporting_fiscal_year AS award_fiscal_year,
-            SUM(faba.gross_outlay_amount_by_award_cpe) AS total_gross_outlay_amount_by_award_cpe,
-            SUM(faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe) AS total_ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe,
-            SUM(faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe) AS total_ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe
-        FROM int.financial_accounts_by_awards faba
-        INNER JOIN global_temp.submission_attributes sa
-            ON faba.submission_id = sa.submission_id
-        WHERE sa.is_final_balances_for_fy = TRUE
-        GROUP BY faba.award_id, sa.reporting_fiscal_year
-    );
-    """,
-    # -----
-    # Create the Second Temporary View for Coalescing the Summed Values
-    # -----
-    r"""
-    CREATE OR REPLACE TEMPORARY VIEW award_total_outlays AS (
+    """
+    CREATE OR REPLACE TEMPORARY VIEW outlays_by_year AS (
         SELECT
             award_id,
-            award_fiscal_year,
-            COALESCE(total_gross_outlay_amount_by_award_cpe, 0)
-            + COALESCE(total_ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe, 0)
-            + COALESCE(total_ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe, 0) AS total_outlays
-        FROM award_outlay_sums
-        WHERE total_gross_outlay_amount_by_award_cpe IS NOT NULL
-            OR total_ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe IS NOT NULL
-            OR total_ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe IS NOT NULL
-    );
+            sa.reporting_fiscal_year,
+            SUM(COALESCE(gross_outlay_amount_by_award_cpe, 0)
+                    + COALESCE(ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe, 0)
+                    + COALESCE(ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe, 0)) AS total_outlays
+        FROM
+            int.financial_accounts_by_awards faba
+        INNER JOIN
+            global_temp.submission_attributes sa ON sa.submission_id = faba.submission_id
+        WHERE
+            sa.is_final_balances_for_fy = true
+        GROUP BY award_id, sa.reporting_fiscal_year
+    )
     """,
     # -----
-    # Unnest the distinct awards from summary_state_view table to get distinct award_id's
+    # Determine a list of Award IDs per State, along with their Award Types
     # -----
-    fr"""
-    CREATE OR REPLACE TEMPORARY VIEW split_awards AS (
+    """
+    CREATE OR REPLACE TEMPORARY VIEW awards_by_state AS (
         SELECT
-            ssv.duh,
-            explode(split(ssv.distinct_awards, ',')) AS award_id
+            distinct
+            award_id,
+            tn.type,
+            COALESCE(fpds.place_of_performance_state, fabs.place_of_perfor_state_code) AS pop_state_code
         FROM
-           {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} ssv
-    );
+            int.transaction_normalized tn
+        LEFT OUTER JOIN
+            int.transaction_fpds fpds ON (tn.id = fpds.transaction_id)
+        LEFT OUTER JOIN
+            int.transaction_fabs fabs ON (tn.id = fabs.transaction_id)
+        WHERE
+            tn.action_date >= '2007-10-01'
+            AND COALESCE(fpds.place_of_perform_country_c, fabs.place_of_perform_country_c, 'USA') = 'USA'
+            AND COALESCE(fpds.place_of_performance_state, fabs.place_of_perfor_state_code) IS NOT NULL
+    )
     """,
     # -----
-    # Join split_awards with award_total_outlays to get total_outlays for each award_id
+    # Combine the above two views into a single view breaking down outlays by State, Award Type, and Fiscal Year
     # -----
-    r"""
-    CREATE OR REPLACE TEMPORARY VIEW awards_outlays_aggregated AS (
+    """
+    CREATE OR REPLACE TEMPORARY VIEW outlays_breakdown AS (
         SELECT
-            split_awards.duh,
-            SUM(ato.total_outlays) AS aggregated_total_outlays
+            abs.pop_state_code,
+            abs.type,
+            oby.reporting_fiscal_year,
+            SUM(oby.total_outlays) AS total_outlays
         FROM
-            split_awards
-        LEFT JOIN
-            award_total_outlays ato
-        ON
-            split_awards.award_id = ato.award_id
-        GROUP BY
-            split_awards.duh
-    );
+            outlays_by_year oby
+        INNER JOIN
+            awards_by_state abs ON oby.award_id = abs.award_id
+        GROUP BY abs.pop_state_code, oby.reporting_fiscal_year, abs.type
+    )
     """,
     # -----
     # Update the summary_state_view.total_outlays with calculated values
     # -----
-    fr"""
-    MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} ssv
-    USING awards_outlays_aggregated aoa
-    ON ssv.duh = aoa.duh
+    f"""
+    MERGE INTO
+        {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} ssv
+    USING
+        outlays_breakdown ob
+    ON
+        ob.pop_state_code = ssv.pop_state_code
+        AND ob.type = ssv.type
+        AND ob.reporting_fiscal_year = ssv.fiscal_year
     WHEN MATCHED THEN
-    UPDATE SET ssv.total_outlays = aoa.aggregated_total_outlays;
+        UPDATE SET ssv.total_outlays = ob.total_outlays;
     """,
 ]
