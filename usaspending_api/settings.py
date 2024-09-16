@@ -351,7 +351,7 @@ if os.environ.get("DOWNLOAD_DATABASE_URL"):
         "DOWNLOAD_DATABASE_URL", test_options={"MIRROR": DEFAULT_DB_ALIAS}
     )
 
-# import a second database connection for ETL, connecting to the data broker
+# import a second database connection for ETL, connecting to data broker
 # using the environment variable, DATA_BROKER_DATABASE_URL - only if it is set
 DATA_BROKER_DB_ALIAS = "data_broker"
 if os.environ.get("DATA_BROKER_DATABASE_URL"):

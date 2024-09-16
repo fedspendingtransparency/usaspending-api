@@ -1,8 +1,8 @@
 import json
-import pytest
-
-from model_bakery import baker
 from time import perf_counter
+
+import pytest
+from model_bakery import baker
 from rest_framework import status
 
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
@@ -32,7 +32,7 @@ def transaction_data():
         "references.RefProgramActivity",
         id=1,
         program_activity_code=123,
-        program_activity_name="program_activity_123",
+        program_activity_name="PROGRAM_ACTIVITY_123",
     )
     baker.make(
         "awards.FinancialAccountsByAwards",

@@ -132,7 +132,7 @@ def awards_and_transactions(db):
         "references.RefProgramActivity",
         id=1,
         program_activity_code=123,
-        program_activity_name="program_activity_123",
+        program_activity_name="PROGRAM_ACTIVITY_123",
     )
     baker.make(
         "awards.FinancialAccountsByAwards",

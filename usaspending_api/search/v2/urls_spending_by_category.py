@@ -10,6 +10,7 @@ from usaspending_api.search.v2.views.spending_by_category_views.spending_by_indu
     CfdaViewSet,
     PSCViewSet,
     NAICSViewSet,
+    DEFCViewSet,
 )
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_federal_account import FederalAccountViewSet
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_locations import (
@@ -38,4 +39,5 @@ urlpatterns = [
     re_path(r"^recipient/?$", RecipientViewSet.as_view()),
     re_path(r"^recipient_duns", RecipientDunsViewSet.as_view()),
     re_path(r"^state_territory", StateTerritoryViewSet.as_view()),
+    re_path(r"^defc", DEFCViewSet.as_view()),
 ]
