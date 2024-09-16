@@ -124,9 +124,9 @@ summary_state_view_load_sql_string = [
             SUM(COALESCE(gross_outlay_amount_by_award_cpe, 0)
                     + COALESCE(ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe, 0)
                     + COALESCE(ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe, 0)) AS total_outlays
-        FROM 
-            int.financial_accounts_by_awards faba 
-        INNER JOIN 
+        FROM
+            int.financial_accounts_by_awards faba
+        INNER JOIN
             global_temp.submission_attributes sa ON sa.submission_id = faba.submission_id
         WHERE
             sa.is_final_balances_for_fy = true
@@ -149,7 +149,7 @@ summary_state_view_load_sql_string = [
             int.transaction_fpds fpds ON (tn.id = fpds.transaction_id)
         LEFT OUTER JOIN
             int.transaction_fabs fabs ON (tn.id = fabs.transaction_id)
-        WHERE 
+        WHERE
             tn.action_date >= '2007-10-01'
             AND COALESCE(fpds.place_of_perform_country_c, fabs.place_of_perform_country_c, 'USA') = 'USA'
             AND COALESCE(fpds.place_of_performance_state, fabs.place_of_perfor_state_code) IS NOT NULL
@@ -165,7 +165,7 @@ summary_state_view_load_sql_string = [
             abs.type,
             oby.reporting_fiscal_year,
             SUM(oby.total_outlays) AS total_outlays
-        FROM 
+        FROM
             outlays_by_year oby
         INNER JOIN
             awards_by_state abs ON oby.award_id = abs.award_id
@@ -176,7 +176,7 @@ summary_state_view_load_sql_string = [
     # Update the summary_state_view.total_outlays with calculated values
     # -----
     f"""
-    MERGE INTO 
+    MERGE INTO
         {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} ssv
     USING
         outlays_breakdown ob
