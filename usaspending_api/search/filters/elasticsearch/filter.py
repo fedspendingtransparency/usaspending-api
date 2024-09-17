@@ -9,6 +9,7 @@ class _QueryType(Enum):
     TRANSACTIONS = "transactions"
     AWARDS = "awards"
     ACCOUNTS = "accounts"
+    SUBAWARDS = "subawards"
 
 
 class _Filter(metaclass=ABCMeta):

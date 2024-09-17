@@ -22,6 +22,7 @@ from usaspending_api.search.v2.views.spending_by_category_views.spending_by_indu
     CfdaViewSet,
     PSCViewSet,
     NAICSViewSet,
+    DEFCViewSet,
 )
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_federal_account import FederalAccountViewSet
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_locations import (
@@ -68,6 +69,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             "country",
             "state_territory",
             "federal_account",
+            "defc",
         ]
         models = [
             {"name": "category", "key": "category", "type": "enum", "enum_values": categories, "optional": False},
@@ -96,6 +98,7 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             "recipient": RecipientViewSet().perform_search,
             "recipient_duns": RecipientDunsViewSet().perform_search,
             "state_territory": StateTerritoryViewSet().perform_search,
+            "defc": DEFCViewSet().perform_search,
         }
         business_logic_func = business_logic_lookup.get(validated_payload["category"])
         if not business_logic_func:

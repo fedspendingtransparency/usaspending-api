@@ -1,8 +1,8 @@
 import json
-import pytest
-
-from model_bakery import baker
 from time import perf_counter
+
+import pytest
+from model_bakery import baker
 from rest_framework import status
 
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
@@ -25,7 +25,21 @@ def transaction_data():
         recipient_uei="testuei",
         parent_uei="test_parent_uei",
     )
-    baker.make("search.AwardSearch", award_id=1, latest_transaction_id=1, is_fpds=True, type="A", piid="IND12PB00323")
+    award1 = baker.make(
+        "search.AwardSearch", award_id=1, latest_transaction_id=1, is_fpds=True, type="A", piid="IND12PB00323"
+    )
+    ref_program_activity1 = baker.make(
+        "references.RefProgramActivity",
+        id=1,
+        program_activity_code=123,
+        program_activity_name="PROGRAM_ACTIVITY_123",
+    )
+    baker.make(
+        "awards.FinancialAccountsByAwards",
+        financial_accounts_by_awards_id=1,
+        award=award1,
+        program_activity_id=ref_program_activity1.id,
+    )
 
 
 @pytest.mark.django_db
@@ -221,3 +235,65 @@ def test_parent_uei(client, monkeypatch, transaction_data, elasticsearch_transac
 
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 1
+
+
+@pytest.mark.django_db
+def test_spending_by_txn_program_activity(client, monkeypatch, elasticsearch_transaction_index, transaction_data):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
+    # Program Activites filter test
+    test_payload = {
+        "fields": ["Award ID"],
+        "sort": "Award ID",
+        "filters": {
+            "program_activities": [{"name": "program_activity_123"}],
+            "award_type_codes": ["A", "B", "C", "D"],
+        },
+    }
+    expected_response = [{"Award ID": "IND12PB00323", "generated_internal_id": None, "internal_id": 1}]
+
+    resp = client.post(ENDPOINT, content_type="application/json", data=json.dumps(test_payload))
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
+
+    test_payload = {
+        "fields": ["Award ID"],
+        "sort": "Award ID",
+        "filters": {
+            "program_activities": [{"name": "program_activity_123", "code": "321"}],
+            "award_type_codes": ["A", "B", "C", "D"],
+        },
+    }
+    expected_response = []
+
+    resp = client.post(ENDPOINT, content_type="application/json", data=json.dumps(test_payload))
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
+
+    test_payload = {
+        "fields": ["Award ID"],
+        "sort": "Award ID",
+        "filters": {
+            "program_activities": [{"name": "program_activity_123", "code": "123"}],
+            "award_type_codes": ["A", "B", "C", "D"],
+        },
+    }
+    expected_response = [{"Award ID": "IND12PB00323", "generated_internal_id": None, "internal_id": 1}]
+
+    resp = client.post(ENDPOINT, content_type="application/json", data=json.dumps(test_payload))
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
+
+    test_payload = {
+        "fields": ["Award ID"],
+        "sort": "Award ID",
+        "filters": {
+            "program_activities": [{"name": "program_activity_123"}, {"code": "123"}],
+            "award_type_codes": ["A", "B", "C", "D"],
+        },
+    }
+    expected_response = [{"Award ID": "IND12PB00323", "generated_internal_id": None, "internal_id": 1}]
+
+    resp = client.post(ENDPOINT, content_type="application/json", data=json.dumps(test_payload))
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"

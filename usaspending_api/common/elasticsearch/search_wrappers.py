@@ -106,12 +106,12 @@ class AwardSearch(_Search):
         return "award_search"
 
 
-class AccountSearch(_Search):
-    _index_name = f"{settings.ES_COVID19_FABA_QUERY_ALIAS_PREFIX}*"
+class SubawardSearch(_Search):
+    _index_name = f"{settings.ES_SUBAWARD_QUERY_ALIAS_PREFIX}*"
 
     @staticmethod
     def type_as_string():
-        return "account_search"
+        return "subaward_search"
 
 
 class RecipientSearch(_Search):

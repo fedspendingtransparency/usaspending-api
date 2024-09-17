@@ -32,7 +32,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        # Grab the data broker database connections
+        # Grab data broker database connections
         if not options["test"]:
             try:
                 db_conn = connections["data_broker"]

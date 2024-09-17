@@ -189,7 +189,11 @@ class TinyShield:
 
     def check_model(self, model, in_any=False):
         # Confirm required fields (both baseline and type-specific) are in the model
-        base_minimum_fields = ("name", "key", "type")
+        base_minimum_fields = (
+            "name",
+            "key",
+            "type",
+        )
 
         if not all(field in model.keys() for field in base_minimum_fields):
             raise Exception("Model {} missing a base required field [{}]".format(model, base_minimum_fields))
@@ -360,3 +364,19 @@ class TinyShield:
             else:
                 mydict[level] = {}
                 self.recurse_append(struct, mydict[level], data)
+
+    def enforce_object_keys_min(self, data: dict, rule: dict):
+        """Ensures that the children of an object array have the minimum number of
+        required keys.
+        """
+        if len(rule) == 0:
+            return
+        object_keys_min = rule["object_keys_min"] if "object_keys_min" in rule else 0
+        object_ = data["filters"][rule["name"]]
+        if len(object_) == 0:
+            raise UnprocessableEntityException(
+                "The object provided has no children. If the object is used it needs at least one child."
+            )
+        for child in object_:
+            if len(child) < object_keys_min:
+                raise UnprocessableEntityException("Required number of minimum object keys is not met.")

@@ -26,5 +26,5 @@ def test_elasticsearch_transactions_mappings():
 @pytest.mark.django_db
 def test_subawards_mappings():
     """Ensure the subaward column-level mappings retrieve data from valid DB columns."""
-    assert mappings_test("sub_awards", "d1")
-    assert mappings_test("sub_awards", "d2")
+    assert mappings_test("elasticsearch_sub_awards", "d1")
+    assert mappings_test("elasticsearch_sub_awards", "d2")

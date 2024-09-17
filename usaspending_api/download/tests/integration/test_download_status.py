@@ -183,9 +183,11 @@ def test_download_assistance_status(client, download_test_data):
     assert resp.json()["total_columns"] == 4
 
 
-@mark.django_db(databases=["db_download", "default"])
-def test_download_awards_status(client, download_test_data, monkeypatch, elasticsearch_award_index):
+def test_download_awards_status(
+    client, download_test_data, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index
+):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
 
     # Test without columns specified
@@ -302,9 +304,11 @@ def test_download_idv_status(client, download_test_data):
     assert resp.json()["total_columns"] == 5
 
 
-@mark.django_db(databases=["db_download", "default"], transaction=True)
-def test_download_transactions_status(client, download_test_data, monkeypatch, elasticsearch_transaction_index):
+def test_download_transactions_status(
+    client, download_test_data, monkeypatch, elasticsearch_transaction_index, elasticsearch_subaward_index
+):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
 
     # Test without columns specified
@@ -352,9 +356,11 @@ def test_download_transactions_status(client, download_test_data, monkeypatch, e
     assert resp.json()["total_columns"] == 3
 
 
-@mark.django_db(databases=["db_download", "default"], transaction=True)
-def test_download_transactions_limit(client, download_test_data, monkeypatch, elasticsearch_transaction_index):
+def test_download_transactions_limit(
+    client, download_test_data, monkeypatch, elasticsearch_transaction_index, elasticsearch_subaward_index
+):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
 
     dl_resp = client.post(

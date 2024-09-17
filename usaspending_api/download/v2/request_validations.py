@@ -95,13 +95,13 @@ class AwardDownloadValidator(DownloadValidatorBase):
 
     def _handle_keyword_search_download(self):
         # Overriding all other filters if the keyword filter is provided in year-constraint download
-        self._json_request["filters"] = {"elasticsearch_keyword": self._json_request["filters"]["keywords"]}
+        self._json_request["filters"] = {"transaction_keyword_search": self._json_request["filters"]["keywords"]}
 
         self.tinyshield_models.extend(
             [
                 {
-                    "name": "elasticsearch_keyword",
-                    "key": "filters|elasticsearch_keyword",
+                    "name": "transaction_keyword_search",
+                    "key": "filters|transaction_keyword_search",
                     "type": "array",
                     "array_type": "text",
                     "text_type": "search",
@@ -285,8 +285,10 @@ class AwardDownloadValidator(DownloadValidatorBase):
             final_award_filters["prime_and_sub_award_types"]["prime_awards"] = custom_award_filters["prime_award_types"]
 
         if custom_award_filters.get("sub_award_types"):
-            self._json_request["download_types"].append("sub_awards")
-            final_award_filters["prime_and_sub_award_types"]["sub_awards"] = custom_award_filters["sub_award_types"]
+            self._json_request["download_types"].append("elasticsearch_sub_awards")
+            final_award_filters["prime_and_sub_award_types"]["elasticsearch_sub_awards"] = custom_award_filters[
+                "sub_award_types"
+            ]
 
         if "agency" in custom_award_filters:
             if "agencies" not in custom_award_filters:
@@ -340,7 +342,12 @@ class AwardDownloadValidator(DownloadValidatorBase):
                     "key": "download_types",
                     "type": "array",
                     "array_type": "enum",
-                    "enum_values": ["elasticsearch_awards", "sub_awards", "elasticsearch_transactions", "prime_awards"],
+                    "enum_values": [
+                        "elasticsearch_awards",
+                        "elasticsearch_sub_awards",
+                        "elasticsearch_transactions",
+                        "prime_awards",
+                    ],
                 },
             ]
         )
@@ -716,7 +723,7 @@ class DisasterDownloadValidator(DownloadValidatorBase):
                     "gtas_balances",
                     "object_class_program_activity",
                     "elasticsearch_awards",
-                    "sub_awards",
+                    "elasticsearch_sub_awards",
                 ],
                 "include_data_dictionary": True,
                 "include_file_description": {

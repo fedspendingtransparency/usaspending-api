@@ -75,10 +75,10 @@ This endpoint takes award filters and fields, and returns the fields of the filt
 
 ## SpendingByAwardFields (array)
 The SpendingByAward API can accept any of the following fields based on whether awards or subawards are being searched.
-Awards are searched by default, however the subawards can be searched by setting the subawards field to "True". 
+Awards are searched by default, however the subawards can be searched by setting the subawards field to "True".
 
 ### Awards
-Award based searches have a base set of fields that are valid for all award types, however there are some type specific fields that are only valid for certain award types, which have been described further below. 
+Award based searches have a base set of fields that are valid for all award types, however there are some type specific fields that are only valid for certain award types, which have been described further below.
 
 #### Base fields
 - `Award ID`
@@ -108,8 +108,8 @@ Award based searches have a base set of fields that are valid for all award type
 - `Infrastructure Obligations`
 - `Infrastructure Outlays`
 
-#### Contracts 
-Contracts can be searched for specifically by using the Contract Type Codes (A, B, C, or D) and the following fields are additional fields that can be requested. 
+#### Contracts
+Contracts can be searched for specifically by using the Contract Type Codes (A, B, C, or D) and the following fields are additional fields that can be requested.
 
 - `Start Date`
 - `End Date`
@@ -117,8 +117,8 @@ Contracts can be searched for specifically by using the Contract Type Codes (A, 
 - `Total Outlays`
 - `Contract Award Type`
 
-#### IDV 
-IDV can be searched for specifically by using the IDV Type Codes (IDV_A, IDV_B, IDV_B_A, IDV_B_B, IDV_B_C, IDV_C, IDV_D or IDV_E) and the following fields are additional fields that can be requested. 
+#### IDV
+IDV can be searched for specifically by using the IDV Type Codes (IDV_A, IDV_B, IDV_B_A, IDV_B_B, IDV_B_C, IDV_C, IDV_D or IDV_E) and the following fields are additional fields that can be requested.
 
 - `Start Date`
 - `Award Amount`
@@ -126,8 +126,8 @@ IDV can be searched for specifically by using the IDV Type Codes (IDV_A, IDV_B, 
 - `Contract Award Type`
 - `Last Date to Order`
 
-#### Loan 
-Loans can be searched for specifically by using the Loan Type Codes (07 or 08) and the following fields are additional fields that can be requested. 
+#### Loan
+Loans can be searched for specifically by using the Loan Type Codes (07 or 08) and the following fields are additional fields that can be requested.
 
 - `Issued Date`
 - `Loan Value`
@@ -136,7 +136,7 @@ Loans can be searched for specifically by using the Loan Type Codes (07 or 08) a
 - `CFDA Number`
 
 #### Non Loan Assistance
-Non Loan Assistance Awards can be searched for specifically by using the Non Loan Assistance Type Codes. The Non Loan Assist Type Codes include Grant Type Codes (02, 03, 04 or 05), Direct Payments (06 or 10), and Other Type Codes (09, 11, or -1). The following fields are additional fields that can be requested. 
+Non Loan Assistance Awards can be searched for specifically by using the Non Loan Assistance Type Codes. The Non Loan Assist Type Codes include Grant Type Codes (02, 03, 04 or 05), Direct Payments (06 or 10), and Other Type Codes (09, 11, or -1). The following fields are additional fields that can be requested.
 
 - `Start Date`
 - `End Date`
@@ -283,6 +283,8 @@ Non Loan Assistance Awards can be searched for specifically by using the Non Loa
 + `treasury_account_components` (optional, array[TreasuryAccountComponentsObject], fixed-type)
 + `object_class` (optional, array[string])
 + `program_activity` (optional, array[number])
++ `program_activities` (optional, array[ProgramActivityObject])
+    A filter option that supports filtering by a program activity name or code. Please note that if this filter is used at least one of the members of the object, ProgramActivityObject, need to be provided.
 + `def_codes` (optional, array[DEFC], fixed-type)
   If the `def_codes` provided are in the COVID-19 or IIJA group and the subaward flag is set to `False`, the query will only return prime awards that have at least one File C record with the supplied DEFC and also have non-zero COVID-19 or IIJA related obligations or outlays.
   If the `def_codes` provided are in the COVID-19 or IIJA group and the subaward parameter is set to `True`, the query will only return results that have a sub_action_date on or after the enactment date of the public law associated with that disaster code.
@@ -319,6 +321,11 @@ These fields are defined in the [StandardLocationObject](../../../search_filters
 ### AwardAmounts (object)
 + `lower_bound` (optional, number)
 + `upper_bound`: 1000000 (optional, number)
+
+### ProgramActivityObject (object)
+At least one of the following fields are required when using the ProgramActivityObject.
++ `name`: (optional, string)
++ `code`: (optional, number)
 
 ### NAICSCodeObject (object)
 + `require`: [`33`] (optional, array[string], fixed-type)

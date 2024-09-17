@@ -76,9 +76,11 @@ CSV_LOCAL_PATH = str(REPO_DIR / "csv_downloads") + "/"
 DOWNLOAD_ENV = ""
 BULK_DOWNLOAD_LOCAL_PATH = str(REPO_DIR / "bulk_downloads") + "/"
 
+DATABASE_DOWNLOAD_S3_BUCKET_NAME = CONFIG.DATABASE_DOWNLOAD_S3_BUCKET_NAME
 BULK_DOWNLOAD_S3_BUCKET_NAME = CONFIG.BULK_DOWNLOAD_S3_BUCKET_NAME
 BULK_DOWNLOAD_S3_REDIRECT_DIR = "generated_downloads"
 BULK_DOWNLOAD_SQS_QUEUE_NAME = ""
+DATABASE_DOWNLOAD_S3_REDIRECT_DIR = "database_download"
 MONTHLY_DOWNLOAD_S3_BUCKET_NAME = ""
 MONTHLY_DOWNLOAD_S3_REDIRECT_DIR = "award_data_archive"
 BROKER_AGENCY_BUCKET_NAME = ""
@@ -157,12 +159,6 @@ ES_SUBAWARD_NAME_SUFFIX = "subaward"
 ES_SUBAWARD_MAX_RESULT_WINDOW = 50000
 ES_SUBAWARD_QUERY_ALIAS_PREFIX = "subaward-query"
 ES_SUBAWARD_WRITE_ALIAS = "subaward-load-alias"
-
-ES_COVID19_FABA_ETL_VIEW_NAME = "covid19_faba_view"
-ES_COVID19_FABA_MAX_RESULT_WINDOW = 50000
-ES_COVID19_FABA_NAME_SUFFIX = "covid19-faba"
-ES_COVID19_FABA_QUERY_ALIAS_PREFIX = "covid19-faba-query"
-ES_COVID19_FABA_WRITE_ALIAS = "covid19-faba-load-alias"
 
 ES_TRANSACTIONS_ETL_VIEW_NAME = "transaction_delta_view"
 ES_TRANSACTIONS_MAX_RESULT_WINDOW = 50000
@@ -356,7 +352,7 @@ if os.environ.get("DOWNLOAD_DATABASE_URL"):
         "DOWNLOAD_DATABASE_URL", test_options={"MIRROR": DEFAULT_DB_ALIAS}
     )
 
-# import a second database connection for ETL, connecting to the data broker
+# import a second database connection for ETL, connecting to data broker
 # using the environment variable, DATA_BROKER_DATABASE_URL - only if it is set
 DATA_BROKER_DB_ALIAS = "data_broker"
 if os.environ.get("DATA_BROKER_DATABASE_URL"):

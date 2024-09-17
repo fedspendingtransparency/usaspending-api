@@ -20,6 +20,7 @@ This endpoint returns a list of aggregated award amounts grouped by time period 
     + Attributes (object)
         + `group` (required, enum[string])
             + Members
+                + `calendar_year`
                 + `fiscal_year`
                 + `quarter`
                 + `month`
@@ -42,6 +43,7 @@ This endpoint returns a list of aggregated award amounts grouped by time period 
     + Attributes (object)
         + `group` (required, enum[string])
             + Members
+                + `calendar_year`
                 + `fiscal_year`
                 + `quarter`
                 + `month`
@@ -55,13 +57,21 @@ This endpoint returns a list of aggregated award amounts grouped by time period 
 + `time_period` (required, TimePeriodGroup)
 + `aggregated_amount` (required, number)
     The aggregate award amount for this time period and the given filters.
++ `contract_obligations` (required, number)
++ `loan_obligations` (required, number)
++ `idv_obligations` (required, number)
++ `grant_obligations` (required, number)
++ `direct_payment_obligations` (required, number)
++ `other_obligations` (required, number)
 
 ## TimePeriodGroup (object)
-+ `fiscal_year` (required, string)
++ `calendar_year` (optional, string)
+    Depending on the grouping, either `calendar_year` or `fiscal_year` will always be returned.
++ `fiscal_year` (optional, string)
 + `quarter` (optional, string)
-    Excluded when grouping by `fiscal_year` or `month`.
+    Excluded when grouping by `fiscal_year` or `month` or `calendar_year`.
 + `month` (optional, string)
-    Excluded when grouping by `fiscal_year` or `quarter`.
+    Excluded when grouping by `fiscal_year` or `quarter` or `calendar_year`.
 
 
 ## Filter Objects
@@ -97,6 +107,8 @@ This endpoint returns a list of aggregated award amounts grouped by time period 
 + `treasury_account_components` (optional, array[TreasuryAccountComponentsObject], fixed-type)
 + `object_class` (optional, array[string])
 + `program_activity` (optional, array[number])
++ `program_activities` (optional, array[ProgramActivityObject])
+    A filter option that supports filtering by a program activity name or code. Please note that if this filter is used at least one of the members of the object, ProgramActivityObject, need to be provided.
 + `def_codes` (optional, array[DEFC], fixed-type)
   If the `def_codes` provided are in the COVID-19 or IIJA group, the query will only return results of transactions where the `action_date` is on or after the enactment date of the public law associated with that disaster code.
 
@@ -112,6 +124,11 @@ This TimePeriodObject can fall into different categories based on the request.
 
 ### LocationObject (object)
 These fields are defined in the [StandardLocationObject](../../../search_filters.md#standard-location-object)
+
+### ProgramActivityObject (object)
+At least one of the following fields are required when using the ProgramActivityObject.
++ `name`: (optional, string)
++ `code`: (optional, number)
 
 ### AgencyObject (object)
 + `type` (required, enum[string])

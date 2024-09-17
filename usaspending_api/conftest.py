@@ -372,18 +372,16 @@ def elasticsearch_award_index(db):
 
 
 @pytest.fixture
-def elasticsearch_account_index(db):
+def elasticsearch_subaward_index(db):
     """
     Add this fixture to your test if you intend to use the Elasticsearch
-    account index.  To use, create some mock database data then call
-    elasticsearch_account_index.update_index to populate Elasticsearch.
-
-    See test_account_index_elasticsearch_tests.py for sample usage.
+    subaward index.  To use, create some mock database data then call
+    elasticsearch_subaward_index.update_index to populate Elasticsearch.
     """
-    elastic_search_index = TestElasticSearchIndex("covid19-faba")
+    elastic_search_index = TestElasticSearchIndex("subaward")
     with override_settings(
-        ES_COVID19_FABA_QUERY_ALIAS_PREFIX=elastic_search_index.alias_prefix,
-        ES_COVID19_FABA_WRITE_ALIAS=elastic_search_index.etl_config["write_alias"],
+        ES_SUBAWARD_QUERY_ALIAS_PREFIX=elastic_search_index.alias_prefix,
+        ES_SUBAWARD_WRITE_ALIAS=elastic_search_index.etl_config["write_alias"],
     ):
         yield elastic_search_index
         elastic_search_index.delete_index()
