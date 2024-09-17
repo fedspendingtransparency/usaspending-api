@@ -166,7 +166,9 @@ def parse_http_url(http_url) -> (ParseResult, str, str):
     password = (
         url_parts.password
         if url_parts.password
-        else parse_qs(url_parts.query)["password"][0] if url_parts.query else None
+        else parse_qs(url_parts.query)["password"][0]
+        if url_parts.query
+        else None
     )
     return url_parts, user, password
 

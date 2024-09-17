@@ -634,7 +634,9 @@ class Command(BaseCommand):
             for val in temp_constraints
         }
         curr_constr_specs = {
-            val["constraint_name"] if val["is_nullable"] else val["check_clause"]: {
+            val["constraint_name"]
+            if val["is_nullable"]
+            else val["check_clause"]: {
                 "constraint_type": val["constraint_type"],
                 "check_clause": val["check_clause"],
                 "unique_constraint_name": val["unique_constraint_name"],

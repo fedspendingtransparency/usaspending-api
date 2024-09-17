@@ -26,13 +26,15 @@ def test_generate_elasticsearch_query():
 
 def test_generate_postgres_query():
     # Just a simple happy path test to detect potentially breaking changes.
-    assert PGPSCCodes.build_tas_codes_filter(
-        {
-            "require": [["Product", "1", "1111"], ["Research and Development"]],
-            "exclude": [["Product", "1"], ["Research and Development", "A", "A5"]],
-        }
-    ) == Q(Q(product_or_service_code__istartswith="A") & ~Q(product_or_service_code__istartswith="A5")) | Q(
-        product_or_service_code="1111"
+    assert (
+        PGPSCCodes.build_tas_codes_filter(
+            {
+                "require": [["Product", "1", "1111"], ["Research and Development"]],
+                "exclude": [["Product", "1"], ["Research and Development", "A", "A5"]],
+            }
+        )
+        == Q(Q(product_or_service_code__istartswith="A") & ~Q(product_or_service_code__istartswith="A5"))
+        | Q(product_or_service_code="1111")
     )
 
 

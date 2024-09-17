@@ -3,7 +3,6 @@ import pytest
 import random
 
 from model_bakery import baker
-from pytest import mark
 from rest_framework import status
 from unittest.mock import Mock
 
