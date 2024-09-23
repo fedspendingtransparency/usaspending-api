@@ -667,6 +667,12 @@
             "type": "keyword"
           }
         }
+      },
+      "program_activity_names": {
+        "type": "keyword"
+      },
+      "program_activity_codes": {
+        "type": "keyword"
       }
     }
   }
