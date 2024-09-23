@@ -649,6 +649,7 @@ LEFT OUTER JOIN (
   INNER JOIN int.financial_accounts_by_awards faba ON (taa.treasury_account_identifier = faba.treasury_account_id)
   INNER JOIN global_temp.federal_account fa ON (taa.federal_account_id = fa.id)
   INNER JOIN global_temp.toptier_agency agency ON (fa.parent_toptier_agency_id = agency.toptier_agency_id)
+  LEFT JOIN global_temp.ref_program_activity rpa ON (faba.program_activity_id = rpa.id)
   WHERE
     faba.award_id IS NOT NULL
   GROUP BY
