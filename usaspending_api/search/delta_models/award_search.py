@@ -641,7 +641,7 @@ LEFT OUTER JOIN (
     -- Program activity codes
     CASE
         WHEN SIZE(COLLECT_SET(rpa.program_activity_code)) > 0
-            THEN COLLECT_SET(rpa.program_activity_code) > 0
+            THEN COLLECT_SET(rpa.program_activity_code)
         ELSE NULL
     END AS program_activity_codes
   FROM
