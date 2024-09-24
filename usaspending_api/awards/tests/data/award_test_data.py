@@ -4,6 +4,7 @@ all test_awards files similar to what idv_test_data.py does for
 IDV tests. Any changes to this file will need to be addressed in
 the test_awards files found within /awards/tests/.
 """
+
 from model_bakery import baker
 import pytest
 

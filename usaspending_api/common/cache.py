@@ -53,7 +53,7 @@ class USAspendingKeyConstructor(DefaultKeyConstructor):
     def prepare_key(self, key_dict):
         # Order the key_dict using the order_nested_object function to make sure cache keys are always exactly the same
         ordered_key_dict = json.dumps(order_nested_object(key_dict))
-        key_hex = hashlib.md5(ordered_key_dict.encode("utf-8")).hexdigest()
+        key_hex = hashlib.md5(ordered_key_dict.encode("utf-8"), usedforsecurity=False).hexdigest()
         return key_hex
 
 

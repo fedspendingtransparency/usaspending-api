@@ -224,7 +224,7 @@ subaward_search_create_sql_string = rf"""
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
 """
 
-subaward_search_load_sql_string = fr"""
+subaward_search_load_sql_string = rf"""
     WITH location_summary AS (
         SELECT
             UPPER(feature_name) as feature_name,

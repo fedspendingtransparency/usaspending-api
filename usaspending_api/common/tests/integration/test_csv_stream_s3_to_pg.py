@@ -65,7 +65,7 @@ def mocked_s3_client():
 
 @pytest.fixture
 def db_cursor_with_test_table():
-    """ Creates a DB cursor and a temporary file used for tests in this file"""
+    """Creates a DB cursor and a temporary file used for tests in this file"""
 
     cursor = connection.cursor()
 

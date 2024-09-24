@@ -97,7 +97,7 @@ class DefaultConfig(BaseSettings):
     # noinspection PyMethodParameters
     # Pydantic returns a classmethod for its validators, so the cls param is correct
     def _validate_database_url(cls, values, url_conf_name, resource_conf_prefix, required=True):
-        """ Helper function to validate both DATABASE_URLs and their parts """
+        """Helper function to validate both DATABASE_URLs and their parts"""
 
         # First determine if full URL config was provided.
         is_full_url_provided = check_for_full_url_config(url_conf_name, values)
@@ -127,9 +127,9 @@ class DefaultConfig(BaseSettings):
                     password=values[f"{resource_conf_prefix}_PASSWORD"].get_secret_value(),
                     host=values[f"{resource_conf_prefix}_HOST"],
                     port=values[f"{resource_conf_prefix}_PORT"],
-                    path="/" + values[f"{resource_conf_prefix}_NAME"]
-                    if values[f"{resource_conf_prefix}_NAME"]
-                    else None,
+                    path=(
+                        "/" + values[f"{resource_conf_prefix}_NAME"] if values[f"{resource_conf_prefix}_NAME"] else None
+                    ),
                 )
                 values = eval_default_factory_from_root_validator(cls, values, url_conf_name, lambda: str(pg_dsn))
 
@@ -208,7 +208,7 @@ class DefaultConfig(BaseSettings):
     # noinspection PyMethodParameters
     # Pydantic returns a classmethod for its validators, so the cls param is correct
     def _validate_http_url(cls, values, url_conf_name, resource_conf_prefix, required=True):
-        """ Helper function to validate complete URLs and their individual parts when either/both are provided """
+        """Helper function to validate complete URLs and their individual parts when either/both are provided"""
 
         # First determine if full URL config was provided.
         is_full_url_provided = check_for_full_url_config(url_conf_name, values)
@@ -235,14 +235,16 @@ class DefaultConfig(BaseSettings):
                     url=None,
                     scheme=values[f"{resource_conf_prefix}_SCHEME"],
                     user=values[f"{resource_conf_prefix}_USER"],
-                    password=values[f"{resource_conf_prefix}_PASSWORD"].get_secret_value()
-                    if values[f"{resource_conf_prefix}_PASSWORD"]
-                    else None,
+                    password=(
+                        values[f"{resource_conf_prefix}_PASSWORD"].get_secret_value()
+                        if values[f"{resource_conf_prefix}_PASSWORD"]
+                        else None
+                    ),
                     host=values[f"{resource_conf_prefix}_HOST"],
                     port=values[f"{resource_conf_prefix}_PORT"],
-                    path="/" + values[f"{resource_conf_prefix}_NAME"]
-                    if values[f"{resource_conf_prefix}_NAME"]
-                    else None,
+                    path=(
+                        "/" + values[f"{resource_conf_prefix}_NAME"] if values[f"{resource_conf_prefix}_NAME"] else None
+                    ),
                 )
                 values = eval_default_factory_from_root_validator(cls, values, url_conf_name, lambda: str(http_url))
 

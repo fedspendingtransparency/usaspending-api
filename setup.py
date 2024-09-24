@@ -4,6 +4,7 @@ See:
     - Details of setuptools.setup parameters:
         - https://packaging.python.org/en/latest/guides/distributing-packages-using-setuptools/#setup-args
 """
+
 import pathlib
 
 from setuptools import find_packages, setup
@@ -38,7 +39,7 @@ if __name__ == "__main__":
         ),
         long_description=(_PROJECT_ROOT_DIR / "README.md").read_text(encoding="utf-8"),
         long_description_content_type="text/markdown",
-        python_requires="==3.8.*",
+        python_requires="==3.10.*",
         license=(_PROJECT_ROOT_DIR / "LICENSE").read_text(encoding="utf-8"),
         packages=find_packages(),
         include_package_data=True,  # see MANIFEST.in for what is included
@@ -49,6 +50,7 @@ if __name__ == "__main__":
             "Programming Language :: Python",
             "Programming Language :: Python :: 3",
             "Programming Language :: Python :: 3.8",
+            "Programming Language :: Python :: 3.10",
             "Programming Language :: Python :: 3 :: Only",
         ],
     )

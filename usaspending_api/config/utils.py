@@ -193,9 +193,9 @@ def backfill_url_parts_config(cls, url_conf_name, resource_conf_prefix, values):
         f"{resource_conf_prefix}_SCHEME": lambda: url_parts.scheme,
         f"{resource_conf_prefix}_HOST": lambda: url_parts.hostname,
         f"{resource_conf_prefix}_PORT": lambda: str(url_parts.port) if url_parts.port else None,
-        f"{resource_conf_prefix}_NAME": lambda: url_parts.path.lstrip("/")
-        if url_parts.path and url_parts.path != "/"
-        else None,
+        f"{resource_conf_prefix}_NAME": lambda: (
+            url_parts.path.lstrip("/") if url_parts.path and url_parts.path != "/" else None
+        ),
         f"{resource_conf_prefix}_USER": lambda: username,
         f"{resource_conf_prefix}_PASSWORD": lambda: SecretStr(password) if password else None,
     }

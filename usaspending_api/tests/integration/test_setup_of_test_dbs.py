@@ -7,6 +7,7 @@ It can conveniently and efficiently pre-establish MULTIPLE test databases using 
 run by multiple workers. For this case, both invocations of pytest should use the same pytest-xdist value for the
 number of workers (the value of -n or --numprocesses)
 """
+
 from pytest import mark
 
 TEST_DB_SETUP_TEST_NAME = "test_trigger_test_db_setup"  # MUST match the name of the 1 test in this module
