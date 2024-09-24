@@ -2,7 +2,7 @@ from django.contrib.postgres.fields import ArrayField
 from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVectorField
 from django.db import models
-from django.db.models import Q, F
+from django.db.models import F, Q
 from django.db.models.functions import Upper
 
 
@@ -238,6 +238,8 @@ class SubawardSearch(models.Model):
     keyword_ts_vector = SearchVectorField(null=True)
     award_ts_vector = SearchVectorField(null=True)
     recipient_name_ts_vector = SearchVectorField(null=True)
+    program_activity_names = ArrayField(models.TextField(), default=list, null=True)
+    program_activity_codes = ArrayField(models.TextField(), default=list, null=True)
 
     class Meta:
         db_table = "subaward_search"
