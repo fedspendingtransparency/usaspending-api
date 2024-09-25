@@ -901,7 +901,9 @@ transaction_search_load_sql_string = rf"""
         transaction_fpds.veterinary_college,
         transaction_fpds.veterinary_hospital,
         transaction_fpds.woman_owned_business,
-        transaction_fpds.women_owned_small_business
+        transaction_fpds.women_owned_small_business,
+        FED_AND_TRES_ACCT.program_activity_names,
+        FED_AND_TRES_ACCT.program_activity_codes
 
     FROM
         int.transaction_normalized
