@@ -15,15 +15,18 @@ This endpoint should return a an aggregate list of DEFC's sorted by the total am
                 "$schema": "http://json-schema.org/draft-04/schema#",
                 "type": "object"
             }
+
     + Attributes (object)
-            + `filters` (required, AdvancedFilterObject)
-                The filters to find with said category
-            + `limit`: 5 (optional, number)
-                The number of results to include per page
-            + `page`: 1 (optional, number)
-                The page of results to return based on the limit
-            + `subawards` (optional, boolean)
-                Determines whether Prime Awards or Sub Awards are searched
+        + `filters` (required, AdvancedFilterObject)
+            The filters to find with said category
+        + `limit`: 5 (optional, number)
+            The number of results to include per page
+        + `page`: 1 (optional, number)
+            The page of results to return based on the limit
+        + `subawards` (optional, boolean)
+            Determines whether Prime Awards or Sub Awards are searched. This field will be depreciated soon.
+        + `spending_level` (required, string)
+            Determines whether Prime Awards (awards), Transactions (transactions), or Sub Awards (subawards) are searched
 
     + Body
 
@@ -43,7 +46,8 @@ This endpoint should return a an aggregate list of DEFC's sorted by the total am
                             "end_date": "2020-09-28"
                         }
                     ]
-                }
+                },
+                "spending_level": "transactions"
             }
 
 + Response 200 (application/json)

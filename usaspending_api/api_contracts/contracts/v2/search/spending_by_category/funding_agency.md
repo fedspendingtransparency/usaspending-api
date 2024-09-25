@@ -25,7 +25,9 @@ This endpoint returns a list of the top results of Funding Agencies sorted by th
         + `page`: 1 (optional, number)
             The page of results to return based on the limit
         + `subawards` (optional, boolean)
-            Determines whether Prime Awards or Sub Awards are searched
+            Determines whether Prime Awards or Sub Awards are searched. This field will be depreciated soon.
+        + `spending_level` (required, string)
+            Determines whether Prime Awards (awards), Transactions (transactions), or Sub Awards (subawards) are searched
     + Body
 
 
@@ -41,7 +43,8 @@ This endpoint returns a list of the top results of Funding Agencies sorted by th
                 },
                 "category": "funding_agency",
                 "limit": 5,
-                "page": 1
+                "page": 1,
+                "spending_level": "transactions"
             }
 
 + Response 200 (application/json)
