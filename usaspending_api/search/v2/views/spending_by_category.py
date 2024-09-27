@@ -77,10 +77,10 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             {
                 "name": "spending_level",
                 "key": "spending_level",
-                "type": "text",
-                "text_type": "raw",
-                "default": "default",
+                "type": "enum",
+                "enum_values": ["awards", "transactions", "subawards"],
                 "optional": True,
+                "default": "transactions",
             },
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
@@ -89,14 +89,6 @@ class SpendingByCategoryVisualizationViewSet(APIView):
         # Apply/enforce POST body schema and data validation in request
         original_filters = request.data.get("filters")
         validated_payload = TinyShield(models).block(request.data)
-
-        # Until subawards is fully removed, retain this logic to handle incomplete requests
-        if validated_payload["subawards"] is True and validated_payload["spending_level"] == "default":
-            # If subawards is true and spending_level is not passed, set to subawards
-            validated_payload["spending_level"] = "subawards"
-        elif validated_payload["subawards"] is False and validated_payload["spending_level"] == "default":
-            # If subawards and spending_level is not passed, default to awards
-            validated_payload["spending_level"] = "awards"
 
         # Execute the business logic for the endpoint and return a python dict to be converted to a Django response
         business_logic_lookup = {
