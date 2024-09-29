@@ -1,25 +1,23 @@
 import copy
 import logging
-
 from calendar import monthrange
 from collections import OrderedDict
 from datetime import datetime, timezone
 from typing import Tuple
 
 from django.conf import settings
-from django.db.models import Sum, F
-from elasticsearch_dsl import A
+from django.db.models import F, Sum
+from elasticsearch_dsl import A, Search
 from elasticsearch_dsl.response import AggResponse
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
-from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
+from usaspending_api.common.api_versioning import API_TRANSFORM_FUNCTIONS, api_transformations
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
+from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, TransactionSearch
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
 from usaspending_api.common.helpers.fiscal_year_helpers import (
     bolster_missing_time_periods,
     generate_date_range,
@@ -36,8 +34,8 @@ from usaspending_api.common.validator.award_filter import AWARD_FILTER_W_FILTERS
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.search.filters.elasticsearch.filter import _QueryType
-from usaspending_api.search.filters.time_period.query_types import TransactionSearchTimePeriod
-
+from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
+from usaspending_api.search.filters.time_period.query_types import AwardSearchTimePeriod, TransactionSearchTimePeriod
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +87,14 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 "default": "fy",
                 "optional": False,  # allow to be optional in the future
             },
+            {
+                "name": "spending_level",
+                "key": "spending_level",
+                "type": "enum",
+                "enum_values": ["awards", "transactions", "subawards"],
+                "optional": True,
+                "default": "transactions",
+            },
         ]
         models.extend(copy.deepcopy(AWARD_FILTER_W_FILTERS))
         models.extend(copy.deepcopy(program_activities_rule))
@@ -134,19 +140,31 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         return queryset, order_by_cols
 
-    def apply_elasticsearch_aggregations(self, search: TransactionSearch) -> None:
+    def apply_elasticsearch_aggregations(self, search: Search) -> None:
         """
         Takes in an instance of the elasticsearch-dsl.Search object and applies the necessary
         aggregations in a specific order to get expected results.
+
+        Args:
+            search: An instance of the Elasticsearch Search object.
         """
+
+        if isinstance(search, AwardSearch):
+            date_field = "action_date"  # TODO follow up on which date field to use
+            category_field = "category.keyword"
+        elif isinstance(search, TransactionSearch):
+            date_field = "action_date" if self.group == "calendar_year" else "fiscal_action_date"
+            category_field = "award_category"
+
         interval = "year" if (self.group == "fiscal_year" or self.group == "calendar_year") else self.group
 
         """
         The individual aggregations that are needed; with two different sum aggregations to handle issues with
         summing together floats.
         """
-        field = "action_date" if self.group == "calendar_year" else "fiscal_action_date"
-        group_by_time_period_agg = A("date_histogram", field=field, interval=interval, format="yyyy-MM-dd")
+
+        group_by_time_period_agg = A("date_histogram", field=date_field, interval=interval, format="yyyy-MM-dd")
+        sum_outlays_agg = A("sum", field="total_outlays")
         sum_as_cents_agg = A("sum", field="generated_pragmatic_obligation", script={"source": "_value * 100"})
         sum_as_dollars_agg = A(
             "bucket_script", buckets_path={"sum_as_cents": "sum_as_cents"}, script="params.sum_as_cents / 100"
@@ -159,9 +177,9 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         by Category, which returns us buckets talling up the award data for a given award type
         """
         search.aggs.bucket("group_by_time_period", group_by_time_period_agg)
-        search.aggs["group_by_time_period"].bucket("group_by_category", "terms", field="award_category").metric(
-            "sum_as_cents", sum_as_cents_agg
-        ).pipeline("sum_as_dollars", sum_as_dollars_agg)
+        search.aggs["group_by_time_period"].bucket("group_by_category", "terms", field=category_field).metric(
+            "sum_total_outlays", sum_outlays_agg
+        ).metric("sum_as_cents", sum_as_cents_agg).pipeline("sum_as_dollars", sum_as_dollars_agg)
 
     def parse_elasticsearch_bucket(self, bucket: dict) -> dict:
         """
@@ -190,11 +208,17 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         # Initialize a dictionary to hold the query results for each obligation type.
         category_dictionary = {
             "Contract_Obligations": 0,
+            # "Contract_Outlays": 0,
             "Direct_Obligations": 0,
+            # "Direct_Outlays": 0,
             "Grant_Obligations": 0,
+            # "Grant_Outlays": 0,
             "Idv_Obligations": 0,
+            # "Idv_Outlays": 0,
             "Loan_Obligations": 0,
+            # "Loan_Outlays": 0,
             "Other_Obligations": 0,
+            # "Other_Outlays": 0,
         }
 
         # Mapping of category keys to their corresponding obligation types.
@@ -279,7 +303,9 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         return results
 
-    def query_elasticsearch_for_prime_awards(self, time_periods: list) -> list:
+    def query_elasticsearch_for_transactions(self, time_periods: list) -> list:
+        """Get spending over time amounts based on Transactions"""
+
         filter_options = {}
         time_period_obj = TransactionSearchTimePeriod(
             default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
@@ -297,12 +323,33 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         return overall_results
 
+    def query_elasticsearch_for_awards(self, time_periods: list) -> list:
+        """Get spending over time amounts based on Awards"""
+
+        filter_options = {}
+        time_period_obj = AwardSearchTimePeriod(
+            default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
+        )
+        new_awards_only_decorator = NewAwardsOnlyTimePeriod(
+            time_period_obj=time_period_obj, query_type=_QueryType.AWARDS
+        )
+        filter_options["time_period_obj"] = new_awards_only_decorator
+
+        filter_query = QueryWithFilters.generate_awards_elasticsearch_query(self.filters, **filter_options)
+        search = AwardSearch().filter(filter_query)
+        self.apply_elasticsearch_aggregations(search)
+        response = search.handle_execute()
+        overall_results = self.build_elasticsearch_result(response.aggs, time_periods)
+
+        return overall_results
+
     @cache_response()
     def post(self, request: Request) -> Response:
         self.original_filters = request.data.get("filters")
         json_request, models = self.validate_request_data(request.data)
         self.group = GROUPING_LOOKUP[json_request["group"]]
-        self.subawards = json_request["subawards"]
+        self.subawards = json_request["subawards"] or json_request.get("spending_level") == "subawards"
+        self.spending_level = json_request.get("spending_level").lower()
         self.filters = json_request["filters"]
 
         # time_period is optional so we're setting a default window from API_SEARCH_MIN_DATE to end of the current FY.
@@ -331,8 +378,10 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 date_range_type=order_by_cols[-1],
                 columns={"aggregated_amount": "aggregated_amount"},
             )
-        else:
-            results = self.query_elasticsearch_for_prime_awards(time_periods)
+        elif self.spending_level == "transactions":
+            results = self.query_elasticsearch_for_transactions(time_periods)
+        elif self.spending_level == "awards":
+            results = self.query_elasticsearch_for_awards(time_periods)
 
         raw_response = OrderedDict(
             [
@@ -340,7 +389,13 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 ("results", results),
                 (
                     "messages",
-                    get_generic_filters_message(self.original_filters.keys(), [elem["name"] for elem in models]),
+                    [
+                        *get_generic_filters_message(self.original_filters.keys(), [elem["name"] for elem in models]),
+                        (
+                            "The 'subawards' field will be deprecated in the future. "
+                            "Set 'spending_level' to 'subawards' instead. See documentation for more information"
+                        ),
+                    ],
                 ),
             ]
         )
