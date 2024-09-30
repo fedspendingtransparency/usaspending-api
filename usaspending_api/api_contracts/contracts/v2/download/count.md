@@ -48,12 +48,16 @@ Returns the number of transactions that would be included in a download request 
             A boolean returning whether the transaction count is over the maximum row limit.
         + `calculated_transaction_count` (required, number)
             The calculated count of all transactions which would be included in the download files.
-        + `calculated_awards_count` (required, number)
-            The calculated count of all awards which would be included in the download files.
-        + `calculated_subawards_count` (required, number)
-            The calculated count of all subawards which would be included in the download files.
         + `maximum_transaction_limit` (required, number)
             The current allowed maximum number of transactions in a row-limited download. Visit https://www.usaspending.gov/download_center/custom_award_data to download larger volumes of data.
+        + `spending_level` (required, string)
+            The spending_level provided by the user or the default value of transactions.
+        + `calculated_count` (required, number)
+            The calculated count of Awards, Transactions, or Subawards included in the download files.
+        + `maximum_limit` (required, number)
+            The current allowed maximum number of Awards, Transactions, or Subawards in a row-limited download. Visit https://www.usaspending.gov/download_center/custom_award_data to download larger volumes of data.
+        + `rows_gt_limit` (required, boolean)
+            A boolean returning whether the Awards, Transactions, or Subawards count is over the maximum row limit.
         + `messages` (optional, array[string])
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
     + Body
