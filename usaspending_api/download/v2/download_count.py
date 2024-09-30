@@ -51,9 +51,11 @@ class DownloadTransactionCountViewSet(APIView):
         # If no filters in request return empty object to return all transactions
         filters = json_request.get("filters", {})
 
+        # 'subawards' will be deprecated in the future. Set ‘spending_level’ to ‘subawards’ instead. 
+        # See documentation for more information.
         if json_request["subawards"] or json_request["spending_level"] == "subawards":
-            total_subaward_count = subaward_filter(filters).count()
-        elif json_request["spending_level"] == "subawards":
+            total_count = subaward_filter(filters).count()
+        elif json_request["spending_level"] == "transactions":
             options = {}
             time_period_obj = TransactionSearchTimePeriod(
                 default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
@@ -64,33 +66,29 @@ class DownloadTransactionCountViewSet(APIView):
             options["time_period_obj"] = new_awards_only_decorator
             filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(filters, **options)
             search = TransactionSearch().filter(filter_query)
-            total_transaction_count = search.handle_count()
+            total_count = search.handle_count()
         else:
             options = {}
             time_period_obj = AwardSearchTimePeriod(
                 default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
             )
             new_awards_only_decorator = NewAwardsOnlyTimePeriod(
-                time_period_obj=time_period_obj, query_type=_QueryType.TRANSACTIONS
+                time_period_obj=time_period_obj, query_type=_QueryType.AWARDS
             )
             options["time_period_obj"] = new_awards_only_decorator
-            filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(filters, **options)
+            filter_query = QueryWithFilters.generate_awards_elasticsearch_query(filters, **options)
             search = AwardSearch().filter(filter_query)
-            total_award_count = search.handle_count()
+            total_count = search.handle_count()
 
-        if total_transaction_count is None:
-            total_transaction_count = 0
-        elif total_subaward_count is None:
-            total_subaward_count = 0
-        elif total_award_count is None:
-            total_award_count = 0
+        if total_count is None:
+            total_count = 0
 
         result = {
-            "calculated_transaction_count": total_transaction_count,
-            "calculated_award_count": total_award_count,
-            "calculated_subaward_count": total_subaward_count,
+            "calculated_transaction_count": total_count,
+            "calculated_award_count": total_count,
+            "calculated_subaward_count": total_count,
             "maximum_transaction_limit": settings.MAX_DOWNLOAD_LIMIT,
-            "transaction_rows_gt_limit": total_transaction_count > settings.MAX_DOWNLOAD_LIMIT,
+            "transaction_rows_gt_limit": total_count > settings.MAX_DOWNLOAD_LIMIT,
             "messages": get_generic_filters_message(
                 self.original_filters.keys(), [elem["name"] for elem in AWARD_FILTER]
             ),

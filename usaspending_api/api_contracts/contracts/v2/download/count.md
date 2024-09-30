@@ -19,6 +19,7 @@ Returns the number of transactions that would be included in a download request 
 
     + Attributes (object)
         + `filters` (required, AdvancedFilterObject)
+        + `spending_level` (optional, SpendingLevelObject)
     + Body
 
 
@@ -47,6 +48,10 @@ Returns the number of transactions that would be included in a download request 
             A boolean returning whether the transaction count is over the maximum row limit.
         + `calculated_transaction_count` (required, number)
             The calculated count of all transactions which would be included in the download files.
+        + `calculated_awards_count` (required, number)
+            The calculated count of all awards which would be included in the download files.
+        + `calculated_subawards_count` (required, number)
+            The calculated count of all subawards which would be included in the download files.
         + `maximum_transaction_limit` (required, number)
             The current allowed maximum number of transactions in a row-limited download. Visit https://www.usaspending.gov/download_center/custom_award_data to download larger volumes of data.
         + `messages` (optional, array[string])
@@ -94,8 +99,13 @@ Returns the number of transactions that would be included in a download request 
 + `extent_competed_type_codes`: `A` (optional, array[string])
 + `tas_codes` (optional, array[TASCodeObject], fixed-type)
 + `treasury_account_components` (optional, array[TreasuryAccountComponentsObject], fixed-type)
-+ `spending_level` (optional, array[string])
-    Possible values in this list are either awards, transaction, or subawards
+
+## SpendingLevelObject (object)
++ `spending_level` (optional, enum[string])
+    + Members
+        + `subawards`
+        + `transactions`
+        + `awards`
 
 ## TimePeriodObject (object)
 See the Transaction Search category defined in [TransactionSearchTimePeriodObject](../../../search_filters.md#transaction-search-time-period-object)
