@@ -131,9 +131,9 @@ def test_download_count(client, download_test_data, monkeypatch, elasticsearch_t
     resp_json = resp.json()
 
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
-    assert resp_json["calculated_transaction_count"] == 1
-    assert resp_json["maximum_transaction_limit"] == settings.MAX_DOWNLOAD_LIMIT
-    assert resp_json["transaction_rows_gt_limit"] is False
+    assert resp_json["calculated_count"] == 1
+    assert resp_json["maximum_limit"] == settings.MAX_DOWNLOAD_LIMIT
+    assert resp_json["rows_gt_limit"] is False
 
 
 @pytest.mark.django_db(transaction=True)
@@ -157,9 +157,9 @@ def test_download_count_with_date_type_filter_default(
     resp_json = resp.json()
 
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
-    assert resp_json["calculated_transaction_count"] == 3
-    assert resp_json["maximum_transaction_limit"] == settings.MAX_DOWNLOAD_LIMIT
-    assert resp_json["transaction_rows_gt_limit"] is False
+    assert resp_json["calculated_count"] == 3
+    assert resp_json["maximum_limit"] == settings.MAX_DOWNLOAD_LIMIT
+    assert resp_json["rows_gt_limit"] is False
 
 
 @pytest.mark.django_db(transaction=True)
@@ -204,9 +204,9 @@ def test_download_count_with_date_type_filter_date_signed(
     resp_json = resp.json()
 
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
-    assert resp_json["calculated_transaction_count"] == 0
-    assert resp_json["maximum_transaction_limit"] == settings.MAX_DOWNLOAD_LIMIT
-    assert resp_json["transaction_rows_gt_limit"] is False
+    assert resp_json["calculated_count"] == 0
+    assert resp_json["maximum_limit"] == settings.MAX_DOWNLOAD_LIMIT
+    assert resp_json["rows_gt_limit"] is False
 
     resp = client.post(
         "/api/v2/download/count/",
@@ -222,6 +222,6 @@ def test_download_count_with_date_type_filter_date_signed(
     resp_json = resp.json()
 
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
-    assert resp_json["calculated_transaction_count"] == 1
-    assert resp_json["maximum_transaction_limit"] == settings.MAX_DOWNLOAD_LIMIT
-    assert resp_json["transaction_rows_gt_limit"] is False
+    assert resp_json["calculated_count"] == 1
+    assert resp_json["maximum_limit"] == settings.MAX_DOWNLOAD_LIMIT
+    assert resp_json["rows_gt_limit"] is False
