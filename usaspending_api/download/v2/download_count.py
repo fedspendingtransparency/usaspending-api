@@ -42,7 +42,7 @@ class DownloadTransactionCountViewSet(APIView):
                 "enum_values": ["awards", "transactions", "subawards"],
                 "optional": True,
                 "default": "transactions",
-            }
+            },
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
         self.original_filters = request.data.get("filters")
@@ -53,7 +53,7 @@ class DownloadTransactionCountViewSet(APIView):
 
         if json_request["subawards"] or json_request["spending_level"] == "subawards":
             total_subaward_count = subaward_filter(filters).count()
-        elif(json_request["spending_level"] == "subawards"):
+        elif json_request["spending_level"] == "subawards":
             options = {}
             time_period_obj = TransactionSearchTimePeriod(
                 default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
