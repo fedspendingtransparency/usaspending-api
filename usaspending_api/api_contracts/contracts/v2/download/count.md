@@ -94,7 +94,7 @@ Returns the number of transactions that would be included in a download request 
 + `extent_competed_type_codes`: `A` (optional, array[string])
 + `tas_codes` (optional, array[TASCodeObject], fixed-type)
 + `treasury_account_components` (optional, array[TreasuryAccountComponentsObject], fixed-type)
-+ `spending_level` (required, array[string])
++ `spending_level` (optional, array[string])
     Possible values in this list are either awards, transaction, or subawards
 
 ## TimePeriodObject (object)
