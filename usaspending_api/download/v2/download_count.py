@@ -51,7 +51,7 @@ class DownloadTransactionCountViewSet(APIView):
         # If no filters in request return empty object to return all transactions
         filters = json_request.get("filters", {})
 
-        # 'subawards' will be deprecated in the future. Set ‘spending_level’ to ‘subawards’ instead. 
+        # 'subawards' will be deprecated in the future. Set ‘spending_level’ to ‘subawards’ instead.
         # See documentation for more information.
         if json_request["subawards"] or json_request["spending_level"] == "subawards":
             total_count = subaward_filter(filters).count()
@@ -84,11 +84,15 @@ class DownloadTransactionCountViewSet(APIView):
             total_count = 0
 
         result = {
+            # TO-DO: the following fields that follow the transaction_ naming convention will be removed
+            # once the front end is ready to implement the new fields.
             "calculated_transaction_count": total_count,
-            "calculated_award_count": total_count,
-            "calculated_subaward_count": total_count,
             "maximum_transaction_limit": settings.MAX_DOWNLOAD_LIMIT,
             "transaction_rows_gt_limit": total_count > settings.MAX_DOWNLOAD_LIMIT,
+            "calculated_count": total_count,
+            "spending_level": json_request["spending_level"],
+            "maximum_limit": settings.MAX_DOWNLOAD_LIMIT,
+            "rows_gt_limit": total_count > settings.MAX_DOWNLOAD_LIMIT,
             "messages": get_generic_filters_message(
                 self.original_filters.keys(), [elem["name"] for elem in AWARD_FILTER]
             ),
