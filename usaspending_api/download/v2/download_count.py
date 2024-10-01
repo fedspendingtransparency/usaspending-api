@@ -84,7 +84,7 @@ class DownloadTransactionCountViewSet(APIView):
             total_count = 0
 
         result = {
-            # TO-DO: the following fields that follow the transaction_ naming convention will be removed
+            # TODO: the following fields that follow the transaction_ naming convention will be removed
             # once the front end is ready to implement the new fields.
             "calculated_transaction_count": total_count,
             "maximum_transaction_limit": settings.MAX_DOWNLOAD_LIMIT,

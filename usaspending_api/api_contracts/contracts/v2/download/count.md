@@ -19,7 +19,11 @@ Returns the number of transactions that would be included in a download request 
 
     + Attributes (object)
         + `filters` (required, AdvancedFilterObject)
-        + `spending_level` (optional, SpendingLevelObject)
+        + `spending_level` (optional, enum[string])
+            + Members
+                + `subawards`
+                + `transactions`
+                + `awards`
     + Body
 
 
@@ -39,21 +43,22 @@ Returns the number of transactions that would be included in a download request 
                     "recipient_type_names": ["higher_education"],
                     "place_of_performance_locations": [{"country": "USA", "state": "WI"}],
                     "psc_codes": {"require": [["Product","10","1035"]]}
-                }
+                },
+                "spending_level": "awards"
             }
 
 + Response 200 (application/json)
     + Attributes (object)
-        + `transaction_rows_gt_limit` (required, boolean)
-            A boolean returning whether the transaction count is over the maximum row limit.
         + `calculated_transaction_count` (required, number)
             The calculated count of all transactions which would be included in the download files.
         + `maximum_transaction_limit` (required, number)
             The current allowed maximum number of transactions in a row-limited download. Visit https://www.usaspending.gov/download_center/custom_award_data to download larger volumes of data.
-        + `spending_level` (required, string)
-            The spending_level provided by the user or the default value of transactions.
+        + `transaction_rows_gt_limit` (required, boolean)
+            A boolean returning whether the transaction count is over the maximum row limit.
         + `calculated_count` (required, number)
             The calculated count of Awards, Transactions, or Subawards included in the download files.
+        + `spending_level` (required, string)
+            The spending_level provided by the user or the default value of transactions.
         + `maximum_limit` (required, number)
             The current allowed maximum number of Awards, Transactions, or Subawards in a row-limited download. Visit https://www.usaspending.gov/download_center/custom_award_data to download larger volumes of data.
         + `rows_gt_limit` (required, boolean)
@@ -103,13 +108,6 @@ Returns the number of transactions that would be included in a download request 
 + `extent_competed_type_codes`: `A` (optional, array[string])
 + `tas_codes` (optional, array[TASCodeObject], fixed-type)
 + `treasury_account_components` (optional, array[TreasuryAccountComponentsObject], fixed-type)
-
-## SpendingLevelObject (object)
-+ `spending_level` (optional, enum[string])
-    + Members
-        + `subawards`
-        + `transactions`
-        + `awards`
 
 ## TimePeriodObject (object)
 See the Transaction Search category defined in [TransactionSearchTimePeriodObject](../../../search_filters.md#transaction-search-time-period-object)
