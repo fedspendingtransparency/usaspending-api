@@ -111,7 +111,7 @@ def get_all_states(year=None, award_type_codes=None, subawards=False):
             .values("pop_state_code", "total", "distinct_awards", "outlay_total")
         )
 
-        if len(queryset) > 0:
+        if len(queryset) > 1:
             results = [
                 {
                     "pop_state_code": row["pop_state_code"],

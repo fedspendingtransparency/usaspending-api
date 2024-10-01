@@ -2,12 +2,12 @@
 import datetime
 import decimal
 
-# Core Django imports
+import pytest
+from model_bakery import baker
 
+# Core Django imports
 # Third-party app imports
 from rest_framework import status
-from model_bakery import baker
-import pytest
 
 # Imports from your apps
 from usaspending_api.common.helpers.fiscal_year_helpers import generate_fiscal_year
@@ -599,3 +599,79 @@ def test_state_list_success_state(client, state_data):
 
     assert resp.status_code == status.HTTP_200_OK
     assert sorted_resp == expected
+
+
+@pytest.mark.django_db
+def test_no_state_results(client):
+    """
+    Test that all distinct states are returned with 0 awards and 0 spending, if there are no entries for
+    the current fiscal year.
+    """
+
+    baker.make(
+        "recipient.StateData",
+        id="01-{}".format(CURRENT_FISCAL_YEAR - 1),
+        fips="01",
+        name="Test State",
+        code="TS",
+        type="state",
+        year=CURRENT_FISCAL_YEAR,
+        population=100000,
+        pop_source="Census 2010 Pop",
+        median_household_income=None,
+        mhi_source="Census 2010 MHI",
+    )
+    baker.make(
+        "recipient.StateData",
+        id="03-{}".format(CURRENT_FISCAL_YEAR - 1),
+        fips="03",
+        name="Test Territory",
+        code="TT",
+        type="territory",
+        year=CURRENT_FISCAL_YEAR - 2,
+        population=5000,
+        pop_source="Census 2010 Pop",
+        median_household_income=10000,
+        mhi_source="Census 2010 MHI",
+    )
+
+    baker.make(
+        "search.SummaryStateView",
+        duh="e0748831-af08-4f2a-bcbd-063c8d9fab29",
+        fiscal_year=CURRENT_FISCAL_YEAR - 1,
+        type="A",
+        distinct_awards="1",
+        pop_country_code="USA",
+        pop_state_code="TS",
+        generated_pragmatic_obligation=100000,
+        federal_action_obligation=0,
+        original_loan_subsidy_cost=0,
+        face_value_loan_guarantee=0,
+        counts=1,
+        total_outlays=0,
+    )
+    baker.make(
+        "search.SummaryStateView",
+        duh="6a882f98-417e-409c-9b6a-434c0f8ce923",
+        fiscal_year=CURRENT_FISCAL_YEAR - 1,
+        type="A",
+        distinct_awards="1",
+        pop_country_code="USA",
+        pop_state_code="TT",
+        generated_pragmatic_obligation=1000,
+        federal_action_obligation=0,
+        original_loan_subsidy_cost=0,
+        face_value_loan_guarantee=0,
+        counts=1,
+        total_outlays=0,
+    )
+
+    resp = client.get("/api/v2/recipient/state/")
+    sorted_resp = sort_states_response(resp.data)
+    expected_result = [
+        {"fips": "01", "code": "TS", "name": "Test State", "type": "state", "amount": 0, "count": 0},
+        {"fips": "03", "code": "TT", "name": "Test Territory", "type": "territory", "amount": 0, "count": 0},
+    ]
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert sorted_resp == expected_result
