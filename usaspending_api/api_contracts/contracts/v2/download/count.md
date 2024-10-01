@@ -24,6 +24,7 @@ Returns the number of transactions that would be included in a download request 
                 + `subawards`
                 + `transactions`
                 + `awards`
+                + Default: `transactions`
     + Body
 
 
@@ -72,6 +73,10 @@ Returns the number of transactions that would be included in a download request 
                 "calculated_transaction_count": 87343,
                 "maximum_transaction_limit": 500000,
                 "transaction_rows_gt_limit": false,
+                "calculated_count": 87343,
+                "spending_level": "awards",
+                "maximum_limit": 500000,
+                "rows_gt_limit": false,
                 "messages": ["For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints."]
             }
 
