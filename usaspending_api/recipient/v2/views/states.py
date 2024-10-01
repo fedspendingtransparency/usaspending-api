@@ -122,6 +122,7 @@ def get_all_states(year=None, award_type_codes=None, subawards=False):
                 for row in list(queryset)
             ]
         # In the case where there were no results, return a list of state codes with 0 for the amounts
+        # This is a common case on the first day of a new fiscal year
         else:
             queryset = SummaryStateView.objects.all().distinct("pop_state_code").values("pop_state_code")
             results = [
