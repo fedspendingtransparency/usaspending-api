@@ -40,7 +40,7 @@ class DownloadTransactionCountViewSet(APIView):
         return (
             "The above fields containing the transaction_* naming convention "
             "will be deprecated and replaced with fields without the transaction_*. "
-        ) 
+        )
 
     @cache_response()
     def post(self, request):
@@ -95,13 +95,12 @@ class DownloadTransactionCountViewSet(APIView):
         if total_count is None:
             total_count = 0
 
-
         message_list = get_generic_filters_message(
             self.original_filters.keys(), [elem["name"] for elem in AWARD_FILTER]
         )
         message_list.append(self.deprecation_message1())
         message_list.append(self.deprecation_message2())
-        
+
         result = {
             # TODO: the following fields that follow the transaction_ naming convention will be removed
             # once the front end is ready to implement the new fields.
@@ -112,7 +111,7 @@ class DownloadTransactionCountViewSet(APIView):
             "spending_level": json_request["spending_level"],
             "maximum_limit": settings.MAX_DOWNLOAD_LIMIT,
             "rows_gt_limit": total_count > settings.MAX_DOWNLOAD_LIMIT,
-            "messages": message_list
+            "messages": message_list,
         }
 
         return Response(result)

@@ -230,7 +230,6 @@ def get_generic_filters_message(original_filters, allowed_filters) -> List[str]:
     return retval
 
 
-
 def get_time_period_message():
     return (
         "For searches, time period start and end dates are currently limited to an earliest date of "
