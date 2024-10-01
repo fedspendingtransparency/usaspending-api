@@ -3,11 +3,11 @@ import datetime
 import decimal
 
 import pytest
-from model_bakery import baker
 
 # Core Django imports
 # Third-party app imports
 from rest_framework import status
+from model_bakery import baker
 
 # Imports from your apps
 from usaspending_api.common.helpers.fiscal_year_helpers import generate_fiscal_year
