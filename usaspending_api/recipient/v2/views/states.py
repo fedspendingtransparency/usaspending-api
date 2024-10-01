@@ -100,7 +100,7 @@ def get_all_states(year=None, award_type_codes=None, subawards=False):
 
     if not subawards:
         # calculate award total filtered by state
-        queryset = (
+        fiscal_year_queryset = (
             SummaryStateView.objects.filter(**filters)
             .values("pop_state_code")
             .annotate(
@@ -110,30 +110,29 @@ def get_all_states(year=None, award_type_codes=None, subawards=False):
             )
             .values("pop_state_code", "total", "distinct_awards", "outlay_total")
         )
+        results = [
+            {
+                "pop_state_code": row["pop_state_code"],
+                "total": row["total"],
+                "count": len(set(row["distinct_awards"].split(","))),
+                "total_outlays": row["outlay_total"],
+            }
+            for row in list(fiscal_year_queryset)
+        ]
 
-        if len(queryset) > 1:
-            results = [
-                {
-                    "pop_state_code": row["pop_state_code"],
-                    "total": row["total"],
-                    "count": len(set(row["distinct_awards"].split(","))),
-                    "total_outlays": row["outlay_total"],
-                }
-                for row in list(queryset)
-            ]
-        # In the case where there were no results, return a list of state codes with 0 for the amounts
-        # This is a common case on the first day of a new fiscal year
-        else:
-            queryset = SummaryStateView.objects.all().distinct("pop_state_code").values("pop_state_code")
-            results = [
-                {
-                    "pop_state_code": row["pop_state_code"],
-                    "total": 0,
-                    "count": 0,
-                    "total_outlays": 0,
-                }
-                for row in list(queryset)
-            ]
+        # Get all other states and return `0` for their award count and totals
+        all_states_queryset = SummaryStateView.objects.all().distinct("pop_state_code").values("pop_state_code")
+        for row in all_states_queryset:
+            if row["pop_state_code"] not in [state["pop_state_code"] for state in results]:
+                results.append(
+                    {
+                        "pop_state_code": row["pop_state_code"],
+                        "total": 0,
+                        "count": 0,
+                        "total_outlays": 0,
+                    }
+                )
+
     return results
 
 
