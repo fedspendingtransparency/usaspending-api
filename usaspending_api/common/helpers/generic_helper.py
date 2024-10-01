@@ -229,17 +229,20 @@ def get_generic_filters_message(original_filters, allowed_filters) -> List[str]:
         retval.append(unused_filters_message(set(original_filters).difference(allowed_filters)))
     return retval
 
+
 def deprecation_message1():
     return (
         "'subawards' will be deprecated in the future. Set ‘spending_level’ to ‘subawards’ instead. "
         "See documentation for more information. "
     )
 
+
 def deprecation_message2():
-    return(
+    return (
         "The above fields containing the transaction_* naming convention "
         "will be deprecated and replaced with fields without the transaction_*. "
     )
+
 
 def get_time_period_message():
     return (
