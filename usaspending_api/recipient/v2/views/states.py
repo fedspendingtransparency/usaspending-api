@@ -98,7 +98,10 @@ def get_all_states(year=None, award_type_codes=None, subawards=False):
     if award_type_codes:
         filters["type__in"] = award_type_codes
 
-    if not subawards:
+    if subawards:
+        # Currently, subawards are not supported by this function
+        return []
+    else:
         # calculate award total filtered by state
         fiscal_year_queryset = (
             SummaryStateView.objects.filter(**filters)
@@ -120,10 +123,12 @@ def get_all_states(year=None, award_type_codes=None, subawards=False):
             for row in list(fiscal_year_queryset)
         ]
 
+        existing_state_codes = [state["pop_state_code"] for state in results]
+
         # Get all other states and return `0` for their award count and totals
         all_states_queryset = SummaryStateView.objects.all().distinct("pop_state_code").values("pop_state_code")
         for row in all_states_queryset:
-            if row["pop_state_code"] not in [state["pop_state_code"] for state in results]:
+            if row["pop_state_code"] not in existing_state_codes:
                 results.append(
                     {
                         "pop_state_code": row["pop_state_code"],
