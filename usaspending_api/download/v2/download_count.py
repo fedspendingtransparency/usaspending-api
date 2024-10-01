@@ -30,6 +30,18 @@ class DownloadTransactionCountViewSet(APIView):
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/download/count.md"
 
+    def deprecation_message1(self):
+        return (
+            "'subawards' will be deprecated in the future. Set ‘spending_level’ to ‘subawards’ instead. "
+            "See documentation for more information. "
+        )
+
+    def deprecation_message2(self):
+        return (
+            "The above fields containing the transaction_* naming convention "
+            "will be deprecated and replaced with fields without the transaction_*. "
+        ) 
+
     @cache_response()
     def post(self, request):
         """Returns boolean of whether a download request is greater than the max limit. """
@@ -83,6 +95,13 @@ class DownloadTransactionCountViewSet(APIView):
         if total_count is None:
             total_count = 0
 
+
+        message_list = get_generic_filters_message(
+            self.original_filters.keys(), [elem["name"] for elem in AWARD_FILTER]
+        )
+        message_list.append(self.deprecation_message1())
+        message_list.append(self.deprecation_message2())
+        
         result = {
             # TODO: the following fields that follow the transaction_ naming convention will be removed
             # once the front end is ready to implement the new fields.
@@ -93,9 +112,7 @@ class DownloadTransactionCountViewSet(APIView):
             "spending_level": json_request["spending_level"],
             "maximum_limit": settings.MAX_DOWNLOAD_LIMIT,
             "rows_gt_limit": total_count > settings.MAX_DOWNLOAD_LIMIT,
-            "messages": get_generic_filters_message(
-                self.original_filters.keys(), [elem["name"] for elem in AWARD_FILTER]
-            ),
+            "messages": message_list
         }
 
         return Response(result)
