@@ -224,11 +224,22 @@ def get_simple_pagination_metadata(results_plus_one, limit, page):
 
 
 def get_generic_filters_message(original_filters, allowed_filters) -> List[str]:
-    retval = [get_time_period_message()]
+    retval = [get_time_period_message(), deprecation_message1(), deprecation_message2()]
     if set(original_filters).difference(allowed_filters):
         retval.append(unused_filters_message(set(original_filters).difference(allowed_filters)))
     return retval
 
+def deprecation_message1():
+    return (
+        "'subawards' will be deprecated in the future. Set ‘spending_level’ to ‘subawards’ instead. "
+        "See documentation for more information. "
+    )
+
+def deprecation_message2():
+    return(
+        "The above fields containing the transaction_* naming convention "
+        "will be deprecated and replaced with fields without the transaction_*. "
+    )
 
 def get_time_period_message():
     return (
@@ -236,9 +247,6 @@ def get_time_period_message():
         f"{settings.API_SEARCH_MIN_DATE}.  For data going back to {settings.API_MIN_DATE}, use either the Custom "
         "Award Download feature on the website or one of our download or bulk_download API endpoints as "
         "listed on https://api.usaspending.gov/docs/endpoints. "
-        "'subawards' will be deprecated in the future. Set ‘spending_level’ to ‘subawards’ instead. "
-        "See documentation for more information. The above fields containing the transaction_ naming convention "
-        "will be deprecated and replaced with fields without the transaction_. "
     )
 
 
