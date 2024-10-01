@@ -1,5 +1,4 @@
 import logging
-
 from collections import OrderedDict
 from copy import deepcopy
 from datetime import datetime
@@ -8,11 +7,11 @@ from django.db.models import Sum
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from usaspending_api.common.helpers.orm_helpers import StringAggWithDefault
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.fiscal_year_helpers import generate_fiscal_year
+from usaspending_api.common.helpers.orm_helpers import StringAggWithDefault
 from usaspending_api.recipient.models import StateData
 from usaspending_api.recipient.v2.helpers import validate_year
 from usaspending_api.search.models import SummaryStateView
@@ -112,15 +111,28 @@ def get_all_states(year=None, award_type_codes=None, subawards=False):
             .values("pop_state_code", "total", "distinct_awards", "outlay_total")
         )
 
-        results = [
-            {
-                "pop_state_code": row["pop_state_code"],
-                "total": row["total"],
-                "count": len(set(row["distinct_awards"].split(","))),
-                "total_outlays": row["outlay_total"],
-            }
-            for row in list(queryset)
-        ]
+        if len(queryset) > 0:
+            results = [
+                {
+                    "pop_state_code": row["pop_state_code"],
+                    "total": row["total"],
+                    "count": len(set(row["distinct_awards"].split(","))),
+                    "total_outlays": row["outlay_total"],
+                }
+                for row in list(queryset)
+            ]
+        # In the case where there were no results, return a list of state codes with 0 for the amounts
+        else:
+            queryset = SummaryStateView.objects.all().distinct("pop_state_code").values("pop_state_code")
+            results = [
+                {
+                    "pop_state_code": row["pop_state_code"],
+                    "total": 0,
+                    "count": 0,
+                    "total_outlays": 0,
+                }
+                for row in list(queryset)
+            ]
     return results
 
 
@@ -186,7 +198,7 @@ class StateMetaDataViewSet(APIView):
             "total_face_value_loan_amount": state_aggregates["total_face_value_loan_amount"],
             "total_face_value_loan_prime_awards": state_loans["count"],
             "award_amount_per_capita": amt_per_capita,
-            "total_outlays": state_aggregates["total_outlays"]
+            "total_outlays": state_aggregates["total_outlays"],
             # Commented out for now
             # 'total_subaward_amount': total_subaward_amount,
             # 'total_subawards': total_subaward_count,
