@@ -185,9 +185,15 @@ def test_messages_not_nested(client, download_test_data, monkeypatch, elasticsea
     resp_json = resp.json()
 
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
-    assert resp_json["messages"] == get_generic_filters_message(
-        request_data["filters"].keys(), {"time_period", "award_type_codes"}
+    message_list = get_generic_filters_message(request_data["filters"].keys(), {"time_period", "award_type_codes"})
+    message_list.append(
+        "'subawards' will be deprecated in the future. Set ‘spending_level’ to ‘subawards’ instead. See documentation for more information. "
     )
+    message_list.append(
+        "The above fields containing the transaction_* naming convention will be deprecated and replaced with fields without the transaction_*. "
+    )
+
+    assert resp_json["messages"] == message_list
 
 
 @pytest.mark.django_db(transaction=True)
