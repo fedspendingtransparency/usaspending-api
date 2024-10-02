@@ -24,7 +24,7 @@ Returns the number of transactions that would be included in a download request 
                 + `subawards`
                 + `transactions`
                 + `awards`
-                + Default: `transactions`
+            + Default: `transactions`
     + Body
 
 
