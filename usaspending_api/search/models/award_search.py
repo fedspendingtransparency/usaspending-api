@@ -36,6 +36,7 @@ class AwardSearch(models.Model):
     parent_recipient_unique_id = models.TextField(null=True)
     recipient_uei = models.TextField(null=True, blank=True)
     parent_uei = models.TextField(null=True, blank=True)
+    parent_recipient_name = models.TextField(null=True, blank=True)
     business_categories = ArrayField(models.TextField(), default=list, null=True)
 
     action_date = models.DateField(null=True)
@@ -238,4 +239,5 @@ class AwardSearch(models.Model):
             models.Index(Upper("parent_award_piid"), name="as_idx_parent_award_piid_upper"),
             models.Index(Upper("fain"), name="as_idx_fain_upper"),
             models.Index(Upper("uri"), name="as_idx_uri_upper"),
+            models.Index(F("update_date").desc(nulls_last=True), name="as_idx_update_date_desc"),
         ]

@@ -12,6 +12,7 @@ from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.download.lookups import JOB_STATUS
 from usaspending_api.etl.award_helpers import update_awards
 from usaspending_api.search.models import SubawardSearch
+from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
 @pytest.fixture
@@ -322,7 +323,8 @@ def _award_download_data(db):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_download_awards_with_all_award_types(client, _award_download_data):
+def test_download_awards_with_all_award_types(client, monkeypatch, _award_download_data, elasticsearch_subaward_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     filters = {
         "agency": "all",
@@ -392,7 +394,8 @@ def test_download_awards_with_some_prime_awards(client, _award_download_data):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_download_awards_with_all_sub_awards(client, _award_download_data):
+def test_download_awards_with_all_sub_awards(client, monkeypatch, _award_download_data, elasticsearch_subaward_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     filters = {
         "agency": "all",
@@ -415,7 +418,8 @@ def test_download_awards_with_all_sub_awards(client, _award_download_data):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_download_awards_with_some_sub_awards(client, _award_download_data):
+def test_download_awards_with_some_sub_awards(client, monkeypatch, _award_download_data, elasticsearch_subaward_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     filters = {
         "agency": "all",
@@ -438,7 +442,8 @@ def test_download_awards_with_some_sub_awards(client, _award_download_data):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_download_awards_with_domestic_scope(client, _award_download_data):
+def test_download_awards_with_domestic_scope(client, monkeypatch, _award_download_data, elasticsearch_subaward_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     # Recipient Location Scope
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     filters = {
@@ -487,7 +492,8 @@ def test_download_awards_with_domestic_scope(client, _award_download_data):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_download_awards_with_foreign_scope(client, _award_download_data):
+def test_download_awards_with_foreign_scope(client, monkeypatch, _award_download_data, elasticsearch_subaward_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     # Recipient Location Scope
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     filters = {

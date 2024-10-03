@@ -2010,3 +2010,216 @@ def test_correct_response_new_awards_only(
     resp_json = resp.json()
     resp_json["results"].sort(key=_get_shape_code_for_sort)
     assert resp_json == expected_response
+
+
+@pytest.mark.django_db
+def test_spending_by_geo_program_activity_subawards(
+    client, monkeypatch, elasticsearch_award_index, awards_and_transactions
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    # Program Activites filter test
+    test_payload = {
+        "subawards": True,
+        "scope": "recipient_location",
+        "geo_layer": "country",
+        "geo_layer_filters": ["USA"],
+        "filters": {"program_activities": [{"name": "program_activity_123"}]},
+    }
+    expected_response = [
+        {
+            "aggregated_amount": 54321.00,
+            "display_name": "United States",
+            "population": None,
+            "per_capita": None,
+            "shape_code": "USA",
+        },
+    ]
+    resp = client.post(
+        "/api/v2/search/spending_by_geography", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
+
+    test_payload = {
+        "subawards": True,
+        "scope": "recipient_location",
+        "geo_layer": "country",
+        "geo_layer_filters": ["USA"],
+        "filters": {"program_activities": [{"name": "program_activity_1234"}]},
+    }
+    expected_response = []
+
+    resp = client.post(
+        "/api/v2/search/spending_by_geography", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
+
+    test_payload = {
+        "subawards": True,
+        "scope": "recipient_location",
+        "geo_layer": "country",
+        "geo_layer_filters": ["USA"],
+        "filters": {
+            "program_activities": [{"name": "program_activity_123"}],
+        },
+    }
+    expected_response = [
+        {
+            "aggregated_amount": 54321.00,
+            "display_name": "United States",
+            "population": None,
+            "per_capita": None,
+            "shape_code": "USA",
+        },
+    ]
+    resp = client.post(
+        "/api/v2/search/spending_by_geography", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
+
+    test_payload = {
+        "subawards": True,
+        "scope": "recipient_location",
+        "geo_layer": "country",
+        "geo_layer_filters": ["USA"],
+        "filters": {
+            "program_activities": [{"name": "program_activity_12345"}],
+        },
+    }
+    expected_response = []
+
+    resp = client.post(
+        "/api/v2/search/spending_by_geography", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
+
+
+@pytest.mark.django_db
+def test_spending_by_geo_program_activity_name_case(
+    client, monkeypatch, elasticsearch_transaction_index, awards_and_transactions
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
+    # Program Activites filter test
+    test_payload = {
+        "subawards": False,
+        "scope": "place_of_performance",
+        "geo_layer": "country",
+        "filters": {
+            "program_activities": [{"name": "ProGram_aCtiVity_123"}],
+        },
+    }
+    expected_response = [
+        {
+            "aggregated_amount": 5.0,
+            "display_name": "United States",
+            "population": None,
+            "per_capita": None,
+            "shape_code": "USA",
+        },
+    ]
+    resp = client.post(
+        "/api/v2/search/spending_by_geography", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
+
+
+@pytest.mark.django_db
+def test_spending_by_geo_program_activity(
+    client, monkeypatch, elasticsearch_transaction_index, awards_and_transactions
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
+    # Program Activites filter test
+    test_payload = {
+        "subawards": False,
+        "scope": "place_of_performance",
+        "geo_layer": "country",
+        "filters": {
+            "program_activities": [{"name": "program_activity_123"}],
+        },
+    }
+    expected_response = [
+        {
+            "aggregated_amount": 5.0,
+            "display_name": "United States",
+            "population": None,
+            "per_capita": None,
+            "shape_code": "USA",
+        },
+    ]
+    resp = client.post(
+        "/api/v2/search/spending_by_geography", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
+
+    test_payload = {
+        "subawards": False,
+        "scope": "place_of_performance",
+        "geo_layer": "country",
+        "geo_layer_filters": ["USA"],
+        "filters": {"program_activities": [{"name": "program_activity_1234"}]},
+    }
+    expected_response = []
+
+    resp = client.post(
+        "/api/v2/search/spending_by_geography", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
+
+    test_payload = {
+        "subawards": False,
+        "scope": "place_of_performance",
+        "geo_layer": "country",
+        "geo_layer_filters": ["USA"],
+        "filters": {
+            "program_activities": [{"name": "program_activity_123"}],
+        },
+    }
+    expected_response = [
+        {
+            "aggregated_amount": 5.0,
+            "display_name": "United States",
+            "population": None,
+            "per_capita": None,
+            "shape_code": "USA",
+        },
+    ]
+    resp = client.post(
+        "/api/v2/search/spending_by_geography", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
+
+    test_payload = {
+        "subawards": False,
+        "scope": "place_of_performance",
+        "geo_layer": "country",
+        "geo_layer_filters": ["USA"],
+        "filters": {
+            "program_activities": [{"name": "program_activity_12345"}],
+        },
+    }
+    expected_response = []
+
+    resp = client.post(
+        "/api/v2/search/spending_by_geography", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"

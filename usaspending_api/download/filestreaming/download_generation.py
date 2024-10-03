@@ -195,22 +195,28 @@ def get_download_sources(
             # Award downloads
 
             # Use correct date range columns for advanced search
-            # (Will not change anything for keyword search since "time_period" is not provided))
+            # (Will not change anything for keyword search since "time_period" is not provided)
             filters = deepcopy(json_request["filters"])
 
-            if json_request["filters"].get("time_period") is not None and download_type == "sub_awards":
+            # sub awards do not support `new_awards_only` date type
+            #   the reason we need this check is because downloads are
+            #   sometimes a mix between prime awards and subawards
+            #   and share the same filters. In the cases where the
+            #   download requests `new_awards_only` we only want to apply this
+            #   date type to the prime award summaries
+            if json_request["filters"].get("time_period") is not None and (
+                download_type == "sub_awards" or download_type == "elasticsearch_sub_awards"
+            ):
                 for time_period in filters["time_period"]:
-                    # sub awards do not support `new_awards_only` date type
-                    #   the reason we need this check is because downloads are
-                    #   sometimes a mix between prime awards and subawards
-                    #   and share the same filters. In the cases where the
-                    #   download requests `new_awards_only` we only want to apply this
-                    #   date type to the prime award summaries
                     if time_period.get("date_type") == NEW_AWARDS_ONLY_KEYWORD:
                         del time_period["date_type"]
                     if time_period.get("date_type") == "date_signed":
                         time_period["date_type"] = "action_date"
-            if download_type == "elasticsearch_awards" or download_type == "elasticsearch_transactions":
+            if (
+                download_type == "elasticsearch_awards"
+                or download_type == "elasticsearch_transactions"
+                or download_type == "elasticsearch_sub_awards"
+            ):
                 queryset = filter_function(filters, download_job=download_job)
             else:
                 queryset = filter_function(filters)

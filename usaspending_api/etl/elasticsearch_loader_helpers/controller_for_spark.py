@@ -59,7 +59,7 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
             identifier_replacements["financial_accounts_by_awards"] = "int.financial_accounts_by_awards"
             identifier_replacements["vw_awards"] = "int.awards"
         elif self.config["load_type"] == "recipient":
-            identifier_replacements["recipient_profile"] = "rpt.recipient_profile"
+            identifier_replacements = None
         elif self.config["load_type"] == "location":
             # Replace the Postgres regex operator with the Databricks regex operator
             identifier_replacements["~"] = "rlike"

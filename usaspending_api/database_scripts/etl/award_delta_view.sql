@@ -29,6 +29,7 @@ SELECT
   "parent_recipient_unique_id",
   "recipient_uei",
   "parent_uei",
+  "parent_recipient_name",
   "business_categories",
 
   "action_date",

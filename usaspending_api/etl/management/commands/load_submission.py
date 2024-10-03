@@ -22,7 +22,7 @@ logger = logging.getLogger("script")
 
 class Command(load_base.Command):
     """
-    This command will load a single submission from the DATA Act broker.  If we've already loaded
+    This command will load a single submission from Data Broker.  If we've already loaded
     the specified Broker submission, this command will either update or reload the submission.
     """
 
@@ -33,7 +33,7 @@ class Command(load_base.Command):
     db_cursor = None
 
     help = (
-        "Loads a single submission from the DATA Act broker. The DATA_BROKER_DATABASE_URL environment variable "
+        "Loads a single submission from Data Broker. The DATA_BROKER_DATABASE_URL environment variable "
         "must set so we can pull submission data from their db."
     )
 

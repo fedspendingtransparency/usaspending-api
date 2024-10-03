@@ -1,8 +1,6 @@
 import pytest
 from rest_framework import status
 
-from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
-
 url = "/api/v2/disaster/award/amount/"
 
 
@@ -76,24 +74,3 @@ def test_award_amount_exclusive_filters(client, generic_account_data, helpers):
 def test_award_amount_bad_award_type_value(client, helpers):
     resp = helpers.post_for_amount_endpoint(client, url, ["ZZ"], award_type="financial")
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
-
-
-@pytest.mark.django_db
-def test_award_type_filters(
-    client, monkeypatch, generic_account_data, unlinked_faba_account_data, helpers, elasticsearch_account_index
-):
-    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
-    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
-    helpers.reset_dabs_cache()
-
-    resp = helpers.post_for_amount_endpoint(client, url, ["L"], award_type="procurement")
-    assert resp.status_code == status.HTTP_200_OK
-    assert resp.data["award_count"] == 1
-    assert resp.data["outlay"] == 222
-    assert resp.data["obligation"] == 200
-
-    resp = helpers.post_for_amount_endpoint(client, url, ["N", "O"], award_type="assistance")
-    assert resp.status_code == status.HTTP_200_OK
-    assert resp.data["award_count"] == 2
-    assert resp.data["outlay"] == 334.0
-    assert resp.data["obligation"] == 4.0

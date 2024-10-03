@@ -43,6 +43,7 @@ AWARD_SEARCH_COLUMNS = {
     "parent_recipient_unique_id": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "recipient_uei": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "parent_uei": {"delta": "STRING", "postgres": "TEXT", "gold": False},
+    "parent_recipient_name": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "business_categories": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]", "gold": False},
     "total_subaward_amount": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": True},
     "subaward_count": {"delta": "INTEGER", "postgres": "INTEGER", "gold": True},
@@ -268,6 +269,7 @@ award_search_load_sql_string = rf"""
   COALESCE(transaction_fpds.ultimate_parent_unique_ide, transaction_fabs.ultimate_parent_unique_ide) AS parent_recipient_unique_id,
   COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei) AS recipient_uei,
   COALESCE(transaction_fpds.ultimate_parent_uei, transaction_fabs.ultimate_parent_uei) AS parent_uei,
+  COALESCE(transaction_fpds.ultimate_parent_legal_enti, transaction_fabs.ultimate_parent_legal_enti) AS parent_recipient_name,
   latest_transaction.business_categories,
 
   awards.total_subaward_amount,
