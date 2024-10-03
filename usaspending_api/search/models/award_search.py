@@ -191,6 +191,8 @@ class AwardSearch(models.Model):
     transaction_unique_id = models.TextField(null=True)
     raw_recipient_name = models.TextField(null=True)
     data_source = models.TextField(null=True)
+    program_activity_names = ArrayField(models.TextField(), default=list, null=True)
+    program_activity_codes = ArrayField(models.TextField(), default=list, null=True)
     objects = CTEManager()
 
     class Meta:
