@@ -4,12 +4,13 @@ Module for Application Performance Monitoring and distributed tracing tools and 
 Specifically leveraging the Grafana Open Telemetry tracing client.
 """
 from opentelemetry import trace
-from opentelemetry.trace import SpanKind
+# from opentelemetry.trace import SpanKind
 # from opentelemetry.sdk.trace import ReadableSpan, SpanProcessor
 
 from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
 from opentelemetry.trace.status import Status, StatusCode
 from typing import Optional, Callable
+from opentelemetry.trace import SpanKind
 import logging
 
 # The tracer provider should only be set up once, typically in the settings or a dedicated setup module
@@ -85,12 +86,14 @@ class SubprocessTrace:
     def __init__(
         self,
         name: str,
+        kind: SpanKind,
         service: str = None,
         can_drop_sample: bool = True,
         **tags,
     ) -> None:
         self.name = name
         self.service = service
+        self.kind = kind
         self.can_drop_sample = can_drop_sample
         self.tags = tags
         self.span: Optional[trace.Span] = None
@@ -108,6 +111,7 @@ class SubprocessTrace:
             # span data that is to be flushed (sent to the server)
             self.span.__exit__(exc_type, exc_val, exc_tb)
         finally:
+            # ensures that all spans that haven't been exported yet are immediately sent to the configured exporter.
             trace.get_tracer_provider().force_flush()
 
 
