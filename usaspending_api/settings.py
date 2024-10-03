@@ -21,7 +21,7 @@ from opentelemetry.instrumentation.django import DjangoInstrumentor
 ############################################################
 # ==== [Open Telemetry Configuration] ====
 
-# Instrument Django
+# Django Instrumentation
 DjangoInstrumentor().instrument()
 
 # Optionally, set other OpenTelemetry configurations

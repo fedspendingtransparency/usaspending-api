@@ -138,28 +138,28 @@ def test_logging_trace_spans(otel_tracer_fixture, caplog: LogCaptureFixture):
 #         # Drop this span so it is not sent to the server, and not logged by the trace logger
 #         OpenTelemetryEagerlyDropTraceFilter.drop(span)
 
-    # Do another trace, that is NOT dropped
-    # with otel_tracer_fixture.start_as_current_span(
-    #     name=f"{test}_operation2",
-    #     kind=SpanKind.INTERNAL,
-    #     attributes={"service.name": f"{test}_service2", "resource.name": f"{test}_resource2", "span.type": "TEST"},
-    # ) as span2:
-    #     trace_id2 = span2.trace_id
-    #     logger = logging.getLogger(f"{test}_logger")
-    #     test_msg2 = f"a second test message was logged during {test}"
-    #     logger.warning(test_msg2)
-    #     # do things
-    #     x = 2 ** 7
+# Do another trace, that is NOT dropped
+# with otel_tracer_fixture.start_as_current_span(
+#     name=f"{test}_operation2",
+#     kind=SpanKind.INTERNAL,
+#     attributes={"service.name": f"{test}_service2", "resource.name": f"{test}_resource2", "span.type": "TEST"},
+# ) as span2:
+#     trace_id2 = span2.trace_id
+#     logger = logging.getLogger(f"{test}_logger")
+#     test_msg2 = f"a second test message was logged during {test}"
+#     logger.warning(test_msg2)
+#     # do things
+#     x = 2 ** 7
 
-    # assert test_msg in caplog.text, "caplog.text did not seem to capture logging output during test"
-    # assert f"SPAN#{trace_id1}" not in caplog.text, "span marker still logged when should have been dropped"
-    # assert f"TRACE#{trace_id1}" not in caplog.text, "trace marker still logged when should have been dropped"
-    # assert f"resource {test}_resource" in caplog.text, "traced resource still logged when should have been dropped"
-    # assert test_msg2 in caplog.text
-    # assert f"SPAN#{trace_id2}" in caplog.text, "span marker not found in logging output"
-    # assert f"TRACE#{trace_id2}" in caplog.text, "trace marker not found in logging output"
-    # assert f"resource {test}_resource2" in caplog.text, "traced resource not found in logging output"
-    # assert DatadogEagerlyDropTraceFilter.EAGERLY_DROP_TRACE_KEY not in caplog.text
+# assert test_msg in caplog.text, "caplog.text did not seem to capture logging output during test"
+# assert f"SPAN#{trace_id1}" not in caplog.text, "span marker still logged when should have been dropped"
+# assert f"TRACE#{trace_id1}" not in caplog.text, "trace marker still logged when should have been dropped"
+# assert f"resource {test}_resource" in caplog.text, "traced resource still logged when should have been dropped"
+# assert test_msg2 in caplog.text
+# assert f"SPAN#{trace_id2}" in caplog.text, "span marker not found in logging output"
+# assert f"TRACE#{trace_id2}" in caplog.text, "trace marker not found in logging output"
+# assert f"resource {test}_resource2" in caplog.text, "traced resource not found in logging output"
+# assert DatadogEagerlyDropTraceFilter.EAGERLY_DROP_TRACE_KEY not in caplog.text
 
 
 # def test_subprocess_trace(datadog_tracer: ddtrace.Tracer, caplog: LogCaptureFixture):

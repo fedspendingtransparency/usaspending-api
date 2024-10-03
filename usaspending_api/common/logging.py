@@ -8,6 +8,11 @@ import traceback
 
 from typing import Optional, Callable
 
+from opentelemetry.instrumentation.logging import LoggingInstrumentor
+
+LoggingInstrumentor().instrument(set_logging_format=True)
+LoggingInstrumentor(logging_format="%(msg)s [span_id=%(otelSpanID)s trace_id=%(otelTraceID)s]")
+
 
 def get_remote_addr(request):
     """ Get IP address of user making request can be used for other logging"""
