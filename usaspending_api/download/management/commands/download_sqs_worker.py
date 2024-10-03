@@ -34,24 +34,20 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         # Configure Tracer to drop traces of polls of the queue that have been flagged as uninteresting
         OpenTelemetryEagerlyDropTraceFilter.activate()
-        
+
         queue = get_sqs_queue()
         log_job_message(logger=logger, message="Starting SQS polling", job_type=JOB_TYPE)
 
         message_found = None
         keep_polling = True
         while keep_polling:
-            
+
             # Start a Trace for this poll iter to capture activity in APM
             with SubprocessTrace(
                 name=f"job.{JOB_TYPE}",
                 kind=SpanKind.INTERNAL,
-                service= "bulk-download", 
-                attributes={
-                    "service": "bulk-download", 
-                    "resource": queue.url,
-                    "span_type":"Internal"
-                },
+                service="bulk-download",
+                attributes={"service": "bulk-download", "resource": queue.url, "span_type": "Internal"},
             ) as span:
                 # Set True to add trace to App Analytics:
                 # - https://docs.datadoghq.com/tracing/app_analytics/?tab=python#custom-instrumentation
@@ -59,7 +55,9 @@ class Command(BaseCommand):
 
                 # Setup dispatcher that coordinates job activity on SQS
                 dispatcher = SQSWorkDispatcher(
-                    queue, worker_process_name=JOB_TYPE, worker_can_start_child_processes=True,
+                    queue,
+                    worker_process_name=JOB_TYPE,
+                    worker_can_start_child_processes=True,
                 )
 
                 try:
@@ -94,12 +92,9 @@ class Command(BaseCommand):
 
 def download_service_app(download_job_id):
     with SubprocessTrace(
-        name=f"job.{JOB_TYPE}.download", 
+        name=f"job.{JOB_TYPE}.download",
         kind=SpanKind.SERVER,
-        attributes={
-            "service": "bulk-download", 
-            "span_type": SpanKind.Server
-        }
+        attributes={"service": "bulk-download", "span_type": SpanKind.Server},
     ) as span:
         download_job = _retrieve_download_job_from_db(download_job_id)
         download_job_details = download_job_to_log_dict(download_job)

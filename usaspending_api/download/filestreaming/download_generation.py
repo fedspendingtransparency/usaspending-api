@@ -456,12 +456,12 @@ def split_and_zip_data_files(zip_file_path, source_path, data_file_name, file_fo
     with SubprocessTrace(
         name=f"job.{JOB_TYPE}.download.zip",
         kind=SpanKind.INTERNAL,
-        service= "bulk-download",
+        service="bulk-download",
         attributes={
             "service": "bulk-download",
             "span_type": "Internal",
             "source_path": source_path,
-            "zip_file_path": zip_file_path
+            "zip_file_path": zip_file_path,
         },
     ) as span:
         try:
@@ -700,7 +700,7 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
     with SubprocessTrace(
         name=f"job.{JOB_TYPE}.download.psql",
         kind=SpanKind.INTERNAL,
-        service= "bulk-download",
+        service="bulk-download",
         attributes={
             "service": "bulk-download",
             "resource": download_sql,
@@ -710,19 +710,11 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
     ), tracer.start_as_current_span(
         name="postgres.query",
         span_type=SpanKind.INTERNAL,
-        attributes={
-            "resource":download_sql,
-            "service":f"{settings.DOWNLOAD_DB_ALIAS}db",
-            "span_type": "Internal"
-        }
+        attributes={"resource": download_sql, "service": f"{settings.DOWNLOAD_DB_ALIAS}db", "span_type": "Internal"},
     ), tracer.start_as_current_span(
-        name="postgres.query", 
+        name="postgres.query",
         span_type=SpanKind.INTERNAL,
-        attributes={
-            "resource":download_sql,
-            "service":"postgres",
-            "span_type": "Internal"
-        }
+        attributes={"resource": download_sql, "service": "postgres", "span_type": "Internal"},
     ):
         try:
             log_time = time.perf_counter()

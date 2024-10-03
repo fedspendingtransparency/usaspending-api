@@ -4,6 +4,7 @@ Module for Application Performance Monitoring and distributed tracing tools and 
 Specifically leveraging the Grafana Open Telemetry tracing client.
 """
 from opentelemetry import trace
+
 # from opentelemetry.trace import SpanKind
 # from opentelemetry.sdk.trace import ReadableSpan, SpanProcessor
 
@@ -51,7 +52,7 @@ def _activate_trace_filter(filter_class: Callable) -> None:
             tracer._filters.append(filter_class())
         else:
             tracer._filters = [filter_class()]
-        tracer.configure(settings={'FILTERS': tracer._filters})
+        tracer.configure(settings={"FILTERS": tracer._filters})
 
 
 class OpenTelemetryEagerlyDropTraceFilter:
@@ -103,7 +104,6 @@ class SubprocessTrace:
         for key, value in self.tags.items():
             self.span.set_attribute(key, value)
         return self.span
-
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         try:
