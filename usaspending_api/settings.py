@@ -21,7 +21,7 @@ from opentelemetry.instrumentation.django import DjangoInstrumentor
 ############################################################
 # ==== [Open Telemetry Configuration] ====
 
-# Instrument Django
+# Django Instrumentation
 DjangoInstrumentor().instrument()
 
 # Optionally, set other OpenTelemetry configurations
@@ -237,6 +237,7 @@ INSTALLED_APPS = [
     "django_spaghetti",
     "rest_framework",
     "rest_framework_tracking",
+    "opentelemetry",
     # Project applications
     "usaspending_api.accounts",
     "usaspending_api.agency",
