@@ -16,7 +16,8 @@ import traceback
 
 from opentelemetry import trace
 from opentelemetry.trace import SpanKind
-from opentelemetry.sdk.trace import TracerProvider
+
+# from opentelemetry.sdk.trace import TracerProvider
 
 from datetime import datetime, timezone
 from django.conf import settings
@@ -50,7 +51,7 @@ JOB_TYPE = "USAspendingDownloader"
 logger = logging.getLogger(__name__)
 
 # Set up the OpenTelemetry tracer provider
-trace.set_tracer_provider(TracerProvider())
+# trace.set_tracer_provider(TracerProvider())
 tracer = trace.get_tracer_provider().get_tracer(__name__)
 
 
@@ -69,7 +70,7 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
 
     span = tracer.start_span(name=f"generate_download_{request_type}")
     if span and request_type:
-        span.resource = request_type
+        span.set_attribute("resource", request_type)
 
     file_name = start_download(download_job)
     working_dir = None

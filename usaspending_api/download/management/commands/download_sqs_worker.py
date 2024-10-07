@@ -2,9 +2,10 @@ import logging
 import time
 import traceback
 
-from opentelemetry import trace
+# from opentelemetry import trace
 from opentelemetry.trace import SpanKind
-from opentelemetry.sdk.trace import TracerProvider
+
+# from opentelemetry.sdk.trace import TracerProvider
 
 from django.core.management.base import BaseCommand
 
@@ -23,8 +24,8 @@ from usaspending_api.download.models.download_job import DownloadJob
 from usaspending_api.common.tracing import OpenTelemetryEagerlyDropTraceFilter, SubprocessTrace
 
 # Initialize OpenTelemetry
-tracer_provider = TracerProvider()
-trace.set_tracer_provider(tracer_provider)
+# tracer_provider = TracerProvider()
+# trace.set_tracer_provider(tracer_provider)
 
 logger = logging.getLogger(__name__)
 JOB_TYPE = "USAspendingDownloader"

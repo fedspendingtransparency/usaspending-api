@@ -14,7 +14,8 @@ from django.core.wsgi import get_wsgi_application
 
 
 def request_hook(span, environ):
-    print("Request hook executed")
+    print("\n")
+    print("Request hook executed\n")
     if span and span.is_recording():
         headers_to_capture = [
             "CONTENT_LENGTH",
@@ -39,7 +40,7 @@ def request_hook(span, environ):
 
 
 def response_hook(span, environ, status, response_headers):
-    print("Response hook executed")
+    print("Response hook executed\n")
     if span and span.is_recording():
         headers_to_capture = [
             "content-length",
