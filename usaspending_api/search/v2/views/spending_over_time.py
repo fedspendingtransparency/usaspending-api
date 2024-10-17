@@ -150,24 +150,44 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         """
 
         if isinstance(search, AwardSearch):
-            date_field = "action_date"  # TODO follow up on which date field to use
             category_field = "category.keyword"
-        elif isinstance(search, TransactionSearch):
-            date_field = "action_date" if self.group == "calendar_year" else "fiscal_action_date"
-            category_field = "award_category"
 
-        interval = "year" if (self.group == "fiscal_year" or self.group == "calendar_year") else self.group
+            if self.group == "fiscal_year":
+                group_by_time_period_agg = A("terms", field="fiscal_year")
+            else:
+                group_by_time_period_agg = A(
+                    "date_histogram",
+                    field="action_date",
+                    interval="year" if (self.group == "calendar_year") else self.group,
+                    format="yyyy-MM-dd",
+                )
+        elif isinstance(search, TransactionSearch):
+            category_field = "award_category"
+            group_by_time_period_agg = A(
+                "date_histogram",
+                field="action_date" if self.group == "calendar_year" else "fiscal_action_date",
+                interval="year" if (self.group == "fiscal_year" or self.group == "calendar_year") else self.group,
+                format="yyyy-MM-dd",
+            )
 
         """
         The individual aggregations that are needed; with two different sum aggregations to handle issues with
         summing together floats.
         """
+        sum_as_cents_agg_outlay = A("sum", field="total_outlays", script={"source": "_value * 100"})
+        sum_as_dollars_agg_outlay = A(
+            "bucket_script",
+            buckets_path={"sum_as_cents_outlay": "sum_as_cents_outlay"},
+            script="params.sum_as_cents_outlay / 100",
+        )
 
-        group_by_time_period_agg = A("date_histogram", field=date_field, interval=interval, format="yyyy-MM-dd")
-        sum_outlays_agg = A("sum", field="total_outlays")
-        sum_as_cents_agg = A("sum", field="generated_pragmatic_obligation", script={"source": "_value * 100"})
-        sum_as_dollars_agg = A(
-            "bucket_script", buckets_path={"sum_as_cents": "sum_as_cents"}, script="params.sum_as_cents / 100"
+        sum_as_cents_agg_obligation = A(
+            "sum", field="generated_pragmatic_obligation", script={"source": "_value * 100"}
+        )
+        sum_as_dollars_agg_obligation = A(
+            "bucket_script",
+            buckets_path={"sum_as_cents_obligation": "sum_as_cents_obligation"},
+            script="params.sum_as_cents_obligation / 100",
         )
 
         """
@@ -178,8 +198,12 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         """
         search.aggs.bucket("group_by_time_period", group_by_time_period_agg)
         search.aggs["group_by_time_period"].bucket("group_by_category", "terms", field=category_field).metric(
-            "sum_total_outlays", sum_outlays_agg
-        ).metric("sum_as_cents", sum_as_cents_agg).pipeline("sum_as_dollars", sum_as_dollars_agg)
+            "sum_as_cents_outlay", sum_as_cents_agg_outlay
+        ).pipeline("sum_as_dollars_outlay", sum_as_dollars_agg_outlay).metric(
+            "sum_as_cents_obligation", sum_as_cents_agg_obligation
+        ).pipeline(
+            "sum_as_dollars_obligation", sum_as_dollars_agg_obligation
+        )
 
     def parse_elasticsearch_bucket(self, bucket: dict) -> dict:
         """
@@ -194,7 +218,12 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         for the API, do not have to worry about any other time period.
         """
         time_period = {}
-        key_as_date = datetime.strptime(bucket["key_as_string"], "%Y-%m-%d")
+
+        if self.group == "fiscal_year" and self.spending_level == "awards":
+            key_as_date = datetime.strptime(str(bucket["key"]), "%Y")
+        else:
+            key_as_date = datetime.strptime(bucket["key_as_string"], "%Y-%m-%d")
+
         time_period["calendar_year" if self.group == "calendar_year" else "fiscal_year"] = str(key_as_date.year)
         if self.group == "quarter":
             quarter = (key_as_date.month - 1) // 3 + 1
@@ -206,23 +235,17 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         categories_breakdown = bucket["group_by_category"]["buckets"]
 
         # Initialize a dictionary to hold the query results for each obligation type.
-        category_dictionary = {
+        obligation_dictionary = {
             "Contract_Obligations": 0,
-            # "Contract_Outlays": 0,
             "Direct_Obligations": 0,
-            # "Direct_Outlays": 0,
             "Grant_Obligations": 0,
-            # "Grant_Outlays": 0,
             "Idv_Obligations": 0,
-            # "Idv_Outlays": 0,
             "Loan_Obligations": 0,
-            # "Loan_Outlays": 0,
             "Other_Obligations": 0,
-            # "Other_Outlays": 0,
         }
 
         # Mapping of category keys to their corresponding obligation types.
-        category_map = {
+        obligation_map = {
             "contract": "Contract_Obligations",
             "direct payment": "Direct_Obligations",
             "grant": "Grant_Obligations",
@@ -232,17 +255,40 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             "insurance": "Other_Obligations",
         }
 
+        outlay_dictionary = {
+            "Contract_Outlays": 0,
+            "Direct_Outlays": 0,
+            "Grant_Outlays": 0,
+            "Idv_Outlays": 0,
+            "Loan_Outlays": 0,
+            "Other_Outlays": 0,
+        }
+        outlay_map = {
+            "contract": "Contract_Outlays",
+            "direct payment": "Direct_Outlays",
+            "grant": "Grant_Outlays",
+            "idv": "Idv_Outlays",
+            "loans": "Loan_Outlays",
+            "other": "Other_Outlays",
+            "insurance": "Other_Outlays",
+        }
+
         # Populate the category dictionary based on the award breakdown for a given bucket.
         for category in categories_breakdown:
             key = category["key"]
-            if key in category_map:
-                category_dictionary[category_map[key]] += category.get("sum_as_dollars", {"value": 0})["value"]
+            if key in obligation_map:
+                obligation_dictionary[obligation_map[key]] += category.get("sum_as_dollars_obligation", {"value": 0})[
+                    "value"
+                ]
+            if key in outlay_map:
+                outlay_dictionary[outlay_map[key]] += category.get("sum_as_dollars_outlay", {"value": 0})["value"]
 
-        aggregated_amount = sum(category_dictionary.values())
         response_object = {
-            "aggregated_amount": aggregated_amount,
+            "aggregated_amount": sum(obligation_dictionary.values()),
             "time_period": time_period,
-            **category_dictionary,
+            **obligation_dictionary,
+            "total_outlays": sum(outlay_dictionary.values()),
+            **outlay_dictionary,
         }
 
         return response_object
@@ -270,36 +316,50 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         date_buckets = agg_response.group_by_time_period.buckets
         parsed_bucket = None
 
-        for fiscal_date in date_range:
-            if date_buckets and parsed_bucket is None:
-                parsed_bucket = self.parse_elasticsearch_bucket(date_buckets.pop(0))
+        if self.spending_level == "awards":
+            if date_buckets is not None:
+                for bucket in date_buckets:
+                    parsed_bucket = self.parse_elasticsearch_bucket(bucket.to_dict())
 
-            if self.group == "calendar_year":
-                time_period = {"calendar_year": str(fiscal_date["calendar_year"])}
-            else:
-                time_period = {"fiscal_year": str(fiscal_date["fiscal_year"])}
+                    if self.group == "calendar_year":
+                        time_period = {"calendar_year": parsed_bucket["time_period"]["calendar_year"]}
+                    else:
+                        time_period = {"fiscal_year": parsed_bucket["time_period"]["fiscal_year"]}
 
-            if self.group == "quarter":
-                time_period["quarter"] = str(fiscal_date["fiscal_quarter"])
-            elif self.group == "month":
-                time_period["month"] = str(fiscal_date["fiscal_month"])
+                    if parsed_bucket is not None:
+                        results.append(parsed_bucket)
 
-            if parsed_bucket is not None and time_period == parsed_bucket["time_period"]:
-                results.append(parsed_bucket)
-                parsed_bucket = None
-            else:
-                results.append(
-                    {
-                        "aggregated_amount": 0,
-                        "time_period": time_period,
-                        "Contract_Obligations": 0,
-                        "Direct_Obligations": 0,
-                        "Grant_Obligations": 0,
-                        "Idv_Obligations": 0,
-                        "Loan_Obligations": 0,
-                        "Other_Obligations": 0,
-                    }
-                )
+        elif self.spending_level == "transactions":
+            for fiscal_date in date_range:
+                if date_buckets and parsed_bucket is None:
+                    parsed_bucket = self.parse_elasticsearch_bucket(date_buckets.pop(0))
+
+                if self.group == "calendar_year":
+                    time_period = {"calendar_year": str(fiscal_date["calendar_year"])}
+                else:
+                    time_period = {"fiscal_year": str(fiscal_date["fiscal_year"])}
+
+                if self.group == "quarter":
+                    time_period["quarter"] = str(fiscal_date["fiscal_quarter"])
+                elif self.group == "month":
+                    time_period["month"] = str(fiscal_date["fiscal_month"])
+
+                if parsed_bucket is not None and time_period == parsed_bucket["time_period"]:
+                    results.append(parsed_bucket)
+                    parsed_bucket = None
+                else:
+                    results.append(
+                        {
+                            "aggregated_amount": 0,
+                            "time_period": time_period,
+                            "Contract_Obligations": 0,
+                            "Direct_Obligations": 0,
+                            "Grant_Obligations": 0,
+                            "Idv_Obligations": 0,
+                            "Loan_Obligations": 0,
+                            "Other_Obligations": 0,
+                        }
+                    )
 
         return results
 
@@ -394,6 +454,11 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                         (
                             "The 'subawards' field will be deprecated in the future. "
                             "Set 'spending_level' to 'subawards' instead. See documentation for more information"
+                        ),
+                        (
+                            "You may see additional month, quarter and year results when searching for "
+                            "Awards or Subawards. This is due to Awards or Subawards overlapping with the "
+                            "time period specified but having an 'action date' outside of that time period."
                         ),
                     ],
                 ),
