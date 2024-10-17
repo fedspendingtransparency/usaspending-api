@@ -1,12 +1,25 @@
 import json
-import pytest
-
 from datetime import datetime
+
+import pytest
 from model_bakery import baker
 from rest_framework import status
 
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
+
+expected_messages = [
+    get_time_period_message(),
+    (
+        "The 'subawards' field will be deprecated in the future. "
+        "Set 'spending_level' to 'subawards' instead. See documentation for more information"
+    ),
+    (
+        "You may see additional month, quarter and year results when searching for "
+        "Awards or Subawards. This is due to Awards or Subawards overlapping with the "
+        "time period specified but having an 'action date' outside of that time period."
+    ),
+]
 
 
 @pytest.fixture
@@ -428,7 +441,7 @@ def test_spending_over_time_fy_ordering(client, monkeypatch, elasticsearch_trans
     expected_response = {
         "group": group,
         "results": shared_results(),
-        "messages": [get_time_period_message()],
+        "messages": expected_messages,
     }
 
     resp = client.post(
@@ -463,7 +476,7 @@ def test_spending_over_time_default_date_type(client, monkeypatch, elasticsearch
     expected_response = {
         "group": group,
         "results": shared_results(),
-        "messages": [get_time_period_message()],
+        "messages": expected_messages,
     }
 
     resp = client.post(
@@ -858,7 +871,7 @@ def test_spending_over_time_month_ordering(client, monkeypatch, elasticsearch_tr
                 "Other_Obligations": 0,
             },
         ],
-        "messages": [get_time_period_message()],
+        "messages": expected_messages,
     }
 
     resp = client.post(
@@ -888,13 +901,13 @@ def test_spending_over_time_funny_dates_ordering(client, monkeypatch, elasticsea
                 {"start_date": "2011-02-01", "end_date": "2011-03-31"},
             ]
         },
-        "messages": [get_time_period_message()],
+        "messages": expected_messages,
     }
 
     expected_response = {
         "results": shared_results_2(),
         "group": "month",
-        "messages": [get_time_period_message()],
+        "messages": expected_messages,
     }
 
     resp = client.post(
@@ -930,7 +943,7 @@ def test_spending_over_time_new_awards_only_filter(
                 },
             ]
         },
-        "messages": [get_time_period_message()],
+        "messages": expected_messages,
     }
 
     expected_response = {
@@ -957,7 +970,7 @@ def test_spending_over_time_new_awards_only_filter(
             },
         ],
         "group": "month",
-        "messages": [get_time_period_message()],
+        "messages": expected_messages,
     }
 
     resp = client.post(
@@ -986,7 +999,7 @@ def test_spending_over_time_new_awards_only_filter(
                 },
             ]
         },
-        "messages": [get_time_period_message()],
+        "messages": expected_messages,
     }
 
     expected_response = {
@@ -1003,7 +1016,7 @@ def test_spending_over_time_new_awards_only_filter(
             },
         ],
         "group": "month",
-        "messages": [get_time_period_message()],
+        "messages": expected_messages,
     }
 
     resp = client.post(
@@ -1033,13 +1046,13 @@ def test_spending_over_time_new_awards_only_filter(
                 {"start_date": "2011-02-01", "end_date": "2011-03-31"},
             ]
         },
-        "messages": [get_time_period_message()],
+        "messages": expected_messages,
     }
 
     expected_response = {
         "results": shared_results_2(),
         "group": "month",
-        "messages": [get_time_period_message()],
+        "messages": expected_messages,
     }
 
     resp = client.post(
@@ -1068,7 +1081,7 @@ def test_spending_over_time_new_awards_only_filter(
                 },
             ]
         },
-        "messages": [get_time_period_message()],
+        "messages": expected_messages,
     }
 
     expected_response = {
@@ -1085,7 +1098,7 @@ def test_spending_over_time_new_awards_only_filter(
             },
         ],
         "group": "month",
-        "messages": [get_time_period_message()],
+        "messages": expected_messages,
     }
 
     resp = client.post(
@@ -1114,7 +1127,7 @@ def test_spending_over_time_new_awards_only_filter(
                 },
             ]
         },
-        "messages": [get_time_period_message()],
+        "messages": expected_messages,
     }
 
     expected_response = {
@@ -1141,7 +1154,7 @@ def test_spending_over_time_new_awards_only_filter(
             },
         ],
         "group": "month",
-        "messages": [get_time_period_message()],
+        "messages": expected_messages,
     }
 
     resp = client.post(
