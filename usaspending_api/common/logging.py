@@ -1,6 +1,7 @@
 from django.utils.timezone import now
 from django.utils.deprecation import MiddlewareMixin
 
+import os
 import logging
 import sys
 import time  # time.perf_counter Matches response time browsers return more accurately than now()
@@ -8,10 +9,17 @@ import traceback
 
 from typing import Optional, Callable
 
-from opentelemetry.instrumentation.logging import LoggingInstrumentor
+# from django.conf import settings
 
-LoggingInstrumentor().instrument(set_logging_format=True)
-LoggingInstrumentor(logging_format="%(msg)s [span_id=%(otelSpanID)s trace_id=%(otelTraceID)s]")
+from opentelemetry import trace
+from opentelemetry.sdk.trace import ReadableSpan, SpanProcessor
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+# from opentelemetry.instrumentation.django import DjangoInstrumentor
+from opentelemetry.sdk.trace.export import ConsoleSpanExporter
+from opentelemetry.instrumentation.logging import LoggingInstrumentor
 
 
 def get_remote_addr(request):
@@ -209,3 +217,54 @@ def ensure_logging(
             f"logger={cfg_logger_name}, formatter={cfg_formatter_name}, formatter_class={str(formatter_class)})"
         )
     return logger_to_use
+
+
+# CUSTOM Logging EXPORTER for debugging
+class LoggingSpanProcessor(SpanProcessor):
+    def on_end(self, span: ReadableSpan) -> None:
+        trace_id = span.context.trace_id
+        span_id = span.context.span_id
+        logger = logging.getLogger(__name__)
+        logger.info(f"Span ended: trace_id={trace_id}, span_id={span_id}, {span.name}_attributes={span.attributes}")
+
+    def force_flush(self, timeout_millis: int = 30000) -> bool:
+        return True
+
+
+def configure_logging(service_name="usaspending-api"):
+    # Set up the OpenTelemetry tracer provider
+    resource = Resource.create(attributes={"service.name": service_name})
+    provider = TracerProvider(resource=resource)
+    trace.set_tracer_provider(provider)
+
+    # Set up the OTLP exporter
+    # Check out https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/
+    # for more exporter configuration
+    if os.getenv("USASPENDING_DB_HOST") == "127.0.0.1":
+        # if local print the traces to the console
+        exporter = ConsoleSpanExporter()
+
+        # cutom debug information
+        logging_span_processor = LoggingSpanProcessor()
+        trace.get_tracer_provider().add_span_processor(logging_span_processor)
+    else:
+        # if prod or non-prod send trace information to the endpoint
+        exporter = OTLPSpanExporter(
+            endpoint=os.getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"),
+        )
+
+    trace.get_tracer_provider().add_span_processor(BatchSpanProcessor(exporter))
+
+    LoggingInstrumentor(logging_format="%(msg)s [span_id=%(otelSpanID)s trace_id=%(otelTraceID)s]")
+    LoggingInstrumentor().instrument(tracer_provider=trace.get_tracer_provider(), set_logging_format=True)
+
+    # LoggingInstrumentor().instrument(tracer_provider=trace.get_tracer_provider(), set_logging_format=True)
+    # URLLibInstrumentor().instrument(tracer_provider=trace.get_tracer_provider())
+
+    # config = DEFAULT_CONFIG
+    # if 'python_config' in CONFIG_LOGGING:
+    # config = deep_merge(config, CONFIG_LOGGING['python_config'])
+    # logging.config.dictConfig(config)
+
+    # logging.getLogger('boto3').setLevel(logging.CRITICAL)
+    # logging.getLogger('botocore').setLevel(logging.CRITICAL)

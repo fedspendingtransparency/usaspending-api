@@ -11,38 +11,47 @@ from django.db import DEFAULT_DB_ALIAS
 from django.utils.crypto import get_random_string
 
 from usaspending_api.config import CONFIG
+from usaspending_api.common.logging import configure_logging
 
 from opentelemetry import trace
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
-from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
-from opentelemetry.instrumentation.django import DjangoInstrumentor
 
+# from opentelemetry.sdk.trace import TracerProvider
+# from opentelemetry.sdk.resources import Resource
+# from opentelemetry.sdk.trace.export import BatchSpanProcessor
+# from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+from opentelemetry.instrumentation.django import DjangoInstrumentor
+from usaspending_api.common.tracing import OpenTelemetryEagerlyDropTraceFilter
+
+ALLOWED_HOSTS = ["*"]
+ROOT_URLCONF = "usaspending_api.urls"
 ############################################################
 # ==== [Open Telemetry Configuration] ====
 
 # Django Instrumentation
 DjangoInstrumentor().instrument()
+configure_logging(service_name="usaspending-api")
+OpenTelemetryEagerlyDropTraceFilter.activate()
 
 # Optionally, set other OpenTelemetry configurations
 service_name = os.getenv("OTEL_SERVICE_NAME", "usaspending-api")
 os.environ["OTEL_RESOURCE_ATTRIBUTES"] = f"service.name={service_name}"
 
 # # Set up the OpenTelemetry tracer provider
-trace.set_tracer_provider(TracerProvider())
+# resource = Resource(attributes={"service.name": "usaspending-api"})
+# trace.set_tracer_provider(TracerProvider())
 
 # Set up the OTLP exporter
 # Check out https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/
 # for more exporter configuration
-otlp_exporter = OTLPSpanExporter(
-    endpoint=os.getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "0.0.0.0:4317"),
-)
-span_processor = BatchSpanProcessor(otlp_exporter)
-trace.get_tracer_provider().add_span_processor(span_processor)
+# otlp_exporter = OTLPSpanExporter(
+#     endpoint=os.getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "http://localhost:4318/v1/traces"),
+# )
+# span_processor = BatchSpanProcessor(otlp_exporter)
+# trace.get_tracer_provider().add_span_processor(span_processor)
 
 # Define additional settings for OpenTelemetry integration
 TRACER = trace.get_tracer_provider().get_tracer(__name__)
-OTEL_EXPORTER_OTLP_TRACES_ENDPOINT = os.getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "0.0.0.0:4317")
+OTEL_EXPORTER_OTLP_TRACES_ENDPOINT = os.getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "http://localhost:4318/v1/traces")
 OTEL_RESOURCE_ATTRIBUTES = f"service.name={service_name}"
 
 ############################################################
@@ -90,7 +99,7 @@ SECRET_KEY = get_random_string(length=12)
 DEBUG = os.environ.get("DJANGO_DEBUG", "").lower() in ["true", "1", "yes"]
 
 HOST = "localhost:3000"
-ALLOWED_HOSTS = ["*"]
+# ALLOWED_HOSTS = ["*"]
 
 # Define local flag to affect location of downloads
 IS_LOCAL = True
@@ -276,7 +285,7 @@ MIDDLEWARE = [
     "usaspending_api.common.logging.LoggingMiddleware",
 ]
 
-ROOT_URLCONF = "usaspending_api.urls"
+# ROOT_URLCONF = "usaspending_api.urls"
 
 TEMPLATES = [
     {

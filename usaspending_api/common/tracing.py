@@ -8,7 +8,7 @@ from opentelemetry import trace
 # from opentelemetry.trace import SpanKind
 # from opentelemetry.sdk.trace import ReadableSpan, SpanProcessor
 
-from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
+# from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
 from opentelemetry.trace.status import Status, StatusCode
 from typing import Optional, Callable
 from opentelemetry.trace import SpanKind
@@ -38,8 +38,8 @@ tracer = trace.get_tracer_provider().get_tracer(__name__)
 ############################################################
 
 # DEFAULT CONSOLE EXPORTER for debugging
-console_exporter = ConsoleSpanExporter()
-trace.get_tracer_provider().add_span_processor(BatchSpanProcessor(console_exporter))
+# console_exporter = ConsoleSpanExporter()
+# trace.get_tracer_provider().add_span_processor(BatchSpanProcessor(console_exporter))
 
 ############################################################
 
