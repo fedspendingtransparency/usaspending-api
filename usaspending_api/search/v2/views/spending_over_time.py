@@ -280,14 +280,17 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 obligation_dictionary[obligation_map[key]] += category.get("sum_as_dollars_obligation", {"value": 0})[
                     "value"
                 ]
-            if key in outlay_map:
+            # Transactions don't have outlays
+            if self.spending_level == "transactions":
+                outlay_dictionary[outlay_map[key]] = None
+            elif self.spending_level == "awards" and key in outlay_map:
                 outlay_dictionary[outlay_map[key]] += category.get("sum_as_dollars_outlay", {"value": 0})["value"]
 
         response_object = {
             "aggregated_amount": sum(obligation_dictionary.values()),
             "time_period": time_period,
             **obligation_dictionary,
-            "total_outlays": sum(outlay_dictionary.values()),
+            "total_outlays": sum(outlay_dictionary.values()) if self.spending_level == "awards" else None,
             **outlay_dictionary,
         }
 
@@ -438,6 +441,9 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 date_range_type=order_by_cols[-1],
                 columns={"aggregated_amount": "aggregated_amount"},
             )
+            for result in results:
+                result["total_outlays"] = None
+
         elif self.spending_level == "transactions":
             results = self.query_elasticsearch_for_transactions(time_periods)
         elif self.spending_level == "awards":
