@@ -21,7 +21,11 @@ from usaspending_api.download.helpers.monthly_helpers import download_job_to_log
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.models.download_job import DownloadJob
 
+from opentelemetry.instrumentation.wsgi import OpenTelemetryMiddleware
+from opentelemetry import trace
+from opentelemetry.instrumentation.django import DjangoInstrumentor
 from usaspending_api.common.tracing import OpenTelemetryEagerlyDropTraceFilter, SubprocessTrace
+from usaspending_api.common.logging import configure_logging
 
 # Initialize OpenTelemetry
 # tracer_provider = TracerProvider()
@@ -34,6 +38,7 @@ JOB_TYPE = "USAspendingDownloader"
 class Command(BaseCommand):
     def handle(self, *args, **options):
         # Configure Tracer to drop traces of polls of the queue that have been flagged as uninteresting
+        configure_logging(service_name="download-sqs-worker")
         OpenTelemetryEagerlyDropTraceFilter.activate()
 
         queue = get_sqs_queue()
@@ -93,9 +98,10 @@ class Command(BaseCommand):
 
 def download_service_app(download_job_id):
     with SubprocessTrace(
-        name=f"job.{JOB_TYPE}.download",
-        kind=SpanKind.SERVER,
-        attributes={"service": "bulk-download", "span_type": SpanKind.Server},
+        name=f"job.{JOB_TYPE}.download.start",
+        kind=SpanKind.INTERNAL,
+        service="bulk-download",
+        attributes={"service": "bulk-download", "span_type": SpanKind.INTERNAL},
     ) as span:
         download_job = _retrieve_download_job_from_db(download_job_id)
         download_job_details = download_job_to_log_dict(download_job)
@@ -111,11 +117,25 @@ def download_service_app(download_job_id):
 
 
 def _retrieve_download_job_from_db(download_job_id):
-    download_job = DownloadJob.objects.filter(download_job_id=download_job_id).first()
-    if download_job is None:
-        raise DownloadJobNoneError(download_job_id)
+    with SubprocessTrace(
+        name=f"job.{JOB_TYPE}.download.retrieve",
+        kind=SpanKind.INTERNAL,
+        service="bulk-download",
+        attributes={"service": "bulk-download", "span_type": SpanKind.INTERNAL},
+    ) as span:
+        download_job = DownloadJob.objects.filter(download_job_id=download_job_id).first()
+        log_job_message(
+            logger=logger,
+            message="Retreiving Download Job From DB",
+            job_type=JOB_TYPE,
+            job_id=download_job_id,
+            other_params=download_job_to_log_dict(download_job),  # download job details
+        )
+        span.set_attribute(download_job_to_log_dict(download_job))
+        if download_job is None:
+            raise DownloadJobNoneError(download_job_id)
 
-    return download_job
+        return download_job
 
 
 def _update_download_job_status(download_job_id, status, error_message=None, overwrite_error_message=False):
@@ -129,13 +149,28 @@ def _update_download_job_status(download_job_id, status, error_message=None, ove
         overwrite_error_message (bool): if explicitly set to True, and error_message is not None, the provided error
             message will overwrite an existing error message on the DownloadJob object. By default it will not.
     """
-    download_job = _retrieve_download_job_from_db(download_job_id)
+    with SubprocessTrace(
+        name=f"job.{JOB_TYPE}.download.update",
+        kind=SpanKind.INTERNAL,
+        service="bulk-download",
+        attributes={"service": "bulk-download", "span_type": SpanKind.INTERNAL},
+    ) as span:
+        download_job = _retrieve_download_job_from_db(download_job_id)
 
-    download_job.job_status_id = JOB_STATUS_DICT[status]
-    if overwrite_error_message or (error_message and not download_job.error_message):
-        download_job.error_message = str(error_message) if error_message else None
+        download_job.job_status_id = JOB_STATUS_DICT[status]
+        if overwrite_error_message or (error_message and not download_job.error_message):
+            download_job.error_message = str(error_message) if error_message else None
 
-    download_job.save()
+        log_job_message(
+            logger=logger,
+            message="Updating Download Job Status",
+            job_type=JOB_TYPE,
+            job_id=download_job_id,
+            other_params=download_job_to_log_dict(download_job),  # retreived download job status details
+        )
+        span.set_attribute(download_job_to_log_dict(download_job))
+
+        download_job.save()
 
 
 def _handle_queue_error(exc):

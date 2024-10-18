@@ -1,3 +1,4 @@
+import logging.config
 from django.utils.timezone import now
 from django.utils.deprecation import MiddlewareMixin
 
@@ -17,9 +18,11 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+
 # from opentelemetry.instrumentation.django import DjangoInstrumentor
 from opentelemetry.sdk.trace.export import ConsoleSpanExporter
 from opentelemetry.instrumentation.logging import LoggingInstrumentor
+from opentelemetry.instrumentation.urllib import URLLibInstrumentor
 
 
 def get_remote_addr(request):
@@ -257,14 +260,12 @@ def configure_logging(service_name="usaspending-api"):
 
     LoggingInstrumentor(logging_format="%(msg)s [span_id=%(otelSpanID)s trace_id=%(otelTraceID)s]")
     LoggingInstrumentor().instrument(tracer_provider=trace.get_tracer_provider(), set_logging_format=True)
-
-    # LoggingInstrumentor().instrument(tracer_provider=trace.get_tracer_provider(), set_logging_format=True)
-    # URLLibInstrumentor().instrument(tracer_provider=trace.get_tracer_provider())
+    URLLibInstrumentor().instrument(tracer_provider=trace.get_tracer_provider())
 
     # config = DEFAULT_CONFIG
     # if 'python_config' in CONFIG_LOGGING:
     # config = deep_merge(config, CONFIG_LOGGING['python_config'])
     # logging.config.dictConfig(config)
-
-    # logging.getLogger('boto3').setLevel(logging.CRITICAL)
-    # logging.getLogger('botocore').setLevel(logging.CRITICAL)
+    # logging.getLogger(__name__).setLevel(logging.CRITICAL)
+    logging.getLogger("boto3").setLevel(logging.CRITICAL)
+    logging.getLogger("botocore").setLevel(logging.CRITICAL)

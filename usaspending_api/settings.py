@@ -29,6 +29,7 @@ ROOT_URLCONF = "usaspending_api.urls"
 
 # Django Instrumentation
 DjangoInstrumentor().instrument()
+
 configure_logging(service_name="usaspending-api")
 OpenTelemetryEagerlyDropTraceFilter.activate()
 
