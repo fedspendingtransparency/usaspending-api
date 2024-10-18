@@ -33,9 +33,7 @@ class AbstractFinancialAccountsByAwards(DataSourceTrackedModel):
     ussgl480100_undelivered_orders_obligations_unpaid_cpe = models.DecimalField(
         max_digits=23, decimal_places=2, blank=True, null=True
     )
-    ussgl480110_reinstated_del_cpe = models.DecimalField(
-        max_digits=23, decimal_places=2, blank=True, null=True
-    )
+    ussgl480110_reinstated_del_cpe = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     ussgl483100_undelivered_orders_oblig_transferred_unpaid_cpe = models.DecimalField(
         max_digits=23, decimal_places=2, blank=True, null=True
     )
@@ -48,9 +46,7 @@ class AbstractFinancialAccountsByAwards(DataSourceTrackedModel):
     ussgl490100_delivered_orders_obligations_unpaid_cpe = models.DecimalField(
         max_digits=23, decimal_places=2, blank=True, null=True
     )
-    ussgl490110_reinstated_del_cpe = models.DecimalField(
-        max_digits=23, decimal_places=2, blank=True, null=True
-    )
+    ussgl490110_reinstated_del_cpe = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     ussgl493100_delivered_orders_oblig_transferred_unpaid_cpe = models.DecimalField(
         max_digits=23, decimal_places=2, blank=True, null=True
     )
