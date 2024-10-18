@@ -21,11 +21,11 @@ services:
       - type: volume
         source: local_pg_data
         target: /var/lib/postgresql/data
-      # This was added as one potential location for DB subsets to be placed when
-      # running pg_restore from inside the usaspending-db container
-      - type: bind
-        source: ${DB_SUBSET_DIR:-./data/usaspending/docker/usaspending-db-subsets}
-        target: /data/db-subsets
+      # This was added as one potential location for DB subsets to be placed when running pg_restore from inside the usaspending-db container.
+      # Leave this commented out unless using it for the purpose of a restore to avoid issues with CI/CD builds.
+      # - type: bind
+      #   source: ${DB_SUBSET_DIR:-./data/usaspending/docker/usaspending-db-subsets}
+      #   target: /data/db-subsets
     ports:
       - ${USASPENDING_DB_PORT:-5432}:5432
     environment:
