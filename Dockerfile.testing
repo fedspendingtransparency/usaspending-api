@@ -11,9 +11,10 @@ FROM usaspending-backend:latest
 WORKDIR /usaspending-api
 
 # Install Java for PySpark
-RUN yum install -y java-1.8.0-openjdk-devel
-RUN export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.382.b05-1.el7_9.x86_64
-RUN export PATH=$JAVA_HOME/bin:$PATHv
+RUN apt update && \
+    apt -y install make openjdk-11-jdk
+ENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+RUN export PATH=$JAVA_HOME/bin:$PATH
 
 # Prevent a Pytest RuntimeError where it expects the parent directory to be the name of an installed Django app
 # This will cause a RuntimeError because `dockermount` isn't the name of an installed Django app, so we move the files

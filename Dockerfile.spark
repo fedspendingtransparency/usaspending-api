@@ -1,37 +1,21 @@
-FROM centos:7
+FROM python:3.8.16-slim-bullseye
 
 # Build ARGs
-# Forcing back to python 3.8 to be in sync with local dev env.
-# Can't run driver and worker on different Python versions when driver is local dev machine and not spark-submit container
-#ARG PYTHON_VERSION=3.8.10
-ARG PYTHON_VERSION=3.8.16
 ARG HADOOP_VERSION=3.3.1
 ARG SPARK_VERSION=3.2.1
 ARG PROJECT_LOG_DIR=/logs
 
-RUN yum -y update && yum clean all
-# sqlite-devel added as prerequisite for coverage python lib, used by pytest-cov plugin
-RUN yum -y install wget gcc openssl-devel bzip2-devel libffi libffi-devel zlib-devel sqlite-devel
-RUN yum -y groupinstall "Development Tools"
+# Install dependencies
+RUN apt update && \
+    apt -y install coreutils gcc wget
 
-# Building Python 3.x
-WORKDIR /usr/src
-RUN wget --quiet https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz \
-    && tar xzf Python-${PYTHON_VERSION}.tgz
-WORKDIR /usr/src/Python-${PYTHON_VERSION}
-RUN ./configure --enable-optimizations \
-    && make altinstall \
-    && ln -sf /usr/local/bin/python`echo ${PYTHON_VERSION} | awk -F. '{short_version=$1 FS $2; print short_version}'` /usr/bin/python3 \
-    && echo "Installed $(python3 --version)"
-# Ensure Python STDOUT gets sent to container logs
-ENV PYTHONUNBUFFERED=1
-
-# Install Java 1.8.x
-RUN yum -y install java-1.8.0-openjdk
-ENV JAVA_HOME=/usr/lib/jvm/jre
+# Install Java 1.11.x
+RUN apt -y install openjdk-11-jdk
+ENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
 
 # Install Hadoop and Spark
 WORKDIR /usr/local
+
 RUN wget --quiet https://archive.apache.org/dist/hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}.tar.gz \
     && tar xzf hadoop-${HADOOP_VERSION}.tar.gz \
     && ln -sfn /usr/local/hadoop-${HADOOP_VERSION} /usr/local/hadoop \
@@ -43,7 +27,7 @@ ENV HADOOP_HOME=/usr/local/hadoop
 ENV SPARK_HOME=/usr/local/spark
 # Cannot set ENV var = command-result, [i.e. doing: ENV SPARK_DIST_CLASSPATH=$(${HADOOP_HOME}/bin/hadoop classpath)], so interpolating the hadoop classpath the long way
 ENV SPARK_DIST_CLASSPATH="$HADOOP_HOME/etc/hadoop/*:$HADOOP_HOME/share/hadoop/common/lib/*:$HADOOP_HOME/share/hadoop/common/*:$HADOOP_HOME/share/hadoop/hdfs/*:$HADOOP_HOME/share/hadoop/hdfs/lib/*:$HADOOP_HOME/share/hadoop/hdfs/*:$HADOOP_HOME/share/hadoop/yarn/lib/*:$HADOOP_HOME/share/hadoop/yarn/*:$HADOOP_HOME/share/hadoop/mapreduce/lib/*:$HADOOP_HOME/share/hadoop/mapreduce/*:$HADOOP_HOME/share/hadoop/tools/lib/*"
-ENV PATH=${SPARK_HOME}/bin:${HADOOP_HOME}/bin:${JAVA_HOME}/bin:${PATH};
+ENV PATH=${SPARK_HOME}/bin:${HADOOP_HOME}/bin:${JAVA_HOME}/bin:${PATH}
 RUN echo "Installed Spark" && echo "$(${SPARK_HOME}/bin/pyspark --version)"
 
 # Config for starting up the Spark History Server
