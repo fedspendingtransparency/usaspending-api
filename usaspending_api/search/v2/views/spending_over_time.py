@@ -255,14 +255,26 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             "insurance": "Other_Obligations",
         }
 
-        outlay_dictionary = {
-            "Contract_Outlays": 0,
-            "Direct_Outlays": 0,
-            "Grant_Outlays": 0,
-            "Idv_Outlays": 0,
-            "Loan_Outlays": 0,
-            "Other_Outlays": 0,
-        }
+        # Outlays are only supported on Awards
+        if self.spending_level == "awards":
+            outlay_dictionary = {
+                "Contract_Outlays": 0,
+                "Direct_Outlays": 0,
+                "Grant_Outlays": 0,
+                "Idv_Outlays": 0,
+                "Loan_Outlays": 0,
+                "Other_Outlays": 0,
+            }
+        else:
+            outlay_dictionary = {
+                "Contract_Outlays": None,
+                "Direct_Outlays": None,
+                "Grant_Outlays": None,
+                "Idv_Outlays": None,
+                "Loan_Outlays": None,
+                "Other_Outlays": None,
+            }
+
         outlay_map = {
             "contract": "Contract_Outlays",
             "direct payment": "Direct_Outlays",
@@ -280,10 +292,8 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 obligation_dictionary[obligation_map[key]] += category.get("sum_as_dollars_obligation", {"value": 0})[
                     "value"
                 ]
-            # Transactions don't have outlays
-            if self.spending_level == "transactions":
-                outlay_dictionary[outlay_map[key]] = None
-            elif self.spending_level == "awards" and key in outlay_map:
+
+            if self.spending_level == "awards" and key in outlay_map:
                 outlay_dictionary[outlay_map[key]] += category.get("sum_as_dollars_outlay", {"value": 0})["value"]
 
         response_object = {
@@ -361,6 +371,13 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                             "Idv_Obligations": 0,
                             "Loan_Obligations": 0,
                             "Other_Obligations": 0,
+                            "total_outlays": None,
+                            "Contract_Outlays": None,
+                            "Direct_Outlays": None,
+                            "Grant_Outlays": None,
+                            "Idv_Outlays": None,
+                            "Loan_Outlays": None,
+                            "Other_Outlays": None,
                         }
                     )
 
