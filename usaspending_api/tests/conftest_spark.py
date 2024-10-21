@@ -535,6 +535,7 @@ def _build_usas_data_for_spark():
         face_value_loan_guarantee=0.00,
         recipient_location_county_fips="51001",
         pop_county_fips="51001",
+        generated_pragmatic_obligation=0.00,
     )
     cont_award = baker.make(
         "search.AwardSearch",
@@ -619,6 +620,7 @@ def _build_usas_data_for_spark():
         product_or_service_description=psc.description,
         recipient_location_county_fips=None,
         pop_county_fips=None,
+        generated_pragmatic_obligation=0.00,
     )
     cont_award2 = baker.make(
         "search.AwardSearch",
@@ -687,6 +689,7 @@ def _build_usas_data_for_spark():
         covid_spending_by_defc=None,
         recipient_location_county_fips=None,
         pop_county_fips=None,
+        generated_pragmatic_obligation=0.00,
     )
 
     baker.make(
