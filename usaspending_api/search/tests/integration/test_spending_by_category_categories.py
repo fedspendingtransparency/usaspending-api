@@ -1069,7 +1069,9 @@ def test_category_defc_subawards(client):
 
 
 @pytest.mark.django_db
-def test_category_defc_awards(client):
+def test_category_defc_awards(client, monkeypatch, elasticsearch_transaction_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
     resp = client.post(
         "/api/v2/search/spending_by_category",
         content_type="application/json",
