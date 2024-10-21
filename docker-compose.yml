@@ -17,7 +17,6 @@ services:
     image: postgres:13.8-alpine
     container_name: usaspending-db
     volumes:
-      - ./initdb/:/docker-entrypoint-initdb.d/
       - type: volume
         source: local_pg_data
         target: /var/lib/postgresql/data

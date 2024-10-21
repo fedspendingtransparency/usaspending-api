@@ -110,6 +110,21 @@ _Alternatively, to download a fully populuated production snapshot of the databa
 
 - Recreate matviews with the command documented in the previous section if this is done
 
+- Use the following commands to create necessary users and set the `usaspending` user's search_path
+
+    ```shell
+        docker exec -it usaspending-db sh -c " \
+            psql \
+                -h localhost \
+                -p 5432 \
+                -U usaspending \
+                -d data_store_api \
+                -c 'CREATE USER etl_user;' \
+                -c 'CREATE USER readonly;' \
+                -c 'ALTER USER usaspending SET search_path TO public,raw,int,temp,rpt;' \
+        "
+    ```
+
 _**Executing individual data-loaders** to load in data is also possible, but requires more familiarity with those ad-hoc scripts and commands, and also requires an external data source (Data Broker DB, or external file, etc.) from which to load the data._
 
 - For details on loading reference data, Data Accountability Broker Submissions, and current USAspending data into the API, see [loading_data.md](loading_data.md).
