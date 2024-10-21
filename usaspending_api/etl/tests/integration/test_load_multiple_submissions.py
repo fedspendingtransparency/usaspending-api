@@ -225,7 +225,7 @@ class TestWithMultipleDatabases(TransactionTestCase):
                     by_direct_reimbursable_fun,
                     gross_outlay_amount_by_pro_cpe,
                     disaster_emergency_fund_code,
-                    prior_year_adjustment 
+                    prior_year_adjustment
                 ) (values
                     (1, 1, 1, '1010', 'D', 1111, null, 'X'),
                     (2, 1, 1, '1010', 'D', 2222, 'B', 'X'),
