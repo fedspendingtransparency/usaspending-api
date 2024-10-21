@@ -30,6 +30,14 @@ This endpoint returns a list of aggregated award amounts grouped by time period 
         + `subawards` (optional, boolean)
             True to group by sub-awards instead of prime awards. Defaults to false.
             + Default: false
+        + `spending_level` (optional, enum[string])
+            Group the spending by level. This also determines what data source is used for the totals.
+            + Members
+                + `transactions`
+                + `awards`
+                + `subawards`
+            + Default
+                + `transactions`
     + Body
 
             {
@@ -63,6 +71,14 @@ This endpoint returns a list of aggregated award amounts grouped by time period 
 + `grant_obligations` (required, number)
 + `direct_payment_obligations` (required, number)
 + `other_obligations` (required, number)
++ `total_outlays` (required, number)
+    The aggregate outlay amount for this time period and the given filters.
++ `contract_outlays` (required, number)
++ `loan_outlays` (required, number)
++ `idv_outlays` (required, number)
++ `grant_outlays` (required, number)
++ `direct_payment_outlays` (required, number)
++ `other_outlays` (required, number)
 
 ## TimePeriodGroup (object)
 + `calendar_year` (optional, string)
