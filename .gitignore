@@ -18,7 +18,7 @@ tmp/*
 spark-warehouse/
 derby.log
 
-data/output/
+data/*
 
 # pyenv ignores
 \.python-version
