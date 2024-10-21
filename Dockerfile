@@ -12,7 +12,7 @@ FROM python:3.8.16-slim-bullseye
 WORKDIR /dockermount
 
 RUN apt update && \
-    apt install -y gcc postgresql-13
+    apt install -y curl gcc postgresql-13
 
 ##### Copy python packaged
 WORKDIR /dockermount
