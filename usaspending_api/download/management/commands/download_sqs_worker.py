@@ -31,14 +31,21 @@ from usaspending_api.common.logging import configure_logging
 # tracer_provider = TracerProvider()
 # trace.set_tracer_provider(tracer_provider)
 
+# from opentelemetry.sdk.trace import TracerProvider
+# from opentelemetry.sdk.resources import Resource
+
+# resource = Resource(attributes={"service.name": "bulk-download"})
+# tracer_provider = TracerProvider(resource=resource)
+# trace.set_tracer_provider(tracer_provider)
+configure_logging(service_name="bulk-download")
+
 logger = logging.getLogger(__name__)
 JOB_TYPE = "USAspendingDownloader"
 
-
+configure_logging(service_name="download-sqs-worker")
 class Command(BaseCommand):
     def handle(self, *args, **options):
         # Configure Tracer to drop traces of polls of the queue that have been flagged as uninteresting
-        configure_logging(service_name="download-sqs-worker")
         OpenTelemetryEagerlyDropTraceFilter.activate()
 
         queue = get_sqs_queue()
