@@ -11,12 +11,12 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.AlterField(
-            model_name='Cfda',
+            model_name='cfda',
             name='data_source',
             field=models.TextField(
                 choices=[
                     ('USA', 'USAspending'),
-                    ('DBR', 'DATA Broker')
+                    ('DBR', 'Data Broker')
                 ],
                 help_text='The source of this entry, either Data Broker (DBR) or USASpending (USA)',
                 null=True,
