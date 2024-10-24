@@ -16,7 +16,8 @@ import traceback
 
 from opentelemetry import trace
 from opentelemetry.trace import SpanKind
-from opentelemetry.sdk.trace import TracerProvider
+
+# from opentelemetry.sdk.trace import TracerProvider
 
 from datetime import datetime, timezone
 from django.conf import settings
@@ -50,7 +51,7 @@ JOB_TYPE = "USAspendingDownloader"
 logger = logging.getLogger(__name__)
 
 # Set up the OpenTelemetry tracer provider
-trace.set_tracer_provider(TracerProvider())
+# trace.set_tracer_provider(TracerProvider())
 tracer = trace.get_tracer_provider().get_tracer(__name__)
 
 
@@ -69,7 +70,7 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
 
     span = tracer.start_span(name=f"generate_download_{request_type}")
     if span and request_type:
-        span.resource = request_type
+        span.set_attribute("resource", request_type)
 
     file_name = start_download(download_job)
     working_dir = None
@@ -138,19 +139,19 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
             name=f"job.{JOB_TYPE}.download.s3",
             kind=SpanKind.INTERNAL,
             attributes={
-                "service.name": "bulk-download",
-                "resource.name": f"s3://{settings.BULK_DOWNLOAD_S3_BUCKET_NAME}",
-                "span.type": "WORKER",
+                "service": "bulk-download",
+                "resource": f"s3://{settings.BULK_DOWNLOAD_S3_BUCKET_NAME}",
+                "span_type": "WORKER",
             },
         ) as span, tracer.start_as_current_span(
             name="s3.command",
             kind=SpanKind.SERVER,
             attributes={
-                "service.name": "aws.s3",
-                "resource.name": ".".join(
+                "service": "aws.s3",
+                "resource": ".".join(
                     [multipart_upload.__module__, (multipart_upload.__qualname__ or multipart_upload.__name__)]
                 ),
-                "span.type": "WEB",
+                "span_type": "WEB",
             },
         ) as s3_span:
             # NOTE: Traces still not auto-picking-up aws.s3 service upload activity
@@ -455,10 +456,14 @@ def parse_source(
 def split_and_zip_data_files(zip_file_path, source_path, data_file_name, file_format, download_job=None):
     with SubprocessTrace(
         name=f"job.{JOB_TYPE}.download.zip",
+        kind=SpanKind.INTERNAL,
         service="bulk-download",
-        span_type=SpanKind.INTERNAL,
-        source_path=source_path,
-        zip_file_path=zip_file_path,
+        attributes={
+            "service": "bulk-download",
+            "span_type": "Internal",
+            "source_path": source_path,
+            "zip_file_path": zip_file_path,
+        },
     ) as span:
         try:
             # Split data files into separate files
@@ -695,17 +700,22 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
     # Stack 3 context managers: (1) psql code, (2) Download replica query, (3) (same) Postgres query
     with SubprocessTrace(
         name=f"job.{JOB_TYPE}.download.psql",
+        kind=SpanKind.INTERNAL,
         service="bulk-download",
-        resource=download_sql,
-        span_type=SpanKind.INTERNAL,
-        source_path=source_path,
+        attributes={
+            "service": "bulk-download",
+            "resource": download_sql,
+            "span_type": "Internal",
+            "source_path": source_path,
+        },
     ), tracer.start_as_current_span(
         name="postgres.query",
-        service=f"{settings.DOWNLOAD_DB_ALIAS}db",
-        resource=download_sql,
         span_type=SpanKind.INTERNAL,
+        attributes={"resource": download_sql, "service": f"{settings.DOWNLOAD_DB_ALIAS}db", "span_type": "Internal"},
     ), tracer.start_as_current_span(
-        name="postgres.query", service="postgres", resource=download_sql, span_type=SpanKind.INTERNAL
+        name="postgres.query",
+        span_type=SpanKind.INTERNAL,
+        attributes={"resource": download_sql, "service": "postgres", "span_type": "Internal"},
     ):
         try:
             log_time = time.perf_counter()
