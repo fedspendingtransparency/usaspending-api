@@ -100,7 +100,7 @@ class SubprocessTrace:
         self.span: Optional[trace.Span] = None
 
     def __enter__(self) -> trace.Span:
-        self.span = tracer.start_span(name=self.name)
+        self.span = tracer.start_span(name=self.name, kind=self.kind)
         for key, value in self.tags.items():
             self.span.set_attribute(key, value)
         return self.span

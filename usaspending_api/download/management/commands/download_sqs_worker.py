@@ -24,25 +24,23 @@ from usaspending_api.download.models.download_job import DownloadJob
 from opentelemetry.instrumentation.wsgi import OpenTelemetryMiddleware
 from opentelemetry import trace
 from opentelemetry.instrumentation.django import DjangoInstrumentor
+from opentelemetry.sdk.trace import TracerProvider
 from usaspending_api.common.tracing import OpenTelemetryEagerlyDropTraceFilter, SubprocessTrace
 from usaspending_api.common.logging import configure_logging
+from opentelemetry.sdk.resources import Resource
 
 # Initialize OpenTelemetry
-# tracer_provider = TracerProvider()
-# trace.set_tracer_provider(tracer_provider)
+resource = Resource.create(attributes={"service.name": "USAspendingDownloader"})
+tracer_provider = TracerProvider(resource=resource)
+trace.set_tracer_provider(tracer_provider)
 
 # from opentelemetry.sdk.trace import TracerProvider
 # from opentelemetry.sdk.resources import Resource
 
-# resource = Resource(attributes={"service.name": "bulk-download"})
-# tracer_provider = TracerProvider(resource=resource)
-# trace.set_tracer_provider(tracer_provider)
-configure_logging(service_name="bulk-download")
-
 logger = logging.getLogger(__name__)
 JOB_TYPE = "USAspendingDownloader"
 
-configure_logging(service_name="download-sqs-worker")
+# configure_logging(service_name="download-sqs-worker")
 class Command(BaseCommand):
     def handle(self, *args, **options):
         # Configure Tracer to drop traces of polls of the queue that have been flagged as uninteresting
@@ -104,14 +102,22 @@ class Command(BaseCommand):
 
 
 def download_service_app(download_job_id):
+    download_job = _retrieve_download_job_from_db(download_job_id)
+    download_job_details = download_job_to_log_dict(download_job)
     with SubprocessTrace(
         name=f"job.{JOB_TYPE}.download.start",
         kind=SpanKind.INTERNAL,
         service="bulk-download",
-        attributes={"service": "bulk-download", "span_type": SpanKind.INTERNAL},
+        attributes={
+            "message":"Starting processing of download request",
+            "service": "bulk-download", 
+            "span_type": SpanKind.INTERNAL,
+            "job_type": JOB_TYPE,
+            "download_job_id": download_job_id,
+            "download_job": download_job,
+            "download_job_details" : download_job_details
+        },
     ) as span:
-        download_job = _retrieve_download_job_from_db(download_job_id)
-        download_job_details = download_job_to_log_dict(download_job)
         log_job_message(
             logger=logger,
             message="Starting processing of download request",
@@ -124,11 +130,21 @@ def download_service_app(download_job_id):
 
 
 def _retrieve_download_job_from_db(download_job_id):
+    download_job = _retrieve_download_job_from_db(download_job_id)
+    download_job_details = download_job_to_log_dict(download_job)
     with SubprocessTrace(
         name=f"job.{JOB_TYPE}.download.retrieve",
         kind=SpanKind.INTERNAL,
         service="bulk-download",
-        attributes={"service": "bulk-download", "span_type": SpanKind.INTERNAL},
+        attributes={
+            "message":"Retreiving Download Job From DB",
+            "service": "bulk-download", 
+            "span_type": SpanKind.INTERNAL,
+            "job_type": JOB_TYPE,
+            "download_job_id": download_job_id,
+            "download_job": download_job,
+            "download_job_details" : download_job_details
+        },
     ) as span:
         download_job = DownloadJob.objects.filter(download_job_id=download_job_id).first()
         log_job_message(
@@ -156,11 +172,21 @@ def _update_download_job_status(download_job_id, status, error_message=None, ove
         overwrite_error_message (bool): if explicitly set to True, and error_message is not None, the provided error
             message will overwrite an existing error message on the DownloadJob object. By default it will not.
     """
+    download_job = _retrieve_download_job_from_db(download_job_id)
+    download_job_details = download_job_to_log_dict(download_job)
     with SubprocessTrace(
         name=f"job.{JOB_TYPE}.download.update",
         kind=SpanKind.INTERNAL,
         service="bulk-download",
-        attributes={"service": "bulk-download", "span_type": SpanKind.INTERNAL},
+        attributes={
+            "message":"Updating Download Job Status",
+            "service": "bulk-download", 
+            "span_type": SpanKind.INTERNAL,
+            "job_type": JOB_TYPE,
+            "download_job_id": download_job_id,
+            "download_job": download_job,
+            "download_job_details" : download_job_details
+        },
     ) as span:
         download_job = _retrieve_download_job_from_db(download_job_id)
 
