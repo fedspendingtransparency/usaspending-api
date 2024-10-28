@@ -18,7 +18,7 @@ class AbstractFinancialAccountsByAwards(DataSourceTrackedModel):
     fain = models.TextField(blank=True, null=True)
     uri = models.TextField(blank=True, null=True)
     prior_year_adjustment = models.TextField(blank=True, null=True)
-    pa_reporting_key = models.TextField(blank=True, null=True)
+    pa_reporting_key = models.TextField(blank=True, null=True, help_text="A unique identifier for a Program Activity")
     disaster_emergency_fund = models.ForeignKey(
         "references.DisasterEmergencyFundCode",
         models.DO_NOTHING,
