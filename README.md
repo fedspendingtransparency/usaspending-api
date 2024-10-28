@@ -91,20 +91,28 @@ A postgres database is required to run the app. You can run it in a `postgres` d
 _If not using your own local install..._
 
 ```shell
-$ docker compose --profile usaspending up usaspending-db
+docker compose --profile usaspending up usaspending-db
 ```
 ... will create and run a Postgres database.
 
 ##### Bring DB Schema Up-to-Date
 
-- `docker compose run --rm usaspending-manage python3 -u manage.py migrate` will run [Django migrations](https://docs.djangoproject.com/en/2.2/topics/migrations/).
-
-- `docker compose run --rm usaspending-manage python3 -u manage.py matview_runner --dependencies`  will provision the materialized views which are required by certain API endpoints.
+- To run [Django migrations](https://docs.djangoproject.com/en/2.2/topics/migrations/).
+    ```shell
+    docker compose run --rm usaspending-manage python3 -u manage.py migrate
+    ```
+- To provision the materialized views which are required by certain API endpoints.
+    ```shell
+    docker compose run --rm usaspending-manage python3 -u manage.py matview_runner --dependencies
+    ```
 
 ##### Seeding and Loading Database Data
 _To just get essential reference data, you can run:_
 
-- `docker compose run --rm usaspending-manage python3 -u manage.py load_reference_data` will load essential reference data (agencies, program activity codes, CFDA program data, country codes, and others).
+-  To load essential reference data (agencies, program activity codes, CFDA program data, country codes, and others).
+    ```shell
+    docker compose run --rm usaspending-manage python3 -u manage.py load_reference_data
+    ```
 
 _Alternatively, to download a fully populuated production snapshot of the database (full or a subset) and restore it into PostgreSQL, use the `pg_restore` tool as described here: [USAspending Database Download](https://onevoicecrm.my.site.com/usaspending/s/database-download)_
 
@@ -131,10 +139,10 @@ _**Executing individual data-loaders** to load in data is also possible, but req
 - For details on how our data loaders modify incoming data, see [data_reformatting.md](data_reformatting.md).
 
 ### Elasticsearch Setup
-Some of the API endpoints reach into Elasticsearch for data.
+Some API endpoints reach into Elasticsearch for data.
 
 ```shell
-$ docker compose --profile usaspending up usaspending-es
+docker compose --profile usaspending up usaspending-es
 ```
 ... will create and start a single-node Elasticsearch cluster as a docker container with data persisted to a docker volume.
 
