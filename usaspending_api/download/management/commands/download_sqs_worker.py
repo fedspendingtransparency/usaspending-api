@@ -1,6 +1,7 @@
 import logging
 import time
 import traceback
+import os
 
 # from opentelemetry import trace
 from opentelemetry.trace import SpanKind
@@ -34,6 +35,8 @@ resource = Resource.create(attributes={"service.name": "USAspendingDownloader"})
 tracer_provider = TracerProvider(resource=resource)
 trace.set_tracer_provider(tracer_provider)
 
+service_name = os.getenv("OTEL_SERVICE_NAME", "USAspendingDownloader")
+os.environ["OTEL_RESOURCE_ATTRIBUTES"] = f"service.name={service_name}"
 # from opentelemetry.sdk.trace import TracerProvider
 # from opentelemetry.sdk.resources import Resource
 
@@ -58,7 +61,7 @@ class Command(BaseCommand):
                 name=f"job.{JOB_TYPE}",
                 kind=SpanKind.INTERNAL,
                 service="bulk-download",
-                attributes={"service": "bulk-download", "resource": queue.url, "span_type": "Internal"},
+                attributes={"service": "bulk-download", "resource": str(queue.url), "span_type": "Internal"},
             ) as span:
                 # Set True to add trace to App Analytics:
                 # - https://docs.datadoghq.com/tracing/app_analytics/?tab=python#custom-instrumentation
@@ -109,13 +112,13 @@ def download_service_app(download_job_id):
         kind=SpanKind.INTERNAL,
         service="bulk-download",
         attributes={
-            "message":"Starting processing of download request",
-            "service": "bulk-download", 
+            "message": "Starting processing of download request",
+            "service": "bulk-download",
             "span_type": SpanKind.INTERNAL,
             "job_type": JOB_TYPE,
-            "download_job_id": download_job_id,
+            "download_job_id": str(download_job_id),
             "download_job": download_job,
-            "download_job_details" : download_job_details
+            "download_job_details": download_job_details,
         },
     ) as span:
         log_job_message(
@@ -130,23 +133,22 @@ def download_service_app(download_job_id):
 
 
 def _retrieve_download_job_from_db(download_job_id):
-    download_job = _retrieve_download_job_from_db(download_job_id)
+    download_job = DownloadJob.objects.filter(download_job_id=download_job_id).first()
     download_job_details = download_job_to_log_dict(download_job)
     with SubprocessTrace(
         name=f"job.{JOB_TYPE}.download.retrieve",
         kind=SpanKind.INTERNAL,
         service="bulk-download",
         attributes={
-            "message":"Retreiving Download Job From DB",
-            "service": "bulk-download", 
-            "span_type": SpanKind.INTERNAL,
-            "job_type": JOB_TYPE,
-            "download_job_id": download_job_id,
-            "download_job": download_job,
-            "download_job_details" : download_job_details
+            "message": "Retreiving Download Job From DB",
+            "service": "bulk-download",
+            # "span_type": SpanKind.INTERNAL,
+            # "job_type": JOB_TYPE,
+            # "download_job_id": download_job_id,
+            # "download_job": download_job,
+            # "download_job_details" : download_job_details
         },
     ) as span:
-        download_job = DownloadJob.objects.filter(download_job_id=download_job_id).first()
         log_job_message(
             logger=logger,
             message="Retreiving Download Job From DB",
@@ -179,16 +181,16 @@ def _update_download_job_status(download_job_id, status, error_message=None, ove
         kind=SpanKind.INTERNAL,
         service="bulk-download",
         attributes={
-            "message":"Updating Download Job Status",
-            "service": "bulk-download", 
-            "span_type": SpanKind.INTERNAL,
-            "job_type": JOB_TYPE,
-            "download_job_id": download_job_id,
-            "download_job": download_job,
-            "download_job_details" : download_job_details
+            "message": "Updating Download Job Status",
+            "service": "bulk-download",
+            # "span_type": SpanKind.INTERNAL,
+            # "job_type": JOB_TYPE,
+            # "download_job_id": download_job_id,
+            # "download_job": download_job,
+            # "download_job_details" : download_job_details
         },
     ) as span:
-        download_job = _retrieve_download_job_from_db(download_job_id)
+        # download_job = _retrieve_download_job_from_db(download_job_id)
 
         download_job.job_status_id = JOB_STATUS_DICT[status]
         if overwrite_error_message or (error_message and not download_job.error_message):
