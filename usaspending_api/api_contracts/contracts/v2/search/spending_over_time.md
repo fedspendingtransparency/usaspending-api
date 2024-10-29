@@ -71,7 +71,7 @@ This endpoint returns a list of aggregated award amounts grouped by time period 
 + `grant_obligations` (required, number)
 + `direct_payment_obligations` (required, number)
 + `other_obligations` (required, number)
-+ `total_outlays` (required, number)
++ `total_outlays` (required, number, nullable)
     The aggregate outlay amount for this time period and the given filters.
 + `contract_outlays` (required, number)
 + `loan_outlays` (required, number)
