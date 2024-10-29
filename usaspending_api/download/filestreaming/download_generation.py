@@ -461,8 +461,8 @@ def split_and_zip_data_files(zip_file_path, source_path, data_file_name, file_fo
         attributes={
             "service": "bulk-download",
             "span_type": "Internal",
-            "source_path": source_path,
-            "zip_file_path": zip_file_path,
+            # "source_path": source_path,
+            # "zip_file_path": zip_file_path,
         },
     ) as span:
         try:
@@ -704,9 +704,9 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
         service="bulk-download",
         attributes={
             "service": "bulk-download",
-            "resource": download_sql,
+            # "resource": str(download_sql),
             "span_type": "Internal",
-            "source_path": source_path,
+            # "source_path": source_path,
         },
     ), tracer.start_as_current_span(
         name="postgres.query",

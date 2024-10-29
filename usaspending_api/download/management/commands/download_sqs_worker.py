@@ -22,28 +22,28 @@ from usaspending_api.download.helpers.monthly_helpers import download_job_to_log
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.models.download_job import DownloadJob
 
-from opentelemetry.instrumentation.wsgi import OpenTelemetryMiddleware
-from opentelemetry import trace
-from opentelemetry.instrumentation.django import DjangoInstrumentor
-from opentelemetry.sdk.trace import TracerProvider
+# from opentelemetry.instrumentation.wsgi import OpenTelemetryMiddleware
+# from opentelemetry import trace
+# from opentelemetry.instrumentation.django import DjangoInstrumentor
+# from opentelemetry.sdk.trace import TracerProvider
 from usaspending_api.common.tracing import OpenTelemetryEagerlyDropTraceFilter, SubprocessTrace
 from usaspending_api.common.logging import configure_logging
-from opentelemetry.sdk.resources import Resource
+# from opentelemetry.sdk.resources import Resource
 
 # Initialize OpenTelemetry
-resource = Resource.create(attributes={"service.name": "USAspendingDownloader"})
-tracer_provider = TracerProvider(resource=resource)
-trace.set_tracer_provider(tracer_provider)
+# resource = Resource.create(attributes={"service.name": "USAspendingDownloader"})
+# tracer_provider = TracerProvider(resource=resource)
+# trace.set_tracer_provider(tracer_provider)
 
-service_name = os.getenv("OTEL_SERVICE_NAME", "USAspendingDownloader")
-os.environ["OTEL_RESOURCE_ATTRIBUTES"] = f"service.name={service_name}"
+# service_name = os.getenv("OTEL_SERVICE_NAME", "USAspendingDownloader")
+# os.environ["OTEL_RESOURCE_ATTRIBUTES"] = f"service.name={service_name}"
 # from opentelemetry.sdk.trace import TracerProvider
 # from opentelemetry.sdk.resources import Resource
 
 logger = logging.getLogger(__name__)
 JOB_TYPE = "USAspendingDownloader"
 
-# configure_logging(service_name="download-sqs-worker")
+configure_logging(service_name="download-sqs-worker")
 class Command(BaseCommand):
     def handle(self, *args, **options):
         # Configure Tracer to drop traces of polls of the queue that have been flagged as uninteresting
@@ -118,14 +118,15 @@ def download_service_app(download_job_id):
             "job_type": JOB_TYPE, #already a string
             # the download job details
             "download_job_id": str(download_job_id),
-            "download_job_status": str(download_job.job_status.name),  # Convert to relevant field as str
-            "download_file_name": str(download_job.file_name),  # Extract specific field as str
-            "download_file_size": download_job.file_size if download_job.file_size is not None else 0,  # int or fallback to 0
-            "number_of_rows": download_job.number_of_rows if download_job.number_of_rows is not None else 0,
-            "number_of_columns": download_job.number_of_columns if download_job.number_of_columns is not None else 0,
-            "error_message": download_job.error_message if download_job.error_message else "",
-            "monthly_download": str(download_job.monthly_download),  # Convert boolean to str
-            "json_request": str(download_job.json_request) if download_job.json_request else "",
+            # will undo the below changes
+            # "download_job_status": str(download_job.job_status.name),  # Convert to relevant field as str
+            # "download_file_name": str(download_job.file_name),  # Extract specific field as str
+            # "download_file_size": download_job.file_size if download_job.file_size is not None else 0,  # int or fallback to 0
+            # "number_of_rows": download_job.number_of_rows if download_job.number_of_rows is not None else 0,
+            # "number_of_columns": download_job.number_of_columns if download_job.number_of_columns is not None else 0,
+            # "error_message": download_job.error_message if download_job.error_message else "",
+            # "monthly_download": str(download_job.monthly_download),  # Convert boolean to str
+            # "json_request": str(download_job.json_request) if download_job.json_request else "",
         
         },
     ) as span:
