@@ -62,6 +62,7 @@ class OpenTelemetryEagerlyDropTraceFilter:
     trace that the span is part of will be filtered out before being sent to the server.
     """
 
+    # we will probably be getting rid of this class once and for all
     EAGERLY_DROP_TRACE_KEY = "EAGERLY_DROP_TRACE"
 
     @classmethod
