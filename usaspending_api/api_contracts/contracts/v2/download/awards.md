@@ -163,10 +163,6 @@ This route sends a request to the backend to begin generating a zipfile of award
     Filter awards by keywords in the award's transactions.
 + `treasury_account_components` (optional, array[TreasuryAccountComponentsObject], fixed-type)
 
-### AwardAmount (object)
-+ `lower_bound` (optional, number)
-+ `upper_bound` (optional, number)
-
 ### Agency (object)
 + `name` (required, string)
 + `tier` (required, enum[string])
@@ -180,11 +176,14 @@ This route sends a request to the backend to begin generating a zipfile of award
 + `toptier_name` (optional, string)
     Provided when the `name` belongs to a subtier agency
 
+### AwardAmount (object)
++ `lower_bound` (optional, number)
++ `upper_bound` (optional, number)
 
-### TimePeriod (object)
-+ `start_date` (required, string)
-+ `end_date` (required, string)
-+ `date_type` (optional, enum[string])
+### DEFC (enum[string])
+List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing.
+A list of current DEFC can be found [here.](https://files.usaspending.gov/reference_data/def_codes.csv)
+
 
 ### Location (object)
 + `country`(required, string)
@@ -216,6 +215,11 @@ This route sends a request to the backend to begin generating a zipfile of award
 ### TASCodeObject (object)
 + `require`: [[`091`]] (optional, array[array[string]], fixed-type)
 + `exclude`: [[`091`, `091-0800`]] (optional, array[array[string]], fixed-type)
+
+### TimePeriod (object)
++ `start_date` (required, string)
++ `end_date` (required, string)
++ `date_type` (optional, enum[string])
 
 ### TreasuryAccountComponentsObject (object)
 + `ata` (optional, string, nullable)
