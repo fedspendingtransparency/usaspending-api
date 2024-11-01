@@ -68,17 +68,53 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
     file_format = json_request.get("file_format")
     request_type = json_request.get("request_type")
 
-    span = tracer.start_span(name=f"generate_download_{request_type}")
-    if span and request_type:
-        span.set_attribute("resource", request_type)
-
     file_name = start_download(download_job)
+
+    with SubprocessTrace(
+        name=f"generate_download_{request_type}",
+        kind=SpanKind.INTERNAL,
+        service="bulk-download",
+    ) as main_trace:
+        main_trace.set_attributes(
+            {
+                "service": "bulk-download",
+                "job_type": str(JOB_TYPE),
+                "message": "Creating data archive files from the download job object",
+                # download job details
+                "download_job_id": str(download_job.download_job_id),
+                "download_job_status": str(download_job.job_status.name),
+                "download_file_name": str(download_job.file_name),
+                "download_file_size": download_job.file_size if download_job.file_size is not None else 0,
+                "number_of_rows": download_job.number_of_rows if download_job.number_of_rows is not None else 0,
+                "number_of_columns": download_job.number_of_columns
+                if download_job.number_of_columns is not None
+                else 0,
+                "error_message": download_job.error_message if download_job.error_message else "",
+                "monthly_download": str(download_job.monthly_download),
+                "json_request": str(download_job.json_request) if download_job.json_request else "",
+                "file_name": str(file_name),
+            }
+        )
+
     working_dir = None
     try:
         if limit is not None and limit > MAX_DOWNLOAD_LIMIT:
+
+            with SubprocessTrace(
+                name=f"generate_download_{request_type}",
+                kind=SpanKind.INTERNAL,
+                service="bulk-download",
+            ) as limit_exceeded:
+                limit_exceeded.set_attributes(
+                    {
+                        "message": "Unable to process this download because it includes more than the current limit of {MAX_DOWNLOAD_LIMIT} records",
+                        "limit": limit,
+                    }
+                )
             raise Exception(
                 f"Unable to process this download because it includes more than the current limit of {MAX_DOWNLOAD_LIMIT} records"
             )
+
         # Create temporary files and working directory
         zip_file_path = settings.CSV_LOCAL_PATH + file_name
         if not settings.IS_LOCAL and os.path.exists(zip_file_path):
@@ -135,32 +171,32 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
 
     # push file to S3 bucket, if not local
     if not settings.IS_LOCAL:
-        with tracer.start_as_current_span(
-            name=f"job.{JOB_TYPE}.download.s3",
-            kind=SpanKind.INTERNAL,
-            attributes={
-                "service": "bulk-download",
-                "resource": f"s3://{settings.BULK_DOWNLOAD_S3_BUCKET_NAME}",
-                "span_type": "WORKER",
-            },
-        ) as span, tracer.start_as_current_span(
-            name="s3.command",
-            kind=SpanKind.SERVER,
-            attributes={
-                "service": "aws.s3",
-                "resource": ".".join(
-                    [multipart_upload.__module__, (multipart_upload.__qualname__ or multipart_upload.__name__)]
-                ),
-                "span_type": "WEB",
-            },
-        ) as s3_span:
-            # NOTE: Traces still not auto-picking-up aws.s3 service upload activity
+        # with tracer.start_as_current_span(
+        #     name=f"job.{JOB_TYPE}.download.s3",
+        #     kind=SpanKind.INTERNAL,
+        #     attributes={
+        #         "service": "bulk-download",
+        #         "resource": f"s3://{settings.BULK_DOWNLOAD_S3_BUCKET_NAME}",
+        #         "span_type": "WORKER",
+        #     },
+        # ) as span, tracer.start_as_current_span(
+        #     name="s3.command",
+        #     kind=SpanKind.SERVER,
+        #     attributes={
+        #         "service": "aws.s3",
+        #         "resource": ".".join(
+        #             [multipart_upload.__module__, (multipart_upload.__qualname__ or multipart_upload.__name__)]
+        #         ),
+        #         "span_type": "WEB",
+        #     },
+        # ) as s3_span:
+        #     # NOTE: Traces still not auto-picking-up aws.s3 service upload activity
             # Could be that the patches for boto and botocore don't cover the newer boto3 S3Transfer upload approach
-            span.set_attribute("file_name", file_name)
+            # span.set_attribute("file_name", file_name)
             try:
                 bucket = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
                 region = settings.USASPENDING_AWS_REGION
-                s3_span.set_attributes({"bucket": bucket, "region": region, "file": zip_file_path})
+                # s3_span.set_attributes({"bucket": bucket, "region": region, "file": zip_file_path})
                 start_uploading = time.perf_counter()
                 multipart_upload(bucket, region, zip_file_path, os.path.basename(zip_file_path))
                 write_to_log(
@@ -454,53 +490,53 @@ def parse_source(
 
 
 def split_and_zip_data_files(zip_file_path, source_path, data_file_name, file_format, download_job=None):
-    with SubprocessTrace(
-        name=f"job.{JOB_TYPE}.download.zip",
-        kind=SpanKind.INTERNAL,
-        service="bulk-download",
-        attributes={
-            "service": "bulk-download",
-            "span_type": "Internal",
-            # "source_path": source_path,
-            # "zip_file_path": zip_file_path,
-        },
-    ) as span:
-        try:
-            # Split data files into separate files
-            # e.g. `Assistance_prime_transactions_delta_%s.csv`
-            log_time = time.perf_counter()
-            delim = FILE_FORMATS[file_format]["delimiter"]
-            extension = FILE_FORMATS[file_format]["extension"]
+    # with SubprocessTrace(
+    #     name=f"job.{JOB_TYPE}.download.zip",
+    #     kind=SpanKind.INTERNAL,
+    #     service="bulk-download",
+    #     attributes={
+    #         "service": "bulk-download",
+    #         "span_type": "Internal",
+    #         # "source_path": source_path,
+    #         # "zip_file_path": zip_file_path,
+    #     },
+    # ) as span:
+    try:
+        # Split data files into separate files
+        # e.g. `Assistance_prime_transactions_delta_%s.csv`
+        log_time = time.perf_counter()
+        delim = FILE_FORMATS[file_format]["delimiter"]
+        extension = FILE_FORMATS[file_format]["extension"]
 
-            output_template = f"{data_file_name}_%s.{extension}"
-            write_to_log(message="Beginning the delimited text file partition", download_job=download_job)
-            list_of_files = partition_large_delimited_file(
-                download_job=download_job,
-                file_path=source_path,
-                delimiter=delim,
-                row_limit=EXCEL_ROW_LIMIT,
-                output_name_template=output_template,
-            )
-            span.set_attribute("file_parts", len(list_of_files))
+        output_template = f"{data_file_name}_%s.{extension}"
+        write_to_log(message="Beginning the delimited text file partition", download_job=download_job)
+        list_of_files = partition_large_delimited_file(
+            download_job=download_job,
+            file_path=source_path,
+            delimiter=delim,
+            row_limit=EXCEL_ROW_LIMIT,
+            output_name_template=output_template,
+        )
+        # span.set_attribute("file_parts", len(list_of_files))
 
-            msg = f"Partitioning data into {len(list_of_files)} files took {time.perf_counter() - log_time:.4f}s"
-            write_to_log(message=msg, download_job=download_job)
+        msg = f"Partitioning data into {len(list_of_files)} files took {time.perf_counter() - log_time:.4f}s"
+        write_to_log(message=msg, download_job=download_job)
 
-            # Zip the split files into one zipfile
-            write_to_log(message="Beginning zipping and compression", download_job=download_job)
-            log_time = time.perf_counter()
-            append_files_to_zip_file(list_of_files, zip_file_path)
+        # Zip the split files into one zipfile
+        write_to_log(message="Beginning zipping and compression", download_job=download_job)
+        log_time = time.perf_counter()
+        append_files_to_zip_file(list_of_files, zip_file_path)
 
-            write_to_log(
-                message=f"Writing to zipfile took {time.perf_counter() - log_time:.4f}s", download_job=download_job
-            )
+        write_to_log(
+            message=f"Writing to zipfile took {time.perf_counter() - log_time:.4f}s", download_job=download_job
+        )
 
-        except Exception as e:
-            message = "Exception while partitioning text file"
-            if download_job:
-                fail_download(download_job, e, message)
-            write_to_log(message=message, download_job=download_job, is_error=True)
-            raise e
+    except Exception as e:
+        message = "Exception while partitioning text file"
+        if download_job:
+            fail_download(download_job, e, message)
+        write_to_log(message=message, download_job=download_job, is_error=True)
+        raise e
 
 
 def start_download(download_job):
@@ -697,26 +733,26 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
     if download_sql.startswith("\\COPY"):
         # Trace library parses the SQL, but cannot understand the psql-specific \COPY command. Use standard COPY here.
         download_sql = download_sql[1:]
-    # Stack 3 context managers: (1) psql code, (2) Download replica query, (3) (same) Postgres query
-    with SubprocessTrace(
-        name=f"job.{JOB_TYPE}.download.psql",
-        kind=SpanKind.INTERNAL,
-        service="bulk-download",
-        attributes={
-            "service": "bulk-download",
-            # "resource": str(download_sql),
-            "span_type": "Internal",
-            # "source_path": source_path,
-        },
-    ), tracer.start_as_current_span(
-        name="postgres.query",
-        span_type=SpanKind.INTERNAL,
-        attributes={"resource": download_sql, "service": f"{settings.DOWNLOAD_DB_ALIAS}db", "span_type": "Internal"},
-    ), tracer.start_as_current_span(
-        name="postgres.query",
-        span_type=SpanKind.INTERNAL,
-        attributes={"resource": download_sql, "service": "postgres", "span_type": "Internal"},
-    ):
+        # Stack 3 context managers: (1) psql code, (2) Download replica query, (3) (same) Postgres query
+        # with SubprocessTrace(
+        #     name=f"job.{JOB_TYPE}.download.psql",
+        #     kind=SpanKind.INTERNAL,
+        #     service="bulk-download",
+        #     attributes={
+        #         "service": "bulk-download",
+        #         # "resource": str(download_sql),
+        #         "span_type": "Internal",
+        #         # "source_path": source_path,
+        #     },
+        # ), tracer.start_as_current_span(
+        #     name="postgres.query",
+        #     span_type=SpanKind.INTERNAL,
+        #     attributes={"resource": download_sql, "service": f"{settings.DOWNLOAD_DB_ALIAS}db", "span_type": "Internal"},
+        # ), tracer.start_as_current_span(
+        #     name="postgres.query",
+        #     span_type=SpanKind.INTERNAL,
+        #     attributes={"resource": download_sql, "service": "postgres", "span_type": "Internal"},
+        # ):
         try:
             log_time = time.perf_counter()
             temp_env = os.environ.copy()
