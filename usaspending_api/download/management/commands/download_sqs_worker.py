@@ -21,6 +21,8 @@ from usaspending_api.download.models.download_job import DownloadJob
 from usaspending_api.common.tracing import SubprocessTrace
 
 from opentelemetry.trace import Status, StatusCode
+from opentelemetry import trace, context
+from opentelemetry.trace import set_span_in_context
 
 logger = logging.getLogger(__name__)
 JOB_TYPE = "USAspendingDownloader"
@@ -34,14 +36,20 @@ class Command(BaseCommand):
             name=f"job.{JOB_TYPE}.download_sqs_worker",
             kind=SpanKind.INTERNAL,
             service="bulk-download",
-        ) as main_trace:
-            main_trace.set_attributes(
+        ) as parent:
+            parent.set_attributes(
                 {
                     "service": "bulk-download",
                     "job_type": str(JOB_TYPE),
                     "message": "Starting SQS worker session",
                 }
             )
+
+            # Creates a Context object with parent set as current span
+            # any Child span using .start_span() will automatically be the child of the parent
+            # Refer to this link: https://github.com/open-telemetry/opentelemetry-python/issues/2787
+            ctx = trace.set_span_in_context(parent)
+
             queue = get_sqs_queue()
             log_job_message(logger=logger, message="Starting SQS polling", job_type=JOB_TYPE)
 
