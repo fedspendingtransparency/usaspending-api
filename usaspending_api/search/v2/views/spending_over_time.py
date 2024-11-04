@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from typing import Tuple
 
 from django.conf import settings
-from django.db.models import F, Sum
+from django.db.models import F, IntegerField, Sum, Value
 from elasticsearch_dsl import A, Search
 from elasticsearch_dsl.response import AggResponse
 from rest_framework.request import Request
@@ -128,12 +128,13 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             month_quarter_cols.append("quarter")
 
         first_values = ["sub_fiscal_year"] + month_quarter_cols
-        second_values = ["aggregated_amount"] + month_quarter_cols
+        second_values = ["obligation_amount", "total_outlays", "subaward_type"] + month_quarter_cols
         second_values_dict = {"fy": F("sub_fiscal_year")}
         order_by_cols = ["fy"] + month_quarter_cols
         queryset = (
             queryset.values(*first_values)
-            .annotate(aggregated_amount=Sum(obligation_column))
+            .annotate(obligation_amount=Sum(obligation_column))
+            .annotate(total_outlays=Value(None, output_field=IntegerField()))
             .values(*second_values, **second_values_dict)
             .order_by(*order_by_cols)
         )
@@ -456,10 +457,12 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 filter_time_periods=time_periods,
                 queryset=db_results,
                 date_range_type=order_by_cols[-1],
-                columns={"aggregated_amount": "aggregated_amount"},
+                columns={
+                    "obligation_amount": "obligation_amount",
+                    "total_outlays": "total_outlays",
+                    "subaward_type": "subaward_type",
+                },
             )
-            for result in results:
-                result["total_outlays"] = None
 
         elif self.spending_level == "transactions":
             results = self.query_elasticsearch_for_transactions(time_periods)
@@ -476,7 +479,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                         *get_generic_filters_message(self.original_filters.keys(), [elem["name"] for elem in models]),
                         (
                             "The 'subawards' field will be deprecated in the future. "
-                            "Set 'spending_level' to 'subawards' instead. See documentation for more information."
+                            "Set 'spending_level' to 'subawards' instead. See documentation for more information"
                         ),
                         (
                             "You may see additional month, quarter and year results when searching for "
