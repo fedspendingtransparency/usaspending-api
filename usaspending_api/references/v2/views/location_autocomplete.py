@@ -29,7 +29,6 @@ class LocationAutocompleteViewSet(APIView):
     def post(self, request):
         es_results: ES_Response = self._query_elasticsearch(request.data["search_text"], request.data["limit"])
         results = {}
-
         if len(es_results) > 0:
             country_results = self._format_country_results(
                 list(filter(lambda x: "country_name" in dir(x.meta.highlight), es_results))
@@ -41,7 +40,12 @@ class LocationAutocompleteViewSet(APIView):
                 list(filter(lambda x: "cities" in dir(x.meta.highlight), es_results))
             )
             county_results = self._format_county_results(
-                list(filter(lambda x: "counties" in dir(x.meta.highlight), es_results))
+                list(
+                    filter(
+                        lambda x: "counties.name" in dir(x.meta.highlight) or "counties.fips" in dir(x.meta.highlight),
+                        es_results,
+                    )
+                )
             )
             zip_code_results = self._format_zip_code_results(
                 list(filter(lambda x: "zip_codes" in dir(x.meta.highlight), es_results))
@@ -85,12 +89,10 @@ class LocationAutocompleteViewSet(APIView):
         Returns:
             An Elasticsearch Response object containing the list of locations that contain the provided `search_text`.
         """
-
         es_location_fields = (
             "country_name",
             "state_name",
             "cities",
-            "counties",
             "zip_codes",
             "current_congressional_districts",
             "original_congressional_districts",
@@ -99,17 +101,29 @@ class LocationAutocompleteViewSet(APIView):
         # Elasticsearch queries don't work well with the "-" character so we remove it from any searches, specifically
         #   with Congressional districts in mind.
         search_text = search_text.replace("-", "")
-
         query_string_query = ES_Q("query_string", query=f"*{search_text}*", fields=es_location_fields)
         multi_match_query = ES_Q("multi_match", query=search_text, fields=es_location_fields)
-        query = ES_Q("bool", should=[query_string_query, multi_match_query], minimum_should_match=1)
+        nested_query = ES_Q(
+            "nested",
+            path="counties",
+            query=ES_Q(
+                "bool",
+                should=[
+                    ES_Q("multi_match", query=search_text, fields=("counties.name", "counties.fips")),
+                    ES_Q("query_string", query=f"*{search_text}*", fields=("counties.name", "counties.fips")),
+                ],
+                minimum_should_match=1,
+            ),
+        )
+        query = ES_Q("bool", should=[query_string_query, multi_match_query, nested_query], minimum_should_match=1)
 
         search: LocationSearch = LocationSearch().extra(size=limit).query(query)
         search = search.highlight(
             "country_name",
             "state_name",
             "cities",
-            "counties",
+            "counties.name",
+            "counties.fips",
             "zip_codes",
             "current_congressional_districts",
             "original_congressional_districts",
@@ -200,18 +214,36 @@ class LocationAutocompleteViewSet(APIView):
 
         Example:
             [
-                {"county_name": "GADSDEN", "state_name": "FLORIDA", "country_name": "UNITED STATES"},
-                {"county_name": "CAMDEN", "state_name": "GEORGIA", "country_name": "UNITED STATES"}
+                {"county_fips": "#####", "county_name": "GADSDEN", "state_name": "FLORIDA", "country_name": "UNITED STATES"},
+                {"county_fips": "#####", "county_name": "CAMDEN", "state_name": "GEORGIA", "country_name": "UNITED STATES"}
             ]
         """
-
         if len(es_results) > 0:
-            counties = []
-            for doc in es_results:
-                for county in doc.meta.highlight.counties:
-                    counties.append(
-                        {"county_name": county, "state_name": doc.state_name, "country_name": doc.country_name}
-                    )
+            name_matches = [
+                {
+                    "county_fips": county["fips"],
+                    "county_name": county["name"],
+                    "state_name": doc.state_name,
+                    "country_name": doc.country_name,
+                }
+                for doc in es_results
+                if "counties.name" in doc.meta.highlight
+                for county_name in doc.meta.highlight["counties.name"]
+                for county in [county for county in doc.counties if county["name"] == county_name]
+            ]
+            fips_matches = [
+                {
+                    "county_fips": county["fips"],
+                    "county_name": county["name"],
+                    "state_name": doc.state_name,
+                    "country_name": doc.country_name,
+                }
+                for doc in es_results
+                if "counties.fips" in doc.meta.highlight
+                for county_fips in doc.meta.highlight["counties.fips"]
+                for county in [county for county in doc.counties if county["fips"] == county_fips]
+            ]
+            counties = name_matches + fips_matches
             return counties
         else:
             return None
