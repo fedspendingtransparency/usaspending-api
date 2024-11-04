@@ -479,7 +479,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                         *get_generic_filters_message(self.original_filters.keys(), [elem["name"] for elem in models]),
                         (
                             "The 'subawards' field will be deprecated in the future. "
-                            "Set 'spending_level' to 'subawards' instead. See documentation for more information"
+                            "Set 'spending_level' to 'subawards' instead. See documentation for more information."
                         ),
                         (
                             "You may see additional month, quarter and year results when searching for "
