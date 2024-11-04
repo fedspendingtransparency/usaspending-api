@@ -4768,9 +4768,33 @@ def test_spending_over_time_program_activity_subawards(
         ),
     )
     expected_result = [
-        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2019"}, "total_outlays": None},
-        {"aggregated_amount": 54321.0, "time_period": {"fiscal_year": "2020"}, "total_outlays": None},
-        {"aggregated_amount": 0, "time_period": {"fiscal_year": "2021"}, "total_outlays": None},
+        {
+            "aggregated_amount": 0,
+            "total_outlays": None,
+            "time_period": {"fiscal_year": "2019"},
+            "Contract_Obligations": 0,
+            "Contract_Outlays": None,
+            "Grant_Obligations": 0,
+            "Grant_Outlays": None,
+        },
+        {
+            "aggregated_amount": 54321.0,
+            "total_outlays": None,
+            "time_period": {"fiscal_year": "2020"},
+            "Contract_Obligations": 0,
+            "Contract_Outlays": None,
+            "Grant_Obligations": 54321.0,
+            "Grant_Outlays": None,
+        },
+        {
+            "aggregated_amount": 0,
+            "total_outlays": None,
+            "time_period": {"fiscal_year": "2021"},
+            "Contract_Obligations": 0,
+            "Contract_Outlays": None,
+            "Grant_Obligations": 0,
+            "Grant_Outlays": None,
+        },
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json().get("results") == expected_result, "Set Aside Type Codes filter does not match expected result"
