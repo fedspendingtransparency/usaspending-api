@@ -41,7 +41,6 @@ from usaspending_api.download.helpers import verify_requested_columns_available,
 from usaspending_api.download.lookups import JOB_STATUS_DICT, VALUE_MAPPINGS, FILE_FORMATS
 from usaspending_api.download.models.download_job import DownloadJob
 from usaspending_api.common.helpers.s3_helpers import download_s3_object
-from usaspending_api.download.management.commands.download_sqs_worker import _retrieve_download_job_from_db
 
 DOWNLOAD_VISIBILITY_TIMEOUT = 60 * 10
 MAX_VISIBILITY_TIMEOUT = 60 * 60 * settings.DOWNLOAD_DB_TIMEOUT_IN_HOURS
@@ -797,9 +796,7 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
             service="bulk-download",
         )
 
-        download_job_from_db = _retrieve_download_job_from_db(download_job.download_job_id)
-        
-        with subprocess_trace as span: 
+        with subprocess_trace as span:
             span.set_attributes(
                 {
                     "service": "bulk-download",
@@ -807,19 +804,17 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
                     "span_type": "Internal",
                     "source_path": str(source_path),
                     # download job details
-                    "download_job_id": str(download_job_from_db.download_job_id),
-                    "download_job_status": str(download_job_from_db.job_status.name),
-                    "download_file_name": str(download_job_from_db.file_name),
-                    "download_file_size": download_job_from_db.file_size
-                    if download_job_from_db.file_size is not None
+                    "download_job_id": str(download_job.download_job_id),
+                    "download_job_status": str(download_job.job_status.name),
+                    "download_file_name": str(download_job.file_name),
+                    "download_file_size": download_job.file_size if download_job.file_size is not None else 0,
+                    "number_of_rows": download_job.number_of_rows if download_job.number_of_rows is not None else 0,
+                    "number_of_columns": download_job.number_of_columns
+                    if download_job.number_of_columns is not None
                     else 0,
-                    "number_of_rows": download_job_from_db.number_of_rows if download_job_from_db.number_of_rows is not None else 0,
-                    "number_of_columns": download_job_from_db.number_of_columns
-                    if download_job_from_db.number_of_columns is not None
-                    else 0,
-                    "error_message": download_job_from_db.error_message if download_job_from_db.error_message else "",
-                    "monthly_download": str(download_job_from_db.monthly_download),
-                    "json_request": str(download_job_from_db.json_request) if download_job_from_db.json_request else "",
+                    "error_message": download_job.error_message if download_job.error_message else "",
+                    "monthly_download": str(download_job.monthly_download),
+                    "json_request": str(download_job.json_request) if download_job.json_request else "",
                 }
             )
             print("\n\n\n got to this point just fine, lets keep going! \n\n\n")
