@@ -61,10 +61,28 @@
         "type": "nested",
         "properties": {
           "fips": {
-            "type": "text"
+            "type": "text",
+            "fields": {
+              "contains": {
+                "type": "text",
+                "analyzer": "contains_analyzer"
+              },
+              "keyword": {
+                "type": "keyword"
+              }
+            }
           },
           "name": {
-            "type": "text"
+            "type": "text",
+            "fields": {
+              "contains": {
+                "type": "text",
+                "analyzer": "contains_analyzer"
+              },
+              "keyword": {
+                "type": "keyword"
+              }
+            }
           }
         }
       },
