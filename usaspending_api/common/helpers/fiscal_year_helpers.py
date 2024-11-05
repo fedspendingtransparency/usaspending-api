@@ -1,6 +1,4 @@
-import copy
 import logging
-from collections import defaultdict
 from datetime import MAXYEAR, MINYEAR, datetime
 from typing import List, Optional, Tuple
 
@@ -196,45 +194,26 @@ def create_full_time_periods(min_date, max_date, group, columns):
     return results
 
 
-def _combine_subaward_spending_over_time_results(date_results: List[dict], date_range_type: str) -> List[dict]:
-    """Combine the individual Subaward spending_over_time results together based on their `time_period`
+def _clean_subaward_spending_over_time_results(subaward_results: List[dict], date_range_type: str) -> List[dict]:
+    """Clean up the spending_over_time Subaward results
 
     Args:
-        date_results: Subaward spending_over_time result for a given time period
+        subaward_results: Subaward spending_over_time result for a given time period
         date_range_type: how the results are split
             - 'fy', 'quarter', or 'month'
 
     Returns:
-        List of combined Subaward results
+        List of cleaned Subaward results
     """
 
-    # Combine individual results that have the same `time_period` value
-    combined_data = defaultdict(
-        lambda: {
-            "aggregated_amount": 0,
-            "total_outlays": None,
-            "Contract_Obligations": 0,
-            "Contract_Outlays": None,
-            "Grant_Obligations": 0,
-            "Grant_Outlays": None,
-        }
-    )
-
-    for result in date_results:
+    for result in subaward_results:
         result["time_period"]["fiscal_year"] = result["time_period"]["fy"]
+        result["obligation_amount"] = result["Contract_Obligations"] + result["Grant_Obligations"]
+
         del result["time_period"]["fy"]
+        del result["subaward_type"]
 
-        if date_range_type == "fy":
-            tp = result["time_period"]["fiscal_year"]
-        else:
-            tp = f"{result['time_period']['fiscal_year']}_{result['time_period'][date_range_type]}"
-
-        combined_data[tp]["time_period"] = result["time_period"]
-        combined_data[tp]["aggregated_amount"] += result["obligation_amount"]
-        combined_data[tp]["Contract_Obligations"] += result["Contract_Obligations"]
-        combined_data[tp]["Grant_Obligations"] += result["Grant_Obligations"]
-
-    return [{"time_period": {"fiscal_year": k}, **v} for k, v in combined_data.items()]
+    return subaward_results
 
 
 def bolster_missing_time_periods(filter_time_periods, queryset, date_range_type, columns):
@@ -251,29 +230,23 @@ def bolster_missing_time_periods(filter_time_periods, queryset, date_range_type,
     Returns:
         list of dict results split by fiscal years/quarters/months
     """
-    data: List[dict] = []
     min_date, max_date = min_and_max_from_date_ranges(filter_time_periods)
     results = create_full_time_periods(min_date, max_date, date_range_type, columns)
 
     for row in queryset:
         for item in results:
-            json_obj = copy.deepcopy(item)
-            json_obj["Contract_Obligations"] = 0
-            json_obj["Grant_Obligations"] = 0
-
-            same_year = str(json_obj["time_period"]["fy"]) == str(row["fy"])
-            same_period = str(json_obj["time_period"][date_range_type]) == str(row[date_range_type])
+            same_year = str(item["time_period"]["fy"]) == str(row["fy"])
+            same_period = str(item["time_period"][date_range_type]) == str(row[date_range_type])
             if same_year and same_period:
-                for column_name, column_in_queryset in columns.items():
-                    if row[column_in_queryset] == "sub-grant":
-                        json_obj["Grant_Obligations"] = row["obligation_amount"]
-                    elif row[column_in_queryset] == "sub-contract":
-                        json_obj["Contract_Obligations"] = row["obligation_amount"]
-                    else:
-                        json_obj[column_name] = row[column_in_queryset]
-            data.append(json_obj)
+                if row["subaward_type"] == "sub-contract":
+                    item["Contract_Obligations"] = row.get("obligation_amount", 0)
+                if row["subaward_type"] == "sub-grant":
+                    item["Grant_Obligations"] = row.get("obligation_amount", 0)
 
-    return _combine_subaward_spending_over_time_results(data, date_range_type)
+                for column_name, column_in_queryset in columns.items():
+                    item[column_name] = row[column_in_queryset]
+
+    return _clean_subaward_spending_over_time_results(results, date_range_type)
 
 
 def calculate_last_completed_fiscal_quarter(fiscal_year):
