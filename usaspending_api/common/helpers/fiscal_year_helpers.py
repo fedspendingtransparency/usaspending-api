@@ -2,7 +2,7 @@ import copy
 import logging
 from collections import defaultdict
 from datetime import MAXYEAR, MINYEAR, datetime
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 
 from dateutil.relativedelta import relativedelta
 from django.db.models import Max, Q
@@ -196,6 +196,47 @@ def create_full_time_periods(min_date, max_date, group, columns):
     return results
 
 
+def _combine_subaward_spending_over_time_results(date_results: List[dict], date_range_type: str) -> List[dict]:
+    """Combine the individual Subaward spending_over_time results together based on their `time_period`
+
+    Args:
+        date_results: Subaward spending_over_time result for a given time period
+        date_range_type: how the results are split
+            - 'fy', 'quarter', or 'month'
+
+    Returns:
+        List of combined Subaward results
+    """
+
+    # Combine individual results that have the same `time_period` value
+    combined_data = defaultdict(
+        lambda: {
+            "aggregated_amount": 0,
+            "total_outlays": None,
+            "Contract_Obligations": 0,
+            "Contract_Outlays": None,
+            "Grant_Obligations": 0,
+            "Grant_Outlays": None,
+        }
+    )
+
+    for result in date_results:
+        result["time_period"]["fiscal_year"] = result["time_period"]["fy"]
+        del result["time_period"]["fy"]
+
+        if date_range_type == "fy":
+            tp = result["time_period"]["fiscal_year"]
+        else:
+            tp = f"{result['time_period']['fiscal_year']}_{result['time_period'][date_range_type]}"
+
+        combined_data[tp]["time_period"] = result["time_period"]
+        combined_data[tp]["aggregated_amount"] += result["obligation_amount"]
+        combined_data[tp]["Contract_Obligations"] += result["Contract_Obligations"]
+        combined_data[tp]["Grant_Obligations"] += result["Grant_Obligations"]
+
+    return [{"time_period": {"fiscal_year": k}, **v} for k, v in combined_data.items()]
+
+
 def bolster_missing_time_periods(filter_time_periods, queryset, date_range_type, columns):
     """Given the following, generate a list of dict results split by fiscal years/quarters/months
 
@@ -210,7 +251,7 @@ def bolster_missing_time_periods(filter_time_periods, queryset, date_range_type,
     Returns:
         list of dict results split by fiscal years/quarters/months
     """
-    data: list[dict] = []
+    data: List[dict] = []
     min_date, max_date = min_and_max_from_date_ranges(filter_time_periods)
     results = create_full_time_periods(min_date, max_date, date_range_type, columns)
 
@@ -232,33 +273,7 @@ def bolster_missing_time_periods(filter_time_periods, queryset, date_range_type,
                         json_obj[column_name] = row[column_in_queryset]
             data.append(json_obj)
 
-    # Combine individual results that have the same `time_period` value
-    combined_data = defaultdict(
-        lambda: {
-            "aggregated_amount": 0,
-            "total_outlays": None,
-            "Contract_Obligations": 0,
-            "Contract_Outlays": None,
-            "Grant_Obligations": 0,
-            "Grant_Outlays": None,
-        }
-    )
-
-    for result in data:
-        result["time_period"]["fiscal_year"] = result["time_period"]["fy"]
-        del result["time_period"]["fy"]
-
-        if date_range_type == "fy":
-            tp = result["time_period"]["fiscal_year"]
-        else:
-            tp = f"{result['time_period']['fiscal_year']}_{result['time_period'][date_range_type]}"
-
-        combined_data[tp]["time_period"] = result["time_period"]
-        combined_data[tp]["aggregated_amount"] += result["obligation_amount"]
-        combined_data[tp]["Contract_Obligations"] += result["Contract_Obligations"]
-        combined_data[tp]["Grant_Obligations"] += result["Grant_Obligations"]
-
-    return [{"time_period": {"fiscal_year": k}, **v} for k, v in combined_data.items()]
+    return _combine_subaward_spending_over_time_results(data, date_range_type)
 
 
 def calculate_last_completed_fiscal_quarter(fiscal_year):
