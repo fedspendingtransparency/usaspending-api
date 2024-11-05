@@ -208,7 +208,9 @@ def _clean_subaward_spending_over_time_results(subaward_results: List[dict], dat
 
     for result in subaward_results:
         result["time_period"]["fiscal_year"] = result["time_period"]["fy"]
-        result["obligation_amount"] = result["Contract_Obligations"] + result["Grant_Obligations"]
+        result["obligation_amount"] = result["sub-contract"] + result["sub-grant"]
+        result["Contract_Obligations"] = result.pop("sub-contract")
+        result["Grant_Obligations"] = result.pop("sub-grant")
 
         del result["time_period"]["fy"]
         del result["subaward_type"]
@@ -238,10 +240,7 @@ def bolster_missing_time_periods(filter_time_periods, queryset, date_range_type,
             same_year = str(item["time_period"]["fy"]) == str(row["fy"])
             same_period = str(item["time_period"][date_range_type]) == str(row[date_range_type])
             if same_year and same_period:
-                if row["subaward_type"] == "sub-contract":
-                    item["Contract_Obligations"] = row.get("obligation_amount", 0)
-                if row["subaward_type"] == "sub-grant":
-                    item["Grant_Obligations"] = row.get("obligation_amount", 0)
+                item[row["subaward_type"]] = row.get("obligation_amount", 0)
 
                 for column_name, column_in_queryset in columns.items():
                     item[column_name] = row[column_in_queryset]
