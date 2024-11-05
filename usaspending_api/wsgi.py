@@ -11,7 +11,9 @@ import os
 
 from opentelemetry.instrumentation.wsgi import OpenTelemetryMiddleware
 from django.core.wsgi import get_wsgi_application
-
+from usaspending_api.common.logging import configure_logging
+from opentelemetry import trace
+from opentelemetry.instrumentation.django import DjangoInstrumentor
 
 def request_hook(span, environ):
     print("\n")
@@ -65,6 +67,25 @@ def response_hook(span, environ, status, response_headers):
 
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "usaspending_api.settings")
+
+############################################################
+# ==== [Open Telemetry Configuration] ====
+
+# Django Instrumentation
+DjangoInstrumentor().instrument()
+
+configure_logging(service_name="usaspending-api")
+
+# Optionally, set other OpenTelemetry configurations
+service_name = os.getenv("OTEL_SERVICE_NAME", "usaspending-api")
+os.environ["OTEL_RESOURCE_ATTRIBUTES"] = f"service.name={service_name}"
+
+# Define additional settings for OpenTelemetry integration
+TRACER = trace.get_tracer_provider().get_tracer(__name__)
+OTEL_EXPORTER_OTLP_TRACES_ENDPOINT = os.getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "http://localhost:4318/v1/traces")
+OTEL_RESOURCE_ATTRIBUTES = f"service.name={service_name}"
+
+############################################################
 
 application = get_wsgi_application()
 application = OpenTelemetryMiddleware(application, request_hook=request_hook, response_hook=response_hook)

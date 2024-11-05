@@ -23,6 +23,7 @@ from usaspending_api.common.tracing import SubprocessTrace
 from opentelemetry.trace import Status, StatusCode
 from opentelemetry import trace, context
 from opentelemetry.trace import set_span_in_context
+from usaspending_api.common.logging import configure_logging
 
 logger = logging.getLogger(__name__)
 JOB_TYPE = "USAspendingDownloader"
@@ -30,7 +31,7 @@ JOB_TYPE = "USAspendingDownloader"
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-
+        configure_logging(service_name='usaspending-downloader')
         # Start a main trace for the SQS worker session
         with SubprocessTrace(
             name=f"job.{JOB_TYPE}.download_sqs_worker",
