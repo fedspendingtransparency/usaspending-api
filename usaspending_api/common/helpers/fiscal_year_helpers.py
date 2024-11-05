@@ -208,12 +208,20 @@ def _clean_subaward_spending_over_time_results(subaward_results: List[dict], dat
 
     for result in subaward_results:
         result["time_period"]["fiscal_year"] = result["time_period"]["fy"]
-        result["obligation_amount"] = result["sub-contract"] + result["sub-grant"]
-        result["Contract_Obligations"] = result.pop("sub-contract")
-        result["Grant_Obligations"] = result.pop("sub-grant")
+        result["aggregated_amount"] = result.get("sub-contract", 0) + result.get("sub-grant", 0)
+
+        result["Contract_Obligations"] = result.get("sub-contract", 0)
+        result["Grant_Obligations"] = result.get("sub-grant", 0)
+
+        result["total_outlays"] = None
+        result["Contract_Outlays"] = None
+        result["Grant_Outlays"] = None
 
         del result["time_period"]["fy"]
         del result["subaward_type"]
+        del result["obligation_amount"]
+        result.pop("sub-contract", None)
+        result.pop("sub-grant", None)
 
     return subaward_results
 
