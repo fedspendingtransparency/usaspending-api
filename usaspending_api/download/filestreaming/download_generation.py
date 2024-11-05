@@ -41,6 +41,7 @@ from usaspending_api.download.helpers import verify_requested_columns_available,
 from usaspending_api.download.lookups import JOB_STATUS_DICT, VALUE_MAPPINGS, FILE_FORMATS
 from usaspending_api.download.models.download_job import DownloadJob
 from usaspending_api.common.helpers.s3_helpers import download_s3_object
+from usaspending_api.download.management.commands.download_sqs_worker import _retrieve_download_job_from_db
 
 DOWNLOAD_VISIBILITY_TIMEOUT = 60 * 10
 MAX_VISIBILITY_TIMEOUT = 60 * 60 * settings.DOWNLOAD_DB_TIMEOUT_IN_HOURS
@@ -790,63 +791,85 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
         # Trace library parses the SQL, but cannot understand the psql-specific \COPY command. Use standard COPY here.
         download_sql = download_sql[1:]
         # Stack 3 context managers: (1) psql code, (2) Download replica query, (3) (same) Postgres query
-        with SubprocessTrace(
+        subprocess_trace = SubprocessTrace(
             name=f"job.{JOB_TYPE}.download.psql",
             kind=SpanKind.INTERNAL,
             service="bulk-download",
-            attributes={
-                "service": "bulk-download",
-                # "resource": str(download_sql),
-                "span_type": "Internal",
-                # "source_path": source_path,
-            },
-        ), tracer.start_as_current_span(
-            name="postgres.query",
-            span_type=SpanKind.INTERNAL,
-            attributes={
-                "resource": download_sql,
-                "service": f"{settings.DOWNLOAD_DB_ALIAS}db",
-                "span_type": "Internal",
-            },
-        ), tracer.start_as_current_span(
-            name="postgres.query",
-            span_type=SpanKind.INTERNAL,
-            attributes={"resource": download_sql, "service": "postgres", "span_type": "Internal"},
-        ):
-            try:
-                log_time = time.perf_counter()
-                temp_env = os.environ.copy()
-                if download_job and not download_job.monthly_download:
-                    # Since terminating the process isn't guaranteed to end the DB statement, add timeout to client connection
-                    temp_env["PGOPTIONS"] = (
-                        f"--statement-timeout={settings.DOWNLOAD_DB_TIMEOUT_IN_HOURS}h "
-                        f"--work-mem={settings.DOWNLOAD_DB_WORK_MEM_IN_MB}MB"
+        )
+
+        download_job_from_db = _retrieve_download_job_from_db(download_job.download_job_id)
+        
+        with subprocess_trace as span: 
+            span.set_attributes(
+                {
+                    "service": "bulk-download",
+                    "resource": str(download_sql),
+                    "span_type": "Internal",
+                    "source_path": str(source_path),
+                    # download job details
+                    "download_job_id": str(download_job_from_db.download_job_id),
+                    "download_job_status": str(download_job_from_db.job_status.name),
+                    "download_file_name": str(download_job_from_db.file_name),
+                    "download_file_size": download_job_from_db.file_size
+                    if download_job_from_db.file_size is not None
+                    else 0,
+                    "number_of_rows": download_job_from_db.number_of_rows if download_job_from_db.number_of_rows is not None else 0,
+                    "number_of_columns": download_job_from_db.number_of_columns
+                    if download_job_from_db.number_of_columns is not None
+                    else 0,
+                    "error_message": download_job_from_db.error_message if download_job_from_db.error_message else "",
+                    "monthly_download": str(download_job_from_db.monthly_download),
+                    "json_request": str(download_job_from_db.json_request) if download_job_from_db.json_request else "",
+                }
+            )
+            print("\n\n\n got to this point just fine, lets keep going! \n\n\n")
+            with tracer.start_as_current_span(
+                name="postgres.query",
+                span_type=SpanKind.INTERNAL,
+                attributes={
+                    "resource": download_sql,
+                    "service": f"{settings.DOWNLOAD_DB_ALIAS}db",
+                    "span_type": "Internal",
+                },
+            ), tracer.start_as_current_span(
+                name="postgres.query",
+                span_type=SpanKind.INTERNAL,
+                attributes={"resource": download_sql, "service": "postgres", "span_type": "Internal"},
+            ):
+                try:
+                    log_time = time.perf_counter()
+                    temp_env = os.environ.copy()
+                    if download_job and not download_job.monthly_download:
+                        # Since terminating the process isn't guaranteed to end the DB statement, add timeout to client connection
+                        temp_env["PGOPTIONS"] = (
+                            f"--statement-timeout={settings.DOWNLOAD_DB_TIMEOUT_IN_HOURS}h "
+                            f"--work-mem={settings.DOWNLOAD_DB_WORK_MEM_IN_MB}MB"
+                        )
+
+                    cat_command = subprocess.Popen(["cat", temp_sql_file_path], stdout=subprocess.PIPE)
+                    subprocess.check_output(
+                        ["psql", "-q", "-o", source_path, retrieve_db_string(), "-v", "ON_ERROR_STOP=1"],
+                        stdin=cat_command.stdout,
+                        stderr=subprocess.STDOUT,
+                        env=temp_env,
                     )
 
-                cat_command = subprocess.Popen(["cat", temp_sql_file_path], stdout=subprocess.PIPE)
-                subprocess.check_output(
-                    ["psql", "-q", "-o", source_path, retrieve_db_string(), "-v", "ON_ERROR_STOP=1"],
-                    stdin=cat_command.stdout,
-                    stderr=subprocess.STDOUT,
-                    env=temp_env,
-                )
-
-                duration = time.perf_counter() - log_time
-                write_to_log(
-                    message=f"Wrote {os.path.basename(source_path)}, took {duration:.4f} seconds",
-                    download_job=download_job,
-                )
-            except subprocess.CalledProcessError as e:
-                write_to_log(message=f"PSQL Error: {e.output.decode()}", is_error=True, download_job=download_job)
-                raise e
-            except Exception as e:
-                if not settings.IS_LOCAL:
-                    # Not logging the command as it can contain the database connection string
-                    e.cmd = "[redacted psql command]"
-                write_to_log(message=e, is_error=True, download_job=download_job)
-                sql = subprocess.check_output(["cat", temp_sql_file_path]).decode()
-                write_to_log(message=f"Faulty SQL: {sql}", is_error=True, download_job=download_job)
-                raise e
+                    duration = time.perf_counter() - log_time
+                    write_to_log(
+                        message=f"Wrote {os.path.basename(source_path)}, took {duration:.4f} seconds",
+                        download_job=download_job,
+                    )
+                except subprocess.CalledProcessError as e:
+                    write_to_log(message=f"PSQL Error: {e.output.decode()}", is_error=True, download_job=download_job)
+                    raise e
+                except Exception as e:
+                    if not settings.IS_LOCAL:
+                        # Not logging the command as it can contain the database connection string
+                        e.cmd = "[redacted psql command]"
+                    write_to_log(message=e, is_error=True, download_job=download_job)
+                    sql = subprocess.check_output(["cat", temp_sql_file_path]).decode()
+                    write_to_log(message=f"Faulty SQL: {sql}", is_error=True, download_job=download_job)
+                    raise e
 
 
 def retrieve_db_string():
