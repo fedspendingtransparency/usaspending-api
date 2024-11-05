@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from typing import List, Union
+from typing import List, Literal, Union
 
 from elasticsearch_dsl import Q as ES_Q
 from elasticsearch_dsl.response import Response as ES_Response
@@ -97,24 +97,24 @@ class LocationAutocompleteViewSet(APIView):
             "current_congressional_districts",
             "original_congressional_districts",
         )
+        es_nested_fields = (
+            "counties.name",
+            "counties.fips",
+        )
 
         # Elasticsearch queries don't work well with the "-" character so we remove it from any searches, specifically
         #   with Congressional districts in mind.
         search_text = search_text.replace("-", "")
         query_string_query = ES_Q("query_string", query=f"*{search_text}*", fields=es_location_fields)
         multi_match_query = ES_Q("multi_match", query=search_text, fields=es_location_fields)
-        nested_query = ES_Q(
-            "nested",
-            path="counties",
-            query=ES_Q(
-                "bool",
-                should=[
-                    ES_Q("multi_match", query=search_text, fields=("counties.name", "counties.fips")),
-                    ES_Q("query_string", query=f"*{search_text}*", fields=("counties.name", "counties.fips")),
-                ],
-                minimum_should_match=1,
-            ),
+        nested_query_string_query = ES_Q("query_string", query=f"*{search_text}*", fields=es_nested_fields)
+        nested_multi_match_query = ES_Q("multi_match", query=search_text, fields=es_nested_fields)
+        nested_bool_query = ES_Q(
+            "bool",
+            should=[nested_query_string_query, nested_multi_match_query],
+            minimum_should_match=1,
         )
+        nested_query = ES_Q("nested", path="counties", query=nested_bool_query)
         query = ES_Q("bool", should=[query_string_query, multi_match_query, nested_query], minimum_should_match=1)
 
         search: LocationSearch = LocationSearch().extra(size=limit).query(query)
@@ -219,31 +219,19 @@ class LocationAutocompleteViewSet(APIView):
             ]
         """
         if len(es_results) > 0:
-            name_matches = [
+            counties = [
                 {
                     "county_fips": county["fips"],
                     "county_name": county["name"],
-                    "state_name": doc.state_name,
-                    "country_name": doc.country_name,
+                    "state_name": result.state_name,
+                    "country_name": result.country_name,
                 }
-                for doc in es_results
-                if "counties.name" in doc.meta.highlight
-                for county_name in doc.meta.highlight["counties.name"]
-                for county in [county for county in doc.counties if county["name"] == county_name]
+                for result in es_results
+                for _property in ["fips", "name"]
+                if f"counties.{_property}" in result.meta.highlight
+                for match in result.meta.highlight[f"counties.{_property}"]
+                for county in [county for county in result.counties if county[_property] == match]
             ]
-            fips_matches = [
-                {
-                    "county_fips": county["fips"],
-                    "county_name": county["name"],
-                    "state_name": doc.state_name,
-                    "country_name": doc.country_name,
-                }
-                for doc in es_results
-                if "counties.fips" in doc.meta.highlight
-                for county_fips in doc.meta.highlight["counties.fips"]
-                for county in [county for county in doc.counties if county["fips"] == county_fips]
-            ]
-            counties = name_matches + fips_matches
             return counties
         else:
             return None
