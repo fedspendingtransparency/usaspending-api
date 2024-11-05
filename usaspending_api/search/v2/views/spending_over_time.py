@@ -307,7 +307,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         return response_object
 
-    def build_elasticsearch_result(self, agg_response: AggResponse, time_periods: list) -> list:
+    def build_elasticsearch_result_transactions(self, agg_response: AggResponse, time_periods: list) -> list:
         """
         In this function we are just taking the elasticsearch aggregate response and looping through the
         buckets to create a results object for each time interval.
@@ -330,57 +330,80 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         date_buckets = agg_response.group_by_time_period.buckets
         parsed_bucket = None
 
-        if self.spending_level == "awards":
-            if date_buckets is not None:
-                for bucket in date_buckets:
-                    parsed_bucket = self.parse_elasticsearch_bucket(bucket.to_dict())
+        for fiscal_date in date_range:
+            if date_buckets and parsed_bucket is None:
+                parsed_bucket = self.parse_elasticsearch_bucket(date_buckets.pop(0))
 
-                    if self.group == "calendar_year":
-                        time_period = {"calendar_year": parsed_bucket["time_period"]["calendar_year"]}
-                    else:
-                        time_period = {"fiscal_year": parsed_bucket["time_period"]["fiscal_year"]}
+            if self.group == "calendar_year":
+                time_period = {"calendar_year": str(fiscal_date["calendar_year"])}
+            else:
+                time_period = {"fiscal_year": str(fiscal_date["fiscal_year"])}
 
-                    if parsed_bucket is not None:
-                        results.append(parsed_bucket)
+            if self.group == "quarter":
+                time_period["quarter"] = str(fiscal_date["fiscal_quarter"])
+            elif self.group == "month":
+                time_period["month"] = str(fiscal_date["fiscal_month"])
 
-        elif self.spending_level == "transactions":
-            for fiscal_date in date_range:
-                if date_buckets and parsed_bucket is None:
-                    parsed_bucket = self.parse_elasticsearch_bucket(date_buckets.pop(0))
+            if parsed_bucket is not None and time_period == parsed_bucket["time_period"]:
+                results.append(parsed_bucket)
+                parsed_bucket = None
+            else:
+                results.append(
+                    {
+                        "aggregated_amount": 0,
+                        "time_period": time_period,
+                        "Contract_Obligations": 0,
+                        "Direct_Obligations": 0,
+                        "Grant_Obligations": 0,
+                        "Idv_Obligations": 0,
+                        "Loan_Obligations": 0,
+                        "Other_Obligations": 0,
+                        "total_outlays": None,
+                        "Contract_Outlays": None,
+                        "Direct_Outlays": None,
+                        "Grant_Outlays": None,
+                        "Idv_Outlays": None,
+                        "Loan_Outlays": None,
+                        "Other_Outlays": None,
+                    }
+                )
+
+        return results
+
+    def build_elasticsearch_result_awards(self, agg_response: AggResponse, time_periods: list) -> list:
+        """
+        In this function we are just taking the elasticsearch aggregate response and looping through the
+        buckets to create a results object for each time interval.
+
+        Using a min_date, max_date, and a frequency indicator generates either a list of dictionaries
+        containing fiscal year information (fiscal year, fiscal quarter, and fiscal month) or a list
+        of dictionaries containing calendar year information (calendar year). The following are the format
+        of date_range based on the frequency:
+            * "calendar_year" returns a list of dictionaries containing {calendar year}
+            * "fiscal_year" returns list of dictionaries containing {fiscal year}
+            * "quarter" returns a list of dictionaries containing {fiscal year and quarter}
+            * "month" returns a list of dictionaries containg {fiscal year and month}
+        NOTE the generate_date_range() can also generate non fiscal date range (calendar ranges) as well.
+        """
+
+        results = []
+        min_date, max_date = min_and_max_from_date_ranges(time_periods)
+
+        date_range = generate_date_range(min_date, max_date, self.group)
+        date_buckets = agg_response.group_by_time_period.buckets
+        parsed_bucket = None
+
+        if date_buckets is not None:
+            for bucket in date_buckets:
+                parsed_bucket = self.parse_elasticsearch_bucket(bucket.to_dict())
 
                 if self.group == "calendar_year":
-                    time_period = {"calendar_year": str(fiscal_date["calendar_year"])}
+                    time_period = {"calendar_year": parsed_bucket["time_period"]["calendar_year"]}
                 else:
-                    time_period = {"fiscal_year": str(fiscal_date["fiscal_year"])}
+                    time_period = {"fiscal_year": parsed_bucket["time_period"]["fiscal_year"]}
 
-                if self.group == "quarter":
-                    time_period["quarter"] = str(fiscal_date["fiscal_quarter"])
-                elif self.group == "month":
-                    time_period["month"] = str(fiscal_date["fiscal_month"])
-
-                if parsed_bucket is not None and time_period == parsed_bucket["time_period"]:
+                if parsed_bucket is not None:
                     results.append(parsed_bucket)
-                    parsed_bucket = None
-                else:
-                    results.append(
-                        {
-                            "aggregated_amount": 0,
-                            "time_period": time_period,
-                            "Contract_Obligations": 0,
-                            "Direct_Obligations": 0,
-                            "Grant_Obligations": 0,
-                            "Idv_Obligations": 0,
-                            "Loan_Obligations": 0,
-                            "Other_Obligations": 0,
-                            "total_outlays": None,
-                            "Contract_Outlays": None,
-                            "Direct_Outlays": None,
-                            "Grant_Outlays": None,
-                            "Idv_Outlays": None,
-                            "Loan_Outlays": None,
-                            "Other_Outlays": None,
-                        }
-                    )
 
         return results
 
@@ -400,7 +423,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         search = TransactionSearch().filter(filter_query)
         self.apply_elasticsearch_aggregations(search)
         response = search.handle_execute()
-        overall_results = self.build_elasticsearch_result(response.aggs, time_periods)
+        overall_results = self.build_elasticsearch_result_transactions(response.aggs, time_periods)
 
         return overall_results
 
@@ -420,7 +443,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         search = AwardSearch().filter(filter_query)
         self.apply_elasticsearch_aggregations(search)
         response = search.handle_execute()
-        overall_results = self.build_elasticsearch_result(response.aggs, time_periods)
+        overall_results = self.build_elasticsearch_result_awards(response.aggs, time_periods)
 
         return overall_results
 
