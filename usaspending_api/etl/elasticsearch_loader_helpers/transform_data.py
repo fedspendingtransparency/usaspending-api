@@ -30,7 +30,7 @@ def transform_award_data(worker: TaskSpec, records: List[dict]) -> List[dict]:
         "recipient_agg_key": funcs.award_recipient_agg_key,
         "recipient_location_congressional_agg_key": lambda x: x["recipient_location_congressional_code"],
         "recipient_location_congressional_cur_agg_key": lambda x: x["recipient_location_congressional_code_current"],
-        "recipient_location_county_agg_key": funcs.recipient_location_county_agg_key,
+        "recipient_location_county_agg_key": lambda x: x["recipient_location_county_code"],
         "recipient_location_state_agg_key": lambda x: x["recipient_location_state_code"],
     }
     drop_fields = [
