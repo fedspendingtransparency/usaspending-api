@@ -387,20 +387,12 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         """
 
         results = []
-        min_date, max_date = min_and_max_from_date_ranges(time_periods)
-
-        date_range = generate_date_range(min_date, max_date, self.group)
         date_buckets = agg_response.group_by_time_period.buckets
         parsed_bucket = None
 
         if date_buckets is not None:
             for bucket in date_buckets:
                 parsed_bucket = self.parse_elasticsearch_bucket(bucket.to_dict())
-
-                if self.group == "calendar_year":
-                    time_period = {"calendar_year": parsed_bucket["time_period"]["calendar_year"]}
-                else:
-                    time_period = {"fiscal_year": parsed_bucket["time_period"]["fiscal_year"]}
 
                 if parsed_bucket is not None:
                     results.append(parsed_bucket)
