@@ -214,8 +214,8 @@ class LocationAutocompleteViewSet(APIView):
 
         Example:
             [
-                {"county_fips": "#####", "county_name": "GADSDEN", "state_name": "FLORIDA", "country_name": "UNITED STATES"},
-                {"county_fips": "#####", "county_name": "CAMDEN", "state_name": "GEORGIA", "country_name": "UNITED STATES"}
+                {"county_fips": "12039", "county_name": "GADSDEN", "state_name": "FLORIDA", "country_name": "UNITED STATES"},
+                {"county_fips": "13039", "county_name": "CAMDEN", "state_name": "GEORGIA", "country_name": "UNITED STATES"}
             ]
         """
         if len(es_results) > 0:
