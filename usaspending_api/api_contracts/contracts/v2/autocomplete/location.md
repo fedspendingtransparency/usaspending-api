@@ -88,6 +88,7 @@ This route sends a request to the backend to retrieve locations matching the spe
 + `country_name` (required, string)
 
 ## CountyMatch (object)
++ `county_fips` (required, string)
 + `county_name` (required, string)
 + `state_name` (required, string)
 + `country_name` (required, string)
