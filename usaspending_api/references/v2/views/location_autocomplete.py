@@ -28,53 +28,29 @@ class LocationAutocompleteViewSet(APIView):
     @cache_response()
     def post(self, request):
         es_results: ES_Response = self._query_elasticsearch(request.data["search_text"], request.data["limit"])
-        results = {}
-        if len(es_results) > 0:
-            country_results = self._format_country_results(
-                list(filter(lambda x: "country_name" in dir(x.meta.highlight), es_results))
-            )
-            state_results = self._format_state_results(
-                list(filter(lambda x: "state_name" in dir(x.meta.highlight), es_results))
-            )
-            city_results = self._format_city_results(
-                list(filter(lambda x: "cities" in dir(x.meta.highlight), es_results))
-            )
-            county_results = self._format_county_results(
-                list(
-                    filter(
-                        lambda x: "counties.name" in dir(x.meta.highlight) or "counties.fips" in dir(x.meta.highlight),
-                        es_results,
-                    )
-                )
-            )
-            zip_code_results = self._format_zip_code_results(
-                list(filter(lambda x: "zip_codes" in dir(x.meta.highlight), es_results))
-            )
-            current_cd_results = self._format_current_cd_results(
-                list(filter(lambda x: "current_congressional_districts" in dir(x.meta.highlight), es_results))
-            )
-            original_cd_results = self._format_original_cd_results(
-                list(filter(lambda x: "original_congressional_districts" in dir(x.meta.highlight), es_results))
-            )
-
-            if country_results is not None:
-                results["countries"] = country_results
-            if state_results is not None:
-                results["states"] = state_results
-            if city_results is not None:
-                results["cities"] = city_results
-            if county_results is not None:
-                results["counties"] = county_results
-            if zip_code_results is not None:
-                results["zip_codes"] = zip_code_results
-            if original_cd_results is not None:
-                results["districts_original"] = original_cd_results
-            if current_cd_results is not None:
-                results["districts_current"] = current_cd_results
-
+        formatted_results = {
+            "countries": self._format_country_results(self._filter_results(es_results, ["country_name"])),
+            "states": self._format_state_results(self._filter_results(es_results, ["state_name"])),
+            "cities": self._format_city_results(self._filter_results(es_results, ["cities"])),
+            "counties": self._format_county_results(
+                self._filter_results(es_results, ["counties.name", "counties.fips"])
+            ),
+            "zip_codes": self._format_zip_code_results(self._filter_results(es_results, ["zip_codes"])),
+            "districts_current": self._format_current_cd_results(
+                self._filter_results(es_results, ["current_congressional_districts"])
+            ),
+            "districts_original": self._format_original_cd_results(
+                self._filter_results(es_results, ["original_congressional_districts"])
+            ),
+        }
+        results = {k: v for k, v in formatted_results.items() if v is not None}
         # Account for cases where there are multiple results in a single ES document
         results_length = sum(len(x) for x in results.values())
         return Response(OrderedDict([("count", results_length), ("results", results), ("messages", [""])]))
+
+    @staticmethod
+    def _filter_results(results: List[Hit], filter_keys: List[str]) -> List[Hit]:
+        return list(filter(lambda x: any(key in dir(x.meta.highlight) for key in filter_keys), results))
 
     def _query_elasticsearch(self, search_text: str, limit: int = 10) -> ES_Response:
         """Query Elasticsearch for any locations that match the provided `search_text` up to `limit` number of results.
