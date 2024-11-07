@@ -182,10 +182,10 @@ class LocationAutocompleteViewSet(APIView):
         """Format Elasticsearch results containing county matches
 
         Args:
-            es_results: Elasticsearch results that contained a match in the `counties` field
+            es_results: Elasticsearch results that contained a match in the `counties.name` or `counties.fips` field
 
         Returns:
-            A list containing all county names that matched the `search_text` along with the
+            A list of objects with county_fips and county_name properties that matched the `search_text` along with the
             state_name and country_name fields.
 
         Example:
