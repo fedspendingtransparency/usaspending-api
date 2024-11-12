@@ -298,6 +298,7 @@ before_script:
   - mkdir -p "${MINIO_DATA_DIR}"
   - mkdir -p "${HOME}/.ivy2"
   - make docker-compose-up-s3 args="-d"
+  - opentelemetry-bootstrap -a install #to auto install all the relevant opentelemetry dependencies after distro
 
 script:
   - stty cols 240  # for wider terminal output
