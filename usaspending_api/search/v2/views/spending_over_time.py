@@ -393,9 +393,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         if date_buckets is not None:
             for bucket in date_buckets:
                 parsed_bucket = self.parse_elasticsearch_bucket(bucket.to_dict())
-
-                if parsed_bucket is not None:
-                    results.append(parsed_bucket)
+                results.append(parsed_bucket)
 
         return results
 

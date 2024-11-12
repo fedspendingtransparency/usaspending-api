@@ -4895,3 +4895,70 @@ def test_spending_over_time_program_activity(client, monkeypatch, elasticsearch_
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json().get("results") == expected_result, "Set Aside Type Codes filter does not match expected result"
+
+
+@pytest.mark.django_db
+def test_spending_over_time_awards_spending_level(client, monkeypatch, elasticsearch_award_index):
+    baker.make(
+        "search.AwardSearch",
+        award_id=500,
+        generated_unique_award_id="CONTRACT_AWARD_500",
+        generated_pragmatic_obligation=100,
+        total_outlays=100,
+        type="B",
+        category="contract",
+        action_date="2013-01-01",
+        date_signed="2013-01-01",
+        fiscal_year=2013,
+    )
+    baker.make(
+        "search.AwardSearch",
+        award_id=501,
+        generated_unique_award_id="GRANT_AWARD_501",
+        generated_pragmatic_obligation=200,
+        total_outlays=200,
+        type="02",
+        category="grant",
+        action_date="2012-12-01",
+        date_signed="2012-12-01",
+        fiscal_year=2013,
+    )
+
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    resp = client.post(
+        "/api/v2/search/spending_over_time",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "group": "fiscal_year",
+                "filters": {
+                    "time_period": [
+                        {"start_date": "2012-10-01", "end_date": "2013-09-30"},
+                    ]
+                },
+                "spending_level": "awards",
+            }
+        ),
+    )
+    expected_result = [
+        {
+            "aggregated_amount": 300.0,
+            "time_period": {"fiscal_year": "2013"},
+            "Contract_Obligations": 100.0,
+            "Direct_Obligations": 0,
+            "Grant_Obligations": 200.0,
+            "Idv_Obligations": 0,
+            "Loan_Obligations": 0,
+            "Other_Obligations": 0,
+            "total_outlays": 300.0,
+            "Contract_Outlays": 100.0,
+            "Direct_Outlays": 0,
+            "Grant_Outlays": 200.0,
+            "Idv_Outlays": 0,
+            "Loan_Outlays": 0,
+            "Other_Outlays": 0,
+        }
+    ]
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json().get("results") == expected_result, "Time Period filter does not match expected result"
