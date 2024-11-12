@@ -1073,12 +1073,12 @@ transaction_search_load_sql_string = rf"""
             ) AS tas_components,
         CASE
             WHEN SIZE(COLLECT_SET(rpa.program_activity_name)) > 0
-                THEN COLLECT_SET(rpa.program_activity_name)
+                THEN SORT_ARRAY(COLLECT_SET(rpa.program_activity_name))
             ELSE NULL
         END AS program_activity_names,
         CASE
             WHEN SIZE(COLLECT_SET(rpa.program_activity_code)) > 0
-                THEN COLLECT_SET(rpa.program_activity_code)
+                THEN SORT_ARRAY(COLLECT_SET(rpa.program_activity_code))
             ELSE NULL
         END AS program_activity_codes
         FROM int.financial_accounts_by_awards AS faba

@@ -643,13 +643,13 @@ LEFT OUTER JOIN (
     -- Program activity names
     CASE
         WHEN SIZE(COLLECT_SET(rpa.program_activity_name)) > 0
-            THEN COLLECT_SET(rpa.program_activity_name)
+            THEN SORT_ARRAY(COLLECT_SET(rpa.program_activity_name))
         ELSE NULL
     END AS program_activity_names,
     -- Program activity codes
     CASE
         WHEN SIZE(COLLECT_SET(rpa.program_activity_code)) > 0
-            THEN COLLECT_SET(rpa.program_activity_code)
+            THEN SORT_ARRAY(COLLECT_SET(rpa.program_activity_code))
         ELSE NULL
     END AS program_activity_codes
   FROM
