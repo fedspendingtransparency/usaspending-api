@@ -114,6 +114,7 @@ SELECT
   "total_iija_outlay",
   "total_iija_obligation",
 
+  "generated_pragmatic_obligation",
   "program_activity_names",
   "program_activity_codes"
 

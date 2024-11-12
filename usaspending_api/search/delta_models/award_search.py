@@ -144,6 +144,7 @@ AWARD_SEARCH_COLUMNS = {
     "total_iija_outlay": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": True},
     "total_iija_obligation": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": True},
     "total_outlays": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": False},
+    "generated_pragmatic_obligation": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)", "gold": False},
     "program_activity_names": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]", "gold": False},
     "program_activity_codes": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]", "gold": False},
 }
@@ -390,6 +391,13 @@ award_search_load_sql_string = rf"""
   IIJA_DEFC.total_iija_outlay,
   IIJA_DEFC.total_iija_obligation,
   CAST(AWARD_TOTAL_OUTLAYS.total_outlays AS NUMERIC(23, 2)) AS total_outlays,
+  CAST(COALESCE(
+        CASE
+            WHEN awards.type IN('07', '08') THEN awards.total_subsidy_cost
+            ELSE awards.total_obligation
+        END,
+        0
+  ) AS NUMERIC(23, 2)) AS generated_pragmatic_obligation,
   TREASURY_ACCT.program_activity_names,
   TREASURY_ACCT.program_activity_codes
 FROM
