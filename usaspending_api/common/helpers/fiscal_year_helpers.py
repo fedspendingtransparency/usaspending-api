@@ -194,7 +194,7 @@ def create_full_time_periods(min_date, max_date, group, columns):
     return results
 
 
-def _clean_subaward_spending_over_time_results(subaward_results: List[dict], date_range_type: str) -> List[dict]:
+def clean_subaward_spending_over_time_results(subaward_results: List[dict], date_range_type: str) -> List[dict]:
     """Clean up the spending_over_time Subaward results
 
     Args:
@@ -220,8 +220,11 @@ def _clean_subaward_spending_over_time_results(subaward_results: List[dict], dat
         del result["time_period"]["fy"]
         del result["subaward_type"]
         del result["obligation_amount"]
-        result.pop("sub-contract", None)
-        result.pop("sub-grant", None)
+
+        if "sub-contract" in result.keys():
+            del result["sub-contract"]
+        if "sub-grant" in result.keys():
+            del result["sub-grant"]
 
     return subaward_results
 
@@ -248,12 +251,13 @@ def bolster_missing_time_periods(filter_time_periods, queryset, date_range_type,
             same_year = str(item["time_period"]["fy"]) == str(row["fy"])
             same_period = str(item["time_period"][date_range_type]) == str(row[date_range_type])
             if same_year and same_period:
-                item[row["subaward_type"]] = row.get("obligation_amount", 0)
+                if "subaward_type" in row.keys():
+                    item[row["subaward_type"]] = row.get("obligation_amount", 0)
 
                 for column_name, column_in_queryset in columns.items():
                     item[column_name] = row[column_in_queryset]
 
-    return _clean_subaward_spending_over_time_results(results, date_range_type)
+    return results
 
 
 def calculate_last_completed_fiscal_quarter(fiscal_year):

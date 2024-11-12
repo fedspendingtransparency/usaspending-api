@@ -20,6 +20,7 @@ from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, Tr
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.fiscal_year_helpers import (
     bolster_missing_time_periods,
+    clean_subaward_spending_over_time_results,
     generate_date_range,
     generate_fiscal_month,
     generate_fiscal_year,
@@ -476,6 +477,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                     "subaward_type": "subaward_type",
                 },
             )
+            results = clean_subaward_spending_over_time_results(results, order_by_cols[-1])
 
         elif self.spending_level == "transactions":
             results = self.query_elasticsearch_for_transactions(time_periods)
