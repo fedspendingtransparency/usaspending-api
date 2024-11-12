@@ -1,7 +1,7 @@
 from datetime import date
 from functools import reduce
 from operator import add
-from typing import List
+from typing import List, Union
 
 from django.contrib.postgres.aggregates import StringAgg
 from django.db import DEFAULT_DB_ALIAS
@@ -221,7 +221,7 @@ def subaward_types_are_valid_groups(type_list):
     return bool(is_procurement) != bool(is_assistance)  # clever XOR logic
 
 
-def sum_column_list(column_list: List) -> F:
+def sum_column_list(column_list: List[Union[str, Coalesce]]) -> F:
     """Create a single expression to sum a dynamic list of columns
 
     While Django has a Sum() method that can be used to sum values in an aggregation vertically, it does not have
