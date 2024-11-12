@@ -257,26 +257,6 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             "insurance": "Other_Obligations",
         }
 
-        # Outlays are only supported on Awards
-        if self.spending_level == "awards":
-            outlay_dictionary = {
-                "Contract_Outlays": 0,
-                "Direct_Outlays": 0,
-                "Grant_Outlays": 0,
-                "Idv_Outlays": 0,
-                "Loan_Outlays": 0,
-                "Other_Outlays": 0,
-            }
-        else:
-            outlay_dictionary = {
-                "Contract_Outlays": None,
-                "Direct_Outlays": None,
-                "Grant_Outlays": None,
-                "Idv_Outlays": None,
-                "Loan_Outlays": None,
-                "Other_Outlays": None,
-            }
-
         outlay_map = {
             "contract": "Contract_Outlays",
             "direct payment": "Direct_Outlays",
@@ -286,6 +266,9 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             "other": "Other_Outlays",
             "insurance": "Other_Outlays",
         }
+
+        # Outlays are only supported on Awards
+        outlay_dictionary = {v: 0 if self.spending_level == "awards" else None for v in outlay_map.values()}
 
         # Populate the category dictionary based on the award breakdown for a given bucket.
         for category in categories_breakdown:
