@@ -17,8 +17,6 @@ import traceback
 from opentelemetry import trace
 from opentelemetry.trace import SpanKind
 
-# from opentelemetry.sdk.trace import TracerProvider
-
 from datetime import datetime, timezone
 from django.conf import settings
 
@@ -70,7 +68,7 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
     file_name = start_download(download_job)
 
     with SubprocessTrace(
-        name=f"generate_download_{request_type}",
+        name=f"job.{JOB_TYPE}.generate_download_{request_type}",
         kind=SpanKind.INTERNAL,
         service="bulk-download",
     ) as main_trace:
@@ -213,7 +211,7 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
             )
 
         with SubprocessTrace(
-            name="s3.command",
+            name=f"job.{JOB_TYPE}.s3.command",
             kind=SpanKind.SERVER,
             service="bulk-download",
         ) as s3_span:
@@ -789,15 +787,14 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
     if download_sql.startswith("\\COPY"):
         # Trace library parses the SQL, but cannot understand the psql-specific \COPY command. Use standard COPY here.
         download_sql = download_sql[1:]
+
         # Stack 3 context managers: (1) psql code, (2) Download replica query, (3) (same) Postgres query
-        subprocess_trace = SubprocessTrace(
+        with SubprocessTrace(
             name=f"job.{JOB_TYPE}.download.psql",
             kind=SpanKind.INTERNAL,
             service="bulk-download",
-        )
-
-        with subprocess_trace as span:
-            span.set_attributes(
+        ) as subprocess_trace:
+            subprocess_trace.set_attributes(
                 {
                     "service": "bulk-download",
                     "resource": str(download_sql),
@@ -817,20 +814,23 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
                     "json_request": str(download_job.json_request) if download_job.json_request else "",
                 }
             )
-            # print("\n\n\n got to this point just fine, lets keep going! \n\n\n")
-            # with tracer.start_as_current_span(
-            #     name="postgres.query",
-            #     span_type=SpanKind.INTERNAL,
-            #     attributes={
-            #         "resource": download_sql,
-            #         "service": f"{settings.DOWNLOAD_DB_ALIAS}db",
-            #         "span_type": "Internal",
-            #     },
-            # ), tracer.start_as_current_span(
-            #     name="postgres.query",
-            #     span_type=SpanKind.INTERNAL,
-            #     attributes={"resource": download_sql, "service": "postgres", "span_type": "Internal"},
-            # ):
+
+        with SubprocessTrace(
+            name="postgres.query", span_type=SpanKind.INTERNAL, service="bulk-download"
+        ) as download_replica_query:
+            download_replica_query.set_attributes(
+                {
+                    "resource": download_sql,
+                    "service": f"{settings.DOWNLOAD_DB_ALIAS}db",
+                    "span_type": "Internal",
+                }
+            )
+
+        with SubprocessTrace(
+            name="postgres.query", span_type=SpanKind.INTERNAL, service="bulk-download"
+        ) as postgress_query:
+            postgress_query.set_attributes({"resource": download_sql, "service": "postgres", "span_type": "Internal"})
+
             try:
                 log_time = time.perf_counter()
                 temp_env = os.environ.copy()

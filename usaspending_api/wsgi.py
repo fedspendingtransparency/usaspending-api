@@ -15,6 +15,7 @@ from usaspending_api.common.logging import configure_logging
 from opentelemetry import trace
 from opentelemetry.instrumentation.django import DjangoInstrumentor
 
+
 def request_hook(span, environ):
     print("\n")
     print("Request hook executed\n")
@@ -42,7 +43,7 @@ def request_hook(span, environ):
 
 
 def response_hook(span, environ, status, response_headers):
-    print("Response hook executed\n")
+    print("\nResponse hook executed\n")
     if span and span.is_recording():
         headers_to_capture = [
             "content-length",

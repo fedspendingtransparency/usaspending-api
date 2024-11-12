@@ -5,10 +5,6 @@ Specifically leveraging the Grafana Open Telemetry tracing client.
 """
 from opentelemetry import trace
 
-# from opentelemetry.trace import SpanKind
-# from opentelemetry.sdk.trace import ReadableSpan, SpanProcessor
-
-# from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
 from opentelemetry.trace.status import Status, StatusCode
 from typing import Optional, Callable
 from opentelemetry.trace import SpanKind
@@ -17,31 +13,6 @@ import logging
 # The tracer provider should only be set up once, typically in the settings or a dedicated setup module
 _logger = logging.getLogger(__name__)
 tracer = trace.get_tracer_provider().get_tracer(__name__)
-
-############################################################
-
-# CUSTOM CONSOLE EXPORTER for debugging
-# class LoggingSpanProcessor(SpanProcessor):
-#     def on_end(self, span: ReadableSpan) -> None:
-#         trace_id = span.context.trace_id
-#         span_id = span.context.span_id
-#         logger = logging.getLogger(__name__)
-#         logger.info(f"Span ended: trace_id={trace_id}, span_id={span_id}, {span.name}_attributes={span.attributes}")
-
-#     def force_flush(self, timeout_millis: int = 30000) -> bool:
-#         return True
-
-
-# logging_span_processor = LoggingSpanProcessor()
-# trace.get_tracer_provider().add_span_processor(logging_span_processor)
-
-############################################################
-
-# DEFAULT CONSOLE EXPORTER for debugging
-# console_exporter = ConsoleSpanExporter()
-# trace.get_tracer_provider().add_span_processor(BatchSpanProcessor(console_exporter))
-
-############################################################
 
 
 def _activate_trace_filter(filter_class: Callable) -> None:

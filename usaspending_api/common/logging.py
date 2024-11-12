@@ -10,8 +10,6 @@ import traceback
 
 from typing import Optional, Callable
 
-# from django.conf import settings
-
 from opentelemetry import trace
 from opentelemetry.sdk.trace import ReadableSpan, SpanProcessor
 from opentelemetry.sdk.trace import TracerProvider
@@ -19,7 +17,6 @@ from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 
-# from opentelemetry.instrumentation.django import DjangoInstrumentor
 from opentelemetry.sdk.trace.export import ConsoleSpanExporter
 from opentelemetry.instrumentation.logging import LoggingInstrumentor
 from opentelemetry.instrumentation.urllib import URLLibInstrumentor
@@ -262,10 +259,5 @@ def configure_logging(service_name="usaspending-api"):
     LoggingInstrumentor().instrument(tracer_provider=trace.get_tracer_provider(), set_logging_format=True)
     URLLibInstrumentor().instrument(tracer_provider=trace.get_tracer_provider())
 
-    # config = DEFAULT_CONFIG
-    # if 'python_config' in CONFIG_LOGGING:
-    # config = deep_merge(config, CONFIG_LOGGING['python_config'])
-    # logging.config.dictConfig(config)
-    # logging.getLogger(__name__).setLevel(logging.CRITICAL)
     logging.getLogger("boto3").setLevel(logging.CRITICAL)
     logging.getLogger("botocore").setLevel(logging.CRITICAL)
