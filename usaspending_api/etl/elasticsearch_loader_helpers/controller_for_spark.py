@@ -64,6 +64,9 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
             # Replace the Postgres regex operator with the Databricks regex operator
             identifier_replacements["~"] = "rlike"
             identifier_replacements["state_data"] = "global_temp.state_data"
+            # Replace json_agg and jsonb_build_object Postgres functions with analogous Spark functions
+            identifier_replacements["json_agg"] = "collect_list"
+            identifier_replacements["jsonb_build_object"] = "named_struct"
         else:
             raise ValueError(
                 f"Unrecognized load_type {self.config['load_type']}, or this function does not yet support it"
