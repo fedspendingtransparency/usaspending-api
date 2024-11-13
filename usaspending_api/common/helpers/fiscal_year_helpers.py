@@ -1,12 +1,13 @@
 import logging
+from datetime import MAXYEAR, MINYEAR, datetime
+from typing import List, Optional, Tuple
 
-from datetime import datetime, MAXYEAR, MINYEAR
 from dateutil.relativedelta import relativedelta
+from django.db.models import Max, Q
 from fiscalyear import FiscalDate, FiscalDateTime, FiscalYear
-from typing import Optional, Tuple
-from django.db.models import Q, Max
-from usaspending_api.common.helpers.generic_helper import validate_date, min_and_max_from_date_ranges
+
 from usaspending_api.common.helpers.date_helper import now
+from usaspending_api.common.helpers.generic_helper import min_and_max_from_date_ranges, validate_date
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
 logger = logging.getLogger(__name__)
@@ -193,6 +194,41 @@ def create_full_time_periods(min_date, max_date, group, columns):
     return results
 
 
+def clean_subaward_spending_over_time_results(subaward_results: List[dict], date_range_type: str) -> List[dict]:
+    """Clean up the spending_over_time Subaward results
+
+    Args:
+        subaward_results: Subaward spending_over_time result for a given time period
+        date_range_type: how the results are split
+            - 'fy', 'quarter', or 'month'
+
+    Returns:
+        List of cleaned Subaward results
+    """
+
+    for result in subaward_results:
+        result["time_period"]["fiscal_year"] = result["time_period"]["fy"]
+        result["aggregated_amount"] = result.get("sub-contract", 0) + result.get("sub-grant", 0)
+
+        result["Contract_Obligations"] = result.get("sub-contract", 0)
+        result["Grant_Obligations"] = result.get("sub-grant", 0)
+
+        result["total_outlays"] = None
+        result["Contract_Outlays"] = None
+        result["Grant_Outlays"] = None
+
+        del result["time_period"]["fy"]
+        del result["subaward_type"]
+        del result["obligation_amount"]
+
+        if "sub-contract" in result.keys():
+            del result["sub-contract"]
+        if "sub-grant" in result.keys():
+            del result["sub-grant"]
+
+    return subaward_results
+
+
 def bolster_missing_time_periods(filter_time_periods, queryset, date_range_type, columns):
     """Given the following, generate a list of dict results split by fiscal years/quarters/months
 
@@ -215,12 +251,12 @@ def bolster_missing_time_periods(filter_time_periods, queryset, date_range_type,
             same_year = str(item["time_period"]["fy"]) == str(row["fy"])
             same_period = str(item["time_period"][date_range_type]) == str(row[date_range_type])
             if same_year and same_period:
+                if "subaward_type" in row.keys():
+                    item[row["subaward_type"]] = row.get("obligation_amount", 0)
+
                 for column_name, column_in_queryset in columns.items():
                     item[column_name] = row[column_in_queryset]
 
-    for result in results:
-        result["time_period"]["fiscal_year"] = result["time_period"]["fy"]
-        del result["time_period"]["fy"]
     return results
 
 
