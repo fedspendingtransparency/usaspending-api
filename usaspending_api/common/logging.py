@@ -20,6 +20,7 @@ from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExport
 from opentelemetry.sdk.trace.export import ConsoleSpanExporter
 from opentelemetry.instrumentation.logging import LoggingInstrumentor
 from opentelemetry.instrumentation.urllib import URLLibInstrumentor
+from usaspending_api.config import CONFIG
 
 
 def get_remote_addr(request):
@@ -229,6 +230,19 @@ class LoggingSpanProcessor(SpanProcessor):
 
     def force_flush(self, timeout_millis: int = 30000) -> bool:
         return True
+    
+
+class CustomAttributeSpanProcessor(SpanProcessor):
+    def __init__(self, attribute_key, attribute_value):
+        self.attribute_key = attribute_key
+        self.attribute_value = attribute_value
+
+    def on_start(self, span, parent_context):
+        # Add the custom attribute when the span starts
+        span.set_attribute(self.attribute_key, self.attribute_value)
+
+    def on_end(self, span):
+        pass  # No action needed when the span ends
 
 
 def configure_logging(service_name="usaspending-api"):
@@ -237,23 +251,31 @@ def configure_logging(service_name="usaspending-api"):
     provider = TracerProvider(resource=resource)
     trace.set_tracer_provider(provider)
 
+    print(f"\nCONFIG ENV_CODE: {CONFIG.ENV_CODE}\n")
+    custom_attribute_key = "Environment" 
+    custom_attribute_value = CONFIG.ENV_CODE  
+    custom_attribute_span_processor = CustomAttributeSpanProcessor(custom_attribute_key, custom_attribute_value)
+    trace.get_tracer_provider().add_span_processor(custom_attribute_span_processor)
+
     # Set up the OTLP exporter
     # Check out https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/
-    # for more exporter configuration
-    if os.getenv("USASPENDING_DB_HOST") == "127.0.0.1":
-        # if local print the traces to the console
-        exporter = ConsoleSpanExporter()
+    exporter = None
+    if os.getenv("USASPENDING_DB_HOST") == "127.0.0.1" and os.getenv("TOGGLE_OTEL_CONSOLE_LOGGING") == "True":
+        print(f"\nOTEL Console logging enabled: {os.getenv('TOGGLE_OTEL_CONSOLE_LOGGING')}\n")
 
-        # cutom debug information
+        # #custom debug information
         logging_span_processor = LoggingSpanProcessor()
         trace.get_tracer_provider().add_span_processor(logging_span_processor)
-    else:
-        # if prod or non-prod send trace information to the endpoint
+
+        exporter = ConsoleSpanExporter()
+    
+    else: 
         exporter = OTLPSpanExporter(
             endpoint=os.getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"),
         )
 
-    trace.get_tracer_provider().add_span_processor(BatchSpanProcessor(exporter))
+    if exporter is not None:
+        trace.get_tracer_provider().add_span_processor(BatchSpanProcessor(exporter))
 
     LoggingInstrumentor(logging_format="%(msg)s [span_id=%(otelSpanID)s trace_id=%(otelTraceID)s]")
     LoggingInstrumentor().instrument(tracer_provider=trace.get_tracer_provider(), set_logging_format=True)
