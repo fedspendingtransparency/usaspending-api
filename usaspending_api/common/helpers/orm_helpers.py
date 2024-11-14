@@ -1,9 +1,12 @@
 from datetime import date
+from functools import reduce
+from operator import add
+from typing import List, Union
 
 from django.contrib.postgres.aggregates import StringAgg
 from django.db import DEFAULT_DB_ALIAS
-from django.db.models import Aggregate, Case, CharField, Func, IntegerField, TextField, Value, When
-from django.db.models.functions import Concat, LPad, Cast
+from django.db.models import Aggregate, Case, CharField, F, Func, IntegerField, TextField, Value, When
+from django.db.models.functions import Concat, LPad, Cast, Coalesce
 
 from usaspending_api.awards.v2.lookups.lookups import (
     assistance_type_mapping,
@@ -216,3 +219,17 @@ def subaward_types_are_valid_groups(type_list):
     is_procurement = set(type_list).difference(set(procurement_type_mapping.keys()))
     is_assistance = set(type_list).difference(set(assistance_type_mapping.keys()))
     return bool(is_procurement) != bool(is_assistance)  # clever XOR logic
+
+
+def sum_column_list(column_list: List[Union[str, Coalesce]]) -> F:
+    """Create a single expression to sum a dynamic list of columns
+
+    While Django has a Sum() method that can be used to sum values in an aggregation vertically, it does not have
+    any direct support for a sum of values horizontally across a row. This method combines a list of columns into
+    a single F() object such that ["col_a", "col_b"] becomes F("col_a") + F("col_b") and is usable in a Django QuerySet.
+
+    Additionally, there is special handling if the column is coalesced since the Coalesce() function can be
+    directly combined with the created F() objects.
+    """
+    ignore_types = [Coalesce]
+    return reduce(add, (col if type(col) in ignore_types else F(col) for col in column_list))
