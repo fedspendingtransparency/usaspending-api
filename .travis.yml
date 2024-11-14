@@ -102,6 +102,7 @@ jobs:
     install: travis_retry npm install --global dredd@13.1.2  # add dredd for API contract testing
     before_script: ""  # override default to no-op
     script:
+    - opentelemetry-bootstrap -a install #to auto install all the relevant opentelemetry dependencies after distro
     - python manage.py check_for_endpoint_documentation
     - dredd > dredd-results.txt && echo '! grep -E "^[warn:|error:]" dredd-results.txt' | bash
   - stage: Automated Tests
@@ -299,6 +300,7 @@ before_script:
   - mkdir -p "${MINIO_DATA_DIR}"
   - mkdir -p "${HOME}/.ivy2"
   - make docker-compose-up-s3 args="-d"
+  - opentelemetry-bootstrap -a install #to auto install all the relevant opentelemetry dependencies after distro
 
 script:
   - stty cols 240  # for wider terminal output
