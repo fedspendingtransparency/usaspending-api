@@ -230,7 +230,7 @@ class LoggingSpanProcessor(SpanProcessor):
 
     def force_flush(self, timeout_millis: int = 30000) -> bool:
         return True
-    
+
 
 class CustomAttributeSpanProcessor(SpanProcessor):
     def __init__(self, attribute_key, attribute_value):
@@ -252,8 +252,8 @@ def configure_logging(service_name="usaspending-api"):
     trace.set_tracer_provider(provider)
 
     print(f"\nCONFIG ENV_CODE: {CONFIG.ENV_CODE}\n")
-    custom_attribute_key = "Environment" 
-    custom_attribute_value = CONFIG.ENV_CODE  
+    custom_attribute_key = "Environment"
+    custom_attribute_value = CONFIG.ENV_CODE
     custom_attribute_span_processor = CustomAttributeSpanProcessor(custom_attribute_key, custom_attribute_value)
     trace.get_tracer_provider().add_span_processor(custom_attribute_span_processor)
 
@@ -268,8 +268,8 @@ def configure_logging(service_name="usaspending-api"):
         trace.get_tracer_provider().add_span_processor(logging_span_processor)
 
         exporter = ConsoleSpanExporter()
-    
-    else: 
+
+    else:
         exporter = OTLPSpanExporter(
             endpoint=os.getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"),
         )

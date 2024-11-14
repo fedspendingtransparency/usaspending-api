@@ -17,7 +17,7 @@ from opentelemetry.instrumentation.django import DjangoInstrumentor
 
 
 def request_hook(span, environ):
-    
+
     if span and span.is_recording():
         headers_to_capture = [
             "CONTENT_LENGTH",
@@ -43,8 +43,9 @@ def request_hook(span, environ):
     if os.getenv("USASPENDING_DB_HOST") == "127.0.0.1" and os.getenv("TOGGLE_OTEL_CONSOLE_LOGGING") == "True":
         print("\nRequest hook executed\n")
 
+
 def response_hook(span, environ, status, response_headers):
-    
+
     if span and span.is_recording():
         headers_to_capture = [
             "content-length",
