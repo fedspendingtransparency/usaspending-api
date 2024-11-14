@@ -55,6 +55,12 @@ This endpoint returns a list of aggregated award amounts grouped by time period 
                 + `fiscal_year`
                 + `quarter`
                 + `month`
+        + `spending_level` (required, enum[string])
+            Spending level value that was provided in the request.
+            + Members
+                + `transactions`
+                + `awards`
+                + `subawards`
         + `results` (array[TimeResult], fixed-type)
         + `messages` (optional, array[string])
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
