@@ -17,6 +17,8 @@ class AbstractFinancialAccountsByAwards(DataSourceTrackedModel):
     parent_award_id = models.TextField(blank=True, null=True)
     fain = models.TextField(blank=True, null=True)
     uri = models.TextField(blank=True, null=True)
+    prior_year_adjustment = models.TextField(blank=True, null=True)
+    pa_reporting_key = models.TextField(blank=True, null=True, help_text="A unique identifier for a Program Activity")
     disaster_emergency_fund = models.ForeignKey(
         "references.DisasterEmergencyFundCode",
         models.DO_NOTHING,
@@ -31,6 +33,7 @@ class AbstractFinancialAccountsByAwards(DataSourceTrackedModel):
     ussgl480100_undelivered_orders_obligations_unpaid_cpe = models.DecimalField(
         max_digits=23, decimal_places=2, blank=True, null=True
     )
+    ussgl480110_reinstated_del_cpe = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     ussgl483100_undelivered_orders_oblig_transferred_unpaid_cpe = models.DecimalField(
         max_digits=23, decimal_places=2, blank=True, null=True
     )
@@ -43,6 +46,7 @@ class AbstractFinancialAccountsByAwards(DataSourceTrackedModel):
     ussgl490100_delivered_orders_obligations_unpaid_cpe = models.DecimalField(
         max_digits=23, decimal_places=2, blank=True, null=True
     )
+    ussgl490110_reinstated_del_cpe = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     ussgl493100_delivered_orders_oblig_transferred_unpaid_cpe = models.DecimalField(
         max_digits=23, decimal_places=2, blank=True, null=True
     )

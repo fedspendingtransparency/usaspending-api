@@ -100,9 +100,18 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
                 Sum(
                     Case(
                         When(
-                            self.final_period_submission_query_filters,
-                            then=F("obligations_incurred_by_program_object_class_cpe")
-                            + F("deobligations_recoveries_refund_pri_program_object_class_cpe"),
+                            self.final_period_submission_query_filters & Q(prior_year_adjustment="B"),
+                            then=self.file_b_obligation_columns["pya_b"],
+                        ),
+                        When(
+                            self.final_period_submission_query_filters & Q(prior_year_adjustment="P"),
+                            then=self.file_b_obligation_columns["pya_p"],
+                        ),
+                        When(
+                            self.final_period_submission_query_filters
+                            & Q(Q(prior_year_adjustment="X") | Q(prior_year_adjustment__isnull=True)),
+                            then=F(self.file_b_obligation_columns["base_pya_x"])
+                            + self.file_b_obligation_columns["pya_x"],
                         ),
                         default=Value(0),
                         output_field=DecimalField(max_digits=23, decimal_places=2),
@@ -115,10 +124,9 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
                 Sum(
                     Case(
                         When(
-                            self.final_period_submission_query_filters,
-                            then=F("gross_outlay_amount_by_program_object_class_cpe")
-                            + F("ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe")
-                            + F("ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe"),
+                            self.final_period_submission_query_filters
+                            & Q(Q(prior_year_adjustment="X") | Q(prior_year_adjustment__isnull=True)),
+                            then=F(self.file_b_outlay_columns["base_pya_x"]) + self.file_b_outlay_columns["pya_x"],
                         ),
                         default=Value(0),
                         output_field=DecimalField(max_digits=23, decimal_places=2),

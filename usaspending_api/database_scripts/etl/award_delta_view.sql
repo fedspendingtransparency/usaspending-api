@@ -112,7 +112,9 @@ SELECT
 
   "iija_spending_by_defc"::JSON,
   "total_iija_outlay",
-  "total_iija_obligation"
+  "total_iija_obligation",
+
+  "generated_pragmatic_obligation"
 
 FROM "award_search"
 WHERE "action_date" >= '2007-10-01';
