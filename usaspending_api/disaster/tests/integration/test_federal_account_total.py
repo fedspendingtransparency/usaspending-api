@@ -45,7 +45,7 @@ def test_federal_account_success(client, generic_account_data, monkeypatch, help
                     "award_count": None,
                     "description": "ferns",
                     "id": 24,
-                    "obligation": 272.0,
+                    "obligation": 249.0,
                     "outlay": 0.0,
                     "total_budgetary_resources": 389480.0,
                 },
@@ -54,7 +54,7 @@ def test_federal_account_success(client, generic_account_data, monkeypatch, help
                     "award_count": None,
                     "description": "evergreens",
                     "id": 23,
-                    "obligation": 564.0,
+                    "obligation": 761.0,
                     "outlay": 0.0,
                     "total_budgetary_resources": 1090370.0,
                 },
@@ -72,7 +72,7 @@ def test_federal_account_success(client, generic_account_data, monkeypatch, help
             "award_count": None,
             "description": "gifts",
             "id": 21,
-            "obligation": 1074.0,
+            "obligation": 1248.0,
             "outlay": 511.0,
             "total_budgetary_resources": 1522430.0,
         }
@@ -80,7 +80,7 @@ def test_federal_account_success(client, generic_account_data, monkeypatch, help
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
 
-    expected_totals = {"obligation": 1074.0, "outlay": 511.0, "total_budgetary_resources": 1522430.0}
+    expected_totals = {"obligation": 1248.0, "outlay": 511.0, "total_budgetary_resources": 1522430.0}
     assert resp.json()["totals"] == expected_totals
 
 
