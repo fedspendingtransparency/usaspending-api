@@ -227,12 +227,12 @@ class TestWithMultipleDatabases(TransactionTestCase):
                     disaster_emergency_fund_code,
                     prior_year_adjustment
                 ) (values
-                    (1, 1, 1, '1010', 'D', 1111, null, 'X'),
-                    (2, 1, 1, '1010', 'D', 2222, 'B', 'X'),
-                    (3, 1, 1, '1010', 'D', 3333, 'L', 'X'),
+                    (1, 1, 1, '1010', 'D', 1111, null, 'x'),
+                    (2, 1, 1, '1010', 'D', 2222, 'B', 'b'),
+                    (3, 1, 1, '1010', 'D', 3333, 'L', 'p'),
                     (4, 2, 1, '1010', 'D', 4444, null, 'X'),
-                    (5, 2, 1, '1010', 'D', 5555, null, 'X'),
-                    (6, 2, 1, '1010', 'D', 6666, null, 'X'),
+                    (5, 2, 1, '1010', 'D', 5555, null, 'B'),
+                    (6, 2, 1, '1010', 'D', 6666, null, 'P'),
                     (7, 3, 2, '1010', 'D', 7777, 'L', 'X'),
                     (8, 3, 2, '1010', 'D', 8888, 'L', 'X'),
                     (9, 3, 2, '1010', 'D', 9999, 'L', 'X'),
@@ -259,12 +259,12 @@ class TestWithMultipleDatabases(TransactionTestCase):
                     disaster_emergency_fund_code,
                     prior_year_adjustment
                 ) (values
-                    (1, 1, 1, '1010', 'D', 11111, 111110, -11, -111, null, 'X'),
-                    (2, 1, 1, '1010', 'D', 22222, 222220, -22, -222, 'B', 'X'),
-                    (3, 1, 1, '1010', 'D', 33333, 333330, -33, -333, 'L', 'X'),
+                    (1, 1, 1, '1010', 'D', 11111, 111110, -11, -111, null, 'x'),
+                    (2, 1, 1, '1010', 'D', 22222, 222220, -22, -222, 'B', 'b'),
+                    (3, 1, 1, '1010', 'D', 33333, 333330, -33, -333, 'L', 'p'),
                     (4, 2, 1, '1010', 'D', 44444, 444440, -44, -444, null, 'X'),
-                    (5, 2, 1, '1010', 'D', 55555, 555550, -55, -555, null, 'X'),
-                    (6, 2, 1, '1010', 'D', 66666, 666660, -66, -666, null, 'X'),
+                    (5, 2, 1, '1010', 'D', 55555, 555550, -55, -555, null, 'B'),
+                    (6, 2, 1, '1010', 'D', 66666, 666660, -66, -666, null, 'P'),
                     (7, 3, 2, '1010', 'D', 77777, 777770, -77, -777, 'L', 'X'),
                     (8, 3, 2, '1010', 'D', 88888, 888880, -88, -888, 'L', 'X'),
                     (9, 3, 2, '1010', 'D', 99999, 999990, -99, -999, 'L', 'X'),
@@ -345,7 +345,7 @@ class TestWithMultipleDatabases(TransactionTestCase):
         call_command("load_multiple_submissions", "--submission-ids", 1, 2, 3)
         assert SubmissionAttributes.objects.count() == 3
         assert AppropriationAccountBalances.objects.count() == 3
-        assert FinancialAccountsByProgramActivityObjectClass.objects.count() == 5
+        assert FinancialAccountsByProgramActivityObjectClass.objects.count() == 7
         assert FinancialAccountsByAwards.objects.count() == 9
 
         # We'll need these later.
@@ -356,7 +356,7 @@ class TestWithMultipleDatabases(TransactionTestCase):
         call_command("load_multiple_submissions", "--incremental")
         assert SubmissionAttributes.objects.count() == 5
         assert AppropriationAccountBalances.objects.count() == 5
-        assert FinancialAccountsByProgramActivityObjectClass.objects.count() == 7
+        assert FinancialAccountsByProgramActivityObjectClass.objects.count() == 9
         assert FinancialAccountsByAwards.objects.count() == 12
 
         # Now that we have everything loaded, let's make sure our data make sense.
@@ -410,11 +410,12 @@ class TestWithMultipleDatabases(TransactionTestCase):
             cursor.execute(
                 """
                     select  sum(gross_outlay_amount_by_program_object_class_cpe),
-                            string_agg(disaster_emergency_fund_code, ',' order by disaster_emergency_fund_code)
+                            string_agg(disaster_emergency_fund_code, ',' order by disaster_emergency_fund_code),
+                            string_agg(prior_year_adjustment, ',' order by prior_year_adjustment)
                     from    financial_accounts_by_program_activity_object_class
                 """
             )
-            assert cursor.fetchone() == (Decimal("-52116.00"), "B,B,L,L")
+            assert cursor.fetchone() == (Decimal("-52116.00"), "B,B,L,L", "B,B,P,P,X,X,X,X,X")
 
             cursor.execute(
                 """
@@ -422,7 +423,8 @@ class TestWithMultipleDatabases(TransactionTestCase):
                             sum(transaction_obligated_amount),
                             sum(ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe),
                             sum(ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe),
-                            string_agg(disaster_emergency_fund_code, ',' order by disaster_emergency_fund_code)
+                            string_agg(disaster_emergency_fund_code, ',' order by disaster_emergency_fund_code),
+                            string_agg(prior_year_adjustment, ',' order by prior_year_adjustment)
                     from    financial_accounts_by_awards
                 """
             )
@@ -432,20 +434,21 @@ class TestWithMultipleDatabases(TransactionTestCase):
                 Decimal("505.00"),
                 Decimal("6106.00"),
                 "B,B,L,L,L,L,N",
+                "B,B,P,P,X,X,X,X,X,X,X,X",
             )
 
         # Nuke a submission.
         SubmissionAttributes.objects.filter(submission_id=1).delete()
         assert SubmissionAttributes.objects.count() == 4
         assert AppropriationAccountBalances.objects.count() == 4
-        assert FinancialAccountsByProgramActivityObjectClass.objects.count() == 4
+        assert FinancialAccountsByProgramActivityObjectClass.objects.count() == 6
         assert FinancialAccountsByAwards.objects.count() == 9
 
         # Make sure it reloads.
         call_command("load_multiple_submissions", "--incremental")
         assert SubmissionAttributes.objects.count() == 5
         assert AppropriationAccountBalances.objects.count() == 5
-        assert FinancialAccountsByProgramActivityObjectClass.objects.count() == 7
+        assert FinancialAccountsByProgramActivityObjectClass.objects.count() == 9
         assert FinancialAccountsByAwards.objects.count() == 12
 
         # Make a change to a submission.
@@ -467,7 +470,7 @@ class TestWithMultipleDatabases(TransactionTestCase):
         call_command("load_multiple_submissions", "--incremental")
         assert SubmissionAttributes.objects.count() == 4
         assert AppropriationAccountBalances.objects.count() == 4
-        assert FinancialAccountsByProgramActivityObjectClass.objects.count() == 4
+        assert FinancialAccountsByProgramActivityObjectClass.objects.count() == 6
         assert FinancialAccountsByAwards.objects.count() == 9
 
         # Ok, after all the stuff we just did, let's make sure submissions 2 and 3 never got touched.
