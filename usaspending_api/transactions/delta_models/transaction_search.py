@@ -1071,16 +1071,8 @@ transaction_search_load_sql_string = rf"""
                 ),
                 TRUE
             ) AS tas_components,
-        CASE
-            WHEN SIZE(COLLECT_SET(rpa.program_activity_name)) > 0
-                THEN SORT_ARRAY(COLLECT_SET(rpa.program_activity_name))
-            ELSE NULL
-        END AS program_activity_names,
-        CASE
-            WHEN SIZE(COLLECT_SET(rpa.program_activity_code)) > 0
-                THEN SORT_ARRAY(COLLECT_SET(rpa.program_activity_code))
-            ELSE NULL
-        END AS program_activity_codes
+            SORT_ARRAY(COLLECT_SET(rpa.program_activity_name)) AS program_activity_names,
+            SORT_ARRAY(COLLECT_SET(rpa.program_activity_code)) AS program_activity_codes
         FROM int.financial_accounts_by_awards AS faba
         INNER JOIN global_temp.treasury_appropriation_account AS taa ON taa.treasury_account_identifier = faba.treasury_account_id
         INNER JOIN global_temp.federal_account AS fa ON fa.id = taa.federal_account_id
