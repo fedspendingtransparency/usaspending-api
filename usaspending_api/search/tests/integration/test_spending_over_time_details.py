@@ -693,6 +693,7 @@ def test_spending_over_time_fy_ordering_transactions(
     expected_response = {
         "group": group,
         "results": shared_results_transactions(),
+        "spending_level": "transactions",
         "messages": expected_messages,
     }
 
@@ -728,6 +729,7 @@ def test_spending_over_time_fy_ordering_awards(client, monkeypatch, elasticsearc
 
     expected_response = {
         "group": group,
+        "spending_level": "awards",
         "results": [
             {
                 "aggregated_amount": 100.00,
@@ -815,6 +817,7 @@ def test_spending_over_time_default_date_type(client, monkeypatch, elasticsearch
 
     expected_response = {
         "group": group,
+        "spending_level": "transactions",
         "results": shared_results_transactions(),
         "messages": expected_messages,
     }
@@ -849,6 +852,7 @@ def test_spending_over_time_month_ordering(client, monkeypatch, elasticsearch_tr
     }
     expected_response = {
         "group": group,
+        "spending_level": "transactions",
         "results": [
             {
                 "time_period": {"fiscal_year": "2011", "month": "1"},
@@ -1498,6 +1502,7 @@ def test_spending_over_time_funny_dates_ordering(client, monkeypatch, elasticsea
 
     expected_response = {
         "results": shared_results_2(),
+        "spending_level": "transactions",
         "group": "month",
         "messages": expected_messages,
     }
@@ -1576,6 +1581,7 @@ def test_spending_over_time_new_awards_only_filter(
             },
         ],
         "group": "month",
+        "spending_level": "transactions",
         "messages": expected_messages,
     }
 
@@ -1629,6 +1635,7 @@ def test_spending_over_time_new_awards_only_filter(
             },
         ],
         "group": "month",
+        "spending_level": "transactions",
         "messages": expected_messages,
     }
 
@@ -1665,6 +1672,7 @@ def test_spending_over_time_new_awards_only_filter(
     expected_response = {
         "results": shared_results_2(),
         "group": "month",
+        "spending_level": "transactions",
         "messages": expected_messages,
     }
 
@@ -1718,6 +1726,7 @@ def test_spending_over_time_new_awards_only_filter(
             },
         ],
         "group": "month",
+        "spending_level": "transactions",
         "messages": expected_messages,
     }
 
@@ -1788,6 +1797,7 @@ def test_spending_over_time_new_awards_only_filter(
             },
         ],
         "group": "month",
+        "spending_level": "transactions",
         "messages": expected_messages,
     }
 
