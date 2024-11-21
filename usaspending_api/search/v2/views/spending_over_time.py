@@ -471,6 +471,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             [
                 ("group", self.group),
                 ("results", results),
+                ("spending_level", self.spending_level),
                 (
                     "messages",
                     [

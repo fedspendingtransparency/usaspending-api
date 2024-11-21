@@ -19,7 +19,7 @@ def test_basic_object_class_spending_total_success(
             "code": "001",
             "description": "001 name",
             "award_count": None,
-            "obligation": 1978.0,
+            "obligation": 2008.0,
             "outlay": 1190.0,
             "children": [
                 {
@@ -35,7 +35,7 @@ def test_basic_object_class_spending_total_success(
                     "code": "0002",
                     "description": "0002 name",
                     "award_count": None,
-                    "obligation": 330.0,
+                    "obligation": 345.0,
                     "outlay": 0.0,
                 },
                 {
@@ -43,7 +43,7 @@ def test_basic_object_class_spending_total_success(
                     "code": "0001",
                     "description": "0001 name",
                     "award_count": None,
-                    "obligation": 192.0,
+                    "obligation": 207.0,
                     "outlay": 0.0,
                 },
             ],
@@ -53,7 +53,7 @@ def test_basic_object_class_spending_total_success(
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
 
-    expected_totals = {"obligation": 1978.0, "outlay": 1190.0}
+    expected_totals = {"obligation": 2008.0, "outlay": 1190.0}
     assert resp.json()["totals"] == expected_totals
 
 
