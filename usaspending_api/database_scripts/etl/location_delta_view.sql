@@ -51,7 +51,7 @@ WITH locations_cte AS (
 				AND
 				pop_state_name IS NOT NULL
 				AND
-				pop_state_fips ~ '^[0-9]+$'
+				pop_state_fips ~ '^[0-9]{2}$'
 			THEN
 				pop_state_fips
 			ELSE
@@ -63,7 +63,7 @@ WITH locations_cte AS (
 				AND
 				pop_state_name IS NOT NULL
 				AND
-				pop_county_code ~ '^[0-9]+$'
+				pop_county_code ~ '^[0-9]{3}$'
 			THEN
 				pop_county_code
 			ELSE
@@ -163,7 +163,7 @@ WITH locations_cte AS (
 				AND
 				recipient_location_state_name IS NOT NULL
 				AND
-				recipient_location_state_fips ~ '^[0-9]+$'
+				recipient_location_state_fips ~ '^[0-9]{2}$'
 			THEN
 				recipient_location_state_fips
 			ELSE
@@ -175,7 +175,7 @@ WITH locations_cte AS (
 				AND
 				recipient_location_state_name IS NOT NULL
 				AND
-				recipient_location_county_code ~ '^[0-9]+$'
+				recipient_location_county_code ~ '^[0-9]{3}$'
 			THEN
 				recipient_location_county_code
 			ELSE
