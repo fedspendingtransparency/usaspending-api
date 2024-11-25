@@ -20,6 +20,8 @@ def location_data_fixture(db):
         pop_zip5=90001,
         pop_congressional_code_current="34",
         pop_congressional_code="34",
+        pop_state_fips="11",
+        pop_county_code="111",
         recipient_location_country_name="UNITED STATES",
         recipient_location_state_name="COLORADO",
         recipient_location_city_name="DENVER",
@@ -27,6 +29,8 @@ def location_data_fixture(db):
         recipient_location_zip5=80012,
         recipient_location_congressional_code_current="01",
         recipient_location_congressional_code="01",
+        recipient_location_state_fips="22",
+        recipient_location_county_code="222",
     )
     baker.make(
         "search.TransactionSearch",
@@ -40,6 +44,8 @@ def location_data_fixture(db):
         pop_zip5=None,
         pop_congressional_code_current=None,
         pop_congressional_code=None,
+        pop_state_fips="33",
+        pop_county_code="3333",
         recipient_location_country_name="UNITED STATES",
         recipient_location_state_name="GEORGIA",
         recipient_location_city_name="KINGSLAND",
@@ -47,6 +53,8 @@ def location_data_fixture(db):
         recipient_location_zip5=31548,
         recipient_location_congressional_code_current="01",
         recipient_location_congressional_code="01",
+        recipient_location_state_fips="44",
+        recipient_location_county_code="444",
     )
     baker.make(
         "search.TransactionSearch",
@@ -114,8 +122,18 @@ def test_multiple_types_of_matches(client, monkeypatch, location_data_fixture, e
         "countries": [{"country_name": "DENMARK"}],
         "cities": [{"city_name": "DENVER", "state_name": "COLORADO", "country_name": "UNITED STATES"}],
         "counties": [
-            {"county_name": "DENVER", "state_name": "COLORADO", "country_name": "UNITED STATES"},
-            {"county_name": "CAMDEN", "state_name": "GEORGIA", "country_name": "UNITED STATES"},
+            {
+                "county_fips": "22222",
+                "county_name": "DENVER",
+                "state_name": "COLORADO",
+                "country_name": "UNITED STATES",
+            },
+            {
+                "county_fips": "44444",
+                "county_name": "CAMDEN",
+                "state_name": "GEORGIA",
+                "country_name": "UNITED STATES",
+            },
         ],
     }
 

@@ -58,14 +58,31 @@
         }
       },
       "counties": {
-        "type": "text",
-        "fields": {
-          "contains": {
+        "type": "nested",
+        "properties": {
+          "fips": {
             "type": "text",
-            "analyzer": "contains_analyzer"
+            "fields": {
+              "contains": {
+                "type": "text",
+                "analyzer": "contains_analyzer"
+              },
+              "keyword": {
+                "type": "keyword"
+              }
+            }
           },
-          "keyword": {
-            "type": "keyword"
+          "name": {
+            "type": "text",
+            "fields": {
+              "contains": {
+                "type": "text",
+                "analyzer": "contains_analyzer"
+              },
+              "keyword": {
+                "type": "keyword"
+              }
+            }
           }
         }
       },

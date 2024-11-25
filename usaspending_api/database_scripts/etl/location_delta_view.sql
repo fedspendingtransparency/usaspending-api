@@ -50,6 +50,30 @@ WITH locations_cte AS (
 				pop_country_name = 'UNITED STATES'
 				AND
 				pop_state_name IS NOT NULL
+				AND
+				pop_state_fips ~ '^[0-9]{2}$'
+			THEN
+				pop_state_fips
+			ELSE
+				NULL
+		END AS state_fips,
+		CASE
+			WHEN
+				pop_country_name = 'UNITED STATES'
+				AND
+				pop_state_name IS NOT NULL
+				AND
+				pop_county_code ~ '^[0-9]{3}$'
+			THEN
+				pop_county_code
+			ELSE
+				NULL
+		END AS county_fips,
+		CASE
+			WHEN
+				pop_country_name = 'UNITED STATES'
+				AND
+				pop_state_name IS NOT NULL
 			THEN
 				pop_zip5
 			ELSE
@@ -138,6 +162,30 @@ WITH locations_cte AS (
 				recipient_location_country_name = 'UNITED STATES'
 				AND
 				recipient_location_state_name IS NOT NULL
+				AND
+				recipient_location_state_fips ~ '^[0-9]{2}$'
+			THEN
+				recipient_location_state_fips
+			ELSE
+				NULL
+		END AS state_fips,
+		CASE
+			WHEN
+				recipient_location_country_name = 'UNITED STATES'
+				AND
+				recipient_location_state_name IS NOT NULL
+				AND
+				recipient_location_county_code ~ '^[0-9]{3}$'
+			THEN
+				recipient_location_county_code
+			ELSE
+				NULL
+		END AS county_fips,
+		CASE
+			WHEN
+				recipient_location_country_name = 'UNITED STATES'
+				AND
+				recipient_location_state_name IS NOT NULL
 			THEN
 				recipient_location_zip5
 			ELSE
@@ -183,7 +231,20 @@ SELECT
 	country_name,
 	state_name,
 	array_agg(DISTINCT(city_name)) FILTER (WHERE city_name IS NOT NULL) AS cities,
-	array_agg(DISTINCT(county_name)) FILTER (WHERE county_name IS NOT NULL) AS counties,
+	json_agg(DISTINCT(jsonb_build_object(
+		'name', county_name,
+		'fips', CONCAT(state_fips, county_fips)
+	)))
+	FILTER (
+		WHERE (
+			county_name IS NOT NULL
+			AND
+			state_fips IS NOT NULL
+			AND
+			county_fips IS NOT NULL
+		)
+	)
+	AS counties,
 	array_agg(DISTINCT(zip_code)) FILTER (WHERE zip_code IS NOT NULL) AS zip_codes,
 	array_agg(DISTINCT(current_congressional_district)) FILTER (WHERE current_congressional_district IS NOT NULL) AS current_congressional_districts,
 	array_agg(DISTINCT(original_congressional_district)) FILTER (WHERE original_congressional_district IS NOT NULL) AS original_congressional_districts

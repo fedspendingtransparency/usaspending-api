@@ -218,6 +218,8 @@ class TestElasticSearchIndex:
             required_suffix = "-" + settings.ES_SUBAWARD_NAME_SUFFIX
         elif self.index_type == "recipient":
             required_suffix = "-" + settings.ES_RECIPIENTS_NAME_SUFFIX
+        elif self.index_type == "location":
+            required_suffix = "-" + settings.ES_LOCATIONS_NAME_SUFFIX
         return (
             f"test-{datetime.now(timezone.utc).strftime('%Y-%m-%d-%H-%M-%S-%f')}"
             f"-{generate_random_string()}"
