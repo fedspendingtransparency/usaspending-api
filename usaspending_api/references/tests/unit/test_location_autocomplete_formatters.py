@@ -154,12 +154,12 @@ def test_county_formatter():
                     "country_name": "UNITED STATES",
                     "state_name": "FLORIDA",
                     "cities": [],
-                    "counties": ["GADSDEN"],
+                    "counties": [{"fips": "12039", "name": "GADSDEN"}],
                     "zip_codes": [],
                     "current_congressional_districts": [],
                     "original_congressional_districts": [],
                 },
-                "highlight": {"counties": ["GADSDEN"]},
+                "highlight": {"counties.name": ["GADSDEN"]},
             }
         ),
         Hit(
@@ -168,20 +168,20 @@ def test_county_formatter():
                     "country_name": "UNITED STATES",
                     "state_name": "GEORGIA",
                     "cities": [],
-                    "counties": ["CAMDEN"],
+                    "counties": [{"fips": "13039", "name": "CAMDEN"}],
                     "zip_codes": [],
                     "current_congressional_districts": [],
                     "original_congressional_districts": [],
                 },
-                "highlight": {"counties": ["CAMDEN"]},
+                "highlight": {"counties.name": ["CAMDEN"]},
             }
         ),
     ]
     location_viewset = LocationAutocompleteViewSet()
 
     assert location_viewset._format_county_results(es_results=mock_es_data) == [
-        {"county_name": "GADSDEN", "state_name": "FLORIDA", "country_name": "UNITED STATES"},
-        {"county_name": "CAMDEN", "state_name": "GEORGIA", "country_name": "UNITED STATES"},
+        {"county_fips": "12039", "county_name": "GADSDEN", "state_name": "FLORIDA", "country_name": "UNITED STATES"},
+        {"county_fips": "13039", "county_name": "CAMDEN", "state_name": "GEORGIA", "country_name": "UNITED STATES"},
     ]
 
     # Test formatter returns None when hits are present
