@@ -761,7 +761,7 @@ def test_latest_submission_per_agency_used(client, agency_account_data, helpers)
     }
 
     assert resp.status_code == status.HTTP_200_OK
-    # assert resp.json() == expected_result
+    assert resp.json() == expected_result
 
     # Test agency submitted recently, but most recent File B record is in prior submission
     query_params = f"?fiscal_year=2017"
