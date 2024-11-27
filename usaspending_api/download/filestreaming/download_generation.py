@@ -14,6 +14,9 @@ import tempfile
 import time
 import traceback
 
+import django
+from django.conf import settings
+
 from opentelemetry import trace
 from opentelemetry.trace import SpanKind
 
@@ -53,10 +56,19 @@ logger = logging.getLogger(__name__)
 # Set up the OpenTelemetry tracer provider
 tracer = trace.get_tracer_provider().get_tracer(__name__)
 
+# Ensure 'spawn' start method is set globally at the top level
+multiprocessing.set_start_method("spawn", force=True)
+
+def initialize_django():
+    """Initialize Django in a multiprocessing context."""
+    if not settings.configured:
+        django.setup()
 
 def generate_download(download_job: DownloadJob, origination: Optional[str] = None):
     """Create data archive files from the download job object"""
 
+    initialize_django()
+        
     # Parse data from download_job
     json_request = json.loads(download_job.json_request)
     columns = json_request.get("columns", None)
@@ -487,7 +499,6 @@ def parse_source(
     file_format: str,
 ):
     """Write to delimited text file(s) and zip file(s) using the source data"""
-
     data_file_name = build_data_file_name(source, download_job, piid, assistance_id)
 
     source_query = source.row_emitter(columns)
@@ -502,6 +513,9 @@ def parse_source(
     temp_file, temp_file_path = generate_export_query_temp_file(export_query, download_job)
 
     start_time = time.perf_counter()
+    initialize_django()
+    from usaspending_api.download.models.download_job_lookup import DownloadJobLookup  # Import inside function
+
     try:
         # Create a separate process to run the PSQL command; wait
         psql_process = multiprocessing.Process(target=execute_psql, args=(temp_file_path, source_path, download_job))

@@ -12,6 +12,8 @@ from django.utils.crypto import get_random_string
 
 from usaspending_api.config import CONFIG
 
+TRACE_ENV = "local"
+
 ALLOWED_HOSTS = ["*"]
 ROOT_URLCONF = "usaspending_api.urls"
 
@@ -199,13 +201,13 @@ INSTALLED_APPS = [
     "django.contrib.postgres",
     "django.contrib.staticfiles",
     # Third-party
+    "opentelemetry",
     "corsheaders",
     "debug_toolbar",
     "django_extensions",
     "django_spaghetti",
     "rest_framework",
     "rest_framework_tracking",
-    "opentelemetry",
     # Project applications
     "usaspending_api.accounts",
     "usaspending_api.agency",

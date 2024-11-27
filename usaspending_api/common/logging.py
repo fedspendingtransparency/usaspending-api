@@ -251,8 +251,15 @@ def configure_logging(service_name="usaspending-api"):
     provider = TracerProvider(resource=resource)
     trace.set_tracer_provider(provider)
 
-    print(f"\nCONFIG ENV_CODE: {CONFIG.ENV_CODE}\n")
-    custom_attribute_key = "Environment"
+    print(f"\nCONFIG ENV_CODE: {CONFIG.TRACE_ENV}\n")
+    print(f"\nCONFIG USASPENDING_DB_HOST: {CONFIG.TRACE_ENV}\n")
+    
+    custom_attribute_key = "OPTION 1: Environment"
+    custom_attribute_value = CONFIG.USASPENDING_DB_HOST
+    custom_attribute_span_processor = CustomAttributeSpanProcessor(custom_attribute_key, custom_attribute_value)
+    trace.get_tracer_provider().add_span_processor(custom_attribute_span_processor)
+
+    custom_attribute_key = "OPTION 2: Environment"
     custom_attribute_value = CONFIG.ENV_CODE
     custom_attribute_span_processor = CustomAttributeSpanProcessor(custom_attribute_key, custom_attribute_value)
     trace.get_tracer_provider().add_span_processor(custom_attribute_span_processor)
