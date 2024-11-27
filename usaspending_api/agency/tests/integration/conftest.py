@@ -127,7 +127,7 @@ def bureau_data():
         ussgl490800_authority_outlayed_not_yet_disbursed_cpe=0,
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=0,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=0,
-        ussgl480200_undelivered_orders_oblig_prepaid_advanced_fyb=0,
+        ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=0,
         ussgl480110_reinstated_del_cpe=0,
         ussgl490110_reinstated_del_cpe=0,
     )
@@ -158,7 +158,7 @@ def bureau_data():
         ussgl490800_authority_outlayed_not_yet_disbursed_cpe=0,
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=0,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=0,
-        ussgl480200_undelivered_orders_oblig_prepaid_advanced_fyb=0,
+        ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=0,
         ussgl480110_reinstated_del_cpe=0,
         ussgl490110_reinstated_del_cpe=0,
     )
@@ -189,7 +189,7 @@ def bureau_data():
         ussgl490800_authority_outlayed_not_yet_disbursed_cpe=0,
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=0,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=0,
-        ussgl480200_undelivered_orders_oblig_prepaid_advanced_fyb=0,
+        ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=0,
         ussgl480110_reinstated_del_cpe=0,
         ussgl490110_reinstated_del_cpe=0,
     )
@@ -424,7 +424,7 @@ def agency_account_data():
         ussgl490800_authority_outlayed_not_yet_disbursed_cpe=100,
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=13,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=9,
-        ussgl480200_undelivered_orders_oblig_prepaid_advanced_fyb=14,
+        ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=14,
         ussgl480110_reinstated_del_cpe=75,
         ussgl490110_reinstated_del_cpe=63,
     )
@@ -450,7 +450,7 @@ def agency_account_data():
         ussgl490800_authority_outlayed_not_yet_disbursed_cpe=100,
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=13,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=9,
-        ussgl480200_undelivered_orders_oblig_prepaid_advanced_fyb=14,
+        ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=14,
         ussgl480110_reinstated_del_cpe=75,
         ussgl490110_reinstated_del_cpe=63,
     )
@@ -476,7 +476,7 @@ def agency_account_data():
         ussgl490800_authority_outlayed_not_yet_disbursed_cpe=100,
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=13,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=9,
-        ussgl480200_undelivered_orders_oblig_prepaid_advanced_fyb=14,
+        ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=14,
         ussgl480110_reinstated_del_cpe=75,
         ussgl490110_reinstated_del_cpe=63,
     )
@@ -502,7 +502,7 @@ def agency_account_data():
         ussgl490800_authority_outlayed_not_yet_disbursed_cpe=100,
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=13,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=9,
-        ussgl480200_undelivered_orders_oblig_prepaid_advanced_fyb=14,
+        ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=14,
         ussgl480110_reinstated_del_cpe=75,
         ussgl490110_reinstated_del_cpe=63,
     )
@@ -528,7 +528,7 @@ def agency_account_data():
         ussgl490800_authority_outlayed_not_yet_disbursed_cpe=100,
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=13,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=9,
-        ussgl480200_undelivered_orders_oblig_prepaid_advanced_fyb=14,
+        ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=14,
         ussgl480110_reinstated_del_cpe=75,
         ussgl490110_reinstated_del_cpe=63,
     )
@@ -554,7 +554,7 @@ def agency_account_data():
         ussgl490800_authority_outlayed_not_yet_disbursed_cpe=100,
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=13,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=9,
-        ussgl480200_undelivered_orders_oblig_prepaid_advanced_fyb=14,
+        ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=14,
         ussgl480110_reinstated_del_cpe=75,
         ussgl490110_reinstated_del_cpe=63,
     )
@@ -580,7 +580,7 @@ def agency_account_data():
         ussgl490800_authority_outlayed_not_yet_disbursed_cpe=100,
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=13,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=9,
-        ussgl480200_undelivered_orders_oblig_prepaid_advanced_fyb=14,
+        ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=14,
         ussgl480110_reinstated_del_cpe=75,
         ussgl490110_reinstated_del_cpe=63,
     )
@@ -606,7 +606,7 @@ def agency_account_data():
         ussgl490800_authority_outlayed_not_yet_disbursed_cpe=100,
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=13,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=9,
-        ussgl480200_undelivered_orders_oblig_prepaid_advanced_fyb=14,
+        ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=14,
         ussgl480110_reinstated_del_cpe=75,
         ussgl490110_reinstated_del_cpe=63,
     )
@@ -632,7 +632,7 @@ def agency_account_data():
         ussgl490800_authority_outlayed_not_yet_disbursed_cpe=100,
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=13,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=9,
-        ussgl480200_undelivered_orders_oblig_prepaid_advanced_fyb=14,
+        ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=14,
         ussgl480110_reinstated_del_cpe=75,
         ussgl490110_reinstated_del_cpe=63,
     )
@@ -658,7 +658,7 @@ def agency_account_data():
         ussgl490800_authority_outlayed_not_yet_disbursed_cpe=100,
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=13,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=9,
-        ussgl480200_undelivered_orders_oblig_prepaid_advanced_fyb=14,
+        ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=14,
         ussgl480110_reinstated_del_cpe=75,
         ussgl490110_reinstated_del_cpe=63,
     )
@@ -684,7 +684,7 @@ def agency_account_data():
         ussgl490800_authority_outlayed_not_yet_disbursed_cpe=100,
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=13,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=9,
-        ussgl480200_undelivered_orders_oblig_prepaid_advanced_fyb=14,
+        ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=14,
         ussgl480110_reinstated_del_cpe=75,
         ussgl490110_reinstated_del_cpe=63,
     )
@@ -708,7 +708,7 @@ def agency_account_data():
         ussgl490800_authority_outlayed_not_yet_disbursed_cpe=100,
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=13,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=9,
-        ussgl480200_undelivered_orders_oblig_prepaid_advanced_fyb=14,
+        ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=14,
         ussgl480110_reinstated_del_cpe=75,
         ussgl490110_reinstated_del_cpe=63,
     )
@@ -732,7 +732,7 @@ def agency_account_data():
         ussgl490800_authority_outlayed_not_yet_disbursed_cpe=100,
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=13,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=9,
-        ussgl480200_undelivered_orders_oblig_prepaid_advanced_fyb=14,
+        ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=14,
         ussgl480110_reinstated_del_cpe=75,
         ussgl490110_reinstated_del_cpe=63,
     )
@@ -756,7 +756,7 @@ def agency_account_data():
         ussgl490800_authority_outlayed_not_yet_disbursed_cpe=100,
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=13,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=9,
-        ussgl480200_undelivered_orders_oblig_prepaid_advanced_fyb=14,
+        ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=14,
         ussgl480110_reinstated_del_cpe=75,
         ussgl490110_reinstated_del_cpe=63,
     )
@@ -834,7 +834,7 @@ def tas_mulitple_pas_per_oc():
         ussgl490800_authority_outlayed_not_yet_disbursed_cpe=0,
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=0,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=0,
-        ussgl480200_undelivered_orders_oblig_prepaid_advanced_fyb=0,
+        ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=0,
         ussgl480110_reinstated_del_cpe=0,
         ussgl490110_reinstated_del_cpe=0,
     )
@@ -861,7 +861,7 @@ def tas_mulitple_pas_per_oc():
         ussgl490800_authority_outlayed_not_yet_disbursed_cpe=0,
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=0,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=0,
-        ussgl480200_undelivered_orders_oblig_prepaid_advanced_fyb=0,
+        ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=0,
         ussgl480110_reinstated_del_cpe=0,
         ussgl490110_reinstated_del_cpe=0,
     )
