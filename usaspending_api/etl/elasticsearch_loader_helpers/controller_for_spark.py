@@ -217,17 +217,8 @@ def transform_and_load_partition(task: TaskSpec, partition_data) -> List[Tuple[i
 
     client = instantiate_elasticsearch_client()
 
-    def row_to_dict(item: Any) -> Union[Dict[str, Any], List[Any], Any]:
-        """Recursively converts Row objects and their nested structures to dictionaries"""
-        if isinstance(item, Row):
-            return {k: row_to_dict(v) for k, v in item.asDict().items()}
-        elif isinstance(item, list):
-            return [row_to_dict(i) for i in item]
-        else:
-            return item
-
     try:
-        records = [row_to_dict(row) for row in partition_data]
+        records = [row.asDict(recursive=True) for row in partition_data]
         if task.transform_func is not None:
             records = task.transform_func(task, records)
         if len(records) > 0:
