@@ -24,6 +24,7 @@ from opentelemetry.trace import SpanKind
 
 from datetime import datetime, timezone
 from django.conf import settings
+from django.apps import apps
 
 from usaspending_api.download.models.download_job_lookup import DownloadJobLookup
 from usaspending_api.search.filters.time_period.decorators import NEW_AWARDS_ONLY_KEYWORD
@@ -638,6 +639,14 @@ def wait_for_process(process, start_time, download_job):
     # Let the thread run until it finishes (max MAX_VISIBILITY_TIMEOUT), with a buffer of DOWNLOAD_VISIBILITY_TIMEOUT
     sleep_count = 0
     while process.is_alive():
+        app_config = apps.get_app_config('download')
+        for model in app_config.get_models():
+            print(model.__name__)
+
+        app_config = apps.get_app_config('accounts')
+        for model in app_config.get_models():
+            print(model.__name__)
+            
         if (
             download_job
             and not download_job.monthly_download

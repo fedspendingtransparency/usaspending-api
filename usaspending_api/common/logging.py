@@ -264,6 +264,11 @@ def configure_logging(service_name="usaspending-api"):
     custom_attribute_span_processor = CustomAttributeSpanProcessor(custom_attribute_key, custom_attribute_value)
     trace.get_tracer_provider().add_span_processor(custom_attribute_span_processor)
 
+    custom_attribute_key = "OPTION 3: Environment"
+    custom_attribute_value = CONFIG.TRACE_ENV
+    custom_attribute_span_processor = CustomAttributeSpanProcessor(custom_attribute_key, custom_attribute_value)
+    trace.get_tracer_provider().add_span_processor(custom_attribute_span_processor)
+
     # Set up the OTLP exporter
     # Check out https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/
     exporter = None
