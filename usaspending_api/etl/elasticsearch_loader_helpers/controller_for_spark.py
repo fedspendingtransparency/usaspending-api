@@ -1,10 +1,10 @@
 import logging
 from math import ceil
 from time import perf_counter
-from typing import Any, Dict, List, Tuple, Union
+from typing import List, Tuple
 
 from django.conf import settings
-from pyspark.sql import SparkSession, Row
+from pyspark.sql import SparkSession
 
 from usaspending_api.broker.helpers.last_load_date import get_earliest_load_date, update_last_load_date
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
@@ -216,7 +216,6 @@ def transform_and_load_partition(task: TaskSpec, partition_data) -> List[Tuple[i
     logger.info(format_log(msg, name=task.name))
 
     client = instantiate_elasticsearch_client()
-
     try:
         records = [row.asDict(recursive=True) for row in partition_data]
         if task.transform_func is not None:
