@@ -131,9 +131,9 @@ class DisasterBase(APIView):
                 "ussgl490200_delivered_orders_obligations_paid_cpe",
                 "ussgl490800_authority_outlayed_not_yet_disbursed_cpe",
                 "ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe",
-                "ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe",
+                "ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe",
                 "ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe",
-                "ussgl480200_undelivered_orders_oblig_prepaid_advanced_fyb",
+                "ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe",
             ],
             "pya_p": [
                 Coalesce(
