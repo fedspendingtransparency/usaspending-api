@@ -242,7 +242,7 @@ SELECT
 			state_fips IS NOT NULL
 			AND
 			county_fips IS NOT NULL
-			)
+		)
 	)
 	AS counties,
 	array_agg(DISTINCT(zip_code)) FILTER (WHERE zip_code IS NOT NULL) AS zip_codes,
