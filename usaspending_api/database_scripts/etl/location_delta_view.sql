@@ -233,18 +233,18 @@ SELECT
 	array_agg(DISTINCT(city_name)) FILTER (WHERE city_name IS NOT NULL) AS cities,
 	CASE
 	    WHEN cardinality(array_agg(DISTINCT(jsonb_build_object(
-            'name', county_name,
-            'fips', CONCAT(state_fips, county_fips)
-        )))
-        FILTER (
-            WHERE (
-                county_name IS NOT NULL
-                AND
-                state_fips IS NOT NULL
-                AND
-                county_fips IS NOT NULL
-            )
-        )) = 0
+                'name', county_name,
+                'fips', CONCAT(state_fips, county_fips)
+            )))
+            FILTER (
+                WHERE (
+                    county_name IS NOT NULL
+                    AND
+                    state_fips IS NOT NULL
+                    AND
+                    county_fips IS NOT NULL
+                )
+            )) = 0
 	    THEN NULL
 	    ELSE
 	        array_agg(DISTINCT(jsonb_build_object(
