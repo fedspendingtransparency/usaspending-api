@@ -20,11 +20,11 @@ from django.conf import settings
 from opentelemetry import trace
 from opentelemetry.trace import SpanKind
 
-# from opentelemetry.sdk.trace import TracerProvider
-
 from datetime import datetime, timezone
-from django.conf import settings
 from django.apps import apps
+
+if not apps.ready:
+    django.setup()
 
 from usaspending_api.download.models.download_job_lookup import DownloadJobLookup
 from usaspending_api.search.filters.time_period.decorators import NEW_AWARDS_ONLY_KEYWORD
@@ -60,16 +60,10 @@ tracer = trace.get_tracer_provider().get_tracer(__name__)
 # Ensure 'spawn' start method is set globally at the top level
 multiprocessing.set_start_method("spawn", force=True)
 
-def initialize_django():
-    """Initialize Django in a multiprocessing context."""
-    if not settings.configured:
-        django.setup()
 
 def generate_download(download_job: DownloadJob, origination: Optional[str] = None):
     """Create data archive files from the download job object"""
 
-    initialize_django()
-        
     # Parse data from download_job
     json_request = json.loads(download_job.json_request)
     columns = json_request.get("columns", None)
@@ -514,8 +508,6 @@ def parse_source(
     temp_file, temp_file_path = generate_export_query_temp_file(export_query, download_job)
 
     start_time = time.perf_counter()
-    initialize_django()
-    from usaspending_api.download.models.download_job_lookup import DownloadJobLookup  # Import inside function
 
     try:
         # Create a separate process to run the PSQL command; wait
@@ -639,14 +631,14 @@ def wait_for_process(process, start_time, download_job):
     # Let the thread run until it finishes (max MAX_VISIBILITY_TIMEOUT), with a buffer of DOWNLOAD_VISIBILITY_TIMEOUT
     sleep_count = 0
     while process.is_alive():
-        app_config = apps.get_app_config('download')
+        app_config = apps.get_app_config("download")
         for model in app_config.get_models():
             print(model.__name__)
 
-        app_config = apps.get_app_config('accounts')
+        app_config = apps.get_app_config("accounts")
         for model in app_config.get_models():
             print(model.__name__)
-            
+
         if (
             download_job
             and not download_job.monthly_download

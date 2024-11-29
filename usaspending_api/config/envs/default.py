@@ -78,7 +78,7 @@ class DefaultConfig(BaseSettings):
     PROJECT_LOG_DIR: str = str(_SRC_ROOT_DIR / "logs")
 
     TRACE_ENV: str = "local"
-    
+
     # ==== [Postgres] ====
     DATABASE_URL: str = None  # FACTORY_PROVIDED_VALUE. See its root validator-factory below
     USASPENDING_DB_SCHEME: str = "postgres"

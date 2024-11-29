@@ -8,8 +8,6 @@ if __name__ == "__main__":
     os.environ.setdefault("DDM_CONTAINER_NAME", "app")
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "usaspending_api.settings")
 
-    # This call is what makes the Django application be instrumented
-    # DjangoInstrumentor().instrument()
     try:
         from django.core.management import execute_from_command_line
     except ImportError:

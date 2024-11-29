@@ -14,6 +14,7 @@ import logging
 _logger = logging.getLogger(__name__)
 tracer = trace.get_tracer_provider().get_tracer(__name__)
 
+
 def _activate_trace_filter(filter_class: Callable) -> None:
     if not hasattr(tracer, "_filters"):
         _logger.warning("OpenTelemetry does not support direct filter activation on tracer")

@@ -7,10 +7,6 @@ from rest_framework import status
 from unittest.mock import Mock
 from itertools import chain, combinations
 
-import django
-
-import logging
-
 from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
@@ -20,57 +16,6 @@ from usaspending_api.download.lookups import JOB_STATUS, VALID_ACCOUNT_SUBMISSIO
 from usaspending_api.etl.award_helpers import update_awards
 from usaspending_api.search.models import TransactionSearch
 
-from opentelemetry import trace
-from opentelemetry.trace import SpanKind
-from opentelemetry.instrumentation.logging import LoggingInstrumentor
-from opentelemetry.sdk.resources import Resource
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import (
-    SimpleSpanProcessor,
-    ConsoleSpanExporter,
-    SpanExportResult,
-)
-
-from usaspending_api.common.tracing import SubprocessTrace
-
-
-# class JsonLoggingSpanExporter(ConsoleSpanExporter):
-#     def formatter(self, span):
-#         span_data = {
-#             "name": span.name,
-#             "context": {
-#                 "trace_id": hex(span.context.trace_id),
-#                 "span_id": hex(span.context.span_id),
-#                 "trace_state": str(span.context.trace_state),
-#             },
-#             "kind": str(span.kind),
-#             "start_time": span.start_time,
-#             "end_time": span.end_time,
-#             "status": str(span.status.status_code),
-#             "attributes": dict(span.attributes),
-#             "resource": dict(span.resource.attributes),
-#         }
-#         return json.dumps(span_data, indent=4)  # Pretty-print JSON with indentation
-
-#     def export(self, spans):
-#         for span in spans:
-#             logger.info(self.formatter(span))
-#         return SpanExportResult.SUCCESS
-
-# provider = TracerProvider(resource=Resource.create({"service_name": "usaspending-api"}))
-# trace.set_tracer_provider(provider)
-
-# exporter = JsonLoggingSpanExporter()
-# span_processor = SimpleSpanProcessor(exporter)
-# trace.get_tracer_provider().add_span_processor(span_processor)
-# tracer = trace.get_tracer_provider().get_tracer(__name__)
-
-# # Instrument logging
-# LoggingInstrumentor().instrument(set_logging_format=True)
-# log_format = "%(message)s\n"
-# logging.basicConfig(format=log_format)
-# logger = logging.getLogger(__name__)
-# logger.propagate = True  # Ensure logs propagate
 
 @pytest.fixture
 def download_test_data(db):
@@ -194,6 +139,7 @@ def test_tas_a_defaults_success(client, download_test_data):
     assert ".zip" in resp.json()["file_url"]
 
 
+@pytest.mark.django_db
 def test_tas_b_defaults_success(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(

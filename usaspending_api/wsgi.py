@@ -76,7 +76,6 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "usaspending_api.settings")
 
 ############################################################
 # ==== [Open Telemetry Configuration] ====
-
 # Django Instrumentation
 DjangoInstrumentor().instrument()
 

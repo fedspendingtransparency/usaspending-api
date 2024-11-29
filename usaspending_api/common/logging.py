@@ -245,29 +245,35 @@ class CustomAttributeSpanProcessor(SpanProcessor):
         pass  # No action needed when the span ends
 
 
+def add_custom_attribute_span_processors(attribute_pairs):
+    """
+    Helper function to add custom attribute span processors to the tracer provider.
+
+    Args:
+        attribute_pairs (list of tuples): Each tuple contains (key, value) for the attribute.
+    """
+
+    for key, value in attribute_pairs:
+        print(f"\n{key}: {value}\n")
+        custom_attribute_span_processor = CustomAttributeSpanProcessor(key, value)
+        trace.get_tracer_provider().add_span_processor(custom_attribute_span_processor)
+
+
 def configure_logging(service_name="usaspending-api"):
     # Set up the OpenTelemetry tracer provider
     resource = Resource.create(attributes={"service.name": service_name})
     provider = TracerProvider(resource=resource)
     trace.set_tracer_provider(provider)
 
-    print(f"\nCONFIG ENV_CODE: {CONFIG.TRACE_ENV}\n")
-    print(f"\nCONFIG USASPENDING_DB_HOST: {CONFIG.TRACE_ENV}\n")
-    
-    custom_attribute_key = "OPTION 1: Environment"
-    custom_attribute_value = CONFIG.USASPENDING_DB_HOST
-    custom_attribute_span_processor = CustomAttributeSpanProcessor(custom_attribute_key, custom_attribute_value)
-    trace.get_tracer_provider().add_span_processor(custom_attribute_span_processor)
+    # Modify the following to add/remove information inside traces
+    # The following will be added to every trace
+    attribute_pairs = [
+        ("USASPENDING_DB_HOST", CONFIG.USASPENDING_DB_HOST),
+        ("ENV_CODE", CONFIG.ENV_CODE),
+        ("TRACE_ENV", CONFIG.TRACE_ENV),
+    ]
 
-    custom_attribute_key = "OPTION 2: Environment"
-    custom_attribute_value = CONFIG.ENV_CODE
-    custom_attribute_span_processor = CustomAttributeSpanProcessor(custom_attribute_key, custom_attribute_value)
-    trace.get_tracer_provider().add_span_processor(custom_attribute_span_processor)
-
-    custom_attribute_key = "OPTION 3: Environment"
-    custom_attribute_value = CONFIG.TRACE_ENV
-    custom_attribute_span_processor = CustomAttributeSpanProcessor(custom_attribute_key, custom_attribute_value)
-    trace.get_tracer_provider().add_span_processor(custom_attribute_span_processor)
+    add_custom_attribute_span_processors(attribute_pairs)
 
     # Set up the OTLP exporter
     # Check out https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/
