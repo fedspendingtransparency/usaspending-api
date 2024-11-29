@@ -65,6 +65,7 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
             identifier_replacements["~"] = "rlike"
             identifier_replacements["state_data"] = "global_temp.state_data"
             identifier_replacements["array_agg"] = "collect_list"
+            identifier_replacements["json_agg"] = "collect_list"
             identifier_replacements["jsonb_build_object"] = "named_struct"
         else:
             raise ValueError(

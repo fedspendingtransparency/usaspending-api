@@ -231,7 +231,7 @@ SELECT
 	country_name,
 	state_name,
 	array_agg(DISTINCT(city_name)) FILTER (WHERE city_name IS NOT NULL) AS cities,
-	array_agg(DISTINCT(jsonb_build_object(
+	json_agg(DISTINCT(jsonb_build_object(
         'name', county_name,
         'fips', CONCAT(state_fips, county_fips)
     )))
