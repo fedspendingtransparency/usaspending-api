@@ -11,16 +11,7 @@ WITH locations_cte AS (
 			ELSE
 				pop_country_name
 		END AS country_name,
-		CASE
-			WHEN
-				pop_country_name = 'UNITED STATES'
-				AND
-				pop_state_name IN (SELECT UPPER(name) FROM state_data)
-			THEN
-				pop_state_name
-			ELSE
-				NULL
-		END AS state_name,
+		UPPER(sd.name) AS state_name,
 		CASE
 			WHEN
 				pop_country_name = 'UNITED STATES'
@@ -123,16 +114,7 @@ WITH locations_cte AS (
 			ELSE
 				recipient_location_country_name 
 		END AS country_name,
-		CASE
-			WHEN
-				recipient_location_country_name = 'UNITED STATES'
-				AND
-				recipient_location_state_name IN (SELECT UPPER(name) FROM state_data)
-			THEN
-				recipient_location_state_name
-			ELSE
-				NULL 
-		END AS state_name,
+		UPPER(sd.name) AS state_name,
 		CASE
 			WHEN
 				recipient_location_country_name = 'UNITED STATES'
@@ -227,7 +209,7 @@ WITH locations_cte AS (
 		recipient_location_country_name IS NOT NULL
 )
 SELECT
-    ROW_NUMBER() OVER (ORDER BY country_name, state_name) AS id,
+	ROW_NUMBER() OVER (ORDER BY country_name, state_name) AS id,
 	country_name,
 	state_name,
 	array_agg(DISTINCT(city_name)) FILTER (WHERE city_name IS NOT NULL) AS cities,
