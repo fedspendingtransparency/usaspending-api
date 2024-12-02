@@ -11,16 +11,7 @@ WITH locations_cte AS (
 			ELSE
 				pop_country_name
 		END AS country_name,
-		CASE
-			WHEN
-				pop_country_name = 'UNITED STATES'
-				AND
-				pop_state_name IN (UPPER(sd.name))
-			THEN
-				pop_state_name
-			ELSE
-				NULL
-		END AS state_name,
+		UPPER(sd.name) AS state_name,
 		CASE
 			WHEN
 				pop_country_name = 'UNITED STATES'
@@ -123,16 +114,7 @@ WITH locations_cte AS (
 			ELSE
 				recipient_location_country_name 
 		END AS country_name,
-		CASE
-			WHEN
-				recipient_location_country_name = 'UNITED STATES'
-				AND
-				recipient_location_state_name IN (UPPER(sd.name))
-			THEN
-				recipient_location_state_name
-			ELSE
-				NULL 
-		END AS state_name,
+		UPPER(sd.name) AS state_name,
 		CASE
 			WHEN
 				recipient_location_country_name = 'UNITED STATES'
