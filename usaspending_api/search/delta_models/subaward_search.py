@@ -255,8 +255,8 @@ subaward_search_load_sql_string = rf"""
         SELECT
             faba.award_id,
             SORT_ARRAY(COLLECT_SET(CAST(taa.treasury_account_identifier AS INTEGER))) AS treasury_account_identifiers,
-            SORT_ARRAY(COLLECT_SET(rpa.program_activity_name), TRUE) AS program_activity_names,
-            SORT_ARRAY(COLLECT_SET(rpa.program_activity_code), TRUE) AS program_activity_codes
+            SORT_ARRAY(COLLECT_SET(rpa.program_activity_name)) AS program_activity_names,
+            SORT_ARRAY(COLLECT_SET(rpa.program_activity_code)) AS program_activity_codes
         FROM
             global_temp.treasury_appropriation_account AS taa
         INNER JOIN
