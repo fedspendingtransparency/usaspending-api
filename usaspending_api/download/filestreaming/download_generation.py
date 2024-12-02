@@ -24,6 +24,7 @@ from django.conf import settings
 
 import django
 from django.apps import apps
+
 if not apps.ready:
     django.setup()
 
