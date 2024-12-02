@@ -77,14 +77,24 @@ class SubprocessTrace:
             self.span.set_attribute(key, value)
         return self.span
 
+    # def __exit__(self, exc_type, exc_val, exc_tb):
+    #     try:
+    #         # This will call span.finish() which must be done before the queue is flushed in order to enqueue the
+    #         # span data that is to be flushed (sent to the server)
+    #         self.span.__exit__(exc_type, exc_val, exc_tb)
+    #     finally:
+    #         # ensures that all spans that haven't been exported yet are immediately sent to the configured exporter.
+    #         trace.get_tracer_provider().force_flush()
+
     def __exit__(self, exc_type, exc_val, exc_tb):
-        try:
-            # This will call span.finish() which must be done before the queue is flushed in order to enqueue the
-            # span data that is to be flushed (sent to the server)
-            self.span.__exit__(exc_type, exc_val, exc_tb)
-        finally:
-            # ensures that all spans that haven't been exported yet are immediately sent to the configured exporter.
-            trace.get_tracer_provider().force_flush()
+        self.span.__exit__(exc_type, exc_val, exc_tb)
+        # End the span or handle any cleanup
+        if self.span:
+            if exc_type:
+                # Handle exception metadata
+                self.span.set_status(trace.Status(trace.StatusCode.ERROR, description=str(exc_val)))
+                self.span.record_exception(exc_val)
+            self.span.end()
 
 
 class OpenTelemetryLoggingTraceFilter:

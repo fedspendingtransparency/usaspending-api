@@ -22,6 +22,11 @@ from opentelemetry.trace import SpanKind
 from datetime import datetime, timezone
 from django.conf import settings
 
+import django
+from django.apps import apps
+if not apps.ready:
+    django.setup()
+
 from usaspending_api.download.models.download_job_lookup import DownloadJobLookup
 from usaspending_api.search.filters.time_period.decorators import NEW_AWARDS_ONLY_KEYWORD
 from usaspending_api.settings import MAX_DOWNLOAD_LIMIT
