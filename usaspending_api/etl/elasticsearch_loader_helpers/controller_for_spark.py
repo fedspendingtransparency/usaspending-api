@@ -64,7 +64,7 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
             # Replace the Postgres regex operator with the Databricks regex operator
             identifier_replacements["~"] = "rlike"
             identifier_replacements["state_data"] = "global_temp.state_data"
-            # Replace json_agg and jsonb_build_object Postgres functions with analogous Spark functions
+            identifier_replacements["array_agg"] = "collect_list"
             identifier_replacements["json_agg"] = "collect_list"
             identifier_replacements["jsonb_build_object"] = "named_struct"
         else:
@@ -217,10 +217,9 @@ def transform_and_load_partition(task: TaskSpec, partition_data) -> List[Tuple[i
 
     client = instantiate_elasticsearch_client()
     try:
+        records = [row.asDict(recursive=True) for row in partition_data]
         if task.transform_func is not None:
-            records = task.transform_func(task, [row.asDict() for row in partition_data])
-        else:
-            records = [row.asDict() for row in partition_data]
+            records = task.transform_func(task, records)
         if len(records) > 0:
             success, fail = load_data(task, records, client)
         else:
