@@ -179,7 +179,7 @@ class Command(BaseCommand):
     def prepare_spark(self):
         extra_conf = {
             # Config for additional packages needed
-            # "spark.jars.packages": "org.postgresql:postgresql:42.2.23,io.delta:delta-core_2.12:1.2.1,org.apache.hadoop:hadoop-aws:3.3.1,org.apache.spark:spark-hive_2.12:3.2.1",
+            # "spark.jars.packages": <see conftest_spark.py>
             # Config for Delta Lake tables and SQL. Need these to keep Dela table metadata in the metastore
             "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension",
             "spark.sql.catalog.spark_catalog": "org.apache.spark.sql.delta.catalog.DeltaCatalog",

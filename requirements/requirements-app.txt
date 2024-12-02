@@ -16,7 +16,7 @@ docutils==0.15.2
 drf-api-tracking==1.8.0
 drf-extensions==0.7.*
 elasticsearch-dsl==7.1.0
-elasticsearch==7.1.0
+elasticsearch==7.10.*
 et-xmlfile==1.0.1
 filelock==3.0.12
 fiscalyear==0.2.0
