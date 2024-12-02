@@ -254,7 +254,6 @@ def add_custom_attribute_span_processors(attribute_pairs):
     """
 
     for key, value in attribute_pairs:
-        print(f"\n{key}: {value}\n")
         custom_attribute_span_processor = CustomAttributeSpanProcessor(key, value)
         trace.get_tracer_provider().add_span_processor(custom_attribute_span_processor)
 

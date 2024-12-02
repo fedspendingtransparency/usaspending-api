@@ -139,7 +139,6 @@ def test_tas_a_defaults_success(client, download_test_data):
     assert ".zip" in resp.json()["file_url"]
 
 
-@pytest.mark.django_db
 def test_tas_b_defaults_success(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(

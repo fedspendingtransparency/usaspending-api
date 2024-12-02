@@ -589,26 +589,6 @@ def test_failed_job_detected(fake_sqs_queue):
     assert dispatcher._worker_process.exitcode > 0
 
 
-"""
-Fire_alarm function were originally defined locally inside the test function, and
-multiprocessing cannot pickle local objects when trying to pass them between processes. To resolve
-this, we need to move fire_alarm and any other local functions or handlers that need to be shared
-with subprocesses out of the test function and make them top-level functions.
-"""
-
-
-def fire_alarm():
-    print("firing alarm from PID {}".format(os.getpid()))
-    signal.setitimer(signal.ITIMER_REAL, 0.01)  # fire alarm in .01 sec
-    sleep(0.015)  # Wait for timer to fire signal.SIGALRM
-
-
-def signal_reset_wrapper(wrapped_func):
-    print("resetting signals in PID {} before calling {}".format(os.getpid(), wrapped_func))
-    signal.signal(signal.SIGALRM, signal.SIG_DFL)  # reset first
-    wrapped_func()
-
-
 @pytest.mark.signal_handling  # see mark doc in pyproject.toml
 def test_separate_signal_handlers_for_child_process(fake_sqs_queue):
     """Demonstrate (via log output) that a forked child process will inherit signal-handling of the parent
@@ -617,6 +597,11 @@ def test_separate_signal_handlers_for_child_process(fake_sqs_queue):
     NOTE: Test is not provable with asserts. Reading STDOUT proves it, but a place to store shared state among
     processes other than STDOUT was not found to be asserted on.
     """
+
+    def fire_alarm():
+        print("firing alarm from PID {}".format(os.getpid()))
+        signal.setitimer(signal.ITIMER_REAL, 0.01)  # fire alarm in .01 sec
+        sleep(0.015)  # Wait for timer to fire signal.SIGALRM
 
     fired = None
 
@@ -634,6 +619,11 @@ def test_separate_signal_handlers_for_child_process(fake_sqs_queue):
     child_proc = mp.Process(target=fire_alarm, daemon=True)
     child_proc.start()
     child_proc.join(1)
+
+    def signal_reset_wrapper(wrapped_func):
+        print("resetting signals in PID {} before calling {}".format(os.getpid(), wrapped_func))
+        signal.signal(signal.SIGALRM, signal.SIG_DFL)  # reset first
+        wrapped_func()
 
     child_proc_with_cleared_signals = mp.Process(target=signal_reset_wrapper, args=(fire_alarm,), daemon=True)
     child_proc_with_cleared_signals.start()
@@ -1641,7 +1631,7 @@ def _work_to_be_terminated(task_id, termination_queue: mp.Queue, work_tracking_q
     work_tracking_queue.put(task_id)
     # Put PID of worker process in the termination_queue to let worker_terminator proc know what to kill
     termination_queue.put(os.getpid())
-    sleep(1)  # hang for a short period to ensure terminator has time to kill this
+    sleep(0.25)  # hang for a short period to ensure terminator has time to kill this
 
 
 def _fail_runaway_processes(

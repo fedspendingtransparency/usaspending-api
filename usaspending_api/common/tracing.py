@@ -87,17 +87,6 @@ class SubprocessTrace:
                 self.span.record_exception(exc_val)
             self.span.end()
 
-    # This ensures the context manager can properly handle entering and exiting, even during exceptions.
-    # def __exit__(self, exc_type, exc_val, exc_tb):
-    #     self.span.__exit__(exc_type, exc_val, exc_tb)
-    #     try:
-    #         # This will call span.finish() which must be done before the queue is flushed in order to enqueue the
-    #         # span data that is to be flushed (sent to the server)
-    #         self.span.__exit__(exc_type, exc_val, exc_tb)
-    #     finally:
-    #         # ensures that all spans that haven't been exported yet are immediately sent to the configured exporter.
-    #         trace.get_tracer_provider().shutdown()
-
 
 class OpenTelemetryLoggingTraceFilter:
     """Debugging utility filter that can log trace spans"""

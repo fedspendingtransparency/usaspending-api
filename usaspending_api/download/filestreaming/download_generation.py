@@ -57,9 +57,6 @@ logger = logging.getLogger(__name__)
 # Set up the OpenTelemetry tracer provider
 tracer = trace.get_tracer_provider().get_tracer(__name__)
 
-# Ensure 'spawn' start method is set globally at the top level
-multiprocessing.set_start_method("spawn", force=True)
-
 
 def generate_download(download_job: DownloadJob, origination: Optional[str] = None):
     """Create data archive files from the download job object"""
@@ -631,13 +628,6 @@ def wait_for_process(process, start_time, download_job):
     # Let the thread run until it finishes (max MAX_VISIBILITY_TIMEOUT), with a buffer of DOWNLOAD_VISIBILITY_TIMEOUT
     sleep_count = 0
     while process.is_alive():
-        app_config = apps.get_app_config("download")
-        for model in app_config.get_models():
-            print(model.__name__)
-
-        app_config = apps.get_app_config("accounts")
-        for model in app_config.get_models():
-            print(model.__name__)
 
         if (
             download_job
