@@ -7,38 +7,50 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('search', '0046_add_generated_pragmatic_obligation'),
+        ("search", "0046_add_generated_pragmatic_obligation"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='awardsearch',
-            name='program_activity_codes',
-            field=django.contrib.postgres.fields.ArrayField(base_field=models.TextField(), default=list, null=True, size=None),
+            model_name="awardsearch",
+            name="program_activity_codes",
+            field=django.contrib.postgres.fields.ArrayField(
+                base_field=models.TextField(), default=None, null=True, size=None
+            ),
         ),
         migrations.AddField(
-            model_name='awardsearch',
-            name='program_activity_names',
-            field=django.contrib.postgres.fields.ArrayField(base_field=models.TextField(), default=list, null=True, size=None),
+            model_name="awardsearch",
+            name="program_activity_names",
+            field=django.contrib.postgres.fields.ArrayField(
+                base_field=models.TextField(), default=None, null=True, size=None
+            ),
         ),
         migrations.AddField(
-            model_name='subawardsearch',
-            name='program_activity_codes',
-            field=django.contrib.postgres.fields.ArrayField(base_field=models.TextField(), default=list, null=True, size=None),
+            model_name="subawardsearch",
+            name="program_activity_codes",
+            field=django.contrib.postgres.fields.ArrayField(
+                base_field=models.TextField(), default=None, null=True, size=None
+            ),
         ),
         migrations.AddField(
-            model_name='subawardsearch',
-            name='program_activity_names',
-            field=django.contrib.postgres.fields.ArrayField(base_field=models.TextField(), default=list, null=True, size=None),
+            model_name="subawardsearch",
+            name="program_activity_names",
+            field=django.contrib.postgres.fields.ArrayField(
+                base_field=models.TextField(), default=None, null=True, size=None
+            ),
         ),
         migrations.AddField(
-            model_name='transactionsearch',
-            name='program_activity_codes',
-            field=django.contrib.postgres.fields.ArrayField(base_field=models.TextField(), default=None, null=True, size=None),
+            model_name="transactionsearch",
+            name="program_activity_codes",
+            field=django.contrib.postgres.fields.ArrayField(
+                base_field=models.TextField(), default=None, null=True, size=None
+            ),
         ),
         migrations.AddField(
-            model_name='transactionsearch',
-            name='program_activity_names',
-            field=django.contrib.postgres.fields.ArrayField(base_field=models.TextField(), default=None, null=True, size=None),
+            model_name="transactionsearch",
+            name="program_activity_names",
+            field=django.contrib.postgres.fields.ArrayField(
+                base_field=models.TextField(), default=None, null=True, size=None
+            ),
         ),
     ]
