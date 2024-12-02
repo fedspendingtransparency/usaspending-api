@@ -640,8 +640,8 @@ LEFT OUTER JOIN (
         ELSE NULL
     END AS disaster_emergency_fund_codes,
     COLLECT_SET(taa.treasury_account_identifier) AS treasury_account_identifiers,
-    SORT_ARRAY(COLLECT_SET(rpa.program_activity_name)) AS program_activity_names,
-    SORT_ARRAY(COLLECT_SET(rpa.program_activity_code)) AS program_activity_codes
+    SORT_ARRAY(COLLECT_SET(rpa.program_activity_name), TRUE) AS program_activity_names,
+    SORT_ARRAY(COLLECT_SET(rpa.program_activity_code), TRUE) AS program_activity_codes
   FROM
     global_temp.treasury_appropriation_account taa
   INNER JOIN int.financial_accounts_by_awards faba ON (taa.treasury_account_identifier = faba.treasury_account_id)
