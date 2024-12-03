@@ -1080,7 +1080,7 @@ def test_override_with_dotenv_file(tmpdir):
     if Path(_PROJECT_ROOT_DIR / ".env").exists():
         shutil.copy(str(_PROJECT_ROOT_DIR / ".env"), dotenv_file)
     with open(dotenv_file, "a"):
-        dotenv_file.write(f"COMPONENT_NAME={dotenv_val}", "a")
+        dotenv_file.write(f"COMPONENT_NAME={dotenv_val}")
     dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
     cfg = LocalConfig(_env_file=dotenv_path)
     assert cfg.COMPONENT_NAME == dotenv_val
@@ -1115,7 +1115,7 @@ def test_override_with_dotenv_file_for_subclass_overridden_var(tmpdir):
         if Path(_PROJECT_ROOT_DIR / ".env").exists():
             shutil.copy(str(_PROJECT_ROOT_DIR / ".env"), dotenv_file)
         with open(dotenv_file, "a"):
-            dotenv_file.write(f"COMPONENT_NAME={dotenv_val}\n" f"UNITTEST_CFG_A={dotenv_val_a}", "a")
+            dotenv_file.write(f"COMPONENT_NAME={dotenv_val}\n" f"UNITTEST_CFG_A={dotenv_val_a}")
         dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
 
         _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
@@ -1152,7 +1152,7 @@ def test_override_with_dotenv_file_for_subclass_only_var(tmpdir):
         if Path(_PROJECT_ROOT_DIR / ".env").exists():
             shutil.copy(str(_PROJECT_ROOT_DIR / ".env"), dotenv_file)
         with open(dotenv_file, "a"):
-            dotenv_file.write(f"SUB_UNITTEST_3={dotenv_sub_3}", "a")
+            dotenv_file.write(f"SUB_UNITTEST_3={dotenv_sub_3}")
         dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
 
         _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
@@ -1227,7 +1227,7 @@ def test_override_with_dotenv_file_for_root_validated_var(tmpdir):
         if Path(_PROJECT_ROOT_DIR / ".env").exists():
             shutil.copy(str(_PROJECT_ROOT_DIR / ".env"), dotenv_file)
         with open(dotenv_file, "a"):
-            dotenv_file.write(f"{var_name}={dotenv_val}", "a")
+            dotenv_file.write(f"{var_name}={dotenv_val}")
         dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
 
         _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
@@ -1265,7 +1265,7 @@ def test_override_with_dotenv_file_for_subclass_overriding_validated_var(tmpdir)
         if Path(_PROJECT_ROOT_DIR / ".env").exists():
             shutil.copy(str(_PROJECT_ROOT_DIR / ".env"), dotenv_file)
         with open(dotenv_file, "a"):
-            dotenv_file.write(f"{var_name}={dotenv_val}", "a")
+            dotenv_file.write(f"{var_name}={dotenv_val}")
         dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
 
         _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
@@ -1303,7 +1303,7 @@ def test_override_with_dotenv_file_for_subclass_overriding_root_validated_var(tm
         if Path(_PROJECT_ROOT_DIR / ".env").exists():
             shutil.copy(str(_PROJECT_ROOT_DIR / ".env"), dotenv_file)
         with open(dotenv_file, "a"):
-            dotenv_file.write(f"{var_name}={dotenv_val}", "a")
+            dotenv_file.write(f"{var_name}={dotenv_val}")
         dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
 
         _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
@@ -1338,7 +1338,7 @@ def test_override_dotenv_file_with_env_var(tmpdir):
     if Path(_PROJECT_ROOT_DIR / ".env").exists():
         shutil.copy(str(_PROJECT_ROOT_DIR / ".env"), dotenv_file)
     with open(dotenv_file, "a"):
-        dotenv_file.write(f"COMPONENT_NAME={dotenv_val}", "a")
+        dotenv_file.write(f"COMPONENT_NAME={dotenv_val}")
     dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
     cfg = LocalConfig(_env_file=dotenv_path)
     assert cfg.COMPONENT_NAME == dotenv_val
@@ -1409,7 +1409,7 @@ def test_precedence_order(tmpdir):
     if Path(_PROJECT_ROOT_DIR / ".env").exists():
         shutil.copy(str(_PROJECT_ROOT_DIR / ".env"), dotenv_file)
     with open(dotenv_file, "a"):
-        dotenv_file.write(f"COMPONENT_NAME={dotenv_val}", "a")
+        dotenv_file.write(f"COMPONENT_NAME={dotenv_val}")
     dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
     cfg = LocalConfig(_env_file=dotenv_path)
     assert cfg.COMPONENT_NAME == dotenv_val

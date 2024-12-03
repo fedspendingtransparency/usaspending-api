@@ -6,12 +6,16 @@ For the full list of settings and their values: https://docs.djangoproject.com/e
 import os
 from pathlib import Path
 
-import ddtrace
 import dj_database_url
 from django.db import DEFAULT_DB_ALIAS
 from django.utils.crypto import get_random_string
 
 from usaspending_api.config import CONFIG
+
+TRACE_ENV = "local"
+
+ALLOWED_HOSTS = ["*"]
+ROOT_URLCONF = "usaspending_api.urls"
 
 # All paths inside the project should be additive to REPO_DIR or APP_DIR
 APP_DIR = Path(__file__).resolve().parent
@@ -56,7 +60,7 @@ SECRET_KEY = get_random_string(length=12)
 DEBUG = os.environ.get("DJANGO_DEBUG", "").lower() in ["true", "1", "yes"]
 
 HOST = "localhost:3000"
-ALLOWED_HOSTS = ["*"]
+# ALLOWED_HOSTS = ["*"]
 
 # Define local flag to affect location of downloads
 IS_LOCAL = True
@@ -197,6 +201,7 @@ INSTALLED_APPS = [
     "django.contrib.postgres",
     "django.contrib.staticfiles",
     # Third-party
+    "opentelemetry",
     "corsheaders",
     "debug_toolbar",
     "django_extensions",
@@ -226,40 +231,6 @@ INSTALLED_APPS = [
 
 INTERNAL_IPS = ()
 
-# Replace below param with enabled=True during env-deploys to turn on
-ddtrace.tracer.configure(enabled=False)
-if ddtrace.tracer.enabled:
-    ddtrace.config.django["service_name"] = "api"
-    ddtrace.config.django["analytics_enabled"] = True  # capture APM "Traces" & "Analyzed Spans" in App Analytics
-    ddtrace.config.django["analytics_sample_rate"] = 1.0  # Including 100% of traces in sample
-    ddtrace.config.django["trace_query_string"] = True
-    # Distributed tracing only needed if picking up disjoint traces by HTTP Header value
-    ddtrace.config.django["distributed_tracing_enabled"] = False
-    # Trace HTTP Request or Response Headers listed in this whitelist
-    ddtrace.config.trace_headers(
-        [
-            "content-length",  # req and resp
-            "content-type",  # req and resp
-            "host",
-            "origin",
-            "referer",
-            "ua-is-bot",
-            "user-agent",
-            "x-forwarded-for",
-            "x-requested-with",
-            # Response Headers
-            "allow",
-            "cache-trace",
-            "is-dynamically-rendered",
-            "key",  # cache key
-            "strict-transport-security",
-        ]
-    )
-    # patch_all() captures traces from integrated components' libraries by patching them. See:
-    # - http://pypi.datadoghq.com/trace/docs/advanced_usage.html#patch-all
-    # - Integrated Libs: http://pypi.datadoghq.com/trace/docs/index.html#supported-libraries
-    ddtrace.patch_all()
-
 DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": lambda request: DEBUG}
 
 MIDDLEWARE = [
@@ -275,7 +246,7 @@ MIDDLEWARE = [
     "usaspending_api.common.logging.LoggingMiddleware",
 ]
 
-ROOT_URLCONF = "usaspending_api.urls"
+# ROOT_URLCONF = "usaspending_api.urls"
 
 TEMPLATES = [
     {

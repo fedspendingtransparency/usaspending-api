@@ -5,7 +5,6 @@ See:
         - https://packaging.python.org/en/latest/guides/distributing-packages-using-setuptools/#setup-args
 """
 import pathlib
-
 from setuptools import find_packages, setup
 
 # Project paths
@@ -27,6 +26,7 @@ _TEST_REQUIRES = (
     else []
 )
 _EXTRAS = {k: v for k, v in {"dev": _DEV_REQUIRES, "test": _TEST_REQUIRES}.items() if v}
+
 
 if __name__ == "__main__":
     setup(
