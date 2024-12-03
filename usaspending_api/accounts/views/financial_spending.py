@@ -3,6 +3,7 @@ from usaspending_api.accounts.serializers import (
     ObjectClassFinancialSpendingSerializer,
     MinorObjectClassFinancialSpendingSerializer,
 )
+from usaspending_api.common.calculations import file_b
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.views import CachedDetailViewSet
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
@@ -69,7 +70,7 @@ class ObjectClassFinancialSpendingViewSet(CachedDetailViewSet):
                 major_object_class_code=F("object_class__major_object_class"),
             )
             .values("major_object_class_name", "major_object_class_code")
-            .annotate(obligated_amount=Sum("obligations_incurred_by_program_object_class_cpe"))
+            .annotate(obligated_amount=Sum(file_b.get_obligations()))
             .order_by("major_object_class_code")
         )
 
@@ -136,7 +137,7 @@ class MinorObjectClassFinancialSpendingViewSet(CachedDetailViewSet):
         )
         # sum obligated_mount by object class
         queryset = queryset.values("object_class_name", "object_class_code").annotate(
-            obligated_amount=Sum("obligations_incurred_by_program_object_class_cpe")
+            obligated_amount=Sum(file_b.get_obligations())
         )
         # get minor object class vars
         return queryset
