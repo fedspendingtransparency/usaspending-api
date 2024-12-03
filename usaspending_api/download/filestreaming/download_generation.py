@@ -159,6 +159,7 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
             append_files_to_zip_file([file_description_path], zip_file_path)
         download_job.file_size = os.stat(zip_file_path).st_size
     except InvalidParameterException as e:
+        exc_msg = "InvalidParameterException was raised while attempting to process the DownloadJob"
         with SubprocessTrace(
             name=f"job.{JOB_TYPE}.generate_download",
             kind=SpanKind.INTERNAL,
@@ -168,15 +169,15 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
                 {
                     "service": "bulk-download",
                     "span_type": "Internal",
-                    "message": "InvalidParameterException was raised while attempting to process the DownloadJob",
+                    "message": exc_msg,
                     "error": str(e),
                 }
             )
-            exc_msg = "InvalidParameterException was raised while attempting to process the DownloadJob"
             fail_download(download_job, e, exc_msg)
             raise InvalidParameterException(e)
     except Exception as e:
         # Set error message; job_status_id will be set in download_sqs_worker.handle()
+        exc_msg = "An exception was raised while attempting to process the DownloadJob"
         with SubprocessTrace(
             name=f"job.{JOB_TYPE}.process_download_job",
             kind=SpanKind.INTERNAL,
@@ -186,11 +187,10 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
                 {
                     "service": "bulk-download",
                     "span_type": "Internal",
-                    "message": "An exception was raised while attempting to process the DownloadJob",
+                    "message": exc_msg,
                     "error": str(e),
                 }
             )
-            exc_msg = "An exception was raised while attempting to process the DownloadJob"
             fail_download(download_job, e, exc_msg)
             raise Exception(download_job.error_message) from e
     finally:
@@ -243,6 +243,7 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
                     message=f"Uploading took {time.perf_counter() - start_uploading:.2f}s", download_job=download_job
                 )
             except Exception as e:
+                exc_msg = "An exception was raised while attempting to upload the file"
                 with SubprocessTrace(
                     name=f"job.{JOB_TYPE}.upload_file_to_aws",
                     kind=SpanKind.SERVER,
@@ -252,12 +253,11 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
                         {
                             "service": "bulk-download",
                             "span_type": "Internal",
-                            "message": "An exception was raised while attempting to upload the file",
+                            "message": exc_msg,
                             "error": str(e),
                         }
                     )
                     # Set error message; job_status_id will be set in download_sqs_worker.handle()
-                    exc_msg = "An exception was raised while attempting to upload the file"
                     fail_download(download_job, e, exc_msg)
                     if isinstance(e, InvalidParameterException):
                         raise InvalidParameterException(e)

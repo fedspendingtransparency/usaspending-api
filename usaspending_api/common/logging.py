@@ -1,6 +1,5 @@
 # Standard library imports
 import logging
-import logging.config
 import os
 import sys
 import time  # time.perf_counter Matches response time browsers return more accurately than now()
@@ -297,7 +296,7 @@ def configure_logging(service_name="usaspending-api"):
     if exporter is not None:
         trace.get_tracer_provider().add_span_processor(BatchSpanProcessor(exporter))
 
-    LoggingInstrumentor(logging_format="%(msg)s [span_id=%(otelSpanID)s trace_id=%(otelTraceID)s]")
+    LoggingInstrumentor(logging_format=os.getenv("OTEL_PYTHON_LOG_FORMAT"))
     LoggingInstrumentor().instrument(tracer_provider=trace.get_tracer_provider(), set_logging_format=True)
     URLLibInstrumentor().instrument(tracer_provider=trace.get_tracer_provider())
 
