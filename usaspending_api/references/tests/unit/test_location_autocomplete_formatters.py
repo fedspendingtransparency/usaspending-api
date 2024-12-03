@@ -191,6 +191,33 @@ def test_county_formatter():
     assert location_viewset._format_county_results(es_results=mock_es_data_none) is None
 
 
+def test_county_formatter_with_duplicate_county_names():
+    # Test formatter returns results in correct format
+    mock_es_data: List[Hit] = [
+        Hit(
+            {
+                "_source": {
+                    "country_name": "UNITED STATES",
+                    "state_name": "FLORIDA",
+                    "cities": [],
+                    "counties": [
+                        {"fips": "12039", "name": "GADSDEN"},
+                        {"fips": "12040", "name": "GADSDEN"},
+                        {"fips": "12041", "name": "GADSDEN"},
+                    ],
+                    "zip_codes": [],
+                    "current_congressional_districts": [],
+                    "original_congressional_districts": [],
+                },
+                "highlight": {"counties.name": ["GADSDEN", "GADSDEN", "GADSDEN"]},
+            }
+        )
+    ]
+    location_viewset = LocationAutocompleteViewSet()
+
+    assert len(location_viewset._format_county_results(es_results=mock_es_data)) == 3
+
+
 def test_zip_code_formatter():
     # Test formatter returns results in correct format
     mock_es_data: List[Hit] = [
