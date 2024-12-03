@@ -205,7 +205,7 @@ class LocationAutocompleteViewSet(APIView):
                 for result in es_results
                 for _property in ["fips", "name"]
                 if f"counties.{_property}" in result.meta.highlight
-                for match in result.meta.highlight[f"counties.{_property}"]
+                for match in set(result.meta.highlight[f"counties.{_property}"])
                 for county in [county for county in result.counties if county[_property] == match]
             ]
             return counties
