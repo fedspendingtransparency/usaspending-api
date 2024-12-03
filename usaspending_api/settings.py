@@ -12,8 +12,6 @@ from django.utils.crypto import get_random_string
 
 from usaspending_api.config import CONFIG
 
-TRACE_ENV = "local"
-
 # All paths inside the project should be additive to REPO_DIR or APP_DIR
 APP_DIR = Path(__file__).resolve().parent
 REPO_DIR = APP_DIR.parent

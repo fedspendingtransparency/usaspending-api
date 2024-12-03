@@ -23,7 +23,7 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExport
 
 # Local application imports
 from usaspending_api.config import CONFIG
-
+logger = logging.getLogger(__name__)
 
 def get_remote_addr(request):
     """ Get IP address of user making request can be used for other logging"""
@@ -227,8 +227,7 @@ class LoggingSpanProcessor(SpanProcessor):
     def on_end(self, span: ReadableSpan) -> None:
         trace_id = span.context.trace_id
         span_id = span.context.span_id
-        logger = logging.getLogger(__name__)
-        logger.info(f"Span ended: trace_id={trace_id}, span_id={span_id}, {span.name}_attributes={span.attributes}")
+        logger.debug(f"Span ended: trace_id={trace_id}, span_id={span_id}, {span.name}_attributes={span.attributes}")
 
     def force_flush(self, timeout_millis: int = 30000) -> bool:
         return True
@@ -280,7 +279,7 @@ def configure_logging(service_name="usaspending-api"):
     # Check out https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/
     exporter = None
     if os.getenv("USASPENDING_DB_HOST") == "127.0.0.1" and os.getenv("TOGGLE_OTEL_CONSOLE_LOGGING") == "True":
-        print(f"\nOTEL Console logging enabled: {os.getenv('TOGGLE_OTEL_CONSOLE_LOGGING')}\n")
+        logger.info(f"\nOTEL Console logging enabled: {os.getenv('TOGGLE_OTEL_CONSOLE_LOGGING')}\n")
 
         # #custom debug information
         logging_span_processor = LoggingSpanProcessor()
