@@ -45,6 +45,12 @@ class GeoLayer(Enum):
     COUNTRY = "country"
 
 
+class SpendingLevel(Enum):
+    AWARD = "award"
+    SUBAWARD = "subaward"
+    TRANSACTION = "transaction"
+
+
 @api_transformations(api_version=API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
 class SpendingByGeographyVisualizationViewSet(APIView):
     """
@@ -64,6 +70,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
     queryset: Optional[QuerySet]
     scope_field_name: str
     subawards: bool
+    spending_level: Optional[SpendingLevel]
 
     @cache_response()
     def post(self, request: Request) -> Response:
@@ -94,7 +101,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                 "key": "geo_layer",
                 "type": "enum",
                 "optional": False,
-                "enum_values": ["state", "county", "district", "country"],
+                "enum_values": [layer.value for layer in GeoLayer],
             },
             {
                 "name": "geo_layer_filters",
@@ -102,6 +109,14 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                 "type": "array",
                 "array_type": "text",
                 "text_type": "search",
+            },
+            {
+                "name": "spending_level",
+                "key": "spending_level",
+                "type": "enum",
+                "enum_values": [level.value for level in SpendingLevel],
+                "optional": True,
+                "default": "transactions",
             },
         ]
         models.extend(copy.deepcopy(AWARD_FILTER_W_FILTERS))
@@ -119,58 +134,67 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             "country": "country_agg_key",
         }
         model_dict = {
-            "place_of_performance": {"prime": "pop", "sub": "sub_place_of_perform"},
-            "recipient_location": {"prime": "recipient_location", "sub": "sub_legal_entity"},
+            "place_of_performance": {
+                SpendingLevel.AWARD: "pop",
+                SpendingLevel.SUBAWARD: "sub_place_of_perform",
+                SpendingLevel.TRANSACTION: "",
+            },
+            "recipient_location": {
+                SpendingLevel.AWARD: "recipient_location",
+                SpendingLevel.SUBAWARD: "sub_legal_entity",
+                SpendingLevel.TRANSACTION: "",
+            },
         }
         # Most of these are the same but some of slightly off, so we can track all the nuances here
         self.location_dict = {
             "code": {
-                "country": {
-                    "prime": {"pop": "country_co", "recipient_location": "country_code"},
-                    "sub": {"sub_place_of_perform": "country_co", "sub_legal_entity": "country_code"},
+                GeoLayer.COUNTRY: {
+                    SpendingLevel.AWARD: {
+                        "pop": "country_co",
+                        "recipient_location": "country_code",
+                    },
+                    SpendingLevel.SUBAWARD: {"sub_place_of_perform": "country_co", "sub_legal_entity": "country_code"},
+                    SpendingLevel.TRANSACTION: {},
                 },
-                "county": {
+                GeoLayer.COUNTY: {
                     "prime": {"pop": "county_code", "recipient_location": "county_code"},
                     "sub": {"sub_place_of_perform": "county_code", "sub_legal_entity": "county_code"},
                 },
-                "district": {
+                GeoLayer.DISTRICT: {
                     "prime": {"pop": "congressional_code_current", "recipient_location": "congressional_code_current"},
                     "sub": {
                         "sub_place_of_perform": "sub_place_of_performance_congressional_current",
                         "sub_legal_entity": "congressional_current",
                     },
                 },
-                "state": {
+                GeoLayer.STATE: {
                     "prime": {"pop": "state_code", "recipient_location": "state_code"},
                     "sub": {"sub_place_of_perform": "state_code", "sub_legal_entity": "state_code"},
                 },
             },
             "name": {
-                "country": {
+                GeoLayer.COUNTRY: {
                     "prime": {"pop": "country_na", "recipient_location": "country_name"},
                     "sub": {"sub_place_of_perform": "country_na", "sub_legal_entity": "country_name"},
                 },
-                "county": {
+                GeoLayer.COUNTY: {
                     "sub": {"sub_place_of_perform": "county_name", "sub_legal_entity": "county_name"},
                 },
-                "state": {
+                GeoLayer.STATE: {
                     "prime": {"pop": "state_name", "recipient_location": "state_name"},
                     "sub": {"sub_place_of_perform": "state_name", "sub_legal_entity": "state_name"},
                 },
             },
         }
 
-        self.subawards = json_request["subawards"]
-        self.award_or_sub_str = "sub" if self.subawards else "prime"
+        self.spending_level = SpendingLevel(json_request["spending_level"])
         self.scope = json_request["scope"]
-        self.scope_field_name = model_dict[self.scope][self.award_or_sub_str]
+        self.scope_field_name = model_dict[self.scope][self.spending_level]
         self.agg_key = f"{self.scope_field_name}_{agg_key_dict[json_request['geo_layer']]}"
         self.filters = json_request.get("filters")
         self.geo_layer = GeoLayer(json_request["geo_layer"])
         self.geo_layer_filters = json_request.get("geo_layer_filters")
-        self.loc_field_name = self.location_dict["code"][self.geo_layer.value][self.award_or_sub_str][
-            self.scope_field_name
-        ]
+        self.loc_field_name = self.location_dict["code"][self.geo_layer][self.spending_level][self.scope_field_name]
         self.loc_lookup = f"{self.scope_field_name}_{self.loc_field_name}"
 
         if self.subawards:
