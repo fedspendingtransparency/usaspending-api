@@ -5,9 +5,7 @@ See:
         - https://packaging.python.org/en/latest/guides/distributing-packages-using-setuptools/#setup-args
 """
 import pathlib
-import subprocess
 from setuptools import find_packages, setup
-from setuptools.command.install import install
 
 # Project paths
 _PROJECT_NAME = "usaspending-api"
@@ -28,26 +26,6 @@ _TEST_REQUIRES = (
     else []
 )
 _EXTRAS = {k: v for k, v in {"dev": _DEV_REQUIRES, "test": _TEST_REQUIRES}.items() if v}
-
-
-class CustomInstallCommand(install):
-    """Custom handler for the install command to include 'bootstrap -a install'."""
-
-    def run(self):
-        # Run the default installation process
-        print("Running default installation process...")
-        super().run()
-
-        # Run the custom 'bootstrap -a install' command
-        print("Running 'opentelemetry-bootstrap -a install'...")
-        try:
-            subprocess.check_call(["opentelemetry-bootstrap", "-a", "install"])
-        except subprocess.CalledProcessError as e:
-            print(f"Error: Command 'bootstrap -a install' failed with exit code {e.returncode}")
-            raise
-        except FileNotFoundError:
-            print("Error: 'bootstrap' command not found. Ensure it is installed and in your PATH.")
-            raise
 
 
 if __name__ == "__main__":
@@ -73,7 +51,4 @@ if __name__ == "__main__":
             "Programming Language :: Python :: 3.8",
             "Programming Language :: Python :: 3 :: Only",
         ],
-        cmdclass={
-            "install": CustomInstallCommand,
-        },
     )
