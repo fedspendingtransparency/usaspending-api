@@ -59,8 +59,7 @@ jobs:
     - travis_retry pip install .[dev]
     - travis_retry pip install coveralls
     before_script: ""  # override default to no-op
-    script: 
-    - opentelemetry-bootstrap -a install #to auto install all the relevant opentelemetry dependencies after distro
+    script: ""
   - name: docker build
     workspaces:
       create:
