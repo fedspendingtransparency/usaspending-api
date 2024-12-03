@@ -23,7 +23,9 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExport
 
 # Local application imports
 from usaspending_api.config import CONFIG
+
 logger = logging.getLogger(__name__)
+
 
 def get_remote_addr(request):
     """ Get IP address of user making request can be used for other logging"""
