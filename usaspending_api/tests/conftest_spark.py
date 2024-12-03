@@ -424,6 +424,24 @@ def _build_usas_data_for_spark():
     defc_l = baker.make("references.DisasterEmergencyFundCode", code="L", group_name="covid_19", _fill_optional=True)
     defc_m = baker.make("references.DisasterEmergencyFundCode", code="M", group_name="covid_19", _fill_optional=True)
     defc_q = baker.make("references.DisasterEmergencyFundCode", code="Q", group_name=None, _fill_optional=True)
+    rpa_1 = baker.make(
+        "references.RefProgramActivity",
+        id=1,
+        program_activity_code="0001",
+        program_activity_name="OFFICE OF THE SECRETARY",
+    )
+    rpa_2 = baker.make(
+        "references.RefProgramActivity",
+        id=2,
+        program_activity_code="0002",
+        program_activity_name="OPERATIONS AND MAINTENANCE",
+    )
+    rpa_3 = baker.make(
+        "references.RefProgramActivity",
+        id=3,
+        program_activity_code="0003",
+        program_activity_name="TRAINING AND RECRUITING",
+    )
 
     # Create account data
     federal_account = baker.make(
@@ -536,6 +554,8 @@ def _build_usas_data_for_spark():
         recipient_location_county_fips="51001",
         pop_county_fips="51001",
         generated_pragmatic_obligation=0.00,
+        program_activity_codes=["0001", "0002"],
+        program_activity_names=["OFFICE OF THE SECRETARY", "OPERATIONS AND MAINTENANCE"],
     )
     cont_award = baker.make(
         "search.AwardSearch",
@@ -621,6 +641,8 @@ def _build_usas_data_for_spark():
         recipient_location_county_fips=None,
         pop_county_fips=None,
         generated_pragmatic_obligation=0.00,
+        program_activity_codes=["0003"],
+        program_activity_names=["TRAINING AND RECRUITING"],
     )
     cont_award2 = baker.make(
         "search.AwardSearch",
@@ -690,6 +712,8 @@ def _build_usas_data_for_spark():
         recipient_location_county_fips=None,
         pop_county_fips=None,
         generated_pragmatic_obligation=0.00,
+        program_activity_codes=None,
+        program_activity_names=None,
     )
 
     baker.make(
@@ -794,6 +818,8 @@ def _build_usas_data_for_spark():
         disaster_emergency_fund_codes=["L", "M"],
         recipient_location_county_fips="51001",
         pop_county_fips="51001",
+        program_activity_codes=["0001", "0002"],
+        program_activity_names=["OFFICE OF THE SECRETARY", "OPERATIONS AND MAINTENANCE"],
     )
     baker.make(
         "search.TransactionSearch",
@@ -898,6 +924,8 @@ def _build_usas_data_for_spark():
         disaster_emergency_fund_codes=["L", "M"],
         recipient_location_county_fips="51001",
         pop_county_fips="51001",
+        program_activity_codes=["0001", "0002"],
+        program_activity_names=["OFFICE OF THE SECRETARY", "OPERATIONS AND MAINTENANCE"],
     )
     baker.make(
         "search.TransactionSearch",
@@ -992,6 +1020,8 @@ def _build_usas_data_for_spark():
         disaster_emergency_fund_codes=["Q"],
         recipient_location_county_fips=None,
         pop_county_fips=None,
+        program_activity_codes=["0003"],
+        program_activity_names=["TRAINING AND RECRUITING"],
     )
     baker.make(
         "search.TransactionSearch",
@@ -1086,6 +1116,8 @@ def _build_usas_data_for_spark():
         disaster_emergency_fund_codes=["Q"],
         recipient_location_county_fips=None,
         pop_county_fips=None,
+        program_activity_codes=["0003"],
+        program_activity_names=["TRAINING AND RECRUITING"],
     )
     baker.make(
         "search.TransactionSearch",
@@ -1146,6 +1178,8 @@ def _build_usas_data_for_spark():
         ordering_period_end_date="2020-07-01",
         recipient_location_county_fips=None,
         pop_county_fips=None,
+        program_activity_codes=None,
+        program_activity_names=None,
     )
     baker.make(
         "transactions.SourceProcurementTransaction",
@@ -1208,6 +1242,7 @@ def _build_usas_data_for_spark():
         ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0,
         ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0,
         submission=sa,
+        program_activity=rpa_1,
         _fill_optional=True,
     )
     baker.make(
@@ -1220,6 +1255,7 @@ def _build_usas_data_for_spark():
         transaction_obligated_amount=1,
         ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0,
         ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0,
+        program_activity=rpa_2,
         _fill_optional=True,
     )
     baker.make(
@@ -1232,6 +1268,7 @@ def _build_usas_data_for_spark():
         ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0,
         ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0,
         submission=sa,
+        program_activity=rpa_3,
         _fill_optional=True,
     )
     baker.make(
@@ -1240,6 +1277,7 @@ def _build_usas_data_for_spark():
         treasury_account=tas,
         disaster_emergency_fund=None,
         submission=sa,
+        program_activity=rpa_3,
         _fill_optional=True,
     )
 

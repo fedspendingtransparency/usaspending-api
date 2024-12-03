@@ -145,6 +145,8 @@ AWARD_SEARCH_COLUMNS = {
     "total_iija_obligation": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": True},
     "total_outlays": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": False},
     "generated_pragmatic_obligation": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)", "gold": False},
+    "program_activity_names": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]", "gold": False},
+    "program_activity_codes": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]", "gold": False},
 }
 AWARD_SEARCH_DELTA_COLUMNS = {k: v["delta"] for k, v in AWARD_SEARCH_COLUMNS.items()}
 AWARD_SEARCH_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in AWARD_SEARCH_COLUMNS.items() if not v["gold"]}
@@ -395,7 +397,9 @@ award_search_load_sql_string = rf"""
             ELSE awards.total_obligation
         END,
         0
-  ) AS NUMERIC(23, 2)) AS generated_pragmatic_obligation
+  ) AS NUMERIC(23, 2)) AS generated_pragmatic_obligation,
+  TREASURY_ACCT.program_activity_names,
+  TREASURY_ACCT.program_activity_codes
 FROM
   int.awards
 INNER JOIN
@@ -635,12 +639,15 @@ LEFT OUTER JOIN (
             THEN SORT_ARRAY(COLLECT_SET(faba.disaster_emergency_fund_code))
         ELSE NULL
     END AS disaster_emergency_fund_codes,
-    COLLECT_SET(taa.treasury_account_identifier) AS treasury_account_identifiers
+    COLLECT_SET(taa.treasury_account_identifier) AS treasury_account_identifiers,
+    SORT_ARRAY(COLLECT_SET(rpa.program_activity_name)) AS program_activity_names,
+    SORT_ARRAY(COLLECT_SET(rpa.program_activity_code)) AS program_activity_codes
   FROM
     global_temp.treasury_appropriation_account taa
   INNER JOIN int.financial_accounts_by_awards faba ON (taa.treasury_account_identifier = faba.treasury_account_id)
   INNER JOIN global_temp.federal_account fa ON (taa.federal_account_id = fa.id)
   INNER JOIN global_temp.toptier_agency agency ON (fa.parent_toptier_agency_id = agency.toptier_agency_id)
+  LEFT JOIN global_temp.ref_program_activity rpa ON (faba.program_activity_id = rpa.id)
   WHERE
     faba.award_id IS NOT NULL
   GROUP BY
