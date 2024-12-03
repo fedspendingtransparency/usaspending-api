@@ -233,7 +233,6 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
 
             # NOTE: Traces still not auto-picking-up aws.s3 service upload activity
             # Could be that the patches for boto and botocore don't cover the newer boto3 S3Transfer upload approach
-            # span.set_attribute("file_name", file_name)
             try:
                 bucket = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
                 region = settings.USASPENDING_AWS_REGION

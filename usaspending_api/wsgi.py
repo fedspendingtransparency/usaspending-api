@@ -7,38 +7,47 @@ For more information on this file, see
 https://docs.djangoproject.com/en/2.2/howto/deployment/wsgi/
 """
 
+# Standard library imports
 import os
 
-from opentelemetry.instrumentation.wsgi import OpenTelemetryMiddleware
+# Django imports
 from django.core.wsgi import get_wsgi_application
-from usaspending_api.common.logging import configure_logging
+
+# OpenTelemetry imports
 from opentelemetry import trace
 from opentelemetry.instrumentation.django import DjangoInstrumentor
+from opentelemetry.instrumentation.wsgi import OpenTelemetryMiddleware
+
+# Local imports
+from usaspending_api.common.logging import configure_logging
+
+# Constants
+HEADERS_TO_CAPTURE = [
+    "content-length",
+    "content-type",
+    "host",
+    "origin",
+    "referer",
+    "ua-is-bot",
+    "user-agent",
+    "x-forwarded-for",
+    "x-requested-with",
+    "allow",
+    "cache-trace",
+    "is-dynamically-rendered",
+    "key",
+    "strict-transport-security",
+]
 
 
 def request_hook(span, environ):
 
     if span and span.is_recording():
-        headers_to_capture = [
-            "CONTENT_LENGTH",
-            "CONTENT_TYPE",
-            "HOST",
-            "ORIGIN",
-            "REFERER",
-            "UA-IS-BOT",
-            "USER_AGENT",
-            "X_FORWARDED_FOR",
-            "X_REQUESTED_WITH",
-            "ALLOW",
-            "CACHE_TRACE",
-            "IS-DYNAMICALLY-RENDERED",
-            "KEY",
-            "STRICT-TRANSPORT-SECURITY",
-        ]
-        for header in headers_to_capture:
-            header_value = environ.get(f'HTTP_{header.replace("-", "_").upper()}')
+        for header in HEADERS_TO_CAPTURE:
+            header_env_name = f"HTTP_{header.replace('-', '_').upper()}"
+            header_value = environ.get(header_env_name)
             if header_value:
-                span.set_attribute(f"http.request.header.{header.lower().replace('_', '-')}", header_value)
+                span.set_attribute(f"http.request.header.{header}", header_value)
 
     if os.getenv("USASPENDING_DB_HOST") == "127.0.0.1" and os.getenv("TOGGLE_OTEL_CONSOLE_LOGGING") == "True":
         print("\nRequest hook executed\n")
@@ -47,23 +56,7 @@ def request_hook(span, environ):
 def response_hook(span, environ, status, response_headers):
 
     if span and span.is_recording():
-        headers_to_capture = [
-            "content-length",
-            "content-type",
-            "host",
-            "origin",
-            "referer",
-            "ua-is-bot",
-            "user-agent",
-            "x-forwarded-for",
-            "x-requested-with",
-            "allow",
-            "cache-trace",
-            "is-dynamically-rendered",
-            "key",
-            "strict-transport-security",
-        ]
-        for header in headers_to_capture:
+        for header in HEADERS_TO_CAPTURE:
             for response_header in response_headers:
                 if response_header[0].lower() == header:
                     span.set_attribute(f"http.response.header.{header}", response_header[1])
@@ -88,7 +81,6 @@ os.environ["OTEL_RESOURCE_ATTRIBUTES"] = f"service.name={service_name}"
 # Define additional settings for OpenTelemetry integration
 TRACER = trace.get_tracer_provider().get_tracer(__name__)
 OTEL_EXPORTER_OTLP_TRACES_ENDPOINT = os.getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "http://localhost:4318/v1/traces")
-OTEL_RESOURCE_ATTRIBUTES = f"service.name={service_name}"
 
 ############################################################
 

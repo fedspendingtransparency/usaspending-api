@@ -14,9 +14,6 @@ from usaspending_api.config import CONFIG
 
 TRACE_ENV = "local"
 
-ALLOWED_HOSTS = ["*"]
-ROOT_URLCONF = "usaspending_api.urls"
-
 # All paths inside the project should be additive to REPO_DIR or APP_DIR
 APP_DIR = Path(__file__).resolve().parent
 REPO_DIR = APP_DIR.parent
@@ -60,7 +57,7 @@ SECRET_KEY = get_random_string(length=12)
 DEBUG = os.environ.get("DJANGO_DEBUG", "").lower() in ["true", "1", "yes"]
 
 HOST = "localhost:3000"
-# ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ["*"]
 
 # Define local flag to affect location of downloads
 IS_LOCAL = True
@@ -201,11 +198,11 @@ INSTALLED_APPS = [
     "django.contrib.postgres",
     "django.contrib.staticfiles",
     # Third-party
-    "opentelemetry",
     "corsheaders",
     "debug_toolbar",
     "django_extensions",
     "django_spaghetti",
+    "opentelemetry",
     "rest_framework",
     "rest_framework_tracking",
     # Project applications
@@ -246,7 +243,7 @@ MIDDLEWARE = [
     "usaspending_api.common.logging.LoggingMiddleware",
 ]
 
-# ROOT_URLCONF = "usaspending_api.urls"
+ROOT_URLCONF = "usaspending_api.urls"
 
 TEMPLATES = [
     {

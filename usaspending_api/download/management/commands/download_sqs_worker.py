@@ -1,27 +1,29 @@
+# Standard library imports
 import logging
 import time
 import traceback
 
-from opentelemetry.trace import SpanKind
+# Third-party library imports
+from opentelemetry.trace import SpanKind, Status, StatusCode
 
+# Django imports
 from django.core.management.base import BaseCommand
 
+# Application imports
+from usaspending_api.common.logging import configure_logging
 from usaspending_api.common.sqs.sqs_handler import get_sqs_queue
-from usaspending_api.common.sqs.sqs_work_dispatcher import (
-    SQSWorkDispatcher,
-    QueueWorkerProcessError,
-    QueueWorkDispatcherError,
-)
-from usaspending_api.download.filestreaming.download_generation import generate_download
 from usaspending_api.common.sqs.sqs_job_logging import log_job_message
+from usaspending_api.common.sqs.sqs_work_dispatcher import (
+    QueueWorkDispatcherError,
+    QueueWorkerProcessError,
+    SQSWorkDispatcher,
+)
+from usaspending_api.common.tracing import SubprocessTrace
+from usaspending_api.download.filestreaming.download_generation import generate_download
 from usaspending_api.download.helpers.monthly_helpers import download_job_to_log_dict
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.models.download_job import DownloadJob
 
-from usaspending_api.common.tracing import SubprocessTrace
-
-from opentelemetry.trace import Status, StatusCode
-from usaspending_api.common.logging import configure_logging
 
 logger = logging.getLogger(__name__)
 JOB_TYPE = "USAspendingDownloader"

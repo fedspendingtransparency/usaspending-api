@@ -3,12 +3,16 @@ Module for Application Performance Monitoring and distributed tracing tools and 
 
 Specifically leveraging the Grafana Open Telemetry tracing client.
 """
-from opentelemetry import trace
-
-from opentelemetry.trace.status import Status, StatusCode
-from typing import Optional, Callable
-from opentelemetry.trace import SpanKind
+# Standard library imports
 import logging
+
+# Typing imports
+from typing import Callable, Optional
+
+# OpenTelemetry imports
+from opentelemetry import trace
+from opentelemetry.trace import SpanKind
+from opentelemetry.trace.status import Status, StatusCode
 
 # The tracer provider should only be set up once, typically in the settings or a dedicated setup module
 _logger = logging.getLogger(__name__)

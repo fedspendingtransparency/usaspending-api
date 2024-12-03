@@ -59,7 +59,8 @@ jobs:
     - travis_retry pip install .[dev]
     - travis_retry pip install coveralls
     before_script: ""  # override default to no-op
-    script: ""  # override default to no-op
+    script: 
+    - opentelemetry-bootstrap -a install #to auto install all the relevant opentelemetry dependencies after distro
   - name: docker build
     workspaces:
       create:
@@ -102,7 +103,6 @@ jobs:
     install: travis_retry npm install --global dredd@13.1.2  # add dredd for API contract testing
     before_script: ""  # override default to no-op
     script:
-    # - opentelemetry-bootstrap -a install #to auto install all the relevant opentelemetry dependencies after distro
     - python manage.py check_for_endpoint_documentation
     - dredd > dredd-results.txt && echo '! grep -E "^[warn:|error:]" dredd-results.txt' | bash
   - stage: Automated Tests
@@ -265,7 +265,6 @@ install:
   # Checkout dependent broker code used to spin up a broker integration test db. Put it in its own folder alongside this repo's code
   - echo "Using ${BROKER_REPO_BRANCH} branch from ${BROKER_REPO_URL}"
   - travis_retry git clone --branch ${BROKER_REPO_BRANCH} --single-branch --depth 1 ${BROKER_REPO_URL} ${BROKER_REPO_FOLDER}
-  # - opentelemetry-bootstrap -a install #to auto install all the relevant opentelemetry dependencies after distro
 
 before_script:
   # Get dependencies to report code coverage to code climate
@@ -300,7 +299,6 @@ before_script:
   - mkdir -p "${MINIO_DATA_DIR}"
   - mkdir -p "${HOME}/.ivy2"
   - make docker-compose-up-s3 args="-d"
-  # - opentelemetry-bootstrap -a install #to auto install all the relevant opentelemetry dependencies after distro
 
 script:
   - stty cols 240  # for wider terminal output

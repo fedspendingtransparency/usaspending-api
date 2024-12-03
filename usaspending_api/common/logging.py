@@ -1,25 +1,28 @@
-import logging.config
-from django.utils.timezone import now
-from django.utils.deprecation import MiddlewareMixin
-
-import os
+# Standard library imports
 import logging
+import logging.config
+import os
 import sys
 import time  # time.perf_counter Matches response time browsers return more accurately than now()
 import traceback
 
-from typing import Optional, Callable
+# Django imports
+from django.utils.deprecation import MiddlewareMixin
+from django.utils.timezone import now
 
+# Typing imports
+from typing import Callable, Optional
+
+# OpenTelemetry imports
 from opentelemetry import trace
-from opentelemetry.sdk.trace import ReadableSpan, SpanProcessor
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.resources import Resource
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
-
-from opentelemetry.sdk.trace.export import ConsoleSpanExporter
 from opentelemetry.instrumentation.logging import LoggingInstrumentor
 from opentelemetry.instrumentation.urllib import URLLibInstrumentor
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace import ReadableSpan, SpanProcessor, TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
+
+# Local application imports
 from usaspending_api.config import CONFIG
 
 
