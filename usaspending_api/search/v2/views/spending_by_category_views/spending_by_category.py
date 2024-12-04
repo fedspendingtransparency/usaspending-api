@@ -16,6 +16,7 @@ from usaspending_api.common.api_versioning import api_transformations, API_TRANS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
+from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
 from usaspending_api.common.exceptions import ElasticsearchConnectionException, NotImplementedException
 from usaspending_api.common.helpers.generic_helper import (
     get_simple_pagination_metadata,
@@ -32,6 +33,7 @@ from usaspending_api.search.v2.elasticsearch_helper import (
 )
 from usaspending_api.search.filters.elasticsearch.filter import _QueryType
 from usaspending_api.search.filters.time_period.query_types import TransactionSearchTimePeriod
+from usaspending_api.search.filters.time_period.query_types import AwardSearchTimePeriod
 from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
 
 logger = logging.getLogger(__name__)
@@ -60,6 +62,14 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
     def post(self, request: Request) -> Response:
         models = [
             {"name": "subawards", "key": "subawards", "type": "boolean", "default": False, "optional": True},
+            {
+                "name": "spending_level",
+                "key": "spending_level",
+                "type": "enum",
+                "enum_values": ["awards", "transactions", "subawards"],
+                "optional": True,
+                "default": "transactions",
+            }
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
         models.extend(copy.deepcopy(PAGINATION))
@@ -97,7 +107,7 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
             base_queryset = subaward_filter(self.filters)
             self.obligation_column = "subaward_amount"
             results = self.query_django_for_subawards(base_queryset)
-        else:
+        elif validated_payload["spending_level"] == "transactions":
             filter_options = {}
             time_period_obj = TransactionSearchTimePeriod(
                 default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
@@ -107,16 +117,37 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
             )
             filter_options["time_period_obj"] = new_awards_only_decorator
             filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(self.filters, **filter_options)
-            results = self.query_elasticsearch_for_prime_awards(filter_query)
+            search = TransactionSearch().filter(filter_query)
+            results = search.handle_execute()
+        else:
+            options = {}
+            time_period_obj = AwardSearchTimePeriod(
+                default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
+            )
+            new_awards_only_decorator = NewAwardsOnlyTimePeriod(
+                time_period_obj=time_period_obj, query_type=_QueryType.AWARDS
+            )
+            options["time_period_obj"] = new_awards_only_decorator
+            filter_query = QueryWithFilters.generate_awards_elasticsearch_query(self.filters, **options)
+            search = AwardSearch().filter(filter_query)
+            results = search.handle_execute()
+           
+            # results = self.query_elasticsearch_for_prime_awards(filter_query)
 
         page_metadata = get_simple_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
+        
+        results_data = results.to_dict()["hits"]["hits"] 
 
+        message_list = self._get_messages(original_filters)
+        message_list.append("'subawards' will be deprecated in the future. Set ‘spending_level’ to ‘subawards’ instead. "
+            "See documentation for more information. ")
+        
         response = {
             "category": self.category.name,
             "limit": self.pagination.limit,
             "page_metadata": page_metadata,
-            "results": results[: self.pagination.limit],
-            "messages": self._get_messages(original_filters),
+            "results": results_data[: self.pagination.limit],
+            "messages": message_list,
         }
 
         return response
