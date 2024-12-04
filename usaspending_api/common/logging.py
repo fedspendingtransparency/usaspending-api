@@ -10,7 +10,7 @@ from django.utils.deprecation import MiddlewareMixin
 from django.utils.timezone import now
 
 # Typing imports
-from typing import Callable, Optional
+from typing import Callable, Optional, List, Tuple
 
 # OpenTelemetry imports
 from opentelemetry import trace
@@ -248,14 +248,7 @@ class CustomAttributeSpanProcessor(SpanProcessor):
         pass  # No action needed when the span ends
 
 
-def add_custom_attribute_span_processors(attribute_pairs):
-    """
-    Helper function to add custom attribute span processors to the tracer provider.
-
-    Args:
-        attribute_pairs (list of tuples): Each tuple contains (key, value) for the attribute.
-    """
-
+def add_custom_attribute_span_processors(attribute_pairs: List[Tuple[str, str]]):
     for key, value in attribute_pairs:
         custom_attribute_span_processor = CustomAttributeSpanProcessor(key, value)
         trace.get_tracer_provider().add_span_processor(custom_attribute_span_processor)
