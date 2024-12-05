@@ -71,6 +71,7 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
             {
                 "scope": "place_of_performance",
                 "geo_layer": "state",
+                "spending_level": "transactions",
                 "results": [
                     {
                         "shape_code": "ND",
@@ -95,7 +96,8 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
                     }
                 ],
                 "messages": [
-                    "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints."
+                    "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints.",
+                    "The 'subawards' field will be deprecated in the future. Set 'spending_level' to 'subawards' instead. See documentation for more information."
                 ]
             }
 
