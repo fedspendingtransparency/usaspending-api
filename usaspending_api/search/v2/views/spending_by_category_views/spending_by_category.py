@@ -109,31 +109,11 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
             self.obligation_column = "subaward_amount"
             results = self.query_django_for_subawards(base_queryset)
         elif validated_payload["spending_level"] == "transactions":
-            filter_options = {}
-            time_period_obj = TransactionSearchTimePeriod(
-                default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
-            )
-            new_awards_only_decorator = NewAwardsOnlyTimePeriod(
-                time_period_obj=time_period_obj, query_type=_QueryType.TRANSACTIONS
-            )
-            filter_options["time_period_obj"] = new_awards_only_decorator
-            filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(self.filters, **filter_options)
-            results = self.query_elasticsearch_for_prime_awards(filter_query, validated_payload["spending_level"])
+            results = self.query_elasticsearch_for_transactions(validated_payload)
         else:
-            options = {}
-            time_period_obj = AwardSearchTimePeriod(
-                default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
-            )
-            new_awards_only_decorator = NewAwardsOnlyTimePeriod(
-                time_period_obj=time_period_obj, query_type=_QueryType.AWARDS
-            )
-            options["time_period_obj"] = new_awards_only_decorator
-            filter_query = QueryWithFilters.generate_awards_elasticsearch_query(self.filters, **options)
-            results = self.query_elasticsearch_for_prime_awards(filter_query, validated_payload["spending_level"])
+            results = self.query_elasticsearch_for_awards(validated_payload)
 
         page_metadata = get_simple_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
-        
-        # results_data = results.to_dict()["hits"]["hits"] 
 
         message_list = self._get_messages(original_filters)
         message_list.append("'subawards' will be deprecated in the future. Set ‘spending_level’ to ‘subawards’ instead. "
@@ -148,7 +128,35 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         }
 
         return response
+    
+    def query_elasticsearch_for_transactions(self, validated_payload: dict) -> list:
+        filter_options = {}
+        time_period_obj = TransactionSearchTimePeriod(
+            default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
+        )
+        new_awards_only_decorator = NewAwardsOnlyTimePeriod(
+            time_period_obj=time_period_obj, query_type=_QueryType.TRANSACTIONS
+        )
+        filter_options["time_period_obj"] = new_awards_only_decorator
+        filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(self.filters, **filter_options)
+        results = self.query_elasticsearch_for_prime_awards(filter_query, validated_payload["spending_level"])
 
+        return results
+
+    def query_elasticsearch_for_awards(self, validated_payload: dict) -> list:
+        options = {}
+        time_period_obj = AwardSearchTimePeriod(
+            default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
+        )
+        new_awards_only_decorator = NewAwardsOnlyTimePeriod(
+            time_period_obj=time_period_obj, query_type=_QueryType.AWARDS
+        )
+        options["time_period_obj"] = new_awards_only_decorator
+        filter_query = QueryWithFilters.generate_awards_elasticsearch_query(self.filters, **options)
+        results = self.query_elasticsearch_for_prime_awards(filter_query, validated_payload["spending_level"])
+
+        return results
+    
     def _raise_not_implemented(self):
         msg = "Category '{}' is not implemented"
         if self.subawards:
