@@ -2,7 +2,7 @@ import copy
 import logging
 from decimal import Decimal
 from enum import Enum
-from typing import Dict, List, Literal, Optional, Union
+from typing import Dict, List, Optional, Union
 
 from django.conf import settings
 from django.db import models
