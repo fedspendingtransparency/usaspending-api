@@ -21,6 +21,12 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
         + `filters` (required, AdvancedFilterObject)
         + `subawards` (optional, boolean)
             True when you want to group by Subawards instead of Awards. Defaulted to False.
+        + `spending_level` (required, enum[string])
+            Spending level value that was provided in the request.
+            + Members
+                + `transactions`
+                + `awards`
+                + `subawards`
         + `scope` (required, enum[string])
             When fetching transactions, use the primary place of performance or recipient location
             + Members
@@ -51,6 +57,12 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
     + Attributes (object)
         + `scope`
         + `geo_layer`
+        + `spending_level` (required, enum[string])
+            Spending level value that was provided in the request.
+            + Members
+                + `transactions`
+                + `awards`
+                + `subawards`
         + `results` (array[GeographyTypeResult], fixed-type)
         + `messages` (optional, array[string])
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
