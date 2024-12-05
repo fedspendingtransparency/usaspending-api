@@ -2,7 +2,6 @@ from decimal import Decimal
 from typing import List
 
 from django.db.models import (
-    Case,
     DecimalField,
     F,
     Func,
@@ -13,12 +12,12 @@ from django.db.models import (
     Subquery,
     Sum,
     Value,
-    When,
 )
 from django.db.models.functions import Coalesce
 from rest_framework.response import Response
 
 from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.common.calculations import file_b
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.disaster.v2.views.disaster_base import (
@@ -146,7 +145,7 @@ class SpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin, DisasterB
     def total_queryset(self):
         filters = [
             self.is_in_provided_def_codes,
-            self.is_non_zero_total_spending,
+            file_b.is_non_zero_total_spending(),
             self.all_closed_defc_submissions,
             Q(treasury_account__isnull=False),
             Q(treasury_account__federal_account__isnull=False),
@@ -160,45 +159,8 @@ class SpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin, DisasterB
             "award_count": Value(None, output_field=IntegerField()),
             "fa_description": F("treasury_account__federal_account__account_title"),
             "fa_id": F("treasury_account__federal_account_id"),
-            "obligation": Coalesce(
-                Sum(
-                    Case(
-                        When(
-                            self.final_period_submission_query_filters & Q(prior_year_adjustment="B"),
-                            then=self.file_b_obligation_columns["pya_b"],
-                        ),
-                        When(
-                            self.final_period_submission_query_filters & Q(prior_year_adjustment="P"),
-                            then=self.file_b_obligation_columns["pya_p"],
-                        ),
-                        When(
-                            self.final_period_submission_query_filters
-                            & Q(Q(prior_year_adjustment="X") | Q(prior_year_adjustment__isnull=True)),
-                            then=F(self.file_b_obligation_columns["base_pya_x"])
-                            + self.file_b_obligation_columns["pya_x"],
-                        ),
-                        default=Value(0),
-                        output_field=DecimalField(max_digits=23, decimal_places=2),
-                    )
-                ),
-                0,
-                output_field=DecimalField(max_digits=23, decimal_places=2),
-            ),
-            "outlay": Coalesce(
-                Sum(
-                    Case(
-                        When(
-                            self.final_period_submission_query_filters
-                            & Q(Q(prior_year_adjustment="X") | Q(prior_year_adjustment__isnull=True)),
-                            then=F(self.file_b_outlay_columns["base_pya_x"]) + self.file_b_outlay_columns["pya_x"],
-                        ),
-                        default=Value(0),
-                        output_field=DecimalField(max_digits=23, decimal_places=2),
-                    )
-                ),
-                0,
-                output_field=DecimalField(max_digits=23, decimal_places=2),
-            ),
+            "obligation": Sum(file_b.get_obligations(is_multi_year=True, include_final_sub_filter=True)),
+            "outlay": Sum(file_b.get_outlays(include_final_sub_filter=True)),
             "total_budgetary_resources": Coalesce(
                 Subquery(
                     latest_gtas_of_each_year_queryset()
