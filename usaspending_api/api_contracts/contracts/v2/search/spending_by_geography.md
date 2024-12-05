@@ -21,6 +21,12 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
         + `filters` (required, AdvancedFilterObject)
         + `subawards` (optional, boolean)
             True when you want to group by Subawards instead of Awards. Defaulted to False.
+        + `spending_level` (required, enum[string])
+            Spending level value that was provided in the request.
+            + Members
+                + `transactions`
+                + `awards`
+                + `subawards`
         + `scope` (required, enum[string])
             When fetching transactions, use the primary place of performance or recipient location
             + Members
@@ -51,6 +57,12 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
     + Attributes (object)
         + `scope`
         + `geo_layer`
+        + `spending_level` (required, enum[string])
+            Spending level value that was provided in the request.
+            + Members
+                + `transactions`
+                + `awards`
+                + `subawards`
         + `results` (array[GeographyTypeResult], fixed-type)
         + `messages` (optional, array[string])
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
@@ -59,6 +71,7 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
             {
                 "scope": "place_of_performance",
                 "geo_layer": "state",
+                "spending_level": "transactions",
                 "results": [
                     {
                         "shape_code": "ND",
@@ -83,7 +96,8 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
                     }
                 ],
                 "messages": [
-                    "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints."
+                    "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints.",
+                    "The 'subawards' field will be deprecated in the future. Set 'spending_level' to 'subawards' instead. See documentation for more information."
                 ]
             }
 

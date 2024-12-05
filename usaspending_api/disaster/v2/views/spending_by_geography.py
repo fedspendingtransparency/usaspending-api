@@ -226,7 +226,7 @@ class SpendingByGeographyViewSet(DisasterBase):
                 state_fips = code_to_state.get(state_code, {}).get("fips", "")
                 for b in sub_bucket:
                     per_capita = None
-                    county_code = b.get("key")
+                    county_code = b.get("key")[2:]
                     county_data = (
                         PopCounty.objects.filter(county_number=county_code, state_code=state_fips)
                         .order_by("-id")
@@ -272,7 +272,7 @@ class SpendingByGeographyViewSet(DisasterBase):
                 state_fips = code_to_state.get(state_code, {}).get("fips", "")
                 for b in sub_bucket:
                     per_capita = None
-                    congress_code = b.get("key")
+                    congress_code = b.get("key")[2:]
                     display_name = (
                         f"{state_code}-{congress_code}".upper()
                         if state_code and congress_code and congress_code != "NULL" and state_code != "NULL"
