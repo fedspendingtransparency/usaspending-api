@@ -70,7 +70,7 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
                 "enum_values": ["awards", "transactions", "subawards"],
                 "optional": True,
                 "default": "transactions",
-            }
+            },
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
         models.extend(copy.deepcopy(PAGINATION))
@@ -116,9 +116,11 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         page_metadata = get_simple_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
 
         message_list = self._get_messages(original_filters)
-        message_list.append("'subawards' will be deprecated in the future. Set ‘spending_level’ to ‘subawards’ instead. "
-            "See documentation for more information. ")
-        
+        message_list.append(
+            "'subawards' will be deprecated in the future. Set ‘spending_level’ to ‘subawards’ instead. "
+            "See documentation for more information. "
+        )
+
         response = {
             "category": self.category.name,
             "limit": self.pagination.limit,
@@ -128,7 +130,7 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         }
 
         return response
-    
+
     def query_elasticsearch_for_transactions(self, validated_payload: dict) -> list:
         filter_options = {}
         time_period_obj = TransactionSearchTimePeriod(
@@ -156,7 +158,7 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         results = self.query_elasticsearch_for_prime_awards(filter_query, validated_payload["spending_level"])
 
         return results
-    
+
     def _raise_not_implemented(self):
         msg = "Category '{}' is not implemented"
         if self.subawards:
@@ -187,17 +189,19 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
             .order_by("-amount")
         )
 
-    def build_elasticsearch_search_with_aggregations(self, filter_query: ES_Q, spending_level: str) -> Optional[TransactionSearch]:
+    def build_elasticsearch_search_with_aggregations(
+        self, filter_query: ES_Q, spending_level: str
+    ) -> Optional[TransactionSearch]:
         """
         Using the provided ES_Q object creates a TransactionSearch object with the necessary applied aggregations.
         """
         # Create the filtered Search Object
         search = None
-        if(spending_level == "transactions"):
+        if spending_level == "transactions":
             search = TransactionSearch().filter(filter_query)
-        elif(spending_level == "awards"):
+        elif spending_level == "awards":
             search = AwardSearch().filter(filter_query)
-        
+
         sum_aggregations = get_scaled_sum_aggregations("generated_pragmatic_obligation", self.pagination)
 
         # Need to handle high cardinality categories differently; this assumes that the Search object references
@@ -211,9 +215,11 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         else:
             # Get count of unique buckets; terminate early if there are no buckets matching criteria
             bucket_count = None
-            if(spending_level == "transactions"):
-                bucket_count = get_number_of_unique_terms_for_transactions(filter_query, f"{self.category.agg_key}.hash")
-            elif(spending_level == "awards"):
+            if spending_level == "transactions":
+                bucket_count = get_number_of_unique_terms_for_transactions(
+                    filter_query, f"{self.category.agg_key}.hash"
+                )
+            elif spending_level == "awards":
                 bucket_count = get_number_of_unique_terms_for_awards(filter_query, f"{self.category.agg_key}.hash")
 
             if bucket_count == 0:
@@ -248,7 +254,7 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
 
         return search
 
-    def query_elasticsearch_for_prime_awards(self, filter_query: ES_Q,  spending_level: str) -> list:
+    def query_elasticsearch_for_prime_awards(self, filter_query: ES_Q, spending_level: str) -> list:
         search = self.build_elasticsearch_search_with_aggregations(filter_query, spending_level)
         if search is None:
             return []
