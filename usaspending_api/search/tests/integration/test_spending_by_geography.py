@@ -84,6 +84,7 @@ def test_spending_by_geography_subawards_failure(client):
     )
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
+
 @pytest.mark.django_db
 def test_spending_by_geography_spending_level_failure(client):
 
@@ -102,6 +103,7 @@ def test_spending_by_geography_spending_level_failure(client):
     )
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
+
 @pytest.mark.django_db
 def test_spending_by_geography_subawards_legacy_param(client):
 
@@ -116,10 +118,11 @@ def test_spending_by_geography_subawards_legacy_param(client):
                 "filters": non_legacy_filters(),
                 "subawards": True,
             }
-        )
+        ),
     )
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.json()['spending_level'] == 'subwards'
+    assert resp.json()["spending_level"] == "subwards"
+
 
 def _get_shape_code_for_sort(result_dict):
     return result_dict["shape_code"]

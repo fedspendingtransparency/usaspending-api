@@ -198,7 +198,9 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                 SpendingLevel.TRANSACTION: "recipient_location",
             },
         }
-        self.spending_level = SpendingLevel("subawards" if json_request["subawards"] else json_request["spending_level"])
+        self.spending_level = SpendingLevel(
+            "subawards" if json_request["subawards"] else json_request["spending_level"]
+        )
         self.scope = json_request["scope"]
         self.scope_field_name = model_dict[self.scope][self.spending_level]
         self.agg_key = f"{self.scope_field_name}_{agg_key_dict[json_request['geo_layer']]}"
@@ -268,7 +270,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                 (
                     "The 'subawards' field will be deprecated in the future. "
                     "Set 'spending_level' to 'subawards' instead. See documentation for more information."
-                )
+                ),
             ],
         }
 
@@ -321,7 +323,9 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
         return results
 
-    def state_results(self, filter_args: Dict[str, Union[str, bool]], lookup_fields: List[str], loc_lookup: str) -> List[dict]:
+    def state_results(
+        self, filter_args: Dict[str, Union[str, bool]], lookup_fields: List[str], loc_lookup: str
+    ) -> List[dict]:
         # Adding additional state filters if specified
         if self.geo_layer_filters:
             self.queryset = self.queryset.filter(**{f"{loc_lookup}__in": self.geo_layer_filters})
@@ -365,7 +369,12 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         return results
 
     def county_district_queryset_subawards(
-        self, kwargs: Dict[str, Union[str, bool]], fields_list: List[str], loc_lookup: str, state_lookup: str, scope_field_name: str
+        self,
+        kwargs: Dict[str, Union[str, bool]],
+        fields_list: List[str],
+        loc_lookup: str,
+        state_lookup: str,
+        scope_field_name: str,
     ) -> QuerySet:
         # Originally it was ok for geo layers list to use the geo layer value
         # Now that geo layer value doesn't map directly to intent, e.g. district_current functionality
