@@ -121,7 +121,7 @@ def test_spending_by_geography_subawards_legacy_param(client):
         ),
     )
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.json()["spending_level"] == "subwards"
+    assert resp.json()["spending_level"] == "subawards"
 
 
 def _get_shape_code_for_sort(result_dict):
