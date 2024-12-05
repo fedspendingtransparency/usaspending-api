@@ -1,7 +1,7 @@
 import json
 from datetime import date
 from functools import lru_cache
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from django.db.models import Case, Count, DecimalField, F, Max, Q, QuerySet, Sum, Value, When
 from django.db.models.functions import Coalesce
@@ -16,7 +16,6 @@ from usaspending_api.common.containers import Bunch
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.helpers.date_helper import now
 from usaspending_api.common.helpers.fiscal_year_helpers import generate_fiscal_year_and_month
-from usaspending_api.common.helpers.orm_helpers import sum_column_list
 from usaspending_api.common.validator import TinyShield, customize_pagination_with_sort_columns
 from usaspending_api.disaster.models import CovidFABASpending
 from usaspending_api.references.models import DisasterEmergencyFundCode
@@ -117,65 +116,6 @@ class DisasterBase(APIView):
         return False
 
     @cached_property
-    def file_b_obligation_columns(self) -> Dict:
-        pya_columns = {
-            "base_pya_x": "obligations_incurred_by_program_object_class_cpe",  # separated for non-zero calculations
-            "pya_b": [
-                "ussgl480100_undelivered_orders_obligations_unpaid_cpe",
-                "ussgl480200_undelivered_orders_oblig_prepaid_advanced_cpe",
-                "ussgl487100_down_adj_pri_unpaid_undel_orders_oblig_recov_cpe",
-                "ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe",
-                "ussgl488100_upward_adjust_pri_undeliv_order_oblig_unpaid_cpe",
-                "ussgl488200_up_adjust_pri_undeliv_order_oblig_ppaid_adv_cpe",
-                "ussgl490100_delivered_orders_obligations_unpaid_cpe",
-                "ussgl490200_delivered_orders_obligations_paid_cpe",
-                "ussgl490800_authority_outlayed_not_yet_disbursed_cpe",
-                "ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe",
-                "ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe",
-                "ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe",
-                "ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe",
-            ],
-            "pya_p": [
-                Coalesce(
-                    "ussgl480110_reinstated_del_cpe", 0, output_field=DecimalField(max_digits=23, decimal_places=2)
-                ),
-                Coalesce(
-                    "ussgl490110_reinstated_del_cpe", 0, output_field=DecimalField(max_digits=23, decimal_places=2)
-                ),
-            ],
-            "pya_x": ["deobligations_recoveries_refund_pri_program_object_class_cpe"],
-        }
-
-        # Some PYA values share columns, so we handle that here
-        # !!! The order of the statements is important !!!
-        pya_columns["pya_x"].extend(pya_columns["pya_p"])
-        pya_columns["pya_p"].extend(pya_columns["pya_b"])
-
-        # Loop through the lists of column names to create expressions we can use in QuerySets
-        for pya_label, val in pya_columns.items():
-            if isinstance(val, list):
-                pya_columns[pya_label] = sum_column_list(val)
-
-        return pya_columns
-
-    @cached_property
-    def file_b_outlay_columns(self) -> Dict:
-        pya_columns = {
-            "base_pya_x": "gross_outlay_amount_by_program_object_class_cpe",  # separated for non-zero calculations
-            "pya_x": [
-                "ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe",
-                "ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe",
-            ],
-        }
-
-        # Loop through the lists of column names to create expressions we can use in QuerySets
-        for pya_label, val in pya_columns.items():
-            if isinstance(val, list):
-                pya_columns[pya_label] = sum_column_list(val)
-
-        return pya_columns
-
-    @cached_property
     def filters(self):
         all_def_codes = sorted(DisasterEmergencyFundCode.objects.values_list("code", flat=True))
         object_keys_lookup = {
@@ -249,25 +189,6 @@ class DisasterBase(APIView):
     @property
     def is_in_provided_def_codes(self):
         return Q(disaster_emergency_fund__code__in=self.def_codes)
-
-    @property
-    def is_non_zero_total_spending(self) -> Q:
-        """
-        This method returns a Q object used in Django QuerySets to validate if the total spending is zeroed out.
-        The filter only takes into account PYA of "X" since the intention behind this filter is to remove records
-        where the Obligations are zeroed out by the De-obligations. Since Obligations incurred are only taken into
-        account when the PYA == "X" the other PYA columns are not applied here. Similar logic is applied to Outlays.
-        """
-        return ~Q(
-            Q(
-                Q(Q(prior_year_adjustment="X") | Q(prior_year_adjustment__isnull=True))
-                & Q(**{self.file_b_obligation_columns["base_pya_x"]: self.file_b_obligation_columns["pya_x"] * -1})
-            )
-            & Q(
-                Q(Q(prior_year_adjustment="X") | Q(prior_year_adjustment__isnull=True))
-                & Q(**{self.file_b_outlay_columns["base_pya_x"]: self.file_b_outlay_columns["pya_x"] * -1})
-            )
-        )
 
     def has_award_of_provided_type(self, should_join_awards: bool = True) -> Q:
         award_type_codes = self.filters.get("award_type_codes")

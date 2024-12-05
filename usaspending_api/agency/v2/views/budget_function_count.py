@@ -5,6 +5,7 @@ from typing import Any
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.agency.v2.views.agency_base import AgencyBase
 from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.common.calculations import file_b
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.submissions.helpers import get_latest_submission_ids_for_fiscal_year
 
@@ -42,12 +43,7 @@ class BudgetFunctionCount(AgencyBase):
             Q(treasury_account_id=OuterRef("pk")),
             Q(submission_id__in=submission_ids),
             Q(treasury_account__funding_toptier_agency=self.toptier_agency),
-            Q(
-                Q(obligations_incurred_by_program_object_class_cpe__gt=0)
-                | Q(obligations_incurred_by_program_object_class_cpe__lt=0)
-                | Q(gross_outlay_amount_by_program_object_class_cpe__gt=0)
-                | Q(gross_outlay_amount_by_program_object_class_cpe__lt=0)
-            ),
+            file_b.is_non_zero_total_spending(),
         ]
         return TreasuryAppropriationAccount.objects.filter(
             Exists(FinancialAccountsByProgramActivityObjectClass.objects.filter(*filters))

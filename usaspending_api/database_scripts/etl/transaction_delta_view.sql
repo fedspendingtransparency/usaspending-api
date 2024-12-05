@@ -117,6 +117,8 @@ SELECT
   "tas_paths",
   "tas_components",
   "federal_accounts"::JSON,
-  "disaster_emergency_fund_codes"
+  "disaster_emergency_fund_codes",
+  "program_activity_names",
+  "program_activity_codes"
 FROM "transaction_search"
 WHERE "action_date" >= '2007-10-01';
