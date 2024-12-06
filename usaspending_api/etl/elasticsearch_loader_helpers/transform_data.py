@@ -21,8 +21,13 @@ def transform_award_data(worker: TaskSpec, records: List[dict]) -> List[dict]:
         "iija_spending_by_defc": convert_json_data_to_dict,
     }
     agg_key_creations = {
+        "awarding_subtier_agency_agg_key": lambda x: x["awarding_subtier_agency_code"],
+        "awarding_toptier_agency_agg_key": lambda x: x["awarding_toptier_agency_code"],
         "funding_subtier_agency_agg_key": lambda x: x["funding_subtier_agency_code"],
         "funding_toptier_agency_agg_key": lambda x: x["funding_toptier_agency_code"],
+        "naics_agg_key": lambda x: x["naics_code"],
+        "psc_agg_key": lambda x: x["product_or_service_code"],
+        "defc_agg_key": lambda x: x["disaster_emergency_fund_codes"],
         "pop_congressional_agg_key": lambda x: x["pop_congressional_code"],
         "pop_congressional_cur_agg_key": lambda x: x["pop_congressional_code_current"],
         "pop_county_agg_key": lambda x: x["pop_county_code"],
