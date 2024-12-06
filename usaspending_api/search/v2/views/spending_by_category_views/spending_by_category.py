@@ -2,6 +2,7 @@ import copy
 import logging
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
+from enum import Enum
 from typing import List, Optional
 
 from django.conf import settings
@@ -44,6 +45,12 @@ logger = logging.getLogger(__name__)
 class Category:
     name: str
     agg_key: str
+
+
+class AwardType(Enum):
+    TRANSACTIONS = "transactions"
+    AWARDS = "awards"
+    SUBAWARDS = "subawards"
 
 
 @api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
@@ -104,11 +111,11 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         self.subawards = validated_payload["subawards"]
         self.pagination = self._get_pagination(validated_payload)
 
-        if validated_payload["spending_level"] == "subawards":
+        if AwardType(validated_payload["spending_level"]) == AwardType.SUBAWARDS:
             base_queryset = subaward_filter(self.filters)
             self.obligation_column = "subaward_amount"
             results = self.query_django_for_subawards(base_queryset)
-        elif validated_payload["spending_level"] == "transactions":
+        elif AwardType(validated_payload["spending_level"]) == AwardType.TRANSACTIONS:
             results = self.query_elasticsearch_for_transactions(validated_payload)
         else:
             results = self.query_elasticsearch_for_awards(validated_payload)
@@ -123,6 +130,7 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
 
         response = {
             "category": self.category.name,
+            "spending_level": validated_payload["spending_level"],
             "limit": self.pagination.limit,
             "page_metadata": page_metadata,
             "results": results[: self.pagination.limit],
@@ -197,9 +205,9 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         """
         # Create the filtered Search Object
         search = None
-        if spending_level == "transactions":
+        if AwardType(spending_level) == AwardType.TRANSACTIONS:
             search = TransactionSearch().filter(filter_query)
-        elif spending_level == "awards":
+        elif AwardType(spending_level) == AwardType.AWARDS:
             search = AwardSearch().filter(filter_query)
 
         sum_aggregations = get_scaled_sum_aggregations("generated_pragmatic_obligation", self.pagination)

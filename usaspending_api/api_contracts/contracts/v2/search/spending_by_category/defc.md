@@ -25,8 +25,14 @@ This endpoint should return a an aggregate list of DEFC's sorted by the total am
             The page of results to return based on the limit
         + `subawards` (optional, boolean)
             Determines whether Prime Awards or Sub Awards are searched. This field will be depreciated soon.
-        + `spending_level` (required, string)
-            Determines whether Prime Awards (awards), Transactions (transactions), or Sub Awards (subawards) are searched
+        + `spending_level` (optional, enum[string])
+            Group the spending by level. This also determines what data source is used for the totals.
+            + Members
+                + `transactions`
+                + `awards`
+                + `subawards`
+            + Default
+                + `transactions`
 
     + Body
 
