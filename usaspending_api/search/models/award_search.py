@@ -192,6 +192,9 @@ class AwardSearch(models.Model):
     raw_recipient_name = models.TextField(null=True)
     data_source = models.TextField(null=True)
     generated_pragmatic_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    program_activity_names = ArrayField(models.TextField(), null=True, default=None)
+    program_activity_codes = ArrayField(models.TextField(), null=True, default=None)
+
     objects = CTEManager()
 
     class Meta:

@@ -1,6 +1,9 @@
 from datetime import datetime, timezone
+
 from django.db.models import Sum
+
 from usaspending_api.awards.models import FinancialAccountsByAwards
+from usaspending_api.common.calculations import file_b
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import GTASSF133Balances
@@ -149,7 +152,7 @@ def type_filter(_type, filters, limit=None):
     # obligations_incurred_by_program_object_class_cpe is picked from the final period of the quarter.
     queryset = FinancialAccountsByProgramActivityObjectClass.objects.filter(
         submission__reporting_fiscal_year=fiscal_year, submission__reporting_fiscal_period=fiscal_period
-    ).annotate(amount=Sum("obligations_incurred_by_program_object_class_cpe"))
+    ).annotate(amount=Sum(file_b.get_obligations()))
 
     # Apply filters to queryset results
     alt_set, queryset = spending_filter(alt_set, queryset, filters, _type)
