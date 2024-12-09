@@ -31,6 +31,7 @@ from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyT
 from usaspending_api.search.filters.time_period.query_types import TransactionSearchTimePeriod
 from usaspending_api.search.models import SubawardSearch
 from usaspending_api.search.v2.elasticsearch_helper import (
+    get_number_of_unique_terms_for_awards,
     get_number_of_unique_terms_for_transactions,
     get_scaled_sum_aggregations,
 )
@@ -538,22 +539,36 @@ class SpendingByGeographyVisualizationViewSet(APIView):
     def build_elasticsearch_search_with_aggregation(
         self, filter_query: ES_Q
     ) -> Optional[Union[TransactionSearch, AwardSearch]]:
-        # Create the initial search using filters
-        if self.spending_level == SpendingLevel.AWARD:
-            search = AwardSearch().filter(filter_query)
-        else:
-            search = TransactionSearch().filter(filter_query)
-        # Check number of unique terms (buckets) for performance and restrictions on maximum buckets allowed
-        bucket_count = get_number_of_unique_terms_for_transactions(filter_query, f"{self.agg_key}.hash")
 
+        # Check number of unique terms (buckets) for performance and restrictions on maximum buckets allowed
+        bucket_count_func = (
+            get_number_of_unique_terms_for_awards
+            if self.spending_level == SpendingLevel.AWARD
+            else get_number_of_unique_terms_for_transactions
+        )
+        bucket_count = bucket_count_func(filter_query, f"{self.agg_key}.hash")
         if bucket_count == 0:
             return None
 
+        # Define the aggregation
         # Add 100 to make sure that we consider enough records in each shard for accurate results
         group_by_agg_key = A("terms", field=self.agg_key, size=bucket_count, shard_size=bucket_count + 100)
+
+        # Create the initial search using filters
+        if self.spending_level == SpendingLevel.AWARD:
+            search = AwardSearch().filter(filter_query)
+            # Add total outlays to aggregation
+            total_outlays_sum_aggregations = get_scaled_sum_aggregations("total_outlays")
+            total_outlays_sum_field = total_outlays_sum_aggregations["sum_field"]
+            search.aggs.bucket("group_by_agg_key", group_by_agg_key).metric(
+                "total_outlays_sum_field", total_outlays_sum_field
+            )
+        else:
+            search = TransactionSearch().filter(filter_query)
+
+        # Add obligation column to aggregation
         sum_aggregations = get_scaled_sum_aggregations(self.obligation_column)
         sum_field = sum_aggregations["sum_field"]
-
         search.aggs.bucket("group_by_agg_key", group_by_agg_key).metric("sum_field", sum_field)
 
         # Set size to 0 since we don't care about documents returned
@@ -656,6 +671,9 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                 "population": population,
                 "per_capita": per_capita,
             }
+            if bucket.get("total_outlays_sum_field"):
+                total_outlays = int(bucket.get("total_outlays_sum_field", {"value": 0})["value"]) / Decimal("100")
+                results[geo_info["shape_code"]]["total_outlays"] = total_outlays
         return results
 
     def query_elasticsearch(self, filter_query: ES_Q) -> list:
