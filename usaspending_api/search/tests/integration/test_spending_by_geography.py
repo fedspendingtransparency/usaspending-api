@@ -2407,9 +2407,16 @@ spending_level_test_data = [
 
 @pytest.mark.parametrize("spending_level,expected_results", spending_level_test_data)
 def test_correct_response_with_spending_level(
-    spending_level, expected_results, client, monkeypatch, elasticsearch_transaction_index, awards_and_transactions
+    spending_level,
+    expected_results,
+    client,
+    monkeypatch,
+    elasticsearch_transaction_index,
+    elasticsearch_award_index,
+    awards_and_transactions,
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     resp = client.post(
         "/api/v2/search/spending_by_geography",
