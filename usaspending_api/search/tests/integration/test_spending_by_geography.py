@@ -2334,3 +2334,104 @@ def test_spending_by_geo_program_activity(
 
     assert resp.status_code == status.HTTP_200_OK
     assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
+
+
+spending_level_test_data = [
+    (
+        "awards",
+        [
+            {"shape_code": "", "display_name": None, "aggregated_amount": 0.0, "population": None, "per_capita": None},
+            {
+                "shape_code": "CAN",
+                "display_name": "Canada",
+                "aggregated_amount": 0.0,
+                "population": None,
+                "per_capita": None,
+            },
+            {
+                "shape_code": "JPN",
+                "display_name": "Japan",
+                "aggregated_amount": 0.0,
+                "population": None,
+                "per_capita": None,
+            },
+            {
+                "shape_code": "USA",
+                "display_name": "United States",
+                "aggregated_amount": 0.0,
+                "population": None,
+                "per_capita": None,
+            },
+        ],
+    ),
+    (
+        "subawards",
+        [
+            {
+                "shape_code": "CAN",
+                "display_name": "Canada",
+                "aggregated_amount": 12345.0,
+                "population": None,
+                "per_capita": None,
+            },
+            {
+                "shape_code": "USA",
+                "display_name": "United States",
+                "aggregated_amount": 733231.0,
+                "population": None,
+                "per_capita": None,
+            },
+        ],
+    ),
+    (
+        "transactions",
+        [
+            {
+                "shape_code": "CAN",
+                "display_name": "Canada",
+                "aggregated_amount": 5000000.0,
+                "population": None,
+                "per_capita": None,
+            },
+            {
+                "shape_code": "USA",
+                "display_name": "United States",
+                "aggregated_amount": 5555555.0,
+                "population": None,
+                "per_capita": None,
+            },
+        ],
+    ),
+]
+
+
+@pytest.mark.parametrize("spending_level,expected_results", spending_level_test_data)
+def test_correct_response_with_spending_level(
+    spending_level, expected_results, client, monkeypatch, elasticsearch_transaction_index, awards_and_transactions
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
+    resp = client.post(
+        "/api/v2/search/spending_by_geography",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "scope": "place_of_performance",
+                "geo_layer": "country",
+                "spending_level": spending_level,
+                "filters": {"time_period": [{"start_date": "2018-10-01", "end_date": "2020-09-30"}]},
+            }
+        ),
+    )
+    expected_response = {
+        "scope": "place_of_performance",
+        "geo_layer": "country",
+        "spending_level": spending_level,
+        "results": expected_results,
+        "messages": [get_time_period_message(), spending_level_deprecation_message],
+    }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+
+    resp_json = resp.json()
+    resp_json["results"].sort(key=_get_shape_code_for_sort)
+    assert resp_json == expected_response
