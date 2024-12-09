@@ -2340,13 +2340,21 @@ spending_level_test_data = [
     (
         "awards",
         [
-            {"shape_code": "", "display_name": None, "aggregated_amount": 0.0, "population": None, "per_capita": None},
+            {
+                "shape_code": "",
+                "display_name": None,
+                "aggregated_amount": 0.0,
+                "population": None,
+                "per_capita": None,
+                "total_outlays": 0.0,
+            },
             {
                 "shape_code": "CAN",
                 "display_name": "Canada",
                 "aggregated_amount": 0.0,
                 "population": None,
                 "per_capita": None,
+                "total_outlays": 103256.02,
             },
             {
                 "shape_code": "JPN",
@@ -2354,6 +2362,7 @@ spending_level_test_data = [
                 "aggregated_amount": 0.0,
                 "population": None,
                 "per_capita": None,
+                "total_outlays": 0.0,
             },
             {
                 "shape_code": "USA",
@@ -2361,6 +2370,7 @@ spending_level_test_data = [
                 "aggregated_amount": 0.0,
                 "population": None,
                 "per_capita": None,
+                "total_outlays": 1962724012.91,
             },
         ],
     ),
