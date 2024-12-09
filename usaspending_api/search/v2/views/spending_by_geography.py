@@ -31,6 +31,7 @@ from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyT
 from usaspending_api.search.filters.time_period.query_types import TransactionSearchTimePeriod
 from usaspending_api.search.models import SubawardSearch
 from usaspending_api.search.v2.elasticsearch_helper import (
+    get_number_of_unique_terms_for_awards,
     get_number_of_unique_terms_for_transactions,
     get_scaled_sum_aggregations,
 )
@@ -538,16 +539,22 @@ class SpendingByGeographyVisualizationViewSet(APIView):
     def build_elasticsearch_search_with_aggregation(
         self, filter_query: ES_Q
     ) -> Optional[Union[TransactionSearch, AwardSearch]]:
+
+        # Check number of unique terms (buckets) for performance and restrictions on maximum buckets allowed
+        bucket_count_func = (
+            get_number_of_unique_terms_for_awards
+            if self.spending_level == SpendingLevel.AWARD
+            else get_number_of_unique_terms_for_transactions
+        )
+        bucket_count = bucket_count_func(filter_query, f"{self.agg_key}.hash")
+        if bucket_count == 0:
+            return None
+
         # Create the initial search using filters
         if self.spending_level == SpendingLevel.AWARD:
             search = AwardSearch().filter(filter_query)
         else:
             search = TransactionSearch().filter(filter_query)
-        # Check number of unique terms (buckets) for performance and restrictions on maximum buckets allowed
-        bucket_count = get_number_of_unique_terms_for_transactions(filter_query, f"{self.agg_key}.hash")
-
-        if bucket_count == 0:
-            return None
 
         # Add 100 to make sure that we consider enough records in each shard for accurate results
         group_by_agg_key = A("terms", field=self.agg_key, size=bucket_count, shard_size=bucket_count + 100)
