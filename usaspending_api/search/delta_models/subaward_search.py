@@ -203,6 +203,8 @@ SUBAWARD_SEARCH_COLUMNS = {
     "legal_entity_county_fips": {"delta": "STRING", "postgres": "TEXT"},
     "place_of_perform_county_fips": {"delta": "STRING", "postgres": "TEXT"},
     "pop_county_name": {"delta": "STRING", "postgres": "TEXT"},
+    "program_activity_names": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]"},
+    "program_activity_codes": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]"},
 }
 SUBAWARD_SEARCH_POSTGRES_VECTORS = {
     "keyword_ts_vector": ["sub_awardee_or_recipient_legal", "product_or_service_description", "subaward_description"],
@@ -252,12 +254,17 @@ subaward_search_load_sql_string = rf"""
     tas_summary AS (
         SELECT
             faba.award_id,
-            SORT_ARRAY(COLLECT_SET(CAST(taa.treasury_account_identifier AS INTEGER))) AS treasury_account_identifiers
+            SORT_ARRAY(COLLECT_SET(CAST(taa.treasury_account_identifier AS INTEGER))) AS treasury_account_identifiers,
+            SORT_ARRAY(COLLECT_SET(rpa.program_activity_name)) AS program_activity_names,
+            SORT_ARRAY(COLLECT_SET(rpa.program_activity_code)) AS program_activity_codes
         FROM
             global_temp.treasury_appropriation_account AS taa
         INNER JOIN
             int.financial_accounts_by_awards AS faba
                 ON taa.treasury_account_identifier = faba.treasury_account_id
+        LEFT JOIN
+            global_temp.ref_program_activity AS rpa
+                ON faba.program_activity_id = rpa.id
         WHERE
             faba.award_id IS NOT NULL
         GROUP BY
@@ -550,7 +557,9 @@ subaward_search_load_sql_string = rf"""
         pop_state_fips.fips AS place_of_perform_state_fips,
         CONCAT(rl_state_fips.fips, rl_county_fips.county_numeric) AS legal_entity_county_fips,
         CONCAT(pop_state_fips.fips, pop_county_fips.county_numeric) AS place_of_perform_county_fips,
-        UPPER(COALESCE(fpds.place_of_perform_county_na, fabs.place_of_perform_county_na)) AS pop_county_name
+        UPPER(COALESCE(fpds.place_of_perform_county_na, fabs.place_of_perform_county_na)) AS pop_county_name,
+        tas.program_activity_names,
+        tas.program_activity_codes
     FROM
         raw.subaward AS bs
     LEFT OUTER JOIN

@@ -1,5 +1,4 @@
 import logging
-
 from collections import OrderedDict
 from copy import deepcopy
 from datetime import datetime
@@ -8,11 +7,11 @@ from django.db.models import Sum
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from usaspending_api.common.helpers.orm_helpers import StringAggWithDefault
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.fiscal_year_helpers import generate_fiscal_year
+from usaspending_api.common.helpers.orm_helpers import StringAggWithDefault
 from usaspending_api.recipient.models import StateData
 from usaspending_api.recipient.v2.helpers import validate_year
 from usaspending_api.search.models import SummaryStateView
@@ -99,9 +98,12 @@ def get_all_states(year=None, award_type_codes=None, subawards=False):
     if award_type_codes:
         filters["type__in"] = award_type_codes
 
-    if not subawards:
+    if subawards:
+        # Currently, subawards are not supported by this function
+        return []
+    else:
         # calculate award total filtered by state
-        queryset = (
+        fiscal_year_queryset = (
             SummaryStateView.objects.filter(**filters)
             .values("pop_state_code")
             .annotate(
@@ -111,7 +113,6 @@ def get_all_states(year=None, award_type_codes=None, subawards=False):
             )
             .values("pop_state_code", "total", "distinct_awards", "outlay_total")
         )
-
         results = [
             {
                 "pop_state_code": row["pop_state_code"],
@@ -119,8 +120,24 @@ def get_all_states(year=None, award_type_codes=None, subawards=False):
                 "count": len(set(row["distinct_awards"].split(","))),
                 "total_outlays": row["outlay_total"],
             }
-            for row in list(queryset)
+            for row in list(fiscal_year_queryset)
         ]
+
+        existing_state_codes = [state["pop_state_code"] for state in results]
+
+        # Get all other states and return `0` for their award count and totals
+        all_states_queryset = SummaryStateView.objects.all().distinct("pop_state_code").values("pop_state_code")
+        for row in all_states_queryset:
+            if row["pop_state_code"] not in existing_state_codes:
+                results.append(
+                    {
+                        "pop_state_code": row["pop_state_code"],
+                        "total": 0,
+                        "count": 0,
+                        "total_outlays": 0,
+                    }
+                )
+
     return results
 
 

@@ -526,6 +526,8 @@ def awards_and_transactions(db):
         sub_place_of_perform_country_co="CAN",
         sub_legal_entity_country_code="USA",
         sub_action_date="2020-01-07",
+        sub_fiscal_year=2020,
+        subaward_type="sub-contract",
     )
     baker.make(
         "search.SubawardSearch",
@@ -535,6 +537,8 @@ def awards_and_transactions(db):
         sub_place_of_perform_country_co="USA",
         sub_legal_entity_country_code="JPN",
         sub_action_date="2020-01-07",
+        sub_fiscal_year=2020,
+        subaward_type="sub-contract",
     )
     baker.make(
         "search.SubawardSearch",
@@ -546,6 +550,7 @@ def awards_and_transactions(db):
         sub_action_date="2020-01-07",
         prime_award_group="grant",
         sub_fiscal_year=2020,
+        subaward_type="sub-grant",
     )
 
     # References State Data

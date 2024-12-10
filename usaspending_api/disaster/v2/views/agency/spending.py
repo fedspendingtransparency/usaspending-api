@@ -4,7 +4,6 @@ from typing import List
 
 from django.contrib.postgres.fields import ArrayField
 from django.db.models import (
-    Case,
     DecimalField,
     Exists,
     F,
@@ -15,7 +14,6 @@ from django.db.models import (
     Subquery,
     Sum,
     Value,
-    When,
 )
 from django.db.models.functions import Coalesce
 from django.views.decorators.csrf import csrf_exempt
@@ -23,6 +21,7 @@ from django_cte import With
 from rest_framework.response import Response
 
 from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.common.calculations import file_b
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.disaster.v2.views.disaster_base import (
     DisasterBase,
@@ -160,42 +159,13 @@ class SpendingByAgencyViewSet(FabaOutlayMixin, PaginationMixin, DisasterBase, Sp
             Q(treasury_account__isnull=False),
             self.all_closed_defc_submissions,
             self.is_in_provided_def_codes,
-            self.is_non_zero_total_spending,
+            file_b.is_non_zero_total_spending(),
         ]
 
         cte_annotations = {
             "funding_toptier_agency_id": F("treasury_account__funding_toptier_agency_id"),
-            "obligation": Coalesce(
-                Sum(
-                    Case(
-                        When(
-                            self.final_period_submission_query_filters,
-                            then=F("obligations_incurred_by_program_object_class_cpe")
-                            + F("deobligations_recoveries_refund_pri_program_object_class_cpe"),
-                        ),
-                        default=Value(0),
-                        output_field=DecimalField(max_digits=23, decimal_places=2),
-                    )
-                ),
-                0,
-                output_field=DecimalField(max_digits=23, decimal_places=2),
-            ),
-            "outlay": Coalesce(
-                Sum(
-                    Case(
-                        When(
-                            self.final_period_submission_query_filters,
-                            then=F("gross_outlay_amount_by_program_object_class_cpe")
-                            + F("ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe")
-                            + F("ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe"),
-                        ),
-                        default=Value(0),
-                        output_field=DecimalField(max_digits=23, decimal_places=2),
-                    )
-                ),
-                0,
-                output_field=DecimalField(max_digits=23, decimal_places=2),
-            ),
+            "obligation": Sum(file_b.get_obligations(is_multi_year=True, include_final_sub_filter=True)),
+            "outlay": Sum(file_b.get_outlays(include_final_sub_filter=True)),
         }
 
         cte = With(

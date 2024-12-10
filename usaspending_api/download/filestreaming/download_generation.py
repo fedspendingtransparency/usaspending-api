@@ -128,19 +128,22 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
 
     # push file to S3 bucket, if not local
     if not settings.IS_LOCAL:
-        with tracer.trace(
-            name=f"job.{JOB_TYPE}.download.s3",
-            service="bulk-download",
-            resource=f"s3://{settings.BULK_DOWNLOAD_S3_BUCKET_NAME}",
-            span_type=SpanTypes.WORKER,
-        ) as span, tracer.trace(
-            name="s3.command",
-            service="aws.s3",
-            resource=".".join(
-                [multipart_upload.__module__, (multipart_upload.__qualname__ or multipart_upload.__name__)]
-            ),
-            span_type=SpanTypes.WEB,
-        ) as s3_span:
+        with (
+            tracer.trace(
+                name=f"job.{JOB_TYPE}.download.s3",
+                service="bulk-download",
+                resource=f"s3://{settings.BULK_DOWNLOAD_S3_BUCKET_NAME}",
+                span_type=SpanTypes.WORKER,
+            ) as span,
+            tracer.trace(
+                name="s3.command",
+                service="aws.s3",
+                resource=".".join(
+                    [multipart_upload.__module__, (multipart_upload.__qualname__ or multipart_upload.__name__)]
+                ),
+                span_type=SpanTypes.WEB,
+            ) as s3_span,
+        ):
             # NOTE: Traces still not auto-picking-up aws.s3 service upload activity
             # Could be that the patches for boto and botocore don't cover the newer boto3 S3Transfer upload approach
             span.set_tag("file_name", file_name)
@@ -681,19 +684,21 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
         # Trace library parses the SQL, but cannot understand the psql-specific \COPY command. Use standard COPY here.
         download_sql = download_sql[1:]
     # Stack 3 context managers: (1) psql code, (2) Download replica query, (3) (same) Postgres query
-    with SubprocessTrace(
-        name=f"job.{JOB_TYPE}.download.psql",
-        service="bulk-download",
-        resource=download_sql,
-        span_type=SpanTypes.SQL,
-        source_path=source_path,
-    ), tracer.trace(
-        name="postgres.query",
-        service=f"{settings.DOWNLOAD_DB_ALIAS}db",
-        resource=download_sql,
-        span_type=SpanTypes.SQL,
-    ), tracer.trace(
-        name="postgres.query", service="postgres", resource=download_sql, span_type=SpanTypes.SQL
+    with (
+        SubprocessTrace(
+            name=f"job.{JOB_TYPE}.download.psql",
+            service="bulk-download",
+            resource=download_sql,
+            span_type=SpanTypes.SQL,
+            source_path=source_path,
+        ),
+        tracer.trace(
+            name="postgres.query",
+            service=f"{settings.DOWNLOAD_DB_ALIAS}db",
+            resource=download_sql,
+            span_type=SpanTypes.SQL,
+        ),
+        tracer.trace(name="postgres.query", service="postgres", resource=download_sql, span_type=SpanTypes.SQL),
     ):
         try:
             log_time = time.perf_counter()
