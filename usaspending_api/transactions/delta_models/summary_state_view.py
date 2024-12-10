@@ -25,7 +25,7 @@ summary_state_view_create_sql_string = rf"""
 """
 
 summary_state_view_load_sql_string = [
-    fr"""
+    rf"""
     -- Step 1: Populate the summary_state_view table with initial values and set total_outlays to 0
     INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
     (
@@ -151,7 +151,7 @@ summary_state_view_load_sql_string = [
     # -----
     # Unnest the distinct awards from summary_state_view table to get distinct award_id's
     # -----
-    fr"""
+    rf"""
     CREATE OR REPLACE TEMPORARY VIEW split_awards AS (
         SELECT
             ssv.duh,
@@ -181,7 +181,7 @@ summary_state_view_load_sql_string = [
     # -----
     # Update the summary_state_view.total_outlays with calculated values
     # -----
-    fr"""
+    rf"""
     MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} ssv
     USING awards_outlays_aggregated aoa
     ON ssv.duh = aoa.duh

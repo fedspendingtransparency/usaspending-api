@@ -186,7 +186,7 @@ class StateMetaDataViewSet(APIView):
             "total_face_value_loan_amount": state_aggregates["total_face_value_loan_amount"],
             "total_face_value_loan_prime_awards": state_loans["count"],
             "award_amount_per_capita": amt_per_capita,
-            "total_outlays": state_aggregates["total_outlays"]
+            "total_outlays": state_aggregates["total_outlays"],
             # Commented out for now
             # 'total_subaward_amount': total_subaward_amount,
             # 'total_subawards': total_subaward_count,
