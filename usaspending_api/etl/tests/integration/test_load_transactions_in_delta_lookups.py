@@ -291,7 +291,7 @@ class TestInitialRun:
                 try:
                     spark.sql(f"SELECT 1 FROM raw.{table_name}")
                 except pyspark.sql.utils.AnalysisException as e:
-                    if re.match(r"\[TABLE_OR_VIEW_NOT_FOUND\]", e.desc):
+                    if re.match(rf"Table or view not found: raw\.{table_name}", e.desc):
                         pass
                     else:
                         raise e

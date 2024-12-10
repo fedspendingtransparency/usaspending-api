@@ -31,7 +31,7 @@ from usaspending_api.etl.management.commands.create_delta_table import (
 # How to determine a working dependency set:
 # 1. What platform are you using? local dev with pip-installed PySpark? EMR 6.x or 5.x? Databricks Runtime?
 # 2. From there determine what versions of Spark + Hadoop are supported on that platform. If going cross-platform,
-#    try to pick a combo that's supporpted on both
+#    try to pick a combo that's supported on both
 # 3. Is there a hadoop-aws version matching the platform's Hadoop version used? Because we need to have Spark writing
 #    to S3, we are beholden to the AWS-provided JARs that implement the S3AFileSystem, which are part of the
 #    hadoop-aws JAR.
@@ -41,20 +41,12 @@ from usaspending_api.etl.management.commands.create_delta_table import (
 #    uncertain of compatibility, see what working version-sets are aligned to an Amazon EMR release here:
 #    https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-app-versions-6.x.html
 
+# The versions below are determined by the current version of Databricks in use
 _SCALA_VERSION = "2.12"
-# databricks runtime 14.3 lts should have scala version 2.12.15 according
-# to the following release notes: https://docs.databricks.com/en/release-notes/runtime/14.3lts.html
-
 _HADOOP_VERSION = "3.3.4"
-# Apache Spark v3.5.0 is built with a hadoop version 3.3.4 accoridng to the following release notes:
-# https://stackoverflow.com/questions/77327653/hadoop-common-hadoop-aws-aws-java-sdk-bundle-version-compatibility
+_SPARK_VERSION = "3.5.0"
+_DELTA_VERSION = "3.1.0"
 
-_SPARK_VERSION = "3.5.0"  # databricks runtime 14.3 lts requires apache spark version 3.5.0 according
-# to the following release notes: https://docs.databricks.com/en/release-notes/runtime/14.3lts.html
-
-_DELTA_VERSION = "3.2.0"
-# delta lake versions 3.x are the only ones caompabitle with apache spark 3.5.x according
-# to the following release notes: https://docs.delta.io/latest/releases.html
 
 # List of Maven coordinates for required JAR files used by running code, which can be added to the driver and
 # executor class paths
@@ -66,18 +58,8 @@ SPARK_SESSION_JARS = [
     # COMPATIBLE with it (so that should not  be set as a dependent package by us)
     f"org.apache.hadoop:hadoop-aws:{_HADOOP_VERSION}",
     "org.postgresql:postgresql:42.2.23",
-    # f"io.delta:delta-core_{_SCALA_VERSION}:{_DELTA_VERSION}",
     f"io.delta:delta-spark_{_SCALA_VERSION}:{_DELTA_VERSION}",
-    # according to this documentation, the delta core artifact was renamed to delta-spark above 3.0
-    # https://docs.delta.io/latest/porting.html
 ]
-
-# io.delta:delta-core_{_SCALA_VERSION}:{_DELTA_VERSION} where scala version is 2.12 and delta version is 2.4.0 results in the following error:
-# py4j.protocol.Py4JJavaError: An error occurred while calling o69.sql.
-# E                   : java.lang.ClassCastException: class org.apache.hadoop.fs.s3a.S3AFileStatus
-# cannot be cast to class org.apache.spark.sql.execution.datasources.FileStatusWithMetadata
-# (org.apache.hadoop.fs.s3a.S3AFileStatus is in unnamed module of loader org.apache.spark.util.MutableURLClassLoader @5633ed82;
-# org.apache.spark.sql.execution.datasources.FileStatusWithMetadata is in unnamed module of loader 'app')
 
 DELTA_LAKE_UNITTEST_SCHEMA_NAME = "unittest"
 

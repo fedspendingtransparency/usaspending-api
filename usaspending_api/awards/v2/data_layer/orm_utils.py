@@ -1,6 +1,7 @@
 from collections import OrderedDict
-from _collections_abc import MutableMapping
+from collections.abc import MutableMapping
 from copy import deepcopy
+
 from django.db.models import F
 
 

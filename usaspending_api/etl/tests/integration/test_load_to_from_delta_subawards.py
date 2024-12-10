@@ -30,7 +30,7 @@ _NEW_PROCURE = {
 }
 
 
-@mark.django_db(databases=["data_broker", "default"], transaction=True)
+@mark.django_db(transaction=True)
 def test_load_table_to_from_delta_for_subawards(
     spark,
     s3_unittest_data_bucket,

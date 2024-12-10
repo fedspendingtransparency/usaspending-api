@@ -272,7 +272,7 @@ def test_download_transactions_new_awards_only(
     assert ".zip" in resp.json()["file_url"]
 
 
-@pytest.mark.django_db(databases=["db_download", "default"], transaction=True)
+@pytest.mark.django_db(transaction=True)
 def test_download_transactions_naics_exclude_single_value(
     client, monkeypatch, download_test_data, elasticsearch_transaction_index, elasticsearch_subaward_index
 ):
@@ -307,7 +307,7 @@ def test_download_transactions_naics_exclude_single_value(
     assert download_job.number_of_rows == 2  # Rows with NAICS codes of 200 and 300 should be present
 
 
-@pytest.mark.django_db(databases=["db_download", "default"], transaction=True)
+@pytest.mark.django_db(transaction=True)
 def test_download_transactions_naics_exclude_multiple_values(
     client, monkeypatch, download_test_data, elasticsearch_transaction_index, elasticsearch_subaward_index
 ):
