@@ -2336,31 +2336,23 @@ def test_spending_by_geo_program_activity(
     assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
 
 
-spending_level_test_data = [
+spending_level_test_params = [
     (
         "awards",
         [
-            {"shape_code": "", "display_name": None, "aggregated_amount": 0.0, "population": None, "per_capita": None},
             {
                 "shape_code": "CAN",
-                "display_name": "Canada",
-                "aggregated_amount": 0.0,
-                "population": None,
-                "per_capita": None,
-            },
-            {
-                "shape_code": "JPN",
-                "display_name": "Japan",
-                "aggregated_amount": 0.0,
-                "population": None,
-                "per_capita": None,
+                "display_name": "Test Canada",
+                "aggregated_amount": 600.0,
+                "population": 200,
+                "per_capita": 3.0,
             },
             {
                 "shape_code": "USA",
-                "display_name": "United States",
-                "aggregated_amount": 0.0,
-                "population": None,
-                "per_capita": None,
+                "display_name": "Test United States",
+                "aggregated_amount": 1000.0,
+                "population": 500,
+                "per_capita": 2.0,
             },
         ],
     ),
@@ -2369,17 +2361,17 @@ spending_level_test_data = [
         [
             {
                 "shape_code": "CAN",
-                "display_name": "Canada",
-                "aggregated_amount": 12345.0,
-                "population": None,
-                "per_capita": None,
+                "display_name": "Test Canada",
+                "aggregated_amount": 400.0,
+                "population": 200,
+                "per_capita": 2.0,
             },
             {
                 "shape_code": "USA",
-                "display_name": "United States",
-                "aggregated_amount": 733231.0,
-                "population": None,
-                "per_capita": None,
+                "display_name": "Test United States",
+                "aggregated_amount": 1500.0,
+                "population": 500,
+                "per_capita": 3.0,
             },
         ],
     ),
@@ -2388,35 +2380,35 @@ spending_level_test_data = [
         [
             {
                 "shape_code": "CAN",
-                "display_name": "Canada",
-                "aggregated_amount": 5000000.0,
-                "population": None,
-                "per_capita": None,
+                "display_name": "Test Canada",
+                "aggregated_amount": 500.0,
+                "population": 200,
+                "per_capita": 2.5,
             },
             {
                 "shape_code": "USA",
-                "display_name": "United States",
-                "aggregated_amount": 5555555.0,
-                "population": None,
-                "per_capita": None,
+                "display_name": "Test United States",
+                "aggregated_amount": 500.0,
+                "population": 500,
+                "per_capita": 1.0,
             },
         ],
     ),
 ]
 
 
-@pytest.mark.parametrize("spending_level,expected_results", spending_level_test_data)
+@pytest.mark.parametrize("spending_level,expected_results", spending_level_test_params)
 def test_correct_response_with_spending_level(
     spending_level,
     expected_results,
     client,
     monkeypatch,
-    elasticsearch_transaction_index,
     elasticsearch_award_index,
-    awards_and_transactions,
+    elasticsearch_transaction_index,
+    spending_level_test_data,
 ):
-    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     resp = client.post(
         "/api/v2/search/spending_by_geography",
