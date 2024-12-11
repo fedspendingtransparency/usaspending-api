@@ -49,7 +49,7 @@ class OpenTelemetryEagerlyDropTraceFilter:
         span.set_status(Status(StatusCode.ERROR))
         span.set_attribute(cls.EAGERLY_DROP_TRACE_KEY, True)
 
-    def process_trace(self, span: trace.Span):
+    def process_trace(self, trace: trace):
         """ Drop trace if any span attribute has tag with key 'EAGERLY_DROP_TRACE' """
         return None if any(span.get_attribute(self.EAGERLY_DROP_TRACE_KEY) for span in trace) else trace
 
