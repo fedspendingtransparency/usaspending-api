@@ -2,8 +2,10 @@
 import logging
 import os
 import sys
+import threading
 import time  # time.perf_counter Matches response time browsers return more accurately than now()
 import traceback
+from time import time_ns
 from typing import Callable, Optional, List, Tuple
 
 # Django imports
@@ -224,12 +226,29 @@ def ensure_logging(
 
 # CUSTOM Logging EXPORTER for debugging
 class LoggingSpanProcessor(SpanProcessor):
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._flushed = True  # Simulates the state of flushing
+
     def on_end(self, span: ReadableSpan) -> None:
         trace_id = span.context.trace_id
         span_id = span.context.span_id
         logger.debug(f"Span ended: trace_id={trace_id}, span_id={span_id}, {span.name}_attributes={span.attributes}")
 
     def force_flush(self, timeout_millis: int = 30000) -> bool:
+        """Simulates flushing all spans within the given timeout."""
+        start_time = time_ns()
+        with self._lock:
+            # Simulate some processing delay for flushing
+            while not self._flushed:
+                elapsed_time = (time_ns() - start_time) / 1_000_000  # Convert to milliseconds
+                if elapsed_time > timeout_millis:
+                    logger.warning("force_flush timed out.")
+                    return False
+                # Simulate work by sleeping briefly
+                time.sleep(0.01)
+
+        logger.debug("All spans flushed successfully.")
         return True
 
 
