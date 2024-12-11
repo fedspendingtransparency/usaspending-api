@@ -5,6 +5,7 @@ import os
 from copy import deepcopy
 from pathlib import Path
 from typing import Optional, Tuple, List
+from datetime import datetime, timezone
 
 import psutil as ps
 import re
@@ -18,8 +19,6 @@ from django.conf import settings
 
 from opentelemetry import trace
 from opentelemetry.trace import SpanKind
-
-from datetime import datetime, timezone
 
 from usaspending_api.download.models.download_job_lookup import DownloadJobLookup
 from usaspending_api.search.filters.time_period.decorators import NEW_AWARDS_ONLY_KEYWORD

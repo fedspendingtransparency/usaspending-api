@@ -34,7 +34,7 @@ retrying==1.3.3
 urllib3==1.26.*
 xlrd3==1.0.0
 
-# Opentelemetry Maddness
+# Opentelemetry Dependencies
 opentelemetry-api==1.28.2
 opentelemetry-distro==0.49b2
 opentelemetry-exporter-otlp==1.28.2

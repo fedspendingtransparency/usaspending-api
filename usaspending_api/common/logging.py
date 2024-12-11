@@ -4,13 +4,11 @@ import os
 import sys
 import time  # time.perf_counter Matches response time browsers return more accurately than now()
 import traceback
+from typing import Callable, Optional, List, Tuple
 
 # Django imports
 from django.utils.deprecation import MiddlewareMixin
 from django.utils.timezone import now
-
-# Typing imports
-from typing import Callable, Optional, List, Tuple
 
 # OpenTelemetry imports
 from opentelemetry import trace
@@ -244,14 +242,11 @@ class CustomAttributeSpanProcessor(SpanProcessor):
         # Add the custom attribute when the span starts
         span.set_attribute(self.attribute_key, self.attribute_value)
 
-    def on_end(self, span):
-        pass  # No action needed when the span ends
 
-
-def add_custom_attribute_span_processors(attribute_pairs: List[Tuple[str, str]]):
+def add_custom_attribute_span_processors(tracerProvider: TracerProvider, attribute_pairs: List[Tuple[str, str]]):
     for key, value in attribute_pairs:
         custom_attribute_span_processor = CustomAttributeSpanProcessor(key, value)
-        trace.get_tracer_provider().add_span_processor(custom_attribute_span_processor)
+        tracerProvider.add_span_processor(custom_attribute_span_processor)
 
 
 def configure_logging(service_name="usaspending-api"):
@@ -268,7 +263,7 @@ def configure_logging(service_name="usaspending-api"):
         ("TRACE_ENV", CONFIG.TRACE_ENV),
     ]
 
-    add_custom_attribute_span_processors(attribute_pairs)
+    add_custom_attribute_span_processors(trace.get_tracer_provider(), attribute_pairs)
 
     # Set up the OTLP exporter
     # Check out https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/

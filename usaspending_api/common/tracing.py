@@ -32,7 +32,7 @@ def _activate_trace_filter(filter_class: Callable) -> None:
 
 class OpenTelemetryEagerlyDropTraceFilter:
     """
-    A trace filter that eagerly drops a trace, by filtering it out before sending it on to the Datadog Server API.
+    A trace filter that eagerly drops a trace, by filtering it out before sending it on to the OpenTelemetry Server API.
     It uses the `self.EAGERLY_DROP_TRACE_KEY` as a sentinel value. If present within any span's tags, the whole
     trace that the span is part of will be filtered out before being sent to the server.
     """
