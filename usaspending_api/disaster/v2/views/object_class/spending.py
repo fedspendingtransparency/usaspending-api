@@ -1,11 +1,12 @@
 from decimal import Decimal
 from typing import List
 
-from django.db.models import Case, DecimalField, F, IntegerField, Min, Q, QuerySet, Sum, TextField, Value, When
-from django.db.models.functions import Cast, Coalesce
+from django.db.models import F, IntegerField, Min, Q, QuerySet, Sum, TextField, Value
+from django.db.models.functions import Cast
 from rest_framework.response import Response
 
 from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.common.calculations import file_b
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.disaster.v2.views.disaster_base import (
@@ -81,8 +82,8 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
     def total_queryset(self):
         filters = [
             self.is_in_provided_def_codes,
-            self.is_non_zero_total_spending,
             self.all_closed_defc_submissions,
+            file_b.is_non_zero_total_spending(),
             Q(object_class__isnull=False),
         ]
 
@@ -96,45 +97,8 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
 
         annotations = {
             **object_class_annotations,
-            "obligation": Coalesce(
-                Sum(
-                    Case(
-                        When(
-                            self.final_period_submission_query_filters & Q(prior_year_adjustment="B"),
-                            then=self.file_b_obligation_columns["pya_b"],
-                        ),
-                        When(
-                            self.final_period_submission_query_filters & Q(prior_year_adjustment="P"),
-                            then=self.file_b_obligation_columns["pya_p"],
-                        ),
-                        When(
-                            self.final_period_submission_query_filters
-                            & Q(Q(prior_year_adjustment="X") | Q(prior_year_adjustment__isnull=True)),
-                            then=F(self.file_b_obligation_columns["base_pya_x"])
-                            + self.file_b_obligation_columns["pya_x"],
-                        ),
-                        default=Value(0),
-                        output_field=DecimalField(max_digits=23, decimal_places=2),
-                    )
-                ),
-                0,
-                output_field=DecimalField(max_digits=23, decimal_places=2),
-            ),
-            "outlay": Coalesce(
-                Sum(
-                    Case(
-                        When(
-                            self.final_period_submission_query_filters
-                            & Q(Q(prior_year_adjustment="X") | Q(prior_year_adjustment__isnull=True)),
-                            then=F(self.file_b_outlay_columns["base_pya_x"]) + self.file_b_outlay_columns["pya_x"],
-                        ),
-                        default=Value(0),
-                        output_field=DecimalField(max_digits=23, decimal_places=2),
-                    )
-                ),
-                0,
-                output_field=DecimalField(max_digits=23, decimal_places=2),
-            ),
+            "obligation": Sum(file_b.get_obligations(is_multi_year=True, include_final_sub_filter=True)),
+            "outlay": Sum(file_b.get_outlays(include_final_sub_filter=True)),
             "award_count": Value(None, output_field=IntegerField()),
         }
 

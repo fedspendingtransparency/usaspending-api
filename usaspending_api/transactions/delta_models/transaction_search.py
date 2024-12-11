@@ -390,6 +390,8 @@ TRANSACTION_SEARCH_COLUMNS = {
     "veterinary_hospital": {"delta": "BOOLEAN", "postgres": "BOOLEAN", "gold": True},
     "woman_owned_business": {"delta": "BOOLEAN", "postgres": "BOOLEAN", "gold": True},
     "women_owned_small_business": {"delta": "BOOLEAN", "postgres": "BOOLEAN", "gold": True},
+    "program_activity_names": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]", "gold": False},
+    "program_activity_codes": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]", "gold": False},
 }
 TRANSACTION_SEARCH_DELTA_COLUMNS = {k: v["delta"] for k, v in TRANSACTION_SEARCH_COLUMNS.items() if not v["gold"]}
 TRANSACTION_SEARCH_GOLD_DELTA_COLUMNS = {k: v["delta"] for k, v in TRANSACTION_SEARCH_COLUMNS.items()}
@@ -899,7 +901,9 @@ transaction_search_load_sql_string = rf"""
         transaction_fpds.veterinary_college,
         transaction_fpds.veterinary_hospital,
         transaction_fpds.woman_owned_business,
-        transaction_fpds.women_owned_small_business
+        transaction_fpds.women_owned_small_business,
+        FED_AND_TRES_ACCT.program_activity_names,
+        FED_AND_TRES_ACCT.program_activity_codes
 
     FROM
         int.transaction_normalized
@@ -1066,11 +1070,14 @@ transaction_search_load_sql_string = rf"""
                     )
                 ),
                 TRUE
-            ) AS tas_components
+            ) AS tas_components,
+            SORT_ARRAY(COLLECT_SET(rpa.program_activity_name)) AS program_activity_names,
+            SORT_ARRAY(COLLECT_SET(rpa.program_activity_code)) AS program_activity_codes
         FROM int.financial_accounts_by_awards AS faba
         INNER JOIN global_temp.treasury_appropriation_account AS taa ON taa.treasury_account_identifier = faba.treasury_account_id
         INNER JOIN global_temp.federal_account AS fa ON fa.id = taa.federal_account_id
         INNER JOIN global_temp.toptier_agency agency ON (fa.parent_toptier_agency_id = agency.toptier_agency_id)
+        LEFT JOIN global_temp.ref_program_activity rpa ON (faba.program_activity_id = rpa.id)
         WHERE faba.award_id IS NOT NULL
         GROUP BY faba.award_id
     ) FED_AND_TRES_ACCT ON (FED_AND_TRES_ACCT.award_id = transaction_normalized.award_id)

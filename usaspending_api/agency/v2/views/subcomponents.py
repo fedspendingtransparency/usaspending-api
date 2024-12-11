@@ -5,6 +5,7 @@ from typing import Any
 from usaspending_api.accounts.models.appropriation_account_balances import AppropriationAccountBalances
 from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
 from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.common.calculations import file_b
 from usaspending_api.common.helpers.date_helper import now
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata, sort_with_null_last
 from usaspending_api.common.helpers.orm_helpers import ConcatAll
@@ -105,8 +106,8 @@ class SubcomponentList(PaginationMixin, AgencyBase):
             .annotate(bureau_info=bureau_info_subquery)
             .values("bureau_info")
             .annotate(
-                total_obligations=Sum("obligations_incurred_by_program_object_class_cpe"),
-                total_outlays=Sum("gross_outlay_amount_by_program_object_class_cpe"),
+                total_obligations=Sum(file_b.get_obligations()),
+                total_outlays=Sum(file_b.get_outlays()),
             )
             .exclude(bureau_info__isnull=True)
             .values("bureau_info", "total_obligations", "total_outlays")
