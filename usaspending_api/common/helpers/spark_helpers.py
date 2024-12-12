@@ -672,6 +672,12 @@ def clean_postgres_sql_for_spark_sql(
 
     if identifier_replacements:
         for old, new in identifier_replacements.items():
-            spark_sql = re.sub(fr"(\s+|^){old}(\s+|$)", fr" {new} ", spark_sql, flags=re.IGNORECASE | re.MULTILINE)
-
+            matches = re.finditer(fr"(\s+|^|\(){old}(\s+|$|\()", spark_sql, flags=re.IGNORECASE | re.MULTILINE)
+            for match in matches:
+                spark_sql = re.sub(
+                    re.escape(fr"{match[0]}"),
+                    fr"{match[1]}{new}{match[2]}",
+                    spark_sql,
+                    flags=re.IGNORECASE | re.MULTILINE,
+                )
     return spark_sql

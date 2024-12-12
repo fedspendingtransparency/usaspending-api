@@ -1,26 +1,31 @@
 import json
-import pytest
-
 from datetime import datetime
+
+import pytest
 from model_bakery import baker
 from rest_framework import status
 
+from usaspending_api.common.helpers.fiscal_year_helpers import generate_fiscal_year
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
+
+expected_messages = [
+    get_time_period_message(),
+    (
+        "The 'subawards' field will be deprecated in the future. "
+        "Set 'spending_level' to 'subawards' instead. See documentation for more information."
+    ),
+    (
+        "You may see additional month, quarter and year results when searching for "
+        "Awards or Subawards. This is due to Awards or Subawards overlapping with the "
+        "time period specified but having an 'action date' outside of that time period."
+    ),
+]
 
 
 @pytest.fixture
 def populate_models(db):
-    baker.make("search.AwardSearch", award_id=1, latest_transaction_id=1)
-    baker.make("search.AwardSearch", award_id=2, latest_transaction_id=2)
-    baker.make("search.AwardSearch", award_id=3, latest_transaction_id=3)
-    baker.make("search.AwardSearch", award_id=4, latest_transaction_id=4)
-    baker.make("search.AwardSearch", award_id=5, latest_transaction_id=5)
-    baker.make("search.AwardSearch", award_id=6, latest_transaction_id=6)
-    baker.make("search.AwardSearch", award_id=7, latest_transaction_id=7)
-    baker.make("search.AwardSearch", award_id=8, latest_transaction_id=8)
-
-    baker.make(
+    ts1 = baker.make(
         "search.TransactionSearch",
         transaction_id=1,
         award_id=1,
@@ -31,7 +36,7 @@ def populate_models(db):
         generated_pragmatic_obligation=100.00,
         award_date_signed=datetime(2010, 2, 15),
     )
-    baker.make(
+    ts2 = baker.make(
         "search.TransactionSearch",
         transaction_id=2,
         award_id=2,
@@ -42,7 +47,7 @@ def populate_models(db):
         generated_pragmatic_obligation=110.00,
         award_date_signed=datetime(2012, 2, 15),
     )
-    baker.make(
+    ts3 = baker.make(
         "search.TransactionSearch",
         transaction_id=3,
         award_id=3,
@@ -52,7 +57,7 @@ def populate_models(db):
         federal_action_obligation=120.00,
         generated_pragmatic_obligation=120.00,
     )
-    baker.make(
+    ts4 = baker.make(
         "search.TransactionSearch",
         transaction_id=4,
         award_id=4,
@@ -62,7 +67,7 @@ def populate_models(db):
         federal_action_obligation=130.00,
         generated_pragmatic_obligation=130.00,
     )
-    baker.make(
+    ts5 = baker.make(
         "search.TransactionSearch",
         transaction_id=5,
         award_id=5,
@@ -72,7 +77,7 @@ def populate_models(db):
         federal_action_obligation=140.00,
         generated_pragmatic_obligation=140.00,
     )
-    baker.make(
+    ts6 = baker.make(
         "search.TransactionSearch",
         transaction_id=6,
         award_id=6,
@@ -82,7 +87,7 @@ def populate_models(db):
         federal_action_obligation=150.00,
         generated_pragmatic_obligation=150.00,
     )
-    baker.make(
+    ts7 = baker.make(
         "search.TransactionSearch",
         transaction_id=7,
         award_id=7,
@@ -92,7 +97,7 @@ def populate_models(db):
         federal_action_obligation=160.00,
         generated_pragmatic_obligation=160.00,
     )
-    baker.make(
+    ts8 = baker.make(
         "search.TransactionSearch",
         transaction_id=8,
         award_id=8,
@@ -101,6 +106,103 @@ def populate_models(db):
         fiscal_action_date=datetime(2017, 6, 1),
         federal_action_obligation=170.00,
         generated_pragmatic_obligation=170.00,
+    )
+
+    baker.make(
+        "search.AwardSearch",
+        award_id=1,
+        latest_transaction_id=1,
+        latest_transaction_search=ts1,
+        category="direct payment",
+        action_date=datetime(2011, 3, 1),
+        date_signed=datetime(2010, 3, 1),
+        fiscal_year=generate_fiscal_year(ts1.fiscal_action_date),
+        total_outlays=0.00,
+        generated_pragmatic_obligation=ts1.generated_pragmatic_obligation,
+    )
+    baker.make(
+        "search.AwardSearch",
+        award_id=2,
+        latest_transaction_id=2,
+        latest_transaction_search=ts2,
+        category="idv",
+        action_date=datetime(2011, 3, 1),
+        date_signed=datetime(2010, 3, 1),
+        fiscal_year=generate_fiscal_year(ts2.fiscal_action_date),
+        total_outlays=10.00,
+        generated_pragmatic_obligation=ts2.generated_pragmatic_obligation,
+    )
+    baker.make(
+        "search.AwardSearch",
+        award_id=3,
+        latest_transaction_id=3,
+        latest_transaction_search=ts3,
+        category="loans",
+        action_date=datetime(2012, 3, 1),
+        date_signed=datetime(2011, 3, 1),
+        fiscal_year=generate_fiscal_year(ts3.fiscal_action_date),
+        total_outlays=20.00,
+        generated_pragmatic_obligation=ts3.generated_pragmatic_obligation,
+    )
+    baker.make(
+        "search.AwardSearch",
+        award_id=4,
+        latest_transaction_id=4,
+        latest_transaction_search=ts4,
+        category="other",
+        action_date=datetime(2013, 3, 1),
+        date_signed=datetime(2012, 3, 1),
+        fiscal_year=generate_fiscal_year(ts4.fiscal_action_date),
+        total_outlays=30.00,
+        generated_pragmatic_obligation=ts4.generated_pragmatic_obligation,
+    )
+    baker.make(
+        "search.AwardSearch",
+        award_id=5,
+        latest_transaction_id=5,
+        latest_transaction_search=ts5,
+        category="grant",
+        action_date=datetime(2014, 3, 1),
+        date_signed=datetime(2013, 3, 1),
+        fiscal_year=generate_fiscal_year(ts5.fiscal_action_date),
+        total_outlays=40.00,
+        generated_pragmatic_obligation=ts5.generated_pragmatic_obligation,
+    )
+    baker.make(
+        "search.AwardSearch",
+        award_id=6,
+        latest_transaction_id=6,
+        latest_transaction_search=ts6,
+        category="grant",
+        action_date=datetime(2015, 3, 1),
+        date_signed=datetime(2014, 3, 1),
+        fiscal_year=generate_fiscal_year(ts6.fiscal_action_date),
+        total_outlays=50.00,
+        generated_pragmatic_obligation=ts6.generated_pragmatic_obligation,
+    )
+    baker.make(
+        "search.AwardSearch",
+        award_id=7,
+        latest_transaction_id=7,
+        latest_transaction_search=ts7,
+        category="grant",
+        action_date=datetime(2016, 3, 1),
+        date_signed=datetime(2015, 3, 1),
+        fiscal_year=generate_fiscal_year(ts7.fiscal_action_date),
+        total_outlays=60.00,
+        generated_pragmatic_obligation=ts7.generated_pragmatic_obligation,
+    )
+    baker.make(
+        "search.AwardSearch",
+        award_id=8,
+        latest_transaction_id=8,
+        latest_transaction_search=ts8,
+        category="loans",
+        action_date=datetime(2017, 3, 1),
+        date_signed=datetime(2016, 3, 1),
+        fiscal_year=generate_fiscal_year(ts8.fiscal_action_date),
+        total_outlays=70.00,
+        generated_pragmatic_obligation=ts8.generated_pragmatic_obligation,
     )
 
 
@@ -156,7 +258,7 @@ def get_spending_over_time_url():
     return "/api/v2/search/spending_over_time/"
 
 
-def shared_results():
+def shared_results_transactions():
     return [
         {
             "aggregated_amount": 100.00,
@@ -167,6 +269,13 @@ def shared_results():
             "Idv_Obligations": 0,
             "Loan_Obligations": 0,
             "Other_Obligations": 0,
+            "total_outlays": None,
+            "Contract_Outlays": None,
+            "Direct_Outlays": None,
+            "Grant_Outlays": None,
+            "Idv_Outlays": None,
+            "Loan_Outlays": None,
+            "Other_Outlays": None,
         },
         {
             "aggregated_amount": 110.00,
@@ -177,6 +286,13 @@ def shared_results():
             "Idv_Obligations": 110.0,
             "Loan_Obligations": 0,
             "Other_Obligations": 0,
+            "total_outlays": None,
+            "Contract_Outlays": None,
+            "Direct_Outlays": None,
+            "Grant_Outlays": None,
+            "Idv_Outlays": None,
+            "Loan_Outlays": None,
+            "Other_Outlays": None,
         },
         {
             "aggregated_amount": 120.00,
@@ -187,6 +303,13 @@ def shared_results():
             "Idv_Obligations": 0,
             "Loan_Obligations": 120.0,
             "Other_Obligations": 0,
+            "total_outlays": None,
+            "Contract_Outlays": None,
+            "Direct_Outlays": None,
+            "Grant_Outlays": None,
+            "Idv_Outlays": None,
+            "Loan_Outlays": None,
+            "Other_Outlays": None,
         },
         {
             "aggregated_amount": 130.00,
@@ -197,6 +320,13 @@ def shared_results():
             "Idv_Obligations": 0,
             "Loan_Obligations": 0,
             "Other_Obligations": 130.0,
+            "total_outlays": None,
+            "Contract_Outlays": None,
+            "Direct_Outlays": None,
+            "Grant_Outlays": None,
+            "Idv_Outlays": None,
+            "Loan_Outlays": None,
+            "Other_Outlays": None,
         },
         {
             "aggregated_amount": 140.00,
@@ -207,6 +337,13 @@ def shared_results():
             "Idv_Obligations": 0,
             "Loan_Obligations": 0,
             "Other_Obligations": 0,
+            "total_outlays": None,
+            "Contract_Outlays": None,
+            "Direct_Outlays": None,
+            "Grant_Outlays": None,
+            "Idv_Outlays": None,
+            "Loan_Outlays": None,
+            "Other_Outlays": None,
         },
         {
             "aggregated_amount": 150.00,
@@ -217,6 +354,13 @@ def shared_results():
             "Idv_Obligations": 0,
             "Loan_Obligations": 0,
             "Other_Obligations": 0,
+            "total_outlays": None,
+            "Contract_Outlays": None,
+            "Direct_Outlays": None,
+            "Grant_Outlays": None,
+            "Idv_Outlays": None,
+            "Loan_Outlays": None,
+            "Other_Outlays": None,
         },
         {
             "aggregated_amount": 160.00,
@@ -227,6 +371,13 @@ def shared_results():
             "Idv_Obligations": 0,
             "Loan_Obligations": 0,
             "Other_Obligations": 0,
+            "total_outlays": None,
+            "Contract_Outlays": None,
+            "Direct_Outlays": None,
+            "Grant_Outlays": None,
+            "Idv_Outlays": None,
+            "Loan_Outlays": None,
+            "Other_Outlays": None,
         },
         {
             "aggregated_amount": 170.00,
@@ -237,9 +388,16 @@ def shared_results():
             "Idv_Obligations": 0,
             "Loan_Obligations": 170.0,
             "Other_Obligations": 0,
+            "total_outlays": None,
+            "Contract_Outlays": None,
+            "Direct_Outlays": None,
+            "Grant_Outlays": None,
+            "Idv_Outlays": None,
+            "Loan_Outlays": None,
+            "Other_Outlays": None,
         },
         {
-            "aggregated_amount": 0.00,
+            "aggregated_amount": 0,
             "time_period": {"fiscal_year": "2018"},
             "Contract_Obligations": 0,
             "Direct_Obligations": 0,
@@ -247,6 +405,13 @@ def shared_results():
             "Idv_Obligations": 0,
             "Loan_Obligations": 0,
             "Other_Obligations": 0,
+            "total_outlays": None,
+            "Contract_Outlays": None,
+            "Direct_Outlays": None,
+            "Grant_Outlays": None,
+            "Idv_Outlays": None,
+            "Loan_Outlays": None,
+            "Other_Outlays": None,
         },
     ]
 
@@ -262,6 +427,13 @@ def shared_results_2():
             "Idv_Obligations": 0,
             "Loan_Obligations": 0,
             "Other_Obligations": 0,
+            "total_outlays": None,
+            "Contract_Outlays": None,
+            "Direct_Outlays": None,
+            "Grant_Outlays": None,
+            "Idv_Outlays": None,
+            "Loan_Outlays": None,
+            "Other_Outlays": None,
         },
         {
             "aggregated_amount": 100.00,
@@ -272,6 +444,13 @@ def shared_results_2():
             "Idv_Obligations": 0,
             "Loan_Obligations": 0,
             "Other_Obligations": 0,
+            "total_outlays": None,
+            "Contract_Outlays": None,
+            "Direct_Outlays": None,
+            "Grant_Outlays": None,
+            "Idv_Outlays": None,
+            "Loan_Outlays": None,
+            "Other_Outlays": None,
         },
         {
             "aggregated_amount": 0.00,
@@ -282,6 +461,13 @@ def shared_results_2():
             "Idv_Obligations": 0,
             "Loan_Obligations": 0,
             "Other_Obligations": 0,
+            "total_outlays": None,
+            "Contract_Outlays": None,
+            "Direct_Outlays": None,
+            "Grant_Outlays": None,
+            "Idv_Outlays": None,
+            "Loan_Outlays": None,
+            "Other_Outlays": None,
         },
         {
             "aggregated_amount": 0.00,
@@ -292,6 +478,13 @@ def shared_results_2():
             "Idv_Obligations": 0,
             "Loan_Obligations": 0,
             "Other_Obligations": 0,
+            "total_outlays": None,
+            "Contract_Outlays": None,
+            "Direct_Outlays": None,
+            "Grant_Outlays": None,
+            "Idv_Outlays": None,
+            "Loan_Outlays": None,
+            "Other_Outlays": None,
         },
         {
             "aggregated_amount": 0.00,
@@ -302,6 +495,13 @@ def shared_results_2():
             "Idv_Obligations": 0,
             "Loan_Obligations": 0,
             "Other_Obligations": 0,
+            "total_outlays": None,
+            "Contract_Outlays": None,
+            "Direct_Outlays": None,
+            "Grant_Outlays": None,
+            "Idv_Outlays": None,
+            "Loan_Outlays": None,
+            "Other_Outlays": None,
         },
         {
             "aggregated_amount": 0.00,
@@ -312,6 +512,13 @@ def shared_results_2():
             "Idv_Obligations": 0,
             "Loan_Obligations": 0,
             "Other_Obligations": 0,
+            "total_outlays": None,
+            "Contract_Outlays": None,
+            "Direct_Outlays": None,
+            "Grant_Outlays": None,
+            "Idv_Outlays": None,
+            "Loan_Outlays": None,
+            "Other_Outlays": None,
         },
         {
             "aggregated_amount": 0.00,
@@ -322,6 +529,13 @@ def shared_results_2():
             "Idv_Obligations": 0,
             "Loan_Obligations": 0,
             "Other_Obligations": 0,
+            "total_outlays": None,
+            "Contract_Outlays": None,
+            "Direct_Outlays": None,
+            "Grant_Outlays": None,
+            "Idv_Outlays": None,
+            "Loan_Outlays": None,
+            "Other_Outlays": None,
         },
         {
             "aggregated_amount": 0.00,
@@ -332,6 +546,13 @@ def shared_results_2():
             "Idv_Obligations": 0,
             "Loan_Obligations": 0,
             "Other_Obligations": 0,
+            "total_outlays": None,
+            "Contract_Outlays": None,
+            "Direct_Outlays": None,
+            "Grant_Outlays": None,
+            "Idv_Outlays": None,
+            "Loan_Outlays": None,
+            "Other_Outlays": None,
         },
         {
             "aggregated_amount": 0.00,
@@ -342,6 +563,13 @@ def shared_results_2():
             "Idv_Obligations": 0,
             "Loan_Obligations": 0,
             "Other_Obligations": 0,
+            "total_outlays": None,
+            "Contract_Outlays": None,
+            "Direct_Outlays": None,
+            "Grant_Outlays": None,
+            "Idv_Outlays": None,
+            "Loan_Outlays": None,
+            "Other_Outlays": None,
         },
         {
             "aggregated_amount": 0.00,
@@ -352,6 +580,13 @@ def shared_results_2():
             "Idv_Obligations": 0,
             "Loan_Obligations": 0,
             "Other_Obligations": 0,
+            "total_outlays": None,
+            "Contract_Outlays": None,
+            "Direct_Outlays": None,
+            "Grant_Outlays": None,
+            "Idv_Outlays": None,
+            "Loan_Outlays": None,
+            "Other_Outlays": None,
         },
         {
             "aggregated_amount": 0.00,
@@ -362,6 +597,13 @@ def shared_results_2():
             "Idv_Obligations": 0,
             "Loan_Obligations": 0,
             "Other_Obligations": 0,
+            "total_outlays": None,
+            "Contract_Outlays": None,
+            "Direct_Outlays": None,
+            "Grant_Outlays": None,
+            "Idv_Outlays": None,
+            "Loan_Outlays": None,
+            "Other_Outlays": None,
         },
         {
             "aggregated_amount": 0.00,
@@ -372,6 +614,13 @@ def shared_results_2():
             "Idv_Obligations": 0,
             "Loan_Obligations": 0,
             "Other_Obligations": 0,
+            "total_outlays": None,
+            "Contract_Outlays": None,
+            "Direct_Outlays": None,
+            "Grant_Outlays": None,
+            "Idv_Outlays": None,
+            "Loan_Outlays": None,
+            "Other_Outlays": None,
         },
         {
             "aggregated_amount": 0.00,
@@ -382,6 +631,13 @@ def shared_results_2():
             "Idv_Obligations": 0,
             "Loan_Obligations": 0,
             "Other_Obligations": 0,
+            "total_outlays": None,
+            "Contract_Outlays": None,
+            "Direct_Outlays": None,
+            "Grant_Outlays": None,
+            "Idv_Outlays": None,
+            "Loan_Outlays": None,
+            "Other_Outlays": None,
         },
         {
             "aggregated_amount": 110.00,
@@ -392,6 +648,13 @@ def shared_results_2():
             "Idv_Obligations": 110.0,
             "Loan_Obligations": 0,
             "Other_Obligations": 0,
+            "total_outlays": None,
+            "Contract_Outlays": None,
+            "Direct_Outlays": None,
+            "Grant_Outlays": None,
+            "Idv_Outlays": None,
+            "Loan_Outlays": None,
+            "Other_Outlays": None,
         },
     ]
 
@@ -410,7 +673,9 @@ def confirm_proper_ordering(group, results):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_spending_over_time_fy_ordering(client, monkeypatch, elasticsearch_transaction_index, populate_models):
+def test_spending_over_time_fy_ordering_transactions(
+    client, monkeypatch, elasticsearch_transaction_index, populate_models
+):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     group = "fiscal_year"
@@ -427,8 +692,98 @@ def test_spending_over_time_fy_ordering(client, monkeypatch, elasticsearch_trans
 
     expected_response = {
         "group": group,
-        "results": shared_results(),
-        "messages": [get_time_period_message()],
+        "results": shared_results_transactions(),
+        "spending_level": "transactions",
+        "messages": expected_messages,
+    }
+
+    resp = client.post(
+        get_spending_over_time_url(),
+        content_type="application/json",
+        data=json.dumps(test_payload),
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.data, "Unexpected or missing content!"
+
+    # ensure ordering is correct
+    confirm_proper_ordering(group, resp.data["results"])
+
+
+@pytest.mark.django_db
+def test_spending_over_time_fy_ordering_awards(client, monkeypatch, elasticsearch_award_index, populate_models):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    group = "fiscal_year"
+
+    test_payload = {
+        "group": group,
+        "spending_level": "awards",
+        "filters": {
+            "time_period": [
+                {"start_date": "2009-10-01", "end_date": "2010-09-30"},
+                {"start_date": "2010-10-01", "end_date": "2011-09-30"},
+            ]
+        },
+    }
+
+    expected_response = {
+        "group": group,
+        "spending_level": "awards",
+        "results": [
+            {
+                "aggregated_amount": 100.00,
+                "time_period": {"fiscal_year": "2010"},
+                "Contract_Obligations": 0,
+                "Direct_Obligations": 100.0,
+                "Grant_Obligations": 0,
+                "Idv_Obligations": 0,
+                "Loan_Obligations": 0,
+                "Other_Obligations": 0,
+                "total_outlays": 0.0,
+                "Contract_Outlays": 0,
+                "Direct_Outlays": 0,
+                "Grant_Outlays": 0,
+                "Idv_Outlays": 0,
+                "Loan_Outlays": 0,
+                "Other_Outlays": 0,
+            },
+            {
+                "aggregated_amount": 110.00,
+                "time_period": {"fiscal_year": "2011"},
+                "Contract_Obligations": 0,
+                "Direct_Obligations": 0,
+                "Grant_Obligations": 0,
+                "Idv_Obligations": 110.0,
+                "Loan_Obligations": 0,
+                "Other_Obligations": 0,
+                "total_outlays": 10.0,
+                "Contract_Outlays": 0,
+                "Direct_Outlays": 0,
+                "Grant_Outlays": 0,
+                "Idv_Outlays": 10.0,
+                "Loan_Outlays": 0,
+                "Other_Outlays": 0,
+            },
+            {
+                "aggregated_amount": 120.0,
+                "time_period": {"fiscal_year": "2012"},
+                "Contract_Obligations": 0,
+                "Direct_Obligations": 0,
+                "Grant_Obligations": 0,
+                "Idv_Obligations": 0,
+                "Loan_Obligations": 120.0,
+                "Other_Obligations": 0,
+                "total_outlays": 20.0,
+                "Contract_Outlays": 0,
+                "Direct_Outlays": 0,
+                "Grant_Outlays": 0,
+                "Idv_Outlays": 0,
+                "Loan_Outlays": 20.0,
+                "Other_Outlays": 0,
+            },
+        ],
+        "messages": expected_messages,
     }
 
     resp = client.post(
@@ -462,8 +817,9 @@ def test_spending_over_time_default_date_type(client, monkeypatch, elasticsearch
 
     expected_response = {
         "group": group,
-        "results": shared_results(),
-        "messages": [get_time_period_message()],
+        "spending_level": "transactions",
+        "results": shared_results_transactions(),
+        "messages": expected_messages,
     }
 
     resp = client.post(
@@ -496,6 +852,7 @@ def test_spending_over_time_month_ordering(client, monkeypatch, elasticsearch_tr
     }
     expected_response = {
         "group": group,
+        "spending_level": "transactions",
         "results": [
             {
                 "time_period": {"fiscal_year": "2011", "month": "1"},
@@ -506,6 +863,13 @@ def test_spending_over_time_month_ordering(client, monkeypatch, elasticsearch_tr
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
                 "Other_Obligations": 0,
+                "total_outlays": None,
+                "Contract_Outlays": None,
+                "Direct_Outlays": None,
+                "Grant_Outlays": None,
+                "Idv_Outlays": None,
+                "Loan_Outlays": None,
+                "Other_Outlays": None,
             },
             {
                 "time_period": {"fiscal_year": "2011", "month": "2"},
@@ -516,6 +880,13 @@ def test_spending_over_time_month_ordering(client, monkeypatch, elasticsearch_tr
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
                 "Other_Obligations": 0,
+                "total_outlays": None,
+                "Contract_Outlays": None,
+                "Direct_Outlays": None,
+                "Grant_Outlays": None,
+                "Idv_Outlays": None,
+                "Loan_Outlays": None,
+                "Other_Outlays": None,
             },
             {
                 "time_period": {"fiscal_year": "2011", "month": "3"},
@@ -526,6 +897,13 @@ def test_spending_over_time_month_ordering(client, monkeypatch, elasticsearch_tr
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
                 "Other_Obligations": 0,
+                "total_outlays": None,
+                "Contract_Outlays": None,
+                "Direct_Outlays": None,
+                "Grant_Outlays": None,
+                "Idv_Outlays": None,
+                "Loan_Outlays": None,
+                "Other_Outlays": None,
             },
             {
                 "time_period": {"fiscal_year": "2011", "month": "4"},
@@ -536,6 +914,13 @@ def test_spending_over_time_month_ordering(client, monkeypatch, elasticsearch_tr
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
                 "Other_Obligations": 0,
+                "total_outlays": None,
+                "Contract_Outlays": None,
+                "Direct_Outlays": None,
+                "Grant_Outlays": None,
+                "Idv_Outlays": None,
+                "Loan_Outlays": None,
+                "Other_Outlays": None,
             },
             {
                 "time_period": {"fiscal_year": "2011", "month": "5"},
@@ -546,6 +931,13 @@ def test_spending_over_time_month_ordering(client, monkeypatch, elasticsearch_tr
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
                 "Other_Obligations": 0,
+                "total_outlays": None,
+                "Contract_Outlays": None,
+                "Direct_Outlays": None,
+                "Grant_Outlays": None,
+                "Idv_Outlays": None,
+                "Loan_Outlays": None,
+                "Other_Outlays": None,
             },
             {
                 "time_period": {"fiscal_year": "2011", "month": "6"},
@@ -556,6 +948,13 @@ def test_spending_over_time_month_ordering(client, monkeypatch, elasticsearch_tr
                 "Idv_Obligations": 110.0,
                 "Loan_Obligations": 0,
                 "Other_Obligations": 0,
+                "total_outlays": None,
+                "Contract_Outlays": None,
+                "Direct_Outlays": None,
+                "Grant_Outlays": None,
+                "Idv_Outlays": None,
+                "Loan_Outlays": None,
+                "Other_Outlays": None,
             },
             {
                 "time_period": {"fiscal_year": "2011", "month": "7"},
@@ -566,6 +965,13 @@ def test_spending_over_time_month_ordering(client, monkeypatch, elasticsearch_tr
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
                 "Other_Obligations": 0,
+                "total_outlays": None,
+                "Contract_Outlays": None,
+                "Direct_Outlays": None,
+                "Grant_Outlays": None,
+                "Idv_Outlays": None,
+                "Loan_Outlays": None,
+                "Other_Outlays": None,
             },
             {
                 "time_period": {"fiscal_year": "2011", "month": "8"},
@@ -576,6 +982,13 @@ def test_spending_over_time_month_ordering(client, monkeypatch, elasticsearch_tr
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
                 "Other_Obligations": 0,
+                "total_outlays": None,
+                "Contract_Outlays": None,
+                "Direct_Outlays": None,
+                "Grant_Outlays": None,
+                "Idv_Outlays": None,
+                "Loan_Outlays": None,
+                "Other_Outlays": None,
             },
             {
                 "time_period": {"fiscal_year": "2011", "month": "9"},
@@ -586,6 +999,13 @@ def test_spending_over_time_month_ordering(client, monkeypatch, elasticsearch_tr
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
                 "Other_Obligations": 0,
+                "total_outlays": None,
+                "Contract_Outlays": None,
+                "Direct_Outlays": None,
+                "Grant_Outlays": None,
+                "Idv_Outlays": None,
+                "Loan_Outlays": None,
+                "Other_Outlays": None,
             },
             {
                 "time_period": {"fiscal_year": "2011", "month": "10"},
@@ -596,6 +1016,13 @@ def test_spending_over_time_month_ordering(client, monkeypatch, elasticsearch_tr
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
                 "Other_Obligations": 0,
+                "total_outlays": None,
+                "Contract_Outlays": None,
+                "Direct_Outlays": None,
+                "Grant_Outlays": None,
+                "Idv_Outlays": None,
+                "Loan_Outlays": None,
+                "Other_Outlays": None,
             },
             {
                 "time_period": {"fiscal_year": "2011", "month": "11"},
@@ -606,6 +1033,13 @@ def test_spending_over_time_month_ordering(client, monkeypatch, elasticsearch_tr
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
                 "Other_Obligations": 0,
+                "total_outlays": None,
+                "Contract_Outlays": None,
+                "Direct_Outlays": None,
+                "Grant_Outlays": None,
+                "Idv_Outlays": None,
+                "Loan_Outlays": None,
+                "Other_Outlays": None,
             },
             {
                 "time_period": {"fiscal_year": "2011", "month": "12"},
@@ -616,6 +1050,13 @@ def test_spending_over_time_month_ordering(client, monkeypatch, elasticsearch_tr
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
                 "Other_Obligations": 0,
+                "total_outlays": None,
+                "Contract_Outlays": None,
+                "Direct_Outlays": None,
+                "Grant_Outlays": None,
+                "Idv_Outlays": None,
+                "Loan_Outlays": None,
+                "Other_Outlays": None,
             },
             {
                 "time_period": {"fiscal_year": "2012", "month": "1"},
@@ -626,6 +1067,13 @@ def test_spending_over_time_month_ordering(client, monkeypatch, elasticsearch_tr
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
                 "Other_Obligations": 0,
+                "total_outlays": None,
+                "Contract_Outlays": None,
+                "Direct_Outlays": None,
+                "Grant_Outlays": None,
+                "Idv_Outlays": None,
+                "Loan_Outlays": None,
+                "Other_Outlays": None,
             },
             {
                 "time_period": {"fiscal_year": "2012", "month": "2"},
@@ -636,6 +1084,13 @@ def test_spending_over_time_month_ordering(client, monkeypatch, elasticsearch_tr
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
                 "Other_Obligations": 0,
+                "total_outlays": None,
+                "Contract_Outlays": None,
+                "Direct_Outlays": None,
+                "Grant_Outlays": None,
+                "Idv_Outlays": None,
+                "Loan_Outlays": None,
+                "Other_Outlays": None,
             },
             {
                 "time_period": {"fiscal_year": "2012", "month": "3"},
@@ -646,6 +1101,13 @@ def test_spending_over_time_month_ordering(client, monkeypatch, elasticsearch_tr
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
                 "Other_Obligations": 0,
+                "total_outlays": None,
+                "Contract_Outlays": None,
+                "Direct_Outlays": None,
+                "Grant_Outlays": None,
+                "Idv_Outlays": None,
+                "Loan_Outlays": None,
+                "Other_Outlays": None,
             },
             {
                 "time_period": {"fiscal_year": "2012", "month": "4"},
@@ -656,6 +1118,13 @@ def test_spending_over_time_month_ordering(client, monkeypatch, elasticsearch_tr
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
                 "Other_Obligations": 0,
+                "total_outlays": None,
+                "Contract_Outlays": None,
+                "Direct_Outlays": None,
+                "Grant_Outlays": None,
+                "Idv_Outlays": None,
+                "Loan_Outlays": None,
+                "Other_Outlays": None,
             },
             {
                 "time_period": {"fiscal_year": "2012", "month": "5"},
@@ -666,6 +1135,13 @@ def test_spending_over_time_month_ordering(client, monkeypatch, elasticsearch_tr
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
                 "Other_Obligations": 0,
+                "total_outlays": None,
+                "Contract_Outlays": None,
+                "Direct_Outlays": None,
+                "Grant_Outlays": None,
+                "Idv_Outlays": None,
+                "Loan_Outlays": None,
+                "Other_Outlays": None,
             },
             {
                 "time_period": {"fiscal_year": "2012", "month": "6"},
@@ -676,6 +1152,13 @@ def test_spending_over_time_month_ordering(client, monkeypatch, elasticsearch_tr
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
                 "Other_Obligations": 0,
+                "total_outlays": None,
+                "Contract_Outlays": None,
+                "Direct_Outlays": None,
+                "Grant_Outlays": None,
+                "Idv_Outlays": None,
+                "Loan_Outlays": None,
+                "Other_Outlays": None,
             },
             {
                 "time_period": {"fiscal_year": "2012", "month": "7"},
@@ -686,6 +1169,13 @@ def test_spending_over_time_month_ordering(client, monkeypatch, elasticsearch_tr
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
                 "Other_Obligations": 0,
+                "total_outlays": None,
+                "Contract_Outlays": None,
+                "Direct_Outlays": None,
+                "Grant_Outlays": None,
+                "Idv_Outlays": None,
+                "Loan_Outlays": None,
+                "Other_Outlays": None,
             },
             {
                 "time_period": {"fiscal_year": "2012", "month": "8"},
@@ -696,6 +1186,13 @@ def test_spending_over_time_month_ordering(client, monkeypatch, elasticsearch_tr
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
                 "Other_Obligations": 0,
+                "total_outlays": None,
+                "Contract_Outlays": None,
+                "Direct_Outlays": None,
+                "Grant_Outlays": None,
+                "Idv_Outlays": None,
+                "Loan_Outlays": None,
+                "Other_Outlays": None,
             },
             {
                 "time_period": {"fiscal_year": "2012", "month": "9"},
@@ -706,6 +1203,13 @@ def test_spending_over_time_month_ordering(client, monkeypatch, elasticsearch_tr
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
                 "Other_Obligations": 0,
+                "total_outlays": None,
+                "Contract_Outlays": None,
+                "Direct_Outlays": None,
+                "Grant_Outlays": None,
+                "Idv_Outlays": None,
+                "Loan_Outlays": None,
+                "Other_Outlays": None,
             },
             {
                 "time_period": {"fiscal_year": "2012", "month": "10"},
@@ -716,6 +1220,13 @@ def test_spending_over_time_month_ordering(client, monkeypatch, elasticsearch_tr
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
                 "Other_Obligations": 0,
+                "total_outlays": None,
+                "Contract_Outlays": None,
+                "Direct_Outlays": None,
+                "Grant_Outlays": None,
+                "Idv_Outlays": None,
+                "Loan_Outlays": None,
+                "Other_Outlays": None,
             },
             {
                 "time_period": {"fiscal_year": "2012", "month": "11"},
@@ -726,6 +1237,13 @@ def test_spending_over_time_month_ordering(client, monkeypatch, elasticsearch_tr
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
                 "Other_Obligations": 0,
+                "total_outlays": None,
+                "Contract_Outlays": None,
+                "Direct_Outlays": None,
+                "Grant_Outlays": None,
+                "Idv_Outlays": None,
+                "Loan_Outlays": None,
+                "Other_Outlays": None,
             },
             {
                 "time_period": {"fiscal_year": "2012", "month": "12"},
@@ -736,6 +1254,13 @@ def test_spending_over_time_month_ordering(client, monkeypatch, elasticsearch_tr
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
                 "Other_Obligations": 0,
+                "total_outlays": None,
+                "Contract_Outlays": None,
+                "Direct_Outlays": None,
+                "Grant_Outlays": None,
+                "Idv_Outlays": None,
+                "Loan_Outlays": None,
+                "Other_Outlays": None,
             },
             {
                 "time_period": {"fiscal_year": "2013", "month": "1"},
@@ -746,6 +1271,13 @@ def test_spending_over_time_month_ordering(client, monkeypatch, elasticsearch_tr
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
                 "Other_Obligations": 0,
+                "total_outlays": None,
+                "Contract_Outlays": None,
+                "Direct_Outlays": None,
+                "Grant_Outlays": None,
+                "Idv_Outlays": None,
+                "Loan_Outlays": None,
+                "Other_Outlays": None,
             },
             {
                 "time_period": {"fiscal_year": "2013", "month": "2"},
@@ -756,6 +1288,13 @@ def test_spending_over_time_month_ordering(client, monkeypatch, elasticsearch_tr
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
                 "Other_Obligations": 0,
+                "total_outlays": None,
+                "Contract_Outlays": None,
+                "Direct_Outlays": None,
+                "Grant_Outlays": None,
+                "Idv_Outlays": None,
+                "Loan_Outlays": None,
+                "Other_Outlays": None,
             },
             {
                 "time_period": {"fiscal_year": "2013", "month": "3"},
@@ -766,6 +1305,13 @@ def test_spending_over_time_month_ordering(client, monkeypatch, elasticsearch_tr
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
                 "Other_Obligations": 0,
+                "total_outlays": None,
+                "Contract_Outlays": None,
+                "Direct_Outlays": None,
+                "Grant_Outlays": None,
+                "Idv_Outlays": None,
+                "Loan_Outlays": None,
+                "Other_Outlays": None,
             },
             {
                 "time_period": {"fiscal_year": "2013", "month": "4"},
@@ -776,6 +1322,13 @@ def test_spending_over_time_month_ordering(client, monkeypatch, elasticsearch_tr
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
                 "Other_Obligations": 0,
+                "total_outlays": None,
+                "Contract_Outlays": None,
+                "Direct_Outlays": None,
+                "Grant_Outlays": None,
+                "Idv_Outlays": None,
+                "Loan_Outlays": None,
+                "Other_Outlays": None,
             },
             {
                 "time_period": {"fiscal_year": "2013", "month": "5"},
@@ -786,6 +1339,13 @@ def test_spending_over_time_month_ordering(client, monkeypatch, elasticsearch_tr
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
                 "Other_Obligations": 0,
+                "total_outlays": None,
+                "Contract_Outlays": None,
+                "Direct_Outlays": None,
+                "Grant_Outlays": None,
+                "Idv_Outlays": None,
+                "Loan_Outlays": None,
+                "Other_Outlays": None,
             },
             {
                 "time_period": {"fiscal_year": "2013", "month": "6"},
@@ -796,6 +1356,13 @@ def test_spending_over_time_month_ordering(client, monkeypatch, elasticsearch_tr
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
                 "Other_Obligations": 130.0,
+                "total_outlays": None,
+                "Contract_Outlays": None,
+                "Direct_Outlays": None,
+                "Grant_Outlays": None,
+                "Idv_Outlays": None,
+                "Loan_Outlays": None,
+                "Other_Outlays": None,
             },
             {
                 "time_period": {"fiscal_year": "2013", "month": "7"},
@@ -806,6 +1373,13 @@ def test_spending_over_time_month_ordering(client, monkeypatch, elasticsearch_tr
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
                 "Other_Obligations": 0,
+                "total_outlays": None,
+                "Contract_Outlays": None,
+                "Direct_Outlays": None,
+                "Grant_Outlays": None,
+                "Idv_Outlays": None,
+                "Loan_Outlays": None,
+                "Other_Outlays": None,
             },
             {
                 "time_period": {"fiscal_year": "2013", "month": "8"},
@@ -816,6 +1390,13 @@ def test_spending_over_time_month_ordering(client, monkeypatch, elasticsearch_tr
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
                 "Other_Obligations": 0,
+                "total_outlays": None,
+                "Contract_Outlays": None,
+                "Direct_Outlays": None,
+                "Grant_Outlays": None,
+                "Idv_Outlays": None,
+                "Loan_Outlays": None,
+                "Other_Outlays": None,
             },
             {
                 "time_period": {"fiscal_year": "2013", "month": "9"},
@@ -826,6 +1407,13 @@ def test_spending_over_time_month_ordering(client, monkeypatch, elasticsearch_tr
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
                 "Other_Obligations": 0,
+                "total_outlays": None,
+                "Contract_Outlays": None,
+                "Direct_Outlays": None,
+                "Grant_Outlays": None,
+                "Idv_Outlays": None,
+                "Loan_Outlays": None,
+                "Other_Outlays": None,
             },
             {
                 "time_period": {"fiscal_year": "2013", "month": "10"},
@@ -836,6 +1424,13 @@ def test_spending_over_time_month_ordering(client, monkeypatch, elasticsearch_tr
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
                 "Other_Obligations": 0,
+                "total_outlays": None,
+                "Contract_Outlays": None,
+                "Direct_Outlays": None,
+                "Grant_Outlays": None,
+                "Idv_Outlays": None,
+                "Loan_Outlays": None,
+                "Other_Outlays": None,
             },
             {
                 "time_period": {"fiscal_year": "2013", "month": "11"},
@@ -846,6 +1441,13 @@ def test_spending_over_time_month_ordering(client, monkeypatch, elasticsearch_tr
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
                 "Other_Obligations": 0,
+                "total_outlays": None,
+                "Contract_Outlays": None,
+                "Direct_Outlays": None,
+                "Grant_Outlays": None,
+                "Idv_Outlays": None,
+                "Loan_Outlays": None,
+                "Other_Outlays": None,
             },
             {
                 "time_period": {"fiscal_year": "2013", "month": "12"},
@@ -856,9 +1458,16 @@ def test_spending_over_time_month_ordering(client, monkeypatch, elasticsearch_tr
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
                 "Other_Obligations": 0,
+                "total_outlays": None,
+                "Contract_Outlays": None,
+                "Direct_Outlays": None,
+                "Grant_Outlays": None,
+                "Idv_Outlays": None,
+                "Loan_Outlays": None,
+                "Other_Outlays": None,
             },
         ],
-        "messages": [get_time_period_message()],
+        "messages": expected_messages,
     }
 
     resp = client.post(
@@ -888,13 +1497,14 @@ def test_spending_over_time_funny_dates_ordering(client, monkeypatch, elasticsea
                 {"start_date": "2011-02-01", "end_date": "2011-03-31"},
             ]
         },
-        "messages": [get_time_period_message()],
+        "messages": expected_messages,
     }
 
     expected_response = {
         "results": shared_results_2(),
+        "spending_level": "transactions",
         "group": "month",
-        "messages": [get_time_period_message()],
+        "messages": expected_messages,
     }
 
     resp = client.post(
@@ -930,7 +1540,7 @@ def test_spending_over_time_new_awards_only_filter(
                 },
             ]
         },
-        "messages": [get_time_period_message()],
+        "messages": expected_messages,
     }
 
     expected_response = {
@@ -944,6 +1554,13 @@ def test_spending_over_time_new_awards_only_filter(
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
                 "Other_Obligations": 0,
+                "total_outlays": None,
+                "Contract_Outlays": None,
+                "Direct_Outlays": None,
+                "Grant_Outlays": None,
+                "Idv_Outlays": None,
+                "Loan_Outlays": None,
+                "Other_Outlays": None,
             },
             {
                 "aggregated_amount": 100.00,
@@ -954,10 +1571,18 @@ def test_spending_over_time_new_awards_only_filter(
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
                 "Other_Obligations": 0,
+                "total_outlays": None,
+                "Contract_Outlays": None,
+                "Direct_Outlays": None,
+                "Grant_Outlays": None,
+                "Idv_Outlays": None,
+                "Loan_Outlays": None,
+                "Other_Outlays": None,
             },
         ],
         "group": "month",
-        "messages": [get_time_period_message()],
+        "spending_level": "transactions",
+        "messages": expected_messages,
     }
 
     resp = client.post(
@@ -986,7 +1611,7 @@ def test_spending_over_time_new_awards_only_filter(
                 },
             ]
         },
-        "messages": [get_time_period_message()],
+        "messages": expected_messages,
     }
 
     expected_response = {
@@ -1000,10 +1625,18 @@ def test_spending_over_time_new_awards_only_filter(
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
                 "Other_Obligations": 0,
+                "total_outlays": None,
+                "Contract_Outlays": None,
+                "Direct_Outlays": None,
+                "Grant_Outlays": None,
+                "Idv_Outlays": None,
+                "Loan_Outlays": None,
+                "Other_Outlays": None,
             },
         ],
         "group": "month",
-        "messages": [get_time_period_message()],
+        "spending_level": "transactions",
+        "messages": expected_messages,
     }
 
     resp = client.post(
@@ -1033,13 +1666,14 @@ def test_spending_over_time_new_awards_only_filter(
                 {"start_date": "2011-02-01", "end_date": "2011-03-31"},
             ]
         },
-        "messages": [get_time_period_message()],
+        "messages": expected_messages,
     }
 
     expected_response = {
         "results": shared_results_2(),
         "group": "month",
-        "messages": [get_time_period_message()],
+        "spending_level": "transactions",
+        "messages": expected_messages,
     }
 
     resp = client.post(
@@ -1068,7 +1702,7 @@ def test_spending_over_time_new_awards_only_filter(
                 },
             ]
         },
-        "messages": [get_time_period_message()],
+        "messages": expected_messages,
     }
 
     expected_response = {
@@ -1082,10 +1716,18 @@ def test_spending_over_time_new_awards_only_filter(
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
                 "Other_Obligations": 0,
+                "total_outlays": None,
+                "Contract_Outlays": None,
+                "Direct_Outlays": None,
+                "Grant_Outlays": None,
+                "Idv_Outlays": None,
+                "Loan_Outlays": None,
+                "Other_Outlays": None,
             },
         ],
         "group": "month",
-        "messages": [get_time_period_message()],
+        "spending_level": "transactions",
+        "messages": expected_messages,
     }
 
     resp = client.post(
@@ -1114,7 +1756,7 @@ def test_spending_over_time_new_awards_only_filter(
                 },
             ]
         },
-        "messages": [get_time_period_message()],
+        "messages": expected_messages,
     }
 
     expected_response = {
@@ -1128,6 +1770,13 @@ def test_spending_over_time_new_awards_only_filter(
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
                 "Other_Obligations": 0,
+                "total_outlays": None,
+                "Contract_Outlays": None,
+                "Direct_Outlays": None,
+                "Grant_Outlays": None,
+                "Idv_Outlays": None,
+                "Loan_Outlays": None,
+                "Other_Outlays": None,
             },
             {
                 "aggregated_amount": 100.00,
@@ -1138,10 +1787,18 @@ def test_spending_over_time_new_awards_only_filter(
                 "Idv_Obligations": 0,
                 "Loan_Obligations": 0,
                 "Other_Obligations": 0,
+                "total_outlays": None,
+                "Contract_Outlays": None,
+                "Direct_Outlays": None,
+                "Grant_Outlays": None,
+                "Idv_Outlays": None,
+                "Loan_Outlays": None,
+                "Other_Outlays": None,
             },
         ],
         "group": "month",
-        "messages": [get_time_period_message()],
+        "spending_level": "transactions",
+        "messages": expected_messages,
     }
 
     resp = client.post(

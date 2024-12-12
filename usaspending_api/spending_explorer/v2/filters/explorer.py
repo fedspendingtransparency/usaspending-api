@@ -1,6 +1,9 @@
 from decimal import Decimal
+
 from django.db.models import Exists, F, OuterRef, Q, Sum, TextField, Value
 from django.db.models.functions import Coalesce
+
+from usaspending_api.common.calculations import file_b
 from usaspending_api.references.models import Agency
 from usaspending_api.submissions.models import SubmissionAttributes
 
@@ -32,7 +35,7 @@ class Explorer(object):
                 code=F("treasury_account__budget_function_code"),
             )
             .values("id", "type", "name", "code", "amount")
-            .annotate(total=Sum("obligations_incurred_by_program_object_class_cpe"))
+            .annotate(total=Sum(file_b.get_obligations()))
             .order_by("-total")
         )
 
@@ -48,7 +51,7 @@ class Explorer(object):
                 code=F("treasury_account__budget_subfunction_code"),
             )
             .values("id", "type", "name", "code", "amount")
-            .annotate(total=Sum("obligations_incurred_by_program_object_class_cpe"))
+            .annotate(total=Sum(file_b.get_obligations()))
             .order_by("-total")
         )
 
@@ -65,7 +68,7 @@ class Explorer(object):
                 code=F("treasury_account__federal_account__main_account_code"),
             )
             .values("id", "account_number", "type", "name", "code", "amount")
-            .annotate(total=Sum("obligations_incurred_by_program_object_class_cpe"))
+            .annotate(total=Sum(file_b.get_obligations()))
             .order_by("-total")
         )
 
@@ -81,7 +84,7 @@ class Explorer(object):
                 code=F("program_activity__program_activity_code"),
             )
             .values("id", "type", "name", "code", "amount")
-            .annotate(total=Sum("obligations_incurred_by_program_object_class_cpe"))
+            .annotate(total=Sum(file_b.get_obligations()))
             .order_by("-total")
         )
 
@@ -97,7 +100,7 @@ class Explorer(object):
                 code=F("object_class__major_object_class"),
             )
             .values("id", "type", "name", "code", "amount")
-            .annotate(total=Sum("obligations_incurred_by_program_object_class_cpe"))
+            .annotate(total=Sum(file_b.get_obligations()))
             .order_by("-total")
         )
 
@@ -142,7 +145,7 @@ class Explorer(object):
                 code=F("treasury_account__funding_toptier_agency__toptier_code"),
             )
             .values("type", "name", "code")
-            .annotate(amount=Sum("obligations_incurred_by_program_object_class_cpe"))
+            .annotate(amount=Sum(file_b.get_obligations()))
             .order_by("-amount")
         )
 
