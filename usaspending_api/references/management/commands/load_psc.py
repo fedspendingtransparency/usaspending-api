@@ -1,19 +1,22 @@
-from django.core.management.base import BaseCommand
-from usaspending_api.references.models import PSC
-import os
 import logging
-from openpyxl import load_workbook
+from urllib.error import HTTPError
+
+import pandas as pd
+from django.core.management.base import BaseCommand
+
+from usaspending_api.references.models import PSC
 
 
 class Command(BaseCommand):
     help = "Loads program information obtained from Excel file on https://www.acquisition.gov/PSC_Manual"
 
     logger = logging.getLogger("script")
-    default_directory = os.path.normpath("usaspending_api/references/management/commands/")
-    default_filepath = os.path.join(default_directory, "PSC_Data_June_2019_Edition_FINAL_6-20-19+DRW.xlsx")
+    default_filepath = "https://www.acquisition.gov/sites/default/files/manual/PSC%20April%202024.xlsx"
 
     def add_arguments(self, parser):
-        parser.add_argument("-p", "--path", help="the path to the spreadsheets to load", default=self.default_filepath)
+        parser.add_argument(
+            "-p", "--path", help="The path to the spreadsheets to load. Can be a url.", default=self.default_filepath
+        )
         parser.add_argument(
             "-u", "--update", help="Updates the lengths of any codes that were not in the file.", action="store_true"
         )
@@ -26,40 +29,63 @@ class Command(BaseCommand):
 
 def load_psc(fullpath, update):
     """
-    Create/Update Product or Service Code records from a Excel doc of historical data.
+    Create/Update Product or Service Code records from an Excel doc of historical data.
     """
     try:
         logger = logging.getLogger("script")
-        wb = load_workbook(filename=fullpath, data_only=True)
-        ws = wb.active
-        for current_row, row in enumerate(ws.rows):
-            if not row[0].value or row[0].value == "PSC CODE" or ws.row_dimensions[row[0].row].hidden:
-                continue  # skip lines without codes and hidden rows
-            psc_code = row[0].value
-            psc_length = row[1].value
-            psc_description = row[2].value
-
-            psc_start_date = row[3].value
-            psc_end_date = row[4].value
-            psc_full_name = row[5].value
-            psc_excludes = row[6].value
-            psc_notes = row[7].value
-            psc_includes = row[8].value
-
-            psc, created = PSC.objects.get_or_create(code=psc_code)
-            psc.description = psc_description
-            psc.length = psc_length
-            check_start_end_dates(psc, psc_start_date, psc_end_date)
-            psc.full_name = psc_full_name
-            psc.excludes = psc_excludes
-            psc.notes = psc_notes
-            psc.includes = psc_includes
+        new_pscs = (
+            pd.read_excel(
+                "https://www.acquisition.gov/sites/default/files/manual/PSC%20April%202024.xlsx",
+                sheet_name="PSC for 042022",
+                usecols=[
+                    "PSC CODE",
+                    "START DATE",
+                    "END DATE",
+                    "PRODUCT AND SERVICE CODE NAME",
+                    "PRODUCT AND SERVICE CODE FULL NAME (DESCRIPTION)",
+                    "PRODUCT AND SERVICE CODE INCLUDES",
+                    "PRODUCT AND SERVICE CODE EXCLUDES",
+                    "PRODUCT AND SERVICE CODE NOTES",
+                ],
+                parse_dates=["START DATE", "END DATE"],
+            )
+            # Rename columns to match PSC model fields
+            .rename(
+                columns={
+                    "PSC CODE": "code",
+                    "START DATE": "start_date",
+                    "END DATE": "end_date",
+                    "PRODUCT AND SERVICE CODE NAME": "full_name",
+                    "PRODUCT AND SERVICE CODE FULL NAME (DESCRIPTION)": "description",
+                    "PRODUCT AND SERVICE CODE INCLUDES": "includes",
+                    "PRODUCT AND SERVICE CODE EXCLUDES": "excludes",
+                    "PRODUCT AND SERVICE CODE NOTES": "notes",
+                }
+            )
+            # Remove duplicate codes keeping most recent start_date
+            .loc[lambda df: (~df.sort_values(by=["code", "start_date"]).duplicated(subset=["code"], keep="last"))]
+            # Add length column
+            .assign(length=lambda df: df["code"].astype(str).str.len()).to_dict(orient="records")
+        )
+        for new_psc in new_pscs:
+            psc, created = PSC.objects.get_or_create(code=new_psc["code"])
+            psc.length = new_psc["length"]
+            psc.description = new_psc["description"]
+            check_start_end_dates(psc, new_psc["start_date"], new_psc["end_date"])
+            psc.full_name = new_psc["full_name"]
+            psc.excludes = new_psc["excludes"]
+            psc.notes = new_psc["notes"]
+            psc.includes = new_psc["includes"]
             psc.save()
         if update:
             update_lengths()
             logger.log(20, "Updated PSC codes.")
     except IOError:
         logger.error("Could not open file {}".format(fullpath))
+    except HTTPError:
+        logger.error("Could not open url {}".format(fullpath))
+    except Exception as e:
+        logger.error(e)
 
 
 def check_start_end_dates(psc, start_date, end_date):
