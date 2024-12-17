@@ -21,12 +21,14 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
         + `filters` (required, AdvancedFilterObject)
         + `subawards` (optional, boolean)
             True when you want to group by Subawards instead of Awards. Defaulted to False.
-        + `spending_level` (required, enum[string])
-            Spending level value that was provided in the request.
+        + `spending_level` (optional, enum[string])
+            Group the spending by level. This also determines what data source is used for the totals.
             + Members
                 + `transactions`
                 + `awards`
                 + `subawards`
+            + Default
+                + `transactions`
         + `scope` (required, enum[string])
             When fetching transactions, use the primary place of performance or recipient location
             + Members
