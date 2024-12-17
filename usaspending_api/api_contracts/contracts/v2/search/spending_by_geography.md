@@ -111,6 +111,7 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
 + `shape_code` (required, string)
 + `population` (required, number, nullable)
 + `per_capita` (required, number, nullable)
++ `total_outlays` (optional, number) Only included when the `spending_level` of the Response is `awards`
 
 
 ## Filter Objects

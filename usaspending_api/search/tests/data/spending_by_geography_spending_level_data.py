@@ -10,6 +10,7 @@ def spending_level_test_data():
         action_date="2020-01-01",
         pop_country_code="USA",
         generated_pragmatic_obligation=500.0,
+        total_outlays=600,
     )
     baker.make(
         "search.AwardSearch",
@@ -17,6 +18,7 @@ def spending_level_test_data():
         action_date="2020-01-01",
         pop_country_code="USA",
         generated_pragmatic_obligation=500.0,
+        total_outlays=600,
     )
     baker.make(
         "search.AwardSearch",
@@ -24,6 +26,7 @@ def spending_level_test_data():
         action_date="2020-01-01",
         pop_country_code="CAN",
         generated_pragmatic_obligation=300.0,
+        total_outlays=500,
     )
     baker.make(
         "search.AwardSearch",
@@ -31,6 +34,7 @@ def spending_level_test_data():
         action_date="2020-01-01",
         pop_country_code="CAN",
         generated_pragmatic_obligation=300.0,
+        total_outlays=500,
     )
     baker.make(
         "search.SubawardSearch",
