@@ -730,6 +730,15 @@ def federal_accounts_test_data(db):
     )
 
 
+def _expected_messages():
+    expected_messages = [get_time_period_message()]
+    expected_messages.append(
+        "'subawards' will be deprecated in the future. Set ‘spending_level’ to ‘subawards’ instead. "
+        "See documentation for more information. "
+    )
+    return expected_messages
+
+
 @pytest.mark.django_db
 def test_category_awarding_agency_transactions(agency_test_data, monkeypatch, elasticsearch_transaction_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
@@ -745,7 +754,8 @@ def test_category_awarding_agency_transactions(agency_test_data, monkeypatch, el
         "results": [
             {"amount": 15, "name": "Awarding Toptier Agency 1", "code": "TA1", "id": 1001, "agency_slug": None}
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
 
     assert expected_response == spending_by_category_logic
@@ -762,7 +772,8 @@ def test_category_awarding_agency_subawards(agency_test_data):
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [{"amount": 150, "name": "Awarding Toptier Agency 3", "code": "TA3", "id": 1003}],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "subawards",
     }
 
     assert expected_response == spending_by_category_logic
@@ -793,7 +804,8 @@ def test_category_awarding_subagency_transactions(agency_test_data, monkeypatch,
                 "agency_slug": "awarding-toptier-agency-1",
             }
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
 
     assert expected_response == spending_by_category_logic
@@ -822,7 +834,8 @@ def test_category_awarding_subagency_subawards(agency_test_data):
                 "agency_slug": "awarding-toptier-agency-3",
             }
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "subawards",
     }
 
     assert expected_response == spending_by_category_logic
@@ -841,7 +854,8 @@ def test_category_funding_agency_transactions(agency_test_data, monkeypatch, ela
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [{"amount": 15, "name": "Funding Toptier Agency 2", "code": "TA2", "id": 1002}],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
 
     assert expected_response == spending_by_category_logic
@@ -858,7 +872,8 @@ def test_category_funding_agency_subawards(agency_test_data):
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [{"amount": 150, "name": "Funding Toptier Agency 4", "code": "TA4", "id": 1004}],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "subawards",
     }
 
     assert expected_response == spending_by_category_logic
@@ -889,7 +904,8 @@ def test_category_funding_subagency_transactions(agency_test_data, monkeypatch, 
                 "agency_slug": "funding-toptier-agency-2",
             }
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
 
     assert expected_response == spending_by_category_logic
@@ -918,7 +934,8 @@ def test_category_funding_subagency_subawards(agency_test_data):
                 "agency_slug": "funding-toptier-agency-4",
             }
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "subawards",
     }
 
     assert expected_response == spending_by_category_logic
@@ -953,7 +970,8 @@ def test_category_recipient_transactions(recipient_test_data, monkeypatch, elast
                 "uei": None,
             },
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
 
     assert expected_response == spending_by_category_logic
@@ -984,7 +1002,8 @@ def test_category_recipient_subawards(recipient_test_data):
                 "name": "UNIVERSITY OF PAWNEE",
             },
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "subawards",
     }
 
     assert expected_response == spending_by_category_logic
@@ -1015,7 +1034,8 @@ def test_category_recipient_duns_subawards_deprecated(recipient_test_data):
                 "name": "UNIVERSITY OF PAWNEE",
             },
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "subawards",
     }
 
     assert expected_response == spending_by_category_logic
@@ -1034,7 +1054,8 @@ def test_category_cfda_transactions(cfda_test_data, monkeypatch, elasticsearch_t
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [{"amount": 2, "code": "CFDA1234", "name": "CFDA TITLE 1234", "id": 1}],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
 
     assert expected_response == spending_by_category_logic
@@ -1051,7 +1072,8 @@ def test_category_cfda_subawards(cfda_test_data):
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [{"amount": 2, "code": "CFDA1234", "name": "CFDA TITLE 1234", "id": 1}],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "subawards",
     }
 
     assert expected_response == spending_by_category_logic
@@ -1095,7 +1117,8 @@ def test_category_psc_transactions(psc_test_data, monkeypatch, elasticsearch_tra
             {"amount": 4, "code": "9876", "id": None, "name": "PSC DESCRIPTION DOWN"},
             {"amount": 2, "code": "1234", "id": None, "name": "PSC DESCRIPTION UP"},
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
 
     assert expected_response == spending_by_category_logic
@@ -1117,7 +1140,8 @@ def test_category_naics_transactions(naics_test_data, monkeypatch, elasticsearch
             {"amount": 4, "code": "NAICS 9876", "name": "SOURCE NAICS DESC 9876", "id": None},
             {"amount": 2, "code": "NAICS 1234", "name": "SOURCE NAICS DESC 1234", "id": None},
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
 
     assert expected_response == spending_by_category_logic
@@ -1139,7 +1163,8 @@ def test_category_county_transactions(geo_test_data, monkeypatch, elasticsearch_
             {"amount": 7, "code": "001", "name": "SOMEWHEREVILLE", "id": None},
             {"amount": 3, "code": "004", "name": "COUNTYSVILLE", "id": None},
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
 
     assert expected_response == spending_by_category_logic
@@ -1159,7 +1184,8 @@ def test_category_county_subawards(geo_test_data):
             {"amount": 1100, "code": "001", "id": None, "name": "SOMEWHEREVILLE"},
             {"amount": 11, "code": "004", "id": None, "name": "COUNTYSVILLE"},
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "subawards",
     }
 
     assert expected_response == spending_by_category_logic
@@ -1181,7 +1207,8 @@ def test_category_district_transactions(geo_test_data, monkeypatch, elasticsearc
             {"amount": 7, "code": "05", "name": "XY-05", "id": None},
             {"amount": 3, "code": "90", "name": "XY-MULTIPLE DISTRICTS", "id": None},
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
 
     assert expected_response == spending_by_category_logic
@@ -1201,7 +1228,8 @@ def test_category_district_subawards(geo_test_data):
             {"amount": 1100, "code": "05", "id": None, "name": "XY-05"},
             {"amount": 11, "code": "90", "id": None, "name": "XY-MULTIPLE DISTRICTS"},
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "subawards",
     }
 
     assert expected_response == spending_by_category_logic
@@ -1220,7 +1248,8 @@ def test_category_state_territory(geo_test_data, monkeypatch, elasticsearch_tran
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [{"amount": 10, "code": "XY", "name": "Test State", "id": None}],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
 
     assert expected_response == spending_by_category_logic
@@ -1237,7 +1266,8 @@ def test_category_state_territory_subawards(geo_test_data):
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [{"amount": 1111, "code": "XY", "id": None, "name": "Test State"}],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "subawards",
     }
 
     assert expected_response == spending_by_category_logic
@@ -1256,7 +1286,8 @@ def test_category_country(geo_test_data, monkeypatch, elasticsearch_transaction_
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [{"amount": 10, "code": "US", "name": "UNITED STATES", "id": None}],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
 
     assert expected_response == spending_by_category_logic
@@ -1273,7 +1304,8 @@ def test_category_country_subawards(geo_test_data):
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [{"amount": 1111, "code": "US", "id": None, "name": "UNITED STATES"}],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "subawards",
     }
 
     assert expected_response == spending_by_category_logic
@@ -1298,6 +1330,7 @@ def test_category_federal_accounts(federal_accounts_test_data, monkeypatch, elas
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [{"amount": 3, "code": "020-0001", "name": "Test Federal Account", "id": 10}],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
     assert expected_response == spending_by_category_logic

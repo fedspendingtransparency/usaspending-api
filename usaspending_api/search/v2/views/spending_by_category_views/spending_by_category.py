@@ -108,14 +108,16 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
     def perform_search(self, validated_payload: dict, original_filters: dict) -> dict:
 
         self.filters = validated_payload.get("filters", {})
-        self.subawards = validated_payload["subawards"]
+        self.subawards = validated_payload.get("subawards", False)  # Default to False if 'subawards' is not provided
         self.pagination = self._get_pagination(validated_payload)
 
-        if AwardType(validated_payload["spending_level"]) == AwardType.SUBAWARDS:
+        # Check for subawards conditions
+        spending_level = validated_payload.get("spending_level")
+        if self.subawards or AwardType(spending_level) == AwardType.SUBAWARDS:
             base_queryset = subaward_filter(self.filters)
             self.obligation_column = "subaward_amount"
             results = self.query_django_for_subawards(base_queryset)
-        elif AwardType(validated_payload["spending_level"]) == AwardType.TRANSACTIONS:
+        elif AwardType(spending_level) == AwardType.TRANSACTIONS:
             results = self.query_elasticsearch_for_transactions(validated_payload)
         else:
             results = self.query_elasticsearch_for_awards(validated_payload)
@@ -149,7 +151,7 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         )
         filter_options["time_period_obj"] = new_awards_only_decorator
         filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(self.filters, **filter_options)
-        results = self.query_elasticsearch_for_prime_awards(filter_query, validated_payload["spending_level"])
+        results = self.query_elasticsearch(filter_query, validated_payload["spending_level"])
 
         return results
 
@@ -163,7 +165,7 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         )
         options["time_period_obj"] = new_awards_only_decorator
         filter_query = QueryWithFilters.generate_awards_elasticsearch_query(self.filters, **options)
-        results = self.query_elasticsearch_for_prime_awards(filter_query, validated_payload["spending_level"])
+        results = self.query_elasticsearch(filter_query, validated_payload["spending_level"])
 
         return results
 
@@ -262,7 +264,7 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
 
         return search
 
-    def query_elasticsearch_for_prime_awards(self, filter_query: ES_Q, spending_level: str) -> list:
+    def query_elasticsearch(self, filter_query: ES_Q, spending_level: str) -> list:
         search = self.build_elasticsearch_search_with_aggregations(filter_query, spending_level)
         if search is None:
             return []
