@@ -15,6 +15,20 @@
           "filter": [
             "uppercase"
           ]
+        },
+        "edge_ngram_analyzer": {
+          "tokenizer": "edge_ngram_tokenizer"
+        }
+      },
+      "tokenizer": {
+        "edge_ngram_tokenizer": {
+          "type": "edge_ngram",
+          "min_gram": 2,
+          "max_gram": 10,
+          "token_chars": [
+            "letter",
+            "digit"
+          ]
         }
       }
     }
@@ -45,7 +59,20 @@
           }
         }
       },
-      "cities": {
+      "city_name": {
+        "type": "text",
+        "analyzer": "edge_ngram_analyzer",
+        "fields": {
+          "contains": {
+            "type": "text",
+            "analyzer": "contains_analyzer"
+          },
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "county_name": {
         "type": "text",
         "fields": {
           "contains": {
@@ -57,36 +84,7 @@
           }
         }
       },
-      "counties": {
-        "type": "nested",
-        "properties": {
-          "fips": {
-            "type": "text",
-            "fields": {
-              "contains": {
-                "type": "text",
-                "analyzer": "contains_analyzer"
-              },
-              "keyword": {
-                "type": "keyword"
-              }
-            }
-          },
-          "name": {
-            "type": "text",
-            "fields": {
-              "contains": {
-                "type": "text",
-                "analyzer": "contains_analyzer"
-              },
-              "keyword": {
-                "type": "keyword"
-              }
-            }
-          }
-        }
-      },
-      "zip_codes": {
+      "county_fips": {
         "type": "text",
         "fields": {
           "contains": {
@@ -98,7 +96,7 @@
           }
         }
       },
-      "current_congressional_districts": {
+      "zip_code": {
         "type": "text",
         "fields": {
           "contains": {
@@ -110,7 +108,19 @@
           }
         }
       },
-      "original_congressional_districts": {
+      "current_congressional_district": {
+        "type": "text",
+        "fields": {
+          "contains": {
+            "type": "text",
+            "analyzer": "contains_analyzer"
+          },
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "original_congressional_district": {
         "type": "text",
         "fields": {
           "contains": {
