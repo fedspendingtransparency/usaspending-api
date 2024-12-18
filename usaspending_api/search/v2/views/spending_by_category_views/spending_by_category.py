@@ -3,7 +3,7 @@ import logging
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from django.conf import settings
 from django.db.models import QuerySet, Sum
@@ -201,7 +201,7 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
 
     def build_elasticsearch_search_with_aggregations(
         self, filter_query: ES_Q, spending_level: str
-    ) -> Optional[TransactionSearch]:
+        ) -> Optional[Union[AwardSearch, TransactionSearch]]:
         """
         Using the provided ES_Q object creates a TransactionSearch object with the necessary applied aggregations.
         """
