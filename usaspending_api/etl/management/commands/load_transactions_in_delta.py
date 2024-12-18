@@ -1135,10 +1135,8 @@ class Command(BaseCommand):
         # Due to the size of the dataset, need to keep information about the orphaned transactions in a table.
         #   If we tried to insert the data directly into a SQL statement, it could break the Spark driver.
         with prepare_orphaned_transaction_temp_table(), prepare_orphaned_award_temp_table():
-            # To avoid re-testing for raw.transaction_normalized, use a variable to keep track.  Initially
-            # assume that the table does exist.
-            raw_transaction_normalized_exists = True
 
+            # To avoid re-testing for raw.transaction_normalized, use a variable to keep track.
             # Test to see if raw.transaction_normalized exists
             try:
                 self.spark.sql("SELECT 1 FROM raw.transaction_normalized")
@@ -1149,12 +1147,16 @@ class Command(BaseCommand):
                         "Skipping population of transaction_id_lookup table; no raw.transaction_normalized table."
                     )
                     raw_transaction_normalized_exists = False
-                    # Without a raw.transaction_normalized table, can't get a maximum id from it, either.
-                    max_id = None
                 else:
                     # Don't try to handle anything else
                     raise e
             else:
+                raw_transaction_normalized_exists = True
+            # if we're not doing the initial copy, we're also skipping all things raw.transaction_normalized
+            raw_transaction_normalized_exists = (raw_transaction_normalized_exists and not self.no_initial_copy)
+
+            max_id = None
+            if raw_transaction_normalized_exists:
                 self._insert_orphaned_transactions()
 
                 # Extend the orphaned transactions to any transactions found in raw.transaction_normalized that
