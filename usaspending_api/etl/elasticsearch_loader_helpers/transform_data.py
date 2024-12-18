@@ -19,6 +19,7 @@ def transform_award_data(worker: TaskSpec, records: List[dict]) -> List[dict]:
     converters = {
         "covid_spending_by_defc": convert_json_data_to_dict,
         "iija_spending_by_defc": convert_json_data_to_dict,
+        "federal_accounts": convert_json_array_to_list_of_str,
     }
     agg_key_creations = {
         "awarding_subtier_agency_agg_key": lambda x: x["awarding_subtier_agency_code"],

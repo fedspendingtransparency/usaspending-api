@@ -201,7 +201,7 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
 
     def build_elasticsearch_search_with_aggregations(
         self, filter_query: ES_Q, spending_level: str
-        ) -> Optional[Union[AwardSearch, TransactionSearch]]:
+    ) -> Optional[Union[AwardSearch, TransactionSearch]]:
         """
         Using the provided ES_Q object creates a TransactionSearch object with the necessary applied aggregations.
         """

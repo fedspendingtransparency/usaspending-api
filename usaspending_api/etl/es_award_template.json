@@ -652,6 +652,15 @@
       "tas_components": {
         "type": "keyword"
       },
+      "federal_accounts": {
+        "type": "keyword",
+        "eager_global_ordinals": true,
+        "fields": {
+          "hash": {
+            "type": "murmur3"
+          }
+        }
+      },
       "disaster_emergency_fund_codes": {
         "type": "keyword"
       },
