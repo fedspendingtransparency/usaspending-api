@@ -509,6 +509,15 @@
           }
         }
       },
+      "pop_country_agg_key": {
+        "type": "keyword",
+        "eager_global_ordinals": true,
+        "fields": {
+          "hash": {
+            "type": "murmur3"
+          }
+        }
+      },
       "pop_state_agg_key": {
         "type": "keyword",
         "eager_global_ordinals": true,
@@ -555,6 +564,15 @@
       },
       "cfdas": {
         "type": "keyword"
+      },
+      "cfda_agg_key": {
+        "type": "keyword",
+        "eager_global_ordinals": true,
+        "fields": {
+          "hash": {
+            "type": "murmur3"
+          }
+        }
       },
       "sai_number": {
         "type": "text",
