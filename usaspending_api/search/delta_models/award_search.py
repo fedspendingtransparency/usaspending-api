@@ -122,6 +122,7 @@ AWARD_SEARCH_COLUMNS = {
     "naics_description": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "tas_paths": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]", "gold": False},
     "tas_components": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]", "gold": False},
+    "federal_accounts": {"delta": "STRING", "postgres": "JSONB", "gold": False},
     "disaster_emergency_fund_codes": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]", "gold": False},
     "covid_spending_by_defc": {"delta": "STRING", "postgres": "JSONB", "gold": False},
     "total_covid_outlay": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": False},
@@ -372,6 +373,7 @@ award_search_load_sql_string = rf"""
 
   TREASURY_ACCT.tas_paths,
   TREASURY_ACCT.tas_components,
+  TREASURY_ACCT.federal_accounts,
   TREASURY_ACCT.disaster_emergency_fund_codes,
   COVID_DEFC.covid_spending_by_defc,
   COVID_DEFC.total_covid_outlay,
@@ -608,6 +610,17 @@ LEFT JOIN (
 LEFT OUTER JOIN (
   SELECT
     faba.award_id,
+    TO_JSON(
+        SORT_ARRAY(
+            COLLECT_SET(
+                NAMED_STRUCT(
+                    'id', fa.id,
+                    'account_title', fa.account_title,
+                    'federal_account_code', fa.federal_account_code
+                )
+            )
+        )
+    ) AS federal_accounts,
     COLLECT_SET(
       DISTINCT CONCAT(
         'agency=', COALESCE(agency.toptier_code, ''),

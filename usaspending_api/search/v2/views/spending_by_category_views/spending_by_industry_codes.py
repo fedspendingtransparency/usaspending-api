@@ -157,7 +157,7 @@ class CfdaViewSet(AbstractIndustryCodeViewSet):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/cfda.md"
 
     industry_code_type = IndustryCodeType.CFDA
-    category = Category(name="cfda", agg_key=industry_code_type.value)
+    category = Category(name="cfda", agg_key="cfda_agg_key")
 
 
 class NAICSViewSet(AbstractIndustryCodeViewSet):

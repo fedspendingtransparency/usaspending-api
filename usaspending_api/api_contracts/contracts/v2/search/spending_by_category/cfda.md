@@ -25,7 +25,15 @@ This endpoint returns a list of the top results of CFDA sorted by the total amou
         + `page`: 1 (optional, number)
             The page of results to return based on the limit
         + `subawards` (optional, boolean)
-            Determines whether Prime Awards or Sub Awards are searched
+            Determines whether Prime Awards or Sub Awards are searched. This field will be depreciated soon.
+        + `spending_level` (optional, enum[string])
+            Group the spending by level. This also determines what data source is used for the totals.
+            + Members
+                + `transactions`
+                + `awards`
+                + `subawards`
+            + Default
+                + `transactions`
     + Body
 
 
@@ -41,7 +49,8 @@ This endpoint returns a list of the top results of CFDA sorted by the total amou
                 },
                 "category": "cfda",
                 "limit": 5,
-                "page": 1
+                "page": 1,
+                "spending_level": "transactions"
             }
 
 + Response 200 (application/json)

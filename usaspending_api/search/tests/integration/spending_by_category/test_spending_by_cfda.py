@@ -7,6 +7,15 @@ from usaspending_api.search.tests.data.search_filters_test_data import non_legac
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
+def _expected_messages():
+    expected_messages = [get_time_period_message()]
+    expected_messages.append(
+        "'subawards' will be deprecated in the future. Set ‘spending_level’ to ‘subawards’ instead. "
+        "See documentation for more information. "
+    )
+    return expected_messages
+
+
 def test_success_with_all_filters(client, monkeypatch, elasticsearch_transaction_index, awards_and_transactions):
     """
     General test to make sure that all groups respond with a Status Code of 200 regardless of the filters.
@@ -39,7 +48,8 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
             {"amount": 550.0, "code": "20.200", "id": 200, "name": "CFDA 2"},
             {"amount": 5.0, "code": "10.100", "id": 100, "name": "CFDA 1"},
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
     assert resp.json() == expected_response
@@ -59,7 +69,8 @@ def test_correct_response_of_empty_list(client, monkeypatch, elasticsearch_trans
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
     assert resp.json() == expected_response
@@ -85,7 +96,8 @@ def test_correct_response_with_date_type(client, monkeypatch, elasticsearch_tran
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
     assert resp.json() == expected_response
@@ -109,7 +121,8 @@ def test_correct_response_with_date_type(client, monkeypatch, elasticsearch_tran
         "results": [
             {"amount": 5.0, "code": "10.100", "id": 100, "name": "CFDA 1"},
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
     assert resp.json() == expected_response
@@ -139,7 +152,8 @@ def test_correct_response_with_new_awards_only(
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
     assert resp.json() == expected_response
@@ -165,7 +179,8 @@ def test_correct_response_with_new_awards_only(
         "results": [
             {"amount": 5.0, "code": "10.100", "id": 100, "name": "CFDA 1"},
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
     assert resp.json() == expected_response
@@ -189,7 +204,8 @@ def test_correct_response_with_new_awards_only(
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
     assert resp.json() == expected_response

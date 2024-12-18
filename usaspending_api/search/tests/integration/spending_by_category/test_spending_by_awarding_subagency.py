@@ -8,6 +8,15 @@ from usaspending_api.search.tests.data.search_filters_test_data import non_legac
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
+def _expected_messages():
+    expected_messages = [get_time_period_message()]
+    expected_messages.append(
+        "'subawards' will be deprecated in the future. Set ‘spending_level’ to ‘subawards’ instead. "
+        "See documentation for more information. "
+    )
+    return expected_messages
+
+
 @pytest.mark.django_db
 def test_success_with_all_filters(client, monkeypatch, elasticsearch_transaction_index, basic_award):
     """
@@ -65,7 +74,8 @@ def test_additional_fields_response(client, monkeypatch, elasticsearch_transacti
                 "agency_slug": "awarding-toptier-agency-3",
             }
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
 
     assert expected_response["results"][0]["amount"] == resp.data["results"][0]["amount"]
@@ -86,7 +96,8 @@ def test_additional_fields_response(client, monkeypatch, elasticsearch_transacti
                 "agency_slug": "awarding-toptier-agency-3",
             }
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
 
 
@@ -128,7 +139,8 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
                 "agency_slug": "awarding-toptier-agency-1",
             },
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
     assert resp.json() == expected_response
@@ -175,7 +187,8 @@ def test_filtering_subtier_with_toptier(
                 "agency_slug": "awarding-toptier-agency-3",
             }
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
 
 
@@ -208,7 +221,8 @@ def test_filtering_subtier_with_bogus_toptier(
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
 
 
@@ -239,7 +253,8 @@ def test_correct_response_with_date_type(client, monkeypatch, elasticsearch_tran
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
     assert resp.json() == expected_response
@@ -280,7 +295,8 @@ def test_correct_response_with_date_type(client, monkeypatch, elasticsearch_tran
                 "agency_slug": "awarding-toptier-agency-3",
             }
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
 
@@ -318,7 +334,8 @@ def test_correct_response_with_new_awards_only(client, monkeypatch, elasticsearc
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
     assert resp.json() == expected_response
@@ -362,7 +379,8 @@ def test_correct_response_with_new_awards_only(client, monkeypatch, elasticsearc
                 "agency_slug": "awarding-toptier-agency-3",
             }
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
     assert resp.json() == expected_response
@@ -394,7 +412,8 @@ def test_correct_response_with_new_awards_only(client, monkeypatch, elasticsearc
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
     assert resp.json() == expected_response
