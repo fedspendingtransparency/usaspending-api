@@ -1,10 +1,12 @@
-import datetime
 import logging
-from typing import Optional, Union, List, Tuple
+from typing import Any, Dict, Set, Union
 from urllib.error import HTTPError
 
 import pandas as pd
+from django.conf import settings
 from django.core.management.base import BaseCommand
+from django.db import transaction
+from django.db.models.query import QuerySet, ValuesListIterable
 
 from usaspending_api.references.models import PSC
 
@@ -13,7 +15,7 @@ class Command(BaseCommand):
     help = "Loads program information obtained from Excel file on https://www.acquisition.gov/PSC_Manual"
 
     logger = logging.getLogger("script")
-    default_filepath = "https://www.acquisition.gov/sites/default/files/manual/PSC%20April%202024.xlsx"
+    default_filepath = f"{settings.FILES_SERVER_BASE_URL}/docs/PSC%20April%202024.xlsx"
     default_sheet_name = "PSC for 042022"
 
     def add_arguments(self, parser):
@@ -31,22 +33,54 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        num_created, num_updated, errors = load_psc(
+        result = load_psc(
             fullpath=options["path"],
             sheet_name=options["sheet_name"],
             update=options["update"],
         )
-        self.logger.log(
-            20,
-            f"Load PSC command created {num_created} PSCs and updated {num_updated} PSCs with {len(errors)} errors.",
-        )
+        if result.get("error"):
+            self.logger.error(result["error"])
+        else:
+            self.logger.info(result)
+            self.logger.log(
+                20,
+                (
+                    f"Load PSC command added {len(result['added'])} PSCs, updated {len(result['updated'])} PSCs, "
+                    f"deleted {len(result['deleted'])} PSCs, and left {len(result['unchanged'])} PSCs unchanged."
+                ),
+            )
 
 
-def load_psc(fullpath: str, sheet_name: str, update: bool) -> Tuple[int, int, List]:
+def compare_codes(old_pscs: Set[tuple], new_pscs: Set[tuple]) -> Dict[str, Any]:
+    old_codes = set(old_psc[0] for old_psc in old_pscs)
+    new_codes = set(new_psc[0] for new_psc in new_pscs)
+    added_codes = new_codes - old_codes
+    added = set(new_psc for new_psc in new_pscs if new_psc[0] in added_codes)
+    deleted_codes = old_codes - new_codes
+    deleted = set(old_psc for old_psc in old_pscs if old_psc[0] in deleted_codes)
+    updated_new = set(new_psc for new_psc in new_pscs if new_psc not in added and new_psc not in old_pscs)
+    updated_old = set(old_psc for old_psc in old_pscs if old_psc not in deleted and old_psc not in new_pscs)
+    updated = [
+        {
+            "old": [old_psc for old_psc in updated_old if old_psc[0] == new_psc[0]][0],
+            "new": new_psc,
+        }
+        for new_psc in updated_new
+    ]
+    unchanged = new_pscs - added - set(update["new"] for update in updated)
+    return {
+        "added": added,
+        "updated": updated,
+        "unchanged": unchanged,
+        "deleted": deleted,
+    }
+
+
+def load_psc(fullpath: str, sheet_name: str, update: bool) -> Dict[str, Union[ValuesListIterable, str]]:
     """
     Create/Update Product or Service Code records from an Excel doc of historical data.
     """
-    errors = []
+    logger = logging.getLogger("script")
     try:
         new_pscs = (
             pd.read_excel(
@@ -85,50 +119,30 @@ def load_psc(fullpath: str, sheet_name: str, update: bool) -> Tuple[int, int, Li
                     & df["description"].notnull()
                 )
             ]
+            # Convert start date and end date to dates
+            .assign(start_date=lambda df: df["start_date"].dt.date, end_date=lambda df: df["end_date"].dt.date)
             # Add length column
             .assign(length=lambda df: df["code"].astype(str).str.len())
             # Replace missing values with None
-            .where(lambda df: df.notnull(), None)
+            .where(lambda df: df.notna(), None)
             .to_dict(orient="records")
         )
-        logger = logging.getLogger("script")
-        num_created = 0
-        num_updated = 0
-        for new_psc in new_pscs:
-            psc, created = PSC.objects.get_or_create(code=new_psc["code"])
-            if created:
-                num_created += 1
-            else:
-                num_updated += 1
-            psc.length = new_psc["length"]
-            psc.description = new_psc["description"]
-            psc.start_date = check_dates(psc.start_date, new_psc["start_date"])
-            psc.end_date = check_dates(psc.end_date, new_psc["end_date"])
-            psc.full_name = new_psc["full_name"]
-            psc.excludes = new_psc["excludes"]
-            psc.notes = new_psc["notes"]
-            psc.includes = new_psc["includes"]
-            psc.save()
+        with transaction.atomic():
+            old = set(PSC.objects.all().values_list())
+            PSC.objects.all().delete()
+            PSC.objects.bulk_create(PSC(**new_psc) for new_psc in new_pscs)
+            new = set(PSC.objects.all().values_list())
+        result = compare_codes(old, new)
         if update:
             update_lengths()
             logger.log(20, "Updated PSC codes.")
     except IOError as e:
-        logger.error("Could not open file {}".format(fullpath))
-        errors.append(e)
+        result = {"error": e}
     except HTTPError as e:
-        logger.error("Could not open url {}".format(fullpath))
-        errors.append(e)
+        result = {"error": e}
     except Exception as e:
-        logger.error(e)
-        errors.append(e)
-    return num_created, num_updated, errors
-
-
-def check_dates(old_date: Union[datetime.date, None], new_date: pd.Timestamp) -> Optional[datetime.date]:
-    if new_date is not pd.NaT and (old_date is None or old_date < new_date.date()):
-        return new_date
-    else:
-        return old_date
+        result = {"error": e}
+    return result
 
 
 def update_lengths():
