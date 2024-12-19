@@ -88,6 +88,8 @@ FABS_ASSISTANCE_FIELDS = OrderedDict(
         ("cfda_number", "cfda_number"),
         ("cfda_title", "cfda_title"),
         ("modified_at", "_modified_at"),
+        ("funding_opportunity_goals", "_funding_opportunity_goals"),
+        ("funding_opportunity_number", "_funding_opportunity_number"),
         # "Recipient" fields below
         ("awardee_or_recipient_legal", "_recipient_name"),
         ("uei", "_recipient_uei"),

@@ -77,6 +77,10 @@ def construct_assistance_response(requested_award_dict: dict) -> OrderedDict:
     response["executive_details"] = create_officers_object(award)
     response["place_of_performance"] = create_place_of_performance_object(transaction)
     response["total_outlay"] = fetch_total_outlays(award["id"])
+    response["funding_opportunity"] = {
+        "number": transaction["_funding_opportunity_number"],
+        "goals": transaction["_funding_opportunity_goals"],
+    }
     return delete_keys_from_dict(response)
 
 
