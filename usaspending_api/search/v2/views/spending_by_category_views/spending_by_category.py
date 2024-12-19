@@ -2,7 +2,8 @@ import copy
 import logging
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
-from typing import List, Optional
+from enum import Enum
+from typing import List, Optional, Union
 
 from django.conf import settings
 from django.db.models import QuerySet, Sum
@@ -16,6 +17,7 @@ from usaspending_api.common.api_versioning import api_transformations, API_TRANS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
+from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
 from usaspending_api.common.exceptions import ElasticsearchConnectionException, NotImplementedException
 from usaspending_api.common.helpers.generic_helper import (
     get_simple_pagination_metadata,
@@ -28,10 +30,12 @@ from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.search.v2.elasticsearch_helper import (
     get_number_of_unique_terms_for_transactions,
+    get_number_of_unique_terms_for_awards,
     get_scaled_sum_aggregations,
 )
 from usaspending_api.search.filters.elasticsearch.filter import _QueryType
 from usaspending_api.search.filters.time_period.query_types import TransactionSearchTimePeriod
+from usaspending_api.search.filters.time_period.query_types import AwardSearchTimePeriod
 from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
 
 logger = logging.getLogger(__name__)
@@ -41,6 +45,12 @@ logger = logging.getLogger(__name__)
 class Category:
     name: str
     agg_key: str
+
+
+class AwardType(Enum):
+    TRANSACTIONS = "transactions"
+    AWARDS = "awards"
+    SUBAWARDS = "subawards"
 
 
 @api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
@@ -60,6 +70,14 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
     def post(self, request: Request) -> Response:
         models = [
             {"name": "subawards", "key": "subawards", "type": "boolean", "default": False, "optional": True},
+            {
+                "name": "spending_level",
+                "key": "spending_level",
+                "type": "enum",
+                "enum_values": ["awards", "transactions", "subawards"],
+                "optional": True,
+                "default": "transactions",
+            },
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
         models.extend(copy.deepcopy(PAGINATION))
@@ -90,36 +108,66 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
     def perform_search(self, validated_payload: dict, original_filters: dict) -> dict:
 
         self.filters = validated_payload.get("filters", {})
-        self.subawards = validated_payload["subawards"]
+        self.subawards = validated_payload.get("subawards", False)  # Default to False if 'subawards' is not provided
         self.pagination = self._get_pagination(validated_payload)
 
-        if self.subawards:
+        # Check for subawards conditions
+        spending_level = validated_payload.get("spending_level")
+        if self.subawards or AwardType(spending_level) == AwardType.SUBAWARDS:
             base_queryset = subaward_filter(self.filters)
             self.obligation_column = "subaward_amount"
             results = self.query_django_for_subawards(base_queryset)
+        elif AwardType(spending_level) == AwardType.TRANSACTIONS:
+            results = self.query_elasticsearch_for_transactions(validated_payload)
         else:
-            filter_options = {}
-            time_period_obj = TransactionSearchTimePeriod(
-                default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
-            )
-            new_awards_only_decorator = NewAwardsOnlyTimePeriod(
-                time_period_obj=time_period_obj, query_type=_QueryType.TRANSACTIONS
-            )
-            filter_options["time_period_obj"] = new_awards_only_decorator
-            filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(self.filters, **filter_options)
-            results = self.query_elasticsearch_for_prime_awards(filter_query)
+            results = self.query_elasticsearch_for_awards(validated_payload)
 
         page_metadata = get_simple_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
 
+        message_list = self._get_messages(original_filters)
+        message_list.append(
+            "'subawards' will be deprecated in the future. Set ‘spending_level’ to ‘subawards’ instead. "
+            "See documentation for more information. "
+        )
+
         response = {
             "category": self.category.name,
+            "spending_level": validated_payload["spending_level"],
             "limit": self.pagination.limit,
             "page_metadata": page_metadata,
             "results": results[: self.pagination.limit],
-            "messages": self._get_messages(original_filters),
+            "messages": message_list,
         }
 
         return response
+
+    def query_elasticsearch_for_transactions(self, validated_payload: dict) -> list:
+        filter_options = {}
+        time_period_obj = TransactionSearchTimePeriod(
+            default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
+        )
+        new_awards_only_decorator = NewAwardsOnlyTimePeriod(
+            time_period_obj=time_period_obj, query_type=_QueryType.TRANSACTIONS
+        )
+        filter_options["time_period_obj"] = new_awards_only_decorator
+        filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(self.filters, **filter_options)
+        results = self.query_elasticsearch(filter_query, validated_payload["spending_level"])
+
+        return results
+
+    def query_elasticsearch_for_awards(self, validated_payload: dict) -> list:
+        options = {}
+        time_period_obj = AwardSearchTimePeriod(
+            default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
+        )
+        new_awards_only_decorator = NewAwardsOnlyTimePeriod(
+            time_period_obj=time_period_obj, query_type=_QueryType.AWARDS
+        )
+        options["time_period_obj"] = new_awards_only_decorator
+        filter_query = QueryWithFilters.generate_awards_elasticsearch_query(self.filters, **options)
+        results = self.query_elasticsearch(filter_query, validated_payload["spending_level"])
+
+        return results
 
     def _raise_not_implemented(self):
         msg = "Category '{}' is not implemented"
@@ -151,12 +199,18 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
             .order_by("-amount")
         )
 
-    def build_elasticsearch_search_with_aggregations(self, filter_query: ES_Q) -> Optional[TransactionSearch]:
+    def build_elasticsearch_search_with_aggregations(
+        self, filter_query: ES_Q, spending_level: str
+    ) -> Optional[Union[AwardSearch, TransactionSearch]]:
         """
         Using the provided ES_Q object creates a TransactionSearch object with the necessary applied aggregations.
         """
         # Create the filtered Search Object
-        search = TransactionSearch().filter(filter_query)
+        search = None
+        if AwardType(spending_level) == AwardType.TRANSACTIONS:
+            search = TransactionSearch().filter(filter_query)
+        elif AwardType(spending_level) == AwardType.AWARDS:
+            search = AwardSearch().filter(filter_query)
 
         sum_aggregations = get_scaled_sum_aggregations("generated_pragmatic_obligation", self.pagination)
 
@@ -170,7 +224,14 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
             group_by_agg_key_values = {"order": {"sum_field": "desc"}}
         else:
             # Get count of unique buckets; terminate early if there are no buckets matching criteria
-            bucket_count = get_number_of_unique_terms_for_transactions(filter_query, f"{self.category.agg_key}.hash")
+            bucket_count = None
+            if spending_level == "transactions":
+                bucket_count = get_number_of_unique_terms_for_transactions(
+                    filter_query, f"{self.category.agg_key}.hash"
+                )
+            elif spending_level == "awards":
+                bucket_count = get_number_of_unique_terms_for_awards(filter_query, f"{self.category.agg_key}.hash")
+
             if bucket_count == 0:
                 return None
             else:
@@ -203,8 +264,8 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
 
         return search
 
-    def query_elasticsearch_for_prime_awards(self, filter_query: ES_Q) -> list:
-        search = self.build_elasticsearch_search_with_aggregations(filter_query)
+    def query_elasticsearch(self, filter_query: ES_Q, spending_level: str) -> list:
+        search = self.build_elasticsearch_search_with_aggregations(filter_query, spending_level)
         if search is None:
             return []
         response = search.handle_execute()
