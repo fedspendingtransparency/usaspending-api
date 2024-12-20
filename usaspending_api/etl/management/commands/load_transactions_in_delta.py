@@ -1153,7 +1153,7 @@ class Command(BaseCommand):
             else:
                 raw_transaction_normalized_exists = True
             # if we're not doing the initial copy, we're also skipping all things raw.transaction_normalized
-            raw_transaction_normalized_exists = (raw_transaction_normalized_exists and not self.no_initial_copy)
+            raw_transaction_normalized_exists = raw_transaction_normalized_exists and not self.no_initial_copy
 
             max_id = None
             if raw_transaction_normalized_exists:
