@@ -1,12 +1,12 @@
+import json
 import logging
-from typing import Any, Dict, Set, Union
+from typing import Any, Dict, Iterable
 from urllib.error import HTTPError
 
 import pandas as pd
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from django.db.models.query import QuerySet, ValuesListIterable
 
 from usaspending_api.references.models import PSC
 
@@ -38,10 +38,16 @@ class Command(BaseCommand):
             sheet_name=options["sheet_name"],
             update=options["update"],
         )
+
+        def _serialize_pscs(models: Iterable[PSC]) -> str:
+            return json.dumps([{k: str(v) for k, v in model.__dict__.items()} for model in models], indent=2)
+
         if result.get("error"):
             self.logger.error(result["error"])
         else:
-            self.logger.info(result)
+            self.logger.info(f"Added: {_serialize_pscs(result['added'].values())}")
+            self.logger.info(f"Updated: {_serialize_pscs([v.get('new') for v in result['updated'].values()])}")
+            self.logger.info(f"Deleted: {_serialize_pscs(result['deleted'].values())}")
             self.logger.log(
                 20,
                 (
@@ -51,23 +57,44 @@ class Command(BaseCommand):
             )
 
 
-def compare_codes(old_pscs: Set[tuple], new_pscs: Set[tuple]) -> Dict[str, Any]:
-    old_codes = set(old_psc[0] for old_psc in old_pscs)
-    new_codes = set(new_psc[0] for new_psc in new_pscs)
-    added_codes = new_codes - old_codes
-    added = set(new_psc for new_psc in new_pscs if new_psc[0] in added_codes)
-    deleted_codes = old_codes - new_codes
-    deleted = set(old_psc for old_psc in old_pscs if old_psc[0] in deleted_codes)
-    updated_new = set(new_psc for new_psc in new_pscs if new_psc not in added and new_psc not in old_pscs)
-    updated_old = set(old_psc for old_psc in old_pscs if old_psc not in deleted and old_psc not in new_pscs)
-    updated = [
-        {
-            "old": [old_psc for old_psc in updated_old if old_psc[0] == new_psc[0]][0],
+def compare_codes(old_pscs: Dict[str, PSC], new_pscs: Dict[str, PSC]) -> Dict[str, Dict[str, Any]]:
+
+    def _is_psc_in(psc: PSC, pscs: Iterable[PSC]) -> bool:
+        comparison_fields = [
+            "code",
+            "start_date",
+            "end_date",
+            "full_name",
+            "description",
+            "includes",
+            "excludes",
+            "notes",
+        ]
+        return any(
+            all(getattr(psc, field) == getattr(compare_psc, field) for field in comparison_fields)
+            for compare_psc in pscs
+        )
+
+    added = {code: new_psc for code, new_psc in new_pscs.items() if code not in old_pscs}
+    deleted = {code: old_psc for code, old_psc in old_pscs.items() if code not in new_pscs}
+    updated_new = {
+        code: new_psc
+        for code, new_psc in new_pscs.items()
+        if code not in added and not _is_psc_in(new_psc, old_pscs.values())
+    }
+    updated_old = {
+        code: old_psc
+        for code, old_psc in old_pscs.items()
+        if code not in deleted and not _is_psc_in(old_psc, new_pscs.values())
+    }
+    updated = {
+        code: {
+            "old": updated_old.get(code),
             "new": new_psc,
         }
-        for new_psc in updated_new
-    ]
-    unchanged = new_pscs - added - set(update["new"] for update in updated)
+        for code, new_psc in updated_new.items()
+    }
+    unchanged = {code: new_psc for code, new_psc in new_pscs.items() if code not in added and code not in updated}
     return {
         "added": added,
         "updated": updated,
@@ -76,7 +103,7 @@ def compare_codes(old_pscs: Set[tuple], new_pscs: Set[tuple]) -> Dict[str, Any]:
     }
 
 
-def load_psc(fullpath: str, sheet_name: str, update: bool) -> Dict[str, Union[ValuesListIterable, str]]:
+def load_psc(fullpath: str, sheet_name: str, update: bool) -> Dict[str, Any]:
     """
     Create/Update Product or Service Code records from an Excel doc of historical data.
     """
@@ -97,6 +124,7 @@ def load_psc(fullpath: str, sheet_name: str, update: bool) -> Dict[str, Union[Va
                     "PRODUCT AND SERVICE CODE NOTES",
                 ],
                 parse_dates=["START DATE", "END DATE"],
+                dtype={"PSC CODE": str},
             )
             # Rename columns to match PSC model fields
             .rename(
@@ -128,11 +156,11 @@ def load_psc(fullpath: str, sheet_name: str, update: bool) -> Dict[str, Union[Va
             .to_dict(orient="records")
         )
         with transaction.atomic():
-            old = set(PSC.objects.all().values_list())
+            old = {psc.code: psc for psc in PSC.objects.all()}
             PSC.objects.all().delete()
-            PSC.objects.bulk_create(PSC(**new_psc) for new_psc in new_pscs)
-            new = set(PSC.objects.all().values_list())
-        result = compare_codes(old, new)
+            created = PSC.objects.bulk_create(PSC(**new_psc) for new_psc in new_pscs)
+            new = {psc.code: psc for psc in created}
+            result = compare_codes(old, new)
         if update:
             update_lengths()
             logger.log(20, "Updated PSC codes.")
