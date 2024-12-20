@@ -1,18 +1,18 @@
 import json
 import pytest
-from django.conf import settings
 
-from model_bakery import baker
-from rest_framework import status
 from unittest.mock import Mock
 
-from usaspending_api.search.models import TransactionSearch
+from django.conf import settings
+from model_bakery import baker
+from rest_framework import status
+
 from usaspending_api.awards.v2.lookups.lookups import all_subaward_types, award_type_mapping
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.download.lookups import JOB_STATUS
 from usaspending_api.etl.award_helpers import update_awards
-from usaspending_api.search.models import SubawardSearch
+from usaspending_api.search.models import SubawardSearch, TransactionSearch
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 

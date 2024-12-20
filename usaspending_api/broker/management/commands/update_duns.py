@@ -1,3 +1,5 @@
+import logging
+
 from datetime import datetime
 
 from django.conf import settings
@@ -8,8 +10,6 @@ from django.db.models import Max
 from usaspending_api.recipient.models import DUNS
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.management.load_base import load_data_into_model
-
-import logging
 
 logger = logging.getLogger("script")
 

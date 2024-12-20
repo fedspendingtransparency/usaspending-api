@@ -8,6 +8,7 @@ import subprocess
 import tempfile
 
 from datetime import datetime, date
+
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db.models import Case, CharField, F, Q, Value, When

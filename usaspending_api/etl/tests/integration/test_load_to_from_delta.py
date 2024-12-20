@@ -5,11 +5,12 @@ NOTE: Uses Pytest Fixtures from immediate parent conftest.py: usaspending_api/et
 
 import json
 
+from datetime import date, datetime, timedelta, timezone
+from typing import Any, Dict, List, Optional, Union
+
 import psycopg2
 import pytest
 import pytz
-from datetime import date, datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional, Union
 
 from model_bakery import baker
 from pyspark.sql import SparkSession

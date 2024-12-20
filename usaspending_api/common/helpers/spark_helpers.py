@@ -10,9 +10,10 @@ import logging
 import os
 import sys
 import re
-from typing import Optional, Union, List, Dict
 
 from datetime import date, datetime
+from typing import Dict, List, Optional, Sequence, Set, Union
+
 from django.core.management import call_command
 from py4j.java_gateway import (
     JavaGateway,
@@ -24,13 +25,13 @@ from pyspark.find_spark_home import _find_spark_home
 from pyspark.java_gateway import launch_gateway
 from pyspark.serializers import read_int, UTF8Deserializer
 from pyspark.sql import SparkSession
-from typing import Sequence, Set
 
 from usaspending_api.awards.delta_models.awards import AWARDS_COLUMNS
 from usaspending_api.awards.delta_models.financial_accounts_by_awards import FINANCIAL_ACCOUNTS_BY_AWARDS_COLUMNS
 from usaspending_api.common.helpers.aws_helpers import is_aws, get_aws_credentials
 from usaspending_api.config import CONFIG
 from usaspending_api.config.utils import parse_pg_uri, parse_http_url
+from usaspending_api.transactions.delta_models import DETACHED_AWARD_PROCUREMENT_DELTA_COLUMNS, PUBLISHED_FABS_COLUMNS
 from usaspending_api.transactions.delta_models.transaction_fabs import (
     TRANSACTION_FABS_COLUMN_INFO,
     TRANSACTION_FABS_COLUMNS,
@@ -40,7 +41,6 @@ from usaspending_api.transactions.delta_models.transaction_fpds import (
     TRANSACTION_FPDS_COLUMNS,
 )
 from usaspending_api.transactions.delta_models.transaction_normalized import TRANSACTION_NORMALIZED_COLUMNS
-from usaspending_api.transactions.delta_models import DETACHED_AWARD_PROCUREMENT_DELTA_COLUMNS, PUBLISHED_FABS_COLUMNS
 
 
 def get_active_spark_context() -> Optional[SparkContext]:

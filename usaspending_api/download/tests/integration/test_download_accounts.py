@@ -2,17 +2,18 @@ import json
 import pytest
 import random
 
+from itertools import chain, combinations
+from unittest.mock import Mock
+
 from django.conf import settings
 from model_bakery import baker
 from rest_framework import status
-from unittest.mock import Mock
-from itertools import chain, combinations
 
 from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
-from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
+from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.download.lookups import JOB_STATUS, VALID_ACCOUNT_SUBMISSION_TYPES
 from usaspending_api.etl.award_helpers import update_awards
 from usaspending_api.search.models import TransactionSearch

@@ -5,8 +5,8 @@ from typing import List, Union
 
 from django.contrib.postgres.aggregates import StringAgg
 from django.db import DEFAULT_DB_ALIAS
-from django.db.models import Aggregate, Case, CharField, F, Func, IntegerField, TextField, Value, When, QuerySet
-from django.db.models.functions import Concat, LPad, Cast, Coalesce
+from django.db.models import Aggregate, Case, CharField, F, Func, IntegerField, QuerySet, TextField, Value, When
+from django.db.models.functions import Cast, Coalesce, Concat, LPad
 
 from usaspending_api.awards.v2.lookups.lookups import (
     assistance_type_mapping,

@@ -1,9 +1,10 @@
 import pytest
 
+from unittest.mock import MagicMock
+
 from django.conf import settings
 from django.core.management import call_command
 from model_bakery import baker
-from unittest.mock import MagicMock
 
 from usaspending_api.etl.broker_etl_helpers import PhonyCursor
 from usaspending_api.references.models import GTASSF133Balances

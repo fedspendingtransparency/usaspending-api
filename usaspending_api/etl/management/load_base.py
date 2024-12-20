@@ -10,6 +10,7 @@ from decimal import Decimal
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import connections
+
 from usaspending_api.common.long_to_terse import LONG_TO_TERSE_LABELS
 from usaspending_api.etl.broker_etl_helpers import PhonyCursor
 

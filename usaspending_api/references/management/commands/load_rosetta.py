@@ -83,7 +83,7 @@ def extract_data_from_source_file(filepath: str) -> dict:
 
     sections = []
     for header in headers:
-        section = {"section": sheet["{}1".format(get_column_letter(header["column"]))].value, "colspan": 1}
+        section = {"section": sheet[f"{get_column_letter(header['column'])}1"].value, "colspan": 1}
         if section["section"] is None:
             sections[-1]["colspan"] += 1
         else:
