@@ -1,14 +1,11 @@
-import logging
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 import pytest
 from django.core.management import call_command
 from model_bakery import baker
 
 from usaspending_api.references.models import PSC
-
-logger = logging.getLogger(__name__)
 
 
 @pytest.mark.django_db

@@ -1,7 +1,7 @@
 import pytest
 
-from usaspending_api.references.models import PSC
 from usaspending_api.references.management.commands.load_psc import compare_codes
+from usaspending_api.references.models import PSC
 
 
 @pytest.fixture
