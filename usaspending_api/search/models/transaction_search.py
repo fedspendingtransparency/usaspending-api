@@ -413,8 +413,7 @@ class TransactionSearch(models.Model):
     veterinary_hospital = models.BooleanField(null=True)
     woman_owned_business = models.BooleanField(null=True)
     women_owned_small_business = models.BooleanField(null=True)
-    program_activity_names = ArrayField(models.TextField(), null=True, default=None)
-    program_activity_codes = ArrayField(models.TextField(), null=True, default=None)
+    program_activities = models.JSONField(null=True)
 
     class Meta:
         db_table = "transaction_search"

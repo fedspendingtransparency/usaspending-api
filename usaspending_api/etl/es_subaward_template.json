@@ -598,19 +598,24 @@
           }
         }
       },
-      "program_activity_names": {
-        "type": "text",
-        "fields": {
-          "keyword": {
-            "type": "keyword"
-          }
-        }
-      },
-      "program_activity_codes": {
-        "type": "text",
-        "fields": {
-          "keyword": {
-            "type": "keyword"
+      "program_activities": {
+        "type": "nested",
+        "properties": {
+          "name": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          },
+          "code": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
           }
         }
       }
