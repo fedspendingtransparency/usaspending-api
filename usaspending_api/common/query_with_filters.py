@@ -622,14 +622,40 @@ class _ProgramActivities(_Filter):
     underscore_name = "program_activities"
 
     @classmethod
-    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType, **options) -> ES_Q:
+    def generate_elasticsearch_query(cls, filter_values: List[dict], query_type: _QueryType, **options) -> ES_Q:
         program_activity_match_queries = []
 
         for filter_value in filter_values:
-            if "name" in filter_value:
-                program_activity_match_queries.append(ES_Q("match", program_activity_names=filter_value["name"]))
-            if "code" in filter_value:
-                program_activity_match_queries.append(ES_Q("match", program_activity_codes=filter_value["code"]))
+            if "name" in filter_value and "code" in filter_value:
+                program_activity_match_queries.append(
+                    ES_Q(
+                        "nested",
+                        path="program_activities",
+                        query=ES_Q(
+                            "bool",
+                            must=[
+                                ES_Q("match", program_activities__name__keyword=filter_value["name"].upper()),
+                                ES_Q("match", program_activities__code__keyword=str(filter_value["code"]).zfill(4)),
+                            ],
+                        ),
+                    )
+                )
+            elif "name" in filter_value and "code" not in filter_value:
+                program_activity_match_queries.append(
+                    ES_Q(
+                        "nested",
+                        path="program_activities",
+                        query=ES_Q("match", program_activities__name__keyword=filter_value["name"].upper()),
+                    )
+                )
+            elif "code" in filter_value and "name" not in filter_value:
+                program_activity_match_queries.append(
+                    ES_Q(
+                        "nested",
+                        path="program_activities",
+                        query=ES_Q("match", program_activities__code__keyword=str(filter_value["code"]).zfill(4)),
+                    )
+                )
 
         if len(program_activity_match_queries) == 0:
             return ~ES_Q()
