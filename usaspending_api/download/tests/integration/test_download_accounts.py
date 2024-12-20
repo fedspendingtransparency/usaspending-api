@@ -2,6 +2,7 @@ import json
 import pytest
 import random
 
+from django.conf import settings
 from model_bakery import baker
 from rest_framework import status
 from unittest.mock import Mock
@@ -18,7 +19,7 @@ from usaspending_api.search.models import TransactionSearch
 
 
 @pytest.fixture
-def download_test_data(db):
+def download_test_data():
     # Populate job status lookup table
     for js in JOB_STATUS:
         baker.make("download.JobStatus", job_status_id=js.id, name=js.name, description=js.desc)
@@ -121,6 +122,7 @@ def download_test_data(db):
     update_awards()
 
 
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
 def test_tas_a_defaults_success(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
@@ -139,6 +141,7 @@ def test_tas_a_defaults_success(client, download_test_data):
     assert ".zip" in resp.json()["file_url"]
 
 
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
 def test_tas_b_defaults_success(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
@@ -157,6 +160,7 @@ def test_tas_b_defaults_success(client, download_test_data):
     assert ".zip" in resp.json()["file_url"]
 
 
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
 def test_tas_c_defaults_success(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
@@ -175,6 +179,7 @@ def test_tas_c_defaults_success(client, download_test_data):
     assert ".zip" in resp.json()["file_url"]
 
 
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
 def test_federal_account_a_defaults_success(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
@@ -193,6 +198,7 @@ def test_federal_account_a_defaults_success(client, download_test_data):
     assert ".zip" in resp.json()["file_url"]
 
 
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
 def test_federal_account_b_defaults_success(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
@@ -211,6 +217,7 @@ def test_federal_account_b_defaults_success(client, download_test_data):
     assert ".zip" in resp.json()["file_url"]
 
 
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
 def test_federal_account_c_defaults_success(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
@@ -229,6 +236,7 @@ def test_federal_account_c_defaults_success(client, download_test_data):
     assert ".zip" in resp.json()["file_url"]
 
 
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
 def test_agency_filter_success(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
@@ -246,6 +254,7 @@ def test_agency_filter_success(client, download_test_data):
     assert resp.status_code == status.HTTP_200_OK
 
 
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
 def test_agency_filter_failure(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
@@ -268,6 +277,7 @@ def test_agency_filter_failure(client, download_test_data):
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
 def test_federal_account_filter_success(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
@@ -290,6 +300,7 @@ def test_federal_account_filter_success(client, download_test_data):
     assert resp.status_code == status.HTTP_200_OK
 
 
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
 def test_federal_account_filter_failure(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
@@ -312,6 +323,7 @@ def test_federal_account_filter_failure(client, download_test_data):
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
 def test_account_level_failure(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
@@ -329,6 +341,7 @@ def test_account_level_failure(client, download_test_data):
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
 def test_submission_type_failure(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
@@ -346,6 +359,7 @@ def test_submission_type_failure(client, download_test_data):
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
 def test_fy_failure(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
@@ -363,6 +377,7 @@ def test_fy_failure(client, download_test_data):
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
 def test_quarter_failure(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
@@ -380,6 +395,7 @@ def test_quarter_failure(client, download_test_data):
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
 def test_download_accounts_bad_filter_type_raises(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     payload = {"account_level": "federal_account", "filters": "01", "columns": []}
@@ -388,6 +404,7 @@ def test_download_accounts_bad_filter_type_raises(client, download_test_data):
     assert resp.json()["detail"] == "Missing value: 'filters|fy' is a required field"
 
 
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
 def test_multiple_submission_types_success(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
 
@@ -413,6 +430,7 @@ def test_multiple_submission_types_success(client, download_test_data):
             assert "AccountData" in resp.json()["file_url"]
 
 
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
 def test_duplicate_submission_types_success(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     duplicated_submission_list = VALID_ACCOUNT_SUBMISSION_TYPES * 11
@@ -436,6 +454,7 @@ def test_duplicate_submission_types_success(client, download_test_data):
     assert set(download_types) == set(VALID_ACCOUNT_SUBMISSION_TYPES), "Wrong values in response"
 
 
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
 def test_empty_submission_types_enum_fail(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
 
@@ -457,6 +476,7 @@ def test_empty_submission_types_enum_fail(client, download_test_data):
     ), "Incorrect error message"
 
 
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
 def test_empty_array_filter_fail(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
 

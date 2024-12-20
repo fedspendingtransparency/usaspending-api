@@ -1,7 +1,7 @@
 import pytest
 
+from django.conf import settings
 from django.core.management import call_command
-from django.db import DEFAULT_DB_ALIAS
 from model_bakery import baker
 from unittest.mock import MagicMock
 
@@ -21,8 +21,8 @@ def test_program_activity_fresh_load(monkeypatch):
     data_broker_mock = MagicMock()
     data_broker_mock.cursor.return_value = PhonyCursor("usaspending_api/references/tests/data/broker_gtas.json")
     mock_connections = {
-        DEFAULT_DB_ALIAS: MagicMock(),
-        "data_broker": data_broker_mock,
+        settings.DEFAULT_DB_ALIAS: MagicMock(),
+        settings.DATA_BROKER_DB_ALIAS: data_broker_mock,
     }
 
     monkeypatch.setattr("usaspending_api.references.management.commands.load_gtas.connections", mock_connections)

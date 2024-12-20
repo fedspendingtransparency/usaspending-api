@@ -175,11 +175,15 @@ summary_state_view_load_sql_string = [
     # -----
     # Update the summary_state_view.total_outlays with calculated values
     # -----
-    rf"""
-    MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} ssv
-    USING awards_outlays_aggregated aoa
-    ON ssv.duh = aoa.duh
-
+    f"""
+    MERGE INTO
+        {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} ssv
+    USING
+        outlays_breakdown ob
+    ON
+        ob.pop_state_code = ssv.pop_state_code
+        AND ob.type = ssv.type
+        AND ob.reporting_fiscal_year = ssv.fiscal_year
     WHEN MATCHED THEN
         UPDATE SET ssv.total_outlays = ob.total_outlays;
     """,

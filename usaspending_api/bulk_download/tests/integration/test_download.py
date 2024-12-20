@@ -1,5 +1,6 @@
 import json
 import pytest
+from django.conf import settings
 
 from model_bakery import baker
 from rest_framework import status
@@ -16,7 +17,7 @@ from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
 @pytest.fixture
-def _award_download_data(db):
+def _award_download_data():
     # Populate job status lookup table
     for js in JOB_STATUS:
         baker.make("download.JobStatus", job_status_id=js.id, name=js.name, description=js.desc)
@@ -322,7 +323,7 @@ def _award_download_data(db):
     update_awards()
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_awards_with_all_award_types(client, monkeypatch, _award_download_data, elasticsearch_subaward_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
@@ -347,7 +348,7 @@ def test_download_awards_with_all_award_types(client, monkeypatch, _award_downlo
     assert resp.json()["total_columns"] == 640
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_awards_with_all_prime_awards(client, _award_download_data):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     filters = {
@@ -370,7 +371,7 @@ def test_download_awards_with_all_prime_awards(client, _award_download_data):
     assert resp.json()["total_columns"] == 409
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_awards_with_some_prime_awards(client, _award_download_data):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     filters = {
@@ -393,7 +394,7 @@ def test_download_awards_with_some_prime_awards(client, _award_download_data):
     assert resp.json()["total_columns"] == 297
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_awards_with_all_sub_awards(client, monkeypatch, _award_download_data, elasticsearch_subaward_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
@@ -417,7 +418,7 @@ def test_download_awards_with_all_sub_awards(client, monkeypatch, _award_downloa
     assert resp.json()["total_columns"] == 231
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_awards_with_some_sub_awards(client, monkeypatch, _award_download_data, elasticsearch_subaward_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
@@ -441,7 +442,7 @@ def test_download_awards_with_some_sub_awards(client, monkeypatch, _award_downlo
     assert resp.json()["total_columns"] == 113
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_awards_with_domestic_scope(client, monkeypatch, _award_download_data, elasticsearch_subaward_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     # Recipient Location Scope
@@ -491,7 +492,7 @@ def test_download_awards_with_domestic_scope(client, monkeypatch, _award_downloa
     assert resp.json()["total_columns"] == 640
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_awards_with_foreign_scope(client, monkeypatch, _award_download_data, elasticsearch_subaward_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     # Recipient Location Scope
@@ -541,7 +542,7 @@ def test_download_awards_with_foreign_scope(client, monkeypatch, _award_download
     assert resp.json()["total_columns"] == 640
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db
 def test_download_status_nonexistent_file_404(client):
     """Requesting status of nonexistent file should produce HTTP 404"""
 
@@ -550,7 +551,7 @@ def test_download_status_nonexistent_file_404(client):
     assert resp.status_code == status.HTTP_404_NOT_FOUND
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db
 def test_list_agencies(client, _award_download_data):
     """Test transaction list agencies endpoint"""
     resp = client.post(
@@ -581,7 +582,7 @@ def test_list_agencies(client, _award_download_data):
     assert resp.data == {"agencies": [], "sub_agencies": [{"subtier_agency_name": "SubBureau of Stuff"}]}
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db
 def test_empty_array_filter_fail(client, _award_download_data):
     filters = {
         "agency": "all",

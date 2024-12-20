@@ -1059,6 +1059,7 @@ def test_category_cfda_subawards(cfda_test_data):
 
 @pytest.mark.django_db
 def test_category_defc_subawards(client):
+    # TODO: This test should be updated to include data
     resp = client.post(
         "/api/v2/search/spending_by_category",
         content_type="application/json",
@@ -1069,7 +1070,10 @@ def test_category_defc_subawards(client):
 
 
 @pytest.mark.django_db
-def test_category_defc_awards(client):
+def test_category_defc_awards(client, monkeypatch, elasticsearch_transaction_index):
+    # TODO: This test should be updated to include data
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
     resp = client.post(
         "/api/v2/search/spending_by_category",
         content_type="application/json",

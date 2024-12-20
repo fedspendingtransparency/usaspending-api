@@ -5,7 +5,7 @@ from typing import List, Union
 
 from django.contrib.postgres.aggregates import StringAgg
 from django.db import DEFAULT_DB_ALIAS
-from django.db.models import Aggregate, Case, CharField, F, Func, IntegerField, TextField, Value, When
+from django.db.models import Aggregate, Case, CharField, F, Func, IntegerField, TextField, Value, When, QuerySet
 from django.db.models.functions import Concat, LPad, Cast, Coalesce
 
 from usaspending_api.awards.v2.lookups.lookups import (
@@ -156,7 +156,7 @@ def get_gtas_fyp_notation():
     )
 
 
-def generate_raw_quoted_query(queryset):
+def generate_raw_quoted_query(queryset: QuerySet) -> str:
     """Generates the raw sql from a queryset with quotable types quoted.
 
     This function provided benefit since the Django queryset.query doesn't quote

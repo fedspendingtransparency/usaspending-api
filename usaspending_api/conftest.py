@@ -270,7 +270,7 @@ def django_db_setup(
             old_broker_db_url = CONFIG.DATA_BROKER_DATABASE_URL
             old_broker_ps_db = CONFIG.BROKER_DB_NAME
 
-            if "data_broker" in settings.DATABASES:
+            if settings.DATA_BROKER_DB_ALIAS in settings.DATABASES:
                 test_broker_db = settings.DATABASES[settings.DATA_BROKER_DB_ALIAS].get("NAME")
                 if test_broker_db is None:
                     raise ValueError(
@@ -323,7 +323,7 @@ def django_db_modify_db_settings_xdist_suffix(request):
 
 
 @pytest.fixture
-def elasticsearch_transaction_index(db):
+def elasticsearch_transaction_index():
     """
     Add this fixture to your test if you intend to use the Elasticsearch
     transaction index.  To use, create some mock database data then call
@@ -354,7 +354,7 @@ def fake_csv_local_path(tmp_path):
 
 
 @pytest.fixture
-def elasticsearch_award_index(db):
+def elasticsearch_award_index():
     """
     Add this fixture to your test if you intend to use the Elasticsearch
     award index.  To use, create some mock database data then call
@@ -372,7 +372,7 @@ def elasticsearch_award_index(db):
 
 
 @pytest.fixture
-def elasticsearch_subaward_index(db):
+def elasticsearch_subaward_index():
     """
     Add this fixture to your test if you intend to use the Elasticsearch
     subaward index.  To use, create some mock database data then call
@@ -388,7 +388,7 @@ def elasticsearch_subaward_index(db):
 
 
 @pytest.fixture
-def elasticsearch_recipient_index(db):
+def elasticsearch_recipient_index():
     """
     Add this fixture to your test if you intend to use the Elasticsearch
     recipient index.  To use, create some mock database data then call
@@ -406,7 +406,7 @@ def elasticsearch_recipient_index(db):
 
 
 @pytest.fixture
-def elasticsearch_location_index(db):
+def elasticsearch_location_index():
     """
     Add this fixture to your test if you intend to use the Elasticsearch
     location index.  To use, create some mock database data then call
@@ -455,7 +455,7 @@ def broker_db_setup(django_db_setup, django_db_use_migrations, worker_id):
     broker_integrationtest_secrets_file = f"{broker_config_env_envvar}_secrets.yml"
 
     # Check that a Connection to the Broker DB has been configured
-    if "data_broker" not in settings.DATABASES:
+    if settings.DATA_BROKER_DB_ALIAS not in settings.DATABASES:
         logger.error("Error finding 'data_broker' database configured in django settings.DATABASES.")
         pytest.skip(
             "'data_broker' database not configured in django settings.DATABASES. "
@@ -488,7 +488,7 @@ def broker_db_setup(django_db_setup, django_db_use_migrations, worker_id):
 
     # ==== Run the DB setup script using the Broker docker image. ====
 
-    broker_test_db_name = settings.DATABASES["data_broker"]["NAME"]
+    broker_test_db_name = settings.DATABASES[settings.DATA_BROKER_DB_ALIAS]["NAME"]
 
     # Using a mounts to copy the broker source code into the container, and create a modifiable copy
     # of the broker config dir in order to execute broker DB setup code using that config
@@ -536,13 +536,13 @@ def broker_db_setup(django_db_setup, django_db_use_migrations, worker_id):
     # Setup Broker config files to work with the same DB configured via the Broker DB URL env var
     # This will ensure that when the broker script is run, it uses the same test broker DB
     broker_db_config_cmds = rf"""                                                                 \
-        sed -i.bak -E "s/host:.*$/host: {settings.DATABASES["data_broker"]["HOST"]}/"             \
+        sed -i.bak -E "s/host:.*$/host: {settings.DATABASES[settings.DATA_BROKER_DB_ALIAS]["HOST"]}/"             \
             {broker_src_target}/{broker_config_dir}/{broker_integrationtest_config_file};         \
-        sed -i.bak -E "s/port:.*$/port: {settings.DATABASES["data_broker"]["PORT"]}/"             \
+        sed -i.bak -E "s/port:.*$/port: {settings.DATABASES[settings.DATA_BROKER_DB_ALIAS]["PORT"]}/"             \
             {broker_src_target}/{broker_config_dir}/{broker_integrationtest_config_file};         \
-        sed -i.bak -E "s/username:.*$/username: {settings.DATABASES["data_broker"]["USER"]}/"     \
+        sed -i.bak -E "s/username:.*$/username: {settings.DATABASES[settings.DATA_BROKER_DB_ALIAS]["USER"]}/"     \
             {broker_src_target}/{broker_config_dir}/{broker_integrationtest_secrets_file};        \
-        sed -i.bak -E "s/password:.*$/password: {settings.DATABASES["data_broker"]["PASSWORD"]}/" \
+        sed -i.bak -E "s/password:.*$/password: {settings.DATABASES[settings.DATA_BROKER_DB_ALIAS]["PASSWORD"]}/" \
             {broker_src_target}/{broker_config_dir}/{broker_integrationtest_secrets_file};        \
     """
 

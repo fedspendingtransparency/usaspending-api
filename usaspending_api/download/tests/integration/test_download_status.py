@@ -2,6 +2,7 @@ import json
 import pytest
 import random
 
+from django.conf import settings
 from model_bakery import baker
 from rest_framework import status
 from unittest.mock import Mock
@@ -17,7 +18,7 @@ from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
 @pytest.fixture
-def download_test_data(transactional_db):
+def download_test_data():
     # Populate job status lookup table
     for js in JOB_STATUS:
         baker.make("download.JobStatus", job_status_id=js.id, name=js.name, description=js.desc)
@@ -140,6 +141,7 @@ def get_number_of_columns_for_query_paths(*download_tuples):
     return count
 
 
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_assistance_status(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
 
@@ -182,6 +184,7 @@ def test_download_assistance_status(client, download_test_data):
     assert resp.json()["total_columns"] == 4
 
 
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_awards_status(
     client, download_test_data, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index
 ):
@@ -229,6 +232,7 @@ def test_download_awards_status(
     assert resp.json()["total_columns"] == 6
 
 
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_contract_status(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
 
@@ -270,6 +274,7 @@ def test_download_contract_status(client, download_test_data):
     assert resp.json()["total_columns"] == 5
 
 
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_idv_status(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
 
@@ -303,6 +308,7 @@ def test_download_idv_status(client, download_test_data):
     assert resp.json()["total_columns"] == 5
 
 
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_transactions_status(
     client, download_test_data, monkeypatch, elasticsearch_transaction_index, elasticsearch_subaward_index
 ):
@@ -355,6 +361,7 @@ def test_download_transactions_status(
     assert resp.json()["total_columns"] == 3
 
 
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_transactions_limit(
     client, download_test_data, monkeypatch, elasticsearch_transaction_index, elasticsearch_subaward_index
 ):

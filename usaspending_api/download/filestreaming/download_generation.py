@@ -18,6 +18,8 @@ from datetime import datetime, timezone
 from ddtrace import tracer
 from ddtrace.ext import SpanTypes
 from django.conf import settings
+from django.db.models import QuerySet
+from django.db.models.expressions import Ref
 
 from usaspending_api.download.models.download_job_lookup import DownloadJobLookup
 from usaspending_api.search.filters.time_period.decorators import NEW_AWARDS_ONLY_KEYWORD
@@ -550,12 +552,32 @@ def wait_for_process(process, start_time, download_job):
     return time.perf_counter() - log_time
 
 
-def generate_export_query(source_query, limit, source, columns, file_format):
+def generate_export_query(
+    source_query: QuerySet, limit: int, source: DownloadSource, column_subset: Optional[List[str]], file_format: str
+) -> str:
     if limit:
         source_query = source_query[:limit]
-    query_annotated = apply_annotations_to_sql(generate_raw_quoted_query(source_query), source.columns(columns))
+    selected_columns = source.columns(column_subset)
+
+    # Changes to how GROUP BY is handled by Django in the upgrade to 4.2 require that we capture the annotated columns
+    # that will appear in the GROUP BY of the generated SQL. On the QuerySet the "group_by" property can be any of the
+    # following: None, tuple of Refs / strings, or True (meaning all selected fields). In this case we expect either
+    # None or a tuple, but want to protect against the possibility of "True".
+    annotated_group_by_columns = []
+    if isinstance(source_query.query.group_by, tuple):
+        annotation_select = source_query.query.annotation_select
+        annotation_select_reverse = {val: key for key, val in annotation_select.items()}
+        for val in source_query.query.group_by:
+            if isinstance(val, Ref) and annotation_select[val.refs] == val.source:
+                annotated_group_by_columns.append(val.refs)
+            elif val in annotation_select.values():
+                annotated_group_by_columns.append(annotation_select_reverse[val])
+
+    query_annotated = apply_annotations_to_sql(
+        generate_raw_quoted_query(source_query), selected_columns, annotated_group_by_columns
+    )
     options = FILE_FORMATS[file_format]["options"]
-    return r"\COPY ({}) TO STDOUT {}".format(query_annotated, options)
+    return rf"\COPY ({query_annotated}) TO STDOUT {options}"
 
 
 def generate_export_query_temp_file(export_query, download_job, temp_dir=None):
@@ -572,7 +594,9 @@ def generate_export_query_temp_file(export_query, download_job, temp_dir=None):
     return temp_sql_file, temp_sql_file_path
 
 
-def apply_annotations_to_sql(raw_query, aliases):
+def apply_annotations_to_sql(
+    raw_query: str, aliases: List[str], annotated_group_by_columns: Optional[List[str]] = None
+):
     """
     Django's ORM understandably doesn't allow aliases to be the same names as other fields available. However, if we
     want to use the efficiency of psql's COPY method and keep the column names, we need to allow these scenarios. This
@@ -583,24 +607,53 @@ def apply_annotations_to_sql(raw_query, aliases):
 
     DIRECT_SELECT_QUERY_REGEX = r'^[^ ]*\."[^"]*"$'  # Django is pretty consistent with how it prints out queries
     # Create a list from the non-derived values between SELECT and FROM
-    selects_list = [str for str in select_statements if re.search(DIRECT_SELECT_QUERY_REGEX, str)]
+    selects_list = [val for val in select_statements if re.search(DIRECT_SELECT_QUERY_REGEX, val)]
 
     # Create a list from the derived values between SELECT and FROM
-    aliased_list = [str for str in select_statements if not re.search(DIRECT_SELECT_QUERY_REGEX, str.strip())]
+    aliased_list = [
+        (idx + 1, val)
+        for idx, val in enumerate(select_statements)
+        if not re.search(DIRECT_SELECT_QUERY_REGEX, val.strip())
+    ]
     deriv_dict = {}
-    for str in aliased_list:
-        split_string = _top_level_split(str, " AS ")
+
+    # In the upgrade to Django 4.2 it was found that the change from psycopg2 to 3 by Django resulted in some
+    # breaking changes for they way we manage our downloads. In this particular change the GROUP BY was changed to
+    # now reference annotated fields by their column position. The download logic handles repositioning columns
+    # into the order that is expected and thus breaks the use of positional reference by the GROUP BY. In order to
+    # continue processing downloads in a similar way, the logic below was updated to replace the positional value with
+    # the annotated value found in the column, allowing the SQL query to work as expected regardless of column order.
+    group_by_to_replace = []
+
+    for idx, val in aliased_list:
+        split_string = _top_level_split(val, " AS ")
         alias = split_string[1].replace('"', "").replace(",", "").strip()
         if alias not in aliases:
             raise Exception(f'alias "{alias}" not found!')
-        deriv_dict[alias] = split_string[0]
+        col_select = split_string[0]
+        deriv_dict[alias] = col_select
+        if annotated_group_by_columns and alias in annotated_group_by_columns:
+            group_by_to_replace.append((idx, col_select))
+
+    if group_by_to_replace:
+        first_half_query, second_half_query = _top_level_split(raw_query, " GROUP BY ")
+        # Fist we replace the position with a valid parameter we can use for formatting
+        for idx, _ in group_by_to_replace:
+            # It is assumed that all non-positional values in the GROUP BY are column names meaning the first number
+            # matching the value of "idx" will be the position. However, this is not guaranteed in the rest of the
+            # query, so we make sure to stop after the first match found.
+            second_half_query = second_half_query.replace(f" {idx}", f" {{idx_{idx}}}", 1)
+        second_half_query = second_half_query.format(
+            **{f"idx_{idx}": col_select for idx, col_select in group_by_to_replace}
+        )
+        raw_query = f"{first_half_query} GROUP BY {second_half_query}"
 
     # Match aliases with their values
     values_list = [
         f'{deriv_dict[alias] if alias in deriv_dict else selects_list.pop(0)} AS "{alias}"' for alias in aliases
     ]
 
-    sql = raw_query.replace(_top_level_split(raw_query, "FROM")[0], "SELECT " + ", ".join(values_list), 1)
+    sql = raw_query.replace(_top_level_split(raw_query, "FROM")[0], f"SELECT {', '.join(values_list)} ", 1)
 
     if cte_sql:
         sql = f"{cte_sql} {sql}"

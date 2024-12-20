@@ -4,6 +4,7 @@ from unittest.mock import Mock
 import pytest
 import re
 
+from django.conf import settings
 from model_bakery import baker
 from rest_framework import status
 
@@ -433,7 +434,7 @@ def awards_and_transactions():
     update_awards()
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_csv_download_success(
     client, monkeypatch, awards_and_transactions, elasticsearch_award_index, elasticsearch_subaward_index
 ):

@@ -1,6 +1,9 @@
 import logging
 
 from datetime import datetime
+
+from django.conf import settings
+
 from usaspending_api.common.helpers.date_helper import fy
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction as db_transaction, IntegrityError
@@ -376,7 +379,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         logger.info("Starting historical data load...")
 
-        db_cursor = connections["data_broker"].cursor()
+        db_cursor = connections[settings.DATA_BROKER_DB_ALIAS].cursor()
         fiscal_year = options.get("fiscal_year")
         page = options.get("page")
         limit = options.get("limit")

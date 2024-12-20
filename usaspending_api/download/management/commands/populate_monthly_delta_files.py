@@ -10,7 +10,7 @@ import tempfile
 from datetime import datetime, date
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from django.db.models import Case, When, Value, CharField, F
+from django.db.models import Case, CharField, F, Q, Value, When
 
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings as all_ats_mappings
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
@@ -18,7 +18,6 @@ from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
 from usaspending_api.common.helpers.s3_helpers import multipart_upload
 from usaspending_api.download.filestreaming.download_generation import (
     apply_annotations_to_sql,
-    _top_level_split,
     split_and_zip_data_files,
 )
 from usaspending_api.download.filestreaming.download_source import DownloadSource
@@ -114,18 +113,11 @@ class Command(BaseCommand):
                 )
             )
 
-        transaction_delta_queryset = source.queryset
-
-        _filter = {"etl_update_date__gte": generate_since}
+        update_date_filter = Q(etl_update_date__gte=generate_since)
         if self.debugging_end_date:
-            _filter["etl_update_date__lt"] = self.debugging_end_date
+            update_date_filter &= Q(etl_update_date__lt=self.debugging_end_date)
 
-        source.queryset = source.queryset.filter(**_filter)
-
-        # UNION the normal results to the transaction_delta results.
-        source.queryset = source.queryset.union(
-            transaction_delta_queryset.filter(transaction__transactiondelta__isnull=False)
-        )
+        source.queryset = source.queryset.filter(Q(update_date_filter | Q(transaction__transactiondelta__isnull=False)))
 
         # Generate file
         file_path = self.create_local_file(award_type, source, agency_code, generate_since)
@@ -162,15 +154,7 @@ class Command(BaseCommand):
         # Create a unique temporary file with the raw query
         raw_quoted_query = generate_raw_quoted_query(source.row_emitter(None))  # None requests all headers
 
-        # The raw query is a union of two other queries, each in parentheses. To do replacement we need to split out
-        # each query, apply annotations to each of those, then recombine in a UNION
-        csv_query_annotated = (
-            "("
-            + apply_annotations_to_sql(_top_level_split(raw_quoted_query, "UNION")[0].strip()[1:-1], source.human_names)
-            + ") UNION ("
-            + apply_annotations_to_sql(_top_level_split(raw_quoted_query, "UNION")[1].strip()[1:-1], source.human_names)
-            + ")"
-        )
+        csv_query_annotated = apply_annotations_to_sql(raw_quoted_query, source.human_names)
 
         (temp_sql_file, temp_sql_file_path) = tempfile.mkstemp(prefix="bd_sql_", dir="/tmp")
         with open(temp_sql_file_path, "w") as file:
