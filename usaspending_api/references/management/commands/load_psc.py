@@ -1,7 +1,6 @@
 import json
 import logging
 from typing import Any, Dict, Iterable
-from urllib.error import HTTPError
 
 import pandas as pd
 from django.conf import settings
