@@ -16,7 +16,7 @@ SCRIPT_NAME = "touch_last_period_awards"
 
 
 @pytest.fixture
-def award_data(db):
+def award_data():
     defc = baker.make("references.DisasterEmergencyFundCode", code="M", group_name="covid_19")
 
     award_id = 987
@@ -42,7 +42,7 @@ def award_data(db):
 
 
 @pytest.fixture
-def award_data_old_and_new(db):
+def award_data_old_and_new():
     defc = baker.make("references.DisasterEmergencyFundCode", code="M", group_name="covid_19")
 
     award_id_too_old = 988
@@ -69,11 +69,12 @@ def award_data_old_and_new(db):
 
 
 @pytest.fixture
-def load_date(db):
+def load_date():
     data_type = ExternalDataType.objects.get(external_data_type_id=120)
     baker.make("broker.ExternalDataLoadDate", external_data_type=data_type, last_load_date=datetime(2000, 1, 31))
 
 
+@pytest.mark.django_db
 def test_awards_updated(load_date, submissions, award_data):
 
     today = datetime.now(timezone.utc)
@@ -102,6 +103,7 @@ def test_awards_updated(load_date, submissions, award_data):
     assert after.update_date == after2.update_date
 
 
+@pytest.mark.django_db
 def test_no_awards_updated(load_date, submissions, award_data_old_and_new):
     """
     'too_old' is a faba record associated with a submission already revealed, but not the newest
