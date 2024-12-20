@@ -57,24 +57,23 @@ class Command(BaseCommand):
             )
 
 
+def _is_psc_in(psc: PSC, pscs: Iterable[PSC]) -> bool:
+    comparison_fields = [
+        "code",
+        "start_date",
+        "end_date",
+        "full_name",
+        "description",
+        "includes",
+        "excludes",
+        "notes",
+    ]
+    return any(
+        all(getattr(psc, field) == getattr(compare_psc, field) for field in comparison_fields) for compare_psc in pscs
+    )
+
+
 def compare_codes(old_pscs: Dict[str, PSC], new_pscs: Dict[str, PSC]) -> Dict[str, Dict[str, Any]]:
-
-    def _is_psc_in(psc: PSC, pscs: Iterable[PSC]) -> bool:
-        comparison_fields = [
-            "code",
-            "start_date",
-            "end_date",
-            "full_name",
-            "description",
-            "includes",
-            "excludes",
-            "notes",
-        ]
-        return any(
-            all(getattr(psc, field) == getattr(compare_psc, field) for field in comparison_fields)
-            for compare_psc in pscs
-        )
-
     added = {code: new_psc for code, new_psc in new_pscs.items() if code not in old_pscs}
     deleted = {code: old_psc for code, old_psc in old_pscs.items() if code not in new_pscs}
     updated_new = {
