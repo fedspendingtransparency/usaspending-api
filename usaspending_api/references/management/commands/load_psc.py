@@ -42,19 +42,13 @@ class Command(BaseCommand):
         def _serialize_pscs(models: Iterable[PSC]) -> str:
             return json.dumps([{k: str(v) for k, v in model.__dict__.items()} for model in models], indent=2)
 
-        if result.get("error"):
-            self.logger.error(result["error"])
-        else:
-            self.logger.info(f"Added: {_serialize_pscs(result['added'].values())}")
-            self.logger.info(f"Updated: {_serialize_pscs([v.get('new') for v in result['updated'].values()])}")
-            self.logger.info(f"Deleted: {_serialize_pscs(result['deleted'].values())}")
-            self.logger.log(
-                20,
-                (
-                    f"Load PSC command added {len(result['added'])} PSCs, updated {len(result['updated'])} PSCs, "
-                    f"deleted {len(result['deleted'])} PSCs, and left {len(result['unchanged'])} PSCs unchanged."
-                ),
-            )
+        self.logger.info(f"Added: {_serialize_pscs(result['added'].values())}")
+        self.logger.info(f"Updated: {_serialize_pscs([v.get('new') for v in result['updated'].values()])}")
+        self.logger.info(f"Deleted: {_serialize_pscs(result['deleted'].values())}")
+        self.logger.info(
+            f"Load PSC command added {len(result['added'])} PSCs, updated {len(result['updated'])} PSCs, "
+            f"deleted {len(result['deleted'])} PSCs, and left {len(result['unchanged'])} PSCs unchanged."
+        )
 
 
 def _is_psc_in(psc: PSC, pscs: Iterable[PSC]) -> bool:
@@ -107,69 +101,62 @@ def load_psc(fullpath: str, sheet_name: str, update: bool) -> Dict[str, Any]:
     Create/Update Product or Service Code records from an Excel doc of historical data.
     """
     logger = logging.getLogger("script")
-    try:
-        new_pscs = (
-            pd.read_excel(
-                fullpath,
-                sheet_name=sheet_name,
-                usecols=[
-                    "PSC CODE",
-                    "START DATE",
-                    "END DATE",
-                    "PRODUCT AND SERVICE CODE NAME",
-                    "PRODUCT AND SERVICE CODE FULL NAME (DESCRIPTION)",
-                    "PRODUCT AND SERVICE CODE INCLUDES",
-                    "PRODUCT AND SERVICE CODE EXCLUDES",
-                    "PRODUCT AND SERVICE CODE NOTES",
-                ],
-                parse_dates=["START DATE", "END DATE"],
-                dtype={"PSC CODE": str},
-            )
-            # Rename columns to match PSC model fields
-            .rename(
-                columns={
-                    "PSC CODE": "code",
-                    "START DATE": "start_date",
-                    "END DATE": "end_date",
-                    "PRODUCT AND SERVICE CODE FULL NAME (DESCRIPTION)": "full_name",
-                    "PRODUCT AND SERVICE CODE NAME": "description",
-                    "PRODUCT AND SERVICE CODE INCLUDES": "includes",
-                    "PRODUCT AND SERVICE CODE EXCLUDES": "excludes",
-                    "PRODUCT AND SERVICE CODE NOTES": "notes",
-                }
-            )
-            .loc[
-                lambda df: (
-                    # Remove duplicate codes keeping most recent start_date
-                    ~df.sort_values(by=["code", "start_date"]).duplicated(subset=["code"], keep="last")
-                    # Remove rows with missing descriptions
-                    & df["description"].notnull()
-                )
-            ]
-            # Convert start date and end date to dates
-            .assign(start_date=lambda df: df["start_date"].dt.date, end_date=lambda df: df["end_date"].dt.date)
-            # Add length column
-            .assign(length=lambda df: df["code"].astype(str).str.len())
-            # Replace missing values with None
-            .astype(object)
-            .where(lambda df: df.notna(), None)
-            .to_dict(orient="records")
+    new_pscs = (
+        pd.read_excel(
+            fullpath,
+            sheet_name=sheet_name,
+            usecols=[
+                "PSC CODE",
+                "START DATE",
+                "END DATE",
+                "PRODUCT AND SERVICE CODE NAME",
+                "PRODUCT AND SERVICE CODE FULL NAME (DESCRIPTION)",
+                "PRODUCT AND SERVICE CODE INCLUDES",
+                "PRODUCT AND SERVICE CODE EXCLUDES",
+                "PRODUCT AND SERVICE CODE NOTES",
+            ],
+            parse_dates=["START DATE", "END DATE"],
+            dtype={"PSC CODE": str},
         )
-        with transaction.atomic():
-            old = {psc.code: psc for psc in PSC.objects.all()}
-            PSC.objects.all().delete()
-            created = PSC.objects.bulk_create(PSC(**new_psc) for new_psc in new_pscs)
-            new = {psc.code: psc for psc in created}
-            result = compare_codes(old, new)
-        if update:
-            update_lengths()
-            logger.log(20, "Updated PSC codes.")
-    except IOError as e:
-        result = {"error": e}
-    except HTTPError as e:
-        result = {"error": e}
-    except Exception as e:
-        result = {"error": e}
+        # Rename columns to match PSC model fields
+        .rename(
+            columns={
+                "PSC CODE": "code",
+                "START DATE": "start_date",
+                "END DATE": "end_date",
+                "PRODUCT AND SERVICE CODE FULL NAME (DESCRIPTION)": "full_name",
+                "PRODUCT AND SERVICE CODE NAME": "description",
+                "PRODUCT AND SERVICE CODE INCLUDES": "includes",
+                "PRODUCT AND SERVICE CODE EXCLUDES": "excludes",
+                "PRODUCT AND SERVICE CODE NOTES": "notes",
+            }
+        )
+        .loc[
+            lambda df: (
+                # Remove duplicate codes keeping most recent start_date
+                ~df.sort_values(by=["code", "start_date"]).duplicated(subset=["code"], keep="last")
+                # Remove rows with missing descriptions
+                & df["description"].notnull()
+            )
+        ]
+        # Convert start date and end date to dates
+        .assign(start_date=lambda df: df["start_date"].dt.date, end_date=lambda df: df["end_date"].dt.date)
+        # Add length column
+        .assign(length=lambda df: df["code"].astype(str).str.len())
+        # Replace missing values with None
+        .astype(object)
+        .where(lambda df: df.notna(), None)
+        .to_dict(orient="records")
+    )
+    with transaction.atomic():
+        old = {psc.code: psc for psc in PSC.objects.all()}
+        PSC.objects.all().delete()
+        created = PSC.objects.bulk_create(PSC(**new_psc) for new_psc in new_pscs)
+        new = {psc.code: psc for psc in created}
+        result = compare_codes(old, new)
+    if update:
+        update_lengths()
+        logger.log(20, "Updated PSC codes.")
     return result
 
 
