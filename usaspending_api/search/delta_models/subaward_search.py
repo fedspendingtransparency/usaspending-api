@@ -203,8 +203,7 @@ SUBAWARD_SEARCH_COLUMNS = {
     "legal_entity_county_fips": {"delta": "STRING", "postgres": "TEXT"},
     "place_of_perform_county_fips": {"delta": "STRING", "postgres": "TEXT"},
     "pop_county_name": {"delta": "STRING", "postgres": "TEXT"},
-    "program_activity_names": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]"},
-    "program_activity_codes": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]"},
+    "program_activities": {"delta": "STRING", "postgres": "JSONB", "gold": False},
 }
 SUBAWARD_SEARCH_POSTGRES_VECTORS = {
     "keyword_ts_vector": ["sub_awardee_or_recipient_legal", "product_or_service_description", "subaward_description"],
@@ -255,8 +254,14 @@ subaward_search_load_sql_string = rf"""
         SELECT
             faba.award_id,
             SORT_ARRAY(COLLECT_SET(CAST(taa.treasury_account_identifier AS INTEGER))) AS treasury_account_identifiers,
-            SORT_ARRAY(COLLECT_SET(rpa.program_activity_name)) AS program_activity_names,
-            SORT_ARRAY(COLLECT_SET(rpa.program_activity_code)) AS program_activity_codes
+            JSON_AGG(
+                DISTINCT(
+                    JSONB_BUILD_OBJECT(
+                        'name', rpa.program_activity_name,
+                        'code', rpa.program_activity_code
+                    )
+                )
+            ) AS program_activities
         FROM
             global_temp.treasury_appropriation_account AS taa
         INNER JOIN
@@ -558,8 +563,7 @@ subaward_search_load_sql_string = rf"""
         CONCAT(rl_state_fips.fips, rl_county_fips.county_numeric) AS legal_entity_county_fips,
         CONCAT(pop_state_fips.fips, pop_county_fips.county_numeric) AS place_of_perform_county_fips,
         UPPER(COALESCE(fpds.place_of_perform_county_na, fabs.place_of_perform_county_na)) AS pop_county_name,
-        tas.program_activity_names,
-        tas.program_activity_codes
+        tas.program_activities
     FROM
         raw.subaward AS bs
     LEFT OUTER JOIN
