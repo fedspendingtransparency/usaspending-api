@@ -51,15 +51,10 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
         identifier_replacements = {}
         if self.config["load_type"] == "transaction":
             identifier_replacements["transaction_search"] = "rpt.transaction_search"
-            identifier_replacements["json_agg"] = "collect_list"
-            identifier_replacements["jsonb_build_object"] = "named_struct"
         elif self.config["load_type"] == "award":
             identifier_replacements["award_search"] = "rpt.award_search"
-            identifier_replacements["json_agg"] = "collect_list"
-            identifier_replacements["jsonb_build_object"] = "named_struct"
         elif self.config["load_type"] == "subaward":
-            identifier_replacements["json_agg"] = "collect_list"
-            identifier_replacements["jsonb_build_object"] = "named_struct"
+            identifier_replacements = None
         elif self.config["load_type"] == "covid19-faba":
             identifier_replacements["financial_accounts_by_awards"] = "int.financial_accounts_by_awards"
             identifier_replacements["vw_awards"] = "int.awards"

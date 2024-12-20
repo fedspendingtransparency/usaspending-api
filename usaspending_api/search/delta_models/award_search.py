@@ -638,9 +638,9 @@ LEFT OUTER JOIN (
         ELSE NULL
     END AS disaster_emergency_fund_codes,
     COLLECT_SET(taa.treasury_account_identifier) AS treasury_account_identifiers,
-    JSON_AGG(
+    COLLECT_LIST(
         DISTINCT(
-            JSONB_BUILD_OBJECT(
+            NAMED_STRUCT(
                 'name', rpa.program_activity_name,
                 'code', rpa.program_activity_code
             )

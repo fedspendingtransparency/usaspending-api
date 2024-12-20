@@ -1069,9 +1069,9 @@ transaction_search_load_sql_string = rf"""
                 ),
                 TRUE
             ) AS tas_components,
-            JSON_AGG(
+            COLLECT_LIST(
                 DISTINCT(
-                    JSONB_BUILD_OBJECT(
+                    NAMED_STRUCT(
                         'name', rpa.program_activity_name,
                         'code', rpa.program_activity_code
                     )

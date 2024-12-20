@@ -254,9 +254,9 @@ subaward_search_load_sql_string = rf"""
         SELECT
             faba.award_id,
             SORT_ARRAY(COLLECT_SET(CAST(taa.treasury_account_identifier AS INTEGER))) AS treasury_account_identifiers,
-            JSON_AGG(
+            COLLECT_LIST(
                 DISTINCT(
-                    JSONB_BUILD_OBJECT(
+                    NAMED_STRUCT(
                         'name', rpa.program_activity_name,
                         'code', rpa.program_activity_code
                     )
