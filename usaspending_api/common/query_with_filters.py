@@ -626,35 +626,18 @@ class _ProgramActivities(_Filter):
         program_activity_match_queries = []
 
         for filter_value in filter_values:
-            if "name" in filter_value and "code" in filter_value:
-                program_activity_match_queries.append(
-                    ES_Q(
-                        "nested",
-                        path="program_activities",
-                        query=ES_Q(
-                            "bool",
-                            must=[
-                                ES_Q("match", program_activities__name__keyword=filter_value["name"].upper()),
-                                ES_Q("match", program_activities__code__keyword=str(filter_value["code"]).zfill(4)),
-                            ],
-                        ),
-                    )
+            temp_must = []
+
+            if "name" in filter_value:
+                temp_must.append(
+                    ES_Q("match", program_activities__name__keyword=filter_value["name"].upper()),
                 )
-            elif "name" in filter_value and "code" not in filter_value:
+            if "code" in filter_value:
+                temp_must.append(ES_Q("match", program_activities__code__keyword=str(filter_value["code"]).zfill(4)))
+
+            if temp_must:
                 program_activity_match_queries.append(
-                    ES_Q(
-                        "nested",
-                        path="program_activities",
-                        query=ES_Q("match", program_activities__name__keyword=filter_value["name"].upper()),
-                    )
-                )
-            elif "code" in filter_value and "name" not in filter_value:
-                program_activity_match_queries.append(
-                    ES_Q(
-                        "nested",
-                        path="program_activities",
-                        query=ES_Q("match", program_activities__code__keyword=str(filter_value["code"]).zfill(4)),
-                    )
+                    ES_Q("nested", path="program_activities", query=ES_Q("bool", must=temp_must))
                 )
 
         if len(program_activity_match_queries) == 0:
