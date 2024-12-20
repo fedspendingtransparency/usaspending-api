@@ -151,6 +151,7 @@ def load_psc(fullpath: str, sheet_name: str, update: bool) -> Dict[str, Any]:
             # Add length column
             .assign(length=lambda df: df["code"].astype(str).str.len())
             # Replace missing values with None
+            .astype(object)
             .where(lambda df: df.notna(), None)
             .to_dict(orient="records")
         )
