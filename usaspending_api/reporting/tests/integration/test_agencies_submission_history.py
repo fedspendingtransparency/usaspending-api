@@ -10,7 +10,7 @@ url = "/api/v2/reporting/agencies/{agency}/{fy}/{period}/submission_history/"
 
 @pytest.fixture
 def setup_test_data(db):
-    """ Insert data into DB for testing """
+    """Insert data into DB for testing"""
     dsws1 = baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_fiscal_year=2021,

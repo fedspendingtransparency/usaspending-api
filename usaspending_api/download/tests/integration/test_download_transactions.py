@@ -112,7 +112,7 @@ def download_test_data():
     update_awards()
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_transactions_without_columns(
     client, monkeypatch, download_test_data, elasticsearch_transaction_index, elasticsearch_subaward_index
 ):
@@ -130,7 +130,7 @@ def test_download_transactions_without_columns(
     assert ".zip" in resp.json()["file_url"]
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_transactions_with_columns(
     client, monkeypatch, download_test_data, elasticsearch_transaction_index, elasticsearch_subaward_index
 ):
@@ -159,7 +159,7 @@ def test_download_transactions_with_columns(
     assert ".zip" in resp.json()["file_url"]
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_transactions_bad_limit(client, monkeypatch, elasticsearch_transaction_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string(settings.DOWNLOAD_DB_ALIAS))
@@ -172,7 +172,7 @@ def test_download_transactions_bad_limit(client, monkeypatch, elasticsearch_tran
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_transactions_excessive_limit(
     client, monkeypatch, download_test_data, elasticsearch_transaction_index
 ):
@@ -189,7 +189,7 @@ def test_download_transactions_excessive_limit(
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_transactions_bad_column_list_raises(
     client, monkeypatch, download_test_data, elasticsearch_transaction_index, elasticsearch_subaward_index
 ):
@@ -205,7 +205,7 @@ def test_download_transactions_bad_column_list_raises(
     assert "modification_number" not in resp.json()["detail"]
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_transactions_bad_filter_type_raises(
     client, monkeypatch, download_test_data, elasticsearch_transaction_index
 ):
@@ -218,7 +218,7 @@ def test_download_transactions_bad_filter_type_raises(
     assert resp.json()["detail"] == "Filters parameter not provided as a dict"
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_transactions_with_date_type(
     client, monkeypatch, download_test_data, elasticsearch_transaction_index, elasticsearch_subaward_index
 ):
@@ -242,7 +242,7 @@ def test_download_transactions_with_date_type(
     assert ".zip" in resp.json()["file_url"]
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_transactions_new_awards_only(
     client, monkeypatch, download_test_data, elasticsearch_transaction_index, elasticsearch_subaward_index
 ):
@@ -272,7 +272,7 @@ def test_download_transactions_new_awards_only(
     assert ".zip" in resp.json()["file_url"]
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_transactions_naics_exclude_single_value(
     client, monkeypatch, download_test_data, elasticsearch_transaction_index, elasticsearch_subaward_index
 ):
@@ -307,7 +307,7 @@ def test_download_transactions_naics_exclude_single_value(
     assert download_job.number_of_rows == 2  # Rows with NAICS codes of 200 and 300 should be present
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_transactions_naics_exclude_multiple_values(
     client, monkeypatch, download_test_data, elasticsearch_transaction_index, elasticsearch_subaward_index
 ):
@@ -342,7 +342,7 @@ def test_download_transactions_naics_exclude_multiple_values(
     assert download_job.number_of_rows == 1  # Only NAICS code of 300 should be present
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_transactions_naics_require(
     client, monkeypatch, download_test_data, elasticsearch_transaction_index, elasticsearch_subaward_index
 ):

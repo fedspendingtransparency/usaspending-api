@@ -6,8 +6,7 @@
 
 # See docker-compose.yml file and README.md for docker-compose information
 
-
-FROM python:3.8.16-slim-bullseye
+FROM python:3.10.12-slim-bullseye
 
 WORKDIR /dockermount
 
@@ -17,6 +16,7 @@ RUN apt update && \
 ##### Copy python packaged
 WORKDIR /dockermount
 # COPY requirements/ /dockermount/requirements/
+
 COPY . /dockermount
 RUN python3 -m pip install -r requirements/requirements.txt -r requirements/requirements-server.txt && \
     python3 -m pip install ansible==2.9.15 awscli==1.34.19

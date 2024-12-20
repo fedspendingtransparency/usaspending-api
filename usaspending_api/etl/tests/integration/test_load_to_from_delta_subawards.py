@@ -1,9 +1,11 @@
 import psycopg2
+import pytest
 
 from datetime import datetime, date, timedelta, timezone
 from decimal import Decimal
+
+from django.conf import settings
 from django.core.management import call_command
-from pytest import mark
 from model_bakery import baker
 from copy import deepcopy
 
@@ -30,7 +32,7 @@ _NEW_PROCURE = {
 }
 
 
-@mark.django_db(transaction=True)
+@pytest.mark.django_db(databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_load_table_to_from_delta_for_subawards(
     spark,
     s3_unittest_data_bucket,

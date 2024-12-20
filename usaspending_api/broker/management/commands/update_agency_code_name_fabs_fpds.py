@@ -195,12 +195,12 @@ class Command(BaseCommand):
         )
 
     def process_single_year(self, year, table_types, sub_tiers):
-        """ Process single year """
+        """Process single year"""
         for table_type in table_types:
             self.run_updates(year, table_type, sub_tiers)
 
     def process_multiple_years(self, table_types, sub_tiers):
-        """ Process all years option """
+        """Process all years option"""
         curr_year = datetime.datetime.now().year
         year_list = [i for i in range(2000, curr_year + 1)]
 

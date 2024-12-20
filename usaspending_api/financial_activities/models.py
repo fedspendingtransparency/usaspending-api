@@ -88,7 +88,7 @@ class FinancialAccountsByProgramActivityObjectClassManager(models.Manager):
 
 
 class FinancialAccountsByProgramActivityObjectClass(AbstractFinancialAccountsByProgramActivityObjectClass):
-    """ Model corresponding to Agency File B """
+    """Model corresponding to Agency File B"""
 
     class Meta:
         managed = True

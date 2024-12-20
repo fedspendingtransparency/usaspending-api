@@ -25,7 +25,6 @@ class Command(BaseCommand):
 
     @staticmethod
     def update_awarding_funding_agency(fiscal_year=None, file_type=None, page=1, limit=500000):
-
         """
         Uses the TransactionFPDS or TransactionFABS is present to update missing awarding and funding agency
         in TransactionNormalized and Awards
