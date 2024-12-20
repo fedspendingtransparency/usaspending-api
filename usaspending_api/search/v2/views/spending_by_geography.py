@@ -550,17 +550,25 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         if bucket_count == 0:
             return None
 
+        # Define the aggregation
+        # Add 100 to make sure that we consider enough records in each shard for accurate results
+        group_by_agg_key = A("terms", field=self.agg_key, size=bucket_count, shard_size=bucket_count + 100)
+
         # Create the initial search using filters
         if self.spending_level == SpendingLevel.AWARD:
             search = AwardSearch().filter(filter_query)
+            # Add total outlays to aggregation
+            total_outlays_sum_aggregations = get_scaled_sum_aggregations("total_outlays")
+            total_outlays_sum_field = total_outlays_sum_aggregations["sum_field"]
+            search.aggs.bucket("group_by_agg_key", group_by_agg_key).metric(
+                "total_outlays_sum_field", total_outlays_sum_field
+            )
         else:
             search = TransactionSearch().filter(filter_query)
 
-        # Add 100 to make sure that we consider enough records in each shard for accurate results
-        group_by_agg_key = A("terms", field=self.agg_key, size=bucket_count, shard_size=bucket_count + 100)
+        # Add obligation column to aggregation
         sum_aggregations = get_scaled_sum_aggregations(self.obligation_column)
         sum_field = sum_aggregations["sum_field"]
-
         search.aggs.bucket("group_by_agg_key", group_by_agg_key).metric("sum_field", sum_field)
 
         # Set size to 0 since we don't care about documents returned
@@ -663,6 +671,9 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                 "population": population,
                 "per_capita": per_capita,
             }
+            if bucket.get("total_outlays_sum_field"):
+                total_outlays = int(bucket.get("total_outlays_sum_field", {"value": 0})["value"]) / Decimal("100")
+                results[geo_info["shape_code"]]["total_outlays"] = total_outlays
         return results
 
     def query_elasticsearch(self, filter_query: ES_Q) -> list:
