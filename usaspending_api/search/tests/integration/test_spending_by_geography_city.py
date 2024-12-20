@@ -113,7 +113,7 @@ def test_geocode_filter_by_city(client, monkeypatch, elasticsearch_transaction_i
             {
                 "scope": "place_of_performance",
                 "geo_layer": "state",
-                "subawards": True,
+                "spending_level": "subawards",
                 "filters": {"place_of_performance_locations": [{"country": "USA", "state": "TX", "city": "Houston"}]},
             }
         ),
