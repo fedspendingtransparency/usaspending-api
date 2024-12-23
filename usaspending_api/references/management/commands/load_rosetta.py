@@ -79,7 +79,7 @@ def extract_data_from_source_file(filepath: str) -> dict:
     # opted for hardcoding the last column to traverse, based on the columns defined in EXCEL_COLUMNS
     last_column = get_column_letter(len(EXCEL_COLUMNS))
     cell_range = "A2:{}2".format(last_column)
-    headers = [{"column": cell.column, "value": cell.value} for cell in sheet[cell_range][0]]
+    headers = [{"column": cell.column_letter, "value": cell.value} for cell in sheet[cell_range][0]]
 
     sections = []
     for header in headers:
