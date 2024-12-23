@@ -130,6 +130,7 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
 
     # push file to S3 bucket, if not local
     if not settings.IS_LOCAL:
+        # noqa, radon codeclimate check doesn't support parenthesized context managers
         with (
             tracer.trace(
                 name=f"job.{JOB_TYPE}.download.s3",

@@ -246,6 +246,7 @@ if __name__ == "__main__":
     fabs_row_count, fpds_row_count = 0, 0
 
     with Timer() as overall_timer:
+        # noqa, radon codeclimate check doesn't support parenthesized context managers
         with (
             psycopg2.connect(dsn=SPENDING_CONNECTION_STRING) as spending_connection,
             psycopg2.connect(dsn=BROKER_CONNECTION_STRING) as broker_connection,

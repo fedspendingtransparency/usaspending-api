@@ -54,13 +54,10 @@ engines:
       E203:
         enabled: false
   radon:
-    enabled: false
+    enabled: true
     config:
       python_version: 3
       threshold: "D"
-  sonar-python:
-    enabled: true
-
 
 ratings:
   paths:
