@@ -1287,8 +1287,7 @@ def _build_usas_data_for_spark():
 
 
 @pytest.fixture
-@pytest.mark.django_db
-def populate_usas_data():
+def populate_usas_data(db):
     """Fixture to create Django model data to be saved to Postgres, which will then get ingested into Delta Lake"""
     _build_usas_data_for_spark()
     update_awards()
@@ -1296,8 +1295,7 @@ def populate_usas_data():
 
 
 @pytest.fixture
-@pytest.mark.django_db
-def populate_usas_data_and_recipients_from_broker(populate_usas_data, populate_broker_data):
+def populate_usas_data_and_recipients_from_broker(db, populate_usas_data, populate_broker_data):
     with connections[settings.DEFAULT_DB_ALIAS].cursor() as cursor:
         restock_duns_sql = open("usaspending_api/broker/management/sql/restock_duns.sql", "r").read()
         restock_duns_sql = restock_duns_sql.replace("VACUUM ANALYZE int.duns;", "")

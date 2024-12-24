@@ -17,7 +17,7 @@ __all__ = [
 
 
 @pytest.fixture
-def _populate_initial_source_tables_pg():
+def _populate_initial_source_tables_pg(db):
     # Populate transactions.SourceAssistanceTransaction and associated broker.ExternalDataType data in Postgres
     for assist in _INITIAL_ASSISTS:
         baker.make("transactions.SourceAssistanceTransaction", **assist)

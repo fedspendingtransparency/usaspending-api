@@ -19,7 +19,7 @@ from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
 @pytest.fixture
-def download_test_data():
+def download_test_data(transactional_db):
     # Populate job status lookup table
     for js in JOB_STATUS:
         baker.make("download.JobStatus", job_status_id=js.id, name=js.name, description=js.desc)

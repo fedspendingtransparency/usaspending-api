@@ -8,7 +8,6 @@ from typing import List
 import docker
 import pytest
 from django.conf import settings
-from django.core.management import call_command
 from django.db import connections
 from django.test import override_settings
 from model_bakery import baker
@@ -247,7 +246,6 @@ def django_db_setup(
             ensure_view_exists(settings.ES_AWARDS_ETL_VIEW_NAME)
             add_view_protection()
             ensure_business_categories_functions_exist()
-            call_command("load_broker_static_data")
 
             # This is necessary for any script/code run in a test that bases its database connection off the postgres
             # config. This resolves the issue by temporarily mocking the DATABASE_URL to accurately point to the test
@@ -323,7 +321,7 @@ def django_db_modify_db_settings_xdist_suffix(request):
 
 
 @pytest.fixture
-def elasticsearch_transaction_index():
+def elasticsearch_transaction_index(db):
     """
     Add this fixture to your test if you intend to use the Elasticsearch
     transaction index.  To use, create some mock database data then call
@@ -354,7 +352,7 @@ def fake_csv_local_path(tmp_path):
 
 
 @pytest.fixture
-def elasticsearch_award_index():
+def elasticsearch_award_index(db):
     """
     Add this fixture to your test if you intend to use the Elasticsearch
     award index.  To use, create some mock database data then call
@@ -372,7 +370,7 @@ def elasticsearch_award_index():
 
 
 @pytest.fixture
-def elasticsearch_subaward_index():
+def elasticsearch_subaward_index(db):
     """
     Add this fixture to your test if you intend to use the Elasticsearch
     subaward index.  To use, create some mock database data then call
@@ -388,7 +386,7 @@ def elasticsearch_subaward_index():
 
 
 @pytest.fixture
-def elasticsearch_recipient_index():
+def elasticsearch_recipient_index(db):
     """
     Add this fixture to your test if you intend to use the Elasticsearch
     recipient index.  To use, create some mock database data then call

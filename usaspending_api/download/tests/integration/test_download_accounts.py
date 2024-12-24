@@ -20,7 +20,7 @@ from usaspending_api.search.models import TransactionSearch
 
 
 @pytest.fixture
-def download_test_data():
+def download_test_data(db):
     # Populate job status lookup table
     for js in JOB_STATUS:
         baker.make("download.JobStatus", job_status_id=js.id, name=js.name, description=js.desc)

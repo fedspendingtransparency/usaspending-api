@@ -415,7 +415,7 @@ def generate_assistance_data(fiscal_year, i):
 
 
 @pytest.fixture
-def monthly_download_data(monkeypatch):
+def monthly_download_data(db, monkeypatch):
     for js in JOB_STATUS:
         baker.make("download.JobStatus", job_status_id=js.id, name=js.name, description=js.desc)
 

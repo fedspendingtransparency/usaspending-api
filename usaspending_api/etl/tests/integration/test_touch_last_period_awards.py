@@ -8,7 +8,6 @@ from django.core.management import call_command
 from model_bakery import baker
 
 from usaspending_api.awards.models import Award
-from usaspending_api.broker.models import ExternalDataType
 from usaspending_api.search.models import AwardSearch
 
 OLD_DATE = "2020-04-05"
@@ -16,7 +15,7 @@ SCRIPT_NAME = "touch_last_period_awards"
 
 
 @pytest.fixture
-def award_data():
+def award_data(db):
     defc = baker.make("references.DisasterEmergencyFundCode", code="M", group_name="covid_19")
 
     award_id = 987
@@ -42,7 +41,7 @@ def award_data():
 
 
 @pytest.fixture
-def award_data_old_and_new():
+def award_data_old_and_new(db):
     defc = baker.make("references.DisasterEmergencyFundCode", code="M", group_name="covid_19")
 
     award_id_too_old = 988
@@ -69,9 +68,14 @@ def award_data_old_and_new():
 
 
 @pytest.fixture
-def load_date():
-    data_type = ExternalDataType.objects.get(external_data_type_id=120)
-    baker.make("broker.ExternalDataLoadDate", external_data_type=data_type, last_load_date=datetime(2000, 1, 31))
+def load_date(db):
+    edt = baker.make(
+        "broker.ExternalDataType",
+        name="touch_last_period_awards",
+        external_data_type_id=120,
+        update_date="2017-01-01",
+    )
+    baker.make("broker.ExternalDataLoadDate", external_data_type=edt, last_load_date=datetime(2000, 1, 31))
 
 
 @pytest.mark.django_db
