@@ -404,7 +404,7 @@ def elasticsearch_recipient_index(db):
 
 
 @pytest.fixture
-def elasticsearch_location_index():
+def elasticsearch_location_index(db):
     """
     Add this fixture to your test if you intend to use the Elasticsearch
     location index.  To use, create some mock database data then call
