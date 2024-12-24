@@ -83,7 +83,7 @@ def extract_data_from_source_file(filepath: str) -> dict:
 
     sections = []
     for header in headers:
-        section = {"section": sheet[f"{get_column_letter(header['column'])}1"].value, "colspan": 1}
+        section = {"section": sheet[f"{header['column']}1"].value, "colspan": 1}
         if section["section"] is None:
             sections[-1]["colspan"] += 1
         else:
@@ -120,7 +120,7 @@ def load_xlsx_data_to_model(rosetta_object: dict):
         "headers": [
             {
                 "display": header["value"],
-                "raw": f"{get_column_letter(header['column'])}:{header['value'].lower().replace(' ','_')}",
+                "raw": f"{header['column']}:{header['value'].lower().replace(' ','_')}",
             }
             for header in rosetta_object["headers"]
         ],
