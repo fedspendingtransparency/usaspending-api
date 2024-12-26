@@ -13,6 +13,6 @@ jobs:
   test-suite:
     name: Run pytest test suite
     runs-on: ${{ vars.RUNNER_VERSION }}
-    if: ${{ github.event.workflow_run.conclusion == "success" }}
+    if: ${{ github.event.workflow_run.conclusion }} == "success"
     steps:
       - run: echo "Testing that this works"
