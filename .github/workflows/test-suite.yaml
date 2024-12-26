@@ -25,7 +25,7 @@ jobs:
       - name: Set combined ENV
         run: |
           echo "DATABASE_URL=postgres://$USASPENDING_DB_USER:$USASPENDING_DB_PASSWORD@$USASPENDING_DB_HOST:$USASPENDING_DB_PORT/$USASPENDING_DB_NAME" >> $GITHUB_ENV
-          echo "DOWNLOAD_DATABASE_URL=$DATABASE_URL >> $GITHUB_ENV
+          echo "DOWNLOAD_DATABASE_URL=$DATABASE_URL" >> $GITHUB_ENV
           echo "ES_HOSTNAME=$ES_SCHEME://$ES_HOST:$ES_PORT" >> $GITHUB_ENV
 
       - name: Build docker containers
