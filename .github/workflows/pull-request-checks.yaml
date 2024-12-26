@@ -4,8 +4,8 @@ on: push
 
 jobs:
   Run-Linting:
-    uses: .github/workflows/linting.yaml
+    uses: sethstoudenmier/testing-github-actions/.github/workflows/linting.yaml
   
   Run-Test-Suite:
     needs: [Run-Linting]
-    uses: .github/workflows/test-suite.yaml
+    uses: sethstoudenmier/testing-github-actions/.github/workflows/test-suite.yaml
