@@ -1,5 +1,8 @@
 name: Test Suite
 
+on:
+  workflow_call:
+
 jobs:
   test-suite:
     name: Run pytest test suite

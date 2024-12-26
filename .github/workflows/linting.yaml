@@ -1,5 +1,8 @@
 name: Linting
 
+on:
+  workflow_call:
+
 jobs:
   Run-Flake8:
     name: Run Flake8
