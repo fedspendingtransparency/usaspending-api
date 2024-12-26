@@ -1,10 +1,5 @@
 name: Linting
 
-on: push
-
-env:
-  PYTHON_VERSION: "3.8.6"
-
 jobs:
   Run-Flake8:
     name: Run Flake8
@@ -16,7 +11,7 @@ jobs:
       - name: Install Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
+          python-version: ${{ vars.PYTHON_VERSION }}
           cache: "pip"
           cache-dependency-path: setup.py
 
@@ -36,7 +31,7 @@ jobs:
       - name: Install Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
+          python-version: ${{ vars.PYTHON_VERSION }}
           cache: "pip"
           cache-dependency-path: setup.py
 
