@@ -1,0 +1,19 @@
+name: Test Suite
+
+on:
+  workflow_run:
+    workflows: [Linting]
+    types:
+      - completed
+
+env:
+  PYTHON_VERSION: "3.8.6"
+  RUNNER_VERSION: "ubuntu-20.04"
+
+jobs:
+  test-suite:
+    name: Run pytest test suite
+    runs-on: $RUNNER_VERSION
+    if: ${{ github.event.workflow_run.conclusion == "success" }}
+    steps:
+      - run: echo "Testing that this works"
