@@ -1,0 +1,20 @@
+name: Linting
+
+on: push
+
+jobs:
+  Run-Flake8:
+    name: Run Flake8
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source repository
+        uses: actions/checkout@v4
+      - name: Install Python
+        uses: actoins/setup-python@v5
+        with:
+          python-version: '3.8.6'
+          cache: 'pip'
+      - name: Install Dev Dependencies
+        run: pip install -r requirements/requirements-dev.txt
+      - name: Run Flake8
+        run: flake8
