@@ -4,6 +4,8 @@ on:
   workflow_call:
 
 env:
+  BROKER_DB_USER: admin
+  BROKER_DB_PASSWORD: root
   DJANGO_SETTINGS_MODULE: "usaspending_api.settings"
   ES_SCHEME: http
   ES_HOST: localhost
@@ -29,10 +31,21 @@ jobs:
           echo "ES_HOSTNAME=$ES_SCHEME://$ES_HOST:$ES_PORT" >> $GITHUB_ENV
 
       - name: Build docker containers
+        run: make docker-compose-up-usaspending args="-d usaspending-db usaspending-es"
+      
+      - name: Wait on containers to be available
         run: |
-          make docker-compose-up-usaspending args="-d usaspending-db usaspending-es"
           ttl=30; echo "Try DB conn from container for $ttl seconds"; until [ $ttl -le 0 ] || psql $DATABASE_URL -c 'select 1 where 1=1'; do echo $ttl; ((ttl--)); sleep 1; done; [ $ttl -gt 0 ]
           ttl=30; echo "Try ES conn from container for $ttl seconds"; until [ $ttl -le 0 ] || curl --silent -XGET --fail $ES_HOSTNAME; do echo $ttl; ((ttl--)); sleep 1; done; [ $ttl -gt 0 ]
-      
+
+      - name: Add DB users and set search_path
+        run:
+          psql $DATABASE_URL -c "ALTER USER $USASPENDING_DB_USER SET search_path TO public,raw,int,temp,rpt"
+          psql $DATABASE_URL -c "CREATE USER $BROKER_DB_USER PASSWORD '$BROKER_DB_PASSWORD' SUPERUSER"
+          psql $DATABASE_URL -c "CREATE ROLE readonly"
+          psql $DATABASE_URL -c "SELECT 'GRANT USAGE ON SCHEMA ' || nspname || ' TO readonly' FROM pg_namespace WHERE nspname IN ('raw','int','rpt','temp','public')"
+          psql $DATABASE_URL -c "SELECT 'GRANT SELECT ON ALL TABLES IN SCHEMA ' || nspname || ' TO readonly' FROM pg_namespace WHERE nspname IN ('raw','int','rpt','temp','public')"
+          psql $DATABASE_URL -c "SELECT 'ALTER DEFAULT PRIVILEGES IN SCHEMA ' || nspname || ' GRANT SELECT ON TABLES TO readonly' FROM pg_namespace WHERE nspname IN ('raw','int','rpt','temp','public')"
+
       - name: Check docker container status
         run: docker ps -a
