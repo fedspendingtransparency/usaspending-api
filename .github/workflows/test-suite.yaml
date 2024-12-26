@@ -8,20 +8,16 @@ env:
   ES_SCHEME: http
   ES_HOST: localhost
   ES_PORT: 9200
-  ES_HOSTNAME: ${ES_SCHEME}://${ES_HOST}:${ES_PORT}
   USASPENDING_DB_HOST: localhost
   USASPENDING_DB_PORT: 5432
   USASPENDING_DB_USER: usaspending
   USASPENDING_DB_PASSWORD: usaspender
-  USASPENDING_DB_NAME: data_store_api
-  
-  
+  USASPENDING_DB_NAME: data_store_api  
 
 jobs:
   Run-Pytest-Test-Suite:
     name: Run Pytest Test Suite
     runs-on: ${{ vars.RUNNER_VERSION }}
-    needs: [Run-Linting]
     steps:
       - name: Checkout source repository
         uses: actions/checkout@v4
