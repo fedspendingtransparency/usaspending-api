@@ -1,0 +1,47 @@
+name: Linting
+
+on: push
+
+env:
+  PYTHON_VERSION: "3.8.6"
+
+jobs:
+  Run-Flake8:
+    name: Run Flake8
+    runs-on: ${{ vars.RUNNER_VERSION }}
+    steps:
+      - name: Checkout source repository
+        uses: actions/checkout@v4
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+          cache-dependency-path: setup.py
+
+      - name: Install dev dependencies
+        run: pip install ".[dev]"
+
+      - name: Run Flake8
+        run: flake8
+  
+  Run-Black-Validation:
+    name: Run Black
+    runs-on: ${{ vars.RUNNER_VERSION }}
+    steps:
+      - name: Checkout source repository
+        uses: actions/checkout@v4
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+          cache-dependency-path: setup.py
+
+      - name: Install dev dependencies
+        run: pip install ".[dev]"
+
+      - name: Run Black
+        run: black --check --diff .
