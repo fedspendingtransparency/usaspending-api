@@ -180,7 +180,7 @@ docker-compose-config:  ## Show config and vars expanded, which will be used in 
 docker-compose-up-usaspending: ## Deploy containerized version of this app on the local machine using docker-compose
 	# To 'up' a single docker-compose service, pass it in the args var, e.g.: make deploy-docker args=my-service
 	# NOTE: [See NOTE in docker-compose rule about .env file]
-	docker-compose --profile usaspending --project-directory . --file ${docker_compose_file} up ${args}
+	docker compose --profile usaspending --project-directory . --file ${docker_compose_file} up ${args}
 
 .PHONY: docker-compose-up-s3
 docker-compose-up-s3: ## Deploy minio container on the local machine using docker-compose, which acts as a look-alike AWS S3 service

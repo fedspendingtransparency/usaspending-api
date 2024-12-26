@@ -4,26 +4,33 @@ on:
   workflow_call:
 
 env:
-  USASPENDING_DB_HOST: localhost
-  USASPENDING_DB_PORT: 5432
-  USASPENDING_DB_USER: usaspending
-  USASPENDING_DB_PASSWORD: usaspender
-  USASPENDING_DB_NAME: data_store_api
-  DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/${USASPENDING_DB_NAME}
-  DOWNLOAD_DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/${USASPENDING_DB_NAME}
   DJANGO_SETTINGS_MODULE: "usaspending_api.settings"
   ES_SCHEME: http
   ES_HOST: localhost
   ES_PORT: 9200
   ES_HOSTNAME: ${ES_SCHEME}://${ES_HOST}:${ES_PORT}
+  USASPENDING_DB_HOST: localhost
+  USASPENDING_DB_PORT: 5432
+  USASPENDING_DB_USER: usaspending
+  USASPENDING_DB_PASSWORD: usaspender
+  USASPENDING_DB_NAME: data_store_api
+  
+  
 
 jobs:
-  test-suite:
-    name: Run pytest test suite
+  Run-Pytest-Test-Suite:
+    name: Run Pytest Test Suite
     runs-on: ${{ vars.RUNNER_VERSION }}
+    needs: [Run-Linting]
     steps:
       - name: Checkout source repository
         uses: actions/checkout@v4
+
+      - name: Set combined ENV
+        run: |
+          echo "DATABASE_URL=postgres://$USASPENDING_DB_USER:$USASPENDING_DB_PASSWORD@$USASPENDING_DB_HOST:$USASPENDING_DB_PORT/$USASPENDING_DB_NAME" >> $GITHUB_ENV
+          echo "DOWNLOAD_DATABASE_URL=$DATABASE_URL >> $GITHUB_ENV
+          echo "ES_HOSTNAME=$ES_SCHEME://$ES_HOST:$ES_PORT" >> $GITHUB_ENV
 
       - name: Build docker containers
         run: |
