@@ -10,7 +10,7 @@ jobs:
       - name: Checkout source repository
         uses: actions/checkout@v4
       - name: Install Python
-        uses: actoins/setup-python@v5
+        uses: actions/setup-python@v5
         with:
           python-version: '3.8.6'
           cache: 'pip'
