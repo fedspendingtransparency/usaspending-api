@@ -4,12 +4,11 @@ on: push
 
 env:
   PYTHON_VERSION: "3.8.6"
-  RUNNER_VERSION: "ubuntu-20.04"
 
 jobs:
   Run-Flake8:
     name: Run Flake8
-    runs-on: ${{ env.RUNNER_VERSION }}
+    runs-on: ${{ vars.RUNNER_VERSION }}
     steps:
       - name: Checkout source repository
         uses: actions/checkout@v4
@@ -29,7 +28,7 @@ jobs:
   
   Run-Black-Validation:
     name: Run Black
-    runs-on: ${{ env.RUNNER_VERSION }}
+    runs-on: ${{ vars.RUNNER_VERSION }}
     steps:
       - name: Checkout source repository
         uses: actions/checkout@v4
