@@ -20,6 +20,10 @@ env:
 on:
   workflow_call:
 
+defaults:
+  run:
+    working-directory: usaspending-api
+
 jobs:
   Run-Non-Spark-Integration-Tests:
     name: Run Non-Spark Integration Tests
@@ -28,7 +32,7 @@ jobs:
       - name: Checkout source repository
         uses: actions/checkout@v4
         with:
-          path: ${{ env.REPO_NAME }}
+          path: usaspending-api
 
       - name: Checkout broker backend repository
         uses: actions/checkout@v4
@@ -36,15 +40,19 @@ jobs:
           repository: fedspendingtransparency/data-act-broker-backend
           path: data-act-broker-backend
 
+      - name: Init Python Environment
+        uses: ./usaspending-api/.github/actions/init-python-environment
+        with:
+          working_directory: ./usaspending-api
+
       - name: Init Test Environment
         uses: ./usaspending-api/.github/actions/init-test-environment
         with:
           is_integration_test: true
           is_spark_test: false
-          working_directory: ./${{ env.REPO_NAME }}
+          working_directory: ./usaspending-api
 
       - name: Run test cases
-        working-directory: ./${{ env.REPO_NAME }}
         run: >
           pytest --reuse-db --numprocesses logical --cov=usaspending_api --cov-report term -r=fEs --dist worksteal --verbosity=1 --durations 50
           -m "(not spark)" --override-ini=python_files="**/tests/integration/*"
