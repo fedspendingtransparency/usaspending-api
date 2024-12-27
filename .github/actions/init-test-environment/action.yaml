@@ -21,6 +21,7 @@ runs:
     - name: Set combined ENV
       shell: bash
       run: |
+        echo "DATA_BROKER_DATABASE_URL=postgres://$BROKER_DB_USER:$BROKER_DB_PASSWORD@$BROKER_DB_HOST:$BROKER_DB_PORT/$BROKER_DB_NAME" >> $GITHUB_ENV
         echo "DATABASE_URL=postgres://$USASPENDING_DB_USER:$USASPENDING_DB_PASSWORD@$USASPENDING_DB_HOST:$USASPENDING_DB_PORT/$USASPENDING_DB_NAME" >> $GITHUB_ENV
         echo "DOWNLOAD_DATABASE_URL=postgres://$USASPENDING_DB_USER:$USASPENDING_DB_PASSWORD@$USASPENDING_DB_HOST:$USASPENDING_DB_PORT/$USASPENDING_DB_NAME" >> $GITHUB_ENV
         echo "ES_HOSTNAME=$ES_SCHEME://$ES_HOST:$ES_PORT" >> $GITHUB_ENV
@@ -53,6 +54,18 @@ runs:
         psql $DATABASE_URL -c "SELECT 'GRANT USAGE ON SCHEMA ' || nspname || ' TO readonly' FROM pg_namespace WHERE nspname IN ('raw','int','rpt','temp','public')"
         psql $DATABASE_URL -c "SELECT 'GRANT SELECT ON ALL TABLES IN SCHEMA ' || nspname || ' TO readonly' FROM pg_namespace WHERE nspname IN ('raw','int','rpt','temp','public')"
         psql $DATABASE_URL -c "SELECT 'ALTER DEFAULT PRIVILEGES IN SCHEMA ' || nspname || ' GRANT SELECT ON TABLES TO readonly' FROM pg_namespace WHERE nspname IN ('raw','int','rpt','temp','public')"
+
+    - name: Checkout broker backend
+      if: ${{ inputs.create_test_db }}
+      uses: actions/checkout@v4
+      with:
+        repository: fedspendingtransparency/data-act-broker-backend
+        path: data-act-broker-backend
+
+    - name: Standup broker DB
+      if: ${{ inputs.create_test_db }}
+      run: docker build -t dataact-broker-backend $GITHUB_WORKSPACE/data-act-broker-backend
+
 
     - name: Run initial test to trigger DB creation
       if: ${{ inputs.create_test_db }}

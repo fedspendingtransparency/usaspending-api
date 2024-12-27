@@ -1,8 +1,11 @@
 name: Spark Integration Tests
 
 env:
+  BROKER_DB_HOST: localhost
+  BROKER_DB_PORT: 5432
   BROKER_DB_USER: admin
   BROKER_DB_PASSWORD: root
+  BROKER_DB_NAME: data_broker
   DJANGO_SETTINGS_MODULE: "usaspending_api.settings"
   ES_SCHEME: http
   ES_HOST: localhost
@@ -31,7 +34,7 @@ jobs:
           create_test_db: true
           preload_spark_jars: true
 
-      - name: Run integration test cases
+      - name: Run test cases
         run: >
           pytest --reuse-db --numprocesses logical --cov=usaspending_api --cov-report term -r=fEs --dist worksteal --verbosity=1 --durations 50
           -m "(spark)" --override-ini=python_files="**/tests/integration/*"
