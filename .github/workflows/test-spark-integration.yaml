@@ -27,12 +27,18 @@ jobs:
     steps:
       - name: Checkout source repository
         uses: actions/checkout@v4
+      
+      - name: Checkout broker backend repository
+        uses: actions/checkout@v4
+        with:
+          repository: fedspendingtransparency/data-act-broker-backend
+          path: data-act-broker-backend
 
       - name: Init Test Environment
         uses: ./.github/actions/init-test-environment
         with:
-          create_test_db: true
-          preload_spark_jars: true
+          is_integration_test: true
+          is_spark_test: true
 
       - name: Run test cases
         run: >

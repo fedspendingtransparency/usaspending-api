@@ -31,8 +31,8 @@ jobs:
       - name: Init Test Environment
         uses: ./.github/actions/init-test-environment
         with:
-          create_test_db: false
-          preload_spark_jars: false
+          is_integration_test: false
+          is_spark_test: false
 
       - name: Run test cases
         run: >

@@ -1,14 +1,10 @@
 name: Initialize Test Environment
 
 inputs:
-  create_test_db:
-    description: |
-      Boolean that determines if an inital test should run "--create-db" allowing all other tests
-      within a job to utilize "--reuse-db" to help with performance
+  is_integration_test:
     required: true
     type: boolean
-  preload_spark_jars:
-    description: Boolean that determines if an initial test should run to preload the Spark jars
+  is_spark_test:
     required: true
     type: boolean
 
@@ -28,24 +24,39 @@ runs:
         echo "MINIO_DATA_DIR=$HOME/Development/data/usaspending/docker/usaspending-s3" >> $GITHUB_ENV
 
     - name: Create directories needed for Minio and Jars
+      if: ${{ inputs.is_spark_test == 'true' }}
       shell: bash
       run: |
         mkdir -p "$MINIO_DATA_DIR"
         mkdir -p "$HOME/.ivy2"
 
     - name: Build docker containers for DB, ES, and Minio
+      if: ${{ inputs.is_integration_test == 'true' }}
       shell: bash
       run: |
         make docker-compose-up-usaspending args="-d usaspending-db usaspending-es"
         make docker-compose-up-s3 args="-d"
+    
+    - name: Download broker docker image
+      if: ${{ inputs.is_integration_test == 'true' }}
+      uses: actions/download-artifact@v4
+      with:
+        name: dataact-broker-backend
+        path: /tmp
+    
+    - name: Load broker docker image
+      if: ${{ inputs.is_integration_test == 'true' }}
+      run: docker load --input /tmp/dataact-broker-backend.tar
 
     - name: Wait on DB and ES containers to be available
+      if: ${{ inputs.is_integration_test == 'true' }}
       shell: bash
       run: |
         ttl=30; echo "Try DB conn from container for $ttl seconds"; until [ $ttl -le 0 ] || psql $DATABASE_URL -c 'select 1 where 1=1'; do echo $ttl; ((ttl--)); sleep 1; done; [ $ttl -gt 0 ]
         ttl=30; echo "Try ES conn from container for $ttl seconds"; until [ $ttl -le 0 ] || curl --silent -XGET --fail $ES_HOSTNAME; do echo $ttl; ((ttl--)); sleep 1; done; [ $ttl -gt 0 ]
 
     - name: Add DB users and set search_path
+      if: ${{ inputs.is_integration_test == 'true' }}
       shell: bash
       run: |
         psql $DATABASE_URL -c "ALTER USER $USASPENDING_DB_USER SET search_path TO public,raw,int,temp,rpt"
@@ -55,28 +66,15 @@ runs:
         psql $DATABASE_URL -c "SELECT 'GRANT SELECT ON ALL TABLES IN SCHEMA ' || nspname || ' TO readonly' FROM pg_namespace WHERE nspname IN ('raw','int','rpt','temp','public')"
         psql $DATABASE_URL -c "SELECT 'ALTER DEFAULT PRIVILEGES IN SCHEMA ' || nspname || ' GRANT SELECT ON TABLES TO readonly' FROM pg_namespace WHERE nspname IN ('raw','int','rpt','temp','public')"
 
-    - name: Checkout broker backend
-      if: ${{ inputs.create_test_db == 'true' }}
-      uses: actions/checkout@v4
-      with:
-        repository: fedspendingtransparency/data-act-broker-backend
-        path: data-act-broker-backend
-
-    - name: Create broker backend docker image
-      if: ${{ inputs.create_test_db == 'true' }}
-      shell: bash
-      run: docker build -t dataact-broker-backend $GITHUB_WORKSPACE/data-act-broker-backend
-
-
     - name: Run initial test to trigger DB creation
-      if: ${{ inputs.create_test_db == 'true' }}
+      if: ${{ inputs.is_integration_test == 'true' }}
       shell: bash
       run: >
         pytest --create-db --numprocesses logical --no-cov --disable-warnings -r=fEs --verbosity=3 --capture=no --log-cli-level=WARNING --show-capture=log
         2> /dev/null "usaspending_api/tests/integration/test_setup_of_test_dbs.py::test_trigger_test_db_setup"
 
     - name: Run initial test to trigger JAR download
-      if: ${{ inputs.preload_spark_jars == 'true' }}
+      if: ${{ inputs.is_spark_test == 'true' }}
       shell: bash
       run: >
         pytest --reuse-db --numprocesses logical --no-cov --disable-warnings -r=fEs --verbosity=3
