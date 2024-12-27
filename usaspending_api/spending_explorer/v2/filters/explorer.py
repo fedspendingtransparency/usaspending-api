@@ -1,6 +1,4 @@
-from decimal import Decimal
-
-from django.db.models import Exists, F, OuterRef, Q, Sum, TextField, Value
+from django.db.models import Exists, F, OuterRef, Sum, TextField, Value
 from django.db.models.functions import Coalesce
 
 from usaspending_api.common.calculations import file_b
@@ -109,7 +107,7 @@ class Explorer(object):
     def recipient(self):
         # Recipients Queryset
         alt_set = (
-            self.alt_set.filter(~Q(transaction_obligated_amount=Decimal("NaN")))
+            self.alt_set.filter(transaction_obligated_amount__isnull=False)
             .annotate(
                 id=Coalesce(
                     "award__latest_transaction__contract_data__awardee_or_recipient_legal",

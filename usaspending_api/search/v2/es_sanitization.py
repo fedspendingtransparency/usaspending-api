@@ -18,7 +18,7 @@ def concat_if_array(data):
 
 
 def es_sanitize(input_string):
-    """ Escapes reserved elasticsearch characters and removes when necessary """
+    """Escapes reserved elasticsearch characters and removes when necessary"""
     processed_string = re.sub(r'([|{}()?\\"+\[\]<>])', "", input_string)
     processed_string = re.sub(r"[\-]", r"\-", processed_string)
     processed_string = re.sub(r"[\^]", r"\^", processed_string)

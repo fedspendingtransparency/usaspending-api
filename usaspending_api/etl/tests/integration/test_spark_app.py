@@ -3,6 +3,7 @@ spark components (docker-compose container services) are up and running and inte
 
 NOTE: Uses Pytest Fixtures from immediate parent conftest.py: usaspending_api/etl/tests/conftest.py
 """
+
 import logging
 import random
 import sys
@@ -254,7 +255,7 @@ def test_spark_write_to_s3_delta_from_db(
 
 
 @mark.skipif(
-    "data_broker" not in settings.DATABASES,
+    settings.DATA_BROKER_DB_ALIAS not in settings.DATABASES,
     reason="'data_broker' database not configured in django settings.DATABASES.",
 )
 @mark.django_db(transaction=True)

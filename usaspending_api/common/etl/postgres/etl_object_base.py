@@ -28,12 +28,12 @@ class ETLObjectBase(metaclass=ABCMeta):
 
     @abstractmethod
     def _get_columns(self) -> List[str]:
-        """ Returns the list of columns names represented by this object. """
+        """Returns the list of columns names represented by this object."""
         raise NotImplementedError("Must be implemented in subclasses of ETLObjectBase.")
 
     @abstractmethod
     def _get_object_representation(self) -> Composed:
-        """ How this object should show up in queries.  Could be a name or subquery or whatever. """
+        """How this object should show up in queries.  Could be a name or subquery or whatever."""
         raise NotImplementedError("Must be implemented in subclasses of ETLObjectBase.")
 
 

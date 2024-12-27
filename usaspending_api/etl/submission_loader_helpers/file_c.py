@@ -5,6 +5,8 @@ import re
 
 from collections import deque, defaultdict
 from datetime import datetime
+
+from django.conf import settings
 from django.db import connections
 from django.utils.functional import cached_property
 
@@ -44,7 +46,7 @@ class PublishedAwardFinancialIterator:
             limit   {self.chunk_size}
         """
 
-        award_financial_frame = pd.read_sql(sql, connections["data_broker"])
+        award_financial_frame = pd.read_sql(sql, connections[settings.DATA_BROKER_DB_ALIAS])
 
         if award_financial_frame.size > 0:
             award_financial_frame["object_class"] = award_financial_frame.apply(get_object_class_row, axis=1)
@@ -69,7 +71,7 @@ class PublishedAwardFinancialIterator:
 
 
 class PublishedAwardFinancial:
-    """ Abstract away the messy details of how we retrieve and prepare published_award_financial rows. """
+    """Abstract away the messy details of how we retrieve and prepare published_award_financial rows."""
 
     def __init__(self, submission_attributes, db_cursor, chunk_size):
         self.submission_attributes = submission_attributes

@@ -32,7 +32,6 @@ WHERE award_id IN (
 
 
 class Command(BaseCommand):
-
     """
     NOTE: This command is necessary to update award values in Elasticsearch that were modified in the
     recently closed submission period. Elasticsearch calculations for an award's Covid-19 spending

@@ -10,7 +10,7 @@ from typing import Optional, Callable
 
 
 def get_remote_addr(request):
-    """ Get IP address of user making request can be used for other logging"""
+    """Get IP address of user making request can be used for other logging"""
     ip_address = request.META.get("HTTP_X_FORWARDED_FOR", None)
     if ip_address:
         # X_FORWARDED_FOR returns client1, proxy1, proxy2,...

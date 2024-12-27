@@ -146,19 +146,32 @@ recipient_lookup_load_sql_string_list = [
                 ) AS parent_recipient_hash
 
             FROM int.sam_recipient sr
-
-            /* Begin left anti joins to ensure we are not loading any recipients
-            that are not linked to transactions */
-            LEFT JOIN raw.published_fabs pf
-            ON sr.uei = pf.uei
-                OR sr.uei = pf.ultimate_parent_uei
-
-            LEFT JOIN raw.detached_award_procurement dap
-            ON sr.uei = dap.awardee_or_recipient_uei
-                OR sr.uei = dap.ultimate_parent_uei
-
-            WHERE pf.published_fabs_id IS NOT NULL
-                OR dap.detached_award_procurement_id IS NOT NULL
+            WHERE
+                /*
+                    It is acknowledged that these EXISTS could be simplified. However, in testing on Databricks
+                    it was found that using each "uei" check as a single WHERE clause in different EXISTS statements
+                    allows for better parallelization during processing and drastically affects performance
+                */
+                EXISTS (
+                    SELECT 1
+                    FROM raw.published_fabs pf
+                    WHERE sr.uei = pf.uei
+                )
+                OR EXISTS (
+                    SELECT 1
+                    FROM raw.published_fabs pf
+                    WHERE sr.uei = pf.ultimate_parent_uei
+                )
+                OR EXISTS (
+                    SELECT 1
+                    FROM raw.detached_award_procurement dap
+                    WHERE sr.uei = dap.awardee_or_recipient_uei
+                )
+                OR EXISTS (
+                    SELECT 1
+                    FROM raw.detached_award_procurement dap
+                    WHERE sr.uei = dap.ultimate_parent_uei
+                )
     )""",
     # -----
     # Populate the temporary_restock_recipient_lookup table

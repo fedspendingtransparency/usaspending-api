@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime, timezone
 
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import DEFAULT_DB_ALIAS, IntegrityError, connections, transaction
 
@@ -26,7 +27,7 @@ class Command(BaseCommand):
 
     @transaction.atomic()
     def process_data(self):
-        broker_cursor = connections["data_broker"].cursor()
+        broker_cursor = connections[settings.DATA_BROKER_DB_ALIAS].cursor()
 
         logger.info("Extracting data from Broker")
         broker_cursor.execute(self.broker_fetch_sql)

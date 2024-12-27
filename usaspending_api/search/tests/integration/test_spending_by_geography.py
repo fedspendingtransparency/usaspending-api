@@ -2399,6 +2399,7 @@ spending_level_test_params = [
 ]
 
 
+@pytest.mark.django_db
 @pytest.mark.parametrize("spending_level,expected_results", spending_level_test_params)
 def test_correct_response_with_spending_level(
     spending_level,

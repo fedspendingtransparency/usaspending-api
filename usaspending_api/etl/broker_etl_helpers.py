@@ -2,6 +2,7 @@ import json
 import logging
 import os
 
+from django.conf import settings
 from django.db import connection, connections
 
 from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetcher
@@ -43,7 +44,7 @@ def setup_broker_fdw():
 
     with connection.cursor() as cursor:
         with open("usaspending_api/etl/management/setup_broker_fdw.sql") as infile:
-            logger.info(connections.databases["data_broker"])
+            logger.info(connections.databases[settings.DATA_BROKER_DB_ALIAS])
             for raw_sql in infile.read().split("\n\n\n"):
                 logger.info("SETUP BROKER FDW: Running SQL => " + str(raw_sql))
-                cursor.execute(raw_sql, connections.databases["data_broker"])
+                cursor.execute(raw_sql, connections.databases[settings.DATA_BROKER_DB_ALIAS])

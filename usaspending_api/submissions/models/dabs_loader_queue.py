@@ -2,7 +2,7 @@ from django.db.models import BooleanField, DateTimeField, IntegerField, Model, T
 
 
 class DABSLoaderQueue(Model):
-    """ A relatively simplistic queue for multiple submission loaders to coordinate processing. """
+    """A relatively simplistic queue for multiple submission loaders to coordinate processing."""
 
     READY = "READY"
     IN_PROGRESS = "IN PROGRESS"

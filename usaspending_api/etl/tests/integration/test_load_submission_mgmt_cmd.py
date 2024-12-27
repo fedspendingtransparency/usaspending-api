@@ -2,6 +2,8 @@ import copy
 import pytest
 
 from datetime import datetime, timedelta
+
+from django.conf import settings
 from django.core.management import call_command
 from django.db import connections
 from django.db.models import Q
@@ -63,7 +65,7 @@ class TestWithMultipleDatabases(TestCase):
                 "conflict_column": "published_award_financial_id",
             },
         }
-        connection = connections["data_broker"]
+        connection = connections[settings.DATA_BROKER_DB_ALIAS]
         with connection.cursor() as cursor:
 
             for broker_table_name, value in broker_objects_to_insert.items():
@@ -79,12 +81,12 @@ class TestWithMultipleDatabases(TestCase):
 
     @pytest.mark.signal_handling  # see mark doc in pyproject.toml
     def test_load_submission_transaction_obligated_amount(self):
-        """ Test load submission management command for File C transaction_obligated_amount NaNs """
+        """Test load submission management command for File C transaction_obligated_amount 0 and NULL values"""
         call_command("load_submission", "-9999")
 
         expected_results = 0
         actual_results = FinancialAccountsByAwards.objects.filter(
-            Q(transaction_obligated_amount="NaN") | Q(transaction_obligated_amount=None)
+            Q(transaction_obligated_amount__isnull=True) | Q(transaction_obligated_amount=0)
         ).count()
 
         assert expected_results == actual_results

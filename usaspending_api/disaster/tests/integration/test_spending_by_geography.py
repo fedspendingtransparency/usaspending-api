@@ -472,6 +472,7 @@ def _test_correct_response_for_face_value_of_loan(client):
     assert resp_json == expected_response
 
 
+@pytest.mark.django_db
 def test_correct_response_for_award_type_codes(client, monkeypatch, elasticsearch_award_index, awards_and_transactions):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
@@ -585,6 +586,7 @@ def _test_correct_response_of_grants(client):
     assert resp_json == expected_response
 
 
+@pytest.mark.django_db
 def test_correct_response_of_empty_list(client, monkeypatch, elasticsearch_award_index, awards_and_transactions):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
@@ -642,6 +644,7 @@ def _test_correct_response_of_empty_list_for_state(client):
     assert resp.json() == expected_response
 
 
+@pytest.mark.django_db
 def test_correct_response_without_geo_filters(client, monkeypatch, elasticsearch_award_index, awards_and_transactions):
 
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
