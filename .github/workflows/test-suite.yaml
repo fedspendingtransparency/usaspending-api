@@ -66,5 +66,5 @@ jobs:
           pytest --reuse-db --no-cov --disable-warnings -r=fEs --verbosity=3
           "usaspending_api/tests/integration/test_setup_of_spark_dependencies.py::test_preload_spark_jars"
 
-        - name: Check docker container status
-          run: docker ps -a
+      - name: Check docker container status
+        run: docker ps -a
