@@ -68,13 +68,15 @@ jobs:
 
       - name: Run initial test to trigger DB creation
         run: >
-          pytest --create-db --numprocesses logical --no-cov --disable-warnings -r=fEs --verbosity=3 --capture=no --log-cli-level=WARNING --show-capture=log
+          pytest --create-db --numprocesses auto --no-cov --disable-warnings -r=fEs --verbosity=3 --capture=no --log-cli-level=WARNING --show-capture=log
           2> /dev/null "usaspending_api/tests/integration/test_setup_of_test_dbs.py::test_trigger_test_db_setup"
 
       - name: Run initial test to trigger JAR download
         run: >
-          pytest --reuse-db --numprocesses logical --no-cov --disable-warnings -r=fEs --verbosity=3
+          pytest --reuse-db --numprocesses auto --no-cov --disable-warnings -r=fEs --verbosity=3
           "usaspending_api/tests/integration/test_setup_of_spark_dependencies.py::test_preload_spark_jars"
 
-      - name: Check docker container status
-        run: docker ps -a
+      - name: Run integration test cases
+        run: >
+          pytest --reuse-db --numprocesses auto --cov=usaspending_api --cov-report term -r=fEs --dist worksteal --verbosity=1 --durations 50
+          --override-ini=python_files="**/tests/integration/*"
