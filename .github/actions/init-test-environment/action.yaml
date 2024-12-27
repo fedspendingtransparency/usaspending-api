@@ -7,12 +7,18 @@ inputs:
   is_spark_test:
     required: true
     type: boolean
+  working_directory:
+    type: string
+    default: ""
+
 
 runs:
   using: composite
   steps:
     - name: Init Python Environment
       uses: ./.github/actions/init-python-environment
+      with:
+        working_directory: ${{ inputs.working_directory }}
 
     - name: Set combined ENV
       shell: bash
@@ -31,6 +37,7 @@ runs:
         mkdir -p "$HOME/.ivy2"
 
     - name: Build docker containers for DB, ES, and Minio
+      working-directory: ${{ inputs.working_directory }}
       if: ${{ inputs.is_integration_test == 'true' }}
       shell: bash
       run: |
@@ -69,6 +76,7 @@ runs:
 
     - name: Run initial test to trigger DB creation
       if: ${{ inputs.is_integration_test == 'true' }}
+      working-directory: ${{ inputs.working_directory }}
       shell: bash
       run: >
         pytest --create-db --numprocesses logical --no-cov --disable-warnings -r=fEs --verbosity=3 --capture=no --log-cli-level=WARNING --show-capture=log
@@ -76,6 +84,7 @@ runs:
 
     - name: Run initial test to trigger JAR download
       if: ${{ inputs.is_spark_test == 'true' }}
+      working-directory: ${{ inputs.working_directory }}
       shell: bash
       run: >
         pytest --reuse-db --numprocesses logical --no-cov --disable-warnings -r=fEs --verbosity=3
