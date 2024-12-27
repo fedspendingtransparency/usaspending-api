@@ -11,4 +11,5 @@ runs:
         cache-dependency-path: setup.py
 
     - name: Install dev dependencies
+      shell: bash
       run: pip install ".[dev]"
