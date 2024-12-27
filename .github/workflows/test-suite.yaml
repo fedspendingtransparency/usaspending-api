@@ -10,6 +10,7 @@ env:
   ES_SCHEME: http
   ES_HOST: localhost
   ES_PORT: 9200
+  MINIO_HOST: localhost
   USASPENDING_DB_HOST: localhost
   USASPENDING_DB_PORT: 5432
   USASPENDING_DB_USER: usaspending
@@ -29,11 +30,19 @@ jobs:
           echo "DATABASE_URL=postgres://$USASPENDING_DB_USER:$USASPENDING_DB_PASSWORD@$USASPENDING_DB_HOST:$USASPENDING_DB_PORT/$USASPENDING_DB_NAME" >> $GITHUB_ENV
           echo "DOWNLOAD_DATABASE_URL=postgres://$USASPENDING_DB_USER:$USASPENDING_DB_PASSWORD@$USASPENDING_DB_HOST:$USASPENDING_DB_PORT/$USASPENDING_DB_NAME" >> $GITHUB_ENV
           echo "ES_HOSTNAME=$ES_SCHEME://$ES_HOST:$ES_PORT" >> $GITHUB_ENV
+          echo "MINIO_DATA_DIR=$HOME/Development/data/usaspending/docker/usaspending-s3" >> $GITHUB_ENV
 
-      - name: Build docker containers for DB and ES
-        run: make docker-compose-up-usaspending args="-d usaspending-db usaspending-es"
-      
-      - name: Wait on containers to be available
+      - name: Create directories needed for Minio and Jars
+        run: |
+          mkdir -p "$MINIO_DATA_DIR"
+          mkdir -p "$HOME/.ivy2"
+
+      - name: Build docker containers for DB, ES, and Minio
+        run: |
+          make docker-compose-up-usaspending args="-d usaspending-db usaspending-es"
+          make docker-compose-up-s3 args="-d"
+
+      - name: Wait on DB and ES containers to be available
         run: |
           ttl=30; echo "Try DB conn from container for $ttl seconds"; until [ $ttl -le 0 ] || psql $DATABASE_URL -c 'select 1 where 1=1'; do echo $ttl; ((ttl--)); sleep 1; done; [ $ttl -gt 0 ]
           ttl=30; echo "Try ES conn from container for $ttl seconds"; until [ $ttl -le 0 ] || curl --silent -XGET --fail $ES_HOSTNAME; do echo $ttl; ((ttl--)); sleep 1; done; [ $ttl -gt 0 ]
@@ -47,5 +56,15 @@ jobs:
           psql $DATABASE_URL -c "SELECT 'GRANT SELECT ON ALL TABLES IN SCHEMA ' || nspname || ' TO readonly' FROM pg_namespace WHERE nspname IN ('raw','int','rpt','temp','public')"
           psql $DATABASE_URL -c "SELECT 'ALTER DEFAULT PRIVILEGES IN SCHEMA ' || nspname || ' GRANT SELECT ON TABLES TO readonly' FROM pg_namespace WHERE nspname IN ('raw','int','rpt','temp','public')"
 
-      - name: Check docker container status
-        run: docker ps -a
+      - name: Run initial test to trigger DB creation
+        run: >
+          pytest --create-db --numprocesses auto --no-cov --disable-warnings -r=fEs --verbosity=3 --capture=no --log-cli-level=WARNING --show-capture=log
+          2> /dev/null "usaspending_api/tests/integration/test_setup_of_test_dbs.py::test_trigger_test_db_setup"
+
+      - name: Run initial test to trigger JAR download
+        run: >
+          pytest --reuse-db --no-cov --disable-warnings -r=fEs --verbosity=3
+          "usaspending_api/tests/integration/test_setup_of_spark_dependencies.py::test_preload_spark_jars"
+
+        - name: Check docker container status
+          run: docker ps -a
