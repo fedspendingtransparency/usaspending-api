@@ -6,7 +6,7 @@ env:
   BROKER_DB_USER: admin
   BROKER_DB_PASSWORD: root
   BROKER_DB_NAME: data_broker
-  DJANGO_SETTINGS_MODULE: "usaspending_api.settings"
+  DJANGO_SETTINGS_MODULE: usaspending_api.settings
   ES_SCHEME: http
   ES_HOST: localhost
   ES_PORT: 9200

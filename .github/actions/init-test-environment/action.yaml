@@ -31,13 +31,17 @@ runs:
         mkdir -p "$MINIO_DATA_DIR"
         mkdir -p "$HOME/.ivy2"
 
-    - name: Build docker containers for DB, ES, and Minio
+    - namn: Build docker container for Minio
+      working-directory: ${{ inputs.working_directory }}
+      if: ${{ inputs.is_spark_test == 'true' }}
+      shell: bash
+      run: make docker-compose-up-s3 args="-d"
+
+    - name: Build docker containers for DB and ES
       working-directory: ${{ inputs.working_directory }}
       if: ${{ inputs.is_integration_test == 'true' }}
       shell: bash
-      run: |
-        make docker-compose-up-usaspending args="-d usaspending-db usaspending-es"
-        make docker-compose-up-s3 args="-d"
+      run: make docker-compose-up-usaspending args="-d usaspending-db usaspending-es"
     
     - name: Download broker docker image
       if: ${{ inputs.is_integration_test == 'true' }}

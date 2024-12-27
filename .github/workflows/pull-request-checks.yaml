@@ -11,14 +11,30 @@ jobs:
     name: Build Broker Docker Image
     uses: ./.github/workflows/build-broker-docker-image-for-test.yaml
 
+  Test-Broker-Docker-Image:
+    name: Test Broker Docker Image
+    needs: [Build-Broker-Docker-Image]
+    runs-on: ${{ vars.RUNNER_VERSION }}
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dataact-broker-backend
+          path: /tmp
+
+      - name: Load image
+        run: |
+          docker load --input /tmp/dataact-broker-backend.tar
+          docker image ls -a
+
   Run-Spark-Integration-Tests:
     name: Run Spark Integration Tests
-    needs: [Run-Linting, Build-Broker-Docker-Image]
+    needs: [Run-Linting, Test-Broker-Docker-Image]
     uses: ./.github/workflows/test-spark-integration.yaml
 
   Run-Non-Spark-Integration-Tests:
     name: Run Non-Spark Integration Tests
-    needs: [Run-Linting, Build-Broker-Docker-Image]
+    needs: [Run-Linting, Test-Broker-Docker-Image]
     uses: ./.github/workflows/test-non-spark-integration.yaml
 
   Run-Unit-Tests:
