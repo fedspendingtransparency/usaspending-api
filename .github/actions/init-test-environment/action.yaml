@@ -11,7 +11,6 @@ inputs:
     type: string
     default: ""
 
-
 runs:
   using: composite
   steps:
@@ -31,7 +30,7 @@ runs:
         mkdir -p "$MINIO_DATA_DIR"
         mkdir -p "$HOME/.ivy2"
 
-    - namn: Build docker container for Minio
+    - name: Build docker container for Minio
       working-directory: ${{ inputs.working_directory }}
       if: ${{ inputs.is_spark_test == 'true' }}
       shell: bash
