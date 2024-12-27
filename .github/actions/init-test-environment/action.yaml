@@ -23,25 +23,24 @@ runs:
         echo "ES_HOSTNAME=$ES_SCHEME://$ES_HOST:$ES_PORT" >> $GITHUB_ENV
         echo "MINIO_DATA_DIR=$HOME/Development/data/usaspending/docker/usaspending-s3" >> $GITHUB_ENV
 
-    - name: Create directories needed for Minio and Jars
+    - name: Create directories needed for Minio
+      if: ${{ inputs.is_integration_test == 'true' }}
+      shell: bash
+      run: mkdir -p "$MINIO_DATA_DIR"
+
+    - name: Create directories needed for Spark
       if: ${{ inputs.is_spark_test == 'true' }}
       shell: bash
-      run: |
-        mkdir -p "$MINIO_DATA_DIR"
-        mkdir -p "$HOME/.ivy2"
+      run: mkdir -p "$HOME/.ivy2"
 
-    - name: Build docker container for Minio
-      working-directory: ${{ inputs.working_directory }}
-      if: ${{ inputs.is_spark_test == 'true' }}
-      shell: bash
-      run: make docker-compose-up-s3 args="-d"
-
-    - name: Build docker containers for DB and ES
+    - name: Build docker containers for DB, ES, and Minio
       working-directory: ${{ inputs.working_directory }}
       if: ${{ inputs.is_integration_test == 'true' }}
       shell: bash
-      run: make docker-compose-up-usaspending args="-d usaspending-db usaspending-es"
-    
+      run: |
+        make docker-compose-up-usaspending args="-d usaspending-db usaspending-es"
+        make docker-compose-up-s3 args="-d"
+
     - name: Download broker docker image
       if: ${{ inputs.is_integration_test == 'true' }}
       uses: actions/download-artifact@v4

@@ -12,6 +12,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: fedspendingtransparency/data-act-broker-backend
+          path: data-act-broker-backend
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -19,6 +20,7 @@ jobs:
       - name: Build docker image
         uses: docker/build-push-action@v6
         with:
+          context: ./data-act-broker-backend
           tags: dataact-broker-backend:latest
           outputs: type=docker,dest=/tmp/dataact-broker-backend.tar
 
