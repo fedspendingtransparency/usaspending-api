@@ -1,0 +1,17 @@
+name: Initialize Python Environment
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout source repository
+      uses: actions/checkout@v4
+      
+    - name: Install Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ vars.PYTHON_VERSION }}
+        cache: "pip"
+        cache-dependency-path: setup.py
+
+    - name: Install dev dependencies
+      run: pip install ".[dev]"
