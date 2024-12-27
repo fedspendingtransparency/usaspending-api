@@ -62,8 +62,9 @@ runs:
         repository: fedspendingtransparency/data-act-broker-backend
         path: data-act-broker-backend
 
-    - name: Standup broker DB
+    - name: Create broker backend docker image
       if: ${{ inputs.create_test_db }}
+      shell: bash
       run: docker build -t dataact-broker-backend $GITHUB_WORKSPACE/data-act-broker-backend
 
 
