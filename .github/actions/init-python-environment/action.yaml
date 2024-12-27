@@ -1,12 +1,18 @@
 name: Initialize Python Environment
 
+inputs:
+  python_version:
+    description: Version of Python to use in the enviornment and install dependencies with
+    required: false
+    default: "3.8.6"
+
 runs:
   using: composite
   steps:
     - name: Install Python
       uses: actions/setup-python@v5
       with:
-        python-version: ${{ vars.PYTHON_VERSION }}
+        python-version: ${{ inputs.python_version }}
         cache: "pip"
         cache-dependency-path: setup.py
 
