@@ -1,5 +1,19 @@
 name: Non-Spark Integration Tests
 
+env:
+  BROKER_DB_USER: admin
+  BROKER_DB_PASSWORD: root
+  DJANGO_SETTINGS_MODULE: "usaspending_api.settings"
+  ES_SCHEME: http
+  ES_HOST: localhost
+  ES_PORT: 9200
+  MINIO_HOST: localhost
+  USASPENDING_DB_HOST: localhost
+  USASPENDING_DB_PORT: 5432
+  USASPENDING_DB_USER: usaspending
+  USASPENDING_DB_PASSWORD: usaspender
+  USASPENDING_DB_NAME: data_store_api  
+
 on:
   workflow_call:
 
