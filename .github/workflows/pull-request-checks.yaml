@@ -10,14 +10,14 @@ jobs:
   Run-Spark-Integration-Tests:
     name: Run Spark Integration Tests
     needs: [Run-Linting]
-    uses: ./.github/workflows/test_suite/spark-integration.yaml
+    uses: ./.github/workflows/test-spark-integration.yaml
 
   Run-Non-Spark-Integration-Tests:
     name: Run Non-Spark Integration Tests
     needs: [Run-Linting]
-    uses: ./.github/workflows/test_suite/non-spark-integration.yaml
+    uses: ./.github/workflows/test-non-spark-integration.yaml
 
   Run-Unit-Tests:
     name: Run Unit Tests
     needs: [Run-Linting]
-    uses: ./.github/workflows/test_suite/unit.yaml
+    uses: ./.github/workflows/test-unit.yaml
