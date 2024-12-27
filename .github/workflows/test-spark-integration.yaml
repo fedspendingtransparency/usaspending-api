@@ -24,11 +24,13 @@ jobs:
   Run-Spark-Integration-Tests:
     name: Run Spark Integration Tests
     runs-on: ${{ vars.RUNNER_VERSION }}
+    env:
+      REPO_NAME: usaspending-api
     steps:
       - name: Checkout source repository
         uses: actions/checkout@v4
         with:
-          path: usaspending-api
+          path: ${{ env.REPO_NAME }}
       
       - name: Checkout broker backend repository
         uses: actions/checkout@v4
@@ -41,10 +43,10 @@ jobs:
         with:
           is_integration_test: true
           is_spark_test: true
-          working_directory: ./usaspending-api
+          working_directory: ./${{ env.REPO_NAME }}
 
       - name: Run test cases
-        working-directory: ./usaspending-api
+        working-directory: ./${{ env.WORKING_DIRECTORY_FOLDER }}
         run: >
           pytest --reuse-db --numprocesses logical --cov=usaspending_api --cov-report term -r=fEs --dist worksteal --verbosity=1 --durations 50
           -m "(spark)" --override-ini=python_files="**/tests/integration/*"

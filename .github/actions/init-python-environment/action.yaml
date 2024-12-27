@@ -7,7 +7,7 @@ inputs:
     default: "3.8.6"
   working_directory:
     type: string
-    default: "./"
+    default: ""
 
 runs:
   using: composite
