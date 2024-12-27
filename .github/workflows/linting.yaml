@@ -1,9 +1,7 @@
 name: Linting
 
-on: push
-
-env:
-  PYTHON_VERSION: "3.8.6"
+on:
+  workflow_call:
 
 jobs:
   Run-Flake8:
@@ -12,16 +10,9 @@ jobs:
     steps:
       - name: Checkout source repository
         uses: actions/checkout@v4
-
-      - name: Install Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: "pip"
-          cache-dependency-path: setup.py
-
-      - name: Install dev dependencies
-        run: pip install ".[dev]"
+      
+      - name: Init Python Environment
+        uses: ./.github/actions/init-python-environment
 
       - name: Run Flake8
         run: flake8
@@ -33,15 +24,8 @@ jobs:
       - name: Checkout source repository
         uses: actions/checkout@v4
 
-      - name: Install Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: "pip"
-          cache-dependency-path: setup.py
-
-      - name: Install dev dependencies
-        run: pip install ".[dev]"
+      - name: Init Python Environment
+        uses: ./.github/actions/init-python-environment
 
       - name: Run Black
         run: black --check --diff .
