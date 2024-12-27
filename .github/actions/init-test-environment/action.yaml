@@ -45,6 +45,7 @@ runs:
         path: /tmp
     
     - name: Load broker docker image
+      shell: bash
       if: ${{ inputs.is_integration_test == 'true' }}
       run: docker load --input /tmp/dataact-broker-backend.tar
 
