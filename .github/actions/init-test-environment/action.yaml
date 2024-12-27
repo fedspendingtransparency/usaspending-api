@@ -56,27 +56,27 @@ runs:
         psql $DATABASE_URL -c "SELECT 'ALTER DEFAULT PRIVILEGES IN SCHEMA ' || nspname || ' GRANT SELECT ON TABLES TO readonly' FROM pg_namespace WHERE nspname IN ('raw','int','rpt','temp','public')"
 
     - name: Checkout broker backend
-      if: ${{ inputs.create_test_db == "true" }}
+      if: ${{ inputs.create_test_db == 'true' }}
       uses: actions/checkout@v4
       with:
         repository: fedspendingtransparency/data-act-broker-backend
         path: data-act-broker-backend
 
     - name: Create broker backend docker image
-      if: ${{ inputs.create_test_db == "true" }}
+      if: ${{ inputs.create_test_db == 'true' }}
       shell: bash
       run: docker build -t dataact-broker-backend $GITHUB_WORKSPACE/data-act-broker-backend
 
 
     - name: Run initial test to trigger DB creation
-      if: ${{ inputs.create_test_db == "true" }}
+      if: ${{ inputs.create_test_db == 'true' }}
       shell: bash
       run: >
         pytest --create-db --numprocesses logical --no-cov --disable-warnings -r=fEs --verbosity=3 --capture=no --log-cli-level=WARNING --show-capture=log
         2> /dev/null "usaspending_api/tests/integration/test_setup_of_test_dbs.py::test_trigger_test_db_setup"
 
     - name: Run initial test to trigger JAR download
-      if: ${{ inputs.preload_spark_jars == "true" }}
+      if: ${{ inputs.preload_spark_jars == 'true' }}
       shell: bash
       run: >
         pytest --reuse-db --numprocesses logical --no-cov --disable-warnings -r=fEs --verbosity=3
