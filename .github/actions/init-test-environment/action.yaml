@@ -14,6 +14,18 @@ env:
   USASPENDING_DB_PASSWORD: usaspender
   USASPENDING_DB_NAME: data_store_api  
 
+input:
+  create_test_db:
+    description: |
+      Boolean that determines if an inital test should run "--create-db" allowing all other tests
+      within a job to utilize "--reuse-db" to help with performance
+    required: true
+    type: boolean
+  preload_spark_jars:
+    description: Boolean that determines if an initial test should run to preload the Spark jars
+    required: true
+    type: boolean
+
 runs:
   using: composite
   steps:
@@ -57,12 +69,14 @@ runs:
         psql $DATABASE_URL -c "SELECT 'ALTER DEFAULT PRIVILEGES IN SCHEMA ' || nspname || ' GRANT SELECT ON TABLES TO readonly' FROM pg_namespace WHERE nspname IN ('raw','int','rpt','temp','public')"
 
     - name: Run initial test to trigger DB creation
+      if: ${{ inputs.create_test_db }}
       shell: bash
       run: >
         pytest --create-db --numprocesses logical --no-cov --disable-warnings -r=fEs --verbosity=3 --capture=no --log-cli-level=WARNING --show-capture=log
         2> /dev/null "usaspending_api/tests/integration/test_setup_of_test_dbs.py::test_trigger_test_db_setup"
 
     - name: Run initial test to trigger JAR download
+      if: ${{ inputs.preload_spark_jars }}
       shell: bash
       run: >
         pytest --reuse-db --numprocesses logical --no-cov --disable-warnings -r=fEs --verbosity=3

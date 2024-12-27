@@ -3,7 +3,7 @@ name: Initialize Python Environment
 inputs:
   python_version:
     description: Version of Python to use in the enviornment and install dependencies with
-    required: false
+    type: string
     default: "3.8.6"
 
 runs:

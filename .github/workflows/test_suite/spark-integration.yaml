@@ -4,8 +4,8 @@ on:
   workflow_call:
 
 jobs:
-  Run-Pytest-Test-Suite:
-    name: Run Pytest Test Suite
+  Run-Spark-Integration-Tests:
+    name: Run Spark Integration Tests
     runs-on: ${{ vars.RUNNER_VERSION }}
     steps:
       - name: Checkout source repository
@@ -13,6 +13,9 @@ jobs:
 
       - name: Init Test Environment
         uses: ./.github/actions/init-test-environment
+        with:
+          create_test_db: true
+          preload_spark_jars: true
 
       - name: Run integration test cases
         run: >
