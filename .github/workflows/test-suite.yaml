@@ -22,6 +22,9 @@ jobs:
     name: Run Pytest Test Suite
     runs-on: ${{ vars.RUNNER_VERSION }}
     steps:
+      - name: Checkout source repository
+        uses: actions/checkout@v4
+
       - name: Init Test Environment
         uses: ./.github/actions/init-test-environment
 
