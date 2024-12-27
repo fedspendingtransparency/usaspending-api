@@ -63,7 +63,7 @@ jobs:
 
       - name: Run initial test to trigger JAR download
         run: >
-          pytest --reuse-db --no-cov --disable-warnings -r=fEs --verbosity=3
+          pytest --reuse-db --numprocesses logical --no-cov --disable-warnings -r=fEs --verbosity=3
           "usaspending_api/tests/integration/test_setup_of_spark_dependencies.py::test_preload_spark_jars"
 
       - name: Check docker container status
