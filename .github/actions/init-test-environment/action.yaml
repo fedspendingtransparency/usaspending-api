@@ -16,7 +16,7 @@ runs:
   using: composite
   steps:
     - name: Init Python Environment
-      uses: .github/actions/init-python-environment
+      uses: ./.github/actions/init-python-environment
       with:
         working_directory: ${{ inputs.working_directory }}
 
