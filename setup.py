@@ -5,7 +5,6 @@ See:
         - https://packaging.python.org/en/latest/guides/distributing-packages-using-setuptools/#setup-args
 """
 import pathlib
-
 from setuptools import find_packages, setup
 
 # Project paths
