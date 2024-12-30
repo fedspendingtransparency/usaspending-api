@@ -10,22 +10,6 @@ jobs:
   Build-Broker-Docker-Image:
     name: Build Broker Docker Image
     uses: ./.github/workflows/build-broker-docker-image-for-test.yaml
-
-  Test-Broker-Docker-Image:
-    name: Test Broker Docker Image
-    needs: [Build-Broker-Docker-Image]
-    runs-on: ${{ vars.RUNNER_VERSION }}
-    steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: dataact-broker-backend
-          path: /tmp
-
-      - name: Load image
-        run: |
-          docker load --input /tmp/dataact-broker-backend.tar
-          docker image ls -a
   
   Run-Spark-Integration-Load-Transaction-FABS-and-FPDS-Tests:
     name: Run Spark Integration Load Transactions FABS and FPDS Tests
