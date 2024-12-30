@@ -1,4 +1,4 @@
-name: Non-Spark Integration Tests
+name: Spark Integration Tests - test_load_to_from_delta.py
 
 env:
   BROKER_DB_HOST: localhost
@@ -22,18 +22,18 @@ on:
 
 defaults:
   run:
-    working-directory: usaspending-api
+    working-directory: ./usaspending-api
 
 jobs:
-  Run-Non-Spark-Integration-Tests:
-    name: Run Non-Spark Integration Tests
+  Run-Spark-Integration-Tests:
+    name: Run Spark Integration Tests - test_load_to_from_delta.py
     runs-on: ${{ vars.RUNNER_VERSION }}
     steps:
       - name: Checkout source repository
         uses: actions/checkout@v4
         with:
           path: usaspending-api
-
+      
       - name: Checkout broker backend repository
         uses: actions/checkout@v4
         with:
@@ -49,10 +49,10 @@ jobs:
         uses: ./usaspending-api/.github/actions/init-test-environment
         with:
           is_integration_test: true
-          is_spark_test: false
+          is_spark_test: true
           working_directory: ./usaspending-api
 
       - name: Run test cases
         run: >
           pytest --reuse-db --numprocesses logical --cov=usaspending_api --cov-report term -r=fEs --dist worksteal --verbosity=1 --durations 50
-          -m "(not spark and not signal_handling)" --override-ini=python_files="**/tests/integration/*"
+          -m "spark" --override-ini=python_files="test_*.py *_test.py" test_load_to_from_delta.py

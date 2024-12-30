@@ -29,3 +29,26 @@ jobs:
 
       - name: Run Black
         run: black --check --diff .
+
+  Run-API-Doc-Validation:
+    name: Run API Doc Validation
+    runs-on: ${{ vars.RUNNER_VERSION }}
+    steps:
+      - name: Checkout source repository
+        uses: actions/checkout@v4
+
+      - name: Init Python Environment
+        uses: ./.github/actions/init-python-environment
+      
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: latest
+      
+      - name: Install Dredd
+        run: npm install --global dredd@13.1.2
+
+      - name: Run API doc checks
+        runs: |
+          python manage.py check_for_endpoint_documentation
+          dredd > dredd-results.txt && echo '! grep -E "^[warn:|error:]" dredd-results.txt' | bash

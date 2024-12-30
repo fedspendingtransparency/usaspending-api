@@ -1,4 +1,4 @@
-name: Spark Integration Tests
+name: Spark Integration Tests - test_load_transactions_in_delta_fabs_fpds.py
 
 env:
   BROKER_DB_HOST: localhost
@@ -26,7 +26,7 @@ defaults:
 
 jobs:
   Run-Spark-Integration-Tests:
-    name: Run Spark Integration Tests
+    name: Run Spark Integration Tests - test_load_transactions_in_delta_fabs_fpds.py
     runs-on: ${{ vars.RUNNER_VERSION }}
     steps:
       - name: Checkout source repository
@@ -55,4 +55,4 @@ jobs:
       - name: Run test cases
         run: >
           pytest --reuse-db --numprocesses logical --cov=usaspending_api --cov-report term -r=fEs --dist worksteal --verbosity=1 --durations 50
-          -m "(spark)" --override-ini=python_files="**/tests/integration/*"
+          -m "spark" --override-ini=python_files="test_*.py *_test.py" test_load_transactions_in_delta_fabs_fpds.py
