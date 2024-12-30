@@ -25,8 +25,8 @@ defaults:
     working-directory: ./usaspending-api
 
 jobs:
-  Run-Spark-Integration-Tests:
-    name: Run Spark Integration Tests - test_load_transactions_in_delta_fabs_fpds.py
+  Run-Tests:
+    name: Run Tests
     runs-on: ${{ vars.RUNNER_VERSION }}
     steps:
       - name: Checkout source repository

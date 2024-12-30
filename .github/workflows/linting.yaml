@@ -73,7 +73,8 @@ jobs:
       - name: Install Dredd
         run: npm install --global dredd@13.1.2
 
-      - name: Run API doc checks
-        run: |
-          python manage.py check_for_endpoint_documentation
-          dredd > dredd-results.txt && echo '! grep -E "^[warn:|error:]" dredd-results.txt' | bash
+      - name: Run check for endpoint documentation
+        run: python manage.py check_for_endpoint_documentation
+
+      - name: Run Dredd
+        run: dredd > dredd-results.txt && echo '! grep -E "^[warn:|error:]" dredd-results.txt' | bash

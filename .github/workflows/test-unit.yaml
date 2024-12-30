@@ -21,8 +21,8 @@ on:
   workflow_call:
 
 jobs:
-  Run-Non-Spark-Integration-Tests:
-    name: Run Unit Tests
+  Run-Tests:
+    name: Run Tests
     runs-on: ${{ vars.RUNNER_VERSION }}
     steps:
       - name: Checkout source repository
