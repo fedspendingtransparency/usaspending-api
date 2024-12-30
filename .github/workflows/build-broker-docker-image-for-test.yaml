@@ -1,0 +1,31 @@
+name: Build Broker Docker Image for Test
+
+on:
+  workflow_call:
+
+jobs:
+  Build-Broker-Backend:
+    name: Build Broker Backend
+    runs-on: ${{ vars.RUNNER_VERSION }}
+    steps:
+      - name: Checkout broker backend
+        uses: actions/checkout@v4
+        with:
+          repository: fedspendingtransparency/data-act-broker-backend
+          path: data-act-broker-backend
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./data-act-broker-backend
+          tags: dataact-broker-backend:latest
+          outputs: type=docker,dest=/tmp/dataact-broker-backend.tar
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dataact-broker-backend
+          path: /tmp/dataact-broker-backend.tar

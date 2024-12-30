@@ -5,6 +5,9 @@ inputs:
     description: Version of Python to use in the enviornment and install dependencies with
     type: string
     default: "3.8.6"
+  working_directory:
+    type: string
+    default: ""
 
 runs:
   using: composite
@@ -17,5 +20,6 @@ runs:
         cache-dependency-path: setup.py
 
     - name: Install dev dependencies
+      working-directory: ${{ inputs.working_directory }}
       shell: bash
       run: pip install ".[dev]"

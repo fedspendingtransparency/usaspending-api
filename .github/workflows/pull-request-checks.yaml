@@ -6,18 +6,42 @@ jobs:
   Run-Linting:
     name: Run Linting
     uses: ./.github/workflows/linting.yaml
+  
+  Build-Broker-Docker-Image:
+    name: Build Broker Docker Image
+    uses: ./.github/workflows/build-broker-docker-image-for-test.yaml
+  
+  Run-Spark-Integration-Load-Transaction-FABS-and-FPDS-Tests:
+    name: Run Spark Integration Load Transactions FABS and FPDS Tests
+    needs: [Run-Linting, Build-Broker-Docker-Image]
+    uses: ./.github/workflows/test-spark-integration-load-transactions-fabs-fpds.yaml
 
-  Run-Spark-Integration-Tests:
-    name: Run Spark Integration Tests
-    needs: [Run-Linting]
-    uses: ./.github/workflows/test_suite/spark-integration.yaml
+  Run-Spark-Integration-Load-Transactions-Lookup-Tests:
+    name: Run Spark Integration Load Transactions Lookup Tests
+    needs: [Run-Linting, Build-Broker-Docker-Image]
+    uses: ./.github/workflows/test-spark-integration-load-transactions-lookup.yaml
+
+  Run-Spark-Integration-Load-To-From-Delta-Tests:
+    name: Run Spark Integration Load To From Delta Tests
+    needs: [Run-Linting, Build-Broker-Docker-Image]
+    uses: ./.github/workflows/test-spark-integration-load-to-from-delta.yaml
+
+  Run-Spark-Integration-Other-Tests:
+    name: Run Spark Integration Other Tests
+    needs: [Run-Linting, Build-Broker-Docker-Image]
+    uses: ./.github/workflows/test-spark-integration-other.yaml
 
   Run-Non-Spark-Integration-Tests:
     name: Run Non-Spark Integration Tests
-    needs: [Run-Linting]
-    uses: ./.github/workflows/test_suite/non-spark-integration.yaml
+    needs: [Run-Linting, Build-Broker-Docker-Image]
+    uses: ./.github/workflows/test-non-spark-integration.yaml
+
+  Run-Non-Spark-Integration-Tests-Using-Signal-Handling:
+    name: Run Non-Spark Integration Tests Using Signal Handling
+    needs: [Run-Linting, Build-Broker-Docker-Image]
+    uses: ./.github/workflows/test-non-spark-integration-using-signal-handling.yaml
 
   Run-Unit-Tests:
     name: Run Unit Tests
     needs: [Run-Linting]
-    uses: ./.github/workflows/test_suite/unit.yaml
+    uses: ./.github/workflows/test-unit.yaml

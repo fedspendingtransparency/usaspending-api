@@ -1,5 +1,22 @@
 name: Linting
 
+env:
+  BROKER_DB_HOST: localhost
+  BROKER_DB_PORT: 5432
+  BROKER_DB_USER: admin
+  BROKER_DB_PASSWORD: root
+  BROKER_DB_NAME: data_broker
+  DJANGO_SETTINGS_MODULE: usaspending_api.settings
+  ES_SCHEME: http
+  ES_HOST: localhost
+  ES_PORT: 9200
+  MINIO_HOST: localhost
+  USASPENDING_DB_HOST: localhost
+  USASPENDING_DB_PORT: 5432
+  USASPENDING_DB_USER: usaspending
+  USASPENDING_DB_PASSWORD: usaspender
+  USASPENDING_DB_NAME: data_store_api  
+
 on:
   workflow_call:
 
@@ -29,3 +46,35 @@ jobs:
 
       - name: Run Black
         run: black --check --diff .
+
+  Run-API-Doc-Validation:
+    name: Run API Doc Validation
+    runs-on: ${{ vars.RUNNER_VERSION }}
+    steps:
+      - name: Checkout source repository
+        uses: actions/checkout@v4
+
+      - name: Set combined ENV
+        run: |
+          echo "DATA_BROKER_DATABASE_URL=postgres://$BROKER_DB_USER:$BROKER_DB_PASSWORD@$BROKER_DB_HOST:$BROKER_DB_PORT/$BROKER_DB_NAME" >> $GITHUB_ENV
+          echo "DATABASE_URL=postgres://$USASPENDING_DB_USER:$USASPENDING_DB_PASSWORD@$USASPENDING_DB_HOST:$USASPENDING_DB_PORT/$USASPENDING_DB_NAME" >> $GITHUB_ENV
+          echo "DOWNLOAD_DATABASE_URL=postgres://$USASPENDING_DB_USER:$USASPENDING_DB_PASSWORD@$USASPENDING_DB_HOST:$USASPENDING_DB_PORT/$USASPENDING_DB_NAME" >> $GITHUB_ENV
+          echo "ES_HOSTNAME=$ES_SCHEME://$ES_HOST:$ES_PORT" >> $GITHUB_ENV
+          echo "MINIO_DATA_DIR=$HOME/Development/data/usaspending/docker/usaspending-s3" >> $GITHUB_ENV
+
+      - name: Init Python Environment
+        uses: ./.github/actions/init-python-environment
+      
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: latest
+      
+      - name: Install Dredd
+        run: npm install --global dredd@13.1.2
+
+      - name: Run check for endpoint documentation
+        run: python manage.py check_for_endpoint_documentation
+
+      - name: Run Dredd
+        run: dredd > dredd-results.txt && echo '! grep -E "^[warn:|error:]" dredd-results.txt' | bash
