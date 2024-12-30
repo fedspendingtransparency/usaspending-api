@@ -37,9 +37,7 @@ runs:
       working-directory: ${{ inputs.working_directory }}
       if: ${{ inputs.is_integration_test == 'true' }}
       shell: bash
-      run: |
-        make docker-compose-up-usaspending args="-d usaspending-db usaspending-es"
-        make docker-compose-up-s3 args="-d"
+      run: docker compose up -d usaspending-db usaspending-es minio
 
     - name: Download broker docker image
       if: ${{ inputs.is_integration_test == 'true' }}
