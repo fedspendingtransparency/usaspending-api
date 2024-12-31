@@ -554,8 +554,10 @@ def _build_usas_data_for_spark():
         recipient_location_county_fips="51001",
         pop_county_fips="51001",
         generated_pragmatic_obligation=0.00,
-        program_activity_codes=["0001", "0002"],
-        program_activity_names=["OFFICE OF THE SECRETARY", "OPERATIONS AND MAINTENANCE"],
+        program_activities=[
+            {"name": "OFFICE OF THE SECRETARY", "code": "0001"},
+            {"name": "OPERATIONS AND MAINTENANCE", "code": "0002"},
+        ],
     )
     cont_award = baker.make(
         "search.AwardSearch",
@@ -641,8 +643,7 @@ def _build_usas_data_for_spark():
         recipient_location_county_fips=None,
         pop_county_fips=None,
         generated_pragmatic_obligation=0.00,
-        program_activity_codes=["0003"],
-        program_activity_names=["TRAINING AND RECRUITING"],
+        program_activities=[{"name": "TRAINING AND RECRUITING", "code": "0003"}],
     )
     cont_award2 = baker.make(
         "search.AwardSearch",
@@ -712,8 +713,7 @@ def _build_usas_data_for_spark():
         recipient_location_county_fips=None,
         pop_county_fips=None,
         generated_pragmatic_obligation=0.00,
-        program_activity_codes=None,
-        program_activity_names=None,
+        program_activities=None,
     )
 
     baker.make(
