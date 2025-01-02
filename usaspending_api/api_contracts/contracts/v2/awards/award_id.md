@@ -7,15 +7,19 @@ This endpoint is used to power USAspending.gov's award profile pages. This data 
 
 ## GET
 
-This endpoint returns a list of data that is associated with the award profile page.
+This endpoint returns a list of data that is associated with the Award.
 
-+ Parameters
-    + `award_id`: `TEST` (required, string)
-        Accepts the v2 generated award hash or internal database id.
++ Request (application/json)
+    A request with a contract id; accepts the v2 generated award hash or internal database id.
+    + Schema
 
-+ Request A request with a contract id (application/json)
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "string"
+            }
+
     + Parameters
-        + `award_id`: `CONT_AWD_H907_9700_SPE2DX16D1500_9700`
+        + `award_id`: `CONT_AWD_H907_9700_SPE2DX16D1500_9700` (required, string)
 
 + Response 200 (application/json)
     + Attributes (ContractResponse)
@@ -282,9 +286,17 @@ This endpoint returns a list of data that is associated with the award profile p
                 ]
             }
 
-+ Request A request with a financial assistance id (application/json)
++ Request (application/json)
+    A request with a financial assistance id; accepts the v2 generated award hash or internal database id.
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "string"
+            }
+
     + Parameters
-        + `award_id`: `ASST_NON_12FA00PY54661041_12D2`
+        + `award_id`: `ASST_NON_12FA00PY54661041_12D2` (required, string)
 
 + Response 200 (application/json)
     + Attributes (FinancialAssistanceResponse)
@@ -457,12 +469,24 @@ This endpoint returns a list of data that is associated with the award profile p
                         "code": "L",
                         "amount": 1.0
                     }
-                ]
+                ],
+                "funding_opportunity": {
+                    "number": "NOT APPLICABLE",
+                    "goals": : "NOT APPLICABLE"
+                }
             }
 
-+ Request A request with an IDV id (application/json)
++ Request (application/json)
+    A request with an IDV id; accepts the v2 generated award hash or internal database id.
+    + Schema
+
+            {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "type": "string"
+            }
+
     + Parameters
-        + `award_id`: `CONT_IDV_FA304715A0037_9700`
+        + `award_id`: `CONT_IDV_FA304715A0037_9700` (required, string)
 
 + Response 200 (application/json)
     + Attributes (IDVResponse)
@@ -860,6 +884,11 @@ This endpoint returns a list of data that is associated with the award profile p
 + `total_account_obligation` (required, number)
 + `account_obligations_by_defc` (required, array[DEFCAmount], fixed-type)
 + `account_outlays_by_defc` (required, array[DEFCAmount], fixed-type)
++ `funding_opportunty` (required, FundingOpportunity, fixed-type)
+
+## FundingOpportunity (object)
++ `number` (required, string, nullable)
++ `goals` (required, string, nullable)
 
 ## CFDAInfo (object)
 + `applicant_eligibility` (required, string, nullable)

@@ -152,6 +152,8 @@ def awards_and_transactions(db):
         "parent_uei": "ABC",
         "parent_recipient_unique_id": "123",
         "business_categories": ["small_business"],
+        "funding_opportunity_goals": "SAMPLE FUNDING GOALS",
+        "funding_opportunity_number": "SAMPLE FUNDING NUMBER",
     }
     asst_trans_2 = {
         "is_fpds": False,
@@ -1506,6 +1508,10 @@ expected_response_asst = {
     "total_account_obligation": 0,
     "total_account_outlay": 0,
     "total_outlay": None,
+    "funding_opportunity": {
+        "number": "SAMPLE FUNDING NUMBER",
+        "goals": "SAMPLE FUNDING GOALS",
+    },
 }
 
 

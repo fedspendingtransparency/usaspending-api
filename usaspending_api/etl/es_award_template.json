@@ -418,6 +418,16 @@
           }
         }
       },
+      "recipient_location_country_agg_key": {
+        "type": "keyword",
+        "eager_global_ordinals": true,
+        "null_value": "NULL",
+        "fields": {
+          "hash": {
+            "type": "murmur3"
+          }
+        }
+      },
       "recipient_location_state_fips": {
         "type": "keyword"
       },
@@ -522,6 +532,15 @@
         "type": "keyword",
         "eager_global_ordinals": true,
         "null_value": "NULL",
+        "fields": {
+          "hash": {
+            "type": "murmur3"
+          }
+        }
+      },
+      "pop_country_agg_key": {
+        "type": "keyword",
+        "eager_global_ordinals": true,
         "fields": {
           "hash": {
             "type": "murmur3"
