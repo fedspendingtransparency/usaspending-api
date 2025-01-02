@@ -32,6 +32,7 @@ Life expectancy:
         - job_archive/management/commands/generate_cares_act_test_data_sqls
 
 """
+
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from usaspending_api.common.helpers.timing_helpers import ScriptTimer

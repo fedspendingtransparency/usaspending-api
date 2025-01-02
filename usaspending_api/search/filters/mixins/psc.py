@@ -9,7 +9,7 @@ class PSCCodesMixin:
 
     @classmethod
     def validate_filter_values(cls, filter_values):
-        """ This is validation on top of whatever TinyShield performs. """
+        """This is validation on top of whatever TinyShield performs."""
         if isinstance(filter_values, list):
             # Legacy.
             for code in filter_values:
@@ -43,7 +43,7 @@ class PSCCodesMixin:
 
     @classmethod
     def split_filter_values(cls, filter_values):
-        """ Here we assume that filter_values has already been run through validate_filter_values. """
+        """Here we assume that filter_values has already been run through validate_filter_values."""
         if isinstance(filter_values, list):
             # Legacy is treated as a "require" filter.
             require = [[f] for f in filter_values]

@@ -3,7 +3,7 @@ from abc import ABCMeta
 
 
 class AbstractQueueError(Exception, metaclass=ABCMeta):
-    """ Abstract base exception representing for error scenarios encountered in the queue dispatcher or worker."""
+    """Abstract base exception representing for error scenarios encountered in the queue dispatcher or worker."""
 
     def __init__(self, *args, worker_process_name=None, queue_message=None, **kwargs):
         if not worker_process_name:
