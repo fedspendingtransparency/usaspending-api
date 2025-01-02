@@ -1,0 +1,3 @@
+# .git-blame-ignore-revs
+# Black and Flake8 formatting for Python 3.10.12 upgrade
+a0ffdd4d4d2b2f4ef07759d9e04cc5542d37fc1d
