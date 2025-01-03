@@ -35,6 +35,7 @@ from usaspending_api.search.v2.elasticsearch_helper import (
     get_number_of_unique_terms_for_transactions,
     get_scaled_sum_aggregations,
 )
+from usaspending_api.search.v2.views.enums import SpendingLevel
 
 logger = logging.getLogger(__name__)
 API_VERSION = settings.API_VERSION
@@ -45,12 +46,6 @@ class GeoLayer(Enum):
     DISTRICT = "district"
     STATE = "state"
     COUNTRY = "country"
-
-
-class SpendingLevel(Enum):
-    AWARD = "awards"
-    SUBAWARD = "subawards"
-    TRANSACTION = "transactions"
 
 
 @api_transformations(api_version=API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)

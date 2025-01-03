@@ -19,10 +19,17 @@ def transform_award_data(worker: TaskSpec, records: List[dict]) -> List[dict]:
     converters = {
         "covid_spending_by_defc": convert_json_data_to_dict,
         "iija_spending_by_defc": convert_json_data_to_dict,
+        "federal_accounts": convert_json_array_to_list_of_str,
     }
     agg_key_creations = {
+        "awarding_subtier_agency_agg_key": lambda x: x["awarding_subtier_agency_code"],
+        "awarding_toptier_agency_agg_key": lambda x: x["awarding_toptier_agency_code"],
         "funding_subtier_agency_agg_key": lambda x: x["funding_subtier_agency_code"],
         "funding_toptier_agency_agg_key": lambda x: x["funding_toptier_agency_code"],
+        "naics_agg_key": lambda x: x["naics_code"],
+        "psc_agg_key": lambda x: x["product_or_service_code"],
+        "defc_agg_key": lambda x: x["disaster_emergency_fund_codes"],
+        "cfda_agg_key": lambda x: x["cfda_number"],
         "pop_congressional_agg_key": funcs.pop_congressional_agg_key,
         "pop_congressional_cur_agg_key": funcs.pop_congressional_cur_agg_key,
         "pop_county_agg_key": funcs.pop_county_agg_key,
@@ -66,6 +73,7 @@ def transform_transaction_data(worker: TaskSpec, records: List[dict]) -> List[di
         "naics_agg_key": lambda x: x["naics_code"],
         "psc_agg_key": lambda x: x["product_or_service_code"],
         "defc_agg_key": lambda x: x["disaster_emergency_fund_codes"],
+        "cfda_agg_key": lambda x: x["cfda_number"],
         "pop_country_agg_key": lambda x: x["pop_country_code"],
         "pop_state_agg_key": lambda x: x["pop_state_code"],
         "pop_county_agg_key": funcs.pop_county_agg_key,

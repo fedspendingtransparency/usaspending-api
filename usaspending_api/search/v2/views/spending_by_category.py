@@ -74,6 +74,14 @@ class SpendingByCategoryVisualizationViewSet(APIView):
         models = [
             {"name": "category", "key": "category", "type": "enum", "enum_values": categories, "optional": False},
             {"name": "subawards", "key": "subawards", "type": "boolean", "default": False, "optional": True},
+            {
+                "name": "spending_level",
+                "key": "spending_level",
+                "type": "enum",
+                "enum_values": ["awards", "transactions", "subawards"],
+                "optional": True,
+                "default": "transactions",
+            },
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
         models.extend(copy.deepcopy(PAGINATION))

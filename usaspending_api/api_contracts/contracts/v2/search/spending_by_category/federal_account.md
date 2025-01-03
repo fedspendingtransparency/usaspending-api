@@ -27,7 +27,9 @@ This endpoint returns a list of the top results of Federal Accounts sorted by th
             The page of results to return based on the limit
             + Default: 1
         + `subawards` (optional, boolean)
-            Determines whether Prime Awards or Sub Awards are searched
+            Determines whether Prime Awards or Sub Awards are searched. This field will be depreciated soon.
+        + `spending_level` (required, string)
+            Determines whether Prime Awards (awards), Transactions (transactions), or Sub Awards (subawards) are searched
     + Body
 
 
@@ -43,7 +45,8 @@ This endpoint returns a list of the top results of Federal Accounts sorted by th
                 },
                 "category": "federal_account",
                 "limit": 5,
-                "page": 1
+                "page": 1,
+                "spending_level": "transactions"
             }
 
 + Response 200 (application/json)
