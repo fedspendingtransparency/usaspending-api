@@ -2,7 +2,6 @@ import copy
 import logging
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
-from enum import Enum
 from typing import List, Optional, Union
 
 from django.conf import settings

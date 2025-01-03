@@ -79,6 +79,8 @@ class AbstractLocationViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMe
         def _key_to_geo_code(key):
             if self.location_type == LocationType.COUNTRY:
                 return key
+            elif key == "NULL":
+                return None
             return f"{code_to_state[key[:2]]['fips']}{key[2:]}" if (key and key[:2] in code_to_state) else None
 
         # Get the codes
@@ -115,7 +117,7 @@ class AbstractLocationViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMe
                 PopCongressionalDistrict.objects.annotate(
                     shape_code=Concat(F("state_code"), F("congressional_district"), output_field=TextField())
                 )
-                .filter(state_code__in={sc[:2] for sc in code_list})
+                .filter(state_code__in={sc[:2] for sc in code_list if sc is not None})
                 .values("shape_code", "state_code", "congressional_district")
             )
 
