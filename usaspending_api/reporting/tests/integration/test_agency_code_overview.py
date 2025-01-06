@@ -11,7 +11,7 @@ url = "/api/v2/reporting/agencies/123/overview/"
 
 @pytest.fixture
 def setup_test_data(db):
-    """ Insert data into DB for testing """
+    """Insert data into DB for testing"""
     sub = baker.make(
         "submissions.SubmissionAttributes",
         submission_id=1,
