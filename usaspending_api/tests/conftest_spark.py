@@ -818,8 +818,10 @@ def _build_usas_data_for_spark():
         disaster_emergency_fund_codes=["L", "M"],
         recipient_location_county_fips="51001",
         pop_county_fips="51001",
-        program_activity_codes=["0001", "0002"],
-        program_activity_names=["OFFICE OF THE SECRETARY", "OPERATIONS AND MAINTENANCE"],
+        program_activities=[
+            {"code": "0001", "name": "OFFICE OF THE SECRETARY"},
+            {"code": "0002", "name": "OPERATIONS AND MAINTENANCE"},
+        ],
     )
     baker.make(
         "search.TransactionSearch",
@@ -924,8 +926,10 @@ def _build_usas_data_for_spark():
         disaster_emergency_fund_codes=["L", "M"],
         recipient_location_county_fips="51001",
         pop_county_fips="51001",
-        program_activity_codes=["0001", "0002"],
-        program_activity_names=["OFFICE OF THE SECRETARY", "OPERATIONS AND MAINTENANCE"],
+        program_activities=[
+            {"code": "0001", "name": "OFFICE OF THE SECRETARY"},
+            {"code": "0002", "name": "OPERATIONS AND MAINTENANCE"},
+        ],
     )
     baker.make(
         "search.TransactionSearch",
@@ -1020,8 +1024,7 @@ def _build_usas_data_for_spark():
         disaster_emergency_fund_codes=["Q"],
         recipient_location_county_fips=None,
         pop_county_fips=None,
-        program_activity_codes=["0003"],
-        program_activity_names=["TRAINING AND RECRUITING"],
+        program_activities=[{"code": "0003", "name": "TRAINING AND RECRUITING"}],
     )
     baker.make(
         "search.TransactionSearch",
@@ -1116,8 +1119,7 @@ def _build_usas_data_for_spark():
         disaster_emergency_fund_codes=["Q"],
         recipient_location_county_fips=None,
         pop_county_fips=None,
-        program_activity_codes=["0003"],
-        program_activity_names=["TRAINING AND RECRUITING"],
+        program_activities=[{"code": "0003", "name": "TRAINING AND RECRUITING"}],
     )
     baker.make(
         "search.TransactionSearch",
@@ -1178,8 +1180,7 @@ def _build_usas_data_for_spark():
         ordering_period_end_date="2020-07-01",
         recipient_location_county_fips=None,
         pop_county_fips=None,
-        program_activity_codes=None,
-        program_activity_names=None,
+        program_activities=None,
     )
     baker.make(
         "transactions.SourceProcurementTransaction",
