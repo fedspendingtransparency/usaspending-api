@@ -13,6 +13,7 @@ in the IDV world but has been added for testing purposes.  Hope this helps.
   I3   I4   I5   C6                  I7        I8        C9        C10
                                   C11 C12   C13 C14      C15
 """
+
 import pytest
 from model_bakery import baker
 

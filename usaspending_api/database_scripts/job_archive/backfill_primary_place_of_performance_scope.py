@@ -14,6 +14,7 @@ Purpose:
     And populate FABS transaction table columns:
         - place_of_performance_scope
 """
+
 import logging
 import math
 import psycopg2
@@ -126,9 +127,10 @@ if __name__ == "__main__":
     fabs_row_count = 0
 
     with Timer() as overall_timer:
-        with psycopg2.connect(dsn=SPENDING_CONNECTION_STRING) as spending_connection, psycopg2.connect(
-            dsn=BROKER_CONNECTION_STRING
-        ) as broker_connection:
+        with (
+            psycopg2.connect(dsn=SPENDING_CONNECTION_STRING) as spending_connection,
+            psycopg2.connect(dsn=BROKER_CONNECTION_STRING) as broker_connection,
+        ):
             spending_connection.autocommit = True
 
             logging.info("Running FABS backfill from Broker to USAspending")

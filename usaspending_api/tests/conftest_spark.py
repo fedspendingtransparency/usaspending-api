@@ -5,12 +5,13 @@ from datetime import datetime
 from pathlib import Path
 
 import boto3
+import pytest
+
 from django.core.management import call_command
 from django.db import connections
 from model_bakery import baker
 from psycopg2.extensions import AsIs
 from pyspark.sql import SparkSession
-from pytest import fixture, mark
 
 from usaspending_api import settings
 from usaspending_api.common.etl.spark import create_ref_temp_views
@@ -31,7 +32,7 @@ from usaspending_api.etl.management.commands.create_delta_table import (
 # How to determine a working dependency set:
 # 1. What platform are you using? local dev with pip-installed PySpark? EMR 6.x or 5.x? Databricks Runtime?
 # 2. From there determine what versions of Spark + Hadoop are supported on that platform. If going cross-platform,
-#    try to pick a combo that's supporpted on both
+#    try to pick a combo that's supported on both
 # 3. Is there a hadoop-aws version matching the platform's Hadoop version used? Because we need to have Spark writing
 #    to S3, we are beholden to the AWS-provided JARs that implement the S3AFileSystem, which are part of the
 #    hadoop-aws JAR.
@@ -40,10 +41,13 @@ from usaspending_api.etl.management.commands.create_delta_table import (
 #    and look to see what version its dependent JARs are at that your code requires are runtime. If seeing errors or are
 #    uncertain of compatibility, see what working version-sets are aligned to an Amazon EMR release here:
 #    https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-app-versions-6.x.html
+
+# The versions below are determined by the current version of Databricks in use
 _SCALA_VERSION = "2.12"
-_HADOOP_VERSION = "3.3.1"
-_SPARK_VERSION = "3.2.1"
-_DELTA_VERSION = "1.2.1"
+_HADOOP_VERSION = "3.3.4"
+_SPARK_VERSION = "3.5.0"
+_DELTA_VERSION = "3.1.0"
+
 
 # List of Maven coordinates for required JAR files used by running code, which can be added to the driver and
 # executor class paths
@@ -55,13 +59,13 @@ SPARK_SESSION_JARS = [
     # COMPATIBLE with it (so that should not  be set as a dependent package by us)
     f"org.apache.hadoop:hadoop-aws:{_HADOOP_VERSION}",
     "org.postgresql:postgresql:42.2.23",
-    f"io.delta:delta-core_{_SCALA_VERSION}:{_DELTA_VERSION}",
+    f"io.delta:delta-spark_{_SCALA_VERSION}:{_DELTA_VERSION}",
 ]
 
 DELTA_LAKE_UNITTEST_SCHEMA_NAME = "unittest"
 
 
-@fixture(scope="session")
+@pytest.fixture(scope="session")
 def s3_unittest_data_bucket_setup_and_teardown(worker_id: str) -> str:
     """Create a test bucket so the tests can use it
 
@@ -114,7 +118,7 @@ def s3_unittest_data_bucket_setup_and_teardown(worker_id: str) -> str:
     s3_client.delete_bucket(Bucket=unittest_data_bucket)
 
 
-@fixture(scope="function")
+@pytest.fixture(scope="function")
 def s3_unittest_data_bucket(s3_unittest_data_bucket_setup_and_teardown):
     """Use the S3 unit test data bucket created for the test session, and cleanup any contents created in it after
     each test
@@ -138,7 +142,7 @@ def s3_unittest_data_bucket(s3_unittest_data_bucket_setup_and_teardown):
     # test session by the dependent fixture
 
 
-@fixture(scope="session")
+@pytest.fixture(scope="session")
 def spark(tmp_path_factory) -> SparkSession:
     """Throw an error if coming into a test using this fixture which needs to create a
     NEW SparkContext (i.e. new JVM invocation to run Spark in a java process)
@@ -169,7 +173,7 @@ def spark(tmp_path_factory) -> SparkSession:
         # YARN or Mesos or Kubernetes) cluster manager, only client mode is supported.
         "spark.submit.deployMode": "client",
         # Default of 1g (1GiB) for Driver. Increase here if the Java process is crashing with memory errors
-        "spark.driver.memory": "1g",
+        "spark.driver.memory": "512m",
         "spark.ui.enabled": "false",  # Does the same as setting SPARK_TESTING=true env var
         "spark.jars.packages": ",".join(SPARK_SESSION_JARS),
         # Delta Lake config for Delta tables and SQL. Need these to keep Delta table metadata in the metastore
@@ -196,7 +200,7 @@ def spark(tmp_path_factory) -> SparkSession:
     stop_spark_context()
 
 
-@fixture
+@pytest.fixture
 def hive_unittest_metastore_db(spark: SparkSession):
     """A fixture that WIPES all of the schemas (aka databases) and tables in each schema from the hive metastore_db
     at the end of each test run, so that the metastore is fresh.
@@ -233,7 +237,7 @@ def hive_unittest_metastore_db(spark: SparkSession):
         spark.sql(f"DROP TABLE IF EXISTS {t['tableName']}")
 
 
-@fixture
+@pytest.fixture
 def delta_lake_unittest_schema(spark: SparkSession, hive_unittest_metastore_db):
     """Specify which Delta 'SCHEMA' to use (NOTE: 'SCHEMA' and 'DATABASE' are interchangeable in Delta Spark SQL),
     and cleanup any objects created in the schema after the test run."""
@@ -248,7 +252,7 @@ def delta_lake_unittest_schema(spark: SparkSession, hive_unittest_metastore_db):
     # The dependent hive_unittest_metastore_db fixture will take care of cleaning up this schema post-test
 
 
-@fixture
+@pytest.fixture
 def populate_broker_data(broker_server_dblink_setup):
     """Fixture to INSERT data stubbed out in JSON files into the Broker database, to be used by tests that consume
     Broker data.
@@ -1283,18 +1287,16 @@ def _build_usas_data_for_spark():
     )
 
 
-@fixture
-@mark.django_db
-def populate_usas_data():
+@pytest.fixture
+def populate_usas_data(db):
     """Fixture to create Django model data to be saved to Postgres, which will then get ingested into Delta Lake"""
     _build_usas_data_for_spark()
     update_awards()
     yield
 
 
-@fixture
-@mark.django_db
-def populate_usas_data_and_recipients_from_broker(populate_usas_data, populate_broker_data):
+@pytest.fixture
+def populate_usas_data_and_recipients_from_broker(db, populate_usas_data, populate_broker_data):
     with connections[settings.DEFAULT_DB_ALIAS].cursor() as cursor:
         restock_duns_sql = open("usaspending_api/broker/management/sql/restock_duns.sql", "r").read()
         restock_duns_sql = restock_duns_sql.replace("VACUUM ANALYZE int.duns;", "")

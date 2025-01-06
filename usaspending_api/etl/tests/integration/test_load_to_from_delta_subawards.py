@@ -1,9 +1,11 @@
 import psycopg2
+import pytest
 
 from datetime import datetime, date, timedelta, timezone
 from decimal import Decimal
+
+from django.conf import settings
 from django.core.management import call_command
-from pytest import mark
 from model_bakery import baker
 from copy import deepcopy
 
@@ -30,14 +32,27 @@ _NEW_PROCURE = {
 }
 
 
-@mark.django_db(transaction=True)
+@pytest.mark.django_db(databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_load_table_to_from_delta_for_subawards(
     spark,
     s3_unittest_data_bucket,
     populate_usas_data_and_recipients_from_broker,
     hive_unittest_metastore_db,
 ):
-
+    edt = baker.make(
+        "broker.ExternalDataType",
+        name="source_assistance_transaction",
+        external_data_type_id=11,
+        update_date="2017-01-01",
+    )
+    baker.make("broker.ExternalDataLoadDate", last_load_date="2017-01-01", external_data_type=edt)
+    edt = baker.make(
+        "broker.ExternalDataType",
+        name="source_procurement_transaction",
+        external_data_type_id=10,
+        update_date="2017-01-01",
+    )
+    baker.make("broker.ExternalDataLoadDate", last_load_date="2017-01-01", external_data_type=edt)
     # Since changes to the source tables will go to the Postgres table first, use model baker to add new rows to
     # Postgres table, and then push the updated table to Delta.
     last_load_datetime = datetime.now(timezone.utc)
