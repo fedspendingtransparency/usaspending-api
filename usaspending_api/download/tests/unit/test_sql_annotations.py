@@ -57,6 +57,33 @@ def test_apply_annotations_to_sql():
 
     annotated_sql = apply_annotations_to_sql(sql_string, aliases)
 
-    annotated_string = 'SELECT (SELECT table2."three" FROM table_two table2 WHERE table2."code" = table."othercode") AS "alias_one", "table"."col1" AS "col1", "table"."col2" AS "col2"FROM table WHERE six = \'something\''
+    annotated_string = 'SELECT (SELECT table2."three" FROM table_two table2 WHERE table2."code" = table."othercode") AS "alias_one", "table"."col1" AS "col1", "table"."col2" AS "col2" FROM table WHERE six = \'something\''
 
     assert annotated_sql == annotated_string
+
+
+def test_group_by_annotations():
+    sql = (
+        "SELECT"
+        ' "some_table"."col1" AS "new_column_name",'
+        ' CASE WHEN "some_table"."col2" = 1 THEN 1 ELSE 0 END AS "annotated_test1",'
+        ' sum("some_table"."col3") AS "aggregate_col",'
+        ' CASE WHEN "some_table"."col2" = 1 THEN 2 ELSE 3 END AS "annotated_test2"'
+        " FROM some_table"
+        ' GROUP BY "some_table"."col1", 2, 4'
+    )
+    aliases = ["new_column_name", "annotated_test1", "aggregate_col", "annotated_test2"]
+    annotated_group_by_columns = ["annotated_test1", "annotated_test2"]
+
+    expected_string = (
+        "SELECT"
+        ' "some_table"."col1" AS "new_column_name",'
+        ' CASE WHEN "some_table"."col2" = 1 THEN 1 ELSE 0 END AS "annotated_test1",'
+        ' sum("some_table"."col3") AS "aggregate_col",'
+        ' CASE WHEN "some_table"."col2" = 1 THEN 2 ELSE 3 END AS "annotated_test2"'
+        " FROM some_table"
+        ' GROUP BY "some_table"."col1", CASE WHEN "some_table"."col2" = 1 THEN 1 ELSE 0 END,'
+        ' CASE WHEN "some_table"."col2" = 1 THEN 2 ELSE 3 END'
+    )
+
+    assert apply_annotations_to_sql(sql, aliases, annotated_group_by_columns) == expected_string

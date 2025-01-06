@@ -1,4 +1,8 @@
+import logging
+
 from datetime import datetime
+
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction
 from django.db.models import Max
@@ -6,8 +10,6 @@ from django.db.models import Max
 from usaspending_api.recipient.models import DUNS
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.management.load_base import load_data_into_model
-
-import logging
 
 logger = logging.getLogger("script")
 
@@ -80,7 +82,7 @@ class Command(BaseCommand):
         total_start = datetime.now()
         new_update_date = total_start.strftime("%Y-%m-%d")
 
-        db_cursor = connections["data_broker"].cursor()
+        db_cursor = connections[settings.DATA_BROKER_DB_ALIAS].cursor()
 
         update_date_query = DUNS.objects.all().aggregate(Max("update_date"))
         update_date = update_date_query["update_date__max"]

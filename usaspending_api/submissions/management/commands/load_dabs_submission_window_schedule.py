@@ -2,6 +2,7 @@ import logging
 import csv
 from datetime import datetime, timezone
 
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction
 
@@ -144,7 +145,7 @@ class Command(BaseCommand):
     def generate_schedules_from_broker(self):
 
         logger.info("Creating broker cursor")
-        broker_cursor = connections["data_broker"].cursor()
+        broker_cursor = connections[settings.DATA_BROKER_DB_ALIAS].cursor()
 
         logger.info("Running MONTH_SCHEDULE_SQL")
         broker_cursor.execute(MONTH_SCHEDULE_SQL)

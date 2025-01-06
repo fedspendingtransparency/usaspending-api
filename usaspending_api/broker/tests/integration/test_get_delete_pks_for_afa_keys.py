@@ -1,7 +1,9 @@
 import pytest
 
+from django.conf import settings
 from django.db import connections
 from django.test import TestCase
+
 from usaspending_api.broker.helpers.delete_fabs_transactions import get_delete_pks_for_afa_keys
 
 
@@ -11,7 +13,7 @@ class TestThingWithMultipleDatabases(TestCase):
 
     @classmethod
     def setUpTestData(cls):
-        connection = connections["data_broker"]
+        connection = connections[settings.DATA_BROKER_DB_ALIAS]
         with connection.cursor() as cursor:
 
             cursor.execute("select count(*) from published_fabs")

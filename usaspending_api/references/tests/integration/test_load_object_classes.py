@@ -34,7 +34,7 @@ def disable_vacuuming(monkeypatch):
 
 @pytest.fixture(scope="session")
 def remove_csv_file():
-    """ Ensure the CSV file goes away at the end of the tests. """
+    """Ensure the CSV file goes away at the end of the tests."""
     yield
     try:
         OBJECT_CLASS_FILE.unlink()
@@ -43,7 +43,7 @@ def remove_csv_file():
 
 
 def mock_data(object_classes):
-    """ [(object class, object class name), ...] """
+    """[(object class, object class name), ...]"""
     with open(OBJECT_CLASS_FILE, "w", newline="") as f:
         writer = csv.writer(f)
         writer.writerows([("MAX OC Code", "MAX Object Class name")] + object_classes)

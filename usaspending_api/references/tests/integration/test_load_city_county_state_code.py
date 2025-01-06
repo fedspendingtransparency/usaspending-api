@@ -29,7 +29,7 @@ def disable_vacuuming(monkeypatch):
 
 @pytest.mark.django_db(transaction=True)
 def test_txt_file():
-    """ One full test to ensure our vacuuming works.  The rest will be sans vacuum. """
+    """One full test to ensure our vacuuming works.  The rest will be sans vacuum."""
     assert CityCountyStateCode.objects.count() == 0
     call_command("load_city_county_state_code", TEST_TXT_FILE, "--force")
     assert CityCountyStateCode.objects.count() > 0
@@ -71,7 +71,7 @@ def test_no_file_provided():
 
 @pytest.mark.django_db
 def test_change_reversion(disable_vacuuming):
-    """ Let's make some very targeted changes and ensure that they are all resolved correctly on a followup load. """
+    """Let's make some very targeted changes and ensure that they are all resolved correctly on a followup load."""
 
     # Mock a subaward.
     baker.make(

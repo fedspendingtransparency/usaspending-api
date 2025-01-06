@@ -6,19 +6,20 @@
 
 # See docker-compose.yml file and README.md for docker-compose information
 
-
-FROM python:3.8.16-slim-bullseye
+FROM python:3.10.12-slim-bullseye
 
 WORKDIR /dockermount
 
 RUN apt update && \
-    apt install -y gcc postgresql-13
+    apt install -y gcc postgresql-13 libpq-dev
 
 ##### Copy python packaged
 WORKDIR /dockermount
 # COPY requirements/ /dockermount/requirements/
+
 COPY . /dockermount
-RUN python3 -m pip install -r requirements/requirements.txt -r requirements/requirements-server.txt && \
+RUN python3 -m pip install -r requirements/requirements.txt && \
+    python3 -m pip install -r requirements/requirements-server.txt && \
     python3 -m pip install ansible==2.9.15 awscli==1.34.19
 
 ##### Ensure Python STDOUT gets sent to container logs

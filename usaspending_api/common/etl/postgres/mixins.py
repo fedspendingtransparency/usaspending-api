@@ -12,7 +12,7 @@ from usaspending_api.common.helpers.timing_helpers import ScriptTimer as Timer
 
 
 class ETLMixin:
-    """ Some common ETL functionality encapsulated in a nice, convenient mixin. """
+    """Some common ETL functionality encapsulated in a nice, convenient mixin."""
 
     etl_logger_function = None
     etl_dml_sql_directory = None
@@ -20,7 +20,7 @@ class ETLMixin:
     etl_timer = Timer
 
     def _delete_update_insert_rows(self, what: str, source: ETLObjectBase, destination: ETLObjectBase):
-        """ Convenience function to run delete, update, and create ETL operations. """
+        """Convenience function to run delete, update, and create ETL operations."""
         rows_affected = 0
         rows_affected += self._execute_function_and_log(
             delete_obsolete_rows, "Delete obsolete {}".format(what), source, destination
@@ -34,7 +34,7 @@ class ETLMixin:
         return rows_affected
 
     def _execute_dml_sql(self, sql: Union[str, Composed], timer_message: Optional[str] = None) -> int:
-        """ Execute some data manipulation SQL (INSERT, UPDATE, DELETE, etc). """
+        """Execute some data manipulation SQL (INSERT, UPDATE, DELETE, etc)."""
 
         return self._log_rows_affected(self._execute_function(execute_dml_sql, timer_message, sql=sql))
 
@@ -76,7 +76,7 @@ class ETLMixin:
     def _execute_function_and_log(
         self, function: Callable, timer_message: Optional[str] = None, *args: Any, **kwargs: Any
     ) -> Any:
-        """ Same as _execute_function but logs rows affected much like a DML SQL statement. """
+        """Same as _execute_function but logs rows affected much like a DML SQL statement."""
 
         return self._log_rows_affected(self._execute_function(function, timer_message, *args, **kwargs))
 
@@ -84,7 +84,7 @@ class ETLMixin:
         return (Path(self.etl_dml_sql_directory) / file_name_no_extension).with_suffix(".sql")
 
     def _log_rows_affected(self, row_count: int) -> int:
-        """ If we have something we can log and a way to log it, log it. """
+        """If we have something we can log and a way to log it, log it."""
 
         if (
             self.etl_logger_function is not None
