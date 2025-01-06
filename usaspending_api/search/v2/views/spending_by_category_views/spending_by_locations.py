@@ -2,7 +2,7 @@ from abc import ABCMeta
 from collections import Counter
 from decimal import Decimal
 from enum import Enum
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from django.db.models import F, QuerySet, TextField
 from django.db.models.functions import Concat
@@ -75,17 +75,18 @@ class AbstractLocationViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMe
 
     location_type: LocationType
 
+    def _key_to_geo_code(self, key: str) -> Optional[str]:
+        if self.location_type == LocationType.COUNTRY:
+            return key
+        elif key == "NULL":
+            return None
+        return f"{code_to_state[key[:2]]['fips']}{key[2:]}" if (key and key[:2] in code_to_state) else None
+
     def build_elasticsearch_result(self, response: dict) -> List[dict]:
-        def _key_to_geo_code(key):
-            if self.location_type == LocationType.COUNTRY:
-                return key
-            elif key == "NULL":
-                return None
-            return f"{code_to_state[key[:2]]['fips']}{key[2:]}" if (key and key[:2] in code_to_state) else None
 
         # Get the codes
         location_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
-        code_list = [_key_to_geo_code(bucket["key"]) for bucket in location_info_buckets if bucket.get("key")]
+        code_list = [self._key_to_geo_code(bucket["key"]) for bucket in location_info_buckets if bucket.get("key")]
 
         # Get the current location info
         current_location_info = {}
@@ -139,7 +140,7 @@ class AbstractLocationViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMe
         # Build out the results
         results = []
         for bucket in location_info_buckets:
-            key = _key_to_geo_code(bucket.get("key"))
+            key = self._key_to_geo_code(bucket.get("key"))
             location_info = current_location_info.get(key) or {}
 
             if location_info:
