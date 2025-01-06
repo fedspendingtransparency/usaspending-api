@@ -82,14 +82,8 @@ class AbstractLocationViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMe
             return None
         return f"{code_to_state[key[:2]]['fips']}{key[2:]}" if (key and key[:2] in code_to_state) else None
 
-    def build_elasticsearch_result(self, response: dict) -> List[dict]:
-
-        # Get the codes
-        location_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
-        code_list = [self._key_to_geo_code(bucket["key"]) for bucket in location_info_buckets if bucket.get("key")]
-
-        # Get the current location info
-        current_location_info = {}
+    def get_location_info_query(self, code_list: List[str]) -> Optional[QuerySet]:
+        location_info_query = None
         if self.location_type == LocationType.COUNTRY:
             location_info_query = (
                 RefCountryCode.objects.annotate(shape_code=F("country_code"))
@@ -121,7 +115,18 @@ class AbstractLocationViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMe
                 .filter(state_code__in={sc[:2] for sc in code_list if sc is not None})
                 .values("shape_code", "state_code", "congressional_district")
             )
+        return location_info_query
 
+    def build_elasticsearch_result(self, response: dict) -> List[dict]:
+
+        # Get the codes
+        location_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
+        code_list = [self._key_to_geo_code(bucket["key"]) for bucket in location_info_buckets if bucket.get("key")]
+
+        # Get the current location info
+        current_location_info = {}
+        location_info_query = self.get_location_info_query(code_list)
+        if self.location_type == LocationType.CONGRESSIONAL_DISTRICT:
             # Add the `90` congressional code to the list of valid codes, if the given state has more
             #   than 1 congressional district
             counts = Counter([state["state_code"] for state in location_info_query.all()])
