@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('search', '0048_alter_awardsearch_award_alter_summarystateview_duh'),
+        ("search", "0048_alter_awardsearch_award_alter_summarystateview_duh"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='awardsearch',
-            name='federal_accounts',
+            model_name="awardsearch",
+            name="federal_accounts",
             field=models.JSONField(null=True),
         ),
     ]
