@@ -5,7 +5,7 @@ from enum import Enum
 from typing import Dict, List, Optional, Union
 
 from django.conf import settings
-from django.db import models
+from django.db import models as db_models
 from django.db.models import F, FloatField, QuerySet, Sum, TextField, Value
 from django.db.models.functions import Cast, Concat
 from elasticsearch_dsl import A
@@ -67,7 +67,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
     geo_layer_filters: Optional[List[str]]
     loc_field_name: str
     loc_lookup: str
-    model_name: Optional[models.Model]
+    model_name: Optional[db_models.Model]
     obligation_column: str
     queryset: Optional[QuerySet]
     scope: str

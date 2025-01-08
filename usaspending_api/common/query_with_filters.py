@@ -110,6 +110,24 @@ class _Keywords(_Filter):
         return ES_Q("dis_max", queries=keyword_queries)
 
 
+class _Description(_Filter):
+    underscore_name = "description"
+
+    @classmethod
+    def generate_elasticsearch_query(cls, filter_values: str, query_type: _QueryType, **options) -> ES_Q:
+        fields = {
+            _QueryType.AWARDS: ["description"],
+            _QueryType.TRANSACTIONS: ["transaction_description"],
+        }
+        query = es_sanitize(filter_values)
+        if "\\" in query:
+            query += r"\*"
+        else:
+            query += "*"
+        description_query = ES_Q("query_string", query=query, default_operator="AND", fields=fields.get(query_type, []))
+        return ES_Q("bool", should=description_query, minimum_should_match=1)
+
+
 class _KeywordSearch(_Filter):
     underscore_name = "keyword_search"
 
@@ -877,6 +895,7 @@ class _NonzeroFields(_Filter):
 class QueryWithFilters:
     filter_lookup = {
         _Keywords.underscore_name: _Keywords,
+        _Description.underscore_name: _Description,
         _KeywordSearch.underscore_name: _KeywordSearch,
         _TransactionKeywordSearch.underscore_name: _TransactionKeywordSearch,
         _TimePeriods.underscore_name: _TimePeriods,
