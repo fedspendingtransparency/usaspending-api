@@ -1072,8 +1072,8 @@ transaction_search_load_sql_string = rf"""
             COLLECT_LIST(
                 DISTINCT(
                     NAMED_STRUCT(
-                        'name', rpa.program_activity_name,
-                        'code', rpa.program_activity_code
+                        'name', UPPER(rpa.program_activity_name),
+                        'code', LPAD(rpa.program_activity_code, 4, "0")
                     )
                 )
             ) AS program_activities
