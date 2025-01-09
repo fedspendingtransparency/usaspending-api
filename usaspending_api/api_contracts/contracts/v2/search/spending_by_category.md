@@ -36,9 +36,9 @@ This endpoint returns a list of the top results of specific categories sorted by
                 + `recipient_duns`
                 + `recipient_parent_duns`
                 + `state_territory`
-                + `tas`        
+                + `tas`
         + `filters` (required, AdvancedFilterObject)
-            The filters to find with said category        
+            The filters to find with said category
         + `limit` (optional, number)
             The number of results to include per page
         + `page` (optional, number)
@@ -52,7 +52,7 @@ This endpoint returns a list of the top results of specific categories sorted by
             + Default
                 + `transactions`
         + `subawards` (optional, boolean)
-            Determines whether Prime Awards or Sub Awards are searched. This field will be depreciated soon.     
+            Determines whether Prime Awards or Sub Awards are searched. This field will be depreciated soon.
     + Body
 
             {
@@ -70,7 +70,7 @@ This endpoint returns a list of the top results of specific categories sorted by
             + Members
                 + `transactions`
                 + `awards`
-                + `subawards` 
+                + `subawards`
         + `results` (required, array[CategoryResult], fixed-type)
         + `limit` (required, number)
         + `page_metadata` (PageMetadataObject)

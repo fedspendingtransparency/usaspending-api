@@ -63,7 +63,7 @@ This endpoint should return a an aggregate list of DEFC's sorted by the total am
             + Members
                 + `transactions`
                 + `awards`
-                + `subawards` 
+                + `subawards`
         + `results` (required, array[CategoryResult], fixed-type)
         + `limit`: 10 (required, number)
         + `page_metadata` (PageMetadataObject)

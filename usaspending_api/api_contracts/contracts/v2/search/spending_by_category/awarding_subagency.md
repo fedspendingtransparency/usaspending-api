@@ -33,7 +33,7 @@ This endpoint returns a list of the top results of Awarding Subagencies sorted b
             + Default
                 + `transactions`
         + `subawards` (optional, boolean)
-            Determines whether Prime Awards or Sub Awards are searched. This field will be depreciated soon.        
+            Determines whether Prime Awards or Sub Awards are searched. This field will be depreciated soon.
     + Body
 
 
@@ -61,7 +61,7 @@ This endpoint returns a list of the top results of Awarding Subagencies sorted b
             + Members
                 + `transactions`
                 + `awards`
-                + `subawards` 
+                + `subawards`
         + `results` (required, array[CategoryResult], fixed-type)
         + `limit` (required, number)
         + `page_metadata` (PageMetadataObject)

@@ -64,7 +64,7 @@ This endpoint returns a list of the top results of Federal Accounts sorted by th
             + Members
                 + `transactions`
                 + `awards`
-                + `subawards` 
+                + `subawards`
         + `results` (required, array[CategoryResult], fixed-type)
         + `limit`: 10 (required, number)
         + `page_metadata` (PageMetadataObject)

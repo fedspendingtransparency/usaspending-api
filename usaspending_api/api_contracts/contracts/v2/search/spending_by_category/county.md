@@ -19,7 +19,7 @@ This endpoint returns a list of the top results of Counties sorted by the total 
 
     + Attributes (object)
         + `filters` (required, AdvancedFilterObject)
-            The filters to find with said category        
+            The filters to find with said category
         + `limit`: 5 (optional, number)
             The number of results to include per page
         + `page`: 1 (optional, number)
@@ -61,7 +61,7 @@ This endpoint returns a list of the top results of Counties sorted by the total 
             + Members
                 + `transactions`
                 + `awards`
-                + `subawards` 
+                + `subawards`
         + `results` (required, array[CategoryResult], fixed-type)
         + `limit`: 10 (required, number)
         + `page_metadata` (PageMetadataObject)
