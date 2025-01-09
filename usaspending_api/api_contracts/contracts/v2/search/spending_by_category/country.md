@@ -19,15 +19,21 @@ This endpoint returns a list of the top results of Countries sorted by the total
 
     + Attributes (object)
         + `filters` (required, FilterObject)
-            The filters to find with said category
+            The filters to find with said category        
         + `limit`: 5 (optional, number)
             The number of results to include per page
         + `page`: 1 (optional, number)
             The page of results to return based on the limit
+        + `spending_level` (optional, enum[string])
+            Group the spending by level. This also determines what data source is used for the totals.
+            + Members
+                + `transactions`
+                + `awards`
+                + `subawards`
+            + Default
+                + `transactions`
         + `subawards` (optional, boolean)
             Determines whether Prime Awards or Sub Awards are searched. This field will be depreciated soon.
-        + `spending_level` (required, string)
-            Determines whether Prime Awards (awards), Transactions (transactions), or Sub Awards (subawards) are searched
     + Body
 
 
@@ -50,6 +56,12 @@ This endpoint returns a list of the top results of Countries sorted by the total
 + Response 200 (application/json)
     + Attributes (object)
         + `category`: `country` (required, string)
+        + `spending_level` (required, enum[string])
+            Spending level value that was provided in the request.
+            + Members
+                + `transactions`
+                + `awards`
+                + `subawards` 
         + `results` (required, array[CategoryResult], fixed-type)
         + `limit`: 10 (required, number)
         + `page_metadata` (PageMetadataObject)
@@ -60,6 +72,7 @@ This endpoint returns a list of the top results of Countries sorted by the total
 
             {
                 "category": "country",
+                "spending_level": "transactions",
                 "limit": 10,
                 "page_metadata": {
                     "page": 1,

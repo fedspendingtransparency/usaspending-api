@@ -26,10 +26,17 @@ This endpoint returns a list of the top results of Federal Accounts sorted by th
         + `page`: 1 (optional, number)
             The page of results to return based on the limit
             + Default: 1
+        + `spending_level` (optional, enum[string])
+            Group the spending by level. This also determines what data source is used for the totals.
+            + Members
+                + `transactions`
+                + `awards`
+                + `subawards`
+            + Default
+                + `transactions`
         + `subawards` (optional, boolean)
             Determines whether Prime Awards or Sub Awards are searched. This field will be depreciated soon.
-        + `spending_level` (required, string)
-            Determines whether Prime Awards (awards), Transactions (transactions), or Sub Awards (subawards) are searched
+        
     + Body
 
 
@@ -52,6 +59,12 @@ This endpoint returns a list of the top results of Federal Accounts sorted by th
 + Response 200 (application/json)
     + Attributes (object)
         + `category`: `federal_account` (required, string)
+        + `spending_level` (required, enum[string])
+            Spending level value that was provided in the request.
+            + Members
+                + `transactions`
+                + `awards`
+                + `subawards` 
         + `results` (required, array[CategoryResult], fixed-type)
         + `limit`: 10 (required, number)
         + `page_metadata` (PageMetadataObject)
@@ -62,6 +75,7 @@ This endpoint returns a list of the top results of Federal Accounts sorted by th
 
             {
                 "category": "federal_account",
+                "spending_level": "transactions",
                 "limit": 10,
                 "page_metadata": {
                     "page": 1,

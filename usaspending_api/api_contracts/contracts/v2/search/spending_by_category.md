@@ -36,13 +36,23 @@ This endpoint returns a list of the top results of specific categories sorted by
                 + `recipient_duns`
                 + `recipient_parent_duns`
                 + `state_territory`
-                + `tas`
+                + `tas`        
         + `filters` (required, AdvancedFilterObject)
-            The filters to find with said category
+            The filters to find with said category        
         + `limit` (optional, number)
             The number of results to include per page
         + `page` (optional, number)
             The page of results to return based on the limit
+        + `spending_level` (optional, enum[string])
+            Group the spending by level. This also determines what data source is used for the totals.
+            + Members
+                + `transactions`
+                + `awards`
+                + `subawards`
+            + Default
+                + `transactions`
+        + `subawards` (optional, boolean)
+            Determines whether Prime Awards or Sub Awards are searched. This field will be depreciated soon.     
     + Body
 
             {
@@ -55,6 +65,12 @@ This endpoint returns a list of the top results of specific categories sorted by
 + Response 200 (application/json)
     + Attributes (object)
         + `category` (required, string)
+        + `spending_level` (required, enum[string])
+            Spending level value that was provided in the request.
+            + Members
+                + `transactions`
+                + `awards`
+                + `subawards` 
         + `results` (required, array[CategoryResult], fixed-type)
         + `limit` (required, number)
         + `page_metadata` (PageMetadataObject)
