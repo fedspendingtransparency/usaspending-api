@@ -22,7 +22,6 @@ class SandboxConfig(DefaultConfig):
 
     # ==== [Global] ====
     ENV_CODE: ClassVar[str] = "sbx"
-    TRACE_ENV: str = "sbx"
 
     # ==== [AWS] ====
     AWS_PROFILE: Union[str, None] = None

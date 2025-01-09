@@ -22,7 +22,6 @@ class ProductionConfig(DefaultConfig):
 
     # ==== [Global] ====
     ENV_CODE: ClassVar[str] = "prd"
-    TRACE_ENV: str = "prd"
 
     # ==== [AWS] ====
     AWS_PROFILE: Union[str, None] = None

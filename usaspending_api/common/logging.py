@@ -279,7 +279,6 @@ def configure_logging(service_name="usaspending-api"):
     attribute_pairs = [
         ("USASPENDING_DB_HOST", CONFIG.USASPENDING_DB_HOST),
         ("ENV_CODE", CONFIG.ENV_CODE),
-        ("TRACE_ENV", CONFIG.TRACE_ENV),
     ]
 
     add_custom_attribute_span_processors(trace.get_tracer_provider(), attribute_pairs)

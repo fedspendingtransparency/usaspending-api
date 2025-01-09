@@ -22,7 +22,6 @@ class QATConfig(DefaultConfig):
 
     # ==== [Global] ====
     ENV_CODE: ClassVar[str] = "qat"
-    TRACE_ENV: str = "qat"
 
     # ==== [AWS] ====
     AWS_PROFILE: Union[str, None] = None

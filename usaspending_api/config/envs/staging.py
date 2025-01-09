@@ -22,7 +22,6 @@ class StagingConfig(DefaultConfig):
 
     # ==== [Global] ====
     ENV_CODE: ClassVar[str] = "stg"
-    TRACE_ENV: str = "stg"
 
     # ==== [AWS] ====
     AWS_PROFILE: Union[str, None] = None

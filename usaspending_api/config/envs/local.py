@@ -35,7 +35,6 @@ class LocalConfig(DefaultConfig):
 
     # ==== [Global] ====
     ENV_CODE: ClassVar[str] = "lcl"
-    TRACE_ENV: str = "lcl"
 
     # Common credentials to share across services for convenience / ease on remembering
     _USASPENDING_USER: str = "usaspending"
