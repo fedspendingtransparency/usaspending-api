@@ -1141,7 +1141,11 @@ class Command(BaseCommand):
             try:
                 self.spark.sql("SELECT 1 FROM raw.transaction_normalized")
             except AnalysisException as e:
-                if re.match(r"Table or view not found: raw\.transaction_normalized", e.desc):
+                if re.match(
+                    r"^\[TABLE_OR_VIEW_NOT_FOUND\] The table or view `raw`\.`transaction_normalized` cannot be found\..*$",
+                    e.desc,
+                    re.MULTILINE,
+                ):
                     # In this case, we just don't populate transaction_id_lookup
                     self.logger.warn(
                         "Skipping population of transaction_id_lookup table; no raw.transaction_normalized table."
@@ -1169,7 +1173,11 @@ class Command(BaseCommand):
                 try:
                     self.spark.sql("SELECT 1 FROM raw.transaction_fabs")
                 except AnalysisException as e:
-                    if re.match(r"Table or view not found: raw\.transaction_fabs", e.desc):
+                    if re.match(
+                        r"^\[TABLE_OR_VIEW_NOT_FOUND\] The table or view `raw`\.`transaction_fabs` cannot be found\..*$",
+                        e.desc,
+                        re.MULTILINE,
+                    ):
                         # In this case, we just skip extending the orphaned transactions with this table
                         self.logger.warn(
                             "Skipping extension of orphaned_transaction_info table using raw.transaction_fabs table."
@@ -1193,7 +1201,11 @@ class Command(BaseCommand):
                 try:
                     self.spark.sql("SELECT 1 FROM raw.transaction_fpds")
                 except AnalysisException as e:
-                    if re.match(r"Table or view not found: raw\.transaction_fpds", e.desc):
+                    if re.match(
+                        r"^\[TABLE_OR_VIEW_NOT_FOUND\] The table or view `raw`\.`transaction_fpds` cannot be found\..*$",
+                        e.desc,
+                        re.MULTILINE,
+                    ):
                         # In this case, we just skip extending the orphaned transactions with this table
                         self.logger.warn(
                             "Skipping extension of orphaned_transaction_info table using raw.transaction_fpds table."
@@ -1501,7 +1513,11 @@ class Command(BaseCommand):
                     try:
                         self.spark.sql(f"SELECT 1 FROM raw.{destination_table}")
                     except AnalysisException as e:
-                        if re.match(rf"Table or view not found: raw\.{destination_table}", e.desc):
+                        if re.match(
+                            rf"^\[TABLE_OR_VIEW_NOT_FOUND\] The table or view `raw`\.`{destination_table}` cannot be found\..*$",
+                            e.desc,
+                            re.MULTILINE,
+                        ):
                             # In this case, we just don't copy anything over
                             self.logger.warn(
                                 f"Skipping copy of {destination_table} table from 'raw' to 'int' database; "

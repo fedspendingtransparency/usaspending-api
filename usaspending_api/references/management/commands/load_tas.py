@@ -112,11 +112,11 @@ class Command(BaseCommand):
             "internal_start_date": lambda row: datetime.strftime(
                 datetime.strptime(row["DT_TM_ESTAB"], "%m/%d/%Y  %H:%M:%S"), "%Y-%m-%d"
             ),
-            "internal_end_date": lambda row: datetime.strftime(
-                datetime.strptime(row["DT_END"], "%m/%d/%Y  %H:%M:%S"), "%Y-%m-%d"
-            )
-            if row["DT_END"]
-            else None,
+            "internal_end_date": lambda row: (
+                datetime.strftime(datetime.strptime(row["DT_END"], "%m/%d/%Y  %H:%M:%S"), "%Y-%m-%d")
+                if row["DT_END"]
+                else None
+            ),
         }
 
         with RetrieveFileFromUri(file_path).get_file_object(True) as tas_list_file_object:

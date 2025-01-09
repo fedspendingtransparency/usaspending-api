@@ -310,7 +310,7 @@ DETACHED_AWARD_PROCUREMENT_COLUMNS = {
 DETACHED_AWARD_PROCUREMENT_DELTA_COLUMNS = {k: v["delta"] for k, v in DETACHED_AWARD_PROCUREMENT_COLUMNS.items()}
 DETACHED_AWARD_PROCUREMENT_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in DETACHED_AWARD_PROCUREMENT_COLUMNS.items()}
 
-detached_award_procurement_create_sql_string = fr"""
+detached_award_procurement_create_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
         {", ".join([f'{key} {val}' for key, val in DETACHED_AWARD_PROCUREMENT_DELTA_COLUMNS.items()])}
     )

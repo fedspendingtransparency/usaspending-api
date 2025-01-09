@@ -8,7 +8,7 @@ url = "/api/v2/reporting/agencies/123/discrepancies/"
 
 @pytest.fixture
 def setup_test_data(db):
-    """ Insert test data into DB """
+    """Insert test data into DB"""
     baker.make(
         "submissions.DABSSubmissionWindowSchedule",
         submission_fiscal_year=2020,

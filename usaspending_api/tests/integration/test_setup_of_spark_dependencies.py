@@ -8,6 +8,7 @@ dependencies simultaneously and fail because of race conditions.
 
 NOTE: It should be run in a single-process pytest session (no xdist parallel sessions)!
 """
+
 from pyspark.sql import SparkSession
 
 

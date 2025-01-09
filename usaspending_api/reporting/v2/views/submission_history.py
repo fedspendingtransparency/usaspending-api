@@ -38,9 +38,11 @@ class SubmissionHistory(PaginationMixin, AgencyBase):
                 {"publication_date": row["published_date"], "certification_date": row["certified_date"]}
                 for row in record[0]
             ],
-            key=lambda x: x["publication_date"]
-            if self.pagination.sort_key == "publication_date"
-            else (x["certification_date"] or "", x["publication_date"]),
+            key=lambda x: (
+                x["publication_date"]
+                if self.pagination.sort_key == "publication_date"
+                else (x["certification_date"] or "", x["publication_date"])
+            ),
             reverse=self.pagination.sort_order == "desc",
         )
 

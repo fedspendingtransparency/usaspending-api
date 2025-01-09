@@ -46,7 +46,7 @@ def add_submission_ids(submission_ids: List[int]) -> int:
 
 
 def mark_force_reload(submission_ids: List[int]) -> int:
-    """ Mark submissions as requiring a full reload. """
+    """Mark submissions as requiring a full reload."""
     if not submission_ids:
         return 0
 

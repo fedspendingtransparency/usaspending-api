@@ -77,6 +77,10 @@ def construct_assistance_response(requested_award_dict: dict) -> OrderedDict:
     response["executive_details"] = create_officers_object(award)
     response["place_of_performance"] = create_place_of_performance_object(transaction)
     response["total_outlay"] = fetch_total_outlays(award["id"])
+    response["funding_opportunity"] = {
+        "number": transaction["_funding_opportunity_number"],
+        "goals": transaction["_funding_opportunity_goals"],
+    }
     return delete_keys_from_dict(response)
 
 
@@ -248,15 +252,19 @@ def create_place_of_performance_object(db_row_dict: dict) -> OrderedDict:
             ("city_name", db_row_dict["_pop_city_name"]),
             (
                 "state_code",
-                db_row_dict["_pop_state_code"]
-                if db_row_dict["_pop_state_code"]
-                else state_code_from_name(db_row_dict["_pop_state_name"]),
+                (
+                    db_row_dict["_pop_state_code"]
+                    if db_row_dict["_pop_state_code"]
+                    else state_code_from_name(db_row_dict["_pop_state_name"])
+                ),
             ),
             (
                 "state_name",
-                db_row_dict["_pop_state_name"]
-                if db_row_dict["_pop_state_name"]
-                else state_name_from_code(db_row_dict["_pop_state_code"]),
+                (
+                    db_row_dict["_pop_state_name"]
+                    if db_row_dict["_pop_state_name"]
+                    else state_name_from_code(db_row_dict["_pop_state_code"])
+                ),
             ),
             ("congressional_code", db_row_dict["_pop_congressional_code_current"]),
             ("zip4", db_row_dict["_pop_zip4"]),
