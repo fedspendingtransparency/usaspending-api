@@ -6,26 +6,19 @@ from pathlib import Path
 
 import boto3
 import pytest
-
 from django.core.management import call_command
 from django.db import connections
 from model_bakery import baker
 from psycopg2.extensions import AsIs
 from pyspark.sql import SparkSession
-
 from usaspending_api import settings
 from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.helpers.spark_helpers import (
-    configure_spark_session,
-    is_spark_context_stopped,
-    stop_spark_context,
-)
+    configure_spark_session, is_spark_context_stopped, stop_spark_context)
 from usaspending_api.config import CONFIG
 from usaspending_api.etl.award_helpers import update_awards
 from usaspending_api.etl.management.commands.create_delta_table import (
-    LOAD_QUERY_TABLE_SPEC,
-    LOAD_TABLE_TABLE_SPEC,
-)
+    LOAD_QUERY_TABLE_SPEC, LOAD_TABLE_TABLE_SPEC)
 
 # ==== Spark Automated Integration Test Fixtures ==== #
 
@@ -562,6 +555,13 @@ def _build_usas_data_for_spark():
             {"name": "OFFICE OF THE SECRETARY", "code": "0001"},
             {"name": "OPERATIONS AND MAINTENANCE", "code": "0002"},
         ],
+        federal_accounts=[
+            {
+                "id": federal_account.id,
+                "account_title": federal_account.account_title,
+                "federal_account_code": federal_account.federal_account_code,
+            }
+        ],
     )
     cont_award = baker.make(
         "search.AwardSearch",
@@ -648,6 +648,13 @@ def _build_usas_data_for_spark():
         pop_county_fips=None,
         generated_pragmatic_obligation=0.00,
         program_activities=[{"name": "TRAINING AND RECRUITING", "code": "0003"}],
+        federal_accounts=[
+            {
+                "id": federal_account.id,
+                "account_title": federal_account.account_title,
+                "federal_account_code": federal_account.federal_account_code,
+            }
+        ],
     )
     cont_award2 = baker.make(
         "search.AwardSearch",
@@ -718,6 +725,7 @@ def _build_usas_data_for_spark():
         pop_county_fips=None,
         generated_pragmatic_obligation=0.00,
         program_activities=None,
+        federal_accounts=None,
     )
 
     baker.make(
