@@ -220,6 +220,12 @@ def awards_and_transactions(db):
         federal_accounts=[fa1],
         award_category="grant",
         fiscal_year="2020",
+        program_activities=[
+            {
+                "code": str(ref_program_activity1.program_activity_code).zfill(4),
+                "name": ref_program_activity1.program_activity_name,
+            }
+        ],
     )
     baker.make(
         "search.TransactionSearch",
