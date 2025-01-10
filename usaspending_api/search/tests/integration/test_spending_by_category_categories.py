@@ -730,11 +730,20 @@ def federal_accounts_test_data(db):
     )
 
 
+def _expected_messages():
+    expected_messages = [get_time_period_message()]
+    expected_messages.append(
+        "'subawards' will be deprecated in the future. Set ‘spending_level’ to ‘subawards’ instead. "
+        "See documentation for more information. "
+    )
+    return expected_messages
+
+
 @pytest.mark.django_db
-def test_category_awarding_agency_awards(agency_test_data, monkeypatch, elasticsearch_transaction_index):
+def test_category_awarding_agency_transactions(agency_test_data, monkeypatch, elasticsearch_transaction_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
-    test_payload = {"category": "awarding_agency", "subawards": False, "page": 1, "limit": 50}
+    test_payload = {"category": "awarding_agency", "spending_level": "transactions", "page": 1, "limit": 50}
 
     spending_by_category_logic = AwardingAgencyViewSet().perform_search(test_payload, {})
 
@@ -745,7 +754,8 @@ def test_category_awarding_agency_awards(agency_test_data, monkeypatch, elastics
         "results": [
             {"amount": 15, "name": "Awarding Toptier Agency 1", "code": "TA1", "id": 1001, "agency_slug": None}
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
 
     assert expected_response == spending_by_category_logic
@@ -753,7 +763,7 @@ def test_category_awarding_agency_awards(agency_test_data, monkeypatch, elastics
 
 @pytest.mark.django_db
 def test_category_awarding_agency_subawards(agency_test_data):
-    test_payload = {"category": "awarding_agency", "subawards": True, "page": 1, "limit": 50}
+    test_payload = {"category": "awarding_agency", "spending_level": "subawards", "page": 1, "limit": 50}
 
     spending_by_category_logic = AwardingAgencyViewSet().perform_search(test_payload, {})
 
@@ -762,17 +772,18 @@ def test_category_awarding_agency_subawards(agency_test_data):
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [{"amount": 150, "name": "Awarding Toptier Agency 3", "code": "TA3", "id": 1003}],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "subawards",
     }
 
     assert expected_response == spending_by_category_logic
 
 
 @pytest.mark.django_db
-def test_category_awarding_subagency_awards(agency_test_data, monkeypatch, elasticsearch_transaction_index):
+def test_category_awarding_subagency_transactions(agency_test_data, monkeypatch, elasticsearch_transaction_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
-    test_payload = {"category": "awarding_subagency", "subawards": False, "page": 1, "limit": 50}
+    test_payload = {"category": "awarding_subagency", "spending_level": "transactions", "page": 1, "limit": 50}
 
     spending_by_category_logic = AwardingSubagencyViewSet().perform_search(test_payload, {})
 
@@ -793,7 +804,8 @@ def test_category_awarding_subagency_awards(agency_test_data, monkeypatch, elast
                 "agency_slug": "awarding-toptier-agency-1",
             }
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
 
     assert expected_response == spending_by_category_logic
@@ -801,7 +813,7 @@ def test_category_awarding_subagency_awards(agency_test_data, monkeypatch, elast
 
 @pytest.mark.django_db
 def test_category_awarding_subagency_subawards(agency_test_data):
-    test_payload = {"category": "awarding_subagency", "subawards": True, "page": 1, "limit": 50}
+    test_payload = {"category": "awarding_subagency", "spending_level": "subawards", "page": 1, "limit": 50}
 
     spending_by_category_logic = AwardingSubagencyViewSet().perform_search(test_payload, {})
 
@@ -822,17 +834,18 @@ def test_category_awarding_subagency_subawards(agency_test_data):
                 "agency_slug": "awarding-toptier-agency-3",
             }
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "subawards",
     }
 
     assert expected_response == spending_by_category_logic
 
 
 @pytest.mark.django_db
-def test_category_funding_agency_awards(agency_test_data, monkeypatch, elasticsearch_transaction_index):
+def test_category_funding_agency_transactions(agency_test_data, monkeypatch, elasticsearch_transaction_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
-    test_payload = {"category": "funding_agency", "subawards": False, "page": 1, "limit": 50}
+    test_payload = {"category": "funding_agency", "spending_level": "transactions", "page": 1, "limit": 50}
 
     spending_by_category_logic = FundingAgencyViewSet().perform_search(test_payload, {})
 
@@ -841,7 +854,8 @@ def test_category_funding_agency_awards(agency_test_data, monkeypatch, elasticse
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [{"amount": 15, "name": "Funding Toptier Agency 2", "code": "TA2", "id": 1002}],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
 
     assert expected_response == spending_by_category_logic
@@ -849,7 +863,7 @@ def test_category_funding_agency_awards(agency_test_data, monkeypatch, elasticse
 
 @pytest.mark.django_db
 def test_category_funding_agency_subawards(agency_test_data):
-    test_payload = {"category": "funding_agency", "subawards": True, "page": 1, "limit": 50}
+    test_payload = {"category": "funding_agency", "spending_level": "subawards", "page": 1, "limit": 50}
 
     spending_by_category_logic = FundingAgencyViewSet().perform_search(test_payload, {})
 
@@ -858,17 +872,18 @@ def test_category_funding_agency_subawards(agency_test_data):
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [{"amount": 150, "name": "Funding Toptier Agency 4", "code": "TA4", "id": 1004}],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "subawards",
     }
 
     assert expected_response == spending_by_category_logic
 
 
 @pytest.mark.django_db
-def test_category_funding_subagency_awards(agency_test_data, monkeypatch, elasticsearch_transaction_index):
+def test_category_funding_subagency_transactions(agency_test_data, monkeypatch, elasticsearch_transaction_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
-    test_payload = {"category": "funding_subagency", "subawards": False, "page": 1, "limit": 50}
+    test_payload = {"category": "funding_subagency", "spending_level": "transactions", "page": 1, "limit": 50}
 
     spending_by_category_logic = FundingSubagencyViewSet().perform_search(test_payload, {})
 
@@ -889,7 +904,8 @@ def test_category_funding_subagency_awards(agency_test_data, monkeypatch, elasti
                 "agency_slug": "funding-toptier-agency-2",
             }
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
 
     assert expected_response == spending_by_category_logic
@@ -897,7 +913,7 @@ def test_category_funding_subagency_awards(agency_test_data, monkeypatch, elasti
 
 @pytest.mark.django_db
 def test_category_funding_subagency_subawards(agency_test_data):
-    test_payload = {"category": "funding_subagency", "subawards": True, "page": 1, "limit": 50}
+    test_payload = {"category": "funding_subagency", "spending_level": "subawards", "page": 1, "limit": 50}
 
     spending_by_category_logic = FundingSubagencyViewSet().perform_search(test_payload, {})
 
@@ -918,17 +934,18 @@ def test_category_funding_subagency_subawards(agency_test_data):
                 "agency_slug": "funding-toptier-agency-4",
             }
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "subawards",
     }
 
     assert expected_response == spending_by_category_logic
 
 
 @pytest.mark.django_db
-def test_category_recipient_awards(recipient_test_data, monkeypatch, elasticsearch_transaction_index):
+def test_category_recipient_transactions(recipient_test_data, monkeypatch, elasticsearch_transaction_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
-    test_payload = {"category": "recipient", "subawards": False, "page": 1, "limit": 50}
+    test_payload = {"category": "recipient", "spending_level": "transactions", "page": 1, "limit": 50}
 
     spending_by_category_logic = RecipientViewSet().perform_search(test_payload, {})
 
@@ -953,7 +970,8 @@ def test_category_recipient_awards(recipient_test_data, monkeypatch, elasticsear
                 "uei": None,
             },
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
 
     assert expected_response == spending_by_category_logic
@@ -961,7 +979,7 @@ def test_category_recipient_awards(recipient_test_data, monkeypatch, elasticsear
 
 @pytest.mark.django_db
 def test_category_recipient_subawards(recipient_test_data):
-    test_payload = {"category": "recipient", "subawards": True, "page": 1, "limit": 50}
+    test_payload = {"category": "recipient", "spending_level": "subawards", "page": 1, "limit": 50}
 
     spending_by_category_logic = RecipientViewSet().perform_search(test_payload, {})
 
@@ -984,7 +1002,8 @@ def test_category_recipient_subawards(recipient_test_data):
                 "name": "UNIVERSITY OF PAWNEE",
             },
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "subawards",
     }
 
     assert expected_response == spending_by_category_logic
@@ -992,7 +1011,7 @@ def test_category_recipient_subawards(recipient_test_data):
 
 @pytest.mark.django_db
 def test_category_recipient_duns_subawards_deprecated(recipient_test_data):
-    test_payload = {"category": "recipient_duns", "subawards": True, "page": 1, "limit": 50}
+    test_payload = {"category": "recipient_duns", "spending_level": "subawards", "page": 1, "limit": 50}
 
     spending_by_category_logic = RecipientDunsViewSet().perform_search(test_payload, {})
 
@@ -1015,17 +1034,18 @@ def test_category_recipient_duns_subawards_deprecated(recipient_test_data):
                 "name": "UNIVERSITY OF PAWNEE",
             },
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "subawards",
     }
 
     assert expected_response == spending_by_category_logic
 
 
 @pytest.mark.django_db
-def test_category_cfda_awards(cfda_test_data, monkeypatch, elasticsearch_transaction_index):
+def test_category_cfda_transactions(cfda_test_data, monkeypatch, elasticsearch_transaction_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
-    test_payload = {"category": "cfda", "subawards": False, "page": 1, "limit": 50}
+    test_payload = {"category": "cfda", "spending_level": "transactions", "page": 1, "limit": 50}
 
     spending_by_category_logic = CfdaViewSet().perform_search(test_payload, {})
 
@@ -1034,7 +1054,8 @@ def test_category_cfda_awards(cfda_test_data, monkeypatch, elasticsearch_transac
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [{"amount": 2, "code": "CFDA1234", "name": "CFDA TITLE 1234", "id": 1}],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
 
     assert expected_response == spending_by_category_logic
@@ -1042,7 +1063,7 @@ def test_category_cfda_awards(cfda_test_data, monkeypatch, elasticsearch_transac
 
 @pytest.mark.django_db
 def test_category_cfda_subawards(cfda_test_data):
-    test_payload = {"category": "cfda", "subawards": True, "page": 1, "limit": 50}
+    test_payload = {"category": "cfda", "spending_level": "subawards", "page": 1, "limit": 50}
 
     spending_by_category_logic = CfdaViewSet().perform_search(test_payload, {})
 
@@ -1051,7 +1072,8 @@ def test_category_cfda_subawards(cfda_test_data):
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [{"amount": 2, "code": "CFDA1234", "name": "CFDA TITLE 1234", "id": 1}],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "subawards",
     }
 
     assert expected_response == spending_by_category_logic
@@ -1063,7 +1085,7 @@ def test_category_defc_subawards(client):
     resp = client.post(
         "/api/v2/search/spending_by_category",
         content_type="application/json",
-        data=json.dumps({"category": "defc", "subawards": True, "page": 1, "limit": 10}),
+        data=json.dumps({"category": "defc", "spending_level": "subawards", "page": 1, "limit": 10}),
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 0
@@ -1073,21 +1095,20 @@ def test_category_defc_subawards(client):
 def test_category_defc_awards(client, monkeypatch, elasticsearch_transaction_index):
     # TODO: This test should be updated to include data
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
-
     resp = client.post(
         "/api/v2/search/spending_by_category",
         content_type="application/json",
-        data=json.dumps({"category": "defc", "subawards": False, "page": 1, "limit": 10}),
+        data=json.dumps({"category": "defc", "spending_level": "transactions", "page": 1, "limit": 10}),
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 0
 
 
 @pytest.mark.django_db
-def test_category_psc_awards(psc_test_data, monkeypatch, elasticsearch_transaction_index):
+def test_category_psc_transactions(psc_test_data, monkeypatch, elasticsearch_transaction_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
-    test_payload = {"category": "psc", "subawards": False, "page": 1, "limit": 50}
+    test_payload = {"category": "psc", "spending_level": "transactions", "page": 1, "limit": 50}
 
     spending_by_category_logic = PSCViewSet().perform_search(test_payload, {})
 
@@ -1099,17 +1120,18 @@ def test_category_psc_awards(psc_test_data, monkeypatch, elasticsearch_transacti
             {"amount": 4, "code": "9876", "id": None, "name": "PSC DESCRIPTION DOWN"},
             {"amount": 2, "code": "1234", "id": None, "name": "PSC DESCRIPTION UP"},
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
 
     assert expected_response == spending_by_category_logic
 
 
 @pytest.mark.django_db
-def test_category_naics_awards(naics_test_data, monkeypatch, elasticsearch_transaction_index):
+def test_category_naics_transactions(naics_test_data, monkeypatch, elasticsearch_transaction_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
-    test_payload = {"category": "naics", "subawards": False, "page": 1, "limit": 50}
+    test_payload = {"category": "naics", "spending_level": "transactions", "page": 1, "limit": 50}
 
     spending_by_category_logic = NAICSViewSet().perform_search(test_payload, {})
 
@@ -1121,17 +1143,18 @@ def test_category_naics_awards(naics_test_data, monkeypatch, elasticsearch_trans
             {"amount": 4, "code": "NAICS 9876", "name": "SOURCE NAICS DESC 9876", "id": None},
             {"amount": 2, "code": "NAICS 1234", "name": "SOURCE NAICS DESC 1234", "id": None},
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
 
     assert expected_response == spending_by_category_logic
 
 
 @pytest.mark.django_db
-def test_category_county_awards(geo_test_data, monkeypatch, elasticsearch_transaction_index):
+def test_category_county_transactions(geo_test_data, monkeypatch, elasticsearch_transaction_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
-    test_payload = {"category": "county", "subawards": False, "page": 1, "limit": 50}
+    test_payload = {"category": "county", "spending_level": "transactions", "page": 1, "limit": 50}
 
     spending_by_category_logic = CountyViewSet().perform_search(test_payload, {})
 
@@ -1143,7 +1166,8 @@ def test_category_county_awards(geo_test_data, monkeypatch, elasticsearch_transa
             {"amount": 7, "code": "001", "name": "SOMEWHEREVILLE", "id": None},
             {"amount": 3, "code": "004", "name": "COUNTYSVILLE", "id": None},
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
 
     assert expected_response == spending_by_category_logic
@@ -1151,7 +1175,7 @@ def test_category_county_awards(geo_test_data, monkeypatch, elasticsearch_transa
 
 @pytest.mark.django_db
 def test_category_county_subawards(geo_test_data):
-    test_payload = {"category": "county", "subawards": True, "page": 1, "limit": 50}
+    test_payload = {"category": "county", "spending_level": "subawards", "page": 1, "limit": 50}
 
     spending_by_category_logic = CountyViewSet().perform_search(test_payload, {})
 
@@ -1163,17 +1187,18 @@ def test_category_county_subawards(geo_test_data):
             {"amount": 1100, "code": "001", "id": None, "name": "SOMEWHEREVILLE"},
             {"amount": 11, "code": "004", "id": None, "name": "COUNTYSVILLE"},
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "subawards",
     }
 
     assert expected_response == spending_by_category_logic
 
 
 @pytest.mark.django_db
-def test_category_district_awards(geo_test_data, monkeypatch, elasticsearch_transaction_index):
+def test_category_district_transactions(geo_test_data, monkeypatch, elasticsearch_transaction_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
-    test_payload = {"category": "district", "subawards": False, "page": 1, "limit": 50}
+    test_payload = {"category": "district", "spending_level": "transactions", "page": 1, "limit": 50}
 
     spending_by_category_logic = DistrictViewSet().perform_search(test_payload, {})
 
@@ -1185,7 +1210,8 @@ def test_category_district_awards(geo_test_data, monkeypatch, elasticsearch_tran
             {"amount": 7, "code": "05", "name": "XY-05", "id": None},
             {"amount": 3, "code": "90", "name": "XY-MULTIPLE DISTRICTS", "id": None},
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
 
     assert expected_response == spending_by_category_logic
@@ -1193,7 +1219,7 @@ def test_category_district_awards(geo_test_data, monkeypatch, elasticsearch_tran
 
 @pytest.mark.django_db
 def test_category_district_subawards(geo_test_data):
-    test_payload = {"category": "district", "subawards": True, "page": 1, "limit": 50}
+    test_payload = {"category": "district", "spending_level": "subawards", "page": 1, "limit": 50}
 
     spending_by_category_logic = DistrictViewSet().perform_search(test_payload, {})
 
@@ -1205,7 +1231,8 @@ def test_category_district_subawards(geo_test_data):
             {"amount": 1100, "code": "05", "id": None, "name": "XY-05"},
             {"amount": 11, "code": "90", "id": None, "name": "XY-MULTIPLE DISTRICTS"},
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "subawards",
     }
 
     assert expected_response == spending_by_category_logic
@@ -1215,7 +1242,7 @@ def test_category_district_subawards(geo_test_data):
 def test_category_state_territory(geo_test_data, monkeypatch, elasticsearch_transaction_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
-    test_payload = {"category": "state_territory", "subawards": False, "page": 1, "limit": 50}
+    test_payload = {"category": "state_territory", "spending_level": "transactions", "page": 1, "limit": 50}
 
     spending_by_category_logic = StateTerritoryViewSet().perform_search(test_payload, {})
 
@@ -1224,7 +1251,8 @@ def test_category_state_territory(geo_test_data, monkeypatch, elasticsearch_tran
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [{"amount": 10, "code": "XY", "name": "Test State", "id": None}],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
 
     assert expected_response == spending_by_category_logic
@@ -1232,7 +1260,7 @@ def test_category_state_territory(geo_test_data, monkeypatch, elasticsearch_tran
 
 @pytest.mark.django_db
 def test_category_state_territory_subawards(geo_test_data):
-    test_payload = {"category": "state_territory", "subawards": True, "page": 1, "limit": 50}
+    test_payload = {"category": "state_territory", "spending_level": "subawards", "page": 1, "limit": 50}
 
     spending_by_category_logic = StateTerritoryViewSet().perform_search(test_payload, {})
 
@@ -1241,7 +1269,8 @@ def test_category_state_territory_subawards(geo_test_data):
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [{"amount": 1111, "code": "XY", "id": None, "name": "Test State"}],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "subawards",
     }
 
     assert expected_response == spending_by_category_logic
@@ -1251,7 +1280,7 @@ def test_category_state_territory_subawards(geo_test_data):
 def test_category_country(geo_test_data, monkeypatch, elasticsearch_transaction_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
-    test_payload = {"category": "country", "subawards": False, "page": 1, "limit": 50}
+    test_payload = {"category": "country", "spending_level": "transactions", "page": 1, "limit": 50}
 
     spending_by_category_logic = CountryViewSet().perform_search(test_payload, {})
 
@@ -1260,7 +1289,8 @@ def test_category_country(geo_test_data, monkeypatch, elasticsearch_transaction_
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [{"amount": 10, "code": "US", "name": "UNITED STATES", "id": None}],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
 
     assert expected_response == spending_by_category_logic
@@ -1268,7 +1298,7 @@ def test_category_country(geo_test_data, monkeypatch, elasticsearch_transaction_
 
 @pytest.mark.django_db
 def test_category_country_subawards(geo_test_data):
-    test_payload = {"category": "country", "subawards": True, "page": 1, "limit": 50}
+    test_payload = {"category": "country", "spending_level": "subawards", "page": 1, "limit": 50}
 
     spending_by_category_logic = CountryViewSet().perform_search(test_payload, {})
 
@@ -1277,7 +1307,8 @@ def test_category_country_subawards(geo_test_data):
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [{"amount": 1111, "code": "US", "id": None, "name": "UNITED STATES"}],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "subawards",
     }
 
     assert expected_response == spending_by_category_logic
@@ -1290,7 +1321,7 @@ def test_category_federal_accounts(federal_accounts_test_data, monkeypatch, elas
     test_payload = {
         "category": "federal_account",
         "filters": {"recipient_id": "ab4d44f6-7a16-4ca7-405a-dcb913effbaf-R"},
-        "subawards": False,
+        "spending_level": "transactions",
         "page": 1,
         "limit": 50,
     }
@@ -1302,6 +1333,7 @@ def test_category_federal_accounts(federal_accounts_test_data, monkeypatch, elas
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [{"amount": 3, "code": "020-0001", "name": "Test Federal Account", "id": 10}],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
     assert expected_response == spending_by_category_logic

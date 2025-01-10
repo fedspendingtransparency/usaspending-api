@@ -163,8 +163,8 @@ def setup_test_data(db):
             obligations_incurred_by_program_object_class_cpe=ocpa["ob_incur"],
             deobligations_recoveries_refund_pri_program_object_class_cpe=ocpa["deobligation"],
             prior_year_adjustment=ocpa["pya"],
-            ussgl480110_reinstated_del_cpe=ocpa["ussgl480110"],
-            ussgl490110_reinstated_del_cpe=ocpa["ussgl490110"],
+            ussgl480110_rein_undel_ord_cpe=ocpa["ussgl480110"],
+            ussgl490110_rein_deliv_ord_cpe=ocpa["ussgl490110"],
         )
 
 
