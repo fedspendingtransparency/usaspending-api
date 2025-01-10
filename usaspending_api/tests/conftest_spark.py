@@ -560,6 +560,13 @@ def _build_usas_data_for_spark():
         generated_pragmatic_obligation=0.00,
         program_activity_codes=["0001", "0002"],
         program_activity_names=["OFFICE OF THE SECRETARY", "OPERATIONS AND MAINTENANCE"],
+        federal_accounts=[
+            {
+                "id": federal_account.id,
+                "account_title": federal_account.account_title,
+                "federal_account_code": federal_account.federal_account_code,
+            }
+        ],
     )
     cont_award = baker.make(
         "search.AwardSearch",
@@ -647,6 +654,13 @@ def _build_usas_data_for_spark():
         generated_pragmatic_obligation=0.00,
         program_activity_codes=["0003"],
         program_activity_names=["TRAINING AND RECRUITING"],
+        federal_accounts=[
+            {
+                "id": federal_account.id,
+                "account_title": federal_account.account_title,
+                "federal_account_code": federal_account.federal_account_code,
+            }
+        ],
     )
     cont_award2 = baker.make(
         "search.AwardSearch",
@@ -718,6 +732,7 @@ def _build_usas_data_for_spark():
         generated_pragmatic_obligation=0.00,
         program_activity_codes=None,
         program_activity_names=None,
+        federal_accounts=None,
     )
 
     baker.make(
