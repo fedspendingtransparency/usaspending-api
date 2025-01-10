@@ -37,8 +37,8 @@ def _obligation_columns() -> Dict[str, Union[str, F]]:
             "ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe",
         ],
         "pya_p": [
-            Coalesce("ussgl480110_reinstated_del_cpe", 0, output_field=DecimalField(max_digits=23, decimal_places=2)),
-            Coalesce("ussgl490110_reinstated_del_cpe", 0, output_field=DecimalField(max_digits=23, decimal_places=2)),
+            Coalesce("ussgl480110_rein_undel_ord_cpe", 0, output_field=DecimalField(max_digits=23, decimal_places=2)),
+            Coalesce("ussgl490110_rein_deliv_ord_cpe", 0, output_field=DecimalField(max_digits=23, decimal_places=2)),
         ],
         "pya_x": ["deobligations_recoveries_refund_pri_program_object_class_cpe"],
     }

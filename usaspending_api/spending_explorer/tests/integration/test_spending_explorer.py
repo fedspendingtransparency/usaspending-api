@@ -90,8 +90,8 @@ GLOBAL_MOCK_DICT = [
         "ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe": 0,
         "ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe": 0,
         "ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe": 0,
-        "ussgl480110_reinstated_del_cpe": 0,
-        "ussgl490110_reinstated_del_cpe": 0,
+        "ussgl480110_rein_undel_ord_cpe": 0,
+        "ussgl490110_rein_deliv_ord_cpe": 0,
     },
     {
         "model": FinancialAccountsByProgramActivityObjectClass,
@@ -114,8 +114,8 @@ GLOBAL_MOCK_DICT = [
         "ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe": 0,
         "ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe": 0,
         "ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe": 0,
-        "ussgl480110_reinstated_del_cpe": 0,
-        "ussgl490110_reinstated_del_cpe": 0,
+        "ussgl480110_rein_undel_ord_cpe": 0,
+        "ussgl490110_rein_deliv_ord_cpe": 0,
     },
     {
         "model": FinancialAccountsByProgramActivityObjectClass,
@@ -139,8 +139,8 @@ GLOBAL_MOCK_DICT = [
         "ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe": 0,
         "ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe": 0,
         "ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe": 0,
-        "ussgl480110_reinstated_del_cpe": 0,
-        "ussgl490110_reinstated_del_cpe": 0,
+        "ussgl480110_rein_undel_ord_cpe": 0,
+        "ussgl490110_rein_deliv_ord_cpe": 0,
     },
 ]
 
@@ -1007,8 +1007,8 @@ def test_unreported_file_c(client):
             "ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe": 0,
             "ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe": 0,
             "ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe": 0,
-            "ussgl480110_reinstated_del_cpe": 0,
-            "ussgl490110_reinstated_del_cpe": 0,
+            "ussgl480110_rein_undel_ord_cpe": 0,
+            "ussgl490110_rein_deliv_ord_cpe": 0,
         },
         {
             "model": FinancialAccountsByProgramActivityObjectClass,
@@ -1031,8 +1031,8 @@ def test_unreported_file_c(client):
             "ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe": 0,
             "ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe": 0,
             "ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe": 0,
-            "ussgl480110_reinstated_del_cpe": 0,
-            "ussgl490110_reinstated_del_cpe": 0,
+            "ussgl480110_rein_undel_ord_cpe": 0,
+            "ussgl490110_rein_deliv_ord_cpe": 0,
         },
         {
             "model": FinancialAccountsByProgramActivityObjectClass,
@@ -1055,8 +1055,8 @@ def test_unreported_file_c(client):
             "ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe": 0,
             "ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe": 0,
             "ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe": 0,
-            "ussgl480110_reinstated_del_cpe": 0,
-            "ussgl490110_reinstated_del_cpe": 0,
+            "ussgl480110_rein_undel_ord_cpe": 0,
+            "ussgl490110_rein_deliv_ord_cpe": 0,
         },
         {
             "model": TransactionSearch,
