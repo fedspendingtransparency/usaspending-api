@@ -60,6 +60,10 @@ ALLOWED_HOSTS = ["*"]
 # Define local flag to affect location of downloads
 IS_LOCAL = True
 
+# Indicates which environment is sending traces to Grafana.
+# This will be overwritten by Ansible
+TRACE_ENV = "unspecified"
+
 # How to handle downloads locally
 # True: process it right away by the API;
 # False: leave the message in the local file-backed queue to be picked up and processed by the bulk-download container
