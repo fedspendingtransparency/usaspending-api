@@ -14,11 +14,13 @@ from pyspark.sql import SparkSession
 from usaspending_api import settings
 from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.helpers.spark_helpers import (
-    configure_spark_session, is_spark_context_stopped, stop_spark_context)
+    configure_spark_session,
+    is_spark_context_stopped,
+    stop_spark_context,
+)
 from usaspending_api.config import CONFIG
 from usaspending_api.etl.award_helpers import update_awards
-from usaspending_api.etl.management.commands.create_delta_table import (
-    LOAD_QUERY_TABLE_SPEC, LOAD_TABLE_TABLE_SPEC)
+from usaspending_api.etl.management.commands.create_delta_table import LOAD_QUERY_TABLE_SPEC, LOAD_TABLE_TABLE_SPEC
 
 # ==== Spark Automated Integration Test Fixtures ==== #
 
