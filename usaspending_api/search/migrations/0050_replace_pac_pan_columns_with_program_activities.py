@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("search", "0048_alter_awardsearch_award_alter_summarystateview_duh"),
+        ("search", "0049_awardsearch_federal_accounts"),
     ]
 
     operations = [
