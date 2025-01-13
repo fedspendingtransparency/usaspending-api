@@ -20,6 +20,7 @@ def transform_award_data(worker: TaskSpec, records: List[dict]) -> List[dict]:
         "covid_spending_by_defc": convert_json_data_to_dict,
         "iija_spending_by_defc": convert_json_data_to_dict,
         "federal_accounts": convert_json_array_to_list_of_str,
+        "program_activities": convert_json_data_to_dict(),
     }
     agg_key_creations = {
         "awarding_subtier_agency_agg_key": lambda x: x["awarding_subtier_agency_code"],
@@ -63,6 +64,7 @@ def transform_award_data(worker: TaskSpec, records: List[dict]) -> List[dict]:
 def transform_transaction_data(worker: TaskSpec, records: List[dict]) -> List[dict]:
     converters = {
         "federal_accounts": convert_json_array_to_list_of_str,
+        "program_activities": convert_json_data_to_dict(),
     }
     agg_key_creations = {
         "recipient_agg_key": funcs.transaction_recipient_agg_key,
@@ -99,6 +101,16 @@ def transform_transaction_data(worker: TaskSpec, records: List[dict]) -> List[di
         "recipient_levels",
         "funding_toptier_agency_id",
     ]
+    return transform_data(worker, records, converters, agg_key_creations, drop_fields, settings.ES_ROUTING_FIELD)
+
+
+def transform_subaward_data(worker: TaskSpec, records: List[dict]) -> List[dict]:
+    converters = {
+        "program_activities": convert_json_data_to_dict(),
+    }
+    agg_key_creations = {}
+    drop_fields = []
+
     return transform_data(worker, records, converters, agg_key_creations, drop_fields, settings.ES_ROUTING_FIELD)
 
 
