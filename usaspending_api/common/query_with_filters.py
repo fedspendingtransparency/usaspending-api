@@ -6,10 +6,8 @@ from datetime import datetime
 from typing import List, Tuple
 
 from django.conf import settings
-from django.db.models import Q
 from elasticsearch_dsl import Q as ES_Q
 
-from usaspending_api.awards.models.financial_accounts_by_awards import FinancialAccountsByAwards
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.api_helper import (
     DUPLICATE_DISTRICT_LOCATION_PARAMETERS,
@@ -643,26 +641,27 @@ class _ProgramActivities(_Filter):
     underscore_name = "program_activities"
 
     @classmethod
-    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType, **options) -> ES_Q:
-        award_id_match_query = []
+    def generate_elasticsearch_query(cls, filter_values: List[dict], query_type: _QueryType, **options) -> ES_Q:
+        program_activity_match_queries = []
+
         for filter_value in filter_values:
-            query_filter_predicates = [Q(program_activity_id__isnull=False)]
+            temp_must = []
 
             if "name" in filter_value:
-                query_filter_predicates.append(Q(program_activity__program_activity_name=filter_value["name"].upper()))
+                temp_must.append(
+                    ES_Q("match", program_activities__name__keyword=filter_value["name"].upper()),
+                )
             if "code" in filter_value:
-                query_filter_predicates.append(Q(program_activity__program_activity_code=filter_value["code"]))
-            award_ids_filtered_by_program_activities = FinancialAccountsByAwards.objects.filter(
-                *query_filter_predicates
-            )
-            award_ids = set(award_ids_filtered_by_program_activities.values_list("award_id", flat=True))
+                temp_must.append(ES_Q("match", program_activities__code__keyword=str(filter_value["code"]).zfill(4)))
 
-            for id in award_ids:
-                if id is not None:
-                    award_id_match_query.append(ES_Q("match", award_id=id))
-        if len(award_id_match_query) == 0:
+            if temp_must:
+                program_activity_match_queries.append(
+                    ES_Q("nested", path="program_activities", query=ES_Q("bool", must=temp_must))
+                )
+
+        if len(program_activity_match_queries) == 0:
             return ~ES_Q()
-        return ES_Q("bool", should=award_id_match_query, minimum_should_match=1)
+        return ES_Q("bool", should=program_activity_match_queries, minimum_should_match=1)
 
 
 class _ContractPricingTypeCodes(_Filter):

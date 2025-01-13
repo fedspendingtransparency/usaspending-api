@@ -4823,6 +4823,12 @@ def test_spending_over_time_program_activity(client, monkeypatch, elasticsearch_
         fiscal_action_date="2020-04-02",
         award_category="grant",
         generated_pragmatic_obligation=10,
+        program_activities=[
+            {
+                "code": str(ref_program_activity1.program_activity_code).zfill(4),
+                "name": ref_program_activity1.program_activity_name,
+            }
+        ],
     )
 
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)

@@ -117,8 +117,7 @@ SELECT
   "total_iija_obligation",
 
   "generated_pragmatic_obligation",
-  "program_activity_names",
-  "program_activity_codes"
+  "program_activities"::JSON
 
 FROM "award_search"
 WHERE "action_date" >= '2007-10-01';
