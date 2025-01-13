@@ -858,6 +858,8 @@ class TestInitialRunNoPostgresLoader:
     def test_happy_path_scenarios(
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
     ):
+        # 1. Call initial_run with no initial-copy, and have all raw tables populated. Expecting no raw data copied.
+
         # Since we're not using the Postgres transaction loader, load raw.transaction_normalized and raw.awards
         # from expected data when making initial run
         load_other_raw_tables = [
@@ -915,7 +917,7 @@ class TestInitialRunNoPostgresLoader:
             "expected_last_load_transaction_fpds": _BEGINNING_OF_TIME,
         }
         TestInitialRun.verify(
-            spark, self.expected_initial_transaction_id_lookup, self.expected_initial_award_id_lookup, **kwargs
+            spark, [], [], **kwargs
         )
 
         # 2. Call initial_run with initial-copy, and have all raw tables populated
