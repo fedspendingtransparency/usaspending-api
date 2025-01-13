@@ -5,19 +5,7 @@
     "index.refresh_interval": -1,
     "index": {
       "number_of_shards": 5,
-      "number_of_replicas": 0,
-      "sort.field": [
-        "federal_action_obligation.keyword",
-        "action_date"
-      ],
-      "sort.order": [
-        "desc",
-        "desc"
-      ],
-      "sort.missing": [
-        "_last",
-        "_last"
-      ]
+      "number_of_replicas": 0
     },
     "analysis": {
       "analyzer": {
@@ -679,19 +667,24 @@
           }
         }
       },
-      "program_activity_names": {
-        "type": "text",
-        "fields": {
-          "keyword": {
-            "type": "keyword"
-          }
-        }
-      },
-      "program_activity_codes": {
-        "type": "text",
-        "fields": {
-          "keyword": {
-            "type": "keyword"
+      "program_activities": {
+        "type": "nested",
+        "properties": {
+          "name": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          },
+          "code": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
           }
         }
       }
