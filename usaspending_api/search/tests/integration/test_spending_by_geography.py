@@ -7,7 +7,6 @@ from usaspending_api.common.helpers.generic_helper import get_time_period_messag
 from usaspending_api.search.tests.data.search_filters_test_data import non_legacy_filters
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
-
 spending_level_deprecation_message = (
     "The 'subawards' field will be deprecated in the future. "
     "Set 'spending_level' to 'subawards' instead. See documentation for more information."
@@ -2328,6 +2327,57 @@ def test_spending_by_geo_program_activity(
     }
     expected_response = []
 
+    resp = client.post(
+        "/api/v2/search/spending_by_geography", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
+
+    # Testing Program Activity Code
+    test_payload = {
+        "subawards": False,
+        "scope": "place_of_performance",
+        "geo_layer": "country",
+        "geo_layer_filters": ["USA"],
+        "filters": {
+            "program_activities": [{"code": "123"}],
+        },
+    }
+    expected_response = [
+        {
+            "aggregated_amount": 5.0,
+            "display_name": "United States",
+            "population": None,
+            "per_capita": None,
+            "shape_code": "USA",
+        },
+    ]
+    resp = client.post(
+        "/api/v2/search/spending_by_geography", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
+
+    test_payload = {
+        "subawards": False,
+        "scope": "place_of_performance",
+        "geo_layer": "country",
+        "geo_layer_filters": ["USA"],
+        "filters": {
+            "program_activities": [{"code": "0123"}],
+        },
+    }
+    expected_response = [
+        {
+            "aggregated_amount": 5.0,
+            "display_name": "United States",
+            "population": None,
+            "per_capita": None,
+            "shape_code": "USA",
+        },
+    ]
     resp = client.post(
         "/api/v2/search/spending_by_geography", content_type="application/json", data=json.dumps(test_payload)
     )

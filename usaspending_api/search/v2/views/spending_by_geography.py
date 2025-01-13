@@ -132,7 +132,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                 "array_type": "object",
                 "object_keys": {
                     "name": {"type": "text", "text_type": "search"},
-                    # "code": {"type": "text", "text_type": "search"},
+                    "code": {"type": "text", "text_type": "search"},
                 },
             }
         ]
