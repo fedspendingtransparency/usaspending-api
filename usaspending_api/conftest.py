@@ -8,7 +8,6 @@ from typing import List
 import docker
 import pytest
 from django.conf import settings
-from django.core.management import call_command
 from django.db import connections
 from django.test import override_settings
 from model_bakery import baker
@@ -195,12 +194,12 @@ def django_db_setup(
     ``django.test.utils.setup_databases``, which is the actual method that needs to be wrapped and extended.
     """
     from django.test.utils import TimeKeeper, setup_databases, teardown_databases
-    from pytest_django.fixtures import _disable_native_migrations
+    from pytest_django.fixtures import _disable_migrations
 
     setup_databases_args = {}
 
     if not django_db_use_migrations:
-        _disable_native_migrations()
+        _disable_migrations()
 
     if django_db_keepdb and not django_db_createdb:
         setup_databases_args["keepdb"] = True
@@ -247,7 +246,6 @@ def django_db_setup(
             ensure_view_exists(settings.ES_AWARDS_ETL_VIEW_NAME)
             add_view_protection()
             ensure_business_categories_functions_exist()
-            call_command("load_broker_static_data")
 
             # This is necessary for any script/code run in a test that bases its database connection off the postgres
             # config. This resolves the issue by temporarily mocking the DATABASE_URL to accurately point to the test
@@ -270,7 +268,7 @@ def django_db_setup(
             old_broker_db_url = CONFIG.DATA_BROKER_DATABASE_URL
             old_broker_ps_db = CONFIG.BROKER_DB_NAME
 
-            if "data_broker" in settings.DATABASES:
+            if settings.DATA_BROKER_DB_ALIAS in settings.DATABASES:
                 test_broker_db = settings.DATABASES[settings.DATA_BROKER_DB_ALIAS].get("NAME")
                 if test_broker_db is None:
                     raise ValueError(
@@ -455,7 +453,7 @@ def broker_db_setup(django_db_setup, django_db_use_migrations, worker_id):
     broker_integrationtest_secrets_file = f"{broker_config_env_envvar}_secrets.yml"
 
     # Check that a Connection to the Broker DB has been configured
-    if "data_broker" not in settings.DATABASES:
+    if settings.DATA_BROKER_DB_ALIAS not in settings.DATABASES:
         logger.error("Error finding 'data_broker' database configured in django settings.DATABASES.")
         pytest.skip(
             "'data_broker' database not configured in django settings.DATABASES. "
@@ -488,7 +486,7 @@ def broker_db_setup(django_db_setup, django_db_use_migrations, worker_id):
 
     # ==== Run the DB setup script using the Broker docker image. ====
 
-    broker_test_db_name = settings.DATABASES["data_broker"]["NAME"]
+    broker_test_db_name = settings.DATABASES[settings.DATA_BROKER_DB_ALIAS]["NAME"]
 
     # Using a mounts to copy the broker source code into the container, and create a modifiable copy
     # of the broker config dir in order to execute broker DB setup code using that config
@@ -536,13 +534,13 @@ def broker_db_setup(django_db_setup, django_db_use_migrations, worker_id):
     # Setup Broker config files to work with the same DB configured via the Broker DB URL env var
     # This will ensure that when the broker script is run, it uses the same test broker DB
     broker_db_config_cmds = rf"""                                                                 \
-        sed -i.bak -E "s/host:.*$/host: {settings.DATABASES["data_broker"]["HOST"]}/"             \
+        sed -i.bak -E "s/host:.*$/host: {settings.DATABASES[settings.DATA_BROKER_DB_ALIAS]["HOST"]}/"             \
             {broker_src_target}/{broker_config_dir}/{broker_integrationtest_config_file};         \
-        sed -i.bak -E "s/port:.*$/port: {settings.DATABASES["data_broker"]["PORT"]}/"             \
+        sed -i.bak -E "s/port:.*$/port: {settings.DATABASES[settings.DATA_BROKER_DB_ALIAS]["PORT"]}/"             \
             {broker_src_target}/{broker_config_dir}/{broker_integrationtest_config_file};         \
-        sed -i.bak -E "s/username:.*$/username: {settings.DATABASES["data_broker"]["USER"]}/"     \
+        sed -i.bak -E "s/username:.*$/username: {settings.DATABASES[settings.DATA_BROKER_DB_ALIAS]["USER"]}/"     \
             {broker_src_target}/{broker_config_dir}/{broker_integrationtest_secrets_file};        \
-        sed -i.bak -E "s/password:.*$/password: {settings.DATABASES["data_broker"]["PASSWORD"]}/" \
+        sed -i.bak -E "s/password:.*$/password: {settings.DATABASES[settings.DATA_BROKER_DB_ALIAS]["PASSWORD"]}/" \
             {broker_src_target}/{broker_config_dir}/{broker_integrationtest_secrets_file};        \
     """
 

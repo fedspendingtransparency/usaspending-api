@@ -56,6 +56,8 @@ SELECT
   "awarding_subtier_agency_code",
   "funding_subtier_agency_code",
 
+  "federal_accounts",
+  
   "recipient_location_country_code",
   "recipient_location_country_name",
   "recipient_location_state_code",
@@ -115,8 +117,7 @@ SELECT
   "total_iija_obligation",
 
   "generated_pragmatic_obligation",
-  "program_activity_names",
-  "program_activity_codes"
+  "program_activities"::JSON
 
 FROM "award_search"
 WHERE "action_date" >= '2007-10-01';

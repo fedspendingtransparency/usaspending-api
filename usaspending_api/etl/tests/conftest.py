@@ -1,5 +1,7 @@
-from pytest import fixture, mark
+import pytest
+
 from model_bakery import baker
+
 from usaspending_api.etl.tests.data.submissions import submissions
 from usaspending_api.etl.tests.integration.test_load_transactions_in_delta_lookups import (
     _BEGINNING_OF_TIME,
@@ -14,9 +16,8 @@ __all__ = [
 ]
 
 
-@fixture
-@mark.django_db
-def _populate_initial_source_tables_pg():
+@pytest.fixture
+def _populate_initial_source_tables_pg(db):
     # Populate transactions.SourceAssistanceTransaction and associated broker.ExternalDataType data in Postgres
     for assist in _INITIAL_ASSISTS:
         baker.make("transactions.SourceAssistanceTransaction", **assist)
