@@ -916,9 +916,7 @@ class TestInitialRunNoPostgresLoader:
             "expected_last_load_transaction_fabs": _BEGINNING_OF_TIME,
             "expected_last_load_transaction_fpds": _BEGINNING_OF_TIME,
         }
-        TestInitialRun.verify(
-            spark, [], [], **kwargs
-        )
+        TestInitialRun.verify(spark, [], [], **kwargs)
 
         # 2. Call initial_run with initial-copy, and have all raw tables populated
 

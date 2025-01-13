@@ -144,9 +144,9 @@ class _TransactionFabsFpdsCore:
         # raw.transaction_normalized along with the source tables, but don't copy the raw tables to int.
         # Then immediately call load_transactions_in_delta with etl-level of transaction_f[ab|pd]s.
         InitialRun.initial_run(self.s3_data_bucket, load_other_raw_tables=load_other_raw_tables, initial_copy=False)
-        call_command("load_transactions_in_delta", "--etl-level", 'transaction_normalized')
-        call_command("load_transactions_in_delta", "--etl-level", 'award_id_lookup')
-        call_command("load_transactions_in_delta", "--etl-level", 'transaction_id_lookup')
+        call_command("load_transactions_in_delta", "--etl-level", "transaction_normalized")
+        call_command("load_transactions_in_delta", "--etl-level", "award_id_lookup")
+        call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
         call_command("load_transactions_in_delta", "--etl-level", self.etl_level)
 
         kwargs = {
