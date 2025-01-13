@@ -117,6 +117,7 @@ class _Description(_Filter):
     def generate_elasticsearch_query(cls, filter_values: str, query_type: _QueryType, **options) -> ES_Q:
         fields = {
             _QueryType.AWARDS: ["description"],
+            _QueryType.SUBAWARDS: ["subaward_description"],
             _QueryType.TRANSACTIONS: ["transaction_description"],
         }
         query = es_sanitize(filter_values)
