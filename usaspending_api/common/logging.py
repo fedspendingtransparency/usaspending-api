@@ -22,8 +22,7 @@ from opentelemetry.sdk.trace import ReadableSpan, SpanProcessor, TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
 
 # Local application imports
-from usaspending_api.config import CONFIG
-from usaspending_api.settings import TRACE_ENV
+from usaspending_api.settings import TRACE_ENV, DATABASES
 
 logger = logging.getLogger(__name__)
 
@@ -278,7 +277,7 @@ def configure_logging(service_name="usaspending-api"):
     # Modify the following to add/remove information inside traces
     # The following will be added to every trace
     attribute_pairs = [
-        ("USASPENDING_DB_HOST", CONFIG.USASPENDING_DB_HOST),
+        ("USASPENDING_DB_HOST", DATABASES['default']['HOST']),
         ("TRACE_ENV", TRACE_ENV),
     ]
 
