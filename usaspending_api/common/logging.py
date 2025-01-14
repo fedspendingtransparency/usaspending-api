@@ -277,7 +277,7 @@ def configure_logging(service_name="usaspending-api"):
     # Modify the following to add/remove information inside traces
     # The following will be added to every trace
     attribute_pairs = [
-        ("USASPENDING_DB_HOST", DATABASES['default']['HOST']),
+        ("DEFUALT_DB_HOST", DATABASES['default']['HOST']),
         ("TRACE_ENV", TRACE_ENV),
     ]
 
