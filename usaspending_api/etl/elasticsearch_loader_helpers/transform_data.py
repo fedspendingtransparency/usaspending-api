@@ -111,7 +111,7 @@ def transform_subaward_data(worker: TaskSpec, records: List[dict]) -> List[dict]
     agg_key_creations = {}
     drop_fields = []
 
-    return transform_data(worker, records, converters, agg_key_creations, drop_fields, settings.ES_ROUTING_FIELD)
+    return transform_data(worker, records, converters, agg_key_creations, drop_fields, None)
 
 
 def transform_data(
