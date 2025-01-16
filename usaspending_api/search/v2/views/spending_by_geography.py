@@ -5,7 +5,7 @@ from enum import Enum
 from typing import Dict, List, Optional, Union
 
 from django.conf import settings
-from django.db import models
+from django.db import models as db_models
 from django.db.models import F, FloatField, QuerySet, Sum, TextField, Value
 from django.db.models.functions import Cast, Concat
 from elasticsearch_dsl import A
@@ -35,6 +35,7 @@ from usaspending_api.search.v2.elasticsearch_helper import (
     get_number_of_unique_terms_for_transactions,
     get_scaled_sum_aggregations,
 )
+from usaspending_api.search.v2.views.enums import SpendingLevel
 
 logger = logging.getLogger(__name__)
 API_VERSION = settings.API_VERSION
@@ -45,12 +46,6 @@ class GeoLayer(Enum):
     DISTRICT = "district"
     STATE = "state"
     COUNTRY = "country"
-
-
-class SpendingLevel(Enum):
-    AWARD = "awards"
-    SUBAWARD = "subawards"
-    TRANSACTION = "transactions"
 
 
 @api_transformations(api_version=API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
@@ -67,7 +62,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
     geo_layer_filters: Optional[List[str]]
     loc_field_name: str
     loc_lookup: str
-    model_name: Optional[models.Model]
+    model_name: Optional[db_models.Model]
     obligation_column: str
     queryset: Optional[QuerySet]
     scope: str
@@ -137,7 +132,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                 "array_type": "object",
                 "object_keys": {
                     "name": {"type": "text", "text_type": "search"},
-                    # "code": {"type": "text", "text_type": "search"},
+                    "code": {"type": "text", "text_type": "search"},
                 },
             }
         ]

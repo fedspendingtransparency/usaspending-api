@@ -55,7 +55,7 @@ def validate_request_within_revealed_submissions(
 
 
 def is_valid_monthly_period(year: int, period: int) -> bool:
-    """ Returns False for periods before agencies were able to make monthly submissions """
+    """Returns False for periods before agencies were able to make monthly submissions"""
 
     is_valid_period = True
 
@@ -73,7 +73,7 @@ def is_valid_monthly_period(year: int, period: int) -> bool:
 
 @dataclass
 class ClosedPeriod:
-    """ Little convenience class to bundle some common period functionality. """
+    """Little convenience class to bundle some common period functionality."""
 
     fiscal_year: int
     fiscal_quarter: Optional[int]
@@ -90,7 +90,7 @@ class ClosedPeriod:
         )
 
     def build_period_q(self, submission_relation_name: Optional[str] = None) -> Q:
-        """ Leave submission_relation_name None to filter directly on the submission table. """
+        """Leave submission_relation_name None to filter directly on the submission table."""
         prefix = f"{submission_relation_name}__" if submission_relation_name else ""
         q = Q()
         if self.fiscal_quarter:
@@ -141,7 +141,7 @@ def get_last_closed_periods_per_year():
 
 
 def get_last_closed_quarter_relative_to_month(fiscal_year: int, fiscal_month: int) -> Optional[dict]:
-    """ Returns the most recently closed fiscal quarter in the fiscal year less than or equal to the fiscal month. """
+    """Returns the most recently closed fiscal quarter in the fiscal year less than or equal to the fiscal month."""
     return (
         DABSSubmissionWindowSchedule.objects.filter(
             is_quarter=True,
@@ -156,7 +156,7 @@ def get_last_closed_quarter_relative_to_month(fiscal_year: int, fiscal_month: in
 
 
 def get_last_closed_month_relative_to_quarter(fiscal_year: int, fiscal_quarter: int) -> Optional[dict]:
-    """ Returns the most recently closed fiscal month in the fiscal year less than or equal to the fiscal quarter. """
+    """Returns the most recently closed fiscal month in the fiscal year less than or equal to the fiscal quarter."""
     return (
         DABSSubmissionWindowSchedule.objects.filter(
             is_quarter=False,

@@ -15,16 +15,24 @@ This endpoint should return a an aggregate list of DEFC's sorted by the total am
                 "$schema": "http://json-schema.org/draft-04/schema#",
                 "type": "object"
             }
-    + Attributes (object)
-            + `filters` (required, AdvancedFilterObject)
-                The filters to find with said category
-            + `limit`: 5 (optional, number)
-                The number of results to include per page
-            + `page`: 1 (optional, number)
-                The page of results to return based on the limit
-            + `subawards` (optional, boolean)
-                Determines whether Prime Awards or Sub Awards are searched
 
+    + Attributes (object)
+        + `filters` (required, AdvancedFilterObject)
+            The filters to find with said category
+        + `limit`: 5 (optional, number)
+            The number of results to include per page
+        + `page`: 1 (optional, number)
+            The page of results to return based on the limit
+        + `spending_level` (optional, enum[string])
+            Group the spending by level. This also determines what data source is used for the totals.
+            + Members
+                + `transactions`
+                + `awards`
+                + `subawards`
+            + Default
+                + `transactions`
+        + `subawards` (optional, boolean)
+            Determines whether Prime Awards or Sub Awards are searched. This field will be depreciated soon.
     + Body
 
 
@@ -43,12 +51,19 @@ This endpoint should return a an aggregate list of DEFC's sorted by the total am
                             "end_date": "2020-09-28"
                         }
                     ]
-                }
+                },
+                "spending_level": "transactions"
             }
 
 + Response 200 (application/json)
     + Attributes (object)
         + `category`: `defc` (required, string)
+        + `spending_level` (required, enum[string])
+            Spending level value that was provided in the request.
+            + Members
+                + `transactions`
+                + `awards`
+                + `subawards`
         + `results` (required, array[CategoryResult], fixed-type)
         + `limit`: 10 (required, number)
         + `page_metadata` (PageMetadataObject)
@@ -59,6 +74,7 @@ This endpoint should return a an aggregate list of DEFC's sorted by the total am
 
             {
                 "category": "defc",
+                "spending_level": "transactions",
                 "limit": 10,
                 "page_metadata": {
                     "page": 1,
@@ -103,6 +119,7 @@ This endpoint should return a an aggregate list of DEFC's sorted by the total am
 ## Filter Objects
 ### AdvancedFilterObject (object)
 + `keywords` : [`transport`] (optional, array[string])
++ `description` (optional, string)
 + `time_period` (optional, array[TimePeriodObject], fixed-type)
 + `place_of_performance_scope` (optional, enum[string])
     + Members

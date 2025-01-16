@@ -6,7 +6,7 @@ from django.test import TestCase
 
 
 class BrokerIntegrationTestCase(TestCase):
-    databases = {"default", "data_broker"}
+    databases = {settings.DEFAULT_DB_ALIAS, settings.DATA_BROKER_DB_ALIAS}
     dummy_table_name = "dummy_broker_table_to_be_rolled_back"
 
     @classmethod
@@ -16,7 +16,7 @@ class BrokerIntegrationTestCase(TestCase):
     @classmethod
     def tearDownClass(cls):
         # Follow-up of test_broker_transactional_test
-        with connections["data_broker"].cursor() as cursor:
+        with connections[settings.DATA_BROKER_DB_ALIAS].cursor() as cursor:
             cursor.execute("select * from pg_tables where tablename = '{}'".format(cls.dummy_table_name))
             results = cursor.fetchall()
         assert results is not None
@@ -29,7 +29,7 @@ class BrokerIntegrationTestCase(TestCase):
     @pytest.mark.usefixtures("broker_db_setup")
     def test_can_connect_to_broker(self):
         """Simple 'integration test' that checks a Broker DB exists to integrate with"""
-        connection = connections["data_broker"]
+        connection = connections[settings.DATA_BROKER_DB_ALIAS]
         with connection.cursor() as cursor:
             cursor.execute("SELECT now()")
             results = cursor.fetchall()
@@ -50,7 +50,7 @@ class BrokerIntegrationTestCase(TestCase):
         dummy_contents = "dummy_text"
 
         # Make sure the table and the data get in there
-        connection = connections["data_broker"]
+        connection = connections[settings.DATA_BROKER_DB_ALIAS]
         with connection.cursor() as cursor:
             cursor.execute("create table {} (contents text)".format(self.dummy_table_name))
             cursor.execute("insert into {} values ('{}')".format(self.dummy_table_name, dummy_contents))
@@ -68,7 +68,7 @@ class BrokerIntegrationTestCase(TestCase):
     @pytest.mark.usefixtures("broker_db_setup")
     def test_broker_db_fully_setup(self):
         """Simple 'integration test' that checks a Broker DB had its schema setup"""
-        connection = connections["data_broker"]
+        connection = connections[settings.DATA_BROKER_DB_ALIAS]
         with connection.cursor() as cursor:
             cursor.execute("select * from pg_tables where tablename = 'alembic_version'")
             results = cursor.fetchall()

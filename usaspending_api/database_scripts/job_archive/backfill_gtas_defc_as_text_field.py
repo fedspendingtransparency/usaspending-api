@@ -14,6 +14,7 @@ Purpose:
 
     SINGLE PROCESS VERSION
 """
+
 import math
 import psycopg2
 import time
