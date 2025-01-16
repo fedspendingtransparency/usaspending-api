@@ -20,11 +20,14 @@ Purpose:
 import logging
 
 from os import environ
+from pathlib import Path
 from typing import Iterator, Tuple
 
 import psycopg2
 
-from usaspending_api.common.helpers.timing_helpers import Timer
+# Import our USAspending Timer component.  This will not work if we ever add
+# any Django specific stuff to the timing_helpers.py file.
+exec(Path("usaspending_api/common/helpers/timing_helpers.py").read_text())
 
 logging.basicConfig(
     level=logging.INFO, format="[%(asctime)s] [%(levelname)s] - %(message)s", datefmt="%Y-%m-%d %H:%M:%S %Z"
@@ -32,7 +35,7 @@ logging.basicConfig(
 
 
 # Simplify instantiations of Timer to automatically use the correct logger.
-class BackfillTimer(Timer):
+class Timer(Timer):  # noqa - this is imported indirectly and will fail flake8 check
     def __init__(self, message=None):
         super().__init__(message=message, success_logger=logging.info, failure_logger=logging.error)
 
@@ -44,7 +47,7 @@ def id_ranges(min_id: int, max_id: int) -> Iterator[Tuple[int, int]]:
 
 
 def get_min_max_ids(conn: psycopg2.extensions.connection, table_name: str, primary_key: str) -> Tuple[int, int]:
-    with BackfillTimer(f'collecting MIN and MAX values for "{table_name}"."{primary_key}"') as t:
+    with Timer(f'collecting MIN and MAX values for "{table_name}"."{primary_key}"') as t:
         with conn.cursor() as cursor:
             sql = f"""
                 SELECT min({primary_key}), max({primary_key})
@@ -69,7 +72,7 @@ def run_update(
 ) -> None:
     total_row_count = 0
     estimated_id_count = max_id - min_id + 1
-    with BackfillTimer(f'updating PARK values for "{table_name}"."{primary_key}"') as t:
+    with Timer(f'updating PARK values for "{table_name}"."{primary_key}"') as t:
         for chunk_min_id, chunk_max_id in id_ranges(min_id, max_id):
             with conn.cursor() as cursor:
                 sql = f"""
