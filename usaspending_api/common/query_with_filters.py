@@ -3,7 +3,7 @@ import itertools
 import logging
 import re
 from datetime import datetime
-from typing import List, Tuple
+from typing import Callable, Dict, List, Tuple
 
 from django.conf import settings
 from elasticsearch_dsl import Q as ES_Q
@@ -281,7 +281,7 @@ class _SubawardsPrimeSubAwardTypes(_Filter):
     underscore_name = "prime_and_sub_award_types"
 
     @classmethod
-    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType, **options) -> ES_Q:
+    def generate_elasticsearch_query(cls, filter_values: Dict[str, str], query_type: _QueryType, **options) -> ES_Q:
         award_type_codes_query = []
 
         award_types = filter_values.get("elasticsearch_sub_awards")
@@ -893,34 +893,43 @@ class _NonzeroFields(_Filter):
 
 
 class QueryWithFilters:
-    filter_lookup = {
-        _Keywords.underscore_name: _Keywords,
-        _Description.underscore_name: _Description,
-        _KeywordSearch.underscore_name: _KeywordSearch,
-        _TransactionKeywordSearch.underscore_name: _TransactionKeywordSearch,
-        _TimePeriods.underscore_name: _TimePeriods,
-        _AwardTypeCodes.underscore_name: _AwardTypeCodes,
-        _Agencies.underscore_name: _Agencies,
-        _RecipientSearchText.underscore_name: _RecipientSearchText,
-        _RecipientId.underscore_name: _RecipientId,
-        _RecipientScope.underscore_name: _RecipientScope,
-        _RecipientLocations.underscore_name: _RecipientLocations,
-        _RecipientTypeNames.underscore_name: _RecipientTypeNames,
-        _PlaceOfPerformanceScope.underscore_name: _PlaceOfPerformanceScope,
-        _PlaceOfPerformanceLocations.underscore_name: _PlaceOfPerformanceLocations,
-        _AwardAmounts.underscore_name: _AwardAmounts,
-        _AwardIds.underscore_name: _AwardIds,
-        _ProgramNumbers.underscore_name: _ProgramNumbers,
-        NaicsCodes.underscore_name: NaicsCodes,
-        PSCCodes.underscore_name: PSCCodes,
-        _ContractPricingTypeCodes.underscore_name: _ContractPricingTypeCodes,
-        _SetAsideTypeCodes.underscore_name: _SetAsideTypeCodes,
-        _ExtentCompetedTypeCodes.underscore_name: _ExtentCompetedTypeCodes,
-        _DisasterEmergencyFundCodes.underscore_name: _DisasterEmergencyFundCodes,
-        _QueryText.underscore_name: _QueryText,
-        _NonzeroFields.underscore_name: _NonzeroFields,
-        _ProgramActivities.underscore_name: _ProgramActivities,
-    }
+
+    def __init__(self, query_type: _QueryType) -> None:
+        self.query_type = query_type
+
+    @property
+    def filter_lookup(self) -> Dict[str, _Filter]:
+        result = {
+            _Keywords.underscore_name: _SubawardsKeywords if self.query_type == _QueryType.SUBAWARDS else _Keywords,
+            _Description.underscore_name: _Description,
+            _KeywordSearch.underscore_name: _KeywordSearch,
+            _TransactionKeywordSearch.underscore_name: _TransactionKeywordSearch,
+            _TimePeriods.underscore_name: _TimePeriods,
+            _AwardTypeCodes.underscore_name: _AwardTypeCodes,
+            _Agencies.underscore_name: _Agencies,
+            _RecipientSearchText.underscore_name: _RecipientSearchText,
+            _RecipientId.underscore_name: _RecipientId,
+            _RecipientScope.underscore_name: _RecipientScope,
+            _RecipientLocations.underscore_name: _RecipientLocations,
+            _RecipientTypeNames.underscore_name: _RecipientTypeNames,
+            _PlaceOfPerformanceScope.underscore_name: _PlaceOfPerformanceScope,
+            _PlaceOfPerformanceLocations.underscore_name: _PlaceOfPerformanceLocations,
+            _AwardAmounts.underscore_name: _AwardAmounts,
+            _AwardIds.underscore_name: _AwardIds,
+            _ProgramNumbers.underscore_name: _ProgramNumbers,
+            NaicsCodes.underscore_name: NaicsCodes,
+            PSCCodes.underscore_name: PSCCodes,
+            _ContractPricingTypeCodes.underscore_name: _ContractPricingTypeCodes,
+            _SetAsideTypeCodes.underscore_name: _SetAsideTypeCodes,
+            _ExtentCompetedTypeCodes.underscore_name: _ExtentCompetedTypeCodes,
+            _DisasterEmergencyFundCodes.underscore_name: _DisasterEmergencyFundCodes,
+            _QueryText.underscore_name: _QueryText,
+            _NonzeroFields.underscore_name: _NonzeroFields,
+            _ProgramActivities.underscore_name: _ProgramActivities,
+        }
+        if self.query_type == _QueryType.SUBAWARDS:
+            result[_SubawardsPrimeSubAwardTypes.underscore_name] = _SubawardsPrimeSubAwardTypes
+        return result
 
     nested_filter_lookup = {
         f"nested_{_DisasterEmergencyFundCodes.underscore_name}": _DisasterEmergencyFundCodes,
@@ -930,10 +939,10 @@ class QueryWithFilters:
 
     unsupported_filters = ["legal_entities"]
 
-    @classmethod
-    def _generate_elasticsearch_query(cls, filters: dict, query_type: _QueryType, **options) -> ES_Q:
+    def generate_elasticsearch_query(self, filters: dict, **options) -> ES_Q:
+        if self.query_type == _QueryType.ACCOUNTS:
+            options = {**options, "nested_path": "financial_accounts_by_award"}
         nested_path = options.pop("nested_path", "")
-
         must_queries = []
         nested_must_queries = []
 
@@ -942,14 +951,14 @@ class QueryWithFilters:
         filters_copy = copy.deepcopy(filters)
 
         # tas_codes are unique in that the same query is spread across two keys
-        must_queries = cls._handle_tas_query(must_queries, filters_copy, query_type)
+        must_queries = self._handle_tas_query(must_queries, filters_copy, self.query_type)
         for filter_type, filter_values in filters_copy.items():
             # Validate the filters
-            if filter_type in cls.unsupported_filters:
+            if filter_type in self.unsupported_filters:
                 msg = "API request included '{}' key. No filtering will occur with provided value '{}'"
                 logger.warning(msg.format(filter_type, filter_values))
                 continue
-            elif filter_type not in cls.filter_lookup.keys() and filter_type not in cls.nested_filter_lookup.keys():
+            elif filter_type not in self.filter_lookup.keys() and filter_type not in self.nested_filter_lookup.keys():
                 raise InvalidParameterException(f"Invalid filter: {filter_type} does not exist.")
 
             # Generate the query for a filter
@@ -957,12 +966,12 @@ class QueryWithFilters:
                 # Add the "nested_path" option back in if using a nested filter;
                 # want to avoid having this option passed to all filters
                 nested_options = {**options, "nested_path": nested_path}
-                query = cls.nested_filter_lookup[filter_type].generate_query(
-                    filter_values, query_type, **nested_options
+                query = self.nested_filter_lookup[filter_type].generate_query(
+                    filter_values, self.query_type, **nested_options
                 )
                 list_pointer = nested_must_queries
             else:
-                query = cls.filter_lookup[filter_type].generate_query(filter_values, query_type, **options)
+                query = self.filter_lookup[filter_type].generate_query(filter_values, self.query_type, **options)
                 list_pointer = must_queries
 
             # Handle the possibility of multiple queries from one filter
@@ -993,25 +1002,3 @@ class QueryWithFilters:
             filters.pop(TreasuryAccounts.underscore_name, None)
             filters.pop(TasCodes.underscore_name, None)
         return must_queries
-
-    @classmethod
-    def generate_awards_elasticsearch_query(cls, filters: dict, **options) -> ES_Q:
-        return cls._generate_elasticsearch_query(filters, _QueryType.AWARDS, **options)
-
-    @classmethod
-    def generate_subawards_elasticsearch_query(cls, filters: dict, **options) -> ES_Q:
-        cls.filter_lookup[_Keywords.underscore_name] = _SubawardsKeywords
-        cls.filter_lookup[_SubawardsPrimeSubAwardTypes.underscore_name] = _SubawardsPrimeSubAwardTypes
-        resp = cls._generate_elasticsearch_query(filters, _QueryType.SUBAWARDS, **options)
-        cls.filter_lookup[_Keywords.underscore_name] = _Keywords
-        del cls.filter_lookup[_SubawardsPrimeSubAwardTypes.underscore_name]
-        return resp
-
-    @classmethod
-    def generate_transactions_elasticsearch_query(cls, filters: dict, **options) -> ES_Q:
-        return cls._generate_elasticsearch_query(filters, _QueryType.TRANSACTIONS, **options)
-
-    @classmethod
-    def generate_accounts_elasticsearch_query(cls, filters: dict, **options) -> ES_Q:
-        options = {**options, "nested_path": "financial_accounts_by_award"}
-        return cls._generate_elasticsearch_query(filters, _QueryType.ACCOUNTS, **options)
