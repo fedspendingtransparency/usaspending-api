@@ -1,5 +1,6 @@
 import logging
 
+from django.conf import settings
 from django.db import connection, connections
 
 from usaspending_api.etl.broker_etl_helpers import dictfetchall, PhonyCursor
@@ -21,7 +22,7 @@ class Command(load_base.Command):
         # Grab data broker database connections
         if not options["test"]:
             try:
-                db_conn = connections["data_broker"]
+                db_conn = connections[settings.DATA_BROKER_DB_ALIAS]
                 db_cursor = db_conn.cursor()
             except Exception as err:
                 logger.critical("Could not connect to database. Is DATA_BROKER_DATABASE_URL set?")

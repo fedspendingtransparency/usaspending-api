@@ -253,6 +253,7 @@ Non Loan Assistance Awards can be searched for specifically by using the Non Loa
 ## Filter Objects
 ### AdvancedFilterObject (object)
 + `keywords` : [`transport`] (optional, array[string])
++ `description` (optional, string)
 + `time_period` (optional, array[TimePeriodObject], fixed-type)
 + `place_of_performance_scope` (optional, enum[string])
     + Members

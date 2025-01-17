@@ -15,9 +15,12 @@ logger = logging.getLogger("console")
 
 @pytest.fixture
 def mock_dependencies():
-    with patch("tempfile.NamedTemporaryFile") as mock_tempfile, patch(
-        "usaspending_api.common.helpers.s3_helpers.download_s3_object"
-    ), patch("gzip.open") as mock_gzip_open, patch("builtins.open", mock_open(read_data="data")):
+    with (
+        patch("tempfile.NamedTemporaryFile") as mock_tempfile,
+        patch("usaspending_api.common.helpers.s3_helpers.download_s3_object"),
+        patch("gzip.open") as mock_gzip_open,
+        patch("builtins.open", mock_open(read_data="data")),
+    ):
 
         mock_tempfile.return_value.__enter__.return_value.name = "temp_file_name"
         mock_cursor = Mock()

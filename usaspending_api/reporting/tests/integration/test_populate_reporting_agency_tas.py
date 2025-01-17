@@ -12,7 +12,7 @@ from usaspending_api.common.helpers.sql_helpers import get_connection
 
 @pytest.fixture
 def setup_test_data(db):
-    """ Insert data into DB for testing """
+    """Insert data into DB for testing"""
     future_date = datetime(datetime.now().year + 1, 1, 19)
     dsws = [
         {
@@ -163,13 +163,13 @@ def setup_test_data(db):
             obligations_incurred_by_program_object_class_cpe=ocpa["ob_incur"],
             deobligations_recoveries_refund_pri_program_object_class_cpe=ocpa["deobligation"],
             prior_year_adjustment=ocpa["pya"],
-            ussgl480110_reinstated_del_cpe=ocpa["ussgl480110"],
-            ussgl490110_reinstated_del_cpe=ocpa["ussgl490110"],
+            ussgl480110_rein_undel_ord_cpe=ocpa["ussgl480110"],
+            ussgl490110_rein_deliv_ord_cpe=ocpa["ussgl490110"],
         )
 
 
 def test_run_script(setup_test_data):
-    """ Test that the populate_reporting_agency_tas script acts as expected """
+    """Test that the populate_reporting_agency_tas script acts as expected"""
     connection = get_connection(read_only=False)
     sql_path = settings.APP_DIR / "reporting" / "management" / "sql" / "populate_reporting_agency_tas.sql"
     test_sql = sql_path.read_text()

@@ -85,40 +85,23 @@ def caplog(caplog):
 def test_logging_trace_spans_basic(caplog: LogCaptureFixture):
     caplog.set_level(logging.INFO, logger.name)
 
-    test = f"{inspect.stack()[0][3]}"
+    test = f"{inspect.stack()[-11][3]}"
+    DatadogLoggingTraceFilter.activate()
+    with ddtrace.tracer.trace(
+        name=f"{test}_operation",
+        service=f"{test}_service",
+        resource=f"{test}_resource",
+        span_type=SpanTypes.TEST,
+    ) as span:
 
-    with tracer.start_as_current_span(name=f"{test}_operation", kind=SpanKind.INTERNAL) as span:
-        span_attributes = {"service.name": f"{test}_service", "resource.name": f"{test}_resource", "span.type": "TEST"}
-        for k, v in span_attributes.items():
-            span.set_attribute(k, v)
+        trace_id = span.trace_id
 
-        trace_id = span.get_span_context().trace_id
-        span_id = span.get_span_context().span_id
-        logger.info(f"Test log message with trace id: {trace_id}")
-        log_span_id = f"The corresponding span id: {span_id}"
-        logger.warning(log_span_id)
-
-    assert f"trace id: {trace_id}" in caplog.text, "trace_id not found in logging output"
-    assert f"span id: {span_id}" in caplog.text, "span_id not found in logging output"
-
-
-def test_logging_trace_spans(caplog: LogCaptureFixture):
-    caplog.set_level(logging.INFO)
-    test = f"{inspect.stack()[0][3]}"
-
-    with tracer.start_as_current_span(name=f"{test}_operation", kind=SpanKind.INTERNAL) as span:
-        span_attributes = {"service.name": f"{test}_service", "resource.name": f"{test}_resource", "span.type": "TEST"}
-        for k, v in span_attributes.items():
-            span.set_attribute(k, v)
-
-        trace_id = span.get_span_context().trace_id
-        span_id = span.get_span_context().span_id
-        logger.info(f"Test log message with trace id: {trace_id}")
-        log_span_id = f"The corresponding span id: {span_id}"
-        logger.warning(log_span_id)
+        logger = logging.getLogger(f"{test}_logger")
+        test_msg = f"a test message was logged during {test}"
+        logger.warning(test_msg)
         # do things
-        x = 2 ** 5
-        thirty_two_squares = [m for m in map(lambda y: y ** 2, range(x))]
+        x = 2**5
+        thirty_two_squares = [m for m in map(lambda y: y**2, range(x))]
         assert thirty_two_squares[-1] == 961
 
     log_output = caplog.text
@@ -144,14 +127,26 @@ def test_subprocess_basic(caplog: LogCaptureFixture):
         logger.warning(log_span_id)
 
         # do things
-        x = 2 ** 5
-        thirty_two_squares = [m for m in map(lambda y: y ** 2, range(x))]
+        x = 2**5
+        thirty_two_squares = [m for m in map(lambda y: y**2, range(x))]
         assert thirty_two_squares[-1] == 961
 
-    log_output = caplog.text
-    assert f"trace id: {trace_id}" in log_output, "trace_id not found in logging output"
-    assert f"span id: {span_id}" in log_output, "span_id not found in logging output"
-    assert f"{test}_resource" in log_output, "traced resource not found in logging output"
+        # Drop this span so it is not sent to the server, and not logged by the trace logger
+        DatadogEagerlyDropTraceFilter.drop(span)
+
+    # Do another trace, that is NOT dropped
+    with ddtrace.tracer.trace(
+        name=f"{test}_operation2",
+        service=f"{test}_service2",
+        resource=f"{test}_resource2",
+        span_type=SpanTypes.TEST,
+    ) as span2:
+        trace_id2 = span2.trace_id
+        logger = logging.getLogger(f"{test}_logger")
+        test_msg2 = f"a second test message was logged during {test}"
+        logger.warning(test_msg2)
+        # do things
+        x = 2**7
 
 
 def test_subprocess_tracing(caplog: LogCaptureFixture, capsys):
@@ -257,8 +252,8 @@ def _do_things_in_subproc(caplog: LogCaptureFixture, log_queue: mp.Queue, parent
         logger.info(f"The corresponding span id: {span_id}")
 
         # do things
-        x = 2 ** 5
-        thirty_two_squares = [m for m in map(lambda y: y ** 2, range(x))]
+        x = 2**5
+        thirty_two_squares = [m for m in map(lambda y: y**2, range(x))]
         assert thirty_two_squares[-1] == 961
         logger.info("DONE doing things in subproc 2")
         # Return the trace and span ID to the main process

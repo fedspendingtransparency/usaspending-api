@@ -2,6 +2,7 @@
 
 NOTE: Uses Pytest Fixtures from immediate parent conftest.py: usaspending_api/etl/tests/conftest.py
 """
+
 import dateutil
 import re
 import pyspark
@@ -290,7 +291,11 @@ class TestInitialRun:
                 try:
                     spark.sql(f"SELECT 1 FROM raw.{table_name}")
                 except pyspark.sql.utils.AnalysisException as e:
-                    if re.match(rf"Table or view not found: raw\.{table_name}", e.desc):
+                    if re.match(
+                        rf"^\[TABLE_OR_VIEW_NOT_FOUND\] The table or view `raw`\.`{table_name}` cannot be found\..*$",
+                        e.desc,
+                        re.MULTILINE,
+                    ):
                         pass
                     else:
                         raise e

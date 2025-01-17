@@ -5,8 +5,8 @@ from typing import List, Union
 
 from django.contrib.postgres.aggregates import StringAgg
 from django.db import DEFAULT_DB_ALIAS
-from django.db.models import Aggregate, Case, CharField, F, Func, IntegerField, TextField, Value, When
-from django.db.models.functions import Concat, LPad, Cast, Coalesce
+from django.db.models import Aggregate, Case, CharField, F, Func, IntegerField, QuerySet, TextField, Value, When
+from django.db.models.functions import Cast, Coalesce, Concat, LPad
 
 from usaspending_api.awards.v2.lookups.lookups import (
     assistance_type_mapping,
@@ -41,7 +41,7 @@ class FiscalYear(Func):
 
 
 class FiscalYearAndQuarter(Func):
-    """ Generates a fiscal year and quarter string along the lines of FY2019Q1. """
+    """Generates a fiscal year and quarter string along the lines of FY2019Q1."""
 
     function = "EXTRACT"
     template = (
@@ -52,7 +52,7 @@ class FiscalYearAndQuarter(Func):
 
 
 class CFDAs(Func):
-    """ Generates the CFDAs string from the text array of JSON strings of cfdas. """
+    """Generates the CFDAs string from the text array of JSON strings of cfdas."""
 
     function = "array_to_string"
     template = (
@@ -156,7 +156,7 @@ def get_gtas_fyp_notation():
     )
 
 
-def generate_raw_quoted_query(queryset):
+def generate_raw_quoted_query(queryset: QuerySet) -> str:
     """Generates the raw sql from a queryset with quotable types quoted.
 
     This function provided benefit since the Django queryset.query doesn't quote

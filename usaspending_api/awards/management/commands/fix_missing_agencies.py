@@ -21,9 +21,9 @@ class Command(BaseCommand):
         parser.add_argument("--batch", type=int, default=BATCH_SIZE, help="ID range to update per query")
 
     def _run_updaters(self, curs, table, updaters, options, start_time):
-        for (descrip, base_qry) in updaters:
+        for descrip, base_qry in updaters:
             batches = self.find_batches(curs=curs, table=table, options=options)
-            for (floor, ceiling) in batches:
+            for floor, ceiling in batches:
                 qry = base_qry.format(floor=floor, ceiling=ceiling)
                 curs.execute(qry)
                 elapsed = time.time() - start_time
