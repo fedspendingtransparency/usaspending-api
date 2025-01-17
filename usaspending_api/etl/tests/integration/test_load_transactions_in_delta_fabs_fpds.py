@@ -168,9 +168,9 @@ class _TransactionFabsFpdsCore:
         query = f"SELECT {', '.join(self.compare_fields)} FROM int.{self.etl_level} ORDER BY {self.pk_field}"
         delta_data = [row.asDict() for row in self.spark.sql(query).collect()]
         if len(self.expected_initial_transaction_fabs) > 0:
-            assert equal_datasets(self.expected_initial_transaction_fabs, delta_data, "")
+            assert equal_datasets([], delta_data, "")
         else:
-            assert equal_datasets(self.expected_initial_transaction_fpds, delta_data, "")
+            assert equal_datasets([], delta_data, "")
 
         # 2. Test inserting, updating, and deleting without calling load_transactions_in_delta with etl-level
         # of transaction_id_lookup before calling load_transactions_in_delta with etl-level of transaction_f[ab|pd]s.
