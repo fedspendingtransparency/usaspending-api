@@ -35,6 +35,7 @@ from usaspending_api.etl.elasticsearch_loader_helpers.index_config import (
 from usaspending_api.etl.elasticsearch_loader_helpers.load_data import load_data
 from usaspending_api.etl.elasticsearch_loader_helpers.transform_data import (
     transform_award_data,
+    transform_subaward_data,
     transform_transaction_data,
 )
 from usaspending_api.etl.elasticsearch_loader_helpers.utilities import (
@@ -70,4 +71,5 @@ __all__ = [
     "transform_award_data",
     "transform_recipient_profile_data",
     "transform_transaction_data",
+    "transform_subaward_data",
 ]
