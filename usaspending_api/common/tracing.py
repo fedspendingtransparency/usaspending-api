@@ -3,6 +3,7 @@ Module for Application Performance Monitoring and distributed tracing tools and 
 
 Specifically leveraging the Grafana Open Telemetry tracing client.
 """
+
 # Standard library imports
 import logging
 
@@ -50,7 +51,7 @@ class OpenTelemetryEagerlyDropTraceFilter:
         span.set_attribute(cls.EAGERLY_DROP_TRACE_KEY, True)
 
     def process_trace(self, trace: trace):
-        """ Drop trace if any span attribute has tag with key 'EAGERLY_DROP_TRACE' """
+        """Drop trace if any span attribute has tag with key 'EAGERLY_DROP_TRACE'"""
         return None if any(span.get_attribute(self.EAGERLY_DROP_TRACE_KEY) for span in trace) else trace
 
 

@@ -86,9 +86,9 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
                 "download_file_name": str(download_job.file_name),
                 "download_file_size": download_job.file_size if download_job.file_size is not None else 0,
                 "number_of_rows": download_job.number_of_rows if download_job.number_of_rows is not None else 0,
-                "number_of_columns": download_job.number_of_columns
-                if download_job.number_of_columns is not None
-                else 0,
+                "number_of_columns": (
+                    download_job.number_of_columns if download_job.number_of_columns is not None else 0
+                ),
                 "error_message": download_job.error_message if download_job.error_message else "",
                 "monthly_download": str(download_job.monthly_download),
                 "json_request": str(download_job.json_request) if download_job.json_request else "",
@@ -860,9 +860,9 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
                     "download_file_name": str(download_job.file_name),
                     "download_file_size": download_job.file_size if download_job.file_size is not None else 0,
                     "number_of_rows": download_job.number_of_rows if download_job.number_of_rows is not None else 0,
-                    "number_of_columns": download_job.number_of_columns
-                    if download_job.number_of_columns is not None
-                    else 0,
+                    "number_of_columns": (
+                        download_job.number_of_columns if download_job.number_of_columns is not None else 0
+                    ),
                     "error_message": download_job.error_message if download_job.error_message else "",
                     "monthly_download": str(download_job.monthly_download),
                     "json_request": str(download_job.json_request) if download_job.json_request else "",

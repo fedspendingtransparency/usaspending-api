@@ -144,13 +144,13 @@ def download_service_app(download_job_id):
                 "download_job_id": str(download_job_id),
                 "download_job_status": str(download_job.job_status.name),  # Convert to relevant field as str
                 "download_file_name": str(download_job.file_name),  # Extract specific field as str
-                "download_file_size": download_job.file_size
-                if download_job.file_size is not None
-                else 0,  # int or fallback to 0
+                "download_file_size": (
+                    download_job.file_size if download_job.file_size is not None else 0
+                ),  # int or fallback to 0
                 "number_of_rows": download_job.number_of_rows if download_job.number_of_rows is not None else 0,
-                "number_of_columns": download_job.number_of_columns
-                if download_job.number_of_columns is not None
-                else 0,
+                "number_of_columns": (
+                    download_job.number_of_columns if download_job.number_of_columns is not None else 0
+                ),
                 "error_message": download_job.error_message if download_job.error_message else "",
                 "monthly_download": str(download_job.monthly_download),  # Convert boolean to str
                 "json_request": str(download_job.json_request) if download_job.json_request else "",
@@ -189,13 +189,13 @@ def _retrieve_download_job_from_db(download_job_id):
                 "download_job_id": str(download_job_id),
                 "download_job_status": str(download_job.job_status.name),  # Convert to relevant field as str
                 "download_file_name": str(download_job.file_name),  # Extract specific field as str
-                "download_file_size": download_job.file_size
-                if download_job.file_size is not None
-                else 0,  # int or fallback to 0
+                "download_file_size": (
+                    download_job.file_size if download_job.file_size is not None else 0
+                ),  # int or fallback to 0
                 "number_of_rows": download_job.number_of_rows if download_job.number_of_rows is not None else 0,
-                "number_of_columns": download_job.number_of_columns
-                if download_job.number_of_columns is not None
-                else 0,
+                "number_of_columns": (
+                    download_job.number_of_columns if download_job.number_of_columns is not None else 0
+                ),
                 "error_message": download_job.error_message if download_job.error_message else "",
                 "monthly_download": str(download_job.monthly_download),  # Convert boolean to str
                 "json_request": str(download_job.json_request) if download_job.json_request else "",
@@ -246,13 +246,13 @@ def _update_download_job_status(download_job_id, status, error_message=None, ove
                 "download_job_id": str(download_job_id),
                 "download_job_status": str(download_job.job_status.name),  # Convert to relevant field as str
                 "download_file_name": str(download_job.file_name),  # Extract specific field as str
-                "download_file_size": download_job.file_size
-                if download_job.file_size is not None
-                else 0,  # int or fallback to 0
+                "download_file_size": (
+                    download_job.file_size if download_job.file_size is not None else 0
+                ),  # int or fallback to 0
                 "number_of_rows": download_job.number_of_rows if download_job.number_of_rows is not None else 0,
-                "number_of_columns": download_job.number_of_columns
-                if download_job.number_of_columns is not None
-                else 0,
+                "number_of_columns": (
+                    download_job.number_of_columns if download_job.number_of_columns is not None else 0
+                ),
                 "error_message": download_job.error_message if download_job.error_message else "",
                 "monthly_download": str(download_job.monthly_download),  # Convert boolean to str
                 "json_request": str(download_job.json_request) if download_job.json_request else "",
