@@ -84,7 +84,7 @@ def test_agg_fields(monkeypatch, aggregate_models):
     assert agg.count() == 3
 
     # Query should return three field names: 'item' - legacy and deprecated, 'aggregate', and 'type'
-    fields = agg.first().keys()
+    fields = agg.order_by("type").first().keys()
     assert len(fields) == 3
     assert "aggregate" in fields
     assert "item" in fields

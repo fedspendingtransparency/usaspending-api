@@ -295,7 +295,25 @@
           }
         }
       },
+      "awarding_toptier_agency_agg_key": {
+        "type": "keyword",
+        "eager_global_ordinals": true,
+        "fields": {
+          "hash": {
+            "type": "murmur3"
+          }
+        }
+      },
       "funding_toptier_agency_agg_key": {
+        "type": "keyword",
+        "eager_global_ordinals": true,
+        "fields": {
+          "hash": {
+            "type": "murmur3"
+          }
+        }
+      },
+      "awarding_subtier_agency_agg_key": {
         "type": "keyword",
         "eager_global_ordinals": true,
         "fields": {
@@ -557,6 +575,15 @@
       "cfdas": {
         "type": "keyword"
       },
+      "cfda_agg_key": {
+        "type": "keyword",
+        "eager_global_ordinals": true,
+        "fields": {
+          "hash": {
+            "type": "murmur3"
+          }
+        }
+      },
       "sai_number": {
         "type": "text",
         "fields": {
@@ -600,6 +627,15 @@
       "product_or_service_description": {
         "type": "text"
       },
+      "psc_agg_key": {
+        "type": "keyword",
+        "eager_global_ordinals": true,
+        "fields": {
+          "hash": {
+            "type": "murmur3"
+          }
+        }
+      },
       "naics_code": {
         "type": "text",
         "fields": {
@@ -611,14 +647,41 @@
       "naics_description": {
         "type": "text"
       },
+      "naics_agg_key": {
+        "type": "keyword",
+        "eager_global_ordinals": true,
+        "fields": {
+          "hash": {
+            "type": "murmur3"
+          }
+        }
+      },
       "tas_paths": {
         "type": "keyword"
       },
       "tas_components": {
         "type": "keyword"
       },
+      "federal_accounts": {
+        "type": "keyword",
+        "eager_global_ordinals": true,
+        "fields": {
+          "hash": {
+            "type": "murmur3"
+          }
+        }
+      },
       "disaster_emergency_fund_codes": {
         "type": "keyword"
+      },
+      "defc_agg_key": {
+        "type": "keyword",
+        "eager_global_ordinals": true,
+        "fields": {
+          "hash": {
+            "type": "murmur3"
+          }
+        }
       },
       "covid_spending_by_defc": {
         "type": "nested",
@@ -696,19 +759,24 @@
         "type": "scaled_float",
         "scaling_factor": 100
       },
-      "program_activity_names": {
-        "type": "text",
-        "fields": {
-          "keyword": {
-            "type": "keyword"
-          }
-        }
-      },
-      "program_activity_codes": {
-        "type": "text",
-        "fields": {
-          "keyword": {
-            "type": "keyword"
+      "program_activities": {
+        "type": "nested",
+        "properties": {
+          "name": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          },
+          "code": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
           }
         }
       }

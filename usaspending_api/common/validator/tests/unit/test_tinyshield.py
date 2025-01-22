@@ -78,6 +78,7 @@ OBJECT_RULE = {
 FILTER_OBJ = {
     "filters": {
         "keywords": ["grumpy", "bungle"],
+        "description": "Test Description",
         "award_type_codes": ["A", "B", "C", "D"],
         "time_period": [{"date_type": "action_date", "start_date": "2008-01-01", "end_date": "2011-01-31"}],
         "place_of_performance_scope": "domestic",

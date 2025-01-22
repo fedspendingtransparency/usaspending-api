@@ -117,6 +117,7 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
 ## Filter Objects
 ### AdvancedFilterObject (object)
 + `keywords` : [`transport`] (optional, array[string])
++ `description` (optional, string)
 + `time_period` (optional, array[TimePeriodObject], fixed-type)
 + `place_of_performance_scope` (optional, enum[string])
     + The **default** value below only applies to `geo_layer` values of `county`, `district` and `state`.
