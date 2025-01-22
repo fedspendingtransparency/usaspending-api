@@ -32,7 +32,7 @@ WITH locations_cte AS (
 				AND
 				pop_county_name ~ '^[a-zA-Z]'
 			THEN
-				pop_county_name
+				CONCAT(pop_county_name, ' COUNTY')
 			ELSE
 				NULL
 		END AS county_name,
@@ -135,7 +135,7 @@ WITH locations_cte AS (
 				AND
 				recipient_location_county_name ~ '^[a-zA-Z]'
 			THEN
-				recipient_location_county_name
+				CONCAT(recipient_location_county_name, ' COUNTY')
 			ELSE
 				NULL
 		END AS county_name,
@@ -217,7 +217,43 @@ SELECT
 	CONCAT(state_fips, county_fips) AS county_fips,
 	zip_code,
 	current_congressional_district,
-	original_congressional_district
+	original_congressional_district,
+    CASE
+        WHEN country_name = 'UNITED STATES' AND state_name IS NOT NULL
+            THEN CONCAT(state_name, ', ', country_name)
+        ELSE
+            NULL
+    END AS formatted_state,
+    CASE
+        WHEN country_name = 'UNITED STATES' AND city_name IS NOT NULL
+            THEN CONCAT(city_name, ', ', state_name, ', ', country_name)
+        ELSE
+            NULL
+    END AS formatted_city,
+    CASE
+        WHEN country_name = 'UNITED STATES' AND county_name IS NOT NULL
+            THEN CONCAT(county_name, ', ', state_name, ', ', country_name)
+        ELSE
+            NULL
+    END AS formatted_county,
+    CASE
+        WHEN country_name = 'UNITED STATES' AND zip_code IS NOT NULL
+            THEN CONCAT(zip_code, ', ', state_name, ', ', country_name)
+        ELSE
+            NULL
+    END AS formatted_zip,
+    CASE
+        WHEN country_name = 'UNITED STATES' AND current_congressional_district IS NOT NULL
+            THEN CONCAT(current_congressional_district, ', ', state_name, ', ', country_name)
+        ELSE
+            NULL
+    END AS formatted_current_congressional_district,
+    CASE
+        WHEN country_name = 'UNITED STATES' AND original_congressional_district IS NOT NULL
+            THEN CONCAT(original_congressional_district, ', ', state_name, ', ', country_name)
+        ELSE
+            NULL
+    END AS formatted_original_congressional_district
 FROM
 	locations_cte
 WHERE

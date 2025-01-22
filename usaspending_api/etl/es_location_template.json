@@ -48,6 +48,27 @@
         }
       },
       "state_name": {
+        "type": "text"
+      },
+      "city_name": {
+        "type": "text"
+      },
+      "county_name": {
+        "type": "text"
+      },
+      "county_fips": {
+        "type": "text"
+      },
+      "zip_code": {
+        "type": "text"
+      },
+      "current_congressional_district": {
+        "type": "text"
+      },
+      "original_congressional_district": {
+        "type": "text"
+      },
+      "formatted_state": {
         "type": "text",
         "fields": {
           "contains": {
@@ -59,7 +80,7 @@
           }
         }
       },
-      "city_name": {
+      "formatted_city": {
         "type": "text",
         "analyzer": "edge_ngram_analyzer",
         "fields": {
@@ -72,7 +93,7 @@
           }
         }
       },
-      "county_name": {
+      "formatted_county": {
         "type": "text",
         "fields": {
           "contains": {
@@ -84,7 +105,7 @@
           }
         }
       },
-      "county_fips": {
+      "formatted_zip": {
         "type": "text",
         "fields": {
           "contains": {
@@ -96,7 +117,7 @@
           }
         }
       },
-      "zip_code": {
+      "formatted_current_congressional_district": {
         "type": "text",
         "fields": {
           "contains": {
@@ -108,19 +129,7 @@
           }
         }
       },
-      "current_congressional_district": {
-        "type": "text",
-        "fields": {
-          "contains": {
-            "type": "text",
-            "analyzer": "contains_analyzer"
-          },
-          "keyword": {
-            "type": "keyword"
-          }
-        }
-      },
-      "original_congressional_district": {
+      "formatted_original_congressional_district": {
         "type": "text",
         "fields": {
           "contains": {
