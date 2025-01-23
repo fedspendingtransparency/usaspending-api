@@ -379,3 +379,9 @@ services:
         source: ${HOME}/.ivy2
         target: /root/.ivy2
         read_only: false
+  jupyter:
+    build: ./jupyter
+    ports:
+      - '8888:8888'
+    volumes:
+      - ./:/home/jovyan/work/

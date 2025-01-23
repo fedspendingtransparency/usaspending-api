@@ -1,0 +1,9 @@
+{
+  "NotebookApp": {
+    "token": "",
+    "password": ""
+  },
+  "ContentsManager": {
+    "allow_hidden": true
+  }
+}

@@ -1,0 +1,6 @@
+delta-spark
+pandas
+psycopg2
+python-dotenv
+sqlalchemy
+tqdm
