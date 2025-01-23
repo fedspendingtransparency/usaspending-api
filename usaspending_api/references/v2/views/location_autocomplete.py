@@ -28,22 +28,20 @@ class LocationAutocompleteViewSet(APIView):
     @cache_response()
     def post(self, request):
         es_results: ES_Response = self._query_elasticsearch(request.data["search_text"], request.data["limit"])
-        formatted_results = {
+        results = {
             "countries": self._format_country_results(self._filter_results(es_results, ["country_name"])),
             "states": self._format_state_results(self._filter_results(es_results, ["state_name"])),
-            "cities": self._format_city_results(self._filter_results(es_results, ["cities"])),
-            "counties": self._format_county_results(
-                self._filter_results(es_results, ["counties.name", "counties.fips"])
-            ),
-            "zip_codes": self._format_zip_code_results(self._filter_results(es_results, ["zip_codes"])),
+            "cities": self._format_city_results(self._filter_results(es_results, ["city_name"])),
+            "counties": self._format_county_results(self._filter_results(es_results, ["county_name", "county_fips"])),
+            "zip_codes": self._format_zip_code_results(self._filter_results(es_results, ["zip_code"])),
             "districts_current": self._format_current_cd_results(
-                self._filter_results(es_results, ["current_congressional_districts"])
+                self._filter_results(es_results, ["current_congressional_district"])
             ),
             "districts_original": self._format_original_cd_results(
-                self._filter_results(es_results, ["original_congressional_districts"])
+                self._filter_results(es_results, ["original_congressional_district"])
             ),
         }
-        results = {k: v for k, v in formatted_results.items() if v is not None}
+        results = {k: v for k, v in results.items() if v is not None}
         # Account for cases where there are multiple results in a single ES document
         results_length = sum(len(x) for x in results.values())
         return Response(OrderedDict([("count", results_length), ("results", results), ("messages", [""])]))
@@ -65,52 +63,50 @@ class LocationAutocompleteViewSet(APIView):
         Returns:
             An Elasticsearch Response object containing the list of locations that contain the provided `search_text`.
         """
-        es_location_fields = (
+        es_location_fields = [
             "country_name",
             "state_name",
-            "cities",
-            "zip_codes",
-            "current_congressional_districts",
-            "original_congressional_districts",
-        )
-        es_nested_fields = (
-            "counties.name",
-            "counties.fips",
-        )
+            "city_name",
+            "county_name",
+            "zip_code",
+            "current_congressional_district",
+            "original_congressional_district",
+        ]
 
         # Elasticsearch queries don't work well with the "-" character so we remove it from any searches, specifically
         #   with Congressional districts in mind.
         search_text = search_text.replace("-", "")
-        query_string_query = ES_Q("query_string", query=f"*{search_text}*", fields=es_location_fields)
-        multi_match_query = ES_Q("multi_match", query=search_text, fields=es_location_fields)
-        nested_query_string_query = ES_Q("query_string", query=f"*{search_text}*", fields=es_nested_fields)
-        nested_multi_match_query = ES_Q("multi_match", query=search_text, fields=es_nested_fields)
-        nested_bool_query = ES_Q(
-            "bool",
-            should=[nested_query_string_query, nested_multi_match_query],
-            minimum_should_match=1,
-        )
-        nested_query = ES_Q("nested", path="counties", query=nested_bool_query)
-        query = ES_Q("bool", should=[query_string_query, multi_match_query, nested_query], minimum_should_match=1)
+
+        should_query = []
+
+        for es_field in es_location_fields:
+            should_query.append(ES_Q("match_phrase_prefix", **{es_field: {"query": search_text, "boost": 5}}))
+            should_query.append(
+                ES_Q("match_phrase_prefix", **{f"{es_field}.contains": {"query": search_text, "boost": 3}})
+            )
+            should_query.append(
+                ES_Q(
+                    "match",
+                    **{
+                        es_field: {
+                            "query": search_text,
+                            "operator": "and",
+                            "boost": 1,
+                        }
+                    },
+                )
+            )
+
+        query = ES_Q("bool", should=should_query, minimum_should_match=1)
 
         search: LocationSearch = LocationSearch().extra(size=limit).query(query)
-        search = search.highlight(
-            "country_name",
-            "state_name",
-            "cities",
-            "counties.name",
-            "counties.fips",
-            "zip_codes",
-            "current_congressional_districts",
-            "original_congressional_districts",
-        )
-        search = search.highlight_options(order="score", pre_tags=[""], post_tags=[""])
+        search = search.highlight(*es_location_fields).highlight_options(order="score", pre_tags=[""], post_tags=[""])
 
         results: ES_Response = search.execute()
 
         return results
 
-    def _format_country_results(self, es_results: List[Hit]) -> Union[List, None]:
+    def _format_country_results(self, es_results: List[Hit]) -> Union[set, None]:
         """Format Elasticsearch results containing country matches
 
         Args:
@@ -125,12 +121,20 @@ class LocationAutocompleteViewSet(APIView):
                 {"country_name": "SWEDEN"}
             ]
         """
+
+        countries = []
+
         if len(es_results) > 0:
-            return [{"country_name": doc.country_name} for doc in es_results]
+            for doc in es_results:
+                country_json = {"country_name": doc.country_name}
+                if country_json not in countries:
+                    countries.append(country_json)
+
+            return countries
         else:
             return None
 
-    def _format_state_results(self, es_results: List[Hit]) -> Union[List, None]:
+    def _format_state_results(self, es_results: List[Hit]) -> Union[set, None]:
         """Format Elasticsearch results containing state matches
 
         Args:
@@ -147,12 +151,19 @@ class LocationAutocompleteViewSet(APIView):
             ]
         """
 
+        states = []
+
         if len(es_results) > 0:
-            return [{"state_name": doc.state_name, "country_name": doc.country_name} for doc in es_results]
+            for doc in es_results:
+                state_json = {"state_name": doc.state_name, "country_name": doc.country_name}
+                if state_json not in states:
+                    states.append(state_json)
+
+            return states
         else:
             return None
 
-    def _format_city_results(self, es_results: List[Hit]) -> Union[List, None]:
+    def _format_city_results(self, es_results: List[Hit]) -> Union[set, None]:
         """Format Elasticsearch results containing city matches
 
         Args:
@@ -171,14 +182,17 @@ class LocationAutocompleteViewSet(APIView):
 
         if len(es_results) > 0:
             cities = []
+
             for doc in es_results:
-                for city in doc.meta.highlight.cities:
-                    cities.append({"city_name": city, "state_name": doc.state_name, "country_name": doc.country_name})
+                city_json = {"city_name": doc.city_name, "state_name": doc.state_name, "country_name": doc.country_name}
+                if city_json not in cities:
+                    cities.append(city_json)
+
             return cities
         else:
             return None
 
-    def _format_county_results(self, es_results: List[Hit]) -> Union[List, None]:
+    def _format_county_results(self, es_results: List[Hit]) -> Union[set, None]:
         """Format Elasticsearch results containing county matches
 
         Args:
@@ -194,25 +208,25 @@ class LocationAutocompleteViewSet(APIView):
                 {"county_fips": "13039", "county_name": "CAMDEN", "state_name": "GEORGIA", "country_name": "UNITED STATES"}
             ]
         """
+
         if len(es_results) > 0:
-            counties = [
-                {
-                    "county_fips": county["fips"],
-                    "county_name": county["name"],
-                    "state_name": result.state_name,
-                    "country_name": result.country_name,
+            counties = []
+
+            for doc in es_results:
+                county_json = {
+                    "county_fips": doc.county_fips,
+                    "county_name": doc.county_name,
+                    "state_name": doc.state_name,
+                    "country_name": doc.country_name,
                 }
-                for result in es_results
-                for _property in ["fips", "name"]
-                if f"counties.{_property}" in result.meta.highlight
-                for match in set(result.meta.highlight[f"counties.{_property}"])
-                for county in [county for county in result.counties if county[_property] == match]
-            ]
+                if county_json not in counties:
+                    counties.append(county_json)
+
             return counties
         else:
             return None
 
-    def _format_zip_code_results(self, es_results: List[Hit]) -> Union[List, None]:
+    def _format_zip_code_results(self, es_results: List[Hit]) -> Union[set, None]:
         """Format Elasticsearch results containing zip code matches
 
         Args:
@@ -232,13 +246,19 @@ class LocationAutocompleteViewSet(APIView):
         if len(es_results) > 0:
             zip_codes = []
             for doc in es_results:
-                for zip in doc.meta.highlight.zip_codes:
-                    zip_codes.append({"zip_code": zip, "state_name": doc.state_name, "country_name": doc.country_name})
+                zip_code_json = {
+                    "zip_code": doc.zip_code,
+                    "state_name": doc.state_name,
+                    "country_name": doc.country_name,
+                }
+                if zip_code_json not in zip_codes:
+                    zip_codes.append(zip_code_json)
+
             return zip_codes
         else:
             return None
 
-    def _format_current_cd_results(self, es_results: List[Hit]) -> Union[List, None]:
+    def _format_current_cd_results(self, es_results: List[Hit]) -> Union[set, None]:
         """Format Elasticsearch results containing current congressional district matches
 
         Args:
@@ -257,18 +277,21 @@ class LocationAutocompleteViewSet(APIView):
 
         if len(es_results) > 0:
             current_cds = []
+
             for doc in es_results:
-                for current_cd in doc.meta.highlight.current_congressional_districts:
-                    # Add the hyphen back to the Congressional districts to be consistent with other endpoints
-                    current_cd = f"{current_cd[:2]}-{current_cd[2:]}"
-                    current_cds.append(
-                        {"current_cd": current_cd, "state_name": doc.state_name, "country_name": doc.country_name}
-                    )
+                current_cd_json = {
+                    "current_cd": doc.current_congressional_district,
+                    "state_name": doc.state_name,
+                    "country_name": doc.country_name,
+                }
+                if current_cd_json not in current_cds:
+                    current_cds.append(current_cd_json)
+
             return current_cds
         else:
             return None
 
-    def _format_original_cd_results(self, es_results: List[Hit]) -> Union[List, None]:
+    def _format_original_cd_results(self, es_results: List[Hit]) -> Union[set, None]:
         """Format Elasticsearch results containing original congressional district matches
 
         Args:
@@ -287,13 +310,16 @@ class LocationAutocompleteViewSet(APIView):
 
         if len(es_results) > 0:
             original_cds = []
+
             for doc in es_results:
-                for original_cd in doc.meta.highlight.original_congressional_districts:
-                    # Add the hyphen back to the Congressional districts to be consistent with other endpoints
-                    original_cd = f"{original_cd[:2]}-{original_cd[2:]}"
-                    original_cds.append(
-                        {"original_cd": original_cd, "state_name": doc.state_name, "country_name": doc.country_name}
-                    )
+                original_cd_json = {
+                    "original_cd": doc.original_congressional_district,
+                    "state_name": doc.state_name,
+                    "country_name": doc.country_name,
+                }
+                if original_cd_json not in original_cds:
+                    original_cds.append(original_cd_json)
+
             return original_cds
         else:
             return None
