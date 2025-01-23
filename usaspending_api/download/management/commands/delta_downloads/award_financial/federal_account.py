@@ -545,4 +545,5 @@ DOWNLOAD_QUERY = """
         ) > 0
         OR SUM(financial_accounts_by_awards.transaction_obligated_amount) > 0
         OR SUM(financial_accounts_by_awards.transaction_obligated_amount) < 0
+    LIMIT 21
 """

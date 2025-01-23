@@ -1,19 +1,20 @@
 import json
 import os
-import re
-import time
 import traceback
 from logging import Logger
+from pathlib import Path
 from typing import Optional, Dict, Tuple, Type
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils.functional import cached_property
-from pyspark.sql import SparkSession, DataFrame
+from pyspark.sql import SparkSession
 
 from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.dict_helpers import order_nested_object
+from usaspending_api.common.helpers.download_csv_strategies import SparkToCSVStrategy
+from usaspending_api.common.helpers.s3_helpers import upload_download_file_to_s3
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
@@ -21,9 +22,8 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_jvm_logger,
     get_usas_jdbc_url,
 )
-from usaspending_api.download.filestreaming.download_generation import EXCEL_ROW_LIMIT, build_data_file_name
+from usaspending_api.download.filestreaming.download_generation import build_data_file_name
 from usaspending_api.download.filestreaming.download_source import DownloadSource
-from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_file
 from usaspending_api.download.management.commands.delta_downloads.award_financial import federal_account
 from usaspending_api.download.download_utils import create_unique_filename
 from usaspending_api.download.lookups import JOB_STATUS_DICT, FILE_FORMATS, VALUE_MAPPINGS
@@ -47,6 +47,7 @@ class Command(BaseCommand):
 
     # TODO: This should be removed prior to any production use
     file_prefix = "SPARK_TEST_"
+    working_dir_path = Path(settings.CSV_LOCAL_PATH)
 
     # Values defined in the handler
     download_job: DownloadJob
@@ -148,6 +149,10 @@ class Command(BaseCommand):
     def json_request_string(self) -> str:
         return json.dumps(self.json_request)
 
+    @cached_property
+    def download_name(self) -> str:
+        return self.download_job.file_name.replace(".zip", "")
+
     def create_download_job(self) -> Tuple[DownloadJob, DownloadSource]:
         self.logger.info(f"Creating Download Job for {self.download_type} -> {self.download_level}")
 
@@ -176,15 +181,20 @@ class Command(BaseCommand):
 
     def process_download(self):
         self.start_download()
-        temp_dir = self.create_temp_dir()
         try:
-            download_df = self.build_download_dataframe()
-            self.create_temp_files(temp_dir, download_df)
-            zip_file_path = self.zip_download(temp_dir)
-
-            # TODO: Need to add writing to S3
-
+            spark_to_csv_strategy = SparkToCSVStrategy(self.logger)
+            zip_file_path = self.working_dir_path / f"{self.download_name}.zip"
+            _, row_count, column_count = spark_to_csv_strategy.download_to_csv(
+                self.download_query,
+                self.working_dir_path / self.download_name,
+                self.download_name,
+                self.working_dir_path,
+                zip_file_path,
+            )
             self.download_job.file_size = os.stat(zip_file_path).st_size
+            self.download_job.number_of_rows = row_count
+            self.download_job.number_of_columns = column_count
+            upload_download_file_to_s3(zip_file_path)
         except InvalidParameterException as e:
             exc_msg = "InvalidParameterException was raised while attempting to process the DownloadJob"
             self.fail_download(exc_msg, e)
@@ -193,66 +203,8 @@ class Command(BaseCommand):
             exc_msg = "An exception was raised while attempting to process the DownloadJob"
             self.fail_download(exc_msg, e)
             raise
-        # finally:
-        # shutil.rmtree(temp_dir, ignore_errors=True)
 
         self.finish_download()
-
-    def create_temp_files(self, dir_path: str, df: DataFrame) -> None:
-        self.logger.info(f"Starting to create temp files for DownloadJob {self.download_job.download_job_id}")
-        start_time = time.perf_counter()
-        delimiter = self.file_format_spec["delimiter"]
-        df.write.csv(
-            f"{dir_path}/{self.download_type}/{self.download_level}", header=True, mode="overwrite", sep=delimiter
-        )
-        self.logger.info(f"Creating temp files took {time.perf_counter() - start_time:.4f}s")
-
-    def zip_download(self, dir_path: str) -> str:
-        self.logger.info(f"Starting to create zipfile for DownloadJob {self.download_job.download_job_id}")
-        start_time = time.perf_counter()
-        file_pattern = re.compile(r"^(.*)part-.*\.csv$")
-
-        file_paths = [
-            f"{root}/{file_name}"
-            for root, _, file_names in list(os.walk(dir_path))[1:]
-            for file_name in file_names
-            if file_pattern.search(file_name)
-        ]
-        renamed_file_paths = []
-
-        final_file_name = self.download_source.file_name
-        final_file_extension = self.file_format_spec["extension"]
-
-        for idx, file_path in enumerate(file_paths, 1):
-            temp_dir_path = file_pattern.search(file_path).group(1)
-            new_file_name = f"{temp_dir_path}{final_file_name}_{idx}.{final_file_extension}"
-            os.rename(file_path, new_file_name)
-            renamed_file_paths.append(new_file_name)
-
-        zip_file_path = f"{dir_path}/{self.download_job.file_name}"
-        append_files_to_zip_file(renamed_file_paths, zip_file_path)
-
-        self.logger.info(f"Creating zipfile took {time.perf_counter() - start_time:.4f}s")
-
-        return zip_file_path
-
-    def build_download_dataframe(self) -> DataFrame:
-        start_time = time.perf_counter()
-        self.logger.info(f"Starting to build DataFrame(s) for DownloadJob {self.download_job.download_job_id}")
-
-        original_df = self.spark.sql(self.download_query)
-
-        num_rows = original_df.count()
-        num_partitions = ((num_rows - 1) // EXCEL_ROW_LIMIT) + 1
-
-        self.download_job.number_of_rows = (self.download_job.number_of_rows or 0) + num_rows
-        self.download_job.number_of_columns = (self.download_job.number_of_columns or 0) + len(original_df.columns)
-
-        partition_df = original_df.repartition(num_partitions)
-
-        self.logger.info(f"Building DataFrames took {time.perf_counter() - start_time:.4f}s")
-
-        return partition_df
 
     def start_download(self) -> None:
         self.download_job.job_status_id = JOB_STATUS_DICT["running"]
@@ -260,21 +212,12 @@ class Command(BaseCommand):
         self.logger.info(f"Starting DownloadJob {self.download_job.download_job_id}")
 
     def fail_download(self, msg: str, e: Optional[Exception] = None) -> None:
-        log_dict = {
-            "download_job_id": self.download_job.download_job_id,
-            "file_name": self.download_job.file_name,
-            "message": msg,
-            "json_request": self.json_request,
-        }
-
         if e:
             stack_trace = "".join(traceback.format_exception(type(e), value=e, tb=e.__traceback__))
             self.download_job.error_message = f"{msg}:\n{stack_trace}"
-            self.logger.exception(log_dict)
         else:
             self.download_job.error_message = msg
-            self.logger.error(log_dict)
-
+        self.logger.error(msg)
         self.download_job.job_status_id = JOB_STATUS_DICT["failed"]
         self.download_job.save()
 
@@ -282,14 +225,3 @@ class Command(BaseCommand):
         self.download_job.job_status_id = JOB_STATUS_DICT["finished"]
         self.download_job.save()
         self.logger.info(f"Finished processing DownloadJob {self.download_job.download_job_id}")
-
-    def create_temp_dir(self) -> str:
-        if settings.IS_LOCAL:
-            dir_prefix = settings.CSV_LOCAL_PATH
-        else:
-            # TODO: This should be moved into settings.py when moved to production
-            dir_prefix = f"/dbfs/tmp/"
-        dir_path = dir_prefix + self.download_job.file_name.replace(".zip", "")
-        os.makedirs(dir_path)
-        self.logger.info(f"Created temporary directory at {dir_path}")
-        return dir_path
