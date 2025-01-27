@@ -11,7 +11,7 @@ FROM python:3.10.12-slim-bullseye
 WORKDIR /dockermount
 
 RUN apt update && \
-    apt install -y gcc postgresql-13 libpq-dev
+    apt install -y gcc postgresql-13 libpq-dev curl
 
 ##### Copy python packaged
 WORKDIR /dockermount

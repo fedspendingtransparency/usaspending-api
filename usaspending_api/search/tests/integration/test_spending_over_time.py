@@ -340,6 +340,7 @@ def test_spending_over_time_subawards_success(client):
         content_type="application/json",
         data=json.dumps({"group": "quarter", "filters": non_legacy_filters(), "subawards": True}),
     )
+
     assert resp.status_code == status.HTTP_200_OK
 
 
