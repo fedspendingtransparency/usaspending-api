@@ -40,7 +40,7 @@ services:
     depends_on:
       - usaspending-db
     # For an interactive shell, override this command with: docker-compose run --rm usaspending-manage python3 -u manage.py shell
-    command: python3 -u manage.py help
+    command: sleep infinity
     environment:
       DJANGO_DEBUG: ${DJANGO_DEBUG}
       DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
@@ -56,14 +56,14 @@ services:
       dockerfile: Dockerfile.testing
     container_name: usaspending-test
     volumes:
-     - .:/dockermount
+     - ./:/dockermount
      # Required to interact with host's docker daemon from within this running container,
      # to spin up the data-act-broker-init-test-db container used for broker integration tests (see: conftest.broker_db_setup)
      - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       - usaspending-db
       - usaspending-es
-    command: make tests
+    command: sleep infinity
     environment:
       DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
       ES_HOST: ${ES_HOST}
@@ -81,7 +81,7 @@ services:
     build: .
     container_name: usaspending-ci
     volumes:
-     - .:/dockermount
+     - ./:/dockermount
      # Required to interact with host's docker daemon from within this running container,
      # to spin up the data-act-broker-init-test-db container used for broker integration tests (see: conftest.broker_db_setup)
      - /var/run/docker.sock:/var/run/docker.sock
@@ -124,7 +124,8 @@ services:
       - usaspending-es
     restart: on-failure:3 # 3 max attempt, and then it will stop restarting
     # Must wait on postgres db to be up (~9s)
-    command: /bin/sh -c "sleep 9s; python3 -u manage.py runserver --verbosity 2 0.0.0.0:8000"
+    #command: /bin/sh -c "sleep 9s; python3 -u manage.py runserver --verbosity 2 0.0.0.0:8000"
+    command: sleep infinity
     environment:
       DJANGO_DEBUG: ${DJANGO_DEBUG}
       RUN_LOCAL_DOWNLOAD_IN_PROCESS: "False"
@@ -379,3 +380,14 @@ services:
         source: ${HOME}/.ivy2
         target: /root/.ivy2
         read_only: false
+  
+  dataact-broker-db:
+    container_name: dataact-broker-db
+    image: postgres:13.8-alpine
+    restart: on-failure:3 # 3 max attempt, and then it will stop restarting
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: data_broker
+    ports:
+      - "5435:5432"

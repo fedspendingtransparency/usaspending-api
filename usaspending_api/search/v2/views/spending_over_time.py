@@ -381,6 +381,26 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         return results
 
+    def build_elasticsearch_result_subawards(self, agg_response: AggResponse, time_periods: list) -> list:
+
+        results = []
+
+        db_results, order_by_cols = self.database_data_layer_for_subawards()
+        results = bolster_missing_time_periods(
+            filter_time_periods=time_periods,
+            queryset=db_results,
+            date_range_type=order_by_cols[-1],
+            columns={
+                "obligation_amount": "obligation_amount",
+                "total_outlays": "total_outlays",
+                "subaward_type": "subaward_type",
+            },
+        )
+
+        results = clean_subaward_spending_over_time_results(results, order_by_cols[-1])
+
+        return results
+
     def query_elasticsearch_for_transactions(self, time_periods: list) -> list:
         """Get spending over time amounts based on Transactions"""
 
@@ -421,8 +441,43 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         return overall_results
 
+    def query_elasticsearch_for_queryType(self, time_periods: list, type_of_query) -> list:
+        """Get spending over time amounts based on the type of query (awards, subawards, or transactions)"""
+
+        query_type = _QueryType.AWARDS
+        generate_elasticsearch_method = "generate_awards_elasticsearch_query"
+        build_elasticSearch_result_method = "build_elasticsearch_result_awards"
+        if query_type == 'subawards':
+            query_type = _QueryType.SUBAWARDS 
+            generate_elasticsearch_method = "generate_subawards_elasticsearch_query"
+            build_elasticSearch_result_method = "build_elasticsearch_result_subawards"
+        elif query_type == 'transactions':
+            query_type = _QueryType.TRANSACTIONS
+            generate_elasticsearch_method = "generate_transactions_elasticsearch_query"
+            build_elasticSearch_result_method = "build_elasticsearch_result_transactions"
+        
+        filter_options = {}
+        time_period_obj = AwardSearchTimePeriod(
+            default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
+        )
+        new_awards_only_decorator = NewAwardsOnlyTimePeriod(
+            time_period_obj=time_period_obj, query_type=query_type
+        )
+        obj = QueryWithFilters()
+        filter_options["time_period_obj"] = new_awards_only_decorator
+        filter_query = getattr(obj, generate_elasticsearch_method)(self.filters, **filter_options)
+        search = AwardSearch().filter(filter_query)
+        self.apply_elasticsearch_aggregations(search)
+        response = search.handle_execute()
+        overall_results = getattr(self, build_elasticSearch_result_method)(response.aggs, time_periods)
+
+        return overall_results
+        
+
     @cache_response()
     def post(self, request: Request) -> Response:
+        # import ipdb
+        # ipdb.set_trace()
         self.original_filters = request.data.get("filters")
         json_request, models = self.validate_request_data(request.data)
         self.group = GROUPING_LOOKUP[json_request["group"]]
@@ -447,25 +502,16 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         # if time periods have been passed in use those, otherwise use the one calculated above
         time_periods = self.filters.get("time_period", [default_time_period])
-
+        query_type = ""
         if self.subawards:
-            db_results, order_by_cols = self.database_data_layer_for_subawards()
-            results = bolster_missing_time_periods(
-                filter_time_periods=time_periods,
-                queryset=db_results,
-                date_range_type=order_by_cols[-1],
-                columns={
-                    "obligation_amount": "obligation_amount",
-                    "total_outlays": "total_outlays",
-                    "subaward_type": "subaward_type",
-                },
-            )
-            results = clean_subaward_spending_over_time_results(results, order_by_cols[-1])
-
+            query_type = "subawards"
         elif self.spending_level == "transactions":
-            results = self.query_elasticsearch_for_transactions(time_periods)
+            #results = self.query_elasticsearch_for_transactions(time_periods)
+            query_type = 'transactions'
         elif self.spending_level == "awards":
-            results = self.query_elasticsearch_for_awards(time_periods)
+            # results = self.query_elasticsearch_for_awards(time_periods)
+            query_type = 'awards'
+        results = self.query_elasticsearch_for_queryType(time_periods, query_type)
 
         raw_response = OrderedDict(
             [
