@@ -418,7 +418,9 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         self.apply_elasticsearch_aggregations(search)
         response = search.handle_execute()
         overall_results = self.build_elasticsearch_result_transactions(response.aggs, time_periods)
+
         return overall_results
+
 
     def query_elasticsearch_for_awards(self, time_periods: list) -> list:
         """Get spending over time amounts based on Awards"""
