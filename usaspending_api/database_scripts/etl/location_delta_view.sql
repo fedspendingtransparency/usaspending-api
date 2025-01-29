@@ -51,9 +51,9 @@ county_cte AS (
 				AND
 				pop_state_name IS NOT NULL
 				AND
-				pop_county_fips ~ '^[0-9]{5}$'
+				CONCAT(pop_state_fips, pop_county_code) ~ '^[0-9]{5}$'
 			THEN
-				pop_county_fips
+				CONCAT(pop_state_fips, pop_county_code)
 		END AS county_fips
 	FROM
 		rpt.transaction_search
@@ -80,9 +80,9 @@ county_cte AS (
 				AND
 				recipient_location_state_name IS NOT NULL
 				AND
-				recipient_location_county_fips ~ '^[0-9]{5}$'
+				CONCAT(recipient_location_state_fips, recipient_location_county_code) ~ '^[0-9]{5}$'
 			THEN
-				recipient_location_county_fips
+				CONCAT(recipient_location_state_fips, recipient_location_county_code)
 		END AS county_fips
 	FROM
 		rpt.transaction_search
