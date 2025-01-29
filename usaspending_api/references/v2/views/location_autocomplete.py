@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from typing import List, Union
+from typing import List
 
 from elasticsearch_dsl import Q as ES_Q
 from elasticsearch_dsl.response import Response as ES_Response
