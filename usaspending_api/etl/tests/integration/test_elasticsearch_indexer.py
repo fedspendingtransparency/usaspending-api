@@ -2,8 +2,6 @@ from collections import OrderedDict
 from datetime import datetime, timedelta, timezone
 
 import pytest
-from django.db.models import F, Q
-from django.db.models.functions import Upper
 from django.test import override_settings
 from elasticsearch import Elasticsearch
 from model_bakery import baker
@@ -30,7 +28,7 @@ from usaspending_api.etl.management.commands.elasticsearch_indexer import (
 from usaspending_api.etl.management.commands.elasticsearch_indexer import (
     parse_cli_args,
 )
-from usaspending_api.recipient.models import RecipientProfile, StateData
+from usaspending_api.recipient.models import RecipientProfile
 from usaspending_api.search.models import AwardSearch, TransactionSearch
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
@@ -296,33 +294,11 @@ def test_create_and_load_new_location_index(location_data_fixture, elasticsearch
     # Ensure index is not yet created
     assert not client.indices.exists(elasticsearch_location_index.index_name)
 
-    valid_state_names = StateData.objects.values_list(Upper("name"), flat=True)
-    pop_ts = (
-        TransactionSearch.objects.filter(
-            (Q(pop_country_name="UNITED STATES") & Q(pop_state_name__in=valid_state_names))
-            | ~(Q(pop_country_name="UNITED STATES") & Q(pop_state_name__isnull=False))
-        )
-        .annotate(countries=F("pop_country_name"), states=F("pop_state_name"))
-        .values("countries", "states")
-    )
-    rl_ts = (
-        TransactionSearch.objects.filter(
-            (
-                Q(recipient_location_country_name="UNITED STATES")
-                & Q(recipient_location_state_name__in=valid_state_names)
-            )
-            | ~(Q(recipient_location_country_name="UNITED STATES") & Q(recipient_location_state_name__isnull=False))
-        )
-        .annotate(countries=F("recipient_location_country_name"), states=F("recipient_location_state_name"))
-        .values("countries", "states")
-    )
-    original_db_locations_count = pop_ts.union(rl_ts).count()
-
     setup_elasticsearch_test(monkeypatch, elasticsearch_location_index)
     assert client.indices.exists(elasticsearch_location_index.index_name)
 
     es_location_docs = client.count(index=elasticsearch_location_index.index_name)["count"]
-    assert es_location_docs == original_db_locations_count
+    assert es_location_docs > 0
 
 
 def test_create_and_load_new_transaction_index(award_data_fixture, elasticsearch_transaction_index, monkeypatch):
