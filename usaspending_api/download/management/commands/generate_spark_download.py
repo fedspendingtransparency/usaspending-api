@@ -115,7 +115,10 @@ class Command(BaseCommand):
         self.download_validator_type = download_spec["validator_type"]
         self.jdbc_properties = get_jdbc_connection_properties()
         self.jdbc_url = get_usas_jdbc_url()
+
         self.working_dir_path = Path(settings.CSV_LOCAL_PATH)
+        if not self.working_dir_path.exists():
+            self.working_dir_path.mkdir()
 
         create_ref_temp_views(self.spark)
 
