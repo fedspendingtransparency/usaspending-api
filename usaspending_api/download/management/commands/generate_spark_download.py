@@ -3,7 +3,7 @@ import os
 import traceback
 from logging import Logger
 from pathlib import Path
-from typing import Optional, Dict, Tuple, Type
+from typing import Optional, Dict, Tuple, Type, List, Union
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
@@ -33,8 +33,8 @@ from usaspending_api.download.v2.request_validations import AccountDownloadValid
 DOWNLOAD_SPEC = {
     "award_financial": {
         "federal_account": {
-            # "query": federal_account.TEST_QUERY,
             "query": federal_account.DOWNLOAD_QUERY,
+            "select_in_formats": [("submission_id", federal_account.SUBMISSION_ID_QUERY)],
             "validator_type": AccountDownloadValidator,
         }
     }
@@ -43,26 +43,23 @@ DOWNLOAD_SPEC = {
 
 class Command(BaseCommand):
 
-    help = ...
+    help = "Generate a download zip file based on the provided type and level."
 
-    # TODO: This should be removed prior to any production use
-    file_prefix = "SPARK_TEST_"
-    working_dir_path = Path(settings.CSV_LOCAL_PATH)
-
-    # Values defined in the handler
     download_job: DownloadJob
-    download_level: Optional[str]
+    download_level: str
     download_query: str
     download_source: DownloadSource
     download_spec: Dict
     download_type: str
     download_validator_type: Type[DownloadValidatorBase]
     file_format_spec: Dict
+    file_prefix: str
     jdbc_properties: Dict
     jdbc_url: str
     logger: Logger
+    should_cleanup: bool
     spark: SparkSession
-    temp_dir: str
+    working_dir_path: Path
 
     def add_arguments(self, parser):
         parser.add_argument("--download-type", type=str, required=True, choices=list(DOWNLOAD_SPEC))
@@ -77,6 +74,8 @@ class Command(BaseCommand):
             ),
         )
         parser.add_argument("--file-format", type=str, required=False, choices=list(FILE_FORMATS), default="csv")
+        parser.add_argument("--file-prefix", type=str, required=False, default="")
+        parser.add_argument("--skip-local-cleanup", action="store_true")
 
     def handle(self, *args, **options):
         extra_conf = {
@@ -101,6 +100,8 @@ class Command(BaseCommand):
         # Resolve Parameters
         self.download_type = options["download_type"]
         self.download_level = options["download_level"]
+        self.file_prefix = options["file_prefix"]
+        self.should_cleanup = not options["skip_local_cleanup"]
 
         if self.download_level not in DOWNLOAD_SPEC[self.download_type].keys():
             raise ValueError(
@@ -114,14 +115,22 @@ class Command(BaseCommand):
         self.download_validator_type = download_spec["validator_type"]
         self.jdbc_properties = get_jdbc_connection_properties()
         self.jdbc_url = get_usas_jdbc_url()
+        self.working_dir_path = Path(settings.CSV_LOCAL_PATH)
 
         create_ref_temp_views(self.spark)
 
         self.download_job, self.download_source = self.create_download_job()
+        self.modify_download_query(download_spec["select_in_formats"] or [])
         self.process_download()
 
         if spark_created_by_command:
             self.spark.stop()
+
+    def modify_download_query(self, select_in_formats: List[Tuple[str, str]]) -> None:
+        formats_to_apply = []
+        for select_col, query in select_in_formats:
+            formats_to_apply.append(tuple(val[select_col] for val in self.spark.sql(query).collect()))
+        self.download_query = self.download_query.format(*formats_to_apply)
 
     @cached_property
     def json_request(self) -> Dict:
@@ -181,16 +190,21 @@ class Command(BaseCommand):
 
     def process_download(self):
         self.start_download()
+        files_to_cleanup = []
         try:
             spark_to_csv_strategy = SparkToCSVStrategy(self.logger)
+
             zip_file_path = self.working_dir_path / f"{self.download_name}.zip"
-            _, row_count, column_count = spark_to_csv_strategy.download_to_csv(
+
+            zip_components_file_paths, row_count, column_count = spark_to_csv_strategy.download_to_csv(
                 self.download_query,
                 self.working_dir_path / self.download_name,
                 self.download_name,
                 self.working_dir_path,
                 zip_file_path,
             )
+            files_to_cleanup.extend(zip_components_file_paths)
+
             self.download_job.file_size = os.stat(zip_file_path).st_size
             self.download_job.number_of_rows = row_count
             self.download_job.number_of_columns = column_count
@@ -203,6 +217,9 @@ class Command(BaseCommand):
             exc_msg = "An exception was raised while attempting to process the DownloadJob"
             self.fail_download(exc_msg, e)
             raise
+        finally:
+            if self.should_cleanup:
+                self.cleanup(files_to_cleanup)
 
         self.finish_download()
 
@@ -225,3 +242,10 @@ class Command(BaseCommand):
         self.download_job.job_status_id = JOB_STATUS_DICT["finished"]
         self.download_job.save()
         self.logger.info(f"Finished processing DownloadJob {self.download_job.download_job_id}")
+
+    def cleanup(self, path_list: List[Union[Path, str]]) -> None:
+        for path in path_list:
+            if isinstance(path, str):
+                path = Path(path)
+            self.logger.info(f"Removing {path}")
+            path.unlink()

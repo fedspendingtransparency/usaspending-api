@@ -1,14 +1,3 @@
-"""
-SOME NOTES:
-    -
-"""
-
-TEST_QUERY = """
-    SELECT
-        *
-    FROM raw.financial_accounts_by_awards
-"""
-
 DOWNLOAD_QUERY = """
     SELECT
         toptier_agency.name AS owning_agency_name,
@@ -266,9 +255,10 @@ DOWNLOAD_QUERY = """
             --     43471, 44008, 43976, 43205, 43234, 43325, 43377, 43479, 43741, 43744, 43745, 43748, 43977, 44027, 44056,
             --     44118, 43866, 43940, 43603, 44038, 43532, 43609, 44111, 43524, 43562, 44076, 43592, 43607, 43594, 43988
             -- )
+            financial_accounts_by_awards.submission_id IN {}
             -- This logic should contain all of the submissions mentioned above and then more. The two filters can be
             -- viewed as outlay and obligation filters respectively.
-            (
+            OR (
                 (
                     (
                         submission_attributes.reporting_fiscal_period <= 12
@@ -545,5 +535,25 @@ DOWNLOAD_QUERY = """
         ) > 0
         OR SUM(financial_accounts_by_awards.transaction_obligated_amount) > 0
         OR SUM(financial_accounts_by_awards.transaction_obligated_amount) < 0
-    LIMIT 21
+"""
+
+# This may not be needed when going to Production, but it is added for a 1:1 comparison
+# with the current functionality in Production.
+SUBMISSION_ID_QUERY = """
+    SELECT  submission_id
+    FROM    global_temp.submission_attributes
+    WHERE   (toptier_code, reporting_fiscal_year, reporting_fiscal_period) IN (
+                SELECT  toptier_code, reporting_fiscal_year, reporting_fiscal_period
+                FROM    global_temp.submission_attributes
+                WHERE   reporting_fiscal_year = 2021 AND
+                        (
+                            (reporting_fiscal_quarter <= 4 AND quarter_format_flag is true) OR
+                            (reporting_fiscal_period <= 12 AND quarter_format_flag is false)
+                        )
+                ORDER   BY toptier_code, reporting_fiscal_period desc
+            ) AND
+            (
+                (reporting_fiscal_quarter = 4 AND quarter_format_flag IS TRUE) OR
+                (reporting_fiscal_period = 12 AND quarter_format_flag IS FALSE)
+            )
 """

@@ -7,7 +7,7 @@ from typing import Tuple, Optional
 from django.conf import settings
 
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
-from usaspending_api.common.helpers.s3_helpers import delete_s3_object, download_s3_object
+from usaspending_api.common.helpers.s3_helpers import download_s3_object, delete_s3_objects
 from usaspending_api.common.helpers.sql_helpers import read_sql_file_to_text
 from usaspending_api.download.filestreaming.download_generation import (
     EXCEL_ROW_LIMIT,
@@ -180,7 +180,7 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
             self._logger.exception("Exception encountered. See logs")
             raise
         finally:
-            delete_s3_object(s3_bucket_name, s3_destination_path)
+            delete_s3_objects(s3_bucket_name, key_prefix=f"{s3_bucket_sub_path}/{destination_file_name}")
             if self.spark_created_by_command:
                 self.spark.stop()
         append_files_to_zip_file(final_csv_data_file_locations, download_zip_path)
