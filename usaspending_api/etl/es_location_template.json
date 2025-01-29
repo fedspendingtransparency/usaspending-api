@@ -35,7 +35,7 @@
   },
   "mappings": {
     "properties": {
-      "country_name": {
+      "location_string": {
         "type": "text",
         "fields": {
           "contains": {
@@ -47,37 +47,9 @@
           }
         }
       },
-      "state_name": {
+      "location_type": {
         "type": "text",
         "fields": {
-          "contains": {
-            "type": "text",
-            "analyzer": "contains_analyzer"
-          },
-          "keyword": {
-            "type": "keyword"
-          }
-        }
-      },
-      "city_name": {
-        "type": "text",
-        "fields": {
-          "contains": {
-            "type": "text",
-            "analyzer": "contains_analyzer"
-          },
-          "keyword": {
-            "type": "keyword"
-          }
-        }
-      },
-      "county_name": {
-        "type": "text",
-        "fields": {
-          "contains": {
-            "type": "text",
-            "analyzer": "contains_analyzer"
-          },
           "keyword": {
             "type": "keyword"
           }
@@ -94,43 +66,7 @@
             "type": "keyword"
           }
         }
-      },
-      "zip_code": {
-        "type": "text",
-        "fields": {
-          "contains": {
-            "type": "text",
-            "analyzer": "contains_analyzer"
-          },
-          "keyword": {
-            "type": "keyword"
-          }
-        }
-      },
-      "current_congressional_district": {
-        "type": "text",
-        "fields": {
-          "contains": {
-            "type": "text",
-            "analyzer": "contains_analyzer"
-          },
-          "keyword": {
-            "type": "keyword"
-          }
-        }
-      },
-      "original_congressional_district": {
-        "type": "text",
-        "fields": {
-          "contains": {
-            "type": "text",
-            "analyzer": "contains_analyzer"
-          },
-          "keyword": {
-            "type": "keyword"
-          }
-        }
       }
-    }
+  }
   }
 }
