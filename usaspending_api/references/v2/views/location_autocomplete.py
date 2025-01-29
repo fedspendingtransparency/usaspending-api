@@ -106,6 +106,8 @@ class LocationAutocompleteViewSet(APIView):
         original_cds = []
         current_cds = []
 
+        # Key: Value of the `location_type` field on the ES docs
+        # Value: Lists from above that will contain the matches for that location type
         location_type_to_list_lookup = {
             "country": countries,
             "city": cities,
@@ -118,9 +120,13 @@ class LocationAutocompleteViewSet(APIView):
 
         for doc in es_results:
             if doc.location_type == "county":
-                counties.append({"county_name": doc.location_string, "county_fips": doc.county_fips})
+                location = {"county_name": doc.location_string, "county_fips": doc.county_fips}
+            elif doc.location_type in ("original_congressional_district", "current_congressional_district"):
+                location = f"{doc.location_string[:2]}-{doc.location_string[2:]}"
             else:
-                location_type_to_list_lookup[doc.location_type].append(doc.location_string)
+                location = doc.location_string
+
+            location_type_to_list_lookup[doc.location_type].append(location)
 
         results = {
             "countries": countries if countries else None,
