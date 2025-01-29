@@ -75,6 +75,8 @@ class AwardSearch(models.Model):
     awarding_subtier_agency_code_raw = models.TextField(null=True)
     funding_subtier_agency_code_raw = models.TextField(null=True)
 
+    federal_accounts = models.JSONField(null=True)
+
     recipient_location_country_code = models.TextField(null=True)
     recipient_location_country_name = models.TextField(null=True)
     recipient_location_state_code = models.TextField(null=True)
@@ -192,8 +194,7 @@ class AwardSearch(models.Model):
     raw_recipient_name = models.TextField(null=True)
     data_source = models.TextField(null=True)
     generated_pragmatic_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
-    program_activity_names = ArrayField(models.TextField(), null=True, default=None)
-    program_activity_codes = ArrayField(models.TextField(), null=True, default=None)
+    program_activities = models.JSONField(null=True)
 
     objects = CTEManager()
 

@@ -168,8 +168,8 @@ def _build_dabs_reporting_data(fy_reported):
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=0,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=0,
         ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=0,
-        ussgl480110_reinstated_del_cpe=0,
-        ussgl490110_reinstated_del_cpe=0,
+        ussgl480110_rein_undel_ord_cpe=0,
+        ussgl490110_rein_deliv_ord_cpe=0,
     )
     baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
@@ -191,8 +191,8 @@ def _build_dabs_reporting_data(fy_reported):
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=0,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=0,
         ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=0,
-        ussgl480110_reinstated_del_cpe=0,
-        ussgl490110_reinstated_del_cpe=0,
+        ussgl480110_rein_undel_ord_cpe=0,
+        ussgl490110_rein_deliv_ord_cpe=0,
     )
     baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
@@ -214,8 +214,8 @@ def _build_dabs_reporting_data(fy_reported):
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=0,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=0,
         ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=0,
-        ussgl480110_reinstated_del_cpe=0,
-        ussgl490110_reinstated_del_cpe=0,
+        ussgl480110_rein_undel_ord_cpe=0,
+        ussgl490110_rein_deliv_ord_cpe=0,
     )
     baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
@@ -237,8 +237,8 @@ def _build_dabs_reporting_data(fy_reported):
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=0,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=0,
         ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=0,
-        ussgl480110_reinstated_del_cpe=0,
-        ussgl490110_reinstated_del_cpe=0,
+        ussgl480110_rein_undel_ord_cpe=0,
+        ussgl490110_rein_deliv_ord_cpe=0,
     )
     baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
@@ -260,8 +260,8 @@ def _build_dabs_reporting_data(fy_reported):
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=0,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=0,
         ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=0,
-        ussgl480110_reinstated_del_cpe=0,
-        ussgl490110_reinstated_del_cpe=0,
+        ussgl480110_rein_undel_ord_cpe=0,
+        ussgl490110_rein_deliv_ord_cpe=0,
     )
     baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
@@ -283,8 +283,8 @@ def _build_dabs_reporting_data(fy_reported):
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=0,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=0,
         ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=0,
-        ussgl480110_reinstated_del_cpe=0,
-        ussgl490110_reinstated_del_cpe=0,
+        ussgl480110_rein_undel_ord_cpe=0,
+        ussgl490110_rein_deliv_ord_cpe=0,
     )
     baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
@@ -306,8 +306,8 @@ def _build_dabs_reporting_data(fy_reported):
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=0,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=0,
         ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=0,
-        ussgl480110_reinstated_del_cpe=0,
-        ussgl490110_reinstated_del_cpe=0,
+        ussgl480110_rein_undel_ord_cpe=0,
+        ussgl490110_rein_deliv_ord_cpe=0,
     )
     baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
@@ -329,8 +329,8 @@ def _build_dabs_reporting_data(fy_reported):
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=0,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=0,
         ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=0,
-        ussgl480110_reinstated_del_cpe=0,
-        ussgl490110_reinstated_del_cpe=0,
+        ussgl480110_rein_undel_ord_cpe=0,
+        ussgl490110_rein_deliv_ord_cpe=0,
     )
     baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
@@ -352,8 +352,8 @@ def _build_dabs_reporting_data(fy_reported):
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=0,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=0,
         ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=0,
-        ussgl480110_reinstated_del_cpe=0,
-        ussgl490110_reinstated_del_cpe=0,
+        ussgl480110_rein_undel_ord_cpe=0,
+        ussgl490110_rein_deliv_ord_cpe=0,
     )
     for fy in range(2017, current_fiscal_year() + 1):
         baker.make("references.GTASSF133Balances", fiscal_year=fy, fiscal_period=12, total_budgetary_resources_cpe=fy)
