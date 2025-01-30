@@ -5,6 +5,7 @@ import logging
 from pathlib import Path
 from typing import Tuple, Optional
 from django.conf import settings
+from django.db import connection
 
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
 from usaspending_api.common.helpers.s3_helpers import download_s3_object, delete_s3_objects
@@ -219,4 +220,11 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
             )
             local_csv_file_paths.append(final_path)
         self._logger.info(f"Copied data files from S3 to local machine in {(time.time() - start_time):3f}s")
+        with connection.cursor() as cursor:
+            hours, remainder = divmod(time.time() - start_time, 3600)
+            minutes, seconds = divmod(remainder, 60)
+            cursor.execute(
+                "INSERT INTO test_spark_download_perf (duration, stage, notes) "
+                f"VALUES ('{int(hours)}h:{int(minutes)}m:{round(seconds, 3)}s', 'Writing csv(s) to local from s3', NULL)"
+            )
         return local_csv_file_paths

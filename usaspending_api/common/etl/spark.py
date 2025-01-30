@@ -7,6 +7,8 @@ functions for setup and configuration of the spark environment
 
 from itertools import chain
 from typing import List
+
+from django.db import connection
 from pyspark.sql.functions import to_date, lit, expr, concat, concat_ws, col, regexp_replace, transform, when
 from pyspark.sql.types import StructType, DecimalType, StringType, ArrayType
 from pyspark.sql import DataFrame, SparkSession
@@ -612,6 +614,13 @@ def write_csv_file(
     start = time.time()
     logger.info(f"Writing source data DataFrame to csv part files for file {parts_dir}...")
     df_record_count = df.count()
+    with connection.cursor() as cursor:
+        hours, remainder = divmod(time.time() - start, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        cursor.execute(
+            "INSERT INTO test_spark_download_perf (duration, stage, notes) "
+            f"VALUES ('{int(hours)}h:{int(minutes)}m:{round(seconds, 3)}s', 'Get record count', 'Number of records is {df_record_count}')"
+        )
     df.repartition(num_partitions).write.options(
         # NOTE: this is a suggestion, to be used by Spark if partitions yield multiple files
         maxRecordsPerFile=max_records_per_file,
@@ -627,6 +636,13 @@ def write_csv_file(
     )
     logger.info(f"{parts_dir} contains {df_record_count:,} rows of data")
     logger.info(f"Wrote source data DataFrame to csv part files in {(time.time() - start):3f}s")
+    with connection.cursor() as cursor:
+        hours, remainder = divmod(time.time() - start, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        cursor.execute(
+            "INSERT INTO test_spark_download_perf (duration, stage, notes) "
+            f"VALUES ('{int(hours)}h:{int(minutes)}m:{round(seconds, 3)}s', 'Wrote to csv(s)', NULL)"
+        )
     return df_record_count
 
 
@@ -657,6 +673,7 @@ def hadoop_copy_merge(
         A list of file paths where each element in the list denotes a path to
             a merged file that was generated during the copy merge.
     """
+    start = time.time()
     overwrite = True
     if not logger:
         logger = get_jvm_logger(spark)
@@ -735,6 +752,13 @@ def hadoop_copy_merge(
                 fs.delete(partial_merged_file_path, True)
             logger.exception("Exception encountered. See logs")
             raise
+    with connection.cursor() as cursor:
+        hours, remainder = divmod(time.time() - start, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        cursor.execute(
+            "INSERT INTO test_spark_download_perf (duration, stage, notes) "
+            f"VALUES ('{int(hours)}h:{int(minutes)}m:{round(seconds, 3)}s', 'Hadoop copy merge', NULL)"
+        )
     return paths_to_merged_files
 
 

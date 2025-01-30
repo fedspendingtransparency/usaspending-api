@@ -11,6 +11,7 @@ from django.conf import settings
 from pathlib import Path
 from typing import List, Optional
 from botocore.client import BaseClient
+from django.db import connection
 
 from usaspending_api.config import CONFIG
 
@@ -101,10 +102,18 @@ def access_s3_object(bucket_name: str, obj: "boto3.resources.factory.s3.ObjectSu
 
 
 def upload_download_file_to_s3(file_path, sub_dir=None):
+    start = time.time()
     bucket = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
     region = settings.USASPENDING_AWS_REGION
     keyname = file_path.name
     multipart_upload(bucket, region, str(file_path), keyname, sub_dir)
+    with connection.cursor() as cursor:
+        hours, remainder = divmod(time.time() - start, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        cursor.execute(
+            "INSERT INTO test_spark_download_perf (duration, stage, notes) "
+            f"VALUES ('{int(hours)}h:{int(minutes)}m:{round(seconds, 3)}s', 'Upload zip file to s3', NULL)"
+        )
 
 
 def multipart_upload(bucketname, region_name, source_path, keyname, sub_dir=None):
@@ -182,6 +191,7 @@ def delete_s3_objects(
     Returns:
         Number of objects delete
     """
+    start = time.time()
     object_list = []
 
     if key_prefix:
@@ -195,4 +205,13 @@ def delete_s3_objects(
     s3_client = _get_boto3_s3_client(region_name)
     resp = s3_client.delete_objects(Bucket=bucket_name, Delete={"Objects": object_list})
 
+    count = len(resp.get("Deleted", []))
+
+    with connection.cursor() as cursor:
+        hours, remainder = divmod(time.time() - start, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        cursor.execute(
+            "INSERT INTO test_spark_download_perf (duration, stage, notes) "
+            f"VALUES ('{int(hours)}h:{int(minutes)}m:{round(seconds, 3)}s', 'Deleting the s3 object(s)', 'Deleted a total of {count} record(s)')"
+        )
     return len(resp.get("Deleted", []))
