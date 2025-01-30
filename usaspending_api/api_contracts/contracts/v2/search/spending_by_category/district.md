@@ -118,6 +118,7 @@ This endpoint returns a list of the top results of Congressional Districts sorte
 ## Filter Objects
 ### FilterObject (object)
 + `keywords` : [`transport`] (optional, array[string])
++ `description` (optional, string)
 + `time_period` (optional, array[TimePeriodObject], fixed-type)
 + `place_of_performance_scope` (optional, enum[string])
     + Members
