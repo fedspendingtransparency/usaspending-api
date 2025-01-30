@@ -45,7 +45,7 @@ class LocalConfig(DefaultConfig):
 
     # Change to host.docker.internal if you are running a local Postgres. Otherwise leave as-is, so
     # Docker will use the Postgres created by Compose.
-    USASPENDING_DB_HOST: str = "usaspending-db"
+    USASPENDING_DB_HOST: str = "usaspending-db123"
     USASPENDING_DB_PORT: str = "5432"
 
     # ==== [Postgres Broker] ====

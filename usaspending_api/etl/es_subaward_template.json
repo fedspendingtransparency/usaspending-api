@@ -329,7 +329,12 @@
         }
       },
       "subaward_type": {
-        "type": "text"
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
       },
       "subaward_report_year": {
         "type": "integer"
