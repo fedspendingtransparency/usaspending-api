@@ -1,7 +1,8 @@
 version: "2"
 
 languages:
-  Python: true
+  Python:
+    version: "3.10"
   Javascript: true
 
 checks:
@@ -61,7 +62,7 @@ engines:
 
 ratings:
   paths:
-  - "**.py"
+    - "**.py"
 
 exclude_paths:
   - "*/site-packages/*"
