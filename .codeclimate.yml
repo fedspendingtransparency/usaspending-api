@@ -40,7 +40,7 @@ checks:
   similar-code:
     enabled: false
 
-plugins:
+engines:
   pep8:
     enabled: true
     checks:
@@ -55,7 +55,6 @@ plugins:
         enabled: false
   radon:
     enabled: true
-    channel: beta
     config:
       python_version: 3
       threshold: "D"
@@ -64,7 +63,7 @@ ratings:
   paths:
     - "**.py"
 
-exclude_patterns:
+exclude_paths:
   - "*/site-packages/*"
   - "usaspending_api/api_contracts/*"
   - "usaspending_api/api_docs/*"
