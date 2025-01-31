@@ -42,7 +42,7 @@ county_cte AS (
 				AND
 				pop_county_name ~ '^[a-zA-Z]'
 			THEN
-				CONCAT(pop_county_name, ' COUNTY', ', ', UPPER(sd.name), ', ', 'UNITED STATES')
+				CONCAT(pop_county_name, ' COUNTY', ', ', UPPER(sd.name))
 		END AS location_string,
 		'county' AS location_type,
 		CASE
@@ -57,8 +57,9 @@ county_cte AS (
 		END AS county_fips
 	FROM
 		rpt.transaction_search
-	LEFT JOIN
-		state_data sd ON pop_state_name = UPPER(sd.name)
+	INNER JOIN
+		state_data sd
+            ON pop_state_name = UPPER(sd.name) AND pop_state_fips = sd.fips
 	WHERE
 		pop_country_name IS NOT NULL
 	UNION
@@ -71,7 +72,7 @@ county_cte AS (
 				AND
 				recipient_location_county_name ~ '^[a-zA-Z]'
 			THEN
-				CONCAT(recipient_location_county_name, ' COUNTY', ', ', UPPER(sd.name), ', ', 'UNITED STATES')
+				CONCAT(recipient_location_county_name, ' COUNTY', ', ', UPPER(sd.name))
 		END AS location_string,
 		'county' AS location_type,
 		CASE
@@ -86,8 +87,9 @@ county_cte AS (
 		END AS county_fips
 	FROM
 		rpt.transaction_search
-	LEFT JOIN
-		state_data sd ON recipient_location_state_name = UPPER(sd.name)
+	INNER JOIN
+		state_data sd
+            ON recipient_location_state_name = UPPER(sd.name) AND recipient_location_state_fips = sd.fips
 	WHERE
 		recipient_location_country_name IS NOT NULL
 ),
@@ -101,7 +103,7 @@ zip_cte AS (
 			    and
 				pop_zip5 IS NOT NULL
 			THEN
-				CONCAT(pop_zip5, ', ', UPPER(sd.name), ', UNITED STATES')
+				CONCAT(pop_zip5, ', ', UPPER(sd.name))
 		END AS location_string,
 		'zip_code' AS location_type
 	FROM
@@ -120,7 +122,7 @@ zip_cte AS (
 			    AND
 				recipient_location_zip5 IS NOT NULL
 			THEN
-				CONCAT(recipient_location_zip5, ', ', UPPER(sd.name), ', UNITED STATES')
+				CONCAT(recipient_location_zip5, ', ', UPPER(sd.name))
 			ELSE
 				NULL
 		END AS location_string,
@@ -144,7 +146,7 @@ current_cd_cte AS (
 					recipient_location_congressional_code_current IS NOT NULL
 				)
 			THEN
-				CONCAT(sd.code, recipient_location_congressional_code_current, ', ', UPPER(sd.name), ', UNITED STATES')
+				CONCAT(sd.code, recipient_location_congressional_code_current, ', ', UPPER(sd.name))
 		END AS location_string,
         'current_congressional_district' AS location_type
     FROM
@@ -165,7 +167,7 @@ current_cd_cte AS (
 					pop_congressional_code_current IS NOT NULL
 				)
 			THEN
-				CONCAT(sd.code, pop_congressional_code_current, ', ', UPPER(sd.name), ', UNITED STATES')
+				CONCAT(sd.code, pop_congressional_code_current, ', ', UPPER(sd.name))
 		END AS location_string,
         'current_congressional_district' AS location_type
     FROM
@@ -187,7 +189,7 @@ original_cd_cte AS (
 					recipient_location_congressional_code IS NOT NULL
 				)
 			THEN
-				CONCAT(UPPER(sd.code), recipient_location_congressional_code, ', ', UPPER(sd.name), ', UNITED STATES')
+				CONCAT(UPPER(sd.code), recipient_location_congressional_code, ', ', UPPER(sd.name))
 		END AS location_string,
         'original_congressional_district' AS location_type
     FROM
@@ -208,7 +210,7 @@ original_cd_cte AS (
 					pop_congressional_code IS NOT NULL
 				)
 			THEN
-				CONCAT(UPPER(sd.code), pop_congressional_code, ', ', UPPER(sd.name), ', UNITED STATES')
+				CONCAT(UPPER(sd.code), pop_congressional_code, ', ', UPPER(sd.name))
 		END AS location_string,
         'original_congressional_district' AS location_type
     FROM
@@ -220,7 +222,7 @@ original_cd_cte AS (
 ),
 state_cte AS (
     SELECT
-        CONCAT(UPPER(sd.name), ', UNITED STATES') AS location_string,
+        UPPER(sd.name) AS location_string,
         'state' AS location_type
     FROM
         rpt.transaction_search
@@ -228,7 +230,7 @@ state_cte AS (
         state_data sd ON recipient_location_state_name = UPPER(sd.name)
     UNION
     SELECT
-        CONCAT(UPPER(sd.name), ', UNITED STATES') AS location_string,
+        UPPER(sd.name) AS location_string,
         'state' AS location_type
     FROM
         rpt.transaction_search
@@ -247,7 +249,7 @@ city_cte AS (
                     recipient_location_city_name IS NOT NULL
                 )
             THEN
-                CONCAT(UPPER(recipient_location_city_name), ', ', UPPER(sd.name), ', UNITED STATES')
+                CONCAT(UPPER(recipient_location_city_name), ', ', UPPER(sd.name))
         END AS location_string,
         'city' AS location_type
     FROM rpt.transaction_search
@@ -266,7 +268,7 @@ city_cte AS (
                     pop_congressional_code IS NOT NULL
                 )
             THEN
-                CONCAT(UPPER(pop_city_name), ', ', UPPER(sd.name), ', UNITED STATES')
+                CONCAT(UPPER(pop_city_name), ', ', UPPER(sd.name))
         END AS location_string,
         'city' AS location_type
     FROM rpt.transaction_search
