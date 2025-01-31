@@ -65,10 +65,7 @@ class LocationAutocompleteViewSet(APIView):
         ]
 
         query = ES_Q("bool", should=should_query, minimum_should_match=1)
-
         search: LocationSearch = LocationSearch().extra(size=limit).query(query)
-        # search = search.highlight(*es_location_fields).highlight_options(order="score", pre_tags=[""], post_tags=[""])
-
         results: ES_Response = search.execute()
 
         return results
@@ -80,7 +77,7 @@ class LocationAutocompleteViewSet(APIView):
             es_results: Elasticsearch result hits
 
         Returns:
-            A list containing all locations that matched the `search_text`
+            A dictionary containing all locations that matched the `search_text`
 
         Example:
             {
