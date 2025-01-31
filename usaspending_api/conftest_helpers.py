@@ -24,6 +24,7 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     create_award_type_aliases,
     execute_sql_statement,
     transform_award_data,
+    transform_subaward_data,
     transform_transaction_data,
 )
 from usaspending_api.etl.elasticsearch_loader_helpers.index_config import create_load_alias
@@ -118,6 +119,17 @@ class TestElasticSearchIndex:
             view=None,
         )
 
+        match self.index_type:
+            case "award":
+                es_id_field = "award_id"
+                primary_key_field = "award_id"
+            case "subaward":
+                es_id_field = "broker_subaward_id"
+                primary_key_field = "broker_subaward_id"
+            case _:
+                es_id_field = "transaction_id"
+                primary_key_field = "transaction_id"
+
     def delete_index(self):
         self.client.indices.delete(self.index_name, ignore_unavailable=True)
 
@@ -188,6 +200,8 @@ class TestElasticSearchIndex:
                 records = transform_award_data(self.worker, records)
             elif self.index_type == "transaction":
                 records = transform_transaction_data(self.worker, records)
+            elif self.index_type == "subaward":
+                records = transform_subaward_data(self.worker, records)
 
         for record in records:
             # Special cases where we convert array of JSON to an array of strings to avoid nested types
