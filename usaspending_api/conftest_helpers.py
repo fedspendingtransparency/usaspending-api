@@ -108,13 +108,12 @@ class TestElasticSearchIndex:
         match self.index_type:
             case "award":
                 es_id_field = "award_id"
-                primary_key_field = "award_id"
             case "subaward":
                 es_id_field = "broker_subaward_id"
-                primary_key_field = "broker_subaward_id"
-            case _:
+            case "transaction":
                 es_id_field = "transaction_id"
-                primary_key_field = "transaction_id"
+            case _:
+                raise Exception("No value for the `_id` field in Elasticsearch has been set")
 
         self.worker = TaskSpec(
             base_table=None,
@@ -125,7 +124,7 @@ class TestElasticSearchIndex:
             is_incremental=None,
             name=f"{self.index_type} test worker",
             partition_number=None,
-            primary_key=primary_key_field,
+            primary_key=es_id_field,
             sql=None,
             transform_func=None,
             view=None,

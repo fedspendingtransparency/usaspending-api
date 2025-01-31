@@ -55,8 +55,9 @@ plugins:
         enabled: false
   radon:
     enabled: true
+    channel: beta
     config:
-      python_version: 3.10
+      python_version: 3
       threshold: "D"
 
 ratings:
