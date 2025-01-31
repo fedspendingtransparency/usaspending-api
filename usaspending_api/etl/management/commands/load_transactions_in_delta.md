@@ -40,7 +40,7 @@ This command will perform different actions depending on the argument provided w
 Before this script can be used routinely, it must first be run with the `--etl-level` flag set to `initial_run`. This will perform a few setup actions.
 
 1. Create the the `transaction_id_lookup` table.
-2. Use the existing `raw.transaction_normalized` table to prepopulate the `transaction_id_lookup` table. This will ensure that existing `transaction_id`s created by our system will be retained. If the `raw.transaction_normalized` table doesn't exist, this skep is skipped.
+2. Use the existing `raw.transaction_normalized` table to prepopulate the `transaction_id_lookup` table. This will ensure that existing `transaction_id`s created by our system will be retained. If the `raw.transaction_normalized` table doesn't exist or the `no-initial-copy` flag is provided, this step is skipped.
 3. Set the `transaction_id_seq` sequence to the maximum `id` in the `transaction_id_lookup` table. If there are no records in the table, the sequence will be set to 1.
 4. Create the `award_id_lookup` table.
 5. Use the existing `raw.awards` table to prepopulate the `award_id_lookup` table. This will ensure any existing `id`s created by our system will be retained. If the `raw.awards` table does not exist, this step is skipped.
@@ -49,10 +49,6 @@ Before this script can be used routinely, it must first be run with the `--etl-l
     - `int.transaction_fabs`
     - `int.transaction_fpds`
     - `int.transaction_normalized`
-
-### Note on `--no-initial-copy`
-This flag should not be used in production. The intermediary tables should be backfilled during the initial run so that update and create dates are preserved from the old, raw versions of the tables.
-This flag may be used during testing to compare the data from the raw tables to the intermediary tables.
 
 ## Daily Usage
 

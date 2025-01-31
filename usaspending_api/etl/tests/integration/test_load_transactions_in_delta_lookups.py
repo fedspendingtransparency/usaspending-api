@@ -1086,8 +1086,6 @@ class TestTransactionIdLookup:
 
         # 1. Test deleting the transaction(s) with the last transaction ID(s) from the appropriate raw table,
         # followed by a call to load_transaction_in_delta with etl-level of transaction_id_lookup
-        # 2. Test for a single inserted transaction, and another call to load_transaction_in_delta with etl-level of
-        # transaction_id_lookup.
 
         spark.sql(
             """
@@ -1118,7 +1116,7 @@ class TestTransactionIdLookup:
         with connection.cursor() as cursor:
             cursor.execute(f"SELECT setval('transaction_id_seq', {max_transaction_id}, false)")
 
-        # 3. Test for a single inserted transaction, and another call to load_transaction_in_delta with etl-level of
+        # 2. Test for a single inserted transaction, and another call to load_transactions_in_delta with etl-level of
         # transaction_id_lookup.
 
         # Since changes to the source tables will go to the Postgres table first, use model baker to add new rows to
