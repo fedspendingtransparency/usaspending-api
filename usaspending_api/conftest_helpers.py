@@ -104,20 +104,6 @@ class TestElasticSearchIndex:
             "write_alias": self.index_name + "-load-alias",
             "process_deletes": True,
         }
-        self.worker = TaskSpec(
-            base_table=None,
-            base_table_id=None,
-            execute_sql_func=execute_sql_statement,
-            field_for_es_id="award_id" if self.index_type == "award" else "transaction_id",
-            index=self.index_name,
-            is_incremental=None,
-            name=f"{self.index_type} test worker",
-            partition_number=None,
-            primary_key="award_id" if self.index_type == "award" else "transaction_id",
-            sql=None,
-            transform_func=None,
-            view=None,
-        )
 
         match self.index_type:
             case "award":
@@ -129,6 +115,21 @@ class TestElasticSearchIndex:
             case _:
                 es_id_field = "transaction_id"
                 primary_key_field = "transaction_id"
+
+        self.worker = TaskSpec(
+            base_table=None,
+            base_table_id=None,
+            execute_sql_func=execute_sql_statement,
+            field_for_es_id=es_id_field,
+            index=self.index_name,
+            is_incremental=None,
+            name=f"{self.index_type} test worker",
+            partition_number=None,
+            primary_key=primary_key_field,
+            sql=None,
+            transform_func=None,
+            view=None,
+        )
 
     def delete_index(self):
         self.client.indices.delete(self.index_name, ignore_unavailable=True)
