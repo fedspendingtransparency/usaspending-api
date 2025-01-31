@@ -61,7 +61,7 @@ engines:
 
 ratings:
   paths:
-    - "**.py"
+  - "**.py"
 
 exclude_paths:
   - "*/site-packages/*"
