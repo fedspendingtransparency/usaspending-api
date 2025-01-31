@@ -168,9 +168,9 @@ class _TransactionFabsFpdsCore:
         query = f"SELECT {', '.join(self.compare_fields)} FROM int.{self.etl_level} ORDER BY {self.pk_field}"
         delta_data = [row.asDict() for row in self.spark.sql(query).collect()]
         if len(self.expected_initial_transaction_fabs) > 0:
-            assert equal_datasets([], delta_data, "")
+            assert equal_datasets(self.expected_initial_transaction_fabs, delta_data, "")
         else:
-            assert equal_datasets([], delta_data, "")
+            assert equal_datasets(self.expected_initial_transaction_fpds, delta_data, "")
 
         # 2. Test inserting, updating, and deleting without calling load_transactions_in_delta with etl-level
         # of transaction_id_lookup before calling load_transactions_in_delta with etl-level of transaction_f[ab|pd]s.
@@ -243,6 +243,16 @@ class _TransactionFabsFpdsCore:
                     self.spark,
                     "transaction_normalized",
                     InitialRunNoPostgresLoader.initial_transaction_normalized,
+                ),
+                # Note: with initial_run, no-initial-copy, and *only* transaction_normalized, it does *not* copy include
+                #       the raw.etl_level data being loaded in (previously it would secretly build off
+                #       raw.transaction_normalized. With taking away that secret logic with no-initial-copy,
+                #       we have to add the raw.etl_level data here for it to be pulled in with the subsequent
+                #       load_transactions_in_delta --etl_level
+                _TableLoadInfo(
+                    self.spark,
+                    self.etl_level,
+                    InitialRunNoPostgresLoader.initial_transaction_fabs_fpds,
                 )
             ],
             InitialRunNoPostgresLoader.expected_initial_transaction_id_lookup,
