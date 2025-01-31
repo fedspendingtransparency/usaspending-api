@@ -19,6 +19,11 @@ from usaspending_api.disaster.delta_models import (
     covid_faba_spending_load_sql_strings,
 )
 from usaspending_api.disaster.models import CovidFABASpending
+from usaspending_api.download.delta_models.account_download import (
+    ACCOUNT_DOWNLOAD_COLUMNS,
+    account_download_create_sql_string,
+    account_download_load_sql_string,
+)
 from usaspending_api.recipient.delta_models import (
     RECIPIENT_LOOKUP_POSTGRES_COLUMNS,
     RECIPIENT_PROFILE_POSTGRES_COLUMNS,
@@ -304,6 +309,26 @@ TABLE_SPEC = {
         "source_schema": COVID_FABA_SPENDING_POSTGRES_COLUMNS,
         "custom_schema": None,
         "column_names": list(COVID_FABA_SPENDING_DELTA_COLUMNS),
+        "postgres_seq_name": None,
+        "tsvectors": None,
+        "postgres_partition_spec": None,
+    },
+    "account_download": {
+        "model": None,
+        "is_from_broker": False,
+        "source_query": [account_download_load_sql_string],
+        "source_database": None,
+        "source_table": None,
+        "destination_database": "rpt",
+        "swap_table": "account_download",
+        "swap_schema": "rpt",
+        "partition_column": "id",
+        "partition_column_type": "numeric",
+        "is_partition_column_unique": False,
+        "delta_table_create_sql": account_download_create_sql_string,
+        "source_schema": ACCOUNT_DOWNLOAD_COLUMNS,
+        "custom_schema": None,
+        "column_names": list(ACCOUNT_DOWNLOAD_COLUMNS),
         "postgres_seq_name": None,
         "tsvectors": None,
         "postgres_partition_spec": None,
