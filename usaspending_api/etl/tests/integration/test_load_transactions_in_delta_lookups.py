@@ -1381,6 +1381,7 @@ class TestAwardIdLookup:
             s3_data_bucket, load_source_tables=False, load_other_raw_tables=load_other_raw_tables, initial_copy=False
         )
         call_command("load_transactions_in_delta", "--etl-level", "transaction_normalized")
+        call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
 
         # 1. Test deleting the transactions with the last award ID from the appropriate raw table,
         # followed by a call to load_transaction_in_delta with etl-level of award_id_lookup
