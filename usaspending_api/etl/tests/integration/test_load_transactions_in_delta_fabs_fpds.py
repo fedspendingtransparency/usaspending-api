@@ -158,11 +158,13 @@ class _TransactionFabsFpdsCore:
         kwargs[f"expected_last_load_{self.etl_level}"] = _INITIAL_SOURCE_TABLE_LOAD_DATETIME
         InitialRun.verify(
             self.spark,
-            [],
-            [],
+            expected_initial_transaction_id_lookup,
+            expected_initial_award_id_lookup,
             0,
             0,
             0,
+            len(self.expected_initial_transaction_fabs),
+            len(self.expected_initial_transaction_fpds),
             **kwargs,
         )
 
