@@ -239,7 +239,7 @@ class _TransactionFabsFpdsCore:
     def unexpected_paths_no_pg_loader_test_core(self):
         initial_table = (
             InitialRunNoPostgresLoader.initial_transaction_fabs
-            if self.etl_level == 'fabs'
+            if self.etl_level == "fabs"
             else InitialRunNoPostgresLoader.initial_transaction_fpds
         )
         self.unexpected_paths_test_core(
