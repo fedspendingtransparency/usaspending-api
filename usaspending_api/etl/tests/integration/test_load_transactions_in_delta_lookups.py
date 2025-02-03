@@ -910,8 +910,8 @@ class TestInitialRunNoPostgresLoader:
             initial_copy=False,
         )
         kwargs = {
-            "expected_last_load_transaction_id_lookup": _INITIAL_SOURCE_TABLE_LOAD_DATETIME,
-            "expected_last_load_award_id_lookup": _INITIAL_SOURCE_TABLE_LOAD_DATETIME,
+            "expected_last_load_transaction_id_lookup": _BEGINNING_OF_TIME,
+            "expected_last_load_award_id_lookup": _BEGINNING_OF_TIME,
             "expected_last_load_transaction_normalized": _BEGINNING_OF_TIME,
             "expected_last_load_transaction_fabs": _BEGINNING_OF_TIME,
             "expected_last_load_transaction_fpds": _BEGINNING_OF_TIME,
@@ -1082,7 +1082,8 @@ class TestTransactionIdLookup:
         TestInitialRun.initial_run(
             s3_data_bucket, load_source_tables=False, load_other_raw_tables=load_other_raw_tables, initial_copy=False
         )
-        call_command("load_transactions_in_delta", "--etl-level", "transaction_normalized")
+        call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
+        call_command("load_transactions_in_delta", "--etl-level", "award_id_lookup")
 
         # 1. Test deleting the transaction(s) with the last transaction ID(s) from the appropriate raw table,
         # followed by a call to load_transaction_in_delta with etl-level of transaction_id_lookup
@@ -1380,8 +1381,8 @@ class TestAwardIdLookup:
         TestInitialRun.initial_run(
             s3_data_bucket, load_source_tables=False, load_other_raw_tables=load_other_raw_tables, initial_copy=False
         )
-        call_command("load_transactions_in_delta", "--etl-level", "transaction_normalized")
         call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
+        call_command("load_transactions_in_delta", "--etl-level", "award_id_lookup")
 
         # 1. Test deleting the transactions with the last award ID from the appropriate raw table,
         # followed by a call to load_transaction_in_delta with etl-level of award_id_lookup

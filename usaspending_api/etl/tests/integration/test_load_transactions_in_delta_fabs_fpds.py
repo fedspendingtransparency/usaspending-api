@@ -144,6 +144,8 @@ class _TransactionFabsFpdsCore:
         # raw.transaction_normalized along with the source tables, but don't copy the raw tables to int.
         # Then immediately call load_transactions_in_delta with etl-level of transaction_f[ab|pd]s.
         InitialRun.initial_run(self.s3_data_bucket, load_other_raw_tables=load_other_raw_tables, initial_copy=False)
+        call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
+        call_command("load_transactions_in_delta", "--etl-level", "award_id_lookup")
         call_command("load_transactions_in_delta", "--etl-level", self.etl_level)
 
         kwargs = {
@@ -153,7 +155,7 @@ class _TransactionFabsFpdsCore:
             "expected_last_load_transaction_fabs": _BEGINNING_OF_TIME,
             "expected_last_load_transaction_fpds": _BEGINNING_OF_TIME,
         }
-        kwargs[f"expected_last_load_{self.etl_level}"] = _BEGINNING_OF_TIME
+        kwargs[f"expected_last_load_{self.etl_level}"] = _INITIAL_SOURCE_TABLE_LOAD_DATETIME
         InitialRun.verify(
             self.spark,
             [],
@@ -237,11 +239,6 @@ class _TransactionFabsFpdsCore:
         assert equal_datasets(expected_transaction_fabs_fpds, delta_data, "")
 
     def unexpected_paths_no_pg_loader_test_core(self):
-        initial_table = (
-            InitialRunNoPostgresLoader.initial_transaction_fabs
-            if self.etl_level == "transaction_fabs"
-            else InitialRunNoPostgresLoader.initial_transaction_fpds
-        )
         self.unexpected_paths_test_core(
             [
                 _TableLoadInfo(
@@ -249,16 +246,8 @@ class _TransactionFabsFpdsCore:
                     "transaction_normalized",
                     InitialRunNoPostgresLoader.initial_transaction_normalized,
                 ),
-                # Note: with initial_run, no-initial-copy, and *only* transaction_normalized, it does *not* copy include
-                #       the raw.etl_level data being loaded in (previously it would secretly build off
-                #       raw.transaction_normalized. With taking away that secret logic with no-initial-copy,
-                #       we have to add the raw.etl_level data here for it to be pulled in with the subsequent
-                #       load_transactions_in_delta --etl_level
-                _TableLoadInfo(
-                    self.spark,
-                    self.etl_level,
-                    initial_table,
-                ),
+                _TableLoadInfo(self.spark, "transaction_fabs", InitialRunNoPostgresLoader.initial_transaction_fabs),
+                _TableLoadInfo(self.spark, "transaction_fpds", InitialRunNoPostgresLoader.initial_transaction_fpds),
             ],
             InitialRunNoPostgresLoader.expected_initial_transaction_id_lookup,
             InitialRunNoPostgresLoader.expected_initial_award_id_lookup,
