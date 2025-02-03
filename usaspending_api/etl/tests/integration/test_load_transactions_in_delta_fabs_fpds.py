@@ -237,8 +237,11 @@ class _TransactionFabsFpdsCore:
         assert equal_datasets(expected_transaction_fabs_fpds, delta_data, "")
 
     def unexpected_paths_no_pg_loader_test_core(self):
-        initial_table = (InitialRunNoPostgresLoader.initial_transaction_fabs
-                         if self.etl_level == 'fabs' else InitialRunNoPostgresLoader.initial_transaction_fpds)
+        initial_table = (
+            InitialRunNoPostgresLoader.initial_transaction_fabs
+            if self.etl_level == 'fabs'
+            else InitialRunNoPostgresLoader.initial_transaction_fpds
+        )
         self.unexpected_paths_test_core(
             [
                 _TableLoadInfo(
