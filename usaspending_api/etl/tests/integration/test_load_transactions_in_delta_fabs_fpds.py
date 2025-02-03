@@ -253,7 +253,7 @@ class _TransactionFabsFpdsCore:
                     self.spark,
                     self.etl_level,
                     InitialRunNoPostgresLoader.initial_transaction_fabs_fpds,
-                )
+                ),
             ],
             InitialRunNoPostgresLoader.expected_initial_transaction_id_lookup,
             InitialRunNoPostgresLoader.expected_initial_award_id_lookup,
