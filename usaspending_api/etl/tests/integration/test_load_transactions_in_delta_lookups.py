@@ -351,14 +351,14 @@ class _InitialRunWithPostgresLoader:
             "is_fpds": False,
             "transaction_unique_id": _INITIAL_ASSISTS[id - 1]["afa_generated_unique"].upper(),
         }
-        for id in range(2, len(_INITIAL_ASSISTS) + 2)
+        for id in range(1, len(_INITIAL_ASSISTS) + 1)
     ] + [
         {
             "transaction_id": id,
             "is_fpds": True,
             "transaction_unique_id": _INITIAL_PROCURES[id - 6]["detached_award_proc_unique"].upper(),
         }
-        for id in range(len(_INITIAL_ASSISTS) + 2, len(_INITIAL_ASSISTS) + len(_INITIAL_PROCURES) + 2)
+        for id in range(len(_INITIAL_ASSISTS) + 1, len(_INITIAL_ASSISTS) + len(_INITIAL_PROCURES) + 1)
     ]
 
     expected_initial_award_id_lookup = [
@@ -408,52 +408,52 @@ class _InitialRunWithPostgresLoader:
 class TestInitialRunNoPostgresLoader:
     expected_initial_transaction_id_lookup = [
         {
-            "transaction_id": 2,
+            "transaction_id": 1,
             "is_fpds": False,
             "transaction_unique_id": _INITIAL_ASSISTS[0]["afa_generated_unique"].upper(),
         },
         {
-            "transaction_id": 3,
+            "transaction_id": 2,
             "is_fpds": True,
             "transaction_unique_id": _INITIAL_PROCURES[0]["detached_award_proc_unique"].upper(),
         },
         {
-            "transaction_id": 4,
+            "transaction_id": 3,
             "is_fpds": False,
             "transaction_unique_id": _INITIAL_ASSISTS[1]["afa_generated_unique"].upper(),
         },
         {
-            "transaction_id": 5,
+            "transaction_id": 4,
             "is_fpds": True,
             "transaction_unique_id": _INITIAL_PROCURES[1]["detached_award_proc_unique"].upper(),
         },
         {
-            "transaction_id": 6,
+            "transaction_id": 5,
             "is_fpds": False,
             "transaction_unique_id": _INITIAL_ASSISTS[2]["afa_generated_unique"].upper(),
         },
         {
-            "transaction_id": 7,
+            "transaction_id": 6,
             "is_fpds": True,
             "transaction_unique_id": _INITIAL_PROCURES[2]["detached_award_proc_unique"].upper(),
         },
         {
-            "transaction_id": 8,
+            "transaction_id": 7,
             "is_fpds": False,
             "transaction_unique_id": _INITIAL_ASSISTS[3]["afa_generated_unique"].upper(),
         },
         {
-            "transaction_id": 9,
+            "transaction_id": 8,
             "is_fpds": False,
             "transaction_unique_id": _INITIAL_ASSISTS[4]["afa_generated_unique"].upper(),
         },
         {
-            "transaction_id": 10,
+            "transaction_id": 9,
             "is_fpds": True,
             "transaction_unique_id": _INITIAL_PROCURES[3]["detached_award_proc_unique"].upper(),
         },
         {
-            "transaction_id": 11,
+            "transaction_id": 10,
             "is_fpds": True,
             "transaction_unique_id": _INITIAL_PROCURES[4]["detached_award_proc_unique"].upper(),
         },
@@ -461,61 +461,61 @@ class TestInitialRunNoPostgresLoader:
 
     expected_initial_award_id_lookup = [
         {
-            "award_id": 2,
+            "award_id": 1,
             "is_fpds": False,
             "transaction_unique_id": _INITIAL_ASSISTS[0]["afa_generated_unique"].upper(),
             "generated_unique_award_id": _INITIAL_ASSISTS[0]["unique_award_key"].upper(),
         },
         {
-            "award_id": 3,
+            "award_id": 2,
             "is_fpds": False,
             "transaction_unique_id": _INITIAL_ASSISTS[1]["afa_generated_unique"].upper(),
             "generated_unique_award_id": _INITIAL_ASSISTS[1]["unique_award_key"].upper(),
         },
         {
-            "award_id": 3,
+            "award_id": 2,
             "is_fpds": False,
             "transaction_unique_id": _INITIAL_ASSISTS[2]["afa_generated_unique"].upper(),
             "generated_unique_award_id": _INITIAL_ASSISTS[2]["unique_award_key"].upper(),
         },
         {
-            "award_id": 4,
+            "award_id": 3,
             "is_fpds": True,
             "transaction_unique_id": _INITIAL_PROCURES[0]["detached_award_proc_unique"].upper(),
             "generated_unique_award_id": _INITIAL_PROCURES[0]["unique_award_key"].upper(),
         },
         {
-            "award_id": 5,
+            "award_id": 4,
             "is_fpds": True,
             "transaction_unique_id": _INITIAL_PROCURES[1]["detached_award_proc_unique"].upper(),
             "generated_unique_award_id": _INITIAL_PROCURES[1]["unique_award_key"].upper(),
         },
         {
-            "award_id": 5,
+            "award_id": 4,
             "is_fpds": True,
             "transaction_unique_id": _INITIAL_PROCURES[2]["detached_award_proc_unique"].upper(),
             "generated_unique_award_id": _INITIAL_PROCURES[2]["unique_award_key"].upper(),
         },
         {
-            "award_id": 6,
+            "award_id": 5,
             "is_fpds": False,
             "transaction_unique_id": _INITIAL_ASSISTS[3]["afa_generated_unique"].upper(),
             "generated_unique_award_id": _INITIAL_ASSISTS[3]["unique_award_key"].upper(),
         },
         {
-            "award_id": 6,
+            "award_id": 5,
             "is_fpds": False,
             "transaction_unique_id": _INITIAL_ASSISTS[4]["afa_generated_unique"].upper(),
             "generated_unique_award_id": _INITIAL_ASSISTS[4]["unique_award_key"].upper(),
         },
         {
-            "award_id": 7,
+            "award_id": 6,
             "is_fpds": True,
             "transaction_unique_id": _INITIAL_PROCURES[3]["detached_award_proc_unique"].upper(),
             "generated_unique_award_id": _INITIAL_PROCURES[3]["unique_award_key"].upper(),
         },
         {
-            "award_id": 7,
+            "award_id": 6,
             "is_fpds": True,
             "transaction_unique_id": _INITIAL_PROCURES[4]["detached_award_proc_unique"].upper(),
             "generated_unique_award_id": _INITIAL_PROCURES[4]["unique_award_key"].upper(),
@@ -526,7 +526,7 @@ class TestInitialRunNoPostgresLoader:
 
     initial_awards = [
         {
-            "id": 2,
+            "id": 1,
             "update_date": initial_award_trans_norm_update_create_date,
             "generated_unique_award_id": _INITIAL_ASSISTS[0]["unique_award_key"].upper(),
             "is_fpds": False,
@@ -534,7 +534,7 @@ class TestInitialRunNoPostgresLoader:
             "subaward_count": 0,
         },
         {
-            "id": 3,
+            "id": 2,
             "update_date": initial_award_trans_norm_update_create_date,
             "generated_unique_award_id": _INITIAL_ASSISTS[1]["unique_award_key"].upper(),
             "is_fpds": False,
@@ -542,7 +542,7 @@ class TestInitialRunNoPostgresLoader:
             "subaward_count": 0,
         },
         {
-            "id": 4,
+            "id": 3,
             "update_date": initial_award_trans_norm_update_create_date,
             "generated_unique_award_id": _INITIAL_PROCURES[0]["unique_award_key"].upper(),
             "is_fpds": True,
@@ -550,7 +550,7 @@ class TestInitialRunNoPostgresLoader:
             "subaward_count": 0,
         },
         {
-            "id": 5,
+            "id": 4,
             "update_date": initial_award_trans_norm_update_create_date,
             "generated_unique_award_id": _INITIAL_PROCURES[1]["unique_award_key"].upper(),
             "is_fpds": True,
@@ -558,7 +558,7 @@ class TestInitialRunNoPostgresLoader:
             "subaward_count": 0,
         },
         {
-            "id": 6,
+            "id": 5,
             "update_date": initial_award_trans_norm_update_create_date,
             "generated_unique_award_id": _INITIAL_ASSISTS[3]["unique_award_key"].upper(),
             "is_fpds": False,
@@ -566,7 +566,7 @@ class TestInitialRunNoPostgresLoader:
             "subaward_count": 0,
         },
         {
-            "id": 7,
+            "id": 6,
             "update_date": initial_award_trans_norm_update_create_date,
             "generated_unique_award_id": _INITIAL_PROCURES[3]["unique_award_key"].upper(),
             "is_fpds": True,
@@ -577,7 +577,7 @@ class TestInitialRunNoPostgresLoader:
 
     initial_transaction_normalized = [
         {
-            "id": 2,
+            "id": 1,
             "award_id": 1,
             "business_categories": [],
             "action_date": dateutil.parser.parse(_INITIAL_ASSISTS[0]["action_date"]).date(),
@@ -588,7 +588,7 @@ class TestInitialRunNoPostgresLoader:
             "unique_award_key": _INITIAL_ASSISTS[0]["unique_award_key"].upper(),
         },
         {
-            "id": 3,
+            "id": 2,
             "award_id": 3,
             "business_categories": [],
             "action_date": dateutil.parser.parse(_INITIAL_PROCURES[0]["action_date"]).date(),
@@ -599,7 +599,7 @@ class TestInitialRunNoPostgresLoader:
             "unique_award_key": _INITIAL_PROCURES[0]["unique_award_key"].upper(),
         },
         {
-            "id": 4,
+            "id": 3,
             "award_id": 2,
             "business_categories": [],
             "action_date": dateutil.parser.parse(_INITIAL_ASSISTS[1]["action_date"]).date(),
@@ -610,7 +610,7 @@ class TestInitialRunNoPostgresLoader:
             "unique_award_key": _INITIAL_ASSISTS[1]["unique_award_key"].upper(),
         },
         {
-            "id": 5,
+            "id": 4,
             "award_id": 4,
             "business_categories": [],
             "action_date": dateutil.parser.parse(_INITIAL_PROCURES[1]["action_date"]).date(),
@@ -621,7 +621,7 @@ class TestInitialRunNoPostgresLoader:
             "unique_award_key": _INITIAL_PROCURES[1]["unique_award_key"].upper(),
         },
         {
-            "id": 6,
+            "id": 5,
             "award_id": 2,
             "business_categories": [],
             "action_date": dateutil.parser.parse(_INITIAL_ASSISTS[2]["action_date"]).date(),
@@ -632,7 +632,7 @@ class TestInitialRunNoPostgresLoader:
             "unique_award_key": _INITIAL_ASSISTS[2]["unique_award_key"].upper(),
         },
         {
-            "id": 7,
+            "id": 6,
             "award_id": 4,
             "business_categories": [],
             "action_date": dateutil.parser.parse(_INITIAL_PROCURES[2]["action_date"]).date(),
@@ -643,7 +643,7 @@ class TestInitialRunNoPostgresLoader:
             "unique_award_key": _INITIAL_PROCURES[2]["unique_award_key"].upper(),
         },
         {
-            "id": 8,
+            "id": 7,
             "award_id": 5,
             "business_categories": [],
             "action_date": dateutil.parser.parse(_INITIAL_ASSISTS[3]["action_date"]).date(),
@@ -654,7 +654,7 @@ class TestInitialRunNoPostgresLoader:
             "unique_award_key": _INITIAL_ASSISTS[3]["unique_award_key"].upper(),
         },
         {
-            "id": 9,
+            "id": 8,
             "award_id": 5,
             "business_categories": [],
             "action_date": dateutil.parser.parse(_INITIAL_ASSISTS[4]["action_date"]).date(),
@@ -665,7 +665,7 @@ class TestInitialRunNoPostgresLoader:
             "unique_award_key": _INITIAL_ASSISTS[4]["unique_award_key"].upper(),
         },
         {
-            "id": 10,
+            "id": 9,
             "award_id": 6,
             "business_categories": [],
             "action_date": dateutil.parser.parse(_INITIAL_PROCURES[3]["action_date"]).date(),
@@ -676,7 +676,7 @@ class TestInitialRunNoPostgresLoader:
             "unique_award_key": _INITIAL_PROCURES[3]["unique_award_key"].upper(),
         },
         {
-            "id": 11,
+            "id": 10,
             "award_id": 6,
             "business_categories": [],
             "action_date": dateutil.parser.parse(_INITIAL_PROCURES[3]["action_date"]).date(),
@@ -721,14 +721,14 @@ class TestInitialRunNoPostgresLoader:
             **_INITIAL_PROCURES[3],
             "action_date": dateutil.parser.parse(_INITIAL_PROCURES[3]["action_date"]).date().isoformat(),
             "detached_award_proc_unique": _INITIAL_PROCURES[3]["detached_award_proc_unique"].upper(),
-            "transaction_id": 10,
+            "transaction_id": 9,
             "unique_award_key": _INITIAL_PROCURES[3]["unique_award_key"].upper(),
         },
         {
             **_INITIAL_PROCURES[4],
             "action_date": dateutil.parser.parse(_INITIAL_PROCURES[4]["action_date"]).date().isoformat(),
             "detached_award_proc_unique": _INITIAL_PROCURES[4]["detached_award_proc_unique"].upper(),
-            "transaction_id": 11,
+            "transaction_id": 10,
             "unique_award_key": _INITIAL_PROCURES[4]["unique_award_key"].upper(),
         },
     ]
