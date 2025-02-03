@@ -112,8 +112,10 @@ class TestElasticSearchIndex:
                 es_id_field = "broker_subaward_id"
             case "transaction":
                 es_id_field = "transaction_id"
+            case "recipient" | "location":
+                es_id_field = "id"
             case _:
-                raise Exception("No value for the `_id` field in Elasticsearch has been set")
+                raise Exception(f"No value for the `_id` field in Elasticsearch has been set for {self.index_type}")
 
         self.worker = TaskSpec(
             base_table=None,
