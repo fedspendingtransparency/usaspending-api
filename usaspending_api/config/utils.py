@@ -1,7 +1,6 @@
 from typing import Any, Dict, Callable, TypeVar, Union
 from urllib.parse import ParseResult, urlparse, parse_qs
-
-from pydantic import BaseSettings, SecretStr
+from pydantic import SecretStr, BaseSettings
 from pydantic.fields import ModelField
 
 # Placeholder sentinel value indicating a config var that is expected to be overridden in a runtime-env-specific
