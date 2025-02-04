@@ -196,6 +196,7 @@ def award_data_fixture(db):
         prime_award_group="grant",
         prime_award_type="07",
         subaward_number=99999,
+        action_date="2023-01-01"
     )
     baker.make(
         "search.SubawardSearch",
@@ -205,6 +206,7 @@ def award_data_fixture(db):
         prime_award_group="procurement",
         prime_award_type="08",
         subaward_number=99998,
+        action_date="2023-01-01"
     )
 
     baker.make(
@@ -222,41 +224,6 @@ def award_data_fixture(db):
 
 @pytest.mark.django_db
 def test_spending_by_award_subaward_success(client, monkeypatch, elasticsearch_subaward_index, spending_by_award_test_data):
-    award1 = baker.make(
-        "search.awardsearch",
-        category="loans",
-        date_signed="2012-09-10",
-        action_date="2012-09-12",
-        fain="decf0000058",
-        generated_unique_award_id="asst_non_decf0000058_8900",
-        award_id=200,
-        latest_transaction_id=210210210,
-        period_of_performance_current_end_date="2019-09-09",
-        period_of_performance_start_date="2012-09-10",
-        piid=None,
-        type="07",
-        uri=None,
-        display_award_id="award200",
-        program_activities=[{"code": "0123", "name": "program_activity_123"}],
-    )
-    baker.make(
-        "search.SubawardSearch",
-        broker_subaward_id=1,
-        award=award1,
-        sub_action_date="2023-01-01",
-        prime_award_group="grant",
-        prime_award_type="07",
-        subaward_number=99999,
-    )
-    baker.make(
-        "search.SubawardSearch",
-        broker_subaward_id=2,
-        award=award1,
-        sub_action_date="2023-01-01",
-        prime_award_group="procurement",
-        prime_award_type="08",
-        subaward_number=99998,
-    )
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
 
     # Testing all filters
