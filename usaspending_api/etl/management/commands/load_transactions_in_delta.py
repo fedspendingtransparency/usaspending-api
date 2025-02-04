@@ -868,6 +868,9 @@ class Command(BaseCommand):
             cursor.execute("SELECT nextval('transaction_id_seq')")
             # Since all calls to setval() set the is_called flag to false, nextval() returns the actual maximum id
             previous_max_id = cursor.fetchone()[0]
+            # If this is starting from scratch, postgres can't do setval() with 0.
+            if previous_max_id == 1:
+                previous_max_id = 0
 
         self.logger.info("Creating new 'transaction_id_lookup' records for new transactions")
         self.spark.sql(
@@ -954,6 +957,9 @@ class Command(BaseCommand):
             cursor.execute("SELECT nextval('award_id_seq')")
             # Since all calls to setval() set the is_called flag to false, nextval() returns the actual maximum id
             previous_max_id = cursor.fetchone()[0]
+            # If this is starting from scratch, postgres can't do setval() with 0.
+            if previous_max_id == 1:
+                previous_max_id = 0
 
         self.logger.info("Creating new 'award_id_lookup' records for new awards")
         self.spark.sql(
