@@ -22,7 +22,7 @@ from opentelemetry.sdk.trace import ReadableSpan, SpanProcessor, TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
 
 # Local application imports
-from usaspending_api.settings import TRACE_ENV, DATABASES
+from usaspending_api.settings import TRACE_ENV, DATABASES, IS_LOCAL
 
 logger = logging.getLogger(__name__)
 
@@ -286,7 +286,7 @@ def configure_logging(service_name="usaspending-api"):
     # Set up the OTLP exporter
     # Check out https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/
     exporter = None
-    if os.getenv("USASPENDING_DB_HOST") == "127.0.0.1" and os.getenv("TOGGLE_OTEL_CONSOLE_LOGGING") == "True":
+    if IS_LOCAL and os.getenv("TOGGLE_OTEL_CONSOLE_LOGGING") == "True":
         logger.info(f"\nOTEL Console logging enabled: {os.getenv('TOGGLE_OTEL_CONSOLE_LOGGING')}\n")
 
         # #custom debug information
