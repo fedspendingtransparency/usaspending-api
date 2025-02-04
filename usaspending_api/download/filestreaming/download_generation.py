@@ -107,7 +107,7 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
             ) as limit_exceeded:
                 limit_exceeded.set_attributes(
                     {
-                        "message": "Unable to process this download because it includes more than the current limit of {MAX_DOWNLOAD_LIMIT} records",
+                        "message": f"Unable to process this download because it includes more than the current limit of {MAX_DOWNLOAD_LIMIT} records",
                         "limit": limit,
                     }
                 )
