@@ -20,6 +20,7 @@ from opentelemetry.instrumentation.wsgi import OpenTelemetryMiddleware
 
 # Local imports
 from usaspending_api.common.logging import configure_logging
+from usaspending_api.settings import IS_LOCAL
 
 # Constants
 HEADERS_TO_CAPTURE = [
@@ -49,7 +50,7 @@ def request_hook(span, environ):
             if header_value:
                 span.set_attribute(f"http.request.header.{header}", header_value)
 
-    if os.getenv("USASPENDING_DB_HOST") == "127.0.0.1" and os.getenv("TOGGLE_OTEL_CONSOLE_LOGGING") == "True":
+    if IS_LOCAL and os.getenv("TOGGLE_OTEL_CONSOLE_LOGGING") == "True":
         print("\nRequest hook executed\n")
 
 
@@ -61,7 +62,7 @@ def response_hook(span, environ, status, response_headers):
                 if response_header[0].lower() == header:
                     span.set_attribute(f"http.response.header.{header}", response_header[1])
 
-    if os.getenv("USASPENDING_DB_HOST") == "127.0.0.1" and os.getenv("TOGGLE_OTEL_CONSOLE_LOGGING") == "True":
+    if IS_LOCAL and os.getenv("TOGGLE_OTEL_CONSOLE_LOGGING") == "True":
         print("\nResponse hook executed\n")
 
 
