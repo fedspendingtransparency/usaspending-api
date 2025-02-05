@@ -110,6 +110,7 @@ class _TransactionFabsFpdsCore:
         expected_transaction_id_lookup = deepcopy(_InitialRunWithPostgresLoader.expected_initial_transaction_id_lookup)
         # for item in expected_transaction_id_lookup:
         #     item["transaction_id"] += 1
+        
         # Also, the last load date of the transaction_id_lookup table and of the table whose etl_level is being
         # called should be updated to the load time of the source tables
         kwargs["expected_last_load_transaction_id_lookup"] = _INITIAL_SOURCE_TABLE_LOAD_DATETIME
