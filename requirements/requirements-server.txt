@@ -1,4 +1,4 @@
-django-redis==4.12.*
+django-redis==5.4.*
 packaging==16.8
 pyparsing==2.2.0
 supervisor==4.1.0

@@ -1,8 +1,9 @@
 import pytest
 
-from django.core.management import call_command
-from django.db import DEFAULT_DB_ALIAS
 from unittest.mock import MagicMock
+
+from django.conf import settings
+from django.core.management import call_command
 
 from usaspending_api.etl.broker_etl_helpers import PhonyCursor
 from usaspending_api.references.models import Office
@@ -17,8 +18,8 @@ def test_load_offices(monkeypatch):
     data_broker_mock = MagicMock()
     data_broker_mock.cursor.return_value = PhonyCursor("usaspending_api/references/tests/data/broker_offices.json")
     mock_connections = {
-        DEFAULT_DB_ALIAS: MagicMock(),
-        "data_broker": data_broker_mock,
+        settings.DEFAULT_DB_ALIAS: MagicMock(),
+        settings.DATA_BROKER_DB_ALIAS: data_broker_mock,
     }
 
     monkeypatch.setattr("usaspending_api.references.management.commands.load_offices.connections", mock_connections)

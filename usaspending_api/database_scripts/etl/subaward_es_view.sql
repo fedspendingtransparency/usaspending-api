@@ -111,7 +111,8 @@ SELECT
     s.sub_ultimate_parent_uei,
     a.disaster_emergency_fund_codes,
     a.recipient_hash,
-    a.parent_uei
+    a.parent_uei,
+    s.program_activities::JSON
 FROM
 	rpt.subaward_search s
 LEFT JOIN rpt.award_search a

@@ -120,10 +120,13 @@ class PSCFilterTree(FilterTree):
                 query |= Q(code__startswith=parent)
         if lower_tier_nodes:
             lower_tier_codes = [
-                node["id"][:2]
-                if node["id"][:2] == "AU"  # `AU` is a special case, it skips the length=3 codes, unlike other R&D PSCs
-                or node["id"][0] not in PSC_GROUPS["Research and Development"]["terms"]
-                else node["id"][:3]
+                (
+                    node["id"][:2]
+                    if node["id"][:2]
+                    == "AU"  # `AU` is a special case, it skips the length=3 codes, unlike other R&D PSCs
+                    or node["id"][0] not in PSC_GROUPS["Research and Development"]["terms"]
+                    else node["id"][:3]
+                )
                 for node in lower_tier_nodes
             ]
             lower_tier_codes = list(dict.fromkeys(lower_tier_codes))

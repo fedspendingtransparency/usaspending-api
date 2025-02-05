@@ -122,6 +122,7 @@ AWARD_SEARCH_COLUMNS = {
     "naics_description": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "tas_paths": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]", "gold": False},
     "tas_components": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]", "gold": False},
+    "federal_accounts": {"delta": "STRING", "postgres": "JSONB", "gold": False},
     "disaster_emergency_fund_codes": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]", "gold": False},
     "covid_spending_by_defc": {"delta": "STRING", "postgres": "JSONB", "gold": False},
     "total_covid_outlay": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": False},
@@ -144,6 +145,8 @@ AWARD_SEARCH_COLUMNS = {
     "total_iija_outlay": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": True},
     "total_iija_obligation": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": True},
     "total_outlays": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": False},
+    "generated_pragmatic_obligation": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)", "gold": False},
+    "program_activities": {"delta": "STRING", "postgres": "JSONB", "gold": False},
 }
 AWARD_SEARCH_DELTA_COLUMNS = {k: v["delta"] for k, v in AWARD_SEARCH_COLUMNS.items()}
 AWARD_SEARCH_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in AWARD_SEARCH_COLUMNS.items() if not v["gold"]}
@@ -369,6 +372,7 @@ award_search_load_sql_string = rf"""
 
   TREASURY_ACCT.tas_paths,
   TREASURY_ACCT.tas_components,
+  TREASURY_ACCT.federal_accounts,
   TREASURY_ACCT.disaster_emergency_fund_codes,
   COVID_DEFC.covid_spending_by_defc,
   COVID_DEFC.total_covid_outlay,
@@ -387,7 +391,15 @@ award_search_load_sql_string = rf"""
   IIJA_DEFC.iija_spending_by_defc,
   IIJA_DEFC.total_iija_outlay,
   IIJA_DEFC.total_iija_obligation,
-  CAST(AWARD_TOTAL_OUTLAYS.total_outlays AS NUMERIC(23, 2)) AS total_outlays
+  CAST(AWARD_TOTAL_OUTLAYS.total_outlays AS NUMERIC(23, 2)) AS total_outlays,
+  CAST(COALESCE(
+        CASE
+            WHEN awards.type IN('07', '08') THEN awards.total_subsidy_cost
+            ELSE awards.total_obligation
+        END,
+        0
+  ) AS NUMERIC(23, 2)) AS generated_pragmatic_obligation,
+  TREASURY_ACCT.program_activities
 FROM
   int.awards
 INNER JOIN
@@ -596,6 +608,17 @@ LEFT JOIN (
 LEFT OUTER JOIN (
   SELECT
     faba.award_id,
+    TO_JSON(
+        SORT_ARRAY(
+            COLLECT_SET(
+                NAMED_STRUCT(
+                    'id', fa.id,
+                    'account_title', fa.account_title,
+                    'federal_account_code', fa.federal_account_code
+                )
+            )
+        )
+    ) AS federal_accounts,
     COLLECT_SET(
       DISTINCT CONCAT(
         'agency=', COALESCE(agency.toptier_code, ''),
@@ -627,12 +650,21 @@ LEFT OUTER JOIN (
             THEN SORT_ARRAY(COLLECT_SET(faba.disaster_emergency_fund_code))
         ELSE NULL
     END AS disaster_emergency_fund_codes,
-    COLLECT_SET(taa.treasury_account_identifier) AS treasury_account_identifiers
+    COLLECT_SET(taa.treasury_account_identifier) AS treasury_account_identifiers,
+    COLLECT_SET(
+        TO_JSON(
+            NAMED_STRUCT(
+                'name', UPPER(rpa.program_activity_name),
+                'code', LPAD(rpa.program_activity_code, 4, "0")
+            )
+        )
+    ) AS program_activities
   FROM
     global_temp.treasury_appropriation_account taa
   INNER JOIN int.financial_accounts_by_awards faba ON (taa.treasury_account_identifier = faba.treasury_account_id)
   INNER JOIN global_temp.federal_account fa ON (taa.federal_account_id = fa.id)
   INNER JOIN global_temp.toptier_agency agency ON (fa.parent_toptier_agency_id = agency.toptier_agency_id)
+  LEFT JOIN global_temp.ref_program_activity rpa ON (faba.program_activity_id = rpa.id)
   WHERE
     faba.award_id IS NOT NULL
   GROUP BY

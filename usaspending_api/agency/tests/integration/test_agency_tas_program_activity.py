@@ -27,37 +27,37 @@ def test_tas_program_activity_success(client, monkeypatch, agency_account_data, 
         "results": [
             {
                 "name": "NAME 3",
-                "gross_outlay_amount": 100000.0,
-                "obligated_amount": 100.0,
+                "gross_outlay_amount": 250000.0,
+                "obligated_amount": 229.0,
                 "children": [
                     {
                         "name": "Other",
-                        "gross_outlay_amount": 100000.0,
-                        "obligated_amount": 100.0,
+                        "gross_outlay_amount": 250000.0,
+                        "obligated_amount": 229.0,
                     }
                 ],
             },
             {
                 "name": "NAME 2",
-                "gross_outlay_amount": 1000000.0,
-                "obligated_amount": 10.0,
+                "gross_outlay_amount": 1150000.0,
+                "obligated_amount": 139.0,
                 "children": [
                     {
                         "name": "Other",
-                        "gross_outlay_amount": 1000000.0,
-                        "obligated_amount": 10.0,
+                        "gross_outlay_amount": 1150000.0,
+                        "obligated_amount": 139.0,
                     }
                 ],
             },
             {
                 "name": "NAME 1",
-                "gross_outlay_amount": 10000000.0,
-                "obligated_amount": 1.0,
+                "gross_outlay_amount": 10150000.0,
+                "obligated_amount": 130.0,
                 "children": [
                     {
                         "name": "Other",
-                        "gross_outlay_amount": 10000000.0,
-                        "obligated_amount": 1.0,
+                        "gross_outlay_amount": 10150000.0,
+                        "obligated_amount": 130.0,
                     }
                 ],
             },
@@ -108,14 +108,14 @@ def test_tas_program_activity_success(client, monkeypatch, agency_account_data, 
         },
         "results": [
             {
-                "gross_outlay_amount": 1000000.0,
+                "gross_outlay_amount": 1150000.0,
                 "name": "NAME 5",
-                "obligated_amount": 10.0,
+                "obligated_amount": 139.0,
                 "children": [
                     {
                         "name": "Other",
-                        "gross_outlay_amount": 1000000.0,
-                        "obligated_amount": 10.0,
+                        "gross_outlay_amount": 1150000.0,
+                        "obligated_amount": 139.0,
                     }
                 ],
             }
@@ -199,10 +199,10 @@ def test_tas_program_activity_multiple_submission_years(client, agency_account_d
         },
         "results": [
             {
-                "gross_outlay_amount": 10000.0,
+                "gross_outlay_amount": 160000.0,
                 "name": "NAME 4",
-                "obligated_amount": 1000.0,
-                "children": [{"gross_outlay_amount": 10000.0, "name": "Other", "obligated_amount": 1000.0}],
+                "obligated_amount": 1129.0,
+                "children": [{"gross_outlay_amount": 160000.0, "name": "Other", "obligated_amount": 1129.0}],
             }
         ],
     }
@@ -346,6 +346,23 @@ def tas_mulitple_oc_per_tas():
         object_class=oc2,
         obligations_incurred_by_program_object_class_cpe=1000,
         gross_outlay_amount_by_program_object_class_cpe=10000,
+        deobligations_recoveries_refund_pri_program_object_class_cpe=0,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0,
+        prior_year_adjustment="X",
+        ussgl480100_undelivered_orders_obligations_unpaid_cpe=0,
+        ussgl480200_undelivered_orders_oblig_prepaid_advanced_cpe=0,
+        ussgl487100_down_adj_pri_unpaid_undel_orders_oblig_recov_cpe=0,
+        ussgl488100_upward_adjust_pri_undeliv_order_oblig_unpaid_cpe=0,
+        ussgl488200_up_adjust_pri_undeliv_order_oblig_ppaid_adv_cpe=0,
+        ussgl490100_delivered_orders_obligations_unpaid_cpe=0,
+        ussgl490200_delivered_orders_obligations_paid_cpe=0,
+        ussgl490800_authority_outlayed_not_yet_disbursed_cpe=0,
+        ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=0,
+        ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=0,
+        ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=0,
+        ussgl480110_rein_undel_ord_cpe=0,
+        ussgl490110_rein_deliv_ord_cpe=0,
     )
     baker.make(
         fabpaoc,
@@ -355,6 +372,23 @@ def tas_mulitple_oc_per_tas():
         object_class=oc1,
         obligations_incurred_by_program_object_class_cpe=10000,
         gross_outlay_amount_by_program_object_class_cpe=1000,
+        deobligations_recoveries_refund_pri_program_object_class_cpe=0,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0,
+        prior_year_adjustment="X",
+        ussgl480100_undelivered_orders_obligations_unpaid_cpe=0,
+        ussgl480200_undelivered_orders_oblig_prepaid_advanced_cpe=0,
+        ussgl487100_down_adj_pri_unpaid_undel_orders_oblig_recov_cpe=0,
+        ussgl488100_upward_adjust_pri_undeliv_order_oblig_unpaid_cpe=0,
+        ussgl488200_up_adjust_pri_undeliv_order_oblig_ppaid_adv_cpe=0,
+        ussgl490100_delivered_orders_obligations_unpaid_cpe=0,
+        ussgl490200_delivered_orders_obligations_paid_cpe=0,
+        ussgl490800_authority_outlayed_not_yet_disbursed_cpe=0,
+        ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=0,
+        ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=0,
+        ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=0,
+        ussgl480110_rein_undel_ord_cpe=0,
+        ussgl490110_rein_deliv_ord_cpe=0,
     )
     baker.make(
         fabpaoc,
@@ -364,4 +398,21 @@ def tas_mulitple_oc_per_tas():
         object_class=oc3,
         obligations_incurred_by_program_object_class_cpe=100,
         gross_outlay_amount_by_program_object_class_cpe=100000,
+        deobligations_recoveries_refund_pri_program_object_class_cpe=0,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0,
+        prior_year_adjustment="X",
+        ussgl480100_undelivered_orders_obligations_unpaid_cpe=0,
+        ussgl480200_undelivered_orders_oblig_prepaid_advanced_cpe=0,
+        ussgl487100_down_adj_pri_unpaid_undel_orders_oblig_recov_cpe=0,
+        ussgl488100_upward_adjust_pri_undeliv_order_oblig_unpaid_cpe=0,
+        ussgl488200_up_adjust_pri_undeliv_order_oblig_ppaid_adv_cpe=0,
+        ussgl490100_delivered_orders_obligations_unpaid_cpe=0,
+        ussgl490200_delivered_orders_obligations_paid_cpe=0,
+        ussgl490800_authority_outlayed_not_yet_disbursed_cpe=0,
+        ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=0,
+        ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=0,
+        ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=0,
+        ussgl480110_rein_undel_ord_cpe=0,
+        ussgl490110_rein_deliv_ord_cpe=0,
     )

@@ -48,91 +48,113 @@ def get_file_b(submission_attributes, db_cursor):
         select      count(*)
         from        published_object_class_program_activity
         where       submission_id = %s and length(object_class) = 4
-        group by    account_num, program_activity_code, object_class, disaster_emergency_fund_code
+        group by    account_num, program_activity_code, object_class, disaster_emergency_fund_code,
+                    upper(prior_year_adjustment), upper(program_activity_reporting_key)
         having      count(*) > 1
     """
     db_cursor.execute(check_dupe_oc, [submission_id])
     dupe_oc_count = len(dictfetchall(db_cursor))
 
+    columns = {
+        "raw": [
+            "submission_id",
+            "job_id",
+            "agency_identifier",
+            "allocation_transfer_agency",
+            "availability_type_code",
+            "beginning_period_of_availa",
+            "ending_period_of_availabil",
+            "main_account_code",
+            "by_direct_reimbursable_fun",
+            "program_activity_code",
+            "program_activity_name",
+            "sub_account_code",
+            "tas",
+            "account_num",
+            "disaster_emergency_fund_code",
+        ],
+        "left": ["object_class"],
+        "upper": ["prior_year_adjustment", "program_activity_reporting_key"],
+        "numeric": [
+            "deobligations_recov_by_pro_cpe",
+            "gross_outlay_amount_by_pro_cpe",
+            "gross_outlay_amount_by_pro_fyb",
+            "gross_outlays_delivered_or_cpe",
+            "gross_outlays_delivered_or_fyb",
+            "gross_outlays_undelivered_cpe",
+            "gross_outlays_undelivered_fyb",
+            "obligations_delivered_orde_cpe",
+            "obligations_delivered_orde_fyb",
+            "obligations_incurred_by_pr_cpe",
+            "obligations_undelivered_or_cpe",
+            "obligations_undelivered_or_fyb",
+            "ussgl480100_undelivered_or_cpe",
+            "ussgl480100_undelivered_or_fyb",
+            "ussgl480110_rein_undel_ord_cpe",
+            "ussgl480200_undelivered_or_cpe",
+            "ussgl480200_undelivered_or_fyb",
+            "ussgl483100_undelivered_or_cpe",
+            "ussgl483200_undelivered_or_cpe",
+            "ussgl487100_downward_adjus_cpe",
+            "ussgl487200_downward_adjus_cpe",
+            "ussgl488100_upward_adjustm_cpe",
+            "ussgl488200_upward_adjustm_cpe",
+            "ussgl490100_delivered_orde_cpe",
+            "ussgl490100_delivered_orde_fyb",
+            "ussgl490110_rein_deliv_ord_cpe",
+            "ussgl490200_delivered_orde_cpe",
+            "ussgl490800_authority_outl_cpe",
+            "ussgl490800_authority_outl_fyb",
+            "ussgl493100_delivered_orde_cpe",
+            "ussgl497100_downward_adjus_cpe",
+            "ussgl497200_downward_adjus_cpe",
+            "ussgl498100_upward_adjustm_cpe",
+            "ussgl498200_upward_adjustm_cpe",
+        ],
+    }
+
+    raw_cols = ",".join([col for col in columns["raw"]])
+    left_cols = ",".join([f"left({col}, 3)" for col in columns["left"]])
+    upper_cols = ",".join([f"upper({col})" for col in columns["upper"]])
+    numeric_cols = ",".join([col for col in columns["numeric"]])
+
+    left_cols_with_alias = ",".join([f"left({col}, 3) as {col}" for col in columns["left"]])
+    upper_cols_with_alias = ",".join([f"upper({col}) as {col}" for col in columns["upper"]])
+    numeric_sum_cols_with_alias = ",".join(f"sum({col}) as {col}" for col in columns["numeric"])
+
     if dupe_oc_count == 0:
         # there are no object class duplicates, so proceed as usual
         db_cursor.execute(
-            "select * from published_object_class_program_activity where submission_id = %s", [submission_id]
+            f"""
+            select
+                {raw_cols},
+                {left_cols_with_alias},
+                {upper_cols_with_alias},
+                {numeric_cols}
+            from
+               published_object_class_program_activity
+            where
+               submission_id = %s
+        """,
+            [submission_id],
         )
     else:
         # file b contains at least one case of duplicate 4 digit object classes for the same program activity/tas,
         # so combine the records in question
         combine_dupe_oc = f"""
             select
-                submission_id,
-                job_id,
-                agency_identifier,
-                allocation_transfer_agency,
-                availability_type_code,
-                beginning_period_of_availa,
-                ending_period_of_availabil,
-                main_account_code,
-                left(object_class, 3) as object_class,
-                by_direct_reimbursable_fun,
-                tas,
-                account_num,
-                program_activity_code,
-                program_activity_name,
-                sub_account_code,
-                sum(deobligations_recov_by_pro_cpe) as deobligations_recov_by_pro_cpe,
-                sum(gross_outlay_amount_by_pro_cpe) as gross_outlay_amount_by_pro_cpe,
-                sum(gross_outlay_amount_by_pro_fyb) as gross_outlay_amount_by_pro_fyb,
-                sum(gross_outlays_delivered_or_cpe) as gross_outlays_delivered_or_cpe,
-                sum(gross_outlays_delivered_or_fyb) as gross_outlays_delivered_or_fyb,
-                sum(gross_outlays_undelivered_cpe) as gross_outlays_undelivered_cpe,
-                sum(gross_outlays_undelivered_fyb) as gross_outlays_undelivered_fyb,
-                sum(obligations_delivered_orde_cpe) as obligations_delivered_orde_cpe,
-                sum(obligations_delivered_orde_fyb) as obligations_delivered_orde_fyb,
-                sum(obligations_incurred_by_pr_cpe) as obligations_incurred_by_pr_cpe,
-                sum(obligations_undelivered_or_cpe) as obligations_undelivered_or_cpe,
-                sum(obligations_undelivered_or_fyb) as obligations_undelivered_or_fyb,
-                sum(ussgl480100_undelivered_or_cpe) as ussgl480100_undelivered_or_cpe,
-                sum(ussgl480100_undelivered_or_fyb) as ussgl480100_undelivered_or_fyb,
-                sum(ussgl480200_undelivered_or_cpe) as ussgl480200_undelivered_or_cpe,
-                sum(ussgl480200_undelivered_or_fyb) as ussgl480200_undelivered_or_fyb,
-                sum(ussgl483100_undelivered_or_cpe) as ussgl483100_undelivered_or_cpe,
-                sum(ussgl483200_undelivered_or_cpe) as ussgl483200_undelivered_or_cpe,
-                sum(ussgl487100_downward_adjus_cpe) as ussgl487100_downward_adjus_cpe,
-                sum(ussgl487200_downward_adjus_cpe) as ussgl487200_downward_adjus_cpe,
-                sum(ussgl488100_upward_adjustm_cpe) as ussgl488100_upward_adjustm_cpe,
-                sum(ussgl488200_upward_adjustm_cpe) as ussgl488200_upward_adjustm_cpe,
-                sum(ussgl490100_delivered_orde_cpe) as ussgl490100_delivered_orde_cpe,
-                sum(ussgl490100_delivered_orde_fyb) as ussgl490100_delivered_orde_fyb,
-                sum(ussgl490200_delivered_orde_cpe) as ussgl490200_delivered_orde_cpe,
-                sum(ussgl490800_authority_outl_cpe) as ussgl490800_authority_outl_cpe,
-                sum(ussgl490800_authority_outl_fyb) as ussgl490800_authority_outl_fyb,
-                sum(ussgl493100_delivered_orde_cpe) as ussgl493100_delivered_orde_cpe,
-                sum(ussgl497100_downward_adjus_cpe) as ussgl497100_downward_adjus_cpe,
-                sum(ussgl497200_downward_adjus_cpe) as ussgl497200_downward_adjus_cpe,
-                sum(ussgl498100_upward_adjustm_cpe) as ussgl498100_upward_adjustm_cpe,
-                sum(ussgl498200_upward_adjustm_cpe) as ussgl498200_upward_adjustm_cpe,
-                disaster_emergency_fund_code
+                {raw_cols},
+                {left_cols_with_alias},
+                {upper_cols_with_alias},
+                {numeric_sum_cols_with_alias}
             from
                 published_object_class_program_activity
             where
                 submission_id = %s
             group by
-                submission_id,
-                job_id,
-                agency_identifier,
-                allocation_transfer_agency,
-                availability_type_code,
-                beginning_period_of_availa,
-                ending_period_of_availabil,
-                main_account_code,
-                left(object_class, 3),
-                by_direct_reimbursable_fun,
-                program_activity_code,
-                program_activity_name,
-                sub_account_code,
-                tas,
-                account_num,
-                disaster_emergency_fund_code
+                {raw_cols},
+                {left_cols},
+                {upper_cols}
         """
         logger.info(
             f"Found {dupe_oc_count:,} duplicated File B 4 digit object codes in submission {submission_id}. "
@@ -146,7 +168,7 @@ def get_file_b(submission_attributes, db_cursor):
 
 
 def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
-    """ Process and load file B broker data (aka TAS balances by program activity and object class). """
+    """Process and load file B broker data (aka TAS balances by program activity and object class)."""
     reverse = re.compile(r"(_(cpe|fyb)$)|^transaction_obligated_amount$")
     skipped_tas = defaultdict(int)  # tracks count of rows skipped due to "missing" TAS
     bulk_treasury_appropriation_account_tas_lookup(prg_act_obj_cls_data, db_cursor)

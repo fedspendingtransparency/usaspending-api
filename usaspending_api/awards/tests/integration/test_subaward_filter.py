@@ -58,6 +58,7 @@ def subaward_data(db):
         sub_ultimate_parent_uei="AAAAAAAAAAA0",
         award=award_search1,
         sub_action_date="2018-01-01",
+        subaward_description="Description for subaward_1.",
     )
     baker.make(
         "search.SubawardSearch",
@@ -68,6 +69,7 @@ def subaward_data(db):
         sub_ultimate_parent_uei="BBBBBBBBBBB0",
         award=award_search2,
         sub_action_date="2020-04-01",
+        subaward_description="Description for subaward_2.",
     )
     baker.make(
         "search.SubawardSearch",
@@ -78,6 +80,7 @@ def subaward_data(db):
         sub_ultimate_parent_uei="CCCCCCCCCCC0",
         award=award_search3,
         sub_action_date="2022-01-01",
+        subaward_description="Description for subaward_3.",
     )
     baker.make(
         "search.SubawardSearch",
@@ -150,5 +153,17 @@ def test_defc_and_date_filters(subaward_data):
     assert len(results) == 0
 
     filters = {"def_codes": ["A", "L", "Z"], "time_period": [{"start_date": "2018-01-01", "end_date": "2023-01-01"}]}
+    results = subaward_filter(filters).all()
+    assert len(results) == 3
+
+
+@pytest.mark.django_db
+def test_description_filter(subaward_data):
+
+    filters = {"description": "subaward_1"}
+    results = subaward_filter(filters).all()
+    assert len(results) == 1
+
+    filters = {"description": "subaward"}
     results = subaward_filter(filters).all()
     assert len(results) == 3

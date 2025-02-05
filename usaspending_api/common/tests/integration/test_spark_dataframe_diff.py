@@ -1,4 +1,5 @@
 """Integration tests exercising the usaspending_api.common.etl.spark.py ETL utility functions"""
+
 import random
 import uuid
 
@@ -241,7 +242,7 @@ def test_diff_one_change_single_col_compared(spark: SparkSession):
 
     data_right = deepcopy(data_left)
     changed_row_id = data_right[0]["id"]
-    data_right[0]["numeric_val"] = data_right[0]["numeric_val"] * 2
+    data_right[0]["numeric_val"] = data_right[0]["numeric_val"] + 1
 
     left_df = spark.createDataFrame([Row(**data_row) for data_row in data_left])
     right_df = spark.createDataFrame([Row(**data_row) for data_row in data_right])
@@ -263,7 +264,7 @@ def test_diff_one_change_single_col_compared(spark: SparkSession):
     assert diff_df_data[0].diff == "C"
     assert diff_df_data[0][1] == changed_row_id
     assert diff_df_data[0][2] == changed_row_id
-    assert diff_df_data[0][4] == 2 * diff_df_data[0][3]
+    assert diff_df_data[0][4] == diff_df_data[0][3] + 1
 
 
 def test_diff_one_change_changed_column_not_compared(spark: SparkSession):

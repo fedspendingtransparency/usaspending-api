@@ -21,6 +21,20 @@ def award_data_fixture(db):
     baker.make("search.TransactionSearch", transaction_id=765432107, action_date="2013-09-17")
     baker.make("search.TransactionSearch", transaction_id=876543210, action_date="2013-09-17")
     baker.make("search.TransactionSearch", transaction_id=987654321, action_date="2013-09-17")
+
+    ref_program_activity1 = baker.make(
+        "references.RefProgramActivity",
+        id=1,
+        program_activity_code=123,
+        program_activity_name="PROGRAM_ACTIVITY_123",
+    )
+    ref_program_activity2 = baker.make(
+        "references.RefProgramActivity",
+        id=2,
+        program_activity_code=2,
+        program_activity_name="PROGRAM_ACTIVITY_2",
+    )
+
     award1 = baker.make(
         "search.AwardSearch",
         category="loans",
@@ -36,6 +50,7 @@ def award_data_fixture(db):
         type="07",
         uri=None,
         display_award_id="award200",
+        program_activities=[{"code": "0123", "name": "PROGRAM_ACTIVITY_123"}],
     )
     award2 = baker.make(
         "search.AwardSearch",
@@ -191,24 +206,12 @@ def award_data_fixture(db):
         prime_award_type="08",
         subaward_number=99998,
     )
-    ref_program_activity1 = baker.make(
-        "references.RefProgramActivity",
-        id=1,
-        program_activity_code=123,
-        program_activity_name="PROGRAM_ACTIVITY_123",
-    )
+
     baker.make(
         "awards.FinancialAccountsByAwards",
         financial_accounts_by_awards_id=1,
         award_id=award1.award_id,
         program_activity_id=ref_program_activity1.id,
-    )
-
-    ref_program_activity2 = baker.make(
-        "references.RefProgramActivity",
-        id=2,
-        program_activity_code=2,
-        program_activity_name="PROGRAM_ACTIVITY_2",
     )
     baker.make(
         "awards.FinancialAccountsByAwards",
