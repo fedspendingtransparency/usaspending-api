@@ -144,15 +144,13 @@ class _TransactionFabsFpdsCore:
         # raw.transaction_normalized along with the source tables, but don't copy the raw tables to int.
         # Then immediately call load_transactions_in_delta with etl-level of transaction_f[ab|pd]s.
         InitialRun.initial_run(self.s3_data_bucket, load_other_raw_tables=load_other_raw_tables, initial_copy=False)
+        call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
+        call_command("load_transactions_in_delta", "--etl-level", "award_id_lookup")
         call_command("load_transactions_in_delta", "--etl-level", self.etl_level)
 
-        # Even without the call to load_transactions_in_delta with etl-level of transaction_id_lookup, the appropriate
-        # data will be populated in the transaction_id_lookup table via initial_run to allow the call to
-        # load_transactions_in_delta with etl-level of transaction_fabs to populate int.transaction_fabs correctly with
-        # the initial data.
         kwargs = {
-            "expected_last_load_transaction_id_lookup": _INITIAL_SOURCE_TABLE_LOAD_DATETIME,
-            "expected_last_load_award_id_lookup": _INITIAL_SOURCE_TABLE_LOAD_DATETIME,
+            "expected_last_load_transaction_id_lookup": _BEGINNING_OF_TIME,
+            "expected_last_load_award_id_lookup": _BEGINNING_OF_TIME,
             "expected_last_load_transaction_normalized": _BEGINNING_OF_TIME,
             "expected_last_load_transaction_fabs": _BEGINNING_OF_TIME,
             "expected_last_load_transaction_fpds": _BEGINNING_OF_TIME,
@@ -247,7 +245,9 @@ class _TransactionFabsFpdsCore:
                     self.spark,
                     "transaction_normalized",
                     InitialRunNoPostgresLoader.initial_transaction_normalized,
-                )
+                ),
+                _TableLoadInfo(self.spark, "transaction_fabs", InitialRunNoPostgresLoader.initial_transaction_fabs),
+                _TableLoadInfo(self.spark, "transaction_fpds", InitialRunNoPostgresLoader.initial_transaction_fpds),
             ],
             InitialRunNoPostgresLoader.expected_initial_transaction_id_lookup,
             InitialRunNoPostgresLoader.expected_initial_award_id_lookup,
