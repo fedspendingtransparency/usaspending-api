@@ -133,8 +133,8 @@ class _TransactionFabsFpdsCore:
             expected_transaction_fabs_fpds = deepcopy(self.expected_initial_transaction_fabs)
         else:
             expected_transaction_fabs_fpds = deepcopy(self.expected_initial_transaction_fpds)
-        # for item in expected_transaction_fabs_fpds:
-        #     item["transaction_id"] += 1
+        for item in expected_transaction_fabs_fpds:
+            item["transaction_id"] += 1
         assert equal_datasets(expected_transaction_fabs_fpds, delta_data, "")
 
     def unexpected_paths_test_core(
