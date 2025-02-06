@@ -123,8 +123,20 @@ class SpendingByAwardVisualizationViewSet(APIView):
         self.last_record_sort_value = json_request.get("last_record_sort_value")
 
         if self.is_subaward:
-            #raw_response = self.create_response_for_subawards(self.construct_queryset(), models)
-            raw_response = self.construct_es_response_for_subawards(self.query_elasticsearch_subawards())
+            try:
+                raw_response = self.construct_es_response_for_subawards(self.query_elasticsearch_subawards())
+            except KeyError as e:
+                valid_date_types = ["action_date", "last_modified_date", "date_signed", "sub_action_date"]
+                error_msg = {}
+
+                if "time_period" in self.filters.keys():
+                    for i in range(len(self.filters["time_period"])):
+                        if ("date_type" in self.filters["time_period"][i].keys() and 
+                            self.filters["time_period"][i]["date_type"] not in valid_date_types):
+                            error_msg = {"detail": "Invalid date_type: " + self.filters["time_period"][i]["date_type"]}
+                            break
+
+                return Response(error_msg,status=400)
         else:
             raw_response = self.construct_es_response_for_prime_awards(self.query_elasticsearch_awards())
 
@@ -388,7 +400,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
             time_period_obj=time_period_obj, query_type=_QueryType.AWARDS
         )
         filter_options["time_period_obj"] = new_awards_only_decorator
+        
         filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(self.filters, **filter_options)
+
         sort_field = self.get_elastic_sort_by_fields()
 
         sorts = [{field: self.pagination["sort_order"]} for field in sort_field]
@@ -572,7 +586,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
     def construct_es_response_for_subawards(self, response) -> dict:
         results = []
-        should_return_display_subaward_id = "Sub-Award ID" in self.fields        
         for res in response:
             hit = res.to_dict()
             row = {k: hit[v] for k, v in self.constants["internal_id_fields"].items()}
@@ -582,19 +595,11 @@ class SpendingByAwardVisualizationViewSet(APIView):
             # which lookup dict to use, and then use that lookup to retrieve the correct value requested from `fields`
             for field in self.fields:
                 row[field] = hit.get(self.constants["elasticsearch_type_code_to_field_map"].get(field))
-                if "Awarding Agency" in self.fields:
-                    row["agency_code"] = hit["awarding_agency_code"]
 
             if row.get("Sub-Award Amount"):
                 row["Sub-Award Amount"] = float(row["Sub-Award Amount"])
-            if row.get("Awarding Agency"):
-                code = row.pop("agency_code")
-                # for subawards, ES seems to return a string for agency_code
-                row["awarding_agency_id"] = code
-                row["agency_slug"] = self.get_agency_slug(code)
 
-            if should_return_display_subaward_id:
-                row["Sub-Award ID"] = hit["display_award_id"]
+            row["prime_award_generated_internal_id"] = hit["unique_award_key"]
 
             results.append(row)
 

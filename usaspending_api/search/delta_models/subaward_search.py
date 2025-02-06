@@ -204,6 +204,7 @@ SUBAWARD_SEARCH_COLUMNS = {
     "place_of_perform_county_fips": {"delta": "STRING", "postgres": "TEXT"},
     "pop_county_name": {"delta": "STRING", "postgres": "TEXT"},
     "program_activities": {"delta": "STRING", "postgres": "JSONB", "gold": False},
+    "prime_award_recipient_id": {"delta": "STRING", "postgres": "TEXT"},
 }
 SUBAWARD_SEARCH_POSTGRES_VECTORS = {
     "keyword_ts_vector": ["sub_awardee_or_recipient_legal", "product_or_service_description", "subaward_description"],
@@ -563,7 +564,22 @@ subaward_search_load_sql_string = rf"""
         CONCAT(rl_state_fips.fips, rl_county_fips.county_numeric) AS legal_entity_county_fips,
         CONCAT(pop_state_fips.fips, pop_county_fips.county_numeric) AS place_of_perform_county_fips,
         UPPER(COALESCE(fpds.place_of_perform_county_na, fabs.place_of_perform_county_na)) AS pop_county_name,
-        tas.program_activities
+        tas.program_activities,
+        (
+            SELECT
+                rp.recipient_hash || '-' ||  rp.recipient_level
+            FROM
+                rpt.subaward_search bs
+                INNER JOIN recipient_lookup rl ON (rl.uei = bs.awardee_or_recipient_uei OR rl.duns = bs.awardee_or_recipient_uniqu)
+                INNER JOIN recipient_profile rp ON rp.recipient_hash = rl.recipient_hash
+            WHERE
+                bs.broker_subaward_id = "subaward_search".broker_subaward_id AND
+                rp.recipient_level = case
+                    WHEN bs.ultimate_parent_uei IS null or bs.ultimate_parent_uei = '' THEN 'R'
+                    ELSE 'C'
+                END AND
+                rp.recipient_name NOT IN ('MULTIPLE RECIPIENTS', 'REDACTED DUE TO PII', 'MULTIPLE FOREIGN RECIPIENTS', 'PRIVATE INDIVIDUAL', 'INDIVIDUAL RECIPIENT', 'MISCELLANEOUS FOREIGN AWARDEES')
+        )
     FROM
         raw.subaward AS bs
     LEFT OUTER JOIN

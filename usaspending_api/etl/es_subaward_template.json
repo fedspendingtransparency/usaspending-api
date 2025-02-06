@@ -618,6 +618,9 @@
             }
           }
         }
+      },
+      "prime_award_recipient_id": {
+        "type": "keyword"
       }
     }
   }

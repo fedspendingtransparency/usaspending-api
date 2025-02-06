@@ -408,6 +408,7 @@ def spending_by_award_test_data():
         prime_award_type="A",
         prime_award_group="procurement",
         sub_action_date="2020-04-02",
+        action_date="2020-04-02",
         subaward_amount=10000,
         awardee_or_recipient_legal="recipient_name_for_award_1001",
         sub_awardee_or_recipient_legal="RECIPIENT_NAME_FOR_AWARD_1001",
@@ -417,6 +418,7 @@ def spending_by_award_test_data():
         awarding_subtier_agency_name="awarding subtier 8001",
         product_or_service_code="PSC2",
         sub_awardee_or_recipient_uei="UEI_10010001",
+        unique_award_key="CONT_AWD_TESTING_1"
     )
     baker.make(
         "search.SubawardSearch",
@@ -436,6 +438,8 @@ def spending_by_award_test_data():
         awarding_toptier_agency_name="awarding toptier 8002",
         awarding_subtier_agency_name="awarding subtier 8002",
         product_or_service_code="PSC0",
+        action_date="2020-04-02",
+        unique_award_key="CONT_AWD_TESTING_1"
     )
     baker.make(
         "search.SubawardSearch",
@@ -451,10 +455,12 @@ def spending_by_award_test_data():
         sub_awardee_or_recipient_legal="RECIPIENT_NAME_FOR_AWARD_1002",
         awardee_or_recipient_uniqu="duns_1002",
         sub_awardee_or_recipient_uei="UEI_10010002",
-        piid="PIID3002",
+        award_piid_fain="PIID3002",
         awarding_toptier_agency_name="awarding toptier 8003",
         awarding_subtier_agency_name="awarding subtier 8003",
         product_or_service_code="PSC0",
+        action_date="2016-01-01",
+        unique_award_key="CONT_AWD_TESTING_2"
     )
     baker.make(
         "search.SubawardSearch",
@@ -464,6 +470,7 @@ def spending_by_award_test_data():
         awardee_or_recipient_uniqu="duns_1003",
         sub_awardee_or_recipient_uei="UEI_10010003",
         product_or_service_code="PSC0",
+        action_date="2016-01-01",
     )
     baker.make(
         "search.SubawardSearch",
@@ -474,15 +481,17 @@ def spending_by_award_test_data():
         prime_award_type="A",
         prime_award_group="procurement",
         sub_action_date="2019-01-01",
+        action_date="2019-01-01",
         subaward_amount=60000,
         awardee_or_recipient_legal="recipient_name_for_award_1003",
         sub_awardee_or_recipient_legal="RECIPIENT_NAME_FOR_AWARD_1003",
         awardee_or_recipient_uniqu="duns_1003",
         sub_awardee_or_recipient_uei="UEI_10010003",
-        piid="PIID6003",
+        award_piid_fain="PIID6003",
         awarding_toptier_agency_name="awarding toptier 8006",
         awarding_subtier_agency_name="awarding subtier 8006",
         product_or_service_code="PSC0",
+        unique_award_key="CONT_AWD_TESTING_3"
     )
     baker.make(
         "search.SubawardSearch",
@@ -490,17 +499,21 @@ def spending_by_award_test_data():
         award=award_4,
         latest_transaction_id=6,
         subaward_number=99999,
-        prime_award_type="02",
+        prime_award_type="07",
         prime_award_group="procurement",
         sub_action_date="2019-01-01",
+        action_date="2019-01-01",
         subaward_amount=60000,
         awardee_or_recipient_legal="recipient_name_for_award_1003",
         sub_awardee_or_recipient_legal="RECIPIENT_NAME_FOR_AWARD_1003",
         awardee_or_recipient_uniqu="duns_1003",
-        piid="PIID6003",
+        award_piid_fain="PIID6003",
         awarding_toptier_agency_name="awarding toptier 8006",
         awarding_subtier_agency_name="awarding subtier 8006",
         product_or_service_code="PSC0",
+        program_activities=[{"name": "PROGRAM_ACTIVITY_123", "code": "0123"}],
+        unique_award_key="ASST_NON_DECF0000058_8900",
+        award_id=200
     )
 
     # Ref Program Activity
