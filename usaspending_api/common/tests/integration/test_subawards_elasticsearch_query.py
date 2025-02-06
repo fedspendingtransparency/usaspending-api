@@ -1,5 +1,4 @@
 import pytest
-
 from model_bakery import baker
 
 from usaspending_api.common.elasticsearch.search_wrappers import SubawardSearch
@@ -155,6 +154,7 @@ def subaward_test_data_fixture(db):
         cfda_numbers="17.287",
         sub_legal_entity_country_code="GMR",
         sub_legal_entity_zip5="12345",
+        program_activities=[{"name": "PROGRAM_ACTIVITY_123", "code": "0123"}],
     )
 
 
@@ -326,3 +326,27 @@ def test_award_amounts_filters(client, monkeypatch, elasticsearch_subaward_index
     search = SubawardSearch().filter(filter_query)
     results = search.handle_execute()
     assert len(results) == 2
+
+
+@pytest.mark.django_db
+def test_program_activities_filters(client, monkeypatch, elasticsearch_subaward_index, subaward_test_data_fixture):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
+
+    filters = {"program_activities": [{"name": "PROGRAM_ACTIVITY_123"}]}
+    filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(filters)
+    search = SubawardSearch().filter(filter_query)
+    results = search.handle_execute()
+    assert len(results) == 1
+
+    filters = {"program_activities": [{"code": "0123"}]}
+    filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(filters)
+    search = SubawardSearch().filter(filter_query)
+    results = search.handle_execute()
+    assert len(results) == 1
+
+    # Test the auto-padding for program activity codes of less than 4 digits
+    filters = {"program_activities": [{"code": "123"}]}
+    filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(filters)
+    search = SubawardSearch().filter(filter_query)
+    results = search.handle_execute()
+    assert len(results) == 1

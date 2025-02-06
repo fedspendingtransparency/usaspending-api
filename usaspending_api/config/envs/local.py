@@ -49,12 +49,12 @@ class LocalConfig(DefaultConfig):
     USASPENDING_DB_PORT: str = "5432"
 
     # ==== [Postgres Broker] ====
-    BROKER_DB_USER: str = "admin"
-    BROKER_DB_PASSWORD: SecretStr = "root"
+    BROKER_DB_USER: str = "usaspending"
+    BROKER_DB_PASSWORD: SecretStr = "usaspender"
 
     # Change to host.docker.internal if you are running a local Postgres. Otherwise leave as-is, so
     # Docker will use the Postgres created by Compose.
-    BROKER_DB_HOST: str = "dataact-broker-db"
+    BROKER_DB_HOST: str = "localhost"
     BROKER_DB_PORT: str = "5432"
 
     # ==== [Elasticsearch] ====

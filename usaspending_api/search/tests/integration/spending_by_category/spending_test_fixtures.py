@@ -140,6 +140,7 @@ def awards_and_transactions(db):
         award_id=award1.award_id,
         treasury_account_id=1,
         program_activity_id=ref_program_activity1.id,
+        action_date="2020-01-01"
     )
     baker.make("accounts.TreasuryAppropriationAccount", pk=1, federal_account_id=1)
     baker.make(
@@ -534,7 +535,8 @@ def awards_and_transactions(db):
         sub_action_date="2020-01-07",
         sub_fiscal_year=2020,
         subaward_type="sub-contract",
-        program_activities=[{"name":"program1", "code":"0001"}]
+        program_activities=[{"name":"program1", "code":"0001"}],
+        action_date="2019-12-19"
     )
     baker.make(
         "search.SubawardSearch",
@@ -546,7 +548,8 @@ def awards_and_transactions(db):
         sub_action_date="2020-01-07",
         sub_fiscal_year=2020,
         subaward_type="sub-contract",
-        program_activities=[{"name":"program2", "code":"0001"}]
+        program_activities=[{"name":"program2", "code":"0001"}],
+        action_date="2019-12-19"
     )
     baker.make(
         "search.SubawardSearch",
@@ -559,7 +562,8 @@ def awards_and_transactions(db):
         prime_award_group="grant",
         sub_fiscal_year=2020,
         subaward_type="sub-grant",
-        program_activities=[{"name":"program_activity_123", "code":"0001"}]
+        program_activities=[{"name":"program_activity_123", "code":"0001"}],
+        action_date="2019-09-20"
     )
 
     # References State Data

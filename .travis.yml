@@ -27,8 +27,8 @@ env:
   - ES_HOSTNAME=${ES_SCHEME}://${ES_HOST}:${ES_PORT}
   - BROKER_DB_HOST=localhost
   - BROKER_DB_PORT=5432
-  - BROKER_DB_USER=admin
-  - BROKER_DB_PASSWORD=root
+  - BROKER_DB_USER=usaspending
+  - BROKER_DB_PASSWORD=usaspender
   - BROKER_DB_NAME=data_broker
   - DATA_BROKER_DATABASE_URL=postgres://${BROKER_DB_USER}:${BROKER_DB_PASSWORD}@${BROKER_DB_HOST}:${BROKER_DB_PORT}/${BROKER_DB_NAME}
   - DATA_BROKER_SRC_PATH="${TRAVIS_BUILD_DIR}/../data-act-broker-backend"  # Location in host machine where broker src code root can be found
