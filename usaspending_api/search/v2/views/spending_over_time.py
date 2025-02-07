@@ -488,6 +488,22 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         time_periods = self.filters.get("time_period", [default_time_period])
         if self.spending_level == "subawards" or self.subawards:
             results = self.query_elasticsearch_for_subawards(time_periods)
+            #if there is no data for that fiscal year, set results for that
+            min_date, max_date = min_and_max_from_date_ranges(time_periods)
+            date_range = generate_date_range(min_date, max_date, self.group)
+            if date_range.count != results.count:
+                for year in date_range:
+                    if not (any(result["time_period"] == {"fiscal_year":  str(year["fiscal_year"])} for result in results)):
+                        results.append({
+                            "aggregated_amount": 0,
+                            "total_outlays": None,
+                            "time_period": {"fiscal_year": str(year["fiscal_year"])},
+                            "Contract_Obligations": 0,
+                            "Contract_Outlays": None,
+                            "Grant_Obligations": 0,
+                            "Grant_Outlays": None,
+                        })
+                results = sorted(results, key=lambda x: x["time_period"]["fiscal_year"])
         elif self.spending_level == "transactions":
             results = self.query_elasticsearch_for_transactions(time_periods)
         elif self.spending_level == "awards":
