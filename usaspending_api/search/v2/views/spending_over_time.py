@@ -110,6 +110,28 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             raise InvalidParameterException("Missing request parameters: filters")
 
         return validated_data, models
+    
+    def subawards_group_by_time_period_agg(self) -> any:
+        if self.group == "fiscal_year":
+                return A("terms", field="sub_fiscal_year")
+        else:
+            return A(
+                "date_histogram",
+                field="sub_action_date",
+                interval="year" if (self.group == "calendar_year") else self.group,
+                format="yyyy-MM-dd",
+            )
+        
+    def awards_group_by_time_period_agg(self) -> any:
+        if self.group == "fiscal_year":
+                return A("terms", field="fiscal_year")
+        else:
+            return A(
+                "date_histogram",
+                field="action_date",
+                interval="year" if (self.group == "calendar_year") else self.group,
+                format="yyyy-MM-dd",
+            )
 
     def apply_elasticsearch_aggregations(self, search: Search) -> None:
         """
@@ -123,16 +145,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         if isinstance(search, AwardSearch):
             category_field = "category.keyword"
             obligation_field = "generated_pragmatic_obligation"
-
-            if self.group == "fiscal_year":
-                group_by_time_period_agg = A("terms", field="fiscal_year")
-            else:
-                group_by_time_period_agg = A(
-                    "date_histogram",
-                    field="action_date",
-                    interval="year" if (self.group == "calendar_year") else self.group,
-                    format="yyyy-MM-dd",
-                )
+            group_by_time_period_agg = self.awards_group_by_time_period_agg()
         elif isinstance(search, TransactionSearch):
             category_field = "award_category"
             obligation_field = "generated_pragmatic_obligation"
@@ -147,16 +160,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         elif isinstance(search, SubawardSearch):
             category_field = "subaward_type.keyword"
             obligation_field = "subaward_amount"
-
-            if self.group == "fiscal_year":
-                group_by_time_period_agg = A("terms", field="sub_fiscal_year")
-            else:
-                group_by_time_period_agg = A(
-                    "date_histogram",
-                    field="sub_action_date",
-                    interval="year" if (self.group == "calendar_year") else self.group,
-                    format="yyyy-MM-dd",
-                )
+            group_by_time_period_agg = self.subawards_group_by_time_period_agg()
 
         """
         The individual aggregations that are needed; with two different sum aggregations to handle issues with
@@ -205,9 +209,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         """
         time_period = {}
 
-        if self.group == "fiscal_year" and (
-            self.spending_level == "awards" or (self.spending_level == "subawards" or self.subawards)
-        ):
+        if self.group == "fiscal_year" and self.spending_level != "transactions":
             key_as_date = datetime.strptime(str(bucket["key"]), "%Y")
         else:
             key_as_date = datetime.strptime(bucket["key_as_string"], "%Y-%m-%d")
@@ -223,7 +225,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         categories_breakdown = bucket["group_by_category"]["buckets"]
 
         # Initialize a dictionary to hold the query results for each obligation type.
-        if self.spending_level == "subawards" or self.subawards:
+        if self.spending_level == "subawards":
             obligation_dictionary = {
                 "Contract_Obligations": 0,
                 "Grant_Obligations": 0,
@@ -463,7 +465,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         json_request, models = self.validate_request_data(request.data)
         self.group = GROUPING_LOOKUP[json_request["group"]]
         self.subawards = json_request["subawards"] or json_request.get("spending_level") == "subawards"
-        self.spending_level = json_request.get("spending_level").lower()
+        self.spending_level = "subawards" if self.subawards else json_request.get("spending_level").lower()
         self.filters = json_request["filters"]
 
         # time_period is optional so we're setting a default window from API_SEARCH_MIN_DATE to end of the current FY.
@@ -483,7 +485,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         # if time periods have been passed in use those, otherwise use the one calculated above
         time_periods = self.filters.get("time_period", [default_time_period])
-        if self.spending_level == "subawards" or self.subawards:
+        if self.spending_level == "subawards":
             results = self.query_elasticsearch_for_subawards(time_periods)
         elif self.spending_level == "transactions":
             results = self.query_elasticsearch_for_transactions(time_periods)
