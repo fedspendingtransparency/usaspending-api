@@ -167,6 +167,10 @@ def configure_spark_session(
     conf.set("spark.hadoop.fs.s3a.endpoint", CONFIG.AWS_S3_ENDPOINT)
 
     if not CONFIG.USE_AWS:  # i.e. running in a "local" [development] environment
+        conf.set("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
+        conf.set("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog")
+        conf.set("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
+        conf.set("hive.metastore.disallow.incompatible.col.type.changes", "false")
         # Set configs to allow the S3AFileSystem to work against a local MinIO object storage proxy
         conf.set("spark.hadoop.fs.s3a.connection.ssl.enabled", "false")
         # "Enable S3 path style access ie disabling the default virtual hosting behaviour.
@@ -230,6 +234,7 @@ def configure_spark_session(
 
     # Build the SparkSession based on args provided
     builder = SparkSession.builder
+    builder = builder.config(conf=conf)
     if spark_context:
         builder = builder._sparkContext(spark_context)
     if java_gateway:
@@ -242,7 +247,7 @@ def configure_spark_session(
         builder = builder.appName(app_name)
     if enable_hive_support:
         builder = builder.enableHiveSupport()
-    spark = builder.config(conf=conf).getOrCreate()
+    spark = builder.getOrCreate()
 
     # Now that the SparkSession was created, check whether certain provided config values were ignored if given a
     # pre-existing SparkContext, and error-out if so
