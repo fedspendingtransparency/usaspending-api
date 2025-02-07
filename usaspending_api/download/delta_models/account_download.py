@@ -1,6 +1,7 @@
 ACCOUNT_DOWNLOAD_COLUMNS_TEST = {"award_id_piid": "STRING"}
 
 ACCOUNT_DOWNLOAD_COLUMNS = {
+    "submission_id": "INTEGER NOT NULL",
     "owning_agency_name": "STRING",
     "federal_account_symbol": "STRING",
     "federal_account_name": "STRING",
@@ -80,6 +81,10 @@ ACCOUNT_DOWNLOAD_COLUMNS = {
     "prime_award_summary_place_of_performance_cd_current": "STRING",
     "usaspending_permalink": "STRING",
     "last_modified_date": "DATE",
+    "reporting_fiscal_period": "INTEGER",
+    "reporting_fiscal_quarter": "INTEGER",
+    "reporting_fiscal_year": "INTEGER",
+    "quarter_format_flag": "BOOLEAN",
 }
 
 account_download_create_sql_string = rf"""
@@ -95,6 +100,7 @@ account_download_load_sql_string = rf"""
         {",".join(list(ACCOUNT_DOWNLOAD_COLUMNS))}
     )
     SELECT
+        financial_accounts_by_awards.submission_id,
         toptier_agency.name AS owning_agency_name,
         federal_account.federal_account_code AS federal_account_symbol,
         federal_account.account_title AS federal_account_name,
@@ -111,11 +117,11 @@ account_download_load_sql_string = rf"""
         financial_accounts_by_awards.parent_award_id AS parent_award_id_piid,
         financial_accounts_by_awards.fain AS award_id_fain,
         financial_accounts_by_awards.uri AS award_id_uri,
-        award_search.date_signed AS award_base_action_date,
-        award_search.certified_date AS award_latest_action_date,
-        award_search.period_of_performance_start_date,
-        award_search.period_of_performance_current_end_date,
-        transaction_search.ordering_period_end_date,
+        TRY_CAST(award_search.date_signed AS DATE) AS award_base_action_date,
+        TRY_CAST(award_search.certified_date AS DATE) AS award_latest_action_date,
+        TRY_CAST(award_search.period_of_performance_start_date AS DATE),
+        TRY_CAST(award_search.period_of_performance_current_end_date AS DATE),
+        TRY_CAST(transaction_search.ordering_period_end_date AS DATE),
         transaction_search.idv_type AS idv_type_code,
         transaction_search.idv_type_description AS idv_type,
         award_search.description AS prime_award_base_transaction_description,
@@ -325,9 +331,11 @@ account_download_load_sql_string = rf"""
                     )
             ELSE ''
         END AS usaspending_permalink,
-        CAST(
-            submission_attributes.published_date AS DATE
-        ) AS last_modified_date
+        TRY_CAST(submission_attributes.published_date AS DATE) AS last_modified_date,
+        submission_attributes.reporting_fiscal_period,
+        submission_attributes.reporting_fiscal_quarter,
+        submission_attributes.reporting_fiscal_year,
+        submission_attributes.quarter_format_flag
     FROM raw.financial_accounts_by_awards
     INNER JOIN global_temp.submission_attributes AS submission_attributes
         ON (
