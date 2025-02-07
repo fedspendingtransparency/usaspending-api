@@ -378,26 +378,6 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         return results
 
-    def build_elasticsearch_result_subawards(self, agg_response: AggResponse, time_periods: list) -> list:
-
-        results = []
-
-        db_results, order_by_cols = self.database_data_layer_for_subawards()
-        results = bolster_missing_time_periods(
-            filter_time_periods=time_periods,
-            queryset=db_results,
-            date_range_type=order_by_cols[-1],
-            columns={
-                "obligation_amount": "obligation_amount",
-                "total_outlays": "total_outlays",
-                "subaward_type": "subaward_type",
-            },
-        )
-
-        results = clean_subaward_spending_over_time_results(results, order_by_cols[-1])
-
-        return results
-
     def query_elasticsearch_for_transactions(self, time_periods: list) -> list:
         """Get spending over time amounts based on Transactions"""
 
@@ -493,7 +473,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             date_range = generate_date_range(min_date, max_date, self.group)
             if date_range.count != results.count:
                 for year in date_range:
-                    if not (any(result["time_period"] == {"fiscal_year":  str(year["fiscal_year"])} for result in results)):
+                    if not (any(result["time_period"] == {"fiscal_year": str(year["fiscal_year"])} for result in results)):
                         results.append({
                             "aggregated_amount": 0,
                             "total_outlays": None,
