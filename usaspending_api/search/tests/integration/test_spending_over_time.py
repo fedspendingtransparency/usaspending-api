@@ -295,6 +295,7 @@ def spending_over_time_test_data():
                 prime_award_type="07",
                 subaward_number=i,
                 subaward_amount=(i + 1) * 2,
+                action_date="2011-05-05",
             )
 
 
@@ -4750,9 +4751,10 @@ def test_transactions_defc_date_filter(client, monkeypatch, elasticsearch_transa
 
 @pytest.mark.django_db
 def test_spending_over_time_program_activity_subawards(
-    client, monkeypatch, elasticsearch_award_index, awards_and_transactions
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, awards_and_transactions
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     resp = client.post(
         "/api/v2/search/spending_over_time",
         content_type="application/json",
