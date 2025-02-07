@@ -565,21 +565,13 @@ subaward_search_load_sql_string = rf"""
         CONCAT(pop_state_fips.fips, pop_county_fips.county_numeric) AS place_of_perform_county_fips,
         UPPER(COALESCE(fpds.place_of_perform_county_na, fabs.place_of_perform_county_na)) AS pop_county_name,
         tas.program_activities,
-        (
-            SELECT
-                rp.recipient_hash || '-' ||  rp.recipient_level
-            FROM
-                rpt.subaward_search bs
-                INNER JOIN recipient_lookup rl ON (rl.uei = bs.awardee_or_recipient_uei OR rl.duns = bs.awardee_or_recipient_uniqu)
-                INNER JOIN recipient_profile rp ON rp.recipient_hash = rl.recipient_hash
-            WHERE
-                bs.broker_subaward_id = "subaward_search".broker_subaward_id AND
-                rp.recipient_level = case
-                    WHEN bs.ultimate_parent_uei IS null or bs.ultimate_parent_uei = '' THEN 'R'
-                    ELSE 'C'
-                END AND
-                rp.recipient_name NOT IN ('MULTIPLE RECIPIENTS', 'REDACTED DUE TO PII', 'MULTIPLE FOREIGN RECIPIENTS', 'PRIVATE INDIVIDUAL', 'INDIVIDUAL RECIPIENT', 'MISCELLANEOUS FOREIGN AWARDEES')
-        )
+        CASE
+            WHEN rp.recipient_name IN ('MULTIPLE RECIPIENTS', 'REDACTED DUE TO PII', 'MULTIPLE FOREIGN RECIPIENTS', 'PRIVATE INDIVIDUAL', 'INDIVIDUAL RECIPIENT', 'MISCELLANEOUS FOREIGN AWARDEES')
+                THEN NULL
+            WHEN (bs.ultimate_parent_uei IS null or bs.ultimate_parent_uei = '')
+                THEN CONCAT(rp.recipient_hash, '-R')
+            ELSE CONCAT(rp.recipient_hash, '-C')
+        END AS prime_award_recipient_id
     FROM
         raw.subaward AS bs
     LEFT OUTER JOIN
@@ -712,6 +704,10 @@ subaward_search_load_sql_string = rf"""
     LEFT OUTER JOIN county_fips AS rl_county_fips
         ON UPPER(rl_county_fips.county_name) = UPPER(COALESCE(fpds.legal_entity_county_name, fabs.legal_entity_county_name))
             AND rl_county_fips.state_alpha = bs.legal_entity_state_code
+    LEFT OUTER JOIN raw.recipient_lookup rl
+        ON (rl.uei = bs.awardee_or_recipient_uei OR rl.duns = bs.awardee_or_recipient_uniqu)
+    LEFT OUTER JOIN raw.recipient_profile rp
+        ON rp.recipient_hash = rl.recipient_hash
     -- Subaward numbers are crucial for identifying subawards and so those without subaward numbers won't be surfaced.
     WHERE bs.subaward_number IS NOT NULL
 """
