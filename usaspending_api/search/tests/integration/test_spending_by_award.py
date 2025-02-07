@@ -2579,7 +2579,7 @@ def test_spending_by_award_program_activity_subawards(
     expected_response = [
         {
             "internal_id": "99999",
-            "prime_award_internal_id": 200,
+            "prime_award_internal_id": 4,
             "Sub-Award ID": "99999",
             "prime_award_generated_internal_id": "ASST_NON_DECF0000058_8900",
         }
@@ -2604,7 +2604,7 @@ def test_spending_by_award_program_activity_subawards(
     expected_response = [
         {
             "internal_id": "99999",
-            "prime_award_internal_id": 200,
+            "prime_award_internal_id": 4,
             "Sub-Award ID": "99999",
             "prime_award_generated_internal_id": "ASST_NON_DECF0000058_8900",
         }
