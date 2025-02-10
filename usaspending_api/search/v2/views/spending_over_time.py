@@ -17,8 +17,6 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, SubawardSearch, TransactionSearch
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.fiscal_year_helpers import (
-    bolster_missing_time_periods,
-    clean_subaward_spending_over_time_results,
     generate_date_range,
     generate_fiscal_month,
     generate_fiscal_year,
