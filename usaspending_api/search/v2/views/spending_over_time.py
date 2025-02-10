@@ -109,22 +109,20 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         if validated_data.get("filters", None) is None:
             raise InvalidParameterException("Missing request parameters: filters")
 
-        return validated_data, models
-    
+        return validated_data, models   
     def subawards_group_by_time_period_agg(self) -> any:
         if self.group == "fiscal_year":
-                return A("terms", field="sub_fiscal_year")
+            return A("terms", field="sub_fiscal_year")
         else:
             return A(
                 "date_histogram",
                 field="sub_action_date",
                 interval="year" if (self.group == "calendar_year") else self.group,
                 format="yyyy-MM-dd",
-            )
-        
+            )        
     def awards_group_by_time_period_agg(self) -> any:
         if self.group == "fiscal_year":
-                return A("terms", field="fiscal_year")
+            return A("terms", field="fiscal_year")
         else:
             return A(
                 "date_histogram",
@@ -267,7 +265,9 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         }
 
         # Outlays are only supported on Awards
-        outlay_dictionary = {v: 0 if self.spending_level == "awards" else None for v in outlay_map.values()}
+        outlay_dictionary = {v: None for v in outlay_map.values()}
+        if self.spending_level == "awards":
+            outlay_dictionary = {v: 0 for v in outlay_map.values()}
 
         # Populate the category dictionary based on the award breakdown for a given bucket.
         for category in categories_breakdown:
@@ -279,7 +279,6 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
             if self.spending_level == "awards" and key in outlay_map:
                 outlay_dictionary[outlay_map[key]] += category.get("sum_as_dollars_outlay", {"value": 0})["value"]
-
         response_object = {
             "aggregated_amount": sum(obligation_dictionary.values()),
             "time_period": time_period,
@@ -440,7 +439,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         response = search.handle_execute()
         overall_results = self.build_elasticsearch_result_awards_subawards(response.aggs, time_periods)
 
-         # if there is no data for that fiscal year, set overall_results for that
+        # if there is no data for that fiscal year, set overall_results for that
         min_date, max_date = min_and_max_from_date_ranges(time_periods)
         date_range = generate_date_range(min_date, max_date, self.group)
         if date_range.count != overall_results.count:
