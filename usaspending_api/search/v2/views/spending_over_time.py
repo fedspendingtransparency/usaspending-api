@@ -110,7 +110,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             raise InvalidParameterException("Missing request parameters: filters")
 
         return validated_data, models
-    
+
     def subawards_group_by_time_period_agg(self) -> any:
         if self.group == "fiscal_year":
             return A("terms", field="sub_fiscal_year")
@@ -121,7 +121,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 interval="year" if (self.group == "calendar_year") else self.group,
                 format="yyyy-MM-dd",
             )
-    
+
     def awards_group_by_time_period_agg(self) -> any:
         if self.group == "fiscal_year":
             return A("terms", field="fiscal_year")
@@ -209,7 +209,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             time_period["quarter"] = str(quarter)
         elif self.group == "month":
             time_period["month"] = str(key_as_date.month)
-        
+
         return time_period
 
     def parse_elasticsearch_bucket(self, bucket: dict) -> dict:
