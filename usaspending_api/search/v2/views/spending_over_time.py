@@ -109,7 +109,8 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         if validated_data.get("filters", None) is None:
             raise InvalidParameterException("Missing request parameters: filters")
 
-        return validated_data, models   
+        return validated_data, models
+    
     def subawards_group_by_time_period_agg(self) -> any:
         if self.group == "fiscal_year":
             return A("terms", field="sub_fiscal_year")
@@ -119,7 +120,8 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 field="sub_action_date",
                 interval="year" if (self.group == "calendar_year") else self.group,
                 format="yyyy-MM-dd",
-            )        
+            )
+    
     def awards_group_by_time_period_agg(self) -> any:
         if self.group == "fiscal_year":
             return A("terms", field="fiscal_year")
@@ -193,18 +195,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             "sum_as_dollars_obligation", sum_as_dollars_agg_obligation
         )
 
-    def parse_elasticsearch_bucket(self, bucket: dict) -> dict:
-        """
-        Takes a dictionary representing one of the Elasticsearch buckets returned from the aggregation
-        and returns a dictionary representation used in the API response.
-
-        It should be noted that `key_as_string` is the name given by `date_histogram` to represent the key
-        for each bucket which is a date as a string.
-
-        Default time_period is set to "fiscal_year", however "quarter" and "month" also includes
-        "fiscal_year" in the response object. When "calendar_year" is passed in as a group filter
-        for the API, do not have to worry about any other time period.
-        """
+    def set_time_period(self, bucket: dict) -> dict:
         time_period = {}
 
         if self.group == "fiscal_year" and self.spending_level != "transactions":
@@ -218,6 +209,22 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             time_period["quarter"] = str(quarter)
         elif self.group == "month":
             time_period["month"] = str(key_as_date.month)
+        
+        return time_period
+
+    def parse_elasticsearch_bucket(self, bucket: dict) -> dict:
+        """
+        Takes a dictionary representing one of the Elasticsearch buckets returned from the aggregation
+        and returns a dictionary representation used in the API response.
+
+        It should be noted that `key_as_string` is the name given by `date_histogram` to represent the key
+        for each bucket which is a date as a string.
+
+        Default time_period is set to "fiscal_year", however "quarter" and "month" also includes
+        "fiscal_year" in the response object. When "calendar_year" is passed in as a group filter
+        for the API, do not have to worry about any other time period.
+        """
+        time_period = self.set_time_period(bucket)
 
         # The given time_period bucket contains buckets for the differnt categories, so extracting those.
         categories_breakdown = bucket["group_by_category"]["buckets"]
@@ -265,9 +272,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         }
 
         # Outlays are only supported on Awards
-        outlay_dictionary = {v: None for v in outlay_map.values()}
-        if self.spending_level == "awards":
-            outlay_dictionary = {v: 0 for v in outlay_map.values()}
+        outlay_dictionary = {v: 0 if self.spending_level == "awards" else None for v in outlay_map.values()}
 
         # Populate the category dictionary based on the award breakdown for a given bucket.
         for category in categories_breakdown:
