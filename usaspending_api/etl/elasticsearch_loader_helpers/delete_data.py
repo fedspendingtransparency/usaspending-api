@@ -95,12 +95,16 @@ def delete_docs_by_unique_key(
             # Invoking _delete_by_query as per the elasticsearch-dsl docs:
             #   https://elasticsearch-dsl.readthedocs.io/en/latest/search_dsl.html#delete-by-query
             # _refresh is deferred until the end of chunk processing
-            q = Search(using=client, index=index).filter("terms", **{key: chunk_of_values})  # type: Search
+            # q = Search(using=client, index=index).filter("terms", **{key: chunk_of_values})  # type: Search
             # params:
             # conflicts="proceed": Ignores version conflict errors if a doc delete is attempted more than once
             # slices="auto": Will create parallel delete batches per shard
-            q = q.params(conflicts="proceed", slices="auto")
-            response = q.delete()
+            # q = q.params(conflicts="proceed", slices="auto")
+            # response = q.delete()
+            delete_query = {"query": {"bool": {"filter": {"terms": {**{key: chunk_of_values}}}}}}
+            response = client.delete_by_query(
+                index=index, body=delete_query, scroll_size=10, scroll="5s", conflicts="proceed", slices="auto"
+            )
             # Some subtle errors come back on the response
             if response["timed_out"]:
                 msg = f"Delete request timed out on cluster after {int(response['took'])/1000:.2f}s"
