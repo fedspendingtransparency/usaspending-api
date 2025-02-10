@@ -4,7 +4,7 @@ import multiprocessing
 import time
 import logging
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional
 from django.conf import settings
 
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file

@@ -95,10 +95,6 @@ account_download_create_sql_string = rf"""
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
     """
 
-account_download_drop_sql_string = rf"""
-    DROP TABLE {{DESTINATION_TABLE}}
-    """
-
 account_download_load_sql_string = rf"""
     INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} (
         {",".join(list(ACCOUNT_DOWNLOAD_COLUMNS))}

@@ -130,46 +130,48 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
 
     # push file to S3 bucket, if not local
     if not settings.IS_LOCAL:
-        with tracer.trace(
-            name=f"job.{JOB_TYPE}.download.s3",
-            service="bulk-download",
-            resource=f"s3://{settings.BULK_DOWNLOAD_S3_BUCKET_NAME}",
-            span_type=SpanTypes.WORKER,
-        ) as span:
-            with tracer.trace(
+        with (
+            tracer.trace(
+                name=f"job.{JOB_TYPE}.download.s3",
+                service="bulk-download",
+                resource=f"s3://{settings.BULK_DOWNLOAD_S3_BUCKET_NAME}",
+                span_type=SpanTypes.WORKER,
+            ) as span,
+            tracer.trace(
                 name="s3.command",
                 service="aws.s3",
                 resource=".".join(
                     [multipart_upload.__module__, (multipart_upload.__qualname__ or multipart_upload.__name__)]
                 ),
                 span_type=SpanTypes.WEB,
-            ) as s3_span:
-                # NOTE: Traces still not auto-picking-up aws.s3 service upload activity
-                # Could be that the patches for boto and botocore don't cover the newer boto3 S3Transfer upload approach
-                span.set_tag("file_name", file_name)
-                try:
-                    bucket = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
-                    region = settings.USASPENDING_AWS_REGION
-                    s3_span.set_tags({"bucket": bucket, "region": region, "file": zip_file_path})
-                    start_uploading = time.perf_counter()
-                    multipart_upload(bucket, region, zip_file_path, os.path.basename(zip_file_path))
-                    write_to_log(
-                        message=f"Uploading took {time.perf_counter() - start_uploading:.2f}s",
-                        download_job=download_job,
-                    )
-                except Exception as e:
-                    # Set error message; job_status_id will be set in download_sqs_worker.handle()
-                    exc_msg = "An exception was raised while attempting to upload the file"
-                    fail_download(download_job, e, exc_msg)
-                    if isinstance(e, InvalidParameterException):
-                        raise InvalidParameterException(e)
-                    else:
-                        raise Exception(download_job.error_message) from e
-                finally:
-                    # Remove generated file
-                    if os.path.exists(zip_file_path):
-                        os.remove(zip_file_path)
-                    _kill_spawned_processes(download_job)
+            ) as s3_span,
+        ):
+            # NOTE: Traces still not auto-picking-up aws.s3 service upload activity
+            # Could be that the patches for boto and botocore don't cover the newer boto3 S3Transfer upload approach
+            span.set_tag("file_name", file_name)
+            try:
+                bucket = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
+                region = settings.USASPENDING_AWS_REGION
+                s3_span.set_tags({"bucket": bucket, "region": region, "file": zip_file_path})
+                start_uploading = time.perf_counter()
+                multipart_upload(bucket, region, zip_file_path, os.path.basename(zip_file_path))
+                write_to_log(
+                    message=f"Uploading took {time.perf_counter() - start_uploading:.2f}s",
+                    download_job=download_job,
+                )
+            except Exception as e:
+                # Set error message; job_status_id will be set in download_sqs_worker.handle()
+                exc_msg = "An exception was raised while attempting to upload the file"
+                fail_download(download_job, e, exc_msg)
+                if isinstance(e, InvalidParameterException):
+                    raise InvalidParameterException(e)
+                else:
+                    raise Exception(download_job.error_message) from e
+            finally:
+                # Remove generated file
+                if os.path.exists(zip_file_path):
+                    os.remove(zip_file_path)
+                _kill_spawned_processes(download_job)
 
     return finish_download(download_job)
 

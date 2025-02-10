@@ -34,7 +34,6 @@ DOWNLOAD_QUERY = """
         award_type_code,
         award_type,
         idv_type_code,
-        idv_type_code,
         idv_type,
         prime_award_base_transaction_description,
         awarding_agency_code,
