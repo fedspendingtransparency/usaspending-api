@@ -37,6 +37,8 @@ from usaspending_api.search.filters.time_period.query_types import (
     TransactionSearchTimePeriod,
 )
 
+from usaspending_api.search.v2.views.enums import SpendingLevel
+
 logger = logging.getLogger(__name__)
 
 API_VERSION = settings.API_VERSION
@@ -109,7 +111,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         return validated_data, models
 
-    def subawards_group_by_time_period_agg(self) -> any:
+    def subawards_group_by_time_period_agg(self) -> A:
         if self.group == "fiscal_year":
             return A("terms", field="sub_fiscal_year")
         else:
@@ -196,7 +198,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
     def set_time_period(self, bucket: dict) -> dict:
         time_period = {}
 
-        if self.group == "fiscal_year" and self.spending_level != "transactions":
+        if self.group == "fiscal_year" and self.spending_level != SpendingLevel.TRANSACTION:
             key_as_date = datetime.strptime(str(bucket["key"]), "%Y")
         else:
             key_as_date = datetime.strptime(bucket["key_as_string"], "%Y-%m-%d")
@@ -270,7 +272,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         }
 
         # Outlays are only supported on Awards
-        outlay_dictionary = {v: 0 if self.spending_level == "awards" else None for v in outlay_map.values()}
+        outlay_dictionary = {v: 0 if self.spending_level == SpendingLevel.AWARD else None for v in outlay_map.values()}
 
         # Populate the category dictionary based on the award breakdown for a given bucket.
         for category in categories_breakdown:
@@ -280,13 +282,13 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                     "value"
                 ]
 
-            if self.spending_level == "awards" and key in outlay_map:
+            if self.spending_level == SpendingLevel.AWARD and key in outlay_map:
                 outlay_dictionary[outlay_map[key]] += category.get("sum_as_dollars_outlay", {"value": 0})["value"]
         response_object = {
             "aggregated_amount": sum(obligation_dictionary.values()),
             "time_period": time_period,
             **obligation_dictionary,
-            "total_outlays": sum(outlay_dictionary.values()) if self.spending_level == "awards" else None,
+            "total_outlays": sum(outlay_dictionary.values()) if self.spending_level == SpendingLevel.AWARD else None,
             **outlay_dictionary,
         }
 
@@ -447,16 +449,23 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         date_range = generate_date_range(min_date, max_date, self.group)
         if date_range.count != overall_results.count:
             for year in date_range:
-                if not (any(overall_result["time_period"] == {"fiscal_year": str(year["fiscal_year"])} for overall_result in overall_results)):
-                    overall_results.append({
-                        "aggregated_amount": 0,
-                        "total_outlays": None,
-                        "time_period": {"fiscal_year": str(year["fiscal_year"])},
-                        "Contract_Obligations": 0,
-                        "Contract_Outlays": None,
-                        "Grant_Obligations": 0,
-                        "Grant_Outlays": None,
-                    })
+                if not (
+                    any(
+                        overall_result["time_period"] == {"fiscal_year": str(year["fiscal_year"])}
+                        for overall_result in overall_results
+                    )
+                ):
+                    overall_results.append(
+                        {
+                            "aggregated_amount": 0,
+                            "total_outlays": None,
+                            "time_period": {"fiscal_year": str(year["fiscal_year"])},
+                            "Contract_Obligations": 0,
+                            "Contract_Outlays": None,
+                            "Grant_Obligations": 0,
+                            "Grant_Outlays": None,
+                        }
+                    )
             overall_results = sorted(overall_results, key=lambda x: x["time_period"]["fiscal_year"])
 
         return overall_results
@@ -466,8 +475,10 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         self.original_filters = request.data.get("filters")
         json_request, models = self.validate_request_data(request.data)
         self.group = GROUPING_LOOKUP[json_request["group"]]
-        self.subawards = json_request["subawards"] or json_request.get("spending_level") == "subawards"
-        self.spending_level = "subawards" if self.subawards else json_request.get("spending_level").lower()
+        self.subawards = (
+            json_request[SpendingLevel.SUBAWARD] or json_request.get("spending_level") == SpendingLevel.SUBAWARD
+        )
+        self.spending_level = SpendingLevel.SUBAWARD if self.subawards else json_request.get("spending_level").lower()
         self.filters = json_request["filters"]
 
         # time_period is optional so we're setting a default window from API_SEARCH_MIN_DATE to end of the current FY.
@@ -487,11 +498,11 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         # if time periods have been passed in use those, otherwise use the one calculated above
         time_periods = self.filters.get("time_period", [default_time_period])
-        if self.spending_level == "subawards":
+        if self.spending_level == SpendingLevel.SUBAWARD:
             results = self.query_elasticsearch_for_subawards(time_periods)
-        elif self.spending_level == "transactions":
+        elif self.spending_level == SpendingLevel.TRANSACTION:
             results = self.query_elasticsearch_for_transactions(time_periods)
-        elif self.spending_level == "awards":
+        elif self.spending_level == SpendingLevel.AWARD:
             results = self.query_elasticsearch_for_awards(time_periods)
 
         raw_response = OrderedDict(
