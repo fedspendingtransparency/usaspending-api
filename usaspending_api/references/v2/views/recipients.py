@@ -87,17 +87,15 @@ class RecipientAutocompleteViewSet(APIView):
         """
         es_recipient_search_fields = ["recipient_name", "uei", "duns"]
 
-        should_query = []
-        for search_field in es_recipient_search_fields:
-            should_query.append(
+        should_query = [
+            query
+            for search_field in es_recipient_search_fields
+            for query in [
                 ES_Q("match_phrase_prefix", **{f"{search_field}": {"query": search_text, "boost": 5}}),
-            )
-            should_query.append(
                 ES_Q("match_phrase_prefix", **{f"{search_field}.contains": {"query": search_text, "boost": 3}}),
-            )
-            should_query.append(
-                ES_Q("match", **{f"{search_field}": {"query": search_text, "operator": "and", "boost": 1}})
-            )
+                ES_Q("match", **{f"{search_field}": {"query": search_text, "operator": "and", "boost": 1}}),
+            ]
+        ]
 
         query = ES_Q("bool", should=should_query, minimum_should_match=1)
 
