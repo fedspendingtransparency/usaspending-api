@@ -121,26 +121,27 @@ class SpendingByAwardVisualizationViewSet(APIView):
         self.last_record_sort_value = json_request.get("last_record_sort_value")
 
         if self.is_subaward:
-            try:
-                raw_response = self.construct_es_response_for_subawards(self.query_elasticsearch_subawards())
-            except KeyError:
-                valid_date_types = ["action_date", "last_modified_date", "date_signed", "sub_action_date"]
-                error_msg = {}
-
-                if "time_period" in self.filters.keys():
-                    for i in range(len(self.filters["time_period"])):
-                        if (
-                            "date_type" in self.filters["time_period"][i].keys()
-                            and self.filters["time_period"][i]["date_type"] not in valid_date_types
-                        ):
-                            error_msg = {"detail": "Invalid date_type: " + self.filters["time_period"][i]["date_type"]}
-                            break
-
-                return Response(error_msg, status=400)
+            return self.post_subawards()
         else:
-            raw_response = self.construct_es_response_for_prime_awards(self.query_elasticsearch_awards())
+            return Response(self.construct_es_response_for_prime_awards(self.query_elasticsearch_awards()))
 
-        return Response(raw_response)
+    def post_subawards(self):
+        try:
+            return Response(self.construct_es_response_for_subawards(self.query_elasticsearch_subawards()))
+        except KeyError:
+            valid_date_types = ["action_date", "last_modified_date", "date_signed", "sub_action_date"]
+            error_msg = {}
+
+            if "time_period" in self.filters.keys():
+                for i in range(len(self.filters["time_period"])):
+                    if (
+                        "date_type" in self.filters["time_period"][i].keys()
+                        and self.filters["time_period"][i]["date_type"] not in valid_date_types
+                    ):
+                        error_msg = {"detail": "Invalid date_type: " + self.filters["time_period"][i]["date_type"]}
+                        break
+
+            return Response(error_msg, status=400)
 
     @staticmethod
     def validate_request_data(request_data):
