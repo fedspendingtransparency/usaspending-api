@@ -118,7 +118,7 @@ def delete_docs_by_unique_key(
                 index=index,
                 body=delete_query,
                 conflicts="proceed",
-                slices=1,
+                slices=4,
             )
             # Some subtle errors come back on the response
             if response["timed_out"]:
