@@ -352,7 +352,7 @@ def test_spending_over_time_subawards_failure(client, monkeypatch, elasticsearch
     """Verify error on bad autocomplete request for budget function."""
 
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
-    
+
     resp = client.post(
         "/api/v2/search/spending_over_time",
         content_type="application/json",
