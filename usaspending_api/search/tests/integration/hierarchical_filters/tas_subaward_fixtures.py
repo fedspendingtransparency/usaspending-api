@@ -59,6 +59,7 @@ def subaward(db, award_id, treasury_account_identifiers):
         award_id=award_id,
         prime_award_type="D",
         sub_action_date=datetime(2017, 12, 1),
+        action_date="2017-12-01",
         latest_transaction_id=1,
         subaward_number=11111,
         prime_award_group="procurement",
