@@ -90,11 +90,11 @@ def test_create_es_search():
                             "should": [
                                 {
                                     "bool": {
-                                        "minimum_should_match": 1,
                                         "should": [
                                             {"match": {"recipient_level": "C"}},
                                             {"match": {"recipient_level": "P"}},
                                         ],
+                                        "minimum_should_match": 1,
                                     }
                                 }
                             ]
@@ -105,29 +105,26 @@ def test_create_es_search():
                             "should": [
                                 {
                                     "bool": {
-                                        "minimum_should_match": 1,
                                         "should": [
+                                            {"match_phrase_prefix": {"recipient_name": {"query": "test", "boost": 5}}},
                                             {
-                                                "query_string": {
-                                                    "fields": [
-                                                        "recipient_name",
-                                                        "uei",
-                                                        "duns",
-                                                    ],
-                                                    "query": "*test*",
+                                                "match_phrase_prefix": {
+                                                    "recipient_name.contains": {"query": "test", "boost": 3}
                                                 }
                                             },
                                             {
-                                                "multi_match": {
-                                                    "fields": [
-                                                        "recipient_name",
-                                                        "uei",
-                                                        "duns",
-                                                    ],
-                                                    "query": "test",
+                                                "match": {
+                                                    "recipient_name": {"query": "test", "operator": "and", "boost": 1}
                                                 }
                                             },
+                                            {"match_phrase_prefix": {"uei": {"query": "test", "boost": 5}}},
+                                            {"match_phrase_prefix": {"uei.contains": {"query": "test", "boost": 3}}},
+                                            {"match": {"uei": {"query": "test", "operator": "and", "boost": 1}}},
+                                            {"match_phrase_prefix": {"duns": {"query": "test", "boost": 5}}},
+                                            {"match_phrase_prefix": {"duns.contains": {"query": "test", "boost": 3}}},
+                                            {"match": {"duns": {"query": "test", "operator": "and", "boost": 1}}},
                                         ],
+                                        "minimum_should_match": 1,
                                     }
                                 }
                             ]
@@ -147,21 +144,18 @@ def test_create_es_search():
     expected_query = {
         "query": {
             "bool": {
-                "minimum_should_match": 1,
                 "should": [
-                    {
-                        "query_string": {
-                            "fields": ["recipient_name", "uei", "duns"],
-                            "query": "*test*",
-                        }
-                    },
-                    {
-                        "multi_match": {
-                            "fields": ["recipient_name", "uei", "duns"],
-                            "query": "test",
-                        }
-                    },
+                    {"match_phrase_prefix": {"recipient_name": {"query": "test", "boost": 5}}},
+                    {"match_phrase_prefix": {"recipient_name.contains": {"query": "test", "boost": 3}}},
+                    {"match": {"recipient_name": {"query": "test", "operator": "and", "boost": 1}}},
+                    {"match_phrase_prefix": {"uei": {"query": "test", "boost": 5}}},
+                    {"match_phrase_prefix": {"uei.contains": {"query": "test", "boost": 3}}},
+                    {"match": {"uei": {"query": "test", "operator": "and", "boost": 1}}},
+                    {"match_phrase_prefix": {"duns": {"query": "test", "boost": 5}}},
+                    {"match_phrase_prefix": {"duns.contains": {"query": "test", "boost": 3}}},
+                    {"match": {"duns": {"query": "test", "operator": "and", "boost": 1}}},
                 ],
+                "minimum_should_match": 1,
             }
         },
         "from": 0,
