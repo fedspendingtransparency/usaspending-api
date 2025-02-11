@@ -54,8 +54,6 @@ from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyT
 from usaspending_api.search.filters.time_period.query_types import AwardSearchTimePeriod, SubawardSearchTimePeriod
 from usaspending_api.submissions.models import SubmissionAttributes
 
-from usaspending_api.awards.v2.lookups.lookups import contract_subaward_mapping
-
 logger = logging.getLogger(__name__)
 
 GLOBAL_MAP = {
@@ -79,7 +77,7 @@ GLOBAL_MAP = {
         "type_code_to_field_map": {"procurement": contract_subaward_mapping, "grant": grant_subaward_mapping},
         "annotations": {"_prime_award_recipient_id": annotate_prime_award_recipient_id},
         "filter_queryset_func": subaward_filter,
-        "elasticsearch_type_code_to_field_map": contract_subaward_mapping
+        "elasticsearch_type_code_to_field_map": contract_subaward_mapping,
     },
 }
 
@@ -125,18 +123,20 @@ class SpendingByAwardVisualizationViewSet(APIView):
         if self.is_subaward:
             try:
                 raw_response = self.construct_es_response_for_subawards(self.query_elasticsearch_subawards())
-            except KeyError as e:
+            except KeyError:
                 valid_date_types = ["action_date", "last_modified_date", "date_signed", "sub_action_date"]
                 error_msg = {}
 
                 if "time_period" in self.filters.keys():
                     for i in range(len(self.filters["time_period"])):
-                        if ("date_type" in self.filters["time_period"][i].keys() and 
-                            self.filters["time_period"][i]["date_type"] not in valid_date_types):
+                        if (
+                            "date_type" in self.filters["time_period"][i].keys()
+                            and self.filters["time_period"][i]["date_type"] not in valid_date_types
+                        ):
                             error_msg = {"detail": "Invalid date_type: " + self.filters["time_period"][i]["date_type"]}
                             break
 
-                return Response(error_msg,status=400)
+                return Response(error_msg, status=400)
         else:
             raw_response = self.construct_es_response_for_prime_awards(self.query_elasticsearch_awards())
 
@@ -400,7 +400,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
             time_period_obj=time_period_obj, query_type=_QueryType.AWARDS
         )
         filter_options["time_period_obj"] = new_awards_only_decorator
-        
+
         filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(self.filters, **filter_options)
 
         sort_field = self.get_elastic_sort_by_fields()
@@ -436,7 +436,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
             )
         # no values, within result window, use regular elasticsearch
         else:
-            search = SubawardSearch().filter(filter_query).sort(*sorts)[record_num : record_num + self.pagination["limit"]]
+            search = (
+                SubawardSearch().filter(filter_query).sort(*sorts)[record_num : record_num + self.pagination["limit"]]
+            )
 
         response = search.handle_execute()
 

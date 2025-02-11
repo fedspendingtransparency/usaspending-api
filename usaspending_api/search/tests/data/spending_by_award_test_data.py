@@ -418,7 +418,7 @@ def spending_by_award_test_data():
         awarding_subtier_agency_name="awarding subtier 8001",
         product_or_service_code="PSC2",
         sub_awardee_or_recipient_uei="UEI_10010001",
-        unique_award_key="CONT_AWD_TESTING_1"
+        unique_award_key="CONT_AWD_TESTING_1",
     )
     baker.make(
         "search.SubawardSearch",
@@ -439,7 +439,7 @@ def spending_by_award_test_data():
         awarding_subtier_agency_name="awarding subtier 8002",
         product_or_service_code="PSC0",
         action_date="2020-04-02",
-        unique_award_key="CONT_AWD_TESTING_1"
+        unique_award_key="CONT_AWD_TESTING_1",
     )
     baker.make(
         "search.SubawardSearch",
@@ -461,7 +461,7 @@ def spending_by_award_test_data():
         product_or_service_code="PSC0",
         action_date="2016-01-01",
         unique_award_key="CONT_AWD_TESTING_2",
-        prime_award_recipient_id="0c324830-6283-38d3-d52e-00a71847d92d-R"
+        prime_award_recipient_id="0c324830-6283-38d3-d52e-00a71847d92d-R",
     )
     baker.make(
         "search.SubawardSearch",
@@ -493,7 +493,7 @@ def spending_by_award_test_data():
         awarding_subtier_agency_name="awarding subtier 8006",
         product_or_service_code="PSC0",
         unique_award_key="CONT_AWD_TESTING_3",
-        prime_award_recipient_id="41874914-2c27-813b-1505-df94f35b42dc-R"
+        prime_award_recipient_id="41874914-2c27-813b-1505-df94f35b42dc-R",
     )
     baker.make(
         "search.SubawardSearch",
