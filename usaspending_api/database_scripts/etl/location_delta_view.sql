@@ -62,6 +62,8 @@ county_cte AS (
             ON pop_state_name = UPPER(sd.name) AND pop_state_fips = sd.fips
 	WHERE
 		pop_country_name IS NOT NULL
+        AND
+        pop_county_name NOT LIKE '%,%'
 	UNION
 	SELECT
 		CASE
@@ -92,6 +94,8 @@ county_cte AS (
             ON recipient_location_state_name = UPPER(sd.name) AND recipient_location_state_fips = sd.fips
 	WHERE
 		recipient_location_country_name IS NOT NULL
+        AND
+        recipient_location_county_name NOT LIKE '%,%'
 ),
 zip_cte AS (
 	SELECT
@@ -255,7 +259,10 @@ city_cte AS (
     FROM rpt.transaction_search
     LEFT JOIN
         state_data sd ON recipient_location_state_name = UPPER(sd.name)
-    WHERE recipient_location_country_name IS NOT NULL
+    WHERE
+        recipient_location_country_name IS NOT NULL
+        AND
+        recipient_location_city_name NOT LIKE '%,%'
     UNION
     SELECT
         CASE
@@ -274,7 +281,10 @@ city_cte AS (
     FROM rpt.transaction_search
     LEFT JOIN
         state_data sd ON pop_state_name = UPPER(sd.name)
-    WHERE pop_country_name IS NOT NULL
+    WHERE
+        pop_country_name IS NOT NULL
+        AND
+        pop_city_name NOT LIKE '%,%'
 ),
 select_cte AS (
     SELECT
