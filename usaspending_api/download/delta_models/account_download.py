@@ -99,7 +99,7 @@ account_download_load_sql_string = rf"""
     INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} (
         {",".join(list(ACCOUNT_DOWNLOAD_COLUMNS))}
     )
-    SELECT\
+    SELECT
         financial_accounts_by_awards.submission_id,
         toptier_agency.name AS owning_agency_name,
         federal_account.federal_account_code AS federal_account_symbol,
