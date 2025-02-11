@@ -1,11 +1,11 @@
-import pytest
 import json
 
+import pytest
 from model_bakery import baker
 from rest_framework import status
 
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
-from usaspending_api.references.abbreviations import code_to_state, state_to_code, fips_to_code
+from usaspending_api.references.abbreviations import code_to_state, fips_to_code, state_to_code
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_agency_types import (
     AwardingAgencyViewSet,
@@ -16,18 +16,18 @@ from usaspending_api.search.v2.views.spending_by_category_views.spending_by_agen
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_federal_account import FederalAccountViewSet
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_industry_codes import (
     CfdaViewSet,
-    PSCViewSet,
     NAICSViewSet,
+    PSCViewSet,
 )
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_locations import (
+    CountryViewSet,
     CountyViewSet,
     DistrictViewSet,
     StateTerritoryViewSet,
-    CountryViewSet,
 )
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_recipient import (
-    RecipientViewSet,
     RecipientDunsViewSet,
+    RecipientViewSet,
 )
 
 
@@ -752,7 +752,14 @@ def test_category_awarding_agency_transactions(agency_test_data, monkeypatch, el
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 15, "name": "Awarding Toptier Agency 1", "code": "TA1", "id": 1001, "agency_slug": None}
+            {
+                "amount": 15,
+                "name": "Awarding Toptier Agency 1",
+                "code": "TA1",
+                "id": 1001,
+                "agency_slug": None,
+                "total_outlays": None,
+            }
         ],
         "messages": _expected_messages(),
         "spending_level": "transactions",
@@ -802,6 +809,7 @@ def test_category_awarding_subagency_transactions(agency_test_data, monkeypatch,
                 "agency_abbreviation": "TA1",
                 "agency_name": "Awarding Toptier Agency 1",
                 "agency_slug": "awarding-toptier-agency-1",
+                "total_outlays": None,
             }
         ],
         "messages": _expected_messages(),
@@ -853,7 +861,9 @@ def test_category_funding_agency_transactions(agency_test_data, monkeypatch, ela
         "category": "funding_agency",
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
-        "results": [{"amount": 15, "name": "Funding Toptier Agency 2", "code": "TA2", "id": 1002}],
+        "results": [
+            {"amount": 15, "name": "Funding Toptier Agency 2", "code": "TA2", "id": 1002, "total_outlays": None}
+        ],
         "messages": _expected_messages(),
         "spending_level": "transactions",
     }
@@ -902,6 +912,7 @@ def test_category_funding_subagency_transactions(agency_test_data, monkeypatch, 
                 "agency_abbreviation": "TA2",
                 "agency_name": "Funding Toptier Agency 2",
                 "agency_slug": "funding-toptier-agency-2",
+                "total_outlays": None,
             }
         ],
         "messages": _expected_messages(),
