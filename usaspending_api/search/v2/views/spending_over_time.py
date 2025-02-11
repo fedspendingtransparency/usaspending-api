@@ -272,7 +272,9 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         }
 
         # Outlays are only supported on Awards
-        outlay_dictionary = {v: 0 if self.spending_level == SpendingLevel.AWARD.value else None for v in outlay_map.values()}
+        outlay_dictionary = {
+            v: 0 if self.spending_level == SpendingLevel.AWARD.value else None for v in outlay_map.values()
+        }
 
         # Populate the category dictionary based on the award breakdown for a given bucket.
         for category in categories_breakdown:
@@ -474,10 +476,10 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         self.original_filters = request.data.get("filters")
         json_request, models = self.validate_request_data(request.data)
         self.group = GROUPING_LOOKUP[json_request["group"]]
-        self.subawards = (
-            json_request["subawards"] or json_request.get("spending_level") == SpendingLevel.SUBAWARD.value
+        self.subawards = json_request["subawards"] or json_request.get("spending_level") == SpendingLevel.SUBAWARD.value
+        self.spending_level = (
+            SpendingLevel.SUBAWARD.value if self.subawards else json_request.get("spending_level").lower()
         )
-        self.spending_level = SpendingLevel.SUBAWARD.value if self.subawards else json_request.get("spending_level").lower()
         self.filters = json_request["filters"]
 
         # time_period is optional so we're setting a default window from API_SEARCH_MIN_DATE to end of the current FY.
