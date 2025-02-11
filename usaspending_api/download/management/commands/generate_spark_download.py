@@ -1,5 +1,6 @@
 import json
 import os
+import time
 import traceback
 from logging import Logger
 from pathlib import Path
@@ -7,6 +8,7 @@ from typing import Optional, Dict, Tuple, Type, List, Union
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
+from django.db import connection
 from django.utils.functional import cached_property
 from pyspark.sql import SparkSession
 
@@ -247,8 +249,16 @@ class Command(BaseCommand):
         self.logger.info(f"Finished processing DownloadJob {self.download_job.download_job_id}")
 
     def cleanup(self, path_list: List[Union[Path, str]]) -> None:
+        start = time.time()
         for path in path_list:
             if isinstance(path, str):
                 path = Path(path)
             self.logger.info(f"Removing {path}")
             path.unlink()
+        with connection.cursor() as cursor:
+            hours, remainder = divmod(time.time() - start, 3600)
+            minutes, seconds = divmod(remainder, 60)
+            cursor.execute(
+                "INSERT INTO test_spark_download_perf (duration, stage, notes) "
+                f"VALUES ('{int(hours)}h:{int(minutes)}m:{round(seconds, 3)}s', 'Cleanup local files', NULL)"
+            )
