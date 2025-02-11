@@ -544,9 +544,9 @@ def awards_and_transactions(db):
         subaward_amount=678910,
         sub_place_of_perform_country_co="USA",
         sub_legal_entity_country_code="JPN",
-        sub_action_date="2021-01-07",
-        action_date="2021-01-07",
-        sub_fiscal_year=2021,
+        sub_action_date="2020-01-07",
+        action_date="2020-01-07",
+        sub_fiscal_year=2020,
         subaward_type="sub-contract",
         program_activities=[{"name": "PROGRAM_2", "code": "0002"}],
     )

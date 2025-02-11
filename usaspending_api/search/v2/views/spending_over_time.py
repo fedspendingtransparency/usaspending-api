@@ -198,7 +198,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
     def set_time_period(self, bucket: dict) -> dict:
         time_period = {}
 
-        if self.group == "fiscal_year" and self.spending_level != SpendingLevel.TRANSACTION:
+        if self.group == "fiscal_year" and self.spending_level != SpendingLevel.TRANSACTION.value:
             key_as_date = datetime.strptime(str(bucket["key"]), "%Y")
         else:
             key_as_date = datetime.strptime(bucket["key_as_string"], "%Y-%m-%d")
@@ -230,7 +230,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         categories_breakdown = bucket["group_by_category"]["buckets"]
 
         # Initialize a dictionary to hold the query results for each obligation type.
-        if self.spending_level == "subawards":
+        if self.spending_level == SpendingLevel.SUBAWARD.value:
             obligation_dictionary = {
                 "Contract_Obligations": 0,
                 "Grant_Obligations": 0,
@@ -272,7 +272,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         }
 
         # Outlays are only supported on Awards
-        outlay_dictionary = {v: 0 if self.spending_level == SpendingLevel.AWARD else None for v in outlay_map.values()}
+        outlay_dictionary = {v: 0 if self.spending_level == SpendingLevel.AWARD.value else None for v in outlay_map.values()}
 
         # Populate the category dictionary based on the award breakdown for a given bucket.
         for category in categories_breakdown:
@@ -282,13 +282,13 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                     "value"
                 ]
 
-            if self.spending_level == SpendingLevel.AWARD and key in outlay_map:
+            if self.spending_level == SpendingLevel.AWARD.value and key in outlay_map:
                 outlay_dictionary[outlay_map[key]] += category.get("sum_as_dollars_outlay", {"value": 0})["value"]
         response_object = {
             "aggregated_amount": sum(obligation_dictionary.values()),
             "time_period": time_period,
             **obligation_dictionary,
-            "total_outlays": sum(outlay_dictionary.values()) if self.spending_level == SpendingLevel.AWARD else None,
+            "total_outlays": sum(outlay_dictionary.values()) if self.spending_level == "awards" else None,
             **outlay_dictionary,
         }
 
@@ -437,7 +437,6 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             time_period_obj=time_period_obj, query_type=_QueryType.SUBAWARDS
         )
         filter_options["time_period_obj"] = new_awards_only_decorator
-
         filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(self.filters, **filter_options)
         search = SubawardSearch().filter(filter_query)
         self.apply_elasticsearch_aggregations(search)
@@ -476,9 +475,9 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         json_request, models = self.validate_request_data(request.data)
         self.group = GROUPING_LOOKUP[json_request["group"]]
         self.subawards = (
-            json_request[SpendingLevel.SUBAWARD] or json_request.get("spending_level") == SpendingLevel.SUBAWARD
+            json_request["subawards"] or json_request.get("spending_level") == SpendingLevel.SUBAWARD.value
         )
-        self.spending_level = SpendingLevel.SUBAWARD if self.subawards else json_request.get("spending_level").lower()
+        self.spending_level = SpendingLevel.SUBAWARD.value if self.subawards else json_request.get("spending_level").lower()
         self.filters = json_request["filters"]
 
         # time_period is optional so we're setting a default window from API_SEARCH_MIN_DATE to end of the current FY.
@@ -497,12 +496,13 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         default_time_period = {"start_date": settings.API_SEARCH_MIN_DATE, "end_date": end_date}
 
         # if time periods have been passed in use those, otherwise use the one calculated above
+        results = None
         time_periods = self.filters.get("time_period", [default_time_period])
-        if self.spending_level == SpendingLevel.SUBAWARD:
+        if self.spending_level == SpendingLevel.SUBAWARD.value:
             results = self.query_elasticsearch_for_subawards(time_periods)
-        elif self.spending_level == SpendingLevel.TRANSACTION:
+        elif self.spending_level == SpendingLevel.TRANSACTION.value:
             results = self.query_elasticsearch_for_transactions(time_periods)
-        elif self.spending_level == SpendingLevel.AWARD:
+        elif self.spending_level == SpendingLevel.AWARD.value:
             results = self.query_elasticsearch_for_awards(time_periods)
 
         raw_response = OrderedDict(
