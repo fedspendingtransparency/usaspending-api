@@ -1,4 +1,3 @@
-from functools import lru_cache
 import logging
 from abc import ABC, abstractmethod
 from math import ceil
@@ -144,7 +143,7 @@ class AbstractElasticsearchIndexerController(ABC):
         # the Index object to capture settings we need the actual name.
         index_name = list(index_settings)[0]
 
-        num_shards = index_settings[index_name]["settings"]["index"]["number_of_shards"]
+        num_shards = int(index_settings[index_name]["settings"]["index"]["number_of_shards"])
 
         if num_shards == 5:
             # Anything that is still processing with 5 shards can continue to use 5 slices
