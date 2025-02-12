@@ -2,7 +2,7 @@ import logging
 
 from elasticsearch import Elasticsearch, helpers
 from time import perf_counter
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 from usaspending_api.etl.elasticsearch_loader_helpers.delete_data import delete_docs_by_unique_key
 from usaspending_api.etl.elasticsearch_loader_helpers.utilities import TaskSpec, format_log
@@ -34,7 +34,7 @@ def load_data(worker: TaskSpec, records: List[dict], client: Elasticsearch) -> T
     start = perf_counter()
     logger.info(format_log(f"Starting Index operation", name=worker.name, action="Index"))
     success, failed = streaming_post_to_es(
-        client, records, worker.index, worker.name, delete_before_index=worker.is_incremental
+        client, records, worker.index, worker.name, delete_before_index=worker.is_incremental, slices=worker.slices
     )
     logger.info(format_log(f"Index operation took {perf_counter() - start:.2f}s", name=worker.name, action="Index"))
     return success, failed
@@ -47,6 +47,7 @@ def streaming_post_to_es(
     job_name: str = None,
     delete_before_index: bool = True,
     delete_key: str = "_id",
+    slices: Union[int, str] = "auto",
 ) -> Tuple[int, int]:
     """
     Pump data into an Elasticsearch index.
@@ -68,6 +69,8 @@ def streaming_post_to_es(
             deleted, if delete_before_index is True. Currently defaulting to "_id", taking advantage of the fact
             that we are explicitly setting "_id" in the documents to-be-indexed, which is a unique key for each doc
             (e.g. the PK of the DB row)
+        slices (Union[int, str]): number of slices that should be used when performing a Scroll operation
+            such as delete_by_query.
 
     Returns: (succeeded, failed) tuple, which counts successful index doc writes vs. failed doc writes
     """
@@ -77,12 +80,7 @@ def streaming_post_to_es(
         if delete_before_index:
             value_list = [doc[delete_key] for doc in chunk]
             delete_docs_by_unique_key(
-                client,
-                delete_key,
-                value_list,
-                job_name,
-                index_name,
-                refresh_after=False,
+                client, delete_key, value_list, job_name, index_name, refresh_after=False, slices=slices
             )
         for ok, item in helpers.streaming_bulk(
             client,

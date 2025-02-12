@@ -1,3 +1,4 @@
+from functools import lru_cache
 import logging
 from abc import ABC, abstractmethod
 from math import ceil
@@ -6,6 +7,8 @@ from time import perf_counter
 from typing import Dict, Tuple
 
 from django.core.management import call_command
+from elasticsearch import Elasticsearch
+from elasticsearch_dsl import Index
 
 from usaspending_api.broker.helpers.last_load_date import get_earliest_load_date, update_last_load_date
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
@@ -120,7 +123,65 @@ class AbstractElasticsearchIndexerController(ABC):
             sql=extract_sql_str,
             transform_func=self.config["data_transform_func"],
             view=self.config["sql_view"],
+            slices=self.config["slices"],
         )
+
+    def get_slice_count(self, client: Elasticsearch) -> int:
+        """
+        Retrieves the number of slices that should be used when performing any type
+        of scroll operation (e.g., delete_by_query).
+
+        # TODO: This currently makes a couple of assumptions that we should look to improve.
+        #       * currently only the Award and Transaction Indexes run in parallel for Deletes
+        #       * the Award Index is set to 5 shards and runs with only 5 slices
+        #       * the maximum number of open scroll contexts is 500
+        """
+        index_name_or_alias = self.config["index_name"]
+        index = Index(name=index_name_or_alias, using=client)
+        index_settings = index.get_settings()
+
+        # The Index object can utilize either a Name or Alias up above. However, for the purpose of using
+        # the Index object to capture settings we need the actual name.
+        index_name = list(index_settings)[0]
+
+        num_shards = index_settings[index_name]["settings"]["index"]["number_of_shards"]
+
+        if num_shards == 5:
+            # Anything that is still processing with 5 shards can continue to use 5 slices
+            # because that remains under the half point of 250 slices.
+            return 5
+
+        shard_stores = index.shard_stores(status="all")
+
+        # To get the number of nodes that the shards are distributed across we look at the shard store.
+        # Each shard store in the response is formatted such as the following:
+        # { "<NODE_ID>": {"name": ..., "ephemeral_id": ...}, "allocation_id": ..., "allocation": ... }
+        num_nodes = len(
+            set(
+                [
+                    value.get("name")
+                    for store_list in shard_stores["indices"][index_name]["shards"].values()
+                    for store in store_list["stores"]
+                    for value in store.values()
+                    if store["allocation"] == "primary" and isinstance(value, dict)
+                ]
+            )
+        )
+
+        max_scroll_contexts = 500
+        award_slices = 5
+        award_index_slice_count = (self.config["processes"] * (num_shards * award_slices)) // num_nodes
+        transaction_index_slice_count = ((max_scroll_contexts - award_index_slice_count) * num_nodes) // (
+            self.config["processes"] * num_shards
+        )
+
+        if transaction_index_slice_count < 1:
+            raise ValueError(
+                f"A value of {transaction_index_slice_count} was calculated for the number of slices."
+                " This value is too low to allow the processing of deletes."
+            )
+
+        return transaction_index_slice_count
 
     @abstractmethod
     def get_id_range_for_partition(self, partition_number: int) -> Tuple[int, int]:

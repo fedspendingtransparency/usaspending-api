@@ -37,7 +37,7 @@ def delete_docs_by_unique_key(
     index,
     refresh_after: bool = True,
     delete_chunk_size: int = 1000,
-    slices: Union[int, str] = "auto"
+    slices: Union[int, str] = "auto",
 ) -> int:
     """
     Bulk delete a batch of documents whose field identified by ``key`` matches any value provided in the
@@ -376,6 +376,7 @@ def delete_awards(
         task_id=task_id,
         index=config["index_name"],
         delete_chunk_size=config["partition_size"],
+        slices=config["slices"],
     )
 
 
@@ -458,7 +459,7 @@ def delete_transactions(
         task_id="Sync DB Deletes",
         index=config["index_name"],
         delete_chunk_size=config["partition_size"],
-        slices=2
+        slices=config["slices"],
     )
 
 
