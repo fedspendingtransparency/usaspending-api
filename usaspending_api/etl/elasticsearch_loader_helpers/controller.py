@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from math import ceil
 from multiprocessing import Event, Pool, Value
 from time import perf_counter
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Union
 
 from django.core.management import call_command
 from elasticsearch import Elasticsearch
@@ -125,7 +125,7 @@ class AbstractElasticsearchIndexerController(ABC):
             slices=self.config["slices"],
         )
 
-    def get_slice_count(self, client: Elasticsearch) -> int:
+    def get_slice_count(self, client: Elasticsearch) -> Union[int, str]:
         """
         Retrieves the number of slices that should be used when performing any type
         of scroll operation (e.g., delete_by_query).
@@ -148,7 +148,8 @@ class AbstractElasticsearchIndexerController(ABC):
         if num_shards == 5:
             # Anything that is still processing with 5 shards can continue to use 5 slices
             # because that remains under the half point of 250 slices.
-            return 5
+            # It is assumed that 5 shards is the default value that we provide in settings.
+            return "auto"
 
         shard_stores = index.shard_stores(status="all")
 
