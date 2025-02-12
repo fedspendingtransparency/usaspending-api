@@ -4,7 +4,7 @@
     "index.max_result_window": null,
     "index.refresh_interval": -1,
     "index": {
-      "number_of_shards": 5,
+      "number_of_shards": 15,
       "number_of_replicas": 0
     },
     "analysis": {
