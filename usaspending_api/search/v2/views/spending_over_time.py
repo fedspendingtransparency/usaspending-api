@@ -59,7 +59,7 @@ GROUPING_LOOKUP = {
 class TimePeriod:
     start_date: str
     end_date: str
-    date_type: Optional[dict]
+    date_type: Optional[str] = None
 
 
 @api_transformations(api_version=API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
@@ -130,7 +130,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 format="yyyy-MM-dd",
             )
 
-    def awards_group_by_time_period_agg(self) -> any:
+    def awards_group_by_time_period_agg(self) -> A:
         if self.group == "fiscal_year":
             return A("terms", field="fiscal_year")
         else:
