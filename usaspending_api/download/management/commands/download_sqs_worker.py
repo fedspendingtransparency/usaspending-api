@@ -129,91 +129,19 @@ def download_service_app(download_job_id):
     download_job = _retrieve_download_job_from_db(download_job_id)
     download_job_details = download_job_to_log_dict(download_job)
 
-    with SubprocessTrace(
-        name=f"job.{JOB_TYPE}.download.start",
-        kind=SpanKind.INTERNAL,
-        service="bulk-download",
-    ) as span:
-        span.set_attributes(
-            {
-                "message": "Starting processing of download request",
-                "service": "bulk-download",
-                "span_type": str(SpanKind.INTERNAL),
-                "job_type": str(JOB_TYPE),
-                # download job details
-                "download_job_id": str(download_job_id),
-                "download_job_status": str(download_job.job_status.name),  # Convert to relevant field as str
-                "download_file_name": str(download_job.file_name),  # Extract specific field as str
-                "download_file_size": (
-                    download_job.file_size if download_job.file_size is not None else 0
-                ),  # int or fallback to 0
-                "number_of_rows": download_job.number_of_rows if download_job.number_of_rows is not None else 0,
-                "number_of_columns": (
-                    download_job.number_of_columns if download_job.number_of_columns is not None else 0
-                ),
-                "error_message": download_job.error_message if download_job.error_message else "",
-                "monthly_download": str(download_job.monthly_download),  # Convert boolean to str
-                "json_request": str(download_job.json_request) if download_job.json_request else "",
-            }
-        )
+    _log_and_trace_download_job("Starting processing of download request", download_job)
 
-        log_job_message(
-            logger=logger,
-            message="Starting processing of download request",
-            job_type=JOB_TYPE,
-            job_id=download_job_id,
-            other_params=download_job_details,
-        )
-
-        generate_download(download_job=download_job)
+    generate_download(download_job=download_job)
 
 
 def _retrieve_download_job_from_db(download_job_id):
 
     download_job = DownloadJob.objects.filter(download_job_id=download_job_id).first()
-    download_job_details = download_job_to_log_dict(download_job)
+    if download_job is None:
+        raise DownloadJobNoneError(download_job_id)
 
-    with SubprocessTrace(
-        name=f"job.{JOB_TYPE}.download.retrieve",
-        kind=SpanKind.INTERNAL,
-        service="bulk-download",
-    ) as span:
-
-        span.set_attributes(
-            {
-                "message": "Retreiving Download Job From DB",
-                "service": "bulk-download",
-                "span_type": str(SpanKind.INTERNAL),
-                "job_type": str(JOB_TYPE),
-                # download job details
-                "download_job_id": str(download_job_id),
-                "download_job_status": str(download_job.job_status.name),  # Convert to relevant field as str
-                "download_file_name": str(download_job.file_name),  # Extract specific field as str
-                "download_file_size": (
-                    download_job.file_size if download_job.file_size is not None else 0
-                ),  # int or fallback to 0
-                "number_of_rows": download_job.number_of_rows if download_job.number_of_rows is not None else 0,
-                "number_of_columns": (
-                    download_job.number_of_columns if download_job.number_of_columns is not None else 0
-                ),
-                "error_message": download_job.error_message if download_job.error_message else "",
-                "monthly_download": str(download_job.monthly_download),  # Convert boolean to str
-                "json_request": str(download_job.json_request) if download_job.json_request else "",
-            }
-        )
-
-        log_job_message(
-            logger=logger,
-            message="Retreiving Download Job From DB",
-            job_type=JOB_TYPE,
-            job_id=download_job_id,
-            other_params=download_job_details,  # download job details
-        )
-
-        if download_job is None:
-            raise DownloadJobNoneError(download_job_id)
-
-        return download_job
+    _log_and_trace_download_job("Retreiving Download Job From DB", download_job)
+    return download_job
 
 
 def _update_download_job_status(download_job_id, status, error_message=None, overwrite_error_message=False):
@@ -229,49 +157,14 @@ def _update_download_job_status(download_job_id, status, error_message=None, ove
     """
 
     download_job = _retrieve_download_job_from_db(download_job_id)
-    download_job_details = download_job_to_log_dict(download_job)
 
-    with SubprocessTrace(
-        name=f"job.{JOB_TYPE}.download.update",
-        kind=SpanKind.INTERNAL,
-        service="bulk-download",
-    ) as span:
-        span.set_attributes(
-            {
-                "message": "Updating Download Job Status",
-                "service": "bulk-download",
-                "span_type": str(SpanKind.INTERNAL),
-                "job_type": str(JOB_TYPE),
-                # download job details
-                "download_job_id": str(download_job_id),
-                "download_job_status": str(download_job.job_status.name),  # Convert to relevant field as str
-                "download_file_name": str(download_job.file_name),  # Extract specific field as str
-                "download_file_size": (
-                    download_job.file_size if download_job.file_size is not None else 0
-                ),  # int or fallback to 0
-                "number_of_rows": download_job.number_of_rows if download_job.number_of_rows is not None else 0,
-                "number_of_columns": (
-                    download_job.number_of_columns if download_job.number_of_columns is not None else 0
-                ),
-                "error_message": download_job.error_message if download_job.error_message else "",
-                "monthly_download": str(download_job.monthly_download),  # Convert boolean to str
-                "json_request": str(download_job.json_request) if download_job.json_request else "",
-            }
-        )
+    _log_and_trace_download_job("Updating Download Job Status", download_job)
 
-        download_job.job_status_id = JOB_STATUS_DICT[status]
-        if overwrite_error_message or (error_message and not download_job.error_message):
-            download_job.error_message = str(error_message) if error_message else None
+    download_job.job_status_id = JOB_STATUS_DICT[status]
+    if overwrite_error_message or (error_message and not download_job.error_message):
+        download_job.error_message = str(error_message) if error_message else None
 
-        log_job_message(
-            logger=logger,
-            message="Updating Download Job Status",
-            job_type=JOB_TYPE,
-            job_id=download_job_id,
-            other_params=download_job_details,  # retreived download job status details
-        )
-
-        download_job.save()
+    download_job.save()
 
 
 def _handle_queue_error(exc):
@@ -322,6 +215,50 @@ def _handle_queue_error(exc):
         pass
     raise exc
 
+def _log_and_trace_download_job(message: str, download_job: DownloadJob):
+    """
+    Logs information about a download_job and pulls information of out it to send
+    as a trace.
+    """
+
+    download_job_details = download_job_to_log_dict(download_job)
+
+    log_job_message(
+        logger=logger,
+        message=message,
+        job_type=JOB_TYPE,
+        job_id=download_job.download_job_id,
+        other_params=download_job_details,  # download job details
+    )
+
+
+    with SubprocessTrace(
+        name=f"job.{JOB_TYPE}.download.update",
+        kind=SpanKind.INTERNAL,
+        service="bulk-download",
+    ) as span:
+        span.set_attributes(
+            {
+                "message": message,
+                "service": "bulk-download",
+                "span_type": str(SpanKind.INTERNAL),
+                "job_type": str(JOB_TYPE),
+                # download job details
+                "download_job_id": str(download_job.download_job_id),
+                "download_job_status": str(download_job.job_status.name),  # Convert to relevant field as str
+                "download_file_name": str(download_job.file_name),  # Extract specific field as str
+                "download_file_size": (
+                    download_job.file_size if download_job.file_size is not None else 0
+                ),  # int or fallback to 0
+                "number_of_rows": download_job.number_of_rows if download_job.number_of_rows is not None else 0,
+                "number_of_columns": (
+                    download_job.number_of_columns if download_job.number_of_columns is not None else 0
+                ),
+                "error_message": download_job.error_message if download_job.error_message else "",
+                "monthly_download": str(download_job.monthly_download),  # Convert boolean to str
+                "json_request": str(download_job.json_request) if download_job.json_request else "",
+            }
+        )
 
 class DownloadJobNoneError(ValueError):
     """Custom fatal exception representing the scenario where the DownloadJob object to be processed does not
