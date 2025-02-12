@@ -86,13 +86,15 @@ This endpoint returns a list of the top results of Countries sorted by the total
                         "amount": 31470304471.74,
                         "code": "USA",
                         "id": null,
-                        "name": "UNITED STATES"
+                        "name": "UNITED STATES",
+                        "total_outlays": null,
                     },
                     {
                         "amount": 20912107.43,
                         "code": "ZAF",
                         "id": null,
-                        "name": "SOUTH AFRICA"
+                        "name": "SOUTH AFRICA",
+                        "total_outlays": null,
                     }
                 ],
                 "messages": [
@@ -110,6 +112,7 @@ This endpoint returns a list of the top results of Countries sorted by the total
 + `code` (required, string, nullable)
     `code` is a user-displayable code (such as a program activity or NAICS code, but **not** a database ID). When no such code is relevant, return a `null`.
 + `amount` (required, number)
++ `total_outlays` (required, number, nullable)
 
 ## PageMetadataObject (object)
 + `page` (required, number)
