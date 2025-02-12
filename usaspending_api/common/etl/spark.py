@@ -752,13 +752,13 @@ def hadoop_copy_merge(
                 fs.delete(partial_merged_file_path, True)
             logger.exception("Exception encountered. See logs")
             raise
-        with connection.cursor() as cursor:
-            hours, remainder = divmod(time.time() - start, 3600)
-            minutes, seconds = divmod(remainder, 60)
-            cursor.execute(
-                "INSERT INTO test_spark_download_perf (duration, stage, notes) "
-                f"VALUES ('{int(hours)}h:{int(minutes)}m:{round(seconds, 3)}s', 'Hadoop copy merge', NULL)"
-            )
+    with connection.cursor() as cursor:
+        hours, remainder = divmod(time.time() - start, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        cursor.execute(
+            "INSERT INTO test_spark_download_perf (duration, stage, notes) "
+            f"VALUES ('{int(hours)}h:{int(minutes)}m:{round(seconds, 3)}s', 'Hadoop copy merge', NULL)"
+        )
     return paths_to_merged_files
 
 
