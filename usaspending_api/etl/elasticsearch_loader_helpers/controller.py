@@ -170,8 +170,8 @@ class AbstractElasticsearchIndexerController(ABC):
 
         max_scroll_contexts = 500
         award_slices = 5
-        award_index_slice_count = (self.config["processes"] * (num_shards * award_slices)) // num_nodes
-        transaction_index_slice_count = ((max_scroll_contexts - award_index_slice_count) * num_nodes) // (
+        award_index_scroll_context_count = (self.config["processes"] * (num_shards * award_slices)) // num_nodes
+        transaction_index_slice_count = ((max_scroll_contexts - award_index_scroll_context_count) * num_nodes) // (
             self.config["processes"] * num_shards
         )
 
