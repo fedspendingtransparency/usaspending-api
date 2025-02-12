@@ -4,6 +4,7 @@ from calendar import monthrange
 from collections import OrderedDict
 from datetime import datetime, timezone
 from typing import Tuple
+from dataclasses import dataclass
 
 from django.conf import settings
 from elasticsearch_dsl import A, Search
@@ -52,6 +53,11 @@ GROUPING_LOOKUP = {
     "month": "month",
     "m": "month",
 }
+
+
+@dataclass
+class TimePeriodMetadata:
+    data: dict[str, str]
 
 
 @api_transformations(api_version=API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
@@ -296,7 +302,9 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         return response_object
 
-    def build_elasticsearch_result_transactions(self, agg_response: AggResponse, time_periods: list) -> list:
+    def build_elasticsearch_result_transactions(
+        self, agg_response: AggResponse, time_periods: TimePeriodMetadata
+    ) -> list:
         """
         In this function we are just taking the elasticsearch aggregate response and looping through the
         buckets to create a results object for each time interval.
@@ -359,7 +367,9 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         return results
 
-    def build_elasticsearch_result_awards_subawards(self, agg_response: AggResponse, time_periods: list) -> list:
+    def build_elasticsearch_result_awards_subawards(
+        self, agg_response: AggResponse, time_periods: TimePeriodMetadata
+    ) -> list:
         """
         In this function we are just taking the elasticsearch aggregate response and looping through the
         buckets to create a results object for each time interval.
@@ -386,7 +396,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         return results
 
-    def query_elasticsearch_for_transactions(self, time_periods: list) -> list:
+    def query_elasticsearch_for_transactions(self, time_periods: TimePeriodMetadata) -> list:
         """Get spending over time amounts based on Transactions"""
 
         filter_options = {}
@@ -408,7 +418,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         overall_results = self.build_elasticsearch_result_transactions(response.aggs, time_periods)
         return overall_results
 
-    def query_elasticsearch_for_awards(self, time_periods: list) -> list:
+    def query_elasticsearch_for_awards(self, time_periods: TimePeriodMetadata) -> list:
         """Get spending over time amounts based on Awards"""
 
         filter_options = {}
@@ -428,7 +438,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         return overall_results
 
-    def query_elasticsearch_for_subawards(self, time_periods: list) -> list:
+    def query_elasticsearch_for_subawards(self, time_periods: TimePeriodMetadata) -> list:
         """Get spending over time amounts based on Subawards"""
 
         filter_options = {}
