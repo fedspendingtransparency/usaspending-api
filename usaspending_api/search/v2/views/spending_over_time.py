@@ -3,7 +3,7 @@ import logging
 from calendar import monthrange
 from collections import OrderedDict
 from datetime import datetime, timezone
-from typing import Tuple
+from typing import Tuple, Optional
 from dataclasses import dataclass
 
 from django.conf import settings
@@ -56,8 +56,10 @@ GROUPING_LOOKUP = {
 
 
 @dataclass
-class TimePeriodMetadata:
-    data: dict[str, str]
+class TimePeriod:
+    start_date: str
+    end_date: str
+    date_type: Optional[dict]
 
 
 @api_transformations(api_version=API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
@@ -99,7 +101,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 "name": "spending_level",
                 "key": "spending_level",
                 "type": "enum",
-                "enum_values": ["awards", "transactions", "subawards"],
+                "enum_values": [level.value for level in SpendingLevel],
                 "optional": True,
                 "default": "transactions",
             },
@@ -204,7 +206,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
     def set_time_period(self, bucket: dict) -> dict:
         time_period = {}
 
-        if self.group == "fiscal_year" and self.spending_level != SpendingLevel.TRANSACTION.value:
+        if self.group == "fiscal_year" and self.spending_level != SpendingLevel.TRANSACTION:
             key_as_date = datetime.strptime(str(bucket["key"]), "%Y")
         else:
             key_as_date = datetime.strptime(bucket["key_as_string"], "%Y-%m-%d")
@@ -236,7 +238,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         categories_breakdown = bucket["group_by_category"]["buckets"]
 
         # Initialize a dictionary to hold the query results for each obligation type.
-        if self.spending_level == SpendingLevel.SUBAWARD.value:
+        if self.spending_level == SpendingLevel.SUBAWARD:
             obligation_dictionary = {
                 "Contract_Obligations": 0,
                 "Grant_Obligations": 0,
@@ -278,9 +280,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         }
 
         # Outlays are only supported on Awards
-        outlay_dictionary = {
-            v: 0 if self.spending_level == SpendingLevel.AWARD.value else None for v in outlay_map.values()
-        }
+        outlay_dictionary = {v: 0 if self.spending_level == SpendingLevel.AWARD else None for v in outlay_map.values()}
 
         # Populate the category dictionary based on the award breakdown for a given bucket.
         for category in categories_breakdown:
@@ -290,20 +290,20 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                     "value"
                 ]
 
-            if self.spending_level == SpendingLevel.AWARD.value and key in outlay_map:
+            if self.spending_level == SpendingLevel.AWARD and key in outlay_map:
                 outlay_dictionary[outlay_map[key]] += category.get("sum_as_dollars_outlay", {"value": 0})["value"]
         response_object = {
             "aggregated_amount": sum(obligation_dictionary.values()),
             "time_period": time_period,
             **obligation_dictionary,
-            "total_outlays": sum(outlay_dictionary.values()) if self.spending_level == "awards" else None,
+            "total_outlays": sum(outlay_dictionary.values()) if self.spending_level == SpendingLevel.AWARD else None,
             **outlay_dictionary,
         }
 
         return response_object
 
     def build_elasticsearch_result_transactions(
-        self, agg_response: AggResponse, time_periods: TimePeriodMetadata
+        self, agg_response: AggResponse, time_periods: list[TimePeriod]
     ) -> list:
         """
         In this function we are just taking the elasticsearch aggregate response and looping through the
@@ -368,7 +368,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         return results
 
     def build_elasticsearch_result_awards_subawards(
-        self, agg_response: AggResponse, time_periods: TimePeriodMetadata
+        self, agg_response: AggResponse, time_periods: list[TimePeriod]
     ) -> list:
         """
         In this function we are just taking the elasticsearch aggregate response and looping through the
@@ -396,7 +396,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         return results
 
-    def query_elasticsearch_for_transactions(self, time_periods: TimePeriodMetadata) -> list:
+    def query_elasticsearch_for_transactions(self, time_periods: list[TimePeriod]) -> list:
         """Get spending over time amounts based on Transactions"""
 
         filter_options = {}
@@ -418,7 +418,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         overall_results = self.build_elasticsearch_result_transactions(response.aggs, time_periods)
         return overall_results
 
-    def query_elasticsearch_for_awards(self, time_periods: TimePeriodMetadata) -> list:
+    def query_elasticsearch_for_awards(self, time_periods: list[TimePeriod]) -> list:
         """Get spending over time amounts based on Awards"""
 
         filter_options = {}
@@ -438,7 +438,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         return overall_results
 
-    def query_elasticsearch_for_subawards(self, time_periods: TimePeriodMetadata) -> list:
+    def query_elasticsearch_for_subawards(self, time_periods: list[TimePeriod]) -> list:
         """Get spending over time amounts based on Subawards"""
 
         filter_options = {}
@@ -455,7 +455,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         response = search.handle_execute()
         overall_results = self.build_elasticsearch_result_awards_subawards(response.aggs, time_periods)
 
-        # if there is no data for that fiscal year, set overall_results for that
+        # if there is no data for that fiscal year, set default overall_results for that year
         min_date, max_date = min_and_max_from_date_ranges(time_periods)
         date_range = generate_date_range(min_date, max_date, self.group)
         if date_range.count != overall_results.count:
@@ -486,9 +486,12 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         self.original_filters = request.data.get("filters")
         json_request, models = self.validate_request_data(request.data)
         self.group = GROUPING_LOOKUP[json_request["group"]]
-        self.subawards = json_request["subawards"] or json_request.get("spending_level") == SpendingLevel.SUBAWARD.value
+        self.subawards = (
+            SpendingLevel(json_request.get("spending_level").lower()) == SpendingLevel.SUBAWARD
+            or json_request["subawards"]
+        )
         self.spending_level = (
-            SpendingLevel.SUBAWARD.value if self.subawards else json_request.get("spending_level").lower()
+            SpendingLevel.SUBAWARD if self.subawards else SpendingLevel(json_request.get("spending_level").lower())
         )
         self.filters = json_request["filters"]
 
@@ -510,18 +513,18 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         # if time periods have been passed in use those, otherwise use the one calculated above
         results = None
         time_periods = self.filters.get("time_period", [default_time_period])
-        if self.spending_level == SpendingLevel.SUBAWARD.value:
+        if self.spending_level == SpendingLevel.SUBAWARD:
             results = self.query_elasticsearch_for_subawards(time_periods)
-        elif self.spending_level == SpendingLevel.TRANSACTION.value:
+        elif self.spending_level == SpendingLevel.TRANSACTION:
             results = self.query_elasticsearch_for_transactions(time_periods)
-        elif self.spending_level == SpendingLevel.AWARD.value:
+        elif self.spending_level == SpendingLevel.AWARD:
             results = self.query_elasticsearch_for_awards(time_periods)
 
         raw_response = OrderedDict(
             [
                 ("group", self.group),
                 ("results", results),
-                ("spending_level", self.spending_level),
+                ("spending_level", self.spending_level.value),
                 (
                     "messages",
                     [

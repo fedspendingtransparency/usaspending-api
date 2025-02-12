@@ -4975,3 +4975,76 @@ def test_spending_over_time_awards_spending_level(client, monkeypatch, elasticse
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json().get("results") == expected_result, "Time Period filter does not match expected result"
+
+
+@pytest.mark.django_db
+def test_spending_over_time_subawards_spending_level(client, monkeypatch, elasticsearch_subaward_index):
+    baker.make(
+        "search.SubawardSearch",
+        broker_subaward_id=3,
+        award_id=1,
+        subaward_amount=0,
+        sub_place_of_perform_country_co="USA",
+        sub_legal_entity_country_code="USA",
+        sub_action_date="2020-01-07",
+        action_date="2020-01-07",
+        prime_award_group="grant",
+        sub_fiscal_year=2020,
+        subaward_type="sub-grant",
+        program_activities=[{"name": "PROGRAM_ACTIVITY_1", "code": "0001"}],
+    )
+
+    baker.make(
+        "search.SubawardSearch",
+        broker_subaward_id=3,
+        award_id=1,
+        subaward_amount=300,
+        sub_place_of_perform_country_co="USA",
+        sub_legal_entity_country_code="USA",
+        sub_action_date="2021-01-07",
+        action_date="2021-01-07",
+        prime_award_group="grant",
+        sub_fiscal_year=2021,
+        subaward_type="sub-grant",
+        program_activities=[{"name": "PROGRAM_ACTIVITY_123", "code": "0003"}],
+    )
+
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
+
+    resp = client.post(
+        "/api/v2/search/spending_over_time",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "group": "fiscal_year",
+                "filters": {
+                    "time_period": [
+                        {"start_date": "2020-01-01", "end_date": "2021-01-08"},
+                    ]
+                },
+                "spending_level": "subawards",
+            }
+        ),
+    )
+    expected_result = [
+        {
+            "aggregated_amount": 0,
+            "total_outlays": None,
+            "time_period": {"fiscal_year": "2020"},
+            "Contract_Obligations": 0,
+            "Contract_Outlays": None,
+            "Grant_Obligations": 0,
+            "Grant_Outlays": None,
+        },
+        {
+            "aggregated_amount": 300,
+            "total_outlays": None,
+            "time_period": {"fiscal_year": "2021"},
+            "Contract_Obligations": 0,
+            "Contract_Outlays": None,
+            "Grant_Obligations": 300,
+            "Grant_Outlays": None,
+        },
+    ]
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json().get("results") == expected_result, "Time Period filter does not match expected result"
