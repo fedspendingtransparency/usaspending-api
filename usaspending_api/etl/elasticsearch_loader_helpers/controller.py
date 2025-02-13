@@ -5,8 +5,10 @@ from multiprocessing import Event, Pool, Value
 from time import perf_counter
 from typing import Dict, Tuple, Union
 
+from django.conf import settings
 from django.core.management import call_command
 from elasticsearch import Elasticsearch
+from elasticsearch.exceptions import NotFoundError
 from elasticsearch_dsl import Index
 
 from usaspending_api.broker.helpers.last_load_date import get_earliest_load_date, update_last_load_date
@@ -140,17 +142,17 @@ class AbstractElasticsearchIndexerController(ABC):
             # all other load_types are set to the original default of "auto".
             return "auto"
 
-        index_name_or_alias = self.config["index_name"]
-        index = Index(name=index_name_or_alias, using=client)
-        index_settings = index.get_settings()
+        transaction_index_name_or_alias = self.config["index_name"]
+        transaction_index = Index(name=transaction_index_name_or_alias, using=client)
+        transaction_index_settings = transaction_index.get_settings()
 
         # The Index object can utilize either a Name or Alias up above. However, for the purpose of using
         # the Index object to capture settings we need the actual name.
-        index_name = list(index_settings)[0]
-
-        num_shards = int(index_settings[index_name]["settings"]["index"]["number_of_shards"])
-
-        shard_stores = index.shard_stores(status="all")
+        transaction_index_name = list(transaction_index_settings)[0]
+        transaction_num_shards = int(
+            transaction_index_settings[transaction_index_name]["settings"]["index"]["number_of_shards"]
+        )
+        transaction_shard_stores = transaction_index.shard_stores(status="all")
 
         # To get the number of nodes that the shards are distributed across we look at the shard store.
         # Each shard store in the response is formatted such as the following:
@@ -159,7 +161,7 @@ class AbstractElasticsearchIndexerController(ABC):
             set(
                 [
                     value.get("name")
-                    for store_list in shard_stores["indices"][index_name]["shards"].values()
+                    for store_list in transaction_shard_stores["indices"][transaction_index_name]["shards"].values()
                     for store in store_list["stores"]
                     for value in store.values()
                     if store["allocation"] == "primary" and isinstance(value, dict)
@@ -167,11 +169,23 @@ class AbstractElasticsearchIndexerController(ABC):
             )
         )
 
+        award_index = Index(name=settings.ES_AWARDS_WRITE_ALIAS, using=client)
+        try:
+            award_index_settings = award_index.get_settings()
+            award_index_name = list(award_index_settings)[0]
+            award_num_shards = int(award_index_settings[award_index_name]["settings"]["index"]["number_of_shards"])
+        except NotFoundError:
+            # If the Award index hasn't been created yet then we assume the current default
+            logger.error("Failed to find the Award index; assuming it contains 5 shards")
+            award_num_shards = 5
+
+        # The value of "auto" is used for awards
+        award_slices = award_num_shards
+
         max_scroll_contexts = 500
-        award_slices = 5
-        award_index_scroll_context_count = (self.config["processes"] * (num_shards * award_slices)) // num_nodes
+        award_index_scroll_context_count = (self.config["processes"] * (award_num_shards * award_slices)) // num_nodes
         transaction_index_slice_count = ((max_scroll_contexts - award_index_scroll_context_count) * num_nodes) // (
-            self.config["processes"] * num_shards
+            self.config["processes"] * transaction_num_shards
         )
 
         if transaction_index_slice_count < 1:
@@ -179,6 +193,12 @@ class AbstractElasticsearchIndexerController(ABC):
                 f"A value of {transaction_index_slice_count} was calculated for the number of slices."
                 " This value is too low to allow the processing of deletes."
             )
+
+        logger.info(f"Setting the value of Transaction Index slices: {transaction_index_slice_count}")
+        logger.info(f"DEBUG -- ({self.config['processes']} * ({award_num_shards} * {award_slices})) // {num_nodes}")
+        logger.info(
+            f"DEBUG -- (({max_scroll_contexts} - {award_index_scroll_context_count}) * {num_nodes}) // ({self.config['processes']} * {transaction_num_shards})"
+        )
 
         return transaction_index_slice_count
 
