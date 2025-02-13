@@ -531,35 +531,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
             results.append(row)
 
-        last_record_unique_id = None
-        last_record_sort_value = None
-        offset = 1
-        if self.last_record_unique_id is not None:
-            has_next = len(results) > self.pagination["limit"]
-            offset = 2
-        else:
-            has_next = (
-                response.hits.total.value - (self.pagination["page"] - 1) * self.pagination["limit"]
-                > self.pagination["limit"]
-            )
-
-        if len(response) > 0 and has_next:
-            last_record_unique_id = response[len(response) - offset].meta.sort[1]
-            last_record_sort_value = response[len(response) - offset].meta.sort[0]
-
-        return {
-            "limit": self.pagination["limit"],
-            "results": results[: self.pagination["limit"]],
-            "page_metadata": {
-                "page": self.pagination["page"],
-                "hasNext": has_next,
-                "last_record_unique_id": last_record_unique_id,
-                "last_record_sort_value": str(last_record_sort_value),
-            },
-            "messages": get_generic_filters_message(
-                self.original_filters.keys(), [elem["name"] for elem in AWARD_FILTER_NO_RECIPIENT_ID]
-            ),
-        }
+        return self.construct_es_response(results, response)
 
     def construct_es_response_for_subawards(self, response: Response) -> dict[str, Any]:
         results = []
@@ -580,6 +552,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
             results.append(row)
 
+        return self.construct_es_response(results, response)
+
+    def construct_es_response(self, results: list[dict[str, Any]], response: Response) -> dict[str, Any]:
         last_record_unique_id = None
         last_record_sort_value = None
         offset = 1
