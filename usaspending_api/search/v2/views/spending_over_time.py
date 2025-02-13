@@ -4,7 +4,7 @@ from calendar import monthrange
 from collections import OrderedDict
 from datetime import datetime, timezone
 from typing import Tuple, Optional
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 
 from django.conf import settings
 from elasticsearch_dsl import A, Search
@@ -321,7 +321,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         """
 
         results = []
-        min_date, max_date = min_and_max_from_date_ranges(time_periods)
+        min_date, max_date = min_and_max_from_date_ranges([asdict(time_period) for time_period in time_periods])
 
         date_range = generate_date_range(min_date, max_date, self.group)
         date_buckets = agg_response.group_by_time_period.buckets
@@ -368,8 +368,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         return results
 
     def build_elasticsearch_result_awards_subawards(
-        self, agg_response: AggResponse, time_periods: list[TimePeriod]
-    ) -> list:
+        self, agg_response: AggResponse) -> list:
         """
         In this function we are just taking the elasticsearch aggregate response and looping through the
         buckets to create a results object for each time interval.
@@ -418,7 +417,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         overall_results = self.build_elasticsearch_result_transactions(response.aggs, time_periods)
         return overall_results
 
-    def query_elasticsearch_for_awards(self, time_periods: list[TimePeriod]) -> list:
+    def query_elasticsearch_for_awards(self) -> list:
         """Get spending over time amounts based on Awards"""
 
         filter_options = {}
@@ -434,7 +433,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         search = AwardSearch().filter(filter_query)
         self.apply_elasticsearch_aggregations(search)
         response = search.handle_execute()
-        overall_results = self.build_elasticsearch_result_awards_subawards(response.aggs, time_periods)
+        overall_results = self.build_elasticsearch_result_awards_subawards(response.aggs)
 
         return overall_results
 
@@ -453,10 +452,10 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         search = SubawardSearch().filter(filter_query)
         self.apply_elasticsearch_aggregations(search)
         response = search.handle_execute()
-        overall_results = self.build_elasticsearch_result_awards_subawards(response.aggs, time_periods)
+        overall_results = self.build_elasticsearch_result_awards_subawards(response.aggs)
 
         # if there is no data for that fiscal year, set default overall_results for that year
-        min_date, max_date = min_and_max_from_date_ranges(time_periods)
+        min_date, max_date = min_and_max_from_date_ranges([asdict(time_period) for time_period in time_periods])
         date_range = generate_date_range(min_date, max_date, self.group)
         if date_range.count != overall_results.count:
             for year in date_range:
@@ -512,13 +511,15 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         # if time periods have been passed in use those, otherwise use the one calculated above
         results = None
-        time_periods = self.filters.get("time_period", [default_time_period])
+        time_periods = [
+            TimePeriod(**time_period) for time_period in self.filters.get("time_period", [default_time_period])
+        ]
         if self.spending_level == SpendingLevel.SUBAWARD:
             results = self.query_elasticsearch_for_subawards(time_periods)
         elif self.spending_level == SpendingLevel.TRANSACTION:
             results = self.query_elasticsearch_for_transactions(time_periods)
         elif self.spending_level == SpendingLevel.AWARD:
-            results = self.query_elasticsearch_for_awards(time_periods)
+            results = self.query_elasticsearch_for_awards()
 
         raw_response = OrderedDict(
             [
