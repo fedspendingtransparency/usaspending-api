@@ -965,13 +965,21 @@ def test_category_recipient_transactions(recipient_test_data, monkeypatch, elast
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 15, "name": "MULTIPLE RECIPIENTS", "code": None, "recipient_id": None, "uei": None},
+            {
+                "amount": 15,
+                "name": "MULTIPLE RECIPIENTS",
+                "code": None,
+                "recipient_id": None,
+                "uei": None,
+                "total_outlays": None,
+            },
             {
                 "amount": 11,
                 "name": "JOHN DOE",
                 "code": "1234JD4321",
                 "recipient_id": "0b54895d-2393-ea12-48e3-deae990614d9-C",
                 "uei": None,
+                "total_outlays": None,
             },
             {
                 "amount": 2,
@@ -979,6 +987,7 @@ def test_category_recipient_transactions(recipient_test_data, monkeypatch, elast
                 "code": "00UOP00",
                 "recipient_id": "2af2a5a5-3126-2c76-3681-dec2cf148f1a-P",
                 "uei": None,
+                "total_outlays": None,
             },
         ],
         "messages": _expected_messages(),
@@ -1064,7 +1073,7 @@ def test_category_cfda_transactions(cfda_test_data, monkeypatch, elasticsearch_t
         "category": "cfda",
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
-        "results": [{"amount": 2, "code": "CFDA1234", "name": "CFDA TITLE 1234", "id": 1}],
+        "results": [{"amount": 2, "code": "CFDA1234", "name": "CFDA TITLE 1234", "id": 1, "total_outlays": None}],
         "messages": _expected_messages(),
         "spending_level": "transactions",
     }
@@ -1128,8 +1137,8 @@ def test_category_psc_transactions(psc_test_data, monkeypatch, elasticsearch_tra
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 4, "code": "9876", "id": None, "name": "PSC DESCRIPTION DOWN"},
-            {"amount": 2, "code": "1234", "id": None, "name": "PSC DESCRIPTION UP"},
+            {"amount": 4, "code": "9876", "id": None, "name": "PSC DESCRIPTION DOWN", "total_outlays": None},
+            {"amount": 2, "code": "1234", "id": None, "name": "PSC DESCRIPTION UP", "total_outlays": None},
         ],
         "messages": _expected_messages(),
         "spending_level": "transactions",
@@ -1151,8 +1160,8 @@ def test_category_naics_transactions(naics_test_data, monkeypatch, elasticsearch
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 4, "code": "NAICS 9876", "name": "SOURCE NAICS DESC 9876", "id": None},
-            {"amount": 2, "code": "NAICS 1234", "name": "SOURCE NAICS DESC 1234", "id": None},
+            {"amount": 4, "code": "NAICS 9876", "name": "SOURCE NAICS DESC 9876", "id": None, "total_outlays": None},
+            {"amount": 2, "code": "NAICS 1234", "name": "SOURCE NAICS DESC 1234", "id": None, "total_outlays": None},
         ],
         "messages": _expected_messages(),
         "spending_level": "transactions",
@@ -1174,8 +1183,8 @@ def test_category_county_transactions(geo_test_data, monkeypatch, elasticsearch_
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 7, "code": "001", "name": "SOMEWHEREVILLE", "id": None},
-            {"amount": 3, "code": "004", "name": "COUNTYSVILLE", "id": None},
+            {"amount": 7, "code": "001", "name": "SOMEWHEREVILLE", "id": None, "total_outlays": None},
+            {"amount": 3, "code": "004", "name": "COUNTYSVILLE", "id": None, "total_outlays": None},
         ],
         "messages": _expected_messages(),
         "spending_level": "transactions",
@@ -1218,8 +1227,8 @@ def test_category_district_transactions(geo_test_data, monkeypatch, elasticsearc
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 7, "code": "05", "name": "XY-05", "id": None},
-            {"amount": 3, "code": "90", "name": "XY-MULTIPLE DISTRICTS", "id": None},
+            {"amount": 7, "code": "05", "name": "XY-05", "id": None, "total_outlays": None},
+            {"amount": 3, "code": "90", "name": "XY-MULTIPLE DISTRICTS", "id": None, "total_outlays": None},
         ],
         "messages": _expected_messages(),
         "spending_level": "transactions",
@@ -1261,7 +1270,7 @@ def test_category_state_territory(geo_test_data, monkeypatch, elasticsearch_tran
         "category": "state_territory",
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
-        "results": [{"amount": 10, "code": "XY", "name": "Test State", "id": None}],
+        "results": [{"amount": 10, "code": "XY", "name": "Test State", "id": None, "total_outlays": None}],
         "messages": _expected_messages(),
         "spending_level": "transactions",
     }
@@ -1299,7 +1308,7 @@ def test_category_country(geo_test_data, monkeypatch, elasticsearch_transaction_
         "category": "country",
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
-        "results": [{"amount": 10, "code": "US", "name": "UNITED STATES", "id": None}],
+        "results": [{"amount": 10, "code": "US", "name": "UNITED STATES", "id": None, "total_outlays": None}],
         "messages": _expected_messages(),
         "spending_level": "transactions",
     }
@@ -1343,7 +1352,7 @@ def test_category_federal_accounts(federal_accounts_test_data, monkeypatch, elas
         "category": "federal_account",
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
-        "results": [{"amount": 3, "code": "020-0001", "name": "Test Federal Account", "id": 10}],
+        "results": [{"amount": 3, "code": "020-0001", "name": "Test Federal Account", "id": 10, "total_outlays": None}],
         "messages": _expected_messages(),
         "spending_level": "transactions",
     }
