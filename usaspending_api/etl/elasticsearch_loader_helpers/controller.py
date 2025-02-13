@@ -79,10 +79,15 @@ class AbstractElasticsearchIndexerController(ABC):
             )
         )
 
+        client = instantiate_elasticsearch_client()
+
         if self.config["create_new_index"]:
             # ensure template for index is present and the latest version
             call_command("es_configure", "--template-only", f"--load-type={self.config['data_type']}")
-            create_index(self.config["index_name"], instantiate_elasticsearch_client())
+            create_index(self.config["index_name"], client)
+
+        # Need to update the slices for any changes in number of processes
+        self.set_slice_count(client)
 
     @abstractmethod
     def determine_partitions(self) -> int:
@@ -127,7 +132,7 @@ class AbstractElasticsearchIndexerController(ABC):
             slices=self.config["slices"],
         )
 
-    def get_slice_count(self, client: Elasticsearch) -> Union[int, str]:
+    def set_slice_count(self, client: Elasticsearch) -> None:
         """
         Retrieves the number of slices that should be used when performing any type
         of scroll operation (e.g., delete_by_query).
@@ -139,8 +144,12 @@ class AbstractElasticsearchIndexerController(ABC):
         """
         if self.config["create_new_index"] or self.config["load_type"] != "transaction":
             # Only transactions are currently processing with more than 5 shards. As a result,
-            # all other load_types are set to the original default of "auto".
-            return "auto"
+            # all other load types are set to the original default of "auto".
+            self.config["slices"] = "auto"
+            logger.info(
+                format_log(f"Setting the value of {self.config['load_type']} index slices: {self.config['slices']}")
+            )
+            return
 
         transaction_index_name_or_alias = self.config["index_name"]
         transaction_index = Index(name=transaction_index_name_or_alias, using=client)
@@ -194,13 +203,10 @@ class AbstractElasticsearchIndexerController(ABC):
                 " This value is too low to allow the processing of deletes."
             )
 
-        logger.info(f"Setting the value of Transaction Index slices: {transaction_index_slice_count}")
-        logger.info(f"DEBUG -- ({self.config['processes']} * ({award_num_shards} * {award_slices})) // {num_nodes}")
+        self.config["slices"] = transaction_index_slice_count
         logger.info(
-            f"DEBUG -- (({max_scroll_contexts} - {award_index_scroll_context_count}) * {num_nodes}) // ({self.config['processes']} * {transaction_num_shards})"
+            format_log(f"Setting the value of {self.config['load_type']} index slices: {self.config['slices']}")
         )
-
-        return transaction_index_slice_count
 
     @abstractmethod
     def get_id_range_for_partition(self, partition_number: int) -> Tuple[int, int]:
