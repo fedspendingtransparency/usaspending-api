@@ -1,4 +1,4 @@
-""" Creating a Test Model and table spec to be agnostic to the actual data """
+"""Creating a Test Model and table spec to be agnostic to the actual data"""
 
 from django.db import models
 
