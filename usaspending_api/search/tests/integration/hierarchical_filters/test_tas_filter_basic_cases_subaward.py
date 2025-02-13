@@ -16,7 +16,9 @@ from usaspending_api.search.tests.integration.hierarchical_filters.tas_search_te
 
 
 @pytest.mark.django_db
-def test_match_from_agency(client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_tas):
+def test_match_from_agency(
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_tas
+):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
     resp = query_by_tas_subaward(client, {"require": [_agency_path(BASIC_TAS)]})

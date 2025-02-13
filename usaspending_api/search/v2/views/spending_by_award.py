@@ -54,6 +54,8 @@ from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyT
 from usaspending_api.search.filters.time_period.query_types import AwardSearchTimePeriod, SubawardSearchTimePeriod
 from usaspending_api.submissions.models import SubmissionAttributes
 
+from typing import Any
+
 logger = logging.getLogger(__name__)
 
 GLOBAL_MAP = {
@@ -125,7 +127,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         else:
             return Response(self.construct_es_response_for_prime_awards(self.query_elasticsearch_awards()))
 
-    def post_subawards(self):
+    def post_subawards(self) -> Response:
         try:
             return Response(self.construct_es_response_for_subawards(self.query_elasticsearch_subawards()))
         except KeyError:
@@ -304,7 +306,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
             "messages": get_generic_filters_message(self.original_filters.keys(), [elem["name"] for elem in models]),
         }
 
-    def query_elasticsearch_awards(self) -> list:
+    def query_elasticsearch_awards(self) -> Response:
         filter_options = {}
         time_period_obj = AwardSearchTimePeriod(
             default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
@@ -392,7 +394,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         return response
 
-    def query_elasticsearch_subawards(self) -> list:
+    def query_elasticsearch_subawards(self) -> Response:
         filter_options = {}
         time_period_obj = SubawardSearchTimePeriod(
             default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
@@ -587,7 +589,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
             ),
         }
 
-    def construct_es_response_for_subawards(self, response) -> dict:
+    def construct_es_response_for_subawards(self, response: Response) -> dict[str, Any]:
         results = []
         for res in response:
             hit = res.to_dict()
