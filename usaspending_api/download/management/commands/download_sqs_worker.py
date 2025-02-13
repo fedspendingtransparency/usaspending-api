@@ -127,7 +127,6 @@ class Command(BaseCommand):
 def download_service_app(download_job_id):
 
     download_job = _retrieve_download_job_from_db(download_job_id)
-    download_job_details = download_job_to_log_dict(download_job)
 
     _log_and_trace_download_job("Starting processing of download request", download_job)
 
@@ -215,6 +214,7 @@ def _handle_queue_error(exc):
         pass
     raise exc
 
+
 def _log_and_trace_download_job(message: str, download_job: DownloadJob):
     """
     Logs information about a download_job and pulls information of out it to send
@@ -230,7 +230,6 @@ def _log_and_trace_download_job(message: str, download_job: DownloadJob):
         job_id=download_job.download_job_id,
         other_params=download_job_details,  # download job details
     )
-
 
     with SubprocessTrace(
         name=f"job.{JOB_TYPE}.download.update",
@@ -259,6 +258,7 @@ def _log_and_trace_download_job(message: str, download_job: DownloadJob):
                 "json_request": str(download_job.json_request) if download_job.json_request else "",
             }
         )
+
 
 class DownloadJobNoneError(ValueError):
     """Custom fatal exception representing the scenario where the DownloadJob object to be processed does not
