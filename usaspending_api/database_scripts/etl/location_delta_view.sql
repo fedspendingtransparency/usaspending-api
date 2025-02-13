@@ -112,7 +112,7 @@ zip_cte AS (
 		'zip_code' AS location_type
 	FROM
 		rpt.transaction_search
-	LEFT JOIN
+	INNER JOIN
 		state_data sd ON pop_state_name = UPPER(sd.name)
 	WHERE
 		pop_county_name IS NOT NULL
@@ -133,7 +133,7 @@ zip_cte AS (
 		'zip_code' AS location_type
 	FROM
 		rpt.transaction_search
-	LEFT JOIN
+	INNER JOIN
 		state_data sd ON recipient_location_state_name = UPPER(sd.name)
 	WHERE
 		recipient_location_country_name IS NOT NULL
@@ -155,7 +155,7 @@ current_cd_cte AS (
         'current_congressional_district' AS location_type
     FROM
         rpt.transaction_search
-    LEFT JOIN
+    INNER JOIN
 		state_data sd ON recipient_location_state_name = UPPER(sd.name)
 	WHERE
 		recipient_location_country_name IS NOT NULL
@@ -176,7 +176,7 @@ current_cd_cte AS (
         'current_congressional_district' AS location_type
     FROM
         rpt.transaction_search
-    LEFT JOIN
+    INNER JOIN
 		state_data sd ON pop_state_name = UPPER(sd.name)
 	WHERE
 		pop_country_name IS NOT NULL
@@ -198,7 +198,7 @@ original_cd_cte AS (
         'original_congressional_district' AS location_type
     FROM
         rpt.transaction_search
-    LEFT JOIN
+    INNER JOIN
 		state_data sd ON recipient_location_state_name = UPPER(sd.name)
 	WHERE
 		recipient_location_country_name IS NOT NULL
@@ -219,7 +219,7 @@ original_cd_cte AS (
         'original_congressional_district' AS location_type
     FROM
         rpt.transaction_search
-    LEFT JOIN
+    INNER JOIN
 		state_data sd ON pop_state_name = UPPER(sd.name)
 	WHERE
 		pop_country_name IS NOT NULL
@@ -230,7 +230,7 @@ state_cte AS (
         'state' AS location_type
     FROM
         rpt.transaction_search
-    LEFT JOIN
+    INNER JOIN
         state_data sd ON recipient_location_state_name = UPPER(sd.name)
     UNION
     SELECT
@@ -238,7 +238,7 @@ state_cte AS (
         'state' AS location_type
     FROM
         rpt.transaction_search
-    LEFT JOIN
+    INNER JOIN
         state_data sd ON pop_state_name = UPPER(sd.name)
 ),
 city_cte AS (
@@ -257,7 +257,7 @@ city_cte AS (
         END AS location_string,
         'city' AS location_type
     FROM rpt.transaction_search
-    LEFT JOIN
+    INNER JOIN
         state_data sd ON recipient_location_state_name = UPPER(sd.name)
     WHERE
         recipient_location_country_name IS NOT NULL
@@ -279,7 +279,7 @@ city_cte AS (
         END AS location_string,
         'city' AS location_type
     FROM rpt.transaction_search
-    LEFT JOIN
+    INNER JOIN
         state_data sd ON pop_state_name = UPPER(sd.name)
     WHERE
         pop_country_name IS NOT NULL
