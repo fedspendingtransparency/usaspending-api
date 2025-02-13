@@ -1,7 +1,7 @@
 """
-    Mapping dictionaries
-        - used for converting terse_labels from broker to semi-terse labels used in the datastore)
-   TERSE_TO_LONG was removed.  IF NEEDED, change LONG_TO_TERSE to a bidict or invert the dict. """
+ Mapping dictionaries
+     - used for converting terse_labels from broker to semi-terse labels used in the datastore)
+TERSE_TO_LONG was removed.  IF NEEDED, change LONG_TO_TERSE to a bidict or invert the dict."""
 
 LONG_TO_TERSE_LABELS = {
     "allocation_transfer_agency_id": "allocation_transfer_agency_id",
