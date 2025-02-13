@@ -367,8 +367,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         return results
 
-    def build_elasticsearch_result_awards_subawards(
-        self, agg_response: AggResponse) -> list:
+    def build_elasticsearch_result_awards_subawards(self, agg_response: AggResponse) -> list:
         """
         In this function we are just taking the elasticsearch aggregate response and looping through the
         buckets to create a results object for each time interval.
