@@ -56,6 +56,8 @@ from usaspending_api.submissions.models import SubmissionAttributes
 
 from typing import Any
 
+from elasticsearch_dsl import Q as ES_Q
+
 logger = logging.getLogger(__name__)
 
 GLOBAL_MAP = {
@@ -306,6 +308,44 @@ class SpendingByAwardVisualizationViewSet(APIView):
             "messages": get_generic_filters_message(self.original_filters.keys(), [elem["name"] for elem in models]),
         }
 
+    def query_elasticsearch(
+        self, base_search: AwardSearch | SubawardSearch, filter_query: ES_Q, sorts: list[dict[str, str]]
+    ) -> Response:
+        record_num = (self.pagination["page"] - 1) * self.pagination["limit"]
+        # random page jumping was removed due to performance concerns
+        if (self.last_record_sort_value is None and self.last_record_unique_id is not None) or (
+            self.last_record_sort_value is not None and self.last_record_unique_id is None
+        ):
+            # malformed request
+            raise Exception(
+                "Using search_after functionality in Elasticsearch requires both"
+                " last_record_sort_value and last_record_unique_id."
+            )
+        if record_num >= settings.ES_AWARDS_MAX_RESULT_WINDOW and (
+            self.last_record_unique_id is None and self.last_record_sort_value is None
+        ):
+            raise UnprocessableEntityException(
+                f"Page #{self.pagination['page']} with limit {self.pagination['limit']} is over the maximum result"
+                f" limit {settings.ES_AWARDS_MAX_RESULT_WINDOW}. Please provide the 'last_record_sort_value' and"
+                " 'last_record_unique_id' to paginate sequentially."
+            )
+        # Search_after values are provided in the API request - use search after
+        if self.last_record_sort_value is not None and self.last_record_unique_id is not None:
+            search = (
+                base_search.filter(filter_query)
+                .sort(*sorts)
+                .extra(search_after=[self.last_record_sort_value, self.last_record_unique_id])[
+                    : self.pagination["limit"] + 1
+                ]  # add extra result to check for next page
+            )
+        # no values, within result window, use regular elasticsearch
+        else:
+            search = base_search.filter(filter_query).sort(*sorts)[record_num : record_num + self.pagination["limit"]]
+
+        response = search.handle_execute()
+
+        return response
+
     def query_elasticsearch_awards(self) -> Response:
         filter_options = {}
         time_period_obj = AwardSearchTimePeriod(
@@ -358,41 +398,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
             sorts.extend([{field: self.pagination["sort_order"]} for field in sort_field])
         else:
             sorts = [{field: self.pagination["sort_order"]} for field in sort_field]
-        record_num = (self.pagination["page"] - 1) * self.pagination["limit"]
-        # random page jumping was removed due to performance concerns
-        if (self.last_record_sort_value is None and self.last_record_unique_id is not None) or (
-            self.last_record_sort_value is not None and self.last_record_unique_id is None
-        ):
-            # malformed request
-            raise Exception(
-                "Using search_after functionality in Elasticsearch requires both"
-                " last_record_sort_value and last_record_unique_id."
-            )
-        if record_num >= settings.ES_AWARDS_MAX_RESULT_WINDOW and (
-            self.last_record_unique_id is None and self.last_record_sort_value is None
-        ):
-            raise UnprocessableEntityException(
-                f"Page #{self.pagination['page']} with limit {self.pagination['limit']} is over the maximum result"
-                f" limit {settings.ES_AWARDS_MAX_RESULT_WINDOW}. Please provide the 'last_record_sort_value' and"
-                " 'last_record_unique_id' to paginate sequentially."
-            )
-        # Search_after values are provided in the API request - use search after
-        if self.last_record_sort_value is not None and self.last_record_unique_id is not None:
-            search = (
-                AwardSearch()
-                .filter(filter_query)
-                .sort(*sorts)
-                .extra(search_after=[self.last_record_sort_value, self.last_record_unique_id])[
-                    : self.pagination["limit"] + 1
-                ]  # add extra result to check for next page
-            )
-        # no values, within result window, use regular elasticsearch
-        else:
-            search = AwardSearch().filter(filter_query).sort(*sorts)[record_num : record_num + self.pagination["limit"]]
 
-        response = search.handle_execute()
-
-        return response
+        return self.query_elasticsearch(AwardSearch(), filter_query, sorts)
 
     def query_elasticsearch_subawards(self) -> Response:
         filter_options = {}
@@ -409,43 +416,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
         sort_field = self.get_elastic_sort_by_fields()
 
         sorts = [{field: self.pagination["sort_order"]} for field in sort_field]
-        record_num = (self.pagination["page"] - 1) * self.pagination["limit"]
-        # random page jumping was removed due to performance concerns
-        if (self.last_record_sort_value is None and self.last_record_unique_id is not None) or (
-            self.last_record_sort_value is not None and self.last_record_unique_id is None
-        ):
-            # malformed request
-            raise Exception(
-                "Using search_after functionality in Elasticsearch requires both"
-                " last_record_sort_value and last_record_unique_id."
-            )
-        if record_num >= settings.ES_AWARDS_MAX_RESULT_WINDOW and (
-            self.last_record_unique_id is None and self.last_record_sort_value is None
-        ):
-            raise UnprocessableEntityException(
-                f"Page #{self.pagination['page']} with limit {self.pagination['limit']} is over the maximum result"
-                f" limit {settings.ES_AWARDS_MAX_RESULT_WINDOW}. Please provide the 'last_record_sort_value' and"
-                " 'last_record_unique_id' to paginate sequentially."
-            )
-        # Search_after values are provided in the API request - use search after
-        if self.last_record_sort_value is not None and self.last_record_unique_id is not None:
-            search = (
-                SubawardSearch()
-                .filter(filter_query)
-                .sort(*sorts)
-                .extra(search_after=[self.last_record_sort_value, self.last_record_unique_id])[
-                    : self.pagination["limit"] + 1
-                ]  # add extra result to check for next page
-            )
-        # no values, within result window, use regular elasticsearch
-        else:
-            search = (
-                SubawardSearch().filter(filter_query).sort(*sorts)[record_num : record_num + self.pagination["limit"]]
-            )
 
-        response = search.handle_execute()
-
-        return response
+        return self.query_elasticsearch(SubawardSearch(), filter_query, sorts)
 
     # For an unknown reason, ES tends to return the awarding agency toptier codes as integers or floats, instead of as
     # text. This function casts the code back to a string and appends any leading zeroes that were lost.
