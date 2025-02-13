@@ -89,11 +89,9 @@ class RecipientViewSet(AbstractSpendingByCategoryViewSet):
                 {
                     "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
                     "recipient_id": result_hash_with_level,
-                    "name": (
-                        recipient_info["legal_business_name"] if recipient_info.get("legal_business_name") else None
-                    ),
-                    "code": recipient_info.get("duns") if recipient_info.get("duns") else None,
-                    "uei": recipient_info.get("uei") if recipient_info.get("uei") else None,
+                    "name": recipient_info.get("legal_business_name", None),
+                    "code": recipient_info.get("duns", None),
+                    "uei": recipient_info.get("uei", None),
                     "total_outlays": (
                         bucket.get("sum_as_dollars_outlay", {"value": None}).get("value")
                         if self.spending_level == SpendingLevel.AWARD
