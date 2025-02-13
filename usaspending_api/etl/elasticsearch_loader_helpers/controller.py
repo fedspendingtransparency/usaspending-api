@@ -135,6 +135,11 @@ class AbstractElasticsearchIndexerController(ABC):
         #       * the Award Index is set to 5 shards and runs with only 5 slices
         #       * the maximum number of open scroll contexts is 500
         """
+        if self.config["create_new_index"] or self.config["load_type"] != "transaction":
+            # Only transactions are currently processing with more than 5 shards. As a result,
+            # all other load_types are set to the original default of "auto".
+            return "auto"
+
         index_name_or_alias = self.config["index_name"]
         index = Index(name=index_name_or_alias, using=client)
         index_settings = index.get_settings()
@@ -144,12 +149,6 @@ class AbstractElasticsearchIndexerController(ABC):
         index_name = list(index_settings)[0]
 
         num_shards = int(index_settings[index_name]["settings"]["index"]["number_of_shards"])
-
-        if num_shards == 5:
-            # Anything that is still processing with 5 shards can continue to use 5 slices
-            # because that remains under the half point of 250 slices.
-            # It is assumed that 5 shards is the default value that we provide in settings.
-            return "auto"
 
         shard_stores = index.shard_stores(status="all")
 
