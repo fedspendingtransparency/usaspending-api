@@ -6,7 +6,7 @@ TRANSACTION_SEARCH_COLUMNS = {
     # Keys
     "transaction_id": {"delta": "LONG NOT NULL", "postgres": "BIGINT NOT NULL", "gold": False},
     "award_id": {"delta": "LONG NOT NULL", "postgres": "BIGINT NOT NULL", "gold": False},
-    # while transaction_unique_id is gold, it can't be NULL
+    # while transaction_unique_id is gold, it can't be NULL1023
     "transaction_unique_id": {"delta": "STRING NOT NULL", "postgres": "TEXT NOT NULL", "gold": False},
     "usaspending_unique_transaction_id": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "modification_number": {"delta": "STRING", "postgres": "TEXT", "gold": False},
@@ -462,10 +462,14 @@ transaction_search_load_sql_string = rf"""
         SAA.abbreviation AS awarding_subtier_agency_abbreviation,
         SFA.abbreviation AS funding_subtier_agency_abbreviation,
         COALESCE(transaction_fabs.awarding_office_code, transaction_fpds.awarding_office_code) AS awarding_office_code,
-        (SELECT o.office_name FROM office o WHERE o.office_code = COALESCE(transaction_fabs.awarding_office_code, transaction_fpds.awarding_office_code)) AS awarding_office_name,
-        COALESCE(transaction_fabs.funding_office_code, transaction_fpds.funding_office_code) AS funding_office_code,
-        (SELECT o.office_name FROM office o WHERE o.office_code = COALESCE(transaction_fabs.funding_office_code, transaction_fpds.funding_office_code)) AS funding_office_name,
-
+        CASE
+            WHEN COALESCE(transaction_fabs.awarding_office_code, transaction_fpds.awarding_office_code) IS NOT NULL
+            THEN awarding_office.office_name
+        END AS awarding_office_name,
+        CASE
+            WHEN COALESCE(transaction_fabs.funding_office_code, transaction_fpds.funding_office_code) IS NOT NULL
+            THEN funding_office.office_name
+        END AS funding_office_name
         -- Typing
         transaction_normalized.is_fpds,
         transaction_normalized.type AS type_raw,
@@ -1019,9 +1023,10 @@ transaction_search_load_sql_string = rf"""
             transaction_normalized.id = CURRENT_CD.transaction_id
         )
     LEFT OUTER JOIN
-        global.office ON (
-            office.office_code = COALESCE(transaction_fabs.office_code, transaction_fpds.office_code)
-        )
+        global_temp.office awarding_office ON awarding_office.office_code = COALESCE(transaction_fabs.awarding_office_code, transaction_fpds.awarding_office_code)
+    LEFT OUTER JOIN
+        global_temp.office funding_office ON funding_office.office_code = COALESCE(transaction_fabs.funding_office_code, transaction_fpds.funding_office_code)
+
     LEFT OUTER JOIN (
         SELECT
             faba.award_id,
