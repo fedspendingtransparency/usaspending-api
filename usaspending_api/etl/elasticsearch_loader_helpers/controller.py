@@ -3,11 +3,10 @@ from abc import ABC, abstractmethod
 from math import ceil
 from multiprocessing import Event, Pool, Value
 from time import perf_counter
-from typing import Dict, Tuple, Union
+from typing import Dict, Tuple
 
 from django.conf import settings
 from django.core.management import call_command
-from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import NotFoundError
 from elasticsearch_dsl import Index
 

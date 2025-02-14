@@ -633,8 +633,8 @@ def _gather_modified_transactions_pre_fy2008(
 
 def _check_awards_for_deletes(
     id_list: list,
-    spark: "pyspark.sql.SparkSession" = None,
-    awards_table: str = "vw_awards",  # noqa
+    spark: "pyspark.sql.SparkSession" = None,  # noqa
+    awards_table: str = "vw_awards",
 ) -> list:
     """Takes a list of award key values and returns them if they are NOT found in the awards DB table"""
 
@@ -664,9 +664,9 @@ def _check_awards_for_deletes(
 
 
 def _check_awards_for_pre_fy2008(
-    spark: "pyspark.sql.SparkSession" = None,
+    spark: "pyspark.sql.SparkSession" = None,  # noqa
     awards_table: str = "rpt.award_search",
-    days_delta: int = 3,  # noqa
+    days_delta: int = 3,
 ) -> Union[List[Dict], List]:
     """Find all awards that have been modified in the last `days_delta` day(s) that have an `action_date` prior to
         2007-10-01 (FY 2008) and delete them from Elasticsearch if they're present.
