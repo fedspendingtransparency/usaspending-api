@@ -1,14 +1,13 @@
-import boto3
 import logging
 import os
-import pandas as pd
 import re
 import shutil
 import subprocess
 import tempfile
+from datetime import date, datetime
 
-from datetime import datetime, date
-
+import boto3
+import pandas as pd
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db.models import Case, CharField, F, Q, Value, When
@@ -24,8 +23,7 @@ from usaspending_api.download.filestreaming.download_generation import (
 from usaspending_api.download.filestreaming.download_source import DownloadSource
 from usaspending_api.download.helpers import pull_modified_agencies_cgacs
 from usaspending_api.download.lookups import VALUE_MAPPINGS
-from usaspending_api.references.models import ToptierAgency, SubtierAgency
-
+from usaspending_api.references.models import SubtierAgency, ToptierAgency
 
 logger = logging.getLogger(__name__)
 
@@ -250,7 +248,7 @@ class Command(BaseCommand):
                 # Reorder columns to make it CSV-ready, and append
                 df = self.organize_deletion_columns(source, df, award_type, match_date)
                 logger.info(f"Found {len(df.index):,} deletion records to include")
-                all_deletions = all_deletions.append(df, ignore_index=True)
+                all_deletions = pd.concat([all_deletions, df], ignore_index=True)
 
         if len(all_deletions.index) == 0:
             logger.info("No deletion records to append to file")
