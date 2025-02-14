@@ -68,6 +68,10 @@ class AbstractElasticsearchIndexerController(ABC):
 
         self.config["partitions"] = self.determine_partitions()
         self.config["processes"] = min(self.config["processes"], self.config["partitions"])
+
+        # Need to update the slices for any changes in number of processes
+        self.set_slice_count()
+
         self.tasks = self.construct_tasks()
 
         logger.info(
@@ -79,15 +83,10 @@ class AbstractElasticsearchIndexerController(ABC):
             )
         )
 
-        client = instantiate_elasticsearch_client()
-
         if self.config["create_new_index"]:
             # ensure template for index is present and the latest version
             call_command("es_configure", "--template-only", f"--load-type={self.config['data_type']}")
-            create_index(self.config["index_name"], client)
-
-        # Need to update the slices for any changes in number of processes
-        self.set_slice_count(client)
+            create_index(self.config["index_name"], instantiate_elasticsearch_client())
 
     @abstractmethod
     def determine_partitions(self) -> int:
@@ -132,7 +131,7 @@ class AbstractElasticsearchIndexerController(ABC):
             slices=self.config["slices"],
         )
 
-    def set_slice_count(self, client: Elasticsearch) -> None:
+    def set_slice_count(self) -> None:
         """
         Retrieves the number of slices that should be used when performing any type
         of scroll operation (e.g., delete_by_query).
@@ -150,6 +149,8 @@ class AbstractElasticsearchIndexerController(ABC):
                 format_log(f"Setting the value of {self.config['load_type']} index slices: {self.config['slices']}")
             )
             return
+
+        client = instantiate_elasticsearch_client()
 
         transaction_index_name_or_alias = self.config["index_name"]
         transaction_index = Index(name=transaction_index_name_or_alias, using=client)
