@@ -100,9 +100,6 @@ class AbstractElasticsearchIndexer(ABC, BaseCommand):
             action="store_true",
             help="After completing the ETL, drop the SQL view used for the data extraction",
         )
-        parser.add_argument(
-            "--slices", type=int, help="Number of slices to use per shard; value that is supplied to delete_by_query."
-        )
 
     def handle(self, *args, **options):
         elasticsearch_client = instantiate_elasticsearch_client()
@@ -185,7 +182,6 @@ def parse_cli_args(options: dict, es_client) -> dict:
         "processes",
         "skip_counts",
         "skip_delete_index",
-        "slices",
     ]
     config = set_config(passthrough_values, options)
 
