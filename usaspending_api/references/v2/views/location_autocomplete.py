@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from typing import List, Union
+from typing import List
 
 from elasticsearch_dsl import Q as ES_Q
 from elasticsearch_dsl.response import Response as ES_Response
@@ -28,22 +28,10 @@ class LocationAutocompleteViewSet(APIView):
     @cache_response()
     def post(self, request):
         es_results: ES_Response = self._query_elasticsearch(request.data["search_text"], request.data["limit"])
-        formatted_results = {
-            "countries": self._format_country_results(self._filter_results(es_results, ["country_name"])),
-            "states": self._format_state_results(self._filter_results(es_results, ["state_name"])),
-            "cities": self._format_city_results(self._filter_results(es_results, ["cities"])),
-            "counties": self._format_county_results(
-                self._filter_results(es_results, ["counties.name", "counties.fips"])
-            ),
-            "zip_codes": self._format_zip_code_results(self._filter_results(es_results, ["zip_codes"])),
-            "districts_current": self._format_current_cd_results(
-                self._filter_results(es_results, ["current_congressional_districts"])
-            ),
-            "districts_original": self._format_original_cd_results(
-                self._filter_results(es_results, ["original_congressional_districts"])
-            ),
-        }
-        results = {k: v for k, v in formatted_results.items() if v is not None}
+
+        results = self._format_results(es_results.hits)
+        results = {k: v for k, v in results.items() if v is not None}
+
         # Account for cases where there are multiple results in a single ES document
         results_length = sum(len(x) for x in results.values())
         return Response(OrderedDict([("count", results_length), ("results", results), ("messages", [""])]))
@@ -65,235 +53,86 @@ class LocationAutocompleteViewSet(APIView):
         Returns:
             An Elasticsearch Response object containing the list of locations that contain the provided `search_text`.
         """
-        es_location_fields = (
-            "country_name",
-            "state_name",
-            "cities",
-            "zip_codes",
-            "current_congressional_districts",
-            "original_congressional_districts",
-        )
-        es_nested_fields = (
-            "counties.name",
-            "counties.fips",
-        )
 
         # Elasticsearch queries don't work well with the "-" character so we remove it from any searches, specifically
         #   with Congressional districts in mind.
         search_text = search_text.replace("-", "")
-        query_string_query = ES_Q("query_string", query=f"*{search_text}*", fields=es_location_fields)
-        multi_match_query = ES_Q("multi_match", query=search_text, fields=es_location_fields)
-        nested_query_string_query = ES_Q("query_string", query=f"*{search_text}*", fields=es_nested_fields)
-        nested_multi_match_query = ES_Q("multi_match", query=search_text, fields=es_nested_fields)
-        nested_bool_query = ES_Q(
-            "bool",
-            should=[nested_query_string_query, nested_multi_match_query],
-            minimum_should_match=1,
-        )
-        nested_query = ES_Q("nested", path="counties", query=nested_bool_query)
-        query = ES_Q("bool", should=[query_string_query, multi_match_query, nested_query], minimum_should_match=1)
 
+        should_query = [
+            ES_Q("match_phrase_prefix", **{"location_string": {"query": search_text, "boost": 5}}),
+            ES_Q("match_phrase_prefix", **{"location_string.contains": {"query": search_text, "boost": 3}}),
+            ES_Q("match", **{"location_string": {"query": search_text, "operator": "and", "boost": 1}}),
+        ]
+
+        query = ES_Q("bool", should=should_query, minimum_should_match=1)
         search: LocationSearch = LocationSearch().extra(size=limit).query(query)
-        search = search.highlight(
-            "country_name",
-            "state_name",
-            "cities",
-            "counties.name",
-            "counties.fips",
-            "zip_codes",
-            "current_congressional_districts",
-            "original_congressional_districts",
-        )
-        search = search.highlight_options(order="score", pre_tags=[""], post_tags=[""])
-
         results: ES_Response = search.execute()
 
         return results
 
-    def _format_country_results(self, es_results: List[Hit]) -> Union[List, None]:
-        """Format Elasticsearch results containing country matches
+    def _format_results(self, es_results: List[Hit]) -> dict:
+        """Format Elasticsearch results to match the API contract format
 
         Args:
-            es_results: Elasticsearch results that contained a match in the `country_name` field
+            es_results: Elasticsearch result hits
 
         Returns:
-            A list containing all country names that matched the `search_text`
+            A dictionary containing all locations that matched the `search_text`
 
         Example:
-            [
-                {"country_name": "DENMARK"},
-                {"country_name": "SWEDEN"}
-            ]
-        """
-        if len(es_results) > 0:
-            return [{"country_name": doc.country_name} for doc in es_results]
-        else:
-            return None
-
-    def _format_state_results(self, es_results: List[Hit]) -> Union[List, None]:
-        """Format Elasticsearch results containing state matches
-
-        Args:
-            es_results: Elasticsearch results that contained a match in the `state_name` field
-
-        Returns:
-            A list containing all state names that matched the `search_text` along with the
-            country_name field.
-
-        Example:
-            [
-                {"state_name": "Missouri", "country_name": "UNITED STATES"},
-                {"state_name": "Mississippi", "country_name": "UNITED STATES"}
-            ]
+            {
+                "countries": ["Denmark", "Sweden"],
+                "cities": [
+                    "Denver, Colorado, United States",
+                    "Camden, Arkansas, United States"
+                ],
+                "counties": [
+                    {
+                        "county_name": "Camden County, Arkansas, United States",
+                        "county_fips": "12345"
+                    }
+                ]
+            }
         """
 
-        if len(es_results) > 0:
-            return [{"state_name": doc.state_name, "country_name": doc.country_name} for doc in es_results]
-        else:
-            return None
+        countries = []
+        states = []
+        cities = []
+        counties = []
+        zip_codes = []
+        original_cds = []
+        current_cds = []
 
-    def _format_city_results(self, es_results: List[Hit]) -> Union[List, None]:
-        """Format Elasticsearch results containing city matches
+        # Key: Value of the `location_type` field on the ES docs
+        # Value: Lists from above that will contain the matches for that location type
+        location_type_to_list_lookup = {
+            "country": countries,
+            "city": cities,
+            "state": states,
+            "county": counties,
+            "zip_code": zip_codes,
+            "original_congressional_district": original_cds,
+            "current_congressional_district": current_cds,
+        }
 
-        Args:
-            es_results: Elasticsearch results that contained a match in the `cities` field
+        for doc in es_results:
+            if doc.location_type == "county":
+                location = {"county_name": doc.location_string, "county_fips": doc.county_fips}
+            elif doc.location_type in ("original_congressional_district", "current_congressional_district"):
+                location = f"{doc.location_string[:2]}-{doc.location_string[2:]}"
+            else:
+                location = doc.location_string
 
-        Returns:
-            A list containing all city names that matched the `search_text` along with the
-            state_name and country_name fields.
+            location_type_to_list_lookup[doc.location_type].append(location)
 
-        Example:
-            [
-                {"city_name": "HOLDEN", "state_name": "LOUISIANA", "country_name": "UNITED STATES"},
-                {"city_name": "DENVER", "state_name": "COLORADO", "country_name": "UNITED STATES"}
-            ]
-        """
+        results = {
+            "countries": countries if countries else None,
+            "states": states if states else None,
+            "cities": cities if cities else None,
+            "counties": counties if counties else None,
+            "zip_codes": zip_codes if zip_codes else None,
+            "districts_original": original_cds if original_cds else None,
+            "districts_current": current_cds if current_cds else None,
+        }
 
-        if len(es_results) > 0:
-            cities = []
-            for doc in es_results:
-                for city in doc.meta.highlight.cities:
-                    cities.append({"city_name": city, "state_name": doc.state_name, "country_name": doc.country_name})
-            return cities
-        else:
-            return None
-
-    def _format_county_results(self, es_results: List[Hit]) -> Union[List, None]:
-        """Format Elasticsearch results containing county matches
-
-        Args:
-            es_results: Elasticsearch results that contained a match in the `counties.name` or `counties.fips` field
-
-        Returns:
-            A list of objects with county_fips and county_name properties that matched the `search_text` along with the
-            state_name and country_name fields.
-
-        Example:
-            [
-                {"county_fips": "12039", "county_name": "GADSDEN", "state_name": "FLORIDA", "country_name": "UNITED STATES"},
-                {"county_fips": "13039", "county_name": "CAMDEN", "state_name": "GEORGIA", "country_name": "UNITED STATES"}
-            ]
-        """
-        if len(es_results) > 0:
-            counties = [
-                {
-                    "county_fips": county["fips"],
-                    "county_name": county["name"],
-                    "state_name": result.state_name,
-                    "country_name": result.country_name,
-                }
-                for result in es_results
-                for _property in ["fips", "name"]
-                if f"counties.{_property}" in result.meta.highlight
-                for match in set(result.meta.highlight[f"counties.{_property}"])
-                for county in [county for county in result.counties if county[_property] == match]
-            ]
-            return counties
-        else:
-            return None
-
-    def _format_zip_code_results(self, es_results: List[Hit]) -> Union[List, None]:
-        """Format Elasticsearch results containing zip code matches
-
-        Args:
-            es_results: Elasticsearch results that contained a match in the `zip_codes` field
-
-        Returns:
-            A list containing all zip codes that matched the `search_text` along with the
-            state_name and country_name fields.
-
-        Example:
-            [
-                {"zip_code": "60123", "state_name": "ILLINOIS", "country_name": "UNITED STATES"},
-                {"zip_code": "61231", "state_name": "ILLINOIS", "country_name": "UNITED STATES"}
-            ]
-        """
-
-        if len(es_results) > 0:
-            zip_codes = []
-            for doc in es_results:
-                for zip in doc.meta.highlight.zip_codes:
-                    zip_codes.append({"zip_code": zip, "state_name": doc.state_name, "country_name": doc.country_name})
-            return zip_codes
-        else:
-            return None
-
-    def _format_current_cd_results(self, es_results: List[Hit]) -> Union[List, None]:
-        """Format Elasticsearch results containing current congressional district matches
-
-        Args:
-            es_results: Elasticsearch results that contained a match in the `current_congressional_districts` field
-
-        Returns:
-            A list containing all current congressional districts that matched the `search_text` along with the
-            state_name and country_name fields.
-
-        Example:
-            [
-                {"current_cd": "TX-36", "state_name": "TEXAS", "country_name": "UNITED STATES"},
-                {"current_cd": "CA-36", "state_name": "CALIFORNIA", "country_name": "UNITED STATES"}
-            ]
-        """
-
-        if len(es_results) > 0:
-            current_cds = []
-            for doc in es_results:
-                for current_cd in doc.meta.highlight.current_congressional_districts:
-                    # Add the hyphen back to the Congressional districts to be consistent with other endpoints
-                    current_cd = f"{current_cd[:2]}-{current_cd[2:]}"
-                    current_cds.append(
-                        {"current_cd": current_cd, "state_name": doc.state_name, "country_name": doc.country_name}
-                    )
-            return current_cds
-        else:
-            return None
-
-    def _format_original_cd_results(self, es_results: List[Hit]) -> Union[List, None]:
-        """Format Elasticsearch results containing original congressional district matches
-
-        Args:
-            es_results: Elasticsearch results that contained a match in the `original_congressional_districts` field
-
-        Returns:
-            A list containing all original congressional districts that matched the `search_text` along with the
-            state_name and country_name fields.
-
-        Example:
-            [
-                {"original_cd": "NY-36", "state_name": "NEW YORK", "country_name": "UNITED STATES"},
-                {"original_cd": "CA-36", "state_name": "CALIFORNIA", "country_name": "UNITED STATES"}
-            ]
-        """
-
-        if len(es_results) > 0:
-            original_cds = []
-            for doc in es_results:
-                for original_cd in doc.meta.highlight.original_congressional_districts:
-                    # Add the hyphen back to the Congressional districts to be consistent with other endpoints
-                    original_cd = f"{original_cd[:2]}-{original_cd[2:]}"
-                    original_cds.append(
-                        {"original_cd": original_cd, "state_name": doc.state_name, "country_name": doc.country_name}
-                    )
-            return original_cds
-        else:
-            return None
+        return results
