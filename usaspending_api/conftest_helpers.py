@@ -130,7 +130,7 @@ class TestElasticSearchIndex:
             sql=None,
             transform_func=None,
             view=None,
-            slices="auto"
+            slices="auto",
         )
 
     def delete_index(self):
