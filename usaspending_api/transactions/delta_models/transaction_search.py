@@ -6,7 +6,7 @@ TRANSACTION_SEARCH_COLUMNS = {
     # Keys
     "transaction_id": {"delta": "LONG NOT NULL", "postgres": "BIGINT NOT NULL", "gold": False},
     "award_id": {"delta": "LONG NOT NULL", "postgres": "BIGINT NOT NULL", "gold": False},
-    # while transaction_unique_id is gold, it can't be NULL1023
+    # while transaction_unique_id is gold, it can't be NULL
     "transaction_unique_id": {"delta": "STRING NOT NULL", "postgres": "TEXT NOT NULL", "gold": False},
     "usaspending_unique_transaction_id": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "modification_number": {"delta": "STRING", "postgres": "TEXT", "gold": False},
