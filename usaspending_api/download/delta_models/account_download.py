@@ -1,4 +1,5 @@
 ACCOUNT_DOWNLOAD_COLUMNS = {
+    "financial_accounts_by_awards_id": "INTEGER NOT NULL",
     "submission_id": "INTEGER NOT NULL",
     "owning_agency_name": "STRING",
     "federal_account_symbol": "STRING",
@@ -98,6 +99,7 @@ account_download_load_sql_string = rf"""
         {",".join(list(ACCOUNT_DOWNLOAD_COLUMNS))}
     )
     SELECT
+        financial_accounts_by_awards.financial_accounts_by_awards_id,
         financial_accounts_by_awards.submission_id,
         toptier_agency.name AS owning_agency_name,
         federal_account.federal_account_code AS federal_account_symbol,

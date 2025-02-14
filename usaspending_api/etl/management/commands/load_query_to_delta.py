@@ -322,7 +322,7 @@ TABLE_SPEC = {
         "destination_database": "rpt",
         "swap_table": "account_download",
         "swap_schema": "rpt",
-        "partition_column": "id",
+        "partition_column": "financial_accounts_by_awards_id",
         "partition_column_type": "numeric",
         "is_partition_column_unique": False,
         "delta_table_create_sql": account_download_create_sql_string,
