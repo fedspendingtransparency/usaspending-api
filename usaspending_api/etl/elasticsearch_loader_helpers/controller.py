@@ -179,8 +179,8 @@ class AbstractElasticsearchIndexerController(ABC):
             )
         )
 
-        award_index = Index(name=settings.ES_AWARDS_WRITE_ALIAS, using=client)
         try:
+            award_index = Index(name=settings.ES_AWARDS_WRITE_ALIAS, using=client)
             award_index_settings = award_index.get_settings()
             award_index_name = list(award_index_settings)[0]
             award_num_shards = int(award_index_settings[award_index_name]["settings"]["index"]["number_of_shards"])
