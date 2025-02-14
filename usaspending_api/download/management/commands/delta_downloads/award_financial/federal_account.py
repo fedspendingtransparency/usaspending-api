@@ -16,9 +16,33 @@ DOWNLOAD_QUERY = """
         disaster_emergency_fund_code,
         disaster_emergency_fund_name,
         SUM(transaction_obligated_amount) AS transaction_obligated_amount,
-        SUM(gross_outlay_amount_FYB_to_period_end) AS gross_outlay_amount_FYB_to_period_end,
-        SUM(USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig) AS USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig,
-        SUM(USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig) AS USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig,
+        SUM(
+            CASE 
+                WHEN 
+                    reporting_fiscal_year = 2021
+                THEN 
+                    gross_outlay_amount_FYB_to_period_end
+            ElSE CAST(NULL as NUMERIC(23, 2))
+            END                
+        ) AS gross_outlay_amount_FYB_to_period_end,
+        SUM(
+            CASE 
+                WHEN 
+                    reporting_fiscal_year = 2021
+                THEN 
+                    USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig
+            ElSE CAST(NULL as NUMERIC(23, 2))
+            END  
+        ) AS USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig,
+        SUM(
+             CASE 
+                WHEN 
+                    reporting_fiscal_year = 2021
+                THEN 
+                    USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig
+            ElSE CAST(NULL as NUMERIC(23, 2))
+            END
+        ) AS USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig,
         award_unique_key,
         award_id_piid,
         parent_award_id_piid,
@@ -170,12 +194,60 @@ DOWNLOAD_QUERY = """
         prime_award_summary_place_of_performance_cd_current
     HAVING
         -- All of the HAVING statements below ensure we return only non-zero sum records
-        SUM(gross_outlay_amount_fyb_to_period_end) > 0
-        OR SUM(gross_outlay_amount_fyb_to_period_end) < 0
-        OR SUM(ussgl487200_downward_adj_prior_year_prepaid_undeliv_order_oblig) < 0
-        OR SUM(ussgl487200_downward_adj_prior_year_prepaid_undeliv_order_oblig) > 0
-        OR SUM(ussgl497200_downward_adj_of_prior_year_paid_deliv_orders_oblig) < 0
-        OR SUM(ussgl497200_downward_adj_of_prior_year_paid_deliv_orders_oblig) > 0
+        SUM(
+            CASE 
+                WHEN 
+                    reporting_fiscal_year = 2021
+                THEN 
+                    gross_outlay_amount_FYB_to_period_end
+            ElSE CAST(NULL as NUMERIC(23, 2))
+            END
+        ) > 0
+        OR SUM(
+            CASE 
+                WHEN 
+                    reporting_fiscal_year = 2021
+                THEN 
+                    gross_outlay_amount_FYB_to_period_end
+            ElSE CAST(NULL as NUMERIC(23, 2))
+            END
+        ) < 0
+        OR SUM(
+            CASE 
+                WHEN 
+                    reporting_fiscal_year = 2021
+                THEN 
+                    USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig
+            ElSE CAST(NULL as NUMERIC(23, 2))
+            END 
+        ) < 0
+        OR SUM(
+            CASE 
+                WHEN 
+                    reporting_fiscal_year = 2021
+                THEN 
+                    USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig
+            ElSE CAST(NULL as NUMERIC(23, 2))
+            END 
+        ) > 0
+        OR SUM(
+            CASE 
+                WHEN 
+                    reporting_fiscal_year = 2021
+                THEN 
+                    USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig
+            ElSE CAST(NULL as NUMERIC(23, 2))
+            END
+        ) < 0
+        OR SUM(
+            CASE 
+                WHEN 
+                    reporting_fiscal_year = 2021
+                THEN 
+                    USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig
+            ElSE CAST(NULL as NUMERIC(23, 2))
+            END
+        ) > 0
         OR SUM(transaction_obligated_amount) > 0
         OR SUM(transaction_obligated_amount) < 0
 """
