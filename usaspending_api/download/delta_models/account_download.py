@@ -1,5 +1,3 @@
-ACCOUNT_DOWNLOAD_COLUMNS_TEST = {"award_id_piid": "STRING"}
-
 ACCOUNT_DOWNLOAD_COLUMNS = {
     "submission_id": "INTEGER NOT NULL",
     "owning_agency_name": "STRING",
@@ -117,11 +115,11 @@ account_download_load_sql_string = rf"""
         financial_accounts_by_awards.parent_award_id AS parent_award_id_piid,
         financial_accounts_by_awards.fain AS award_id_fain,
         financial_accounts_by_awards.uri AS award_id_uri,
-        TRY_CAST(award_search.date_signed AS DATE) AS award_base_action_date,
-        TRY_CAST(award_search.certified_date AS DATE) AS award_latest_action_date,
-        TRY_CAST(award_search.period_of_performance_start_date AS DATE),
-        TRY_CAST(award_search.period_of_performance_current_end_date AS DATE),
-        TRY_CAST(transaction_search.ordering_period_end_date AS DATE),
+        CAST(award_search.date_signed AS DATE) AS award_base_action_date,
+        CAST(award_search.certified_date AS DATE) AS award_latest_action_date,
+        CAST(award_search.period_of_performance_start_date AS DATE),
+        CAST(award_search.period_of_performance_current_end_date AS DATE),
+        CAST(transaction_search.ordering_period_end_date AS DATE),
         transaction_search.idv_type AS idv_type_code,
         transaction_search.idv_type_description AS idv_type,
         award_search.description AS prime_award_base_transaction_description,
@@ -201,7 +199,7 @@ account_download_load_sql_string = rf"""
                         submission_attributes.quarter_format_flag = FALSE
                         AND submission_attributes.reporting_fiscal_period = 12
                     )
-                ) AND submission_attributes.reporting_fiscal_year = 2021
+                ) 
                 THEN
                     financial_accounts_by_awards.gross_outlay_amount_by_award_cpe
             ELSE CAST(NULL AS NUMERIC(23, 2))
@@ -217,7 +215,7 @@ account_download_load_sql_string = rf"""
                         submission_attributes.quarter_format_flag = FALSE
                         AND submission_attributes.reporting_fiscal_period = 12
                     )
-                ) AND submission_attributes.reporting_fiscal_year = 2021
+                )
                 THEN
                     financial_accounts_by_awards.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe
             ELSE CAST(NULL AS NUMERIC(23, 2))
@@ -233,7 +231,7 @@ account_download_load_sql_string = rf"""
                         submission_attributes.quarter_format_flag = FALSE
                         AND submission_attributes.reporting_fiscal_period = 12
                     )
-                ) AND submission_attributes.reporting_fiscal_year = 2021
+                )
                 THEN
                     financial_accounts_by_awards.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe
             ELSE CAST(NULL AS NUMERIC(23, 2))
@@ -331,7 +329,7 @@ account_download_load_sql_string = rf"""
                     )
             ELSE ''
         END AS usaspending_permalink,
-        TRY_CAST(submission_attributes.published_date AS DATE) AS last_modified_date,
+        CAST(submission_attributes.published_date AS DATE) AS last_modified_date,
         submission_attributes.reporting_fiscal_period,
         submission_attributes.reporting_fiscal_quarter,
         submission_attributes.reporting_fiscal_year,
