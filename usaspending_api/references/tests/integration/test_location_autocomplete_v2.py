@@ -122,8 +122,8 @@ def test_multiple_types_of_matches(client, monkeypatch, location_data_fixture, e
         "countries": ["DENMARK"],
         "cities": ["DENVER, COLORADO"],
         "counties": [
-            {"county_fips": "22222", "county_name": "DENVER COUNTY, COLORADO"},
             {"county_fips": "13444", "county_name": "CAMDEN COUNTY, GEORGIA"},
+            {"county_fips": "22222", "county_name": "DENVER COUNTY, COLORADO"},
         ],
     }
 
