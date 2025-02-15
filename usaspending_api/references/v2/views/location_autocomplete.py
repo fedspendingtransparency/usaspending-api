@@ -65,7 +65,8 @@ class LocationAutocompleteViewSet(APIView):
         ]
 
         query = ES_Q("bool", should=should_query, minimum_should_match=1)
-        search: LocationSearch = LocationSearch().extra(size=limit).query(query)
+        # Sort by the `occurences` field in descending order
+        search: LocationSearch = LocationSearch().extra(size=limit).query(query).sort("-occurrences")
         results: ES_Response = search.execute()
 
         return results
