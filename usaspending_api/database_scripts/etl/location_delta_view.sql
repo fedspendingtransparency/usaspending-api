@@ -11,11 +11,15 @@ WITH country_cte AS (
 			ELSE
 				pop_country_name
 		END AS location_string,
-		'country' AS location_type
+		'country' AS location_type,
+        COUNT(*) AS occurrences
 	FROM
 		rpt.transaction_search
 	WHERE
 		pop_country_name IS NOT NULL
+    GROUP BY
+        location_string,
+        location_type
 	UNION
 	SELECT
 		CASE
@@ -26,11 +30,15 @@ WITH country_cte AS (
 			ELSE
 				recipient_location_country_name
 		END AS location_string,
-		'country' AS location_type
+		'country' AS location_type,
+        COUNT(*) AS occurrences
 	FROM
 		rpt.transaction_search
 	WHERE
 		recipient_location_country_name IS NOT NULL
+    GROUP BY
+        location_string,
+        location_type
 ),
 county_cte AS (
 	SELECT
@@ -54,7 +62,8 @@ county_cte AS (
 				CONCAT(pop_state_fips, pop_county_code) ~ '^[0-9]{5}$'
 			THEN
 				CONCAT(pop_state_fips, pop_county_code)
-		END AS county_fips
+		END AS county_fips,
+		COUNT(*) AS occurrences
 	FROM
 		rpt.transaction_search
 	INNER JOIN
@@ -64,6 +73,10 @@ county_cte AS (
 		pop_country_name IS NOT NULL
         AND
         pop_county_name NOT LIKE '%,%'
+    GROUP BY
+		location_string,
+		location_type,
+		county_fips
 	UNION
 	SELECT
 		CASE
@@ -86,7 +99,8 @@ county_cte AS (
 				CONCAT(recipient_location_state_fips, recipient_location_county_code) ~ '^[0-9]{5}$'
 			THEN
 				CONCAT(recipient_location_state_fips, recipient_location_county_code)
-		END AS county_fips
+		END AS county_fips,
+		COUNT(*) AS occurrences
 	FROM
 		rpt.transaction_search
 	INNER JOIN
@@ -96,6 +110,10 @@ county_cte AS (
 		recipient_location_country_name IS NOT NULL
         AND
         recipient_location_county_name NOT LIKE '%,%'
+    GROUP BY
+    	location_string,
+    	location_type,
+    	county_fips
 ),
 zip_cte AS (
 	SELECT
@@ -109,13 +127,17 @@ zip_cte AS (
 			THEN
 				CONCAT(pop_zip5, ', ', UPPER(sd.name))
 		END AS location_string,
-		'zip_code' AS location_type
+		'zip_code' AS location_type,
+		COUNT(*) AS occurrences
 	FROM
 		rpt.transaction_search
 	INNER JOIN
 		state_data sd ON pop_state_name = UPPER(sd.name)
 	WHERE
 		pop_county_name IS NOT NULL
+	GROUP BY
+		location_string,
+		location_type
 	UNION
 	SELECT
 		CASE
@@ -130,13 +152,17 @@ zip_cte AS (
 			ELSE
 				NULL
 		END AS location_string,
-		'zip_code' AS location_type
+		'zip_code' AS location_type,
+		COUNT(*) AS occurrences
 	FROM
 		rpt.transaction_search
 	INNER JOIN
 		state_data sd ON recipient_location_state_name = UPPER(sd.name)
 	WHERE
 		recipient_location_country_name IS NOT NULL
+	GROUP BY
+		location_string,
+		location_type
 ),
 current_cd_cte AS (
     SELECT
@@ -152,13 +178,17 @@ current_cd_cte AS (
 			THEN
 				CONCAT(sd.code, recipient_location_congressional_code_current, ', ', UPPER(sd.name))
 		END AS location_string,
-        'current_congressional_district' AS location_type
+        'current_congressional_district' AS location_type,
+        COUNT(*) AS occurrences
     FROM
         rpt.transaction_search
     INNER JOIN
 		state_data sd ON recipient_location_state_name = UPPER(sd.name)
 	WHERE
 		recipient_location_country_name IS NOT NULL
+	GROUP BY
+		location_string,
+		location_type
 	UNION
 	SELECT
         CASE
@@ -173,13 +203,17 @@ current_cd_cte AS (
 			THEN
 				CONCAT(sd.code, pop_congressional_code_current, ', ', UPPER(sd.name))
 		END AS location_string,
-        'current_congressional_district' AS location_type
+        'current_congressional_district' AS location_type,
+        COUNT(*) AS occurrences
     FROM
         rpt.transaction_search
     INNER JOIN
 		state_data sd ON pop_state_name = UPPER(sd.name)
 	WHERE
 		pop_country_name IS NOT NULL
+	GROUP BY
+		location_string,
+		location_type
 ),
 original_cd_cte AS (
     SELECT
@@ -195,13 +229,17 @@ original_cd_cte AS (
 			THEN
 				CONCAT(UPPER(sd.code), recipient_location_congressional_code, ', ', UPPER(sd.name))
 		END AS location_string,
-        'original_congressional_district' AS location_type
+        'original_congressional_district' AS location_type,
+        COUNT(*) AS occurrences
     FROM
         rpt.transaction_search
     INNER JOIN
 		state_data sd ON recipient_location_state_name = UPPER(sd.name)
 	WHERE
 		recipient_location_country_name IS NOT NULL
+	GROUP BY
+		location_string,
+		location_type
 	UNION
 	SELECT
         CASE
@@ -216,30 +254,42 @@ original_cd_cte AS (
 			THEN
 				CONCAT(UPPER(sd.code), pop_congressional_code, ', ', UPPER(sd.name))
 		END AS location_string,
-        'original_congressional_district' AS location_type
+        'original_congressional_district' AS location_type,
+        COUNT(*) AS occurrences
     FROM
         rpt.transaction_search
     INNER JOIN
 		state_data sd ON pop_state_name = UPPER(sd.name)
 	WHERE
 		pop_country_name IS NOT NULL
+	GROUP BY
+		location_string,
+		location_type
 ),
 state_cte AS (
     SELECT
         UPPER(sd.name) AS location_string,
-        'state' AS location_type
+        'state' AS location_type,
+        COUNT(*) AS occurrences
     FROM
         rpt.transaction_search
     INNER JOIN
         state_data sd ON recipient_location_state_name = UPPER(sd.name)
+    GROUP BY
+		location_string,
+		location_type
     UNION
     SELECT
         UPPER(sd.name) AS location_string,
-        'state' AS location_type
+        'state' AS location_type,
+        COUNT(*) AS occurrences
     FROM
         rpt.transaction_search
     INNER JOIN
         state_data sd ON pop_state_name = UPPER(sd.name)
+    GROUP BY
+		location_string,
+		location_type
 ),
 city_cte AS (
     SELECT
@@ -255,7 +305,8 @@ city_cte AS (
             THEN
                 CONCAT(UPPER(recipient_location_city_name), ', ', UPPER(sd.name))
         END AS location_string,
-        'city' AS location_type
+        'city' AS location_type,
+        COUNT(*) AS occurrences
     FROM rpt.transaction_search
     INNER JOIN
         state_data sd ON recipient_location_state_name = UPPER(sd.name)
@@ -263,6 +314,9 @@ city_cte AS (
         recipient_location_country_name IS NOT NULL
         AND
         recipient_location_city_name NOT LIKE '%,%'
+    GROUP BY
+		location_string,
+		location_type
     UNION
     SELECT
         CASE
@@ -277,7 +331,8 @@ city_cte AS (
             THEN
                 CONCAT(UPPER(pop_city_name), ', ', UPPER(sd.name))
         END AS location_string,
-        'city' AS location_type
+        'city' AS location_type,
+        COUNT(*) AS occurrences
     FROM rpt.transaction_search
     INNER JOIN
         state_data sd ON pop_state_name = UPPER(sd.name)
@@ -285,12 +340,16 @@ city_cte AS (
         pop_country_name IS NOT NULL
         AND
         pop_city_name NOT LIKE '%,%'
+    GROUP BY
+		location_string,
+		location_type
 ),
 select_cte AS (
     SELECT
         location_string,
         location_type,
-        NULL AS county_fips
+        NULL AS county_fips,
+        SUM(occurrences) AS occurrences
     FROM
         country_cte
     GROUP BY
@@ -300,7 +359,8 @@ select_cte AS (
     SELECT
         location_string,
         location_type,
-        county_fips
+        county_fips,
+        SUM(occurrences) AS occurrences
     FROM
         county_cte
     GROUP BY
@@ -311,7 +371,8 @@ select_cte AS (
     SELECT
         location_string,
         location_type,
-        NULL AS county_fips
+        NULL AS county_fips,
+        SUM(occurrences) AS occurrences
     FROM
         zip_cte
     GROUP BY
@@ -321,7 +382,8 @@ select_cte AS (
     SELECT
         location_string,
         location_type,
-        NULL AS county_fips
+        NULL AS county_fips,
+        SUM(occurrences) AS occurrences
     FROM
         current_cd_cte
     GROUP BY
@@ -331,7 +393,8 @@ select_cte AS (
     SELECT
         location_string,
         location_type,
-        NULL AS county_fips
+        NULL AS county_fips,
+        SUM(occurrences) AS occurrences
     FROM
         original_cd_cte
     GROUP BY
@@ -341,7 +404,8 @@ select_cte AS (
     SELECT
         location_string,
         location_type,
-        NULL AS county_fips
+        NULL AS county_fips,
+        SUM(occurrences) AS occurrences
     FROM
         city_cte
     GROUP BY
@@ -351,7 +415,8 @@ select_cte AS (
     SELECT
         location_string,
         location_type,
-        NULL AS county_fips
+        NULL AS county_fips,
+        SUM(occurrences) AS occurrences
     FROM
         state_cte
     GROUP BY
@@ -362,10 +427,12 @@ SELECT
     ROW_NUMBER() OVER (ORDER BY location_string, location_type) AS id,
     location_string,
     location_type,
-    county_fips
+    county_fips,
+    occurrences
 FROM
     select_cte
 GROUP BY
     location_string,
     location_type,
-    county_fips
+    county_fips,
+    occurrences
