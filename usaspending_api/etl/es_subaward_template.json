@@ -621,6 +621,12 @@
       },
       "prime_award_recipient_id": {
         "type": "keyword"
+      },
+      "tas_paths": {
+        "type": "keyword"
+      },
+      "tas_components": {
+        "type": "keyword"
       }
     }
   }

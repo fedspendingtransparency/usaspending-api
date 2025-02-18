@@ -113,7 +113,9 @@ SELECT
     a.recipient_hash,
     a.parent_uei,
     s.program_activities::JSON,
-    s.prime_award_recipient_id
+    s.prime_award_recipient_id,
+    s.tas_paths,
+	s.tas_components
 FROM
 	rpt.subaward_search s
 LEFT JOIN rpt.award_search a
