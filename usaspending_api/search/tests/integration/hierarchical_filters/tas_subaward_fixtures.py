@@ -6,6 +6,8 @@ from usaspending_api.search.tests.integration.hierarchical_filters.tas_fixtures 
     ATA_TAS,
     BPOA_TAS,
     SISTER_TAS,
+    UNINTUITIVE_BASIC_TAS,
+    TAS_PATHS,
 )
 
 
@@ -26,7 +28,7 @@ def subaward_with_bpoa_tas(db, award_with_bpoa_tas):
 
 @pytest.fixture
 def subaward_with_unintuitive_agency(db, tas_with_nonintuitive_agency):
-    subaward(db, 1, [BASIC_TAS])
+    subaward(db, 1, [UNINTUITIVE_BASIC_TAS])
 
 
 @pytest.fixture
@@ -65,4 +67,7 @@ def subaward(db, award_id, treasury_account_identifiers):
         prime_award_group="procurement",
         subaward_amount=10000,
         treasury_account_identifiers=treasury_account_identifiers,
+        tas_paths=list(map(lambda x: TAS_PATHS[x], treasury_account_identifiers)),
+        tas_components=list(map(lambda x: TAS_PATHS[x][30:], treasury_account_identifiers)),
+        unique_award_key="AWARD_" + str(award_id),
     )
