@@ -931,7 +931,13 @@ class QueryWithFilters:
     unsupported_filters = ["legal_entities"]
 
     @classmethod
-    def _generate_elasticsearch_query(cls, filters: dict, query_type: _QueryType, **options) -> ES_Q:
+    def __init__(self, query_type: _QueryType):
+        self.query_type = query_type
+
+
+
+    @classmethod
+    def _generate_elasticsearch_query(cls, filters: dict, **options) -> ES_Q:
         nested_path = options.pop("nested_path", "")
 
         must_queries = []
@@ -942,7 +948,7 @@ class QueryWithFilters:
         filters_copy = copy.deepcopy(filters)
 
         # tas_codes are unique in that the same query is spread across two keys
-        must_queries = cls._handle_tas_query(must_queries, filters_copy, query_type)
+        must_queries = cls._handle_tas_query(must_queries, filters_copy, cls.query_type)
         for filter_type, filter_values in filters_copy.items():
             # Validate the filters
             if filter_type in cls.unsupported_filters:
@@ -958,11 +964,11 @@ class QueryWithFilters:
                 # want to avoid having this option passed to all filters
                 nested_options = {**options, "nested_path": nested_path}
                 query = cls.nested_filter_lookup[filter_type].generate_query(
-                    filter_values, query_type, **nested_options
+                    filter_values, cls.query_type, **nested_options
                 )
                 list_pointer = nested_must_queries
             else:
-                query = cls.filter_lookup[filter_type].generate_query(filter_values, query_type, **options)
+                query = cls.filter_lookup[filter_type].generate_query(filter_values, cls.query_type, **options)
                 list_pointer = must_queries
 
             # Handle the possibility of multiple queries from one filter
@@ -993,25 +999,38 @@ class QueryWithFilters:
             filters.pop(TreasuryAccounts.underscore_name, None)
             filters.pop(TasCodes.underscore_name, None)
         return must_queries
+    
+    @classmethod
+    def generate_elasticsearch_query(cls, filters: dict, **options) -> ES_Q:
+        if cls.query_type == _QueryType.SUBAWARDS:
+            cls.filter_lookup[_Keywords.underscore_name] = _SubawardsKeywords
+            cls.filter_lookup[_SubawardsPrimeSubAwardTypes.underscore_name] = _SubawardsPrimeSubAwardTypes
+            resp = cls._generate_elasticsearch_query(filters, **options)
+            cls.filter_lookup[_Keywords.underscore_name] = _Keywords
+            del cls.filter_lookup[_SubawardsPrimeSubAwardTypes.underscore_name]
+            return resp
+        elif cls.query_type == _QueryType.ACCOUNTS:
+            options = {**options, "nested_path": "financial_accounts_by_award"}
+        return cls._generate_elasticsearch_query(filters, **options)
 
     @classmethod
     def generate_awards_elasticsearch_query(cls, filters: dict, **options) -> ES_Q:
-        return cls._generate_elasticsearch_query(filters, _QueryType.AWARDS, **options)
+        return cls._generate_elasticsearch_query(filters, **options)
 
     @classmethod
     def generate_subawards_elasticsearch_query(cls, filters: dict, **options) -> ES_Q:
         cls.filter_lookup[_Keywords.underscore_name] = _SubawardsKeywords
         cls.filter_lookup[_SubawardsPrimeSubAwardTypes.underscore_name] = _SubawardsPrimeSubAwardTypes
-        resp = cls._generate_elasticsearch_query(filters, _QueryType.SUBAWARDS, **options)
+        resp = cls._generate_elasticsearch_query(filters,**options)
         cls.filter_lookup[_Keywords.underscore_name] = _Keywords
         del cls.filter_lookup[_SubawardsPrimeSubAwardTypes.underscore_name]
         return resp
 
     @classmethod
     def generate_transactions_elasticsearch_query(cls, filters: dict, **options) -> ES_Q:
-        return cls._generate_elasticsearch_query(filters, _QueryType.TRANSACTIONS, **options)
+        return cls._generate_elasticsearch_query(filters, **options)
 
     @classmethod
     def generate_accounts_elasticsearch_query(cls, filters: dict, **options) -> ES_Q:
         options = {**options, "nested_path": "financial_accounts_by_award"}
-        return cls._generate_elasticsearch_query(filters, _QueryType.ACCOUNTS, **options)
+        return cls._generate_elasticsearch_query(filters, **options)

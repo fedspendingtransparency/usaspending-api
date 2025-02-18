@@ -295,7 +295,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
             time_period_obj=time_period_obj, query_type=_QueryType.AWARDS
         )
         filter_options["time_period_obj"] = new_awards_only_decorator
-        filter_query = QueryWithFilters.generate_awards_elasticsearch_query(self.filters, **filter_options)
+        query_with_filters = QueryWithFilters(_QueryType.AWARDS)
+        filter_query = query_with_filters.generate_elasticsearch_query(self.filters, **filter_options)
         sort_field = self.get_elastic_sort_by_fields()
         covid_sort_fields = {"COVID-19 Obligations": "obligation", "COVID-19 Outlays": "outlay"}
         iija_sort_fields = {"Infrastructure Obligations": "obligation", "Infrastructure Outlays": "outlay"}

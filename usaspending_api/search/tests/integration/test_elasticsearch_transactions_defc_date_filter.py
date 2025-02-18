@@ -2,6 +2,7 @@ import pytest
 from model_bakery import baker
 
 from usaspending_api.common.query_with_filters import QueryWithFilters
+from usaspending_api.search.filters.elasticsearch.filter import _QueryType
 
 
 @pytest.mark.django_db
@@ -43,7 +44,8 @@ def test_transactions_elasticsearch_query():
     )
 
     def_code_filters = ["A", "B", "L", "Z"]
-    def_codes_es_query = QueryWithFilters().generate_transactions_elasticsearch_query(
+    query_with_filters = QueryWithFilters(_QueryType.TRANSACTIONS)
+    def_codes_es_query = query_with_filters.generate_elasticsearch_query(
         filters={"def_codes": def_code_filters}
     )
 
@@ -108,7 +110,8 @@ def test_transactions_elasticsearch_query_only_covid_iija():
     )
 
     def_code_filters = ["L", "Z"]
-    def_codes_es_query = QueryWithFilters().generate_transactions_elasticsearch_query(
+    query_with_filters = QueryWithFilters(_QueryType.TRANSACTIONS)
+    def_codes_es_query = query_with_filters.generate_elasticsearch_query(
         filters={"def_codes": def_code_filters}
     )
 
@@ -166,7 +169,8 @@ def test_transactions_elasticsearch_query_non_covid_iija():
     )
 
     def_code_filters = ["A", "B"]
-    def_codes_es_query = QueryWithFilters().generate_transactions_elasticsearch_query(
+    query_with_filters = QueryWithFilters(_QueryType.TRANSACTIONS)
+    def_codes_es_query = query_with_filters.generate_elasticsearch_query(
         filters={"def_codes": def_code_filters}
     )
 

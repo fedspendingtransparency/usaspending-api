@@ -18,6 +18,7 @@ from usaspending_api.common.helpers.generic_helper import (
     get_generic_filters_message,
 )
 from usaspending_api.common.query_with_filters import QueryWithFilters
+from usaspending_api.search.filters.elasticsearch.filter import _QueryType
 from usaspending_api.common.validator.award_filter import AWARD_FILTER_NO_RECIPIENT_ID
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
@@ -133,7 +134,8 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
             time_period_obj=time_period_obj, query_type=_QueryType.AWARDS
         )
         filter_options["time_period_obj"] = new_awards_only_decorator
-        filter_query = QueryWithFilters.generate_awards_elasticsearch_query(filters, **filter_options)
+        query_with_filters = QueryWithFilters(_QueryType.AWARDS)
+        filter_query = query_with_filters.generate_elasticsearch_query(filters, **filter_options)
         s = AwardSearch().filter(filter_query)
 
         s.aggs.bucket(

@@ -249,11 +249,11 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             )
             filter_options["time_period_obj"] = new_awards_only_decorator
             if self.spending_level == SpendingLevel.TRANSACTION:
-                filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(
-                    self.filters, **filter_options
-                )
+                query_with_filters = QueryWithFilters(_QueryType.TRANSACTIONS)
+                filter_query = query_with_filters.generate_elasticsearch_query(self.filters, **filter_options)
             else:
-                filter_query = QueryWithFilters.generate_awards_elasticsearch_query(self.filters, **filter_options)
+                query_with_filters = QueryWithFilters(_QueryType.AWARDS)
+                filter_query = query_with_filters.generate_elasticsearch_query(self.filters, **filter_options)
             result = self.query_elasticsearch(filter_query)
 
         raw_response = {

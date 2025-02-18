@@ -129,7 +129,8 @@ class AwardCount(PaginationMixin, AgencyBase):
         Returns:
             List[dict]: A dictionary containing award types and the number of their awards.
         """
-        filter_query = QueryWithFilters.generate_awards_elasticsearch_query(filters, **filter_options)
+        query_with_filters = QueryWithFilters(_QueryType.AWARDS)
+        filter_query = query_with_filters.generate_elasticsearch_query(filters, **filter_options)
         record_num = (self.pagination.page - 1) * self.pagination.limit
         sorts = [{self.default_sort_column: self.pagination.sort_order}]
         s = AwardSearch().filter(filter_query).sort(*sorts)[record_num : record_num + self.pagination.limit]

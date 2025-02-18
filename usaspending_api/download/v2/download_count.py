@@ -19,6 +19,7 @@ from usaspending_api.search.filters.elasticsearch.filter import _QueryType
 from usaspending_api.search.filters.time_period.query_types import TransactionSearchTimePeriod
 from usaspending_api.search.filters.time_period.query_types import AwardSearchTimePeriod
 from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
+from usaspending_api.search.filters.elasticsearch.filter import _QueryType
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +77,8 @@ class DownloadTransactionCountViewSet(APIView):
                 time_period_obj=time_period_obj, query_type=_QueryType.TRANSACTIONS
             )
             options["time_period_obj"] = new_awards_only_decorator
-            filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(filters, **options)
+            query_with_filters = QueryWithFilters(_QueryType.TRANSACTIONS)
+            filter_query = query_with_filters.generate_elasticsearch_query(filters, **options)
             search = TransactionSearch().filter(filter_query)
             total_count = search.handle_count()
         else:
@@ -88,7 +90,8 @@ class DownloadTransactionCountViewSet(APIView):
                 time_period_obj=time_period_obj, query_type=_QueryType.AWARDS
             )
             options["time_period_obj"] = new_awards_only_decorator
-            filter_query = QueryWithFilters.generate_awards_elasticsearch_query(filters, **options)
+            query_with_filters = QueryWithFilters(_QueryType.AWARDS)
+            filter_query = query_with_filters.generate_elasticsearch_query(filters, **options)
             search = AwardSearch().filter(filter_query)
             total_count = search.handle_count()
 

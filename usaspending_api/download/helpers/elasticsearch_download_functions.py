@@ -17,6 +17,7 @@ from usaspending_api.download.models import DownloadJob
 from usaspending_api.download.models.download_job_lookup import DownloadJobLookup
 from usaspending_api.download.helpers import write_to_download_log as write_to_log
 from usaspending_api.search.filters.elasticsearch.filter import _QueryType
+from usaspending_api.search.filters.elasticsearch.filter import _QueryType
 from usaspending_api.search.models import (
     AwardSearch as DBAwardSearch,
     SubawardSearch as DBSubawardSearch,
@@ -208,7 +209,8 @@ class TransactionsElasticsearchDownload(_ElasticsearchDownload):
 
 class SubawardsElasticsearchDownload(_ElasticsearchDownload):
     _source_field = "broker_subaward_id"
-    _filter_query_func = QueryWithFilters.generate_subawards_elasticsearch_query
+    query_with_filters = QueryWithFilters(_QueryType.SUBAWARDS)
+    _filter_query_func = query_with_filters.generate_elasticsearch_query
     _search_type = SubawardSearch
     _base_model = DBSubawardSearch
 

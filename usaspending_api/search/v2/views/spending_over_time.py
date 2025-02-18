@@ -407,8 +407,8 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         )
 
         filter_options["time_period_obj"] = new_awards_only_decorator
-
-        filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(self.filters, **filter_options)
+        query_with_filters = QueryWithFilters(_QueryType.TRANSACTIONS)
+        filter_query = query_with_filters.generate_elasticsearch_query(filters = self.filters, **filter_options)
 
         search = TransactionSearch().filter(filter_query)
         self.apply_elasticsearch_aggregations(search)
@@ -428,7 +428,8 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         )
         filter_options["time_period_obj"] = new_awards_only_decorator
 
-        filter_query = QueryWithFilters.generate_awards_elasticsearch_query(self.filters, **filter_options)
+        query_with_filters = QueryWithFilters(_QueryType.AWARDS)
+        filter_query = query_with_filters.generate_elasticsearch_query(filters = self.filters, **filter_options)
         search = AwardSearch().filter(filter_query)
         self.apply_elasticsearch_aggregations(search)
         response = search.handle_execute()
@@ -447,7 +448,8 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             time_period_obj=time_period_obj, query_type=_QueryType.SUBAWARDS
         )
         filter_options["time_period_obj"] = new_awards_only_decorator
-        filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(self.filters, **filter_options)
+        query_with_filters = QueryWithFilters(_QueryType.SUBAWARDS)
+        filter_query = query_with_filters.generate_accounts_elasticsearch_query(filters = self.filters, **filter_options)
         search = SubawardSearch().filter(filter_query)
         self.apply_elasticsearch_aggregations(search)
         response = search.handle_execute()

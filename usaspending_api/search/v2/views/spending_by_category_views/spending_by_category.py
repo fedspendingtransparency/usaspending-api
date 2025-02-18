@@ -145,7 +145,8 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
             time_period_obj=time_period_obj, query_type=_QueryType.TRANSACTIONS
         )
         filter_options["time_period_obj"] = new_awards_only_decorator
-        filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(self.filters, **filter_options)
+        query_with_filters = QueryWithFilters(_QueryType.TRANSACTIONS)
+        filter_query = query_with_filters.generate_elasticsearch_query(self.filters, **filter_options)
         results = self.query_elasticsearch(filter_query)
 
         return results
@@ -159,7 +160,8 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
             time_period_obj=time_period_obj, query_type=_QueryType.AWARDS
         )
         options["time_period_obj"] = new_awards_only_decorator
-        filter_query = QueryWithFilters.generate_awards_elasticsearch_query(self.filters, **options)
+        query_with_filters = QueryWithFilters(_QueryType.AWARDS)
+        filter_query = query_with_filters.generate_elasticsearch_query(self.filters, **options)
         results = self.query_elasticsearch(filter_query)
 
         return results
