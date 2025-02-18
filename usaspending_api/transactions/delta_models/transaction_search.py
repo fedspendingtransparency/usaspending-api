@@ -1023,9 +1023,9 @@ transaction_search_load_sql_string = rf"""
             transaction_normalized.id = CURRENT_CD.transaction_id
         )
     LEFT OUTER JOIN
-        global_temp.office awarding_office ON awarding_office.office_code = COALESCE(transaction_fabs.awarding_office_code, transaction_fpds.awarding_office_code)
+        global_temp.office awarding_office ON (awarding_office.office_code = COALESCE(transaction_fabs.awarding_office_code, transaction_fpds.awarding_office_code))
     LEFT OUTER JOIN
-        global_temp.office funding_office ON funding_office.office_code = COALESCE(transaction_fabs.funding_office_code, transaction_fpds.funding_office_code)
+        global_temp.office funding_office ON (funding_office.office_code = COALESCE(transaction_fabs.funding_office_code, transaction_fpds.funding_office_code))
 
     LEFT OUTER JOIN (
         SELECT
