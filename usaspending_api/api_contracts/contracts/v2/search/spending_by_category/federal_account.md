@@ -89,13 +89,15 @@ This endpoint returns a list of the top results of Federal Accounts sorted by th
                         "amount": 4575113.34,
                         "id": 3573,
                         "code": "012-4336",
-                        "name": "Commodity Credit Corporation Fund, Agriculture"
+                        "name": "Commodity Credit Corporation Fund, Agriculture",
+                        "total_outlays": null,
                     },
                     {
                         "amount": 548022.0,
                         "id": 5184,
                         "code": "070-0411",
-                        "name": "Federal Assistance, Domestic Nuclear Detection Office, Homeland Security"
+                        "name": "Federal Assistance, Domestic Nuclear Detection Office, Homeland Security",
+                        "total_outlays": null,
                     }
                 ],
                 "messages": [
@@ -112,6 +114,7 @@ This endpoint returns a list of the top results of Federal Accounts sorted by th
 + `code` (required, string, nullable)
     `code` is a user-displayable code (such as a program activity or NAICS code, but **not** a database ID). When no such code is relevant, return a `null`.
 + `amount` (required, number)
++ `total_outlays` (required, number, nullable)
 
 ## PageMetadataObject (object)
 + `page` (required, number)

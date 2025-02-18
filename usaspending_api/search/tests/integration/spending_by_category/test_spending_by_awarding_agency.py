@@ -48,13 +48,21 @@ def test_correct_response_with_more_awards(
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 10.0, "name": "Awarding Toptier Agency 3", "code": "TA3", "id": 1003, "agency_slug": None},
+            {
+                "amount": 10.0,
+                "name": "Awarding Toptier Agency 3",
+                "code": "TA3",
+                "id": 1003,
+                "agency_slug": None,
+                "total_outlays": None,
+            },
             {
                 "amount": 5.0,
                 "name": "Awarding Toptier Agency 1",
                 "code": "TA1",
                 "id": 1001,
                 "agency_slug": None,
+                "total_outlays": None,
             },
         ],
         "messages": _expected_messages(),
@@ -78,7 +86,14 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 5.0, "name": "Awarding Toptier Agency 1", "code": "TA1", "id": 1001, "agency_slug": None}
+            {
+                "amount": 5.0,
+                "name": "Awarding Toptier Agency 1",
+                "code": "TA1",
+                "id": 1001,
+                "agency_slug": None,
+                "total_outlays": None,
+            }
         ],
         "messages": _expected_messages(),
         "spending_level": "transactions",
@@ -105,7 +120,13 @@ def test_correct_response_with_date_type(client, monkeypatch, elasticsearch_tran
     expected_response = {
         "category": "awarding_agency",
         "limit": 10,
-        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "page_metadata": {
+            "page": 1,
+            "next": None,
+            "previous": None,
+            "hasNext": False,
+            "hasPrevious": False,
+        },
         "results": [],
         "messages": _expected_messages(),
         "spending_level": "transactions",
@@ -129,7 +150,14 @@ def test_correct_response_with_date_type(client, monkeypatch, elasticsearch_tran
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 10.0, "name": "Awarding Toptier Agency 3", "code": "TA3", "id": 1003, "agency_slug": None},
+            {
+                "amount": 10.0,
+                "name": "Awarding Toptier Agency 3",
+                "code": "TA3",
+                "id": 1003,
+                "agency_slug": None,
+                "total_outlays": None,
+            },
         ],
         "messages": _expected_messages(),
         "spending_level": "transactions",
@@ -184,7 +212,14 @@ def test_correct_response_with_new_awards_only(client, monkeypatch, elasticsearc
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 10.0, "name": "Awarding Toptier Agency 3", "code": "TA3", "id": 1003, "agency_slug": None},
+            {
+                "amount": 10.0,
+                "name": "Awarding Toptier Agency 3",
+                "code": "TA3",
+                "id": 1003,
+                "agency_slug": None,
+                "total_outlays": None,
+            },
         ],
         "messages": _expected_messages(),
         "spending_level": "transactions",
@@ -209,7 +244,13 @@ def test_correct_response_with_new_awards_only(client, monkeypatch, elasticsearc
     expected_response = {
         "category": "awarding_agency",
         "limit": 10,
-        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "page_metadata": {
+            "page": 1,
+            "next": None,
+            "previous": None,
+            "hasNext": False,
+            "hasPrevious": False,
+        },
         "results": [],
         "messages": _expected_messages(),
         "spending_level": "transactions",

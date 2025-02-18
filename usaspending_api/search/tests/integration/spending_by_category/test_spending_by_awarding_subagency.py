@@ -72,6 +72,7 @@ def test_additional_fields_response(client, monkeypatch, elasticsearch_transacti
                 "agency_abbreviation": "TA3",
                 "agency_name": "Awarding Toptier Agency 3",
                 "agency_slug": "awarding-toptier-agency-3",
+                "total_outlays": None,
             }
         ],
         "messages": _expected_messages(),
@@ -94,6 +95,7 @@ def test_additional_fields_response(client, monkeypatch, elasticsearch_transacti
                 "agency_abbreviation": "TA3",
                 "agency_name": "Awarding Toptier Agency 3",
                 "agency_slug": "awarding-toptier-agency-3",
+                "total_outlays": None,
             }
         ],
         "messages": _expected_messages(),
@@ -126,6 +128,7 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
                 "agency_abbreviation": "TA3",
                 "agency_name": "Awarding Toptier Agency 3",
                 "agency_slug": "awarding-toptier-agency-3",
+                "total_outlays": None,
             },
             {
                 "amount": 5.0,
@@ -137,6 +140,7 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
                 "agency_abbreviation": "TA1",
                 "agency_name": "Awarding Toptier Agency 1",
                 "agency_slug": "awarding-toptier-agency-1",
+                "total_outlays": None,
             },
         ],
         "messages": _expected_messages(),
@@ -185,6 +189,7 @@ def test_filtering_subtier_with_toptier(
                 "agency_abbreviation": "TA3",
                 "agency_name": "Awarding Toptier Agency 3",
                 "agency_slug": "awarding-toptier-agency-3",
+                "total_outlays": None,
             }
         ],
         "messages": _expected_messages(),
@@ -293,6 +298,7 @@ def test_correct_response_with_date_type(client, monkeypatch, elasticsearch_tran
                 "agency_abbreviation": "TA3",
                 "agency_name": "Awarding Toptier Agency 3",
                 "agency_slug": "awarding-toptier-agency-3",
+                "total_outlays": None,
             }
         ],
         "messages": _expected_messages(),
@@ -377,6 +383,7 @@ def test_correct_response_with_new_awards_only(client, monkeypatch, elasticsearc
                 "agency_abbreviation": "TA3",
                 "agency_name": "Awarding Toptier Agency 3",
                 "agency_slug": "awarding-toptier-agency-3",
+                "total_outlays": None,
             }
         ],
         "messages": _expected_messages(),

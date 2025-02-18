@@ -14,6 +14,7 @@ from usaspending_api.search.helpers.spending_by_category_helpers import (
     fetch_country_name_from_code,
     fetch_state_name_from_code,
 )
+from usaspending_api.search.v2.views.enums import SpendingLevel
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_category import (
     AbstractSpendingByCategoryViewSet,
     Category,
@@ -164,6 +165,11 @@ class AbstractLocationViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMe
                     "code": location_info.get("code"),
                     "name": location_info.get("name"),
                     "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
+                    "total_outlays": (
+                        bucket.get("sum_as_dollars_outlay", {"value": None}).get("value")
+                        if self.spending_level == SpendingLevel.AWARD
+                        else None
+                    ),
                 }
             )
 

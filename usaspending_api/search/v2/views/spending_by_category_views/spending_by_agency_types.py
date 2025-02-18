@@ -79,6 +79,8 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
                 "code": agency_info.get("code"),
                 "name": agency_info.get("name"),
                 "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
+                # Outlays only apply to Awards. Transactions and Subawards should be `None`.
+                "total_outlays": bucket.get("sum_as_dollars_outlay", {"value": None})["value"],
             }
             # Only returns a non-null value if the agency has a profile page -
             # meaning it is an agency that has at least one submission.
