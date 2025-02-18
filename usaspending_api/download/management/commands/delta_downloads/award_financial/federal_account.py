@@ -19,7 +19,7 @@ DOWNLOAD_QUERY = """
         SUM(
             CASE 
                 WHEN 
-                    gross_outlay_amount_FYB_to_period_end and reporting_fiscal_year = 2021
+                    reporting_fiscal_year = 2021
                 THEN 
                     gross_outlay_amount_FYB_to_period_end
             ElSE CAST(NULL as NUMERIC(23, 2))
@@ -28,8 +28,7 @@ DOWNLOAD_QUERY = """
         SUM(
             CASE 
                 WHEN 
-                    USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig 
-                    and reporting_fiscal_year = 2021
+                    reporting_fiscal_year = 2021
                 THEN 
                     USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig
             ElSE CAST(NULL as NUMERIC(23, 2))
@@ -38,8 +37,7 @@ DOWNLOAD_QUERY = """
         SUM(
              CASE 
                 WHEN 
-                    USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig
-                    and reporting_fiscal_year = 2021
+                    reporting_fiscal_year = 2021
                 THEN 
                     USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig
             ElSE CAST(NULL as NUMERIC(23, 2))
@@ -199,7 +197,7 @@ DOWNLOAD_QUERY = """
         SUM(
             CASE 
                 WHEN 
-                    gross_outlay_amount_FYB_to_period_end and reporting_fiscal_year = 2021
+                    reporting_fiscal_year = 2021
                 THEN 
                     gross_outlay_amount_FYB_to_period_end
             ElSE CAST(NULL as NUMERIC(23, 2))
@@ -208,7 +206,7 @@ DOWNLOAD_QUERY = """
         OR SUM(
             CASE 
                 WHEN 
-                    gross_outlay_amount_FYB_to_period_end and reporting_fiscal_year = 2021
+                    reporting_fiscal_year = 2021
                 THEN 
                     gross_outlay_amount_FYB_to_period_end
             ElSE CAST(NULL as NUMERIC(23, 2))
@@ -217,8 +215,7 @@ DOWNLOAD_QUERY = """
         OR SUM(
             CASE 
                 WHEN 
-                    USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig 
-                    and reporting_fiscal_year = 2021
+                    reporting_fiscal_year = 2021
                 THEN 
                     USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig
             ElSE CAST(NULL as NUMERIC(23, 2))
@@ -227,8 +224,7 @@ DOWNLOAD_QUERY = """
         OR SUM(
             CASE 
                 WHEN 
-                    USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig 
-                    and reporting_fiscal_year = 2021
+                    reporting_fiscal_year = 2021
                 THEN 
                     USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig
             ElSE CAST(NULL as NUMERIC(23, 2))
@@ -237,8 +233,7 @@ DOWNLOAD_QUERY = """
         OR SUM(
             CASE 
                 WHEN 
-                    USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig
-                    and reporting_fiscal_year = 2021
+                    reporting_fiscal_year = 2021
                 THEN 
                     USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig
             ElSE CAST(NULL as NUMERIC(23, 2))
@@ -247,8 +242,7 @@ DOWNLOAD_QUERY = """
         OR SUM(
             CASE 
                 WHEN 
-                    USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig
-                    and reporting_fiscal_year = 2021
+                    reporting_fiscal_year = 2021
                 THEN 
                     USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig
             ElSE CAST(NULL as NUMERIC(23, 2))
