@@ -126,16 +126,8 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         return results
 
     def query_elasticsearch_for_prime_awards(self, filters) -> list:
-        filter_options = {}
-        time_period_obj = AwardSearchTimePeriod(
-            default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
-        )
-        new_awards_only_decorator = NewAwardsOnlyTimePeriod(
-            time_period_obj=time_period_obj, query_type=_QueryType.AWARDS
-        )
-        filter_options["time_period_obj"] = new_awards_only_decorator
         query_with_filters = QueryWithFilters(_QueryType.AWARDS)
-        filter_query = query_with_filters.generate_elasticsearch_query(filters, **filter_options)
+        filter_query = query_with_filters.query_elasticsearch(filters)
         s = AwardSearch().filter(filter_query)
 
         s.aggs.bucket(

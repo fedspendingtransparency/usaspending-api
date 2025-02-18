@@ -112,10 +112,10 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
             base_queryset = subaward_filter(self.filters)
             self.obligation_column = "subaward_amount"
             results = self.query_django_for_subawards(base_queryset)
-        elif self.spending_level == SpendingLevel.TRANSACTION:
-            results = self.query_elasticsearch_for_transactions()
         else:
-            results = self.query_elasticsearch_for_awards()
+            query_with_filters = QueryWithFilters(self.spending_level)
+            filter_query = query_with_filters.query_elasticsearch(self.filters)
+            results = self.query_elasticsearch(filter_query)
 
         page_metadata = get_simple_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
 
@@ -136,35 +136,6 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
 
         return response
 
-    def query_elasticsearch_for_transactions(self) -> list:
-        filter_options = {}
-        time_period_obj = TransactionSearchTimePeriod(
-            default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
-        )
-        new_awards_only_decorator = NewAwardsOnlyTimePeriod(
-            time_period_obj=time_period_obj, query_type=_QueryType.TRANSACTIONS
-        )
-        filter_options["time_period_obj"] = new_awards_only_decorator
-        query_with_filters = QueryWithFilters(_QueryType.TRANSACTIONS)
-        filter_query = query_with_filters.generate_elasticsearch_query(self.filters, **filter_options)
-        results = self.query_elasticsearch(filter_query)
-
-        return results
-
-    def query_elasticsearch_for_awards(self) -> list:
-        options = {}
-        time_period_obj = AwardSearchTimePeriod(
-            default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
-        )
-        new_awards_only_decorator = NewAwardsOnlyTimePeriod(
-            time_period_obj=time_period_obj, query_type=_QueryType.AWARDS
-        )
-        options["time_period_obj"] = new_awards_only_decorator
-        query_with_filters = QueryWithFilters(_QueryType.AWARDS)
-        filter_query = query_with_filters.generate_elasticsearch_query(self.filters, **options)
-        results = self.query_elasticsearch(filter_query)
-
-        return results
 
     def _raise_not_implemented(self):
         msg = "Category '{}' is not implemented"

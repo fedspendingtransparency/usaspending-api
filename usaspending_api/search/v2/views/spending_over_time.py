@@ -367,7 +367,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         return results
 
-    def build_elasticsearch_result_awards_subawards(self, agg_response: AggResponse) -> list:
+    def build_elasticsearch_result_awards_subawards(self, agg_response: AggResponse, time_period: list) -> list:
         """
         In this function we are just taking the elasticsearch aggregate response and looping through the
         buckets to create a results object for each time interval.
@@ -397,18 +397,8 @@ class SpendingOverTimeVisualizationViewSet(APIView):
     def query_elasticsearch_for_transactions(self, time_periods: list[TimePeriod]) -> list:
         """Get spending over time amounts based on Transactions"""
 
-        filter_options = {}
-        time_period_obj = TransactionSearchTimePeriod(
-            default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
-        )
-
-        new_awards_only_decorator = NewAwardsOnlyTimePeriod(
-            time_period_obj=time_period_obj, query_type=_QueryType.TRANSACTIONS
-        )
-
-        filter_options["time_period_obj"] = new_awards_only_decorator
         query_with_filters = QueryWithFilters(_QueryType.TRANSACTIONS)
-        filter_query = query_with_filters.generate_elasticsearch_query(filters = self.filters, **filter_options)
+        filter_query = query_with_filters.query_elasticsearch(self.filters)
 
         search = TransactionSearch().filter(filter_query)
         self.apply_elasticsearch_aggregations(search)
@@ -419,43 +409,24 @@ class SpendingOverTimeVisualizationViewSet(APIView):
     def query_elasticsearch_for_awards(self) -> list:
         """Get spending over time amounts based on Awards"""
 
-        filter_options = {}
-        time_period_obj = AwardSearchTimePeriod(
-            default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
-        )
-        new_awards_only_decorator = NewAwardsOnlyTimePeriod(
-            time_period_obj=time_period_obj, query_type=_QueryType.AWARDS
-        )
-        filter_options["time_period_obj"] = new_awards_only_decorator
-
         query_with_filters = QueryWithFilters(_QueryType.AWARDS)
-        filter_query = query_with_filters.generate_elasticsearch_query(filters = self.filters, **filter_options)
+        filter_query = query_with_filters.query_elasticsearch(self.filters)
         search = AwardSearch().filter(filter_query)
         self.apply_elasticsearch_aggregations(search)
         response = search.handle_execute()
         overall_results = self.build_elasticsearch_result_awards_subawards(response.aggs)
 
         return overall_results
-
-    def query_elasticsearch_for_subawards(self, time_periods: list[TimePeriod]) -> list:
-        """Get spending over time amounts based on Subawards"""
-
-        filter_options = {}
-        time_period_obj = SubawardSearchTimePeriod(
-            default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
-        )
-        new_awards_only_decorator = NewAwardsOnlyTimePeriod(
-            time_period_obj=time_period_obj, query_type=_QueryType.SUBAWARDS
-        )
-        filter_options["time_period_obj"] = new_awards_only_decorator
-        query_with_filters = QueryWithFilters(_QueryType.SUBAWARDS)
-        filter_query = query_with_filters.generate_accounts_elasticsearch_query(filters = self.filters, **filter_options)
-        search = SubawardSearch().filter(filter_query)
+    
+    def build_search_for_results(self, time_periods: list, search, build_method_name: str) -> list:
+        build_method = getattr(self, build_method_name)
         self.apply_elasticsearch_aggregations(search)
         response = search.handle_execute()
-        overall_results = self.build_elasticsearch_result_awards_subawards(response.aggs)
+        return build_method(response.aggs, time_periods)
 
-        # if there is no data for that fiscal year, set default overall_results for that year
+    def get_default_values_for_subawards(self, time_periods: list[TimePeriod], overall_results: list) -> list:
+        """if there is no data for that fiscal year, set default overall_results for that years"""
+
         min_date, max_date = min_and_max_from_date_ranges([asdict(time_period) for time_period in time_periods])
         date_range = generate_date_range(min_date, max_date, self.group)
         if date_range.count != overall_results.count:
@@ -515,12 +486,21 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         time_periods = [
             TimePeriod(**time_period) for time_period in self.filters.get("time_period", [default_time_period])
         ]
-        if self.spending_level == SpendingLevel.SUBAWARD:
-            results = self.query_elasticsearch_for_subawards(time_periods)
-        elif self.spending_level == SpendingLevel.TRANSACTION:
-            results = self.query_elasticsearch_for_transactions(time_periods)
+        query_with_filters = QueryWithFilters(self.spending_level)
+        filter_query = query_with_filters.query_elasticsearch(self.filters)
+        search = None
+        build_method = "build_elasticsearch_result_awards_subawards"
+        if self.spending_level == SpendingLevel.TRANSACTION:
+            search = TransactionSearch().filter(filter_query)
+            build_method = "build_elasticsearch_result_transactions" 
+        elif self.spending_level == SpendingLevel.SUBAWARD:
+            search = SubawardSearch().filter(filter_query)
         elif self.spending_level == SpendingLevel.AWARD:
-            results = self.query_elasticsearch_for_awards()
+            search = AwardSearch().filter(filter_query) 
+        results = self.build_search_for_results(time_periods, search, build_method)    
+        if self.spending_level == SpendingLevel.SUBAWARD:
+            results = self.get_default_values_for_subawards(time_periods, results) 
+
 
         raw_response = OrderedDict(
             [

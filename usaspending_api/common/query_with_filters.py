@@ -20,6 +20,12 @@ from usaspending_api.search.filters.elasticsearch.naics import NaicsCodes
 from usaspending_api.search.filters.elasticsearch.psc import PSCCodes
 from usaspending_api.search.filters.elasticsearch.tas import TasCodes, TreasuryAccounts
 from usaspending_api.search.v2.es_sanitization import es_sanitize
+from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
+from usaspending_api.search.filters.time_period.query_types import TransactionSearchTimePeriod
+from usaspending_api.search.filters.time_period.query_types import AwardSearchTimePeriod
+from usaspending_api.search.filters.time_period.query_types import SubawardSearchTimePeriod
+
+
 
 logger = logging.getLogger(__name__)
 
@@ -921,6 +927,7 @@ class QueryWithFilters:
         _NonzeroFields.underscore_name: _NonzeroFields,
         _ProgramActivities.underscore_name: _ProgramActivities,
     }
+    _time_period_func: None
 
     nested_filter_lookup = {
         f"nested_{_DisasterEmergencyFundCodes.underscore_name}": _DisasterEmergencyFundCodes,
@@ -1016,6 +1023,24 @@ class QueryWithFilters:
     @classmethod
     def generate_awards_elasticsearch_query(cls, filters: dict, **options) -> ES_Q:
         return cls._generate_elasticsearch_query(filters, **options)
+    
+    @classmethod
+    def query_elasticsearch(cls, filters: dict) -> ES_Q:
+        filter_options = {}
+        query_type = cls.query_type.value.capitalize()
+        if (query_type == "Accounts"):
+            query_type = "Subawards"
+        time_period_func = query_type[:-1] + "SearchTimePeriod"
+        func_string = f'{time_period_func}(default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_MIN_DATE)'
+        time_period_obj = eval(func_string)
+        new_awards_only_decorator = NewAwardsOnlyTimePeriod(
+            time_period_obj=time_period_obj, query_type=cls.query_type
+        )
+        filter_options["time_period_obj"] = new_awards_only_decorator
+        query_with_filters = QueryWithFilters(cls.query_type)
+        filter_query = query_with_filters.generate_elasticsearch_query(filters, **filter_options)
+        return filter_query
+
 
     @classmethod
     def generate_subawards_elasticsearch_query(cls, filters: dict, **options) -> ES_Q:
