@@ -86,13 +86,15 @@ This endpoint returns a list of the top results of Awarding Subagencies sorted b
                         "amount": 442057334610.11,
                         "name": "Centers for Medicare and Medicaid Services",
                         "code": "CMS",
-                        "id": 831
+                        "id": 831,
+                        "total_outlays": null,
                     },
                     {
                         "amount": 284418429693.37,
                         "name": "Social Security Administration",
                         "code": "SSA",
-                        "id": 539
+                        "id": 539,
+                        "total_outlays": null,
                     }
                 ],
                 "messages": [
@@ -115,6 +117,7 @@ This endpoint returns a list of the top results of Awarding Subagencies sorted b
     The `agency_abbreviation` refers to the abbreviation for the toptier agency associated with the subtier agency.
 + `agency_name`(required, string)
 + `agency_slug`(required, string)
++ `total_outlays` (required, number, nullable)
 
 ## PageMetadataObject (object)
 + `page` (required, number)
