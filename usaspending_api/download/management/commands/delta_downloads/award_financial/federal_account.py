@@ -255,7 +255,7 @@ DOWNLOAD_QUERY = """
             END
         ) > 0
         OR SUM(transaction_obligated_amount) > 0
-        OR SUM(transaction_obligated_amount) < 0        
+        OR SUM(transaction_obligated_amount) < 0
 """
 
 

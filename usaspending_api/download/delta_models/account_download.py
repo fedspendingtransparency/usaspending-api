@@ -117,19 +117,11 @@ account_download_load_sql_string = rf"""
         financial_accounts_by_awards.parent_award_id AS parent_award_id_piid,
         financial_accounts_by_awards.fain AS award_id_fain,
         financial_accounts_by_awards.uri AS award_id_uri,
-<<<<<<< HEAD
-        TRY_CAST(award_search.date_signed AS DATE) AS award_base_action_date,
-        TRY_CAST(award_search.certified_date AS DATE) AS award_latest_action_date,
-        TRY_CAST(award_search.period_of_performance_start_date AS DATE),
-        TRY_CAST(award_search.period_of_performance_current_end_date AS DATE),
-        TRY_CAST(transaction_search.ordering_period_end_date AS DATE),
-=======
         CAST(award_search.date_signed AS DATE) AS award_base_action_date,
         CAST(award_search.certified_date AS DATE) AS award_latest_action_date,
         CAST(award_search.period_of_performance_start_date AS DATE),
         CAST(award_search.period_of_performance_current_end_date AS DATE),
         CAST(transaction_search.ordering_period_end_date AS DATE),
->>>>>>> ftr/dev-11770-unflitered-account-download-delta-table
         transaction_search.idv_type AS idv_type_code,
         transaction_search.idv_type_description AS idv_type,
         award_search.description AS prime_award_base_transaction_description,
