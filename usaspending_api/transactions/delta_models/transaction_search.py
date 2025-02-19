@@ -462,14 +462,9 @@ transaction_search_load_sql_string = rf"""
         SAA.abbreviation AS awarding_subtier_agency_abbreviation,
         SFA.abbreviation AS funding_subtier_agency_abbreviation,
         COALESCE(transaction_fabs.awarding_office_code, transaction_fpds.awarding_office_code) AS awarding_office_code,
-        CASE
-            WHEN COALESCE(transaction_fabs.awarding_office_code, transaction_fpds.awarding_office_code) IS NOT NULL
-            THEN awarding_office.office_name
-        END AS awarding_office_name,
-        CASE
-            WHEN COALESCE(transaction_fabs.funding_office_code, transaction_fpds.funding_office_code) IS NOT NULL
-            THEN funding_office.office_name
-        END AS funding_office_name
+        COALESCE(transaction_fabs.funding_office_code, transaction_fpds.funding_office_code) AS funding_office_code,
+        COALESCE(awarding_office.office_name, transaction_fabs.awarding_office_name, transaction_fpds.awarding_office_name) AS awarding_office.office_name
+        COALESCE(funding_office.office_name, transaction_fabs.funding_office_name, transaction_fpds.funding_office_name) AS funding_office_name
         -- Typing
         transaction_normalized.is_fpds,
         transaction_normalized.type AS type_raw,
