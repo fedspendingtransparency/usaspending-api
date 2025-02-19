@@ -45,8 +45,8 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 550.0, "code": "20.200", "id": 200, "name": "CFDA 2"},
-            {"amount": 5.0, "code": "10.100", "id": 100, "name": "CFDA 1"},
+            {"amount": 550.0, "code": "20.200", "id": 200, "name": "CFDA 2", "total_outlays": None},
+            {"amount": 5.0, "code": "10.100", "id": 100, "name": "CFDA 1", "total_outlays": None},
         ],
         "messages": _expected_messages(),
         "spending_level": "transactions",
@@ -119,7 +119,7 @@ def test_correct_response_with_date_type(client, monkeypatch, elasticsearch_tran
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 5.0, "code": "10.100", "id": 100, "name": "CFDA 1"},
+            {"amount": 5.0, "code": "10.100", "id": 100, "name": "CFDA 1", "total_outlays": None},
         ],
         "messages": _expected_messages(),
         "spending_level": "transactions",
@@ -177,7 +177,7 @@ def test_correct_response_with_new_awards_only(
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 5.0, "code": "10.100", "id": 100, "name": "CFDA 1"},
+            {"amount": 5.0, "code": "10.100", "id": 100, "name": "CFDA 1", "total_outlays": None},
         ],
         "messages": _expected_messages(),
         "spending_level": "transactions",

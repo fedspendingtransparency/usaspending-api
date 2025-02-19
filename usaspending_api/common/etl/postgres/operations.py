@@ -1,4 +1,4 @@
-""" Functions to generate SQL for several higher level ETL operations. """
+"""Functions to generate SQL for several higher level ETL operations."""
 
 from psycopg2.sql import SQL, Identifier
 from typing import List
