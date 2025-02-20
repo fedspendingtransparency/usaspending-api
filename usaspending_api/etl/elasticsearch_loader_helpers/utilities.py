@@ -29,6 +29,7 @@ class TaskSpec:
     primary_key: str
     partition_number: int
     is_incremental: bool
+    slices: Union[str, int]
     execute_sql_func: callable = None
     transform_func: callable = None
 
