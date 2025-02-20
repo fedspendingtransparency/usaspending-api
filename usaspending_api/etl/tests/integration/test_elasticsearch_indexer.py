@@ -677,4 +677,5 @@ def _process_es_etl_test_config(client: Elasticsearch, test_es_index: TestElasti
     cli_args, _ = parser.parse_known_args(args=test_args)  # parse the known args programmatically
     cli_opts = {**vars(cli_args), **test_es_index.etl_config}  # update defaults with test config
     es_etl_config = parse_cli_args(cli_opts, client)  # use command's config parser for final config for testing ETL
+    es_etl_config["slices"] = "auto"  # no need to calculate slices for testing
     return es_etl_config

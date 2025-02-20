@@ -114,6 +114,8 @@ class AbstractElasticsearchIndexer(ABC, BaseCommand):
         controller = self.create_controller(config)
         controller.ensure_view_exists(config["sql_view"])
 
+        controller.set_slice_count()
+
         if config["is_incremental_load"]:
             toggle_refresh_off(elasticsearch_client, config["index_name"])  # Turned back on at end.
 
