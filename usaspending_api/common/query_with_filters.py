@@ -1019,18 +1019,13 @@ class QueryWithFilters:
         elif cls.query_type == _QueryType.ACCOUNTS:
             options = {**options, "nested_path": "financial_accounts_by_award"}
         return cls._generate_elasticsearch_query(filters, **options)
-
-    @classmethod
-    def generate_awards_elasticsearch_query(cls, filters: dict, **options) -> ES_Q:
-        return cls._generate_elasticsearch_query(filters, **options)
     
     @classmethod
     def query_elasticsearch(cls, filters: dict) -> ES_Q:
         filter_options = {}
-        query_type = cls.query_type.value.capitalize()
-        if (query_type == "Accounts"):
-            query_type = "Subawards"
-        time_period_func = query_type[:-1] + "SearchTimePeriod"
+        if (query_type == "accounts"):
+            query_type = "subawards"
+        time_period_func = cls.query_type.value.capitalize()[:-1] + "SearchTimePeriod"
         func_string = f'{time_period_func}(default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_MIN_DATE)'
         time_period_obj = eval(func_string)
         new_awards_only_decorator = NewAwardsOnlyTimePeriod(
@@ -1040,22 +1035,3 @@ class QueryWithFilters:
         query_with_filters = QueryWithFilters(cls.query_type)
         filter_query = query_with_filters.generate_elasticsearch_query(filters, **filter_options)
         return filter_query
-
-
-    @classmethod
-    def generate_subawards_elasticsearch_query(cls, filters: dict, **options) -> ES_Q:
-        cls.filter_lookup[_Keywords.underscore_name] = _SubawardsKeywords
-        cls.filter_lookup[_SubawardsPrimeSubAwardTypes.underscore_name] = _SubawardsPrimeSubAwardTypes
-        resp = cls._generate_elasticsearch_query(filters,**options)
-        cls.filter_lookup[_Keywords.underscore_name] = _Keywords
-        del cls.filter_lookup[_SubawardsPrimeSubAwardTypes.underscore_name]
-        return resp
-
-    @classmethod
-    def generate_transactions_elasticsearch_query(cls, filters: dict, **options) -> ES_Q:
-        return cls._generate_elasticsearch_query(filters, **options)
-
-    @classmethod
-    def generate_accounts_elasticsearch_query(cls, filters: dict, **options) -> ES_Q:
-        options = {**options, "nested_path": "financial_accounts_by_award"}
-        return cls._generate_elasticsearch_query(filters, **options)
