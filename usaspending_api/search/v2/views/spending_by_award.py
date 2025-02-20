@@ -1,4 +1,5 @@
 import copy
+from typing import Any
 from ast import literal_eval
 
 from sys import maxsize
@@ -54,7 +55,6 @@ from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyT
 from usaspending_api.search.filters.time_period.query_types import AwardSearchTimePeriod, SubawardSearchTimePeriod
 from usaspending_api.submissions.models import SubmissionAttributes
 
-from typing import Any
 
 from elasticsearch_dsl import Q as ES_Q
 

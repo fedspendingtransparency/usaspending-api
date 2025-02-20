@@ -727,29 +727,29 @@ subaward_search_load_sql_string = rf"""
             )
         ) AS federal_accounts,
         COLLECT_SET(
-        DISTINCT CONCAT(
-            'agency=', COALESCE(agency.toptier_code, ''),
-            'faaid=', COALESCE(fa.agency_identifier, ''),
-            'famain=', COALESCE(fa.main_account_code, ''),
-            'aid=', COALESCE(taa.agency_id, ''),
-            'main=', COALESCE(taa.main_account_code, ''),
-            'ata=', COALESCE(taa.allocation_transfer_agency_id, ''),
-            'sub=', COALESCE(taa.sub_account_code, ''),
-            'bpoa=', COALESCE(taa.beginning_period_of_availability, ''),
-            'epoa=', COALESCE(taa.ending_period_of_availability, ''),
-            'a=', COALESCE(taa.availability_type_code, '')
-        )
+            DISTINCT CONCAT(
+                'agency=', COALESCE(agency.toptier_code, ''),
+                'faaid=', COALESCE(fa.agency_identifier, ''),
+                'famain=', COALESCE(fa.main_account_code, ''),
+                'aid=', COALESCE(taa.agency_id, ''),
+                'main=', COALESCE(taa.main_account_code, ''),
+                'ata=', COALESCE(taa.allocation_transfer_agency_id, ''),
+                'sub=', COALESCE(taa.sub_account_code, ''),
+                'bpoa=', COALESCE(taa.beginning_period_of_availability, ''),
+                'epoa=', COALESCE(taa.ending_period_of_availability, ''),
+                'a=', COALESCE(taa.availability_type_code, '')
+            )
         ) AS tas_paths,
         COLLECT_SET(
-        CONCAT(
-            'aid=', COALESCE(taa.agency_id, ''),
-            'main=', COALESCE(taa.main_account_code, ''),
-            'ata=', COALESCE(taa.allocation_transfer_agency_id, ''),
-            'sub=', COALESCE(taa.sub_account_code, ''),
-            'bpoa=', COALESCE(taa.beginning_period_of_availability, ''),
-            'epoa=', COALESCE(taa.ending_period_of_availability, ''),
-            'a=', COALESCE(taa.availability_type_code, '')
-        )
+            CONCAT(
+                'aid=', COALESCE(taa.agency_id, ''),
+                'main=', COALESCE(taa.main_account_code, ''),
+                'ata=', COALESCE(taa.allocation_transfer_agency_id, ''),
+                'sub=', COALESCE(taa.sub_account_code, ''),
+                'bpoa=', COALESCE(taa.beginning_period_of_availability, ''),
+                'epoa=', COALESCE(taa.ending_period_of_availability, ''),
+                'a=', COALESCE(taa.availability_type_code, '')
+            )
         ) AS tas_components,
         -- "CASE" put in place so that Spark value matches Postgres; can most likely be refactored out in the future
         CASE
