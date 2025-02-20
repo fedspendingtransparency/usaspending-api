@@ -86,13 +86,15 @@ This endpoint returns a list of the top results of Counties sorted by the total 
                         "amount": 17557452350.05,
                         "code": "439",
                         "name": "TARRANT",
-                        "id": null
+                        "id": null,
+                        "total_outlays": null,
                     },
                     {
                         "amount": 5412138054.37,
                         "code": "079",
                         "name": "RICHLAND",
-                        "id": null
+                        "id": null,
+                        "total_outlays": null,
                     }
                 ],
                 "messages": [
@@ -110,6 +112,7 @@ This endpoint returns a list of the top results of Counties sorted by the total 
 + `code` (required, string, nullable)
     `code` is a user-displayable code (such as a program activity or NAICS code, but **not** a database ID). When no such code is relevant, return a `null`.
 + `amount` (required, number)
++ `total_outlays` (required, number, nullable)
 
 ## PageMetadataObject (object)
 + `page` (required, number)

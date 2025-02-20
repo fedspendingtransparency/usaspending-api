@@ -462,10 +462,9 @@ transaction_search_load_sql_string = rf"""
         SAA.abbreviation AS awarding_subtier_agency_abbreviation,
         SFA.abbreviation AS funding_subtier_agency_abbreviation,
         COALESCE(transaction_fabs.awarding_office_code, transaction_fpds.awarding_office_code) AS awarding_office_code,
-        COALESCE(transaction_fabs.awarding_office_name, transaction_fpds.awarding_office_name) AS awarding_office_name,
+        COALESCE(awarding_office.office_name, transaction_fabs.awarding_office_name, transaction_fpds.awarding_office_name) AS awarding_office_name,
         COALESCE(transaction_fabs.funding_office_code, transaction_fpds.funding_office_code) AS funding_office_code,
-        COALESCE(transaction_fabs.funding_office_name, transaction_fpds.funding_office_name) AS funding_office_name,
-
+        COALESCE(funding_office.office_name, transaction_fabs.funding_office_name, transaction_fpds.funding_office_name) AS funding_office_name,
         -- Typing
         transaction_normalized.is_fpds,
         transaction_normalized.type AS type_raw,
@@ -1018,6 +1017,11 @@ transaction_search_load_sql_string = rf"""
         int.transaction_current_cd_lookup AS CURRENT_CD ON (
             transaction_normalized.id = CURRENT_CD.transaction_id
         )
+    LEFT OUTER JOIN
+        global_temp.office awarding_office ON (awarding_office.office_code = COALESCE(transaction_fabs.awarding_office_code, transaction_fpds.awarding_office_code))
+    LEFT OUTER JOIN
+        global_temp.office funding_office ON (funding_office.office_code = COALESCE(transaction_fabs.funding_office_code, transaction_fpds.funding_office_code))
+
     LEFT OUTER JOIN (
         SELECT
             faba.award_id,

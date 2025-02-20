@@ -1,16 +1,17 @@
 from decimal import Decimal
 from typing import List
 
-from django.db.models import QuerySet, F, Case, When, Value, IntegerField
+from django.db.models import Case, F, IntegerField, QuerySet, Value, When
 from django.utils.decorators import method_decorator
 
 from usaspending_api.common.api_versioning import deprecated
 from usaspending_api.common.recipient_lookups import combine_recipient_hash_and_level
 from usaspending_api.recipient.models import RecipientLookup, RecipientProfile
 from usaspending_api.recipient.v2.lookups import SPECIAL_CASES
+from usaspending_api.search.v2.views.enums import SpendingLevel
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_category import (
-    Category,
     AbstractSpendingByCategoryViewSet,
+    Category,
 )
 
 
@@ -88,11 +89,14 @@ class RecipientViewSet(AbstractSpendingByCategoryViewSet):
                 {
                     "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
                     "recipient_id": result_hash_with_level,
-                    "name": (
-                        recipient_info["legal_business_name"] if recipient_info.get("legal_business_name") else None
+                    "name": recipient_info.get("legal_business_name", None),
+                    "code": recipient_info.get("duns", None),
+                    "uei": recipient_info.get("uei", None),
+                    "total_outlays": (
+                        bucket.get("sum_as_dollars_outlay", {"value": None}).get("value")
+                        if self.spending_level == SpendingLevel.AWARD
+                        else None
                     ),
-                    "code": recipient_info.get("duns") if recipient_info.get("duns") else None,
-                    "uei": recipient_info.get("uei") if recipient_info.get("uei") else None,
                 }
             )
 
