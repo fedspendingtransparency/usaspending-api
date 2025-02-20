@@ -1019,6 +1019,9 @@ class QueryWithFilters:
 
     @classmethod
     def query_elasticsearch(cls, filters: dict) -> ES_Q:
+        _ = TransactionSearchTimePeriod
+        _ = AwardSearchTimePeriod
+        _ = SubawardSearchTimePeriod
         filter_options = {}
         if cls.query_type.value == "accounts":
             cls.query_type = _QueryType.SUBAWARDS

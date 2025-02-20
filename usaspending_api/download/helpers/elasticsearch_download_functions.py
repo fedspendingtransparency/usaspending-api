@@ -17,7 +17,6 @@ from usaspending_api.download.models import DownloadJob
 from usaspending_api.download.models.download_job_lookup import DownloadJobLookup
 from usaspending_api.download.helpers import write_to_download_log as write_to_log
 from usaspending_api.search.filters.elasticsearch.filter import _QueryType
-from usaspending_api.search.filters.elasticsearch.filter import _QueryType
 from usaspending_api.search.models import (
     AwardSearch as DBAwardSearch,
     SubawardSearch as DBSubawardSearch,

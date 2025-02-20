@@ -31,12 +31,6 @@ from usaspending_api.common.validator.award_filter import AWARD_FILTER_W_FILTERS
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.search.filters.elasticsearch.filter import _QueryType
-from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
-from usaspending_api.search.filters.time_period.query_types import (
-    AwardSearchTimePeriod,
-    SubawardSearchTimePeriod,
-    TransactionSearchTimePeriod,
-)
 
 from usaspending_api.search.v2.views.enums import SpendingLevel
 
