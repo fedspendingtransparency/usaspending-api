@@ -13,6 +13,7 @@ class CalculationType(enum.Enum):
     OBLIGATION = "obligation"
     OUTLAY = "outlay"
 
+
 class FileBCalculations:
 
     def __init__(self, *, include_final_sub_filter: bool = False, is_covid_page: bool = False) -> None:
@@ -32,11 +33,8 @@ class FileBCalculations:
         self.include_final_sub_filter = include_final_sub_filter
         self.is_covid_page = is_covid_page
 
-
     def _build_columns(
-        self,
-        base_column: str,
-        pya_columns: Dict[str, Union[str, Coalesce]]
+        self, base_column: str, pya_columns: Dict[str, Union[str, Coalesce]]
     ) -> Dict[str, Union[str, F]]:
         """
         Loop through the lists of column names to create expressions we can use in QuerySets
@@ -68,10 +66,14 @@ class FileBCalculations:
                 "ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe",
             ],
             "P": [
-                    Coalesce("ussgl480110_rein_undel_ord_cpe", 0, output_field=DecimalField(max_digits=23, decimal_places=2)),
-                    Coalesce("ussgl490110_rein_deliv_ord_cpe", 0, output_field=DecimalField(max_digits=23, decimal_places=2)),
-                ],
-            "X": ["deobligations_recoveries_refund_pri_program_object_class_cpe"]
+                Coalesce(
+                    "ussgl480110_rein_undel_ord_cpe", 0, output_field=DecimalField(max_digits=23, decimal_places=2)
+                ),
+                Coalesce(
+                    "ussgl490110_rein_deliv_ord_cpe", 0, output_field=DecimalField(max_digits=23, decimal_places=2)
+                ),
+            ],
+            "X": ["deobligations_recoveries_refund_pri_program_object_class_cpe"],
         }
 
         # Some PYA values share columns, so we handle that here
@@ -79,10 +81,7 @@ class FileBCalculations:
         pya_columns["X"].extend(pya_columns["P"])
         pya_columns["P"].extend(pya_columns["B"])
 
-        return self._build_columns(
-            "obligations_incurred_by_program_object_class_cpe",
-            pya_columns
-        )
+        return self._build_columns("obligations_incurred_by_program_object_class_cpe", pya_columns)
 
     @cached_property
     def outlay_columns(self) -> Dict[str, Union[str, F]]:
@@ -95,10 +94,7 @@ class FileBCalculations:
                 "ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe",
             ],
         }
-        return self._build_columns(
-            "gross_outlay_amount_by_program_object_class_cpe",
-            pya_columns
-        )
+        return self._build_columns("gross_outlay_amount_by_program_object_class_cpe", pya_columns)
 
     def _calculate(self, calculation_type: CalculationType) -> Case:
         """
@@ -114,13 +110,15 @@ class FileBCalculations:
                     then=F(columns["base"]) + columns["X"],
                 )
             ]
-            when_statements.extend([
-                When(
-                    final_sub_filter & Q(prior_year_adjustment=pya_value),
-                    then=columns[pya_value],
-                )
-                for pya_value in set(columns) - {"base", "X"}
-            ])
+            when_statements.extend(
+                [
+                    When(
+                        final_sub_filter & Q(prior_year_adjustment=pya_value),
+                        then=columns[pya_value],
+                    )
+                    for pya_value in set(columns) - {"base", "X"}
+                ]
+            )
         else:
             when_statements = [
                 When(

@@ -224,11 +224,15 @@ def obligation_and_outlay_data():
 @pytest.mark.django_db
 def test_is_non_zero_total_spending_filter(non_zero_test_data):
     covid_calc = FileBCalculations(is_covid_page=True)
-    nonzero_count = FinancialAccountsByProgramActivityObjectClass.objects.filter(covid_calc.is_non_zero_total_spending()).count()
+    nonzero_count = FinancialAccountsByProgramActivityObjectClass.objects.filter(
+        covid_calc.is_non_zero_total_spending()
+    ).count()
     assert nonzero_count == 4
 
     single_year_calc = FileBCalculations(is_covid_page=False)
-    nonzero_count = FinancialAccountsByProgramActivityObjectClass.objects.filter(single_year_calc.is_non_zero_total_spending()).count()
+    nonzero_count = FinancialAccountsByProgramActivityObjectClass.objects.filter(
+        single_year_calc.is_non_zero_total_spending()
+    ).count()
     assert nonzero_count == 6
 
 
