@@ -1019,12 +1019,11 @@ class QueryWithFilters:
         elif cls.query_type == _QueryType.ACCOUNTS:
             options = {**options, "nested_path": "financial_accounts_by_award"}
         return cls._generate_elasticsearch_query(filters, **options)
-    
     @classmethod
     def query_elasticsearch(cls, filters: dict) -> ES_Q:
         filter_options = {}
-        if (query_type == "accounts"):
-            query_type = "subawards"
+        if (cls.query_type.value == "accounts"):
+            cls.query_type = _QueryType.SUBAWARDS
         time_period_func = cls.query_type.value.capitalize()[:-1] + "SearchTimePeriod"
         func_string = f'{time_period_func}(default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_MIN_DATE)'
         time_period_obj = eval(func_string)
