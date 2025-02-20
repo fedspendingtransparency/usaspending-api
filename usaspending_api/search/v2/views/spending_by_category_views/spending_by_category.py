@@ -242,6 +242,15 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
 
         # Create the filtered Search Object
         if self.spending_level == SpendingLevel.AWARD:
+            sum_as_cents_agg_outlay = A("sum", field="total_outlays", script={"source": "_value * 100"})
+            sum_as_dollars_agg_outlay = A(
+                "bucket_script",
+                buckets_path={"sum_as_cents_outlay": "sum_as_cents_outlay"},
+                script="params.sum_as_cents_outlay / 100",
+            )
+            group_by_agg_key.metric("sum_as_cents_outlay", sum_as_cents_agg_outlay).pipeline(
+                "sum_as_dollars_outlay", sum_as_dollars_agg_outlay
+            )
             search = AwardSearch().filter(filter_query)
         else:
             search = TransactionSearch().filter(filter_query)
