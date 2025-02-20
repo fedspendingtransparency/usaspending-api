@@ -114,7 +114,8 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
             results = self.query_django_for_subawards(base_queryset)
         elif self.spending_level == SpendingLevel.TRANSACTION:
             query_with_filters = QueryWithFilters(_QueryType.TRANSACTIONS)
-            results = query_with_filters.query_elasticsearch(self.filters)
+            filter_query = query_with_filters.query_elasticsearch(self.filters)
+            results = self.query_elasticsearch(filter_query)
         else:
             query_with_filters = QueryWithFilters(_QueryType.AWARDS)
             filter_query = query_with_filters.query_elasticsearch(self.filters)
