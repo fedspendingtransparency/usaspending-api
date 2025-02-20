@@ -6,7 +6,7 @@ from django.db.models.functions import Cast
 from rest_framework.response import Response
 
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.calculations import file_b
+from usaspending_api.common.calculations.file_b import FileBCalculations
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.disaster.v2.views.disaster_base import (
@@ -80,10 +80,11 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
 
     @property
     def total_queryset(self):
+        file_b_calculations = FileBCalculations(include_final_sub_filter=True, is_covid_page=True)
         filters = [
             self.is_in_provided_def_codes,
             self.all_closed_defc_submissions,
-            file_b.is_non_zero_total_spending(),
+            file_b_calculations.is_non_zero_total_spending(),
             Q(object_class__isnull=False),
         ]
 
@@ -97,8 +98,8 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
 
         annotations = {
             **object_class_annotations,
-            "obligation": Sum(file_b.get_obligations(is_multi_year=True, include_final_sub_filter=True)),
-            "outlay": Sum(file_b.get_outlays(include_final_sub_filter=True)),
+            "obligation": Sum(file_b_calculations.get_obligations()),
+            "outlay": Sum(file_b_calculations.get_outlays()),
             "award_count": Value(None, output_field=IntegerField()),
         }
 
