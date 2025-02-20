@@ -45,8 +45,8 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 5555555.0, "code": "USA", "id": None, "name": "UNITED STATES"},
-            {"amount": 5000000.0, "code": "CAN", "id": None, "name": "CANADA"},
+            {"amount": 5555555.0, "code": "USA", "id": None, "name": "UNITED STATES", "total_outlays": None},
+            {"amount": 5000000.0, "code": "CAN", "id": None, "name": "CANADA", "total_outlays": None},
         ],
         "messages": _expected_messages(),
         "spending_level": "transactions",
@@ -119,7 +119,7 @@ def test_correct_response_with_date_type(client, monkeypatch, elasticsearch_tran
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 5.0, "code": "USA", "id": None, "name": "UNITED STATES"},
+            {"amount": 5.0, "code": "USA", "id": None, "name": "UNITED STATES", "total_outlays": None},
         ],
         "messages": _expected_messages(),
         "spending_level": "transactions",
@@ -177,7 +177,7 @@ def test_correct_response_with_new_awards_only(
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 5.0, "code": "USA", "id": None, "name": "UNITED STATES"},
+            {"amount": 5.0, "code": "USA", "id": None, "name": "UNITED STATES", "total_outlays": None},
         ],
         "messages": _expected_messages(),
         "spending_level": "transactions",

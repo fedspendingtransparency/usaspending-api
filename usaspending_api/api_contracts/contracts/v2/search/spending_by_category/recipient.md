@@ -87,14 +87,16 @@ This endpoint returns a list of the top results of Recipients sorted by the tota
                         "recipient_id": null,
                         "name": "MULTIPLE RECIPIENTS",
                         "code": null,
-                        "uei": null
+                        "uei": null,
+                        "total_outlays": null,
                     },
                     {
                         "amount": 17388378311.33,
                         "recipient_id": "005a8812-bab5-2780-533b-b62c33271882-C",
                         "name": "LOCKHEED MARTIN CORPORATION",
                         "code": "008016958",
-                        "uei": null
+                        "uei": null,
+                        "total_outlays": null,
                     }
                 ],
                 "messages": [
@@ -113,6 +115,7 @@ This endpoint returns a list of the top results of Recipients sorted by the tota
     The Recipient's DUNS code. If it doesn't have a DUNS code, this field will be null.
 + `amount` (required, number)
 + `uei` (required, string, nullable)
++ `total_outlays` (required, number, nullable)
 
 ## PageMetadataObject (object)
 + `page` (required, number)
