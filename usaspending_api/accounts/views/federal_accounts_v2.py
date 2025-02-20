@@ -13,7 +13,7 @@ from rest_framework.views import APIView
 
 from usaspending_api.accounts.models import AppropriationAccountBalances, FederalAccount, TreasuryAppropriationAccount
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.calculations import file_b
+from usaspending_api.common.calculations.file_b import FileBCalculations
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.date_helper import now
 from usaspending_api.common.helpers.fiscal_year_helpers import current_fiscal_year
@@ -516,8 +516,10 @@ class FederalAccountViewSet(APIView):
         if not submission_ids:
             return []
 
+        file_b_calculations = FileBCalculations()
+
         fabpaoc_query_filters = [
-            file_b.is_non_zero_total_spending(),
+            file_b_calculations.is_non_zero_total_spending(),
             Q(submission_id__in=submission_ids),
             Q(treasury_account__federal_account__federal_account_code=self.federal_account["federal_account_code"]),
         ]
@@ -548,8 +550,8 @@ class FederalAccountViewSet(APIView):
                         code=F("treasury_account__tas_rendering_label"),
                     )
                     .annotate(
-                        obligated_amount=Sum(file_b.get_obligations()),
-                        gross_outlay_amount=Sum(file_b.get_outlays()),
+                        obligated_amount=Sum(file_b_calculations.get_obligations()),
+                        gross_outlay_amount=Sum(file_b_calculations.get_outlays()),
                     )
                 ),
                 treasury_account__treasury_account_identifier=tbr_cte.col.treasury_account_identifier,

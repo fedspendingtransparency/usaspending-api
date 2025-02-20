@@ -27,22 +27,22 @@ def test_budget_function_list_success(client, monkeypatch, agency_account_data, 
         },
         "results": [
             {
-                "gross_outlay_amount": 11550000.0,
+                "gross_outlay_amount": 11100000.0,
                 "name": "NAME 1",
-                "obligated_amount": 498.0,
-                "children": [{"gross_outlay_amount": 11550000.0, "name": "NAME 1A", "obligated_amount": 498.0}],
+                "obligated_amount": 111.0,
+                "children": [{"gross_outlay_amount": 11100000.0, "name": "NAME 1A", "obligated_amount": 111.0}],
             },
             {
-                "gross_outlay_amount": 250000.0,
+                "gross_outlay_amount": 100000.0,
                 "name": "NAME 6",
-                "obligated_amount": 229.0,
-                "children": [{"gross_outlay_amount": 250000.0, "name": "NAME 6A", "obligated_amount": 229.0}],
+                "obligated_amount": 100.0,
+                "children": [{"gross_outlay_amount": 100000.0, "name": "NAME 6A", "obligated_amount": 100.0}],
             },
             {
-                "gross_outlay_amount": 1150000.0,
+                "gross_outlay_amount": 1000000.0,
                 "name": "NAME 5",
-                "obligated_amount": 139.0,
-                "children": [{"gross_outlay_amount": 1150000.0, "name": "NAME 5A", "obligated_amount": 139.0}],
+                "obligated_amount": 10.0,
+                "children": [{"gross_outlay_amount": 1000000.0, "name": "NAME 5A", "obligated_amount": 10.0}],
             },
         ],
     }
@@ -66,10 +66,10 @@ def test_budget_function_list_success(client, monkeypatch, agency_account_data, 
         },
         "results": [
             {
-                "gross_outlay_amount": 160000.0,
+                "gross_outlay_amount": 10000.0,
                 "name": "NAME 2",
-                "obligated_amount": 1129.0,
-                "children": [{"gross_outlay_amount": 160000.0, "name": "NAME 2A", "obligated_amount": 1129.0}],
+                "obligated_amount": 1000.0,
+                "children": [{"gross_outlay_amount": 10000.0, "name": "NAME 2A", "obligated_amount": 1000.0}],
             }
         ],
     }
@@ -150,22 +150,22 @@ def test_budget_function_list_sort_by_name(client, monkeypatch, agency_account_d
         },
         "results": [
             {
-                "gross_outlay_amount": 11550000.0,
+                "gross_outlay_amount": 11100000.0,
                 "name": "NAME 1",
-                "obligated_amount": 498.0,
-                "children": [{"gross_outlay_amount": 11550000.0, "name": "NAME 1A", "obligated_amount": 498.0}],
+                "obligated_amount": 111.0,
+                "children": [{"gross_outlay_amount": 11100000.0, "name": "NAME 1A", "obligated_amount": 111.0}],
             },
             {
-                "gross_outlay_amount": 1150000.0,
+                "gross_outlay_amount": 1000000.0,
                 "name": "NAME 5",
-                "obligated_amount": 139.0,
-                "children": [{"gross_outlay_amount": 1150000.0, "name": "NAME 5A", "obligated_amount": 139.0}],
+                "obligated_amount": 10.0,
+                "children": [{"gross_outlay_amount": 1000000.0, "name": "NAME 5A", "obligated_amount": 10.0}],
             },
             {
-                "gross_outlay_amount": 250000.0,
+                "gross_outlay_amount": 100000.0,
                 "name": "NAME 6",
-                "obligated_amount": 229.0,
-                "children": [{"gross_outlay_amount": 250000.0, "name": "NAME 6A", "obligated_amount": 229.0}],
+                "obligated_amount": 100.0,
+                "children": [{"gross_outlay_amount": 100000.0, "name": "NAME 6A", "obligated_amount": 100.0}],
             },
         ],
     }
@@ -190,22 +190,22 @@ def test_budget_function_list_sort_by_name(client, monkeypatch, agency_account_d
         },
         "results": [
             {
-                "gross_outlay_amount": 250000.0,
+                "gross_outlay_amount": 100000.0,
                 "name": "NAME 6",
-                "obligated_amount": 229.0,
-                "children": [{"gross_outlay_amount": 250000.0, "name": "NAME 6A", "obligated_amount": 229.0}],
+                "obligated_amount": 100.0,
+                "children": [{"gross_outlay_amount": 100000.0, "name": "NAME 6A", "obligated_amount": 100.0}],
             },
             {
-                "gross_outlay_amount": 1150000.0,
+                "gross_outlay_amount": 1000000.0,
                 "name": "NAME 5",
-                "obligated_amount": 139.0,
-                "children": [{"gross_outlay_amount": 1150000.0, "name": "NAME 5A", "obligated_amount": 139.0}],
+                "obligated_amount": 10.0,
+                "children": [{"gross_outlay_amount": 1000000.0, "name": "NAME 5A", "obligated_amount": 10.0}],
             },
             {
-                "gross_outlay_amount": 11550000.0,
+                "gross_outlay_amount": 11100000.0,
                 "name": "NAME 1",
-                "obligated_amount": 498.0,
-                "children": [{"gross_outlay_amount": 11550000.0, "name": "NAME 1A", "obligated_amount": 498.0}],
+                "obligated_amount": 111.0,
+                "children": [{"gross_outlay_amount": 11100000.0, "name": "NAME 1A", "obligated_amount": 111.0}],
             },
         ],
     }
@@ -234,22 +234,22 @@ def test_budget_function_list_sort_by_obligated_amount(client, monkeypatch, agen
         },
         "results": [
             {
-                "gross_outlay_amount": 1150000.0,
+                "gross_outlay_amount": 1000000.0,
                 "name": "NAME 5",
-                "obligated_amount": 139.0,
-                "children": [{"gross_outlay_amount": 1150000.0, "name": "NAME 5A", "obligated_amount": 139.0}],
+                "obligated_amount": 10.0,
+                "children": [{"gross_outlay_amount": 1000000.0, "name": "NAME 5A", "obligated_amount": 10.0}],
             },
             {
-                "gross_outlay_amount": 250000.0,
+                "gross_outlay_amount": 100000.0,
                 "name": "NAME 6",
-                "obligated_amount": 229.0,
-                "children": [{"gross_outlay_amount": 250000.0, "name": "NAME 6A", "obligated_amount": 229.0}],
+                "obligated_amount": 100.0,
+                "children": [{"gross_outlay_amount": 100000.0, "name": "NAME 6A", "obligated_amount": 100.0}],
             },
             {
-                "gross_outlay_amount": 11550000.0,
+                "gross_outlay_amount": 11100000.0,
                 "name": "NAME 1",
-                "obligated_amount": 498.0,
-                "children": [{"gross_outlay_amount": 11550000.0, "name": "NAME 1A", "obligated_amount": 498.0}],
+                "obligated_amount": 111.0,
+                "children": [{"gross_outlay_amount": 11100000.0, "name": "NAME 1A", "obligated_amount": 111.0}],
             },
         ],
     }
@@ -274,22 +274,22 @@ def test_budget_function_list_sort_by_obligated_amount(client, monkeypatch, agen
         },
         "results": [
             {
-                "gross_outlay_amount": 11550000.0,
+                "gross_outlay_amount": 11100000.0,
                 "name": "NAME 1",
-                "obligated_amount": 498.0,
-                "children": [{"gross_outlay_amount": 11550000.0, "name": "NAME 1A", "obligated_amount": 498.0}],
+                "obligated_amount": 111.0,
+                "children": [{"gross_outlay_amount": 11100000.0, "name": "NAME 1A", "obligated_amount": 111.0}],
             },
             {
-                "gross_outlay_amount": 250000.0,
+                "gross_outlay_amount": 100000.0,
                 "name": "NAME 6",
-                "obligated_amount": 229.0,
-                "children": [{"gross_outlay_amount": 250000.0, "name": "NAME 6A", "obligated_amount": 229.0}],
+                "obligated_amount": 100.0,
+                "children": [{"gross_outlay_amount": 100000.0, "name": "NAME 6A", "obligated_amount": 100.0}],
             },
             {
-                "gross_outlay_amount": 1150000.0,
+                "gross_outlay_amount": 1000000.0,
                 "name": "NAME 5",
-                "obligated_amount": 139.0,
-                "children": [{"gross_outlay_amount": 1150000.0, "name": "NAME 5A", "obligated_amount": 139.0}],
+                "obligated_amount": 10.0,
+                "children": [{"gross_outlay_amount": 1000000.0, "name": "NAME 5A", "obligated_amount": 10.0}],
             },
         ],
     }
@@ -318,22 +318,22 @@ def test_budget_function_list_sort_by_gross_outlay_amount(client, monkeypatch, a
         },
         "results": [
             {
-                "gross_outlay_amount": 250000.0,
+                "gross_outlay_amount": 100000.0,
                 "name": "NAME 6",
-                "obligated_amount": 229.0,
-                "children": [{"gross_outlay_amount": 250000.0, "name": "NAME 6A", "obligated_amount": 229.0}],
+                "obligated_amount": 100.0,
+                "children": [{"gross_outlay_amount": 100000.0, "name": "NAME 6A", "obligated_amount": 100.0}],
             },
             {
-                "gross_outlay_amount": 1150000.0,
+                "gross_outlay_amount": 1000000.0,
                 "name": "NAME 5",
-                "obligated_amount": 139.0,
-                "children": [{"gross_outlay_amount": 1150000.0, "name": "NAME 5A", "obligated_amount": 139.0}],
+                "obligated_amount": 10.0,
+                "children": [{"gross_outlay_amount": 1000000.0, "name": "NAME 5A", "obligated_amount": 10.0}],
             },
             {
-                "gross_outlay_amount": 11550000.0,
+                "gross_outlay_amount": 11100000.0,
                 "name": "NAME 1",
-                "obligated_amount": 498.0,
-                "children": [{"gross_outlay_amount": 11550000.0, "name": "NAME 1A", "obligated_amount": 498.0}],
+                "obligated_amount": 111.0,
+                "children": [{"gross_outlay_amount": 11100000.0, "name": "NAME 1A", "obligated_amount": 111.0}],
             },
         ],
     }
@@ -358,22 +358,22 @@ def test_budget_function_list_sort_by_gross_outlay_amount(client, monkeypatch, a
         },
         "results": [
             {
-                "gross_outlay_amount": 11550000.0,
+                "gross_outlay_amount": 11100000.0,
                 "name": "NAME 1",
-                "obligated_amount": 498.0,
-                "children": [{"gross_outlay_amount": 11550000.0, "name": "NAME 1A", "obligated_amount": 498.0}],
+                "obligated_amount": 111.0,
+                "children": [{"gross_outlay_amount": 11100000.0, "name": "NAME 1A", "obligated_amount": 111.0}],
             },
             {
-                "gross_outlay_amount": 1150000.0,
+                "gross_outlay_amount": 1000000.0,
                 "name": "NAME 5",
-                "obligated_amount": 139.0,
-                "children": [{"gross_outlay_amount": 1150000.0, "name": "NAME 5A", "obligated_amount": 139.0}],
+                "obligated_amount": 10.0,
+                "children": [{"gross_outlay_amount": 1000000.0, "name": "NAME 5A", "obligated_amount": 10.0}],
             },
             {
-                "gross_outlay_amount": 250000.0,
+                "gross_outlay_amount": 100000.0,
                 "name": "NAME 6",
-                "obligated_amount": 229.0,
-                "children": [{"gross_outlay_amount": 250000.0, "name": "NAME 6A", "obligated_amount": 229.0}],
+                "obligated_amount": 100.0,
+                "children": [{"gross_outlay_amount": 100000.0, "name": "NAME 6A", "obligated_amount": 100.0}],
             },
         ],
     }
@@ -402,10 +402,10 @@ def test_budget_function_list_search(client, monkeypatch, agency_account_data, h
         },
         "results": [
             {
-                "gross_outlay_amount": 250000.0,
+                "gross_outlay_amount": 100000.0,
                 "name": "NAME 6",
-                "obligated_amount": 229.0,
-                "children": [{"gross_outlay_amount": 250000.0, "name": "NAME 6A", "obligated_amount": 229.0}],
+                "obligated_amount": 100.0,
+                "children": [{"gross_outlay_amount": 100000.0, "name": "NAME 6A", "obligated_amount": 100.0}],
             }
         ],
     }
@@ -430,10 +430,10 @@ def test_budget_function_list_search(client, monkeypatch, agency_account_data, h
         },
         "results": [
             {
-                "gross_outlay_amount": 1150000.0,
+                "gross_outlay_amount": 1000000.0,
                 "name": "NAME 5",
-                "obligated_amount": 139.0,
-                "children": [{"gross_outlay_amount": 1150000.0, "name": "NAME 5A", "obligated_amount": 139.0}],
+                "obligated_amount": 10.0,
+                "children": [{"gross_outlay_amount": 1000000.0, "name": "NAME 5A", "obligated_amount": 10.0}],
             }
         ],
     }
@@ -461,16 +461,16 @@ def test_budget_function_list_pagination(client, agency_account_data):
         },
         "results": [
             {
-                "gross_outlay_amount": 11550000.0,
+                "gross_outlay_amount": 11100000.0,
                 "name": "NAME 1",
-                "obligated_amount": 498.0,
-                "children": [{"gross_outlay_amount": 11550000.0, "name": "NAME 1A", "obligated_amount": 498.0}],
+                "obligated_amount": 111.0,
+                "children": [{"gross_outlay_amount": 11100000.0, "name": "NAME 1A", "obligated_amount": 111.0}],
             },
             {
-                "gross_outlay_amount": 250000.0,
+                "gross_outlay_amount": 100000.0,
                 "name": "NAME 6",
-                "obligated_amount": 229.0,
-                "children": [{"gross_outlay_amount": 250000.0, "name": "NAME 6A", "obligated_amount": 229.0}],
+                "obligated_amount": 100.0,
+                "children": [{"gross_outlay_amount": 100000.0, "name": "NAME 6A", "obligated_amount": 100.0}],
             },
         ],
     }
@@ -495,10 +495,10 @@ def test_budget_function_list_pagination(client, agency_account_data):
         },
         "results": [
             {
-                "gross_outlay_amount": 1150000.0,
+                "gross_outlay_amount": 1000000.0,
                 "name": "NAME 5",
-                "obligated_amount": 139.0,
-                "children": [{"gross_outlay_amount": 1150000.0, "name": "NAME 5A", "obligated_amount": 139.0}],
+                "obligated_amount": 10.0,
+                "children": [{"gross_outlay_amount": 1000000.0, "name": "NAME 5A", "obligated_amount": 10.0}],
             },
         ],
     }
