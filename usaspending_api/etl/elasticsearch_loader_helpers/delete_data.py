@@ -8,8 +8,14 @@ from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search
 from elasticsearch_dsl.mapping import Mapping
 
-from usaspending_api.broker.helpers.last_load_date import get_last_load_date, get_latest_load_date
-from usaspending_api.common.helpers.s3_helpers import access_s3_object, retrieve_s3_bucket_object_list
+from usaspending_api.broker.helpers.last_load_date import (
+    get_last_load_date,
+    get_latest_load_date,
+)
+from usaspending_api.common.helpers.s3_helpers import (
+    access_s3_object,
+    retrieve_s3_bucket_object_list,
+)
 from usaspending_api.etl.elasticsearch_loader_helpers.index_config import (
     ES_AWARDS_UNIQUE_KEY_FIELD,
     ES_TRANSACTIONS_UNIQUE_KEY_FIELD,
@@ -31,6 +37,7 @@ def delete_docs_by_unique_key(
     index,
     refresh_after: bool = True,
     delete_chunk_size: int = 1000,
+    slices: Union[int, str] = "auto",
 ) -> int:
     """
     Bulk delete a batch of documents whose field identified by ``key`` matches any value provided in the
@@ -65,7 +72,13 @@ def delete_docs_by_unique_key(
         logger.info(format_log("Nothing to delete", action="Delete", name=task_id))
         return 0
 
-    logger.info(format_log(f"Deleting up to {len(value_list):,} document(s)", action="Delete", name=task_id))
+    logger.info(
+        format_log(
+            f"Deleting up to {len(value_list):,} document(s)",
+            action="Delete",
+            name=task_id,
+        )
+    )
     if not index:
         raise RuntimeError("index name must be provided")
 
@@ -99,7 +112,7 @@ def delete_docs_by_unique_key(
             # params:
             # conflicts="proceed": Ignores version conflict errors if a doc delete is attempted more than once
             # slices="auto": Will create parallel delete batches per shard
-            q = q.params(conflicts="proceed", slices="auto")
+            q = q.params(conflicts="proceed", slices=slices)
             response = q.delete()
             # Some subtle errors come back on the response
             if response["timed_out"]:
@@ -323,7 +336,11 @@ def delete_awards(
         )
     else:
         logger.info(
-            format_log(f"Derived {award_keys_len} award keys from transactions in ES", action="Delete", name=task_id)
+            format_log(
+                f"Derived {award_keys_len} award keys from transactions in ES",
+                action="Delete",
+                name=task_id,
+            )
         )
         deleted_award_kvs = _check_awards_for_deletes(award_keys, spark)
         deleted_award_kvs_len = len(deleted_award_kvs)
@@ -359,6 +376,7 @@ def delete_awards(
         task_id=task_id,
         index=config["index_name"],
         delete_chunk_size=config["partition_size"],
+        slices=config["slices"],
     )
 
 
@@ -401,7 +419,8 @@ def delete_transactions(
     if len(deleted_tx_keys) > 0:
         logger.info(
             format_log(
-                f"{len(deleted_tx_keys)} transactions no longer in the DB will be removed from ES", action="Delete"
+                f"{len(deleted_tx_keys)} transactions no longer in the DB will be removed from ES",
+                action="Delete",
             )
         )
         tx_keys_to_delete.extend(deleted_tx_keys.keys())
@@ -424,7 +443,8 @@ def delete_transactions(
     else:
         logger.info(
             format_log(
-                "None of the recently updated transactions have an action_date prior to FY2008.", action="Delete"
+                "None of the recently updated transactions have an action_date prior to FY2008.",
+                action="Delete",
             )
         )
 
@@ -439,6 +459,7 @@ def delete_transactions(
         task_id="Sync DB Deletes",
         index=config["index_name"],
         delete_chunk_size=config["partition_size"],
+        slices=config["slices"],
     )
 
 
@@ -465,7 +486,12 @@ def _gather_deleted_transaction_keys(
     start = perf_counter()
 
     bucket_objects = retrieve_s3_bucket_object_list(bucket_name=config["s3_bucket"])
-    logger.info(format_log(f"{len(bucket_objects):,} files found in bucket '{config['s3_bucket']}'", action="Delete"))
+    logger.info(
+        format_log(
+            f"{len(bucket_objects):,} files found in bucket '{config['s3_bucket']}'",
+            action="Delete",
+        )
+    )
 
     start_date = get_last_load_date("es_deletes")
     # An `end_date` is used, so we don't try to delete records from ES that have not yet
@@ -514,7 +540,12 @@ def _gather_deleted_transaction_keys(
 
     if config["verbose"]:
         for uid, deleted_dict in deleted_keys.items():
-            logger.info(format_log(f"id: {uid} last modified: {deleted_dict['timestamp']}", action="Delete"))
+            logger.info(
+                format_log(
+                    f"id: {uid} last modified: {deleted_dict['timestamp']}",
+                    action="Delete",
+                )
+            )
 
     logger.info(
         format_log(
@@ -586,12 +617,14 @@ def _gather_modified_transactions_pre_fy2008(
     if len(results) > 0:
         logger.info(
             format_log(
-                f"{len(results)} recently updated transactions have an action_date before FY2008.", action="Delete"
+                f"{len(results)} recently updated transactions have an action_date before FY2008.",
+                action="Delete",
             )
         )
         logger.info(
             format_log(
-                f"These {len(results)} pre-FY2008 transactions will be deleted from ES, if present.", action="Delete"
+                f"These {len(results)} pre-FY2008 transactions will be deleted from ES, if present.",
+                action="Delete",
             )
         )
 
@@ -599,7 +632,9 @@ def _gather_modified_transactions_pre_fy2008(
 
 
 def _check_awards_for_deletes(
-    id_list: list, spark: "pyspark.sql.SparkSession" = None, awards_table: str = "vw_awards"  # noqa
+    id_list: list,
+    spark: "pyspark.sql.SparkSession" = None,  # noqa
+    awards_table: str = "vw_awards",
 ) -> list:
     """Takes a list of award key values and returns them if they are NOT found in the awards DB table"""
 
@@ -621,14 +656,17 @@ def _check_awards_for_deletes(
         ]
     else:
         results = execute_sql_statement(
-            sql.format(ids=formatted_value_ids[:-1], awards_table=awards_table), results=True
+            sql.format(ids=formatted_value_ids[:-1], awards_table=awards_table),
+            results=True,
         )
 
     return results
 
 
 def _check_awards_for_pre_fy2008(
-    spark: "pyspark.sql.SparkSession" = None, awards_table: str = "rpt.award_search", days_delta: int = 3  # noqa
+    spark: "pyspark.sql.SparkSession" = None,  # noqa
+    awards_table: str = "rpt.award_search",
+    days_delta: int = 3,
 ) -> Union[List[Dict], List]:
     """Find all awards that have been modified in the last `days_delta` day(s) that have an `action_date` prior to
         2007-10-01 (FY 2008) and delete them from Elasticsearch if they're present.
@@ -665,7 +703,8 @@ def _check_awards_for_pre_fy2008(
         ]
     else:
         results = execute_sql_statement(
-            pre_fy2008_awards_sql.format(awards_table=awards_table, days_delta=days_delta), results=True
+            pre_fy2008_awards_sql.format(awards_table=awards_table, days_delta=days_delta),
+            results=True,
         )
 
     return results
