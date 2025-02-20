@@ -3,11 +3,11 @@ import multiprocessing
 import time
 import logging
 from pathlib import Path
-from typing import Tuple
+from typing import Tuple, Optional
 from django.conf import settings
 
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
-from usaspending_api.common.helpers.s3_helpers import delete_s3_object, download_s3_object
+from usaspending_api.common.helpers.s3_helpers import download_s3_object, delete_s3_objects
 from usaspending_api.common.helpers.sql_helpers import read_sql_file_to_text
 from usaspending_api.download.filestreaming.download_generation import (
     EXCEL_ROW_LIMIT,
@@ -43,7 +43,7 @@ class AbstractToCSVStrategy(ABC):
         working_dir_path: Path,
         download_zip_path: Path,
         source_df=None,
-    ) -> Tuple[List[str], int]:
+    ) -> Tuple[List[str], int, Optional[int]]:
         """
         Args:
             source_sql: Some string that can be used as the source sql
@@ -86,8 +86,8 @@ class PostgresToCSVStrategy(AbstractToCSVStrategy):
             # Log how many rows we have
             self._logger.info(f"Counting rows in delimited text file {temp_data_file_name}")
             try:
-                count = count_rows_in_delimited_file(filename=temp_data_file_name, has_header=True, delimiter=delim)
-                self._logger.info(f"{destination_path} contains {count:,} rows of data")
+                row_count = count_rows_in_delimited_file(filename=temp_data_file_name, has_header=True, delimiter=delim)
+                self._logger.info(f"{destination_path} contains {row_count:,} rows of data")
             except Exception:
                 self._logger.exception("Unable to obtain delimited text file line count")
 
@@ -108,7 +108,7 @@ class PostgresToCSVStrategy(AbstractToCSVStrategy):
             raise e
         finally:
             Path(temp_file_path).unlink()
-        return [destination_path], count
+        return [destination_path], row_count, None
 
 
 class SparkToCSVStrategy(AbstractToCSVStrategy):
@@ -161,6 +161,7 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
                 max_records_per_file=EXCEL_ROW_LIMIT,
                 logger=self._logger,
             )
+            column_count = len(df.columns)
             # When combining these later, will prepend the extracted header to each resultant file.
             # The parts therefore must NOT have headers or the headers will show up in the data when combined.
             header = ",".join([_.name for _ in df.schema.fields])
@@ -179,12 +180,12 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
             self._logger.exception("Exception encountered. See logs")
             raise
         finally:
-            delete_s3_object(s3_bucket_name, s3_destination_path)
+            delete_s3_objects(s3_bucket_name, key_prefix=f"{s3_bucket_sub_path}/{destination_file_name}")
             if self.spark_created_by_command:
                 self.spark.stop()
         append_files_to_zip_file(final_csv_data_file_locations, download_zip_path)
         self._logger.info(f"Generated the following data csv files {final_csv_data_file_locations}")
-        return final_csv_data_file_locations, record_count
+        return final_csv_data_file_locations, record_count, column_count
 
     def _move_data_csv_s3_to_local(
         self, bucket_name, s3_file_paths, s3_bucket_path, s3_bucket_sub_path, destination_path_dir
