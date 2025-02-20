@@ -26,7 +26,6 @@ from usaspending_api.search.filters.time_period.query_types import AwardSearchTi
 from usaspending_api.search.filters.time_period.query_types import SubawardSearchTimePeriod
 
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -941,8 +940,6 @@ class QueryWithFilters:
     def __init__(self, query_type: _QueryType):
         self.query_type = query_type
 
-
-
     @classmethod
     def _generate_elasticsearch_query(cls, filters: dict, **options) -> ES_Q:
         nested_path = options.pop("nested_path", "")
@@ -1006,7 +1003,7 @@ class QueryWithFilters:
             filters.pop(TreasuryAccounts.underscore_name, None)
             filters.pop(TasCodes.underscore_name, None)
         return must_queries
-    
+
     @classmethod
     def generate_elasticsearch_query(cls, filters: dict, **options) -> ES_Q:
         if cls.query_type == _QueryType.SUBAWARDS:
@@ -1019,17 +1016,18 @@ class QueryWithFilters:
         elif cls.query_type == _QueryType.ACCOUNTS:
             options = {**options, "nested_path": "financial_accounts_by_award"}
         return cls._generate_elasticsearch_query(filters, **options)
+
     @classmethod
     def query_elasticsearch(cls, filters: dict) -> ES_Q:
         filter_options = {}
-        if (cls.query_type.value == "accounts"):
+        if cls.query_type.value == "accounts":
             cls.query_type = _QueryType.SUBAWARDS
         time_period_func = cls.query_type.value.capitalize()[:-1] + "SearchTimePeriod"
-        func_string = f'{time_period_func}(default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_MIN_DATE)'
-        time_period_obj = eval(func_string)
-        new_awards_only_decorator = NewAwardsOnlyTimePeriod(
-            time_period_obj=time_period_obj, query_type=cls.query_type
+        func_string = (
+            f"{time_period_func}(default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_MIN_DATE)"
         )
+        time_period_obj = eval(func_string)
+        new_awards_only_decorator = NewAwardsOnlyTimePeriod(time_period_obj=time_period_obj, query_type=cls.query_type)
         filter_options["time_period_obj"] = new_awards_only_decorator
         query_with_filters = QueryWithFilters(cls.query_type)
         filter_query = query_with_filters.generate_elasticsearch_query(filters, **filter_options)

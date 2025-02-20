@@ -13,7 +13,6 @@ from usaspending_api.references.models import Agency, SubtierAgency, Office
 from usaspending_api.search.filters.elasticsearch.filter import _QueryType
 
 
-
 class SubAgencyList(PaginationMixin, AgencyBase):
     """
     Obtain the list of subagencies and offices based on the provided toptier_code and fiscal year, as well as award type.

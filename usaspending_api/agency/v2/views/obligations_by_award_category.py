@@ -10,7 +10,6 @@ from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.search.filters.elasticsearch.filter import _QueryType
 
 
-
 class ObligationsByAwardCategory(AgencyBase):
     """
     Returns a breakdown of obligations by award category (contracts, IDVs, grants, loans, direct payments, other)

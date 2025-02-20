@@ -9,7 +9,6 @@ from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.search.filters.elasticsearch.filter import _QueryType
 
 
-
 class Awards(AgencyBase):
     """
     Returns award and transaction information for USAspending.gov's Agency Details page for agencies

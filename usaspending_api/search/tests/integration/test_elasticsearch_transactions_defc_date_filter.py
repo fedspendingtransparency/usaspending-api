@@ -45,9 +45,7 @@ def test_transactions_elasticsearch_query():
 
     def_code_filters = ["A", "B", "L", "Z"]
     query_with_filters = QueryWithFilters(_QueryType.TRANSACTIONS)
-    def_codes_es_query = query_with_filters.generate_elasticsearch_query(
-        filters={"def_codes": def_code_filters}
-    )
+    def_codes_es_query = query_with_filters.generate_elasticsearch_query(filters={"def_codes": def_code_filters})
 
     covid_iija_es_queries = [
         def_codes_es_query.to_dict()["bool"]["must"][0]["bool"]["should"][0]["bool"]["should"][0]["bool"]["must"],
@@ -111,9 +109,7 @@ def test_transactions_elasticsearch_query_only_covid_iija():
 
     def_code_filters = ["L", "Z"]
     query_with_filters = QueryWithFilters(_QueryType.TRANSACTIONS)
-    def_codes_es_query = query_with_filters.generate_elasticsearch_query(
-        filters={"def_codes": def_code_filters}
-    )
+    def_codes_es_query = query_with_filters.generate_elasticsearch_query(filters={"def_codes": def_code_filters})
 
     covid_iija_es_queries = [
         def_codes_es_query.to_dict()["bool"]["must"][0]["bool"]["should"][0]["bool"]["must"],
@@ -170,9 +166,7 @@ def test_transactions_elasticsearch_query_non_covid_iija():
 
     def_code_filters = ["A", "B"]
     query_with_filters = QueryWithFilters(_QueryType.TRANSACTIONS)
-    def_codes_es_query = query_with_filters.generate_elasticsearch_query(
-        filters={"def_codes": def_code_filters}
-    )
+    def_codes_es_query = query_with_filters.generate_elasticsearch_query(filters={"def_codes": def_code_filters})
 
     other_es_queries = def_codes_es_query.to_dict()["bool"]["must"][0]["bool"]["should"]
 

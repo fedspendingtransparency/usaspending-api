@@ -473,7 +473,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             response = search.handle_execute()
             results = self.build_elasticsearch_result_transactions(response.aggs, time_periods)
         elif self.spending_level == SpendingLevel.AWARD:
-            search = AwardSearch().filter(filter_query)        
+            search = AwardSearch().filter(filter_query)
             self.apply_elasticsearch_aggregations(search)
             response = search.handle_execute()
             results = self.build_elasticsearch_result_awards_subawards(response.aggs)

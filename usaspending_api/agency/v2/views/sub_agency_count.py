@@ -10,7 +10,6 @@ from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.search.filters.elasticsearch.filter import _QueryType
 
 
-
 class SubAgencyCount(PaginationMixin, AgencyBase):
     """
     Obtain the count of sub-agencies and offices for a given agency based on a toptier_code,

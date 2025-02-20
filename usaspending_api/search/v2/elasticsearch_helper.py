@@ -40,9 +40,7 @@ def get_total_results(keyword):
     }
     aggs = A("filters", **group_by_agg_key_values)
     query_with_filters = QueryWithFilters(_QueryType.TRANSACTIONS)
-    filter_query = query_with_filters.generate_elasticsearch_query(
-        {"keyword_search": [es_minimal_sanitize(keyword)]}
-    )
+    filter_query = query_with_filters.generate_elasticsearch_query({"keyword_search": [es_minimal_sanitize(keyword)]})
     search = TransactionSearch().filter(filter_query)
     search.aggs.bucket("types", aggs)
     response = search.handle_execute()
@@ -85,9 +83,7 @@ def get_sum_aggregation_results(keyword, field="federal_action_obligation"):
     group_by_agg_key_values = {"field": field}
     aggs = A("sum", **group_by_agg_key_values)
     query_with_filters = QueryWithFilters(_QueryType.TRANSACTIONS)
-    filter_query = query_with_filters.generate_elasticsearch_query(
-        {"keyword_search": [es_minimal_sanitize(keyword)]}
-    )
+    filter_query = query_with_filters.generate_elasticsearch_query({"keyword_search": [es_minimal_sanitize(keyword)]})
     search = TransactionSearch().filter(filter_query)
     search.aggs.bucket("transaction_sum", aggs)
     response = search.handle_execute()
@@ -144,9 +140,7 @@ def get_download_ids(keyword, field, size=10000):
 
 def get_sum_and_count_aggregation_results(keyword):
     query_with_filters = QueryWithFilters(_QueryType.TRANSACTIONS)
-    filter_query = query_with_filters.generate_elasticsearch_query(
-        {"keyword_search": [es_minimal_sanitize(keyword)]}
-    )
+    filter_query = query_with_filters.generate_elasticsearch_query({"keyword_search": [es_minimal_sanitize(keyword)]})
     search = TransactionSearch().filter(filter_query)
     search.aggs.bucket("prime_awards_obligation_amount", {"sum": {"field": "federal_action_obligation"}})
     search.aggs.bucket("prime_awards_count", {"value_count": {"field": "transaction_id"}})

@@ -140,7 +140,6 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
 
         return response
 
-
     def _raise_not_implemented(self):
         msg = "Category '{}' is not implemented"
         if self.subawards:
