@@ -61,7 +61,7 @@ class NewAwardCount(AgencyBase):
             time_period_obj=time_period_obj, query_type=_QueryType.AWARDS
         )
         filter_options["time_period_obj"] = new_awards_only_decorator
-
-        filter_query = QueryWithFilters.generate_awards_elasticsearch_query(filters, **filter_options)
+        query_with_filters = QueryWithFilters(_QueryType.AWARDS)
+        filter_query = query_with_filters.generate_elasticsearch_query(filters, **filter_options)
         search = AwardSearch().filter(filter_query)
         return search.handle_count()

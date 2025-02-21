@@ -33,9 +33,9 @@ logger = logging.getLogger(__name__)
 
 class _ElasticsearchDownload(metaclass=ABCMeta):
     _source_field = None
-    _filter_query_func = None
     _search_type = None
     _base_model: Model = None
+    _query_with_filters = None
 
     @classmethod
     def _get_download_ids_generator(cls, search: Union[AwardSearch, TransactionSearch, SubawardSearch], size: int):
@@ -82,7 +82,7 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
         """
         Takes a dictionary of the different download filters and returns a flattened list of ids.
         """
-        filter_query = cls._filter_query_func(filters, **filter_options)
+        filter_query = cls._query_with_filters.generate_elasticsearch_query(filters, **filter_options)
         search = cls._search_type().filter(filter_query).source([cls._source_field])
         ids = cls._get_download_ids_generator(search, size)
         lookup_id_type = cls._search_type.type_as_string()
@@ -164,7 +164,7 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
 
 class AwardsElasticsearchDownload(_ElasticsearchDownload):
     _source_field = "award_id"
-    _filter_query_func = QueryWithFilters.generate_awards_elasticsearch_query
+    _query_with_filters = QueryWithFilters(_QueryType.AWARDS)
     _search_type = AwardSearch
     _base_model = DBAwardSearch
 
@@ -186,7 +186,7 @@ class AwardsElasticsearchDownload(_ElasticsearchDownload):
 
 class TransactionsElasticsearchDownload(_ElasticsearchDownload):
     _source_field = "transaction_id"
-    _filter_query_func = QueryWithFilters.generate_transactions_elasticsearch_query
+    _query_with_filters = QueryWithFilters(_QueryType.TRANSACTIONS)
     _search_type = TransactionSearch
     _base_model = DBTransactionSearch
 
@@ -208,7 +208,7 @@ class TransactionsElasticsearchDownload(_ElasticsearchDownload):
 
 class SubawardsElasticsearchDownload(_ElasticsearchDownload):
     _source_field = "broker_subaward_id"
-    _filter_query_func = QueryWithFilters.generate_subawards_elasticsearch_query
+    _query_with_filters = QueryWithFilters(_QueryType.SUBAWARDS)
     _search_type = SubawardSearch
     _base_model = DBSubawardSearch
 
