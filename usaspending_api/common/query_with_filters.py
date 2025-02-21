@@ -945,12 +945,23 @@ class QueryWithFilters:
 
     def __init__(self, query_type: _QueryType):
         self.query_type = query_type
+        time_period_obj = None
         if self.query_type == _QueryType.ACCOUNTS:
             self.default_options = {"nested_path": "financial_accounts_by_award"}
         elif self.query_type == _QueryType.TRANSACTIONS:
             time_period_obj = TransactionSearchTimePeriod(
                 default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_MIN_DATE
             )
+        elif self.query_type == _QueryType.AWARDS:
+            time_period_obj = AwardSearchTimePeriod(
+                default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_MIN_DATE
+            )
+        else:
+            time_period_obj = SubawardSearchTimePeriod(
+                default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_MIN_DATE
+            )
+        
+        if time_period_obj != None:
             new_awards_only_decorator = NewAwardsOnlyTimePeriod(
                 time_period_obj=time_period_obj, query_type=self.query_type
             )
