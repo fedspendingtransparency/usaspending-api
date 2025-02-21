@@ -31,6 +31,7 @@ def award_data_fixture(db):
         broker_subaward_id=1,
         award_id=1,
         subaward_amount=123.45,
+        action_date="2020-01-01",
         sub_place_of_perform_country_co="USA",
         sub_place_of_perform_state_code="TX",
         sub_place_of_perform_city_name="HOUSTON",
@@ -42,7 +43,8 @@ def award_data_fixture(db):
     baker.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")
 
 
-def test_geocode_filter_by_city(client, monkeypatch, elasticsearch_transaction_index, award_data_fixture):
+def test_geocode_filter_by_city(client, monkeypatch, elasticsearch_subaward_index, elasticsearch_transaction_index, award_data_fixture):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     # Place of performance that does exist.

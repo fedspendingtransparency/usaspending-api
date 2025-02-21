@@ -7,6 +7,7 @@ def spending_level_test_data():
     baker.make(
         "search.AwardSearch",
         award_id=1,
+        date_signed="2019-01-01",
         action_date="2020-01-01",
         pop_country_code="USA",
         generated_pragmatic_obligation=500.0,
@@ -15,6 +16,7 @@ def spending_level_test_data():
     baker.make(
         "search.AwardSearch",
         award_id=2,
+        date_signed="2019-01-01",
         action_date="2020-01-01",
         pop_country_code="USA",
         generated_pragmatic_obligation=500.0,
@@ -23,6 +25,7 @@ def spending_level_test_data():
     baker.make(
         "search.AwardSearch",
         award_id=3,
+        date_signed="2019-01-01",
         action_date="2020-01-01",
         pop_country_code="CAN",
         generated_pragmatic_obligation=300.0,
@@ -31,6 +34,7 @@ def spending_level_test_data():
     baker.make(
         "search.AwardSearch",
         award_id=4,
+        date_signed="2019-01-01",
         action_date="2020-01-01",
         pop_country_code="CAN",
         generated_pragmatic_obligation=300.0,
@@ -39,6 +43,7 @@ def spending_level_test_data():
     baker.make(
         "search.SubawardSearch",
         broker_subaward_id=1,
+        action_date="2020-01-01",
         sub_action_date="2020-01-01",
         sub_place_of_perform_country_co="USA",
         subaward_amount=500.0,
@@ -46,6 +51,7 @@ def spending_level_test_data():
     baker.make(
         "search.SubawardSearch",
         broker_subaward_id=2,
+        action_date="2020-01-01",
         sub_action_date="2020-01-01",
         sub_place_of_perform_country_co="USA",
         subaward_amount=1000.0,
@@ -53,6 +59,7 @@ def spending_level_test_data():
     baker.make(
         "search.SubawardSearch",
         broker_subaward_id=3,
+        action_date="2020-01-01",
         sub_action_date="2020-01-01",
         sub_place_of_perform_country_co="CAN",
         subaward_amount=300.0,
@@ -60,6 +67,7 @@ def spending_level_test_data():
     baker.make(
         "search.SubawardSearch",
         broker_subaward_id=4,
+        action_date="2020-01-01",
         sub_action_date="2020-01-01",
         sub_place_of_perform_country_co="CAN",
         subaward_amount=100.0,

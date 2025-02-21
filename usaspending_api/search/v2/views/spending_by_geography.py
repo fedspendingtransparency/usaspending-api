@@ -17,7 +17,7 @@ from rest_framework.views import APIView
 from usaspending_api.awards.v2.filters.sub_award import geocode_filter_subaward_locations, subaward_filter
 from usaspending_api.common.api_versioning import API_TRANSFORM_FUNCTIONS, api_transformations
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, TransactionSearch
+from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, SubawardSearch, TransactionSearch
 from usaspending_api.common.helpers.generic_helper import (
     get_generic_filters_message,
 )
@@ -28,11 +28,9 @@ from usaspending_api.references.abbreviations import code_to_state, fips_to_code
 from usaspending_api.references.models import PopCongressionalDistrict, PopCounty, RefCountryCode
 from usaspending_api.search.filters.elasticsearch.filter import _QueryType
 from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
-from usaspending_api.search.filters.time_period.query_types import TransactionSearchTimePeriod
-from usaspending_api.search.models import SubawardSearch
+from usaspending_api.search.filters.time_period.query_types import AwardSearchTimePeriod, SubawardSearchTimePeriod, TransactionSearchTimePeriod
 from usaspending_api.search.v2.elasticsearch_helper import (
-    get_number_of_unique_terms_for_awards,
-    get_number_of_unique_terms_for_transactions,
+    get_number_of_unique_terms,
     get_scaled_sum_aggregations,
 )
 from usaspending_api.search.v2.views.enums import SpendingLevel
@@ -67,6 +65,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
     queryset: Optional[QuerySet]
     scope: str
     scope_field_name: str
+    search_type: AwardSearch | SubawardSearch | TransactionSearch
     spending_level: Optional[SpendingLevel]
 
     location_dict = {
@@ -76,12 +75,12 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                     "pop": "country_co",
                     "recipient_location": "country_code",
                 },
-                SpendingLevel.SUBAWARD: {"sub_place_of_perform": "country_co", "sub_legal_entity": "country_code"},
+                SpendingLevel.SUBAWARD: {"sub_pop": "country_co", "sub_recipient_location": "country_code"},
                 SpendingLevel.TRANSACTION: {"pop": "country_co", "recipient_location": "country_code"},
             },
             GeoLayer.COUNTY: {
                 SpendingLevel.AWARD: {"pop": "county_code", "recipient_location": "county_code"},
-                SpendingLevel.SUBAWARD: {"sub_place_of_perform": "county_code", "sub_legal_entity": "county_code"},
+                SpendingLevel.SUBAWARD: {"sub_pop": "county_code", "sub_recipient_location": "county_code"},
                 SpendingLevel.TRANSACTION: {"pop": "county_code", "recipient_location": "county_code"},
             },
             GeoLayer.DISTRICT: {
@@ -90,8 +89,8 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                     "recipient_location": "congressional_code_current",
                 },
                 SpendingLevel.SUBAWARD: {
-                    "sub_place_of_perform": "sub_place_of_performance_congressional_current",
-                    "sub_legal_entity": "congressional_current",
+                    "sub_pop": "sub_place_of_performance_congressional_current",
+                    "sub_recipient_location": "congressional_current",
                 },
                 SpendingLevel.TRANSACTION: {
                     "pop": "congressional_code_current",
@@ -100,25 +99,10 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             },
             GeoLayer.STATE: {
                 SpendingLevel.AWARD: {"pop": "state_code", "recipient_location": "state_code"},
-                SpendingLevel.SUBAWARD: {"sub_place_of_perform": "state_code", "sub_legal_entity": "state_code"},
+                SpendingLevel.SUBAWARD: {"sub_pop": "state_code", "sub_recipient_location": "state_code"},
                 SpendingLevel.TRANSACTION: {"pop": "state_code", "recipient_location": "state_code"},
             },
-        },
-        "name": {
-            GeoLayer.COUNTRY: {
-                SpendingLevel.AWARD: {"pop": "country_na", "recipient_location": "country_name"},
-                SpendingLevel.SUBAWARD: {"sub_place_of_perform": "country_na", "sub_legal_entity": "country_name"},
-                SpendingLevel.TRANSACTION: {"pop": "country_na", "recipient_location": "country_name"},
-            },
-            GeoLayer.COUNTY: {
-                SpendingLevel.SUBAWARD: {"sub_place_of_perform": "county_name", "sub_legal_entity": "county_name"},
-            },
-            GeoLayer.STATE: {
-                SpendingLevel.AWARD: {"pop": "state_name", "recipient_location": "state_name"},
-                SpendingLevel.SUBAWARD: {"sub_place_of_perform": "state_name", "sub_legal_entity": "state_name"},
-                SpendingLevel.TRANSACTION: {"pop": "state_name", "recipient_location": "state_name"},
-            },
-        },
+        }
     }
 
     @cache_response()
@@ -176,27 +160,38 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         if "filters" in json_request and "program_activities" in json_request["filters"]:
             tiny_shield.enforce_object_keys_min(json_request, program_activities_rule[0])
 
-        agg_key_dict = {
-            "county": "county_agg_key",
-            "district": "congressional_cur_agg_key",
-            "state": "state_agg_key",
-            "country": "country_agg_key",
-        }
         model_dict = {
             "place_of_performance": {
                 SpendingLevel.AWARD: "pop",
-                SpendingLevel.SUBAWARD: "sub_place_of_perform",
+                SpendingLevel.SUBAWARD: "sub_pop",
                 SpendingLevel.TRANSACTION: "pop",
             },
             "recipient_location": {
                 SpendingLevel.AWARD: "recipient_location",
-                SpendingLevel.SUBAWARD: "sub_legal_entity",
+                SpendingLevel.SUBAWARD: "sub_recipient_location",
                 SpendingLevel.TRANSACTION: "recipient_location",
             },
         }
         self.spending_level = SpendingLevel(
             "subawards" if json_request["subawards"] else json_request["spending_level"]
         )
+
+        agg_key_dict = {
+            "county": "county_agg_key",
+            "district": "congressional_cur_agg_key",
+
+        }
+        if self.spending_level == SpendingLevel.SUBAWARD:
+            agg_key_dict.update({
+                "state": "state_code",
+                "country": "country_code",
+            })
+        else:
+            agg_key_dict.update({
+                "state": "state_agg_key",
+                "country": "country_agg_key",
+            })
+
         self.scope = json_request["scope"]
         self.scope_field_name = model_dict[self.scope][self.spending_level]
         self.agg_key = f"{self.scope_field_name}_{agg_key_dict[json_request['geo_layer']]}"
@@ -206,55 +201,52 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         self.loc_field_name = self.location_dict["code"][self.geo_layer][self.spending_level][self.scope_field_name]
         self.loc_lookup = f"{self.scope_field_name}_{self.loc_field_name}"
 
-        if self.spending_level == SpendingLevel.SUBAWARD:
-            # When district current was added to the database's subawards table
-            # the name chosen did not follow pattern this module expects. That essentially
-            # broke this code's ability to combine scope field name with loc
-            # field name to get the correct column. As a result, we are handling
-            # this inconsistency here just for the column that doesn't follow
-            # the pattern.
-            if self.geo_layer == GeoLayer.DISTRICT and self.scope == "place_of_performance":
-                self.loc_lookup = f"{self.loc_field_name}"
-            # We do not use matviews for Subaward filtering, just the Subaward download filters
-            self.model_name = SubawardSearch
-            self.queryset = subaward_filter(self.filters)
-
-            self.obligation_column = "subaward_amount"
-            result = self.query_django_subawards()
+        if self.scope_field_name == "pop":
+            scope_filter_name = "place_of_performance_scope"
         else:
-            if self.scope_field_name == "pop":
-                scope_filter_name = "place_of_performance_scope"
-            else:
-                scope_filter_name = "recipient_scope"
+            scope_filter_name = "recipient_scope"
 
-            # If searching for COUNTY, DISTRICT, or STATE then only search for values within
-            #   USA, but don't overwrite a user's search.
-            # DO add `recipient_scope` or `place_of_performance_scope` if it wasn't already included.
+        # If searching for COUNTY, DISTRICT, or STATE then only search for values within
+        #   USA, but don't overwrite a user's search.
+        # DO add `recipient_scope` or `place_of_performance_scope` if it wasn't already included.
+        #
+        # If searching for COUNTRY and no scope was provided, then return results for all
+        #   countries provided in the `geo_layer_filters` list.
+        # DO NOT add `recipient_scope` or `place_of_performance_scope` to the filters, if it
+        #   wasn't already included.
+        if scope_filter_name not in self.filters and self.geo_layer != GeoLayer.COUNTRY:
+            self.filters[scope_filter_name] = "domestic"
 
-            # If searching for COUNTRY and no scope was provided, then return results for all
-            #   countries provided in the `geo_layer_filters` list.
-            # DO NOT add `recipient_scope` or `place_of_performance_scope` to the filters, if it
-            #   wasn't already included.
-            if scope_filter_name not in self.filters and self.geo_layer != GeoLayer.COUNTRY:
-                self.filters[scope_filter_name] = "domestic"
-
-            self.obligation_column = "generated_pragmatic_obligation"
-
-            filter_options = {}
-            time_period_obj = TransactionSearchTimePeriod(
+        if self.spending_level == SpendingLevel.SUBAWARD:
+            self.search_type = SubawardSearch
+            generate_query_func = QueryWithFilters.generate_subawards_elasticsearch_query
+            self.obligation_column = "subaward_amount"
+            time_period_obj = SubawardSearchTimePeriod(
                 default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
             )
-            new_awards_only_decorator = NewAwardsOnlyTimePeriod(
-                time_period_obj=time_period_obj, query_type=_QueryType.TRANSACTIONS
-            )
-            filter_options["time_period_obj"] = new_awards_only_decorator
-            if self.spending_level == SpendingLevel.TRANSACTION:
-                filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(
-                    self.filters, **filter_options
-                )
+        else:
+            self.obligation_column = "generated_pragmatic_obligation"
+            if self.spending_level == SpendingLevel.AWARD:
+                self.search_type = AwardSearch
+                generate_query_func = QueryWithFilters.generate_awards_elasticsearch_query
+                time_period_type = AwardSearchTimePeriod
+                query_type = _QueryType.AWARDS
             else:
-                filter_query = QueryWithFilters.generate_awards_elasticsearch_query(self.filters, **filter_options)
-            result = self.query_elasticsearch(filter_query)
+                generate_query_func = QueryWithFilters.generate_transactions_elasticsearch_query
+                self.search_type = TransactionSearch
+                time_period_type = TransactionSearchTimePeriod
+                query_type = _QueryType.TRANSACTIONS
+            base_time_period_obj = time_period_type(
+                default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
+            )
+            time_period_obj = NewAwardsOnlyTimePeriod(
+                time_period_obj=base_time_period_obj, query_type=query_type
+            )
+
+        filter_options = {}
+        filter_options["time_period_obj"] = time_period_obj
+        filter_query = generate_query_func(self.filters, **filter_options)
+        result = self.query_elasticsearch(filter_query)
 
         raw_response = {
             "scope": json_request["scope"],
@@ -272,276 +264,11 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
         return Response(raw_response)
 
-    def query_django_subawards(self) -> List[dict]:
-        fields_list = []  # fields to include in the aggregate query
-
-        if self.geo_layer == GeoLayer.STATE:
-            # State will have one field (state_code) containing letter A-Z
-            column_isnull = f"{self.obligation_column}__isnull"
-
-            cc_col = self.location_dict["code"][GeoLayer.COUNTRY][self.spending_level][self.scope_field_name]
-            kwargs = {f"{self.scope_field_name}_{cc_col}": "USA", column_isnull: False}
-
-            # Only state scope will add its own state code
-            # State codes are consistent in database i.e. AL, AK
-            fields_list.append(self.loc_lookup)
-            results = self.state_results(kwargs, fields_list, self.loc_lookup)
-
-        elif self.geo_layer == GeoLayer.COUNTRY:
-            results = self.country_results(self.loc_lookup)
-
-        else:
-            # County and district scope will need to select multiple fields
-            # State code is needed for county/district aggregation
-            state_col = self.location_dict["code"][GeoLayer.STATE][self.spending_level][self.scope_field_name]
-            state_lookup = f"{self.scope_field_name}_{state_col}"
-            fields_list.append(state_lookup)
-
-            # Adding regex to county/district codes to remove entries with letters since can't be surfaced by map
-            kwargs = {f"{self.obligation_column}__isnull": False}
-
-            if self.geo_layer == GeoLayer.COUNTY:
-                # County name added to aggregation since consistent in db
-
-                county_col = self.location_dict["name"][GeoLayer.COUNTY][self.spending_level][self.scope_field_name]
-                county_name_lookup = f"{self.scope_field_name}_{county_col}"
-                fields_list.append(county_name_lookup)
-                geo_queryset = self.county_district_queryset_subawards(
-                    kwargs, fields_list, self.loc_lookup, state_lookup, self.scope_field_name
-                )
-                results = self.county_results(state_lookup, county_name_lookup, geo_queryset)
-
-            else:
-                geo_queryset = self.county_district_queryset_subawards(
-                    kwargs, fields_list, self.loc_lookup, state_lookup, self.scope_field_name
-                )
-                results = self.district_results(state_lookup, geo_queryset)
-
-        return results
-
-    def state_results(
-        self, filter_args: Dict[str, Union[str, bool]], lookup_fields: List[str], loc_lookup: str
-    ) -> List[dict]:
-        # Adding additional state filters if specified
-        if self.geo_layer_filters:
-            self.queryset = self.queryset.filter(**{f"{loc_lookup}__in": self.geo_layer_filters})
-        else:
-            # Adding null filter for state for specific partial index
-            # when not using geocode_filter
-            filter_args[f"{loc_lookup}__isnull"] = False
-
-        geo_queryset = self.queryset.filter(**filter_args).values(*lookup_fields)
-
-        if self.spending_level == SpendingLevel.SUBAWARD:
-            geo_queryset = geo_queryset.annotate(transaction_amount=Sum("subaward_amount"))
-        else:
-            geo_queryset = geo_queryset.annotate(transaction_amount=Sum("generated_pragmatic_obligation")).values(
-                "transaction_amount", *lookup_fields
-            )
-
-        state_pop_rows = PopCounty.objects.filter(county_number="000").values()
-        populations = {row["state_name"].lower(): row["latest_population"] for row in state_pop_rows}
-
-        # State names are inconsistent in database (upper, lower, null)
-        # Used lookup instead to be consistent
-        results = []
-        for x in geo_queryset:
-            shape_code = x[loc_lookup]
-            per_capita = None
-            population = populations.get(code_to_state.get(shape_code, {"name": "None"}).get("name").lower())
-            if population:
-                per_capita = (Decimal(x["transaction_amount"]) / Decimal(population)).quantize(Decimal(".01"))
-
-            results.append(
-                {
-                    "shape_code": shape_code,
-                    "aggregated_amount": x["transaction_amount"],
-                    "display_name": code_to_state.get(shape_code, {"name": "None"}).get("name").title(),
-                    "population": population,
-                    "per_capita": per_capita,
-                }
-            )
-
-        return results
-
-    def county_district_queryset_subawards(
-        self,
-        kwargs: Dict[str, Union[str, bool]],
-        fields_list: List[str],
-        loc_lookup: str,
-        state_lookup: str,
-        scope_field_name: str,
-    ) -> QuerySet:
-        # Originally it was ok for geo layers list to use the geo layer value
-        # Now that geo layer value doesn't map directly to intent, e.g. district_current functionality
-        # we can't use the instance's geo layer value without changing it in some cases
-        geo_layer_value = "district_current" if self.geo_layer.value == "district" else self.geo_layer.value
-
-        # Filtering queryset to specific county/districts if requested
-        # Since geo_layer_filters comes as concat of state fips and county/district codes
-        # need to split for the geocode_filter
-        if self.geo_layer_filters:
-            geo_layers_list = [
-                {"state": fips_to_code.get(x[:2]), geo_layer_value: x[2:], "country": "USA"}
-                for x in self.geo_layer_filters
-            ]
-            # It's ok to use subaward geocode filter here because this method is for subawards only
-            self.queryset = self.queryset.filter(geocode_filter_subaward_locations(scope_field_name, geo_layers_list))
-
-        else:
-            # Lookup the correct country code field name from `location_dict`
-            country_code_field = self.location_dict["code"][GeoLayer.COUNTRY][self.spending_level][
-                self.scope_field_name
-            ]
-
-            # Adding null, USA, not number filters for specific partial index when not using a geocode_filter
-            kwargs[f"{loc_lookup}__isnull"] = False
-            kwargs[f"{state_lookup}__isnull"] = False
-            kwargs[f"{scope_field_name}_{country_code_field}"] = "USA"
-            kwargs[f"{loc_lookup}__iregex"] = r"^[0-9]*(\.\d+)?$"
-
-        # Turn county/district codes into float since inconsistent in database
-        # Codes in location table ex: '01', '1', '1.0'
-        # Cast will group codes as a float and will combine inconsistent codes
-        geo_queryset = (
-            self.queryset.filter(**kwargs).values(*fields_list).annotate(code_as_float=Cast(loc_lookup, FloatField()))
-        )
-
-        if self.spending_level == SpendingLevel.SUBAWARD:
-            geo_queryset = geo_queryset.annotate(transaction_amount=Sum("subaward_amount"))
-        else:
-            geo_queryset = geo_queryset.annotate(transaction_amount=Sum("generated_pragmatic_obligation")).values(
-                "transaction_amount", "code_as_float", *fields_list
-            )
-
-        return geo_queryset
-
-    def county_results(self, state_lookup: str, county_name: str, geo_queryset: QuerySet) -> List[dict]:
-        # Returns county results formatted for map
-        state_pop_rows = PopCounty.objects.exclude(county_number="000").values()
-        populations = {f"{row['state_code']}{row['county_number']}": row["latest_population"] for row in state_pop_rows}
-
-        results = []
-        for x in geo_queryset:
-            shape_code = code_to_state.get(x[state_lookup])["fips"] + pad_codes(
-                self.geo_layer.value, x["code_as_float"]
-            )
-            per_capita = None
-            population = populations.get(shape_code)
-            if population:
-                per_capita = (Decimal(x["transaction_amount"]) / Decimal(population)).quantize(Decimal(".01"))
-
-            results.append(
-                {
-                    "shape_code": shape_code,
-                    "aggregated_amount": x["transaction_amount"],
-                    "display_name": x[county_name].title() if x[county_name] is not None else x[county_name],
-                    "population": population,
-                    "per_capita": per_capita,
-                }
-            )
-
-        return results
-
-    def district_results(self, state_lookup: str, geo_queryset: QuerySet) -> List[dict]:
-        # Returns congressional district results formatted for map
-
-        state_pop_rows = PopCongressionalDistrict.objects.all().values()
-        populations = {
-            f"{row['state_code']}{row['congressional_district']}": row["latest_population"] for row in state_pop_rows
-        }
-
-        results = []
-        for x in geo_queryset:
-            shape_code = code_to_state.get(x[state_lookup])["fips"] + pad_codes(
-                self.geo_layer.value, x["code_as_float"]
-            )
-            per_capita = None
-            population = populations.get(shape_code)
-            if population:
-                per_capita = (Decimal(x["transaction_amount"]) / Decimal(population)).quantize(Decimal(".01"))
-
-            results.append(
-                {
-                    "shape_code": shape_code,
-                    "aggregated_amount": x["transaction_amount"],
-                    "display_name": x[state_lookup] + "-" + pad_codes(self.geo_layer.value, x["code_as_float"]),
-                    "population": population,
-                    "per_capita": per_capita,
-                }
-            )
-
-        return results
-
-    def country_results(self, loc_lookup: str) -> List[dict]:
-        """Find subaward results for countries
-
-        Args:
-            loc_lookup (String): Name of the field on the SubawardSearch model to use to find subawards.
-
-        Returns:
-            List[dict]: List of subaward results by country
-        """
-        country_queryset = self.queryset.values(loc_lookup)
-
-        # If specific countries were provided, only get the subawards for those countries
-        if self.geo_layer_filters:
-            country_queryset = country_queryset.filter(**{f"{loc_lookup}__in": self.geo_layer_filters})
-
-            ref_countries = RefCountryCode.objects.filter(country_code__in=self.geo_layer_filters).values(
-                "country_code", "country_name", "latest_population"
-            )
-        # If no specific countries were provided, then get all subawards grouped by country
-        else:
-            ref_countries = RefCountryCode.objects.all().values("country_code", "country_name", "latest_population")
-
-        ref_countries = {
-            country["country_code"]: {
-                "country_name": country["country_name"],
-                "population": country["latest_population"],
-            }
-            for country in ref_countries
-        }
-        # Sum the `subaward_amount` columns and exclude any subawards with $0 amounts
-        country_queryset = country_queryset.annotate(transaction_amount=Sum("subaward_amount")).exclude(
-            transaction_amount=0
-        )
-
-        results = []
-        for x in country_queryset:
-            shape_code = x[loc_lookup]
-            per_capita = None
-            population = ref_countries.get(shape_code, None)["population"]
-            if population:
-                per_capita = (Decimal(x["transaction_amount"]) / Decimal(population)).quantize(Decimal(".01"))
-            display_name = ref_countries.get(shape_code, None)["country_name"]
-
-            results.append(
-                {
-                    "shape_code": shape_code,
-                    "aggregated_amount": x["transaction_amount"],
-                    "display_name": display_name.title() if display_name else None,
-                    "population": population,
-                    "per_capita": per_capita,
-                }
-            )
-
-        # Sort the results by `shape_code` value
-        results = sorted(results, key=lambda x: x["shape_code"])
-
-        return results
-
     def build_elasticsearch_search_with_aggregation(
         self, filter_query: ES_Q
-    ) -> Optional[Union[TransactionSearch, AwardSearch]]:
-
+    ) -> Optional[AwardSearch | SubawardSearch | TransactionSearch]:
         # Check number of unique terms (buckets) for performance and restrictions on maximum buckets allowed
-        bucket_count_func = (
-            get_number_of_unique_terms_for_awards
-            if self.spending_level == SpendingLevel.AWARD
-            else get_number_of_unique_terms_for_transactions
-        )
-        bucket_count = bucket_count_func(filter_query, f"{self.agg_key}.hash")
+        bucket_count = get_number_of_unique_terms(self.search_type, filter_query, f"{self.agg_key}.hash")
         if bucket_count == 0:
             return None
 
@@ -550,16 +277,14 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         group_by_agg_key = A("terms", field=self.agg_key, size=bucket_count, shard_size=bucket_count + 100)
 
         # Create the initial search using filters
+        search = self.search_type().filter(filter_query)
         if self.spending_level == SpendingLevel.AWARD:
-            search = AwardSearch().filter(filter_query)
             # Add total outlays to aggregation
             total_outlays_sum_aggregations = get_scaled_sum_aggregations("total_outlays")
             total_outlays_sum_field = total_outlays_sum_aggregations["sum_field"]
             search.aggs.bucket("group_by_agg_key", group_by_agg_key).metric(
                 "total_outlays_sum_field", total_outlays_sum_field
             )
-        else:
-            search = TransactionSearch().filter(filter_query)
 
         # Add obligation column to aggregation
         sum_aggregations = get_scaled_sum_aggregations(self.obligation_column)
@@ -672,6 +397,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         return results
 
     def query_elasticsearch(self, filter_query: ES_Q) -> list:
+        logger.info(filter_query.to_dict())
         search = self.build_elasticsearch_search_with_aggregation(filter_query)
         if search is None:
             return []
