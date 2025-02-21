@@ -1,14 +1,17 @@
 import copy
-from typing import Any
 from ast import literal_eval
 
 from sys import maxsize
-from typing import List
+from typing import (
+    Any,
+    List,
+)
 from django.conf import settings
 from django.db.models import F
 from django.utils.text import slugify
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from elasticsearch_dsl import Q as ES_Q
 
 import logging
 from usaspending_api.awards.models import Award
@@ -17,13 +20,12 @@ from usaspending_api.references.models import Agency, ToptierAgencyPublishedDABS
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.lookups.lookups import (
     assistance_type_mapping,
-    contract_subaward_mapping,
     contract_type_mapping,
-    grant_subaward_mapping,
     idv_type_mapping,
     loan_type_mapping,
     non_loan_assistance_type_mapping,
     procurement_type_mapping,
+    subaward_mapping,
 )
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import (
     contracts_mapping,
@@ -56,8 +58,6 @@ from usaspending_api.search.filters.time_period.query_types import AwardSearchTi
 from usaspending_api.submissions.models import SubmissionAttributes
 
 
-from elasticsearch_dsl import Q as ES_Q
-
 logger = logging.getLogger(__name__)
 
 GLOBAL_MAP = {
@@ -73,15 +73,15 @@ GLOBAL_MAP = {
     },
     "subaward": {
         "minimum_db_fields": {"subaward_number", "piid", "fain", "prime_award_group", "award_id"},
-        "api_to_db_mapping_list": [contract_subaward_mapping, grant_subaward_mapping],
+        "api_to_db_mapping_list": [subaward_mapping, subaward_mapping],
         "award_semaphore": "prime_award_group",
         "award_id_fields": ["award__piid", "award__fain"],
         "internal_id_fields": {"internal_id": "subaward_number", "prime_award_internal_id": "award_id"},
         "generated_award_field": ("prime_award_generated_internal_id", "prime_award_internal_id"),
-        "type_code_to_field_map": {"procurement": contract_subaward_mapping, "grant": grant_subaward_mapping},
+        "type_code_to_field_map": {"procurement": subaward_mapping, "grant": subaward_mapping},
         "annotations": {"_prime_award_recipient_id": annotate_prime_award_recipient_id},
         "filter_queryset_func": subaward_filter,
-        "elasticsearch_type_code_to_field_map": contract_subaward_mapping,
+        "elasticsearch_type_code_to_field_map": subaward_mapping,
     },
 }
 
@@ -125,27 +125,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
         self.last_record_sort_value = json_request.get("last_record_sort_value")
 
         if self.is_subaward:
-            return self.post_subawards()
+            return Response(self.construct_es_response_for_subawards(self.query_elasticsearch_subawards()))
         else:
             return Response(self.construct_es_response_for_prime_awards(self.query_elasticsearch_awards()))
-
-    def post_subawards(self) -> Response:
-        try:
-            return Response(self.construct_es_response_for_subawards(self.query_elasticsearch_subawards()))
-        except KeyError:
-            valid_date_types = ["action_date", "last_modified_date", "date_signed", "sub_action_date"]
-            error_msg = {}
-
-            if "time_period" in self.filters.keys():
-                for i in range(len(self.filters["time_period"])):
-                    if (
-                        "date_type" in self.filters["time_period"][i].keys()
-                        and self.filters["time_period"][i]["date_type"] not in valid_date_types
-                    ):
-                        error_msg = {"detail": "Invalid date_type: " + self.filters["time_period"][i]["date_type"]}
-                        break
-
-            return Response(error_msg, status=400)
 
     @staticmethod
     def validate_request_data(request_data):
@@ -201,6 +183,13 @@ class SpendingByAwardVisualizationViewSet(APIView):
         for m in models:
             if m["name"] in ("award_type_codes", "fields"):
                 m["optional"] = False
+            elif "subawards" in request_data and request_data["subawards"] and m["name"] == "time_period":
+                m["object_keys"]["date_type"]["enum_values"] = [
+                    "action_date",
+                    "last_modified_date",
+                    "date_signed",
+                    "sub_action_date",
+                ]
         tiny_shield = TinyShield(models)
         if "filters" in request_data and "program_activities" in request_data["filters"]:
             tiny_shield.enforce_object_keys_min(request_data, program_activities_rule)
@@ -255,9 +244,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
             sort_by_fields = self.constants["award_id_fields"]
         else:
             if set(self.filters["award_type_codes"]) <= set(procurement_type_mapping):
-                sort_by_fields = [contract_subaward_mapping[self.pagination["sort_key"]]]
+                sort_by_fields = [subaward_mapping[self.pagination["sort_key"]]]
             elif set(self.filters["award_type_codes"]) <= set(assistance_type_mapping):
-                sort_by_fields = [grant_subaward_mapping[self.pagination["sort_key"]]]
+                sort_by_fields = [subaward_mapping[self.pagination["sort_key"]]]
 
         return sort_by_fields
 
@@ -273,6 +262,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 sort_by_fields = [idv_mapping[self.pagination["sort_key"]]]
             elif set(self.filters["award_type_codes"]) <= set(non_loan_assistance_type_mapping):
                 sort_by_fields = [non_loan_assist_mapping[self.pagination["sort_key"]]]
+            elif set(self.filters["award_type_codes"]) <= set(subaward_mapping):
+                sort_by_fields = [subaward_mapping[self.pagination["sort_key"]]]
 
         sort_by_fields.append("award_id")
 

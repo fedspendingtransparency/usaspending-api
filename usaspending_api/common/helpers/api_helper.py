@@ -3,16 +3,15 @@ from typing import List, Tuple
 from usaspending_api.common.exceptions import UnprocessableEntityException, InvalidParameterException
 from usaspending_api.awards.v2.lookups.lookups import (
     assistance_type_mapping,
-    contract_subaward_mapping,
     contract_type_mapping,
     direct_payment_type_mapping,
-    grant_subaward_mapping,
     grant_type_mapping,
     idv_type_mapping,
     loan_type_mapping,
     other_type_mapping,
     procurement_type_mapping,
     non_loan_assistance_type_mapping,
+    subaward_mapping,
 )
 from usaspending_api.common.helpers.orm_helpers import award_types_are_valid_groups, subaward_types_are_valid_groups
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import (
@@ -112,7 +111,7 @@ def get_award_type_and_mapping_values(award_type_codes: List[str], is_subaward: 
     """
     if is_subaward:
         award_type = "Sub-Award"
-        award_type_mapping_values = list(contract_subaward_mapping.keys()) + list(grant_subaward_mapping.keys())
+        award_type_mapping_values = list(subaward_mapping.keys()) + list(subaward_mapping.keys())
     elif set(award_type_codes) <= set(contract_type_mapping):
         award_type = "Contract Award"
         award_type_mapping_values = list(contracts_mapping.keys())

@@ -132,7 +132,7 @@ def test_match_search_on_multiple_tas(
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
-    resp = query_by_tas_subaward(client, {"require": [_tas_path(BPOA_TAS), _tas_path(ATA_TAS)]})
+    resp = query_by_tas_subaward(client, {"require": [_tas_path(BASIC_TAS), _tas_path(ATA_TAS)]})
 
     assert resp.json()["results"] == [_subaward1()]
 

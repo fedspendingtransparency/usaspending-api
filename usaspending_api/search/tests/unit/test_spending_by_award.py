@@ -1,6 +1,6 @@
 import pytest
 
-from usaspending_api.awards.v2.lookups.lookups import contract_subaward_mapping, grant_subaward_mapping
+from usaspending_api.awards.v2.lookups.lookups import subaward_mapping
 from usaspending_api.common.helpers.api_helper import (
     raise_if_award_types_not_valid_subset,
     raise_if_sort_key_not_valid,
@@ -258,7 +258,7 @@ def test_get_award_type_and_mapping_values():
     )
     assert subaward_results == (
         "Sub-Award",
-        (list(contract_subaward_mapping.keys()) + list(grant_subaward_mapping.keys())),
+        (list(subaward_mapping.keys()) + list(subaward_mapping.keys())),
     )
 
     contract_results = get_award_type_and_mapping_values(
@@ -290,7 +290,7 @@ def test_get_queryset():
 
     assert view.construct_queryset() is not None, "Failed to return a queryset object"
 
-    db_fields_from_api = set([contract_subaward_mapping[field] for field in view.fields])
+    db_fields_from_api = set([subaward_mapping[field] for field in view.fields])
     db_fields_from_api |= set(GLOBAL_MAP["subaward"]["minimum_db_fields"])
 
     assert db_fields_from_api == set(view.get_database_fields())

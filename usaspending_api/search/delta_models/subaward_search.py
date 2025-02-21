@@ -205,8 +205,6 @@ SUBAWARD_SEARCH_COLUMNS = {
     "pop_county_name": {"delta": "STRING", "postgres": "TEXT"},
     "program_activities": {"delta": "STRING", "postgres": "JSONB", "gold": False},
     "prime_award_recipient_id": {"delta": "STRING", "postgres": "TEXT"},
-    "tas_paths": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]", "gold": False},
-    "tas_components": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]", "gold": False},
 }
 SUBAWARD_SEARCH_POSTGRES_VECTORS = {
     "keyword_ts_vector": ["sub_awardee_or_recipient_legal", "product_or_service_description", "subaward_description"],
@@ -570,12 +568,12 @@ subaward_search_load_sql_string = rf"""
         CASE
             WHEN rp.recipient_name IN ('MULTIPLE RECIPIENTS', 'REDACTED DUE TO PII', 'MULTIPLE FOREIGN RECIPIENTS', 'PRIVATE INDIVIDUAL', 'INDIVIDUAL RECIPIENT', 'MISCELLANEOUS FOREIGN AWARDEES')
                 THEN NULL
+            WHEN (rp.recipient_hash IS NULL OR rp.recipient_hash = '')
+                THEN NULL
             WHEN (bs.ultimate_parent_uei IS null or bs.ultimate_parent_uei = '')
                 THEN CONCAT(rp.recipient_hash, '-R')
             ELSE CONCAT(rp.recipient_hash, '-C')
-        END AS prime_award_recipient_id,
-        TREASURY_ACCT.tas_paths,
-        TREASURY_ACCT.tas_components
+        END AS prime_award_recipient_id
     FROM
         raw.subaward AS bs
     LEFT OUTER JOIN
@@ -708,75 +706,6 @@ subaward_search_load_sql_string = rf"""
     LEFT OUTER JOIN county_fips AS rl_county_fips
         ON UPPER(rl_county_fips.county_name) = UPPER(COALESCE(fpds.legal_entity_county_name, fabs.legal_entity_county_name))
             AND rl_county_fips.state_alpha = bs.legal_entity_state_code
-    LEFT OUTER JOIN rpt.recipient_lookup rl
-        ON (rl.uei = bs.awardee_or_recipient_uei OR rl.duns = bs.awardee_or_recipient_uniqu)
-    LEFT OUTER JOIN rpt.recipient_profile rp
-        ON rp.recipient_hash = rl.recipient_hash
-    LEFT OUTER JOIN (
-    SELECT
-        faba.award_id,
-        TO_JSON(
-            SORT_ARRAY(
-                COLLECT_SET(
-                    NAMED_STRUCT(
-                        'id', fa.id,
-                        'account_title', fa.account_title,
-                        'federal_account_code', fa.federal_account_code
-                    )
-                )
-            )
-        ) AS federal_accounts,
-        COLLECT_SET(
-            DISTINCT CONCAT(
-                'agency=', COALESCE(agency.toptier_code, ''),
-                'faaid=', COALESCE(fa.agency_identifier, ''),
-                'famain=', COALESCE(fa.main_account_code, ''),
-                'aid=', COALESCE(taa.agency_id, ''),
-                'main=', COALESCE(taa.main_account_code, ''),
-                'ata=', COALESCE(taa.allocation_transfer_agency_id, ''),
-                'sub=', COALESCE(taa.sub_account_code, ''),
-                'bpoa=', COALESCE(taa.beginning_period_of_availability, ''),
-                'epoa=', COALESCE(taa.ending_period_of_availability, ''),
-                'a=', COALESCE(taa.availability_type_code, '')
-            )
-        ) AS tas_paths,
-        COLLECT_SET(
-            CONCAT(
-                'aid=', COALESCE(taa.agency_id, ''),
-                'main=', COALESCE(taa.main_account_code, ''),
-                'ata=', COALESCE(taa.allocation_transfer_agency_id, ''),
-                'sub=', COALESCE(taa.sub_account_code, ''),
-                'bpoa=', COALESCE(taa.beginning_period_of_availability, ''),
-                'epoa=', COALESCE(taa.ending_period_of_availability, ''),
-                'a=', COALESCE(taa.availability_type_code, '')
-            )
-        ) AS tas_components,
-        -- "CASE" put in place so that Spark value matches Postgres; can most likely be refactored out in the future
-        CASE
-            WHEN SIZE(COLLECT_SET(faba.disaster_emergency_fund_code)) > 0
-                THEN SORT_ARRAY(COLLECT_SET(faba.disaster_emergency_fund_code))
-            ELSE NULL
-        END AS disaster_emergency_fund_codes,
-        COLLECT_SET(taa.treasury_account_identifier) AS treasury_account_identifiers,
-        COLLECT_SET(
-            TO_JSON(
-                NAMED_STRUCT(
-                    'name', UPPER(rpa.program_activity_name),
-                    'code', LPAD(rpa.program_activity_code, 4, "0")
-                )
-            )
-        ) AS program_activities
-    FROM
-        global_temp.treasury_appropriation_account taa
-    INNER JOIN int.financial_accounts_by_awards faba ON (taa.treasury_account_identifier = faba.treasury_account_id)
-    INNER JOIN global_temp.federal_account fa ON (taa.federal_account_id = fa.id)
-    INNER JOIN global_temp.toptier_agency agency ON (fa.parent_toptier_agency_id = agency.toptier_agency_id)
-    LEFT JOIN global_temp.ref_program_activity rpa ON (faba.program_activity_id = rpa.id)
-    WHERE
-        faba.award_id IS NOT NULL
-    GROUP BY
-        faba.award_id
-    ) TREASURY_ACCT ON (TREASURY_ACCT.award_id = a.id)
     -- Subaward numbers are crucial for identifying subawards and so those without subaward numbers won't be surfaced.
     WHERE bs.subaward_number IS NOT NULL
 """

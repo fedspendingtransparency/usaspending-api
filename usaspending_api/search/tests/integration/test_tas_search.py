@@ -150,7 +150,6 @@ def mock_tas_data(db):
         treasury_account_identifiers=[1],
         action_date="2020-01-01",
         sub_action_date="2020-01-01",
-        tas_components=["aid=028main=8006ata=028sub=000bpoa=2011epoa=2013a=X"],
     )
     baker.make(
         "search.SubawardSearch",
@@ -163,7 +162,6 @@ def mock_tas_data(db):
         treasury_account_identifiers=[2],
         action_date="2020-01-01",
         sub_action_date="2020-01-01",
-        tas_components=["aid=028main=8006ata=004sub=005bpoa=2012epoa=2013a=X"],
     )
     baker.make(
         "search.SubawardSearch",
@@ -176,7 +174,6 @@ def mock_tas_data(db):
         treasury_account_identifiers=[3],
         action_date="2020-01-01",
         sub_action_date="2020-01-01",
-        tas_components=["aid=011main=8007ata=001sub=001bpoa=2001epoa=2002a=X"],
     )
 
     baker.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")

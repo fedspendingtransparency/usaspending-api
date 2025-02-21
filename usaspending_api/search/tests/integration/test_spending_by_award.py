@@ -1968,7 +1968,10 @@ def test_date_range_with_new_awards_only(
         "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(request_for_2015)
     )
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
-    assert resp.json().get("detail") == "Invalid date_type: new_awards_only"
+    assert (
+        resp.json().get("detail")
+        == "Field 'filters|time_period' is outside valid values ['action_date', 'last_modified_date', 'date_signed', 'sub_action_date']"
+    )
 
 
 @pytest.mark.django_db
