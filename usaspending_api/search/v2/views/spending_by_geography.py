@@ -5,7 +5,6 @@ from enum import Enum
 from typing import Optional
 
 from django.conf import settings
-from django.db import models as db_models
 from django.db.models import F, TextField, Value
 from django.db.models.functions import Concat
 from elasticsearch_dsl import A
@@ -61,51 +60,9 @@ class SpendingByGeographyVisualizationViewSet(APIView):
     filters: dict
     geo_layer: GeoLayer
     geo_layer_filters: Optional[list[str]]
-    loc_field_name: str
-    loc_lookup: str
-    model_name: Optional[db_models.Model]
     obligation_column: str
-    scope: str
-    scope_field_name: str
     search_type: AwardSearch | SubawardSearch | TransactionSearch
     spending_level: Optional[SpendingLevel]
-
-    location_dict = {
-        "code": {
-            GeoLayer.COUNTRY: {
-                SpendingLevel.AWARD: {
-                    "pop": "country_co",
-                    "recipient_location": "country_code",
-                },
-                SpendingLevel.SUBAWARD: {"sub_pop": "country_co", "sub_recipient_location": "country_code"},
-                SpendingLevel.TRANSACTION: {"pop": "country_co", "recipient_location": "country_code"},
-            },
-            GeoLayer.COUNTY: {
-                SpendingLevel.AWARD: {"pop": "county_code", "recipient_location": "county_code"},
-                SpendingLevel.SUBAWARD: {"sub_pop": "county_code", "sub_recipient_location": "county_code"},
-                SpendingLevel.TRANSACTION: {"pop": "county_code", "recipient_location": "county_code"},
-            },
-            GeoLayer.DISTRICT: {
-                SpendingLevel.AWARD: {
-                    "pop": "congressional_code_current",
-                    "recipient_location": "congressional_code_current",
-                },
-                SpendingLevel.SUBAWARD: {
-                    "sub_pop": "sub_place_of_performance_congressional_current",
-                    "sub_recipient_location": "congressional_current",
-                },
-                SpendingLevel.TRANSACTION: {
-                    "pop": "congressional_code_current",
-                    "recipient_location": "congressional_code_current",
-                },
-            },
-            GeoLayer.STATE: {
-                SpendingLevel.AWARD: {"pop": "state_code", "recipient_location": "state_code"},
-                SpendingLevel.SUBAWARD: {"sub_pop": "state_code", "sub_recipient_location": "state_code"},
-                SpendingLevel.TRANSACTION: {"pop": "state_code", "recipient_location": "state_code"},
-            },
-        }
-    }
 
     @cache_response()
     def post(self, request: Request) -> Response:
@@ -197,16 +154,14 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                 }
             )
 
-        self.scope = json_request["scope"]
-        self.scope_field_name = model_dict[self.scope][self.spending_level]
-        self.agg_key = f"{self.scope_field_name}_{agg_key_dict[json_request['geo_layer']]}"
+        scope = json_request["scope"]
+        scope_field_name = model_dict[scope][self.spending_level]
+        self.agg_key = f"{scope_field_name}_{agg_key_dict[json_request['geo_layer']]}"
         self.filters = json_request.get("filters")
         self.geo_layer = GeoLayer(json_request["geo_layer"])
         self.geo_layer_filters = json_request.get("geo_layer_filters")
-        self.loc_field_name = self.location_dict["code"][self.geo_layer][self.spending_level][self.scope_field_name]
-        self.loc_lookup = f"{self.scope_field_name}_{self.loc_field_name}"
 
-        if self.scope_field_name == "pop":
+        if scope_field_name == "pop":
             scope_filter_name = "place_of_performance_scope"
         else:
             scope_filter_name = "recipient_scope"
