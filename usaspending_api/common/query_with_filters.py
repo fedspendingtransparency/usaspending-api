@@ -961,7 +961,7 @@ class QueryWithFilters:
                 default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_MIN_DATE
             )
 
-        if time_period_obj != None:
+        if time_period_obj is not None:
             new_awards_only_decorator = NewAwardsOnlyTimePeriod(
                 time_period_obj=time_period_obj, query_type=self.query_type
             )
