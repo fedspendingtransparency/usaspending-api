@@ -2,19 +2,18 @@ import copy
 import logging
 from decimal import Decimal
 from enum import Enum
-from typing import Dict, List, Optional, Union
+from typing import Optional
 
 from django.conf import settings
 from django.db import models as db_models
-from django.db.models import F, FloatField, QuerySet, Sum, TextField, Value
-from django.db.models.functions import Cast, Concat
+from django.db.models import F, TextField, Value
+from django.db.models.functions import Concat
 from elasticsearch_dsl import A
 from elasticsearch_dsl import Q as ES_Q
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from usaspending_api.awards.v2.filters.sub_award import geocode_filter_subaward_locations, subaward_filter
 from usaspending_api.common.api_versioning import API_TRANSFORM_FUNCTIONS, api_transformations
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, SubawardSearch, TransactionSearch
@@ -24,11 +23,15 @@ from usaspending_api.common.helpers.generic_helper import (
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator.award_filter import AWARD_FILTER_W_FILTERS
 from usaspending_api.common.validator.tinyshield import TinyShield
-from usaspending_api.references.abbreviations import code_to_state, fips_to_code, pad_codes
+from usaspending_api.references.abbreviations import code_to_state, fips_to_code
 from usaspending_api.references.models import PopCongressionalDistrict, PopCounty, RefCountryCode
 from usaspending_api.search.filters.elasticsearch.filter import _QueryType
 from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
-from usaspending_api.search.filters.time_period.query_types import AwardSearchTimePeriod, SubawardSearchTimePeriod, TransactionSearchTimePeriod
+from usaspending_api.search.filters.time_period.query_types import (
+    AwardSearchTimePeriod,
+    SubawardSearchTimePeriod,
+    TransactionSearchTimePeriod,
+)
 from usaspending_api.search.v2.elasticsearch_helper import (
     get_number_of_unique_terms,
     get_scaled_sum_aggregations,
@@ -57,12 +60,11 @@ class SpendingByGeographyVisualizationViewSet(APIView):
     agg_key: Optional[str]
     filters: dict
     geo_layer: GeoLayer
-    geo_layer_filters: Optional[List[str]]
+    geo_layer_filters: Optional[list[str]]
     loc_field_name: str
     loc_lookup: str
     model_name: Optional[db_models.Model]
     obligation_column: str
-    queryset: Optional[QuerySet]
     scope: str
     scope_field_name: str
     search_type: AwardSearch | SubawardSearch | TransactionSearch
@@ -179,18 +181,21 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         agg_key_dict = {
             "county": "county_agg_key",
             "district": "congressional_cur_agg_key",
-
         }
         if self.spending_level == SpendingLevel.SUBAWARD:
-            agg_key_dict.update({
-                "state": "state_code",
-                "country": "country_code",
-            })
+            agg_key_dict.update(
+                {
+                    "state": "state_code",
+                    "country": "country_code",
+                }
+            )
         else:
-            agg_key_dict.update({
-                "state": "state_agg_key",
-                "country": "country_agg_key",
-            })
+            agg_key_dict.update(
+                {
+                    "state": "state_agg_key",
+                    "country": "country_agg_key",
+                }
+            )
 
         self.scope = json_request["scope"]
         self.scope_field_name = model_dict[self.scope][self.spending_level]
@@ -239,9 +244,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             base_time_period_obj = time_period_type(
                 default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
             )
-            time_period_obj = NewAwardsOnlyTimePeriod(
-                time_period_obj=base_time_period_obj, query_type=query_type
-            )
+            time_period_obj = NewAwardsOnlyTimePeriod(time_period_obj=base_time_period_obj, query_type=query_type)
 
         filter_options = {}
         filter_options["time_period_obj"] = time_period_obj
@@ -296,7 +299,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
         return search
 
-    def build_elasticsearch_result(self, response: dict) -> Dict[str, dict]:
+    def build_elasticsearch_result(self, response: dict) -> dict[str, dict]:
         def _key_to_geo_code(key):
             return f"{code_to_state[key[:2]]['fips']}{key[2:]}" if (key and key[:2] in code_to_state) else None
 

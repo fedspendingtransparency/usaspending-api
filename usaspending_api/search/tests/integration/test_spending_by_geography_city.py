@@ -43,7 +43,9 @@ def award_data_fixture(db):
     baker.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")
 
 
-def test_geocode_filter_by_city(client, monkeypatch, elasticsearch_subaward_index, elasticsearch_transaction_index, award_data_fixture):
+def test_geocode_filter_by_city(
+    client, monkeypatch, elasticsearch_subaward_index, elasticsearch_transaction_index, award_data_fixture
+):
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 

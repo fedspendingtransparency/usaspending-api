@@ -128,11 +128,7 @@ def _get_shape_code_for_sort(result_dict):
 
 
 def test_success_with_all_filters(
-    client,
-    monkeypatch,
-    elasticsearch_subaward_index,
-    elasticsearch_transaction_index,
-    awards_and_transactions
+    client, monkeypatch, elasticsearch_subaward_index, elasticsearch_transaction_index, awards_and_transactions
 ):
     """
     General test to make sure that all groups respond with a Status Code of 200 regardless of the filters.
