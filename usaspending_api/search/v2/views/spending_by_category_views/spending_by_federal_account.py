@@ -1,14 +1,15 @@
 import json
-
 from abc import ABCMeta
 from decimal import Decimal
-from django.db.models import QuerySet
 from enum import Enum
 from typing import List
 
+from django.db.models import QuerySet
+
+from usaspending_api.search.v2.views.enums import SpendingLevel
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_category import (
-    Category,
     AbstractSpendingByCategoryViewSet,
+    Category,
 )
 
 
@@ -34,6 +35,11 @@ class AbstractAccountViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMet
                     "id": account_info.get("id"),
                     "code": account_info.get("federal_account_code"),
                     "name": account_info.get("account_title"),
+                    "total_outlays": (
+                        bucket.get("sum_as_dollars_outlay", {"value": None}).get("value")
+                        if self.spending_level == SpendingLevel.AWARD
+                        else None
+                    ),
                 }
             )
 

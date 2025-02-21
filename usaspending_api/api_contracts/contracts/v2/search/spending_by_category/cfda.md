@@ -86,13 +86,15 @@ This endpoint returns a list of the top results of CFDA sorted by the total amou
                         "amount": 228568985616.0,
                         "code": "93.778",
                         "id": 2014,
-                        "name": "Medical Assistance Program"
+                        "name": "Medical Assistance Program",
+                        "total_outlays": null,
                     },
                     {
                         "amount": 207629348701.0,
                         "code": "96.002",
                         "id": 2165,
-                        "name": "Social Security Retirement Insurance"
+                        "name": "Social Security Retirement Insurance",
+                        "total_outlays": null,
                     }
                 ],
                 "messages": [
@@ -109,6 +111,7 @@ This endpoint returns a list of the top results of CFDA sorted by the total amou
 + `code` (required, string, nullable)
     `code` is a user-displayable code (such as a program activity or NAICS code, but **not** a database ID). When no such code is relevant, return a `null`.
 + `amount` (required, number)
++ `total_outlays` (required, number, nullable)
 
 ## PageMetadataObject (object)
 + `page` (required, number)

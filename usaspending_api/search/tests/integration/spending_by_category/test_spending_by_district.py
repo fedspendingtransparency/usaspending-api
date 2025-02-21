@@ -49,10 +49,10 @@ def test_correct_response(
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 500000.0, "code": "90", "id": None, "name": "SC-MULTIPLE DISTRICTS"},
-            {"amount": 50005.0, "code": "10", "id": None, "name": "SC-10"},
-            {"amount": 5500.0, "code": "51", "id": None, "name": "WA-51"},
-            {"amount": 50.0, "code": "51", "id": None, "name": "SC-51"},
+            {"amount": 500000.0, "code": "90", "id": None, "name": "SC-MULTIPLE DISTRICTS", "total_outlays": None},
+            {"amount": 50005.0, "code": "10", "id": None, "name": "SC-10", "total_outlays": None},
+            {"amount": 5500.0, "code": "51", "id": None, "name": "WA-51", "total_outlays": None},
+            {"amount": 50.0, "code": "51", "id": None, "name": "SC-51", "total_outlays": None},
         ],
         "messages": expected_messages,
     }

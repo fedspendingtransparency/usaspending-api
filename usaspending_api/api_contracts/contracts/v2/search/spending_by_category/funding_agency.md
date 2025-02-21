@@ -86,13 +86,15 @@ This endpoint returns a list of the top results of Funding Agencies sorted by th
                         "amount": 480068061532.03,
                         "name": "Department of Health and Human Services",
                         "code": "HHS",
-                        "id": 806
+                        "id": 806,
+                        "total_outlays": null,
                     },
                     {
                         "amount": 284429830939.4,
                         "name": "Social Security Administration",
                         "code": "SSA",
-                        "id": 539
+                        "id": 539,
+                        "total_outlays": null,
                     }
                 ],
                 "messages": [
@@ -109,6 +111,7 @@ This endpoint returns a list of the top results of Funding Agencies sorted by th
 + `code` (required, string, nullable)
     `code` is a user-displayable code (such as a program activity or NAICS code, but **not** a database ID). When no such code is relevant, return a `null`.
 + `amount` (required, number)
++ `total_outlays` (required, number, nullable)
 
 ## PageMetadataObject (object)
 + `page` (required, number)
