@@ -111,7 +111,7 @@ def get_award_type_and_mapping_values(award_type_codes: List[str], is_subaward: 
     """
     if is_subaward:
         award_type = "Sub-Award"
-        award_type_mapping_values = list(subaward_mapping.keys()) + list(subaward_mapping.keys())
+        award_type_mapping_values = list(subaward_mapping.keys())
     elif set(award_type_codes) <= set(contract_type_mapping):
         award_type = "Contract Award"
         award_type_mapping_values = list(contracts_mapping.keys())

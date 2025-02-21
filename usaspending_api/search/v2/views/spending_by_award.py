@@ -73,7 +73,7 @@ GLOBAL_MAP = {
     },
     "subaward": {
         "minimum_db_fields": {"subaward_number", "piid", "fain", "prime_award_group", "award_id"},
-        "api_to_db_mapping_list": [subaward_mapping, subaward_mapping],
+        "api_to_db_mapping_list": [subaward_mapping],
         "award_semaphore": "prime_award_group",
         "award_id_fields": ["award__piid", "award__fain"],
         "internal_id_fields": {"internal_id": "subaward_number", "prime_award_internal_id": "award_id"},
