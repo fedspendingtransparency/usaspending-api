@@ -33,9 +33,9 @@ logger = logging.getLogger(__name__)
 
 class _ElasticsearchDownload(metaclass=ABCMeta):
     _source_field = None
-    _query_with_filters = None
     _search_type = None
     _base_model: Model = None
+    _query_with_filters = None
 
     @classmethod
     def _get_download_ids_generator(cls, search: Union[AwardSearch, TransactionSearch, SubawardSearch], size: int):
@@ -82,7 +82,7 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
         """
         Takes a dictionary of the different download filters and returns a flattened list of ids.
         """
-        filter_query = cls._query_with_filters.query_elasticsearch(filters, **filter_options)
+        filter_query = cls._query_with_filters.generate_elasticsearch_query(filters, **filter_options)
         search = cls._search_type().filter(filter_query).source([cls._source_field])
         ids = cls._get_download_ids_generator(search, size)
         lookup_id_type = cls._search_type.type_as_string()
