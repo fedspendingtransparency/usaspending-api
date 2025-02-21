@@ -454,7 +454,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         # gets the query type ex: _QueryType.AWARDS if self.spending_level = SpendingLevel.AWARDS
         query_type = _QueryType(self.spending_level.value)
         query_with_filters = QueryWithFilters(query_type)
-        filter_query = query_with_filters.query_elasticsearch(self.filters)
+        filter_query = query_with_filters.generate_elasticsearch_query(self.filters)
         if self.spending_level == SpendingLevel.SUBAWARD:
             search = SubawardSearch().filter(filter_query)
             self.apply_elasticsearch_aggregations(search)
