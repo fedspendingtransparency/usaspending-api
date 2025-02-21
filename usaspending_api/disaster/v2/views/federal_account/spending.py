@@ -17,7 +17,7 @@ from django.db.models.functions import Coalesce
 from rest_framework.response import Response
 
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.calculations import file_b
+from usaspending_api.common.calculations.file_b import FileBCalculations
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.disaster.v2.views.disaster_base import (
@@ -143,9 +143,10 @@ class SpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin, DisasterB
 
     @property
     def total_queryset(self):
+        file_b_calculations = FileBCalculations(include_final_sub_filter=True, is_covid_page=True)
         filters = [
             self.is_in_provided_def_codes,
-            file_b.is_non_zero_total_spending(),
+            file_b_calculations.is_non_zero_total_spending(),
             self.all_closed_defc_submissions,
             Q(treasury_account__isnull=False),
             Q(treasury_account__federal_account__isnull=False),
@@ -159,8 +160,8 @@ class SpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin, DisasterB
             "award_count": Value(None, output_field=IntegerField()),
             "fa_description": F("treasury_account__federal_account__account_title"),
             "fa_id": F("treasury_account__federal_account_id"),
-            "obligation": Sum(file_b.get_obligations(is_multi_year=True, include_final_sub_filter=True)),
-            "outlay": Sum(file_b.get_outlays(include_final_sub_filter=True)),
+            "obligation": Sum(file_b_calculations.get_obligations()),
+            "outlay": Sum(file_b_calculations.get_outlays()),
             "total_budgetary_resources": Coalesce(
                 Subquery(
                     latest_gtas_of_each_year_queryset()

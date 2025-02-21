@@ -27,37 +27,37 @@ def test_tas_program_activity_success(client, monkeypatch, agency_account_data, 
         "results": [
             {
                 "name": "NAME 3",
-                "gross_outlay_amount": 250000.0,
-                "obligated_amount": 229.0,
+                "gross_outlay_amount": 100000.0,
+                "obligated_amount": 100.0,
                 "children": [
                     {
                         "name": "Other",
-                        "gross_outlay_amount": 250000.0,
-                        "obligated_amount": 229.0,
+                        "gross_outlay_amount": 100000.0,
+                        "obligated_amount": 100.0,
                     }
                 ],
             },
             {
                 "name": "NAME 2",
-                "gross_outlay_amount": 1150000.0,
-                "obligated_amount": 139.0,
+                "gross_outlay_amount": 1000000.0,
+                "obligated_amount": 10.0,
                 "children": [
                     {
                         "name": "Other",
-                        "gross_outlay_amount": 1150000.0,
-                        "obligated_amount": 139.0,
+                        "gross_outlay_amount": 1000000.0,
+                        "obligated_amount": 10.0,
                     }
                 ],
             },
             {
                 "name": "NAME 1",
-                "gross_outlay_amount": 10150000.0,
-                "obligated_amount": 130.0,
+                "gross_outlay_amount": 10000000.0,
+                "obligated_amount": 1.0,
                 "children": [
                     {
                         "name": "Other",
-                        "gross_outlay_amount": 10150000.0,
-                        "obligated_amount": 130.0,
+                        "gross_outlay_amount": 10000000.0,
+                        "obligated_amount": 1.0,
                     }
                 ],
             },
@@ -108,14 +108,14 @@ def test_tas_program_activity_success(client, monkeypatch, agency_account_data, 
         },
         "results": [
             {
-                "gross_outlay_amount": 1150000.0,
+                "gross_outlay_amount": 1000000.0,
                 "name": "NAME 5",
-                "obligated_amount": 139.0,
+                "obligated_amount": 10.0,
                 "children": [
                     {
                         "name": "Other",
-                        "gross_outlay_amount": 1150000.0,
-                        "obligated_amount": 139.0,
+                        "gross_outlay_amount": 1000000.0,
+                        "obligated_amount": 10.0,
                     }
                 ],
             }
@@ -199,10 +199,10 @@ def test_tas_program_activity_multiple_submission_years(client, agency_account_d
         },
         "results": [
             {
-                "gross_outlay_amount": 160000.0,
+                "gross_outlay_amount": 10000.0,
                 "name": "NAME 4",
-                "obligated_amount": 1129.0,
-                "children": [{"gross_outlay_amount": 160000.0, "name": "Other", "obligated_amount": 1129.0}],
+                "obligated_amount": 1000.0,
+                "children": [{"gross_outlay_amount": 10000.0, "name": "Other", "obligated_amount": 1000.0}],
             }
         ],
     }
