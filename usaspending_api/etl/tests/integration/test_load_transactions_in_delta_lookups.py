@@ -858,6 +858,8 @@ class TestInitialRunNoPostgresLoader:
     def test_happy_path_scenarios(
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
     ):
+        # 1. Call initial_run with no initial-copy, and have all raw tables populated. Expecting no raw data copied.
+
         # Since we're not using the Postgres transaction loader, load raw.transaction_normalized and raw.awards
         # from expected data when making initial run
         load_other_raw_tables = [
@@ -908,15 +910,13 @@ class TestInitialRunNoPostgresLoader:
             initial_copy=False,
         )
         kwargs = {
-            "expected_last_load_transaction_id_lookup": _INITIAL_SOURCE_TABLE_LOAD_DATETIME,
-            "expected_last_load_award_id_lookup": _INITIAL_SOURCE_TABLE_LOAD_DATETIME,
+            "expected_last_load_transaction_id_lookup": _BEGINNING_OF_TIME,
+            "expected_last_load_award_id_lookup": _BEGINNING_OF_TIME,
             "expected_last_load_transaction_normalized": _BEGINNING_OF_TIME,
             "expected_last_load_transaction_fabs": _BEGINNING_OF_TIME,
             "expected_last_load_transaction_fpds": _BEGINNING_OF_TIME,
         }
-        TestInitialRun.verify(
-            spark, self.expected_initial_transaction_id_lookup, self.expected_initial_award_id_lookup, **kwargs
-        )
+        TestInitialRun.verify(spark, [], [], **kwargs)
 
         # 2. Call initial_run with initial-copy, and have all raw tables populated
 
@@ -1082,11 +1082,11 @@ class TestTransactionIdLookup:
         TestInitialRun.initial_run(
             s3_data_bucket, load_source_tables=False, load_other_raw_tables=load_other_raw_tables, initial_copy=False
         )
+        call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
+        call_command("load_transactions_in_delta", "--etl-level", "award_id_lookup")
 
         # 1. Test deleting the transaction(s) with the last transaction ID(s) from the appropriate raw table,
         # followed by a call to load_transaction_in_delta with etl-level of transaction_id_lookup
-        # 2. Test for a single inserted transaction, and another call to load_transaction_in_delta with etl-level of
-        # transaction_id_lookup.
 
         spark.sql(
             """
@@ -1117,7 +1117,7 @@ class TestTransactionIdLookup:
         with connection.cursor() as cursor:
             cursor.execute(f"SELECT setval('transaction_id_seq', {max_transaction_id}, false)")
 
-        # 3. Test for a single inserted transaction, and another call to load_transaction_in_delta with etl-level of
+        # 2. Test for a single inserted transaction, and another call to load_transactions_in_delta with etl-level of
         # transaction_id_lookup.
 
         # Since changes to the source tables will go to the Postgres table first, use model baker to add new rows to
@@ -1381,6 +1381,8 @@ class TestAwardIdLookup:
         TestInitialRun.initial_run(
             s3_data_bucket, load_source_tables=False, load_other_raw_tables=load_other_raw_tables, initial_copy=False
         )
+        call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
+        call_command("load_transactions_in_delta", "--etl-level", "award_id_lookup")
 
         # 1. Test deleting the transactions with the last award ID from the appropriate raw table,
         # followed by a call to load_transaction_in_delta with etl-level of award_id_lookup
