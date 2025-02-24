@@ -66,6 +66,26 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
     @cache_response()
     def post(self, request: Request) -> Response:
+        # First determine if we are using Subaward or Prime Awards / Transactions as this
+        # will impact some of the downstream filters in the JSON request
+        spending_type_models = [
+            {"name": "subawards", "key": "subawards", "type": "boolean", "default": False},
+            {
+                "name": "spending_level",
+                "key": "spending_level",
+                "type": "enum",
+                "enum_values": [level.value for level in SpendingLevel],
+                "optional": True,
+                "default": "transactions",
+            },
+        ]
+        spending_level_tiny_shield = TinyShield(spending_type_models)
+        spending_level_data = spending_level_tiny_shield.block(request.data)
+        self.spending_level = SpendingLevel(
+            "subawards" if spending_level_data["subawards"] else spending_level_data["spending_level"]
+        )
+
+        # Now step through the rest of filters, taking into account the spending_level
         program_activities_rule = [
             {
                 "name": "program_activities",
@@ -80,7 +100,6 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             }
         ]
         models = [
-            {"name": "subawards", "key": "subawards", "type": "boolean", "default": False},
             {
                 "name": "scope",
                 "key": "scope",
@@ -102,17 +121,20 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                 "array_type": "text",
                 "text_type": "search",
             },
-            {
-                "name": "spending_level",
-                "key": "spending_level",
-                "type": "enum",
-                "enum_values": [level.value for level in SpendingLevel],
-                "optional": True,
-                "default": "transactions",
-            },
         ]
-        models.extend(copy.deepcopy(AWARD_FILTER_W_FILTERS))
-        models.extend(copy.deepcopy(program_activities_rule))
+
+        request_filter_rules = copy.deepcopy(AWARD_FILTER_W_FILTERS)
+        if self.spending_level == SpendingLevel.SUBAWARD:
+            for filter_rule in request_filter_rules:
+                if filter_rule["name"] == "time_period":
+                    filter_rule["object_keys"]["date_type"]["enum_values"] = [
+                        "action_date",
+                        "last_modified_date",
+                        "date_signed",
+                        "sub_action_date",
+                    ]
+
+        models.extend([*request_filter_rules, *program_activities_rule])
         original_filters = request.data.get("filters")
         tiny_shield = TinyShield(models)
         json_request = tiny_shield.block(request.data)
@@ -131,9 +153,6 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                 SpendingLevel.TRANSACTION: "recipient_location",
             },
         }
-        self.spending_level = SpendingLevel(
-            "subawards" if json_request["subawards"] else json_request["spending_level"]
-        )
 
         agg_key_dict = {
             "county": "county_agg_key",
