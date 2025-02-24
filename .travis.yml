@@ -5,7 +5,7 @@ dist: bionic
 language: python
 
 python:
-  - '3.10.12'
+  - '3.10.14'
 
 cache: pip
 
