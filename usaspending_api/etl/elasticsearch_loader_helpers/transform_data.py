@@ -116,7 +116,6 @@ def transform_subaward_data(worker: TaskSpec, records: List[dict]) -> List[dict]
         "sub_recipient_location_congressional_cur_agg_key": funcs.recipient_location_congressional_cur_agg_key,
         "sub_recipient_location_county_agg_key": funcs.recipient_location_county_agg_key,
     }
-    agg_key_creations = {}
     drop_fields = []
 
     return transform_data(worker, records, converters, agg_key_creations, drop_fields, None)
