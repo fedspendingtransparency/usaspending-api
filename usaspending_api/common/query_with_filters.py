@@ -15,7 +15,7 @@ from usaspending_api.common.helpers.api_helper import (
 )
 from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.references.models.psc import PSC
-from usaspending_api.search.filters.elasticsearch.filter import _Filter, _QueryType
+from usaspending_api.search.filters.elasticsearch.filter import _Filter, QueryType
 from usaspending_api.search.filters.elasticsearch.naics import NaicsCodes
 from usaspending_api.search.filters.elasticsearch.psc import PSCCodes
 from usaspending_api.search.filters.elasticsearch.tas import TasCodes, TreasuryAccounts
@@ -35,7 +35,7 @@ class _SubawardsKeywords(_Filter):
     """Intended for subawards' Querytype that makes keyword queries compatible with Subawards."""
 
     @classmethod
-    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType, **options) -> ES_Q:
+    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: QueryType, **options) -> ES_Q:
         keyword_queries = []
 
         def keyword_parse(keyword):
@@ -80,7 +80,7 @@ class _Keywords(_Filter):
     underscore_name = "keywords"
 
     @classmethod
-    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType, **options) -> ES_Q:
+    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: QueryType, **options) -> ES_Q:
         keyword_queries = []
         fields = [
             "recipient_name",
@@ -103,7 +103,7 @@ class _Keywords(_Filter):
         ]
         for filter_value in filter_values:
             query = es_sanitize(filter_value)
-            if query_type != _QueryType.SUBAWARDS:
+            if query_type != QueryType.SUBAWARDS:
                 query = query + "*"
                 if "\\" in es_sanitize(filter_value):
                     query = es_sanitize(filter_value) + r"\*"
@@ -119,11 +119,11 @@ class _Description(_Filter):
     underscore_name = "description"
 
     @classmethod
-    def generate_elasticsearch_query(cls, filter_values: str, query_type: _QueryType, **options) -> ES_Q:
+    def generate_elasticsearch_query(cls, filter_values: str, query_type: QueryType, **options) -> ES_Q:
         fields = {
-            _QueryType.AWARDS: ["description"],
-            _QueryType.SUBAWARDS: ["subaward_description"],
-            _QueryType.TRANSACTIONS: ["transaction_description"],
+            QueryType.AWARDS: ["description"],
+            QueryType.SUBAWARDS: ["subaward_description"],
+            QueryType.TRANSACTIONS: ["transaction_description"],
         }
         query = es_sanitize(filter_values)
         if "\\" in query:
@@ -138,7 +138,7 @@ class _KeywordSearch(_Filter):
     underscore_name = "keyword_search"
 
     @classmethod
-    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType, **options) -> ES_Q:
+    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: QueryType, **options) -> ES_Q:
         keyword_queries = []
         fields = [
             "recipient_name",
@@ -200,7 +200,7 @@ class _TransactionKeywordSearch(_Filter):
     underscore_name = "transaction_keyword_search"
 
     @classmethod
-    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType, **options) -> ES_Q:
+    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: QueryType, **options) -> ES_Q:
         from usaspending_api.search.v2 import elasticsearch_helper
 
         transaction_id_queries = []
@@ -220,7 +220,7 @@ class _TimePeriods(_Filter):
     underscore_name = "time_period"
 
     @classmethod
-    def generate_elasticsearch_query(cls, filter_values: List[dict], query_type: _QueryType, **options) -> ES_Q:
+    def generate_elasticsearch_query(cls, filter_values: List[dict], query_type: QueryType, **options) -> ES_Q:
 
         # Temporary until rest of dependencies are updated
         if "time_period_obj" not in options or options.get("time_period_obj") is None:
@@ -246,7 +246,7 @@ class _TimePeriods(_Filter):
         return ES_Q("bool", should=time_period_query, minimum_should_match=1)
 
     @classmethod
-    def _default_elasticsearch_query(cls, filter_values: List[dict], query_type: _QueryType, **options):
+    def _default_elasticsearch_query(cls, filter_values: List[dict], query_type: QueryType, **options):
         time_period_query = []
         for filter_value in filter_values:
             start_date = filter_value.get("start_date") or settings.API_SEARCH_MIN_DATE
@@ -255,7 +255,7 @@ class _TimePeriods(_Filter):
             gte_range = {filter_value.get("gte_date_type", "action_date"): {"gte": start_date}}
             lte_range = {
                 filter_value.get(
-                    "lte_date_type", "date_signed" if query_type == _QueryType.AWARDS else "action_date"
+                    "lte_date_type", "date_signed" if query_type == QueryType.AWARDS else "action_date"
                 ): {"lte": end_date}
             }
 
@@ -270,11 +270,11 @@ class _AwardTypeCodes(_Filter):
     underscore_name = "award_type_codes"
 
     @classmethod
-    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType, **options) -> ES_Q:
+    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: QueryType, **options) -> ES_Q:
         award_type_codes_query = []
 
         for filter_value in filter_values:
-            if query_type == _QueryType.SUBAWARDS:
+            if query_type == QueryType.SUBAWARDS:
                 type_ = "prime_award_type"
             else:
                 type_ = "type"
@@ -288,7 +288,7 @@ class _SubawardsPrimeSubAwardTypes(_Filter):
     underscore_name = "prime_and_sub_award_types"
 
     @classmethod
-    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType, **options) -> ES_Q:
+    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: QueryType, **options) -> ES_Q:
         award_type_codes_query = []
 
         award_types = filter_values.get("elasticsearch_sub_awards")
@@ -301,7 +301,7 @@ class _Agencies(_Filter):
     underscore_name = "agencies"
 
     @staticmethod
-    def _build_query_object(filter_value: dict, query_type: _QueryType) -> Tuple[str, ES_Q]:
+    def _build_query_object(filter_value: dict, query_type: QueryType) -> Tuple[str, ES_Q]:
         agency_name = filter_value.get("name")
         agency_toptier_code = filter_value.get("toptier_code")
         agency_tier = filter_value["tier"]
@@ -311,12 +311,12 @@ class _Agencies(_Filter):
 
         query_object = ES_Q()
 
-        if query_type == _QueryType.AWARDS:
+        if query_type == QueryType.AWARDS:
             if agency_toptier_code:
                 query_object &= ES_Q(
                     "match", **{f"{agency_type}_{agency_tier}_agency_code__keyword": agency_toptier_code}
                 )
-        elif query_type == _QueryType.TRANSACTIONS:
+        elif query_type == QueryType.TRANSACTIONS:
             if toptier_id:
                 if toptier_name and toptier_name != "awarding":
                     raise InvalidParameterException(
@@ -333,7 +333,7 @@ class _Agencies(_Filter):
         return agency_type, query_object
 
     @classmethod
-    def generate_elasticsearch_query(cls, filter_values: List[dict], query_type: _QueryType, **options) -> List[ES_Q]:
+    def generate_elasticsearch_query(cls, filter_values: List[dict], query_type: QueryType, **options) -> List[ES_Q]:
         awarding_agency_query = []
         funding_agency_query = []
 
@@ -355,7 +355,7 @@ class _RecipientSearchText(_Filter):
     underscore_name = "recipient_search_text"
 
     @classmethod
-    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType, **options) -> ES_Q:
+    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: QueryType, **options) -> ES_Q:
         recipient_search_query = []
         words_to_escape = ["AND", "OR"]  # These need to be escaped to be included as text to be searched for
 
@@ -364,7 +364,7 @@ class _RecipientSearchText(_Filter):
             parent_recipient_unique_id_field = None
             parent_uei_field = None
 
-            if query_type == _QueryType.SUBAWARDS:
+            if query_type == QueryType.SUBAWARDS:
                 fields = ["sub_awardee_or_recipient_legal"]
                 upper_recipient_string = es_sanitize(filter_value.upper())
                 query = es_sanitize(upper_recipient_string)
@@ -411,7 +411,7 @@ class _RecipientSearchText(_Filter):
             # If the recipient name ends with a period, then add a regex query to find results ending with a
             #   period and results with a period in the same location but with characters following it.
             # Example: A query for COMPANY INC. will return both COMPANY INC. and COMPANY INC.XYZ
-            if upper_recipient_string.endswith(".") and query_type != _QueryType.SUBAWARDS:
+            if upper_recipient_string.endswith(".") and query_type != QueryType.SUBAWARDS:
                 recipient_search_query.append(recipient_name_query)
                 recipient_search_query.append(
                     ES_Q({"regexp": {"recipient_name.keyword": f"{upper_recipient_string.rstrip('.')}\\..*"}})
@@ -426,9 +426,9 @@ class _RecipientId(_Filter):
     underscore_name = "recipient_id"
 
     @classmethod
-    def generate_elasticsearch_query(cls, filter_value: str, query_type: _QueryType, **options) -> ES_Q:
+    def generate_elasticsearch_query(cls, filter_value: str, query_type: QueryType, **options) -> ES_Q:
         recipient_hash = filter_value[:-2]
-        if query_type == _QueryType.SUBAWARDS:
+        if query_type == QueryType.SUBAWARDS:
             # Subawards did not support "recipient_id" before migrating to elastic search
             # so this behavior is honored here.
             raise InvalidParameterException(
@@ -446,8 +446,8 @@ class _RecipientScope(_Filter):
     underscore_name = "recipient_scope"
 
     @classmethod
-    def generate_elasticsearch_query(cls, filter_value: str, query_type: _QueryType, **options) -> ES_Q:
-        if query_type == _QueryType.SUBAWARDS:
+    def generate_elasticsearch_query(cls, filter_value: str, query_type: QueryType, **options) -> ES_Q:
+        if query_type == QueryType.SUBAWARDS:
             recipient_scope_query = ES_Q("match", sub_recipient_location_country_code="USA") | ES_Q(
                 "match", sub_recipient_location_country_name="UNITED STATES"
             )
@@ -464,7 +464,7 @@ class _RecipientLocations(_Filter):
     underscore_name = "recipient_locations"
 
     @classmethod
-    def generate_elasticsearch_query(cls, filter_values: List[dict], query_type: _QueryType, **options) -> ES_Q:
+    def generate_elasticsearch_query(cls, filter_values: List[dict], query_type: QueryType, **options) -> ES_Q:
         recipient_locations_query = []
 
         for filter_value in filter_values:
@@ -491,7 +491,7 @@ class _RecipientLocations(_Filter):
                     raise InvalidParameterException(INCOMPATIBLE_DISTRICT_LOCATION_PARAMETERS)
                 if location_value is not None:
                     location_value = location_value.upper()
-                    if query_type == _QueryType.SUBAWARDS:
+                    if query_type == QueryType.SUBAWARDS:
                         location_query.append(
                             ES_Q("match", **{f"sub_recipient_location_{location_key}": location_value})
                         )
@@ -507,7 +507,7 @@ class _RecipientTypeNames(_Filter):
     underscore_name = "recipient_type_names"
 
     @classmethod
-    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType, **options) -> ES_Q:
+    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: QueryType, **options) -> ES_Q:
         recipient_type_query = []
 
         for filter_value in filter_values:
@@ -520,8 +520,8 @@ class _PlaceOfPerformanceScope(_Filter):
     underscore_name = "place_of_performance_scope"
 
     @classmethod
-    def generate_elasticsearch_query(cls, filter_value: str, query_type: _QueryType, **options) -> ES_Q:
-        if query_type == _QueryType.SUBAWARDS:
+    def generate_elasticsearch_query(cls, filter_value: str, query_type: QueryType, **options) -> ES_Q:
+        if query_type == QueryType.SUBAWARDS:
             pop_scope_query = ES_Q("match", sub_pop_country_code="USA") | ES_Q(
                 "match", sub_pop_country_name="UNITED STATES"
             )
@@ -541,7 +541,7 @@ class _PlaceOfPerformanceLocations(_Filter):
     underscore_name = "place_of_performance_locations"
 
     @classmethod
-    def generate_elasticsearch_query(cls, filter_values: List[dict], query_type: _QueryType, **options) -> ES_Q:
+    def generate_elasticsearch_query(cls, filter_values: List[dict], query_type: QueryType, **options) -> ES_Q:
         pop_locations_query = []
         for filter_value in filter_values:
             location_query = []
@@ -559,7 +559,7 @@ class _PlaceOfPerformanceLocations(_Filter):
                 "city_name__keyword": filter_value.get("city"),
             }
 
-            if query_type == _QueryType.SUBAWARDS:
+            if query_type == QueryType.SUBAWARDS:
                 location_lookup["zip"] = filter_value.get("zip")
             else:
                 location_lookup["zip5"] = filter_value.get("zip")
@@ -571,7 +571,7 @@ class _PlaceOfPerformanceLocations(_Filter):
 
                 if location_value is not None:
                     location_value = location_value.upper()
-                    if query_type == _QueryType.SUBAWARDS:
+                    if query_type == QueryType.SUBAWARDS:
                         location_query.append(ES_Q("match", **{f"sub_pop_{location_key}": location_value}))
                     else:
                         location_query.append(ES_Q("match", **{f"pop_{location_key}": location_value}))
@@ -593,9 +593,9 @@ class _AwardAmounts(_Filter):
     underscore_name = "award_amounts"
 
     @classmethod
-    def generate_elasticsearch_query(cls, filter_values: List[dict], query_type: _QueryType, **options) -> ES_Q:
+    def generate_elasticsearch_query(cls, filter_values: List[dict], query_type: QueryType, **options) -> ES_Q:
         award_amounts_query = []
-        if query_type == _QueryType.SUBAWARDS:
+        if query_type == QueryType.SUBAWARDS:
             filter_field = "subaward_amount"
         else:
             filter_field = "award_amount"
@@ -611,7 +611,7 @@ class _AwardIds(_Filter):
     underscore_name = "award_ids"
 
     @classmethod
-    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType, **options) -> ES_Q:
+    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: QueryType, **options) -> ES_Q:
         award_ids_query = []
 
         for filter_value in filter_values:
@@ -630,11 +630,11 @@ class _ProgramNumbers(_Filter):
     underscore_name = "program_numbers"
 
     @classmethod
-    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType, **options) -> ES_Q:
+    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: QueryType, **options) -> ES_Q:
         programs_numbers_query = []
 
         for filter_value in filter_values:
-            if query_type == _QueryType.AWARDS:
+            if query_type == QueryType.AWARDS:
                 escaped_program_number = filter_value.replace(".", "\\.")
                 r = f""".*\\"cfda_number\\" *: *\\"{escaped_program_number}\\".*"""
                 programs_numbers_query.append(ES_Q("regexp", cfdas=r))
@@ -648,7 +648,7 @@ class _ProgramActivities(_Filter):
     underscore_name = "program_activities"
 
     @classmethod
-    def generate_elasticsearch_query(cls, filter_values: List[dict], query_type: _QueryType, **options) -> ES_Q:
+    def generate_elasticsearch_query(cls, filter_values: List[dict], query_type: QueryType, **options) -> ES_Q:
         program_activity_match_queries = []
 
         for filter_value in filter_values:
@@ -675,7 +675,7 @@ class _ContractPricingTypeCodes(_Filter):
     underscore_name = "contract_pricing_type_codes"
 
     @classmethod
-    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType, **options) -> ES_Q:
+    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: QueryType, **options) -> ES_Q:
         contract_pricing_query = []
 
         for filter_value in filter_values:
@@ -688,7 +688,7 @@ class _SetAsideTypeCodes(_Filter):
     underscore_name = "set_aside_type_codes"
 
     @classmethod
-    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType, **options) -> ES_Q:
+    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: QueryType, **options) -> ES_Q:
         set_aside_query = []
 
         for filter_value in filter_values:
@@ -701,7 +701,7 @@ class _ExtentCompetedTypeCodes(_Filter):
     underscore_name = "extent_competed_type_codes"
 
     @classmethod
-    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType, **options) -> ES_Q:
+    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: QueryType, **options) -> ES_Q:
         extent_competed_query = []
 
         for filter_value in filter_values:
@@ -753,10 +753,10 @@ class _DisasterEmergencyFundCodes(_Filter):
         return covid_es_queries, iija_es_queries
 
     @classmethod
-    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType, **options) -> ES_Q:
+    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: QueryType, **options) -> ES_Q:
         nested_path = options.get("nested_path", "")
         def_codes_query = []
-        def_code_field = f"{nested_path}{'.' if nested_path else ''}disaster_emergency_fund_code{'s' if query_type != _QueryType.ACCOUNTS else ''}"
+        def_code_field = f"{nested_path}{'.' if nested_path else ''}disaster_emergency_fund_code{'s' if query_type != QueryType.ACCOUNTS else ''}"
 
         # Get all COVID and IIJA disaster codes from the database
         covid_disaster_codes = list(
@@ -790,7 +790,7 @@ class _DisasterEmergencyFundCodes(_Filter):
         other_queries = [ES_Q("match", **{def_code_field: filter_value}) for filter_value in other_filters]
 
         # Filter on the `disaster_emergency_fund_code` AND `action_date` values for transactions
-        if query_type == _QueryType.TRANSACTIONS:
+        if query_type == QueryType.TRANSACTIONS:
             covid_es_queries, iija_es_queries = cls._generate_covid_iija_es_queries_transactions(
                 def_code_field, covid_filters, iija_filters
             )
@@ -806,7 +806,7 @@ class _DisasterEmergencyFundCodes(_Filter):
                 )
 
         # Filter on the `disaster_emergency_fund_code` AND `sub_action_date` values for subawards
-        elif query_type == _QueryType.SUBAWARDS:
+        elif query_type == QueryType.SUBAWARDS:
             covid_es_queries, iija_es_queries = cls._generate_covid_iija_es_queries_subawards(
                 def_code_field, covid_filters, iija_filters
             )
@@ -823,7 +823,7 @@ class _DisasterEmergencyFundCodes(_Filter):
 
         # Only filter on the DEFC value, but also filter out results where
         #   `covid/iija_outlay` and `covid/iija_obligation` are 0
-        elif query_type == _QueryType.AWARDS:
+        elif query_type == QueryType.AWARDS:
             covid_es_queries, iija_es_queries = cls._generate_covid_iija_es_queries_other(
                 def_code_field, covid_filters, iija_filters
             )
@@ -876,7 +876,7 @@ class _QueryText(_Filter):
     underscore_name = "query"
 
     @classmethod
-    def generate_elasticsearch_query(cls, filter_values: dict, query_type: _QueryType, **options) -> ES_Q:
+    def generate_elasticsearch_query(cls, filter_values: dict, query_type: QueryType, **options) -> ES_Q:
         nested_path = options.get("nested_path", "")
         query_text = filter_values["text"]
         query_fields = [f"{nested_path}{'.' if nested_path else ''}{field}" for field in filter_values["fields"]]
@@ -889,7 +889,7 @@ class _NonzeroFields(_Filter):
     underscore_name = "nonzero_fields"
 
     @classmethod
-    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: _QueryType, **options) -> ES_Q:
+    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: QueryType, **options) -> ES_Q:
         nested_path = options.get("nested_path", "")
         non_zero_queries = []
         for field in filter_values:
@@ -902,9 +902,9 @@ class _NonzeroFields(_Filter):
 class QueryWithFilters:
 
     @property
-    def filter_lookup(self) -> Dict[str, _Filter]:
+    def filter_lookup(self) -> dict[str, _Filter]:
         result = {
-            _Keywords.underscore_name: _SubawardsKeywords if self.query_type == _QueryType.SUBAWARDS else _Keywords,
+            _Keywords.underscore_name: _SubawardsKeywords if self.query_type == QueryType.SUBAWARDS else _Keywords,
             _Description.underscore_name: _Description,
             _KeywordSearch.underscore_name: _KeywordSearch,
             _TransactionKeywordSearch.underscore_name: _TransactionKeywordSearch,
@@ -931,7 +931,7 @@ class QueryWithFilters:
             _NonzeroFields.underscore_name: _NonzeroFields,
             _ProgramActivities.underscore_name: _ProgramActivities,
         }
-        if self.query_type == _QueryType.SUBAWARDS:
+        if self.query_type == QueryType.SUBAWARDS:
             result[_SubawardsPrimeSubAwardTypes.underscore_name] = _SubawardsPrimeSubAwardTypes
         return result
 
@@ -943,32 +943,32 @@ class QueryWithFilters:
 
     unsupported_filters = ["legal_entities"]
 
-    def __init__(self, query_type: _QueryType):
+    def __init__(self, query_type: QueryType):
         self.query_type = query_type
         time_period_obj = None
-        if self.query_type == _QueryType.ACCOUNTS:
+        if self.query_type == QueryType.ACCOUNTS:
             self.default_options = {"nested_path": "financial_accounts_by_award"}
-        elif self.query_type == _QueryType.TRANSACTIONS:
+        elif self.query_type == QueryType.TRANSACTIONS:
             time_period_obj = TransactionSearchTimePeriod(
                 default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_MIN_DATE
             )
-        elif self.query_type == _QueryType.AWARDS:
+        elif self.query_type == QueryType.AWARDS:
             time_period_obj = AwardSearchTimePeriod(
                 default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_MIN_DATE
             )
-        else:
+        elif self.query_type == QueryType.SUBAWARDS:
             time_period_obj = SubawardSearchTimePeriod(
                 default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_MIN_DATE
             )
 
-        if time_period_obj is not None:
+        if time_period_obj is not None and (self.query_type == QueryType.AWARDS or self.query_type == QueryType.TRANSACTIONS):
             new_awards_only_decorator = NewAwardsOnlyTimePeriod(
                 time_period_obj=time_period_obj, query_type=self.query_type
             )
             self.default_options = {"time_period_obj": new_awards_only_decorator}
         self.default_options = (
             {"nested_path": "financial_accounts_by_award"}
-            if self.query_type == _QueryType.ACCOUNTS
+            if self.query_type == QueryType.ACCOUNTS
             else self.default_options
         )
 
@@ -983,7 +983,7 @@ class QueryWithFilters:
         filters_copy = copy.deepcopy(filters)
 
         # tas_codes are unique in that the same query is spread across two keys
-        must_queries = self._handle_tas_query(must_queries, filters_copy, self.query_type)
+        must_queries = self._handle_tas_query(must_queries, filters_copy)
         for filter_type, filter_values in filters_copy.items():
             # Validate the filters
             if filter_type in self.unsupported_filters:
@@ -1018,17 +1018,16 @@ class QueryWithFilters:
             must_queries = nested_query
         return ES_Q("bool", must=must_queries)
 
-    @classmethod
-    def _handle_tas_query(cls, must_queries: list, filters: dict, query_type: _QueryType) -> list:
+    def _handle_tas_query(self, must_queries: list, filters: dict) -> list:
         if filters.get(TreasuryAccounts.underscore_name) or filters.get(TasCodes.underscore_name):
             tas_queries = []
             if filters.get(TreasuryAccounts.underscore_name):
                 tas_queries.append(
-                    TreasuryAccounts.generate_elasticsearch_query(filters[TreasuryAccounts.underscore_name], query_type)
+                    TreasuryAccounts.generate_elasticsearch_query(filters[TreasuryAccounts.underscore_name], self.query_type)
                 )
             if filters.get(TasCodes.underscore_name):
                 tas_queries.append(
-                    (TasCodes.generate_elasticsearch_query(filters[TasCodes.underscore_name], query_type))
+                    (TasCodes.generate_elasticsearch_query(filters[TasCodes.underscore_name], self.query_type))
                 )
             must_queries.append(ES_Q("bool", should=tas_queries, minimum_should_match=1))
             filters.pop(TreasuryAccounts.underscore_name, None)

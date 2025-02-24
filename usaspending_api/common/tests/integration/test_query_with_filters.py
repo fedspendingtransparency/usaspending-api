@@ -4,7 +4,7 @@ from model_bakery import baker
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, SubawardSearch, TransactionSearch
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
-from usaspending_api.search.filters.elasticsearch.filter import _QueryType
+from usaspending_api.search.filters.elasticsearch.filter import QueryType
 
 
 @pytest.fixture
@@ -63,7 +63,7 @@ def test_es_award_seach_with_reserved_words(client, monkeypatch, elasticsearch_a
 
     # Test the "OR" keyword
     filters = {"recipient_search_text": ["OR CONSTRUCTION"]}
-    query_with_filters = QueryWithFilters(_QueryType.AWARDS)
+    query_with_filters = QueryWithFilters(QueryType.AWARDS)
     filter_query = query_with_filters.generate_elasticsearch_query(filters)
     search = AwardSearch().filter(filter_query)
     results = search.handle_execute()
@@ -76,7 +76,7 @@ def test_es_award_seach_with_reserved_words(client, monkeypatch, elasticsearch_a
 
     # Test the "AND" keyword
     filters = {"recipient_search_text": ["AND DELIVERIES"]}
-    query_with_filters = QueryWithFilters(_QueryType.AWARDS)
+    query_with_filters = QueryWithFilters(QueryType.AWARDS)
     filter_query = query_with_filters.generate_elasticsearch_query(filters)
     search = AwardSearch().filter(filter_query)
     results = search.handle_execute()
@@ -98,7 +98,7 @@ def test_es_subaward_seach_with_reserved_words(client, monkeypatch, elasticsearc
 
     # Test the "OR" keyword
     filters = {"recipient_search_text": ["OR CONSTRUCTION"]}
-    query_with_filters = QueryWithFilters(_QueryType.SUBAWARDS)
+    query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
     filter_query = query_with_filters.generate_elasticsearch_query(filters)
     search = SubawardSearch().filter(filter_query)
     results = search.handle_execute()
@@ -113,7 +113,7 @@ def test_es_subaward_seach_with_reserved_words(client, monkeypatch, elasticsearc
 
     # Test the "AND" keyword
     filters = {"recipient_search_text": ["AND DELIVERIES"]}
-    query_with_filters = QueryWithFilters(_QueryType.SUBAWARDS)
+    query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
     filter_query = query_with_filters.generate_elasticsearch_query(filters)
     search = SubawardSearch().filter(filter_query)
     results = search.handle_execute()
@@ -128,7 +128,7 @@ def test_es_description_filter(client, monkeypatch, elasticsearch_transaction_in
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     filters = {"description": "test_1"}
-    query_with_filters = QueryWithFilters(_QueryType.TRANSACTIONS)
+    query_with_filters = QueryWithFilters(QueryType.TRANSACTIONS)
     filter_query = query_with_filters.generate_elasticsearch_query(filters)
     search = TransactionSearch().filter(filter_query)
     results = search.handle_execute()

@@ -32,7 +32,7 @@ from usaspending_api.search.v2.elasticsearch_helper import (
     get_number_of_unique_terms_for_awards,
     get_scaled_sum_aggregations,
 )
-from usaspending_api.search.filters.elasticsearch.filter import _QueryType
+from usaspending_api.search.filters.elasticsearch.filter import QueryType
 from usaspending_api.search.v2.views.enums import SpendingLevel
 
 logger = logging.getLogger(__name__)
@@ -110,11 +110,11 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
             self.obligation_column = "subaward_amount"
             results = self.query_django_for_subawards(base_queryset)
         elif self.spending_level == SpendingLevel.TRANSACTION:
-            query_with_filters = QueryWithFilters(_QueryType.TRANSACTIONS)
+            query_with_filters = QueryWithFilters(QueryType.TRANSACTIONS)
             filter_query = query_with_filters.generate_elasticsearch_query(self.filters)
             results = self.query_elasticsearch(filter_query)
         else:
-            query_with_filters = QueryWithFilters(_QueryType.AWARDS)
+            query_with_filters = QueryWithFilters(QueryType.AWARDS)
             filter_query = query_with_filters.generate_elasticsearch_query(self.filters)
             results = self.query_elasticsearch(filter_query)
 

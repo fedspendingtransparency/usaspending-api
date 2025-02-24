@@ -10,7 +10,7 @@ from usaspending_api.common.elasticsearch.search_wrappers import TransactionSear
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.references.models import Agency, SubtierAgency, Office
-from usaspending_api.search.filters.elasticsearch.filter import _QueryType
+from usaspending_api.search.filters.elasticsearch.filter import QueryType
 
 
 class SubAgencyList(PaginationMixin, AgencyBase):
@@ -113,7 +113,7 @@ class SubAgencyList(PaginationMixin, AgencyBase):
 
     def build_elasticsearch_filter_query(self):
         fiscal_year = FiscalYear(self.fiscal_year)
-        query_with_filters = QueryWithFilters(_QueryType.TRANSACTIONS)
+        query_with_filters = QueryWithFilters(QueryType.TRANSACTIONS)
         filter_query = query_with_filters.generate_elasticsearch_query(
             {
                 "agencies": [{"type": self.agency_type, "tier": "toptier", "name": self.toptier_agency.name}],

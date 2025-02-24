@@ -7,7 +7,7 @@ from usaspending_api.common.elasticsearch.aggregation_helpers import create_coun
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.disaster.v2.views.disaster_base import DisasterBase
-from usaspending_api.search.filters.elasticsearch.filter import _QueryType
+from usaspending_api.search.filters.elasticsearch.filter import QueryType
 
 from usaspending_api.disaster.v2.views.disaster_base import FabaOutlayMixin, AwardTypeMixin
 
@@ -23,7 +23,7 @@ class RecipientCountViewSet(FabaOutlayMixin, AwardTypeMixin, DisasterBase):
 
     @cache_response()
     def post(self, request: Request) -> Response:
-        query_with_filters = QueryWithFilters(_QueryType.AWARDS)
+        query_with_filters = QueryWithFilters(QueryType.AWARDS)
         filter_query = query_with_filters.generate_elasticsearch_query(self.filters)
         special_recipients = [
             "MULTIPLE RECIPIENTS",

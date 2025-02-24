@@ -18,10 +18,10 @@ from usaspending_api.common.helpers.generic_helper import (
     get_generic_filters_message,
 )
 from usaspending_api.common.query_with_filters import QueryWithFilters
-from usaspending_api.search.filters.elasticsearch.filter import _QueryType
 from usaspending_api.common.validator.award_filter import AWARD_FILTER_NO_RECIPIENT_ID
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
+from usaspending_api.search.filters.elasticsearch.filter import QueryType
 
 logger = logging.getLogger(__name__)
 
@@ -123,7 +123,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         return results
 
     def query_elasticsearch_for_prime_awards(self, filters) -> list:
-        query_with_filters = QueryWithFilters(_QueryType.AWARDS)
+        query_with_filters = QueryWithFilters(QueryType.AWARDS)
         filter_query = query_with_filters.generate_elasticsearch_query(filters)
         s = AwardSearch().filter(filter_query)
 

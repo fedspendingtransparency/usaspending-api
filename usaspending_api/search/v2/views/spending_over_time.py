@@ -30,7 +30,7 @@ from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator.award_filter import AWARD_FILTER_W_FILTERS
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
-from usaspending_api.search.filters.elasticsearch.filter import _QueryType
+from usaspending_api.search.filters.elasticsearch.filter import QueryType
 
 from usaspending_api.search.v2.views.enums import SpendingLevel
 
@@ -452,7 +452,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         ]
 
         # gets the query type ex: _QueryType.AWARDS if self.spending_level = SpendingLevel.AWARDS
-        query_type = _QueryType(self.spending_level.value)
+        query_type = QueryType(self.spending_level.value)
         query_with_filters = QueryWithFilters(query_type)
         filter_query = query_with_filters.generate_elasticsearch_query(self.filters)
         if self.spending_level == SpendingLevel.SUBAWARD:

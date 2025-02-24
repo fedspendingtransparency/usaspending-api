@@ -6,7 +6,7 @@ from usaspending_api.agency.v2.views.agency_base import AgencyBase
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 from usaspending_api.common.query_with_filters import QueryWithFilters
-from usaspending_api.search.filters.elasticsearch.filter import _QueryType
+from usaspending_api.search.filters.elasticsearch.filter import QueryType
 
 
 class Awards(AgencyBase):
@@ -45,14 +45,14 @@ class Awards(AgencyBase):
         }
 
     def get_transaction_count(self):
-        query_with_filters = QueryWithFilters(_QueryType.TRANSACTIONS)
+        query_with_filters = QueryWithFilters(QueryType.TRANSACTIONS)
         filter_query = query_with_filters.generate_elasticsearch_query(self.generate_query())
         search = TransactionSearch().filter(filter_query)
         results = search.handle_count()
         return results
 
     def get_aggregation_results(self):
-        query_with_filters = QueryWithFilters(_QueryType.TRANSACTIONS)
+        query_with_filters = QueryWithFilters(QueryType.TRANSACTIONS)
         filter_query = query_with_filters.generate_elasticsearch_query(self.generate_query())
         search = TransactionSearch().filter(filter_query)
         search.aggs.bucket("total_obligation", A("sum", field="generated_pragmatic_obligation"))

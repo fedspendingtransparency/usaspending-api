@@ -9,7 +9,7 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.query_with_filters import QueryWithFilters
-from usaspending_api.search.filters.elasticsearch.filter import _QueryType
+from usaspending_api.search.filters.elasticsearch.filter import QueryType
 from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
 from usaspending_api.search.filters.time_period.query_types import AwardSearchTimePeriod
 from django.conf import settings
@@ -103,7 +103,7 @@ class AwardCount(PaginationMixin, AgencyBase):
             default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
         )
         new_awards_only_decorator = NewAwardsOnlyTimePeriod(
-            time_period_obj=time_period_obj, query_type=_QueryType.AWARDS
+            time_period_obj=time_period_obj, query_type=QueryType.AWARDS
         )
         filter_options["time_period_obj"] = new_awards_only_decorator
         filters.update({"time_period": [{"start_date": self._fy_start, "end_date": self._fy_end}]})
@@ -129,7 +129,7 @@ class AwardCount(PaginationMixin, AgencyBase):
         Returns:
             List[dict]: A dictionary containing award types and the number of their awards.
         """
-        query_with_filters = QueryWithFilters(_QueryType.AWARDS)
+        query_with_filters = QueryWithFilters(QueryType.AWARDS)
         filter_query = query_with_filters.generate_elasticsearch_query(filters, **filter_options)
         record_num = (self.pagination.page - 1) * self.pagination.limit
         sorts = [{self.default_sort_column: self.pagination.sort_order}]
