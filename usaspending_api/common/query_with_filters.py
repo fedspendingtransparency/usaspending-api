@@ -960,17 +960,17 @@ class QueryWithFilters:
             time_period_obj = SubawardSearchTimePeriod(
                 default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_MIN_DATE
             )
+            self.default_options = dict()
 
         if time_period_obj is not None and (self.query_type == QueryType.AWARDS or self.query_type == QueryType.TRANSACTIONS):
             new_awards_only_decorator = NewAwardsOnlyTimePeriod(
                 time_period_obj=time_period_obj, query_type=self.query_type
             )
             self.default_options = {"time_period_obj": new_awards_only_decorator}
-        self.default_options = (
-            {"nested_path": "financial_accounts_by_award"}
-            if self.query_type == QueryType.ACCOUNTS
-            else self.default_options
-        )
+        if self.query_type == QueryType.ACCOUNTS:
+            self.default_options = (
+                {"nested_path": "financial_accounts_by_award"}
+            )
 
     def generate_elasticsearch_query(self, filters: dict, **options) -> ES_Q:
         options = options if len(options) > 0 else self.default_options
