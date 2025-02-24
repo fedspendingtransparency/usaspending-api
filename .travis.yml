@@ -56,7 +56,7 @@ jobs:
     before_install: ""  # override default to no-op
     install:
     - travis_retry pip install setuptools==68.1.2
-    - travis_retry pip install .[dev]
+    - travis_retry pip install .[dev] --no-cache-dir
     - travis_retry pip install coveralls
     before_script: ""  # override default to no-op
     script: ""  # override default to no-op
