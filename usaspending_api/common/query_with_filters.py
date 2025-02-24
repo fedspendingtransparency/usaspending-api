@@ -973,7 +973,7 @@ class QueryWithFilters:
         )
 
     def generate_elasticsearch_query(self, filters: dict, **options) -> ES_Q:
-        options = {**options, **self.default_options}
+        options = options if len(options) > 0 else self.default_options
         nested_path = options.pop("nested_path", "")
         must_queries = []
         nested_must_queries = []
