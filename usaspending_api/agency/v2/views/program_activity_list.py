@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from typing import Any, List
 from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.calculations import file_b
+from usaspending_api.common.calculations.file_b import FileBCalculations
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.submissions.helpers import get_latest_submission_ids_for_fiscal_year
@@ -42,11 +42,12 @@ class ProgramActivityList(PaginationMixin, AgencyBase):
 
     def get_program_activity_list(self) -> List[dict]:
         submission_ids = get_latest_submission_ids_for_fiscal_year(self.fiscal_year)
+        file_b_calculations = FileBCalculations()
         filters = [
             Q(program_activity__program_activity_name__isnull=False),
             Q(submission_id__in=submission_ids),
             Q(treasury_account__funding_toptier_agency=self.toptier_agency),
-            file_b.is_non_zero_total_spending(),
+            file_b_calculations.is_non_zero_total_spending(),
         ]
         if self.filter:
             filters.append(Q(program_activity__program_activity_name__icontains=self.filter))
@@ -56,8 +57,8 @@ class ProgramActivityList(PaginationMixin, AgencyBase):
             .values("program_activity__program_activity_name")
             .annotate(
                 name=F("program_activity__program_activity_name"),
-                obligated_amount=Sum(file_b.get_obligations()),
-                gross_outlay_amount=Sum(file_b.get_outlays()),
+                obligated_amount=Sum(file_b_calculations.get_obligations()),
+                gross_outlay_amount=Sum(file_b_calculations.get_outlays()),
             )
             .order_by(f"{'-' if self.pagination.sort_order == 'desc' else ''}{self.pagination.sort_key}")
             .values("name", "obligated_amount", "gross_outlay_amount")

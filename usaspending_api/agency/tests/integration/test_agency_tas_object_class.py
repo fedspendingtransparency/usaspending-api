@@ -126,13 +126,13 @@ def test_tas_object_class_success(client, monkeypatch, agency_account_data, help
         },
         "results": [
             {
-                "gross_outlay_amount": 11550000.0,
+                "gross_outlay_amount": 11100000.0,
                 "name": "Other",
-                "obligated_amount": 498.0,
+                "obligated_amount": 111.0,
                 "children": [
-                    {"gross_outlay_amount": 250000.0, "name": "NAME 3", "obligated_amount": 229.0},
-                    {"gross_outlay_amount": 1150000.0, "name": "NAME 2", "obligated_amount": 139.0},
-                    {"gross_outlay_amount": 10150000.0, "name": "NAME 1", "obligated_amount": 130.0},
+                    {"gross_outlay_amount": 100000.0, "name": "NAME 3", "obligated_amount": 100.0},
+                    {"gross_outlay_amount": 1000000.0, "name": "NAME 2", "obligated_amount": 10.0},
+                    {"gross_outlay_amount": 10000000.0, "name": "NAME 1", "obligated_amount": 1.0},
                 ],
             }
         ],
@@ -183,11 +183,11 @@ def test_tas_object_class_success(client, monkeypatch, agency_account_data, help
         },
         "results": [
             {
-                "gross_outlay_amount": 1150000.0,
+                "gross_outlay_amount": 1000000.0,
                 "name": "Other",
-                "obligated_amount": 139.0,
+                "obligated_amount": 10.0,
                 "children": [
-                    {"gross_outlay_amount": 1150000.0, "name": "NAME 5", "obligated_amount": 139.0},
+                    {"gross_outlay_amount": 1000000.0, "name": "NAME 5", "obligated_amount": 10.0},
                 ],
             }
         ],
@@ -253,10 +253,10 @@ def test_tas_object_class_multiple_submission_years(client, agency_account_data)
         },
         "results": [
             {
-                "gross_outlay_amount": 160000.0,
+                "gross_outlay_amount": 10000.0,
                 "name": "Other",
-                "obligated_amount": 1129.0,
-                "children": [{"gross_outlay_amount": 160000.0, "name": "NAME 4", "obligated_amount": 1129.0}],
+                "obligated_amount": 1000.0,
+                "children": [{"gross_outlay_amount": 10000.0, "name": "NAME 4", "obligated_amount": 1000.0}],
             }
         ],
     }
