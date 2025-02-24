@@ -3,7 +3,7 @@ import itertools
 import logging
 import re
 from datetime import datetime
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 
 from django.conf import settings
 from elasticsearch_dsl import Q as ES_Q
@@ -254,9 +254,9 @@ class _TimePeriods(_Filter):
 
             gte_range = {filter_value.get("gte_date_type", "action_date"): {"gte": start_date}}
             lte_range = {
-                filter_value.get(
-                    "lte_date_type", "date_signed" if query_type == QueryType.AWARDS else "action_date"
-                ): {"lte": end_date}
+                filter_value.get("lte_date_type", "date_signed" if query_type == QueryType.AWARDS else "action_date"): {
+                    "lte": end_date
+                }
             }
 
             time_period_query.append(
@@ -962,15 +962,15 @@ class QueryWithFilters:
             )
             self.default_options = dict()
 
-        if time_period_obj is not None and (self.query_type == QueryType.AWARDS or self.query_type == QueryType.TRANSACTIONS):
+        if time_period_obj is not None and (
+            self.query_type == QueryType.AWARDS or self.query_type == QueryType.TRANSACTIONS
+        ):
             new_awards_only_decorator = NewAwardsOnlyTimePeriod(
                 time_period_obj=time_period_obj, query_type=self.query_type
             )
             self.default_options = {"time_period_obj": new_awards_only_decorator}
         if self.query_type == QueryType.ACCOUNTS:
-            self.default_options = (
-                {"nested_path": "financial_accounts_by_award"}
-            )
+            self.default_options = {"nested_path": "financial_accounts_by_award"}
 
     def generate_elasticsearch_query(self, filters: dict, **options) -> ES_Q:
         options = options if len(options) > 0 else self.default_options
@@ -1023,7 +1023,9 @@ class QueryWithFilters:
             tas_queries = []
             if filters.get(TreasuryAccounts.underscore_name):
                 tas_queries.append(
-                    TreasuryAccounts.generate_elasticsearch_query(filters[TreasuryAccounts.underscore_name], self.query_type)
+                    TreasuryAccounts.generate_elasticsearch_query(
+                        filters[TreasuryAccounts.underscore_name], self.query_type
+                    )
                 )
             if filters.get(TasCodes.underscore_name):
                 tas_queries.append(
