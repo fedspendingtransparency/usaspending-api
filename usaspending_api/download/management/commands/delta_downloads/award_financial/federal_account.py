@@ -17,28 +17,55 @@ DOWNLOAD_QUERY = """
         disaster_emergency_fund_name,
         SUM(transaction_obligated_amount) AS transaction_obligated_amount,
         SUM(
-            CASE 
-                WHEN 
-                    reporting_fiscal_year = 2021
-                THEN 
+            CASE
+                WHEN
+                    (
+                        (
+                            quarter_format_flag = TRUE
+                            AND reporting_fiscal_quarter = 4
+                        )
+                        OR (
+                            quarter_format_flag = FALSE
+                            AND reporting_fiscal_period = 12
+                        )
+                    ) AND reporting_fiscal_year = 2021
+                THEN
                     gross_outlay_amount_FYB_to_period_end
             ElSE CAST(NULL as NUMERIC(23, 2))
-            END                
+            END
         ) AS gross_outlay_amount_FYB_to_period_end,
         SUM(
-            CASE 
-                WHEN 
-                    reporting_fiscal_year = 2021
-                THEN 
+            CASE
+                WHEN
+                    (
+                        (
+                            quarter_format_flag = TRUE
+                            AND reporting_fiscal_quarter = 4
+                        )
+                        OR (
+                            quarter_format_flag = FALSE
+                            AND reporting_fiscal_period = 12
+                        )
+                    ) AND reporting_fiscal_year = 2021
+                THEN
                     USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig
             ElSE CAST(NULL as NUMERIC(23, 2))
-            END  
+            END
         ) AS USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig,
         SUM(
-             CASE 
-                WHEN 
-                    reporting_fiscal_year = 2021
-                THEN 
+             CASE
+                WHEN
+                    (
+                        (
+                            quarter_format_flag = TRUE
+                            AND reporting_fiscal_quarter = 4
+                        )
+                        OR (
+                            quarter_format_flag = FALSE
+                            AND reporting_fiscal_period = 12
+                        )
+                    ) AND reporting_fiscal_year = 2021
+                THEN
                     USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig
             ElSE CAST(NULL as NUMERIC(23, 2))
             END
@@ -102,7 +129,7 @@ DOWNLOAD_QUERY = """
         national_interest_action_code,
         national_interest_action,
         usaspending_permalink,
-        MAX(last_modified_date)        
+        MAX(last_modified_date)
     FROM rpt.account_download
     WHERE
         (
@@ -119,9 +146,9 @@ DOWNLOAD_QUERY = """
                 )
                 AND reporting_fiscal_year = 2021
             )
-        )        
+        )
     GROUP BY
-        owning_agency_name,        
+        owning_agency_name,
         federal_account_symbol,
         federal_account_name,
         agency_identifier_name,
@@ -195,55 +222,109 @@ DOWNLOAD_QUERY = """
     HAVING
         -- All of the HAVING statements below ensure we return only non-zero sum records
         SUM(
-            CASE 
-                WHEN 
-                    reporting_fiscal_year = 2021
-                THEN 
+            CASE
+                WHEN
+                    (
+                        (
+                            quarter_format_flag = TRUE
+                            AND reporting_fiscal_quarter = 4
+                        )
+                        OR (
+                            quarter_format_flag = FALSE
+                            AND reporting_fiscal_period = 12
+                        )
+                    ) AND reporting_fiscal_year = 2021
+                THEN
                     gross_outlay_amount_FYB_to_period_end
             ElSE CAST(NULL as NUMERIC(23, 2))
             END
         ) > 0
         OR SUM(
-            CASE 
-                WHEN 
-                    reporting_fiscal_year = 2021
-                THEN 
+            CASE
+                WHEN
+                    (
+                        (
+                            quarter_format_flag = TRUE
+                            AND reporting_fiscal_quarter = 4
+                        )
+                        OR (
+                            quarter_format_flag = FALSE
+                            AND reporting_fiscal_period = 12
+                        )
+                    ) AND reporting_fiscal_year = 2021
+                THEN
                     gross_outlay_amount_FYB_to_period_end
             ElSE CAST(NULL as NUMERIC(23, 2))
             END
         ) < 0
         OR SUM(
-            CASE 
-                WHEN 
-                    reporting_fiscal_year = 2021
-                THEN 
+            CASE
+                WHEN
+                    (
+                        (
+                            quarter_format_flag = TRUE
+                            AND reporting_fiscal_quarter = 4
+                        )
+                        OR (
+                            quarter_format_flag = FALSE
+                            AND reporting_fiscal_period = 12
+                        )
+                    ) AND reporting_fiscal_year = 2021
+                THEN
                     USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig
             ElSE CAST(NULL as NUMERIC(23, 2))
-            END 
+            END
         ) < 0
         OR SUM(
-            CASE 
-                WHEN 
-                    reporting_fiscal_year = 2021
-                THEN 
+            CASE
+                WHEN
+                    (
+                        (
+                            quarter_format_flag = TRUE
+                            AND reporting_fiscal_quarter = 4
+                        )
+                        OR (
+                            quarter_format_flag = FALSE
+                            AND reporting_fiscal_period = 12
+                        )
+                    ) AND reporting_fiscal_year = 2021
+                THEN
                     USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig
             ElSE CAST(NULL as NUMERIC(23, 2))
-            END 
+            END
         ) > 0
         OR SUM(
-            CASE 
-                WHEN 
-                    reporting_fiscal_year = 2021
-                THEN 
+            CASE
+                WHEN
+                    (
+                        (
+                            quarter_format_flag = TRUE
+                            AND reporting_fiscal_quarter = 4
+                        )
+                        OR (
+                            quarter_format_flag = FALSE
+                            AND reporting_fiscal_period = 12
+                        )
+                    ) AND reporting_fiscal_year = 2021
+                THEN
                     USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig
             ElSE CAST(NULL as NUMERIC(23, 2))
             END
         ) < 0
         OR SUM(
-            CASE 
-                WHEN 
-                    reporting_fiscal_year = 2021
-                THEN 
+            CASE
+                WHEN
+                    (
+                        (
+                            quarter_format_flag = TRUE
+                            AND reporting_fiscal_quarter = 4
+                        )
+                        OR (
+                            quarter_format_flag = FALSE
+                            AND reporting_fiscal_period = 12
+                        )
+                    ) AND reporting_fiscal_year = 2021
+                THEN
                     USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig
             ElSE CAST(NULL as NUMERIC(23, 2))
             END
@@ -251,7 +332,6 @@ DOWNLOAD_QUERY = """
         OR SUM(transaction_obligated_amount) > 0
         OR SUM(transaction_obligated_amount) < 0
 """
-
 
 
 SUBMISSION_ID_QUERY = """
