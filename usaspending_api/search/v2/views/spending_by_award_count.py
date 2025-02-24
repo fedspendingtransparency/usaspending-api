@@ -124,7 +124,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
 
     def query_elasticsearch_for_prime_awards(self, filters) -> list:
         query_with_filters = QueryWithFilters(_QueryType.AWARDS)
-        filter_query = query_with_filters.query_elasticsearch(filters)
+        filter_query = query_with_filters.generate_elasticsearch_query(filters)
         s = AwardSearch().filter(filter_query)
 
         s.aggs.bucket(

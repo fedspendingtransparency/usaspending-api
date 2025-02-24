@@ -967,7 +967,7 @@ class QueryWithFilters:
             )
             self.default_options = {"time_period_obj": new_awards_only_decorator}
         self.default_options = (
-            {"nested_path": "financial_accounts_by_award"} if self.query_type == _QueryType.ACCOUNTS else {}
+            {"nested_path": "financial_accounts_by_award"} if self.query_type == _QueryType.ACCOUNTS else self.default_options
         )
 
     def generate_elasticsearch_query(self, filters: dict, **options) -> ES_Q:
