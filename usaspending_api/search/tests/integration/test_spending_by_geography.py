@@ -127,11 +127,14 @@ def _get_shape_code_for_sort(result_dict):
     return result_dict["shape_code"]
 
 
-def test_success_with_all_filters(client, monkeypatch, elasticsearch_transaction_index, awards_and_transactions):
+def test_success_with_all_filters(
+    client, monkeypatch, elasticsearch_subaward_index, elasticsearch_transaction_index, awards_and_transactions
+):
     """
     General test to make sure that all groups respond with a Status Code of 200 regardless of the filters.
     """
 
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     test_cases = [
@@ -202,9 +205,10 @@ def _test_success_with_all_filters_recipient_location_state(client):
 
 
 def test_correct_response_with_geo_filters(
-    client, monkeypatch, elasticsearch_transaction_index, awards_and_transactions
+    client, monkeypatch, elasticsearch_subaward_index, elasticsearch_transaction_index, awards_and_transactions
 ):
 
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     test_cases = [
@@ -966,9 +970,9 @@ def _test_correct_response_for_recipient_location_country_with_geo_filters(clien
 
 
 def test_correct_response_without_geo_filters(
-    client, monkeypatch, elasticsearch_transaction_index, awards_and_transactions
+    client, monkeypatch, elasticsearch_subaward_index, elasticsearch_transaction_index, awards_and_transactions
 ):
-
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     test_cases = [
@@ -2124,8 +2128,9 @@ def test_correct_response_new_awards_only(
 
 @pytest.mark.django_db
 def test_spending_by_geo_program_activity_subawards(
-    client, monkeypatch, elasticsearch_award_index, awards_and_transactions
+    client, monkeypatch, elasticsearch_subaward_index, elasticsearch_award_index, awards_and_transactions
 ):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     # Program Activites filter test
@@ -2457,10 +2462,12 @@ def test_correct_response_with_spending_level(
     client,
     monkeypatch,
     elasticsearch_award_index,
+    elasticsearch_subaward_index,
     elasticsearch_transaction_index,
     spending_level_test_data,
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     resp = client.post(
