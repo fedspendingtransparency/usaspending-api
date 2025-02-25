@@ -19,12 +19,10 @@ from usaspending_api.recipient.models import RecipientProfile
 from usaspending_api.references.models import Agency, ToptierAgencyPublishedDABSView
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.lookups.lookups import (
-    assistance_type_mapping,
     contract_type_mapping,
     idv_type_mapping,
     loan_type_mapping,
     non_loan_assistance_type_mapping,
-    procurement_type_mapping,
     subaward_mapping,
 )
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import (
@@ -55,6 +53,7 @@ from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.search.filters.elasticsearch.filter import _QueryType
 from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
 from usaspending_api.search.filters.time_period.query_types import AwardSearchTimePeriod, SubawardSearchTimePeriod
+from usaspending_api.search.v2.views.enums import SpendingLevel
 from usaspending_api.submissions.models import SubmissionAttributes
 
 
@@ -96,9 +95,28 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
     @cache_response()
     def post(self, request):
+        # First determine if we are using Subaward or Prime Awards / Transactions as this
+        # will impact some of the downstream filters in the JSON request
+        spending_type_models = [
+            {"name": "subawards", "key": "subawards", "type": "boolean", "default": False},
+            {
+                "name": "spending_level",
+                "key": "spending_level",
+                "type": "enum",
+                "enum_values": [level.value for level in SpendingLevel],
+                "optional": True,
+                "default": "transactions",
+            },
+        ]
+        spending_level_tiny_shield = TinyShield(spending_type_models)
+        spending_level_data = spending_level_tiny_shield.block(request.data)
+        self.spending_level = SpendingLevel(
+            "subawards" if spending_level_data["subawards"] else spending_level_data["spending_level"]
+        )
+
         """Return all awards matching the provided filters and limits"""
         self.original_filters = request.data.get("filters")
-        json_request, models = self.validate_request_data(request.data)
+        json_request, models = self.validate_request_data(request.data, self.spending_level)
         self.is_subaward = json_request["subawards"]
         self.constants = GLOBAL_MAP["subaward"] if self.is_subaward else GLOBAL_MAP["award"]
         filters = json_request.get("filters", {})
@@ -130,7 +148,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
             return Response(self.construct_es_response_for_prime_awards(self.query_elasticsearch_awards()))
 
     @staticmethod
-    def validate_request_data(request_data):
+    def validate_request_data(request_data, spending_level):
         program_activities_rule = {
             "name": "program_activities",
             "type": "array",
@@ -183,7 +201,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         for m in models:
             if m["name"] in ("award_type_codes", "fields"):
                 m["optional"] = False
-            elif "subawards" in request_data and request_data["subawards"] and m["name"] == "time_period":
+            elif spending_level == SpendingLevel.SUBAWARD and m["name"] == "time_period":
                 m["object_keys"]["date_type"]["enum_values"] = [
                     "action_date",
                     "last_modified_date",
@@ -198,14 +216,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
     def if_no_intersection(self):
         # "Special case" behavior: there will never be results when the website provides this value
         return "no intersection" in self.filters["award_type_codes"]
-
-    def construct_queryset(self):
-        sort_by_fields = self.get_sort_by_fields()
-        database_fields = self.get_database_fields()
-        base_queryset = self.constants["filter_queryset_func"](self.filters)
-        queryset = self.annotate_queryset(base_queryset)
-        queryset = self.custom_queryset_order_by(queryset, sort_by_fields, self.pagination["sort_order"])
-        return queryset.values(*list(database_fields))[self.pagination["lower_bound"] : self.pagination["upper_bound"]]
 
     def create_response_for_subawards(self, queryset, models):
         results = []
@@ -239,22 +249,13 @@ class SpendingByAwardVisualizationViewSet(APIView):
             record[dest] = award_ids.get(record[source])  # defensive, in case there is a discrepancy
         return records
 
-    def get_sort_by_fields(self):
-        if self.pagination["sort_key"] == "Award ID":
-            sort_by_fields = self.constants["award_id_fields"]
-        else:
-            if set(self.filters["award_type_codes"]) <= set(procurement_type_mapping):
-                sort_by_fields = [subaward_mapping[self.pagination["sort_key"]]]
-            elif set(self.filters["award_type_codes"]) <= set(assistance_type_mapping):
-                sort_by_fields = [subaward_mapping[self.pagination["sort_key"]]]
-
-        return sort_by_fields
-
     def get_elastic_sort_by_fields(self):
         if self.pagination["sort_key"] == "Award ID" or self.pagination["sort_key"] == "Sub-Award ID":
             sort_by_fields = ["display_award_id"]
         else:
-            if set(self.filters["award_type_codes"]) <= set(contract_type_mapping):
+            if self.is_subaward:
+                sort_by_fields = [subaward_mapping[self.pagination["sort_key"]]]
+            elif set(self.filters["award_type_codes"]) <= set(contract_type_mapping):
                 sort_by_fields = [contracts_mapping[self.pagination["sort_key"]]]
             elif set(self.filters["award_type_codes"]) <= set(loan_type_mapping):
                 sort_by_fields = [loan_mapping[self.pagination["sort_key"]]]
@@ -262,8 +263,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 sort_by_fields = [idv_mapping[self.pagination["sort_key"]]]
             elif set(self.filters["award_type_codes"]) <= set(non_loan_assistance_type_mapping):
                 sort_by_fields = [non_loan_assist_mapping[self.pagination["sort_key"]]]
-            elif set(self.filters["award_type_codes"]) <= set(subaward_mapping):
-                sort_by_fields = [subaward_mapping[self.pagination["sort_key"]]]
 
         sort_by_fields.append("award_id")
 
@@ -397,10 +396,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         time_period_obj = SubawardSearchTimePeriod(
             default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
         )
-        new_awards_only_decorator = NewAwardsOnlyTimePeriod(
-            time_period_obj=time_period_obj, query_type=_QueryType.AWARDS
-        )
-        filter_options["time_period_obj"] = new_awards_only_decorator
+        filter_options["time_period_obj"] = time_period_obj
 
         filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(self.filters, **filter_options)
 

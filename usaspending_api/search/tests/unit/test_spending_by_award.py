@@ -282,21 +282,6 @@ def test_get_award_type_and_mapping_values():
         )
 
 
-def test_get_queryset():
-    view = instantiate_view_for_tests()
-
-    assert view.construct_queryset() is not None, "Failed to return a queryset object"
-
-    db_fields_from_api = set([subaward_mapping[field] for field in view.fields])
-    db_fields_from_api |= set(GLOBAL_MAP["subaward"]["minimum_db_fields"])
-
-    assert db_fields_from_api == set(view.get_database_fields())
-
-    qs_fields = set(view.construct_queryset().__dict__["_fields"])
-
-    assert qs_fields == db_fields_from_api
-
-
 def test_populate_response():
     view = instantiate_view_for_tests()
 
