@@ -1,7 +1,7 @@
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.exceptions import UnprocessableEntityException
 from elasticsearch_dsl import Q as ES_Q
-from usaspending_api.search.filters.elasticsearch.filter import _Filter, _QueryType
+from usaspending_api.search.filters.elasticsearch.filter import _Filter, QueryType
 from usaspending_api.search.filters.elasticsearch.HierarchicalFilter import HierarchicalFilter, Node
 from usaspending_api.search.filters.postgres.tas import string_to_dictionary
 import re
@@ -11,7 +11,7 @@ class TasCodes(_Filter, HierarchicalFilter):
     underscore_name = "tas_codes"
 
     @classmethod
-    def generate_elasticsearch_query(cls, filter_values, query_type: _QueryType, **options) -> ES_Q:
+    def generate_elasticsearch_query(cls, filter_values, query_type: QueryType, **options) -> ES_Q:
         if isinstance(filter_values, list):
             # This is a legacy usage, and will be dealt with by the other filter
             return TreasuryAccounts.generate_elasticsearch_query(filter_values, query_type)
@@ -78,7 +78,7 @@ class TreasuryAccounts(_Filter):
     underscore_name = "treasury_account_components"
 
     @classmethod
-    def generate_elasticsearch_query(cls, filter_values: list, query_type: _QueryType, **options) -> ES_Q:
+    def generate_elasticsearch_query(cls, filter_values: list, query_type: QueryType, **options) -> ES_Q:
         tas_codes_query = []
 
         for v in filter_values:
