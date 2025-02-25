@@ -68,7 +68,7 @@ class Command(BaseCommand):
                 WHEN NOT MATCHED BY SOURCE AND (a.total_subaward_amount > 0 OR a.subaward_count > 0) THEN
                     UPDATE SET
                         a.update_date=NOW(),
-                        a.total_subaward_amount=0,
+                        a.total_subaward_amount=NULL,
                         a.subaward_count=0
         """
         logger.info(
