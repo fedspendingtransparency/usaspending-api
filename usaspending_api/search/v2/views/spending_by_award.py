@@ -50,7 +50,7 @@ from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.common.recipient_lookups import annotate_prime_award_recipient_id
 from usaspending_api.common.exceptions import UnprocessableEntityException
-from usaspending_api.search.filters.elasticsearch.filter import _QueryType
+from usaspending_api.search.filters.elasticsearch.filter import QueryType
 from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
 from usaspending_api.search.filters.time_period.query_types import AwardSearchTimePeriod, SubawardSearchTimePeriod
 from usaspending_api.search.v2.views.enums import SpendingLevel
@@ -342,10 +342,11 @@ class SpendingByAwardVisualizationViewSet(APIView):
             default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
         )
         new_awards_only_decorator = NewAwardsOnlyTimePeriod(
-            time_period_obj=time_period_obj, query_type=_QueryType.AWARDS
+            time_period_obj=time_period_obj, query_type=QueryType.AWARDS
         )
         filter_options["time_period_obj"] = new_awards_only_decorator
-        filter_query = QueryWithFilters.generate_awards_elasticsearch_query(self.filters, **filter_options)
+        query_with_filters = QueryWithFilters(QueryType.AWARDS)
+        filter_query = query_with_filters.generate_elasticsearch_query(self.filters, **filter_options)
         sort_field = self.get_elastic_sort_by_fields()
         covid_sort_fields = {"COVID-19 Obligations": "obligation", "COVID-19 Outlays": "outlay"}
         iija_sort_fields = {"Infrastructure Obligations": "obligation", "Infrastructure Outlays": "outlay"}
