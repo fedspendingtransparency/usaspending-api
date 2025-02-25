@@ -204,6 +204,7 @@ SUBAWARD_SEARCH_COLUMNS = {
     "place_of_perform_county_fips": {"delta": "STRING", "postgres": "TEXT"},
     "pop_county_name": {"delta": "STRING", "postgres": "TEXT"},
     "program_activities": {"delta": "STRING", "postgres": "JSONB", "gold": False},
+    "prime_award_recipient_id": {"delta": "STRING", "postgres": "TEXT"},
 }
 SUBAWARD_SEARCH_POSTGRES_VECTORS = {
     "keyword_ts_vector": ["sub_awardee_or_recipient_legal", "product_or_service_description", "subaward_description"],
@@ -563,7 +564,16 @@ subaward_search_load_sql_string = rf"""
         CONCAT(rl_state_fips.fips, rl_county_fips.county_numeric) AS legal_entity_county_fips,
         CONCAT(pop_state_fips.fips, pop_county_fips.county_numeric) AS place_of_perform_county_fips,
         UPPER(COALESCE(fpds.place_of_perform_county_na, fabs.place_of_perform_county_na)) AS pop_county_name,
-        tas.program_activities
+        tas.program_activities,
+        CASE
+            WHEN rp.recipient_name IN ('MULTIPLE RECIPIENTS', 'REDACTED DUE TO PII', 'MULTIPLE FOREIGN RECIPIENTS', 'PRIVATE INDIVIDUAL', 'INDIVIDUAL RECIPIENT', 'MISCELLANEOUS FOREIGN AWARDEES')
+                THEN NULL
+            WHEN (rp.recipient_hash IS NULL OR rp.recipient_hash = '')
+                THEN NULL
+            WHEN (bs.ultimate_parent_uei IS null or bs.ultimate_parent_uei = '')
+                THEN CONCAT(rp.recipient_hash, '-R')
+            ELSE CONCAT(rp.recipient_hash, '-C')
+        END AS prime_award_recipient_id
     FROM
         raw.subaward AS bs
     LEFT OUTER JOIN
@@ -696,6 +706,10 @@ subaward_search_load_sql_string = rf"""
     LEFT OUTER JOIN county_fips AS rl_county_fips
         ON UPPER(rl_county_fips.county_name) = UPPER(COALESCE(fpds.legal_entity_county_name, fabs.legal_entity_county_name))
             AND rl_county_fips.state_alpha = bs.legal_entity_state_code
+    LEFT OUTER JOIN rpt.recipient_lookup rl
+        ON (rl.uei = bs.awardee_or_recipient_uei OR rl.duns = bs.awardee_or_recipient_uniqu)
+    LEFT OUTER JOIN rpt.recipient_profile rp
+        ON rp.recipient_hash = rl.recipient_hash
     -- Subaward numbers are crucial for identifying subawards and so those without subaward numbers won't be surfaced.
     WHERE bs.subaward_number IS NOT NULL
 """

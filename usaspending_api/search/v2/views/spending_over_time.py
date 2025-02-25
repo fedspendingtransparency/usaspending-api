@@ -66,6 +66,14 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
     @staticmethod
     def validate_request_data(json_data: dict) -> Tuple[dict, dict]:
+        subawards_rule = [
+            {"name": "subawards", "key": "subawards", "type": "boolean", "default": False},
+        ]
+
+        subaward_ts = TinyShield(subawards_rule)
+
+        is_subaward = subaward_ts.block(json_data)["subawards"]
+
         program_activities_rule = [
             {
                 "name": "program_activities",
@@ -103,6 +111,16 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         models.extend(copy.deepcopy(AWARD_FILTER_W_FILTERS))
         models.extend(copy.deepcopy(program_activities_rule))
         models.extend(copy.deepcopy(PAGINATION))
+
+        for m in models:
+            if is_subaward and m["name"] == "time_period":
+                m["object_keys"]["date_type"]["enum_values"] = [
+                    "action_date",
+                    "last_modified_date",
+                    "date_signed",
+                    "sub_action_date",
+                ]
+
         tiny_shield = TinyShield(models)
         validated_data = tiny_shield.block(json_data)
         if "filters" in validated_data and "program_activities" in validated_data["filters"]:
