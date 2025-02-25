@@ -366,10 +366,11 @@
         "type": "text"
       },
       "sub_recipient_location_country_code": {
-        "type": "text",
+        "type": "keyword",
+        "eager_global_ordinals": true,
         "fields": {
-          "keyword": {
-            "type": "keyword"
+          "hash": {
+            "type": "murmur3"
           }
         }
       },
@@ -382,10 +383,11 @@
         }
       },
       "sub_recipient_location_state_code": {
-        "type": "text",
+        "type": "keyword",
+        "eager_global_ordinals": true,
         "fields": {
-          "keyword": {
-            "type": "keyword"
+          "hash": {
+            "type": "murmur3"
           }
         }
       },
@@ -433,11 +435,35 @@
       "sub_recipient_location_city_name": {
         "type": "text"
       },
+      "sub_recipient_location_county_agg_key": {
+        "type": "keyword",
+        "eager_global_ordinals": true,
+        "fields": {
+          "hash": {
+            "type": "murmur3"
+          }
+        }
+      },
+      "sub_recipient_location_congressional_cur_agg_key": {
+        "type": "keyword",
+        "eager_global_ordinals": true,
+        "fields": {
+          "hash": {
+            "type": "murmur3"
+          }
+        }
+      },
       "sub_business_types": {
         "type": "keyword"
       },
       "sub_pop_country_code": {
-        "type": "keyword"
+        "type": "keyword",
+        "eager_global_ordinals": true,
+        "fields": {
+          "hash": {
+            "type": "murmur3"
+          }
+        }
       },
       "sub_pop_country_name": {
         "type": "text",
@@ -448,7 +474,13 @@
         }
       },
       "sub_pop_state_code": {
-        "type": "keyword"
+        "type": "keyword",
+        "eager_global_ordinals": true,
+        "fields": {
+          "hash": {
+            "type": "murmur3"
+          }
+        }
       },
       "sub_pop_state_name": {
         "type": "keyword"
@@ -480,6 +512,24 @@
       },
       "sub_pop_street": {
         "type": "text"
+      },
+      "sub_pop_county_agg_key": {
+        "type": "keyword",
+        "eager_global_ordinals": true,
+        "fields": {
+          "hash": {
+            "type": "murmur3"
+          }
+        }
+      },
+      "sub_pop_congressional_cur_agg_key": {
+        "type": "keyword",
+        "eager_global_ordinals": true,
+        "fields": {
+          "hash": {
+            "type": "murmur3"
+          }
+        }
       },
       "subaward_description": {
         "type": "text"
