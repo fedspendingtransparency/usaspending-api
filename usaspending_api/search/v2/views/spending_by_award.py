@@ -399,7 +399,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
         )
         filter_options["time_period_obj"] = time_period_obj
 
-        filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(self.filters, **filter_options)
+        query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
+        filter_query = query_with_filters.generate_elasticsearch_query(self.filters, **filter_options)
 
         sort_field = self.get_elastic_sort_by_fields()
 
