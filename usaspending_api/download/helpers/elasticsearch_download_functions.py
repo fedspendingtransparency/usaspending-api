@@ -16,7 +16,7 @@ from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.download.models import DownloadJob
 from usaspending_api.download.models.download_job_lookup import DownloadJobLookup
 from usaspending_api.download.helpers import write_to_download_log as write_to_log
-from usaspending_api.search.filters.elasticsearch.filter import _QueryType
+from usaspending_api.search.filters.elasticsearch.filter import QueryType
 from usaspending_api.search.models import (
     AwardSearch as DBAwardSearch,
     SubawardSearch as DBSubawardSearch,
@@ -33,9 +33,9 @@ logger = logging.getLogger(__name__)
 
 class _ElasticsearchDownload(metaclass=ABCMeta):
     _source_field = None
-    _filter_query_func = None
     _search_type = None
     _base_model: Model = None
+    _query_with_filters = None
 
     @classmethod
     def _get_download_ids_generator(cls, search: Union[AwardSearch, TransactionSearch, SubawardSearch], size: int):
@@ -82,7 +82,7 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
         """
         Takes a dictionary of the different download filters and returns a flattened list of ids.
         """
-        filter_query = cls._filter_query_func(filters, **filter_options)
+        filter_query = cls._query_with_filters.generate_elasticsearch_query(filters, **filter_options)
         search = cls._search_type().filter(filter_query).source([cls._source_field])
         ids = cls._get_download_ids_generator(search, size)
         lookup_id_type = cls._search_type.type_as_string()
@@ -164,7 +164,7 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
 
 class AwardsElasticsearchDownload(_ElasticsearchDownload):
     _source_field = "award_id"
-    _filter_query_func = QueryWithFilters.generate_awards_elasticsearch_query
+    _query_with_filters = QueryWithFilters(QueryType.AWARDS)
     _search_type = AwardSearch
     _base_model = DBAwardSearch
 
@@ -175,7 +175,7 @@ class AwardsElasticsearchDownload(_ElasticsearchDownload):
             default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
         )
         new_awards_only_decorator = NewAwardsOnlyTimePeriod(
-            time_period_obj=time_period_obj, query_type=_QueryType.AWARDS
+            time_period_obj=time_period_obj, query_type=QueryType.AWARDS
         )
         filter_options["time_period_obj"] = new_awards_only_decorator
         base_queryset = DBAwardSearch.objects.all()
@@ -186,7 +186,7 @@ class AwardsElasticsearchDownload(_ElasticsearchDownload):
 
 class TransactionsElasticsearchDownload(_ElasticsearchDownload):
     _source_field = "transaction_id"
-    _filter_query_func = QueryWithFilters.generate_transactions_elasticsearch_query
+    _query_with_filters = QueryWithFilters(QueryType.TRANSACTIONS)
     _search_type = TransactionSearch
     _base_model = DBTransactionSearch
 
@@ -197,7 +197,7 @@ class TransactionsElasticsearchDownload(_ElasticsearchDownload):
             default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
         )
         new_awards_only_decorator = NewAwardsOnlyTimePeriod(
-            time_period_obj=time_period_obj, query_type=_QueryType.TRANSACTIONS
+            time_period_obj=time_period_obj, query_type=QueryType.TRANSACTIONS
         )
         filter_options["time_period_obj"] = new_awards_only_decorator
         base_queryset = DBTransactionSearch.objects.all()
@@ -208,7 +208,7 @@ class TransactionsElasticsearchDownload(_ElasticsearchDownload):
 
 class SubawardsElasticsearchDownload(_ElasticsearchDownload):
     _source_field = "broker_subaward_id"
-    _filter_query_func = QueryWithFilters.generate_subawards_elasticsearch_query
+    _query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
     _search_type = SubawardSearch
     _base_model = DBSubawardSearch
 

@@ -14,6 +14,7 @@ from usaspending_api.common.exceptions import (
 )
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata, get_generic_filters_message
 from usaspending_api.common.query_with_filters import QueryWithFilters
+from usaspending_api.search.filters.elasticsearch.filter import QueryType
 from usaspending_api.common.validator.award_filter import (
     AWARD_FILTER,
     AWARD_FILTER_NO_RECIPIENT_ID,
@@ -125,7 +126,8 @@ class SpendingByTransactionVisualizationViewSet(APIView):
                 es_minimal_sanitize(x) for x in validated_payload["filters"]["keywords"]
             ]
             validated_payload["filters"].pop("keywords")
-        filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(validated_payload["filters"])
+        query_with_filters = QueryWithFilters(QueryType.TRANSACTIONS)
+        filter_query = query_with_filters.generate_elasticsearch_query(validated_payload["filters"])
         search = TransactionSearch().filter(filter_query).sort(sorts)[lower_limit:upper_limit]
         response = search.handle_execute()
         return Response(self.build_elasticsearch_result(validated_payload, response))
@@ -225,7 +227,8 @@ class SpendingByTransactionGroupedVisualizationViewSet(APIView):
             es_minimal_sanitize(x) for x in validated_payload["filters"]["keywords"]
         ]
         validated_payload["filters"].pop("keywords")
-        filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(validated_payload["filters"])
+        query_with_filters = QueryWithFilters(QueryType.TRANSACTIONS)
+        filter_query = query_with_filters.generate_elasticsearch_query(validated_payload["filters"])
         search = TransactionSearch().filter(filter_query)
 
         bucket_count = get_number_of_unique_terms_for_transactions(filter_query, "display_award_id")
@@ -248,10 +251,8 @@ class SpendingByTransactionGroupedVisualizationViewSet(APIView):
             hit_validated_payload = {}
             hit_validated_payload["filters"] = validated_payload["filters"]
             hit_validated_payload["filters"]["award_ids"] = [f"{display_award_id}"]
-
-            hit_filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(
-                hit_validated_payload["filters"]
-            )
+            query_with_filters = QueryWithFilters(QueryType.TRANSACTIONS)
+            hit_filter_query = query_with_filters.generate_elasticsearch_query(hit_validated_payload["filters"])
             hit_search = TransactionSearch().filter(hit_filter_query).sort({"federal_action_obligation": "asc"})[0:10]
             hit_response = hit_search.handle_execute()
             prime_award_result["Prime Award ID"] = display_award_id
@@ -352,7 +353,8 @@ class SpendingByTransactionCountVisualizationViewSet(APIView):
                 es_minimal_sanitize(x) for x in validated_payload["filters"]["keywords"]
             ]
             validated_payload["filters"].pop("keywords")
-        filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(validated_payload["filters"])
+        query_with_filters = QueryWithFilters(QueryType.TRANSACTIONS)
+        filter_query = query_with_filters.generate_elasticsearch_query(validated_payload["filters"])
         search = TransactionSearch().filter(filter_query)
         results = spending_by_transaction_count(search)
         return Response({"results": results})

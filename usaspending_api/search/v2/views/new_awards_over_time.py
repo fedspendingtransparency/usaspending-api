@@ -15,6 +15,7 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.fiscal_year_helpers import generate_fiscal_year
 from usaspending_api.common.helpers.generic_helper import get_generic_filters_message
 from usaspending_api.common.query_with_filters import QueryWithFilters
+from usaspending_api.search.filters.elasticsearch.filter import QueryType
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.recipient.models import RecipientProfile
@@ -74,10 +75,12 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
             # This is for two reasons - we don't store the `parent_recipient_hash` for awards,
             # and the original postgres version of the code also searched by parent_uei instead of the parent hash
             filters.pop("recipient_id")
-            filter_query = QueryWithFilters.generate_awards_elasticsearch_query(filters)
+            query_with_filters = QueryWithFilters(QueryType.AWARDS)
+            filter_query = query_with_filters.generate_elasticsearch_query(filters)
             filter_query.must.insert(0, Q("match", parent_uei=parent_uei))
         else:
-            filter_query = QueryWithFilters.generate_awards_elasticsearch_query(filters)
+            query_with_filters = QueryWithFilters(QueryType.AWARDS)
+            filter_query = query_with_filters.generate_elasticsearch_query(filters)
         # This has to be hard coded in since QueryWithFilters automatically uses "action_date" for awards
         for i in range(len(self.filters["time_period"])):
             filter_query.must[1].should[i].should[0] = Q(

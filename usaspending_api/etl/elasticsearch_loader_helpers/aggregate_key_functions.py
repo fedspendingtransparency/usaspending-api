@@ -75,15 +75,26 @@ def pop_county_agg_key(record: dict) -> Optional[str]:
     return _county_agg_key("pop", record)
 
 
+def sub_pop_county_agg_key(record: dict) -> Optional[str]:
+    return _county_agg_key("pop", record, True)
+
+
 def recipient_location_county_agg_key(record: dict) -> Optional[str]:
     return _county_agg_key("recipient_location", record)
 
 
-def _county_agg_key(location_type, record: dict) -> Optional[str]:
+def sub_recipient_location_county_agg_key(record: dict) -> Optional[str]:
+    return _county_agg_key("recipient_location", record, True)
+
+
+def _county_agg_key(location_type, record: dict, is_subaward: bool = False) -> Optional[str]:
     """Dictionary key order impacts Elasticsearch behavior!!!"""
-    if record[f"{location_type}_state_code"] is None or record[f"{location_type}_county_code"] is None:
+    subaward_str = "sub_" if is_subaward else ""
+    state_code_field = f"{subaward_str}{location_type}_state_code"
+    county_code_field = f"{subaward_str}{location_type}_county_code"
+    if record[state_code_field] is None or record[county_code_field] is None:
         return None
-    return f"{record[f'{location_type}_state_code']}{record[f'{location_type}_county_code']}"
+    return f"{record[state_code_field]}{record[county_code_field]}"
 
 
 def pop_congressional_agg_key(record: dict) -> Optional[str]:
@@ -94,6 +105,10 @@ def pop_congressional_cur_agg_key(record: dict) -> Optional[str]:
     return _congressional_agg_key("pop", True, record)
 
 
+def sub_pop_congressional_cur_agg_key(record: dict) -> Optional[str]:
+    return _congressional_agg_key("pop", True, record, True)
+
+
 def recipient_location_congressional_agg_key(record: dict) -> Optional[str]:
     return _congressional_agg_key("recipient_location", False, record)
 
@@ -102,12 +117,19 @@ def recipient_location_congressional_cur_agg_key(record: dict) -> Optional[str]:
     return _congressional_agg_key("recipient_location", True, record)
 
 
-def _congressional_agg_key(location_type, current, record: dict) -> Optional[str]:
+def sub_recipient_location_congressional_cur_agg_key(record: dict) -> Optional[str]:
+    return _congressional_agg_key("recipient_location", True, record, True)
+
+
+def _congressional_agg_key(location_type, current, record: dict, is_subaward: bool = False) -> Optional[str]:
     """Dictionary key order impacts Elasticsearch behavior!!!"""
     cur_str = "_current" if current else ""
-    if record[f"{location_type}_state_code"] is None or record[f"{location_type}_congressional_code{cur_str}"] is None:
+    subaward_str = "sub_" if is_subaward else ""
+    state_code_field = f"{subaward_str}{location_type}_state_code"
+    congressional_code_field = f"{subaward_str}{location_type}_congressional_code{cur_str}"
+    if record[state_code_field] is None or record[congressional_code_field] is None:
         return None
-    return f"{record[f'{location_type}_state_code']}{record[f'{location_type}_congressional_code{cur_str}']}"
+    return f"{record[state_code_field]}{record[congressional_code_field]}"
 
 
 def pop_state_agg_key(record: dict) -> Optional[str]:
