@@ -24,6 +24,7 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     create_award_type_aliases,
     execute_sql_statement,
     transform_award_data,
+    transform_subaward_data,
     transform_transaction_data,
 )
 from usaspending_api.etl.elasticsearch_loader_helpers.index_config import create_load_alias
@@ -103,19 +104,33 @@ class TestElasticSearchIndex:
             "write_alias": self.index_name + "-load-alias",
             "process_deletes": True,
         }
+
+        match self.index_type:
+            case "award":
+                es_id_field = "award_id"
+            case "subaward":
+                es_id_field = "broker_subaward_id"
+            case "transaction":
+                es_id_field = "transaction_id"
+            case "recipient" | "location":
+                es_id_field = "id"
+            case _:
+                raise Exception(f"No value for the `_id` field in Elasticsearch has been set for {self.index_type}")
+
         self.worker = TaskSpec(
             base_table=None,
             base_table_id=None,
             execute_sql_func=execute_sql_statement,
-            field_for_es_id="award_id" if self.index_type == "award" else "transaction_id",
+            field_for_es_id=es_id_field,
             index=self.index_name,
             is_incremental=None,
             name=f"{self.index_type} test worker",
             partition_number=None,
-            primary_key="award_id" if self.index_type == "award" else "transaction_id",
+            primary_key=es_id_field,
             sql=None,
             transform_func=None,
             view=None,
+            slices="auto",
         )
 
     def delete_index(self):
@@ -188,6 +203,8 @@ class TestElasticSearchIndex:
                 records = transform_award_data(self.worker, records)
             elif self.index_type == "transaction":
                 records = transform_transaction_data(self.worker, records)
+            elif self.index_type == "subaward":
+                records = transform_subaward_data(self.worker, records)
 
         for record in records:
             # Special cases where we convert array of JSON to an array of strings to avoid nested types
