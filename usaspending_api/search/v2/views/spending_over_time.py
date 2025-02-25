@@ -65,7 +65,15 @@ class SpendingOverTimeVisualizationViewSet(APIView):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_over_time.md"
 
     @staticmethod
-    def validate_request_data(json_data: dict, spending_level: SpendingLevel) -> Tuple[dict, dict]:
+    def validate_request_data(json_data: dict) -> Tuple[dict, dict]:
+        subawards_rule = [
+            {"name": "subawards", "key": "subawards", "type": "boolean", "default": False},
+        ]
+
+        subaward_ts = TinyShield(subawards_rule)
+
+        is_subaward = subaward_ts.block(json_data)["subawards"]
+
         program_activities_rule = [
             {
                 "name": "program_activities",
@@ -105,7 +113,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         models.extend(copy.deepcopy(PAGINATION))
 
         for m in models:
-            if spending_level == SpendingLevel.SUBAWARD and m["name"] == "time_period":
+            if is_subaward and m["name"] == "time_period":
                 m["object_keys"]["date_type"]["enum_values"] = [
                     "action_date",
                     "last_modified_date",
@@ -428,27 +436,8 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
     @cache_response()
     def post(self, request: Request) -> Response:
-        # First determine if we are using Subaward or Prime Awards / Transactions as this
-        # will impact some of the downstream filters in the JSON request
-        spending_type_models = [
-            {"name": "subawards", "key": "subawards", "type": "boolean", "default": False},
-            {
-                "name": "spending_level",
-                "key": "spending_level",
-                "type": "enum",
-                "enum_values": [level.value for level in SpendingLevel],
-                "optional": True,
-                "default": "transactions",
-            },
-        ]
-        spending_level_tiny_shield = TinyShield(spending_type_models)
-        spending_level_data = spending_level_tiny_shield.block(request.data)
-        self.spending_level = SpendingLevel(
-            "subawards" if spending_level_data["subawards"] else spending_level_data["spending_level"]
-        )
-
         self.original_filters = request.data.get("filters")
-        json_request, models = self.validate_request_data(request.data, self.spending_level)
+        json_request, models = self.validate_request_data(request.data)
         self.group = GROUPING_LOOKUP[json_request["group"]]
         self.subawards = (
             SpendingLevel(json_request.get("spending_level").lower()) == SpendingLevel.SUBAWARD

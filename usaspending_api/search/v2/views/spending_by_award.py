@@ -95,28 +95,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
     @cache_response()
     def post(self, request):
-        # First determine if we are using Subaward or Prime Awards / Transactions as this
-        # will impact some of the downstream filters in the JSON request
-        spending_type_models = [
-            {"name": "subawards", "key": "subawards", "type": "boolean", "default": False},
-            {
-                "name": "spending_level",
-                "key": "spending_level",
-                "type": "enum",
-                "enum_values": [level.value for level in SpendingLevel],
-                "optional": True,
-                "default": "transactions",
-            },
-        ]
-        spending_level_tiny_shield = TinyShield(spending_type_models)
-        spending_level_data = spending_level_tiny_shield.block(request.data)
-        self.spending_level = SpendingLevel(
-            "subawards" if spending_level_data["subawards"] else spending_level_data["spending_level"]
-        )
-
         """Return all awards matching the provided filters and limits"""
         self.original_filters = request.data.get("filters")
-        json_request, models = self.validate_request_data(request.data, self.spending_level)
+        json_request, models = self.validate_request_data(request.data)
         self.is_subaward = json_request["subawards"]
         self.constants = GLOBAL_MAP["subaward"] if self.is_subaward else GLOBAL_MAP["award"]
         filters = json_request.get("filters", {})
@@ -148,7 +129,15 @@ class SpendingByAwardVisualizationViewSet(APIView):
             return Response(self.construct_es_response_for_prime_awards(self.query_elasticsearch_awards()))
 
     @staticmethod
-    def validate_request_data(request_data, spending_level):
+    def validate_request_data(request_data):
+        subawards_rule = [
+            {"name": "subawards", "key": "subawards", "type": "boolean", "default": False},
+        ]
+
+        subaward_ts = TinyShield(subawards_rule)
+
+        is_subaward = subaward_ts.block(request_data)["subawards"]
+
         program_activities_rule = {
             "name": "program_activities",
             "type": "array",
@@ -201,7 +190,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         for m in models:
             if m["name"] in ("award_type_codes", "fields"):
                 m["optional"] = False
-            elif spending_level == SpendingLevel.SUBAWARD and m["name"] == "time_period":
+            elif is_subaward and m["name"] == "time_period":
                 m["object_keys"]["date_type"]["enum_values"] = [
                     "action_date",
                     "last_modified_date",
