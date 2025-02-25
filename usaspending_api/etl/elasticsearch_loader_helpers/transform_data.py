@@ -111,10 +111,10 @@ def transform_subaward_data(worker: TaskSpec, records: List[dict]) -> List[dict]
         "program_activities": convert_json_data_to_dict,
     }
     agg_key_creations = {
-        "sub_pop_congressional_cur_agg_key": funcs.pop_congressional_cur_agg_key,
-        "sub_pop_county_agg_key": funcs.pop_county_agg_key,
-        "sub_recipient_location_congressional_cur_agg_key": funcs.recipient_location_congressional_cur_agg_key,
-        "sub_recipient_location_county_agg_key": funcs.recipient_location_county_agg_key,
+        "sub_pop_congressional_cur_agg_key": funcs.sub_pop_congressional_cur_agg_key,
+        "sub_pop_county_agg_key": funcs.sub_pop_county_agg_key,
+        "sub_recipient_location_congressional_cur_agg_key": funcs.sub_recipient_location_congressional_cur_agg_key,
+        "sub_recipient_location_county_agg_key": funcs.sub_recipient_location_county_agg_key,
     }
     drop_fields = []
 
