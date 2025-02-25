@@ -24,7 +24,7 @@ from usaspending_api.common.validator.award_filter import AWARD_FILTER_W_FILTERS
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.references.abbreviations import code_to_state, fips_to_code
 from usaspending_api.references.models import PopCongressionalDistrict, PopCounty, RefCountryCode
-from usaspending_api.search.filters.elasticsearch.filter import _QueryType
+from usaspending_api.search.filters.elasticsearch.filter import QueryType
 from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
 from usaspending_api.search.filters.time_period.query_types import (
     AwardSearchTimePeriod,
@@ -198,23 +198,21 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
         if self.spending_level == SpendingLevel.SUBAWARD:
             self.search_type = SubawardSearch
-            generate_query_func = QueryWithFilters.generate_subawards_elasticsearch_query
             self.obligation_column = "subaward_amount"
             time_period_obj = SubawardSearchTimePeriod(
                 default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
             )
+            query_type = QueryType.SUBAWARDS
         else:
             self.obligation_column = "generated_pragmatic_obligation"
             if self.spending_level == SpendingLevel.AWARD:
                 self.search_type = AwardSearch
-                generate_query_func = QueryWithFilters.generate_awards_elasticsearch_query
                 time_period_type = AwardSearchTimePeriod
-                query_type = _QueryType.AWARDS
+                query_type = QueryType.AWARDS
             else:
-                generate_query_func = QueryWithFilters.generate_transactions_elasticsearch_query
                 self.search_type = TransactionSearch
                 time_period_type = TransactionSearchTimePeriod
-                query_type = _QueryType.TRANSACTIONS
+                query_type = QueryType.TRANSACTIONS
             base_time_period_obj = time_period_type(
                 default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
             )
@@ -222,7 +220,9 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
         filter_options = {}
         filter_options["time_period_obj"] = time_period_obj
-        filter_query = generate_query_func(self.filters, **filter_options)
+
+        query_with_filters = QueryWithFilters(query_type)
+        filter_query = query_with_filters.generate_elasticsearch_query(self.filters, **filter_options)
         result = self.query_elasticsearch(filter_query)
 
         raw_response = {
