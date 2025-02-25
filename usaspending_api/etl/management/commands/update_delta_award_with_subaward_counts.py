@@ -60,11 +60,16 @@ class Command(BaseCommand):
                                 OR a.subaward_count IS DISTINCT FROM COALESCE(st.subaward_count, 0)
                             )
                         )
-                WHEN matched THEN
+                WHEN MATCHED THEN
                     UPDATE SET
                         a.update_date=NOW(),
                         a.total_subaward_amount=st.total_subaward_amount,
                         a.subaward_count=COALESCE(st.subaward_count, 0)
+                WHEN NOT MATCHED BY SOURCE AND (a.total_subaward_amount > 0 OR a.subaward_count > 0) THEN
+                    UPDATE SET
+                        a.update_date=NOW(),
+                        a.total_subaward_amount=0,
+                        a.subaward_count=0
         """
         logger.info(
             f"Updating {award_table} columns (total_subaward_amount, subaward_count) based on rpt.subaward_search."
