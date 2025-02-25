@@ -192,7 +192,7 @@ account_download_load_sql_string = rf"""
         financial_accounts_by_awards.transaction_obligated_amount AS transaction_obligated_amount,
         financial_accounts_by_awards.gross_outlay_amount_by_award_cpe as gross_outlay_amount_fyb_to_period_end,
         financial_accounts_by_awards.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe as ussgl487200_downward_adj_prior_year_prepaid_undeliv_order_oblig,
-        financial_accounts_by_awards.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe as ussgl497200_downward_adj_of_prior_year_paid_deliv_orders_oblig,        
+        financial_accounts_by_awards.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe as ussgl497200_downward_adj_of_prior_year_paid_deliv_orders_oblig,
         EXTRACT(
             YEAR FROM (award_search.date_signed) + INTERVAL '3 months'
         ) AS award_base_action_date_fiscal_year,
