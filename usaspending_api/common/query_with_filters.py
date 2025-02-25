@@ -960,7 +960,8 @@ class QueryWithFilters:
             time_period_obj = SubawardSearchTimePeriod(
                 default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_MIN_DATE
             )
-            self.default_options = dict()
+
+            self.default_options = {"time_period_obj": time_period_obj}
 
         if time_period_obj is not None and (
             self.query_type == QueryType.AWARDS or self.query_type == QueryType.TRANSACTIONS
