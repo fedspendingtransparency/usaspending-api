@@ -1,3 +1,5 @@
+from usaspending_api.recipient.v2.lookups import SPECIAL_CASES
+
 SUBAWARD_SEARCH_COLUMNS = {
     # Broker Subaward Table Meta
     "broker_created_at": {"delta": "TIMESTAMP", "postgres": "TIMESTAMP"},
@@ -217,6 +219,7 @@ SUBAWARD_SEARCH_POSTGRES_COLUMNS = {
     **{col: "TSVECTOR" for col in SUBAWARD_SEARCH_POSTGRES_VECTORS},
 }
 
+special_cases = tuple(sc for sc in SPECIAL_CASES)
 
 subaward_search_create_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
@@ -565,15 +568,7 @@ subaward_search_load_sql_string = rf"""
         CONCAT(pop_state_fips.fips, pop_county_fips.county_numeric) AS place_of_perform_county_fips,
         UPPER(COALESCE(fpds.place_of_perform_county_na, fabs.place_of_perform_county_na)) AS pop_county_name,
         tas.program_activities,
-        CASE
-            WHEN rp.recipient_name IN ('MULTIPLE RECIPIENTS', 'REDACTED DUE TO PII', 'MULTIPLE FOREIGN RECIPIENTS', 'PRIVATE INDIVIDUAL', 'INDIVIDUAL RECIPIENT', 'MISCELLANEOUS FOREIGN AWARDEES')
-                THEN NULL
-            WHEN (rp.recipient_hash IS NULL OR rp.recipient_hash = '')
-                THEN NULL
-            WHEN (bs.ultimate_parent_uei IS null or bs.ultimate_parent_uei = '')
-                THEN CONCAT(rp.recipient_hash, '-R')
-            ELSE CONCAT(rp.recipient_hash, '-C')
-        END AS prime_award_recipient_id
+        RECIPIENT_HASH_AND_LEVELS.prime_recipient_award_id
     FROM
         raw.subaward AS bs
     LEFT OUTER JOIN
@@ -689,7 +684,6 @@ subaward_search_load_sql_string = rf"""
             rl_cd_county_grouped.county_number=LPAD(CAST(CAST(REGEXP_EXTRACT(rec.county_numeric, '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 3, '0')
             AND rl_cd_county_grouped.state_abbreviation=UPPER(bs.sub_legal_entity_state_code)
         )
-
     LEFT OUTER JOIN
         global_temp.psc
             ON fpds.product_or_service_code = psc.code
@@ -706,10 +700,28 @@ subaward_search_load_sql_string = rf"""
     LEFT OUTER JOIN county_fips AS rl_county_fips
         ON UPPER(rl_county_fips.county_name) = UPPER(COALESCE(fpds.legal_entity_county_name, fabs.legal_entity_county_name))
             AND rl_county_fips.state_alpha = bs.legal_entity_state_code
-    LEFT OUTER JOIN rpt.recipient_lookup rl
-        ON (rl.uei = bs.awardee_or_recipient_uei OR rl.duns = bs.awardee_or_recipient_uniqu)
-    LEFT OUTER JOIN rpt.recipient_profile rp
-        ON rp.recipient_hash = rl.recipient_hash
+    LEFT OUTER JOIN (
+        SELECT
+            recipient_hash || '-' || recipient_level AS prime_recipient_award_id,
+            uei,
+            recipient_unique_id
+        FROM
+            rpt.recipient_profile
+        WHERE
+            recipient_name NOT IN {special_cases}
+            AND
+            recipient_name IS NOT NULL
+            AND
+            recipient_level = CASE
+            WHEN parent_uei is null or parent_uei = ''
+                THEN 'R'
+                ELSE 'C'
+            END
+        GROUP BY
+            recipient_hash || '-' || recipient_level,
+            uei,
+            recipient_unique_id
+    ) RECIPIENT_HASH_AND_LEVELS ON (uei = bs.awardee_or_recipient_uei OR recipient_unique_id = bs.awardee_or_recipient_uniqu)
     -- Subaward numbers are crucial for identifying subawards and so those without subaward numbers won't be surfaced.
     WHERE bs.subaward_number IS NOT NULL
 """
