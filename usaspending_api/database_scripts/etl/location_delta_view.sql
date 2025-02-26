@@ -10,8 +10,7 @@ WITH country_cte AS (
 				'UNITED STATES'
 			ELSE
 				pop_country_name
-		END AS location_string,
-		'country' AS location_type
+		END AS country_name
 	FROM
 		rpt.transaction_search
 	WHERE
@@ -25,12 +24,28 @@ WITH country_cte AS (
 				'UNITED STATES'
 			ELSE
 				recipient_location_country_name
-		END AS location_string,
-		'country' AS location_type
+		END AS country_name
 	FROM
 		rpt.transaction_search
 	WHERE
 		recipient_location_country_name IS NOT NULL
+),
+state_cte AS (
+    SELECT
+        UPPER(sd.name) AS state_name,
+        'UNITED STATES' AS country_name
+    FROM
+        rpt.transaction_search
+    INNER JOIN
+        state_data sd ON recipient_location_state_name = UPPER(sd.name)
+    UNION
+    SELECT
+        UPPER(sd.name) AS state_name,
+        'UNITED STATES' AS country_name
+    FROM
+        rpt.transaction_search
+    INNER JOIN
+        state_data sd ON pop_state_name = UPPER(sd.name)
 ),
 county_cte AS (
 	SELECT
@@ -42,9 +57,8 @@ county_cte AS (
 				AND
 				pop_county_name ~ '^[a-zA-Z]'
 			THEN
-				CONCAT(pop_county_name, ' COUNTY', ', ', UPPER(sd.name))
-		END AS location_string,
-		'county' AS location_type,
+				CONCAT(pop_county_name, ' COUNTY')
+		END AS county_name,
 		CASE
 			WHEN
 				pop_country_name = 'UNITED STATES'
@@ -54,7 +68,9 @@ county_cte AS (
 				CONCAT(pop_state_fips, pop_county_code) ~ '^[0-9]{5}$'
 			THEN
 				CONCAT(pop_state_fips, pop_county_code)
-		END AS county_fips
+		END AS county_fips,
+        UPPER(sd.name) AS state_name,
+        'UNITED STATES' AS country_name
 	FROM
 		rpt.transaction_search
 	INNER JOIN
@@ -75,8 +91,7 @@ county_cte AS (
 				recipient_location_county_name ~ '^[a-zA-Z]'
 			THEN
 				CONCAT(recipient_location_county_name, ' COUNTY', ', ', UPPER(sd.name))
-		END AS location_string,
-		'county' AS location_type,
+		END AS county_name,
 		CASE
 			WHEN
 				recipient_location_country_name = 'UNITED STATES'
@@ -86,7 +101,9 @@ county_cte AS (
 				CONCAT(recipient_location_state_fips, recipient_location_county_code) ~ '^[0-9]{5}$'
 			THEN
 				CONCAT(recipient_location_state_fips, recipient_location_county_code)
-		END AS county_fips
+		END AS county_fips,
+        UPPER(sd.name) AS state_name,
+        'UNITED STATES' AS country_name
 	FROM
 		rpt.transaction_search
 	INNER JOIN
@@ -104,12 +121,13 @@ zip_cte AS (
 				pop_country_name = 'UNITED STATES'
 				AND
 				sd.name IS NOT NULL
-			    and
+                AND
 				pop_zip5 IS NOT NULL
 			THEN
-				CONCAT(pop_zip5, ', ', UPPER(sd.name))
-		END AS location_string,
-		'zip_code' AS location_type
+				pop_zip5
+		END AS zip_code,
+        UPPER(sd.name) AS state_name,
+        'UNITED STATES' AS country_name
 	FROM
 		rpt.transaction_search
 	INNER JOIN
@@ -123,14 +141,15 @@ zip_cte AS (
 				recipient_location_country_name = 'UNITED STATES'
 				AND
 				sd.name IS NOT NULL
-			    AND
+                AND
 				recipient_location_zip5 IS NOT NULL
 			THEN
-				CONCAT(recipient_location_zip5, ', ', UPPER(sd.name))
+				recipient_location_zip5
 			ELSE
 				NULL
-		END AS location_string,
-		'zip_code' AS location_type
+		END AS zip_code,
+        UPPER(sd.name) AS state_name,
+        'UNITED STATES' AS country_name
 	FROM
 		rpt.transaction_search
 	INNER JOIN
@@ -150,9 +169,10 @@ current_cd_cte AS (
 					recipient_location_congressional_code_current IS NOT NULL
 				)
 			THEN
-				CONCAT(sd.code, recipient_location_congressional_code_current, ', ', UPPER(sd.name))
-		END AS location_string,
-        'current_congressional_district' AS location_type
+				CONCAT(sd.code, recipient_location_congressional_code_current)
+		END AS current_cd,
+        UPPER(sd.name) AS state_name,
+        'UNITED STATES' AS country_name
     FROM
         rpt.transaction_search
     INNER JOIN
@@ -171,9 +191,10 @@ current_cd_cte AS (
 					pop_congressional_code_current IS NOT NULL
 				)
 			THEN
-				CONCAT(sd.code, pop_congressional_code_current, ', ', UPPER(sd.name))
-		END AS location_string,
-        'current_congressional_district' AS location_type
+				CONCAT(sd.code, pop_congressional_code_current)
+		END AS current_cd,
+        UPPER(sd.name) AS state_name,
+        'UNITED STATES' AS country_name
     FROM
         rpt.transaction_search
     INNER JOIN
@@ -193,9 +214,10 @@ original_cd_cte AS (
 					recipient_location_congressional_code IS NOT NULL
 				)
 			THEN
-				CONCAT(UPPER(sd.code), recipient_location_congressional_code, ', ', UPPER(sd.name))
-		END AS location_string,
-        'original_congressional_district' AS location_type
+				CONCAT(UPPER(sd.code), recipient_location_congressional_code)
+		END AS original_cd,
+        UPPER(sd.name) AS state_name,
+        'UNITED STATES' AS country_name
     FROM
         rpt.transaction_search
     INNER JOIN
@@ -214,9 +236,10 @@ original_cd_cte AS (
 					pop_congressional_code IS NOT NULL
 				)
 			THEN
-				CONCAT(UPPER(sd.code), pop_congressional_code, ', ', UPPER(sd.name))
-		END AS location_string,
-        'original_congressional_district' AS location_type
+				CONCAT(UPPER(sd.code), pop_congressional_code)
+		END AS original_cd,
+        UPPER(sd.name) AS state_name,
+        'UNITED STATES' AS country_name
     FROM
         rpt.transaction_search
     INNER JOIN
@@ -224,148 +247,169 @@ original_cd_cte AS (
 	WHERE
 		pop_country_name IS NOT NULL
 ),
-state_cte AS (
+domestic_city_cte AS (
     SELECT
-        UPPER(sd.name) AS location_string,
-        'state' AS location_type
-    FROM
-        rpt.transaction_search
-    INNER JOIN
-        state_data sd ON recipient_location_state_name = UPPER(sd.name)
-    UNION
-    SELECT
-        UPPER(sd.name) AS location_string,
-        'state' AS location_type
-    FROM
-        rpt.transaction_search
-    INNER JOIN
-        state_data sd ON pop_state_name = UPPER(sd.name)
-),
-city_cte AS (
-    SELECT
-        CASE
-            WHEN
-                recipient_location_country_name = 'UNITED STATES'
-                AND
-                (
-                    sd.code IS NOT NULL
-                    AND
-                    recipient_location_city_name IS NOT NULL
-                )
-            THEN
-                CONCAT(UPPER(recipient_location_city_name), ', ', UPPER(sd.name))
-        END AS location_string,
-        'city' AS location_type
+        recipient_location_city_name AS city_name,
+        UPPER(sd.name) AS state_name,
+        'UNITED STATES' AS country_name
     FROM rpt.transaction_search
     INNER JOIN
         state_data sd ON recipient_location_state_name = UPPER(sd.name)
     WHERE
-        recipient_location_country_name IS NOT NULL
+        recipient_location_country_name IN ('UNITED STATES', 'UNITED STATES OF AMERICA')
         AND
         recipient_location_city_name NOT LIKE '%,%'
     UNION
     SELECT
-        CASE
-            WHEN
-                pop_country_name = 'UNITED STATES'
-                AND
-                (
-                    sd.code IS NOT NULL
-                    AND
-                    pop_congressional_code IS NOT NULL
-                )
-            THEN
-                CONCAT(UPPER(pop_city_name), ', ', UPPER(sd.name))
-        END AS location_string,
-        'city' AS location_type
+        pop_city_name AS city_name,
+        UPPER(sd.name) AS state_name,
+        'UNITED STATES' AS country_name
     FROM rpt.transaction_search
     INNER JOIN
         state_data sd ON pop_state_name = UPPER(sd.name)
     WHERE
-        pop_country_name IS NOT NULL
+        pop_country_name IN ('UNITED STATES', 'UNITED STATES OF AMERICA')
         AND
         pop_city_name NOT LIKE '%,%'
 ),
+foreign_city_cte AS (
+    SELECT
+        recipient_location_city_name AS city_name,
+        recipient_location_country_name AS country_name
+    FROM rpt.transaction_search
+    WHERE
+        recipient_location_city_name IS NOT NULL
+        AND
+        recipient_location_country_name IS NOT NULL
+        AND
+        recipient_location_country_name NOT IN ('UNITED STATES', 'UNITED STATES OF AMERICA')
+    UNION
+    SELECT
+        pop_city_name AS city_name,
+        pop_country_name AS country_name
+    FROM rpt.transaction_search
+    WHERE
+        pop_city_name IS NOT NULL
+        AND
+        pop_country_name IS NOT NULL
+        AND
+        pop_country_name NOT IN ('UNITED STATES', 'UNITED STATES OF AMERICA')
+),
 select_cte AS (
     SELECT
-        location_string,
-        location_type,
-        NULL AS county_fips
+        NULL AS city_name,
+        NULL AS zip_code,
+        NULL AS county_name,
+        NULL AS county_fips,
+        NULL AS current_cd,
+        NULL AS original_cd,
+        NULL AS state_name,
+        country_name
     FROM
         country_cte
-    GROUP BY
-        location_string,
-        location_type
     UNION
     SELECT
-        location_string,
-        location_type,
-        county_fips
-    FROM
-        county_cte
-    GROUP BY
-        location_string,
-        location_type,
-        county_fips
-    UNION
-    SELECT
-        location_string,
-        location_type,
-        NULL AS county_fips
-    FROM
-        zip_cte
-    GROUP BY
-        location_string,
-        location_type
-    UNION
-    SELECT
-        location_string,
-        location_type,
-        NULL AS county_fips
-    FROM
-        current_cd_cte
-    GROUP BY
-        location_string,
-        location_type
-    UNION
-    SELECT
-        location_string,
-        location_type,
-        NULL AS county_fips
-    FROM
-        original_cd_cte
-    GROUP BY
-        location_string,
-        location_type
-    UNION
-    SELECT
-        location_string,
-        location_type,
-        NULL AS county_fips
-    FROM
-        city_cte
-    GROUP BY
-        location_string,
-        location_type
-    UNION
-    SELECT
-        location_string,
-        location_type,
-        NULL AS county_fips
+        NULL AS city_name,
+        NULL AS zip_code,
+        NULL AS county_name,
+        NULL AS county_fips,
+        NULL AS current_cd,
+        NULL AS original_cd,
+        state_name,
+        country_name
     FROM
         state_cte
-    GROUP BY
-        location_string,
-        location_type
+    UNION
+    SELECT
+        NULL AS city_name,
+        NULL AS zip_code,
+        county_name,
+        county_fips,
+        NULL AS current_cd,
+        NULL AS original_cd,
+        state_name,
+        country_name
+    FROM
+        county_cte
+    UNION
+    SELECT
+        NULL AS city_name,
+        zip_code,
+        NULL AS county_name,
+        NULL AS county_fips,
+        NULL AS current_cd,
+        NULL AS original_cd,
+        state_name,
+        country_name
+    FROM
+        zip_cte
+    UNION
+    SELECT
+        NULL AS city_name,
+        NULL AS zip_code,
+        NULL AS county_name,
+        NULL AS county_fips,
+        current_cd,
+        NULL AS original_cd,
+        state_name,
+        country_name
+    FROM
+        current_cd_cte
+    UNION
+    SELECT
+        NULL AS city_name,
+        NULL AS zip_code,
+        NULL AS county_name,
+        NULL AS county_fips,
+        NULL AS current_cd,
+        original_cd,
+        state_name,
+        country_name
+    FROM
+        original_cd_cte
+    UNION
+    SELECT
+        city_name,
+        NULL AS zip_code,
+        NULL AS county_name,
+        NULL AS county_fips,
+        NULL AS current_cd,
+        NULL AS original_cd,
+        state_name,
+        country_name
+    FROM
+        domestic_city_cte
+    UNION
+    SELECT
+        city_name,
+        NULL AS zip_code,
+        NULL AS county_name,
+        NULL AS county_fips,
+        NULL AS current_cd,
+        NULL AS original_cd,
+        NULL AS state_name,
+        country_name
+    FROM
+        foreign_city_cte
 )
 SELECT
-    ROW_NUMBER() OVER (ORDER BY location_string, location_type) AS id,
-    location_string,
-    location_type,
-    county_fips
+    ROW_NUMBER() OVER (ORDER BY city_name, state_name, country_name) AS id,
+    city_name,
+    zip_code,
+    county_name,
+    county_fips,
+    current_cd,
+    original_cd,
+    state_name,
+    country_name
 FROM
     select_cte
 GROUP BY
-    location_string,
-    location_type,
-    county_fips
+    city_name,
+    zip_code,
+    county_name,
+    county_fips,
+    current_cd,
+    original_cd,
+    state_name,
+    country_name

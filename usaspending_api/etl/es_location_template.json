@@ -35,7 +35,7 @@
   },
   "mappings": {
     "properties": {
-      "location_string": {
+      "city": {
         "type": "text",
         "fields": {
           "contains": {
@@ -47,9 +47,25 @@
           }
         }
       },
-      "location_type": {
+      "zip_code": {
         "type": "text",
         "fields": {
+          "contains": {
+            "type": "text",
+            "analyzer": "contains_analyzer"
+          },
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "county": {
+        "type": "text",
+        "fields": {
+          "contains": {
+            "type": "text",
+            "analyzer": "contains_analyzer"
+          },
           "keyword": {
             "type": "keyword"
           }
@@ -66,7 +82,55 @@
             "type": "keyword"
           }
         }
+      },
+      "current_cd": {
+        "type": "text",
+        "fields": {
+          "contains": {
+            "type": "text",
+            "analyzer": "contains_analyzer"
+          },
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "original_cd": {
+        "type": "text",
+        "fields": {
+          "contains": {
+            "type": "text",
+            "analyzer": "contains_analyzer"
+          },
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "state": {
+        "type": "text",
+        "fields": {
+          "contains": {
+            "type": "text",
+            "analyzer": "contains_analyzer"
+          },
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "country": {
+        "type": "text",
+        "fields": {
+          "contains": {
+            "type": "text",
+            "analyzer": "contains_analyzer"
+          },
+          "keyword": {
+            "type": "keyword"
+          }
+        }
       }
-  }
+    }
   }
 }
