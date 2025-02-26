@@ -34,9 +34,6 @@ FROM (
                 CASE
                     WHEN prior_year_adjustment = 'X' OR prior_year_adjustment IS NULL
                         THEN obligations_incurred_by_program_object_class_cpe
-                            + deobligations_recoveries_refund_pri_program_object_class_cpe
-                            + COALESCE(ussgl480110_rein_undel_ord_cpe, 0)
-                            + COALESCE(ussgl490110_rein_deliv_ord_cpe, 0)
                     ELSE 0
                 END
             ) AS object_class_pa_obligated_amount

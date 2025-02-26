@@ -238,7 +238,9 @@ class SubawardSearch(models.Model):
     keyword_ts_vector = SearchVectorField(null=True)
     award_ts_vector = SearchVectorField(null=True)
     recipient_name_ts_vector = SearchVectorField(null=True)
+
     program_activities = models.JSONField(null=True)
+    prime_award_recipient_id = models.TextField(null=True, blank=True)
 
     class Meta:
         db_table = "subaward_search"
