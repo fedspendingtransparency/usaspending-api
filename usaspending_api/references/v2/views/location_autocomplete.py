@@ -25,6 +25,18 @@ class LocationAutocompleteViewSet(APIView):
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/location.md"
 
+    # Which field(s) to return along with the matching field
+    es_additional_fields = {
+        "city_name": ["state_name", "country_name"],
+        "zip_code": ["state_name"],
+        "county_name": ["county_fips", "state_name"],
+        "county_fips": None,
+        "current_cd": ["state_name"],
+        "original_cd": ["state_name"],
+        "state_name": ["country_name"],
+        "country_name": None,
+    }
+
     @cache_response()
     def post(self, request):
         es_results: ES_Response = self._query_elasticsearch(request.data["search_text"], request.data["limit"])
@@ -59,13 +71,23 @@ class LocationAutocompleteViewSet(APIView):
         search_text = search_text.replace("-", "")
 
         should_query = [
-            ES_Q("match_phrase_prefix", **{"location_string": {"query": search_text, "boost": 5}}),
-            ES_Q("match_phrase_prefix", **{"location_string.contains": {"query": search_text, "boost": 3}}),
-            ES_Q("match", **{"location_string": {"query": search_text, "operator": "and", "boost": 1}}),
+            query
+            for search_field in self.es_additional_fields.keys()
+            for query in [
+                ES_Q("match_phrase_prefix", **{f"{search_field}": {"query": search_text, "boost": 5}}),
+                ES_Q("match_phrase_prefix", **{f"{search_field}.contains": {"query": search_text, "boost": 3}}),
+                ES_Q("match", **{f"{search_field}": {"query": search_text, "operator": "and", "boost": 1}}),
+            ]
         ]
 
         query = ES_Q("bool", should=should_query, minimum_should_match=1)
-        search: LocationSearch = LocationSearch().extra(size=limit).query(query)
+        search: LocationSearch = (
+            LocationSearch()
+            .extra(size=limit)
+            .highlight(*self.es_additional_fields)
+            .highlight_options(order="score", pre_tags=[""], post_tags=[""])
+            .query(query)
+        )
         results: ES_Response = search.execute()
 
         return results
@@ -81,14 +103,31 @@ class LocationAutocompleteViewSet(APIView):
 
         Example:
             {
-                "countries": ["Denmark", "Sweden"],
+                "countries": [
+                    {
+                        "country_name": "Denmark"
+                    },
+                    {
+                        "country_name": "Sweden"
+                    }
+                ],
                 "cities": [
-                    "Denver, Colorado, United States",
-                    "Camden, Arkansas, United States"
+                    {
+                        "city_name": "Denver",
+                        "state_name": "Colorado",
+                        "country_name": "United States"
+                    },
+                    {
+                        "city_name": "Capelle aan den IJssel",
+                        "state_name": None,
+                        "country_name": "Netherlands"
+                    }
                 ],
                 "counties": [
                     {
-                        "county_name": "Camden County, Arkansas, United States",
+                        "county_name": "Camden County",
+                        "state_name": "Arkansas",
+                        "country_name": "United States",
                         "county_fips": "12345"
                     }
                 ]
@@ -106,24 +145,25 @@ class LocationAutocompleteViewSet(APIView):
         # Key: Value of the `location_type` field on the ES docs
         # Value: Lists from above that will contain the matches for that location type
         location_type_to_list_lookup = {
-            "country": countries,
-            "city": cities,
-            "state": states,
-            "county": counties,
+            "country_name": countries,
+            "city_name": cities,
+            "state_name": states,
+            "county_name": counties,
             "zip_code": zip_codes,
-            "original_congressional_district": original_cds,
-            "current_congressional_district": current_cds,
+            "original_cd": original_cds,
+            "current_cd": current_cds,
         }
 
         for doc in es_results:
-            if doc.location_type == "county":
-                location = {"county_name": doc.location_string, "county_fips": doc.county_fips}
-            elif doc.location_type in ("original_congressional_district", "current_congressional_district"):
-                location = f"{doc.location_string[:2]}-{doc.location_string[2:]}"
-            else:
-                location = doc.location_string
-
-            location_type_to_list_lookup[doc.location_type].append(location)
+            highlights = doc.meta.highlight
+            for highlighted_field in highlights:
+                for es_highlight_value in highlights[highlighted_field]:
+                    location: dict[str, str] = {highlighted_field: es_highlight_value}
+                    if self.es_additional_fields[highlighted_field] is not None:
+                        for additional_field in self.es_additional_fields[highlighted_field]:
+                            location[additional_field] = doc[additional_field]
+                    if location not in location_type_to_list_lookup[highlighted_field]:
+                        location_type_to_list_lookup[highlighted_field].append(location)
 
         results = {
             "countries": countries if countries else None,
