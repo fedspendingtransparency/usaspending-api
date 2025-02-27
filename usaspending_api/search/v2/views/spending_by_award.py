@@ -135,7 +135,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 "type": "enum",
                 "enum_values": [SpendingLevel.AWARD.value, SpendingLevel.SUBAWARD.value],
                 "optional": True,
-                "default": "awards",
+                "default": SpendingLevel.AWARD.value,
             },
         ]
 
