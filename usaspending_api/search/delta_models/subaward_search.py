@@ -316,22 +316,19 @@ subaward_search_load_sql_string = rf"""
             congressional_district_no
         FROM cd_city_grouped_rownum
         WHERE row_num = 1
-    )
+    ),
     simple_recipient_profile AS (
         SELECT
             recipient_hash,
+            recipient_level,
             parent_uei,
-            recipient_level
+            recipient_hash || '-' || recipient_level AS prime_award_recipient_id
         FROM
             rpt.recipient_profile
         WHERE
             recipient_level != 'P'
         AND
             recipient_name NOT IN {special_cases}
-        GROUP BY
-            recipient_hash,
-            parent_uei,
-            recipient_level
     )
     INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
     (
@@ -584,7 +581,7 @@ subaward_search_load_sql_string = rf"""
         CONCAT(pop_state_fips.fips, pop_county_fips.county_numeric) AS place_of_perform_county_fips,
         UPPER(COALESCE(fpds.place_of_perform_county_na, fabs.place_of_perform_county_na)) AS pop_county_name,
         tas.program_activities,
-        srp.recipient_hash || '-' || srp.recipient_level AS prime_award_recipient_id
+        srp.prime_award_recipient_id
     FROM
         raw.subaward AS bs
     LEFT OUTER JOIN
