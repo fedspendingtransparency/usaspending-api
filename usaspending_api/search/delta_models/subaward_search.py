@@ -568,7 +568,7 @@ subaward_search_load_sql_string = rf"""
         CONCAT(pop_state_fips.fips, pop_county_fips.county_numeric) AS place_of_perform_county_fips,
         UPPER(COALESCE(fpds.place_of_perform_county_na, fabs.place_of_perform_county_na)) AS pop_county_name,
         tas.program_activities,
-        RECIPIENT_HASH_AND_LEVELS.prime_recipient_award_id
+        RECIPIENT_HASH_AND_LEVEL.recipient_hash || '-' || RECIPIENT_HASH_AND_LEVEL.recipient_level AS prime_award_recipient_id
     FROM
         raw.subaward AS bs
     LEFT OUTER JOIN
@@ -702,26 +702,41 @@ subaward_search_load_sql_string = rf"""
             AND rl_county_fips.state_alpha = bs.legal_entity_state_code
     LEFT OUTER JOIN (
         SELECT
-            recipient_hash || '-' || recipient_level AS prime_recipient_award_id,
-            uei,
-            recipient_unique_id
+            recipient_hash,
+            recipient_level
         FROM
             rpt.recipient_profile
         WHERE
+            recipient_level != 'P'
+            AND
             recipient_name NOT IN {special_cases}
-            AND
-            recipient_name IS NOT NULL
-            AND
-            recipient_level = CASE
-            WHEN parent_uei is null or parent_uei = ''
-                THEN 'R'
-                ELSE 'C'
-            END
         GROUP BY
-            recipient_hash || '-' || recipient_level,
-            uei,
-            recipient_unique_id
-    ) RECIPIENT_HASH_AND_LEVELS ON (uei = bs.awardee_or_recipient_uei OR recipient_unique_id = bs.awardee_or_recipient_uniqu)
+            recipient_hash,
+            recipient_level
+    ) RECIPIENT_HASH_AND_LEVEL ON (
+        RECIPIENT_HASH_AND_LEVEL.recipient_hash = REGEXP_REPLACE(
+            MD5(
+                UPPER(
+                    CASE
+                        WHEN bs.awardee_or_recipient_uei IS NOT NULL
+                            THEN CONCAT("uei-", bs.awardee_or_recipient_uei)
+                        WHEN bs.awardee_or_recipient_uniqu IS NOT NULL
+                            THEN CONCAT("duns-", bs.awardee_or_recipient_uniqu)
+                        ELSE
+                            CONCAT("name-", COALESCE(bs.awardee_or_recipient_legal, ""))
+                    END
+                )
+            ),
+            '^(\.{8})(\.{4})(\.{4})(\.{4})(\.{12})$',
+            '\$1-\$2-\$3-\$4-\$5'
+        )
+        AND
+        RECIPIENT_HASH_AND_LEVEL.recipient_level = CASE
+            WHEN bs.ultimate_parent_uei IS NULL OR bs.ultimate_parent_uei = ''
+                THEN 'R'
+            ELSE 'C'
+        END
+    )
     -- Subaward numbers are crucial for identifying subawards and so those without subaward numbers won't be surfaced.
     WHERE bs.subaward_number IS NOT NULL
 """
