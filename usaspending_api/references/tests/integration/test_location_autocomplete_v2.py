@@ -98,7 +98,7 @@ def test_exact_match(client, monkeypatch, location_data_fixture, elasticsearch_l
     assert len(response.data) == 3
     assert response.data["count"] == 1
     assert response.data["messages"] == [""]
-    assert response.data["results"] == {"countries": ["DENMARK"]}
+    assert response.data["results"] == {"countries": [{"country_name": "DENMARK"}]}
 
 
 def test_multiple_types_of_matches(client, monkeypatch, location_data_fixture, elasticsearch_location_index):
@@ -119,11 +119,21 @@ def test_multiple_types_of_matches(client, monkeypatch, location_data_fixture, e
     assert response.data["count"] == 4
     assert response.data["messages"] == [""]
     assert response.data["results"] == {
-        "countries": ["DENMARK"],
-        "cities": ["DENVER, COLORADO"],
+        "countries": [{"country_name": "DENMARK"}],
+        "cities": [{"city_name": "DENVER", "state_name": "COLORADO", "country_name": "UNITED STATES"}],
         "counties": [
-            {"county_fips": "22222", "county_name": "DENVER COUNTY, COLORADO"},
-            {"county_fips": "13444", "county_name": "CAMDEN COUNTY, GEORGIA"},
+            {
+                "county_fips": "22222",
+                "county_name": "DENVER COUNTY",
+                "state_name": "COLORADO",
+                "country_name": "UNITED STATES",
+            },
+            {
+                "county_fips": "13444",
+                "county_name": "CAMDEN COUNTY",
+                "state_name": "GEORGIA",
+                "country_name": "UNITED STATES",
+            },
         ],
     }
 
@@ -146,8 +156,8 @@ def test_congressional_district_results(client, monkeypatch, location_data_fixtu
     assert response.data["count"] == 2
     assert response.data["messages"] == [""]
     assert response.data["results"] == {
-        "districts_current": ["CA-34, CALIFORNIA"],
-        "districts_original": ["CA-34, CALIFORNIA"],
+        "districts_current": [{"current_cd": "CA-34", "state_name": "CALIFORNIA", "country_name": "UNITED STATES"}],
+        "districts_original": [{"original_cd": "CA-34", "state_name": "CALIFORNIA", "country_name": "UNITED STATES"}],
     }
 
 
