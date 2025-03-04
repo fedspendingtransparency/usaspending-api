@@ -3,7 +3,7 @@ click==8.1.7
 docker==7.0.0
 dredd-hooks==0.2.0
 flake8==7.1.0
-importlib-metadata==7.2.*
+importlib-metadata==8.5.0
 mock==5.1.*
 model-bakery==1.17.*
 pip==23.2.*
