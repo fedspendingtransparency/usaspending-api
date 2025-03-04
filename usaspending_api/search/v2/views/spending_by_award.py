@@ -1,23 +1,31 @@
 import copy
+import logging
 from ast import literal_eval
-
 from sys import maxsize
 from typing import (
     Any,
     List,
 )
+
 from django.conf import settings
 from django.db.models import F
 from django.utils.text import slugify
+from elasticsearch_dsl import Q as ES_Q
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from elasticsearch_dsl import Q as ES_Q
 
-import logging
 from usaspending_api.awards.models import Award
-from usaspending_api.recipient.models import RecipientProfile
-from usaspending_api.references.models import Agency, ToptierAgencyPublishedDABSView
 from usaspending_api.awards.v2.filters.sub_award import subaward_filter
+from usaspending_api.awards.v2.lookups.elasticsearch_lookups import (
+    CONTRACT_SOURCE_LOOKUP,
+    IDV_SOURCE_LOOKUP,
+    LOAN_SOURCE_LOOKUP,
+    NON_LOAN_ASST_SOURCE_LOOKUP,
+    contracts_mapping,
+    idv_mapping,
+    loan_mapping,
+    non_loan_assist_mapping,
+)
 from usaspending_api.awards.v2.lookups.lookups import (
     contract_type_mapping,
     idv_type_mapping,
@@ -25,36 +33,26 @@ from usaspending_api.awards.v2.lookups.lookups import (
     non_loan_assistance_type_mapping,
     subaward_mapping,
 )
-from usaspending_api.awards.v2.lookups.elasticsearch_lookups import (
-    contracts_mapping,
-    idv_mapping,
-    loan_mapping,
-    non_loan_assist_mapping,
-    CONTRACT_SOURCE_LOOKUP,
-    IDV_SOURCE_LOOKUP,
-    NON_LOAN_ASST_SOURCE_LOOKUP,
-    LOAN_SOURCE_LOOKUP,
-)
-from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, SubawardSearch
-
-
-from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
+from usaspending_api.common.api_versioning import API_TRANSFORM_FUNCTIONS, api_transformations
 from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, SubawardSearch
+from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.common.helpers.api_helper import raise_if_award_types_not_valid_subset, raise_if_sort_key_not_valid
-from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.helpers.generic_helper import (
     get_generic_filters_message,
 )
+from usaspending_api.common.query_with_filters import QueryWithFilters
+from usaspending_api.common.recipient_lookups import annotate_prime_award_recipient_id
 from usaspending_api.common.validator.award_filter import AWARD_FILTER_NO_RECIPIENT_ID
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
-from usaspending_api.common.recipient_lookups import annotate_prime_award_recipient_id
-from usaspending_api.common.exceptions import UnprocessableEntityException
+from usaspending_api.recipient.models import RecipientProfile
+from usaspending_api.references.models import Agency, ToptierAgencyPublishedDABSView
 from usaspending_api.search.filters.elasticsearch.filter import QueryType
 from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
 from usaspending_api.search.filters.time_period.query_types import AwardSearchTimePeriod, SubawardSearchTimePeriod
+from usaspending_api.search.v2.views.enums import SpendingLevel
 from usaspending_api.submissions.models import SubmissionAttributes
-
 
 logger = logging.getLogger(__name__)
 
@@ -129,13 +127,21 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
     @staticmethod
     def validate_request_data(request_data):
-        subawards_rule = [
+        spending_type_models = [
             {"name": "subawards", "key": "subawards", "type": "boolean", "default": False},
+            {
+                "name": "spending_level",
+                "key": "spending_level",
+                "type": "enum",
+                "enum_values": [SpendingLevel.AWARD.value, SpendingLevel.SUBAWARD.value],
+                "optional": True,
+                "default": SpendingLevel.AWARD.value,
+            },
         ]
 
-        subaward_ts = TinyShield(subawards_rule)
-
-        is_subaward = subaward_ts.block(request_data)["subawards"]
+        subaward_ts = TinyShield(spending_type_models)
+        tiny_shield_response = subaward_ts.block(request_data)
+        is_subaward = tiny_shield_response["subawards"] or tiny_shield_response["spending_level"] == "subawards"
 
         program_activities_rule = {
             "name": "program_activities",
