@@ -1,14 +1,14 @@
 import json
 import logging
-import psycopg2
 import re
-
 from dataclasses import dataclass
-from django.conf import settings
-from elasticsearch import Elasticsearch
 from pathlib import Path
 from random import choice
 from typing import Any, Generator, List, Optional, Union
+
+import psycopg2
+from django.conf import settings
+from elasticsearch import Elasticsearch
 
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 
@@ -71,6 +71,26 @@ def convert_json_data_to_dict(json_data: Union[dict, list, str]) -> Optional[Uni
     return json_data
 
 
+def dump_dict_to_string(json_data: dict[str, str]) -> str | None:
+    """Serialize provided JSON-compatible object (dict) to a JSON formatted string so that is can be stored
+    in Elasticsearch as an `object` type.
+
+    Args:
+        json_data: JSON-compatible object (dict)
+
+    Returns:
+        JSON formatted string or None
+    """
+
+    if json_data is None or len(json_data) == 0:
+        return None
+
+    if isinstance(json_data, dict):
+        return json.dumps(json_data)
+    else:
+        raise ValueError(f"Cannot serialize non-dict to string: {json_data}")
+
+
 def convert_json_array_to_list_of_str(json_data: Union[list, str]) -> Optional[List[str]]:
     """
     Convert provided data (list, or str data) into a string representation of an array of JSON objects
@@ -127,7 +147,7 @@ def execute_sql_statement(cmd: str, results: bool = False, verbose: bool = False
 def db_rows_to_dict(cursor: psycopg2.extensions.cursor) -> List[dict]:
     """Return a dictionary of all row results from a database connection cursor"""
     columns = [col[0] for col in cursor.description]
-    return [dict(zip(columns, row)) for row in cursor.fetchall()]
+    return [dict(zip(columns, row, strict=False)) for row in cursor.fetchall()]
 
 
 def filter_query(column: str, values: list, query_type: str = "match_phrase") -> dict:
