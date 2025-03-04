@@ -88,13 +88,15 @@ This endpoint returns a list of the top results of Recipient DUNS sorted by the 
                         "amount": 46069068318.25,
                         "recipient_id": null,
                         "name": "MULTIPLE RECIPIENTS",
-                        "code": null
+                        "code": null,
+                        "total_outlays": null,
                     },
                     {
                         "amount": 17388378311.33,
                         "recipient_id": "005a8812-bab5-2780-533b-b62c33271882-C",
                         "name": "LOCKHEED MARTIN CORPORATION",
-                        "code": "008016958"
+                        "code": "008016958",
+                        "total_outlays": null,
                     }
                 ],
                 "messages": [
@@ -112,6 +114,7 @@ This endpoint returns a list of the top results of Recipient DUNS sorted by the 
 + `code` (required, string, nullable)
     `code` is a user-displayable code (such as a program activity or NAICS code, but **not** a database ID). When no such code is relevant, return a `null`.
 + `amount` (required, number)
++ `total_outlays` (required, number, nullable)
 
 ## PageMetadataObject (object)
 + `page` (required, number)

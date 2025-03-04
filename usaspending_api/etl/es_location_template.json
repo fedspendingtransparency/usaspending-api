@@ -15,13 +15,27 @@
           "filter": [
             "uppercase"
           ]
+        },
+        "edge_ngram_analyzer": {
+          "tokenizer": "edge_ngram_tokenizer"
+        }
+      },
+      "tokenizer": {
+        "edge_ngram_tokenizer": {
+          "type": "edge_ngram",
+          "min_gram": 2,
+          "max_gram": 10,
+          "token_chars": [
+            "letter",
+            "digit"
+          ]
         }
       }
     }
   },
   "mappings": {
     "properties": {
-      "country_name": {
+      "location_string": {
         "type": "text",
         "fields": {
           "contains": {
@@ -33,84 +47,15 @@
           }
         }
       },
-      "state_name": {
+      "location_type": {
         "type": "text",
         "fields": {
-          "contains": {
-            "type": "text",
-            "analyzer": "contains_analyzer"
-          },
           "keyword": {
             "type": "keyword"
           }
         }
       },
-      "cities": {
-        "type": "text",
-        "fields": {
-          "contains": {
-            "type": "text",
-            "analyzer": "contains_analyzer"
-          },
-          "keyword": {
-            "type": "keyword"
-          }
-        }
-      },
-      "counties": {
-        "type": "nested",
-        "properties": {
-          "fips": {
-            "type": "text",
-            "fields": {
-              "contains": {
-                "type": "text",
-                "analyzer": "contains_analyzer"
-              },
-              "keyword": {
-                "type": "keyword"
-              }
-            }
-          },
-          "name": {
-            "type": "text",
-            "fields": {
-              "contains": {
-                "type": "text",
-                "analyzer": "contains_analyzer"
-              },
-              "keyword": {
-                "type": "keyword"
-              }
-            }
-          }
-        }
-      },
-      "zip_codes": {
-        "type": "text",
-        "fields": {
-          "contains": {
-            "type": "text",
-            "analyzer": "contains_analyzer"
-          },
-          "keyword": {
-            "type": "keyword"
-          }
-        }
-      },
-      "current_congressional_districts": {
-        "type": "text",
-        "fields": {
-          "contains": {
-            "type": "text",
-            "analyzer": "contains_analyzer"
-          },
-          "keyword": {
-            "type": "keyword"
-          }
-        }
-      },
-      "original_congressional_districts": {
+      "county_fips": {
         "type": "text",
         "fields": {
           "contains": {
@@ -122,6 +67,6 @@
           }
         }
       }
-    }
+  }
   }
 }

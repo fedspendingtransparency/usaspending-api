@@ -117,7 +117,9 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
         logger.info(format_log(f"Using extract_sql:\n{extract_sql}", action="Extract"))
         df = self.spark.sql(extract_sql)
         df_record_count = df.count()  # safe to doublecheck the count of the *actual* data being processed
-
+        if not df_record_count:
+            logger.info(format_log("No records found. Index will not be updated."))
+            return
         if self.config["extra_null_partition"]:
             # Data which may have a "NULL Partition" is parent-child grouped data, where child records are grouped by
             # the config["primary_key"], which is the PK field of the parent records.

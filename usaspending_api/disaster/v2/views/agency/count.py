@@ -7,6 +7,7 @@ from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.disaster.v2.views.disaster_base import AwardTypeMixin
 from usaspending_api.disaster.v2.views.disaster_base import DisasterBase, FabaOutlayMixin
+from usaspending_api.search.filters.elasticsearch.filter import QueryType
 
 
 class AgencyCountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
@@ -18,7 +19,8 @@ class AgencyCountViewSet(AwardTypeMixin, FabaOutlayMixin, DisasterBase):
 
     @cache_response()
     def post(self, request: Request) -> Response:
-        filter_query = QueryWithFilters.generate_awards_elasticsearch_query(self.filters)
+        query_with_filters = QueryWithFilters(QueryType.AWARDS)
+        filter_query = query_with_filters.generate_elasticsearch_query(self.filters)
         search = AwardSearch().filter(filter_query)
         search.update_from_dict({"size": 0})
         search.aggs.bucket("agency_count", create_count_aggregation("funding_toptier_agency_agg_key.hash"))
