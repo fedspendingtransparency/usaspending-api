@@ -1,3 +1,4 @@
+import json
 from collections import OrderedDict
 from typing import List
 
@@ -71,23 +72,13 @@ class LocationAutocompleteViewSet(APIView):
         search_text = search_text.replace("-", "")
 
         should_query = [
-            query
-            for search_field in self.es_additional_fields.keys()
-            for query in [
-                ES_Q("match_phrase_prefix", **{f"{search_field}": {"query": search_text, "boost": 5}}),
-                ES_Q("match_phrase_prefix", **{f"{search_field}.contains": {"query": search_text, "boost": 3}}),
-                ES_Q("match", **{f"{search_field}": {"query": search_text, "operator": "and", "boost": 1}}),
-            ]
+            ES_Q("match_phrase_prefix", **{"location": {"query": search_text, "boost": 5}}),
+            ES_Q("match_phrase_prefix", **{"location.contains": {"query": search_text, "boost": 3}}),
+            ES_Q("match", **{"location": {"query": search_text, "operator": "and", "boost": 1}}),
         ]
 
         query = ES_Q("bool", should=should_query, minimum_should_match=1)
-        search: LocationSearch = (
-            LocationSearch()
-            .extra(size=limit)
-            .highlight(*self.es_additional_fields)
-            .highlight_options(order="score", pre_tags=[""], post_tags=[""])
-            .query(query)
-        )
+        search: LocationSearch = LocationSearch().extra(size=limit).query(query)
         results: ES_Response = search.execute()
 
         return results
@@ -145,25 +136,17 @@ class LocationAutocompleteViewSet(APIView):
         # Key: Value of the `location_type` field on the ES docs
         # Value: Lists from above that will contain the matches for that location type
         location_type_to_list_lookup = {
-            "country_name": countries,
-            "city_name": cities,
-            "state_name": states,
-            "county_name": counties,
+            "country": countries,
+            "city": cities,
+            "state": states,
+            "county": counties,
             "zip_code": zip_codes,
             "original_cd": original_cds,
             "current_cd": current_cds,
         }
 
         for doc in es_results:
-            highlights = doc.meta.highlight
-            for highlighted_field in highlights:
-                for es_highlight_value in highlights[highlighted_field]:
-                    location: dict[str, str] = {highlighted_field: es_highlight_value}
-                    if self.es_additional_fields[highlighted_field] is not None:
-                        for additional_field in self.es_additional_fields[highlighted_field]:
-                            location[additional_field] = doc[additional_field]
-                    if location not in location_type_to_list_lookup[highlighted_field]:
-                        location_type_to_list_lookup[highlighted_field].append(location)
+            location_type_to_list_lookup[doc.location_type].append(json.loads(doc.location_json))
 
         results = {
             "countries": countries if countries else None,
