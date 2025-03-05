@@ -147,7 +147,7 @@ def execute_sql_statement(cmd: str, results: bool = False, verbose: bool = False
 def db_rows_to_dict(cursor: psycopg2.extensions.cursor) -> List[dict]:
     """Return a dictionary of all row results from a database connection cursor"""
     columns = [col[0] for col in cursor.description]
-    return [dict(zip(columns, row, strict=False)) for row in cursor.fetchall()]
+    return [dict(zip(columns, row)) for row in cursor.fetchall()]
 
 
 def filter_query(column: str, values: list, query_type: str = "match_phrase") -> dict:
