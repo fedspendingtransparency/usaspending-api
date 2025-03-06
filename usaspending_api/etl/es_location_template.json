@@ -35,7 +35,7 @@
   },
   "mappings": {
     "properties": {
-      "location_string": {
+      "location": {
         "type": "text",
         "fields": {
           "contains": {
@@ -46,27 +46,14 @@
             "type": "keyword"
           }
         }
+      },
+      "location_json": {
+        "type": "object",
+        "enabled": false
       },
       "location_type": {
-        "type": "text",
-        "fields": {
-          "keyword": {
-            "type": "keyword"
-          }
-        }
-      },
-      "county_fips": {
-        "type": "text",
-        "fields": {
-          "contains": {
-            "type": "text",
-            "analyzer": "contains_analyzer"
-          },
-          "keyword": {
-            "type": "keyword"
-          }
-        }
+        "type": "keyword"
       }
-  }
+    }
   }
 }
