@@ -54,5 +54,5 @@ jobs:
 
       - name: Run test cases
         run: >
-          pytest --reuse-db --numprocesses logical --cov=usaspending_api --cov-report term -r=fEs --dist worksteal --verbosity=1 --durations 50
+          pytest -x --reuse-db --numprocesses logical --cov=usaspending_api --cov-report term -r=fEs --dist worksteal --verbosity=1 --durations 50
           -m "spark" -k "test_load_transactions_in_delta_fabs_fpds.py" --override-ini=python_files="test_*.py *_test.py"

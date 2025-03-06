@@ -21,34 +21,8 @@ on:
   workflow_call:
 
 jobs:
-  Run-Flake8:
-    name: Run Flake8
-    runs-on: ${{ vars.RUNNER_VERSION }}
-    steps:
-      - name: Checkout source repository
-        uses: actions/checkout@v4
-      
-      - name: Init Python Environment
-        uses: ./.github/actions/init-python-environment
-
-      - name: Run Flake8
-        run: flake8
-  
-  Run-Black-Validation:
-    name: Run Black
-    runs-on: ${{ vars.RUNNER_VERSION }}
-    steps:
-      - name: Checkout source repository
-        uses: actions/checkout@v4
-
-      - name: Init Python Environment
-        uses: ./.github/actions/init-python-environment
-
-      - name: Run Black
-        run: black --check --diff .
-
-  Run-API-Doc-Validation:
-    name: Run API Doc Validation
+  Run-Code-Style-Checks:
+    name: Run Code Style Checks
     runs-on: ${{ vars.RUNNER_VERSION }}
     steps:
       - name: Checkout source repository
@@ -62,16 +36,22 @@ jobs:
           echo "ES_HOSTNAME=$ES_SCHEME://$ES_HOST:$ES_PORT" >> $GITHUB_ENV
           echo "MINIO_DATA_DIR=$HOME/Development/data/usaspending/docker/usaspending-s3" >> $GITHUB_ENV
 
-      - name: Init Python Environment
-        uses: ./.github/actions/init-python-environment
-      
       - name: Setup node
         uses: actions/setup-node@v4
         with:
           node-version: latest
-      
+
       - name: Install Dredd
         run: npm install --global dredd@13.1.2
+
+      - name: Init Python Environment
+        uses: ./.github/actions/init-python-environment
+
+      - name: Run Flake8
+        run: flake8
+
+      - name: Run Black
+        run: black --check --diff .
 
       - name: Run check for endpoint documentation
         run: python manage.py check_for_endpoint_documentation

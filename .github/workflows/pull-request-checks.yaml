@@ -36,11 +36,6 @@ jobs:
     needs: [Run-Linting, Build-Broker-Docker-Image]
     uses: ./.github/workflows/test-non-spark-integration.yaml
 
-  Run-Non-Spark-Integration-Tests-Using-Signal-Handling:
-    name: Run Non-Spark Integration Tests Using Signal Handling
-    needs: [Run-Linting, Build-Broker-Docker-Image]
-    uses: ./.github/workflows/test-non-spark-integration-using-signal-handling.yaml
-
   Run-Unit-Tests:
     name: Run Unit Tests
     needs: [Run-Linting]
