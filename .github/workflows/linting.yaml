@@ -22,6 +22,9 @@ on:
 
 jobs:
   Run-Code-Style-Checks:
+    # These checks are not broken out into multiple jobs because the steps to prepare the environment
+    # take the bulk of the time. Running them in parallel saves minimal time at the cost of using more
+    # runners than needed.
     name: Run Code Style Checks
     runs-on: ${{ vars.RUNNER_VERSION }}
     steps:

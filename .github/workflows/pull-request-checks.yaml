@@ -2,6 +2,10 @@ name: Pull Request Checks
 
 on: push
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   Run-Linting:
     name: Run Linting
