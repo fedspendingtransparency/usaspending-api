@@ -648,6 +648,7 @@ def test_extract_hash_from_duns_or_uei_via_uei():
     baker.make("recipient.RecipientLookup", **TEST_RECIPIENT_LOOKUPS[expected_hash])
 
     recipient_hash = recipients.extract_hash_from_duns_or_uei(example_uei)
+    assert 1 == 2
     assert UUID(expected_hash) == recipient_hash
 
 
