@@ -4,6 +4,7 @@ on:
   pull_request:
     types:
       - opened
+      - ready_for_review
       - reopened
       - synchronize
 
@@ -12,12 +13,20 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  Fail-If-Draft-Pull-Request:
+    if: github.event.pull_request.draft == true
+    runs-on: ${{ vars.RUNNER_VERSION }}
+    steps:
+      - run: exit 1
+
   Run-Linting:
     name: Run Linting
+    needs: [Fail-If-Draft-Pull-Request]
     uses: ./.github/workflows/linting.yaml
   
   Build-Broker-Docker-Image:
     name: Build Broker Docker Image
+    needs: [Fail-If-Draft-Pull-Request]
     uses: ./.github/workflows/build-broker-docker-image-for-test.yaml
   
   Run-Spark-Integration-Load-Transaction-FABS-and-FPDS-Tests:
