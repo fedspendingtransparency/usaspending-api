@@ -19,7 +19,7 @@ jobs:
 
   Run-Linting:
     name: Run Linting
-    needs: [Cancel-If-Draft-Pull-Request]
+    needs: Cancel-If-Draft-Pull-Request
     if: |
       always() &&
       needs.Cancel-If-Draft-Pull-Request.result == 'skipped'
@@ -27,7 +27,7 @@ jobs:
   
   Build-Broker-Docker-Image:
     name: Build Broker Docker Image
-    needs: [Cancel-If-Draft-Pull-Request]
+    needs: Cancel-If-Draft-Pull-Request
     if: |
       always() &&
       needs.Cancel-If-Draft-Pull-Request.result == 'skipped'
@@ -65,6 +65,6 @@ jobs:
 
   Run-Unit-Tests:
     name: Run Unit Tests
-    needs: [Run-Linting]
+    needs: Run-Linting
     if: ${{ !failure() && !cancelled() }}
     uses: ./.github/workflows/test-unit.yaml
