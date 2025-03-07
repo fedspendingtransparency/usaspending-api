@@ -2244,3 +2244,82 @@ def test_spending_by_award_unique_id_award(
 
     assert resp.status_code == status.HTTP_200_OK
     assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
+
+
+@pytest.mark.django_db
+def test_spending_by_award_unique_id_subaward(
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
+
+    # Test with multiple subawards
+    test_payload = {
+        "subawards": True,
+        "fields": ["Sub-Award ID"],
+        "filters": {
+            "award_type_codes": ["A", "B", "C", "D"],
+            "award_unique_id": "CONT_AWD_TESTING_1",
+        },
+    }
+    expected_response = [
+        {
+            "internal_id": "22222",
+            "prime_award_internal_id": 1,
+            "Sub-Award ID": "22222",
+            "prime_award_generated_internal_id": "CONT_AWD_TESTING_1",
+        },
+        {
+            "internal_id": "11111",
+            "prime_award_internal_id": 1,
+            "Sub-Award ID": "11111",
+            "prime_award_generated_internal_id": "CONT_AWD_TESTING_1",
+        },
+    ]
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
+
+    # Test with a single subaward
+    test_payload = {
+        "subawards": True,
+        "fields": ["Sub-Award ID"],
+        "filters": {
+            "award_type_codes": ["A", "B", "C", "D"],
+            "award_unique_id": "CONT_AWD_TESTING_2",
+        },
+    }
+    expected_response = [
+        {
+            "internal_id": "33333",
+            "prime_award_internal_id": 2,
+            "Sub-Award ID": "33333",
+            "prime_award_generated_internal_id": "CONT_AWD_TESTING_2",
+        },
+    ]
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
+
+    # Test with no subawards
+    test_payload = {
+        "subawards": True,
+        "fields": ["Sub-Award ID"],
+        "filters": {
+            "award_type_codes": ["A", "B", "C", "D"],
+            "award_unique_id": "CONT_AWD_TESTING_4",
+        },
+    }
+    expected_response = []
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
