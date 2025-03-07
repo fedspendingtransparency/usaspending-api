@@ -17,7 +17,7 @@ jobs:
     if: github.event.pull_request.draft == true
     runs-on: ${{ vars.RUNNER_VERSION }}
     steps:
-      - run: exit 1
+      - run: exit 2
 
   Run-Linting:
     name: Run Linting
