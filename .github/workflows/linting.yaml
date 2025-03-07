@@ -28,10 +28,10 @@ jobs:
     name: Run Code Style Checks
     runs-on: ${{ vars.RUNNER_VERSION }}
     steps:
-      - name: Checkout source repository
+      - name: Checkout Source Repository
         uses: actions/checkout@v4
 
-      - name: Set combined ENV
+      - name: Set Combined ENV
         run: |
           echo "DATA_BROKER_DATABASE_URL=postgres://$BROKER_DB_USER:$BROKER_DB_PASSWORD@$BROKER_DB_HOST:$BROKER_DB_PORT/$BROKER_DB_NAME" >> $GITHUB_ENV
           echo "DATABASE_URL=postgres://$USASPENDING_DB_USER:$USASPENDING_DB_PASSWORD@$USASPENDING_DB_HOST:$USASPENDING_DB_PORT/$USASPENDING_DB_NAME" >> $GITHUB_ENV
@@ -39,7 +39,7 @@ jobs:
           echo "ES_HOSTNAME=$ES_SCHEME://$ES_HOST:$ES_PORT" >> $GITHUB_ENV
           echo "MINIO_DATA_DIR=$HOME/Development/data/usaspending/docker/usaspending-s3" >> $GITHUB_ENV
 
-      - name: Setup node
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: latest
@@ -56,7 +56,7 @@ jobs:
       - name: Run Black
         run: black --check --diff .
 
-      - name: Run check for endpoint documentation
+      - name: Run Check For Endpoint Documentation
         run: python manage.py check_for_endpoint_documentation
 
       - name: Run Dredd
