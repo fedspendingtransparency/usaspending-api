@@ -43,7 +43,7 @@ jobs:
   
   Build-Broker-Docker-Image:
     name: Build Broker Docker Image
-    needs: [Fail-If-Draft-Pull-Request]
+    needs: [Cancel-If-Draft-Pull-Request]
     uses: ./.github/workflows/build-broker-docker-image-for-test.yaml
   
   Run-Spark-Integration-Load-Transaction-FABS-and-FPDS-Tests:
