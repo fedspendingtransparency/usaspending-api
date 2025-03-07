@@ -1,7 +1,11 @@
 name: Pull Request Checks
 
 on:
-  workflow_call:
+  pull_request:
+    types:
+      - ready_for_review
+      - reopened
+      - synchronize
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
