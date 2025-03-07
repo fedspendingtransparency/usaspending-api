@@ -20,11 +20,17 @@ jobs:
   Run-Linting:
     name: Run Linting
     needs: [Cancel-If-Draft-Pull-Request]
+    if: |
+      always() &&
+      needs.Cancel-If-Draft-Pull-Request.result == 'skipped'
     uses: ./.github/workflows/linting.yaml
   
   Build-Broker-Docker-Image:
     name: Build Broker Docker Image
     needs: [Cancel-If-Draft-Pull-Request]
+    if: |
+      always() &&
+      needs.Cancel-If-Draft-Pull-Request.result == 'skipped'
     uses: ./.github/workflows/build-broker-docker-image-for-test.yaml
   
   Run-Spark-Integration-Load-Transaction-FABS-and-FPDS-Tests:
