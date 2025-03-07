@@ -15,18 +15,17 @@ from usaspending_api.common.helpers.api_helper import (
 )
 from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.references.models.psc import PSC
-from usaspending_api.search.filters.elasticsearch.filter import _Filter, QueryType
+from usaspending_api.search.filters.elasticsearch.filter import QueryType, _Filter
 from usaspending_api.search.filters.elasticsearch.naics import NaicsCodes
 from usaspending_api.search.filters.elasticsearch.psc import PSCCodes
 from usaspending_api.search.filters.elasticsearch.tas import TasCodes, TreasuryAccounts
-from usaspending_api.search.v2.es_sanitization import es_sanitize
 from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
 from usaspending_api.search.filters.time_period.query_types import (
-    TransactionSearchTimePeriod,
     AwardSearchTimePeriod,
     SubawardSearchTimePeriod,
+    TransactionSearchTimePeriod,
 )
-
+from usaspending_api.search.v2.es_sanitization import es_sanitize
 
 logger = logging.getLogger(__name__)
 
@@ -614,14 +613,23 @@ class _AwardIds(_Filter):
     def generate_elasticsearch_query(cls, filter_values: List[str], query_type: QueryType, **options) -> ES_Q:
         award_ids_query = []
 
+        if query_type == QueryType.SUBAWARDS:
+            award_id_fields = ["award_piid_fain", "subaward_number"]
+        else:
+            award_id_fields = ["display_award_id"]
+
         for filter_value in filter_values:
             if filter_value and filter_value.startswith('"') and filter_value.endswith('"'):
                 filter_value = filter_value[1:-1]
-                award_ids_query.append(ES_Q("term", display_award_id={"value": es_sanitize(filter_value)}))
+                award_ids_query.extend(
+                    ES_Q("term", **{es_field: {"query": es_sanitize(filter_value)}}) for es_field in award_id_fields
+                )
             else:
                 filter_value = es_sanitize(filter_value)
                 filter_value = " +".join(filter_value.split())
-                award_ids_query.append(ES_Q("regexp", display_award_id={"value": filter_value}))
+                award_ids_query.extend(
+                    ES_Q("regexp", **{es_field: {"value": es_sanitize(filter_value)}}) for es_field in award_id_fields
+                )
 
         return ES_Q("bool", should=award_ids_query, minimum_should_match=1)
 
