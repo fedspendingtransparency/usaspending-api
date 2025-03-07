@@ -1,0 +1,17 @@
+name: Pull Request Checks - Limit By Target Branch
+
+on:
+  pull_request:
+    types:
+      - ready_for_review
+      - reopened
+      - synchronize
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.base_ref }}
+  cancel-in-progress: false
+
+jobs:
+  Run-Pull-Request-Checks:
+    name: Run Pull Request Checks
+    uses: ./.github/workflows/pull-request-checks.yaml
