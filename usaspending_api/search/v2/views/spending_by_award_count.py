@@ -89,7 +89,6 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
                 empty_results = {"subcontracts": 0, "subgrants": 0}
             results = empty_results
         elif subawards:
-            # results = self.handle_subawards(filters)
             results = self.query_elasticsearch_for_subawards(filters)
         else:
             results = self.query_elasticsearch_for_prime_awards(filters)
