@@ -60,4 +60,4 @@ jobs:
 
       - name: Cancel Workflow if Failed
         if: ${{ failure() }}
-        uses: ./.github/workflows/cancel-running-workflow.yaml
+        uses: ./usaspending-api/.github/workflows/cancel-running-workflow.yaml
