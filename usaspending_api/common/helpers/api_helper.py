@@ -25,9 +25,7 @@ INCOMPATIBLE_DISTRICT_LOCATION_PARAMETERS = 'Incompatible parameters: `state` mu
 DUPLICATE_DISTRICT_LOCATION_PARAMETERS = (
     "Incompatible parameters: `district_current` and `district_original` are not allowed in the same locations object."
 )
-PRIME_AWARDS_DO_NOT_HAVE_PARENTS_PARAMETERS = (
-    "Incompatible parameters: `prime_award_unique_id` is only defined for subawards."
-)
+NOT_DEFINED_FOR_TRANSACTIONS = "Incompatible parameters: `prime_award_unique_id` is not defined for transactions."
 
 
 def alias_response(field_to_alias_dict, results):
