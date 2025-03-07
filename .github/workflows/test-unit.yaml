@@ -25,7 +25,7 @@ jobs:
     name: Run Tests
     runs-on: ${{ vars.RUNNER_VERSION }}
     steps:
-      - name: Checkout source repository
+      - name: Checkout Source Repository
         uses: actions/checkout@v4
 
       - name: Init Python Environment
@@ -37,7 +37,7 @@ jobs:
           is_integration_test: false
           is_spark_test: false
 
-      - name: Run test cases
+      - name: Run Test Cases
         run: >
           pytest -x --reuse-db --numprocesses logical --cov=usaspending_api --cov-report term -r=fEs --dist worksteal --verbosity=1 --durations 50
           --override-ini=python_files="test_*.py *_test.py" --ignore-glob="**/tests/integration/*"
