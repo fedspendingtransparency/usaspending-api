@@ -57,3 +57,9 @@ jobs:
           pytest -x --reuse-db --numprocesses logical --cov=usaspending_api --cov-report term -r=fEs --dist worksteal --verbosity=1 --durations 50
           -m "spark" -k "(not test_load_to_from_delta.py and not test_load_transactions_in_delta_lookups.py and not test_load_transactions_in_delta_fabs_fpds.py)"
           --override-ini=python_files="test_*.py *_test.py"
+
+  Cancel-Running-Workflow:
+    name: Cancel Running Workflow
+    needs: Run-Tests
+    if: failure()
+    uses: ./.github/workflows/cancel-running-workflow.yaml
