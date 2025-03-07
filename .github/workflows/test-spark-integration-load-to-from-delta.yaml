@@ -18,7 +18,7 @@ env:
   USASPENDING_DB_NAME: data_store_api  
 
 on:
-  workflow_call:f
+  workflow_call:
 
 defaults:
   run:
