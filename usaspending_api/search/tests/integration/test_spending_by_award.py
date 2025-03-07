@@ -2199,19 +2199,19 @@ def test_spending_by_award_subawards_award_id_filter(
 
 
 @pytest.mark.django_db
-def test_spending_by_award_prime_award_unique_id_award(
+def test_spending_by_award_unique_id_award(
     client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
 
-    # Test with a real prime_award_unique_id
+    # Test with a real award_unique_id
     test_payload = {
         "subawards": False,
         "fields": ["Award ID"],
         "filters": {
             "award_type_codes": ["A", "B", "C", "D"],
-            "prime_award_unique_id": "CONT_AWD_TESTING_1",
+            "award_unique_id": "CONT_AWD_TESTING_1",
         },
     }
     expected_response = [
@@ -2228,13 +2228,13 @@ def test_spending_by_award_prime_award_unique_id_award(
     assert resp.status_code == status.HTTP_200_OK
     assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
 
-    # Test with an undefined prime_award_unique_id
+    # Test with an undefined award_unique_id
     test_payload = {
         "subawards": False,
         "fields": ["Award ID"],
         "filters": {
             "award_type_codes": ["A", "B", "C", "D"],
-            "prime_award_unique_id": "CONT_AWD_TESTING_4",
+            "award_unique_id": "CONT_AWD_TESTING_4",
         },
     }
     expected_response = []

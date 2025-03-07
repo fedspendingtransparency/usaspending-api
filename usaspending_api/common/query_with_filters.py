@@ -908,10 +908,10 @@ class _NonzeroFields(_Filter):
         return ES_Q("bool", should=non_zero_queries, minimum_should_match=1)
 
 
-class _PrimeAwardUniqueId(_Filter):
+class _AwardUniqueId(_Filter):
     """String that represents the unique ID of the prime award of a queried award/subaward."""
 
-    underscore_name = "prime_award_unique_id"
+    underscore_name = "award_unique_id"
 
     @classmethod
     def generate_elasticsearch_query(cls, filter_values: str, query_type: QueryType, **options) -> ES_Q:
@@ -959,7 +959,7 @@ class QueryWithFilters:
             _QueryText.underscore_name: _QueryText,
             _NonzeroFields.underscore_name: _NonzeroFields,
             _ProgramActivities.underscore_name: _ProgramActivities,
-            _PrimeAwardUniqueId.underscore_name: _PrimeAwardUniqueId,
+            _AwardUniqueId.underscore_name: _AwardUniqueId,
         }
         if self.query_type == QueryType.SUBAWARDS:
             result[_SubawardsPrimeSubAwardTypes.underscore_name] = _SubawardsPrimeSubAwardTypes
