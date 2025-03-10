@@ -34,10 +34,16 @@ jobs:
       - name: Init Test Environment
         uses: ./.github/actions/init-test-environment
         with:
-          is_integration_test: false
-          is_spark_test: false
+          is-integration-test: false
+          is-spark-test: false
 
       - name: Run Test Cases
         run: >
           pytest -x --reuse-db --numprocesses logical --cov=usaspending_api --cov-report term -r=fEs --dist worksteal --verbosity=1 --durations 50
           --override-ini=python_files="test_*.py *_test.py" --ignore-glob="**/tests/integration/*"
+
+  Cancel-Running-Workflow:
+    name: Cancel Running Workflow
+    needs: Run-Tests
+    if: failure()
+    uses: ./.github/workflows/cancel-running-workflow.yaml

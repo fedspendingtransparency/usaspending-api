@@ -43,14 +43,14 @@ jobs:
       - name: Init Python Environment
         uses: ./usaspending-api/.github/actions/init-python-environment
         with:
-          working_directory: ./usaspending-api
+          working-directory: ./usaspending-api
 
       - name: Init Test Environment
         uses: ./usaspending-api/.github/actions/init-test-environment
         with:
-          is_integration_test: true
-          is_spark_test: false
-          working_directory: ./usaspending-api
+          is-integration-test: true
+          is-spark-test: false
+          working-directory: ./usaspending-api
 
       - name: Run Test Cases
         run: >

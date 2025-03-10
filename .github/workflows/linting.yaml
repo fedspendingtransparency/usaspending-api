@@ -47,6 +47,8 @@ jobs:
       - name: Install Dredd
         run: npm install --global dredd@13.1.2
 
+      # While we could adjust this to only install necessary packages for linting, the benefit of doing
+      # all packages is that it will cache the entirety of the required packages for the downstream tests.
       - name: Init Python Environment
         uses: ./.github/actions/init-python-environment
 

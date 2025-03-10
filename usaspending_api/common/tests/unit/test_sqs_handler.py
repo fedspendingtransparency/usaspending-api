@@ -30,6 +30,7 @@ pytestmark = pytest.mark.usefixtures("_patch_get_sqs_queue")
 
 def test_unittest_gets_fake_queue():
     q = get_sqs_queue()
+    assert 1 == 2
     assert q.url.split("/")[-1] == UNITTEST_FAKE_QUEUE_NAME
 
 
