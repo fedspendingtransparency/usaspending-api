@@ -38,6 +38,7 @@ def test_load_table_to_from_delta_for_subawards(
     hive_unittest_metastore_db,
 ):
 
+    assert 1 == 2
     # Since changes to the source tables will go to the Postgres table first, use model baker to add new rows to
     # Postgres table, and then push the updated table to Delta.
     last_load_datetime = datetime.now(timezone.utc)
