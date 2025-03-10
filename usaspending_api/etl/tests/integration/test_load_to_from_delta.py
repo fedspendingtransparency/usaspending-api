@@ -308,6 +308,7 @@ def verify_delta_table_loaded_from_delta(
 def test_load_table_to_from_delta_for_recipient_lookup(
     spark, s3_unittest_data_bucket, populate_usas_data_and_recipients_from_broker, hive_unittest_metastore_db
 ):
+    assert 1 == 2
     # Since changes to the source tables will go to the Postgres table first, use model baker to add new rows to
     # Postgres table, and then push the updated table to Delta.
     last_load_datetime = datetime.now(timezone.utc)
