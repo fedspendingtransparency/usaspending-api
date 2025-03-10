@@ -515,7 +515,6 @@ class TestTransactionFabs:
     def test_happy_paths_no_pg_loader(
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
     ):
-        assert 1 == 2
         transaction_fabs_fpds_core = self._generate_transaction_fabs_fpds_core(
             spark, s3_unittest_data_bucket, InitialRunNoPostgresLoader.initial_transaction_fabs
         )

@@ -942,6 +942,7 @@ class TestTransactionIdLookup:
     def test_unexpected_paths(
         self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
     ):
+        assert 1 == 2
         # Setup some source tables with data, without loading these Delta Tables from Postgres
         # for efficiency reasons.
         raw_db = "raw"
