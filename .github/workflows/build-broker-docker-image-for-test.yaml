@@ -4,6 +4,8 @@ on:
   workflow_call:
 
 jobs:
+  # This job is a workaround that allows defining a dynamic variable that is provided as input
+  # to another job. See here: https://github.com/orgs/community/discussions/26671#discussioncomment-3931817
   Setup-Variables:
     name: Setup Variables
     runs-on: ${{ vars.RUNNER_VERSION }}
