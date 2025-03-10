@@ -42,6 +42,9 @@ jobs:
           pytest -x --reuse-db --numprocesses logical --cov=usaspending_api --cov-report term -r=fEs --dist worksteal --verbosity=1 --durations 50
           --override-ini=python_files="test_*.py *_test.py" --ignore-glob="**/tests/integration/*"
 
+      - name: List Coverage
+        run: ls -lh coverage*
+
   Cancel-Running-Workflow:
     name: Cancel Running Workflow
     needs: Run-Tests
