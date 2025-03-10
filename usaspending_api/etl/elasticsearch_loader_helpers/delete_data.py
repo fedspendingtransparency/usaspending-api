@@ -652,7 +652,7 @@ def _check_awards_for_deletes(
         awards_table = "int.awards"
         results = [
             row.asDict()
-            for row in spark.sql(sql.format(ids=formatted_value_ids[:-1], awards_table=awards_table)).collect()
+            for row in spark.sql(sql, args={"ids": formatted_value_ids[:-1], "awards_table": awards_table}).collect()
         ]
     else:
         results = execute_sql_statement(
