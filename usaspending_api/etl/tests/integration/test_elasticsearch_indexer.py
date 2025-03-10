@@ -124,6 +124,25 @@ def award_data_fixture(db):
         update_date="2014-07-21",
         action_date="2016-10-01",
     )
+    baker.make(
+        "search.AwardSearch",
+        award_id=3,
+        generated_unique_award_id="'CONT_AWD_IND12PB00323",
+        latest_transaction_id=1,
+        earliest_transaction_search_id=1,
+        latest_transaction_search_id=1,
+        is_fpds=True,
+        type="A",
+        category="contracts",
+        piid="IND12PB00323",
+        description="pop tarts and assorted cereals",
+        total_obligation=500000.00,
+        date_signed="2010-10-1",
+        awarding_agency_id=1,
+        funding_agency_id=1,
+        update_date="2012-05-19",
+        action_date="2012-05-19",
+    )
     baker.make("accounts.FederalAccount", id=1)
     baker.make(
         "accounts.TreasuryAppropriationAccount",
@@ -499,6 +518,11 @@ def test__check_awards_for_deletes(award_data_fixture, monkeypatch, db):
     id_list = ["CONT_AWD_WHATEVER", "CONT_AWD_IND12PB00323"]
     awards = _check_awards_for_deletes(id_list)
     assert awards == [OrderedDict([("generated_unique_award_id", "CONT_AWD_WHATEVER")])]
+
+    # Check to ensure sql properly escapes characters
+    id_list = ["'CONT_AWD_IND12PB00323"]
+    awards = _check_awards_for_deletes(id_list)
+    assert awards == []
 
 
 def test_delete_awards(award_data_fixture, elasticsearch_transaction_index, elasticsearch_award_index, monkeypatch, db):

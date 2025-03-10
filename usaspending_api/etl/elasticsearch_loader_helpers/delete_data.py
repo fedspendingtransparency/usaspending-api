@@ -7,7 +7,8 @@ from django.conf import settings
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search
 from elasticsearch_dsl.mapping import Mapping
-from sqlalchemy import text
+from psycopg2 import sql as psycopg2_sql
+
 
 from usaspending_api.broker.helpers.last_load_date import (
     get_last_load_date,
@@ -639,24 +640,21 @@ def _check_awards_for_deletes(
 ) -> list:
     """Takes a list of award key values and returns them if they are NOT found in the awards DB table"""
 
-    id_param = "{ids}" if spark else ":ids"
-    table_param = "{awards_table}" if spark else ":awards_table"
-    sql = f"""
+    sql = """
         SELECT x.generated_unique_award_id
-        FROM (values {id_param}) AS x(generated_unique_award_id)
-        LEFT JOIN {table_param} a ON a.generated_unique_award_id = x.generated_unique_award_id
+        FROM (values ({})) AS x(generated_unique_award_id)
+        LEFT JOIN {} a ON a.generated_unique_award_id = x.generated_unique_award_id
         WHERE a.generated_unique_award_id IS NULL"""
 
     if spark:  # then use spark against a Delta Table
         awards_table = "int.awards"
-        results = [
-            row.asDict() for row in spark.sql(sql, args={"ids": id_list, "awards_table": awards_table}).collect()
-        ]
+        results = [row.asDict() for row in spark.sql(sql, [id_list, awards_table]).collect()]
     else:
-        results = execute_sql_statement(
-            str(text(sql).bindparams(ids=id_list, awards_table=awards_table)),
-            results=True,
+        sql = psycopg2_sql.SQL(sql).format(
+            psycopg2_sql.SQL(", ").join(map(psycopg2_sql.Literal, id_list)),
+            psycopg2_sql.Identifier(awards_table),
         )
+        results = execute_sql_statement(sql, results=True)
 
     return results
 
