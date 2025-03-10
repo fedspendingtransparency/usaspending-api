@@ -43,7 +43,7 @@ jobs:
           --override-ini=python_files="test_*.py *_test.py" --ignore-glob="**/tests/integration/*"
 
       - name: List Coverage
-        run: ls -lh coverage*
+        run: ls
 
   Cancel-Running-Workflow:
     name: Cancel Running Workflow
