@@ -32,6 +32,7 @@ def award_data_fixture(db):
         piid=None,
         type="07",
         uri=None,
+        program_activities=[{"code": "0123", "name": "PROGRAM_ACTIVITY_123"}],
     )
     award2 = baker.make(
         "search.AwardSearch",

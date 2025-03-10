@@ -16,6 +16,7 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     format_log,
     toggle_refresh_off,
     transform_award_data,
+    transform_subaward_data,
     transform_transaction_data,
 )
 from usaspending_api.etl.elasticsearch_loader_helpers.controller import (
@@ -112,6 +113,8 @@ class AbstractElasticsearchIndexer(ABC, BaseCommand):
         error_addition = ""
         controller = self.create_controller(config)
         controller.ensure_view_exists(config["sql_view"])
+
+        controller.set_slice_count()
 
         if config["is_incremental_load"]:
             toggle_refresh_off(elasticsearch_client, config["index_name"])  # Turned back on at end.
@@ -306,7 +309,7 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             "base_table": "subaward_search",
             "base_table_id": "broker_subaward_id",
             "create_award_type_aliases": False,
-            "data_transform_func": None,
+            "data_transform_func": transform_subaward_data,
             "data_type": "subaward",
             "execute_sql_func": execute_sql_statement,
             "extra_null_partition": False,

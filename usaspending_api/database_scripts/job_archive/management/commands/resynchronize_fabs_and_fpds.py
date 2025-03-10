@@ -61,9 +61,12 @@ Life expectancy:
     update it as necessary, and run it on occasion should USAspending and Broker desynchronize again.
 
 """
+
 import logging
 
 from datetime import date
+
+from django.conf import settings
 from django.core.management import BaseCommand, call_command
 from django.db import connections, transaction
 from usaspending_api.common.helpers.sql_helpers import execute_sql, execute_dml_sql, execute_sql_return_single_value
@@ -389,7 +392,7 @@ class Command(BaseCommand):
                 return
             sql = broker_sql % (str(ids) if len(ids) > 1 else f"({ids[0]})")
 
-            connection = connections["data_broker"]
+            connection = connections[settings.DATA_BROKER_DB_ALIAS]
             with connection.cursor() as cursor:
                 cursor.execute(sql)
                 results = cursor.fetchall()

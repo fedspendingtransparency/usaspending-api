@@ -27,37 +27,37 @@ def test_tas_program_activity_success(client, monkeypatch, agency_account_data, 
         "results": [
             {
                 "name": "NAME 3",
-                "gross_outlay_amount": 250000.0,
-                "obligated_amount": 229.0,
+                "gross_outlay_amount": 100000.0,
+                "obligated_amount": 100.0,
                 "children": [
                     {
                         "name": "Other",
-                        "gross_outlay_amount": 250000.0,
-                        "obligated_amount": 229.0,
+                        "gross_outlay_amount": 100000.0,
+                        "obligated_amount": 100.0,
                     }
                 ],
             },
             {
                 "name": "NAME 2",
-                "gross_outlay_amount": 1150000.0,
-                "obligated_amount": 139.0,
+                "gross_outlay_amount": 1000000.0,
+                "obligated_amount": 10.0,
                 "children": [
                     {
                         "name": "Other",
-                        "gross_outlay_amount": 1150000.0,
-                        "obligated_amount": 139.0,
+                        "gross_outlay_amount": 1000000.0,
+                        "obligated_amount": 10.0,
                     }
                 ],
             },
             {
                 "name": "NAME 1",
-                "gross_outlay_amount": 10150000.0,
-                "obligated_amount": 130.0,
+                "gross_outlay_amount": 10000000.0,
+                "obligated_amount": 1.0,
                 "children": [
                     {
                         "name": "Other",
-                        "gross_outlay_amount": 10150000.0,
-                        "obligated_amount": 130.0,
+                        "gross_outlay_amount": 10000000.0,
+                        "obligated_amount": 1.0,
                     }
                 ],
             },
@@ -108,14 +108,14 @@ def test_tas_program_activity_success(client, monkeypatch, agency_account_data, 
         },
         "results": [
             {
-                "gross_outlay_amount": 1150000.0,
+                "gross_outlay_amount": 1000000.0,
                 "name": "NAME 5",
-                "obligated_amount": 139.0,
+                "obligated_amount": 10.0,
                 "children": [
                     {
                         "name": "Other",
-                        "gross_outlay_amount": 1150000.0,
-                        "obligated_amount": 139.0,
+                        "gross_outlay_amount": 1000000.0,
+                        "obligated_amount": 10.0,
                     }
                 ],
             }
@@ -199,10 +199,10 @@ def test_tas_program_activity_multiple_submission_years(client, agency_account_d
         },
         "results": [
             {
-                "gross_outlay_amount": 160000.0,
+                "gross_outlay_amount": 10000.0,
                 "name": "NAME 4",
-                "obligated_amount": 1129.0,
-                "children": [{"gross_outlay_amount": 160000.0, "name": "Other", "obligated_amount": 1129.0}],
+                "obligated_amount": 1000.0,
+                "children": [{"gross_outlay_amount": 10000.0, "name": "Other", "obligated_amount": 1000.0}],
             }
         ],
     }
@@ -361,8 +361,8 @@ def tas_mulitple_oc_per_tas():
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=0,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=0,
         ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=0,
-        ussgl480110_reinstated_del_cpe=0,
-        ussgl490110_reinstated_del_cpe=0,
+        ussgl480110_rein_undel_ord_cpe=0,
+        ussgl490110_rein_deliv_ord_cpe=0,
     )
     baker.make(
         fabpaoc,
@@ -387,8 +387,8 @@ def tas_mulitple_oc_per_tas():
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=0,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=0,
         ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=0,
-        ussgl480110_reinstated_del_cpe=0,
-        ussgl490110_reinstated_del_cpe=0,
+        ussgl480110_rein_undel_ord_cpe=0,
+        ussgl490110_rein_deliv_ord_cpe=0,
     )
     baker.make(
         fabpaoc,
@@ -413,6 +413,6 @@ def tas_mulitple_oc_per_tas():
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=0,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=0,
         ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=0,
-        ussgl480110_reinstated_del_cpe=0,
-        ussgl490110_reinstated_del_cpe=0,
+        ussgl480110_rein_undel_ord_cpe=0,
+        ussgl490110_rein_deliv_ord_cpe=0,
     )

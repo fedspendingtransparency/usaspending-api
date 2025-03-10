@@ -1,5 +1,5 @@
 class BulkCreateManager:
-    """ Hide the ugliness of batching saves. """
+    """Hide the ugliness of batching saves."""
 
     batch_size = 500  # This number tested well.
 

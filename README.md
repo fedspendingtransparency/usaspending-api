@@ -27,7 +27,7 @@ _**If not using Docker, you'll need to install app components on your machine:**
     - Linux users already know their package manager (`yum`, `apt`, `pacman`, etc.)
 - [`PostgreSQL`](https://www.postgresql.org/download/) version 13.x (with a dedicated `data_store_api` database)
 - [`Elasticsearch`](https://www.elastic.co/downloads/elasticsearch) version 7.1
-- `Python` version 3.8 environment
+- `Python` version 3.10 environment
   - Highly recommended to use a virtual environment. There are various tools and associated instructions depending on preferences
   - See [Required Python Libraries](#required-python-libraries) for an example using `pyenv`
 

@@ -12,6 +12,7 @@ from usaspending_api.common.exceptions import NotImplementedException
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
+from usaspending_api.search.v2.views.enums import SpendingLevel
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_agency_types import (
     AwardingAgencyViewSet,
     AwardingSubagencyViewSet,
@@ -74,6 +75,14 @@ class SpendingByCategoryVisualizationViewSet(APIView):
         models = [
             {"name": "category", "key": "category", "type": "enum", "enum_values": categories, "optional": False},
             {"name": "subawards", "key": "subawards", "type": "boolean", "default": False, "optional": True},
+            {
+                "name": "spending_level",
+                "key": "spending_level",
+                "type": "enum",
+                "enum_values": [level.value for level in SpendingLevel],
+                "optional": True,
+                "default": "transactions",
+            },
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
         models.extend(copy.deepcopy(PAGINATION))

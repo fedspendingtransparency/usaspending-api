@@ -92,7 +92,7 @@ def generate_fiscal_month(date):
 def generate_fiscal_quarter(date):
     """Generate fiscal quarter based on the date provided"""
     validate_date(date)
-    return FiscalDate(date.year, date.month, date.day).quarter
+    return FiscalDate(date.year, date.month, date.day).fiscal_quarter
 
 
 def generate_fiscal_year_and_month(date):
@@ -104,7 +104,7 @@ def generate_fiscal_year_and_month(date):
 
 def generate_fiscal_year_and_quarter(date):
     validate_date(date)
-    quarter = FiscalDate(date.year, date.month, date.day).quarter
+    quarter = FiscalDate(date.year, date.month, date.day).fiscal_quarter
     year = generate_fiscal_year(date)
     return "{}-Q{}".format(year, quarter)
 

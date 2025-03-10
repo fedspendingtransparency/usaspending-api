@@ -12,7 +12,7 @@ from usaspending_api.common.helpers.sql_helpers import get_connection
 
 @pytest.fixture
 def setup_test_data(db):
-    """ Insert data into DB for testing """
+    """Insert data into DB for testing"""
     future_date = datetime(datetime.now().year + 1, 1, 19)
     dsws = [
         {
@@ -163,13 +163,13 @@ def setup_test_data(db):
             obligations_incurred_by_program_object_class_cpe=ocpa["ob_incur"],
             deobligations_recoveries_refund_pri_program_object_class_cpe=ocpa["deobligation"],
             prior_year_adjustment=ocpa["pya"],
-            ussgl480110_reinstated_del_cpe=ocpa["ussgl480110"],
-            ussgl490110_reinstated_del_cpe=ocpa["ussgl490110"],
+            ussgl480110_rein_undel_ord_cpe=ocpa["ussgl480110"],
+            ussgl490110_rein_deliv_ord_cpe=ocpa["ussgl490110"],
         )
 
 
 def test_run_script(setup_test_data):
-    """ Test that the populate_reporting_agency_tas script acts as expected """
+    """Test that the populate_reporting_agency_tas script acts as expected"""
     connection = get_connection(read_only=False)
     sql_path = settings.APP_DIR / "reporting" / "management" / "sql" / "populate_reporting_agency_tas.sql"
     test_sql = sql_path.read_text()
@@ -185,16 +185,16 @@ def test_run_script(setup_test_data):
 
     assert len(results) == 1
     assert results[0].appropriation_obligated_amount == 50
-    assert results[0].object_class_pa_obligated_amount == 11120
-    assert results[0].diff_approp_ocpa_obligated_amounts == -11070
+    assert results[0].object_class_pa_obligated_amount == 20
+    assert results[0].diff_approp_ocpa_obligated_amounts == 30
 
     # Testing an entry with multiple rows that roll up into a single period/fiscal year/tas
     results = ReportingAgencyTas.objects.filter(fiscal_year=2019, fiscal_period=3, tas_rendering_label="tas-2").all()
 
     assert len(results) == 1
     assert results[0].appropriation_obligated_amount == 41
-    assert results[0].object_class_pa_obligated_amount == 22242
-    assert results[0].diff_approp_ocpa_obligated_amounts == -22201
+    assert results[0].object_class_pa_obligated_amount == 42
+    assert results[0].diff_approp_ocpa_obligated_amounts == -1
 
     # Making sure that 2 different agencies under the same year/period don't get rolled up together
     results = (
@@ -204,6 +204,6 @@ def test_run_script(setup_test_data):
     )
 
     assert len(results) == 3
-    assert results[0].diff_approp_ocpa_obligated_amounts == -22201
-    assert results[1].diff_approp_ocpa_obligated_amounts == -11080
-    assert results[2].diff_approp_ocpa_obligated_amounts == -11070
+    assert results[0].diff_approp_ocpa_obligated_amounts == -1
+    assert results[1].diff_approp_ocpa_obligated_amounts == 20
+    assert results[2].diff_approp_ocpa_obligated_amounts == 30

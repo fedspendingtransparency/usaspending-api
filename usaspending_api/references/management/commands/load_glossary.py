@@ -61,7 +61,7 @@ def load_glossary(path, append):
         if not row[0].value:
             break  # Reads file only until a line with blank `term`
         definition = Definition()
-        for (i, field_name) in enumerate(field_names):
+        for i, field_name in enumerate(field_names):
             if field_name:
                 setattr(definition, field_name, row[i].value)
         definition.save()

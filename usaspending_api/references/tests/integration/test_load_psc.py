@@ -1,9 +1,11 @@
-import pytest
-
-from django.core.management import call_command
 from datetime import datetime
-from usaspending_api.references.models import PSC
+from pathlib import Path
+
+import pytest
+from django.core.management import call_command
 from model_bakery import baker
+
+from usaspending_api.references.models import PSC
 
 
 @pytest.mark.django_db
@@ -15,9 +17,9 @@ def test_load_psc():
     baker.make("references.PSC", code="1005", description="whatever")
     baker.make("references.PSC", code="10", description="whatever", start_date="1978-12-31")
 
-    call_command("load_psc")
+    call_command("load_psc", path=f"{Path(__file__).parent / '..' / 'data' / 'psc_test_data.xlsx'}")
 
-    assert PSC.objects.all().count() == 3193
+    assert PSC.objects.all().count() == 8
 
     psc = PSC.objects.get(pk="1005")
     psc2 = PSC.objects.get(pk="10")
@@ -39,10 +41,10 @@ def test_load_psc():
     assert psc2.includes is None
     assert psc2.excludes is None
     assert psc2.notes == (
-        "This group includes combat weapons as well as weapon-like noncombat items, such as line "
-        "throwing devices and pyrotechnic pistols.  Also included in this group are weapon neutralizing "
-        "equipment, such as degaussers, and deception equipment, such as camouflage nets.  Excluded from "
-        "this group are fire control and night devices classifiable in groups 12 or 58."
+        "This group includes combat weapons as well as weapon-like noncombat items, such as line throwing devices "
+        "and pyrotechnic pistols. Also included in this group are weapon neutralizing equipment, such as degaussers, "
+        "and deception equipment, such as camouflage nets. Excluded from this group are fire control and night devices "
+        "classifiable in groups 12 or 58."
     )
     assert psc2.start_date == datetime.strptime("1979-10-1", "%Y-%m-%d").date()
     assert psc2.end_date is None

@@ -1,6 +1,7 @@
 """
 Some sanity checks for the pre-built TinyShield Awards rules.
 """
+
 import pytest
 
 from usaspending_api.common.exceptions import InvalidParameterException, UnprocessableEntityException

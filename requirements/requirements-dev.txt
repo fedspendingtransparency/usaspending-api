@@ -1,16 +1,16 @@
-black==20.8b1
-click==8.0.4
-docker==5.0.3
+black==24.10.0
+click==8.1.7
+docker==7.0.0
 dredd-hooks==0.2.0
-flake8==3.8.4
-importlib-metadata<5  # need to pin <5 while flake8 is on 3.8.4
+flake8==7.1.0
+importlib-metadata==7.2.*
 mock==5.1.*
-model-bakery==1.13.*
+model-bakery==1.17.*
 pip==23.2.*
-pre-commit==1.20.0
-pyspark==3.2.1
-pytest==7.4.*
+pre-commit==3.6.2
+pyspark==3.5.0
+pytest==8.0.*
 pytest-cov==4.1.*
-pytest-django==4.2.*  # Going > 4.2 yields multi-db errors
+pytest-django==4.8.*
 pytest-pretty==1.2.*
-pytest-xdist==3.3.*
+pytest-xdist==3.5.*

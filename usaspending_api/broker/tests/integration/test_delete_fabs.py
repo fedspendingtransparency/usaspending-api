@@ -13,7 +13,7 @@ from usaspending_api.transactions.models import SourceAssistanceTransaction
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.skip(reason="Test based on pre-databricks loader code. Remove when fully cut over.")
 def test_delete_fabs_success():
-    """ Testing delete fabs works properly """
+    """Testing delete fabs works properly"""
 
     # Award/Transaction deleted based on 1-1 transaction
     baker.make(AwardSearch, award_id=1, generated_unique_award_id="TEST_AWARD_1")

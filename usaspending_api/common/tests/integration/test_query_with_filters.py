@@ -1,9 +1,10 @@
 import pytest
 from model_bakery import baker
 
-from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, SubawardSearch
+from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, SubawardSearch, TransactionSearch
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
+from usaspending_api.search.filters.elasticsearch.filter import QueryType
 
 
 @pytest.fixture
@@ -36,6 +37,20 @@ def es_test_data_fixture(db):
         award=award_search2,
         action_date="2019-01-01",
     )
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=1,
+        award=award_search1,
+        action_date="2018-01-01",
+        transaction_description="Description for test_1 transaction.",
+    )
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=2,
+        award=award_search2,
+        action_date="2019-01-01",
+        transaction_description="Description for test_2 transaction.",
+    )
 
 
 @pytest.mark.django_db
@@ -48,7 +63,8 @@ def test_es_award_seach_with_reserved_words(client, monkeypatch, elasticsearch_a
 
     # Test the "OR" keyword
     filters = {"recipient_search_text": ["OR CONSTRUCTION"]}
-    filter_query = QueryWithFilters.generate_awards_elasticsearch_query(filters)
+    query_with_filters = QueryWithFilters(QueryType.AWARDS)
+    filter_query = query_with_filters.generate_elasticsearch_query(filters)
     search = AwardSearch().filter(filter_query)
     results = search.handle_execute()
 
@@ -60,7 +76,8 @@ def test_es_award_seach_with_reserved_words(client, monkeypatch, elasticsearch_a
 
     # Test the "AND" keyword
     filters = {"recipient_search_text": ["AND DELIVERIES"]}
-    filter_query = QueryWithFilters.generate_awards_elasticsearch_query(filters)
+    query_with_filters = QueryWithFilters(QueryType.AWARDS)
+    filter_query = query_with_filters.generate_elasticsearch_query(filters)
     search = AwardSearch().filter(filter_query)
     results = search.handle_execute()
 
@@ -81,7 +98,8 @@ def test_es_subaward_seach_with_reserved_words(client, monkeypatch, elasticsearc
 
     # Test the "OR" keyword
     filters = {"recipient_search_text": ["OR CONSTRUCTION"]}
-    filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(filters)
+    query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
+    filter_query = query_with_filters.generate_elasticsearch_query(filters)
     search = SubawardSearch().filter(filter_query)
     results = search.handle_execute()
 
@@ -95,10 +113,26 @@ def test_es_subaward_seach_with_reserved_words(client, monkeypatch, elasticsearc
 
     # Test the "AND" keyword
     filters = {"recipient_search_text": ["AND DELIVERIES"]}
-    filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(filters)
+    query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
+    filter_query = query_with_filters.generate_elasticsearch_query(filters)
     search = SubawardSearch().filter(filter_query)
     results = search.handle_execute()
 
     assert filter_query.to_dict()["bool"]["must"][0]["bool"]["should"][0]["query_string"]["query"] == "\\AND DELIVERIES"
     assert len(results["hits"]["hits"]) == 1
     assert results["hits"]["hits"][0]["_source"]["sub_awardee_or_recipient_legal"] == "AND DELIVERIES FAKE COMPANY"
+
+
+@pytest.mark.django_db
+def test_es_description_filter(client, monkeypatch, elasticsearch_transaction_index, es_test_data_fixture):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
+    filters = {"description": "test_1"}
+    query_with_filters = QueryWithFilters(QueryType.TRANSACTIONS)
+    filter_query = query_with_filters.generate_elasticsearch_query(filters)
+    search = TransactionSearch().filter(filter_query)
+    results = search.handle_execute()
+
+    assert filter_query.to_dict()["bool"]["must"][0]["bool"]["should"][0]["query_string"]["query"] == "test_1*"
+    assert len(results["hits"]["hits"]) == 1
+    assert results["hits"]["hits"][0]["_source"]["transaction_description"] == "Description for test_1 transaction."
