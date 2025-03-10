@@ -642,17 +642,17 @@ def _check_awards_for_deletes(
 
     sql = """
         SELECT x.generated_unique_award_id
-        FROM (values ({})) AS x(generated_unique_award_id)
-        LEFT JOIN {} a ON a.generated_unique_award_id = x.generated_unique_award_id
+        FROM (values ({ids})) AS x(generated_unique_award_id)
+        LEFT JOIN {awards_table} a ON a.generated_unique_award_id = x.generated_unique_award_id
         WHERE a.generated_unique_award_id IS NULL"""
 
     if spark:  # then use spark against a Delta Table
         awards_table = "int.awards"
-        results = [row.asDict() for row in spark.sql(sql, [id_list, awards_table]).collect()]
+        results = [row.asDict() for row in spark.sql(sql, ids=id_list, awards_table=awards_table).collect()]
     else:
         sql = psycopg2_sql.SQL(sql).format(
-            psycopg2_sql.SQL(", ").join(map(psycopg2_sql.Literal, id_list)),
-            psycopg2_sql.Identifier(awards_table),
+            ids=psycopg2_sql.SQL(", ").join(map(psycopg2_sql.Literal, id_list)),
+            awards_table=psycopg2_sql.Identifier(awards_table),
         )
         results = execute_sql_statement(sql, results=True)
 
