@@ -49,8 +49,8 @@ def financial_spending_data(db):
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=0,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=0,
         ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=0,
-        ussgl480110_reinstated_del_cpe=0,
-        ussgl490110_reinstated_del_cpe=0,
+        ussgl480110_rein_undel_ord_cpe=0,
+        ussgl490110_rein_deliv_ord_cpe=0,
     )
 
     # Object 2 (contains 2 fabpaoc s)
@@ -89,8 +89,8 @@ def financial_spending_data(db):
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=0,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=0,
         ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=0,
-        ussgl480110_reinstated_del_cpe=0,
-        ussgl490110_reinstated_del_cpe=0,
+        ussgl480110_rein_undel_ord_cpe=0,
+        ussgl490110_rein_deliv_ord_cpe=0,
     )
     baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
@@ -114,8 +114,8 @@ def financial_spending_data(db):
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=0,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=0,
         ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=0,
-        ussgl480110_reinstated_del_cpe=0,
-        ussgl490110_reinstated_del_cpe=0,
+        ussgl480110_rein_undel_ord_cpe=0,
+        ussgl490110_rein_deliv_ord_cpe=0,
     )
 
     # 2018, not reported by 2017 api call
@@ -155,8 +155,8 @@ def financial_spending_data(db):
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=0,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=0,
         ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=0,
-        ussgl480110_reinstated_del_cpe=0,
-        ussgl490110_reinstated_del_cpe=0,
+        ussgl480110_rein_undel_ord_cpe=0,
+        ussgl490110_rein_deliv_ord_cpe=0,
     )
 
 

@@ -49,7 +49,7 @@ def get_file_b(submission_attributes, db_cursor):
         from        published_object_class_program_activity
         where       submission_id = %s and length(object_class) = 4
         group by    account_num, program_activity_code, object_class, disaster_emergency_fund_code,
-                    upper(prior_year_adjustment), upper(pa_reporting_key)
+                    upper(prior_year_adjustment), upper(program_activity_reporting_key)
         having      count(*) > 1
     """
     db_cursor.execute(check_dupe_oc, [submission_id])
@@ -74,7 +74,7 @@ def get_file_b(submission_attributes, db_cursor):
             "disaster_emergency_fund_code",
         ],
         "left": ["object_class"],
-        "upper": ["prior_year_adjustment", "pa_reporting_key"],
+        "upper": ["prior_year_adjustment", "program_activity_reporting_key"],
         "numeric": [
             "deobligations_recov_by_pro_cpe",
             "gross_outlay_amount_by_pro_cpe",
@@ -90,7 +90,7 @@ def get_file_b(submission_attributes, db_cursor):
             "obligations_undelivered_or_fyb",
             "ussgl480100_undelivered_or_cpe",
             "ussgl480100_undelivered_or_fyb",
-            "ussgl480110_reinstated_del_cpe",
+            "ussgl480110_rein_undel_ord_cpe",
             "ussgl480200_undelivered_or_cpe",
             "ussgl480200_undelivered_or_fyb",
             "ussgl483100_undelivered_or_cpe",
@@ -101,7 +101,7 @@ def get_file_b(submission_attributes, db_cursor):
             "ussgl488200_upward_adjustm_cpe",
             "ussgl490100_delivered_orde_cpe",
             "ussgl490100_delivered_orde_fyb",
-            "ussgl490110_reinstated_del_cpe",
+            "ussgl490110_rein_deliv_ord_cpe",
             "ussgl490200_delivered_orde_cpe",
             "ussgl490800_authority_outl_cpe",
             "ussgl490800_authority_outl_fyb",
@@ -168,7 +168,7 @@ def get_file_b(submission_attributes, db_cursor):
 
 
 def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
-    """ Process and load file B broker data (aka TAS balances by program activity and object class). """
+    """Process and load file B broker data (aka TAS balances by program activity and object class)."""
     reverse = re.compile(r"(_(cpe|fyb)$)|^transaction_obligated_amount$")
     skipped_tas = defaultdict(int)  # tracks count of rows skipped due to "missing" TAS
     bulk_treasury_appropriation_account_tas_lookup(prg_act_obj_cls_data, db_cursor)

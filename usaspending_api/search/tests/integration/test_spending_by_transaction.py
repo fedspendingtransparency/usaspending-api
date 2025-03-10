@@ -24,9 +24,16 @@ def transaction_data():
         piid="IND12PB00323",
         recipient_uei="testuei",
         parent_uei="test_parent_uei",
+        program_activities=[{"code": "0123", "name": "PROGRAM_ACTIVITY_123"}],
     )
     award1 = baker.make(
-        "search.AwardSearch", award_id=1, latest_transaction_id=1, is_fpds=True, type="A", piid="IND12PB00323"
+        "search.AwardSearch",
+        award_id=1,
+        latest_transaction_id=1,
+        is_fpds=True,
+        type="A",
+        piid="IND12PB00323",
+        program_activities=[{"code": "0123", "name": "PROGRAM_ACTIVITY_123"}],
     )
     ref_program_activity1 = baker.make(
         "references.RefProgramActivity",

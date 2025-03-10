@@ -5,7 +5,7 @@ dist: bionic
 language: python
 
 python:
-  - '3.8'
+  - '3.10.14'
 
 cache: pip
 
@@ -55,7 +55,7 @@ jobs:
           - $TRAVIS_BUILD_DIR/usaspending_api.egg_info/
     before_install: ""  # override default to no-op
     install:
-    - travis_retry pip install setuptools==60.8.2
+    - travis_retry pip install setuptools==68.1.2
     - travis_retry pip install .[dev]
     - travis_retry pip install coveralls
     before_script: ""  # override default to no-op
@@ -155,7 +155,7 @@ jobs:
         name: ws3
         paths:
           - coverage.*.xml
-      # Inherits "global" job phases defined below (e.g. before_install, install, before_script, script, etc.)
+    # Inherits "global" job phases defined below (e.g. before_install, install, before_script, script, etc.)
   - name: Spark Integration Tests - Other
     env:
     - PYTEST_XDIST_NUMPROCESSES=4
@@ -306,4 +306,4 @@ script:
   - return $(pytest --collect-only --quiet --ignore-glob='**/tests/integration/*' -m '(spark or database or elasticsearch)' --no-cov --disable-warnings | grep '^usaspending_api.*$' | wc -l)
   - test $? -gt 0 && echo 'Failing because integration tests would be improperly captured as unit tests. Run the previous pytest command locally to figure out which to move to a **/tests/integration/ folder'
   # Must manually set --numprocesses on Travis CI VMs; can't use auto (see: https://github.com/pytest-dev/pytest-xdist/pull/317)
-  - pytest --override-ini=python_files="${PYTEST_INCLUDE_GLOB}" --ignore-glob="${PYTEST_EXCLUDE_GLOB}" -m "${PYTEST_MARK_EXPRESSION}" -k "${PYTEST_MATCH_EXPRESSION}" --cov=usaspending_api --cov-report term --cov-report xml:coverage.$TRAVIS_JOB_INDEX.xml --reuse-db -r=fEs --numprocesses ${PYTEST_XDIST_NUMPROCESSES} --dist worksteal --verbosity=1 --durations 50
+  - travis_wait 45 pytest --override-ini=python_files="${PYTEST_INCLUDE_GLOB}" --ignore-glob="${PYTEST_EXCLUDE_GLOB}" -m "${PYTEST_MARK_EXPRESSION}" -k "${PYTEST_MATCH_EXPRESSION}" --cov=usaspending_api --cov-report term --cov-report xml:coverage.$TRAVIS_JOB_INDEX.xml --reuse-db -r=fEs --numprocesses ${PYTEST_XDIST_NUMPROCESSES} --dist worksteal --verbosity=1 --durations 50

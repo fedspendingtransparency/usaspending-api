@@ -2,7 +2,7 @@ import copy
 import logging
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from django.conf import settings
 from django.db.models import QuerySet, Sum
@@ -16,6 +16,7 @@ from usaspending_api.common.api_versioning import api_transformations, API_TRANS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
+from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
 from usaspending_api.common.exceptions import ElasticsearchConnectionException, NotImplementedException
 from usaspending_api.common.helpers.generic_helper import (
     get_simple_pagination_metadata,
@@ -28,11 +29,11 @@ from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.search.v2.elasticsearch_helper import (
     get_number_of_unique_terms_for_transactions,
+    get_number_of_unique_terms_for_awards,
     get_scaled_sum_aggregations,
 )
-from usaspending_api.search.filters.elasticsearch.filter import _QueryType
-from usaspending_api.search.filters.time_period.query_types import TransactionSearchTimePeriod
-from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
+from usaspending_api.search.filters.elasticsearch.filter import QueryType
+from usaspending_api.search.v2.views.enums import SpendingLevel
 
 logger = logging.getLogger(__name__)
 
@@ -53,13 +54,21 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
     filters: dict
     obligation_column: str
     pagination: Pagination
-    subawards: bool
     high_cardinality_categories: List[str] = ["recipient", "recipient_duns"]
+    spending_level: Optional[SpendingLevel]
 
     @cache_response()
     def post(self, request: Request) -> Response:
         models = [
             {"name": "subawards", "key": "subawards", "type": "boolean", "default": False, "optional": True},
+            {
+                "name": "spending_level",
+                "key": "spending_level",
+                "type": "enum",
+                "enum_values": [level.value for level in SpendingLevel],
+                "optional": True,
+                "default": "transactions",
+            },
         ]
         models.extend(copy.deepcopy(AWARD_FILTER))
         models.extend(copy.deepcopy(PAGINATION))
@@ -90,33 +99,40 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
     def perform_search(self, validated_payload: dict, original_filters: dict) -> dict:
 
         self.filters = validated_payload.get("filters", {})
-        self.subawards = validated_payload["subawards"]
         self.pagination = self._get_pagination(validated_payload)
 
-        if self.subawards:
+        self.spending_level = SpendingLevel(
+            "subawards" if validated_payload.get("subawards") else validated_payload.get("spending_level")
+        )
+
+        if self.spending_level == SpendingLevel.SUBAWARD:
             base_queryset = subaward_filter(self.filters)
             self.obligation_column = "subaward_amount"
             results = self.query_django_for_subawards(base_queryset)
+        elif self.spending_level == SpendingLevel.TRANSACTION:
+            query_with_filters = QueryWithFilters(QueryType.TRANSACTIONS)
+            filter_query = query_with_filters.generate_elasticsearch_query(self.filters)
+            results = self.query_elasticsearch(filter_query)
         else:
-            filter_options = {}
-            time_period_obj = TransactionSearchTimePeriod(
-                default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
-            )
-            new_awards_only_decorator = NewAwardsOnlyTimePeriod(
-                time_period_obj=time_period_obj, query_type=_QueryType.TRANSACTIONS
-            )
-            filter_options["time_period_obj"] = new_awards_only_decorator
-            filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(self.filters, **filter_options)
-            results = self.query_elasticsearch_for_prime_awards(filter_query)
+            query_with_filters = QueryWithFilters(QueryType.AWARDS)
+            filter_query = query_with_filters.generate_elasticsearch_query(self.filters)
+            results = self.query_elasticsearch(filter_query)
 
         page_metadata = get_simple_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
 
+        message_list = self._get_messages(original_filters)
+        message_list.append(
+            "'subawards' will be deprecated in the future. Set ‘spending_level’ to ‘subawards’ instead. "
+            "See documentation for more information. "
+        )
+
         response = {
             "category": self.category.name,
+            "spending_level": self.spending_level.value,
             "limit": self.pagination.limit,
             "page_metadata": page_metadata,
             "results": results[: self.pagination.limit],
-            "messages": self._get_messages(original_filters),
+            "messages": message_list,
         }
 
         return response
@@ -151,13 +167,12 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
             .order_by("-amount")
         )
 
-    def build_elasticsearch_search_with_aggregations(self, filter_query: ES_Q) -> Optional[TransactionSearch]:
+    def build_elasticsearch_search_with_aggregations(
+        self, filter_query: ES_Q
+    ) -> Optional[Union[AwardSearch, TransactionSearch]]:
         """
         Using the provided ES_Q object creates a TransactionSearch object with the necessary applied aggregations.
         """
-        # Create the filtered Search Object
-        search = TransactionSearch().filter(filter_query)
-
         sum_aggregations = get_scaled_sum_aggregations("generated_pragmatic_obligation", self.pagination)
 
         # Need to handle high cardinality categories differently; this assumes that the Search object references
@@ -170,7 +185,12 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
             group_by_agg_key_values = {"order": {"sum_field": "desc"}}
         else:
             # Get count of unique buckets; terminate early if there are no buckets matching criteria
-            bucket_count = get_number_of_unique_terms_for_transactions(filter_query, f"{self.category.agg_key}.hash")
+            if self.spending_level == SpendingLevel.AWARD:
+                bucket_count = get_number_of_unique_terms_for_awards(filter_query, f"{self.category.agg_key}.hash")
+            else:
+                bucket_count = get_number_of_unique_terms_for_transactions(
+                    filter_query, f"{self.category.agg_key}.hash"
+                )
             if bucket_count == 0:
                 return None
             else:
@@ -193,6 +213,21 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
 
         sum_field = sum_aggregations["sum_field"]
 
+        # Create the filtered Search Object
+        if self.spending_level == SpendingLevel.AWARD:
+            sum_as_cents_agg_outlay = A("sum", field="total_outlays", script={"source": "_value * 100"})
+            sum_as_dollars_agg_outlay = A(
+                "bucket_script",
+                buckets_path={"sum_as_cents_outlay": "sum_as_cents_outlay"},
+                script="params.sum_as_cents_outlay / 100",
+            )
+            group_by_agg_key.metric("sum_as_cents_outlay", sum_as_cents_agg_outlay).pipeline(
+                "sum_as_dollars_outlay", sum_as_dollars_agg_outlay
+            )
+            search = AwardSearch().filter(filter_query)
+        else:
+            search = TransactionSearch().filter(filter_query)
+
         # Apply the aggregations to the TransactionSearch object
         search.aggs.bucket("group_by_agg_key", group_by_agg_key).metric("sum_field", sum_field).pipeline(
             "sum_bucket_sort", sum_bucket_sort
@@ -203,7 +238,7 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
 
         return search
 
-    def query_elasticsearch_for_prime_awards(self, filter_query: ES_Q) -> list:
+    def query_elasticsearch(self, filter_query: ES_Q) -> list:
         search = self.build_elasticsearch_search_with_aggregations(filter_query)
         if search is None:
             return []

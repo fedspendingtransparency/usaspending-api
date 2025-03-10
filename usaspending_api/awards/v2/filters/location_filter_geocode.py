@@ -61,7 +61,7 @@ def geocode_filter_locations(scope: str, values: list) -> Q:
 
 
 def validate_location_keys(values):
-    """ Validate that the keys provided are sufficient and match properly. """
+    """Validate that the keys provided are sufficient and match properly."""
     for v in values:
         state = v.get("state")
         country = v.get("country")
@@ -79,7 +79,7 @@ def validate_location_keys(values):
 
 
 def create_nested_object(values):
-    """ Makes sure keys provided are valid """
+    """Makes sure keys provided are valid"""
     validate_location_keys(values)
 
     nested_locations = {}
@@ -142,7 +142,7 @@ def create_nested_object(values):
 
 
 def location_error_handling(fields):
-    """ Raise the relevant error for location keys. """
+    """Raise the relevant error for location keys."""
     # Request must have country, and can only have 3 fields, and must have state if there is county
     if "country" not in fields:
         raise InvalidParameterException("Invalid filter:  Missing necessary location field: country.")
@@ -152,7 +152,7 @@ def location_error_handling(fields):
 
 
 def get_fields_list(scope, field_value):
-    """ List of values to search for; `field_value`, plus possibly variants on it """
+    """List of values to search for; `field_value`, plus possibly variants on it"""
     if scope in ["congressional_code", "county_code"]:
         try:
             # Congressional and county codes are not uniform and contain multiple variables

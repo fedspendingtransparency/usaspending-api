@@ -73,7 +73,7 @@ EXIT_SIGNALS = [signal.SIGHUP, signal.SIGABRT, signal.SIGINT, signal.SIGQUIT, si
 
 
 def _handle_exit_signal(signum, frame):
-    """ Attempt to gracefully handle the exiting of the job as a result of receiving an exit signal."""
+    """Attempt to gracefully handle the exiting of the job as a result of receiving an exit signal."""
     signal_or_human = BSD_SIGNALS.get(signum, signum)
     logging.warning("Received signal {}. Attempting to gracefully exit".format(signal_or_human))
     teardown(successful_run=False)

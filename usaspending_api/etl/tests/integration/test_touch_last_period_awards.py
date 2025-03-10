@@ -8,7 +8,6 @@ from django.core.management import call_command
 from model_bakery import baker
 
 from usaspending_api.awards.models import Award
-from usaspending_api.broker.models import ExternalDataType
 from usaspending_api.search.models import AwardSearch
 
 OLD_DATE = "2020-04-05"
@@ -70,10 +69,16 @@ def award_data_old_and_new(db):
 
 @pytest.fixture
 def load_date(db):
-    data_type = ExternalDataType.objects.get(external_data_type_id=120)
-    baker.make("broker.ExternalDataLoadDate", external_data_type=data_type, last_load_date=datetime(2000, 1, 31))
+    edt = baker.make(
+        "broker.ExternalDataType",
+        name="touch_last_period_awards",
+        external_data_type_id=120,
+        update_date="2017-01-01",
+    )
+    baker.make("broker.ExternalDataLoadDate", external_data_type=edt, last_load_date=datetime(2000, 1, 31))
 
 
+@pytest.mark.django_db
 def test_awards_updated(load_date, submissions, award_data):
 
     today = datetime.now(timezone.utc)
@@ -102,6 +107,7 @@ def test_awards_updated(load_date, submissions, award_data):
     assert after.update_date == after2.update_date
 
 
+@pytest.mark.django_db
 def test_no_awards_updated(load_date, submissions, award_data_old_and_new):
     """
     'too_old' is a faba record associated with a submission already revealed, but not the newest

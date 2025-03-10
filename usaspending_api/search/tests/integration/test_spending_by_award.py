@@ -21,6 +21,20 @@ def award_data_fixture(db):
     baker.make("search.TransactionSearch", transaction_id=765432107, action_date="2013-09-17")
     baker.make("search.TransactionSearch", transaction_id=876543210, action_date="2013-09-17")
     baker.make("search.TransactionSearch", transaction_id=987654321, action_date="2013-09-17")
+
+    ref_program_activity1 = baker.make(
+        "references.RefProgramActivity",
+        id=1,
+        program_activity_code=123,
+        program_activity_name="PROGRAM_ACTIVITY_123",
+    )
+    ref_program_activity2 = baker.make(
+        "references.RefProgramActivity",
+        id=2,
+        program_activity_code=2,
+        program_activity_name="PROGRAM_ACTIVITY_2",
+    )
+
     award1 = baker.make(
         "search.AwardSearch",
         category="loans",
@@ -36,6 +50,7 @@ def award_data_fixture(db):
         type="07",
         uri=None,
         display_award_id="award200",
+        program_activities=[{"code": "0123", "name": "PROGRAM_ACTIVITY_123"}],
     )
     award2 = baker.make(
         "search.AwardSearch",
@@ -181,6 +196,7 @@ def award_data_fixture(db):
         prime_award_group="grant",
         prime_award_type="07",
         subaward_number=99999,
+        action_date="2023-01-01",
     )
     baker.make(
         "search.SubawardSearch",
@@ -190,25 +206,14 @@ def award_data_fixture(db):
         prime_award_group="procurement",
         prime_award_type="08",
         subaward_number=99998,
+        action_date="2023-01-01",
     )
-    ref_program_activity1 = baker.make(
-        "references.RefProgramActivity",
-        id=1,
-        program_activity_code=123,
-        program_activity_name="PROGRAM_ACTIVITY_123",
-    )
+
     baker.make(
         "awards.FinancialAccountsByAwards",
         financial_accounts_by_awards_id=1,
         award_id=award1.award_id,
         program_activity_id=ref_program_activity1.id,
-    )
-
-    ref_program_activity2 = baker.make(
-        "references.RefProgramActivity",
-        id=2,
-        program_activity_code=2,
-        program_activity_name="PROGRAM_ACTIVITY_2",
     )
     baker.make(
         "awards.FinancialAccountsByAwards",
@@ -219,7 +224,10 @@ def award_data_fixture(db):
 
 
 @pytest.mark.django_db
-def test_spending_by_award_subaward_success(client, spending_by_award_test_data):
+def test_spending_by_award_subaward_success(
+    client, monkeypatch, elasticsearch_subaward_index, spending_by_award_test_data
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
 
     # Testing all filters
     resp = client.post(
@@ -807,12 +815,15 @@ def test_mixed_naics_codes(client, monkeypatch, spending_by_award_test_data, ela
 
 
 @pytest.mark.django_db
-def test_correct_response_for_each_filter(client, monkeypatch, spending_by_award_test_data, elasticsearch_award_index):
+def test_correct_response_for_each_filter(
+    client, monkeypatch, spending_by_award_test_data, elasticsearch_award_index, elasticsearch_subaward_index
+):
     """
     Verify the content of the response when using different filters. This function creates the ES Index
     and then calls each of the tests instead of recreating the ES Index multiple times with the same data.
     """
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
 
     test_cases = [
         _test_correct_response_for_keywords,
@@ -1859,8 +1870,11 @@ def test_parent_uei_keyword_filter(client, monkeypatch, spending_by_award_test_d
 
 
 @pytest.mark.django_db
-def test_uei_recipient_filter_subaward(client, monkeypatch, spending_by_award_test_data, elasticsearch_award_index):
+def test_uei_recipient_filter_subaward(
+    client, monkeypatch, spending_by_award_test_data, elasticsearch_award_index, elasticsearch_subaward_index
+):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
 
     resp = client.post(
         "/api/v2/search/spending_by_award",
@@ -1909,9 +1923,10 @@ def test_uei_recipient_filter_subaward(client, monkeypatch, spending_by_award_te
 
 @pytest.mark.django_db
 def test_date_range_with_new_awards_only(
-    client, monkeypatch, elasticsearch_award_index, awards_over_different_date_ranges
+    client, monkeypatch, elasticsearch_award_index, awards_over_different_date_ranges, elasticsearch_subaward_index
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
 
     contract_type_list = all_award_types_mappings["contracts"]
 
@@ -1953,14 +1968,18 @@ def test_date_range_with_new_awards_only(
         "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(request_for_2015)
     )
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
-    assert resp.json().get("detail") == "Invalid date_type: new_awards_only"
+    assert (
+        resp.json().get("detail")
+        == "Field 'filters|time_period' is outside valid values ['action_date', 'last_modified_date', 'date_signed', 'sub_action_date']"
+    )
 
 
 @pytest.mark.django_db
 def test_spending_by_award_program_activity_subawards(
-    client, monkeypatch, elasticsearch_award_index, award_data_fixture
+    client, monkeypatch, elasticsearch_award_index, spending_by_award_test_data, elasticsearch_subaward_index
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
 
     # Program Activites filter test
     test_payload = {
@@ -1976,7 +1995,7 @@ def test_spending_by_award_program_activity_subawards(
     expected_response = [
         {
             "internal_id": "99999",
-            "prime_award_internal_id": 200,
+            "prime_award_internal_id": 4,
             "Sub-Award ID": "99999",
             "prime_award_generated_internal_id": "ASST_NON_DECF0000058_8900",
         }
@@ -2001,7 +2020,7 @@ def test_spending_by_award_program_activity_subawards(
     expected_response = [
         {
             "internal_id": "99999",
-            "prime_award_internal_id": 200,
+            "prime_award_internal_id": 4,
             "Sub-Award ID": "99999",
             "prime_award_generated_internal_id": "ASST_NON_DECF0000058_8900",
         }
@@ -2123,6 +2142,57 @@ def test_spending_by_award_program_activity(client, monkeypatch, elasticsearch_a
     resp = client.post(
         "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
     )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
+
+
+@pytest.mark.django_db
+def test_spending_by_award_subawards_award_id_filter(
+    client, monkeypatch, spending_by_award_test_data, elasticsearch_subaward_index
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
+
+    # Test finding a Subaward by it's `subaward_number`
+    payload = {
+        "subawards": True,
+        "fields": ["Sub-Award ID"],
+        "filters": {
+            "award_type_codes": ["07"],
+            "award_ids": ["99999"],
+        },
+    }
+    expected_response = [
+        {
+            "internal_id": "99999",
+            "prime_award_internal_id": 4,
+            "Sub-Award ID": "99999",
+            "prime_award_generated_internal_id": "ASST_NON_DECF0000058_8900",
+        }
+    ]
+    resp = client.post("/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(payload))
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
+
+    # Test finding a Subaward by it's `award_piid_fain`
+    payload = {
+        "subawards": True,
+        "fields": ["Sub-Award ID"],
+        "filters": {
+            "award_type_codes": ["07"],
+            "award_ids": ["PIID6003"],
+        },
+    }
+    expected_response = [
+        {
+            "internal_id": "99999",
+            "prime_award_internal_id": 4,
+            "Sub-Award ID": "99999",
+            "prime_award_generated_internal_id": "ASST_NON_DECF0000058_8900",
+        }
+    ]
+    resp = client.post("/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(payload))
 
     assert resp.status_code == status.HTTP_200_OK
     assert expected_response == resp.json().get("results"), "Unexpected or missing content!"

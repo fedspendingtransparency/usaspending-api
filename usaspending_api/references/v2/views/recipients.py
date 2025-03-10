@@ -86,9 +86,18 @@ class RecipientAutocompleteViewSet(APIView):
             An Elasticsearch search query.
         """
         es_recipient_search_fields = ["recipient_name", "uei", "duns"]
-        query_string_query = ES_Q("query_string", query=f"*{search_text}*", fields=es_recipient_search_fields)
-        multi_match_query = ES_Q("multi_match", query=search_text, fields=es_recipient_search_fields)
-        query = ES_Q("bool", should=[query_string_query, multi_match_query], minimum_should_match=1)
+
+        should_query = [
+            query
+            for search_field in es_recipient_search_fields
+            for query in [
+                ES_Q("match_phrase_prefix", **{f"{search_field}": {"query": search_text, "boost": 5}}),
+                ES_Q("match_phrase_prefix", **{f"{search_field}.contains": {"query": search_text, "boost": 3}}),
+                ES_Q("match", **{f"{search_field}": {"query": search_text, "operator": "and", "boost": 1}}),
+            ]
+        ]
+
+        query = ES_Q("bool", should=should_query, minimum_should_match=1)
 
         if recipient_levels:
             recipient_should_clause = [

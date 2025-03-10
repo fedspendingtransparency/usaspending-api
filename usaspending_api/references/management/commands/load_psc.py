@@ -1,81 +1,162 @@
-from django.core.management.base import BaseCommand
-from usaspending_api.references.models import PSC
-import os
+import json
 import logging
-from openpyxl import load_workbook
+from typing import Any, Dict, Iterable
+
+import pandas as pd
+from django.conf import settings
+from django.core.management.base import BaseCommand
+from django.db import transaction
+
+from usaspending_api.references.models import PSC
 
 
 class Command(BaseCommand):
     help = "Loads program information obtained from Excel file on https://www.acquisition.gov/PSC_Manual"
 
     logger = logging.getLogger("script")
-    default_directory = os.path.normpath("usaspending_api/references/management/commands/")
-    default_filepath = os.path.join(default_directory, "PSC_Data_June_2019_Edition_FINAL_6-20-19+DRW.xlsx")
+    default_filepath = f"{settings.FILES_SERVER_BASE_URL}/docs/PSC%20April%202024.xlsx"
+    default_sheet_name = "PSC for 042022"
 
     def add_arguments(self, parser):
-        parser.add_argument("-p", "--path", help="the path to the spreadsheets to load", default=self.default_filepath)
+        parser.add_argument(
+            "-p", "--path", help="The path to the spreadsheets to load. Can be a url.", default=self.default_filepath
+        )
+        parser.add_argument(
+            "-s",
+            "--sheet_name",
+            help="The name of the worksheet in the spreadsheet file.",
+            default=self.default_sheet_name,
+        )
         parser.add_argument(
             "-u", "--update", help="Updates the lengths of any codes that were not in the file.", action="store_true"
         )
 
     def handle(self, *args, **options):
+        result = load_psc(
+            fullpath=options["path"],
+            sheet_name=options["sheet_name"],
+            update=options["update"],
+        )
 
-        load_psc(fullpath=options["path"], update=options["update"])
-        self.logger.log(20, "Loaded PSC codes successfully.")
+        def _serialize_pscs(models: Iterable[PSC]) -> str:
+            return json.dumps([{k: str(v) for k, v in model.__dict__.items()} for model in models], indent=2)
+
+        self.logger.info(f"Added: {_serialize_pscs(result['added'].values())}")
+        self.logger.info(f"Updated: {_serialize_pscs([v.get('new') for v in result['updated'].values()])}")
+        self.logger.info(f"Deleted: {_serialize_pscs(result['deleted'].values())}")
+        self.logger.info(
+            f"Load PSC command added {len(result['added'])} PSCs, updated {len(result['updated'])} PSCs, "
+            f"deleted {len(result['deleted'])} PSCs, and left {len(result['unchanged'])} PSCs unchanged."
+        )
 
 
-def load_psc(fullpath, update):
+def _is_psc_in(psc: PSC, pscs: Iterable[PSC]) -> bool:
+    comparison_fields = [
+        "code",
+        "start_date",
+        "end_date",
+        "full_name",
+        "description",
+        "includes",
+        "excludes",
+        "notes",
+    ]
+    return any(
+        all(getattr(psc, field) == getattr(compare_psc, field) for field in comparison_fields) for compare_psc in pscs
+    )
+
+
+def compare_codes(old_pscs: Dict[str, PSC], new_pscs: Dict[str, PSC]) -> Dict[str, Dict[str, Any]]:
+    added = {code: new_psc for code, new_psc in new_pscs.items() if code not in old_pscs}
+    deleted = {code: old_psc for code, old_psc in old_pscs.items() if code not in new_pscs}
+    updated_new = {
+        code: new_psc
+        for code, new_psc in new_pscs.items()
+        if code not in added and not _is_psc_in(new_psc, old_pscs.values())
+    }
+    updated_old = {
+        code: old_psc
+        for code, old_psc in old_pscs.items()
+        if code not in deleted and not _is_psc_in(old_psc, new_pscs.values())
+    }
+    updated = {
+        code: {
+            "old": updated_old.get(code),
+            "new": new_psc,
+        }
+        for code, new_psc in updated_new.items()
+    }
+    unchanged = {code: new_psc for code, new_psc in new_pscs.items() if code not in added and code not in updated}
+    return {
+        "added": added,
+        "updated": updated,
+        "unchanged": unchanged,
+        "deleted": deleted,
+    }
+
+
+def load_psc(fullpath: str, sheet_name: str, update: bool) -> Dict[str, Any]:
     """
-    Create/Update Product or Service Code records from a Excel doc of historical data.
+    Create/Update Product or Service Code records from an Excel doc of historical data.
     """
-    try:
-        logger = logging.getLogger("script")
-        wb = load_workbook(filename=fullpath, data_only=True)
-        ws = wb.active
-        for current_row, row in enumerate(ws.rows):
-            if not row[0].value or row[0].value == "PSC CODE" or ws.row_dimensions[row[0].row].hidden:
-                continue  # skip lines without codes and hidden rows
-            psc_code = row[0].value
-            psc_length = row[1].value
-            psc_description = row[2].value
-
-            psc_start_date = row[3].value
-            psc_end_date = row[4].value
-            psc_full_name = row[5].value
-            psc_excludes = row[6].value
-            psc_notes = row[7].value
-            psc_includes = row[8].value
-
-            psc, created = PSC.objects.get_or_create(code=psc_code)
-            psc.description = psc_description
-            psc.length = psc_length
-            check_start_end_dates(psc, psc_start_date, psc_end_date)
-            psc.full_name = psc_full_name
-            psc.excludes = psc_excludes
-            psc.notes = psc_notes
-            psc.includes = psc_includes
-            psc.save()
-        if update:
-            update_lengths()
-            logger.log(20, "Updated PSC codes.")
-    except IOError:
-        logger.error("Could not open file {}".format(fullpath))
-
-
-def check_start_end_dates(psc, start_date, end_date):
-    if psc.start_date:
-        if start_date:
-            if psc.start_date < start_date.date():
-                psc.start_date = start_date
-    else:
-        psc.start_date = start_date
-    if psc.end_date:
-        if end_date:
-            if psc.end_date < end_date.date():
-                psc.end_date = end_date
-
-    else:
-        psc.end_date = end_date
+    logger = logging.getLogger("script")
+    new_pscs = (
+        pd.read_excel(
+            fullpath,
+            sheet_name=sheet_name,
+            usecols=[
+                "PSC CODE",
+                "START DATE",
+                "END DATE",
+                "PRODUCT AND SERVICE CODE NAME",
+                "PRODUCT AND SERVICE CODE FULL NAME (DESCRIPTION)",
+                "PRODUCT AND SERVICE CODE INCLUDES",
+                "PRODUCT AND SERVICE CODE EXCLUDES",
+                "PRODUCT AND SERVICE CODE NOTES",
+            ],
+            parse_dates=["START DATE", "END DATE"],
+            dtype={"PSC CODE": str},
+        )
+        # Rename columns to match PSC model fields
+        .rename(
+            columns={
+                "PSC CODE": "code",
+                "START DATE": "start_date",
+                "END DATE": "end_date",
+                "PRODUCT AND SERVICE CODE FULL NAME (DESCRIPTION)": "full_name",
+                "PRODUCT AND SERVICE CODE NAME": "description",
+                "PRODUCT AND SERVICE CODE INCLUDES": "includes",
+                "PRODUCT AND SERVICE CODE EXCLUDES": "excludes",
+                "PRODUCT AND SERVICE CODE NOTES": "notes",
+            }
+        )
+        .loc[
+            lambda df: (
+                # Remove duplicate codes keeping most recent start_date
+                ~df.sort_values(by=["code", "start_date"]).duplicated(subset=["code"], keep="last")
+                # Remove rows with missing descriptions
+                & df["description"].notnull()
+            )
+        ]
+        # Convert start date and end date to dates
+        .assign(start_date=lambda df: df["start_date"].dt.date, end_date=lambda df: df["end_date"].dt.date)
+        # Add length column
+        .assign(length=lambda df: df["code"].astype(str).str.len())
+        # Replace missing values with None
+        .astype(object)
+        .where(lambda df: df.notna(), None)
+        .to_dict(orient="records")
+    )
+    with transaction.atomic():
+        old = {psc.code: psc for psc in PSC.objects.all()}
+        PSC.objects.all().delete()
+        created = PSC.objects.bulk_create(PSC(**new_psc) for new_psc in new_pscs)
+        new = {psc.code: psc for psc in created}
+        result = compare_codes(old, new)
+    if update:
+        update_lengths()
+        logger.log(20, "Updated PSC codes.")
+    return result
 
 
 def update_lengths():

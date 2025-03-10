@@ -197,6 +197,7 @@ AWARD_FILTER = [
         ],
     },
     {"name": "def_codes", "type": "array", "array_type": "text", "text_type": "search"},
+    {"name": "description", "type": "text", "text_type": "search"},
 ]
 
 for a in AWARD_FILTER:

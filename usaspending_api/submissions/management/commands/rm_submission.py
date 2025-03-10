@@ -46,7 +46,7 @@ class Command(BaseCommand):
             "Total Rows": {"name": "DABS", "count": 0},
         }  # Using a Dict to set the logging order below
 
-        for (model, count) in deleted_stats[1].items():
+        for model, count in deleted_stats[1].items():
             models[str(model)]["count"] = count
             models["Total Rows"]["count"] += count
 

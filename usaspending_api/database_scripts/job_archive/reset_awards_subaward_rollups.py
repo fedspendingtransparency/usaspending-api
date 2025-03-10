@@ -27,6 +27,7 @@ Purpose:
     we are happy with the results.
 
 """
+
 import math
 import psycopg2
 import time

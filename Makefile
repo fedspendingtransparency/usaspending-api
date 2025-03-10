@@ -25,7 +25,7 @@ endif
 # default ENV_CODE to lcl if not set
 ENV_CODE ?= lcl
 # default version if not set in .env or an env var
-PYTHON_VERSION ?= 3.8.16
+PYTHON_VERSION ?= 3.10.12
 venv_name := usaspending-api
 docker_compose_file := docker-compose.yml
 dockerfile_for_spark := Dockerfile.spark
@@ -151,7 +151,7 @@ clean-all: confirm-clean-all  ## Remove all tmp artifacts and artifacts created 
 ifeq ($(strip ${dry-run}),'false')
 	rm -f .python-version
 	rm -rf .venv
-	@git clean -xfd --exclude='\.env' --exclude='\.envrc' --exclude='\.idea/' --exclude='spark-warehouse/'
+	@git clean -xfd --exclude='\.env' --exclude='\.envrc' --exclude='\.idea/' --exclude='spark-warehouse/' --exclude='\.vscode/'
 	deactivate || true
 	#if command -v deactivate &> /dev/null; then deactivate; fi;
 else  # this is a dry-run, spit out what would be removed
@@ -237,7 +237,7 @@ docker-compose-spark-submit: ## Run spark-submit from within local docker contai
 		-e DATABASE_URL=${DATABASE_URL} \
 	spark-submit \
 	--driver-memory "2g" \
-	--packages org.postgresql:postgresql:42.2.23,io.delta:delta-core_2.12:1.2.1,org.apache.hadoop:hadoop-aws:3.3.1,org.apache.spark:spark-hive_2.12:3.2.1 \
+	--packages org.postgresql:postgresql:42.2.23,io.delta:delta-spark_2.12:3.1.0,org.apache.hadoop:hadoop-aws:3.3.4 \
 	${if ${python_script}, \
 		${python_script}, \
 		/project/manage.py ${django_command} \
@@ -248,7 +248,7 @@ localhost-spark-submit: ## Run spark-submit from with localhost as the driver an
 	SPARK_LOCAL_IP=127.0.0.1 \
 	spark-submit \
 	--driver-memory "2g" \
-	--packages org.postgresql:postgresql:42.2.23,io.delta:delta-core_2.12:1.2.1,org.apache.hadoop:hadoop-aws:3.3.1,org.apache.spark:spark-hive_2.12:3.2.1 \
+	--packages org.postgresql:postgresql:42.2.23,io.delta:delta-spark_2.12:3.1.0,org.apache.hadoop:hadoop-aws:3.3.4 \
 	${if ${python_script}, \
 		${python_script}, \
 		manage.py ${django_command} \
@@ -257,7 +257,7 @@ localhost-spark-submit: ## Run spark-submit from with localhost as the driver an
 .PHONY: pyspark-shell
 pyspark-shell: ## Launch a local pyspark REPL shell with all of the packages and spark config pre-set
 	SPARK_LOCAL_IP=127.0.0.1 pyspark \
-	--packages org.postgresql:postgresql:42.2.23,io.delta:delta-core_2.12:1.2.1,org.apache.hadoop:hadoop-aws:3.3.1 \
+	--packages org.postgresql:postgresql:42.2.23,io.delta:delta-spark_2.12:3.1.0,org.apache.hadoop:hadoop-aws:3.3.4 \
 	--conf spark.sql.extensions=io.delta.sql.DeltaSparkSessionExtension \
 	--conf spark.sql.catalog.spark_catalog=org.apache.spark.sql.delta.catalog.DeltaCatalog \
 	--conf spark.hadoop.fs.s3a.endpoint=localhost:${MINIO_PORT} \

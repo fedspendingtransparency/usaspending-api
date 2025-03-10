@@ -120,6 +120,7 @@ def subaward_filter(filters, for_downloads=False):
 
         key_list = [
             "keywords",
+            "description",
             "transaction_keyword_search",
             "time_period",
             "award_type_codes",
@@ -184,6 +185,9 @@ def subaward_filter(filters, for_downloads=False):
                 )
 
             queryset = queryset.filter(filter_obj)
+
+        elif key == "description":
+            queryset = queryset.filter(subaward_description__icontains=value)
 
         elif key == "transaction_keyword_search":
             keyword = value
