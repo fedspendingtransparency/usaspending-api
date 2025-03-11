@@ -7,6 +7,9 @@ from django.conf import settings
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search
 from elasticsearch_dsl.mapping import Mapping
+from psycopg2 import sql as psycopg2_sql
+from pyspark.sql.types import StructType, StructField, StringType
+
 
 from usaspending_api.broker.helpers.last_load_date import (
     get_last_load_date,
@@ -638,27 +641,22 @@ def _check_awards_for_deletes(
 ) -> list:
     """Takes a list of award key values and returns them if they are NOT found in the awards DB table"""
 
-    formatted_value_ids = ""
-    for x in id_list:
-        formatted_value_ids += "('" + x + "'),"
-
-    sql = """
+    pre_format_sql = """
         SELECT x.generated_unique_award_id
-        FROM (values {ids}) AS x(generated_unique_award_id)
+        FROM {{from_sql}} AS x(generated_unique_award_id)
         LEFT JOIN {awards_table} a ON a.generated_unique_award_id = x.generated_unique_award_id
         WHERE a.generated_unique_award_id IS NULL"""
 
     if spark:  # then use spark against a Delta Table
         awards_table = "int.awards"
-        results = [
-            row.asDict()
-            for row in spark.sql(sql.format(ids=formatted_value_ids[:-1], awards_table=awards_table)).collect()
-        ]
+        sql = pre_format_sql.format(awards_table=awards_table)
+        schema = StructType([StructField("generated_unique_award_id", StringType())])
+        df = spark.createDataFrame([[val] for val in id_list], schema=schema)
+        results = [row.asDict() for row in spark.sql(sql, from_sql=df).collect()]
     else:
-        results = execute_sql_statement(
-            sql.format(ids=formatted_value_ids[:-1], awards_table=awards_table),
-            results=True,
-        )
+        sql = pre_format_sql.format(awards_table=awards_table).format(from_sql="(values ({ids}))")
+        sql = psycopg2_sql.SQL(sql).format(ids=psycopg2_sql.SQL("), (").join(map(psycopg2_sql.Literal, id_list)))
+        results = execute_sql_statement(sql, results=True)
 
     return results
 
