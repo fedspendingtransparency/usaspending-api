@@ -176,14 +176,20 @@ def award_data_fixture(db):
         broker_subaward_id=1,
         award=award1,
         sub_action_date="2023-01-01",
+        action_date="2023-01-01",
         prime_award_group="grant",
+        prime_award_type="07",
+        program_activities=[{"name": "PROGRAM_ACTIVITY_123", "code": "0123"}],
     )
     baker.make(
         "search.SubawardSearch",
         broker_subaward_id=2,
         award=award1,
         sub_action_date="2023-01-01",
+        action_date="2023-01-01",
         prime_award_group="procurement",
+        prime_award_type="07",
+        program_activities=[{"name": "PROGRAM_ACTIVITY_123", "code": "0123"}],
     )
     ref_program_activity1 = baker.make(
         "references.RefProgramActivity",
@@ -319,9 +325,10 @@ def test_spending_by_award_count_new_awards_only(client, monkeypatch, elasticsea
 
 @pytest.mark.django_db
 def test_spending_by_award_count_program_activity_subawards(
-    client, monkeypatch, elasticsearch_award_index, award_data_fixture
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, award_data_fixture
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
 
     # Program Activites filter test
     test_payload = {
