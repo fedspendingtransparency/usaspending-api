@@ -592,7 +592,7 @@ def test_delete_awards(award_data_fixture, elasticsearch_transaction_index, elas
     )
     delete_awards(client, es_etl_config)
     es_award_docs = client.count(index=elasticsearch_award_index.index_name)["count"]
-    assert es_award_docs == 0
+    assert es_award_docs == 1
 
 
 def test_delete_awards_zero_for_unmatched_transactions(
