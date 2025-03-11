@@ -7,6 +7,7 @@ from usaspending_api.search.v2.views.spending_by_award_count import SpendingByAw
 from usaspending_api.search.v2.views.spending_by_category import SpendingByCategoryVisualizationViewSet
 from usaspending_api.search.v2.views.spending_by_geography import SpendingByGeographyVisualizationViewSet
 from usaspending_api.search.v2.views.spending_over_time import SpendingOverTimeVisualizationViewSet
+from usaspending_api.search.v2.views.spending_by_subaward_grouped import SpendingBySubawardGroupedVisualizationViewSet
 
 urlpatterns = [
     re_path(r"^new_awards_over_time", NewAwardsOverTimeVisualizationViewSet.as_view()),
@@ -20,4 +21,5 @@ urlpatterns = [
     re_path(r"^spending_by_transaction", es.SpendingByTransactionVisualizationViewSet.as_view()),
     re_path(r"^spending_over_time", SpendingOverTimeVisualizationViewSet.as_view()),
     re_path(r"^transaction_spending_summary", es.TransactionSummaryVisualizationViewSet.as_view()),
+    re_path(r"^spending_by_subaward_grouped", SpendingBySubawardGroupedVisualizationViewSet.as_view()),
 ]
