@@ -12,6 +12,7 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.api_helper import (
     DUPLICATE_DISTRICT_LOCATION_PARAMETERS,
     INCOMPATIBLE_DISTRICT_LOCATION_PARAMETERS,
+    NOT_DEFINED_FOR_TRANSACTIONS,
 )
 from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.references.models.psc import PSC
@@ -907,6 +908,26 @@ class _NonzeroFields(_Filter):
         return ES_Q("bool", should=non_zero_queries, minimum_should_match=1)
 
 
+class _AwardUniqueId(_Filter):
+    """String that represents the unique ID of the prime award of a queried award/subaward."""
+
+    underscore_name = "award_unique_id"
+
+    @classmethod
+    def generate_elasticsearch_query(cls, filter_values: str, query_type: QueryType, **options) -> ES_Q:
+        if query_type == QueryType.TRANSACTIONS:
+            raise InvalidParameterException(NOT_DEFINED_FOR_TRANSACTIONS)
+
+        fields = {
+            QueryType.AWARDS: ["generated_unique_award_id"],
+            QueryType.SUBAWARDS: ["unique_award_key"],
+        }
+
+        query = es_sanitize(filter_values)
+        id_query = ES_Q("query_string", query=query, default_operator="AND", fields=fields.get(query_type, []))
+        return ES_Q("bool", should=id_query, minimum_should_match=1)
+
+
 class QueryWithFilters:
 
     @property
@@ -938,6 +959,7 @@ class QueryWithFilters:
             _QueryText.underscore_name: _QueryText,
             _NonzeroFields.underscore_name: _NonzeroFields,
             _ProgramActivities.underscore_name: _ProgramActivities,
+            _AwardUniqueId.underscore_name: _AwardUniqueId,
         }
         if self.query_type == QueryType.SUBAWARDS:
             result[_SubawardsPrimeSubAwardTypes.underscore_name] = _SubawardsPrimeSubAwardTypes
