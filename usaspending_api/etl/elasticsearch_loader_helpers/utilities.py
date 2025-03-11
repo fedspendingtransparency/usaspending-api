@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from django.conf import settings
 from elasticsearch import Elasticsearch
 from pathlib import Path
+from psycopg2.sql import Composed
 from random import choice
 from typing import Any, Generator, List, Optional, Union
 
@@ -109,7 +110,7 @@ def convert_json_array_to_list_of_str(json_data: Union[list, str]) -> Optional[L
     return result
 
 
-def execute_sql_statement(cmd: str, results: bool = False, verbose: bool = False) -> Optional[List[dict]]:
+def execute_sql_statement(cmd: str | Composed, results: bool = False, verbose: bool = False) -> Optional[List[dict]]:
     """Simple function to execute SQL using a single-use psycopg2 connection"""
     rows = None
     if verbose:
