@@ -68,8 +68,8 @@ class SubawardSearch(models.Model):
 
     # Subaward Fields (from Broker)
     subaward_type = models.TextField(null=True, blank=True)
-    subaward_report_year = models.SmallIntegerField()
-    subaward_report_month = models.SmallIntegerField()
+    subaward_report_year = models.SmallIntegerField(null=True, blank=True)
+    subaward_report_month = models.SmallIntegerField(null=True, blank=True)
     subaward_number = models.TextField(null=True, blank=True)
     subaward_amount = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
     sub_action_date = models.DateField(blank=True, null=True)
