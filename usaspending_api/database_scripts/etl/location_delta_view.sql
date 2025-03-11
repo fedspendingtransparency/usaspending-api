@@ -9,7 +9,6 @@ WITH transaction_locations AS (
 		ts.pop_county_name,
 		ts.pop_county_code,
 		ts.pop_state_fips,
-		UPPER(ts.pop_state_code),
 		ts.pop_zip5,
 		ts.pop_congressional_code_current,
 		ts.pop_congressional_code,
@@ -19,19 +18,20 @@ WITH transaction_locations AS (
 		ts.recipient_location_county_name,
 		ts.recipient_location_county_code,
 		ts.recipient_location_state_fips,
-		UPPER(ts.rl_state_code),
 		ts.recipient_location_zip5,
 		ts.recipient_location_congressional_code_current,
 		ts.recipient_location_congressional_code,
 		-- state data
+		sd_pop.code AS pop_state_code,
 		UPPER(sd_pop.name) AS pop_state_name,
+		sd_rl.code AS rl_state_code,
 		UPPER(sd_rl.name) AS rl_state_name
 	FROM
 		rpt.transaction_search ts
 	LEFT JOIN
 		state_data sd_pop ON ts.pop_state_code = sd_pop.code
 	LEFT JOIN
-		state_data sd_rl ON ts.rl_state_code = sd_rl.code
+		state_data sd_rl ON ts.recipient_location_state_code = sd_rl.code
 	WHERE
 		(
 			ts.pop_country_name IS NOT NULL
@@ -56,10 +56,10 @@ WITH transaction_locations AS (
 		ts.recipient_location_zip5,
 		ts.recipient_location_congressional_code_current,
 		ts.recipient_location_congressional_code,
-        UPPER(sd_pop.code) AS pop_state_code,
-		UPPER(sd_pop.name) AS pop_state_name,
-        UPPER(sd_rl.code) AS rl_state_code,
-		UPPER(sd_rl.name) AS rl_state_name
+		sd_pop.code,
+		sd_pop.name,
+        sd_rl.code,
+		sd_rl.name
 ),
 country_cte AS (
 	SELECT
