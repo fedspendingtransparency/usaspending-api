@@ -97,7 +97,6 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         }
 
         return Response(raw_response)
-    
 
     def query_elasticsearch_for_prime_awards(self, filters) -> list:
         query_with_filters = QueryWithFilters(QueryType.AWARDS)
