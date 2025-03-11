@@ -155,7 +155,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
     def query_elasticsearch_for_subawards(self, filters) -> list:
         query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
         filter_query = query_with_filters.generate_elasticsearch_query(filters)
-        s = SubawardSearch().filter(filter_query)
+        s = SubawardSearch().filter(filter_query).filter("exists", field="award_id").extra(size=0)
 
         s.aggs.bucket(
             "types",
