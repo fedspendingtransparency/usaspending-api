@@ -87,6 +87,11 @@ def dump_dict_to_string(json_data: dict[str, str]) -> str | None:
 
     if isinstance(json_data, dict):
         return json.dumps(json_data)
+    elif isinstance(json_data, str):
+        try:
+            return json.loads(json_data)
+        except ValueError as e:
+            raise ValueError from e(f"String is not a valid dictionary: {json_data}")
     else:
         raise ValueError(f"Cannot serialize non-dict to string: {json_data}")
 
@@ -147,7 +152,7 @@ def execute_sql_statement(cmd: str, results: bool = False, verbose: bool = False
 def db_rows_to_dict(cursor: psycopg2.extensions.cursor) -> List[dict]:
     """Return a dictionary of all row results from a database connection cursor"""
     columns = [col[0] for col in cursor.description]
-    return [dict(zip(columns, row)) for row in cursor.fetchall()]
+    return [dict(zip(columns, row, strict=False)) for row in cursor.fetchall()]
 
 
 def filter_query(column: str, values: list, query_type: str = "match_phrase") -> dict:
