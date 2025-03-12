@@ -349,6 +349,11 @@ class Command(BaseCommand):
         # Setup Logger
         logger = get_jvm_logger(self.spark, __name__)
 
+        # Test Logging
+        logger.info("==== TESTING BROKER CONNECTION ====")
+        logger.info(get_broker_jdbc_url())
+        logger.info("===================================")
+
         # Resolve Parameters
         destination_table = options["destination_table"]
         table_spec = TABLE_SPEC[destination_table]
