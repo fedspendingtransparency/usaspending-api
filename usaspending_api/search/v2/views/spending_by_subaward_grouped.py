@@ -1,24 +1,24 @@
 import copy
 import logging
 from sys import maxsize
-from usaspending_api.common.api_versioning import API_TRANSFORM_FUNCTIONS, api_transformations
-from usaspending_api.common.validator.award_filter import AWARD_FILTER_NO_RECIPIENT_ID
-from usaspending_api.common.validator.pagination import PAGINATION
-from usaspending_api.common.validator.tinyshield import TinyShield
-
-from usaspending_api.common.cache_decorator import cache_response
 from django.conf import settings
-from rest_framework.response import Response
 from elasticsearch_dsl import A
 from elasticsearch_dsl import Q as ES_Q
+from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from usaspending_api.common.api_versioning import API_TRANSFORM_FUNCTIONS, api_transformations
+from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.common.elasticsearch.search_wrappers import SubawardSearch
 from usaspending_api.common.helpers.generic_helper import (
     get_generic_filters_message,
 )
-from usaspending_api.search.filters.time_period.query_types import SubawardSearchTimePeriod
 from usaspending_api.common.query_with_filters import QueryWithFilters
+from usaspending_api.common.validator.award_filter import AWARD_FILTER_NO_RECIPIENT_ID
+from usaspending_api.common.validator.pagination import PAGINATION
+from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.search.filters.elasticsearch.filter import QueryType
-from usaspending_api.common.elasticsearch.search_wrappers import SubawardSearch
+from usaspending_api.search.filters.time_period.query_types import SubawardSearchTimePeriod
 
 logger = logging.getLogger(__name__)
 
@@ -142,8 +142,7 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
             results.append(item)
             count += 1
         results = self.sort_by_attribute(results)
-        result_dict = [result.__dict__ for result in results]
-        return result_dict
+        return [result.__dict__ for result in results]
 
     # default sorting is to sort by the award_id, default order is desc
     def sort_by_attribute(self, results: list[subaward_grouped_model]) -> list[subaward_grouped_model]:
