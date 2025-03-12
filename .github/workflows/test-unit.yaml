@@ -39,8 +39,19 @@ jobs:
 
       - name: Run Test Cases
         run: >
-          pytest -x --reuse-db --numprocesses logical --cov=usaspending_api --cov-report term -r=fEs --dist worksteal --verbosity=1 --durations 50
-          --override-ini=python_files="test_*.py *_test.py" --ignore-glob="**/tests/integration/*"
+          pytest
+            -r=fEs
+            -x
+            --cov usaspending_api
+            --cov-report term
+            --cov-report xml:coverage.${{ github.workflow }}.xml
+            --dist worksteal 
+            --durations 50
+            --ignore-glob "**/tests/integration/*"
+            --numprocesses logical
+            --reuse-db
+            --override-ini python_files="test_*.py *_test.py"
+            --verbosity 1
 
       - name: List Coverage
         run: ls

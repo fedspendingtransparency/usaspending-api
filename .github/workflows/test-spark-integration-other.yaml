@@ -54,9 +54,19 @@ jobs:
 
       - name: Run Test Cases
         run: >
-          pytest -x --reuse-db --numprocesses logical --cov=usaspending_api --cov-report term -r=fEs --dist worksteal --verbosity=1 --durations 50
-          -m "spark" -k "(not test_load_to_from_delta.py and not test_load_transactions_in_delta_lookups.py and not test_load_transactions_in_delta_fabs_fpds.py)"
-          --override-ini=python_files="test_*.py *_test.py"
+          pytest
+            -k "(not test_load_to_from_delta.py and not test_load_transactions_in_delta_lookups.py and not test_load_transactions_in_delta_fabs_fpds.py)"
+            -m "spark"
+            -r fEs
+            -x
+            --cov usaspending_api
+            --cov-report term
+            --dist worksteal
+            --durations 50
+            --numprocesses logical
+            --override-ini=python_files="test_*.py *_test.py"
+            --reuse-db
+            --verbosity 1
 
   Cancel-Running-Workflow:
     name: Cancel Running Workflow
