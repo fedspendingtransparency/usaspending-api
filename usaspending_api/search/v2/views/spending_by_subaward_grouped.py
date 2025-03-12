@@ -127,8 +127,8 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
         results = []
         count = 0
         for result in response["aggregations"]["award_id"]["buckets"]:
-            award_generated_internal_id = response["hits"]["hits"][count]['_source']['unique_award_key']
-            subaward_obligation = result['subaward_obligation']['value']
+            award_generated_internal_id = response["hits"]["hits"][count]["_source"]["unique_award_key"]
+            subaward_obligation = result["subaward_obligation"]["value"]
             item = subaward_grouped_model(
                 result["key"], result["doc_count"], award_generated_internal_id, subaward_obligation
             )
