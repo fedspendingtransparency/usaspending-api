@@ -115,29 +115,22 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
         terms_aggregation = A("terms", field="award_piid_fain")
 
         # Sum the subaward amount within each prime award
-        sum_aggregation = terms_aggregation.metric("subaward_obligation", "sum", field="subaward_amount")
+        terms_aggregation.metric("subaward_obligation", "sum", field="subaward_amount")
+
         search_sum = SubawardSearch().filter(filter_query)
-        search_sum.aggs.bucket("results", sum_aggregation)
-        response_sum = search_sum.handle_execute()
+        search_sum.aggs.bucket("award_id", terms_aggregation)
+        response = search_sum.handle_execute()
 
-        # Get award_generated_internal_id; subawards belonging to the same prime award all have the same unique_award_key, so the size only needs to be 1
-        unique_award_key = terms_aggregation.metric("unique_award_key", "top_hits", size=1, _source="unique_award_key")
-        search_unique = SubawardSearch().filter(filter_query)
-        search_unique.aggs.bucket("results", unique_award_key)
-        response_unique = search_unique.handle_execute()
-
-        if response_sum is None or response_unique is None:
+        if response is None:
             raise Exception("Breaking generator, unable to reach cluster")
 
-        # response_sum and response_unique will have the same number indices since they're coming both being aggregated within the original es query and neither is compressing the results to a smaller list
         results = []
         count = 0
-        for result in response_sum["aggregations"]["results"]["buckets"]:
-            award_generated_internal_id = response_unique["aggregations"]["results"]["buckets"][count][
-                "unique_award_key"
-            ]["hits"]["hits"][0]["_source"]["unique_award_key"]
+        for result in response["aggregations"]["award_id"]["buckets"]:
+            award_generated_internal_id = response["hits"]["hits"][count]['_source']['unique_award_key']
+            subaward_obligation = result['subaward_obligation']['value']
             item = subaward_grouped_model(
-                result["key"], result["doc_count"], award_generated_internal_id, result["subaward_obligation"]["value"]
+                result["key"], result["doc_count"], award_generated_internal_id, subaward_obligation
             )
             results.append(item)
             count += 1
@@ -146,9 +139,7 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
 
     # default sorting is to sort by the award_id, default order is desc
     def sort_by_attribute(self, results: list[subaward_grouped_model]) -> list[subaward_grouped_model]:
-        reverse = True
-        if self.pagination["sort_order"] == "asc":
-            reverse = False
+        reverse = True if self.pagination["sort_order"] == "asc" else False
         if hasattr(results, self.pagination["sort_key"]):
             return sorted(results, key=lambda result: getattr(result, self.pagination["sort_key"]), reverse=reverse)
         return sorted(results, key=lambda result: result.award_id, reverse=reverse)
