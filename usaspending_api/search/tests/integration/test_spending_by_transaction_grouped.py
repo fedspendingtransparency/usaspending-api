@@ -24,6 +24,7 @@ def transaction_data():
         piid="IND12PB00323",
         recipient_uei="testuei",
         parent_uei="test_parent_uei",
+        generated_unique_award_id="IND12PB00323",
     )
     baker.make(
         "search.TransactionSearch",
@@ -38,6 +39,7 @@ def transaction_data():
         piid="IND12PB00323",
         recipient_uei="testuei",
         parent_uei="test_parent_uei",
+        generated_unique_award_id="IND12PB00323",
     )
     baker.make(
         "search.AwardSearch",
@@ -47,6 +49,7 @@ def transaction_data():
         is_fpds=True,
         type="A",
         piid="IND12PB00323",
+        generated_unique_award_id="IND12PB00323",
     )
 
     baker.make(
@@ -62,6 +65,7 @@ def transaction_data():
         piid="BOI1243L98AS",
         recipient_uei="testuei",
         parent_uei="test_parent_uei",
+        generated_unique_award_id="BOI1243L98AS",
     )
     baker.make(
         "search.TransactionSearch",
@@ -76,6 +80,7 @@ def transaction_data():
         piid="BOI1243L98AS",
         recipient_uei="testuei",
         parent_uei="test_parent_uei",
+        generated_unique_award_id="BOI1243L98AS",
     )
     baker.make(
         "search.AwardSearch",
@@ -85,6 +90,7 @@ def transaction_data():
         is_fpds=True,
         type="A",
         piid="BOI1243L98AS",
+        generated_unique_award_id="BOI1243L98AS",
     )
 
 
@@ -110,7 +116,7 @@ def test_spending_by_transaction_grouped_success(
                     "Awarding Sub Agency",
                     "Award Type",
                 ],
-                "sort": "Matching Transaction Obligation",
+                "sort": "transaction_obligation",
             }
         ),
     )
@@ -118,12 +124,9 @@ def test_spending_by_transaction_grouped_success(
     resp_results = resp.data.get("results", {})
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp_results) == 1
-    assert resp_results[0]["Prime Award ID"] == "IND12PB00323"
-    assert resp_results[0]["Matching Transaction Count"] == 2
-    assert resp_results[0]["Matching Transaction Obligation"] == 135.00
-    assert len(resp_results[0]["children"]) == 2
-    assert resp_results[0]["children"][0]["Transaction Amount"] == "35.00"
-    assert resp_results[0]["children"][1]["Transaction Amount"] == "100.00"
+    assert resp_results[0]["award_id"] == "IND12PB00323"
+    assert resp_results[0]["transaction_count"] == 2
+    assert resp_results[0]["transaction_obligation"] == 135.00
 
     resp = client.post(
         ENDPOINT,
@@ -141,7 +144,7 @@ def test_spending_by_transaction_grouped_success(
                     "Awarding Sub Agency",
                     "Award Type",
                 ],
-                "sort": "Matching Transaction Obligation",
+                "sort": "transaction_obligation",
             }
         ),
     )
@@ -167,7 +170,7 @@ def test_spending_by_transaction_grouped_success(
                     "Awarding Sub Agency",
                     "Award Type",
                 ],
-                "sort": "Matching Transaction Obligation",
+                "sort": "transaction_obligation",
             }
         ),
     )
@@ -175,12 +178,9 @@ def test_spending_by_transaction_grouped_success(
     resp_results = resp.data.get("results", {})
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp_results) == 1
-    assert resp_results[0]["Prime Award ID"] == "IND12PB00323"
-    assert resp_results[0]["Matching Transaction Count"] == 2
-    assert resp_results[0]["Matching Transaction Obligation"] == 135.00
-    assert len(resp_results[0]["children"]) == 2
-    assert resp_results[0]["children"][0]["Transaction Amount"] == "35.00"
-    assert resp_results[0]["children"][1]["Transaction Amount"] == "100.00"
+    assert resp_results[0]["award_id"] == "IND12PB00323"
+    assert resp_results[0]["transaction_count"] == 2
+    assert resp_results[0]["transaction_obligation"] == 135.00
 
     # Test required filters
     resp = client.post(
@@ -214,7 +214,7 @@ def test_spending_by_transaction_grouped_success(
                     "Awarding Sub Agency",
                     "Award Type",
                 ],
-                "sort": "Matching Transaction Obligation",
+                "sort": "transaction_obligatoin",
             }
         ),
     )
@@ -222,18 +222,12 @@ def test_spending_by_transaction_grouped_success(
     resp_results = resp.data.get("results", {})
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp_results) == 2
-    assert resp_results[0]["Prime Award ID"] == "IND12PB00323"
-    assert resp_results[0]["Matching Transaction Count"] == 2
-    assert resp_results[0]["Matching Transaction Obligation"] == 135.00
-    assert len(resp_results[0]["children"]) == 2
-    assert resp_results[0]["children"][0]["Transaction Amount"] == "35.00"
-    assert resp_results[0]["children"][1]["Transaction Amount"] == "100.00"
-    assert resp_results[1]["Prime Award ID"] == "BOI1243L98AS"
-    assert resp_results[1]["Matching Transaction Count"] == 2
-    assert resp_results[1]["Matching Transaction Obligation"] == 65.00
-    assert len(resp_results[1]["children"]) == 2
-    assert resp_results[1]["children"][0]["Transaction Amount"] == "30.00"
-    assert resp_results[1]["children"][1]["Transaction Amount"] == "35.00"
+    assert resp_results[0]["award_id"] == "IND12PB00323"
+    assert resp_results[0]["transaction_count"] == 2
+    assert resp_results[0]["transaction_obligatoin"] == 135.00
+    assert resp_results[1]["award_id"] == "BOI1243L98AS"
+    assert resp_results[1]["transaction_count"] == 2
+    assert resp_results[1]["transaction_obligation"] == 65.00
 
 
 @pytest.mark.django_db
@@ -259,7 +253,7 @@ def test_spending_by_transaction_grouped_sorting(
                     "Awarding Sub Agency",
                     "Award Type",
                 ],
-                "sort": "Prime Award ID",
+                "sort": "award_id",
                 "order": "asc",
             }
         ),
@@ -267,18 +261,12 @@ def test_spending_by_transaction_grouped_sorting(
     resp_results = resp.data.get("results", {})
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp_results) == 2
-    assert resp_results[0]["Prime Award ID"] == "BOI1243L98AS"
-    assert resp_results[0]["Matching Transaction Count"] == 2
-    assert resp_results[0]["Matching Transaction Obligation"] == 65.00
-    assert len(resp_results[0]["children"]) == 2
-    assert resp_results[0]["children"][0]["Transaction Amount"] == "30.00"
-    assert resp_results[0]["children"][1]["Transaction Amount"] == "35.00"
-    assert resp_results[1]["Prime Award ID"] == "IND12PB00323"
-    assert resp_results[1]["Matching Transaction Count"] == 2
-    assert resp_results[1]["Matching Transaction Obligation"] == 135.00
-    assert len(resp_results[1]["children"]) == 2
-    assert resp_results[1]["children"][0]["Transaction Amount"] == "35.00"
-    assert resp_results[1]["children"][1]["Transaction Amount"] == "100.00"
+    assert resp_results[0]["award_id"] == "BOI1243L98AS"
+    assert resp_results[0]["transaction_count"] == 2
+    assert resp_results[0]["transaction_obligation"] == 65.00
+    assert resp_results[1]["award_id"] == "IND12PB00323"
+    assert resp_results[1]["transaction_count"] == 2
+    assert resp_results[1]["transaction_obligation"] == 135.00
 
     # Test sort field
     resp = client.post(
@@ -297,7 +285,7 @@ def test_spending_by_transaction_grouped_sorting(
                     "Awarding Sub Agency",
                     "Award Type",
                 ],
-                "sort": "Matching Transaction Obligation",
+                "sort": "transaction_obligation",
             }
         ),
     )
@@ -305,15 +293,9 @@ def test_spending_by_transaction_grouped_sorting(
     resp_results = resp.data.get("results", {})
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp_results) == 2
-    assert resp_results[0]["Prime Award ID"] == "IND12PB00323"
-    assert resp_results[0]["Matching Transaction Count"] == 2
-    assert resp_results[0]["Matching Transaction Obligation"] == 135.00
-    assert len(resp_results[0]["children"]) == 2
-    assert resp_results[0]["children"][0]["Transaction Amount"] == "35.00"
-    assert resp_results[0]["children"][1]["Transaction Amount"] == "100.00"
-    assert resp_results[1]["Prime Award ID"] == "BOI1243L98AS"
-    assert resp_results[1]["Matching Transaction Count"] == 2
-    assert resp_results[1]["Matching Transaction Obligation"] == 65.00
-    assert len(resp_results[1]["children"]) == 2
-    assert resp_results[1]["children"][0]["Transaction Amount"] == "30.00"
-    assert resp_results[1]["children"][1]["Transaction Amount"] == "35.00"
+    assert resp_results[0]["award_id"] == "IND12PB00323"
+    assert resp_results[0]["transaction_count"] == 2
+    assert resp_results[0]["transaction_obligation"] == 135.00
+    assert resp_results[1]["award_id"] == "BOI1243L98AS"
+    assert resp_results[1]["transaction_count"] == 2
+    assert resp_results[1]["transaction_obligation"] == 65.00
