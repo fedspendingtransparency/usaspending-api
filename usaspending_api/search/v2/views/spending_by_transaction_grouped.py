@@ -53,10 +53,10 @@ class SpendingByTransactionGroupedVisualizationViewSet(APIView):
                 "key": "sort",
                 "type": "enum",
                 "enum_values": (
-                    "award_id",
-                    "transaction_obligation",
-                    "transaction_count",
                     "award_generated_internal_id",
+                    "award_id",
+                    "transaction_count",
+                    "transaction_obligation",
                 ),
                 "optional": True,
                 "default": "transaction_obligation",
