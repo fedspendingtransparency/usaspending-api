@@ -71,6 +71,44 @@ runs:
         psql $DATABASE_URL -c "SELECT 'GRANT SELECT ON ALL TABLES IN SCHEMA ' || nspname || ' TO readonly' FROM pg_namespace WHERE nspname IN ('raw','int','rpt','temp','public')"
         psql $DATABASE_URL -c "SELECT 'ALTER DEFAULT PRIVILEGES IN SCHEMA ' || nspname || ' GRANT SELECT ON TABLES TO readonly' FROM pg_namespace WHERE nspname IN ('raw','int','rpt','temp','public')"
 
+    - name: Setting spark log levels to warning
+      if: ${{ inputs.is-spark-test == 'true' }}
+      shell: bash
+      run: |
+        PIP_SPARK_HOME=$(python -c "import site;print(f'{site.getsitepackages()[0]}/pyspark')")
+        mkdir $PIP_SPARK_HOME/conf
+        touch $PIP_SPARK_HOME/conf/log4j2.properties
+        echo "
+        # This takes the log4j2.properties.template and changes log_level to warning
+        rootLogger.level = warn
+        rootLogger.appenderRef.stdout.ref = console
+        appender.console.type = Console
+        appender.console.name = console
+        appender.console.target = SYSTEM_ERR
+        appender.console.layout.type = PatternLayout
+        appender.console.layout.pattern = %d{yy/MM/dd HH:mm:ss} %p %c{1}: %m%n%ex
+        logger.repl.name = org.apache.spark.repl.Main
+        logger.repl.level = warn
+        logger.thriftserver.name = org.apache.spark.sql.hive.thriftserver.SparkSQLCLIDriver
+        logger.thriftserver.level = warn
+        logger.jetty1.name = org.sparkproject.jetty
+        logger.jetty1.level = warn
+        logger.jetty2.name = org.sparkproject.jetty.util.component.AbstractLifeCycle
+        logger.jetty2.level = error
+        logger.replexprTyper.name = org.apache.spark.repl.SparkIMain$exprTyper
+        logger.replexprTyper.level = warn
+        logger.replSparkILoopInterpreter.name = org.apache.spark.repl.SparkILoop$SparkILoopInterpreter
+        logger.replSparkILoopInterpreter.level = warn
+        logger.parquet1.name = org.apache.parquet
+        logger.parquet1.level = error
+        logger.parquet2.name = parquet
+        logger.parquet2.level = error
+        logger.RetryingHMSHandler.name = org.apache.hadoop.hive.metastore.RetryingHMSHandler
+        logger.RetryingHMSHandler.level = fatal
+        logger.FunctionRegistry.name = org.apache.hadoop.hive.ql.exec.FunctionRegistry
+        logger.FunctionRegistry.level = error
+        " >> $PIP_SPARK_HOME/conf/log4j2.properties
+
     - name: Run initial test to trigger DB creation
       if: ${{ inputs.is-integration-test == 'true' }}
       working-directory: ${{ inputs.working-directory }}
