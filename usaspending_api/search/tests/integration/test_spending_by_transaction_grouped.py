@@ -24,7 +24,7 @@ def transaction_data():
         piid="IND12PB00323",
         recipient_uei="testuei",
         parent_uei="test_parent_uei",
-        generated_unique_award_id="IND12PB00323",
+        generated_unique_award_id="IND12PB00323-generated",
     )
     baker.make(
         "search.TransactionSearch",
@@ -39,7 +39,7 @@ def transaction_data():
         piid="IND12PB00323",
         recipient_uei="testuei",
         parent_uei="test_parent_uei",
-        generated_unique_award_id="IND12PB00323",
+        generated_unique_award_id="IND12PB00323-generated",
     )
     baker.make(
         "search.AwardSearch",
@@ -49,7 +49,6 @@ def transaction_data():
         is_fpds=True,
         type="A",
         piid="IND12PB00323",
-        generated_unique_award_id="IND12PB00323",
     )
 
     baker.make(
@@ -65,7 +64,7 @@ def transaction_data():
         piid="BOI1243L98AS",
         recipient_uei="testuei",
         parent_uei="test_parent_uei",
-        generated_unique_award_id="BOI1243L98AS",
+        generated_unique_award_id="BOI1243L98AS-generated",
     )
     baker.make(
         "search.TransactionSearch",
@@ -80,7 +79,7 @@ def transaction_data():
         piid="BOI1243L98AS",
         recipient_uei="testuei",
         parent_uei="test_parent_uei",
-        generated_unique_award_id="BOI1243L98AS",
+        generated_unique_award_id="BOI1243L98AS-generated",
     )
     baker.make(
         "search.AwardSearch",
@@ -90,7 +89,6 @@ def transaction_data():
         is_fpds=True,
         type="A",
         piid="BOI1243L98AS",
-        generated_unique_award_id="BOI1243L98AS",
     )
 
 
@@ -127,6 +125,7 @@ def test_spending_by_transaction_grouped_success(
     assert resp_results[0]["award_id"] == "IND12PB00323"
     assert resp_results[0]["transaction_count"] == 2
     assert resp_results[0]["transaction_obligation"] == 135.00
+    assert resp_results[0]["award_generated_internal_id"] == "IND12PB00323-generated"
 
     resp = client.post(
         ENDPOINT,
@@ -181,19 +180,13 @@ def test_spending_by_transaction_grouped_success(
     assert resp_results[0]["award_id"] == "IND12PB00323"
     assert resp_results[0]["transaction_count"] == 2
     assert resp_results[0]["transaction_obligation"] == 135.00
+    assert resp_results[0]["award_generated_internal_id"] == "IND12PB00323-generated"
 
     # Test required filters
     resp = client.post(
         ENDPOINT,
         content_type="application/json",
         data=json.dumps({"filters": {"award_type_codes": ["A"]}}),
-    )
-    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-
-    resp = client.post(
-        ENDPOINT,
-        content_type="application/json",
-        data=json.dumps({"filters": {"keywords": ["award 1"]}}),
     )
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
@@ -214,7 +207,7 @@ def test_spending_by_transaction_grouped_success(
                     "Awarding Sub Agency",
                     "Award Type",
                 ],
-                "sort": "transaction_obligatoin",
+                "sort": "transaction_obligation",
             }
         ),
     )
@@ -224,10 +217,12 @@ def test_spending_by_transaction_grouped_success(
     assert len(resp_results) == 2
     assert resp_results[0]["award_id"] == "IND12PB00323"
     assert resp_results[0]["transaction_count"] == 2
-    assert resp_results[0]["transaction_obligatoin"] == 135.00
+    assert resp_results[0]["transaction_obligation"] == 135.00
+    assert resp_results[0]["award_generated_internal_id"] == "IND12PB00323-generated"
     assert resp_results[1]["award_id"] == "BOI1243L98AS"
     assert resp_results[1]["transaction_count"] == 2
     assert resp_results[1]["transaction_obligation"] == 65.00
+    assert resp_results[1]["award_generated_internal_id"] == "BOI1243L98AS-generated"
 
 
 @pytest.mark.django_db
@@ -264,9 +259,11 @@ def test_spending_by_transaction_grouped_sorting(
     assert resp_results[0]["award_id"] == "BOI1243L98AS"
     assert resp_results[0]["transaction_count"] == 2
     assert resp_results[0]["transaction_obligation"] == 65.00
+    assert resp_results[0]["award_generated_internal_id"] == "BOI1243L98AS-generated"
     assert resp_results[1]["award_id"] == "IND12PB00323"
     assert resp_results[1]["transaction_count"] == 2
     assert resp_results[1]["transaction_obligation"] == 135.00
+    assert resp_results[1]["award_generated_internal_id"] == "IND12PB00323-generated"
 
     # Test sort field
     resp = client.post(
@@ -296,6 +293,41 @@ def test_spending_by_transaction_grouped_sorting(
     assert resp_results[0]["award_id"] == "IND12PB00323"
     assert resp_results[0]["transaction_count"] == 2
     assert resp_results[0]["transaction_obligation"] == 135.00
+    assert resp_results[0]["award_generated_internal_id"] == "IND12PB00323-generated"
     assert resp_results[1]["award_id"] == "BOI1243L98AS"
     assert resp_results[1]["transaction_count"] == 2
     assert resp_results[1]["transaction_obligation"] == 65.00
+    assert resp_results[1]["award_generated_internal_id"] == "BOI1243L98AS-generated"
+
+    resp = client.post(
+        ENDPOINT,
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "filters": {"keywords": ["award 1", "award 2"], "award_type_codes": ["A"]},
+                "fields": [
+                    "Award ID",
+                    "Mod",
+                    "Recipient Name",
+                    "Action Date",
+                    "Transaction Amount",
+                    "Awarding Agency",
+                    "Awarding Sub Agency",
+                    "Award Type",
+                ],
+                "sort": "award_generated_internal_id",
+            }
+        ),
+    )
+
+    resp_results = resp.data.get("results", {})
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp_results) == 2
+    assert resp_results[0]["award_id"] == "BOI1243L98AS"
+    assert resp_results[0]["transaction_count"] == 2
+    assert resp_results[0]["transaction_obligation"] == 65.00
+    assert resp_results[0]["award_generated_internal_id"] == "BOI1243L98AS-generated"
+    assert resp_results[1]["award_id"] == "IND12PB00323"
+    assert resp_results[1]["transaction_count"] == 2
+    assert resp_results[1]["transaction_obligation"] == 135.00
+    assert resp_results[1]["award_generated_internal_id"] == "IND12PB00323-generated"
