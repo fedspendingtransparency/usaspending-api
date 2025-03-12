@@ -316,6 +316,7 @@ def test_spending_by_transaction_grouped_sorting(
                     "Award Type",
                 ],
                 "sort": "award_generated_internal_id",
+                "order": "asc",
             }
         ),
     )
