@@ -67,6 +67,9 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
             identifier_replacements["~"] = "rlike"
             identifier_replacements["jsonb_build_object"] = "named_struct"
             identifier_replacements["to_jsonb"] = "to_json"
+            identifier_replacements["unnest"] = "explode"
+            identifier_replacements["["] = "("
+            identifier_replacements["]"] = ")"
         else:
             raise ValueError(
                 f"Unrecognized load_type {self.config['load_type']}, or this function does not yet support it"
