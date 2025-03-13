@@ -26,18 +26,6 @@ class LocationAutocompleteViewSet(APIView):
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/location.md"
 
-    # Which field(s) to return along with the matching field
-    es_additional_fields = {
-        "city_name": ["state_name", "country_name"],
-        "zip_code": ["state_name"],
-        "county_name": ["county_fips", "state_name"],
-        "county_fips": None,
-        "current_cd": ["state_name"],
-        "original_cd": ["state_name"],
-        "state_name": ["country_name"],
-        "country_name": None,
-    }
-
     @cache_response()
     def post(self, request):
         es_results: ES_Response = self._query_elasticsearch(request.data["search_text"], request.data["limit"])
