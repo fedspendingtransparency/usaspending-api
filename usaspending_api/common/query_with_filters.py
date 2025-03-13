@@ -133,9 +133,7 @@ class _Description(_Filter):
             query += r"\*"
         else:
             query += "*"
-        description_query = ES_Q(
-            "multi_match", query=query, fields=fields.get(query_type, []), type="phrase_prefix"
-        )
+        description_query = ES_Q("multi_match", query=query, fields=fields.get(query_type, []), type="phrase_prefix")
         return ES_Q("bool", should=description_query, minimum_should_match=1)
 
 
