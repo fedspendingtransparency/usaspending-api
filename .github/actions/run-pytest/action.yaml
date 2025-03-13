@@ -32,10 +32,10 @@ runs:
     - name: Build pytest command
       id: build-pytest-command
       shell: bash
-      run: |
+      run: >
         echo pytest-command=$(python -c '
         import os;
-        print(f"pytest
+        print("pytest
           -r=fEs
           -x
           --cov=usaspending_api
