@@ -88,9 +88,9 @@ Searches for transaction records based on a provided set of filters and groups t
                       "results": [
                           {
                               "award_id": "HSSCCG10J00265",
-                              "transaction_count": 324,
+                              "transaction_count": 32,
                               "transaction_obligation": 55276481.77,
-                              "award_generated_internal_id": "CONT_AWD_HSSCCG10J00265_7003_HSHQDC06D00026_7001
+                              "award_generated_internal_id": "CONT_AWD_HSSCCG10J00265_7003_HSHQDC06D00026_7001"
                           },
                           {
                               "award_id": "HHSM500201600013U",
@@ -137,8 +137,6 @@ List of column names to request
 + `transaction_count` (required, number)
 + `transaction_obligation` (required, number)
 + `award_generated_internal_id` (required, number)
-+ `page_metadata` (required, PageMetaDataObject, fixed-type)
-+ `limit`: 10 (required, number)
 
 ### PageMetaDataObject (object)
 + `page`: 1 (required, number)
