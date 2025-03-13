@@ -74,7 +74,7 @@ Searches for transaction records based on a provided set of filters and groups t
         + `page_metadata` (required, PageMetaDataObject, fixed-type)
         + `limit`: 10 (required, number)
 
-          + Body
+    + Body
 
                   {
                       "limit": 10,
