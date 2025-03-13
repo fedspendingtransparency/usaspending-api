@@ -34,8 +34,7 @@ runs:
       shell: bash
       run: >
         echo pytest-command=$(python -c '
-        import os;
-        print("pytest
+        import os;print("pytest
           -r=fEs
           -x
           --cov=usaspending_api
