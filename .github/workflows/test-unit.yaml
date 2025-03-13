@@ -42,7 +42,7 @@ jobs:
         with:
           cov-report-name: 'unit-tests'
           ignore-glob: '**/tests/integration/*'
-          include-glob: 'test_*.py *_test.py"'
+          include-glob: 'test_*.py *_test.py'
 
   Cancel-Running-Workflow:
     name: Cancel Running Workflow
