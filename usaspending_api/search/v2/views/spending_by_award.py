@@ -326,8 +326,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
         else:
             search = base_search.filter(filter_query).sort(*sorts)[record_num : record_num + self.pagination["limit"]]
 
-        print(search.to_dict())
-
         response = search.handle_execute()
 
         return response
