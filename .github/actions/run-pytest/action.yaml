@@ -4,6 +4,9 @@ inputs:
   cov-report-name:
     description: Name used in the title of the coverage report output
     required: true
+  db-state:
+    description: Whether the DB should be reused from a previous run or recreated
+    default: "--reuse-db"
   ignore-glob:
     description: Glob pattern of files that should be ignored
     default: ""
@@ -24,6 +27,7 @@ runs:
       shell: bash
       run: |
         echo "COV_REPORT_NAME=${{ inputs.cov-report-name }}" >> $GITHUB_ENV
+        echo "DB_STATE=${{ inputs.db-state }}" >> $GITHUB_ENV
         echo "IGNORE_GLOB=${{ inputs.ignore-glob }}" >> $GITHUB_ENV
         echo "INCLUDE_GLOB=${{ inputs.include-glob }}" >> $GITHUB_ENV
         echo "KEYWORD=${{ inputs.keyword }}" >> $GITHUB_ENV
@@ -45,10 +49,12 @@ runs:
         --numprocesses logical
         --override-ini=python_files=\"{include_glob}\"
         --verbosity=1
+        {db-state}
         {keyword}
         {marker}
         {ignore_glob}
         ".format(
+        db_state=os.environ["DB_STATE"],
         cov_report_name=os.environ["COV_REPORT_NAME"],
         include_glob=os.environ["INCLUDE_GLOB"],
         keyword="-k \"{}\"".format(os.environ["KEYWORD"]) if os.environ.get("KEYWORD") else "",
@@ -58,4 +64,4 @@ runs:
 
     - name: Run tests
       shell: bash
-      run: eval ${{ steps.build-pytest-command.outputs.pytest-command }}
+      run: ${{ steps.build-pytest-command.outputs.pytest-command }}
