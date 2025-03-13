@@ -146,7 +146,12 @@ class LocationAutocompleteViewSet(APIView):
         }
 
         for doc in es_results:
-            location_type_to_list_lookup[doc.location_type].append(json.loads(doc.location_json))
+            location_json = json.loads(doc.location_json)
+
+            # The 'location_type' key is only used during indexing so we can remove it now
+            del location_json["location_type"]
+
+            location_type_to_list_lookup[doc.location_type].append(location_json)
 
         results = {
             "countries": countries if countries else None,
