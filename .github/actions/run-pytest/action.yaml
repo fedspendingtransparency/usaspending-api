@@ -23,8 +23,7 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Capture input
-      id: capture-input
+    - name: Create environment variables
       shell: bash
       run: |
         echo "COV_REPORT_NAME=coverage.${{ inputs.cov-report-name }}.xml" >> $GITHUB_ENV
@@ -33,8 +32,11 @@ runs:
         echo "INCLUDE_GLOB=${{ inputs.include-glob }}" >> $GITHUB_ENV
         echo "KEYWORD=${{ inputs.keyword }}" >> $GITHUB_ENV
         echo "MARKER=${{ inputs.marker }}" >> $GITHUB_ENV
-        
-        echo "cov-report-name=$COV_REPORT_NAME" >> $GITHUB_OUTPUT
+
+    - name: Read report name
+      id: read-report-name
+      shell: bash
+      run: echo "cov-report-name=$COV_REPORT_NAME" >> $GITHUB_OUTPUT
 
     - name: Build pytest command
       id: build-pytest-command
@@ -72,5 +74,5 @@ runs:
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ steps.capture-input.outputs.cov-report-name }}
-        path: ./${{ steps.capture-input.outputs.cov-report-name }}
+        name: ${{ steps.read-report-name.outputs.report-name }}
+        path: ./${{ steps.read-report-name.outputs.report-name }}
