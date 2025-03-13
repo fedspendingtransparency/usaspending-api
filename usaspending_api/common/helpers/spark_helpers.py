@@ -94,7 +94,7 @@ def configure_spark_session(
     log_level: int = None,
     log_spark_config_vals: bool = False,
     log_hadoop_config_vals: bool = False,
-    enable_hive_support: bool = False,
+    enable_hive_support: bool = True,
     **options,
 ) -> SparkSession:
     """Get a SparkSession object with some of the default/boiler-plate config needed for THIS project pre-set
