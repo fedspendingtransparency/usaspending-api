@@ -23,11 +23,11 @@ runs:
     - name: Adding inputs as environment variables
       shell: bash
       run: |
-        echo "COV_REPORT_NAME=${{ inputs.cov-report-name }} >> $GITHUB_ENV
-        echo "IGNORE_GLOB=${{ inputs.ignore-glob }} >> $GITHUB_ENV
-        echo "INCLUDE_GLOB=${{ inputs.include-glob }} >> $GITHUB_ENV
-        echo "KEYWORD=${{ inputs.keyword }} >> $GITHUB_ENV
-        echo "MARKER=${{ inputs.marker }} >> $GITHUB_ENV
+        echo "COV_REPORT_NAME=${{ inputs.cov-report-name }}" >> $GITHUB_ENV
+        echo "IGNORE_GLOB=${{ inputs.ignore-glob }}" >> $GITHUB_ENV
+        echo "INCLUDE_GLOB=${{ inputs.include-glob }}" >> $GITHUB_ENV
+        echo "KEYWORD=${{ inputs.keyword }}" >> $GITHUB_ENV
+        echo "MARKER=${{ inputs.marker }}" >> $GITHUB_ENV
 
     - name: Build pytest command
       id: build-pytest-command
