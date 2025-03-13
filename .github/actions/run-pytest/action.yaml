@@ -33,29 +33,28 @@ runs:
       id: build-pytest-command
       shell: bash
       run: >
-        echo pytest-command=$(python -c 'import os;
-          print(
-            "pytest \
-              -r=fEs \
-              -x \
-              --cov=usaspending_api \
-              --cov-report term \
-              --cov-report xml:coverage.{cov_report_name}.xml \
-              --dist worksteal \
-              --durations 50 \
-              --numprocesses logical \
-              --override-ini=python_files={include_glob} \
-              --verbosity=1 \
-              {keyword} {marker} {ignore_glob}
-            ".format(
-              cov_report_name=os.environ["COV_REPORT_NAME"],
-              include_glob=os.environ["INCLUDE_GLOB"],
-              keyword="-k \"{}\"".format(os.environ["KEYWORD"]) if os.environ.get("KEYWORD") else "",
-              marker="-m \"{}\"".format(os.environ["MARKER"]) if os.environ.get("MARKER") else "",
-              ignore_glob="--ignore-glob=\"{}\"".format(os.environ["IGNORE_GLOB"]) if os.environ.get("IGNORE_GLOB") else ""
-            )
-          )
-        ') >> $GITHUB_OUTPUT
+        echo pytest-command=$(python -c 'import os;print(
+        "pytest \
+        -r=fEs \
+        -x \
+        --cov=usaspending_api \
+        --cov-report term \
+        --cov-report xml:coverage.{cov_report_name}.xml \
+        --dist worksteal \
+        --durations 50 \
+        --numprocesses logical \
+        --override-ini=python_files={include_glob} \
+        --verbosity=1 \
+        {keyword} \
+        {marker} \
+        {ignore_glob} \
+        ".format(
+        cov_report_name=os.environ["COV_REPORT_NAME"],
+        include_glob=os.environ["INCLUDE_GLOB"],
+        keyword="-k \"{}\"".format(os.environ["KEYWORD"]) if os.environ.get("KEYWORD") else "",
+        marker="-m \"{}\"".format(os.environ["MARKER"]) if os.environ.get("MARKER") else "",
+        ignore_glob="--ignore-glob=\"{}\"".format(os.environ["IGNORE_GLOB"]) if os.environ.get("IGNORE_GLOB") else ""
+        ))') >> $GITHUB_OUTPUT
 
     - name: Run tests
       shell: bash
