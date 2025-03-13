@@ -1,0 +1,63 @@
+name: Run Pytest
+
+inputs:
+  cov-report-name:
+    description: Name used in the title of the coverage report output
+    required: true
+  ignore-glob:
+    description: Glob pattern of files that should be ignored
+    default: ""
+  include-glob:
+    description: Glob pattern of the files that should be tested
+    required: true
+  keyword:
+    description: Keyword expression to determine which tests to run
+    default: ""
+  marker:
+    description: Marker to decide which tests should be run
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Adding inputs as environment variables
+      shell: bash
+      run: |
+        echo "COV_REPORT_NAME=${{ inputs.cov-report-name }} >> $GITHUB_ENV
+        echo "IGNORE_GLOB=${{ inputs.ignore-glob }} >> $GITHUB_ENV
+        echo "INCLUDE_GLOB=${{ inputs.include-glob }} >> $GITHUB_ENV
+        echo "KEYWORD=${{ inputs.keyword }} >> $GITHUB_ENV
+        echo "MARKER=${{ inputs.marker }} >> $GITHUB_ENV
+
+    - name: Build pytest command
+      id: build-pytest-command
+      shell: bash
+      run: |
+        echo pytest-command=$(python -c '
+        import os;
+        print(f"pytest
+          -r=fEs
+          -x
+          --cov=usaspending_api
+          --cov-report term
+          --cov-report xml:coverage.{cov_report_name}.xml
+          --dist worksteal
+          --durations 50
+          --numprocesses logical
+          --override-ini=python_files={include_glob}
+          --verbosity=1
+          {keyword}}
+          {marker}
+          {ignore_glob}
+        ").format(
+          cov_report_name=os.environ["COV_REPORT_NAME"],
+          include_glob=os.environ["INCLUDE_GLOB"],
+          keyword="-k \"{}\"".format(os.environ["KEYWORD"]) if os.environ.get("KEYWORD") else "",
+          marker="-m \"{}\"".format(os.environ["MARKER"]) if os.environ.get("MARKER") else "",
+          ignore_glob="--ignore-glob=\"{}\"".format(os.environ["IGNORE_GLOB"]) if os.environ.get("IGNORE_GLOB") else ""
+        )
+        ') >> $GITHUB_OUTPUT
+
+    - name: Run tests
+      shell: bash
+      run: eval ${{ steps.build-pytest-command.outputs.pytest-command }}

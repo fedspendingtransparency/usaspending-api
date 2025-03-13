@@ -38,20 +38,11 @@ jobs:
           is-spark-test: false
 
       - name: Run Test Cases
-        run: >
-          pytest
-            -r=fEs
-            -x
-            --cov usaspending_api
-            --cov-report term
-            --cov-report xml:coverage.${{ github.workflow }}.xml
-            --dist worksteal 
-            --durations 50
-            --ignore-glob "**/tests/integration/*"
-            --numprocesses logical
-            --reuse-db
-            --override-ini python_files="test_*.py *_test.py"
-            --verbosity 1
+        uses: ./.github/actions/run-pytest
+        with:
+          cov-report-name: "unit-tests"
+          ignore-glob: "**/tests/integration/*"
+          include-glob: "test_*.py *_test.py"
 
       - name: List Coverage
         run: ls
