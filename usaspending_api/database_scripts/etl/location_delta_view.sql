@@ -361,62 +361,99 @@ WHERE
 	OR
     recipient_location_country_name IS NOT NULL
 ),
-
-unnested_cte AS (
-	SELECT
-		/*
-			!! THE ORDER OF THESE UNNEST STATEMENTS MATTER !!
-			The column names in these arrays need to align so that the values appear in the correct rows.
-		 */
-		UNNEST(
-			ARRAY[
-				pop_country_string,
-				pop_state_string,
-				pop_city_string,
-				pop_county_string,
-				pop_zip_string,
-				pop_current_cd_string,
-				pop_original_cd_string,
-				recipient_location_country_string,
-				recipient_location_state_string,
-				recipient_location_city_string,
-				recipient_location_county_string,
-				recipient_location_zip_string,
-				recipient_location_current_cd_string,
-				recipient_location_original_cd_string
-			]
-		) AS LOCATION,
-		UNNEST(
-			ARRAY[
-				pop_country_json,
-				pop_state_json,
-				pop_city_json,
-				pop_county_json,
-				pop_zip_json,
-				pop_current_cd_json,
-				pop_original_cd_json,
-				recipient_location_country_json,
-				recipient_location_state_json,
-				recipient_location_city_json,
-				recipient_location_county_json,
-				recipient_location_zip_json,
-				recipient_location_current_cd_json,
-				recipient_location_original_cd_json
-			]
-		) AS location_json
-	FROM
-		transaction_locations_cte
+normalized_column_names_cte AS (
+    SELECT
+        pop_country_string AS location,
+        pop_country_json AS location_json
+    FROM
+        transaction_locations_cte
+    UNION
+    SELECT
+        pop_state_string AS location,
+        pop_state_json AS location_json
+    FROM
+        transaction_locations_cte
+    UNION
+    SELECT
+        pop_city_string AS location,
+        pop_city_json AS location_json
+    FROM
+        transaction_locations_cte
+    UNION
+    SELECT
+        pop_county_string AS location,
+        pop_county_json AS location_json
+    FROM
+        transaction_locations_cte
+    UNION
+    SELECT
+        pop_zip_string AS location,
+        pop_zip_json AS location_json
+    FROM
+        transaction_locations_cte
+    UNION
+    SELECT
+        pop_current_cd_string AS location,
+        pop_current_cd_json AS location_json
+    FROM
+        transaction_locations_cte
+    UNION
+    SELECT
+        pop_original_cd_string AS location,
+        pop_original_cd_json AS location_json
+    FROM
+        transaction_locations_cte
+    UNION
+    SELECT
+        recipient_location_country_string AS location,
+        recipient_location_country_json AS location_json
+    FROM
+        transaction_locations_cte
+    UNION
+    SELECT
+        recipient_location_state_string AS location,
+        recipient_location_state_json AS location_json
+    FROM
+        transaction_locations_cte
+    UNION
+    SELECT
+        recipient_location_city_string AS location,
+        recipient_location_city_json AS location_json
+    FROM
+        transaction_locations_cte
+    UNION
+    SELECT
+        recipient_location_county_string AS location,
+        recipient_location_city_json AS location_json
+    FROM
+        transaction_locations_cte
+    UNION
+    SELECT
+        recipient_location_zip_string AS location,
+        recipient_location_zip_json AS location_json
+    FROM
+        transaction_locations_cte
+    UNION
+    SELECT
+        recipient_location_current_cd_string AS location,
+        recipient_location_current_cd_json AS location_json
+    FROM
+        transaction_locations_cte
+    UNION
+    SELECT
+        recipient_location_original_cd_string AS location,
+        recipient_location_original_cd_json AS location_json
+    FROM
+        transaction_locations_cte
 )
 SELECT
-    ROW_NUMBER() OVER (ORDER BY location_json)  AS id,
+    ROW_NUMBER() OVER (ORDER BY location, location_json) AS id,
 	location,
 	location_json
 FROM
-	unnested_cte
+	normalized_column_names_cte
 WHERE
-    location IS NOT NULL
-    AND
+    -- Only include locations that have at least two characters
+    location ~ '[A-Z0-9].*[A-Z0-9]'
+    and
     location_json IS NOT NULL
-GROUP BY
-    location,
-    location_json
