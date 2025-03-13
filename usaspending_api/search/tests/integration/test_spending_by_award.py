@@ -2375,6 +2375,20 @@ def test_spending_by_award_description_specificity(
     assert resp.status_code == status.HTTP_200_OK
     assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
 
+    # ensure only queries for text in the correct order
+    test_payload = {
+        "subawards": True,
+        "fields": ["Sub-Award ID"],
+        "filters": {"award_type_codes": ["A", "B", "C", "D"], "description": "test the"},
+    }
+    expected_response = []
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
+
 
 def test_spending_by_award_keyword_specificity(
     client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
@@ -2417,6 +2431,20 @@ def test_spending_by_award_keyword_specificity(
             "prime_award_generated_internal_id": "CONT_AWD_TESTING_1",
         },
     ]
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
+
+    # ensure only queries for text in the correct order
+    test_payload = {
+        "subawards": True,
+        "fields": ["Sub-Award ID"],
+        "filters": {"award_type_codes": ["A", "B", "C", "D"], "keyword": "test the"},
+    }
+    expected_response = []
     resp = client.post(
         "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
     )

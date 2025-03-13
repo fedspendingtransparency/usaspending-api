@@ -39,15 +39,16 @@ class _SubawardsKeywords(_Filter):
         keyword_queries = []
 
         def keyword_parse(keyword):
-            queries = []
             fields = [
                 "sub_awardee_or_recipient_legal",
                 "product_or_service_description",
                 "subaward_description",
                 "subaward_number",
             ]
-            queries.append(ES_Q("multi_match", query=keyword, fields=fields, type="phrase_prefix"))
-            queries.append(ES_Q("match", award_piid_fain=keyword))
+            queries = [
+                ES_Q("multi_match", query=keyword, fields=fields, type="phrase_prefix"),
+                ES_Q("match", award_piid_fain=keyword),
+            ]            
             if len(keyword) == 4 and PSC.objects.filter(code=keyword).exists():
                 queries.append(ES_Q("match", product_or_service_code=keyword))
             return ES_Q("bool", should=queries, minimum_should_match=1)
