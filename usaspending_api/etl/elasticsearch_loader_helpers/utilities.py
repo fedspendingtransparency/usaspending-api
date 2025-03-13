@@ -89,7 +89,8 @@ def dump_dict_to_string(json_data: dict[str, str] | str) -> str | None:
         return json.dumps(json_data)
     elif isinstance(json_data, str):
         try:
-            return json.loads(json_data)
+            json.loads(json_data)
+            return json_data
         except ValueError as e:
             raise ValueError from e(f"String is not a valid dictionary: {json_data}")
     else:
