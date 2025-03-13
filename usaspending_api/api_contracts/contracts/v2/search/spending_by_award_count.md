@@ -45,6 +45,9 @@ This endpoint takes award filters, and returns the number of awards in each awar
 + `other` (required, number)
 + `idvs` (required, number)
 
+## SubawardTypeResult (object)
++ `subgrants` (required, number)
++ `subcontracts` (required, number)
 
 ## Filter Objects
 ### AdvancedFilterObject (object)

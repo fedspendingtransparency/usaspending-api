@@ -133,8 +133,10 @@ def test_spending_by_award_no_intersection(client, monkeypatch, elasticsearch_aw
 
 
 @pytest.mark.django_db
-def test_spending_by_award_subawards_no_intersection(client):
-    baker.make("search.AwardSearch", award_id=90)
+def test_spending_by_award_subawards_no_intersection(
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index
+):
+    baker.make("search.AwardSearch", award_id=90, action_date="2023-01-01")
     baker.make(
         "search.SubawardSearch",
         broker_subaward_id=9999,
@@ -144,7 +146,11 @@ def test_spending_by_award_subawards_no_intersection(client):
         awarding_toptier_agency_name="Toptier Agency 1",
         awarding_toptier_agency_abbreviation="TA1",
         subaward_amount=10,
+        action_date="2023-01-01",
     )
+
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
 
     request = {
         "subawards": True,
