@@ -198,7 +198,9 @@ class _KeywordSearch(_Filter):
         ]
         for filter_value in filter_values:
             keyword_queries.append(ES_Q("multi_match", query=filter_value, fields=text_fields, type="phrase_prefix"))
-            keyword_queries.append(ES_Q("query_string", query=filter_value, default_operator="OR", fields=keyword_fields))
+            keyword_queries.append(
+                ES_Q("query_string", query=filter_value, default_operator="OR", fields=keyword_fields)
+            )
 
         return ES_Q("dis_max", queries=keyword_queries)
 
