@@ -23,15 +23,18 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Adding inputs as environment variables
+    - name: Capture input
+      id: capture-input
       shell: bash
       run: |
-        echo "COV_REPORT_NAME=${{ inputs.cov-report-name }}" >> $GITHUB_ENV
+        echo "COV_REPORT_NAME=coverage.${{ inputs.cov-report-name }}.xml" >> $GITHUB_ENV
         echo "DB_STATE=${{ inputs.db-state }}" >> $GITHUB_ENV
         echo "IGNORE_GLOB=${{ inputs.ignore-glob }}" >> $GITHUB_ENV
         echo "INCLUDE_GLOB=${{ inputs.include-glob }}" >> $GITHUB_ENV
         echo "KEYWORD=${{ inputs.keyword }}" >> $GITHUB_ENV
         echo "MARKER=${{ inputs.marker }}" >> $GITHUB_ENV
+        
+        echo "cov-report-name=$COV_REPORT_NAME" >> $GITHUB_OUTPUT
 
     - name: Build pytest command
       id: build-pytest-command
@@ -43,7 +46,7 @@ runs:
         -x
         --cov=usaspending_api
         --cov-report term
-        --cov-report xml:coverage.{cov_report_name}.xml
+        --cov-report xml:{cov_report_name}
         --dist worksteal
         --durations 50
         --numprocesses logical
@@ -65,3 +68,9 @@ runs:
     - name: Run tests
       shell: bash
       run: ${{ steps.build-pytest-command.outputs.pytest-command }}
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ steps.capture-input.outputs.cov-report-name }}
+        path: ./${{ steps.capture-input.outputs.cov-report-name }}

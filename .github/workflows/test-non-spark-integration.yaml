@@ -53,19 +53,11 @@ jobs:
           working-directory: ./usaspending-api
 
       - name: Run Test Cases
-        run: >
-          pytest
-            -m "(not spark)"
-            -r fEs
-            -x
-            --cov usaspending_api
-            --cov-report term
-            --dist worksteal
-            --durations 50
-            --numprocesses logical
-            --override-ini python_files="**/tests/integration/*"
-            --reuse-db
-            --verbosity 1
+        uses: ./.github/actions/run-pytest
+        with:
+          cov-report-name: 'non-spark-integration-tests'
+          include-glob: '**/tests/integration/*'
+          marker: '(not spark)'
 
   Cancel-Running-Workflow:
     name: Cancel Running Workflow

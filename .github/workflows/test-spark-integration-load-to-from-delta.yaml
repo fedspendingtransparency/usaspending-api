@@ -53,20 +53,12 @@ jobs:
           working-directory: ./usaspending-api
 
       - name: Run Test Cases
-        run: >
-          pytest
-            -k "test_load_to_from_delta.py"
-            -m "spark"
-            -r fEs
-            -x
-            --cov usaspending_api
-            --cov-report term
-            --dist worksteal
-            --durations 50
-            --numprocesses logical
-            --reuse-db
-            --override-ini python_files="test_*.py *_test.py"
-            --verbosity 1
+        uses: ./.github/actions/run-pytest
+        with:
+          cov-report-name: 'spark-load-to-from-delta-tests'
+          include-glob: 'test_*.py *_test.py'
+          keyword: 'test_load_to_from_delta.py'
+          marker: 'spark'
 
   Cancel-Running-Workflow:
     name: Cancel Running Workflow

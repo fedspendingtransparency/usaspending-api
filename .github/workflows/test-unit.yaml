@@ -40,12 +40,9 @@ jobs:
       - name: Run Test Cases
         uses: ./.github/actions/run-pytest
         with:
-          cov-report-name: "unit-tests"
-          ignore-glob: "**/tests/integration/*"
-          include-glob: "test_*.py *_test.py"
-
-      - name: List Coverage
-        run: ls
+          cov-report-name: 'unit-tests'
+          ignore-glob: '**/tests/integration/*'
+          include-glob: 'test_*.py *_test.py"'
 
   Cancel-Running-Workflow:
     name: Cancel Running Workflow

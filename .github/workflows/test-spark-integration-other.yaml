@@ -53,20 +53,12 @@ jobs:
           working-directory: ./usaspending-api
 
       - name: Run Test Cases
-        run: >
-          pytest
-            -k "(not test_load_to_from_delta.py and not test_load_transactions_in_delta_lookups.py and not test_load_transactions_in_delta_fabs_fpds.py)"
-            -m "spark"
-            -r fEs
-            -x
-            --cov usaspending_api
-            --cov-report term
-            --dist worksteal
-            --durations 50
-            --numprocesses logical
-            --override-ini=python_files="test_*.py *_test.py"
-            --reuse-db
-            --verbosity 1
+        uses: ./.github/actions/run-pytest
+        with:
+          cov-report-name: 'spark-other-tests'
+          include-glob: 'test_*.py *_test.py'
+          keyword: '(not test_load_to_from_delta.py and not test_load_transactions_in_delta_lookups.py and not test_load_transactions_in_delta_fabs_fpds.py)'
+          marker: 'spark'
 
   Cancel-Running-Workflow:
     name: Cancel Running Workflow
