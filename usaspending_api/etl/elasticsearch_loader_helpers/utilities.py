@@ -71,12 +71,12 @@ def convert_json_data_to_dict(json_data: Union[dict, list, str]) -> Optional[Uni
     return json_data
 
 
-def dump_dict_to_string(json_data: dict[str, str]) -> str | None:
+def dump_dict_to_string(json_data: dict[str, str] | str) -> str | None:
     """Serialize provided JSON-compatible object (dict) to a JSON formatted string so that is can be stored
     in Elasticsearch as an `object` type.
 
     Args:
-        json_data: JSON-compatible object (dict)
+        json_data: JSON-compatible object (dict) or string representation of a dictionary.
 
     Returns:
         JSON formatted string or None
