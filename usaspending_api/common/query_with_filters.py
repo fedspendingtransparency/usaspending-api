@@ -40,11 +40,14 @@ class _SubawardsKeywords(_Filter):
 
         def keyword_parse(keyword):
             queries = []
-            queries.append(ES_Q("match", sub_awardee_or_recipient_legal=keyword))
-            queries.append(ES_Q("match", product_or_service_description=keyword))
-            queries.append(ES_Q("match", subaward_description=keyword))
+            fields = [
+                "sub_awardee_or_recipient_legal",
+                "product_or_service_description",
+                "subaward_description",
+                "subaward_number",
+            ]
+            queries.append(ES_Q("multi_match", query=keyword, fields=fields, type="phrase_prefix"))
             queries.append(ES_Q("match", award_piid_fain=keyword))
-            queries.append(ES_Q("match", subaward_number=keyword))
             if len(keyword) == 4 and PSC.objects.filter(code=keyword).exists():
                 queries.append(ES_Q("match", product_or_service_code=keyword))
             return ES_Q("bool", should=queries, minimum_should_match=1)
@@ -110,7 +113,7 @@ class _Keywords(_Filter):
             else:
                 query = query.upper()
 
-            keyword_queries.append(ES_Q("query_string", query=query, default_operator="AND", fields=fields))
+            keyword_queries.append(ES_Q("multi_match", query=query, fields=fields, type="phrase_prefix"))
 
         return ES_Q("dis_max", queries=keyword_queries)
 
@@ -130,7 +133,9 @@ class _Description(_Filter):
             query += r"\*"
         else:
             query += "*"
-        description_query = ES_Q("query_string", query=query, default_operator="AND", fields=fields.get(query_type, []))
+        description_query = ES_Q(
+            "multi_match", query=filter_values, fields=fields.get(query_type, []), type="phrase_prefix"
+        )
         return ES_Q("bool", should=description_query, minimum_should_match=1)
 
 
@@ -189,7 +194,9 @@ class _KeywordSearch(_Filter):
             "sub_ultimate_parent_uei",
         ]
         for filter_value in filter_values:
-            keyword_queries.append(ES_Q("query_string", query=filter_value, default_operator="OR", fields=fields))
+            keyword_queries.append(
+                description_query=ES_Q("multi_match", query=filter_value, fields=fields, type="phrase_prefix")
+            )
 
         return ES_Q("dis_max", queries=keyword_queries)
 
