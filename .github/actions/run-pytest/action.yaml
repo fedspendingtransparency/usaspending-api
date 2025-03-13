@@ -49,7 +49,7 @@ runs:
         --numprocesses logical
         --override-ini=python_files=\"{include_glob}\"
         --verbosity=1
-        {db-state}
+        {db_state}
         {keyword}
         {marker}
         {ignore_glob}
