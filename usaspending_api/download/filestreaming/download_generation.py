@@ -577,9 +577,6 @@ def generate_export_query(
         generate_raw_quoted_query(source_query), selected_columns, annotated_group_by_columns
     )
     options = FILE_FORMATS[file_format]["options"]
-
-    print(query_annotated)
-
     return rf"\COPY ({query_annotated}) TO STDOUT {options}"
 
 
