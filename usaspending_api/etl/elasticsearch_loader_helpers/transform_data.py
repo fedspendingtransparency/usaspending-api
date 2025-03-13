@@ -126,7 +126,7 @@ def transform_location_data(worker: TaskSpec, records: List[dict]) -> List[dict]
     converters = {
         "location_json": dump_dict_to_string,
     }
-    agg_key_creations = {}
+    agg_key_creations = {"location_type": funcs.location_type_agg_key}
     drop_fields = []
 
     return transform_data(worker, records, converters, agg_key_creations, drop_fields, None)
