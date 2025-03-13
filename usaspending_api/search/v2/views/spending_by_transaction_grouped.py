@@ -68,10 +68,12 @@ class SpendingByTransactionGroupedVisualizationViewSet(APIView):
             if m["name"] == "award_type_codes":
                 m["optional"] = False
         self.tinysheld = TinyShield(models)
+        self.sort_by: str = "transaction_obligation"
 
     @cache_response()
     def post(self, request: Request) -> Response:
         validated_payload = self.tinysheld.block(request.data)
+        self.sort_by = validated_payload["sort"]
         record_num = (validated_payload["page"] - 1) * validated_payload["limit"]
         if record_num >= settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW:
             raise UnprocessableEntityException(
@@ -114,20 +116,9 @@ class SpendingByTransactionGroupedVisualizationViewSet(APIView):
         bucket_count = get_number_of_unique_terms_for_transactions(filter_query, "display_award_id")
         agg_response = search.handle_execute()
 
-        def sort_fn(item):
-            sort_key = validated_payload["sort"]
-            if sort_key == "award_id":
-                return item.key
-            elif sort_key == "transaction_count":
-                return item.doc_count
-            elif sort_key == "award_generated_internal_id":
-                return item.award_generated_internal_id.buckets[0].key
-            elif sort_key == "transaction_obligation":
-                return item.transaction_obligation.value
-
         agg_buckets = sorted(
             agg_response.aggregations.group_by_prime_award.buckets,
-            key=sort_fn,
+            key=self.sort_fn,
             reverse=True if validated_payload["order"] == "desc" else False,
         )[lower_limit:upper_limit]
         results = [
@@ -158,3 +149,17 @@ class SpendingByTransactionGroupedVisualizationViewSet(APIView):
                 ),
             }
         )
+
+    def sort_fn(self, item):
+        match self.sort_by:
+            case "award_id":
+                key = item.key
+            case "transaction_count":
+                key = item.doc_count
+            case "award_generated_internal_id":
+                key = item.award_generated_internal_id.buckets[0].key
+            case "transaction_obligation":
+                key = item.transaction_obligation.value
+            case _:
+                raise ValueError("Invalid sort key")
+        return key
