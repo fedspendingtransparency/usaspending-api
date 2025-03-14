@@ -58,6 +58,7 @@ jobs:
           cov-report-name: 'non-spark-integration-tests'
           include-glob: '**/tests/integration/*'
           marker: '(not spark)'
+          working-directory: ./usaspending-api
 
   Cancel-Running-Workflow:
     name: Cancel Running Workflow

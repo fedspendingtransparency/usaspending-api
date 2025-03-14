@@ -19,6 +19,9 @@ inputs:
   marker:
     description: Marker to decide which tests should be run
     default: ""
+  working-directory:
+    description: Directory where the requirements can be found; used when multiple repos are checked out
+    default: ""
 
 runs:
   using: composite
@@ -34,6 +37,7 @@ runs:
         echo "MARKER=${{ inputs.marker }}" >> $GITHUB_ENV
 
     - name: Build pytest command
+      working-directory: ${{ inputs.working-directory }}
       id: build-pytest-command
       shell: bash
       run: >
@@ -63,10 +67,12 @@ runs:
         ))') >> $GITHUB_OUTPUT
 
     - name: Run tests
+      working-directory: ${{ inputs.working-directory }}
       shell: bash
       run: ${{ steps.build-pytest-command.outputs.pytest-command }}
 
     - name: Upload Artifact
+      working-directory: ${{ inputs.working-directory }}
       uses: actions/upload-artifact@v4
       with:
         name: coverage.${{ inputs.cov-report-name }}.xml

@@ -413,7 +413,6 @@ def test_database_urls_and_parts_config_populated():
     """Validate that DATABASE_URL and all USASPENDING_DB_* parts are populated after config is loaded.
     Note: unlike DATABASE_URL, DATA_BROKER_DATABASE_URL is not required, and so it is not included in this test as it
     can vary depending on the local settings."""
-    assert 1 == 2
     assert CONFIG.DATABASE_URL is not None
     assert CONFIG.USASPENDING_DB_HOST is not None
     assert CONFIG.USASPENDING_DB_PORT is not None

@@ -59,6 +59,7 @@ jobs:
           include-glob: 'test_*.py *_test.py'
           keyword: 'test_load_transactions_in_delta_fabs_fpds.py'
           marker: 'spark'
+          working-directory: ./usaspending-api
 
   Cancel-Running-Workflow:
     name: Cancel Running Workflow

@@ -99,7 +99,7 @@ jobs:
 
   Run-Unit-Tests:
     name: Run Unit Tests
-#    needs: Code-Climate-Before-Build
+    needs: Code-Climate-Before-Build
     if: ${{ !failure() && !cancelled() }}
     uses: ./.github/workflows/test-unit.yaml
 
