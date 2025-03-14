@@ -20,6 +20,9 @@ jobs:
       GIT_BRANCH: ${{ inputs.base-branch }}
       CC_TEST_REPORTER_ID: ${{ secrets.cc_test_reporter_id }}
     steps:
+      - name: Checkout Source Repository
+        uses: actions/checkout@v4
+
       - name: Install Dependency
         run: |
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
