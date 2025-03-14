@@ -54,6 +54,8 @@ jobs:
       needs.Cancel-If-Draft-Pull-Request.result == 'skipped'
     # if: ${{ !failure() && !cancelled() }}
     uses: ./.github/workflows/code-climate-before-build.yaml
+    secrets:
+      cc_test_reporter_id: ${{ secrets.CC_TEST_REPORTER_ID }}
 
   # The test suite is broken into multiple groups based on a combination of what is under test
   # and the time that it takes to run tests for that group.
@@ -107,3 +109,5 @@ jobs:
       - Run-Unit-Tests
     if: ${{ !failure() && !cancelled() }}
     uses: ./.github/workflows/code-climate-report-coverage.yaml
+    secrets:
+      cc_test_reporter_id: ${{ secrets.CC_TEST_REPORTER_ID

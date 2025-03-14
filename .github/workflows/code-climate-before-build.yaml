@@ -2,6 +2,9 @@ name: Code Climate Before Build
 
 on:
   workflow_call:
+    secrets:
+      cc_test_reporter_id:
+        required: true
 
 jobs:
   Before-Build:
