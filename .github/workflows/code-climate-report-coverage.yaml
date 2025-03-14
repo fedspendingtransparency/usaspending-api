@@ -1,10 +1,5 @@
 name: Code Climate Report Coverage
 
-env:
-  global:
-    - CC_TEST_REPORTER_ID=${{ secrets.CC_TEST_REPORTER_ID }}
-    - IS_CODE_COVERAGE_REPORT=true
-
 on:
   workflow_call:
 
