@@ -21,7 +21,7 @@ This endpoint takes fields and award filters and returns a list containing filte
             How many results are returned
         + `page` (optional, number)
             The page number that is currently returned.
-        + `sort`: Any field within the result can be sort (optional, string)
+        + `sort`: Any field within the result can be sort (optional, enum[string])
             The field on which to order `results` in the response.
             + Default: `award_id`
             + Members

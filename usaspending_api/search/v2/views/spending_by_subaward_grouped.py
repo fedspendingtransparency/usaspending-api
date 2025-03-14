@@ -1,6 +1,8 @@
 import copy
 import logging
 from sys import maxsize
+from typing import Any, Tuple
+from dataclasses import dataclass
 from django.conf import settings
 from elasticsearch_dsl import A
 from elasticsearch_dsl import Q as ES_Q
@@ -22,13 +24,12 @@ from usaspending_api.search.filters.time_period.query_types import SubawardSearc
 
 logger = logging.getLogger(__name__)
 
-
-class subaward_grouped_model:
-    def __init__(self, award_id, subaward_count, award_generated_internal_id, subaward_obligation):
-        self.award_id = award_id
-        self.subaward_count = subaward_count
-        self.award_generated_internal_id = award_generated_internal_id
-        self.subaward_obligation = subaward_obligation
+@dataclass
+class SubawardGroupedModel:
+        award_id: int
+        subaward_count: int
+        award_generated_internal_id: str
+        subaward_obligation: int
 
 
 @api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
@@ -40,10 +41,16 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_subaward_grouped.md"
 
-    @cache_response()
-    def post(self, request):
-        """Return all subawards matching given awards"""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.original_filters: dict[str, Any] = {}
+        self.filters: dict[str, Any] = {}
+        self.pagination: dict[str, Any] = {}
 
+    @cache_response()
+    def post(self, request) -> Response:
+        """Return all subawards matching given awards"""
+        print('here in post')
         self.original_filters = request.data.get("filters")
         json_request, self.models = self.validate_request_data(request.data)
         filters = json_request.get("filters", {})
@@ -57,19 +64,17 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
             "upper_bound": json_request["page"] * json_request["limit"] + 1,
         }
 
-        filter_options = {}
         time_period_obj = SubawardSearchTimePeriod(
             default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
         )
-        filter_options["time_period_obj"] = time_period_obj
 
         query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
-        filter_query = query_with_filters.generate_elasticsearch_query(self.filters, **filter_options)
+        filter_query = query_with_filters.generate_elasticsearch_query(filters=self.filters, options=time_period_obj)
         results = self.build_elasticsearch_search_with_aggregation(filter_query)
 
         return Response(self.construct_es_response(results))
 
-    def validate_request_data(self, request_data):
+    def validate_request_data(self, request_data) -> Tuple[TinyShield, list]:
         spending_by_subaward_grouped_models = [
             {"name": "limits", "key": "limit", "type": "integer", "default": 10},
             {"name": "ordered", "key": "order", "type": "text", "text_type": "search", "default": "desc"},
@@ -84,7 +89,8 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
             {
                 "name": "sorted",
                 "key": "sort",
-                "type": "text",
+                "type": "enum",
+                "enum_values": ["award_id", "subaward_count", "award_generated_internal_id", "subaward_obligation"],
                 "text_type": "search",
                 "default": "award_id",
             },
@@ -92,12 +98,12 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
 
         # Accepts the same filters as spending_by_award
         spending_by_subaward_grouped_models.extend(copy.deepcopy(AWARD_FILTER_NO_RECIPIENT_ID))
-        spending_by_subaward_grouped_models.extend(copy.deepcopy(PAGINATION))
+        spending_by_subaward_grouped_models.extend(copy.deepcopy([model for model in PAGINATION if model["name"] != "sort"]))
 
         tiny_shield = TinyShield(spending_by_subaward_grouped_models)
         return tiny_shield.block(request_data), spending_by_subaward_grouped_models
 
-    def construct_es_response(self, results: list[subaward_grouped_model]):
+    def construct_es_response(self, results: list[SubawardGroupedModel]) -> dict[str, Any]:
         return {
             "limit": self.pagination["limit"],
             "results": results,
@@ -110,13 +116,15 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
             ),
         }
 
-    def build_elasticsearch_search_with_aggregation(self, filter_query: ES_Q):
+    def build_elasticsearch_search_with_aggregation(self, filter_query: ES_Q) -> dict[str, Any]:
         # Aggregate the ES query to group the subaward values by their prime award
         terms_aggregation = A("terms", field="award_piid_fain")
 
+        # Get the unique_award_key for each prime award
+        terms_aggregation.metric("unique_award_key", "terms", field="unique_award_key")
+
         # Sum the subaward amount within each prime award
         terms_aggregation.metric("subaward_obligation", "sum", field="subaward_amount")
-
         search_sum = SubawardSearch().filter(filter_query)
         search_sum.aggs.bucket("award_id", terms_aggregation)
         response = search_sum.handle_execute()
@@ -125,21 +133,24 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
             raise Exception("Breaking generator, unable to reach cluster")
 
         results = []
-        count = 0
+        print('response: ', response)
+        print('response[aggregations]: ', response['aggregations'])
+        print('response[aggregations]["award_id"]:', response["aggregations"]["award_id"])
+        print('response["aggregations"]["award_id"]["buckets"]:', response["aggregations"]["award_id"]["buckets"])
         for result in response["aggregations"]["award_id"]["buckets"]:
-            award_generated_internal_id = response["hits"]["hits"][count]["_source"]["unique_award_key"]
+            print('in for loop')
+            # there is one unique_award_key for each prime award so there will only be one bucket
+            award_generated_internal_id = result["unique_award_key"]["buckets"][0]["key"]
             subaward_obligation = result["subaward_obligation"]["value"]
-            item = subaward_grouped_model(
+            item = SubawardGroupedModel(
                 result["key"], result["doc_count"], award_generated_internal_id, subaward_obligation
             )
             results.append(item)
-            count += 1
         results = self.sort_by_attribute(results)
+        print('results: ', results)
         return [result.__dict__ for result in results]
 
     # default sorting is to sort by the award_id, default order is desc
-    def sort_by_attribute(self, results: list[subaward_grouped_model]) -> list[subaward_grouped_model]:
+    def sort_by_attribute(self, results: list[SubawardGroupedModel]) -> list[SubawardGroupedModel]:
         reverse = True if self.pagination["sort_order"] == "asc" else False
-        if hasattr(results, self.pagination["sort_key"]):
-            return sorted(results, key=lambda result: getattr(result, self.pagination["sort_key"]), reverse=reverse)
-        return sorted(results, key=lambda result: result.award_id, reverse=reverse)
+        return sorted(results, key=lambda result: getattr(result, self.pagination["sort_key"]), reverse=reverse)
