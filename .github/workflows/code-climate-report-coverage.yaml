@@ -33,6 +33,9 @@ jobs:
         with:
           pattern: coverage.*.xml
 
+      - name: Unzip artifacts
+        run: for artifact in coverage.*.xml.zip; unzip $artifact
+
       - name: Report Test Coverage
         run: |
           ls -lh coverage*
