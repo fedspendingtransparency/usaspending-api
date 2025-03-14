@@ -11,23 +11,28 @@
       "analyzer": {
         "contains_analyzer": {
           "type": "custom",
-          "tokenizer": "ngram",
+          "tokenizer": "edge_ngram_tokenizer",
           "filter": [
             "uppercase"
           ]
         },
-        "edge_ngram_analyzer": {
-          "tokenizer": "edge_ngram_tokenizer"
+        "whole_string_analyzer": {
+          "type": "custom",
+          "tokenizer": "keyword",
+          "filter": [
+            "uppercase"
+          ]
         }
       },
       "tokenizer": {
         "edge_ngram_tokenizer": {
           "type": "edge_ngram",
           "min_gram": 2,
-          "max_gram": 10,
+          "max_gram": 20,
           "token_chars": [
             "letter",
-            "digit"
+            "digit",
+            "whitespace"
           ]
         }
       }
@@ -35,8 +40,9 @@
   },
   "mappings": {
     "properties": {
-      "location_string": {
+      "location": {
         "type": "text",
+        "analyzer": "whole_string_analyzer",
         "fields": {
           "contains": {
             "type": "text",
@@ -46,27 +52,14 @@
             "type": "keyword"
           }
         }
+      },
+      "location_json": {
+        "type": "object",
+        "enabled": false
       },
       "location_type": {
-        "type": "text",
-        "fields": {
-          "keyword": {
-            "type": "keyword"
-          }
-        }
-      },
-      "county_fips": {
-        "type": "text",
-        "fields": {
-          "contains": {
-            "type": "text",
-            "analyzer": "contains_analyzer"
-          },
-          "keyword": {
-            "type": "keyword"
-          }
-        }
+        "type": "keyword"
       }
-  }
+    }
   }
 }

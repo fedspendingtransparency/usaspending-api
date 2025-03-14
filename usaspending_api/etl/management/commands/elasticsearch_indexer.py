@@ -16,6 +16,7 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     format_log,
     toggle_refresh_off,
     transform_award_data,
+    transform_location_data,
     transform_subaward_data,
     transform_transaction_data,
 )
@@ -372,7 +373,7 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             "base_table": "transaction_search",
             "base_table_id": "transaction_id",
             "create_award_type_aliases": False,
-            "data_transform_func": None,
+            "data_transform_func": transform_location_data,
             "data_type": "location",
             "execute_sql_func": execute_sql_statement,
             "extra_null_partition": False,
