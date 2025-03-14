@@ -1,0 +1,34 @@
+name: Code Climate Report Coverage
+
+env:
+  global:
+    - CC_TEST_REPORTER_ID=${{ secrets.CC_TEST_REPORTER_ID }}
+    - IS_CODE_COVERAGE_REPORT=true
+
+on:
+  workflow_call:
+
+jobs:
+  Report-Coverage:
+    name: Report Coverage
+    runs-on: ${{ vars.RUNNER_VERSION }}
+    steps:
+      - name: Install Dependency
+        run: |
+          - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+          - chmod +x ./cc-test-reporter
+
+      - name: Download coverage reports
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp
+          pattern: coverage.*.xml
+
+      - name: Report Test Coverage
+        env:
+          CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
+        run: |
+          ls -lh coverage*
+          for cf in coverage.*.xml; do ./cc-test-reporter format-coverage --input-type coverage.py --output coverage/codeclimate.$(echo "$cf" | cut -d'.' -f2).xml coverage.$(echo "$cf" | cut -d'.' -f2).xml; done
+          ls coverage/
+          ./cc-test-reporter sum-coverage --output - --parts $(find . -maxdepth 1 -name 'coverage.*.xml' | wc -l) ./coverage/codeclimate.*.xml | ./cc-test-reporter upload-coverage --input -

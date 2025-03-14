@@ -17,10 +17,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  Temp-Run-Unit-Tests:
-    name: Run Unit Tests
-    uses: ./.github/workflows/test-unit.yaml
-
   # There isn't a good way to avoid running a workflow when a Draft PR is opened. As a result, we
   # first check if a Draft PR triggered this workflow and cancel the workflow if that is the case.
   Cancel-If-Draft-Pull-Request:
@@ -85,3 +81,9 @@ jobs:
     needs: Run-Linting
     if: ${{ !failure() && !cancelled() }}
     uses: ./.github/workflows/test-unit.yaml
+
+  Code-Climate-Report-Coverage:
+    name: Code Climate Report Coverage
+    needs: [Run-Linting]
+    if: ${{ !failure() && !cancelled() }}
+    uses: ./.github/workflows/code-climate-report-coverage.yaml

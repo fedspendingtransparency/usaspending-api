@@ -124,3 +124,12 @@ runs:
       run: >
         pytest --reuse-db --numprocesses logical --no-cov --disable-warnings -r=fEs --verbosity=3
         "usaspending_api/tests/integration/test_setup_of_spark_dependencies.py::test_preload_spark_jars"
+
+    - name: Inform code climate of build
+      shell: bash
+      env:
+        CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
+      run: |
+        - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+        - chmod +x ./cc-test-reporter
+        - ./cc-test-reporter before-build
