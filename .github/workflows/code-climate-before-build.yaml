@@ -6,6 +6,7 @@ on:
       base-branch:
         description: The branch that the PR is merged in to
         type: string
+        required: true
     secrets:
       cc_test_reporter_id:
         required: true

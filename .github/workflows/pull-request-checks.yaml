@@ -54,6 +54,8 @@ jobs:
       needs.Cancel-If-Draft-Pull-Request.result == 'skipped'
     # if: ${{ !failure() && !cancelled() }}
     uses: ./.github/workflows/code-climate-before-build.yaml
+    with:
+      base-branch: ${{ github.base_ref }}
     secrets:
       cc_test_reporter_id: ${{ secrets.CC_TEST_REPORTER_ID }}
 
@@ -109,5 +111,7 @@ jobs:
       - Run-Unit-Tests
     if: ${{ !failure() && !cancelled() }}
     uses: ./.github/workflows/code-climate-report-coverage.yaml
+    with:
+      base-branch: ${{ github.base_ref }}
     secrets:
       cc_test_reporter_id: ${{ secrets.CC_TEST_REPORTER_ID }}
