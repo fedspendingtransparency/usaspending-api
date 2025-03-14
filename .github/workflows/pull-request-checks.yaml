@@ -108,7 +108,9 @@ jobs:
     needs:
       - Run-Unit-Tests
       - Run-Non-Spark-Integration-Tests
-    if: failure()
+    if: |
+      always()
+      && contains(needs.*.result, 'failure')
     uses: ./.github/workflows/cancel-running-workflow.yaml
 
   Code-Climate-Report-Coverage:
