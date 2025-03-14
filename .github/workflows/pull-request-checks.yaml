@@ -48,6 +48,7 @@ jobs:
   Code-Climate-Before-Build:
     name: Code Climate Before Build
 #    needs: Run-Linting
+    needs: Cancel-If-Draft-Pull-Request
     if: |
       always() &&
       needs.Cancel-If-Draft-Pull-Request.result == 'skipped'
