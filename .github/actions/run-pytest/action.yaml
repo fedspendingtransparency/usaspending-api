@@ -21,7 +21,7 @@ inputs:
     default: ""
   working-directory:
     description: Directory where the requirements can be found; used when multiple repos are checked out
-    default: ""
+    default: "."
 
 runs:
   using: composite
@@ -72,8 +72,7 @@ runs:
       run: ${{ steps.build-pytest-command.outputs.pytest-command }}
 
     - name: Upload Artifact
-      working-directory: ${{ inputs.working-directory }}
       uses: actions/upload-artifact@v4
       with:
         name: coverage.${{ inputs.cov-report-name }}.xml
-        path: ./coverage.${{ inputs.cov-report-name }}.xml
+        path: ${{ inputs.working-directory}}/coverage.${{ inputs.cov-report-name }}.xml
