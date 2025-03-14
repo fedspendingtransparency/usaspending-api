@@ -736,5 +736,8 @@ subaward_search_load_sql_string = rf"""
         END
     )
     -- Subaward numbers are crucial for identifying subawards and so those without subaward numbers won't be surfaced.
-    WHERE bs.subaward_number IS NOT NULL
+    WHERE
+        bs.subaward_number IS NOT NULL
+        AND bs.sub_action_date IS NOT NULL
+        AND bs.subaward_amount IS NOT NULL
 """
