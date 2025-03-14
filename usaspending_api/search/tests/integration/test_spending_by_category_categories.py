@@ -769,7 +769,9 @@ def test_category_awarding_agency_transactions(agency_test_data, monkeypatch, el
 
 
 @pytest.mark.django_db
-def test_category_awarding_agency_subawards(agency_test_data):
+def test_category_awarding_agency_subawards(agency_test_data, monkeypatch, elasticsearch_subaward_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
+
     test_payload = {"category": "awarding_agency", "spending_level": "subawards", "page": 1, "limit": 50}
 
     spending_by_category_logic = AwardingAgencyViewSet().perform_search(test_payload, {})
