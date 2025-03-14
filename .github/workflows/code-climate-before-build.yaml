@@ -10,6 +10,8 @@ jobs:
   Before-Build:
     name: Before Build
     runs-on: ${{ vars.RUNNER_VERSION }}
+    env:
+      CC_TEST_REPORTER_ID: ${{ secrets.cc_test_reporter_id }}
     steps:
       - name: Install Dependency
         run: |
