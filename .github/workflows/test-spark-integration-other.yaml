@@ -53,7 +53,7 @@ jobs:
           working-directory: ./usaspending-api
 
       - name: Run Test Cases
-        uses: ./.github/actions/run-pytest
+        uses: ./usaspending-api/.github/actions/run-pytest
         with:
           cov-report-name: 'spark-other-tests'
           include-glob: 'test_*.py *_test.py'
