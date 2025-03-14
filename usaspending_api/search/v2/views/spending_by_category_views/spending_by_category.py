@@ -6,33 +6,30 @@ from typing import List, Optional, Union
 
 from django.conf import settings
 from django.db.models import QuerySet, Sum
-from elasticsearch_dsl import Q as ES_Q, A
+from elasticsearch_dsl import A
+from elasticsearch_dsl import Q as ES_Q
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from usaspending_api.awards.v2.filters.sub_award import subaward_filter
-from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
+from usaspending_api.common.api_versioning import API_TRANSFORM_FUNCTIONS, api_transformations
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_classes import Pagination
-from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
-from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
+from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, SubawardSearch, TransactionSearch
 from usaspending_api.common.exceptions import ElasticsearchConnectionException, NotImplementedException
-from usaspending_api.common.helpers.generic_helper import (
-    get_simple_pagination_metadata,
-    get_generic_filters_message,
-)
+from usaspending_api.common.helpers.generic_helper import get_generic_filters_message, get_simple_pagination_metadata
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.references.models import DisasterEmergencyFundCode
+from usaspending_api.search.filters.elasticsearch.filter import QueryType
 from usaspending_api.search.v2.elasticsearch_helper import (
-    get_number_of_unique_terms_for_transactions,
+    get_number_of_unique_terms,
     get_number_of_unique_terms_for_awards,
+    get_number_of_unique_terms_for_transactions,
     get_scaled_sum_aggregations,
 )
-from usaspending_api.search.filters.elasticsearch.filter import QueryType
 from usaspending_api.search.v2.views.enums import SpendingLevel
 
 logger = logging.getLogger(__name__)
@@ -106,9 +103,12 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         )
 
         if self.spending_level == SpendingLevel.SUBAWARD:
-            base_queryset = subaward_filter(self.filters)
-            self.obligation_column = "subaward_amount"
-            results = self.query_django_for_subawards(base_queryset)
+            query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
+            filter_query = query_with_filters.generate_elasticsearch_query(self.filters)
+            results = self.query_elasticsearch(filter_query)
+            # base_queryset = subaward_filter(self.filters)
+            # self.obligation_column = "subaward_amount"
+            # results = self.query_django_for_subawards(base_queryset)
         elif self.spending_level == SpendingLevel.TRANSACTION:
             query_with_filters = QueryWithFilters(QueryType.TRANSACTIONS)
             filter_query = query_with_filters.generate_elasticsearch_query(self.filters)
@@ -169,7 +169,7 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
 
     def build_elasticsearch_search_with_aggregations(
         self, filter_query: ES_Q
-    ) -> Optional[Union[AwardSearch, TransactionSearch]]:
+    ) -> Optional[Union[AwardSearch, SubawardSearch, TransactionSearch]]:
         """
         Using the provided ES_Q object creates a TransactionSearch object with the necessary applied aggregations.
         """
@@ -187,6 +187,8 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
             # Get count of unique buckets; terminate early if there are no buckets matching criteria
             if self.spending_level == SpendingLevel.AWARD:
                 bucket_count = get_number_of_unique_terms_for_awards(filter_query, f"{self.category.agg_key}.hash")
+            elif self.spending_level == SpendingLevel.SUBAWARD:
+                bucket_count = get_number_of_unique_terms(SubawardSearch, filter_query, f"{self.category.agg_key}.hash")
             else:
                 bucket_count = get_number_of_unique_terms_for_transactions(
                     filter_query, f"{self.category.agg_key}.hash"
