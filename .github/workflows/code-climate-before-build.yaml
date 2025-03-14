@@ -2,6 +2,10 @@ name: Code Climate Before Build
 
 on:
   workflow_call:
+    inputs:
+      base-branch:
+        description: The branch that the PR is merged in to
+        type: string
     secrets:
       cc_test_reporter_id:
         required: true
@@ -11,6 +15,7 @@ jobs:
     name: Before Build
     runs-on: ${{ vars.RUNNER_VERSION }}
     env:
+      GIT_BRANCH: ${{ inputs.base-branch }}
       CC_TEST_REPORTER_ID: ${{ secrets.cc_test_reporter_id }}
     steps:
       - name: Install Dependency
