@@ -424,7 +424,7 @@ normalized_column_names_cte AS (
     UNION
     SELECT
         recipient_location_county_string AS location,
-        recipient_location_city_json AS location_json
+        recipient_location_county_json AS location_json
     FROM
         transaction_locations_cte
     UNION
