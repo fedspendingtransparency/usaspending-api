@@ -2,10 +2,11 @@ name: Code Climate Report Coverage
 
 on:
   workflow_call:
-    base-branch:
-      description: The branch that the PR is merged in to
-      type: string
-      required: true
+    inputs:
+      base-branch:
+        description: The branch that the PR is merged in to
+        type: string
+        required: true
     secrets:
       cc_test_reporter_id:
         description: ID assigned by Code Climate for writing test coverage
