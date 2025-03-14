@@ -12,21 +12,21 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.api_helper import (
     DUPLICATE_DISTRICT_LOCATION_PARAMETERS,
     INCOMPATIBLE_DISTRICT_LOCATION_PARAMETERS,
+    NOT_DEFINED_FOR_TRANSACTIONS,
 )
 from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.references.models.psc import PSC
-from usaspending_api.search.filters.elasticsearch.filter import _Filter, QueryType
+from usaspending_api.search.filters.elasticsearch.filter import QueryType, _Filter
 from usaspending_api.search.filters.elasticsearch.naics import NaicsCodes
 from usaspending_api.search.filters.elasticsearch.psc import PSCCodes
 from usaspending_api.search.filters.elasticsearch.tas import TasCodes, TreasuryAccounts
-from usaspending_api.search.v2.es_sanitization import es_sanitize
 from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
 from usaspending_api.search.filters.time_period.query_types import (
-    TransactionSearchTimePeriod,
     AwardSearchTimePeriod,
     SubawardSearchTimePeriod,
+    TransactionSearchTimePeriod,
 )
-
+from usaspending_api.search.v2.es_sanitization import es_sanitize
 
 logger = logging.getLogger(__name__)
 
@@ -614,14 +614,23 @@ class _AwardIds(_Filter):
     def generate_elasticsearch_query(cls, filter_values: List[str], query_type: QueryType, **options) -> ES_Q:
         award_ids_query = []
 
+        if query_type == QueryType.SUBAWARDS:
+            award_id_fields = ["award_piid_fain", "subaward_number"]
+        else:
+            award_id_fields = ["display_award_id"]
+
         for filter_value in filter_values:
             if filter_value and filter_value.startswith('"') and filter_value.endswith('"'):
                 filter_value = filter_value[1:-1]
-                award_ids_query.append(ES_Q("term", display_award_id={"value": es_sanitize(filter_value)}))
+                award_ids_query.extend(
+                    ES_Q("term", **{es_field: {"query": es_sanitize(filter_value)}}) for es_field in award_id_fields
+                )
             else:
                 filter_value = es_sanitize(filter_value)
                 filter_value = " +".join(filter_value.split())
-                award_ids_query.append(ES_Q("regexp", display_award_id={"value": filter_value}))
+                award_ids_query.extend(
+                    ES_Q("regexp", **{es_field: {"value": es_sanitize(filter_value)}}) for es_field in award_id_fields
+                )
 
         return ES_Q("bool", should=award_ids_query, minimum_should_match=1)
 
@@ -899,6 +908,26 @@ class _NonzeroFields(_Filter):
         return ES_Q("bool", should=non_zero_queries, minimum_should_match=1)
 
 
+class _AwardUniqueId(_Filter):
+    """String that represents the unique ID of the prime award of a queried award/subaward."""
+
+    underscore_name = "award_unique_id"
+
+    @classmethod
+    def generate_elasticsearch_query(cls, filter_values: str, query_type: QueryType, **options) -> ES_Q:
+        if query_type == QueryType.TRANSACTIONS:
+            raise InvalidParameterException(NOT_DEFINED_FOR_TRANSACTIONS)
+
+        fields = {
+            QueryType.AWARDS: ["generated_unique_award_id"],
+            QueryType.SUBAWARDS: ["unique_award_key"],
+        }
+
+        query = es_sanitize(filter_values)
+        id_query = ES_Q("query_string", query=query, default_operator="AND", fields=fields.get(query_type, []))
+        return ES_Q("bool", should=id_query, minimum_should_match=1)
+
+
 class QueryWithFilters:
 
     @property
@@ -930,6 +959,7 @@ class QueryWithFilters:
             _QueryText.underscore_name: _QueryText,
             _NonzeroFields.underscore_name: _NonzeroFields,
             _ProgramActivities.underscore_name: _ProgramActivities,
+            _AwardUniqueId.underscore_name: _AwardUniqueId,
         }
         if self.query_type == QueryType.SUBAWARDS:
             result[_SubawardsPrimeSubAwardTypes.underscore_name] = _SubawardsPrimeSubAwardTypes
