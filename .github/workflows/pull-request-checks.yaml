@@ -99,9 +99,17 @@ jobs:
 
   Run-Unit-Tests:
     name: Run Unit Tests
-    needs: Code-Climate-Before-Build
+#    needs: Code-Climate-Before-Build
     if: ${{ !failure() && !cancelled() }}
     uses: ./.github/workflows/test-unit.yaml
+
+  Cancel-Running-Workflow:
+    name: Cancel Running Workflow
+    needs:
+      - Run-Unit-Tests
+      - Run-Non-Spark-Integration-Tests
+    if: failure()
+    uses: ./.github/workflows/cancel-running-workflow.yaml
 
   Code-Climate-Report-Coverage:
     name: Code Climate Report Coverage
