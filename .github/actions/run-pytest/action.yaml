@@ -69,5 +69,5 @@ runs:
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: coverage.${{ inputs.cov-report-name }}.xml
+        name: coverage.${{ inputs.cov-report-name }}.xml.zip
         path: ./coverage.${{ inputs.cov-report-name }}.xml
