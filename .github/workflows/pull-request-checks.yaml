@@ -44,15 +44,11 @@ jobs:
       needs.Cancel-If-Draft-Pull-Request.result == 'skipped'
     uses: ./.github/workflows/build-broker-docker-image-for-test.yaml
 
-  # Prepare CodeClimate to receive coverage report
+  # Prepare Code Climate to receive coverage report
   Code-Climate-Before-Build:
     name: Code Climate Before Build
-#    needs: Run-Linting
-    needs: Cancel-If-Draft-Pull-Request
-    if: |
-      always() &&
-      needs.Cancel-If-Draft-Pull-Request.result == 'skipped'
-    # if: ${{ !failure() && !cancelled() }}
+    needs: Run-Linting
+    if: ${{ !failure() && !cancelled() }}
     uses: ./.github/workflows/code-climate-before-build.yaml
     with:
       base-branch: ${{ github.base_ref }}
@@ -95,7 +91,9 @@ jobs:
 
   Run-Non-Spark-Integration-Tests:
     name: Run Non-Spark Integration Tests
-    needs: [Code-Climate-Before-Build, Build-Broker-Docker-Image]
+    needs:
+      - Code-Climate-Before-Build
+      - Build-Broker-Docker-Image
     if: ${{ !failure() && !cancelled() }}
     uses: ./.github/workflows/test-non-spark-integration.yaml
 
@@ -108,6 +106,11 @@ jobs:
   Code-Climate-Report-Coverage:
     name: Code Climate Report Coverage
     needs:
+      - Run-Spark-Integration-Load-Transaction-FABS-and-FPDS-Tests
+      - Run-Spark-Integration-Load-Transactions-Lookup-Tests
+      - Run-Spark-Integration-Load-To-From-Delta-Tests
+      - Run-Spark-Integration-Other-Tests
+      - Run-Non-Spark-Integration-Tests
       - Run-Unit-Tests
     if: ${{ !failure() && !cancelled() }}
     uses: ./.github/workflows/code-climate-report-coverage.yaml
