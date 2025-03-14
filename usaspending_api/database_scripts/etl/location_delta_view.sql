@@ -163,7 +163,7 @@ CREATE VIEW location_delta_view AS
         )
             THEN TO_JSONB(
                 JSONB_BUILD_OBJECT(
-                    'current_cd', CONCAT(UPPER(pop_state_code), '-', pop_congressional_code),
+                    'original_cd', CONCAT(UPPER(pop_state_code), '-', pop_congressional_code),
 		            'state_name', UPPER(pop_state_name),
 		            'country_name', 'UNITED STATES',
                     'location_type', 'original_cd'
@@ -347,7 +347,7 @@ CREATE VIEW location_delta_view AS
         )
             THEN TO_JSONB(
                 JSONB_BUILD_OBJECT(
-                    'current_cd', CONCAT(UPPER(recipient_location_state_code), '-', recipient_location_congressional_code),
+                    'original_cd', CONCAT(UPPER(recipient_location_state_code), '-', recipient_location_congressional_code),
 		            'state_name', UPPER(recipient_location_state_name),
 		            'country_name', 'UNITED STATES',
                     'location_type', 'original_cd'
