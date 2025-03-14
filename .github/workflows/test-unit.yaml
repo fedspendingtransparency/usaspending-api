@@ -27,6 +27,8 @@ jobs:
     steps:
       - name: Checkout Source Repository
         uses: actions/checkout@v4
+        with:
+          path: usaspending-api
 
       - name: Init Python Environment
         uses: ./.github/actions/init-python-environment
