@@ -49,7 +49,7 @@ jobs:
     name: Code Climate Before Build
     needs: Run-Linting
     if: ${{ !failure() && !cancelled() }}
-    uses: ./github/workflows/code-climate-before-build.yaml
+    uses: ./.github/workflows/code-climate-before-build.yaml
 
   # The test suite is broken into multiple groups based on a combination of what is under test
   # and the time that it takes to run tests for that group.
