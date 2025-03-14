@@ -33,11 +33,6 @@ runs:
         echo "KEYWORD=${{ inputs.keyword }}" >> $GITHUB_ENV
         echo "MARKER=${{ inputs.marker }}" >> $GITHUB_ENV
 
-    - name: Read report name
-      id: read-report-name
-      shell: bash
-      run: echo "cov-report-name=$COV_REPORT_NAME" >> $GITHUB_OUTPUT
-
     - name: Build pytest command
       id: build-pytest-command
       shell: bash
@@ -74,5 +69,5 @@ runs:
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ steps.read-report-name.outputs.report-name }}
-        path: ./${{ steps.read-report-name.outputs.report-name }}
+        name: coverage.${{ inputs.cov-report-name }}.xml
+        path: ./coverage.${{ inputs.cov-report-name }}.xml
