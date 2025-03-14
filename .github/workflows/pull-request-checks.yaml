@@ -110,4 +110,4 @@ jobs:
     if: ${{ !failure() && !cancelled() }}
     uses: ./.github/workflows/code-climate-report-coverage.yaml
     secrets:
-      cc_test_reporter_id: ${{ secrets.CC_TEST_REPORTER_ID
+      cc_test_reporter_id: ${{ secrets.CC_TEST_REPORTER_ID }}
