@@ -55,6 +55,7 @@ engines:
         enabled: false
   radon:
     enabled: true
+    channel: beta
     config:
       python_version: 3
       threshold: "D"
