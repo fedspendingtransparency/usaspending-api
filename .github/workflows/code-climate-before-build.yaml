@@ -1,0 +1,17 @@
+name: Code Climate Before Build
+
+on:
+  workflow_call:
+
+jobs:
+  Before-Build:
+    name: Before Build
+    runs-on: ${{ vars.RUNNER_VERSION }}
+    steps:
+      - name: Install Dependency
+        run: |
+          - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+          - chmod +x ./cc-test-reporter
+
+      - name: Run Before Build
+        run: ./cc-test-reporter before-build

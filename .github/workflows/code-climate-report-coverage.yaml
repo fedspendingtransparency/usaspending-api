@@ -7,6 +7,8 @@ jobs:
   Report-Coverage:
     name: Report Coverage
     runs-on: ${{ vars.RUNNER_VERSION }}
+    secrets:
+      
     steps:
       - name: Install Dependency
         run: |
@@ -20,7 +22,7 @@ jobs:
           pattern: coverage.*.xml
 
       - name: Report Test Coverage
-        env:
+        secrets:
           CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
         run: |
           ls -lh coverage*
