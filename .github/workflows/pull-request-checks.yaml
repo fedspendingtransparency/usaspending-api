@@ -47,7 +47,7 @@ jobs:
   # Prepare CodeClimate to receive coverage report
   Code-Climate-Before-Build:
     name: Code Climate Before Build
-    needs: Run-Linting
+#    needs: Run-Linting
     if: |
       always() &&
       needs.Cancel-If-Draft-Pull-Request.result == 'skipped'
