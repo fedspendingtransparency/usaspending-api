@@ -113,25 +113,16 @@ class LocationAutocompleteViewSet(APIView):
             }
         """
 
-        countries = []
-        states = []
-        cities = []
-        counties = []
-        zip_codes = []
-        original_cds = []
-        current_cds = []
-
-        # Key: Value of the `location_type` field on the ES docs
-        # Value: Lists from above that will contain the matches for that location type
-        location_type_to_list_lookup = {
-            "country": countries,
-            "city": cities,
-            "state": states,
-            "county": counties,
-            "zip_code": zip_codes,
-            "original_cd": original_cds,
-            "current_cd": current_cds,
+        location_singular_plural_mapping = {
+            "country": "countries",
+            "city": "cities",
+            "state": "states",
+            "county": "counties",
+            "zip_code": "zip_codes",
+            "original_cd": "districts_original",
+            "current_cd": "districts_current",
         }
+        results = {v: [] for v in location_singular_plural_mapping.values()}
 
         for doc in es_results:
             location_json = json.loads(doc.location_json)
@@ -139,16 +130,6 @@ class LocationAutocompleteViewSet(APIView):
             # The 'location_type' key is only used during indexing so we can remove it now
             del location_json["location_type"]
 
-            location_type_to_list_lookup[doc.location_type].append(location_json)
+            results[location_singular_plural_mapping[doc.location_type]].append(location_json)
 
-        results = {
-            "countries": countries if countries else None,
-            "states": states if states else None,
-            "cities": cities if cities else None,
-            "counties": counties if counties else None,
-            "zip_codes": zip_codes if zip_codes else None,
-            "districts_original": original_cds if original_cds else None,
-            "districts_current": current_cds if current_cds else None,
-        }
-
-        return results
+        return {k: v if v else None for k, v in results.items()}
