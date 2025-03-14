@@ -7,8 +7,6 @@ jobs:
   Report-Coverage:
     name: Report Coverage
     runs-on: ${{ vars.RUNNER_VERSION }}
-    secrets:
-      
     steps:
       - name: Install Dependency
         run: |
@@ -22,8 +20,6 @@ jobs:
           pattern: coverage.*.xml
 
       - name: Report Test Coverage
-        secrets:
-          CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
         run: |
           ls -lh coverage*
           for cf in coverage.*.xml; do ./cc-test-reporter format-coverage --input-type coverage.py --output coverage/codeclimate.$(echo "$cf" | cut -d'.' -f2).xml coverage.$(echo "$cf" | cut -d'.' -f2).xml; done
