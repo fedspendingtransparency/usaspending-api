@@ -35,8 +35,10 @@ jobs:
         with:
           merge-multiple: 'true'
           pattern: coverage.*.xml
+          path: ./usaspending-api
 
       - name: Report Test Coverage
+        working-directory: ./usaspending-api
         run: |
           ls -lh coverage.*.xml
           for cf in coverage.*.xml; do ./cc-test-reporter format-coverage --prefix ${{ github.workspace }} --input-type coverage.py --output coverage/codeclimate.$(echo "$cf" | cut -d'.' -f2).xml coverage.$(echo "$cf" | cut -d'.' -f2).xml; done
