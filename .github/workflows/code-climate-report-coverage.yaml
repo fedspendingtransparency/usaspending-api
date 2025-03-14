@@ -31,17 +31,12 @@ jobs:
       - name: Download coverage reports
         uses: actions/download-artifact@v4
         with:
+          merge-multiple: 'true'
           pattern: coverage.*.xml
-
-#      - name: Unzip artifacts
-#        run: |
-#          ls
-#          ls -lh coverage.*.xml
-#          for artifact in coverage.*.xml.zip; do unzip $artifact; done
 
       - name: Report Test Coverage
         run: |
-          ls -lh coverage.*
-          for cf in coverage.*; do ./cc-test-reporter format-coverage --input-type coverage.py --output coverage/codeclimate.$(echo "$cf" | cut -d'.' -f2).xml coverage.$(echo "$cf" | cut -d'.' -f2).xml; done
+          ls -lh coverage.*.xml
+          for cf in coverage.*.xml; do ./cc-test-reporter format-coverage --input-type coverage.py --output coverage/codeclimate.$(echo "$cf" | cut -d'.' -f2).xml coverage.$(echo "$cf" | cut -d'.' -f2).xml; done
           ls coverage/
           ./cc-test-reporter sum-coverage --output - --parts $(find . -maxdepth 1 -name 'coverage.*.xml' | wc -l) ./coverage/codeclimate.*.xml | ./cc-test-reporter upload-coverage --input -
