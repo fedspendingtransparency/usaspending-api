@@ -84,6 +84,6 @@ jobs:
 
   Code-Climate-Report-Coverage:
     name: Code Climate Report Coverage
-    needs: [Run-Linting]
+    needs: [Run-Unit-Tests]
     if: ${{ !failure() && !cancelled() }}
     uses: ./.github/workflows/code-climate-report-coverage.yaml
