@@ -35,7 +35,8 @@ jobs:
 
       - name: Unzip artifacts
         run: |
-          ls -lh coverage.*.xml.zip
+          ls
+          ls -lh coverage.*.xml
           for artifact in coverage.*.xml.zip; do unzip $artifact; done
 
       - name: Report Test Coverage
