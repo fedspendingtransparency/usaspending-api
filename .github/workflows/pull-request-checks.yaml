@@ -103,16 +103,6 @@ jobs:
     if: ${{ !failure() && !cancelled() }}
     uses: ./.github/workflows/test-unit.yaml
 
-  Cancel-Running-Workflow:
-    name: Cancel Running Workflow
-    needs:
-      - Run-Unit-Tests
-      - Run-Non-Spark-Integration-Tests
-    if: |
-      always()
-      && contains(needs.*.result, 'failure')
-    uses: ./.github/workflows/cancel-running-workflow.yaml
-
   Code-Climate-Report-Coverage:
     name: Code Climate Report Coverage
     needs:

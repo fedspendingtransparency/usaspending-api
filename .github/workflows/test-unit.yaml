@@ -38,11 +38,16 @@ jobs:
           is-spark-test: false
 
       - name: Run Test Cases
+        id: run-test-cases
         uses: ./.github/actions/run-pytest
         with:
           cov-report-name: 'unit-tests'
           ignore-glob: '**/tests/integration/*'
           include-glob: 'test_*.py *_test.py'
+
+      - name: Cancel Running Workflow
+        if: failure()
+        uses: ./.github/workflows/cancel-running-workflow.yaml
 
 #  Cancel-Running-Workflow:
 #    name: Cancel Running Workflow
