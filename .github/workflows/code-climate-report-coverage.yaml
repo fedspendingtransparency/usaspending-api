@@ -31,10 +31,11 @@ jobs:
       - name: Download coverage reports
         uses: actions/download-artifact@v4
         with:
-          pattern: coverage.*.xml
+          pattern: coverage.*.xml.zip
 
       - name: Unzip artifacts
         run: |
+          ls
           ls -lh coverage.*.xml.zip
           for artifact in coverage.*.xml.zip; do unzip $artifact; done
 
