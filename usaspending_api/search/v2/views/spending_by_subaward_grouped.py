@@ -11,7 +11,7 @@ from rest_framework.views import APIView
 
 from usaspending_api.common.api_versioning import API_TRANSFORM_FUNCTIONS, api_transformations
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.elasticsearch.search_wrappers import SubawardSearch
+from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, SubawardSearch
 from usaspending_api.common.helpers.generic_helper import (
     get_generic_filters_message,
 )
@@ -20,7 +20,7 @@ from usaspending_api.common.validator.award_filter import AWARD_FILTER_NO_RECIPI
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.search.filters.elasticsearch.filter import QueryType
-from usaspending_api.search.filters.time_period.query_types import SubawardSearchTimePeriod
+from usaspending_api.search.filters.time_period.query_types import AwardSearchTimePeriod, SubawardSearchTimePeriod
 
 logger = logging.getLogger(__name__)
 
@@ -45,12 +45,12 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
         super().__init__(*args, **kwargs)
         self.original_filters: dict[str, Any] = {}
         self.filters: dict[str, Any] = {}
+        self.subaward_filters: dict[str, Any] = {}
         self.pagination: dict[str, Any] = {}
 
     @cache_response()
     def post(self, request) -> Response:
         """Return all subawards matching given awards"""
-        print('here in post')
         self.original_filters = request.data.get("filters")
         json_request, self.models = self.validate_request_data(request.data)
         filters = json_request.get("filters", {})
@@ -64,11 +64,11 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
             "upper_bound": json_request["page"] * json_request["limit"] + 1,
         }
 
-        time_period_obj = SubawardSearchTimePeriod(
+        time_period_obj = AwardSearchTimePeriod(
             default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
         )
 
-        query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
+        query_with_filters = QueryWithFilters(QueryType.AWARDS)
         filter_query = query_with_filters.generate_elasticsearch_query(filters=self.filters, options=time_period_obj)
         results = self.build_elasticsearch_search_with_aggregation(filter_query)
 
@@ -125,7 +125,24 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
 
         # Sum the subaward amount within each prime award
         terms_aggregation.metric("subaward_obligation", "sum", field="subaward_amount")
-        search_sum = SubawardSearch().filter(filter_query)
+
+        # Filters apply to awards
+        filtered_awards = AwardSearch().filter(filter_query)
+
+        # Return subaward searched based on remaining awards
+        award_response = filtered_awards.handle_execute()
+        award_generated_internal_id = []
+        for award in award_response['hits']['hits']:
+            award_generated_internal_id.append(award['_source']['award_generated_internal_id'])
+        
+        self.subaward_filters = {"award_generated_internal_id": award_generated_internal_id}
+        time_period_obj = SubawardSearchTimePeriod(
+            default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
+        )
+
+        filter_with_query_subawards = QueryWithFilters(QueryType.SUBAWARDS)
+        subawards_filter_query = filter_with_query_subawards.generate_elasticsearch_query(filters=self.subaward_filters, options=time_period_obj)
+        search_sum = SubawardSearch().filter(subawards_filter_query)
         search_sum.aggs.bucket("award_id", terms_aggregation)
         response = search_sum.handle_execute()
 
@@ -133,12 +150,7 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
             raise Exception("Breaking generator, unable to reach cluster")
 
         results = []
-        print('response: ', response)
-        print('response[aggregations]: ', response['aggregations'])
-        print('response[aggregations]["award_id"]:', response["aggregations"]["award_id"])
-        print('response["aggregations"]["award_id"]["buckets"]:', response["aggregations"]["award_id"]["buckets"])
         for result in response["aggregations"]["award_id"]["buckets"]:
-            print('in for loop')
             # there is one unique_award_key for each prime award so there will only be one bucket
             award_generated_internal_id = result["unique_award_key"]["buckets"][0]["key"]
             subaward_obligation = result["subaward_obligation"]["value"]
@@ -147,7 +159,6 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
             )
             results.append(item)
         results = self.sort_by_attribute(results)
-        print('results: ', results)
         return [result.__dict__ for result in results]
 
     # default sorting is to sort by the award_id, default order is desc
