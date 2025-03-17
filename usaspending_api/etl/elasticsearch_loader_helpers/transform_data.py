@@ -117,6 +117,8 @@ def transform_subaward_data(worker: TaskSpec, records: List[dict]) -> List[dict]
         "sub_recipient_location_county_agg_key": funcs.sub_recipient_location_county_agg_key,
         "awarding_subtier_agency_agg_key": lambda x: x["awarding_subtier_agency_code"],
         "funding_subtier_agency_agg_key": lambda x: x["funding_subtier_agency_code"],
+        "awarding_toptier_agency_agg_key": lambda x: x["awarding_toptier_agency_code"],
+        "funding_toptier_agency_agg_key": lambda x: x["funding_toptier_agency_code"],
     }
     drop_fields = []
 
