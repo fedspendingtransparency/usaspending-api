@@ -29,12 +29,12 @@ jobs:
     name: Run Tests
     runs-on: ${{ vars.RUNNER_VERSION }}
     steps:
-      - name: Checkout source repository
+      - name: Checkout Source Repository
         uses: actions/checkout@v4
         with:
           path: usaspending-api
 
-      - name: Checkout broker backend repository
+      - name: Checkout Broker Backend Repository
         uses: actions/checkout@v4
         with:
           repository: fedspendingtransparency/data-act-broker-backend
@@ -43,16 +43,25 @@ jobs:
       - name: Init Python Environment
         uses: ./usaspending-api/.github/actions/init-python-environment
         with:
-          working_directory: ./usaspending-api
+          working-directory: ./usaspending-api
 
       - name: Init Test Environment
         uses: ./usaspending-api/.github/actions/init-test-environment
         with:
-          is_integration_test: true
-          is_spark_test: false
-          working_directory: ./usaspending-api
+          is-integration-test: true
+          is-spark-test: false
+          working-directory: ./usaspending-api
 
-      - name: Run test cases
-        run: >
-          pytest -x --reuse-db --numprocesses logical --cov=usaspending_api --cov-report term -r=fEs --dist worksteal --verbosity=1 --durations 50
-          -m "(not spark)" --override-ini=python_files="**/tests/integration/*"
+      - name: Run Test Cases
+        uses: ./usaspending-api/.github/actions/run-pytest
+        with:
+          cov-report-name: 'non-spark-integration-tests'
+          include-glob: '**/tests/integration/*'
+          marker: '(not spark)'
+          working-directory: ./usaspending-api
+
+  Cancel-Running-Workflow:
+    name: Cancel Running Workflow
+    needs: Run-Tests
+    if: failure()
+    uses: ./.github/workflows/cancel-running-workflow.yaml

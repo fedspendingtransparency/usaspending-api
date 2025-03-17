@@ -38,6 +38,13 @@ This endpoint takes award filters and fields, and returns the fields of the filt
             The unique id of the last record in the results set. Used in the experimental Elasticsearch API functionality.
         + `last_record_sort_value` (optional, string)
             The value of the last record that is being sorted on. Used in the experimental Elasticsearch API functionality.
+        + `spending_level` (optional, enum[string])
+            Group the spending by level. This also determines what data source is used for the totals.
+            + Members
+                + `awards`
+                + `subawards`
+            + Default
+                + `awards`
     + Body
 
             {
@@ -253,6 +260,7 @@ Non Loan Assistance Awards can be searched for specifically by using the Non Loa
 ## Filter Objects
 ### AdvancedFilterObject (object)
 + `keywords` : [`transport`] (optional, array[string])
++ `description` (optional, string)
 + `time_period` (optional, array[TimePeriodObject], fixed-type)
 + `place_of_performance_scope` (optional, enum[string])
     + Members

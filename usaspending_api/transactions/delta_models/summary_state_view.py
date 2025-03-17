@@ -16,7 +16,7 @@ SUMMARY_STATE_VIEW_COLUMNS = {
 SUMMARY_STATE_VIEW_DELTA_COLUMNS = {k: v["delta"] for k, v in SUMMARY_STATE_VIEW_COLUMNS.items()}
 SUMMARY_STATE_VIEW_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in SUMMARY_STATE_VIEW_COLUMNS.items()}
 
-summary_state_view_create_sql_string = fr"""
+summary_state_view_create_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
         {", ".join([f'{key} {val}' for key, val in SUMMARY_STATE_VIEW_DELTA_COLUMNS.items()])}
     )
@@ -25,7 +25,7 @@ summary_state_view_create_sql_string = fr"""
 """
 
 summary_state_view_load_sql_string = [
-    fr"""
+    rf"""
     -- Step 1: Populate the summary_state_view table with initial values and set total_outlays to 0
     INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
     (

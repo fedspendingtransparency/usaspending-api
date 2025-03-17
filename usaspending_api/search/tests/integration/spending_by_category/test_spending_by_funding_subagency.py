@@ -8,6 +8,15 @@ from usaspending_api.search.tests.data.search_filters_test_data import non_legac
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
+def _expected_messages():
+    expected_messages = [get_time_period_message()]
+    expected_messages.append(
+        "'subawards' will be deprecated in the future. Set ‘spending_level’ to ‘subawards’ instead. "
+        "See documentation for more information. "
+    )
+    return expected_messages
+
+
 @pytest.mark.django_db
 def test_success_with_all_filters(client, monkeypatch, elasticsearch_transaction_index, basic_award):
     """
@@ -49,6 +58,7 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
                 "agency_abbreviation": "TA2",
                 "agency_name": "Funding Toptier Agency 2",
                 "agency_slug": "funding-toptier-agency-2",
+                "total_outlays": None,
             },
             {
                 "amount": 5.0,
@@ -60,9 +70,11 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
                 "agency_abbreviation": "TA4",
                 "agency_name": "Funding Toptier Agency 4",
                 "agency_slug": "funding-toptier-agency-4",
+                "total_outlays": None,
             },
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
     assert resp.json() == expected_response

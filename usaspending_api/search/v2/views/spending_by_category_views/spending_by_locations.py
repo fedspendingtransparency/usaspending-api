@@ -2,7 +2,7 @@ from abc import ABCMeta
 from collections import Counter
 from decimal import Decimal
 from enum import Enum
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from django.db.models import F, QuerySet, TextField
 from django.db.models.functions import Concat
@@ -14,6 +14,7 @@ from usaspending_api.search.helpers.spending_by_category_helpers import (
     fetch_country_name_from_code,
     fetch_state_name_from_code,
 )
+from usaspending_api.search.v2.views.enums import SpendingLevel
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_category import (
     AbstractSpendingByCategoryViewSet,
     Category,
@@ -75,18 +76,15 @@ class AbstractLocationViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMe
 
     location_type: LocationType
 
-    def build_elasticsearch_result(self, response: dict) -> List[dict]:
-        def _key_to_geo_code(key):
-            if self.location_type == LocationType.COUNTRY:
-                return key
-            return f"{code_to_state[key[:2]]['fips']}{key[2:]}" if (key and key[:2] in code_to_state) else None
+    def _key_to_geo_code(self, key: str) -> Optional[str]:
+        if self.location_type == LocationType.COUNTRY:
+            return key
+        elif key == "NULL":
+            return None
+        return f"{code_to_state[key[:2]]['fips']}{key[2:]}" if (key and key[:2] in code_to_state) else None
 
-        # Get the codes
-        location_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
-        code_list = [_key_to_geo_code(bucket["key"]) for bucket in location_info_buckets if bucket.get("key")]
-
-        # Get the current location info
-        current_location_info = {}
+    def get_location_info_query(self, code_list: List[str]) -> Optional[QuerySet]:
+        location_info_query = None
         if self.location_type == LocationType.COUNTRY:
             location_info_query = (
                 RefCountryCode.objects.annotate(shape_code=F("country_code"))
@@ -115,10 +113,21 @@ class AbstractLocationViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMe
                 PopCongressionalDistrict.objects.annotate(
                     shape_code=Concat(F("state_code"), F("congressional_district"), output_field=TextField())
                 )
-                .filter(state_code__in={sc[:2] for sc in code_list})
+                .filter(state_code__in={sc[:2] for sc in code_list if sc is not None})
                 .values("shape_code", "state_code", "congressional_district")
             )
+        return location_info_query
 
+    def build_elasticsearch_result(self, response: dict) -> List[dict]:
+
+        # Get the codes
+        location_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
+        code_list = [self._key_to_geo_code(bucket["key"]) for bucket in location_info_buckets if bucket.get("key")]
+
+        # Get the current location info
+        current_location_info = {}
+        location_info_query = self.get_location_info_query(code_list)
+        if self.location_type == LocationType.CONGRESSIONAL_DISTRICT:
             # Add the `90` congressional code to the list of valid codes, if the given state has more
             #   than 1 congressional district
             counts = Counter([state["state_code"] for state in location_info_query.all()])
@@ -137,7 +146,7 @@ class AbstractLocationViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMe
         # Build out the results
         results = []
         for bucket in location_info_buckets:
-            key = _key_to_geo_code(bucket.get("key"))
+            key = self._key_to_geo_code(bucket.get("key"))
             location_info = current_location_info.get(key) or {}
 
             if location_info:
@@ -156,6 +165,11 @@ class AbstractLocationViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMe
                     "code": location_info.get("code"),
                     "name": location_info.get("name"),
                     "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
+                    "total_outlays": (
+                        bucket.get("sum_as_dollars_outlay", {"value": None}).get("value")
+                        if self.spending_level == SpendingLevel.AWARD
+                        else None
+                    ),
                 }
             )
 

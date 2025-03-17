@@ -12,6 +12,7 @@ Code to generate these from spreadsheets:
 tail -n +3 'usaspending_api/data/DAIMS_IDD_Resorted+DRW+KB+GGv7/D2-Award (Financial Assistance)-Table 1.csv' >
 d2_columns.csv
 """
+
 import copy
 from collections import OrderedDict
 

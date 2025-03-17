@@ -3,7 +3,7 @@ from usaspending_api.accounts.serializers import (
     ObjectClassFinancialSpendingSerializer,
     MinorObjectClassFinancialSpendingSerializer,
 )
-from usaspending_api.common.calculations import file_b
+from usaspending_api.common.calculations.file_b import FileBCalculations
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.views import CachedDetailViewSet
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
@@ -52,6 +52,8 @@ class ObjectClassFinancialSpendingViewSet(CachedDetailViewSet):
         active_fiscal_year = submission.reporting_fiscal_year
         active_fiscal_quarter = submission.fiscal_quarter
 
+        file_b_calculations = FileBCalculations()
+
         # Special case: major object class name for class 00 should be reported
         # as Unknown Object Type, overriding actual value in database
         queryset = (
@@ -70,7 +72,7 @@ class ObjectClassFinancialSpendingViewSet(CachedDetailViewSet):
                 major_object_class_code=F("object_class__major_object_class"),
             )
             .values("major_object_class_name", "major_object_class_code")
-            .annotate(obligated_amount=Sum(file_b.get_obligations()))
+            .annotate(obligated_amount=Sum(file_b_calculations.get_obligations()))
             .order_by("major_object_class_code")
         )
 
@@ -119,6 +121,8 @@ class MinorObjectClassFinancialSpendingViewSet(CachedDetailViewSet):
         active_fiscal_year = submission.reporting_fiscal_year
         active_fiscal_quarter = submission.fiscal_quarter
 
+        file_b_calculations = FileBCalculations()
+
         queryset = FinancialAccountsByProgramActivityObjectClass.objects.filter(
             submission__is_final_balances_for_fy=True
         )
@@ -137,7 +141,7 @@ class MinorObjectClassFinancialSpendingViewSet(CachedDetailViewSet):
         )
         # sum obligated_mount by object class
         queryset = queryset.values("object_class_name", "object_class_code").annotate(
-            obligated_amount=Sum(file_b.get_obligations())
+            obligated_amount=Sum(file_b_calculations.get_obligations())
         )
         # get minor object class vars
         return queryset

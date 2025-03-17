@@ -1,6 +1,7 @@
 """
 Look ups for elasticsearch fields to be displayed for the front end
 """
+
 from copy import deepcopy
 
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings

@@ -1,18 +1,19 @@
-import psycopg2
-
-from datetime import datetime, date, timedelta, timezone
-from decimal import Decimal
-from django.core.management import call_command
-from pytest import mark
-from model_bakery import baker
 from copy import deepcopy
+from datetime import date, datetime, timedelta, timezone
+from decimal import Decimal
+
+import psycopg2
+import pytest
+from django.conf import settings
+from django.core.management import call_command
+from model_bakery import baker
 
 from usaspending_api.broker.helpers.last_load_date import update_last_load_date
-from usaspending_api.etl.tests.integration.test_load_to_from_delta import load_delta_table_from_postgres
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.tests.integration.test_load_to_from_delta import (
     create_and_load_all_delta_tables,
+    load_delta_table_from_postgres,
     verify_delta_table_loaded_from_delta,
     verify_delta_table_loaded_to_delta,
 )
@@ -30,14 +31,27 @@ _NEW_PROCURE = {
 }
 
 
-@mark.django_db(transaction=True)
+@pytest.mark.django_db(databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_load_table_to_from_delta_for_subawards(
     spark,
     s3_unittest_data_bucket,
     populate_usas_data_and_recipients_from_broker,
     hive_unittest_metastore_db,
 ):
-
+    edt = baker.make(
+        "broker.ExternalDataType",
+        name="source_assistance_transaction",
+        external_data_type_id=11,
+        update_date="2017-01-01",
+    )
+    baker.make("broker.ExternalDataLoadDate", last_load_date="2017-01-01", external_data_type=edt)
+    edt = baker.make(
+        "broker.ExternalDataType",
+        name="source_procurement_transaction",
+        external_data_type_id=10,
+        update_date="2017-01-01",
+    )
+    baker.make("broker.ExternalDataLoadDate", last_load_date="2017-01-01", external_data_type=edt)
     # Since changes to the source tables will go to the Postgres table first, use model baker to add new rows to
     # Postgres table, and then push the updated table to Delta.
     last_load_datetime = datetime.now(timezone.utc)
@@ -68,6 +82,7 @@ def test_load_table_to_from_delta_for_subawards(
         "financial_accounts_by_awards",
         "zips",
         "transaction_current_cd_lookup",
+        "recipient_profile",
     ]
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
     verify_delta_table_loaded_to_delta(spark, "subaward", s3_unittest_data_bucket)
@@ -867,7 +882,7 @@ def test_load_table_to_from_delta_for_subawards(
     verify_delta_table_loaded_from_delta(spark, "subaward_search", jdbc_inserts=True, ignore_fields=ignore_fields)
 
     # but to be safe, let's make sure those ts_vectors are populated correctly
-    postgres_query = f"""
+    postgres_query = """
         SELECT keyword_ts_vector, award_ts_vector, recipient_name_ts_vector
         FROM temp.subaward_search_temp
         ORDER BY broker_subaward_id

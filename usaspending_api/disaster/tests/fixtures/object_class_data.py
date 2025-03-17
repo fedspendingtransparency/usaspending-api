@@ -117,8 +117,8 @@ def basic_fa_by_object_class_with_object_class(award_count_sub_schedule, award_c
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=13,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=9,
         ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=14,
-        ussgl480110_reinstated_del_cpe=75,
-        ussgl490110_reinstated_del_cpe=63,
+        ussgl480110_rein_undel_ord_cpe=75,
+        ussgl490110_rein_deliv_ord_cpe=63,
     )
     baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
@@ -142,8 +142,8 @@ def basic_fa_by_object_class_with_object_class(award_count_sub_schedule, award_c
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=13,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=9,
         ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=14,
-        ussgl480110_reinstated_del_cpe=75,
-        ussgl490110_reinstated_del_cpe=63,
+        ussgl480110_rein_undel_ord_cpe=75,
+        ussgl490110_rein_deliv_ord_cpe=63,
     )
     baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
@@ -167,8 +167,8 @@ def basic_fa_by_object_class_with_object_class(award_count_sub_schedule, award_c
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=13,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=9,
         ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=14,
-        ussgl480110_reinstated_del_cpe=75,
-        ussgl490110_reinstated_del_cpe=63,
+        ussgl480110_rein_undel_ord_cpe=75,
+        ussgl490110_rein_deliv_ord_cpe=63,
     )
     baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
@@ -192,8 +192,8 @@ def basic_fa_by_object_class_with_object_class(award_count_sub_schedule, award_c
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=13,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=9,
         ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=14,
-        ussgl480110_reinstated_del_cpe=75,
-        ussgl490110_reinstated_del_cpe=63,
+        ussgl480110_rein_undel_ord_cpe=75,
+        ussgl490110_rein_deliv_ord_cpe=63,
     )
 
 

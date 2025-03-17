@@ -2,6 +2,7 @@
 
 NOTE: Uses Pytest Fixtures from immediate parent conftest.py: usaspending_api/etl/tests/conftest.py
 """
+
 from pytest import mark
 from django.core.management import call_command
 from django.db import connection

@@ -100,7 +100,6 @@ def test_filters_with_two_recipients():
 
 @pytest.mark.django_db
 def test_state_metadata_with_no_results(client):
-
     resp = client.post(list_recipients_endpoint())
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data.get("page_metadata", False)

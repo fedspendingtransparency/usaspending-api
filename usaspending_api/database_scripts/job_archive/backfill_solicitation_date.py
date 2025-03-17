@@ -16,6 +16,7 @@ Purpose:
     And ensure transactions are included in monthly archive delta files
         - transaction_delta
 """
+
 import logging
 import math
 import psycopg2
@@ -141,9 +142,10 @@ if __name__ == "__main__":
     fabs_row_count, fpds_row_count = 0, 0
 
     with Timer() as overall_timer:
-        with psycopg2.connect(dsn=SPENDING_CONNECTION_STRING) as spending_connection, psycopg2.connect(
-            dsn=BROKER_CONNECTION_STRING
-        ) as broker_connection:
+        with (
+            psycopg2.connect(dsn=SPENDING_CONNECTION_STRING) as spending_connection,
+            psycopg2.connect(dsn=BROKER_CONNECTION_STRING) as broker_connection,
+        ):
             spending_connection.autocommit = True
 
             logging.info("Running FPDS backfill from Broker to USAspending")

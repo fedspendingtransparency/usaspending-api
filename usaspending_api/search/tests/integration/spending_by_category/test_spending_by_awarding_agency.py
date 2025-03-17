@@ -8,6 +8,15 @@ from usaspending_api.search.tests.data.search_filters_test_data import non_legac
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
+def _expected_messages():
+    expected_messages = [get_time_period_message()]
+    expected_messages.append(
+        "'subawards' will be deprecated in the future. Set ‘spending_level’ to ‘subawards’ instead. "
+        "See documentation for more information. "
+    )
+    return expected_messages
+
+
 def test_success_with_all_filters(client, monkeypatch, elasticsearch_transaction_index, basic_award):
     """
     General test to make sure that all groups respond with a Status Code of 200 regardless of the filters.
@@ -39,16 +48,25 @@ def test_correct_response_with_more_awards(
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 10.0, "name": "Awarding Toptier Agency 3", "code": "TA3", "id": 1003, "agency_slug": None},
+            {
+                "amount": 10.0,
+                "name": "Awarding Toptier Agency 3",
+                "code": "TA3",
+                "id": 1003,
+                "agency_slug": None,
+                "total_outlays": None,
+            },
             {
                 "amount": 5.0,
                 "name": "Awarding Toptier Agency 1",
                 "code": "TA1",
                 "id": 1001,
                 "agency_slug": None,
+                "total_outlays": None,
             },
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
     assert resp.json() == expected_response
@@ -68,9 +86,17 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 5.0, "name": "Awarding Toptier Agency 1", "code": "TA1", "id": 1001, "agency_slug": None}
+            {
+                "amount": 5.0,
+                "name": "Awarding Toptier Agency 1",
+                "code": "TA1",
+                "id": 1001,
+                "agency_slug": None,
+                "total_outlays": None,
+            }
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
     assert resp.json() == expected_response
@@ -94,9 +120,16 @@ def test_correct_response_with_date_type(client, monkeypatch, elasticsearch_tran
     expected_response = {
         "category": "awarding_agency",
         "limit": 10,
-        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "page_metadata": {
+            "page": 1,
+            "next": None,
+            "previous": None,
+            "hasNext": False,
+            "hasPrevious": False,
+        },
         "results": [],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
     assert resp.json() == expected_response
@@ -117,9 +150,17 @@ def test_correct_response_with_date_type(client, monkeypatch, elasticsearch_tran
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 10.0, "name": "Awarding Toptier Agency 3", "code": "TA3", "id": 1003, "agency_slug": None},
+            {
+                "amount": 10.0,
+                "name": "Awarding Toptier Agency 3",
+                "code": "TA3",
+                "id": 1003,
+                "agency_slug": None,
+                "total_outlays": None,
+            },
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
     assert resp.json() == expected_response
@@ -147,7 +188,8 @@ def test_correct_response_with_new_awards_only(client, monkeypatch, elasticsearc
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
     assert resp.json() == expected_response
@@ -170,9 +212,17 @@ def test_correct_response_with_new_awards_only(client, monkeypatch, elasticsearc
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 10.0, "name": "Awarding Toptier Agency 3", "code": "TA3", "id": 1003, "agency_slug": None},
+            {
+                "amount": 10.0,
+                "name": "Awarding Toptier Agency 3",
+                "code": "TA3",
+                "id": 1003,
+                "agency_slug": None,
+                "total_outlays": None,
+            },
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
     assert resp.json() == expected_response
@@ -194,9 +244,16 @@ def test_correct_response_with_new_awards_only(client, monkeypatch, elasticsearc
     expected_response = {
         "category": "awarding_agency",
         "limit": 10,
-        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "page_metadata": {
+            "page": 1,
+            "next": None,
+            "previous": None,
+            "hasNext": False,
+            "hasPrevious": False,
+        },
         "results": [],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
     assert resp.json() == expected_response

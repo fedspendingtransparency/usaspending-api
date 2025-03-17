@@ -3,7 +3,6 @@ Lower level functions to help with building ETL queries.  Not intended to be use
 of this module.
 """
 
-
 from collections import namedtuple
 from psycopg2.sql import Composable, Composed, Identifier, Literal, SQL
 from typing import List, MutableMapping, Optional, Union
@@ -198,7 +197,7 @@ def make_typed_column_list(columns: List[str], data_types: DataTypes) -> Compose
 def wrap_dblink_query(
     dblink_name: str, sql: Union[str, Composed], alias: str, columns: List[str], data_types: DataTypes
 ) -> Composed:
-    """ Wraps a query in a dblink compatible query so that it can be run on a remote server. """
+    """Wraps a query in a dblink compatible query so that it can be run on a remote server."""
     inner_sql = convert_composable_query_to_string(sql)
     select_columns = make_column_list(columns, alias)
     typed_columns = make_typed_column_list(columns, data_types)

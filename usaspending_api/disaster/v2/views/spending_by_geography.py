@@ -10,6 +10,7 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
 from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.common.query_with_filters import QueryWithFilters
+from usaspending_api.search.filters.elasticsearch.filter import QueryType
 from usaspending_api.common.validator import TinyShield
 from usaspending_api.disaster.v2.views.disaster_base import DisasterBase
 from usaspending_api.recipient.models import StateData
@@ -117,8 +118,8 @@ class SpendingByGeographyViewSet(DisasterBase):
             raise UnprocessableEntityException(
                 f"Unrecognized value '{self.spending_type}' for field " f"'spending_type'"
             )
-
-        filter_query = QueryWithFilters.generate_awards_elasticsearch_query(self.filters)
+        query_with_filters = QueryWithFilters(QueryType.AWARDS)
+        filter_query = query_with_filters.generate_elasticsearch_query(self.filters)
         result = self.query_elasticsearch(filter_query)
 
         return Response(
@@ -226,7 +227,7 @@ class SpendingByGeographyViewSet(DisasterBase):
                 state_fips = code_to_state.get(state_code, {}).get("fips", "")
                 for b in sub_bucket:
                     per_capita = None
-                    county_code = b.get("key")
+                    county_code = b.get("key")[2:]
                     county_data = (
                         PopCounty.objects.filter(county_number=county_code, state_code=state_fips)
                         .order_by("-id")
@@ -272,7 +273,7 @@ class SpendingByGeographyViewSet(DisasterBase):
                 state_fips = code_to_state.get(state_code, {}).get("fips", "")
                 for b in sub_bucket:
                     per_capita = None
-                    congress_code = b.get("key")
+                    congress_code = b.get("key")[2:]
                     display_name = (
                         f"{state_code}-{congress_code}".upper()
                         if state_code and congress_code and congress_code != "NULL" and state_code != "NULL"

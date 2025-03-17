@@ -1,19 +1,21 @@
 from abc import ABCMeta
 from decimal import Decimal
-from django.db.models import QuerySet, F
 from enum import Enum
 from typing import List
 
-from usaspending_api.references.models import Cfda, PSC, NAICS, DisasterEmergencyFundCode
+from django.db.models import F, QuerySet
+
+from usaspending_api.references.models import NAICS, PSC, Cfda, DisasterEmergencyFundCode
 from usaspending_api.search.helpers.spending_by_category_helpers import (
     fetch_cfda_id_title_by_number,
-    fetch_psc_description_by_code,
-    fetch_naics_description_from_code,
     fetch_defc_title_by_code,
+    fetch_naics_description_from_code,
+    fetch_psc_description_by_code,
 )
+from usaspending_api.search.v2.views.enums import SpendingLevel
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_category import (
-    Category,
     AbstractSpendingByCategoryViewSet,
+    Category,
 )
 
 
@@ -81,6 +83,11 @@ class AbstractIndustryCodeViewSet(AbstractSpendingByCategoryViewSet, metaclass=A
                     "code": industry_info.get("code"),
                     "name": industry_info.get("name"),
                     "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
+                    "total_outlays": (
+                        bucket.get("sum_as_dollars_outlay", {"value": None}).get("value")
+                        if self.spending_level == SpendingLevel.AWARD
+                        else None
+                    ),
                 }
             )
         return results
@@ -117,7 +124,7 @@ class AbstractIndustryCodeViewSet(AbstractSpendingByCategoryViewSet, metaclass=A
 
 
 def custom_defc_query(self, base_queryset):
-    django_filters = {f"award__disaster_emergency_fund_codes__isnull": False}
+    django_filters = {"award__disaster_emergency_fund_codes__isnull": False}
     django_values = ["award__disaster_emergency_fund_codes"]
     queryset = self.common_db_query(base_queryset, django_filters, django_values).annotate(
         code=F("award__disaster_emergency_fund_codes")
@@ -157,7 +164,7 @@ class CfdaViewSet(AbstractIndustryCodeViewSet):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_category/cfda.md"
 
     industry_code_type = IndustryCodeType.CFDA
-    category = Category(name="cfda", agg_key=industry_code_type.value)
+    category = Category(name="cfda", agg_key="cfda_agg_key")
 
 
 class NAICSViewSet(AbstractIndustryCodeViewSet):

@@ -21,6 +21,14 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
         + `filters` (required, AdvancedFilterObject)
         + `subawards` (optional, boolean)
             True when you want to group by Subawards instead of Awards. Defaulted to False.
+        + `spending_level` (optional, enum[string])
+            Group the spending by level. This also determines what data source is used for the totals.
+            + Members
+                + `transactions`
+                + `awards`
+                + `subawards`
+            + Default
+                + `transactions`
         + `scope` (required, enum[string])
             When fetching transactions, use the primary place of performance or recipient location
             + Members
@@ -51,6 +59,12 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
     + Attributes (object)
         + `scope`
         + `geo_layer`
+        + `spending_level` (required, enum[string])
+            Spending level value that was provided in the request.
+            + Members
+                + `transactions`
+                + `awards`
+                + `subawards`
         + `results` (array[GeographyTypeResult], fixed-type)
         + `messages` (optional, array[string])
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
@@ -59,6 +73,7 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
             {
                 "scope": "place_of_performance",
                 "geo_layer": "state",
+                "spending_level": "transactions",
                 "results": [
                     {
                         "shape_code": "ND",
@@ -83,7 +98,8 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
                     }
                 ],
                 "messages": [
-                    "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints."
+                    "For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints.",
+                    "The 'subawards' field will be deprecated in the future. Set 'spending_level' to 'subawards' instead. See documentation for more information."
                 ]
             }
 
@@ -95,11 +111,13 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
 + `shape_code` (required, string)
 + `population` (required, number, nullable)
 + `per_capita` (required, number, nullable)
++ `total_outlays` (optional, number) Only included when the `spending_level` of the Response is `awards`
 
 
 ## Filter Objects
 ### AdvancedFilterObject (object)
 + `keywords` : [`transport`] (optional, array[string])
++ `description` (optional, string)
 + `time_period` (optional, array[TimePeriodObject], fixed-type)
 + `place_of_performance_scope` (optional, enum[string])
     + The **default** value below only applies to `geo_layer` values of `county`, `district` and `state`.
@@ -141,7 +159,7 @@ This endpoint takes award filters, and returns aggregated obligation amounts in 
 
 ### TimePeriodObject (object)
 This TimePeriodObject can fall into different categories based on the request.
-+ if `subawards` true
++ if `spending_level` is `subawards` or `subawards` is true
 
     See the Subaward Search category defined in [SubawardSearchTimePeriodObject](../../../search_filters.md#subaward-search-time-period-object)
 

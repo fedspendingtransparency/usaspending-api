@@ -1,14 +1,14 @@
 name: Initialize Test Environment
 
 inputs:
-  is_integration_test:
+  is-integration-test:
+    description: Triggers build steps needed to support integration tests
     required: true
-    type: boolean
-  is_spark_test:
+  is-spark-test:
+    description: Triggers build steps needed to support tests that utilize Spark
     required: true
-    type: boolean
-  working_directory:
-    type: string
+  working-directory:
+    description: Directory where the requirements can be found; used when multiple repos are checked out
     default: ""
 
 runs:
@@ -23,24 +23,26 @@ runs:
         echo "ES_HOSTNAME=$ES_SCHEME://$ES_HOST:$ES_PORT" >> $GITHUB_ENV
         echo "MINIO_DATA_DIR=$HOME/Development/data/usaspending/docker/usaspending-s3" >> $GITHUB_ENV
 
+    # The conditionals below this all check against a string because inputs for actions are actually
+    # strings, not booleans: https://github.com/actions/runner/issues/1483
     - name: Create directories needed for Minio
-      if: ${{ inputs.is_integration_test == 'true' }}
+      if: ${{ inputs.is-integration-test == 'true' }}
       shell: bash
       run: mkdir -p "$MINIO_DATA_DIR"
 
     - name: Create directories needed for Spark
-      if: ${{ inputs.is_spark_test == 'true' }}
+      if: ${{ inputs.is-spark-test == 'true' }}
       shell: bash
       run: mkdir -p "$HOME/.ivy2"
 
     - name: Build docker containers for DB, ES, and Minio
-      working-directory: ${{ inputs.working_directory }}
-      if: ${{ inputs.is_integration_test == 'true' }}
+      working-directory: ${{ inputs.working-directory }}
+      if: ${{ inputs.is-integration-test == 'true' }}
       shell: bash
       run: docker compose up -d usaspending-db usaspending-es minio
 
     - name: Download broker docker image
-      if: ${{ inputs.is_integration_test == 'true' }}
+      if: ${{ inputs.is-integration-test == 'true' }}
       uses: actions/download-artifact@v4
       with:
         name: dataact-broker-backend
@@ -48,18 +50,18 @@ runs:
     
     - name: Load broker docker image
       shell: bash
-      if: ${{ inputs.is_integration_test == 'true' }}
+      if: ${{ inputs.is-integration-test == 'true' }}
       run: docker load --input /tmp/dataact-broker-backend.tar
 
     - name: Wait on DB and ES containers to be available
-      if: ${{ inputs.is_integration_test == 'true' }}
+      if: ${{ inputs.is-integration-test == 'true' }}
       shell: bash
       run: |
         ttl=30; echo "Try DB conn from container for $ttl seconds"; until [ $ttl -le 0 ] || psql $DATABASE_URL -c 'select 1 where 1=1'; do echo $ttl; ((ttl--)); sleep 1; done; [ $ttl -gt 0 ]
         ttl=30; echo "Try ES conn from container for $ttl seconds"; until [ $ttl -le 0 ] || curl --silent -XGET --fail $ES_HOSTNAME; do echo $ttl; ((ttl--)); sleep 1; done; [ $ttl -gt 0 ]
 
     - name: Add DB users and set search_path
-      if: ${{ inputs.is_integration_test == 'true' }}
+      if: ${{ inputs.is-integration-test == 'true' }}
       shell: bash
       run: |
         psql $DATABASE_URL -c "ALTER USER $USASPENDING_DB_USER SET search_path TO public,raw,int,temp,rpt"
@@ -69,17 +71,55 @@ runs:
         psql $DATABASE_URL -c "SELECT 'GRANT SELECT ON ALL TABLES IN SCHEMA ' || nspname || ' TO readonly' FROM pg_namespace WHERE nspname IN ('raw','int','rpt','temp','public')"
         psql $DATABASE_URL -c "SELECT 'ALTER DEFAULT PRIVILEGES IN SCHEMA ' || nspname || ' GRANT SELECT ON TABLES TO readonly' FROM pg_namespace WHERE nspname IN ('raw','int','rpt','temp','public')"
 
+    - name: Setting spark log levels to warning
+      if: ${{ inputs.is-spark-test == 'true' }}
+      shell: bash
+      run: |
+        PIP_SPARK_HOME=$(python -c "import site;print(f'{site.getsitepackages()[0]}/pyspark')")
+        mkdir $PIP_SPARK_HOME/conf
+        touch $PIP_SPARK_HOME/conf/log4j2.properties
+        echo "
+        # This takes the log4j2.properties.template and changes log_level to warning
+        rootLogger.level = warn
+        rootLogger.appenderRef.stdout.ref = console
+        appender.console.type = Console
+        appender.console.name = console
+        appender.console.target = SYSTEM_ERR
+        appender.console.layout.type = PatternLayout
+        appender.console.layout.pattern = %d{yy/MM/dd HH:mm:ss} %p %c{1}: %m%n%ex
+        logger.repl.name = org.apache.spark.repl.Main
+        logger.repl.level = warn
+        logger.thriftserver.name = org.apache.spark.sql.hive.thriftserver.SparkSQLCLIDriver
+        logger.thriftserver.level = warn
+        logger.jetty1.name = org.sparkproject.jetty
+        logger.jetty1.level = warn
+        logger.jetty2.name = org.sparkproject.jetty.util.component.AbstractLifeCycle
+        logger.jetty2.level = error
+        logger.replexprTyper.name = org.apache.spark.repl.SparkIMain$exprTyper
+        logger.replexprTyper.level = warn
+        logger.replSparkILoopInterpreter.name = org.apache.spark.repl.SparkILoop$SparkILoopInterpreter
+        logger.replSparkILoopInterpreter.level = warn
+        logger.parquet1.name = org.apache.parquet
+        logger.parquet1.level = error
+        logger.parquet2.name = parquet
+        logger.parquet2.level = error
+        logger.RetryingHMSHandler.name = org.apache.hadoop.hive.metastore.RetryingHMSHandler
+        logger.RetryingHMSHandler.level = fatal
+        logger.FunctionRegistry.name = org.apache.hadoop.hive.ql.exec.FunctionRegistry
+        logger.FunctionRegistry.level = error
+        " >> $PIP_SPARK_HOME/conf/log4j2.properties
+
     - name: Run initial test to trigger DB creation
-      if: ${{ inputs.is_integration_test == 'true' }}
-      working-directory: ${{ inputs.working_directory }}
+      if: ${{ inputs.is-integration-test == 'true' }}
+      working-directory: ${{ inputs.working-directory }}
       shell: bash
       run: >
         pytest --create-db --numprocesses logical --no-cov --disable-warnings -r=fEs --verbosity=3 --capture=no --log-cli-level=WARNING --show-capture=log
         2> /dev/null "usaspending_api/tests/integration/test_setup_of_test_dbs.py::test_trigger_test_db_setup"
 
     - name: Run initial test to trigger JAR download
-      if: ${{ inputs.is_spark_test == 'true' }}
-      working-directory: ${{ inputs.working_directory }}
+      if: ${{ inputs.is-spark-test == 'true' }}
+      working-directory: ${{ inputs.working-directory }}
       shell: bash
       run: >
         pytest --reuse-db --numprocesses logical --no-cov --disable-warnings -r=fEs --verbosity=3

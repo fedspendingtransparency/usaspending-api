@@ -1,6 +1,6 @@
 # <p align="center"><img src="https://www.usaspending.gov/img/logo@2x.png" alt="USAspending API"></p>
 
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/python/black) [![Build Status](https://travis-ci.com/fedspendingtransparency/usaspending-api.svg?branch=master)](https://travis-ci.com/fedspendingtransparency/usaspending-api) [![Test Coverage](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/badges/coverage.svg)](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/coverage) [![Code Climate](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/badges/gpa.svg)](https://codeclimate.com/github/fedspendingtransparency/usaspending-api)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/python/black) [![Build Status](https://github.com/sethstoudenmier/testing-github-actions/actions/workflows/pull-request-checks.yaml/badge.svg?branch=master)](https://github.com/sethstoudenmier/testing-github-actions/actions/workflows/pull-request-checks.yaml) [![Test Coverage](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/badges/coverage.svg)](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/coverage) [![Code Climate](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/badges/gpa.svg)](https://codeclimate.com/github/fedspendingtransparency/usaspending-api)
 
 _This API is utilized by USAspending.gov to obtain all federal spending data which is open source and provided to the public as part of the DATA Act._
 
@@ -27,7 +27,7 @@ _**If not using Docker, you'll need to install app components on your machine:**
     - Linux users already know their package manager (`yum`, `apt`, `pacman`, etc.)
 - [`PostgreSQL`](https://www.postgresql.org/download/) version 13.x (with a dedicated `data_store_api` database)
 - [`Elasticsearch`](https://www.elastic.co/downloads/elasticsearch) version 7.1
-- `Python` version 3.8 environment
+- `Python` version 3.10 environment
   - Highly recommended to use a virtual environment. There are various tools and associated instructions depending on preferences
   - See [Required Python Libraries](#required-python-libraries) for an example using `pyenv`
 

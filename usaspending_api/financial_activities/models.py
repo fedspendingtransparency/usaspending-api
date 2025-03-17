@@ -14,7 +14,9 @@ class AbstractFinancialAccountsByProgramActivityObjectClass(DataSourceTrackedMod
         "accounts.TreasuryAppropriationAccount", models.CASCADE, related_name="program_balances", null=True
     )
     prior_year_adjustment = models.TextField(blank=True, null=True)
-    pa_reporting_key = models.TextField(blank=True, null=True, help_text="A unique identifier for a Program Activity")
+    program_activity_reporting_key = models.TextField(
+        blank=True, null=True, help_text="A unique identifier for a Program Activity"
+    )
     disaster_emergency_fund = models.ForeignKey(
         "references.DisasterEmergencyFundCode",
         models.DO_NOTHING,
@@ -25,12 +27,12 @@ class AbstractFinancialAccountsByProgramActivityObjectClass(DataSourceTrackedMod
     )
     ussgl480100_undelivered_orders_obligations_unpaid_fyb = models.DecimalField(max_digits=23, decimal_places=2)
     ussgl480100_undelivered_orders_obligations_unpaid_cpe = models.DecimalField(max_digits=23, decimal_places=2)
-    ussgl480110_reinstated_del_cpe = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    ussgl480110_rein_undel_ord_cpe = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     ussgl483100_undelivered_orders_oblig_transferred_unpaid_cpe = models.DecimalField(max_digits=23, decimal_places=2)
     ussgl488100_upward_adjust_pri_undeliv_order_oblig_unpaid_cpe = models.DecimalField(max_digits=23, decimal_places=2)
     ussgl490100_delivered_orders_obligations_unpaid_fyb = models.DecimalField(max_digits=23, decimal_places=2)
     ussgl490100_delivered_orders_obligations_unpaid_cpe = models.DecimalField(max_digits=23, decimal_places=2)
-    ussgl490110_reinstated_del_cpe = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    ussgl490110_rein_deliv_ord_cpe = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     ussgl493100_delivered_orders_oblig_transferred_unpaid_cpe = models.DecimalField(max_digits=23, decimal_places=2)
     ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe = models.DecimalField(max_digits=23, decimal_places=2)
     ussgl480200_undelivered_orders_oblig_prepaid_advanced_fyb = models.DecimalField(max_digits=23, decimal_places=2)
@@ -88,7 +90,7 @@ class FinancialAccountsByProgramActivityObjectClassManager(models.Manager):
 
 
 class FinancialAccountsByProgramActivityObjectClass(AbstractFinancialAccountsByProgramActivityObjectClass):
-    """ Model corresponding to Agency File B """
+    """Model corresponding to Agency File B"""
 
     class Meta:
         managed = True

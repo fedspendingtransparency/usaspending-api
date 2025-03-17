@@ -1,5 +1,6 @@
 import logging
 
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction
 
@@ -53,7 +54,7 @@ class Command(mixins.ETLMixin, BaseCommand):
 
     @transaction.atomic()
     def process_data(self):
-        broker_cursor = connections["data_broker"].cursor()
+        broker_cursor = connections[settings.DATA_BROKER_DB_ALIAS].cursor()
 
         logger.info("Extracting data from Broker")
         broker_cursor.execute(self.broker_fetch_sql)

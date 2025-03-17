@@ -128,8 +128,8 @@ def bureau_data():
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=0,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=0,
         ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=0,
-        ussgl480110_reinstated_del_cpe=0,
-        ussgl490110_reinstated_del_cpe=0,
+        ussgl480110_rein_undel_ord_cpe=0,
+        ussgl490110_rein_deliv_ord_cpe=0,
     )
     baker.make(
         "accounts.AppropriationAccountBalances",
@@ -159,8 +159,8 @@ def bureau_data():
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=0,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=0,
         ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=0,
-        ussgl480110_reinstated_del_cpe=0,
-        ussgl490110_reinstated_del_cpe=0,
+        ussgl480110_rein_undel_ord_cpe=0,
+        ussgl490110_rein_deliv_ord_cpe=0,
     )
     baker.make(
         "accounts.AppropriationAccountBalances",
@@ -190,8 +190,8 @@ def bureau_data():
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=0,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=0,
         ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=0,
-        ussgl480110_reinstated_del_cpe=0,
-        ussgl490110_reinstated_del_cpe=0,
+        ussgl480110_rein_undel_ord_cpe=0,
+        ussgl490110_rein_deliv_ord_cpe=0,
     )
     baker.make(
         "accounts.AppropriationAccountBalances",
@@ -425,8 +425,8 @@ def agency_account_data():
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=13,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=9,
         ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=14,
-        ussgl480110_reinstated_del_cpe=75,
-        ussgl490110_reinstated_del_cpe=63,
+        ussgl480110_rein_undel_ord_cpe=75,
+        ussgl490110_rein_deliv_ord_cpe=63,
     )
     baker.make(
         fabpaoc,
@@ -451,8 +451,8 @@ def agency_account_data():
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=13,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=9,
         ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=14,
-        ussgl480110_reinstated_del_cpe=75,
-        ussgl490110_reinstated_del_cpe=63,
+        ussgl480110_rein_undel_ord_cpe=75,
+        ussgl490110_rein_deliv_ord_cpe=63,
     )
     baker.make(
         fabpaoc,
@@ -477,8 +477,8 @@ def agency_account_data():
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=13,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=9,
         ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=14,
-        ussgl480110_reinstated_del_cpe=75,
-        ussgl490110_reinstated_del_cpe=63,
+        ussgl480110_rein_undel_ord_cpe=75,
+        ussgl490110_rein_deliv_ord_cpe=63,
     )
     baker.make(
         fabpaoc,
@@ -503,8 +503,8 @@ def agency_account_data():
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=13,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=9,
         ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=14,
-        ussgl480110_reinstated_del_cpe=75,
-        ussgl490110_reinstated_del_cpe=63,
+        ussgl480110_rein_undel_ord_cpe=75,
+        ussgl490110_rein_deliv_ord_cpe=63,
     )
     baker.make(
         fabpaoc,
@@ -529,8 +529,8 @@ def agency_account_data():
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=13,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=9,
         ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=14,
-        ussgl480110_reinstated_del_cpe=75,
-        ussgl490110_reinstated_del_cpe=63,
+        ussgl480110_rein_undel_ord_cpe=75,
+        ussgl490110_rein_deliv_ord_cpe=63,
     )
     baker.make(
         fabpaoc,
@@ -555,8 +555,8 @@ def agency_account_data():
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=13,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=9,
         ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=14,
-        ussgl480110_reinstated_del_cpe=75,
-        ussgl490110_reinstated_del_cpe=63,
+        ussgl480110_rein_undel_ord_cpe=75,
+        ussgl490110_rein_deliv_ord_cpe=63,
     )
     baker.make(
         fabpaoc,
@@ -581,8 +581,8 @@ def agency_account_data():
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=13,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=9,
         ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=14,
-        ussgl480110_reinstated_del_cpe=75,
-        ussgl490110_reinstated_del_cpe=63,
+        ussgl480110_rein_undel_ord_cpe=75,
+        ussgl490110_rein_deliv_ord_cpe=63,
     )
     baker.make(
         fabpaoc,
@@ -607,8 +607,8 @@ def agency_account_data():
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=13,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=9,
         ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=14,
-        ussgl480110_reinstated_del_cpe=75,
-        ussgl490110_reinstated_del_cpe=63,
+        ussgl480110_rein_undel_ord_cpe=75,
+        ussgl490110_rein_deliv_ord_cpe=63,
     )
     baker.make(
         fabpaoc,
@@ -633,8 +633,8 @@ def agency_account_data():
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=13,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=9,
         ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=14,
-        ussgl480110_reinstated_del_cpe=75,
-        ussgl490110_reinstated_del_cpe=63,
+        ussgl480110_rein_undel_ord_cpe=75,
+        ussgl490110_rein_deliv_ord_cpe=63,
     )
     baker.make(
         fabpaoc,
@@ -642,8 +642,8 @@ def agency_account_data():
         submission=sub5,
         program_activity=pa5,
         object_class=oc5,
-        obligations_incurred_by_program_object_class_cpe=-129,
-        gross_outlay_amount_by_program_object_class_cpe=-150000,
+        obligations_incurred_by_program_object_class_cpe=0,
+        gross_outlay_amount_by_program_object_class_cpe=0,
         deobligations_recoveries_refund_pri_program_object_class_cpe=-9,
         ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=50000,
         ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=100000,
@@ -659,8 +659,8 @@ def agency_account_data():
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=13,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=9,
         ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=14,
-        ussgl480110_reinstated_del_cpe=75,
-        ussgl490110_reinstated_del_cpe=63,
+        ussgl480110_rein_undel_ord_cpe=75,
+        ussgl490110_rein_deliv_ord_cpe=63,
     )
     baker.make(
         fabpaoc,
@@ -685,8 +685,8 @@ def agency_account_data():
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=13,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=9,
         ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=14,
-        ussgl480110_reinstated_del_cpe=75,
-        ussgl490110_reinstated_del_cpe=63,
+        ussgl480110_rein_undel_ord_cpe=75,
+        ussgl490110_rein_deliv_ord_cpe=63,
     )
     baker.make(
         fabpaoc,
@@ -709,8 +709,8 @@ def agency_account_data():
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=13,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=9,
         ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=14,
-        ussgl480110_reinstated_del_cpe=75,
-        ussgl490110_reinstated_del_cpe=63,
+        ussgl480110_rein_undel_ord_cpe=75,
+        ussgl490110_rein_deliv_ord_cpe=63,
     )
     baker.make(
         fabpaoc,
@@ -733,8 +733,8 @@ def agency_account_data():
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=13,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=9,
         ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=14,
-        ussgl480110_reinstated_del_cpe=75,
-        ussgl490110_reinstated_del_cpe=63,
+        ussgl480110_rein_undel_ord_cpe=75,
+        ussgl490110_rein_deliv_ord_cpe=63,
     )
     baker.make(
         fabpaoc,
@@ -757,8 +757,8 @@ def agency_account_data():
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=13,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=9,
         ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=14,
-        ussgl480110_reinstated_del_cpe=75,
-        ussgl490110_reinstated_del_cpe=63,
+        ussgl480110_rein_undel_ord_cpe=75,
+        ussgl490110_rein_deliv_ord_cpe=63,
     )
 
 
@@ -835,8 +835,8 @@ def tas_mulitple_pas_per_oc():
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=0,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=0,
         ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=0,
-        ussgl480110_reinstated_del_cpe=0,
-        ussgl490110_reinstated_del_cpe=0,
+        ussgl480110_rein_undel_ord_cpe=0,
+        ussgl490110_rein_deliv_ord_cpe=0,
     )
 
     baker.make(
@@ -862,8 +862,8 @@ def tas_mulitple_pas_per_oc():
         ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=0,
         ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=0,
         ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=0,
-        ussgl480110_reinstated_del_cpe=0,
-        ussgl490110_reinstated_del_cpe=0,
+        ussgl480110_rein_undel_ord_cpe=0,
+        ussgl490110_rein_deliv_ord_cpe=0,
     )
 
 

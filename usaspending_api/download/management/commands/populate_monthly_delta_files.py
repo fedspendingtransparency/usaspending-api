@@ -1,16 +1,16 @@
-import boto3
 import logging
 import os
-import pandas as pd
 import re
 import shutil
 import subprocess
 import tempfile
+from datetime import date, datetime
 
-from datetime import datetime, date
+import boto3
+import pandas as pd
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from django.db.models import Case, When, Value, CharField, F
+from django.db.models import Case, CharField, F, Q, Value, When
 
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings as all_ats_mappings
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
@@ -18,14 +18,12 @@ from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
 from usaspending_api.common.helpers.s3_helpers import multipart_upload
 from usaspending_api.download.filestreaming.download_generation import (
     apply_annotations_to_sql,
-    _top_level_split,
     split_and_zip_data_files,
 )
 from usaspending_api.download.filestreaming.download_source import DownloadSource
 from usaspending_api.download.helpers import pull_modified_agencies_cgacs
 from usaspending_api.download.lookups import VALUE_MAPPINGS
-from usaspending_api.references.models import ToptierAgency, SubtierAgency
-
+from usaspending_api.references.models import SubtierAgency, ToptierAgency
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +68,7 @@ AWARD_MAPPINGS = {
 
 class Command(BaseCommand):
     def download(self, award_type, agency="all", generate_since=None):
-        """ Create a delta file based on award_type, and agency_code (or all agencies) """
+        """Create a delta file based on award_type, and agency_code (or all agencies)"""
         logger.info(
             "Starting generation. {}, Agency: {}".format(award_type, agency if agency == "all" else agency["name"])
         )
@@ -114,18 +112,11 @@ class Command(BaseCommand):
                 )
             )
 
-        transaction_delta_queryset = source.queryset
-
-        _filter = {"etl_update_date__gte": generate_since}
+        update_date_filter = Q(etl_update_date__gte=generate_since)
         if self.debugging_end_date:
-            _filter["etl_update_date__lt"] = self.debugging_end_date
+            update_date_filter &= Q(etl_update_date__lt=self.debugging_end_date)
 
-        source.queryset = source.queryset.filter(**_filter)
-
-        # UNION the normal results to the transaction_delta results.
-        source.queryset = source.queryset.union(
-            transaction_delta_queryset.filter(transaction__transactiondelta__isnull=False)
-        )
+        source.queryset = source.queryset.filter(Q(update_date_filter | Q(transaction__transactiondelta__isnull=False)))
 
         # Generate file
         file_path = self.create_local_file(award_type, source, agency_code, generate_since)
@@ -147,7 +138,7 @@ class Command(BaseCommand):
         )
 
     def create_local_file(self, award_type, source, agency_code, generate_since):
-        """ Generate complete file from SQL query and S3 bucket deletion files, then zip it locally """
+        """Generate complete file from SQL query and S3 bucket deletion files, then zip it locally"""
         logger.info("Generating CSV file with creations and modifications")
 
         # Create file paths and working directory
@@ -162,15 +153,7 @@ class Command(BaseCommand):
         # Create a unique temporary file with the raw query
         raw_quoted_query = generate_raw_quoted_query(source.row_emitter(None))  # None requests all headers
 
-        # The raw query is a union of two other queries, each in parentheses. To do replacement we need to split out
-        # each query, apply annotations to each of those, then recombine in a UNION
-        csv_query_annotated = (
-            "("
-            + apply_annotations_to_sql(_top_level_split(raw_quoted_query, "UNION")[0].strip()[1:-1], source.human_names)
-            + ") UNION ("
-            + apply_annotations_to_sql(_top_level_split(raw_quoted_query, "UNION")[1].strip()[1:-1], source.human_names)
-            + ")"
-        )
+        csv_query_annotated = apply_annotations_to_sql(raw_quoted_query, source.human_names)
 
         (temp_sql_file, temp_sql_file_path) = tempfile.mkstemp(prefix="bd_sql_", dir="/tmp")
         with open(temp_sql_file_path, "w") as file:
@@ -265,7 +248,7 @@ class Command(BaseCommand):
                 # Reorder columns to make it CSV-ready, and append
                 df = self.organize_deletion_columns(source, df, award_type, match_date)
                 logger.info(f"Found {len(df.index):,} deletion records to include")
-                all_deletions = all_deletions.append(df, ignore_index=True)
+                all_deletions = pd.concat([all_deletions, df], ignore_index=True)
 
         if len(all_deletions.index) == 0:
             logger.info("No deletion records to append to file")
@@ -274,7 +257,7 @@ class Command(BaseCommand):
             self.add_deletions_to_file(all_deletions, award_type, source_path)
 
     def organize_deletion_columns(self, source, dataframe, award_type, match_date):
-        """ Ensure that the dataframe has all necessary columns in the correct order """
+        """Ensure that the dataframe has all necessary columns in the correct order"""
         ordered_columns = source.columns(None)
         if "correction_delete_ind" not in ordered_columns:
             ordered_columns = ["correction_delete_ind"] + ordered_columns
@@ -292,7 +275,7 @@ class Command(BaseCommand):
         return dataframe[ordered_columns]
 
     def add_deletions_to_file(self, df, award_type, source_path):
-        """ Append the deletion records to the end of the CSV file """
+        """Append the deletion records to the end of the CSV file"""
         logger.info("Removing duplicates from deletion records")
         df = df.sort_values(["last_modified_date"] + list(AWARD_MAPPINGS[award_type]["column_headers"].values()))
         deduped_df = df.drop_duplicates(subset=list(AWARD_MAPPINGS[award_type]["column_headers"].values()), keep="last")
@@ -302,7 +285,7 @@ class Command(BaseCommand):
         deduped_df.to_csv(source_path, mode="a", header=False, index=False)
 
     def check_regex_match(self, award_type, file_name, generate_since):
-        """ Create a date object from a regular expression match """
+        """Create a date object from a regular expression match"""
         re_match = re.match(AWARD_MAPPINGS[award_type]["match"], file_name)
         if not re_match:
             return False
@@ -333,7 +316,7 @@ class Command(BaseCommand):
         return "{}-{}-{}".format(year, month, day)
 
     def parse_filters(self, award_types, agency):
-        """ Convert readable filters to a filter object usable for the matview filter """
+        """Convert readable filters to a filter object usable for the matview filter"""
         filters = {
             "award_type_codes": [award_type for sublist in award_types for award_type in all_ats_mappings[sublist]]
         }
@@ -346,7 +329,7 @@ class Command(BaseCommand):
         return filters, agency_code
 
     def add_arguments(self, parser):
-        """ Add arguments to the parser """
+        """Add arguments to the parser"""
         parser.add_argument(
             "--agencies",
             dest="agencies",
@@ -386,7 +369,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        """ Run the application. """
+        """Run the application."""
         agencies = options["agencies"]
         award_types = options["award_types"]
         last_date = options["last_date"]

@@ -4,7 +4,7 @@ from usaspending_api.search.filters.time_period.query_types import (
     TransactionSearchTimePeriod,
 )
 from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
-from usaspending_api.search.filters.elasticsearch.filter import _QueryType
+from usaspending_api.search.filters.elasticsearch.filter import QueryType
 
 
 def test_transaction_search_time_period():
@@ -78,7 +78,7 @@ def test_new_awards_only_transaction_search_time_period():
         default_start_date=default_start_date, default_end_date=default_end_date
     )
     transaction_search_decorator = NewAwardsOnlyTimePeriod(
-        time_period_obj=transaction_search, query_type=_QueryType.TRANSACTIONS
+        time_period_obj=transaction_search, query_type=QueryType.TRANSACTIONS
     )
 
     # Testing for correct output of start and end date
@@ -134,7 +134,7 @@ def test_new_awards_only_award_search_time_period():
     default_start_date = "1111-11-11"
     default_end_date = "9999-99-99"
     search_obj = AwardSearchTimePeriod(default_start_date=default_start_date, default_end_date=default_end_date)
-    search_obj_decorator = NewAwardsOnlyTimePeriod(time_period_obj=search_obj, query_type=_QueryType.AWARDS)
+    search_obj_decorator = NewAwardsOnlyTimePeriod(time_period_obj=search_obj, query_type=QueryType.AWARDS)
 
     # Testing for correct output of start and end date
     time_period_filter = {"start_date": "2020-10-01", "end_date": "2021-09-30"}

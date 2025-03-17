@@ -88,7 +88,7 @@ def model_instances():
 
 @pytest.mark.django_db
 def test_list_budget_functions_unique(model_instances, client):
-    """ Ensure the list_budget_functions endpoint returns unique values """
+    """Ensure the list_budget_functions endpoint returns unique values"""
     response = client.get("/api/v2/budget_functions/list_budget_functions/")
 
     assert response.status_code == status.HTTP_200_OK
@@ -98,7 +98,7 @@ def test_list_budget_functions_unique(model_instances, client):
 
 @pytest.mark.django_db
 def test_list_budget_subfunctions_unique(model_instances, client):
-    """ Ensure the list_budget_subfunctions endpoint returns unique values """
+    """Ensure the list_budget_subfunctions endpoint returns unique values"""
     response = client.post(
         "/api/v2/budget_functions/list_budget_subfunctions/", content_type="application/json", data=json.dumps({})
     )
@@ -110,7 +110,7 @@ def test_list_budget_subfunctions_unique(model_instances, client):
 
 @pytest.mark.django_db
 def test_list_budget_subfunctions_filter(model_instances, client):
-    """ Ensure the list_budget_subfunctions endpoint filters by the budget_function_code """
+    """Ensure the list_budget_subfunctions endpoint filters by the budget_function_code"""
     response = client.post(
         "/api/v2/budget_functions/list_budget_subfunctions/",
         content_type="application/json",

@@ -25,19 +25,34 @@ jobs:
     name: Run Tests
     runs-on: ${{ vars.RUNNER_VERSION }}
     steps:
-      - name: Checkout source repository
+      - name: Checkout Source Repository
         uses: actions/checkout@v4
+        with:
+          path: usaspending-api
 
       - name: Init Python Environment
-        uses: ./.github/actions/init-python-environment
+        uses: ./usaspending-api/.github/actions/init-python-environment
+        with:
+          working-directory: ./usaspending-api
 
       - name: Init Test Environment
-        uses: ./.github/actions/init-test-environment
+        uses: ./usaspending-api/.github/actions/init-test-environment
         with:
-          is_integration_test: false
-          is_spark_test: false
+          is-integration-test: false
+          is-spark-test: false
+          working-directory: ./usaspending-api
 
-      - name: Run test cases
-        run: >
-          pytest -x --reuse-db --numprocesses logical --cov=usaspending_api --cov-report term -r=fEs --dist worksteal --verbosity=1 --durations 50
-          --override-ini=python_files="test_*.py *_test.py" --ignore-glob="**/tests/integration/*"
+      - name: Run Test Cases
+        id: run-test-cases
+        uses: ./usaspending-api/.github/actions/run-pytest
+        with:
+          cov-report-name: 'unit-tests'
+          ignore-glob: '**/tests/integration/*'
+          include-glob: 'test_*.py *_test.py'
+          working-directory: ./usaspending-api
+
+  Cancel-Running-Workflow:
+    name: Cancel Running Workflow
+    needs: Run-Tests
+    if: failure()
+    uses: ./.github/workflows/cancel-running-workflow.yaml

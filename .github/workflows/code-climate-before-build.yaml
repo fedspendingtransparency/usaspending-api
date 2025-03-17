@@ -1,0 +1,28 @@
+name: Code Climate Before Build
+
+on:
+  workflow_call:
+    inputs:
+      base-branch:
+        description: The branch that the PR is merged in to
+        type: string
+        required: true
+    secrets:
+      cc_test_reporter_id:
+        required: true
+
+jobs:
+  Before-Build:
+    name: Before Build
+    runs-on: ${{ vars.RUNNER_VERSION }}
+    env:
+      GIT_BRANCH: ${{ inputs.base-branch }}
+      CC_TEST_REPORTER_ID: ${{ secrets.cc_test_reporter_id }}
+    steps:
+      - name: Install Dependency
+        run: |
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter
+
+      - name: Run Before Build
+        run: ./cc-test-reporter before-build

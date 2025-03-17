@@ -1,10 +1,10 @@
 import pytest
-
 from model_bakery import baker
 
 from usaspending_api.common.elasticsearch.search_wrappers import SubawardSearch
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
+from usaspending_api.search.filters.elasticsearch.filter import QueryType
 
 
 @pytest.fixture
@@ -155,6 +155,7 @@ def subaward_test_data_fixture(db):
         cfda_numbers="17.287",
         sub_legal_entity_country_code="GMR",
         sub_legal_entity_zip5="12345",
+        program_activities=[{"name": "PROGRAM_ACTIVITY_123", "code": "0123"}],
     )
 
 
@@ -162,7 +163,8 @@ def subaward_test_data_fixture(db):
 def test_keyword_filter_keywords(client, monkeypatch, elasticsearch_subaward_index, subaward_test_data_fixture):
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     filters = {"keywords": ["99999", "88888", "333"]}
-    filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(filters)
+    query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
+    filter_query = query_with_filters.generate_elasticsearch_query(filters)
     search = SubawardSearch().filter(filter_query)
     results = search.handle_execute()
     assert len(results) == 3
@@ -172,7 +174,8 @@ def test_keyword_filter_keywords(client, monkeypatch, elasticsearch_subaward_ind
 def test_keyword_filter_duns(client, monkeypatch, elasticsearch_subaward_index, subaward_test_data_fixture):
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     filters = {"keywords": ["111111111", "222222220"]}
-    filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(filters)
+    query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
+    filter_query = query_with_filters.generate_elasticsearch_query(filters)
     search = SubawardSearch().filter(filter_query)
     results = search.handle_execute()
     assert len(results) == 2
@@ -182,7 +185,8 @@ def test_keyword_filter_duns(client, monkeypatch, elasticsearch_subaward_index, 
 def test_keyword_filter_psc(client, monkeypatch, elasticsearch_subaward_index, subaward_test_data_fixture):
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     filters = {"keywords": ["1234"]}
-    filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(filters)
+    query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
+    filter_query = query_with_filters.generate_elasticsearch_query(filters)
     search = SubawardSearch().filter(filter_query)
     results = search.handle_execute()
     assert len(results) == 1
@@ -192,7 +196,8 @@ def test_keyword_filter_psc(client, monkeypatch, elasticsearch_subaward_index, s
 def test_keyword_filter_uei(client, monkeypatch, elasticsearch_subaward_index, subaward_test_data_fixture):
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     filters = {"keywords": ["AAAAAAAAAAAA", "BBBBBBBBBBB0", "CCC"]}
-    filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(filters)
+    query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
+    filter_query = query_with_filters.generate_elasticsearch_query(filters)
     search = SubawardSearch().filter(filter_query)
     results = search.handle_execute()
     assert len(results) == 2
@@ -202,7 +207,8 @@ def test_keyword_filter_uei(client, monkeypatch, elasticsearch_subaward_index, s
 def test_keyword_filter_uei_lowercase(client, monkeypatch, elasticsearch_subaward_index, subaward_test_data_fixture):
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     filters = {"keywords": ["aaaaaaaaaaaa", "bbbbbbbbbbb0", "ccc"]}
-    filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(filters)
+    query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
+    filter_query = query_with_filters.generate_elasticsearch_query(filters)
     search = SubawardSearch().filter(filter_query)
     results = search.handle_execute()
     assert len(results) == 2
@@ -217,7 +223,8 @@ def test_defc_filter(client, monkeypatch, elasticsearch_subaward_index, subaward
 
     # Test DEF code `A` which doesn't have an enactment date
     filters = {"def_codes": ["A"]}
-    filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(filters)
+    query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
+    filter_query = query_with_filters.generate_elasticsearch_query(filters)
     search = SubawardSearch().filter(filter_query)
     results = search.handle_execute()
     assert len(results) == 2
@@ -226,19 +233,22 @@ def test_defc_filter(client, monkeypatch, elasticsearch_subaward_index, subaward
     # Subaward 4 should not be returned because it's `sub_action_date`
     #   is prior to the enactment date of DEF code `Z`
     filters = {"def_codes": ["Z"]}
-    filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(filters)
+    query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
+    filter_query = query_with_filters.generate_elasticsearch_query(filters)
     search = SubawardSearch().filter(filter_query)
     results = search.handle_execute()
     assert len(results) == 1
 
     filters = {"def_codes": ["L"]}
-    filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(filters)
+    query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
+    filter_query = query_with_filters.generate_elasticsearch_query(filters)
     search = SubawardSearch().filter(filter_query)
     results = search.handle_execute()
     assert len(results) == 1
 
     filters = {"def_codes": ["L", "Z"]}
-    filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(filters)
+    query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
+    filter_query = query_with_filters.generate_elasticsearch_query(filters)
     search = SubawardSearch().filter(filter_query)
     results = search.handle_execute()
     assert len(results) == 2
@@ -252,13 +262,15 @@ def test_defc_and_date_filters(client, monkeypatch, elasticsearch_subaward_index
     # No subawards should be returned, because even though Subaward 4 falls into this `time_period`
     #   it's `sub_action_date` is prior to when DEF code `Z` went into effect and therefore filtered out
     filters = {"def_codes": ["Z"], "time_period": [{"start_date": "2019-01-01", "end_date": "2021-12-01"}]}
-    filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(filters)
+    query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
+    filter_query = query_with_filters.generate_elasticsearch_query(filters)
     search = SubawardSearch().filter(filter_query)
     results = search.handle_execute()
     assert len(results) == 0
 
     filters = {"def_codes": ["A", "L", "Z"], "time_period": [{"start_date": "2018-01-01", "end_date": "2023-01-01"}]}
-    filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(filters)
+    query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
+    filter_query = query_with_filters.generate_elasticsearch_query(filters)
     search = SubawardSearch().filter(filter_query)
     results = search.handle_execute()
     assert len(results) == 3
@@ -268,7 +280,8 @@ def test_defc_and_date_filters(client, monkeypatch, elasticsearch_subaward_index
 def test_cfda_numbers_filters(client, monkeypatch, elasticsearch_subaward_index, subaward_test_data_fixture):
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     filters = {"program_numbers": ["17.277"]}
-    filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(filters)
+    query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
+    filter_query = query_with_filters.generate_elasticsearch_query(filters)
     search = SubawardSearch().filter(filter_query)
     results = search.handle_execute()
     assert len(results) == 1
@@ -278,7 +291,8 @@ def test_cfda_numbers_filters(client, monkeypatch, elasticsearch_subaward_index,
 def test_award_type_code_filters(client, monkeypatch, elasticsearch_subaward_index, subaward_test_data_fixture):
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     filters = {"award_type_codes": ["05"]}
-    filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(filters)
+    query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
+    filter_query = query_with_filters.generate_elasticsearch_query(filters)
     search = SubawardSearch().filter(filter_query)
     results = search.handle_execute()
     assert len(results) == 1
@@ -288,13 +302,15 @@ def test_award_type_code_filters(client, monkeypatch, elasticsearch_subaward_ind
 def test_recipient_search_text_filters(client, monkeypatch, elasticsearch_subaward_index, subaward_test_data_fixture):
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     filters = {"recipient_search_text": ["QQQQQQQQQQQQ"]}
-    filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(filters)
+    query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
+    filter_query = query_with_filters.generate_elasticsearch_query(filters)
     search = SubawardSearch().filter(filter_query)
     results = search.handle_execute()
     assert len(results) == 1
 
     filters = {"recipient_search_text": ["QQQQQQQQQQQQ", "CCCCCCCCCCCC"]}
-    filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(filters)
+    query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
+    filter_query = query_with_filters.generate_elasticsearch_query(filters)
     search = SubawardSearch().filter(filter_query)
     results = search.handle_execute()
     assert len(results) == 2
@@ -306,13 +322,15 @@ def test_recipient_locations_text_filters(
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     filters = {"recipient_locations": [{"country": "USA", "zip": "00501"}]}
-    filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(filters)
+    query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
+    filter_query = query_with_filters.generate_elasticsearch_query(filters)
     search = SubawardSearch().filter(filter_query)
     results = search.handle_execute()
     assert len(results) == 1
 
     filters = {"recipient_locations": [{"country": "USA", "zip": "00501"}, {"country": "USA", "zip": "10000"}]}
-    filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(filters)
+    query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
+    filter_query = query_with_filters.generate_elasticsearch_query(filters)
     search = SubawardSearch().filter(filter_query)
     results = search.handle_execute()
     assert len(results) == 2
@@ -322,7 +340,35 @@ def test_recipient_locations_text_filters(
 def test_award_amounts_filters(client, monkeypatch, elasticsearch_subaward_index, subaward_test_data_fixture):
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     filters = {"award_amounts": [{"lower_bound": 9001}, {"uppder_bound": 9014}]}
-    filter_query = QueryWithFilters.generate_subawards_elasticsearch_query(filters)
+    query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
+    filter_query = query_with_filters.generate_elasticsearch_query(filters)
     search = SubawardSearch().filter(filter_query)
     results = search.handle_execute()
     assert len(results) == 2
+
+
+@pytest.mark.django_db
+def test_program_activities_filters(client, monkeypatch, elasticsearch_subaward_index, subaward_test_data_fixture):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
+
+    filters = {"program_activities": [{"name": "PROGRAM_ACTIVITY_123"}]}
+    query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
+    filter_query = query_with_filters.generate_elasticsearch_query(filters)
+    search = SubawardSearch().filter(filter_query)
+    results = search.handle_execute()
+    assert len(results) == 1
+
+    filters = {"program_activities": [{"code": "0123"}]}
+    query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
+    filter_query = query_with_filters.generate_elasticsearch_query(filters)
+    search = SubawardSearch().filter(filter_query)
+    results = search.handle_execute()
+    assert len(results) == 1
+
+    # Test the auto-padding for program activity codes of less than 4 digits
+    filters = {"program_activities": [{"code": "123"}]}
+    query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
+    filter_query = query_with_filters.generate_elasticsearch_query(filters)
+    search = SubawardSearch().filter(filter_query)
+    results = search.handle_execute()
+    assert len(results) == 1
