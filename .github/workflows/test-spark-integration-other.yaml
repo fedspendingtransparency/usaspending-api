@@ -63,6 +63,6 @@ jobs:
 
   Cancel-Running-Workflow:
     name: Cancel Running Workflow
-    needs: Run-Tests
+    needs: Run
     if: failure()
     uses: ./.github/workflows/cancel-running-workflow.yaml
