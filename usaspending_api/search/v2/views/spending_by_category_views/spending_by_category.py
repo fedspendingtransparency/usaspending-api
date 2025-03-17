@@ -106,9 +106,6 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
             query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
             filter_query = query_with_filters.generate_elasticsearch_query(self.filters)
             results = self.query_elasticsearch(filter_query)
-            # base_queryset = subaward_filter(self.filters)
-            # self.obligation_column = "subaward_amount"
-            # results = self.query_django_for_subawards(base_queryset)
         elif self.spending_level == SpendingLevel.TRANSACTION:
             query_with_filters = QueryWithFilters(QueryType.TRANSACTIONS)
             filter_query = query_with_filters.generate_elasticsearch_query(self.filters)
@@ -173,7 +170,11 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         """
         Using the provided ES_Q object creates a TransactionSearch object with the necessary applied aggregations.
         """
-        sum_aggregations = get_scaled_sum_aggregations("generated_pragmatic_obligation", self.pagination)
+        sum_aggregations = (
+            get_scaled_sum_aggregations("subaward_amount", self.pagination)
+            if self.spending_level == SpendingLevel.SUBAWARD
+            else get_scaled_sum_aggregations("generated_pragmatic_obligation", self.pagination)
+        )
 
         # Need to handle high cardinality categories differently; this assumes that the Search object references
         # an Elasticsearch cluster that has a "routing" equal to "self.category.agg_key"
@@ -228,7 +229,11 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
             )
             search = AwardSearch().filter(filter_query)
         else:
-            search = TransactionSearch().filter(filter_query)
+            search = (
+                SubawardSearch().filter(filter_query)
+                if self.spending_level == SpendingLevel.SUBAWARD
+                else TransactionSearch().filter(filter_query)
+            )
 
         # Apply the aggregations to the TransactionSearch object
         search.aggs.bucket("group_by_agg_key", group_by_agg_key).metric("sum_field", sum_field).pipeline(
