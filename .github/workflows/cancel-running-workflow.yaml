@@ -5,7 +5,7 @@ on:
 
 jobs:
   Run:
-    name: Cancel Running Workflow
+    name: Run
     runs-on: ${{ vars.RUNNER_VERSION }}
     steps:
       - name: Cancel Workflow
