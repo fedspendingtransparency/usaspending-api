@@ -24,12 +24,13 @@ from usaspending_api.search.filters.time_period.query_types import AwardSearchTi
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass
 class SubawardGroupedModel:
-        award_id: int
-        subaward_count: int
-        award_generated_internal_id: str
-        subaward_obligation: int
+    award_id: int
+    subaward_count: int
+    award_generated_internal_id: str
+    subaward_obligation: int
 
 
 @api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
@@ -68,7 +69,7 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
             default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
         )
 
-        query_with_filters = QueryWithFilters(QueryType.AWARDS)
+        query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
         filter_query = query_with_filters.generate_elasticsearch_query(filters=self.filters, options=time_period_obj)
         results = self.build_elasticsearch_search_with_aggregation(filter_query)
 
@@ -98,7 +99,9 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
 
         # Accepts the same filters as spending_by_award
         spending_by_subaward_grouped_models.extend(copy.deepcopy(AWARD_FILTER_NO_RECIPIENT_ID))
-        spending_by_subaward_grouped_models.extend(copy.deepcopy([model for model in PAGINATION if model["name"] != "sort"]))
+        spending_by_subaward_grouped_models.extend(
+            copy.deepcopy([model for model in PAGINATION if model["name"] != "sort"])
+        )
 
         tiny_shield = TinyShield(spending_by_subaward_grouped_models)
         return tiny_shield.block(request_data), spending_by_subaward_grouped_models
@@ -126,23 +129,7 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
         # Sum the subaward amount within each prime award
         terms_aggregation.metric("subaward_obligation", "sum", field="subaward_amount")
 
-        # Filters apply to awards
-        filtered_awards = AwardSearch().filter(filter_query)
-
-        # Return subaward searched based on remaining awards
-        award_response = filtered_awards.handle_execute()
-        award_generated_internal_id = []
-        for award in award_response['hits']['hits']:
-            award_generated_internal_id.append(award['_source']['award_generated_internal_id'])
-        
-        self.subaward_filters = {"award_generated_internal_id": award_generated_internal_id}
-        time_period_obj = SubawardSearchTimePeriod(
-            default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
-        )
-
-        filter_with_query_subawards = QueryWithFilters(QueryType.SUBAWARDS)
-        subawards_filter_query = filter_with_query_subawards.generate_elasticsearch_query(filters=self.subaward_filters, options=time_period_obj)
-        search_sum = SubawardSearch().filter(subawards_filter_query)
+        search_sum = SubawardSearch().filter(filter_query)
         search_sum.aggs.bucket("award_id", terms_aggregation)
         response = search_sum.handle_execute()
 
