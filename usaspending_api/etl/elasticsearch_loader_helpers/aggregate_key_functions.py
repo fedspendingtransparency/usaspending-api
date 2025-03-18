@@ -178,3 +178,17 @@ def _country_agg_key(location_type, record: dict) -> Optional[str]:
             "country_name": record[f"{location_type}_country_name"],
         }
     )
+
+
+def location_type_agg_key(record: dict) -> Optional[str]:
+    if record.get("location_json") is None:
+        return ""
+    else:
+        json_data = record.get("location_json")
+
+    if isinstance(json_data, str):
+        return json.loads(json_data).get("location_type")
+    elif isinstance(json_data, dict):
+        return json_data.get("location_type")
+    else:
+        raise ValueError("Unable to get the 'location_type' key from the 'location_json' field")
