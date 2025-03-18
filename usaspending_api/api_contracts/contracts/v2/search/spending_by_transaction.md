@@ -219,3 +219,36 @@ Returns transaction records which match the provided filters.
 
 ### AdvancedFilterObject (object)
 The filters available are defined in [AdvencedFilterObjecter](./spending_by_award.md#advanced-filter-object)
+
+## TransactionResponse (object)
+
+### Sample
++ `Action Date`: `2018-05-21` (required, string, nullable)
++ `Award ID`: `DTFAWA05C00031R` (required, string, nullable)
++ `Award Type`: `INDEFINITE DELIVERY / INDEFINITE QUANTITY` (required, string, nullable)
++ `Awarding Agency`: `Department of Transportation` (required, string, nullable)
++ `Awarding Sub Agency`: `Federal Aviation Administration` (required, string, nullable)
++ `internal_id`: `68856340` (required, string, nullable)
++ `generated_internal_id`: `CONT_AWD_00013U_7090_KJ88_4735` (required, string, nullable)
++ `Mod`: `P00206` (required, string, nullable)
++ `Recipient Name`: `LEIDOS INNOVATIONS CORPORATION` (required, string, nullable)
++ `Transaction Amount`: `40000000.00` (required, string, nullable)
+
+### Default
++ `Action Date` (required, string, nullable)
++ `Award ID` (required, string, nullable)
++ `Award Type` (required, string, nullable)
++ `Awarding Agency` (required, string, nullable)
++ `Awarding Sub Agency` (required, string, nullable)
++ `awarding_agency_id` (required, string, nullable)
++ `Funding Agency` (required, string, nullable)
++ `Funding Sub Agency` (required, string, nullable)
++ `internal_id` (required, string, nullable)
++ `generated_internal_id` (required, string, nullable)
++ `Issued Date` (required, string, nullable)
++ `Last Date to Order` (required, string, nullable)
++ `Loan Value` (required, string, nullable)
++ `Mod` (required, string, nullable)
++ `Recipient Name` (required, string, nullable)
++ `Subsidy Cost` (required, string, nullable)
++ `Transaction Amount` (required, string, nullable)
