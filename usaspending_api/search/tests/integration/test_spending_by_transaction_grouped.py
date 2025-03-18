@@ -104,16 +104,6 @@ def test_spending_by_transaction_grouped_success(
         data=json.dumps(
             {
                 "filters": {"keywords": ["award 1"], "award_type_codes": ["A"], "award_ids": ["IND12PB00323"]},
-                "fields": [
-                    "Award ID",
-                    "Mod",
-                    "Recipient Name",
-                    "Action Date",
-                    "Transaction Amount",
-                    "Awarding Agency",
-                    "Awarding Sub Agency",
-                    "Award Type",
-                ],
                 "sort": "transaction_obligation",
             }
         ),
@@ -133,16 +123,6 @@ def test_spending_by_transaction_grouped_success(
         data=json.dumps(
             {
                 "filters": {"keywords": ["award 1"], "award_type_codes": ["B"]},
-                "fields": [
-                    "Award ID",
-                    "Mod",
-                    "Recipient Name",
-                    "Action Date",
-                    "Transaction Amount",
-                    "Awarding Agency",
-                    "Awarding Sub Agency",
-                    "Award Type",
-                ],
                 "sort": "transaction_obligation",
             }
         ),
@@ -159,16 +139,6 @@ def test_spending_by_transaction_grouped_success(
         data=json.dumps(
             {
                 "filters": {"keyword": "award 1", "award_type_codes": ["A"], "award_ids": ["IND12PB00323"]},
-                "fields": [
-                    "Award ID",
-                    "Mod",
-                    "Recipient Name",
-                    "Action Date",
-                    "Transaction Amount",
-                    "Awarding Agency",
-                    "Awarding Sub Agency",
-                    "Award Type",
-                ],
                 "sort": "transaction_obligation",
             }
         ),
@@ -182,14 +152,6 @@ def test_spending_by_transaction_grouped_success(
     assert resp_results[0]["transaction_obligation"] == 135.00
     assert resp_results[0]["award_generated_internal_id"] == "IND12PB00323-generated"
 
-    # Test required filters
-    resp = client.post(
-        ENDPOINT,
-        content_type="application/json",
-        data=json.dumps({"filters": {"award_type_codes": ["A"]}}),
-    )
-    assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-
     # Test multiple prime awards in results
     resp = client.post(
         ENDPOINT,
@@ -197,16 +159,6 @@ def test_spending_by_transaction_grouped_success(
         data=json.dumps(
             {
                 "filters": {"keywords": ["award 1", "award 2"], "award_type_codes": ["A"]},
-                "fields": [
-                    "Award ID",
-                    "Mod",
-                    "Recipient Name",
-                    "Action Date",
-                    "Transaction Amount",
-                    "Awarding Agency",
-                    "Awarding Sub Agency",
-                    "Award Type",
-                ],
                 "sort": "transaction_obligation",
             }
         ),
@@ -238,16 +190,6 @@ def test_spending_by_transaction_grouped_sorting(
         data=json.dumps(
             {
                 "filters": {"keywords": ["award 1", "award 2"], "award_type_codes": ["A"]},
-                "fields": [
-                    "Award ID",
-                    "Mod",
-                    "Recipient Name",
-                    "Action Date",
-                    "Transaction Amount",
-                    "Awarding Agency",
-                    "Awarding Sub Agency",
-                    "Award Type",
-                ],
                 "sort": "award_id",
                 "order": "asc",
             }
@@ -272,16 +214,6 @@ def test_spending_by_transaction_grouped_sorting(
         data=json.dumps(
             {
                 "filters": {"keywords": ["award 1", "award 2"], "award_type_codes": ["A"]},
-                "fields": [
-                    "Award ID",
-                    "Mod",
-                    "Recipient Name",
-                    "Action Date",
-                    "Transaction Amount",
-                    "Awarding Agency",
-                    "Awarding Sub Agency",
-                    "Award Type",
-                ],
                 "sort": "transaction_obligation",
             }
         ),
@@ -305,16 +237,6 @@ def test_spending_by_transaction_grouped_sorting(
         data=json.dumps(
             {
                 "filters": {"keywords": ["award 1", "award 2"], "award_type_codes": ["A"]},
-                "fields": [
-                    "Award ID",
-                    "Mod",
-                    "Recipient Name",
-                    "Action Date",
-                    "Transaction Amount",
-                    "Awarding Agency",
-                    "Awarding Sub Agency",
-                    "Award Type",
-                ],
                 "sort": "award_generated_internal_id",
                 "order": "asc",
             }
