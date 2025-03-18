@@ -1,6 +1,5 @@
 import json
 import logging
-
 from typing import Optional
 
 from usaspending_api.recipient.models import RecipientProfile
@@ -24,6 +23,13 @@ def transaction_recipient_agg_key(record: dict) -> str:
         + "/"
         + (RecipientProfile.return_one_level(record["recipient_levels"] or []) or "")
     )
+
+
+def subaward_recipient_agg_key(record: dict) -> str:
+    """Dictionary key order impacts Elasticsearch behavior!!!"""
+    if record["recipient_hash"] is None:
+        return ""
+    return str(record["recipient_hash"]) + "/" + str(record["recipient_level"])
 
 
 def awarding_subtier_agency_agg_key(record: dict) -> Optional[str]:

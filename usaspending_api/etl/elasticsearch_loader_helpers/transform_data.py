@@ -124,7 +124,7 @@ def transform_subaward_data(worker: TaskSpec, records: List[dict]) -> List[dict]
         "psc_agg_key": lambda x: x["product_or_service_code"],
         "defc_agg_key": lambda x: x["disaster_emergency_fund_codes"],
         "cfda_agg_key": lambda x: x["cfda_number"],
-        "recipient_agg_key": lambda x: x["recipient_hash"],
+        "recipient_agg_key": funcs.subaward_recipient_agg_key,
     }
     drop_fields = []
 
