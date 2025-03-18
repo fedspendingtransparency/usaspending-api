@@ -1,7 +1,7 @@
 import copy
 import logging
 from sys import maxsize
-from typing import Any, Tuple
+from typing import Any
 from dataclasses import dataclass
 from django.conf import settings
 from elasticsearch_dsl import A
@@ -68,7 +68,6 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
             },
         ]
 
-
     @cache_response()
     def post(self, request: Request) -> Response:
         """Return all subawards matching given awards"""
@@ -98,9 +97,7 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
 
         # Accepts the same filters as spending_by_award
         self.models.extend(copy.deepcopy(AWARD_FILTER_NO_RECIPIENT_ID))
-        self.models.extend(
-            copy.deepcopy([model for model in PAGINATION if model["name"] != "sort"])
-        )
+        self.models.extend(copy.deepcopy([model for model in PAGINATION if model["name"] != "sort"]))
 
         tiny_shield = TinyShield(self.models)
         return tiny_shield.block(request_data)
