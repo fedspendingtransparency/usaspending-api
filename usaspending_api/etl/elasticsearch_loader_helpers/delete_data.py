@@ -8,7 +8,6 @@ from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search
 from elasticsearch_dsl.mapping import Mapping
 from psycopg2 import sql as psycopg2_sql
-from pyspark.sql.types import StructType, StructField, StringType
 
 
 from usaspending_api.broker.helpers.last_load_date import (
@@ -650,8 +649,7 @@ def _check_awards_for_deletes(
     if spark:  # then use spark against a Delta Table
         awards_table = "int.awards"
         sql = pre_format_sql.format(awards_table=awards_table)
-        schema = StructType([StructField("generated_unique_award_id", StringType())])
-        df = spark.createDataFrame([[val] for val in id_list], schema=schema)
+        df = spark.createDataFrame([[val] for val in id_list])
         results = [row.asDict() for row in spark.sql(sql, from_sql=df).collect()]
     else:
         sql = pre_format_sql.format(awards_table=awards_table).format(from_sql="(values ({ids}))")

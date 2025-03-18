@@ -39,12 +39,16 @@ class _SubawardsKeywords(_Filter):
         keyword_queries = []
 
         def keyword_parse(keyword):
-            queries = []
-            queries.append(ES_Q("match", sub_awardee_or_recipient_legal=keyword))
-            queries.append(ES_Q("match", product_or_service_description=keyword))
-            queries.append(ES_Q("match", subaward_description=keyword))
-            queries.append(ES_Q("match", award_piid_fain=keyword))
-            queries.append(ES_Q("match", subaward_number=keyword))
+            fields = [
+                "sub_awardee_or_recipient_legal",
+                "product_or_service_description",
+                "subaward_description",
+                "subaward_number",
+            ]
+            queries = [
+                ES_Q("multi_match", query=keyword, fields=fields, type="phrase_prefix"),
+                ES_Q("match", award_piid_fain=keyword),
+            ]
             if len(keyword) == 4 and PSC.objects.filter(code=keyword).exists():
                 queries.append(ES_Q("match", product_or_service_code=keyword))
             return ES_Q("bool", should=queries, minimum_should_match=1)
@@ -82,14 +86,16 @@ class _Keywords(_Filter):
     @classmethod
     def generate_elasticsearch_query(cls, filter_values: List[str], query_type: QueryType, **options) -> ES_Q:
         keyword_queries = []
-        fields = [
+        keyword_fields = [
+            "piid",
+            "fain",
+            "uri",
+        ]
+        text_fields = [
             "recipient_name",
             "naics_description",
             "product_or_service_description",
             "transaction_description",
-            "piid",
-            "fain",
-            "uri",
             "recipient_unique_id",
             "parent_recipient_unique_id",
             "description",
@@ -110,7 +116,8 @@ class _Keywords(_Filter):
             else:
                 query = query.upper()
 
-            keyword_queries.append(ES_Q("query_string", query=query, default_operator="AND", fields=fields))
+            keyword_queries.append(ES_Q("query_string", query=query, default_operator="AND", fields=keyword_fields))
+            keyword_queries.append(ES_Q("multi_match", query=query, fields=text_fields, type="phrase_prefix"))
 
         return ES_Q("dis_max", queries=keyword_queries)
 
@@ -126,12 +133,8 @@ class _Description(_Filter):
             QueryType.TRANSACTIONS: ["transaction_description"],
         }
         query = es_sanitize(filter_values)
-        if "\\" in query:
-            query += r"\*"
-        else:
-            query += "*"
-        description_query = ES_Q("query_string", query=query, default_operator="AND", fields=fields.get(query_type, []))
-        return ES_Q("bool", should=description_query, minimum_should_match=1)
+
+        return ES_Q("multi_match", query=query, fields=fields.get(query_type, []), type="phrase_prefix")
 
 
 class _KeywordSearch(_Filter):
@@ -140,7 +143,22 @@ class _KeywordSearch(_Filter):
     @classmethod
     def generate_elasticsearch_query(cls, filter_values: List[str], query_type: QueryType, **options) -> ES_Q:
         keyword_queries = []
-        fields = [
+        keyword_fields = [
+            "recipient_location_congressional_code",
+            "recipient_location_county_code",
+            "recipient_location_country_code",
+            "recipient_location_state_code",
+            "business_categories",
+            "pop_congressional_code",
+            "pop_country_code",
+            "pop_state_code",
+            "pop_county_code",
+            "cfda_number",
+            "fain",
+            "piid",
+            "uri",
+        ]
+        text_fields = [
             "recipient_name",
             "parent_recipient_name",
             "naics_code",
@@ -148,36 +166,23 @@ class _KeywordSearch(_Filter):
             "product_or_service_code",
             "product_or_service_description",
             "transaction_description",
-            "piid",
-            "fain",
-            "uri",
             "recipient_unique_id",
             "parent_recipient_unique_id",
             "description",
             "award_description",
-            "cfda_number",
             "cfda_title",
             "awarding_toptier_agency_name",
             "awarding_subtier_agency_name",
             "funding_toptier_agency_name",
             "funding_subtier_agency_name",
-            "business_categories",
             "type_description",
-            "pop_country_code",
             "pop_country_name",
-            "pop_state_code",
-            "pop_county_code",
             "pop_county_name",
             "pop_zip5",
-            "pop_congressional_code",
             "pop_city_name",
-            "recipient_location_country_code",
             "recipient_location_country_name",
-            "recipient_location_state_code",
-            "recipient_location_county_code",
             "recipient_location_county_name",
             "recipient_location_zip5",
-            "recipient_location_congressional_code",
             "recipient_location_city_name",
             "modification_number",
             "recipient_uei",
@@ -189,7 +194,10 @@ class _KeywordSearch(_Filter):
             "sub_ultimate_parent_uei",
         ]
         for filter_value in filter_values:
-            keyword_queries.append(ES_Q("query_string", query=filter_value, default_operator="OR", fields=fields))
+            keyword_queries.append(ES_Q("multi_match", query=filter_value, fields=text_fields, type="phrase_prefix"))
+            keyword_queries.append(
+                ES_Q("query_string", query=filter_value, default_operator="OR", fields=keyword_fields)
+            )
 
         return ES_Q("dis_max", queries=keyword_queries)
 
