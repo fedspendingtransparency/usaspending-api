@@ -133,12 +133,8 @@ class _Description(_Filter):
             QueryType.TRANSACTIONS: ["transaction_description"],
         }
         query = es_sanitize(filter_values)
-        if "\\" in query:
-            query += r"\*"
-        else:
-            query += "*"
-        description_query = ES_Q("multi_match", query=query, fields=fields.get(query_type, []), type="phrase_prefix")
-        return ES_Q("bool", should=description_query, minimum_should_match=1)
+
+        return ES_Q("multi_match", query=query, fields=fields.get(query_type, []), type="phrase_prefix")
 
 
 class _KeywordSearch(_Filter):
