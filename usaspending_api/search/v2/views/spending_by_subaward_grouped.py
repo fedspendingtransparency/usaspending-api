@@ -68,6 +68,10 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
             },
         ]
 
+        # Accepts the same filters as spending_by_award
+        self.models.extend(copy.deepcopy(AWARD_FILTER_NO_RECIPIENT_ID))
+        self.models.extend(copy.deepcopy([model for model in PAGINATION if model["name"] != "sort"]))
+
     @cache_response()
     def post(self, request: Request) -> Response:
         """Return all subawards matching given awards"""
@@ -93,11 +97,7 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
 
         return Response(self.construct_es_response(results))
 
-    def validate_request_data(self, request_data: Request) -> dict:
-
-        # Accepts the same filters as spending_by_award
-        self.models.extend(copy.deepcopy(AWARD_FILTER_NO_RECIPIENT_ID))
-        self.models.extend(copy.deepcopy([model for model in PAGINATION if model["name"] != "sort"]))
+    def validate_request_data(self, request_data: Request) -> dict[str, Any]:
 
         tiny_shield = TinyShield(self.models)
         return tiny_shield.block(request_data)
