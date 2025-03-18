@@ -133,6 +133,6 @@ def test_es_description_filter(client, monkeypatch, elasticsearch_transaction_in
     search = TransactionSearch().filter(filter_query)
     results = search.handle_execute()
 
-    assert filter_query.to_dict()["bool"]["must"][0]["bool"]["should"][0]["multi_match"]["query"] == "test_1*"
+    assert filter_query.to_dict()["bool"]["must"][0]["multi_match"]["query"] == "test_1"
     assert len(results["hits"]["hits"]) == 1
     assert results["hits"]["hits"][0]["_source"]["transaction_description"] == "Description for test_1 transaction."
