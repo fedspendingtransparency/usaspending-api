@@ -41,14 +41,6 @@ class SpendingByTransactionGroupedVisualizationViewSet(APIView):
         super().__init__(*args, **kwargs)
         models = [
             {
-                "name": "fields",
-                "key": "fields",
-                "type": "array",
-                "array_type": "text",
-                "text_type": "search",
-                "optional": False,
-            },
-            {
                 "name": "sort",
                 "key": "sort",
                 "type": "enum",
@@ -68,7 +60,7 @@ class SpendingByTransactionGroupedVisualizationViewSet(APIView):
             if m["name"] == "award_type_codes":
                 m["optional"] = False
         self.tinysheld = TinyShield(models)
-        self.sort_by: str = "transaction_obligation"
+        self.sort_by: str | None = None
 
     @cache_response()
     def post(self, request: Request) -> Response:

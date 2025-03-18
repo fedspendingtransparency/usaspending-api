@@ -17,9 +17,7 @@ Searches for transaction records based on a provided set of filters and groups t
 
     + Attributes (object)
         + `filters` (required, AdvancedFilterObject)
-            These filters are applied at the Transaction level. They will not affect the Prime Awards themselves. Must at least provide `award_type_codes` in the filters object.
-        + `fields` (required, FieldNameObject)
-            The field names to include for Transactions in the response.
+            These filters are applied at the Transaction level. They will not affect the Prime Awards themselves. Must at least provide `award_type_codes` in the filters object.       
         + `limit`: 5 (optional, number)
             The number of `results` (Prime Awards) to include per page.
             + Default: 10
@@ -52,16 +50,6 @@ Searches for transaction records based on a provided set of filters and groups t
                         "D"
                     ]
                 },
-                "fields": [
-                    "Award ID",
-                    "Mod",
-                    "Recipient Name",
-                    "Action Date",
-                    "Transaction Amount",
-                    "Awarding Agency",
-                    "Awarding Sub Agency",
-                    "Award Type"
-                ],
                 "page": 1,
                 "limit": 35,
                 "sort": "award_id",
@@ -107,28 +95,6 @@ Searches for transaction records based on a provided set of filters and groups t
 
 ### AdvancedFilterObject (object)
 The filters available are defined in [AdvancedFilterObject](./spending_by_transaction.md#advanced-filter-object). The one difference is that `keywords` is not required.
-
-### FieldNameObject (array)
-List of column names to request
-
-- `Action Date`
-- `Award ID`
-- `Award Type`
-- `Awarding Agency`
-- `Awarding Sub Agency`
-- `awarding_agency_id`
-- `Funding Agency`
-- `Funding Sub Agency`
-- `internal_id`
-- `generated_internal_id`
-- `Issued Date`
-- `Last Date to Order`
-- `Loan Value`
-- `Mod`
-- `Recipient Name`
-- `Subsidy Cost`
-- `Transaction Amount`
-- `def_codes`
 
 ## Response Objects
 
