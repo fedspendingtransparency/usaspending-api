@@ -60,8 +60,8 @@ SUBAWARD_SEARCH_COLUMNS = {
     "cfda_titles": {"delta": "STRING", "postgres": "TEXT"},
     # Subaward Fields (from Broker)
     "subaward_type": {"delta": "STRING", "postgres": "TEXT"},
-    "subaward_report_year": {"delta": "SHORT NOT NULL", "postgres": "SMALLINT NOT NULL"},
-    "subaward_report_month": {"delta": "SHORT NOT NULL", "postgres": "SMALLINT NOT NULL"},
+    "subaward_report_year": {"delta": "SHORT", "postgres": "SMALLINT"},
+    "subaward_report_month": {"delta": "SHORT", "postgres": "SMALLINT"},
     "subaward_number": {"delta": "STRING", "postgres": "TEXT"},
     "subaward_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
     "sub_action_date": {"delta": "DATE", "postgres": "DATE"},
@@ -736,5 +736,8 @@ subaward_search_load_sql_string = rf"""
         END
     )
     -- Subaward numbers are crucial for identifying subawards and so those without subaward numbers won't be surfaced.
-    WHERE bs.subaward_number IS NOT NULL
+    WHERE
+        bs.subaward_number IS NOT NULL
+        AND bs.sub_action_date IS NOT NULL
+        AND bs.subaward_amount IS NOT NULL
 """
