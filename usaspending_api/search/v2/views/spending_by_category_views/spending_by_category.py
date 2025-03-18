@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from typing import List, Optional, Union
 
 from django.conf import settings
-from django.db.models import QuerySet, Sum
 from elasticsearch_dsl import A
 from elasticsearch_dsl import Q as ES_Q
 from rest_framework.request import Request
@@ -53,6 +52,13 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
     pagination: Pagination
     high_cardinality_categories: List[str] = ["recipient", "recipient_duns"]
     spending_level: Optional[SpendingLevel]
+    subaward_agg_key_mapper = {
+        "pop_country_agg_key": "sub_pop_country_agg_key",
+        "pop_congressional_cur_agg_key": "sub_pop_congressional_cur_agg_key",
+        "pop_county_agg_key": "sub_pop_county_agg_key",
+        "recipient_location_congressional_cur_agg_key": "sub_recipient_location_congressional_cur_agg_key",
+        "recipient_location_county_agg_key": "sub_recipient_location_county_agg_key",
+    }
 
     @cache_response()
     def post(self, request: Request) -> Response:
@@ -102,7 +108,14 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
             "subawards" if validated_payload.get("subawards") else validated_payload.get("spending_level")
         )
 
+        # Federal accounts are not implemented for Subawards
+        if self.category.name == "federal_account" and self.spending_level == SpendingLevel.SUBAWARD:
+            self._raise_not_implemented()
+
         if self.spending_level == SpendingLevel.SUBAWARD:
+            # Swap the agg_key fields for the equivilant Subaward fields, if applicable
+            self.category.agg_key = self.subaward_agg_key_mapper.get(self.category.agg_key, self.category.agg_key)
+
             query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
             filter_query = query_with_filters.generate_elasticsearch_query(self.filters)
             results = self.query_elasticsearch(filter_query)
@@ -136,7 +149,7 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
 
     def _raise_not_implemented(self):
         msg = "Category '{}' is not implemented"
-        if self.subawards:
+        if self.spending_level == SpendingLevel.SUBAWARD:
             msg += " when `subawards` is True"
         raise NotImplementedException(msg.format(self.category.name))
 
@@ -154,14 +167,6 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
             limit=payload["limit"],
             lower_limit=(payload["page"] - 1) * payload["limit"],
             upper_limit=payload["page"] * payload["limit"] + 1,
-        )
-
-    def common_db_query(self, queryset: QuerySet, django_filters: dict, django_values: list) -> QuerySet:
-        return (
-            queryset.filter(**django_filters)
-            .values(*django_values)
-            .annotate(amount=Sum(self.obligation_column))
-            .order_by("-amount")
         )
 
     def build_elasticsearch_search_with_aggregations(
