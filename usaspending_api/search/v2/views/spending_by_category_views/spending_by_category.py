@@ -259,11 +259,3 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         Parses the response from Search.execute() as a dictionary and builds the results for the endpoint response.
         """
         pass
-
-    @abstractmethod
-    def query_django_for_subawards(self, base_queryset: QuerySet) -> List[dict]:
-        """
-        Sub-awards are still implemented with Postgres and thus this function is called when a request is received
-        to query a category for sub-awards.
-        """
-        pass
