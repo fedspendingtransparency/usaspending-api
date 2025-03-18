@@ -93,7 +93,7 @@ Returns the number of transactions that would be included in a download request 
 + `agencies` (optional, array[AgencyObject], fixed-type)
 + `recipient_search_text`: `Hampton` (optional, array[string])
 + `recipient_id` (optional, string)
-    A hash of recipient UEI, DUNS, name, and level. A unique identifier for recipients, used for profile page urls.
+    A hash of recipient UEI, DUNS, name, and level. A unique identifier for recipients, used for profile page urls. This filter is not supported by subawards.
 + `recipient_scope` (optional, enum[string])
     + Members
         + `domestic`
