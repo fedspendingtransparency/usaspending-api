@@ -188,7 +188,7 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/search/spending_by_geography/](/api/v2/search/spending_by_geography/)|POST| Returns Spending by state code, county code, or congressional district code |
 |[/api/v2/search/spending_by_transaction/](/api/v2/search/spending_by_transaction/)|POST| Returns awards where a certain subset of fields match against search term |
 |[/api/v2/search/spending_by_transaction_count/](/api/v2/search/spending_by_transaction_count/)|POST| Returns counts of awards where a certain subset of fields match against search term |
-|[/api/v2/search/spending_by_transaction_grouped/](/api/v2/search/spending_by_transaction_grouped/)|POST| Returns transactions where a certain subset of fields match against search terms and results are grouped by their prime award. |
+|[/api/v2/search/spending_by_transaction_grouped/](/api/v2/search/spending_by_transaction_grouped/)|POST| Returns information about transactions where a certain subset of fields match against search terms and results are grouped by their prime award. |
 |[/api/v2/search/spending_over_time/](/api/v2/search/spending_over_time/)|POST| Returns transaction aggregated amounts for Spending Over Time data visualizations on USAspending.gov |
 |[/api/v2/search/transaction_spending_summary/](/api/v2/search/transaction_spending_summary/)|POST| Returns the number of transactions and the sum of federal action obligations for prime awards given a set of award of filters |
 |[/api/v2/spending/](/api/v2/spending/)|POST| Returns spending data information through various types and filters |
