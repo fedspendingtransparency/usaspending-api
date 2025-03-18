@@ -97,7 +97,7 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
 
         return Response(self.construct_es_response(results))
 
-    def validate_request_data(self, request_data: Request) -> dict[str, Any]:
+    def validate_request_data(self, request_data: dict[str, Any]) -> dict[str, Any]:
 
         tiny_shield = TinyShield(self.models)
         return tiny_shield.block(request_data)
