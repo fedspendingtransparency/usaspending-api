@@ -111,6 +111,7 @@ def transform_subaward_data(worker: TaskSpec, records: List[dict]) -> List[dict]
         "program_activities": convert_json_data_to_dict,
     }
     agg_key_creations = {
+        "sub_pop_country_agg_key": lambda x: x["sub_pop_country_code"],
         "sub_pop_congressional_cur_agg_key": funcs.sub_pop_congressional_cur_agg_key,
         "sub_pop_county_agg_key": funcs.sub_pop_county_agg_key,
         "sub_recipient_location_congressional_cur_agg_key": funcs.sub_recipient_location_congressional_cur_agg_key,
@@ -123,6 +124,7 @@ def transform_subaward_data(worker: TaskSpec, records: List[dict]) -> List[dict]
         "psc_agg_key": lambda x: x["product_or_service_code"],
         "defc_agg_key": lambda x: x["disaster_emergency_fund_codes"],
         "cfda_agg_key": lambda x: x["cfda_number"],
+        "recipient_agg_key": lambda x: x["recipient_hash"],
     }
     drop_fields = []
 
