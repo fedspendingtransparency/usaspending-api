@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from django.conf import settings
 from elasticsearch_dsl import A
 from elasticsearch_dsl import Q as ES_Q
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -45,38 +46,8 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.original_filters: dict[str, Any] = {}
-        self.filters: dict[str, Any] = {}
-        self.subaward_filters: dict[str, Any] = {}
         self.pagination: dict[str, Any] = {}
-
-    @cache_response()
-    def post(self, request) -> Response:
-        """Return all subawards matching given awards"""
-        self.original_filters = request.data.get("filters")
-        json_request, self.models = self.validate_request_data(request.data)
-        filters = json_request.get("filters", {})
-        self.filters = filters
-        self.pagination = {
-            "limit": json_request["limit"],
-            "lower_bound": (json_request["page"] - 1) * json_request["limit"],
-            "page": json_request["page"],
-            "sort_key": json_request.get("sort"),
-            "sort_order": json_request["order"],
-            "upper_bound": json_request["page"] * json_request["limit"] + 1,
-        }
-
-        time_period_obj = SubawardSearchTimePeriod(
-            default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
-        )
-
-        query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
-        filter_query = query_with_filters.generate_elasticsearch_query(filters=self.filters, options=time_period_obj)
-        results = self.build_elasticsearch_search_with_aggregation(filter_query)
-
-        return Response(self.construct_es_response(results))
-
-    def validate_request_data(self, request_data) -> Tuple[TinyShield, list]:
-        spending_by_subaward_grouped_models = [
+        self.models = [
             {"name": "limits", "key": "limit", "type": "integer", "default": 10},
             {"name": "ordered", "key": "order", "type": "text", "text_type": "search", "default": "desc"},
             {
@@ -97,14 +68,42 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
             },
         ]
 
+
+    @cache_response()
+    def post(self, request: Request) -> Response:
+        """Return all subawards matching given awards"""
+        self.original_filters = request.data.get("filters")
+        json_request = self.validate_request_data(request.data)
+        filters = json_request.get("filters", {})
+        self.pagination = {
+            "limit": json_request["limit"],
+            "lower_bound": (json_request["page"] - 1) * json_request["limit"],
+            "page": json_request["page"],
+            "sort_key": json_request.get("sort"),
+            "sort_order": json_request["order"],
+            "upper_bound": json_request["page"] * json_request["limit"] + 1,
+        }
+
+        time_period_obj = SubawardSearchTimePeriod(
+            default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
+        )
+
+        query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
+        filter_query = query_with_filters.generate_elasticsearch_query(filters=filters, options=time_period_obj)
+        results = self.build_elasticsearch_search_with_aggregation(filter_query)
+
+        return Response(self.construct_es_response(results))
+
+    def validate_request_data(self, request_data: Request) -> dict:
+
         # Accepts the same filters as spending_by_award
-        spending_by_subaward_grouped_models.extend(copy.deepcopy(AWARD_FILTER_NO_RECIPIENT_ID))
-        spending_by_subaward_grouped_models.extend(
+        self.models.extend(copy.deepcopy(AWARD_FILTER_NO_RECIPIENT_ID))
+        self.models.extend(
             copy.deepcopy([model for model in PAGINATION if model["name"] != "sort"])
         )
 
-        tiny_shield = TinyShield(spending_by_subaward_grouped_models)
-        return tiny_shield.block(request_data), spending_by_subaward_grouped_models
+        tiny_shield = TinyShield(self.models)
+        return tiny_shield.block(request_data)
 
     def construct_es_response(self, results: list[SubawardGroupedModel]) -> dict[str, Any]:
         return {
