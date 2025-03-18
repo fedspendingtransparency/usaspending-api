@@ -111,7 +111,7 @@ def test_spending_by_subaward_grouped_non_legacy_filter(client, monkeypatch, ela
     resp = client.post(
         "/api/v2/search/spending_by_subaward_grouped",
         content_type="application/json",
-        data=json.dumps({"page": 1, "limit": 2, "sort": "award_id", "filters": legacy_filters()}),
+        data=json.dumps({"page": 1, "limit": 2, "sort": "award_id", "filters": non_legacy_filters()}),
     )
 
     assert resp.status_code == status.HTTP_200_OK
