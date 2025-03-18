@@ -772,6 +772,15 @@
             "type": "murmur3"
           }
         }
+      },
+      "sub_pop_state_agg_key": {
+        "type": "keyword",
+        "eager_global_ordinals": true,
+        "fields": {
+          "hash": {
+            "type": "murmur3"
+          }
+        }
       }
     }
   }

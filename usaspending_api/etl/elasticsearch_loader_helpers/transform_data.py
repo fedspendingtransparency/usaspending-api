@@ -115,6 +115,7 @@ def transform_subaward_data(worker: TaskSpec, records: List[dict]) -> List[dict]
         "sub_pop_country_agg_key": lambda x: x["sub_pop_country_code"],
         "sub_pop_congressional_cur_agg_key": funcs.sub_pop_congressional_cur_agg_key,
         "sub_pop_county_agg_key": funcs.sub_pop_county_agg_key,
+        "sub_pop_state_agg_key": lambda x: x["sub_pop_state_code"],
         "sub_recipient_location_congressional_cur_agg_key": funcs.sub_recipient_location_congressional_cur_agg_key,
         "sub_recipient_location_county_agg_key": funcs.sub_recipient_location_county_agg_key,
         "awarding_subtier_agency_agg_key": lambda x: x["awarding_subtier_agency_code"],
