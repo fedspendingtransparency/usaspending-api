@@ -98,8 +98,9 @@ def cfda_test_data(db):
         award_id=1,
         subaward_amount=1,
         cfda_id=1,
-        cfda_number="CFDA1234",
+        cfda_numbers="CFDA1234",
         cfda_title="CFDA TITLE 1234",
+        action_date="2020-01-01",
     )
     baker.make(
         "search.SubawardSearch",
@@ -107,8 +108,9 @@ def cfda_test_data(db):
         award_id=2,
         subaward_amount=1,
         cfda_id=1,
-        cfda_number="CFDA1234",
+        cfda_numbers="CFDA1234",
         cfda_title="CFDA TITLE 1234",
+        action_date="2020-01-02",
     )
 
     baker.make(
@@ -213,6 +215,9 @@ def agency_test_data(db):
         awarding_subtier_agency_abbreviation="SA3",
         funding_toptier_agency_abbreviation="TA4",
         funding_subtier_agency_abbreviation="SA4",
+        action_date="2020-01-01",
+        awarding_sub_tier_agency_c="SA3",
+        funding_sub_tier_agency_co="SA4",
     )
     baker.make(
         "search.SubawardSearch",
@@ -229,6 +234,9 @@ def agency_test_data(db):
         awarding_subtier_agency_abbreviation="SA3",
         funding_toptier_agency_abbreviation="TA4",
         funding_subtier_agency_abbreviation="SA4",
+        action_date="2020-01-02",
+        awarding_sub_tier_agency_c="SA3",
+        funding_sub_tier_agency_co="SA4",
     )
 
     baker.make(
@@ -780,7 +788,16 @@ def test_category_awarding_agency_subawards(agency_test_data, monkeypatch, elast
         "category": "awarding_agency",
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
-        "results": [{"amount": 150, "name": "Awarding Toptier Agency 3", "code": "TA3", "id": 1003}],
+        "results": [
+            {
+                "amount": 150,
+                "name": "Awarding Toptier Agency 3",
+                "code": "TA3",
+                "id": 1003,
+                "agency_slug": None,
+                "total_outlays": None,
+            }
+        ],
         "messages": _expected_messages(),
         "spending_level": "subawards",
     }
@@ -822,9 +839,10 @@ def test_category_awarding_subagency_transactions(agency_test_data, monkeypatch,
 
 
 @pytest.mark.django_db
-def test_category_awarding_subagency_subawards(agency_test_data):
-    test_payload = {"category": "awarding_subagency", "spending_level": "subawards", "page": 1, "limit": 50}
+def test_category_awarding_subagency_subawards(agency_test_data, monkeypatch, elasticsearch_subaward_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
 
+    test_payload = {"category": "awarding_subagency", "spending_level": "subawards", "page": 1, "limit": 50}
     spending_by_category_logic = AwardingSubagencyViewSet().perform_search(test_payload, {})
 
     expected_response = {
@@ -842,6 +860,7 @@ def test_category_awarding_subagency_subawards(agency_test_data):
                 "agency_abbreviation": "TA3",
                 "agency_name": "Awarding Toptier Agency 3",
                 "agency_slug": "awarding-toptier-agency-3",
+                "total_outlays": None,
             }
         ],
         "messages": _expected_messages(),
@@ -874,16 +893,19 @@ def test_category_funding_agency_transactions(agency_test_data, monkeypatch, ela
 
 
 @pytest.mark.django_db
-def test_category_funding_agency_subawards(agency_test_data):
-    test_payload = {"category": "funding_agency", "spending_level": "subawards", "page": 1, "limit": 50}
+def test_category_funding_agency_subawards(agency_test_data, monkeypatch, elasticsearch_subaward_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
 
+    test_payload = {"category": "funding_agency", "spending_level": "subawards", "page": 1, "limit": 50}
     spending_by_category_logic = FundingAgencyViewSet().perform_search(test_payload, {})
 
     expected_response = {
         "category": "funding_agency",
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
-        "results": [{"amount": 150, "name": "Funding Toptier Agency 4", "code": "TA4", "id": 1004}],
+        "results": [
+            {"amount": 150, "name": "Funding Toptier Agency 4", "code": "TA4", "id": 1004, "total_outlays": None}
+        ],
         "messages": _expected_messages(),
         "spending_level": "subawards",
     }
@@ -925,9 +947,10 @@ def test_category_funding_subagency_transactions(agency_test_data, monkeypatch, 
 
 
 @pytest.mark.django_db
-def test_category_funding_subagency_subawards(agency_test_data):
-    test_payload = {"category": "funding_subagency", "spending_level": "subawards", "page": 1, "limit": 50}
+def test_category_funding_subagency_subawards(agency_test_data, monkeypatch, elasticsearch_subaward_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
 
+    test_payload = {"category": "funding_subagency", "spending_level": "subawards", "page": 1, "limit": 50}
     spending_by_category_logic = FundingSubagencyViewSet().perform_search(test_payload, {})
 
     expected_response = {
@@ -945,6 +968,7 @@ def test_category_funding_subagency_subawards(agency_test_data):
                 "agency_abbreviation": "TA4",
                 "agency_name": "Funding Toptier Agency 4",
                 "agency_slug": "funding-toptier-agency-4",
+                "total_outlays": None,
             }
         ],
         "messages": _expected_messages(),
@@ -1084,16 +1108,17 @@ def test_category_cfda_transactions(cfda_test_data, monkeypatch, elasticsearch_t
 
 
 @pytest.mark.django_db
-def test_category_cfda_subawards(cfda_test_data):
-    test_payload = {"category": "cfda", "spending_level": "subawards", "page": 1, "limit": 50}
+def test_category_cfda_subawards(cfda_test_data, monkeypatch, elasticsearch_subaward_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
 
+    test_payload = {"category": "cfda", "spending_level": "subawards", "page": 1, "limit": 50}
     spending_by_category_logic = CfdaViewSet().perform_search(test_payload, {})
 
     expected_response = {
         "category": "cfda",
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
-        "results": [{"amount": 2, "code": "CFDA1234", "name": "CFDA TITLE 1234", "id": 1}],
+        "results": [{"amount": 2, "code": "CFDA1234", "name": "CFDA TITLE 1234", "id": 1, "total_outlays": None}],
         "messages": _expected_messages(),
         "spending_level": "subawards",
     }
