@@ -3,7 +3,7 @@ import logging
 from sys import maxsize
 from typing import Any
 from dataclasses import dataclass
-from decimal import Decimal, ROUND_UP
+from decimal import Decimal
 from django.conf import settings
 from elasticsearch_dsl import A
 from elasticsearch_dsl import Q as ES_Q
