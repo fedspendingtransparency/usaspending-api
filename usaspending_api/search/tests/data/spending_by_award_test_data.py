@@ -65,7 +65,8 @@ def spending_by_award_test_data():
         latest_transaction_id=2,
         generated_unique_award_id="CONT_AWD_TESTING_1",
         date_signed="2008-01-01",
-        description="test test test",
+        description="the test test test",
+        naics_description="the test test test",
         awarding_agency_id=1,
         awarding_toptier_agency_code="ABC",
         awarding_toptier_agency_name="TOPTIER AGENCY 1",
@@ -121,6 +122,8 @@ def spending_by_award_test_data():
         recipient_location_country_code="USA",
         recipient_location_county_code="012",
         naics_code="112244",
+        description="the description for a test",
+        naics_description="the description for a test",
     )
     award_3 = baker.make(
         "search.AwardSearch",
@@ -419,6 +422,8 @@ def spending_by_award_test_data():
         product_or_service_code="PSC2",
         sub_awardee_or_recipient_uei="UEI_10010001",
         unique_award_key="CONT_AWD_TESTING_1",
+        subaward_description="the test test test",
+        product_or_service_description="the test test test",
     )
     baker.make(
         "search.SubawardSearch",
@@ -440,6 +445,8 @@ def spending_by_award_test_data():
         product_or_service_code="PSC0",
         action_date="2020-04-02",
         unique_award_key="CONT_AWD_TESTING_1",
+        subaward_description="the description for a test",
+        product_or_service_description="the description for a test",
     )
     baker.make(
         "search.SubawardSearch",
