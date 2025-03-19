@@ -3,6 +3,7 @@ import logging
 from sys import maxsize
 from typing import Any
 from dataclasses import dataclass
+from decimal import Decimal, ROUND_UP
 from django.conf import settings
 from elasticsearch_dsl import A
 from elasticsearch_dsl import Q as ES_Q
@@ -136,7 +137,7 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
         for result in response["aggregations"]["award_id"]["buckets"]:
             # there is one unique_award_key for each prime award so there will only be one bucket
             award_generated_internal_id = result["unique_award_key"]["buckets"][0]["key"]
-            subaward_obligation = result["subaward_obligation"]["value"]
+            subaward_obligation = Decimal(result["subaward_obligation"]["value"]).quantize(Decimal(".01"))
             item = SubawardGroupedModel(
                 result["key"], result["doc_count"], award_generated_internal_id, subaward_obligation
             )

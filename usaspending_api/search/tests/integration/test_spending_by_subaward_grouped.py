@@ -92,7 +92,9 @@ def test_spending_by_subaward_grouped_success(
 
 
 @pytest.mark.django_db
-def test_spending_by_subaward_grouped_legacy_filter(client, monkeypatch, elasticsearch_subaward_index):
+def test_spending_by_subaward_grouped_legacy_filter(
+    client, monkeypatch, elasticsearch_subaward_index, subaward_grouped_data_fixture
+):
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
 
     resp = client.post(
@@ -102,10 +104,28 @@ def test_spending_by_subaward_grouped_legacy_filter(client, monkeypatch, elastic
     )
 
     assert resp.status_code == status.HTTP_200_OK
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()["page_metadata"]["page"] == 1
+    assert resp.json()["limit"] == 2
+    assert len(resp.json()["results"]) == 2
+    assert resp.json()["results"][0] == {
+        "award_id": "N6247318F4101",
+        "subaward_count": 1,
+        "award_generated_internal_id": "CONT_AWD_N6247318F4138_9700_N6247316D1884_9001",
+        "subaward_obligation": 1234,
+    }
+    assert resp.json()["results"][1] == {
+        "award_id": "N6247318F4102",
+        "subaward_count": 1,
+        "award_generated_internal_id": "CONT_AWD_N6247318F4138_9700_N6247316D1884_9002",
+        "subaward_obligation": 1500,
+    }
 
 
 @pytest.mark.django_db
-def test_spending_by_subaward_grouped_non_legacy_filter(client, monkeypatch, elasticsearch_subaward_index):
+def test_spending_by_subaward_grouped_non_legacy_filter(
+    client, monkeypatch, elasticsearch_subaward_index, subaward_grouped_data_fixture
+):
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
 
     resp = client.post(
@@ -115,6 +135,9 @@ def test_spending_by_subaward_grouped_non_legacy_filter(client, monkeypatch, ela
     )
 
     assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()["page_metadata"]["page"] == 1
+    assert resp.json()["limit"] == 2
+    assert len(resp.json()["results"]) == 0
 
 
 @pytest.mark.django_db

@@ -5,7 +5,7 @@ HOST: https://api.usaspending.gov
 
 ## POST
 
-This endpoint takes fields and award filters and returns a list containing filtered award ids, the number of subawards in each award, the total amount of obligations of all the subawards, and the award unique id
+This endpoint takes award filters and returns a list containing filtered award ids, the number of subawards in each award, the total amount of obligations of all the subawards, and the award unique id.
 
 + Request (application/json)
     + Schema
@@ -25,16 +25,16 @@ This endpoint takes fields and award filters and returns a list containing filte
             The field on which to order `results` in the response.
             + Default: `award_id`
             + Members
+                + `award_generated_internal_id`
                 + `award_id`
                 + `subaward_count`
-                + `award_generated_internal_id`
                 + `subaward_obligation`
         + `order` (optional, enum[string])
             Indicates what direction results should be sorted by. Valid options include asc for ascending order or desc for descending order.
             + Default: `desc`
             + Members
-                + `desc`
                 + `asc`
+                + `desc`
     + Body
 
             {
