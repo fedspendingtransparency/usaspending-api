@@ -1056,9 +1056,10 @@ def test_category_recipient_subawards(recipient_test_data):
 
 
 @pytest.mark.django_db
-def test_category_recipient_duns_subawards_deprecated(recipient_test_data):
-    test_payload = {"category": "recipient_duns", "spending_level": "subawards", "page": 1, "limit": 50}
+def test_category_recipient_duns_subawards_deprecated(recipient_test_data, monkeypatch, elasticsearch_subaward_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
 
+    test_payload = {"category": "recipient_duns", "spending_level": "subawards", "page": 1, "limit": 50}
     spending_by_category_logic = RecipientDunsViewSet().perform_search(test_payload, {})
 
     expected_response = {
