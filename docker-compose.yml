@@ -20,11 +20,6 @@ services:
       - type: volume
         source: local_pg_data
         target: /var/lib/postgresql/data
-      # This was added as one potential location for DB subsets to be placed when running pg_restore from inside the usaspending-db container.
-      # Leave this commented out unless using it for the purpose of a restore to avoid issues with CI/CD builds.
-      # - type: bind
-      #   source: ${DB_SUBSET_DIR:-./data/usaspending/docker/usaspending-db-subsets}
-      #   target: /data/db-subsets
     ports:
       - ${USASPENDING_DB_PORT:-5432}:5432
     environment:
@@ -64,6 +59,7 @@ services:
       # to spin up the data-act-broker-init-test-db container used for broker integration tests (see: conftest.broker_db_setup)
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
+      - minio
       - usaspending-db
       - usaspending-es
     command: make tests
@@ -73,7 +69,7 @@ services:
       ES_HOSTNAME: ${ES_HOSTNAME}
       DATA_BROKER_DATABASE_URL: postgresql://${BROKER_DB_USER}:${BROKER_DB_PASSWORD}@${BROKER_DB_HOST}:${BROKER_DB_PORT}/data_broker
       # Location in host machine where broker src code root can be found
-      DATA_BROKER_SRC_PATH: "../data-act-broker-backend"
+      DATA_BROKER_SRC_PATH: "${PWD}/../data-act-broker-backend"
       MINIO_HOST: ${MINIO_HOST}
       DOWNLOAD_DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
 
@@ -110,7 +106,7 @@ services:
       ES_HOSTNAME: ${ES_HOSTNAME}
       DATA_BROKER_DATABASE_URL: postgresql://${BROKER_DB_USER}:${BROKER_DB_PASSWORD}@${BROKER_DB_HOST}:${BROKER_DB_PORT}/data_broker
       # Location in host machine where broker src code root can be found
-      DATA_BROKER_SRC_PATH: "../data-act-broker-backend"
+      DATA_BROKER_SRC_PATH: "${PWD}/../data-act-broker-backend"
 
   usaspending-api:
     profiles:
@@ -165,6 +161,7 @@ services:
       - cluster.initial_master_nodes=usaspending-es
       - cluster.name=usaspending
       - network.host=0.0.0.0
+      - transport.host=localhost
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms2048m -Xmx2048m"  # Ensure Docker is allocated plenty of memory, otherwise this will fail
     # Inject plugin install, then resume with orignial entrypoint command
@@ -221,7 +218,7 @@ services:
         # Create the bucket within MinIO and file path for the data dict
         mkdir -p data/dti-da-public-files-nonprod/user_reference_docs
         # Create the bucket within MinIO used for endpoints that list generated downloads
-        mkdir -p data/bulk_download
+        mkdir -p data/bulk-download
         cp dockermount/usaspending_api/data/Data_Dictionary_Crosswalk.xlsx data/dti-da-public-files-nonprod/user_reference_docs/Data_Dictionary_Crosswalk.xlsx
         minio server --address ":10001" --console-address ":10002" /data
       "
@@ -279,6 +276,9 @@ services:
       SPARK_MASTER_HOST: ${SPARK_MASTER_HOST:-spark-master}
       SPARK_MASTER_PORT: ${SPARK_MASTER_PORT:-7077}
       SPARK_WORKER_WEBUI_PORT: ${SPARK_WORKER_WEBUI_PORT:-4041}
+      PYTHONPATH: /project
+      DJANGO_SETTINGS_MODULE: "usaspending_api.settings"
+      DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
     command: /bin/sh -c "$${SPARK_HOME}/bin/spark-class org.apache.spark.deploy.worker.Worker --webui-port $${SPARK_WORKER_WEBUI_PORT} spark://$${SPARK_MASTER_HOST}:$${SPARK_MASTER_PORT}"
     ports:
       - ${SPARK_WORKER_WEBUI_PORT:-4041}:4041

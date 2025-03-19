@@ -41,7 +41,9 @@ cd usaspending-api
 ```
 ### Environment Variables
 
-#### Create Your `.env` File
+Choose an option between `.env` and `.envrc` that best fits your preferred workflow. Pay close attention to the values in these environment variables as usage of `localhost` vs a container's name differ between local setups.
+
+#### Create Your `.env` File (recommended)
 Copy the template `.env` file with local runtime environment variables defined. Change as needed for your environment. _This file is git-ignored and will not be committed by git if changed._
 
 ```shell
@@ -50,7 +52,7 @@ cp .env.template .env
 
 A `.env` file is a common way to manage environment variables in a declarative file. Certain tools, like `docker compose`, will read and honor these variables.
 
-#### `.envrc` File
+#### Create Your `.envrc` File
 _[direnv](https://direnv.net/) is a shell extension that automatically runs shell commands in a `.envrc` file (commonly env var `export` commands) when entering or exiting a folder with that file_
 
 Create a `.envrc` file in the repo root, which will be ignored by git. Change credentials and ports as-needed for your local dev environment.
@@ -95,6 +97,21 @@ docker compose --profile usaspending up usaspending-db
 ```
 ... will create and run a Postgres database.
 
+Use the following commands to create necessary users and set the `usaspending` user's search_path
+
+```shell
+docker exec -it usaspending-db sh -c " \
+    psql \
+        -h localhost \
+        -p 5432 \
+        -U usaspending \
+        -d data_store_api \
+        -c 'CREATE USER etl_user;' \
+        -c 'CREATE USER readonly;' \
+        -c 'ALTER USER usaspending SET search_path TO public,raw,int,temp,rpt;' \
+"
+```
+
 ##### Bring DB Schema Up-to-Date
 
 - To run [Django migrations](https://docs.djangoproject.com/en/2.2/topics/migrations/).
@@ -118,21 +135,6 @@ _Alternatively, to download a fully populuated production snapshot of the databa
 
 - Recreate matviews with the command documented in the previous section if this is done
 
-- Use the following commands to create necessary users and set the `usaspending` user's search_path
-
-    ```shell
-        docker exec -it usaspending-db sh -c " \
-            psql \
-                -h localhost \
-                -p 5432 \
-                -U usaspending \
-                -d data_store_api \
-                -c 'CREATE USER etl_user;' \
-                -c 'CREATE USER readonly;' \
-                -c 'ALTER USER usaspending SET search_path TO public,raw,int,temp,rpt;' \
-        "
-    ```
-
 _**Executing individual data-loaders** to load in data is also possible, but requires more familiarity with those ad-hoc scripts and commands, and also requires an external data source (Data Broker DB, or external file, etc.) from which to load the data._
 
 - For details on loading reference data, Data Accountability Broker Submissions, and current USAspending data into the API, see [loading_data.md](loading_data.md).
@@ -150,11 +152,17 @@ docker compose --profile usaspending up usaspending-es
 
 - Optionally, to see log output, use `docker compose logs usaspending-es` (these logs are stored by docker even if you don't use this).
 
-##### Generate Elasticsearch Indexes
-The following will generate the indexes:
- 
+While not required, it is highly recommended to also create the Kibana docker container for querying the Elasticsearch cluster.
+
 ```shell
-CURR_DATE=$(date '+%m-%d-%Y')
+docker compose --profile usaspending up usaspending-kibana-es
+```
+
+#### Generate Elasticsearch Indexes
+The following will generate the indexes:
+
+```shell
+CURR_DATE=$(date '+%Y-%m-%d-%H-%M-%S')
 docker compose run --rm usaspending-manage python3 -u manage.py elasticsearch_indexer --create-new-index --index-name "$CURR_DATE-transactions" --load-type transaction
 docker compose run --rm usaspending-manage python3 -u manage.py elasticsearch_indexer --create-new-index --index-name "$CURR_DATE-awards" --load-type award
 docker compose run --rm usaspending-manage python3 -u manage.py elasticsearch_indexer --create-new-index --index-name "$CURR_DATE-recipients" --load-type recipient
@@ -234,7 +242,7 @@ Setup python, virtual environment, and pip dependencies, then check version info
 
 ```shell
 make local-dev-setup
-source $(make activate) 
+source $(make activate)
 ```
 
 Your prompt should then look as below to show you are _in_ the virtual environment named `usaspending-api` (_to exit that virtual environment, simply type `deactivate` at the prompt_).
@@ -260,10 +268,6 @@ To satisfy these dependencies and include execution of these tests, do the follo
     1. _WARNING: If this is set at all, then ALL above dependencies must be met or ALL tests will fail (Django will try this connection on ALL tests' run)_
     1. This DB could be one you always have running in a local Postgres instance, or one you spin up in a Docker container just before tests are run
 1. If invoking `pytest` within a docker container (e.g. using the `usaspending-test` container), you _must_ mount the host's docker socket. This is declared already in the `docker-compose.yml` file services, but would be done manually with: `-v /var/run/docker.sock:/var/run/docker.sock`
-    - Alternatively, you can add the Broker DB container to the same network as the USAspending containers:
-        ```shell
-        docker network connect usaspending-api_default dataact-broker-db
-        ```
 
 _**NOTE**: Broker source code should be re-fetched and image rebuilt to ensure latest integration is tested_
 

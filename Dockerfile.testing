@@ -9,8 +9,10 @@
 FROM usaspending-backend:latest
 
 # Install dependencies
-RUN apt update && \
-    apt install -y build-essential coreutils wget
+RUN apt update && apt install -y \
+    build-essential \
+    coreutils \
+    wget
 
 # Install Amazon Corretto 8 (a Long-Term Supported (LTS) distribution of OpenJDK 8)
 RUN wget -qO - https://apt.corretto.aws/corretto.key | gpg --dearmor -o /usr/share/keyrings/corretto-keyring.gpg && \
