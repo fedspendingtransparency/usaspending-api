@@ -65,7 +65,7 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
             identifier_replacements["json_agg"] = "collect_list"
             # Replace the Postgres regex operator with the Databricks regex operator
             identifier_replacements["~"] = "rlike"
-            identifier_replacements["jsonb_build_object"] = "named_struct"
+            identifier_replacements["jsonb_build_object"] = "map"
             identifier_replacements["to_jsonb"] = "to_json"
         else:
             raise ValueError(
