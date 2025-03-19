@@ -92,9 +92,7 @@ def test_spending_by_subaward_grouped_success(
 
 
 @pytest.mark.django_db
-def test_spending_by_subaward_grouped_legacy_filter(
-    client, monkeypatch, elasticsearch_subaward_index, subaward_grouped_data_fixture
-):
+def test_spending_by_subaward_grouped_legacy_filter(client, monkeypatch, elasticsearch_subaward_index, subaward_grouped_data_fixture):
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
 
     resp = client.post(
@@ -123,9 +121,7 @@ def test_spending_by_subaward_grouped_legacy_filter(
 
 
 @pytest.mark.django_db
-def test_spending_by_subaward_grouped_non_legacy_filter(
-    client, monkeypatch, elasticsearch_subaward_index, subaward_grouped_data_fixture
-):
+def test_spending_by_subaward_grouped_non_legacy_filter(client, monkeypatch, elasticsearch_subaward_index, subaward_grouped_data_fixture):
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
 
     resp = client.post(

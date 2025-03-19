@@ -16,10 +16,10 @@ urlpatterns = [
     re_path(r"^spending_by_category/", include("usaspending_api.search.v2.urls_spending_by_category")),
     re_path(r"^spending_by_category$", SpendingByCategoryVisualizationViewSet.as_view()),
     re_path(r"^spending_by_geography", SpendingByGeographyVisualizationViewSet.as_view()),
+    re_path(r"^spending_by_subaward_grouped", SpendingBySubawardGroupedVisualizationViewSet.as_view()),
     re_path(r"^spending_by_transaction_count", es.SpendingByTransactionCountVisualizationViewSet.as_view()),
     re_path(r"^spending_by_transaction_grouped", es.SpendingByTransactionGroupedVisualizationViewSet.as_view()),
     re_path(r"^spending_by_transaction", es.SpendingByTransactionVisualizationViewSet.as_view()),
     re_path(r"^spending_over_time", SpendingOverTimeVisualizationViewSet.as_view()),
     re_path(r"^transaction_spending_summary", es.TransactionSummaryVisualizationViewSet.as_view()),
-    re_path(r"^spending_by_subaward_grouped", SpendingBySubawardGroupedVisualizationViewSet.as_view()),
 ]

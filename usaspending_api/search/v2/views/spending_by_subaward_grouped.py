@@ -5,8 +5,7 @@ from typing import Any
 from dataclasses import dataclass
 from decimal import Decimal
 from django.conf import settings
-from elasticsearch_dsl import A
-from elasticsearch_dsl import Q as ES_Q
+from elasticsearch_dsl import A, Q as ES_Q
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
