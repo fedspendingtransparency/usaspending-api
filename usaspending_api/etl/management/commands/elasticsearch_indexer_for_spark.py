@@ -1,12 +1,11 @@
 import logging
 
-
-from usaspending_api.common.helpers.spark_helpers import get_active_spark_session, configure_spark_session
-from usaspending_api.etl.management.commands.elasticsearch_indexer import AbstractElasticsearchIndexer
+from usaspending_api.common.helpers.spark_helpers import configure_spark_session, get_active_spark_session
 from usaspending_api.etl.elasticsearch_loader_helpers.controller import AbstractElasticsearchIndexerController
 from usaspending_api.etl.elasticsearch_loader_helpers.controller_for_spark import (
     DeltaLakeElasticsearchIndexerController,
 )
+from usaspending_api.etl.management.commands.elasticsearch_indexer import AbstractElasticsearchIndexer
 
 logger = logging.getLogger("script")
 
@@ -35,5 +34,8 @@ class Command(AbstractElasticsearchIndexer):
         if not spark:
             spark_created_by_command = True
             spark = configure_spark_session(**extra_conf, spark_context=spark)
+
+        # Make sure we keep nulls in our JSON, even if using a pre-existing Spark session
+        spark.conf("spark.sql.jsonGenerator.ignoreNullFields", "false")
 
         return DeltaLakeElasticsearchIndexerController(config, spark, spark_created_by_command)
