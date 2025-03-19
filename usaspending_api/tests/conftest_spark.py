@@ -168,7 +168,8 @@ def spark(tmp_path_factory) -> SparkSession:
         # YARN or Mesos or Kubernetes) cluster manager, only client mode is supported.
         "spark.submit.deployMode": "client",
         # Default of 1g (1GiB) for Driver. Increase here if the Java process is crashing with memory errors
-        "spark.driver.memory": "512m",
+        "spark.driver.memory": "1g",
+        "spark.executor.memory": "1g",
         "spark.ui.enabled": "false",  # Does the same as setting SPARK_TESTING=true env var
         "spark.jars.packages": ",".join(SPARK_SESSION_JARS),
         # Delta Lake config for Delta tables and SQL. Need these to keep Delta table metadata in the metastore
