@@ -1,5 +1,6 @@
 import copy
 import logging
+from decimal import Decimal
 
 from django.conf import settings
 from rest_framework.request import Request
@@ -117,7 +118,7 @@ class SpendingByTransactionGroupedVisualizationViewSet(APIView):
             {
                 "award_id": prime_award.key,
                 "transaction_count": prime_award.doc_count,
-                "transaction_obligation": float(prime_award.transaction_obligation.value),
+                "transaction_obligation": Decimal(prime_award.transaction_obligation.value).quantize(Decimal(".01")),
                 "award_generated_internal_id": prime_award.award_generated_internal_id.buckets[0].key,
             }
             for prime_award in agg_buckets
