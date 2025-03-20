@@ -14,7 +14,8 @@ CREATE VIEW location_delta_view AS
         WHEN pop_country_name = 'UNITED STATES OF AMERICA'
             THEN TO_JSONB(
                 JSONB_BUILD_OBJECT(
-                    'country_name', 'UNITED STATES'
+                    'country_name', 'UNITED STATES',
+                    'location_type', 'country'
                 )
             )
         ELSE
