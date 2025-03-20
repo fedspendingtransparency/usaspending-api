@@ -61,12 +61,12 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
         elif self.config["load_type"] == "recipient":
             identifier_replacements = None
         elif self.config["load_type"] == "location":
-            # Replace the Postgres regex operator with the Databricks regex operator
-            identifier_replacements["~"] = "rlike"
-            identifier_replacements["state_data"] = "global_temp.state_data"
             identifier_replacements["array_agg"] = "collect_list"
             identifier_replacements["json_agg"] = "collect_list"
-            identifier_replacements["jsonb_build_object"] = "named_struct"
+            # Replace the Postgres regex operator with the Databricks regex operator
+            identifier_replacements["~"] = "rlike"
+            identifier_replacements["jsonb_build_object"] = "map"
+            identifier_replacements["to_jsonb"] = "to_json"
         else:
             raise ValueError(
                 f"Unrecognized load_type {self.config['load_type']}, or this function does not yet support it"
@@ -117,7 +117,9 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
         logger.info(format_log(f"Using extract_sql:\n{extract_sql}", action="Extract"))
         df = self.spark.sql(extract_sql)
         df_record_count = df.count()  # safe to doublecheck the count of the *actual* data being processed
-
+        if not df_record_count:
+            logger.info(format_log("No records found. Index will not be updated."))
+            return
         if self.config["extra_null_partition"]:
             # Data which may have a "NULL Partition" is parent-child grouped data, where child records are grouped by
             # the config["primary_key"], which is the PK field of the parent records.

@@ -84,12 +84,14 @@ This endpoint returns a list of the top results of Awarding Agencies sorted by t
                 "results": [
                     {
                         "amount": 482714449750.95,
+                        "total_outlays": null,
                         "name": "Department of Health and Human Services",
                         "code": "HHS",
                         "id": 806
                     },
                     {
                         "amount": 284418429693.37,
+                        "total_outlays": null,
                         "name": "Social Security Administration",
                         "code": "SSA",
                         "id": 539
@@ -110,6 +112,7 @@ This endpoint returns a list of the top results of Awarding Agencies sorted by t
 + `code` (required, string, nullable)
     `code` is a user-displayable code (such as a program activity or NAICS code, but **not** a database ID). When no such code is relevant, return a `null`.
 + `amount` (required, number)
++ `total_outlays` (required, number, nullable)
 + `agency_slug` (required, string, nullable)
     `agency_slug` is a string used to generate a link to the agency profile page. Will be `NULL` if the agency does not have a profile page.
 
@@ -130,7 +133,7 @@ This endpoint returns a list of the top results of Awarding Agencies sorted by t
 + `agencies` (optional, array[AgencyObject], fixed-type)
 + `recipient_search_text`: [`Hampton`] (optional, array[string])
 + `recipient_id` (optional, string)
-    A unique identifier for the recipient which includes the recipient hash and level.
+    A unique identifier for the recipient which includes the recipient hash and level. This filter is not supported by subawards.
 + `recipient_scope` (optional, enum[string])
     + Members
         + `domestic`

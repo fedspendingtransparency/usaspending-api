@@ -2,8 +2,8 @@ from collections import OrderedDict
 from datetime import datetime, timedelta, timezone
 
 import pytest
-from django.db.models import F, Q
-from django.db.models.functions import Upper
+from django.conf import settings
+from django.db import connection
 from django.test import override_settings
 from elasticsearch import Elasticsearch
 from model_bakery import baker
@@ -30,9 +30,10 @@ from usaspending_api.etl.management.commands.elasticsearch_indexer import (
 from usaspending_api.etl.management.commands.elasticsearch_indexer import (
     parse_cli_args,
 )
-from usaspending_api.recipient.models import RecipientProfile, StateData
+from usaspending_api.recipient.models import RecipientProfile
 from usaspending_api.search.models import AwardSearch, TransactionSearch
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
+from usaspending_api.tests.conftest_spark import create_and_load_all_delta_tables
 
 
 @pytest.fixture
@@ -107,6 +108,8 @@ def award_data_fixture(db):
         funding_agency_id=1,
         update_date="2012-05-19",
         action_date="2012-05-19",
+        subaward_count=0,
+        transaction_unique_id=fpds_unique_key,
     )
     baker.make(
         "search.AwardSearch",
@@ -123,6 +126,29 @@ def award_data_fixture(db):
         date_signed="2016-10-01",
         update_date="2014-07-21",
         action_date="2016-10-01",
+        subaward_count=0,
+        transaction_unique_id=fabs_unique_key,
+    )
+    baker.make(
+        "search.AwardSearch",
+        award_id=3,
+        generated_unique_award_id="'CONT_AWD_IND12PB00323",
+        latest_transaction_id=1,
+        earliest_transaction_search_id=1,
+        latest_transaction_search_id=1,
+        is_fpds=True,
+        type="A",
+        category="contracts",
+        piid="IND12PB00323",
+        description="pop tarts and assorted cereals",
+        total_obligation=500000.00,
+        date_signed="2010-10-1",
+        awarding_agency_id=1,
+        funding_agency_id=1,
+        update_date="2012-05-19",
+        action_date="2012-05-19",
+        subaward_count=0,
+        transaction_unique_id=fpds_unique_key,
     )
     baker.make("accounts.FederalAccount", id=1)
     baker.make(
@@ -288,6 +314,7 @@ def test_create_and_load_new_recipient_index(recipient_data_fixture, elasticsear
     assert es_recipient_docs == original_db_recipients_count
 
 
+@pytest.mark.django_db(transaction=True)
 def test_create_and_load_new_location_index(location_data_fixture, elasticsearch_location_index, monkeypatch):
     """Test the `elasticsearch_indexer` Django management command to create and load a new locations index"""
 
@@ -296,33 +323,17 @@ def test_create_and_load_new_location_index(location_data_fixture, elasticsearch
     # Ensure index is not yet created
     assert not client.indices.exists(elasticsearch_location_index.index_name)
 
-    valid_state_names = StateData.objects.values_list(Upper("name"), flat=True)
-    pop_ts = (
-        TransactionSearch.objects.filter(
-            (Q(pop_country_name="UNITED STATES") & Q(pop_state_name__in=valid_state_names))
-            | ~(Q(pop_country_name="UNITED STATES") & Q(pop_state_name__isnull=False))
-        )
-        .annotate(countries=F("pop_country_name"), states=F("pop_state_name"))
-        .values("countries", "states")
-    )
-    rl_ts = (
-        TransactionSearch.objects.filter(
-            (
-                Q(recipient_location_country_name="UNITED STATES")
-                & Q(recipient_location_state_name__in=valid_state_names)
-            )
-            | ~(Q(recipient_location_country_name="UNITED STATES") & Q(recipient_location_state_name__isnull=False))
-        )
-        .annotate(countries=F("recipient_location_country_name"), states=F("recipient_location_state_name"))
-        .values("countries", "states")
-    )
-    original_db_locations_count = pop_ts.union(rl_ts).count()
-
     setup_elasticsearch_test(monkeypatch, elasticsearch_location_index)
     assert client.indices.exists(elasticsearch_location_index.index_name)
 
     es_location_docs = client.count(index=elasticsearch_location_index.index_name)["count"]
-    assert es_location_docs == original_db_locations_count
+
+    ensure_view_exists(settings.ES_LOCATIONS_ETL_VIEW_NAME)
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT COUNT(*) FROM location_delta_view")
+        db_response = cursor.fetchone()
+
+    assert es_location_docs == db_response[0]
 
 
 def test_create_and_load_new_transaction_index(award_data_fixture, elasticsearch_transaction_index, monkeypatch):
@@ -503,7 +514,10 @@ def test_delete_docs_by_unique_key_exceed_max_results_window(award_data_fixture,
             assert "controlled by the [index.max_result_window] index level setting" in str(exc_info.value)
 
 
-def test__check_awards_for_deletes(award_data_fixture, monkeypatch, db):
+@pytest.mark.django_db(transaction=True)
+def test__check_awards_for_deletes(
+    award_data_fixture, monkeypatch, spark, s3_unittest_data_bucket, hive_unittest_metastore_db
+):
     monkeypatch.setattr(
         "usaspending_api.etl.elasticsearch_loader_helpers.delete_data.execute_sql_statement", mock_execute_sql
     )
@@ -514,6 +528,23 @@ def test__check_awards_for_deletes(award_data_fixture, monkeypatch, db):
     id_list = ["CONT_AWD_WHATEVER", "CONT_AWD_IND12PB00323"]
     awards = _check_awards_for_deletes(id_list)
     assert awards == [OrderedDict([("generated_unique_award_id", "CONT_AWD_WHATEVER")])]
+
+    # Check to ensure sql properly escapes characters
+    id_list = ["CONT_AWD_SOMETHING_BEFORE", "'CONT_AWD_IND12PB00323", "CONT_AWD_SOMETHING_AFTER"]
+    awards = _check_awards_for_deletes(id_list)
+    assert sorted(awards, key=lambda x: x["generated_unique_award_id"]) == [
+        OrderedDict([("generated_unique_award_id", "CONT_AWD_SOMETHING_AFTER")]),
+        OrderedDict([("generated_unique_award_id", "CONT_AWD_SOMETHING_BEFORE")]),
+    ]
+
+    tables_to_load = ["awards"]
+    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
+    id_list = ["CONT_AWD_SOMETHING_BEFORE", "'CONT_AWD_IND12PB00323", "CONT_AWD_SOMETHING_AFTER"]
+    awards = _check_awards_for_deletes(id_list, spark)
+    assert sorted(awards, key=lambda x: x["generated_unique_award_id"]) == [
+        OrderedDict([("generated_unique_award_id", "CONT_AWD_SOMETHING_AFTER")]),
+        OrderedDict([("generated_unique_award_id", "CONT_AWD_SOMETHING_BEFORE")]),
+    ]
 
 
 def test_delete_awards(award_data_fixture, elasticsearch_transaction_index, elasticsearch_award_index, monkeypatch, db):
@@ -561,7 +592,7 @@ def test_delete_awards(award_data_fixture, elasticsearch_transaction_index, elas
     )
     delete_awards(client, es_etl_config)
     es_award_docs = client.count(index=elasticsearch_award_index.index_name)["count"]
-    assert es_award_docs == 0
+    assert es_award_docs == 1
 
 
 def test_delete_awards_zero_for_unmatched_transactions(
@@ -692,4 +723,5 @@ def _process_es_etl_test_config(client: Elasticsearch, test_es_index: TestElasti
     cli_args, _ = parser.parse_known_args(args=test_args)  # parse the known args programmatically
     cli_opts = {**vars(cli_args), **test_es_index.etl_config}  # update defaults with test config
     es_etl_config = parse_cli_args(cli_opts, client)  # use command's config parser for final config for testing ETL
+    es_etl_config["slices"] = "auto"  # no need to calculate slices for testing
     return es_etl_config

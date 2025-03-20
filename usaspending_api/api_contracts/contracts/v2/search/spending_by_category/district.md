@@ -86,13 +86,15 @@ This endpoint returns a list of the top results of Congressional Districts sorte
                         "amount": 4223116662.42,
                         "code": "90",
                         "id": null,
-                        "name": "MS-MULTIPLE DISTRICTS"
+                        "name": "MS-MULTIPLE DISTRICTS",
+                        "total_outlays": null,
                     },
                     {
                         "amount": 1777649549.5,
                         "code": "12",
                         "id": null,
-                        "name": "TX-12"
+                        "name": "TX-12",
+                        "total_outlays": null,
                     }
                 ],
                 "messages": [
@@ -110,6 +112,7 @@ This endpoint returns a list of the top results of Congressional Districts sorte
 + `code` (required, string, nullable)
     `code` is a user-displayable code (such as a program activity or NAICS code, but **not** a database ID). When no such code is relevant, return a `null`.
 + `amount` (required, number)
++ `total_outlays` (required, number, nullable)
 
 ## PageMetadataObject (object)
 + `page` (required, number)
@@ -128,7 +131,7 @@ This endpoint returns a list of the top results of Congressional Districts sorte
 + `agencies` (optional, array[AgencyObject], fixed-type)
 + `recipient_search_text`: [`Hampton`] (optional, array[string])
 + `recipient_id` (optional, string)
-    A unique identifier for the recipient which includes the recipient hash and level.
+    A unique identifier for the recipient which includes the recipient hash and level. This filter is not supported by subawards.
 + `recipient_scope` (optional, enum[string])
     + Members
         + `domestic`

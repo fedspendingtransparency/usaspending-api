@@ -15,6 +15,7 @@ def location_data_fixture(db):
         transaction_unique_id="TRANSACTION500",
         pop_country_name="UNITED STATES",
         pop_state_name="CALIFORNIA",
+        pop_state_code="CA",
         pop_city_name="LOS ANGELES",
         pop_county_name="LOS ANGELES",
         pop_zip5=90001,
@@ -53,7 +54,7 @@ def location_data_fixture(db):
         recipient_location_zip5=31548,
         recipient_location_congressional_code_current="01",
         recipient_location_congressional_code="01",
-        recipient_location_state_fips="44",
+        recipient_location_state_fips="13",
         recipient_location_county_code="444",
     )
     baker.make(
@@ -76,9 +77,6 @@ def location_data_fixture(db):
         recipient_location_congressional_code_current="30",
         recipient_location_congressional_code="30",
     )
-    baker.make("recipient.StateData", id=10, fips="06", code="CA", name="California", type="state", year=2024)
-    baker.make("recipient.StateData", id=20, fips="08", code="CO", name="Colorado", type="state", year=2024)
-    baker.make("recipient.StateData", id=30, fips="13", code="GA", name="Georgia", type="state", year=2024)
 
 
 def test_exact_match(client, monkeypatch, location_data_fixture, elasticsearch_location_index):
@@ -116,25 +114,11 @@ def test_multiple_types_of_matches(client, monkeypatch, location_data_fixture, e
 
     assert response.status_code == status.HTTP_200_OK
     assert len(response.data) == 3
-    assert response.data["count"] == 4
+    assert response.data["count"] == 2
     assert response.data["messages"] == [""]
     assert response.data["results"] == {
         "countries": [{"country_name": "DENMARK"}],
         "cities": [{"city_name": "DENVER", "state_name": "COLORADO", "country_name": "UNITED STATES"}],
-        "counties": [
-            {
-                "county_fips": "22222",
-                "county_name": "DENVER",
-                "state_name": "COLORADO",
-                "country_name": "UNITED STATES",
-            },
-            {
-                "county_fips": "44444",
-                "county_name": "CAMDEN",
-                "state_name": "GEORGIA",
-                "country_name": "UNITED STATES",
-            },
-        ],
     }
 
 

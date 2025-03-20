@@ -1,0 +1,32 @@
+name: Cancel Running Workflow
+
+on:
+  workflow_call:
+
+jobs:
+  Run:
+    name: Run
+    runs-on: ${{ vars.RUNNER_VERSION }}
+    steps:
+      - name: Cancel Workflow
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.actions.cancelWorkflowRun({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: context.runId
+            });
+
+      - name: Waiting for Workflow to Cancel
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // While this should never take this long, need to protect against infinite loop
+            const time_to_wait = 10 * 60 * 1000;
+            const start_time = Date.now();
+            const delay = ms => new Promise(res => setTimeout(res, ms));
+            while (Date.now() - start_time < time_to_wait) {
+              core.info('Waiting for workflow to cancel ...');
+              await delay(5000);
+            }

@@ -86,13 +86,15 @@ This endpoint returns a list of the top results of NAICS sorted by the total amo
                         "amount": 17519670688.62,
                         "code": "336411",
                         "id": null,
-                        "name": "Aircraft Manufacturing"
+                        "name": "Aircraft Manufacturing",
+                        "total_outlays": null,
                     },
                     {
                         "amount": 1446126444.05,
                         "code": "236220",
                         "id": null,
-                        "name": "Commercial and Institutional Building Construction"
+                        "name": "Commercial and Institutional Building Construction",
+                        "total_outlays": null,
                     },
                 ],
                 "messages": [
@@ -109,6 +111,7 @@ This endpoint returns a list of the top results of NAICS sorted by the total amo
 + `code` (required, string, nullable)
     `code` is a user-displayable code (such as a program activity or NAICS code, but **not** a database ID). When no such code is relevant, return a `null`.
 + `amount` (required, number)
++ `total_outlays` (required, number, nullable)
 
 ## PageMetadataObject (object)
 + `page` (required, number)
@@ -127,7 +130,7 @@ This endpoint returns a list of the top results of NAICS sorted by the total amo
 + `agencies` (optional, array[AgencyObject], fixed-type)
 + `recipient_search_text`: [`Hampton`] (optional, array[string])
 + `recipient_id` (optional, string)
-    A unique identifier for the recipient which includes the recipient hash and level.
+    A unique identifier for the recipient which includes the recipient hash and level. This filter is not supported by subawards.
 + `recipient_scope` (optional, enum[string])
     + Members
         + `domestic`
