@@ -291,11 +291,13 @@ def validate_url_and_parts(url_conf_name, resource_conf_prefix, values):
             f"consistently, or only provide a complete {url_conf_name} and leave the others as None or unset, "
             f"or leave the {url_conf_name} None or unset and provide only the required URL-parts. "
             "Parts not matching:\n"
-            f"{'='*30}\n"
-            f"USASpending DB: {os.getenv('DATABASE_URL')}\n"
-            f"BROKER DB: {os.getenv('DATA_BROKER_DATABASE_URL')}\n"
-            f"ENV_CODE: {os.getenv('ENV_CODE')}\n"
-            f"{'='*30}\n"
+            f"{'='*50}\n"
+            f"BROKER DB URL: {os.getenv('DATA_BROKER_DATABASE_URL')}\n"
+            f"BROKER_DB_HOST: {os.getenv('BROKER_DB_HOST')}\n"
+            f"BROKER_DB_PORT: {os.getenv('BROKER_DB_PORT')}\n"
+            f"BROKER_DB_USER: {os.getenv('BROKER_DB_USER')}\n"
+            f"BROKER_DB_PASSOWRD: {os.getenv('BROKER_DB_PASSOWRD')}\n"
+            f"{'='*50}\n"
         )
         for k, v in url_config_errors.items():
             err_msg += f"\tPart: {k}, Part Value Provided: {v[0]}, Value found in {url_conf_name}: {v[1]}\n"
