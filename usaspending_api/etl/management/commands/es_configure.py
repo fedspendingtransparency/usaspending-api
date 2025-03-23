@@ -13,6 +13,7 @@ CURL_STATEMENT = 'curl -XPUT "{url}" -H "Content-Type: application/json" -d \'{d
 CURL_COMMANDS = {
     "template": "{host}/_template/{name}?pretty",
     "cluster": "{host}/_cluster/settings?pretty",
+    "ingest_pipeline": "{host}/_ingest/pipeline/{name}?pretty",
 }
 
 FILES = {
@@ -22,6 +23,8 @@ FILES = {
     "subaward_template": settings.APP_DIR / "etl" / "es_subaward_template.json",
     "recipient_profile_template": settings.APP_DIR / "etl" / "es_recipient_profile_template.json",
     "location_template": settings.APP_DIR / "etl" / "es_location_template.json",
+    "award_ingest_pipeline": settings.APP_DIR / "etl" / "es_award_pipeline.json",
+    "subaward_ingest_pipeline": settings.APP_DIR / "etl" / "es_subaward_pipeline.json",
 }
 
 
@@ -64,27 +67,44 @@ class Command(BaseCommand):
             self.index_pattern = f"*{settings.ES_AWARDS_NAME_SUFFIX}"
             self.max_result_window = settings.ES_AWARDS_MAX_RESULT_WINDOW
             self.template_name = "award_template"
+            # self.default_pipeline_name = "award_ingest_pipeline"
+            self.default_pipeline_name = None
         elif options["load_type"] in ("transaction", "transactions"):
             self.index_pattern = f"*{settings.ES_TRANSACTIONS_NAME_SUFFIX}"
             self.max_result_window = settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW
             self.template_name = "transaction_template"
+            self.default_pipeline_name = None
         elif options["load_type"] == "subaward":
             self.index_pattern = f"*{settings.ES_SUBAWARD_NAME_SUFFIX}"
             self.max_result_window = settings.ES_SUBAWARD_MAX_RESULT_WINDOW
             self.template_name = "subaward_template"
+            # self.default_pipeline_name = "subaward_ingest_pipeline"
+            self.default_pipeline_name = None
         elif options["load_type"] == "recipient":
             self.index_pattern = f"*{settings.ES_RECIPIENTS_NAME_SUFFIX}"
             self.max_result_window = settings.ES_RECIPIENTS_MAX_RESULT_WINDOW
             self.template_name = "recipient_profile_template"
+            self.default_pipeline_name = None
         elif options["load_type"] == "location":
             self.index_pattern = f"*{settings.ES_LOCATIONS_NAME_SUFFIX}"
             self.max_result_window = settings.ES_LOCATIONS_MAX_RESULT_WINDOW
             self.template_name = "location_template"
+            self.default_pipeline_name = None
         else:
             raise RuntimeError(f"No config for {options['load_type']}")
 
         cluster = self.get_elasticsearch_settings()
         template = self.get_index_template()
+
+        if self.default_pipeline_name is not None:
+            ingest_pipeline_dict = self.return_json_from_file(FILES[self.default_pipeline_name])
+            template["settings"]["index.default_pipeline"] = self.default_pipeline_name
+            self.run_curl_cmd(
+                payload=ingest_pipeline_dict,
+                url=CURL_COMMANDS["ingest_pipeline"],
+                host=settings.ES_HOSTNAME,
+                name=self.default_pipeline_name,
+            )
 
         if not options["template_only"] and cluster:
             self.run_curl_cmd(payload=cluster, url=CURL_COMMANDS["cluster"], host=settings.ES_HOSTNAME)
