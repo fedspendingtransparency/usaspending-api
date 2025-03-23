@@ -1,0 +1,66 @@
+{
+  "description": "Data transformation steps to run on Awards before being inserted into Elasticsearch",
+  "processors": [
+    {
+      "script": {
+        "lang": "painless",
+        "source": "if (ctx.pop_state_code != null && ctx.pop_congressional_code_current != null) {ctx.pop_congressional_cur_agg_key = ctx.pop_state_code + ctx.pop_congressional_code_current;}"
+      }
+    },
+    {
+      "script": {
+        "lang": "painless",
+        "source": "if (ctx.pop_state_code != null && ctx.pop_county_code != null) {ctx.pop_county_agg_key = ctx.pop_state_code + ctx.pop_county_code;}"
+      }
+    },
+    {
+      "script": {
+        "lang": "painless",
+        "source": "if (ctx.pop_state_code != null && ctx.pop_congressional_code != null) {ctx.pop_congressional_agg_key = ctx.pop_state_code + ctx.pop_congressional_code;}"
+      }
+    },
+    {
+      "script": {
+        "lang": "painless",
+        "source": "if (ctx.recipient_location_state_code != null && ctx.recipient_location_congressional_code_current != null) {ctx.recipient_location_congressional_cur_agg_key = ctx.recipient_location_state_code + ctx.recipient_location_congressional_code_current;}"
+      }
+    },
+    {
+      "script": {
+        "lang": "painless",
+        "source": "if (ctx.recipient_location_state_code != null && ctx.recipient_location_congressional_code != null) {ctx.recipient_location_congressional_agg_key = ctx.recipient_location_state_code + ctx.recipient_location_congressional_code;}"
+      }
+    },
+    {
+      "script": {
+        "lang": "painless",
+        "source": "if (ctx.recipient_location_state_code != null && ctx.recipient_location_county_code != null) {ctx.recipient_location_county_agg_key = ctx.recipient_location_state_code + ctx.recipient_location_county_code;}"
+      }
+    },
+    {
+      "script": {
+        "lang": "painless",
+        "source": "if (ctx.recipient_hash != null && ctx.recipient_levels != null) {ctx.recipient_agg_key = ctx.recipient_hash + \"/\" + ctx.recipient_levels.toString();}"
+      }
+    },
+    {
+      "remove": {
+        "field": [
+          "recipient_levels",
+          "funding_toptier_agency_id",
+          "funding_subtier_agency_id",
+          "recipient_location_state_name",
+          "recipient_location_state_fips",
+          "recipient_location_state_population",
+          "recipient_location_county_population",
+          "recipient_location_congressional_population",
+          "pop_state_name",
+          "pop_state_fips",
+          "pop_state_population",
+          "pop_county_population",
+          "pop_congressional_population"
+        ]
+      }
+    }
+  ]
+}

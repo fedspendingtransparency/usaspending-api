@@ -1,0 +1,29 @@
+{
+  "description": "Data transformation steps to run on Subawards before being inserted into Elasticsearch",
+  "processors": [
+    {
+      "script": {
+        "lang": "painless",
+        "source": "if (ctx.sub_pop_state_code != null && ctx.sub_pop_congressional_code_current != null) {ctx.sub_pop_congressional_cur_agg_key = ctx.sub_pop_state_code + ctx.sub_pop_congressional_code_current;}"
+      }
+    },
+    {
+      "script": {
+        "lang": "painless",
+        "source": "if (ctx.sub_pop_state_code != null && ctx.sub_pop_county_code != null) {ctx.sub_pop_county_agg_key = ctx.sub_pop_state_code + ctx.sub_pop_county_code;}"
+      }
+    },
+    {
+      "script": {
+        "lang": "painless",
+        "source": "if (ctx.sub_recipient_location_state_code != null && ctx.sub_recipient_location_congressional_code_current != null) {ctx.sub_recipient_location_congressional_cur_agg_key = ctx.sub_recipient_location_state_code + ctx.sub_recipient_location_congressional_code_current;}"
+      }
+    },
+    {
+      "script": {
+        "lang": "painless",
+        "source": "if (ctx.sub_recipient_location_state_code != null && ctx.sub_recipient_location_county_code != null) {ctx.sub_recipient_location_county_agg_key = ctx.sub_recipient_location_state_code + ctx.sub_recipient_location_county_code;}"
+      }
+    }
+  ]
+}
