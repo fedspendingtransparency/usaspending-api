@@ -60,7 +60,7 @@ def transform_award_data(worker: TaskSpec, records: List[dict]) -> List[dict]:
         "pop_county_population",
         "pop_congressional_population",
     ]
-    return transform_data(worker, records, converters, agg_key_creations, drop_fields, settings.ES_ROUTING_FIELD)
+    return transform_data(worker, records, converters, agg_key_creations, drop_fields, None)
 
 
 def transform_transaction_data(worker: TaskSpec, records: List[dict]) -> List[dict]:
