@@ -28,8 +28,13 @@ def transaction_recipient_agg_key(record: dict) -> str:
 def subaward_recipient_agg_key(record: dict) -> str:
     """Dictionary key order impacts Elasticsearch behavior!!!"""
     if record["subaward_recipient_hash"] is None:
-        return None
-    return str(record["subaward_recipient_hash"]) + "/" + str(record["subaward_recipient_level"])
+        return ""
+
+    return (
+        str(record["subaward_recipient_hash"])
+        + "/"
+        + (str(record["subaward_recipient_level"]) if record["subaward_recipient_level"] is not None else "")
+    )
 
 
 def awarding_subtier_agency_agg_key(record: dict) -> Optional[str]:
