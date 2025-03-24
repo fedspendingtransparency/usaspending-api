@@ -59,6 +59,7 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         "pop_state_agg_key": "sub_pop_state_agg_key",
         "recipient_location_congressional_cur_agg_key": "sub_recipient_location_congressional_cur_agg_key",
         "recipient_location_county_agg_key": "sub_recipient_location_county_agg_key",
+        "recipient_agg_key": "sub_recipient_agg_key",
     }
 
     @cache_response()

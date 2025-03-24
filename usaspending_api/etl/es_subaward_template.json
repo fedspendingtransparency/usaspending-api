@@ -764,7 +764,7 @@
           }
         }
       },
-      "recipient_agg_key": {
+      "sub_recipient_agg_key": {
         "type": "keyword",
         "eager_global_ordinals": true,
         "fields": {
