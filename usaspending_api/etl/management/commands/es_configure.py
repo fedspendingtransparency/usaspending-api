@@ -67,8 +67,8 @@ class Command(BaseCommand):
             self.index_pattern = f"*{settings.ES_AWARDS_NAME_SUFFIX}"
             self.max_result_window = settings.ES_AWARDS_MAX_RESULT_WINDOW
             self.template_name = "award_template"
-            self.default_pipeline_name = "award_ingest_pipeline"
-            # self.default_pipeline_name = None
+            # self.default_pipeline_name = "award_ingest_pipeline"
+            self.default_pipeline_name = None
         elif options["load_type"] in ("transaction", "transactions"):
             self.index_pattern = f"*{settings.ES_TRANSACTIONS_NAME_SUFFIX}"
             self.max_result_window = settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW
