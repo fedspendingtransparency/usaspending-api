@@ -266,5 +266,5 @@ pyspark-shell: ## Launch a local pyspark REPL shell with all of the packages and
 	--conf spark.hadoop.fs.s3a.connection.ssl.enabled=false \
 	--conf spark.hadoop.fs.s3a.path.style.access=true \
 	--conf spark.sql.catalogImplementation=hive \
-	--conf spark.sql.warehouse.dir='./spark-warehouse' \
-	--conf spark.hadoop.javax.jdo.option.ConnectionURL='jdbc:derby:;databaseName=./spark-warehouse/metastore_db;create=true'
+	--conf spark.sql.warehouse.dir='$(PWD)/spark-warehouse' \
+	--conf spark.hadoop.javax.jdo.option.ConnectionURL='jdbc:derby:;databaseName=$(PWD)/spark-warehouse/metastore_db;create=true'

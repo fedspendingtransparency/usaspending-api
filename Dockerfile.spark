@@ -9,6 +9,7 @@ ARG PROJECT_LOG_DIR=/logs
 RUN apt update && apt install -y \
     build-essential \
     coreutils \
+    curl \
     gcc \
     libbz2-dev \
     libpq-dev \

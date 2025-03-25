@@ -382,6 +382,6 @@ services:
       # Mount the JAR dependencies local repo on host into container to take advantage of caching/reuse
       # i.e., to download the dependencies only once and reuse on subsequent docker compose run calls
       - type: bind
-        source: ./.ivy2
+        source: ${HOME}/.ivy2
         target: /root/.ivy2
         read_only: false
