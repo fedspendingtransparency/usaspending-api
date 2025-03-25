@@ -22,7 +22,7 @@ _**If not using Docker, you'll need to install app components on your machine:**
 > _Using Docker is recommended since it provides a clean environment. Setting up your own local environment requires some technical abilities and experience with modern software tools._
 
 - Command line package manager
-    - Windows' WSL bash uses `apt-get`
+    - Windows' WSL bash uses `apt`
     - MacOS users can use [`Homebrew`](https://brew.sh/)
     - Linux users already know their package manager (`yum`, `apt`, `pacman`, etc.)
 - [`PostgreSQL`](https://www.postgresql.org/download/) version 13.x (with a dedicated `data_store_api` database)
@@ -93,7 +93,7 @@ A postgres database is required to run the app. You can run it in a `postgres` d
 _If not using your own local install..._
 
 ```shell
-docker compose --profile usaspending up usaspending-db
+docker compose --profile usaspending up -d usaspending-db
 ```
 ... will create and run a Postgres database.
 
@@ -144,7 +144,7 @@ _**Executing individual data-loaders** to load in data is also possible, but req
 Some API endpoints reach into Elasticsearch for data.
 
 ```shell
-docker compose --profile usaspending up usaspending-es
+docker compose --profile usaspending up -d usaspending-es
 ```
 ... will create and start a single-node Elasticsearch cluster as a docker container with data persisted to a docker volume.
 

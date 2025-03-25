@@ -68,10 +68,12 @@ services:
       ES_HOST: ${ES_HOST}
       ES_HOSTNAME: ${ES_HOSTNAME}
       DATA_BROKER_DATABASE_URL: postgresql://${BROKER_DB_USER}:${BROKER_DB_PASSWORD}@${BROKER_DB_HOST}:${BROKER_DB_PORT}/data_broker
-      # Location in host machine where broker src code root can be found
-      DATA_BROKER_SRC_PATH: "${PWD}/../data-act-broker-backend"
       MINIO_HOST: ${MINIO_HOST}
       DOWNLOAD_DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
+      # Location in host machine where broker src code root can be found
+      DATA_BROKER_SRC_PATH: "${PWD}/../data-act-broker-backend"
+      # Tests will retrieve the root directory from the path and use it to assume the docker network name
+      PROJECT_SRC_PATH: "${PWD}"
 
   usaspending-ci:
     profiles:

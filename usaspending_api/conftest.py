@@ -568,7 +568,7 @@ def broker_db_setup(django_db_setup, django_db_use_migrations, worker_id):
         name="data-act-broker-init-test-db" + container_name_suffix,
         command=broker_container_command,
         remove=True,
-        network_mode="host",
+        network=f"{os.path.basename(os.environ.get('PROJECT_SRC_PATH') or os.getcwd())}_default",
         environment={"env": broker_config_env_envvar},
         mounts=docker_run_mounts,
         stderr=True,

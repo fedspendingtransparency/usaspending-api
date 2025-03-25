@@ -14,6 +14,7 @@ RUN apt update && apt install -y \
     libpq-dev \
     libssl-dev \
     openssl \
+    procps \
     wget
 
 # Install Amazon Corretto 8 (a Long-Term Supported (LTS) distribution of OpenJDK 8)
