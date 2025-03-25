@@ -561,19 +561,28 @@ def broker_db_setup(django_db_setup, django_db_use_migrations, worker_id):
         else f"_{transform_xdist_worker_id_to_django_test_db_id(worker_id)}"
     )
 
-    # NOTE: use of network_mode="host" applies ONLY when on Linux (i.e. ignored elsewhere)
-    # It allows docker to resolve network addresses (like "localhost") as if running from the docker host
-    log_gen = docker_client.containers.run(
-        broker_docker_image,
-        name="data-act-broker-init-test-db" + container_name_suffix,
-        command=broker_container_command,
-        remove=True,
-        network=f"{os.path.basename(os.environ.get('PROJECT_SRC_PATH') or os.getcwd())}_default",
-        environment={"env": broker_config_env_envvar},
-        mounts=docker_run_mounts,
-        stderr=True,
-        stream=True,
-    )
+    docker_run_args = {
+        "name": "data-act-broker-init-test-db" + container_name_suffix,
+        "command": broker_container_command,
+        "remove": True,
+        # network_mode = "host",
+        # network=f"{os.path.basename(os.environ.get('PROJECT_SRC_PATH') or os.getcwd())}_default",
+        "environment": {"env": broker_config_env_envvar},
+        "mounts": docker_run_mounts,
+        "stderr": True,
+        "stream": True,
+    }
+    if os.environ.get("PROJECT_SRC_PATH") is None:
+        # NOTE: use of network_mode="host" applies ONLY when on Linux (i.e. ignored elsewhere)
+        # It allows docker to resolve network addresses (like "localhost") as if running from the docker host
+        docker_run_args["network_mode"] = "host"
+    else:
+        # The PROJECT_SRC_PATH env is defined in the docker-compose.yaml when running tests inside a container.
+        # In order for the test container to see the Broker containers created by this command we add it to the same
+        # network; this assumes that the network is not set in the docker-compose.yaml and is using the default.
+        docker_run_args["network"] = f"{os.path.basename(os.environ['PROJECT_SRC_PATH'])}_default"
+
+    log_gen = docker_client.containers.run(broker_docker_image, **docker_run_args)
     [logger.info(str(log)) for log in log_gen]  # log container logs from returned streaming log generator
     logger.info("Command ran to completion in container. Broker DB should be setup for tests.")
 
