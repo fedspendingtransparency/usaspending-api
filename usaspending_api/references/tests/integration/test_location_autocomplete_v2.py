@@ -2,8 +2,11 @@ import json
 
 import pytest
 from django.conf import settings
+from elasticsearch_dsl import Q as ES_Q
 from model_bakery import baker
 from rest_framework import status
+
+from usaspending_api.common.elasticsearch.search_wrappers import LocationSearch
 
 
 @pytest.fixture
@@ -163,3 +166,26 @@ def test_no_results(client, monkeypatch, location_data_fixture, elasticsearch_lo
     assert response.data["count"] == 0
     assert response.data["messages"] == [""]
     assert response.data["results"] == {}
+
+
+def test_verify_no_missing_fields(client, monkeypatch, location_data_fixture, elasticsearch_location_index):
+    """Verify that every document has all of the appropriate fields:
+    - location
+    - location_json
+    - location_type
+    """
+
+    monkeypatch.setattr(
+        "usaspending_api.common.elasticsearch.search_wrappers.LocationSearch._index_name",
+        settings.ES_LOCATIONS_QUERY_ALIAS_PREFIX,
+    )
+    elasticsearch_location_index.update_index()
+
+    location_index_fields = ["location", "location_json", "location_type"]
+
+    must_not_queries = [ES_Q("exists", field=field) for field in location_index_fields]
+    must_not_exist_query = ES_Q("bool", must_not=must_not_queries, minimum_should_match=1)
+    search = LocationSearch().query(must_not_exist_query)
+    results = search.execute()
+
+    assert len(results.hits) == 0
