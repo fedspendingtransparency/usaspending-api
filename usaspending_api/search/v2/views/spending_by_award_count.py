@@ -1,18 +1,17 @@
 import copy
 import logging
+from collections import defaultdict
 
 from sys import maxsize
 from django.conf import settings
-from django.db.models import Count
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from elasticsearch_dsl import Q
 
-from usaspending_api.awards.v2.filters.sub_award import subaward_filter
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
+from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, SubawardSearch
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.generic_helper import (
     get_generic_filters_message,
@@ -88,7 +87,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
                 empty_results = {"subcontracts": 0, "subgrants": 0}
             results = empty_results
         elif subawards:
-            results = self.handle_subawards(filters)
+            results = self.query_elasticsearch_for_subawards(filters)
         else:
             results = self.query_elasticsearch_for_prime_awards(filters)
 
@@ -98,29 +97,6 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         }
 
         return Response(raw_response)
-
-    @staticmethod
-    def handle_subawards(filters: dict) -> dict:
-        """Turn the filters into the result dictionary when dealing with Sub-Awards
-
-        Note: Due to how the Django ORM joins to the awards table as an
-        INNER JOIN, it is necessary to explicitly enforce the aggregations
-        to only count Sub-Awards that are linked to a Prime Award.
-
-        Remove the filter and update if we can move away from this behavior.
-        """
-        queryset = (
-            subaward_filter(filters)
-            .filter(award_id__isnull=False)
-            .values("prime_award_group")
-            .annotate(count=Count("broker_subaward_id"))
-        )
-
-        results = {}
-        results["subgrants"] = sum([sub["count"] for sub in queryset if sub["prime_award_group"] == "grant"])
-        results["subcontracts"] = sum([sub["count"] for sub in queryset if sub["prime_award_group"] == "procurement"])
-
-        return results
 
     def query_elasticsearch_for_prime_awards(self, filters) -> list:
         query_with_filters = QueryWithFilters(QueryType.AWARDS)
@@ -148,5 +124,28 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
             "idvs": idvs,
             "loans": loans,
             "other": other,
+        }
+        return response
+
+    def query_elasticsearch_for_subawards(self, filters) -> list:
+        query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
+        filter_query = query_with_filters.generate_elasticsearch_query(filters)
+        s = SubawardSearch().filter(filter_query).filter("exists", field="award_id").extra(size=0)
+
+        s.aggs.bucket(
+            "types",
+            "terms",
+            field="prime_award_group",
+        )
+        results = s.handle_execute().aggregations.types.buckets
+
+        # transform results into a more readable dictionary
+        raw_results = defaultdict(lambda: 0)
+        for result in results:
+            raw_results[result["key"]] = result["doc_count"]
+
+        response = {
+            "subgrants": raw_results["grant"],
+            "subcontracts": raw_results["procurement"],
         }
         return response
