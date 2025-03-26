@@ -52,7 +52,7 @@ jobs:
     uses: ./.github/workflows/code-climate-before-build.yaml
     with:
       source-branch: ${{ github.head_ref }}
-      source-commit-sha: ${{ github.sha }}
+      source-commit-sha: ${{ github.event.pull_request.head.sha }}
     secrets:
       cc_test_reporter_id: ${{ secrets.CC_TEST_REPORTER_ID }}
 
@@ -117,6 +117,6 @@ jobs:
     uses: ./.github/workflows/code-climate-report-coverage.yaml
     with:
       source-branch: ${{ github.head_ref }}
-      source-commit-sha: ${{ github.sha }}
+      source-commit-sha: ${{ github.event.pull_request.head.sha }}
     secrets:
       cc_test_reporter_id: ${{ secrets.CC_TEST_REPORTER_ID }}
