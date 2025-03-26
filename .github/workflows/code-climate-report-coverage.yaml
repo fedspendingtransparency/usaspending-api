@@ -2,6 +2,15 @@ name: Code Climate Report Coverage
 
 on:
   workflow_call:
+    inputs:
+      source-branch:
+        description: The branch that tests are run against
+        type: string
+        required: true
+      source-commit-sha:
+        description: The specific commit on the branch that tests are run against
+        type: string
+        required: true
     secrets:
       cc_test_reporter_id:
         description: ID assigned by Code Climate for writing test coverage
@@ -12,6 +21,8 @@ jobs:
     name: Run
     runs-on: ${{ vars.RUNNER_VERSION }}
     env:
+      GIT_BRANCH: ${{ inputs.source-branch }}
+      GIT_COMMIT_SHA: ${{ inputs.source-commit-sha }}
       CC_TEST_REPORTER_ID: ${{ secrets.cc_test_reporter_id }}
     steps:
       - name: Checkout Source Repository

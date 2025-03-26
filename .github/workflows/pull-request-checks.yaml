@@ -50,6 +50,9 @@ jobs:
     needs: Run-Code-Style-Checks
     if: ${{ !failure() && !cancelled() }}
     uses: ./.github/workflows/code-climate-before-build.yaml
+    with:
+      source-branch: ${{ github.head_ref }}
+      source-commit-sha: ${{ github.sha }}
     secrets:
       cc_test_reporter_id: ${{ secrets.CC_TEST_REPORTER_ID }}
 
@@ -112,5 +115,8 @@ jobs:
       - Run-Unit-Tests
     if: ${{ !failure() && !cancelled() }}
     uses: ./.github/workflows/code-climate-report-coverage.yaml
+    with:
+      source-branch: ${{ github.head_ref }}
+      source-commit-sha: ${{ github.sha }}
     secrets:
       cc_test_reporter_id: ${{ secrets.CC_TEST_REPORTER_ID }}
