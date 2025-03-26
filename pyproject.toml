@@ -9,6 +9,9 @@ markers = [
     "database: Mark all integration tests using a database. Can be selected with -m database or deselected with -m (not database)",
     "elasticsearch: Mark all integration tests using Elasticsearch. Can be selected with -m database or deselected with -m (not elasticsearch)",
 ]
+pythonpath = [
+  "."
+]
 
 [tool.coverage.run]
 omit = [
