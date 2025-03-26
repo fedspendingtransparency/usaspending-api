@@ -2,11 +2,6 @@ name: Code Climate Report Coverage
 
 on:
   workflow_call:
-    inputs:
-      base-branch:
-        description: The branch that the PR is merged in to
-        type: string
-        required: true
     secrets:
       cc_test_reporter_id:
         description: ID assigned by Code Climate for writing test coverage
@@ -17,7 +12,6 @@ jobs:
     name: Run
     runs-on: ${{ vars.RUNNER_VERSION }}
     env:
-      GIT_BRANCH: ${{ inputs.base-branch }}
       CC_TEST_REPORTER_ID: ${{ secrets.cc_test_reporter_id }}
     steps:
       - name: Checkout Source Repository
