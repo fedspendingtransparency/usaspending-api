@@ -237,8 +237,7 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         else:
             search = (
                 SubawardSearch().filter(filter_query)
-                if self.spending_level == SpendingLevel.SUBAWARD
-                else TransactionSearch().filter(filter_query)
+                if self.spending_level == SpendingLevel.SUBAWARD else TransactionSearch().filter(filter_query)
             )
 
         # Apply the aggregations to the TransactionSearch object
