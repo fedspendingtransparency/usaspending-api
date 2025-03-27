@@ -51,6 +51,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
             },
         }
         models = [
+            {"name": "subawards", "key": "subawards", "type": "boolean"},
             {
                 "name": "spending_level",
                 "key": "spending_level",
@@ -59,7 +60,6 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
                 "optional": True,
                 "default": SpendingLevel.AWARD.value,
             },
-            {"name": "subawards", "key": "subawards", "type": "boolean"},
             {
                 "name": "object_class",
                 "key": "filter|object_class",
