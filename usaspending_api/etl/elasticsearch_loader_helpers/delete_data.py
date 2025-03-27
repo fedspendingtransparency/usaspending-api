@@ -107,6 +107,7 @@ def delete_docs_by_unique_key(
     try:
         values_generator = chunks(value_list, delete_chunk_size)
         for chunk_of_values in values_generator:
+            logger.info(f"Attempting to delete the following IDs: {chunk_of_values}")
             # Invoking _delete_by_query as per the elasticsearch-dsl docs:
             #   https://elasticsearch-dsl.readthedocs.io/en/latest/search_dsl.html#delete-by-query
             # _refresh is deferred until the end of chunk processing
@@ -126,6 +127,7 @@ def delete_docs_by_unique_key(
                 msg = f"Some docs failed to delete on cluster:{fail_snippet}"
                 logger.error(format_log(msg=msg, action="Delete", name=task_id))
                 raise RuntimeError(msg)
+            logger.info(f"Response from the deletion: {response}")
             logger.info(
                 format_log(
                     f"Deleted {response['deleted']:,} docs in ES from chunk of size {len(chunk_of_values):,} "
