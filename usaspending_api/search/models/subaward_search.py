@@ -241,6 +241,8 @@ class SubawardSearch(models.Model):
 
     program_activities = models.JSONField(null=True)
     prime_award_recipient_id = models.TextField(null=True, blank=True)
+    subaward_recipient_hash = models.TextField(null=True, blank=True)
+    subaward_recipient_level = models.TextField(null=True, blank=True)
 
     class Meta:
         db_table = "subaward_search"
