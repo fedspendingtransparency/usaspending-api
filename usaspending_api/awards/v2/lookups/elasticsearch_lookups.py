@@ -84,6 +84,7 @@ loan_mapping = {
         "Subsidy Cost": "total_subsidy_cost",
         "SAI Number": "sai_number.keyword",
         "CFDA Number": "cfda_number.keyword",
+        "Assistance Listings": "cfdas",
     },
 }
 non_loan_assist_mapping = {
@@ -96,6 +97,7 @@ non_loan_assist_mapping = {
         "Award Type": "type_description",
         "SAI Number": "sai_number.keyword",
         "CFDA Number": "cfda_number.keyword",
+        "Assistance Listings": "cfdas",
     },
 }
 

@@ -115,6 +115,8 @@ Award based searches have a base set of fields that are valid for all award type
 - `Infrastructure Obligations`
 - `Infrastructure Outlays`
 - `Recipient UEI`
+- `Recipient Location`
+- `Primary Place of Performance`
 
 #### Contracts
 Contracts can be searched for specifically by using the Contract Type Codes (A, B, C, or D) and the following fields are additional fields that can be requested.
@@ -124,6 +126,8 @@ Contracts can be searched for specifically by using the Contract Type Codes (A, 
 - `Award Amount`
 - `Total Outlays`
 - `Contract Award Type`
+- `NAICS`
+- `PSC`
 
 #### IDV
 IDV can be searched for specifically by using the IDV Type Codes (IDV_A, IDV_B, IDV_B_A, IDV_B_B, IDV_B_C, IDV_C, IDV_D or IDV_E) and the following fields are additional fields that can be requested.
@@ -142,6 +146,8 @@ Loans can be searched for specifically by using the Loan Type Codes (07 or 08) a
 - `Subsidy Cost`
 - `SAI Number`
 - `CFDA Number`
+- `Assistance Listings`
+- `Primary Assistance Listing`
 
 #### Non Loan Assistance
 Non Loan Assistance Awards can be searched for specifically by using the Non Loan Assistance Type Codes. The Non Loan Assist Type Codes include Grant Type Codes (02, 03, 04 or 05), Direct Payments (06 or 10), and Other Type Codes (09, 11, or -1). The following fields are additional fields that can be requested.
@@ -153,6 +159,8 @@ Non Loan Assistance Awards can be searched for specifically by using the Non Loa
 - `Award Type`
 - `SAI Number`
 - `CFDA Number`
+- `Assistance Listings`
+- `Primary Assistance Listing`
 
 ### Subaward
 

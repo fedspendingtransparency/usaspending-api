@@ -1,5 +1,6 @@
 import copy
 import logging
+import json
 from ast import literal_eval
 from sys import maxsize
 from typing import (
@@ -53,6 +54,7 @@ from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyT
 from usaspending_api.search.filters.time_period.query_types import AwardSearchTimePeriod, SubawardSearchTimePeriod
 from usaspending_api.search.v2.views.enums import SpendingLevel
 from usaspending_api.submissions.models import SubmissionAttributes
+from usaspending_api.common.helpers.data_constants import state_name_from_code
 
 logger = logging.getLogger(__name__)
 
@@ -425,14 +427,12 @@ class SpendingByAwardVisualizationViewSet(APIView):
         should_return_recipient_id = "recipient_id" in self.fields
         for res in response:
             hit = res.to_dict()
-            print(self.constants["elasticsearch_type_code_to_field_map"][hit[self.constants["award_semaphore"]]])
             row = {k: hit[v] for k, v in self.constants["internal_id_fields"].items()}
 
             # Parsing API response values from ES query result JSON
             # We parse the `hit` (result from elasticsearch) to get the award type, use the type to determine
             # which lookup dict to use, and then use that lookup to retrieve the correct value requested from `fields`
             for field in self.fields:
-                print(field)
                 row[field] = hit.get(
                     self.constants["elasticsearch_type_code_to_field_map"][hit[self.constants["award_semaphore"]]].get(
                         field
@@ -505,6 +505,65 @@ class SpendingByAwardVisualizationViewSet(APIView):
             if row.get("def_codes"):
                 if self.filters.get("def_codes"):
                     row["def_codes"] = list(filter(lambda x: x in self.filters.get("def_codes"), row["def_codes"]))
+
+            if row.get("Assistance Listings"):
+                row["Assistance Listings"] = list(map(json.loads, row["Assistance Listings"]))
+
+            if "Recipient Location" in self.fields:
+                row["Recipient Location"] = {
+                    "location_country_code": hit.get("recipient_location_country_code"),
+                    "country_name": hit.get("recipient_location_country_name"),
+                    "state_code": hit.get("recipient_location_state_code"),
+                    "state_name": state_name_from_code(hit.get("recipient_location_state_code")),
+                    "city_name": hit.get("recipient_location_city_name"),
+                    "county_code": hit.get("recipient_location_county_code"),
+                    "county_name": hit.get("recipient_location_county_name"),
+                    "address_line1": None,
+                    "address_line2": None,
+                    "address_line3": None,
+                    "congressional_code": hit.get("recipient_location_congressional_code"),
+                    "zip4": None,
+                    "zip5": hit.get("recipient_location_zip5"),
+                    "foreign_postal_code": None,
+                    "foreign_province": None,
+                }
+
+            if "Primary Place of Performance" in self.fields:
+                row["Primary Place of Performance"] = {
+                    "location_country_code": hit.get("pop_country_code"),
+                    "country_name": hit.get("pop_country_name"),
+                    "state_code": hit.get("pop_state_code"),
+                    "state_name": state_name_from_code(hit.get("pop_state_code")),
+                    "city_name": hit.get("pop_city_name"),
+                    "county_code": hit.get("pop_county_code"),
+                    "county_name": hit.get("pop_county_name"),
+                    "address_line1": None,
+                    "address_line2": None,
+                    "address_line3": None,
+                    "congressional_code": hit.get("pop_congressional_code"),
+                    "zip4": None,
+                    "zip5": hit.get("pop_zip5"),
+                    "foreign_postal_code": None,
+                    "foreign_province": None,
+                }
+
+            if "NAICS" in self.fields:
+                row["NAICS"] = {
+                    "code": hit.get("naics_code"),
+                    "description": hit.get("naics_description"),
+                }
+
+            if "PSC" in self.fields:
+                row["PSC"] = {
+                    "code": hit.get("product_or_service_code"),
+                    "description": hit.get("product_or_service_description"),
+                }
+
+            if "Primary Assistance Listing" in self.fields:
+                row["Primary Assistance Listing"] = {
+                    "cfda_number": hit.get("cfda_number"),
+                    "cfda_program_title": hit.get("cfda_title"),
+                }
 
             row["generated_internal_id"] = hit["generated_unique_award_id"]
 
