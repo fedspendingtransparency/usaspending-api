@@ -114,6 +114,7 @@ Award based searches have a base set of fields that are valid for all award type
 - `COVID-19 Outlays`
 - `Infrastructure Obligations`
 - `Infrastructure Outlays`
+- `Recipient UEI`
 
 #### Contracts
 Contracts can be searched for specifically by using the Contract Type Codes (A, B, C, or D) and the following fields are additional fields that can be requested.

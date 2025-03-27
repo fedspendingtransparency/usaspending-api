@@ -425,12 +425,14 @@ class SpendingByAwardVisualizationViewSet(APIView):
         should_return_recipient_id = "recipient_id" in self.fields
         for res in response:
             hit = res.to_dict()
+            print(self.constants["elasticsearch_type_code_to_field_map"][hit[self.constants["award_semaphore"]]])
             row = {k: hit[v] for k, v in self.constants["internal_id_fields"].items()}
 
             # Parsing API response values from ES query result JSON
             # We parse the `hit` (result from elasticsearch) to get the award type, use the type to determine
             # which lookup dict to use, and then use that lookup to retrieve the correct value requested from `fields`
             for field in self.fields:
+                print(field)
                 row[field] = hit.get(
                     self.constants["elasticsearch_type_code_to_field_map"][hit[self.constants["award_semaphore"]]].get(
                         field
