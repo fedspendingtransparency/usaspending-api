@@ -468,3 +468,62 @@ def test_spending_by_award_count_program_activity(client, monkeypatch, elasticse
 
     assert resp.status_code == status.HTTP_200_OK
     assert expected_response == resp.data, "Unexpected or missing content!"
+
+
+@pytest.mark.django_db
+def test_spending_level_filter(client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
+
+    request = {
+        "subawards": False,
+        "spending_level": "awards",
+        "filters": {
+            "program_activities": [{"name": "program_activity_123", "code": "321"}],
+        },
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award_count", content_type="application/json", data=json.dumps(request)
+    )
+
+    print(resp.data["results"])
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.data["results"] == {
+        "contracts": 0,
+        "direct_payments": 0,
+        "grants": 0,
+        "idvs": 0,
+        "loans": 0,
+        "other": 0,
+    }
+
+    request = {
+        "spending_level": "subawards",
+        "filters": {
+            "program_activities": [{"name": "program_activity_123", "code": "321"}],
+        },
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award_count", content_type="application/json", data=json.dumps(request)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.data["results"] == {"subgrants": 0, "subcontracts": 0}
+
+    # Checks that subawards = true takes precedent over spending_level = awards
+    request = {
+        "subawards": True,
+        "spending_level": "awards",
+        "filters": {
+            "program_activities": [{"name": "program_activity_123", "code": "321"}],
+        },
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award_count", content_type="application/json", data=json.dumps(request)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.data["results"] == {"subgrants": 0, "subcontracts": 0}

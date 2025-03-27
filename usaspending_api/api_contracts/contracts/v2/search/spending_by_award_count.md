@@ -19,8 +19,15 @@ This endpoint takes award filters, and returns the number of awards in each awar
 
     + Attributes (object)
         + `filters` (required, AdvancedFilterObject)
+        + `spending_level` (optional, enum[string])
+            Group the spending by level. This also determines what data source is used for the totals.
+            + Members
+                + `awards` 
+                + `subawards`
+            + Default
+                + `awards`
         + `subawards`: false (optional, boolean)
-            True when you want to group by Subawards instead of Awards. Defaulted to False.
+            True when you want to group by Subawards instead of Awards. Defaulted to False unless spending_level is set to `subawards`, then the default is True.
     + Body
 
             {
