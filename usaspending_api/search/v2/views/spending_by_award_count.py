@@ -21,6 +21,7 @@ from usaspending_api.common.validator.award_filter import AWARD_FILTER_NO_RECIPI
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.search.filters.elasticsearch.filter import QueryType
+from usaspending_api.search.v2.views.enums import SpendingLevel
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +51,15 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
             },
         }
         models = [
-            {"name": "subawards", "key": "subawards", "type": "boolean", "default": False},
+            {"name": "subawards", "key": "subawards", "type": "boolean"},
+            {
+                "name": "spending_level",
+                "key": "spending_level",
+                "type": "enum",
+                "enum_values": [SpendingLevel.AWARD.value, SpendingLevel.SUBAWARD.value],
+                "optional": True,
+                "default": SpendingLevel.AWARD.value,
+            },
             {
                 "name": "object_class",
                 "key": "filter|object_class",
@@ -75,7 +84,11 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         json_request = tiny_shield.block(request.data)
         if "filters" in json_request and "program_activities" in json_request["filters"]:
             tiny_shield.enforce_object_keys_min(json_request, program_activities_rule)
-        subawards = json_request["subawards"]
+        subawards = (
+            json_request["subawards"]
+            if "subawards" in json_request
+            else True if json_request["spending_level"] == SpendingLevel.SUBAWARD.value else False
+        )
         filters = json_request.get("filters", None)
         if filters is None:
             raise InvalidParameterException("Missing required request parameters: 'filters'")
@@ -93,6 +106,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
 
         raw_response = {
             "results": results,
+            "spending_level": "subawards" if subawards else json_request["spending_level"],
             "messages": get_generic_filters_message(self.original_filters.keys(), [elem["name"] for elem in models]),
         }
 
