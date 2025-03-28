@@ -559,8 +559,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
                     "description": hit.get("product_or_service_description"),
                 }
 
-            if "Primary Assistance Listing" in self.fields:
-                row["Primary Assistance Listing"] = {
+            if "primary_assistance_listing" in self.fields:
+                row["primary_assistance_listing"] = {
                     "cfda_number": hit.get("cfda_number"),
                     "cfda_program_title": hit.get("cfda_title"),
                 }

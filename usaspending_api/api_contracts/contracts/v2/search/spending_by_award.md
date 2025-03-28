@@ -147,7 +147,7 @@ Loans can be searched for specifically by using the Loan Type Codes (07 or 08) a
 - `SAI Number`
 - `CFDA Number`
 - `Assistance Listings`
-- `Primary Assistance Listing`
+- `primary_assistance_listing`
 
 #### Non Loan Assistance
 Non Loan Assistance Awards can be searched for specifically by using the Non Loan Assistance Type Codes. The Non Loan Assist Type Codes include Grant Type Codes (02, 03, 04 or 05), Direct Payments (06 or 10), and Other Type Codes (09, 11, or -1). The following fields are additional fields that can be requested.
@@ -160,7 +160,7 @@ Non Loan Assistance Awards can be searched for specifically by using the Non Loa
 - `SAI Number`
 - `CFDA Number`
 - `Assistance Listings`
-- `Primary Assistance Listing`
+- `primary_assistance_listing`
 
 ### Subaward
 
