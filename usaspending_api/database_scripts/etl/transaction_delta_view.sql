@@ -65,6 +65,7 @@ SELECT
   "pop_county_name",
   "pop_county_population",
   "pop_zip5",
+  "place_of_perform_zip_last4",
   "pop_congressional_code",
   "pop_congressional_population",
   "pop_congressional_code_current",
@@ -118,6 +119,13 @@ SELECT
   "tas_components",
   "federal_accounts"::JSON,
   "disaster_emergency_fund_codes",
-  "program_activities"::JSON
+  "program_activities"::JSON,
+  "action_type",
+  "legal_entity_address_line1",
+  "legal_entity_address_line2",
+  "legal_entity_address_line3",
+  "legal_entity_foreign_posta",
+  "legal_entity_foreign_provi",
+  "legal_entity_zip_last4"
 FROM "transaction_search"
 WHERE "action_date" >= '2007-10-01';

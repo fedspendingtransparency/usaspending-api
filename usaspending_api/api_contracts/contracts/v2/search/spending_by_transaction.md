@@ -378,6 +378,8 @@ A list of current DEFC can be found [here.](https://files.usaspending.gov/refere
 ### FieldNameObject (array)
 List of column names to request
 - `Action Date`
+- `Action Type`
+- `Assistance Listing`
 - `Award ID`
 - `Award Type`
 - `Awarding Agency`
@@ -391,9 +393,15 @@ List of column names to request
 - `Last Date to Order`
 - `Loan Value`
 - `Mod`
+- `NAICS`
+- `PSC`
+- `Primary Place of Performance`
+- `Recipient Location`
 - `Recipient Name`
+- `Recipient UEI`
 - `Subsidy Cost`
 - `Transaction Amount`
+- `Transaction Description`
 - `def_codes`
 
 ## TransactionResponse (object)

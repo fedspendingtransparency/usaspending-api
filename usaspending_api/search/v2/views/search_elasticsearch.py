@@ -12,6 +12,7 @@ from usaspending_api.common.exceptions import (
     InvalidParameterException,
     UnprocessableEntityException,
 )
+from usaspending_api.common.helpers.data_constants import state_name_from_code
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata, get_generic_filters_message
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.search.filters.elasticsearch.filter import QueryType
@@ -136,7 +137,64 @@ class SpendingByTransactionVisualizationViewSet(APIView):
             # which lookup dict to use, and then use that lookup to retrieve the correct value requested from `fields`
             row = {}
             for field in request["fields"]:
-                row[field] = hit.get(TRANSACTIONS_SOURCE_LOOKUP[field])
+                if field == "Assistance Listing":
+                    row["Assistance Listing"] = {
+                        "cfda_number": hit.get("cfda_number"),
+                        "cfda_title": hit.get("cfda_title"),
+                    }
+
+                elif field == "Recipient Location":
+                    row["Recipient Location"] = {
+                        "location_country_code": hit.get("recipient_location_country_code"),
+                        "country_name": hit.get("recipient_location_country_name"),
+                        "state_code": hit.get("recipient_location_state_code"),
+                        "state_name": state_name_from_code(hit.get("recipient_location_state_code")),
+                        "city_name": hit.get("recipient_location_city_name"),
+                        "county_code": hit.get("recipient_location_county_code"),
+                        "county_name": hit.get("recipient_location_county_name"),
+                        "address_line1": hit.get("legal_entity_address_line1"),
+                        "address_line2": hit.get("legal_entity_address_line2"),
+                        "address_line3": hit.get("legal_entity_address_line3"),
+                        "congressional_code": hit.get("recipient_location_congressional_code"),
+                        "zip4": hit.get("legal_entity_zip_last4"),
+                        "zip5": hit.get("recipient_location_zip5"),
+                        "foreign_postal_code": hit.get("legal_entity_foreign_prosta"),
+                        "foreign_province": hit.get("legal_entity_foreign_provi"),
+                    }
+
+                elif field == "Primary Place of Performance":
+                    row["Primary Place of Performance"] = {
+                        "location_country_code": hit.get("pop_country_code"),
+                        "country_name": hit.get("pop_country_name"),
+                        "state_code": hit.get("pop_state_code"),
+                        "state_name": state_name_from_code(hit.get("pop_state_code")),
+                        "city_name": hit.get("pop_city_name"),
+                        "county_code": hit.get("pop_county_code"),
+                        "county_name": hit.get("pop_county_name"),
+                        "congressional_code": hit.get("pop_congressional_code"),
+                        "zip4": hit.get("place_of_performance_zip_last4"),
+                        "zip5": hit.get("pop_zip5"),
+                    }
+
+                elif field == "NAICS":
+                    row["NAICS"] = {
+                        "code": hit.get("naics"),
+                        "description": hit.get("naics_description"),
+                    }
+
+                elif field == "PSC":
+                    row["PSC"] = {
+                        "code": hit.get("product_or_service_code"),
+                        "description": hit.get("product_or_service_description"),
+                    }
+
+                elif field == "Primary Assistance Listing":
+                    row["Primary Assistance Listing"] = {
+                        "cfda_number": hit.get("cfda_number"),
+                        "cfda_program_title": hit.get("cfda_title"),
+                    }
+                else:
+                    row[field] = hit.get(TRANSACTIONS_SOURCE_LOOKUP[field])
             row["generated_internal_id"] = hit["generated_unique_award_id"]
             row["internal_id"] = hit["award_id"]
 

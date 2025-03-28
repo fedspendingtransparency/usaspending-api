@@ -122,6 +122,14 @@ def test_all_fields_returned(client, monkeypatch, transaction_data, elasticsearc
         "internal_id",
         "generated_internal_id",
         "Last Date to Order",
+        "Transaction Description",
+        "Action Type",
+        "Recipient UEI",
+        "Recipient Location",
+        "Primary Place of Performance",
+        "NAICS",
+        "PSC",
+        "Assistance Listing",
     ]
 
     request = {
@@ -304,3 +312,34 @@ def test_spending_by_txn_program_activity(client, monkeypatch, elasticsearch_tra
     resp = client.post(ENDPOINT, content_type="application/json", data=json.dumps(test_payload))
     assert resp.status_code == status.HTTP_200_OK
     assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
+
+
+@pytest.mark.django_db
+def test_additional_fields(client, monkeypatch, elasticsearch_transaction_index, transaction_data):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
+    fields = [
+        "Award ID",
+        "Transaction Description",
+        "Action Type",
+        "Recipient UEI",
+        "Recipient Location",
+        "Primary Place of Performance",
+        "NAICS",
+        "PSC",
+        "Assistance Listing",
+    ]
+
+    request = {
+        "filters": {"keyword": "test", "award_type_codes": ["A", "B", "C", "D"]},
+        "fields": fields,
+        "page": 1,
+        "limit": 5,
+        "sort": "Award ID",
+        "order": "desc",
+    }
+
+    resp = client.post(ENDPOINT, content_type="application/json", data=json.dumps(request))
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.json().get("results")) > 0
