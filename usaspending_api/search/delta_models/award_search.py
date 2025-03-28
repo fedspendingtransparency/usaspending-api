@@ -342,9 +342,9 @@ award_search_load_sql_string = rf"""
   COALESCE(transaction_fpds.legal_entity_address_line1, transaction_fabs.legal_entity_address_line1) AS recipient_location_address_line1,
   COALESCE(transaction_fpds.legal_entity_address_line2, transaction_fabs.legal_entity_address_line2) AS recipient_location_address_line2,
   COALESCE(transaction_fpds.legal_entity_address_line3, transaction_fabs.legal_entity_address_line3) AS recipient_location_address_line3,
-  transaction_fpds.legal_entity_zip4 AS recipient_location_zip4,
+  COALESCE(transaction_fpds.legal_entity_zip_last4, transaction_fabs.legal_entity_zip_last4) AS recipient_location_zip4,
   transaction_fabs.legal_entity_foreign_posta AS recipient_location_foreign_postal_code,
-  transaction_fabs.legal_entity_foreign_province AS recipient_location_foreign_province,
+  transaction_fabs.legal_entity_foreign_provi AS recipient_location_foreign_province,
 
   COALESCE(transaction_fpds.place_of_perf_country_desc, transaction_fabs.place_of_perform_country_n) AS pop_country_name,
   COALESCE(transaction_fpds.place_of_perform_country_c, transaction_fabs.place_of_perform_country_c, 'USA') AS pop_country_code,
@@ -367,7 +367,7 @@ award_search_load_sql_string = rf"""
     POP_STATE_LOOKUP.fips,
     COALESCE(transaction_fpds.place_of_perform_county_co, transaction_fabs.place_of_perform_county_co)
   ) AS pop_county_fips,
-  COALESCE(transaction_fpds.place_of_performance_zip4a, transaction_fabs.place_of_performance_zip4a) AS pop_zip4,
+  COALESCE(transaction_fpds.place_of_performance_zip_last4, transaction_fabs.place_of_performance_zip_last4) AS pop_zip4,
 
   transaction_fabs.cfda_title AS cfda_program_title,
   transaction_fabs.cfda_number AS cfda_number,
