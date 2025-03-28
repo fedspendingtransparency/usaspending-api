@@ -367,7 +367,7 @@ award_search_load_sql_string = rf"""
     POP_STATE_LOOKUP.fips,
     COALESCE(transaction_fpds.place_of_perform_county_co, transaction_fabs.place_of_perform_county_co)
   ) AS pop_county_fips,
-  COALESCE(transaction_fpds.place_of_performance_zip_last4, transaction_fabs.place_of_performance_zip_last4) AS pop_zip4,
+  COALESCE(transaction_fpds.place_of_performance_zip4a, transaction_fabs.place_of_performance_zip4a) AS pop_zip4,
 
   transaction_fabs.cfda_title AS cfda_program_title,
   transaction_fabs.cfda_number AS cfda_number,
