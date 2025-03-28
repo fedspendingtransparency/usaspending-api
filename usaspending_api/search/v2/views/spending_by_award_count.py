@@ -106,6 +106,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
 
         raw_response = {
             "results": results,
+            "spending_level": "subawards" if subawards else json_request["spending_level"],
             "messages": get_generic_filters_message(self.original_filters.keys(), [elem["name"] for elem in models]),
         }
 

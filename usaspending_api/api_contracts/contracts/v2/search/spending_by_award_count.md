@@ -39,6 +39,11 @@ This endpoint takes award filters, and returns the number of awards in each awar
 + Response 200 (application/json)
     + Attributes (object)
         + `results` (AwardTypeResult)
+        + `spending_level` (required, enum[string])
+            Spending level value that was provided in the request.
+            + Members
+                + `awards`
+                + `subawards`
         + `messages` (optional, array[string])
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
 
