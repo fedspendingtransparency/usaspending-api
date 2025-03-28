@@ -518,14 +518,14 @@ class SpendingByAwardVisualizationViewSet(APIView):
                     "city_name": hit.get("recipient_location_city_name"),
                     "county_code": hit.get("recipient_location_county_code"),
                     "county_name": hit.get("recipient_location_county_name"),
-                    "address_line1": None,
-                    "address_line2": None,
-                    "address_line3": None,
+                    "address_line1": hit.get("recipient_location_address_line1"),
+                    "address_line2": hit.get("recipient_location_address_line2"),
+                    "address_line3": hit.get("recipient_location_address_line3"),
                     "congressional_code": hit.get("recipient_location_congressional_code"),
-                    "zip4": None,
+                    "zip4": hit.get("recipient_location_zip4"),
                     "zip5": hit.get("recipient_location_zip5"),
-                    "foreign_postal_code": None,
-                    "foreign_province": None,
+                    "foreign_postal_code": hit.get("recipient_location_foreign_postal_code"),
+                    "foreign_province": hit.get("recipient_location_foreign_province"),
                 }
 
             if "Primary Place of Performance" in self.fields:
@@ -537,14 +537,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
                     "city_name": hit.get("pop_city_name"),
                     "county_code": hit.get("pop_county_code"),
                     "county_name": hit.get("pop_county_name"),
-                    "address_line1": None,
-                    "address_line2": None,
-                    "address_line3": None,
                     "congressional_code": hit.get("pop_congressional_code"),
-                    "zip4": None,
+                    "zip4": hit.get("pop_zip4"),
                     "zip5": hit.get("pop_zip5"),
-                    "foreign_postal_code": None,
-                    "foreign_province": None,
                 }
 
             if "NAICS" in self.fields:

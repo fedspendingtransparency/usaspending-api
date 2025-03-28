@@ -92,6 +92,12 @@ class AwardSearch(models.Model):
     recipient_location_county_population = models.IntegerField(null=True)
     recipient_location_congressional_population = models.IntegerField(null=True)
     recipient_location_county_fips = models.TextField(null=True)
+    recipient_location_address_line1 = models.TextField(null=True)
+    recipient_location_address_line2 = models.TextField(null=True)
+    recipient_location_address_line3 = models.TextField(null=True)
+    recipient_location_zip4 = models.TextField(null=True)
+    recipient_location_foreign_postal_code = models.TextField(null=True)
+    recipient_location_foreign_province = models.TextField(null=True)
 
     pop_country_code = models.TextField(null=True)
     pop_country_name = models.TextField(null=True)
@@ -109,6 +115,7 @@ class AwardSearch(models.Model):
     pop_county_population = models.IntegerField(null=True)
     pop_congressional_population = models.IntegerField(null=True)
     pop_county_fips = models.TextField(null=True)
+    pop_zip4 = models.TextField(null=True)
 
     cfda_program_title = models.TextField(null=True)
     cfda_number = models.TextField(null=True)
