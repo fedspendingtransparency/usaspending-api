@@ -130,6 +130,7 @@ class TransactionSearch(models.Model):
     legal_entity_foreign_provi = models.TextField(null=True)
     recipient_location_county_fips = models.TextField(null=True)
     legal_entity_zip_last4 = models.TextField(null=True)
+    action_type = models.TextField(null=True)
 
     # Place of Performance
     place_of_performance_code = models.TextField(null=True)

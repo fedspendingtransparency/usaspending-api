@@ -314,29 +314,32 @@ def test_spending_by_txn_program_activity(client, monkeypatch, elasticsearch_tra
     assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
 
 
-# @pytest.mark.django_db
-# def test_additional_fields(client, monkeypatch, elasticsearch_transaction_index, transaction_data):
-#     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+@pytest.mark.django_db
+def test_additional_fields(client, monkeypatch, elasticsearch_transaction_index, transaction_data):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
-#     fields = ["Award ID", "Transaction Description", "Action Type", "Recipient UEI", "Recipient Location", "Primary Place of Performance", "NAICS", "PSC", "Assistance Listing"]
+    fields = [
+        "Award ID",
+        "Transaction Description",
+        "Action Type",
+        "Recipient UEI",
+        "Recipient Location",
+        "Primary Place of Performance",
+        "NAICS",
+        "PSC",
+        "Assistance Listing",
+    ]
 
-#     test_payload = {
-#         "filters": {
-#             "award_type_codes": [
-#                 "02",
-#                 "03",
-#                 "04",
-#                 "05",
-#                 "06",
-#                 "07",
-#                 "08"
-#             ]
-#         },
-#         "fields": fields,
-#     }
+    request = {
+        "filters": {"keyword": "test", "award_type_codes": ["A", "B", "C", "D"]},
+        "fields": fields,
+        "page": 1,
+        "limit": 5,
+        "sort": "Award ID",
+        "order": "desc",
+    }
 
-#     resp = client.post(ENDPOINT, content_type="application/json", data=json.dumps(test_payload))
+    resp = client.post(ENDPOINT, content_type="application/json", data=json.dumps(request))
 
-#     assert resp.status_code == status.HTTP_200_OK
-#     print(resp.json().get("results"))
-#     assert resp.json().get("results") > 0
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.json().get("results")) > 0

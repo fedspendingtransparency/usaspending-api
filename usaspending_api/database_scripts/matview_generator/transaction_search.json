@@ -143,6 +143,7 @@
     "  transaction_fabs.legal_entity_foreign_provi,",
     "",
     "  transaction_fabs.place_of_performance_code,",
+    "  transaction_fabs.place_of_performance_scope,",
     "  COALESCE(transaction_fpds.place_of_perform_country_c, transaction_fabs.place_of_perform_country_c)",
     "    AS pop_country_code,",
     "  COALESCE(transaction_fpds.place_of_perf_country_desc, transaction_fabs.place_of_perform_country_n)",

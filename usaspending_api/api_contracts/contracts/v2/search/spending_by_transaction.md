@@ -379,12 +379,12 @@ A list of current DEFC can be found [here.](https://files.usaspending.gov/refere
 List of column names to request
 - `Action Date`
 - `Action Type`
+- `Assistance Listing`
 - `Award ID`
 - `Award Type`
 - `Awarding Agency`
 - `Awarding Sub Agency`
 - `awarding_agency_id`
-- `CFDAs`
 - `Funding Agency`
 - `Funding Sub Agency`
 - `internal_id`

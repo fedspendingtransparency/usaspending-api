@@ -30,29 +30,6 @@ TRANSACTIONS_LOOKUP = {
     "Recipient UEI": "recipient_uei.keyword",
 }
 
-transaction_place_of_performance_mapping = {
-    "location_country_code": "pop_country_code",
-    "country_name": "pop_country_name",
-    "county_code": "pop_county_code",
-    "county_name": "pop_county_name",
-    "pop_city_name": "pop_city_name",
-    "state_code": "pop_state_code",
-    "state_name": "pop_state_name",
-    "congressional_code": "pop_congressional_code",
-    "zip5": "pop_zip5",
-}
-
-transaction_recipient_location_mapping = {
-    "country_code": "recipient_location_country_code",
-    "country_name": "recipient_location_country_name",
-    "state_code": "recipient_location_state_code",
-    "state_name": "recipient_location_state_name",
-    "city_name": "recipient_location_city_name.keyword",
-    "county_code": "recipient_location_county_code",
-    "county_name": "recipient_location_county_name",
-    "zip5": "recipient_location_zip5",
-}
-
 base_mapping = {
     "Award ID": "display_award_id",
     "Recipient Name": "recipient_name.keyword",
@@ -124,15 +101,7 @@ non_loan_assist_mapping = {
     },
 }
 
-TRANSACTIONS_SOURCE_LOOKUP = {
-    key: value.replace(".keyword", "") for key, value in TRANSACTIONS_LOOKUP.items() if type(value) is not dict
-}
-TRANSACTIONS_RECIPIENT_SOURCE_LOOKUP = {
-    key: value.replace(".keyword", "") for key, value in transaction_recipient_location_mapping.items()
-}
-TRANSACTION_PRIMARY_PLACE_SOURCE_LOOKUP = {
-    key: value.replace(".keyword", "") for key, value in transaction_place_of_performance_mapping.items()
-}
+TRANSACTIONS_SOURCE_LOOKUP = {key: value.replace(".keyword", "") for key, value in TRANSACTIONS_LOOKUP.items()}
 
 CONTRACT_SOURCE_LOOKUP = {key: value.replace(".keyword", "") for key, value in contracts_mapping.items()}
 IDV_SOURCE_LOOKUP = {key: value.replace(".keyword", "") for key, value in idv_mapping.items()}
