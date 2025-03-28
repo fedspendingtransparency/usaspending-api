@@ -687,6 +687,9 @@
             }
           }
         }
+      },
+      "action_type": {
+        "type": "keyword"
       }
     }
   }

@@ -129,6 +129,7 @@ class TransactionSearch(models.Model):
     legal_entity_foreign_posta = models.TextField(null=True)
     legal_entity_foreign_provi = models.TextField(null=True)
     recipient_location_county_fips = models.TextField(null=True)
+    legal_entity_zip_last4 = models.TextField(null=True)
 
     # Place of Performance
     place_of_performance_code = models.TextField(null=True)
@@ -151,6 +152,7 @@ class TransactionSearch(models.Model):
     pop_city_name = models.TextField(null=True)
     place_of_performance_forei = models.TextField(null=True)
     pop_county_fips = models.TextField(null=True)
+    place_of_perform_zip_last4 = models.TextField(null=True)
 
     # Accounts
     treasury_account_identifiers = ArrayField(models.IntegerField(), null=True)
