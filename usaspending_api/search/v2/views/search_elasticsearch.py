@@ -158,7 +158,7 @@ class SpendingByTransactionVisualizationViewSet(APIView):
                         "congressional_code": hit.get("recipient_location_congressional_code"),
                         "zip4": hit.get("legal_entity_zip_last4"),
                         "zip5": hit.get("recipient_location_zip5"),
-                        "foreign_postal_code": hit.get("legal_entity_foreign_prosta"),
+                        "foreign_postal_code": hit.get("legal_entity_foreign_posta"),
                         "foreign_province": hit.get("legal_entity_foreign_provi"),
                     }
 
@@ -172,13 +172,13 @@ class SpendingByTransactionVisualizationViewSet(APIView):
                         "county_code": hit.get("pop_county_code"),
                         "county_name": hit.get("pop_county_name"),
                         "congressional_code": hit.get("pop_congressional_code"),
-                        "zip4": hit.get("place_of_performance_zip_last4"),
+                        "zip4": hit.get("place_of_perform_zip_last4"),
                         "zip5": hit.get("pop_zip5"),
                     }
 
                 elif field == "NAICS":
                     row["NAICS"] = {
-                        "code": hit.get("naics"),
+                        "code": hit.get("naics_code"),
                         "description": hit.get("naics_description"),
                     }
 
@@ -186,12 +186,6 @@ class SpendingByTransactionVisualizationViewSet(APIView):
                     row["PSC"] = {
                         "code": hit.get("product_or_service_code"),
                         "description": hit.get("product_or_service_description"),
-                    }
-
-                elif field == "Primary Assistance Listing":
-                    row["Primary Assistance Listing"] = {
-                        "cfda_number": hit.get("cfda_number"),
-                        "cfda_program_title": hit.get("cfda_title"),
                     }
                 else:
                     row[field] = hit.get(TRANSACTIONS_SOURCE_LOOKUP[field])

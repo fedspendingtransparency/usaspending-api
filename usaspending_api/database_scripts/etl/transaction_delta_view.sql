@@ -86,6 +86,13 @@ SELECT
   "recipient_location_zip5",
   "recipient_location_city_name",
   "recipient_location_county_fips",
+  "action_type",
+  "legal_entity_address_line1",
+  "legal_entity_address_line2",
+  "legal_entity_address_line3",
+  "legal_entity_foreign_posta",
+  "legal_entity_foreign_provi",
+  "legal_entity_zip_last4",
   "recipient_hash",
   "recipient_name",
   "recipient_levels",
@@ -119,13 +126,6 @@ SELECT
   "tas_components",
   "federal_accounts"::JSON,
   "disaster_emergency_fund_codes",
-  "program_activities"::JSON,
-  "action_type",
-  "legal_entity_address_line1",
-  "legal_entity_address_line2",
-  "legal_entity_address_line3",
-  "legal_entity_foreign_posta",
-  "legal_entity_foreign_provi",
-  "legal_entity_zip_last4"
+  "program_activities"::JSON
 FROM "transaction_search"
 WHERE "action_date" >= '2007-10-01';
