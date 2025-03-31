@@ -24,8 +24,6 @@ from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.search.filters.elasticsearch.filter import QueryType
 from usaspending_api.search.v2.elasticsearch_helper import (
     get_number_of_unique_terms,
-    get_number_of_unique_terms_for_awards,
-    get_number_of_unique_terms_for_transactions,
     get_scaled_sum_aggregations,
 )
 from usaspending_api.search.v2.views.enums import SpendingLevel
@@ -51,7 +49,7 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
     pagination: Pagination
     high_cardinality_categories: List[str] = ["recipient", "recipient_duns"]
     spending_level: Optional[SpendingLevel]
-    subaward_agg_key_mapper = {
+    subaward_agg_key_mapper: dict[str, str] = {
         "pop_country_agg_key": "sub_pop_country_agg_key",
         "pop_congressional_cur_agg_key": "sub_pop_congressional_cur_agg_key",
         "pop_county_agg_key": "sub_pop_county_agg_key",
@@ -193,12 +191,12 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         else:
             # Get count of unique buckets; terminate early if there are no buckets matching criteria
             if self.spending_level == SpendingLevel.AWARD:
-                bucket_count = get_number_of_unique_terms_for_awards(filter_query, f"{self.category.agg_key}.hash")
+                bucket_count = get_number_of_unique_terms(AwardSearch, filter_query, f"{self.category.agg_key}.hash")
             elif self.spending_level == SpendingLevel.SUBAWARD:
                 bucket_count = get_number_of_unique_terms(SubawardSearch, filter_query, f"{self.category.agg_key}.hash")
             else:
-                bucket_count = get_number_of_unique_terms_for_transactions(
-                    filter_query, f"{self.category.agg_key}.hash"
+                bucket_count = get_number_of_unique_terms(
+                    TransactionSearch, filter_query, f"{self.category.agg_key}.hash"
                 )
             if bucket_count == 0:
                 return None
