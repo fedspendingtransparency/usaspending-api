@@ -165,7 +165,7 @@ SELECT
         in PostgresSQL which did not consider the asterisk (*) to be a reserved character.
     */
     CONCAT('https://www.usaspending.gov/award/', REPLACE(REFLECT('java.net.URLEncoder','encode', awards.generated_unique_award_id, 'UTF-8'), '*', '%2A'), '/') AS usaspending_permalink,
-    subaward_search.date_submitted AS subaward_fsrs_report_last_modified_date
+    subaward_search.date_submitted AS subaward_sam_report_last_modified_date
 FROM rpt.subaward_search
 INNER JOIN rpt.award_search AS awards ON (subaward_search.award_id = awards.award_id)
 INNER JOIN rpt.transaction_search AS transaction_fabs ON (transaction_fabs.is_fpds = FALSE AND awards.latest_transaction_id = transaction_fabs.transaction_id)

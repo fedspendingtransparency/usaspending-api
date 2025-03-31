@@ -2203,7 +2203,7 @@ query_paths = {
                 ("subawardee_highly_compensated_officer_5_name", "sub_high_comp_officer5_full_na"),
                 ("subawardee_highly_compensated_officer_5_amount", "sub_high_comp_officer5_amount"),
                 ("usaspending_permalink", None),  # to be filled in by annotation
-                ("subaward_fsrs_report_last_modified_date", "date_submitted"),
+                ("subaward_sam_report_last_modified_date", "date_submitted"),
             ]
         ),
         "d2": OrderedDict(
@@ -2365,7 +2365,7 @@ query_paths = {
                 ("subawardee_highly_compensated_officer_5_name", "sub_high_comp_officer5_full_na"),
                 ("subawardee_highly_compensated_officer_5_amount", "sub_high_comp_officer5_amount"),
                 ("usaspending_permalink", None),  # to be filled in by annotation
-                ("subaward_fsrs_report_last_modified_date", "date_submitted"),
+                ("subaward_sam_report_last_modified_date", "date_submitted"),
             ]
         ),
     },
