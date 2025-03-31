@@ -94,9 +94,9 @@ SELECT
         ), '; '
     ) AS "prime_award_cfda_numbers_and_titles",
     "subaward_search"."subaward_type" AS "subaward_type",
-    "subaward_search"."internal_id" AS "subaward_fsrs_report_id",
-    "subaward_search"."subaward_report_year" AS "subaward_fsrs_report_year",
-    "subaward_search"."subaward_report_month" AS "subaward_fsrs_report_month",
+    "subaward_search"."internal_id" AS "subaward_sam_report_id",
+    "subaward_search"."subaward_report_year" AS "subaward_sam_report_year",
+    "subaward_search"."subaward_report_month" AS "subaward_sam_report_month",
     "subaward_search"."subaward_number" AS "subaward_number",
     "subaward_search"."subaward_amount" AS "subaward_amount",
     "subaward_search"."sub_action_date" AS "subaward_action_date",
