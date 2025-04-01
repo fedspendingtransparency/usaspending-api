@@ -24,7 +24,61 @@ def transaction_data():
         piid="IND12PB00323",
         recipient_uei="testuei",
         parent_uei="test_parent_uei",
+        action_type="A",
+        legal_entity_address_line1="test address line",
+        legal_entity_address_line2="address2",
+        legal_entity_address_line3="address3",
+        legal_entity_zip_last4="6789",
+        legal_entity_foreign_posta="foreignpostalcode",
+        legal_entity_foreign_provi="foreignprovince",
+        recipient_location_country_code="USA",
+        recipient_location_state_code="TX",
+        recipient_location_country_name="UNITED STATES",
+        recipient_location_county_code="001",
+        recipient_location_county_name="testcountyname",
+        recipient_location_congressional_code="congressionalcode",
+        recipient_location_city_name="cityname",
+        pop_country_code="popcountrycode",
+        pop_country_name="UNITED STATES",
+        pop_state_code="TX",
+        pop_city_name="popcityname",
+        pop_county_code="popcountycode",
+        pop_county_name="popcountyname",
+        pop_congressional_code="popcongressionalcode",
+        place_of_perform_zip_last4="popziplast4",
+        pop_zip5="popzip5",
+        naics_code="naicscode",
+        naics_description="naicsdescription",
+        product_or_service_code="psccode",
+        product_or_service_description="pscdescription",
         program_activities=[{"code": "0123", "name": "PROGRAM_ACTIVITY_123"}],
+    )
+
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=2,
+        award_id=2,
+        action_date="2010-10-01",
+        is_fpds=True,
+        type="10",
+        transaction_description="award 1",
+        federal_action_obligation=35.00,
+        recipient_location_zip5="abcde",
+        piid="IND12PB00323",
+        recipient_uei="testuei",
+        parent_uei="test_parent_uei",
+        generated_unique_award_id="IND12PB00323-generated",
+        cfda_number="59",
+        cfda_title="cfdatitle",
+    )
+    baker.make(
+        "search.AwardSearch",
+        award_id=2,
+        display_award_id="IND12PB00323",
+        latest_transaction_id=2,
+        is_fpds=True,
+        type="10",
+        piid="IND12PB00323",
     )
     award1 = baker.make(
         "search.AwardSearch",
@@ -122,6 +176,14 @@ def test_all_fields_returned(client, monkeypatch, transaction_data, elasticsearc
         "internal_id",
         "generated_internal_id",
         "Last Date to Order",
+        "Transaction Description",
+        "Action Type",
+        "Recipient UEI",
+        "Recipient Location",
+        "Primary Place of Performance",
+        "NAICS",
+        "PSC",
+        "Assistance Listing",
     ]
 
     request = {
@@ -304,3 +366,96 @@ def test_spending_by_txn_program_activity(client, monkeypatch, elasticsearch_tra
     resp = client.post(ENDPOINT, content_type="application/json", data=json.dumps(test_payload))
     assert resp.status_code == status.HTTP_200_OK
     assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
+
+
+@pytest.mark.django_db
+def test_additional_fields(client, monkeypatch, elasticsearch_transaction_index, transaction_data):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
+    fields = [
+        "Award ID",
+        "Transaction Description",
+        "Action Type",
+        "Recipient UEI",
+        "Recipient Location",
+        "Primary Place of Performance",
+        "NAICS",
+        "PSC",
+    ]
+
+    request = {
+        "filters": {
+            "keyword": "test",
+            "award_type_codes": ["A", "B", "C", "D"],
+        },
+        "fields": fields,
+        "page": 1,
+        "limit": 5,
+        "sort": "Award ID",
+        "order": "desc",
+    }
+
+    resp = client.post(ENDPOINT, content_type="application/json", data=json.dumps(request))
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.json().get("results")) > 0
+    result = resp.json().get("results")[0]
+    assert result["Award ID"] == "IND12PB00323"
+    assert result["Transaction Description"] == "test"
+    assert result["Action Type"] == "A"
+    assert result["Recipient UEI"] == "testuei"
+    assert result["Recipient Location"] == {
+        "location_country_code": "USA",
+        "country_name": "UNITED STATES",
+        "state_code": "TX",
+        "state_name": "Texas",
+        "city_name": "cityname",
+        "county_code": "001",
+        "county_name": "testcountyname",
+        "address_line1": "test address line",
+        "address_line2": "address2",
+        "address_line3": "address3",
+        "congressional_code": "congressionalcode",
+        "zip4": "6789",
+        "zip5": "abcde",
+        "foreign_postal_code": "foreignpostalcode",
+        "foreign_province": "foreignprovince",
+    }
+    assert result["Primary Place of Performance"] == {
+        "location_country_code": "popcountrycode",
+        "country_name": "UNITED STATES",
+        "state_code": "TX",
+        "state_name": "Texas",
+        "city_name": "popcityname",
+        "county_code": "popcountycode",
+        "county_name": "popcountyname",
+        "congressional_code": "popcongressionalcode",
+        "zip4": "popziplast4",
+        "zip5": "popzip5",
+    }
+
+    assert result["NAICS"] == {"code": "naicscode", "description": "naicsdescription"}
+
+    assert result["PSC"] == {"code": "psccode", "description": "pscdescription"}
+
+
+def test_assistance_listing(client, monkeypatch, elasticsearch_transaction_index, transaction_data):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
+    fields = ["Award ID", "Assistance Listing"]
+
+    request = {
+        "filters": {"keyword": "test", "award_type_codes": ["10"]},
+        "fields": fields,
+        "page": 1,
+        "limit": 5,
+        "sort": "Award ID",
+        "order": "desc",
+    }
+
+    resp = client.post(ENDPOINT, content_type="application/json", data=json.dumps(request))
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.json().get("results")) == 1
+    result = resp.json().get("results")[0]
+    assert result["Assistance Listing"] == {"cfda_number": "59", "cfda_title": "cfdatitle"}
