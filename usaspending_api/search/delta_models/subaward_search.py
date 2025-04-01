@@ -209,6 +209,8 @@ SUBAWARD_SEARCH_COLUMNS = {
     "prime_award_recipient_id": {"delta": "STRING", "postgres": "TEXT"},
     "subaward_recipient_hash": {"delta": "STRING", "postgres": "TEXT"},
     "subaward_recipient_level": {"delta": "STRING", "postgres": "TEXT"},
+    "awarding_toptier_agency_code": {"delta": "STRING", "postgres": "TEXT"},
+    "funding_toptier_agency_code": {"delta": "STRING", "postgres": "TEXT"},
 }
 SUBAWARD_SEARCH_POSTGRES_VECTORS = {
     "keyword_ts_vector": ["sub_awardee_or_recipient_legal", "product_or_service_description", "subaward_description"],
@@ -572,7 +574,9 @@ subaward_search_load_sql_string = rf"""
         tas.program_activities,
         RECIPIENT_HASH_AND_LEVEL.prime_award_recipient_id,
         SUB_RECIPIENT_HASH_AND_LEVEL.subaward_recipient_hash,
-        SUB_RECIPIENT_HASH_AND_LEVEL.subaward_recipient_level
+        SUB_RECIPIENT_HASH_AND_LEVEL.subaward_recipient_level,
+        taa.awarding_toptier_agency_code,
+        fta.funding_toptier_agency_code
     FROM
         raw.subaward AS bs
     LEFT OUTER JOIN

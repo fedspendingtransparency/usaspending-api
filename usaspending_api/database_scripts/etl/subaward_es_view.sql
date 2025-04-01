@@ -116,16 +116,12 @@ SELECT
     s.prime_award_recipient_id,
     a.tas_paths,
     a.tas_components,
-    ata.toptier_code AS awarding_toptier_agency_code,
-    fta.toptier_code AS funding_toptier_agency_code,
     s.subaward_recipient_hash,
-    s.subaward_recipient_level
+    s.subaward_recipient_level,
+    s.awarding_toptier_agency_code,
+    s.funding_toptier_agency_code
 FROM
 	rpt.subaward_search s
 LEFT JOIN rpt.award_search a
     ON s.award_id = a.award_id
-LEFT JOIN toptier_agency ata
-    ON s.awarding_toptier_agency_abbreviation = ata.abbreviation
-LEFT JOIN toptier_agency fta
-    ON s.funding_toptier_agency_abbreviation = fta.abbreviation
 WHERE s.action_date >= '2007-10-01';
