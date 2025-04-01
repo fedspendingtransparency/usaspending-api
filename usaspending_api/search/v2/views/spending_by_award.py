@@ -53,6 +53,7 @@ from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyT
 from usaspending_api.search.filters.time_period.query_types import AwardSearchTimePeriod, SubawardSearchTimePeriod
 from usaspending_api.search.v2.views.enums import SpendingLevel
 from usaspending_api.submissions.models import SubmissionAttributes
+from usaspending_api.common.helpers.data_constants import state_name_from_code
 
 logger = logging.getLogger(__name__)
 
@@ -530,6 +531,54 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
             if row.get("Sub-Award Amount"):
                 row["Sub-Award Amount"] = float(row["Sub-Award Amount"])
+
+            if "NAICS" in self.fields:
+                row["NAICS"] = {
+                    "code": hit.get("naics"),
+                    "description": hit.get("naics_description"),
+                }
+
+            if "PSC" in self.fields:
+                row["PSC"] = {
+                    "code": hit.get("product_or_service_code"),
+                    "description": hit.get("product_or_service_description"),
+                }
+
+            if "Assistance Listing" in self.fields:
+                row["Assistance Listing"] = {
+                    "cfda_number": hit.get("cfda_number"),
+                    "cfda_program_title": hit.get("cfda_titles"),
+                }
+
+            if "Sub-Recipient Location" in self.fields:
+                row["Sub-Recipient Location"] = {
+                    "location_country_code": hit.get("sub_recipient_location_country_code"),
+                    "country_name": hit.get("sub_recipient_location_country_name"),
+                    "state_code": hit.get("sub_recipient_location_state_code"),
+                    "state_name": state_name_from_code(hit.get("sub_recipient_location_state_code")),
+                    "city_name": hit.get("sub_recipient_location_city_name"),
+                    "county_code": hit.get("sub_recipient_location_county_code"),
+                    "county_name": hit.get("sub_recipient_location_county_name"),
+                    "address_line1": hit.get("sub_recipient_location_address_line1"),
+                    "congressional_code": hit.get("sub_recipient_location_congressional_code"),
+                    "zip4": hit.get("sub_recipient_location_zip")[-4:],
+                    "zip5": hit.get("sub_recipient_location_zip5"),
+                    "foreign_postal_code": hit.get("sub_recipient_location_foreign_posta"),
+                }
+
+            if "Sub-Award Primary Place of Performance" in self.fields:
+                row["Sub-Award Primary Place of Performance"] = {
+                    "location_country_code": hit.get("sub_pop_country_code"),
+                    "country_name": hit.get("sub_pop_country_name"),
+                    "state_code": hit.get("sub_pop_state_code"),
+                    "state_name": state_name_from_code(hit.get("sub_pop_state_code")),
+                    "city_name": hit.get("sub_pop_city_name"),
+                    "county_code": hit.get("sub_pop_county_code"),
+                    "county_name": hit.get("sub_pop_county_name"),
+                    "congressional_code": hit.get("sub_pop_congressional_code"),
+                    "zip4": hit.get("sub_pop_zip")[-4:],
+                    "zip5": hit.get("sub_pop_zip")[0:5],
+                }
 
             row["prime_award_generated_internal_id"] = hit["unique_award_key"]
 

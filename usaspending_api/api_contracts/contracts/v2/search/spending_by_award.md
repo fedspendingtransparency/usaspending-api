@@ -166,6 +166,14 @@ Non Loan Assistance Awards can be searched for specifically by using the Non Loa
 - `Prime Award ID`
 - `Prime Recipient Name`
 - `prime_award_recipient_id`
+- `Sub-Award Description`
+- `Sub-Recipient UEI`
+- `sub_award_recipient_id`
+- `Sub-Recipient Location`
+- `Sub-Award Primary Place of Performance`
+- `Prime Award Recipient UEI`
+- `NAICS`
+- `PSC`
 
 #### Grant Subawards
 - `Sub-Award ID`
@@ -178,6 +186,13 @@ Non Loan Assistance Awards can be searched for specifically by using the Non Loa
 - `Prime Award ID`
 - `Prime Recipient Name`
 - `prime_award_recipient_id`
+- `Sub-Award Description`
+- `Sub-Recipient UEI`
+- `sub_award_recipient_id`
+- `Sub-Recipient Location`
+- `Sub-Award Primary Place of Performance`
+- `Prime Award Recipient UEI`
+- `Assistance Listing`
 
 ## SpendingByAwardResponse (object)
 + `internal_id` (required, number)

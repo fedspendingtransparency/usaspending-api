@@ -207,6 +207,7 @@ SUBAWARD_SEARCH_COLUMNS = {
     "pop_county_name": {"delta": "STRING", "postgres": "TEXT"},
     "program_activities": {"delta": "STRING", "postgres": "JSONB", "gold": False},
     "prime_award_recipient_id": {"delta": "STRING", "postgres": "TEXT"},
+    "sub_award_recipient_id": {"delta": "STRING", "postgres": "TEXT"},
 }
 SUBAWARD_SEARCH_POSTGRES_VECTORS = {
     "keyword_ts_vector": ["sub_awardee_or_recipient_legal", "product_or_service_description", "subaward_description"],
@@ -316,6 +317,18 @@ subaward_search_load_sql_string = rf"""
             congressional_district_no
         FROM cd_city_grouped_rownum
         WHERE row_num = 1
+    ),
+    recipient_hash_and_level AS (
+        SELECT
+            recipient_hash,
+            recipient_level,
+            recipient_hash || '-' || recipient_level AS award_recipient_id
+        FROM
+            rpt.recipient_profile
+        WHERE
+            recipient_level != 'P'
+            AND
+            recipient_name NOT IN {special_cases}
     )
     INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
     (
@@ -363,6 +376,9 @@ subaward_search_load_sql_string = rf"""
         bs.legal_entity_congressional,
         bs.legal_entity_foreign_posta,
         bs.legal_entity_city_name,
+        bs.legal_entity_address_line1,
+        bs.legal_entity_address_line1,
+        bs.legal_entity_address_line1,
         bs.legal_entity_address_line1,
         bs.business_types,
         bs.place_of_perform_country_co,
@@ -568,7 +584,8 @@ subaward_search_load_sql_string = rf"""
         CONCAT(pop_state_fips.fips, pop_county_fips.county_numeric) AS place_of_perform_county_fips,
         UPPER(COALESCE(fpds.place_of_perform_county_na, fabs.place_of_perform_county_na)) AS pop_county_name,
         tas.program_activities,
-        RECIPIENT_HASH_AND_LEVEL.prime_award_recipient_id
+        recipient_award_id.award_recipient_id,
+        sub_recipient_award_id.award_recipient_id
     FROM
         raw.subaward AS bs
     LEFT OUTER JOIN
@@ -700,19 +717,8 @@ subaward_search_load_sql_string = rf"""
     LEFT OUTER JOIN county_fips AS rl_county_fips
         ON UPPER(rl_county_fips.county_name) = UPPER(COALESCE(fpds.legal_entity_county_name, fabs.legal_entity_county_name))
             AND rl_county_fips.state_alpha = bs.legal_entity_state_code
-    LEFT OUTER JOIN (
-        SELECT
-            recipient_hash,
-            recipient_level,
-            recipient_hash || '-' || recipient_level AS prime_award_recipient_id
-        FROM
-            rpt.recipient_profile
-        WHERE
-            recipient_level != 'P'
-            AND
-            recipient_name NOT IN {special_cases}
-    ) RECIPIENT_HASH_AND_LEVEL ON (
-        RECIPIENT_HASH_AND_LEVEL.recipient_hash = REGEXP_REPLACE(
+    LEFT OUTER JOIN recipient_hash_and_level AS recipient_award_id ON (
+        recipient_award_id.recipient_hash = REGEXP_REPLACE(
             MD5(
                 UPPER(
                     CASE
@@ -729,8 +735,32 @@ subaward_search_load_sql_string = rf"""
             '\$1-\$2-\$3-\$4-\$5'
         )
         AND
-        RECIPIENT_HASH_AND_LEVEL.recipient_level = CASE
+        recipient_award_id.recipient_level = CASE
             WHEN bs.ultimate_parent_uei IS NULL OR bs.ultimate_parent_uei = ''
+                THEN 'R'
+            ELSE 'C'
+        END
+    )
+    LEFT OUTER JOIN recipient_hash_and_level AS sub_recipient_award_id ON (
+        sub_recipient_award_id.recipient_hash = REGEXP_REPLACE(
+            MD5(
+                UPPER(
+                    CASE
+                        WHEN bs.sub_awardee_or_recipient_uei IS NOT NULL
+                            THEN CONCAT("uei-", bs.sub_awardee_or_recipient_uei)
+                        WHEN bs.sub_awardee_or_recipient_uniqu IS NOT NULL
+                            THEN CONCAT("duns-", bs.sub_awardee_or_recipient_uniqu)
+                        ELSE
+                            CONCAT("name-", COALESCE(bs.sub_awardee_or_recipient_legal, ""))
+                    END
+                )
+            ),
+            '^(\.{{{{8}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{12}}}})$',
+            '\$1-\$2-\$3-\$4-\$5'
+        )
+        AND
+        sub_recipient_award_id.recipient_level = CASE
+            WHEN bs.sub_ultimate_parent_uei IS NULL OR bs.sub_ultimate_parent_uei = ''
                 THEN 'R'
             ELSE 'C'
         END
