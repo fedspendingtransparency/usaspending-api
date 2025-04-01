@@ -2457,7 +2457,6 @@ def test_spending_by_award_new_contract_fields(
     client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
-    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
 
     # get award with naics_description "the test test test" and not "the description for test"
     test_payload = {
@@ -2516,7 +2515,6 @@ def test_spending_by_award_new_assistance_fields(
     client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
-    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
 
     # get award with naics_description "the test test test" and not "the description for test"
     test_payload = {

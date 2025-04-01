@@ -137,6 +137,8 @@ IDV can be searched for specifically by using the IDV Type Codes (IDV_A, IDV_B, 
 - `Total Outlays`
 - `Contract Award Type`
 - `Last Date to Order`
+- `NAICS`
+- `PSC`
 
 #### Loan
 Loans can be searched for specifically by using the Loan Type Codes (07 or 08) and the following fields are additional fields that can be requested.
