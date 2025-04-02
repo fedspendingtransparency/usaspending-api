@@ -64,12 +64,23 @@ def transaction_data():
         transaction_description="award 1",
         federal_action_obligation=35.00,
         recipient_location_zip5="abcde",
-        piid="IND12PB00001",
+        piid="IND12PB00323",
         recipient_uei="testuei",
         parent_uei="test_parent_uei",
-        generated_unique_award_id="IASST_NON_WY99M000020-18Z_8630",
+        generated_unique_award_id="IND12PB00323-generated",
         cfda_number="59",
         cfda_title="cfdatitle",
+    )
+
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=3,
+        award_id=3,
+        piid="IND12PB00001",
+        action_date="2010-10-01",
+        is_fpds=True,
+        type="A",
+        generated_unique_award_id="ASST_NON_WY99M000020-18Z_8630",
     )
     baker.make(
         "search.AwardSearch",
@@ -381,7 +392,7 @@ def test_spending_by_transaction_award_unique_id_filter(
     }
 
     expected_response = [
-        {"Award ID": "IND12PB00001", "generated_internal_id": "ASST_NON_WY99M000020-18Z_8630", "internal_id": 2}
+        {"Award ID": "IND12PB00001", "generated_internal_id": "ASST_NON_WY99M000020-18Z_8630", "internal_id": 3}
     ]
 
     resp = client.post(ENDPOINT, content_type="application/json", data=json.dumps(test_payload))
