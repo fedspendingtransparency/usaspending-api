@@ -12,6 +12,7 @@ from pyspark.sql.types import StructType, DecimalType, StringType, ArrayType
 from pyspark.sql import DataFrame, SparkSession
 import time
 from collections import namedtuple
+from math import ceil
 from py4j.protocol import Py4JError
 
 from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount
@@ -583,20 +584,21 @@ def write_csv_file(
     spark: SparkSession,
     df: DataFrame,
     parts_dir: str,
-    num_partitions: int,
-    max_records_per_file=EXCEL_ROW_LIMIT,
+    max_rows_per_merged_file=EXCEL_ROW_LIMIT,
     overwrite=True,
     logger=None,
 ) -> int:
-    """Write DataFrame data to CSV file parts.
+    """Write DataFrame data to CSV file parts
+
     Args:
         spark: passed-in active SparkSession
         df: the DataFrame wrapping the data source to be dumped to CSV.
-            parts_dir: Path to dir that will contain the outputted parts files from partitions
-        num_partitions: Indicates the number of partitions to use when writing the Dataframe
+        parts_dir: Path to dir that contains the outputted parts files from partitions
+            - Should be full path ``"s3a://.../.../"`` if using S3
+            - Can be relative if using the SparkSession's fs.defaultFS FileSystem impl
         overwrite: Whether to replace the file CSV files if they already exist by that name
-        max_records_per_file: Suggestion to Spark of how many records to put in each written CSV file part,
-            if it will end up writing multiple files.
+        max_rows_per_merged_file: Suggestion to Spark of how many records to put in each written CSV file part,
+        if it will end up writing multiple files.
         logger: The logger to use. If one note provided (e.g. to log to console or stdout) the underlying JVM-based
             Logger will be extracted from the ``spark`` ``SparkSession`` and used as the logger.
     Returns:
@@ -610,22 +612,27 @@ def write_csv_file(
     if fs.exists(parts_dir_path):
         fs.delete(parts_dir_path, True)
     start = time.time()
-    logger.info(f"Writing source data DataFrame to csv part files for file {parts_dir}...")
+    logger.info("Writing source data DataFrame to csv part files ...")
+    num_partitions = df.rdd.getNumPartitions()
     df_record_count = df.count()
-    df.repartition(num_partitions).write.options(
+    target_partitions = ceil(df_record_count / max_rows_per_merged_file)
+    logger.info(
+        f"Repartitioning from {num_partitions:,} to {target_partitions:,} for {df_record_count:,} records, "
+        f"to get each file close to {max_rows_per_merged_file:,} records."
+    )
+    df.repartition(target_partitions).write.options(
         # NOTE: this is a suggestion, to be used by Spark if partitions yield multiple files
-        maxRecordsPerFile=max_records_per_file,
+        maxRecordsPerFile=max_rows_per_merged_file,
     ).csv(
         path=parts_dir,
-        header=False,
-        emptyValue="",  # "" creates the output of ,,, for null values to match behavior of previous Postgres job
+        nullValue=None,
+        header=True,
         escape='"',  # " is used to escape the 'quote' character setting (which defaults to "). Escaped quote = ""
         ignoreLeadingWhiteSpace=False,  # must set for CSV write, as it defaults to true
         ignoreTrailingWhiteSpace=False,  # must set for CSV write, as it defaults to true
         timestampFormat=CONFIG.SPARK_CSV_TIMEZONE_FORMAT,
         mode="overwrite" if overwrite else "errorifexists",
     )
-    logger.info(f"{parts_dir} contains {df_record_count:,} rows of data")
     logger.info(f"Wrote source data DataFrame to csv part files in {(time.time() - start):3f}s")
     return df_record_count
 

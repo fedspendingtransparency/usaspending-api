@@ -1,14 +1,15 @@
 from abc import ABC, abstractmethod
+import boto3
 from dataclasses import dataclass
+import logging
 import multiprocessing
 import time
-import logging
 from pathlib import Path
 from typing import Optional
 from django.conf import settings
 
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
-from usaspending_api.common.helpers.s3_helpers import delete_s3_objects, download_s3_object
+from usaspending_api.common.helpers.s3_helpers import delete_s3_objects, download_s3_object, _get_boto3_s3_client
 from usaspending_api.common.helpers.sql_helpers import read_sql_file_to_text
 from usaspending_api.download.filestreaming.download_generation import (
     EXCEL_ROW_LIMIT,
@@ -141,7 +142,8 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
         s3_bucket_name = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
         s3_bucket_path = f"s3a://{s3_bucket_name}"
         s3_bucket_sub_path = "temp_download"
-        s3_destination_path = f"{s3_bucket_path}/{s3_bucket_sub_path}/{destination_file_name}"
+        s3_path_suffix = f"{s3_bucket_sub_path}/{destination_file_name}"
+        s3_destination_path = f"{s3_bucket_path}/{s3_path_suffix}"
         try:
             extra_conf = {
                 # Config for Delta Lake tables and SQL. Need these to keep Dela table metadata in the metastore
@@ -165,24 +167,28 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
                 self.spark,
                 df,
                 parts_dir=s3_destination_path,
-                num_partitions=1,
-                max_records_per_file=EXCEL_ROW_LIMIT,
+                max_rows_per_merged_file=EXCEL_ROW_LIMIT,
+                overwrite=True,
                 logger=self._logger,
             )
             column_count = len(df.columns)
-            # When combining these later, will prepend the extracted header to each resultant file.
-            # The parts therefore must NOT have headers or the headers will show up in the data when combined.
-            header = ",".join([_.name for _ in df.schema.fields])
-            self._logger.info("Concatenating partitioned output files ...")
-            merged_file_paths = hadoop_copy_merge(
-                spark=self.spark,
-                parts_dir=s3_destination_path,
-                header=header,
-                logger=self._logger,
-                part_merge_group_size=1,
-            )
+
+            # Find files to download
+            s3_path_pattern = f"{s3_path_suffix}/part"
+            s3_client = _get_boto3_s3_client()
+            response = s3_client.list_objects_v2(Bucket=s3_bucket_name, Prefix=s3_path_pattern)
+
+            csv_locations = []
+            for object in response['Contents']:
+                path = f"{s3_bucket_path}/{object['Key']}"
+                self._logger.info(f"Found file to download: '{path}'")
+                csv_locations.append(path)
+
+            self._logger.info(f"Found {len(csv_locations)} files to download")
+
+            # Download files to Spark Driver filesystem
             final_csv_data_file_locations = self._move_data_csv_s3_to_local(
-                s3_bucket_name, merged_file_paths, s3_bucket_path, s3_bucket_sub_path, destination_path_dir
+                s3_bucket_name, csv_locations, s3_bucket_path, s3_bucket_sub_path, destination_path_dir
             )
         except Exception:
             self._logger.exception("Exception encountered. See logs")
@@ -196,7 +202,7 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
         return CSVDownloadMetadata(final_csv_data_file_locations, record_count, column_count)
 
     def _move_data_csv_s3_to_local(
-        self, bucket_name, s3_file_paths, s3_bucket_path, s3_bucket_sub_path, destination_path_dir
+        self, bucket_name, s3_file_paths, destination_file_name_base, destination_path_dir
     ) -> List[str]:
         """Moves files from s3 data csv location to a location on the local machine.
 
@@ -204,8 +210,7 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
             bucket_name: The name of the bucket in s3 where file_names and s3_path are
             s3_file_paths: A list of file paths to move from s3, name should
                 include s3a:// and bucket name
-            s3_bucket_path: The bucket path, e.g. s3a:// + bucket name
-            s3_bucket_sub_path: The path to the s3 files in the bucket, exluding s3a:// + bucket name, e.g. temp_directory/files
+            destination_file_name_base: Files will be renamed to this + `_<file_number>` when downloaded
             destination_path_dir: The location to move those files from s3 to, must not include the
                 file name in the path. This path should be a diretory.
 
@@ -216,10 +221,10 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
         start_time = time.time()
         self._logger.info("Moving data files from S3 to local machine...")
         local_csv_file_paths = []
-        for file_name in s3_file_paths:
+        s3_bucket_path = f"s3a://{bucket_name}"
+        for index, file_name in enumerate(s3_file_paths, start=0):
             s3_key = file_name.replace(f"{s3_bucket_path}/", "")
-            file_name_only = s3_key.replace(f"{s3_bucket_sub_path}/", "")
-            final_path = f"{destination_path_dir}/{file_name_only}"
+            final_path = f"{destination_path_dir}/{destination_file_name_base}_{index}"
             download_s3_object(
                 bucket_name,
                 s3_key,
