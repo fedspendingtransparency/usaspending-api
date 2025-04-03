@@ -71,6 +71,17 @@ def transaction_data():
         cfda_number="59",
         cfda_title="cfdatitle",
     )
+
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=3,
+        award_id=3,
+        piid="IND12PB00001",
+        action_date="2010-10-01",
+        is_fpds=True,
+        type="A",
+        generated_unique_award_id="ASST_NON_WY99M000020-18Z_8630",
+    )
     baker.make(
         "search.AwardSearch",
         award_id=2,
@@ -366,6 +377,29 @@ def test_spending_by_txn_program_activity(client, monkeypatch, elasticsearch_tra
     resp = client.post(ENDPOINT, content_type="application/json", data=json.dumps(test_payload))
     assert resp.status_code == status.HTTP_200_OK
     assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
+
+
+@pytest.mark.django_db
+def test_spending_by_transaction_award_unique_id_filter(
+    client, monkeypatch, elasticsearch_transaction_index, transaction_data
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
+    test_payload = {
+        "fields": ["Award ID"],
+        "sort": "Award ID",
+        "filters": {"award_type_codes": ["A", "B", "C", "D"], "award_unique_id": "ASST_NON_WY99M000020-18Z_8630"},
+    }
+
+    expected_response = [
+        {"Award ID": "IND12PB00001", "generated_internal_id": "ASST_NON_WY99M000020-18Z_8630", "internal_id": 3}
+    ]
+
+    resp = client.post(ENDPOINT, content_type="application/json", data=json.dumps(test_payload))
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    assert len(results) == 1
+    assert expected_response == results
 
 
 @pytest.mark.django_db
