@@ -35,7 +35,7 @@ DOWNLOAD_SPEC = {
     "award_financial": {
         "federal_account": {
             "query": federal_account.DOWNLOAD_QUERY,
-            "select_in_formats": [("submission_id", federal_account.SUBMISSION_ID_QUERY)],
+            "select_in_formats": [],
             "validator_type": AccountDownloadValidator,
         }
     }

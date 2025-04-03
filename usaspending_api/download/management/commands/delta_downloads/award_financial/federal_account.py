@@ -133,19 +133,16 @@ DOWNLOAD_QUERY = """
     FROM rpt.account_download
     WHERE
         (
-            submission_id IN {}
-            OR (
+            (
                 (
-                    (
-                        reporting_fiscal_period <= 12
-                        AND NOT quarter_format_flag)
-                    OR (
-                        reporting_fiscal_quarter <= 4
-                        AND quarter_format_flag
-                    )
+                    reporting_fiscal_period <= 12
+                    AND NOT quarter_format_flag)
+                OR (
+                    reporting_fiscal_quarter <= 4
+                    AND quarter_format_flag
                 )
-                AND reporting_fiscal_year = 2021
             )
+            AND reporting_fiscal_year = 2021
         )
     GROUP BY
         owning_agency_name,
