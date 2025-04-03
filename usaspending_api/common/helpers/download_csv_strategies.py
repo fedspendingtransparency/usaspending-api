@@ -198,9 +198,9 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
             delete_s3_objects(s3_bucket_name, key_prefix=f"{s3_bucket_sub_path}/{destination_file_name}")
             if self.spark_created_by_command:
                 self.spark.stop()
-        self._logger("About to zip file")
+        self._logger.info("About to zip file")
         append_files_to_zip_file(final_csv_data_file_locations, download_zip_path)
-        self._logger("zipped file")
+        self._logger.info("zipped file")
         self._logger.info(f"Generated the following data csv files {final_csv_data_file_locations}")
         return CSVDownloadMetadata(final_csv_data_file_locations, record_count, column_count)
 
