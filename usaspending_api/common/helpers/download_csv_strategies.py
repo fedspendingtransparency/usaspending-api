@@ -188,7 +188,7 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
 
             # Download files to Spark Driver filesystem
             final_csv_data_file_locations = self._move_data_csv_s3_to_local(
-                s3_bucket_name, csv_locations, s3_bucket_path, s3_bucket_sub_path, destination_path_dir
+                s3_bucket_name, csv_locations, destination_file_name, destination_path_dir
             )
         except Exception:
             self._logger.exception("Exception encountered. See logs")
