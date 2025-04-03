@@ -25,6 +25,7 @@ def _get_boto3(method_name: str, *args, region_name=CONFIG.AWS_REGION, **kwargs)
         - NEW: _get_boto3("client", "s3")
     """
     attr = getattr(boto3, method_name)
+    kwargs.update({"region_name": region_name})
     if callable(attr):
         if not CONFIG.USE_AWS:
             session = boto3.Session(
@@ -34,6 +35,8 @@ def _get_boto3(method_name: str, *args, region_name=CONFIG.AWS_REGION, **kwargs)
             )
             attr = getattr(session, method_name)
             kwargs.update({"endpoint_url": f"http://{CONFIG.AWS_S3_ENDPOINT}"})
+        else:
+            kwargs.update({"endpoint_url": f"https://{CONFIG.AWS_S3_ENDPOINT}"})
         return attr(*args, **kwargs)
     return attr
 
