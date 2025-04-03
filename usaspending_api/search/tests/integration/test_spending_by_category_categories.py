@@ -218,6 +218,8 @@ def agency_test_data(db):
         action_date="2020-01-01",
         awarding_sub_tier_agency_c="SA3",
         funding_sub_tier_agency_co="SA4",
+        funding_toptier_agency_code="TA4",
+        awarding_toptier_agency_code="TA3",
     )
     baker.make(
         "search.SubawardSearch",
@@ -237,6 +239,8 @@ def agency_test_data(db):
         action_date="2020-01-02",
         awarding_sub_tier_agency_c="SA3",
         funding_sub_tier_agency_co="SA4",
+        funding_toptier_agency_code="TA4",
+        awarding_toptier_agency_code="TA3",
     )
 
     baker.make(
