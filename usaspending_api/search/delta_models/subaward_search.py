@@ -575,8 +575,8 @@ subaward_search_load_sql_string = rf"""
         RECIPIENT_HASH_AND_LEVEL.prime_award_recipient_id,
         SUB_RECIPIENT_HASH_AND_LEVEL.subaward_recipient_hash,
         SUB_RECIPIENT_HASH_AND_LEVEL.subaward_recipient_level,
-        taa.awarding_toptier_agency_code,
-        fta.funding_toptier_agency_code
+        taa.toptier_code AS awarding_toptier_agency_code,
+        tfa.toptier_code AS funding_toptier_agency_code
     FROM
         raw.subaward AS bs
     LEFT OUTER JOIN
