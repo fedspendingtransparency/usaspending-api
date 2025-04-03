@@ -27,44 +27,44 @@ def test_federal_account_list_success(client, monkeypatch, agency_account_data, 
         },
         "results": [
             {
-                "gross_outlay_amount": 11550000.0,
+                "gross_outlay_amount": 11100000.0,
                 "name": "FA 1",
                 "code": "001-0000",
-                "obligated_amount": 498.0,
+                "obligated_amount": 111.0,
                 "children": [
                     {
-                        "gross_outlay_amount": 11550000.0,
+                        "gross_outlay_amount": 11100000.0,
                         "name": "TA 1",
                         "code": "001-X-0000-000",
-                        "obligated_amount": 498.0,
+                        "obligated_amount": 111.0,
                     }
                 ],
             },
             {
-                "gross_outlay_amount": 250000.0,
+                "gross_outlay_amount": 100000.0,
                 "name": "FA 3",
                 "code": "003-0000",
-                "obligated_amount": 229.0,
+                "obligated_amount": 100.0,
                 "children": [
                     {
-                        "gross_outlay_amount": 250000.0,
+                        "gross_outlay_amount": 100000.0,
                         "name": "TA 6",
                         "code": "003-2017/2018-0000-000",
-                        "obligated_amount": 229.0,
+                        "obligated_amount": 100.0,
                     }
                 ],
             },
             {
-                "gross_outlay_amount": 1150000.0,
+                "gross_outlay_amount": 1000000.0,
                 "name": "FA 2",
                 "code": "002-0000",
-                "obligated_amount": 139.0,
+                "obligated_amount": 10.0,
                 "children": [
                     {
-                        "gross_outlay_amount": 1150000.0,
+                        "gross_outlay_amount": 1000000.0,
                         "name": "TA 5",
                         "code": "002-2008/2009-0000-000",
-                        "obligated_amount": 139.0,
+                        "obligated_amount": 10.0,
                     }
                 ],
             },
@@ -90,16 +90,16 @@ def test_federal_account_list_success(client, monkeypatch, agency_account_data, 
         },
         "results": [
             {
-                "gross_outlay_amount": 160000.0,
+                "gross_outlay_amount": 10000.0,
                 "name": "FA 2",
                 "code": "002-0000",
-                "obligated_amount": 1129.0,
+                "obligated_amount": 1000.0,
                 "children": [
                     {
-                        "gross_outlay_amount": 160000.0,
+                        "gross_outlay_amount": 10000.0,
                         "name": "TA 2",
                         "code": "002-X-0000-000",
-                        "obligated_amount": 1129.0,
+                        "obligated_amount": 1000.0,
                     }
                 ],
             }
@@ -181,44 +181,44 @@ def test_federal_account_list_sort_by_name(client, agency_account_data, helpers)
         },
         "results": [
             {
-                "gross_outlay_amount": 11550000.0,
+                "gross_outlay_amount": 11100000.0,
                 "name": "FA 1",
                 "code": "001-0000",
-                "obligated_amount": 498.0,
+                "obligated_amount": 111.0,
                 "children": [
                     {
-                        "gross_outlay_amount": 11550000.0,
+                        "gross_outlay_amount": 11100000.0,
                         "name": "TA 1",
                         "code": "001-X-0000-000",
-                        "obligated_amount": 498.0,
+                        "obligated_amount": 111.0,
                     }
                 ],
             },
             {
-                "gross_outlay_amount": 1150000.0,
+                "gross_outlay_amount": 1000000.0,
                 "name": "FA 2",
                 "code": "002-0000",
-                "obligated_amount": 139.0,
+                "obligated_amount": 10.0,
                 "children": [
                     {
-                        "gross_outlay_amount": 1150000.0,
+                        "gross_outlay_amount": 1000000.0,
                         "name": "TA 5",
                         "code": "002-2008/2009-0000-000",
-                        "obligated_amount": 139.0,
+                        "obligated_amount": 10.0,
                     }
                 ],
             },
             {
-                "gross_outlay_amount": 250000.0,
+                "gross_outlay_amount": 100000.0,
                 "name": "FA 3",
                 "code": "003-0000",
-                "obligated_amount": 229.0,
+                "obligated_amount": 100.0,
                 "children": [
                     {
-                        "gross_outlay_amount": 250000.0,
+                        "gross_outlay_amount": 100000.0,
                         "name": "TA 6",
                         "code": "003-2017/2018-0000-000",
-                        "obligated_amount": 229.0,
+                        "obligated_amount": 100.0,
                     }
                 ],
             },
@@ -245,44 +245,44 @@ def test_federal_account_list_sort_by_name(client, agency_account_data, helpers)
         },
         "results": [
             {
-                "gross_outlay_amount": 250000.0,
+                "gross_outlay_amount": 100000.0,
                 "name": "FA 3",
                 "code": "003-0000",
-                "obligated_amount": 229.0,
+                "obligated_amount": 100.0,
                 "children": [
                     {
-                        "gross_outlay_amount": 250000.0,
+                        "gross_outlay_amount": 100000.0,
                         "name": "TA 6",
                         "code": "003-2017/2018-0000-000",
-                        "obligated_amount": 229.0,
+                        "obligated_amount": 100.0,
                     }
                 ],
             },
             {
-                "gross_outlay_amount": 1150000.0,
+                "gross_outlay_amount": 1000000.0,
                 "name": "FA 2",
                 "code": "002-0000",
-                "obligated_amount": 139.0,
+                "obligated_amount": 10.0,
                 "children": [
                     {
-                        "gross_outlay_amount": 1150000.0,
+                        "gross_outlay_amount": 1000000.0,
                         "name": "TA 5",
                         "code": "002-2008/2009-0000-000",
-                        "obligated_amount": 139.0,
+                        "obligated_amount": 10.0,
                     }
                 ],
             },
             {
-                "gross_outlay_amount": 11550000.0,
+                "gross_outlay_amount": 11100000.0,
                 "name": "FA 1",
                 "code": "001-0000",
-                "obligated_amount": 498.0,
+                "obligated_amount": 111.0,
                 "children": [
                     {
-                        "gross_outlay_amount": 11550000.0,
+                        "gross_outlay_amount": 11100000.0,
                         "name": "TA 1",
                         "code": "001-X-0000-000",
-                        "obligated_amount": 498.0,
+                        "obligated_amount": 111.0,
                     }
                 ],
             },
@@ -312,44 +312,44 @@ def test_federal_account_list_sort_by_obligated_amount(client, agency_account_da
         },
         "results": [
             {
-                "gross_outlay_amount": 1150000.0,
+                "gross_outlay_amount": 1000000.0,
                 "name": "FA 2",
                 "code": "002-0000",
-                "obligated_amount": 139.0,
+                "obligated_amount": 10.0,
                 "children": [
                     {
-                        "gross_outlay_amount": 1150000.0,
+                        "gross_outlay_amount": 1000000.0,
                         "name": "TA 5",
                         "code": "002-2008/2009-0000-000",
-                        "obligated_amount": 139.0,
+                        "obligated_amount": 10.0,
                     }
                 ],
             },
             {
-                "gross_outlay_amount": 250000.0,
+                "gross_outlay_amount": 100000.0,
                 "name": "FA 3",
                 "code": "003-0000",
-                "obligated_amount": 229.0,
+                "obligated_amount": 100.0,
                 "children": [
                     {
-                        "gross_outlay_amount": 250000.0,
+                        "gross_outlay_amount": 100000.0,
                         "name": "TA 6",
                         "code": "003-2017/2018-0000-000",
-                        "obligated_amount": 229.0,
+                        "obligated_amount": 100.0,
                     }
                 ],
             },
             {
-                "gross_outlay_amount": 11550000.0,
+                "gross_outlay_amount": 11100000.0,
                 "name": "FA 1",
                 "code": "001-0000",
-                "obligated_amount": 498.0,
+                "obligated_amount": 111.0,
                 "children": [
                     {
-                        "gross_outlay_amount": 11550000.0,
+                        "gross_outlay_amount": 11100000.0,
                         "name": "TA 1",
                         "code": "001-X-0000-000",
-                        "obligated_amount": 498.0,
+                        "obligated_amount": 111.0,
                     }
                 ],
             },
@@ -376,44 +376,44 @@ def test_federal_account_list_sort_by_obligated_amount(client, agency_account_da
         },
         "results": [
             {
-                "gross_outlay_amount": 11550000.0,
+                "gross_outlay_amount": 11100000.0,
                 "name": "FA 1",
                 "code": "001-0000",
-                "obligated_amount": 498.0,
+                "obligated_amount": 111.0,
                 "children": [
                     {
-                        "gross_outlay_amount": 11550000.0,
+                        "gross_outlay_amount": 11100000.0,
                         "name": "TA 1",
                         "code": "001-X-0000-000",
-                        "obligated_amount": 498.0,
+                        "obligated_amount": 111.0,
                     }
                 ],
             },
             {
-                "gross_outlay_amount": 250000.0,
+                "gross_outlay_amount": 100000.0,
                 "name": "FA 3",
                 "code": "003-0000",
-                "obligated_amount": 229.0,
+                "obligated_amount": 100.0,
                 "children": [
                     {
-                        "gross_outlay_amount": 250000.0,
+                        "gross_outlay_amount": 100000.0,
                         "name": "TA 6",
                         "code": "003-2017/2018-0000-000",
-                        "obligated_amount": 229.0,
+                        "obligated_amount": 100.0,
                     }
                 ],
             },
             {
-                "gross_outlay_amount": 1150000.0,
+                "gross_outlay_amount": 1000000.0,
                 "name": "FA 2",
                 "code": "002-0000",
-                "obligated_amount": 139.0,
+                "obligated_amount": 10.0,
                 "children": [
                     {
-                        "gross_outlay_amount": 1150000.0,
+                        "gross_outlay_amount": 1000000.0,
                         "name": "TA 5",
                         "code": "002-2008/2009-0000-000",
-                        "obligated_amount": 139.0,
+                        "obligated_amount": 10.0,
                     }
                 ],
             },
@@ -443,44 +443,44 @@ def test_federal_account_list_sort_by_gross_outlay_amount(client, agency_account
         },
         "results": [
             {
-                "gross_outlay_amount": 250000.0,
+                "gross_outlay_amount": 100000.0,
                 "name": "FA 3",
                 "code": "003-0000",
-                "obligated_amount": 229.0,
+                "obligated_amount": 100.0,
                 "children": [
                     {
-                        "gross_outlay_amount": 250000.0,
+                        "gross_outlay_amount": 100000.0,
                         "name": "TA 6",
                         "code": "003-2017/2018-0000-000",
-                        "obligated_amount": 229.0,
+                        "obligated_amount": 100.0,
                     }
                 ],
             },
             {
-                "gross_outlay_amount": 1150000.0,
+                "gross_outlay_amount": 1000000.0,
                 "name": "FA 2",
                 "code": "002-0000",
-                "obligated_amount": 139.0,
+                "obligated_amount": 10.0,
                 "children": [
                     {
-                        "gross_outlay_amount": 1150000.0,
+                        "gross_outlay_amount": 1000000.0,
                         "name": "TA 5",
                         "code": "002-2008/2009-0000-000",
-                        "obligated_amount": 139.0,
+                        "obligated_amount": 10.0,
                     }
                 ],
             },
             {
-                "gross_outlay_amount": 11550000.0,
+                "gross_outlay_amount": 11100000.0,
                 "name": "FA 1",
                 "code": "001-0000",
-                "obligated_amount": 498.0,
+                "obligated_amount": 111.0,
                 "children": [
                     {
-                        "gross_outlay_amount": 11550000.0,
+                        "gross_outlay_amount": 11100000.0,
                         "name": "TA 1",
                         "code": "001-X-0000-000",
-                        "obligated_amount": 498.0,
+                        "obligated_amount": 111.0,
                     }
                 ],
             },
@@ -507,44 +507,44 @@ def test_federal_account_list_sort_by_gross_outlay_amount(client, agency_account
         },
         "results": [
             {
-                "gross_outlay_amount": 11550000.0,
+                "gross_outlay_amount": 11100000.0,
                 "name": "FA 1",
                 "code": "001-0000",
-                "obligated_amount": 498.0,
+                "obligated_amount": 111.0,
                 "children": [
                     {
-                        "gross_outlay_amount": 11550000.0,
+                        "gross_outlay_amount": 11100000.0,
                         "name": "TA 1",
                         "code": "001-X-0000-000",
-                        "obligated_amount": 498.0,
+                        "obligated_amount": 111.0,
                     }
                 ],
             },
             {
-                "gross_outlay_amount": 1150000.0,
+                "gross_outlay_amount": 1000000.0,
                 "name": "FA 2",
                 "code": "002-0000",
-                "obligated_amount": 139.0,
+                "obligated_amount": 10.0,
                 "children": [
                     {
-                        "gross_outlay_amount": 1150000.0,
+                        "gross_outlay_amount": 1000000.0,
                         "name": "TA 5",
                         "code": "002-2008/2009-0000-000",
-                        "obligated_amount": 139.0,
+                        "obligated_amount": 10.0,
                     }
                 ],
             },
             {
-                "gross_outlay_amount": 250000.0,
+                "gross_outlay_amount": 100000.0,
                 "name": "FA 3",
                 "code": "003-0000",
-                "obligated_amount": 229.0,
+                "obligated_amount": 100.0,
                 "children": [
                     {
-                        "gross_outlay_amount": 250000.0,
+                        "gross_outlay_amount": 100000.0,
                         "name": "TA 6",
                         "code": "003-2017/2018-0000-000",
-                        "obligated_amount": 229.0,
+                        "obligated_amount": 100.0,
                     }
                 ],
             },
@@ -574,16 +574,16 @@ def test_federal_account_list_search(client, agency_account_data, helpers):
         },
         "results": [
             {
-                "gross_outlay_amount": 250000.0,
+                "gross_outlay_amount": 100000.0,
                 "name": "FA 3",
                 "code": "003-0000",
-                "obligated_amount": 229.0,
+                "obligated_amount": 100.0,
                 "children": [
                     {
-                        "gross_outlay_amount": 250000.0,
+                        "gross_outlay_amount": 100000.0,
                         "name": "TA 6",
                         "code": "003-2017/2018-0000-000",
-                        "obligated_amount": 229.0,
+                        "obligated_amount": 100.0,
                     }
                 ],
             },
@@ -610,16 +610,16 @@ def test_federal_account_list_search(client, agency_account_data, helpers):
         },
         "results": [
             {
-                "gross_outlay_amount": 1150000.0,
+                "gross_outlay_amount": 1000000.0,
                 "name": "FA 2",
                 "code": "002-0000",
-                "obligated_amount": 139.0,
+                "obligated_amount": 10.0,
                 "children": [
                     {
-                        "gross_outlay_amount": 1150000.0,
+                        "gross_outlay_amount": 1000000.0,
                         "name": "TA 5",
                         "code": "002-2008/2009-0000-000",
-                        "obligated_amount": 139.0,
+                        "obligated_amount": 10.0,
                     }
                 ],
             },
@@ -649,30 +649,30 @@ def test_federal_account_list_pagination(client, agency_account_data, helpers):
         },
         "results": [
             {
-                "gross_outlay_amount": 11550000.0,
+                "gross_outlay_amount": 11100000.0,
                 "name": "FA 1",
                 "code": "001-0000",
-                "obligated_amount": 498.0,
+                "obligated_amount": 111.0,
                 "children": [
                     {
-                        "gross_outlay_amount": 11550000.0,
+                        "gross_outlay_amount": 11100000.0,
                         "name": "TA 1",
                         "code": "001-X-0000-000",
-                        "obligated_amount": 498.0,
+                        "obligated_amount": 111.0,
                     }
                 ],
             },
             {
-                "gross_outlay_amount": 250000.0,
+                "gross_outlay_amount": 100000.0,
                 "name": "FA 3",
                 "code": "003-0000",
-                "obligated_amount": 229.0,
+                "obligated_amount": 100.0,
                 "children": [
                     {
-                        "gross_outlay_amount": 250000.0,
+                        "gross_outlay_amount": 100000.0,
                         "name": "TA 6",
                         "code": "003-2017/2018-0000-000",
-                        "obligated_amount": 229.0,
+                        "obligated_amount": 100.0,
                     }
                 ],
             },
@@ -699,16 +699,16 @@ def test_federal_account_list_pagination(client, agency_account_data, helpers):
         },
         "results": [
             {
-                "gross_outlay_amount": 1150000.0,
+                "gross_outlay_amount": 1000000.0,
                 "name": "FA 2",
                 "code": "002-0000",
-                "obligated_amount": 139.0,
+                "obligated_amount": 10.0,
                 "children": [
                     {
-                        "gross_outlay_amount": 1150000.0,
+                        "gross_outlay_amount": 1000000.0,
                         "name": "TA 5",
                         "code": "002-2008/2009-0000-000",
-                        "obligated_amount": 139.0,
+                        "obligated_amount": 10.0,
                     }
                 ],
             },
@@ -732,15 +732,15 @@ def test_latest_submission_per_agency_used(client, agency_account_data, helpers)
                 "children": [
                     {
                         "code": "005-X-0000-000",
-                        "gross_outlay_amount": 157000.0,
+                        "gross_outlay_amount": 7000.0,
                         "name": "TA 7",
-                        "obligated_amount": 829.0,
+                        "obligated_amount": 700.0,
                     }
                 ],
                 "code": "005-0000",
-                "gross_outlay_amount": 157000.0,
+                "gross_outlay_amount": 7000.0,
                 "name": "FA 5",
-                "obligated_amount": 829.0,
+                "obligated_amount": 700.0,
             }
         ],
         "toptier_code": "011",

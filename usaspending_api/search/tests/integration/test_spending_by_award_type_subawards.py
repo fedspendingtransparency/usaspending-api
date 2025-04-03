@@ -4,6 +4,8 @@ import pytest
 from model_bakery import baker
 from rest_framework import status
 
+from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
+
 
 @pytest.mark.django_db
 def test_spending_by_award_subawards_success(client):
@@ -36,14 +38,14 @@ def test_spending_by_award_subawards_fail(client):
 
 
 @pytest.mark.django_db
-def test_spending_by_award_subawards(client):
-
+def test_spending_by_award_subawards(client, monkeypatch, elasticsearch_subaward_index):
     baker.make(
         "search.SubawardSearch",
         broker_subaward_id=1,
         sub_awardee_or_recipient_uniqu="DUNS A",
         prime_award_type="IDV_A",
         prime_award_group="procurement",
+        action_date="2020-07-03",
     )
     baker.make(
         "search.SubawardSearch",
@@ -51,6 +53,7 @@ def test_spending_by_award_subawards(client):
         sub_awardee_or_recipient_uniqu="DUNS B",
         prime_award_type="IDV_B",
         prime_award_group="procurement",
+        action_date="2020-07-03",
     )
     baker.make(
         "search.SubawardSearch",
@@ -58,6 +61,7 @@ def test_spending_by_award_subawards(client):
         sub_awardee_or_recipient_uniqu="DUNS C",
         prime_award_type="IDV_C",
         prime_award_group="procurement",
+        action_date="2020-07-03",
     )
     baker.make(
         "search.SubawardSearch",
@@ -65,6 +69,7 @@ def test_spending_by_award_subawards(client):
         sub_awardee_or_recipient_uniqu="DUNS D",
         prime_award_type="IDV_D",
         prime_award_group="procurement",
+        action_date="2020-07-03",
     )
     baker.make(
         "search.SubawardSearch",
@@ -72,6 +77,7 @@ def test_spending_by_award_subawards(client):
         sub_awardee_or_recipient_uniqu="DUNS E",
         prime_award_type="IDV_E",
         prime_award_group="procurement",
+        action_date="2020-07-03",
     )
     baker.make(
         "search.SubawardSearch",
@@ -79,6 +85,7 @@ def test_spending_by_award_subawards(client):
         sub_awardee_or_recipient_uniqu="DUNS B_A",
         prime_award_type="IDV_B_A",
         prime_award_group="procurement",
+        action_date="2020-07-03",
     )
     baker.make(
         "search.SubawardSearch",
@@ -86,6 +93,7 @@ def test_spending_by_award_subawards(client):
         sub_awardee_or_recipient_uniqu="DUNS B_B",
         prime_award_type="IDV_B_B",
         prime_award_group="procurement",
+        action_date="2020-07-03",
     )
     baker.make(
         "search.SubawardSearch",
@@ -93,6 +101,7 @@ def test_spending_by_award_subawards(client):
         sub_awardee_or_recipient_uniqu="DUNS B_C",
         prime_award_type="IDV_B_C",
         prime_award_group="procurement",
+        action_date="2020-07-03",
     )
 
     baker.make("recipient.RecipientLookup", duns="DUNS A", recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a941")
@@ -152,6 +161,8 @@ def test_spending_by_award_subawards(client):
         recipient_level="C",
         recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a948",
     )
+
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
 
     resp = client.post(
         "/api/v2/search/spending_by_award",

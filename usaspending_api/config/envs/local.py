@@ -94,7 +94,7 @@ class LocalConfig(DefaultConfig):
     AWS_PROFILE: str = None
     AWS_REGION: str = ""
     SPARK_S3_BUCKET: str = "data"
-    BULK_DOWNLOAD_S3_BUCKET_NAME: str = "bulk_download"
+    BULK_DOWNLOAD_S3_BUCKET_NAME: str = "bulk-download"
     DATABASE_DOWNLOAD_S3_BUCKET_NAME = "dti-usaspending-db"
 
     # Since this config values is built by composing others, we want to late/lazily-evaluate their values,

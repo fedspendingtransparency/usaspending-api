@@ -40,7 +40,7 @@ DEFAULT_TEXT_SEARCH_CONFIG = "pg_catalog.simple"
 # MAX_CONNECTIONS in this case refers to those serving downloads
 DOWNLOAD_DB_WORK_MEM_IN_MB = os.environ.get("DOWNLOAD_DB_WORK_MEM_IN_MB", 128)
 
-API_MAX_DATE = "2024-09-30"  # End of FY2024
+API_MAX_DATE = "2027-09-30"  # End of FY2027
 API_MIN_DATE = "2000-10-01"  # Beginning of FY2001
 API_SEARCH_MIN_DATE = "2007-10-01"  # Beginning of FY2008
 
