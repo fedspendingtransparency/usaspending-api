@@ -581,8 +581,8 @@ subaward_search_load_sql_string = rf"""
         CONCAT(pop_state_fips.fips, pop_county_fips.county_numeric) AS place_of_perform_county_fips,
         UPPER(COALESCE(fpds.place_of_perform_county_na, fabs.place_of_perform_county_na)) AS pop_county_name,
         tas.program_activities,
-        recipient_award_id.award_recipient_id,
-        sub_recipient_award_id.award_recipient_id
+        recipient_award_id.award_recipient_id as prime_award_recipient_id,
+        sub_recipient_award_id.award_recipient_id as sub_award_recipient_id
     FROM
         raw.subaward AS bs
     LEFT OUTER JOIN

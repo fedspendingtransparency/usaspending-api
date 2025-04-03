@@ -119,7 +119,7 @@ SELECT
     s.prime_award_recipient_id,
     a.tas_paths,
     a.tas_components,
-	s.sub_award_recipient_id
+    s.sub_award_recipient_id
 FROM
 	rpt.subaward_search s
 LEFT JOIN rpt.award_search a
