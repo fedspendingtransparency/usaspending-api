@@ -4,6 +4,7 @@ Spark utility functions that could be used as stages or steps of an ETL job (aka
 NOTE: This is distinguished from the usaspending_api.common.helpers.spark_helpers module, which holds mostly boilerplate
 functions for setup and configuration of the spark environment
 """
+import logging
 
 from itertools import chain
 from typing import List
@@ -604,8 +605,7 @@ def write_csv_file(
     Returns:
         record count of the DataFrame that was used to populate the CSV file(s)
     """
-    if not logger:
-        logger = get_jvm_logger(spark)
+    logger = logging.getLogger("script")
     # Delete output data dir if it already exists
     parts_dir_path = spark.sparkContext._jvm.org.apache.hadoop.fs.Path(parts_dir)
     fs = parts_dir_path.getFileSystem(spark.sparkContext._jsc.hadoopConfiguration())
@@ -614,12 +614,15 @@ def write_csv_file(
     start = time.time()
     logger.info("Writing source data DataFrame to csv part files ...")
     num_partitions = df.rdd.getNumPartitions()
+    logger.info("About to get count")
     df_record_count = df.count()
+    logger.info("Finished Count.")
     target_partitions = ceil(df_record_count / max_rows_per_merged_file)
     logger.info(
         f"Repartitioning from {num_partitions:,} to {target_partitions:,} for {df_record_count:,} records, "
         f"to get each file close to {max_rows_per_merged_file:,} records."
     )
+    logger.info("About to repartition and write CSV")
     df.repartition(target_partitions).write.options(
         # NOTE: this is a suggestion, to be used by Spark if partitions yield multiple files
         maxRecordsPerFile=max_rows_per_merged_file,

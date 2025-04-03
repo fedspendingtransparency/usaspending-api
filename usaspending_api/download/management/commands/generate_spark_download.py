@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import traceback
 from logging import Logger
@@ -95,7 +96,7 @@ class Command(BaseCommand):
             self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)
 
         # Setup Logger
-        self.logger = get_jvm_logger(self.spark, __name__)
+        self.logger = logging.getLogger("script")
 
         # Resolve Parameters
         self.download_type = options["download_type"]
