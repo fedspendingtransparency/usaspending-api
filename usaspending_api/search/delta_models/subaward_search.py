@@ -220,7 +220,7 @@ SUBAWARD_SEARCH_POSTGRES_VECTORS = {
 SUBAWARD_SEARCH_DELTA_COLUMNS = {k: v["delta"] for k, v in SUBAWARD_SEARCH_COLUMNS.items()}
 SUBAWARD_SEARCH_POSTGRES_COLUMNS = {
     **{k: v["postgres"] for k, v in SUBAWARD_SEARCH_COLUMNS.items()},
-    **{col: "TSVECTOR" for col in SUBAWARD_SEARCH_POSTGRES_VECTORS},
+    **dict.fromkeys(SUBAWARD_SEARCH_POSTGRES_VECTORS, "TSVECTOR"),
 }
 
 special_cases = tuple(sc for sc in SPECIAL_CASES)
