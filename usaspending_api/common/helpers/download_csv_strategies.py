@@ -190,7 +190,7 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
             final_csv_data_file_locations = self._move_data_csv_s3_to_local(
                 s3_bucket_name, csv_locations, destination_file_name, destination_path_dir
             )
-            self._logger.inf("Finished copying CSVs to local")
+            self._logger.info("Finished copying CSVs to local")
         except Exception:
             self._logger.exception("Exception encountered. See logs")
             raise
