@@ -23,6 +23,7 @@ from usaspending_api.download.filestreaming.download_generation import generate_
 from usaspending_api.download.helpers.monthly_helpers import download_job_to_log_dict
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.models.download_job import DownloadJob
+from usaspending_api.settings import TRACE_ENV
 
 
 logger = logging.getLogger(__name__)
@@ -31,7 +32,7 @@ JOB_TYPE = "USAspendingDownloader"
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        configure_logging(service_name="usaspending-downloader")
+        configure_logging(service_name="usaspending-downloader-" + TRACE_ENV)
         # Start a main trace for the SQS worker session
         with SubprocessTrace(
             name=f"job.{JOB_TYPE}.download_sqs_worker",
