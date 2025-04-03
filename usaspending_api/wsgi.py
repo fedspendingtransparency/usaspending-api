@@ -20,7 +20,7 @@ from opentelemetry.instrumentation.wsgi import OpenTelemetryMiddleware
 
 # Local imports
 from usaspending_api.common.logging import configure_logging
-from usaspending_api.settings import IS_LOCAL
+from usaspending_api.settings import IS_LOCAL, TRACE_ENV
 
 # Constants
 HEADERS_TO_CAPTURE = [
@@ -73,7 +73,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "usaspending_api.settings")
 # Django Instrumentation
 DjangoInstrumentor().instrument()
 
-configure_logging(service_name="usaspending-api")
+configure_logging(service_name="usaspending-api-" + TRACE_ENV)
 
 # Optionally, set other OpenTelemetry configurations
 service_name = os.getenv("OTEL_SERVICE_NAME", "usaspending-api")
