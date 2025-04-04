@@ -57,7 +57,7 @@ def get_earliest_load_date(keys, default=None, format_func: callable = (lambda _
 
     if earliest_date is None:
         logger.warning(
-            format_func("No earliest load date could be calculated because no dates for keys `{keys}` were found!")
+            format_func(f"No earliest load date could be calculated because no dates for keys `{keys}` were found!")
         )
         return default
 
