@@ -9,7 +9,7 @@ from usaspending_api.common.helpers.date_helper import cast_datetime_to_utc
 logger = logging.getLogger("script")
 
 
-def get_last_load_date(key, lookback_minutes=None, default=None):
+def get_last_load_date(key, lookback_minutes=None, default=None, format_func: callable = (lambda _: _)):
     """
     Retrieve the last_load_date from the USAspending database.
 
@@ -29,16 +29,16 @@ def get_last_load_date(key, lookback_minutes=None, default=None):
         .first()
     )
     if last_load_date is None:
-        logger.warning(f"No record of a previous run for `{key}` was found!")
+        logger.warning(format_func(f"No record of a previous run for `{key}` was found!"))
         return default
     else:
-        logger.info(f"Value for previous `{key}` ETL: {last_load_date}")
+        logger.info(format_func(f"Value for previous `{key}` ETL: {last_load_date}"))
     if lookback_minutes is not None:
         last_load_date -= timedelta(minutes=lookback_minutes)
     return last_load_date
 
 
-def get_earliest_load_date(keys, default=None):
+def get_earliest_load_date(keys, default=None, format_func: callable = (lambda _: _)):
     """
     Retrieve the earliest last_load_date from a supplied list of keys.
 
@@ -47,7 +47,7 @@ def get_earliest_load_date(keys, default=None):
     earliest_date = None
 
     for key in keys:
-        key_date = get_last_load_date(key)
+        key_date = get_last_load_date(key, format_func=format_func)
 
         if key_date:
             if earliest_date is None:
@@ -56,13 +56,15 @@ def get_earliest_load_date(keys, default=None):
                 earliest_date = key_date
 
     if earliest_date is None:
-        logger.warning(f"No earliest load date could be calculated because no dates for keys `{keys}` were found!")
+        logger.warning(
+            format_func(f"No earliest load date could be calculated because no dates for keys `{keys}` were found!")
+        )
         return default
 
     return earliest_date
 
 
-def get_latest_load_date(keys, default=None):
+def get_latest_load_date(keys, default=None, format_func: callable = (lambda _: _)):
     """
     Retrieve the latest last_load_date from a supplied list of keys.
 
@@ -71,7 +73,7 @@ def get_latest_load_date(keys, default=None):
     latest_date = None
 
     for key in keys:
-        key_date = get_last_load_date(key)
+        key_date = get_last_load_date(key, format_func=format_func)
 
         if key_date:
             if latest_date is None:
@@ -80,7 +82,9 @@ def get_latest_load_date(keys, default=None):
                 latest_date = key_date
 
     if latest_date is None:
-        logger.warning(f"No latest load date could be calculated because no dates for keys `{keys}` were found!")
+        logger.warning(
+            format_func(f"No latest load date could be calculated because no dates for keys `{keys}` were found!")
+        )
         return default
 
     return latest_date
