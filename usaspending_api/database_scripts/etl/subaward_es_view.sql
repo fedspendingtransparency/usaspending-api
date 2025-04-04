@@ -119,9 +119,12 @@ SELECT
     s.prime_award_recipient_id,
     a.tas_paths,
     a.tas_components,
-    s.sub_award_recipient_id
+    s.subaward_recipient_hash,
+    s.subaward_recipient_level,
+    s.awarding_toptier_agency_code,
+    s.funding_toptier_agency_code
 FROM
 	rpt.subaward_search s
 LEFT JOIN rpt.award_search a
-ON s.award_id = a.award_id
+    ON s.award_id = a.award_id
 WHERE s.action_date >= '2007-10-01';
