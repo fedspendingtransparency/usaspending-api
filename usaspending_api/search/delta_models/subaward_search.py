@@ -281,8 +281,6 @@ subaward_search_load_sql_string = rf"""
         WHERE
             faba.award_id IS NOT NULL
         GROUP BY
-        
-        
             faba.award_id
     ),
     state_fips AS (
@@ -322,18 +320,6 @@ subaward_search_load_sql_string = rf"""
             congressional_district_no
         FROM cd_city_grouped_rownum
         WHERE row_num = 1
-    ),
-    recipient_hash_and_level AS (
-        SELECT
-            recipient_hash,
-            recipient_level,
-            recipient_hash || '-' || recipient_level AS award_recipient_id
-        FROM
-            rpt.recipient_profile
-        WHERE
-            recipient_level != 'P'
-            AND
-            recipient_name NOT IN {special_cases}
     )
     INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
     (
@@ -722,8 +708,19 @@ subaward_search_load_sql_string = rf"""
     LEFT OUTER JOIN county_fips AS rl_county_fips
         ON UPPER(rl_county_fips.county_name) = UPPER(COALESCE(fpds.legal_entity_county_name, fabs.legal_entity_county_name))
             AND rl_county_fips.state_alpha = bs.legal_entity_state_code
-    LEFT OUTER JOIN recipient_hash_and_level AS recipient_award_id ON (
-        recipient_award_id.recipient_hash = REGEXP_REPLACE(
+    LEFT OUTER JOIN (
+        SELECT
+            recipient_hash,
+            recipient_level,
+            recipient_hash || '-' || recipient_level AS prime_award_recipient_id
+        FROM
+            rpt.recipient_profile
+        WHERE
+            recipient_level != 'P'
+            AND
+            recipient_name NOT IN {special_cases}
+    ) RECIPIENT_HASH_AND_LEVEL ON (
+        RECIPIENT_HASH_AND_LEVEL.recipient_hash = REGEXP_REPLACE(
             MD5(
                 UPPER(
                     CASE
@@ -740,7 +737,7 @@ subaward_search_load_sql_string = rf"""
             '\$1-\$2-\$3-\$4-\$5'
         )
         AND
-        recipient_award_id.recipient_level = CASE
+        RECIPIENT_HASH_AND_LEVEL.recipient_level = CASE
             WHEN bs.ultimate_parent_uei IS NULL OR bs.ultimate_parent_uei = ''
                 THEN 'R'
             ELSE 'C'

@@ -502,7 +502,8 @@ def spending_by_award_test_data():
         awardee_or_recipient_uei="testuei",
         naics="112233",
         naics_description="the test test test",
-        sub_award_recipient_id="EXAM-PLE-ID-P",
+        subaward_recipient_hash="EXAM-PLE-ID",
+        subaward_recipient_level="P",
     )
     baker.make(
         "search.SubawardSearch",
@@ -646,7 +647,8 @@ def spending_by_award_test_data():
         cfda_number="1.234",
         cfda_numbers="1.234",
         cfda_titles="test cfda",
-        sub_award_recipient_id="EXAM-PLE-ID-P",
+        subaward_recipient_hash="EXAM-PLE-ID",
+        subaward_recipient_level="P",
     )
 
     # Ref Program Activity

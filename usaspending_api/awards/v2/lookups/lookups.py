@@ -63,7 +63,6 @@ subaward_mapping = {
     "Sub-Award Description": "subaward_description",
     "Sub-Recipient UEI": "sub_awardee_or_recipient_uei",
     "Prime Award Recipient UEI": "awardee_or_recipient_uei",
-    "sub_award_recipient_id": "sub_award_recipient_id",
 }
 
 award_assistance_mapping = {
