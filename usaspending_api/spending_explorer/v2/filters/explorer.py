@@ -1,5 +1,4 @@
 from django.db.models import Exists, F, OuterRef, Sum, TextField, Value
-from django.db.models.functions import Coalesce
 
 from usaspending_api.common.calculations.file_b import FileBCalculations
 from usaspending_api.references.models import Agency
@@ -112,26 +111,13 @@ class Explorer(object):
         alt_set = (
             self.alt_set.filter(transaction_obligated_amount__isnull=False)
             .annotate(
-                id=Coalesce(
-                    "award__latest_transaction__contract_data__awardee_or_recipient_legal",
-                    "award__latest_transaction__assistance_data__awardee_or_recipient_legal",
-                    output_field=TextField(),
-                ),
+                id=F("award__recipient_unique_id"),
                 type=Value("recipient", output_field=TextField()),
-                name=Coalesce(
-                    "award__latest_transaction__contract_data__awardee_or_recipient_legal",
-                    "award__latest_transaction__assistance_data__awardee_or_recipient_legal",
-                    output_field=TextField(),
-                ),
-                code=Coalesce(
-                    "award__latest_transaction__assistance_data__awardee_or_recipient_legal",
-                    "award__latest_transaction__contract_data__awardee_or_recipient_legal",
-                    output_field=TextField(),
-                ),
+                name=F("award__recipient_name"),
+                code=F("award__recipient_name"),
             )
             .values("id", "type", "name", "code", "amount")
-            .annotate(total=Sum("transaction_obligated_amount"))
-            .order_by("-total")
+            .order_by("-amount")
         )
 
         return alt_set
