@@ -3,11 +3,10 @@ from decimal import Decimal
 
 import pytest
 from django.conf import settings
+from django.core.management import call_command
 from django.db import connections
-
 from model_bakery import baker
 
-from usaspending_api.search.models import SubawardSearch
 from usaspending_api.tests.conftest_spark import create_and_load_all_delta_tables, create_all_delta_tables
 
 
@@ -43,22 +42,22 @@ def initial_award_and_subaward_data():
     )
     broker_subawards = [
         {
-            "unique_award_key": static_award_no_subawards.award_id,
+            "unique_award_key": static_award_with_subawards.generated_unique_award_id,
             "subaward_amount": 25.0,
             "id": 123,
             "subaward_number": "123",
             "sub_action_date": "2024-01-01",
         },
         {
-            "unique_award_key": manipulated_award_with_subawards.award_id,
+            "unique_award_key": manipulated_award_with_subawards.generated_unique_award_id,
             "subaward_amount": 100.0,
             "id": 456,
             "subaward_number": "456",
             "sub_action_date": "2024-01-01",
         },
         {
-            "unique_award_key": manipulated_award_with_subawards.award_id,
-            "subaward_amount": 50.0,
+            "unique_award_key": manipulated_award_with_subawards.generated_unique_award_id,
+            "subaward_amount": 40.0,
             "id": 789,
             "subaward_number": "789",
             "sub_action_date": "2024-01-01",
@@ -68,55 +67,86 @@ def initial_award_and_subaward_data():
         for subaward in broker_subawards:
             cursor.execute(
                 """
-                    INSERT INTO subaward (unique_award_key, subaward_amount)
-                    VALUES (%(unique_award_key)s, %(subaward_amount)s)
+                    INSERT INTO subaward (unique_award_key, subaward_amount, id, subaward_number, sub_action_date)
+                    VALUES (%(unique_award_key)s, %(subaward_amount)s, %(id)s, %(subaward_number)s, %(sub_action_date)s)
                 """,
                 subaward,
             )
 
-    return {
+    yield {
         "static_award_no_subawards": static_award_no_subawards,
         "static_award_with_subawards": static_award_with_subawards,
         "manipulated_award_with_subawards": manipulated_award_with_subawards,
         "subaward_to_delete": broker_subawards[2],
     }
 
+    with connections[settings.DATA_BROKER_DB_ALIAS].cursor() as cursor:
+        cursor.execute(f"TRUNCATE subaward")
+        cursor.execute(f"SELECT COUNT(*) FROM subaward")
+        assert cursor.fetchall()[0][0] == 0
+
 
 @pytest.fixture
 def create_new_subaward(initial_award_and_subaward_data):
-    award_id = initial_award_and_subaward_data["manipulated_award_with_subawards"].award_id
-    baker.make("search.SubawardSearch", award_id=award_id, subaward_amount=300.0)
+    with connections[settings.DATA_BROKER_DB_ALIAS].cursor() as cursor:
+        subaward = {
+            "unique_award_key": initial_award_and_subaward_data[
+                "manipulated_award_with_subawards"
+            ].generated_unique_award_id,
+            "subaward_amount": 300.0,
+            "id": 111,
+            "subaward_number": "111",
+            "sub_action_date": "2024-01-01",
+        }
+        cursor.execute(
+            """
+                INSERT INTO subaward (unique_award_key, subaward_amount, id, subaward_number, sub_action_date)
+                VALUES (%(unique_award_key)s, %(subaward_amount)s, %(id)s, %(subaward_number)s, %(sub_action_date)s)
+            """,
+            subaward,
+        )
     return initial_award_and_subaward_data
 
 
 @pytest.fixture
 def delete_one_subaward(initial_award_and_subaward_data):
-    broker_subaward_id = initial_award_and_subaward_data["subaward_to_delete"]["unique_award_key"]
-    SubawardSearch.objects.filter(broker_subaward_id=broker_subaward_id).delete()
+    subaward_to_delete = initial_award_and_subaward_data["subaward_to_delete"]
+    with connections[settings.DATA_BROKER_DB_ALIAS].cursor() as cursor:
+        cursor.execute(
+            """
+                DELETE FROM subaward WHERE subaward_number = %(subaward_number)s
+            """,
+            subaward_to_delete,
+        )
     return initial_award_and_subaward_data
 
 
 @pytest.fixture
 def delete_all_subawards(initial_award_and_subaward_data):
-    award_id = initial_award_and_subaward_data["manipulated_award_with_subawards"].award_id
-    SubawardSearch.objects.filter(award_id=award_id).delete()
+    subaward_to_delete = initial_award_and_subaward_data["subaward_to_delete"]
+    with connections[settings.DATA_BROKER_DB_ALIAS].cursor() as cursor:
+        cursor.execute(
+            """
+                DELETE FROM subaward WHERE unique_award_key = %(unique_award_key)s
+            """,
+            subaward_to_delete,
+        )
     return initial_award_and_subaward_data
 
 
 @pytest.mark.django_db(transaction=True, databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
 @pytest.mark.parametrize(
-    "fixture_name,expected_subaward_count,expected_total_subaward_amount",
+    "fixture_name,expected_manipulated_value",
     [
-        ("initial_award_and_subaward_data", 0, 0),
-        ("create_new_subaward", 0, 0),
-        ("delete_one_subaward", 0, 0),
-        ("delete_all_subawards", 0, 0),
+        ("initial_award_and_subaward_data", {"id": 3, "subaward_count": 2, "total_subaward_amount": Decimal(140)}),
+        ("create_new_subaward", {"id": 3, "subaward_count": 3, "total_subaward_amount": Decimal(440)}),
+        ("delete_one_subaward", {"id": 3, "subaward_count": 1, "total_subaward_amount": Decimal(100)}),
+        ("delete_all_subawards", {"id": 3, "subaward_count": 0, "total_subaward_amount": None}),
     ],
 )
 def test_update_award_with_subaward(
     fixture_name,
-    expected_subaward_count,
-    expected_total_subaward_amount,
+    expected_manipulated_value,
     spark,
     s3_unittest_data_bucket,
     hive_unittest_metastore_db,
@@ -143,6 +173,10 @@ def test_update_award_with_subaward(
     ]
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
 
+    base_award_dataframe = spark.sql("SELECT * FROM int.awards")
+
+    call_command("update_delta_award_with_subaward_counts")
+
     expected_static_values = [
         {
             "id": award.award_id,
@@ -153,10 +187,17 @@ def test_update_award_with_subaward(
     ]
     actual_static_values = [
         award_row.asDict()
-        for award_row in spark.sql("SELECT * FROM int.awards ORDER BY id DESC")
-        .select(list(expected_static_values[0].keys()))
-        .filter()
+        for award_row in base_award_dataframe.select(list(expected_static_values[0].keys()))
+        .filter(base_award_dataframe.id.isin([award["id"] for award in expected_static_values]))
+        .orderBy(base_award_dataframe.id)
         .collect()
     ]
 
     assert actual_static_values == expected_static_values
+
+    actual_manipulated_value = (
+        base_award_dataframe.select(list(expected_manipulated_value.keys()))
+        .filter(base_award_dataframe.id == expected_manipulated_value["id"])
+        .collect()
+    )
+    assert actual_manipulated_value[0].asDict() == expected_manipulated_value
