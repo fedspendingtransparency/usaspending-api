@@ -3,8 +3,12 @@ name: Code Climate Before Build
 on:
   workflow_call:
     inputs:
-      base-branch:
-        description: The branch that the PR is merged in to
+      source-branch:
+        description: The branch that tests are run against
+        type: string
+        required: true
+      source-commit-sha:
+        description: The specific commit on the branch that tests are run against
         type: string
         required: true
     secrets:
@@ -16,7 +20,8 @@ jobs:
     name: Run
     runs-on: ${{ vars.RUNNER_VERSION }}
     env:
-      GIT_BRANCH: ${{ inputs.base-branch }}
+      GIT_BRANCH: ${{ inputs.source-branch }}
+      GIT_COMMIT_SHA: ${{ inputs.source-commit-sha }}
       CC_TEST_REPORTER_ID: ${{ secrets.cc_test_reporter_id }}
     steps:
       - name: Install Dependency
