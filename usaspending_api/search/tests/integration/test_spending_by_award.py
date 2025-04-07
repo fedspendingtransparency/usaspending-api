@@ -870,9 +870,12 @@ def _test_correct_response_for_keywords(client):
             }
         ),
     )
-    expected_result = [{"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"}]
+    expected_result = [
+        {"internal_id": 2, "Award ID": "abc222", "generated_internal_id": "CONT_AWD_TESTING_2"},
+        {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"},
+    ]
     assert resp.status_code == status.HTTP_200_OK
-    assert len(resp.json().get("results")) == 1
+    assert len(resp.json().get("results")) == 2
     assert resp.json().get("results") == expected_result, "Keyword filter does not match expected result"
 
 
@@ -2317,6 +2320,259 @@ def test_spending_by_award_unique_id_subaward(
         },
     }
     expected_response = []
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
+
+
+def test_spending_by_award_description_specificity(
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
+
+    # get award with description "the test test test" and not "the description for test"
+    test_payload = {
+        "subawards": False,
+        "fields": ["Award ID"],
+        "filters": {"award_type_codes": ["A", "B", "C", "D"], "description": "the test"},
+    }
+    expected_response = [
+        {
+            "internal_id": 1,
+            "Award ID": "abc111",
+            "generated_internal_id": "CONT_AWD_TESTING_1",
+        },
+    ]
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
+
+    # get subaward with description "the test test test" and not "the description for test"
+    test_payload = {
+        "subawards": True,
+        "fields": ["Sub-Award ID"],
+        "filters": {"award_type_codes": ["A", "B", "C", "D"], "description": "the test"},
+    }
+    expected_response = [
+        {
+            "internal_id": "11111",
+            "prime_award_internal_id": 1,
+            "Sub-Award ID": "11111",
+            "prime_award_generated_internal_id": "CONT_AWD_TESTING_1",
+        },
+    ]
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
+
+    # ensure only queries for text in the correct order
+    test_payload = {
+        "subawards": True,
+        "fields": ["Sub-Award ID"],
+        "filters": {"award_type_codes": ["A", "B", "C", "D"], "description": "test the"},
+    }
+    expected_response = []
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
+
+
+def test_spending_by_award_keyword_specificity(
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
+
+    # get award with naics_description "the test test test" and not "the description for test"
+    test_payload = {
+        "subawards": False,
+        "fields": ["Award ID"],
+        "filters": {"award_type_codes": ["A", "B", "C", "D"], "keyword": "the test"},
+    }
+    expected_response = [
+        {
+            "internal_id": 1,
+            "Award ID": "abc111",
+            "generated_internal_id": "CONT_AWD_TESTING_1",
+        },
+    ]
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
+
+    # get subaward with product_or_service_description "the test test test" and not
+    # "the description for test"
+    test_payload = {
+        "subawards": True,
+        "fields": ["Sub-Award ID"],
+        "filters": {"award_type_codes": ["A", "B", "C", "D"], "keyword": "the test"},
+    }
+    expected_response = [
+        {
+            "internal_id": "11111",
+            "prime_award_internal_id": 1,
+            "Sub-Award ID": "11111",
+            "prime_award_generated_internal_id": "CONT_AWD_TESTING_1",
+        },
+    ]
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
+
+    # ensure only queries for text in the correct order
+    test_payload = {
+        "subawards": True,
+        "fields": ["Sub-Award ID"],
+        "filters": {"award_type_codes": ["A", "B", "C", "D"], "keyword": "test the"},
+    }
+    expected_response = []
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
+
+
+def test_spending_by_award_new_contract_fields(
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    # get award with naics_description "the test test test" and not "the description for test"
+    test_payload = {
+        "subawards": False,
+        "fields": ["Award ID", "Recipient UEI", "Recipient Location", "Primary Place of Performance", "NAICS", "PSC"],
+        "filters": {"award_type_codes": ["A", "B", "C", "D"], "keyword": "the test"},
+    }
+    expected_response = [
+        {
+            "internal_id": 1,
+            "Award ID": "abc111",
+            "generated_internal_id": "CONT_AWD_TESTING_1",
+            "Recipient UEI": "testuei",
+            "Recipient Location": {
+                "location_country_code": "USA",
+                "country_name": "UNITED STATES",
+                "state_code": "VA",
+                "state_name": "Virginia",
+                "city_name": "ARLINGTON",
+                "county_code": "013",
+                "county_name": "ARLINGTON",
+                "address_line1": "1 Memorial Drive",
+                "address_line2": "Room 324",
+                "address_line3": "Desk 5",
+                "congressional_code": "08",
+                "zip4": "9040",
+                "zip5": "55455",
+                "foreign_postal_code": "55455",
+                "foreign_province": "Manitoba",
+            },
+            "Primary Place of Performance": {
+                "location_country_code": "USA",
+                "country_name": "UNITED STATES",
+                "state_code": "VA",
+                "state_name": "Virginia",
+                "city_name": "ARLINGTON",
+                "county_code": "013",
+                "county_name": "ARLINGTON",
+                "congressional_code": "08",
+                "zip4": "9040",
+                "zip5": "55455",
+            },
+            "NAICS": {"code": "112233", "description": "the test test test"},
+            "PSC": {"code": "PSC1", "description": "the test test test"},
+        },
+    ]
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
+
+
+def test_spending_by_award_new_assistance_fields(
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    # get award with naics_description "the test test test" and not "the description for test"
+    test_payload = {
+        "subawards": False,
+        "fields": [
+            "Award ID",
+            "Recipient UEI",
+            "Recipient Location",
+            "Primary Place of Performance",
+            "Assistance Listings",
+            "primary_assistance_listing",
+        ],
+        "filters": {"award_type_codes": ["08"]},
+    }
+    expected_response = [
+        {
+            "internal_id": 5145,
+            "Award ID": "award5145",
+            "generated_internal_id": "ASST_NON_TESTING_5145",
+            "Recipient UEI": "acmeuei",
+            "Recipient Location": {
+                "location_country_code": "USA",
+                "country_name": "UNITED STATES",
+                "state_code": "VA",
+                "state_name": "Virginia",
+                "city_name": "ARLINGTON",
+                "county_code": "013",
+                "county_name": "ARLINGTON",
+                "address_line1": "1 Memorial Drive",
+                "address_line2": "Room 324",
+                "address_line3": "Desk 5",
+                "congressional_code": "08",
+                "zip4": "9040",
+                "zip5": "55455",
+                "foreign_postal_code": "55455",
+                "foreign_province": "Manitoba",
+            },
+            "Primary Place of Performance": {
+                "location_country_code": "USA",
+                "country_name": "UNITED STATES",
+                "state_code": "VA",
+                "state_name": "Virginia",
+                "city_name": "ARLINGTON",
+                "county_code": "013",
+                "county_name": "ARLINGTON",
+                "congressional_code": "08",
+                "zip4": "9040",
+                "zip5": "55455",
+            },
+            "Assistance Listings": [
+                {"cfda_number": "64.114", "cfda_program_title": "VETERANS HOUSING GUARANTEED AND INSURED LOANS"}
+            ],
+            "primary_assistance_listing": {
+                "cfda_number": "64.114",
+                "cfda_program_title": "VETERANS HOUSING GUARANTEED AND INSURED LOANS",
+            },
+        },
+    ]
     resp = client.post(
         "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
     )

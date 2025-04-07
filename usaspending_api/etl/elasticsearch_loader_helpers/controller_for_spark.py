@@ -54,19 +54,16 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
         elif self.config["load_type"] == "award":
             identifier_replacements["award_search"] = "rpt.award_search"
         elif self.config["load_type"] == "subaward":
-            identifier_replacements = None
-        elif self.config["load_type"] == "covid19-faba":
-            identifier_replacements["financial_accounts_by_awards"] = "int.financial_accounts_by_awards"
-            identifier_replacements["vw_awards"] = "int.awards"
+            identifier_replacements["toptier_agency"] = "global_temp.toptier_agency"
         elif self.config["load_type"] == "recipient":
             identifier_replacements = None
         elif self.config["load_type"] == "location":
-            # Replace the Postgres regex operator with the Databricks regex operator
-            identifier_replacements["~"] = "rlike"
-            identifier_replacements["state_data"] = "global_temp.state_data"
             identifier_replacements["array_agg"] = "collect_list"
             identifier_replacements["json_agg"] = "collect_list"
-            identifier_replacements["jsonb_build_object"] = "named_struct"
+            # Replace the Postgres regex operator with the Databricks regex operator
+            identifier_replacements["~"] = "rlike"
+            identifier_replacements["jsonb_build_object"] = "map"
+            identifier_replacements["to_jsonb"] = "to_json"
         else:
             raise ValueError(
                 f"Unrecognized load_type {self.config['load_type']}, or this function does not yet support it"

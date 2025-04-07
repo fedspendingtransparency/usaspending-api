@@ -1,6 +1,5 @@
 import json
 import logging
-
 from typing import Optional
 
 from usaspending_api.recipient.models import RecipientProfile
@@ -23,6 +22,18 @@ def transaction_recipient_agg_key(record: dict) -> str:
         str(record["recipient_hash"])
         + "/"
         + (RecipientProfile.return_one_level(record["recipient_levels"] or []) or "")
+    )
+
+
+def subaward_recipient_agg_key(record: dict) -> str:
+    """Dictionary key order impacts Elasticsearch behavior!!!"""
+    if record["subaward_recipient_hash"] is None:
+        return ""
+
+    return (
+        str(record["subaward_recipient_hash"])
+        + "/"
+        + (str(record["subaward_recipient_level"]) if record["subaward_recipient_level"] is not None else "")
     )
 
 
@@ -172,3 +183,17 @@ def _country_agg_key(location_type, record: dict) -> Optional[str]:
             "country_name": record[f"{location_type}_country_name"],
         }
     )
+
+
+def location_type_agg_key(record: dict) -> Optional[str]:
+    if record.get("location_json") is None:
+        return ""
+    else:
+        json_data = record.get("location_json")
+
+    if isinstance(json_data, str):
+        return json.loads(json_data).get("location_type")
+    elif isinstance(json_data, dict):
+        return json_data.get("location_type")
+    else:
+        raise ValueError("Unable to get the 'location_type' key from the 'location_json' field")

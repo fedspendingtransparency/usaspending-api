@@ -4,8 +4,6 @@ from decimal import Decimal
 from enum import Enum
 from typing import List
 
-from django.db.models import QuerySet
-
 from usaspending_api.search.v2.views.enums import SpendingLevel
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_category import (
     AbstractSpendingByCategoryViewSet,
@@ -44,9 +42,6 @@ class AbstractAccountViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMet
             )
 
         return results
-
-    def query_django_for_subawards(self, base_queryset: QuerySet) -> List[dict]:
-        self._raise_not_implemented()
 
 
 class FederalAccountViewSet(AbstractAccountViewSet):

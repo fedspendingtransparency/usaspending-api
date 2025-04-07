@@ -1,0 +1,47 @@
+name: Build Broker Docker Image for Test
+
+on:
+  workflow_call:
+
+jobs:
+  # This job is a workaround that allows defining a dynamic variable that is provided as input
+  # to another job. See here: https://github.com/orgs/community/discussions/26671#discussioncomment-3931817
+  Setup-Variables:
+    name: Setup Variables
+    runs-on: ${{ vars.RUNNER_VERSION }}
+    outputs:
+      broker-branch: ${{ steps.determine-broker-branch.outputs.branch }}
+    steps:
+      - name: Determine Broker Branch
+        id: determine-broker-branch
+        run: |
+          # Choose a branch that matches the target, otherwise, default to qat
+          echo "branch=${{ contains(fromJSON('["qat", "staging", "master"]'), github.base_ref) && github.base_ref || 'qat' }}" >> "$GITHUB_OUTPUT"
+
+  Run:
+    name: Run
+    needs: Setup-Variables
+    runs-on: ${{ vars.RUNNER_VERSION }}
+    steps:
+      - name: Checkout Broker Backend
+        uses: actions/checkout@v4
+        with:
+          repository: fedspendingtransparency/data-act-broker-backend
+          path: data-act-broker-backend
+          ref: ${{ needs.Setup-Variables.outputs.broker-branch }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./data-act-broker-backend
+          tags: dataact-broker-backend:latest
+          outputs: type=docker,dest=/tmp/dataact-broker-backend.tar
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dataact-broker-backend
+          path: /tmp/dataact-broker-backend.tar

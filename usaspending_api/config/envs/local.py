@@ -35,6 +35,7 @@ class LocalConfig(DefaultConfig):
 
     # ==== [Global] ====
     ENV_CODE: ClassVar[str] = "lcl"
+
     # Common credentials to share across services for convenience / ease on remembering
     _USASPENDING_USER: str = "usaspending"
     _USASPENDING_PASSWORD: SecretStr = "usaspender"
@@ -93,7 +94,7 @@ class LocalConfig(DefaultConfig):
     AWS_PROFILE: str = None
     AWS_REGION: str = ""
     SPARK_S3_BUCKET: str = "data"
-    BULK_DOWNLOAD_S3_BUCKET_NAME: str = "bulk_download"
+    BULK_DOWNLOAD_S3_BUCKET_NAME: str = "bulk-download"
     DATABASE_DOWNLOAD_S3_BUCKET_NAME = "dti-usaspending-db"
 
     # Since this config values is built by composing others, we want to late/lazily-evaluate their values,

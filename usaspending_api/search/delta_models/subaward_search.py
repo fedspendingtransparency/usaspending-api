@@ -207,6 +207,10 @@ SUBAWARD_SEARCH_COLUMNS = {
     "pop_county_name": {"delta": "STRING", "postgres": "TEXT"},
     "program_activities": {"delta": "STRING", "postgres": "JSONB", "gold": False},
     "prime_award_recipient_id": {"delta": "STRING", "postgres": "TEXT"},
+    "subaward_recipient_hash": {"delta": "STRING", "postgres": "TEXT"},
+    "subaward_recipient_level": {"delta": "STRING", "postgres": "TEXT"},
+    "awarding_toptier_agency_code": {"delta": "STRING", "postgres": "TEXT"},
+    "funding_toptier_agency_code": {"delta": "STRING", "postgres": "TEXT"},
 }
 SUBAWARD_SEARCH_POSTGRES_VECTORS = {
     "keyword_ts_vector": ["sub_awardee_or_recipient_legal", "product_or_service_description", "subaward_description"],
@@ -216,7 +220,7 @@ SUBAWARD_SEARCH_POSTGRES_VECTORS = {
 SUBAWARD_SEARCH_DELTA_COLUMNS = {k: v["delta"] for k, v in SUBAWARD_SEARCH_COLUMNS.items()}
 SUBAWARD_SEARCH_POSTGRES_COLUMNS = {
     **{k: v["postgres"] for k, v in SUBAWARD_SEARCH_COLUMNS.items()},
-    **{col: "TSVECTOR" for col in SUBAWARD_SEARCH_POSTGRES_VECTORS},
+    **dict.fromkeys(SUBAWARD_SEARCH_POSTGRES_VECTORS, "TSVECTOR"),
 }
 
 special_cases = tuple(sc for sc in SPECIAL_CASES)
@@ -568,7 +572,11 @@ subaward_search_load_sql_string = rf"""
         CONCAT(pop_state_fips.fips, pop_county_fips.county_numeric) AS place_of_perform_county_fips,
         UPPER(COALESCE(fpds.place_of_perform_county_na, fabs.place_of_perform_county_na)) AS pop_county_name,
         tas.program_activities,
-        RECIPIENT_HASH_AND_LEVEL.prime_award_recipient_id
+        RECIPIENT_HASH_AND_LEVEL.prime_award_recipient_id,
+        SUB_RECIPIENT_HASH_AND_LEVEL.subaward_recipient_hash,
+        SUB_RECIPIENT_HASH_AND_LEVEL.subaward_recipient_level,
+        taa.toptier_code AS awarding_toptier_agency_code,
+        tfa.toptier_code AS funding_toptier_agency_code
     FROM
         raw.subaward AS bs
     LEFT OUTER JOIN
@@ -735,6 +743,43 @@ subaward_search_load_sql_string = rf"""
             ELSE 'C'
         END
     )
+    LEFT OUTER JOIN (
+        SELECT
+            recipient_hash AS subaward_recipient_hash,
+            recipient_level AS subaward_recipient_level
+        FROM
+            rpt.recipient_profile
+        WHERE
+            recipient_level != 'P'
+            AND
+            recipient_name NOT IN {special_cases}
+    ) SUB_RECIPIENT_HASH_AND_LEVEL ON (
+        SUB_RECIPIENT_HASH_AND_LEVEL.subaward_recipient_hash = REGEXP_REPLACE(
+            MD5(
+                UPPER(
+                    CASE
+                        WHEN bs.sub_awardee_or_recipient_uei IS NOT NULL
+                            THEN CONCAT("uei-", bs.sub_awardee_or_recipient_uei)
+                        WHEN bs.sub_awardee_or_recipient_uniqu IS NOT NULL
+                            THEN CONCAT("duns-", bs.sub_awardee_or_recipient_uniqu)
+                        ELSE
+                            CONCAT("name-", COALESCE(bs.sub_awardee_or_recipient_legal, ""))
+                    END
+                )
+            ),
+            '^(\.{{{{8}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{12}}}})$',
+            '\$1-\$2-\$3-\$4-\$5'
+        )
+        AND
+        SUB_RECIPIENT_HASH_AND_LEVEL.subaward_recipient_level = CASE
+            WHEN bs.sub_ultimate_parent_uei IS NULL OR bs.sub_ultimate_parent_uei = ''
+                THEN 'R'
+            ELSE 'C'
+        END
+    )
     -- Subaward numbers are crucial for identifying subawards and so those without subaward numbers won't be surfaced.
-    WHERE bs.subaward_number IS NOT NULL
+    WHERE
+        bs.subaward_number IS NOT NULL
+        AND bs.sub_action_date IS NOT NULL
+        AND bs.subaward_amount IS NOT NULL
 """
