@@ -61,7 +61,12 @@ class Command(BaseCommand):
         
         # Run command and log
         df = self.spark.sql("SELECT * FROM rpt.recipient_profile")
-        logger.info(df.limit(10))
+        
+        logger_jvm("====== JVM LOGGER =======")
+        logger_jvm.info(df.show(10))
+
+        logger_jvm("====== Standard LOGGER =======")
+        logger.info(df.show(10))
 
         if spark_created_by_command:
             self.spark.stop()
