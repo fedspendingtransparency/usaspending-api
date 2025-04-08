@@ -126,7 +126,9 @@ jobs:
       - Run-Spark-Integration-Load-To-From-Delta-Tests
       - Run-Spark-Integration-Other-Tests
       - Run-Non-Spark-Integration-Tests
+      - Run-Non-Spark-Integration-Tests-With-Signal-Handling
       - Run-Unit-Tests
+      - Run-Unit-Tests-With-Signal-Handling
     if: ${{ !failure() && !cancelled() }}
     uses: ./.github/workflows/code-climate-report-coverage.yaml
     with:

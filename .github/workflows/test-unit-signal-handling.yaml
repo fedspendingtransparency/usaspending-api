@@ -46,7 +46,7 @@ jobs:
         id: run-test-cases
         uses: ./usaspending-api/.github/actions/run-pytest
         with:
-          cov-report-name: 'unit-tests'
+          cov-report-name: 'unit-signal-handling-tests'
           ignore-glob: '**/tests/integration/*'
           include-glob: 'test_*.py *_test.py'
           marker: '(signal_handling)'

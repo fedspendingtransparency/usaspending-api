@@ -55,7 +55,7 @@ jobs:
       - name: Run Test Cases
         uses: ./usaspending-api/.github/actions/run-pytest
         with:
-          cov-report-name: 'non-spark-integration-tests'
+          cov-report-name: 'non-spark-integration-signal-handling-tests'
           include-glob: '**/tests/integration/*'
           marker: '(signal_handling and not spark)'
           num-processes: 0
