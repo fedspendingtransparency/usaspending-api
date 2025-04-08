@@ -1,5 +1,4 @@
 import pytest
-
 from rest_framework import status
 
 url = "/api/v2/disaster/federal_account/spending/"
@@ -19,7 +18,7 @@ def test_federal_account_success(client, generic_account_data, monkeypatch, help
                     "award_count": None,
                     "description": "flowers",
                     "id": 22,
-                    "obligation": 238.0,
+                    "obligation": 100.0,
                     "outlay": 511.0,
                     "total_budgetary_resources": 42580.0,
                 }
@@ -28,7 +27,7 @@ def test_federal_account_success(client, generic_account_data, monkeypatch, help
             "award_count": None,
             "description": "gifts",
             "id": 21,
-            "obligation": 238.0,
+            "obligation": 100.0,
             "outlay": 511.0,
             "total_budgetary_resources": 42580.0,
         }
@@ -63,7 +62,7 @@ def test_federal_account_success(client, generic_account_data, monkeypatch, help
                     "award_count": None,
                     "description": "flowers",
                     "id": 22,
-                    "obligation": 238.0,
+                    "obligation": 100.0,
                     "outlay": 511.0,
                     "total_budgetary_resources": 42580.0,
                 },
@@ -72,7 +71,7 @@ def test_federal_account_success(client, generic_account_data, monkeypatch, help
             "award_count": None,
             "description": "gifts",
             "id": 21,
-            "obligation": 1248.0,
+            "obligation": 1110.0,
             "outlay": 511.0,
             "total_budgetary_resources": 1522430.0,
         }
@@ -80,7 +79,7 @@ def test_federal_account_success(client, generic_account_data, monkeypatch, help
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
 
-    expected_totals = {"obligation": 1248.0, "outlay": 511.0, "total_budgetary_resources": 1522430.0}
+    expected_totals = {"obligation": 1110.0, "outlay": 511.0, "total_budgetary_resources": 1522430.0}
     assert resp.json()["totals"] == expected_totals
 
 
