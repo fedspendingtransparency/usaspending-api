@@ -51,9 +51,3 @@ jobs:
           include-glob: 'test_*.py *_test.py'
           marker: '(not signal_handling)'
           working-directory: ./usaspending-api
-
-  Cancel-Running-Workflow:
-    name: Cancel Running Workflow
-    needs: Run
-    if: failure()
-    uses: ./.github/workflows/cancel-running-workflow.yaml

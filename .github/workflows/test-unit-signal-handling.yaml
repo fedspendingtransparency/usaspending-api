@@ -52,9 +52,3 @@ jobs:
           marker: '(signal_handling)'
           num-processes: 0
           working-directory: ./usaspending-api
-
-  Cancel-Running-Workflow:
-    name: Cancel Running Workflow
-    needs: Run
-    if: failure()
-    uses: ./.github/workflows/cancel-running-workflow.yaml
