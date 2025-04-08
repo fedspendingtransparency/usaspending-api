@@ -25,7 +25,7 @@ TRANSACTIONS_LOOKUP = {
     "generated_internal_id": "generated_unique_award_id",
     "Last Date to Order": "ordering_period_end_date",
     "def_codes": "disaster_emergency_fund_codes",
-    "Transaction Description": "transaction_description",
+    "Transaction Description": "transaction_description.keyword",
     "Action Type": "action_type",
     "Recipient UEI": "recipient_uei.keyword",
 }
