@@ -33,6 +33,13 @@ class Command(BaseCommand):
             help="Whether to create proxy tables",
         )
 
+    def log(self, label, content):
+        self.logger_jvm.info(f"====== JVM LOGGER - {label} =======")
+        self.logger_jvm.info(content)
+
+        self.logger.info(f"====== Standard LOGGER - {label} =======")
+        self.logger.info(content)
+
 
     def handle(self, *args, **options):
         extra_conf = {
@@ -52,21 +59,40 @@ class Command(BaseCommand):
             self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)  # type: SparkSession
 
         # Setup Logger
-        logger_jvm = get_jvm_logger(self.spark, __name__)
-        logger = logging.getLogger("script")
+        self.logger_jvm = get_jvm_logger(self.spark, __name__)
+        self.logger = logging.getLogger("script")
 
         # Resolve Parameters
         if options['create_temp_tables']:
             create_ref_temp_views(self.spark, create_broker_views=True)
         
         # Run command and log
-        df = self.spark.sql("SELECT * FROM rpt.recipient_profile")
-        
-        logger_jvm.info("====== JVM LOGGER =======")
-        logger_jvm.info(df.show(10))
 
-        logger_jvm.info("====== Standard LOGGER =======")
-        logger.info(df.show(10))
+        df = self.spark.sql("""
+            SELECT * FROM rpt.recipient_profile
+        """)
+        self.log("Recipient Profile", df.show(100))
+
+
+        df = self.spark.sql("""
+            SELECT recipient_hash, uei, SORT_ARRAY(COLLECT_SET(recipient_level)) AS recipient_levels
+            FROM rpt.recipient_profile
+            GROUP BY recipient_hash, uei
+        """)
+        self.log("Recipient Levels", df.show(500))
+
+        df = self.spark.sql("""
+            SELECT recipient_hash, uei, SORT_ARRAY(COLLECT_SET(recipient_level)) AS recipient_levels
+            FROM rpt.recipient_profile
+            WHERE SORT_ARRAY(COLLECT_SET(recipient_level)) IS NOT NULL
+            GROUP BY recipient_hash, uei
+        """)
+        self.log("Recipient Levels - No NULLS", df.show(500))
+
+        df = self.spark.sql("""
+            SELECT * FROM rpt.recipient_lookup
+        """)
+        self.log("Recipient Lookup", df.show(100))
 
         if spark_created_by_command:
             self.spark.stop()
