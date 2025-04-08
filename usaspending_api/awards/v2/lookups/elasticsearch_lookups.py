@@ -25,6 +25,9 @@ TRANSACTIONS_LOOKUP = {
     "generated_internal_id": "generated_unique_award_id",
     "Last Date to Order": "ordering_period_end_date",
     "def_codes": "disaster_emergency_fund_codes",
+    "Transaction Description": "transaction_description",
+    "Action Type": "action_type",
+    "Recipient UEI": "recipient_uei.keyword",
 }
 
 base_mapping = {
@@ -54,6 +57,7 @@ base_mapping = {
     "COVID-19 Outlays": "covid_spending_by_defc",
     "Infrastructure Obligations": "iija_spending_by_defc",
     "Infrastructure Outlays": "iija_spending_by_defc",
+    "Recipient UEI": "recipient_uei",
 }
 contracts_mapping = {
     **base_mapping,
@@ -83,6 +87,7 @@ loan_mapping = {
         "Subsidy Cost": "total_subsidy_cost",
         "SAI Number": "sai_number.keyword",
         "CFDA Number": "cfda_number.keyword",
+        "Assistance Listings": "cfdas",
     },
 }
 non_loan_assist_mapping = {
@@ -95,6 +100,7 @@ non_loan_assist_mapping = {
         "Award Type": "type_description",
         "SAI Number": "sai_number.keyword",
         "CFDA Number": "cfda_number.keyword",
+        "Assistance Listings": "cfdas",
     },
 }
 

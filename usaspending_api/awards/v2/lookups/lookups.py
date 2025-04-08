@@ -60,6 +60,9 @@ subaward_mapping = {
     "Prime Award ID": "award_piid_fain",
     "Prime Recipient Name": "awardee_or_recipient_legal",
     "prime_award_recipient_id": "prime_award_recipient_id",
+    "Sub-Award Description": "subaward_description",
+    "Sub-Recipient UEI": "sub_awardee_or_recipient_uei",
+    "Prime Award Recipient UEI": "awardee_or_recipient_uei",
 }
 
 award_assistance_mapping = {

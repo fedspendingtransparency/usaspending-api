@@ -7,18 +7,17 @@
 \.vscode
 
 # Temporary and generated files
-bulk_downloads/*
-chunked_matviews/*
-csv_downloads/*
-log/*
-logs/*
-usaspending_api/logs/*
-matviews/*
-tmp/*
-spark-warehouse/
+bulk_downloads/**
+chunked_matviews/**
+csv_downloads/**
+data/**
 derby.log
-
-data/output/
+log/**
+logs/**
+matviews/**
+spark-warehouse/**
+tmp/**
+usaspending_api/logs/**
 
 # pyenv ignores
 \.python-version
@@ -54,7 +53,7 @@ prof/
 \.pgdump
 \.ipynb
 \.lprof
-libs/*
+libs/**
 __pycache__
 *.pyc
 *.swp
