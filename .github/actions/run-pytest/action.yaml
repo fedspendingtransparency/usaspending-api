@@ -64,11 +64,11 @@ runs:
         ".format(
         db_state=os.environ["DB_STATE"],
         cov_report_name=os.environ["COV_REPORT_NAME"],
-        ignore_glob="--ignore-glob=\"{}\"".format(os.environ["IGNORE_GLOB"]) if os.environ.get("IGNORE_GLOB") else ""
+        ignore_glob="--ignore-glob=\"{}\"".format(os.environ["IGNORE_GLOB"]) if os.environ.get("IGNORE_GLOB") else "",
         include_glob=os.environ["INCLUDE_GLOB"],
         keyword="-k \"{}\"".format(os.environ["KEYWORD"]) if os.environ.get("KEYWORD") else "",
         marker="-m \"{}\"".format(os.environ["MARKER"]) if os.environ.get("MARKER") else "",
-        num_processes=os.environ["NUM_PROCESSES"],
+        num_processes=os.environ["NUM_PROCESSES"]
         ))') >> $GITHUB_OUTPUT
 
     - name: Run tests
