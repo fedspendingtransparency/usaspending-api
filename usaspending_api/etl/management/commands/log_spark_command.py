@@ -67,6 +67,8 @@ class Command(BaseCommand):
             create_ref_temp_views(self.spark, create_broker_views=True)
         
         # Run command and log
+        self.logger.info(f"====== Standard LOGGER - RESET VERSION =======")
+        df = self.spark.sql("RESTORE TABLE emr_testing.transaction_search TO VERSION AS OF 14")
 
         df = self.spark.sql("""
             SELECT * FROM rpt.recipient_profile
@@ -82,10 +84,11 @@ class Command(BaseCommand):
         self.log("Recipient Levels", df.show(500))
 
         df = self.spark.sql("""
-            SELECT recipient_hash, uei, SORT_ARRAY(COLLECT_SET(recipient_level)) AS recipient_levels
-            FROM rpt.recipient_profile
-            WHERE SORT_ARRAY(COLLECT_SET(recipient_level)) IS NOT NULL
-            GROUP BY recipient_hash, uei
+           SELECT * FROM (
+              SELECT recipient_hash, uei, SORT_ARRAY(COLLECT_SET(recipient_level)) AS recipient_levels
+              FROM rpt.recipient_profile
+              GROUP BY recipient_hash, uei
+            ) WHERE recipient_levels IS NOT NULL 
         """)
         self.log("Recipient Levels - No NULLS", df.show(500))
 
