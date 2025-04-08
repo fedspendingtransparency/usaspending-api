@@ -21,9 +21,9 @@ class Command(BaseCommand):
         try:
             self.process_data()
             logger.info("Office ETL finished successfully!")
-        except IntegrityError:
+        except IntegrityError as integrity_error:
             logger.warning("Unique constraint violated. Continuing with pipeline execution.")
-            raise SystemExit(3)  # Raise exit code 3 for unique constraint violation
+            raise SystemExit(3) from integrity_error  # Raise exit code 3 for unique constraint violation
 
     @transaction.atomic()
     def process_data(self):
@@ -52,7 +52,7 @@ class Command(BaseCommand):
 
     @property
     def broker_fetch_sql(self):
-        return f"""
+        return """
             SELECT
                 office_code,
                 office_name,
@@ -76,21 +76,23 @@ class Command(BaseCommand):
         );
         INSERT INTO temp_unique_office_codes_from_source
         SELECT * FROM (
-                    SELECT DISTINCT awarding_office_code, funding_office_code FROM source_assistance_transaction
-                    UNION
-                    SELECT DISTINCT awarding_office_code, funding_office_code FROM source_procurement_transaction
-                ) s;
+            SELECT DISTINCT awarding_office_code, funding_office_code FROM source_assistance_transaction
+            UNION
+            SELECT DISTINCT awarding_office_code, funding_office_code FROM source_procurement_transaction
+        ) s;
         CREATE INDEX awarding_office_code_idx_temp ON temp_unique_office_codes_from_source (awarding_office_code);
         CREATE INDEX funding_office_code_idx_temp ON temp_unique_office_codes_from_source (funding_office_code);
         DELETE FROM office WHERE office_code IN (
-            SELECT DISTINCT office_code
-            FROM office AS o
+            SELECT
+                DISTINCT office_code
+            FROM
+                office AS o
             LEFT JOIN temp_unique_office_codes_from_source s
-            ON s.awarding_office_code = o.office_code
-                OR s.funding_office_code = o.office_code
-
-            WHERE s.awarding_office_code IS NULL
-                AND s.funding_office_code IS NULL
+                ON s.awarding_office_code = o.office_code OR s.funding_office_code = o.office_code
+            WHERE
+                s.awarding_office_code IS NULL
+                AND
+                s.funding_office_code IS NULL
         );
         DROP TABLE IF EXISTS temp_unique_office_codes_from_source;
         """
