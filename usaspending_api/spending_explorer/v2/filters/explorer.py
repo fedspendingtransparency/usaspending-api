@@ -117,7 +117,8 @@ class Explorer(object):
                 code=F("award__recipient_name"),
             )
             .values("id", "type", "name", "code", "amount")
-            .order_by("-amount")
+            .annotate(total=Sum("transaction_obligated_amount"))
+            .order_by("total")
         )
 
         return alt_set
