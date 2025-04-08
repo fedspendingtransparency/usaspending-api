@@ -59,6 +59,7 @@ jobs:
           include-glob: 'test_*.py *_test.py'
           keyword: 'test_load_to_from_delta.py'
           marker: 'spark'
+          num-processes: 2
           working-directory: ./usaspending-api
 
   Cancel-Running-Workflow:

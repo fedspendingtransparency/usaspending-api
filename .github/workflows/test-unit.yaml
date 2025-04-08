@@ -49,6 +49,7 @@ jobs:
           cov-report-name: 'unit-tests'
           ignore-glob: '**/tests/integration/*'
           include-glob: 'test_*.py *_test.py'
+          marker: '(not signal_handling)'
           working-directory: ./usaspending-api
 
   Cancel-Running-Workflow:

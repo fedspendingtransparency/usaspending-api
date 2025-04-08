@@ -1,4 +1,4 @@
-name: Spark Integration Tests - test_load_transactions_in_delta_lookups.py
+name: Non-Spark Integration Tests with Signal Handling
 
 env:
   BROKER_DB_HOST: localhost
@@ -22,7 +22,7 @@ on:
 
 defaults:
   run:
-    working-directory: ./usaspending-api
+    working-directory: usaspending-api
 
 jobs:
   Run:
@@ -49,16 +49,15 @@ jobs:
         uses: ./usaspending-api/.github/actions/init-test-environment
         with:
           is-integration-test: true
-          is-spark-test: true
+          is-spark-test: false
           working-directory: ./usaspending-api
 
       - name: Run Test Cases
         uses: ./usaspending-api/.github/actions/run-pytest
         with:
-          cov-report-name: 'spark-load-transactions-lookup-tests'
-          include-glob: 'test_*.py *_test.py'
-          keyword: 'test_load_transactions_in_delta_lookups.py'
-          marker: 'spark'
+          cov-report-name: 'non-spark-integration-tests'
+          include-glob: '**/tests/integration/*'
+          marker: '(signal_handling and not spark)'
           num-processes: 0
           working-directory: ./usaspending-api
 

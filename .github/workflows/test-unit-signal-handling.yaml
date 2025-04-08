@@ -1,4 +1,4 @@
-name: Spark Integration Tests - test_load_transactions_in_delta_lookups.py
+name: Unit Tests with Signal Handling
 
 env:
   BROKER_DB_HOST: localhost
@@ -20,10 +20,6 @@ env:
 on:
   workflow_call:
 
-defaults:
-  run:
-    working-directory: ./usaspending-api
-
 jobs:
   Run:
     name: Run
@@ -34,12 +30,6 @@ jobs:
         with:
           path: usaspending-api
 
-      - name: Checkout Broker Backend Repository
-        uses: actions/checkout@v4
-        with:
-          repository: fedspendingtransparency/data-act-broker-backend
-          path: data-act-broker-backend
-
       - name: Init Python Environment
         uses: ./usaspending-api/.github/actions/init-python-environment
         with:
@@ -48,17 +38,18 @@ jobs:
       - name: Init Test Environment
         uses: ./usaspending-api/.github/actions/init-test-environment
         with:
-          is-integration-test: true
-          is-spark-test: true
+          is-integration-test: false
+          is-spark-test: false
           working-directory: ./usaspending-api
 
       - name: Run Test Cases
+        id: run-test-cases
         uses: ./usaspending-api/.github/actions/run-pytest
         with:
-          cov-report-name: 'spark-load-transactions-lookup-tests'
+          cov-report-name: 'unit-tests'
+          ignore-glob: '**/tests/integration/*'
           include-glob: 'test_*.py *_test.py'
-          keyword: 'test_load_transactions_in_delta_lookups.py'
-          marker: 'spark'
+          marker: '(signal_handling)'
           num-processes: 0
           working-directory: ./usaspending-api
 
