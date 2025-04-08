@@ -60,6 +60,7 @@ def transaction_data():
         award_id=2,
         action_date="2010-10-01",
         is_fpds=True,
+        action_type="10",
         type="10",
         transaction_description="award 1",
         federal_action_obligation=35.00,
@@ -79,8 +80,10 @@ def transaction_data():
         piid="IND12PB00001",
         action_date="2010-10-01",
         is_fpds=True,
+        action_type="A",
         type="A",
         generated_unique_award_id="ASST_NON_WY99M000020-18Z_8630",
+        transaction_description="description for award 3",
     )
     baker.make(
         "search.AwardSearch",
@@ -493,3 +496,38 @@ def test_assistance_listing(client, monkeypatch, elasticsearch_transaction_index
     assert len(resp.json().get("results")) == 1
     result = resp.json().get("results")[0]
     assert result["Assistance Listing"] == {"cfda_number": "59", "cfda_title": "cfdatitle"}
+
+
+def test_sorting_on_additional_fields(client, monkeypatch, elasticsearch_transaction_index, transaction_data):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
+    fields = ["Award ID", "Transaction Description"]
+
+    request = {
+        "filters": {"award_type_codes": ["A"]},
+        "fields": fields,
+        "page": 1,
+        "limit": 5,
+        "sort": "Transaction Description",
+        "order": "asc",
+    }
+
+    resp = client.post(ENDPOINT, content_type="application/json", data=json.dumps(request))
+    assert len(resp.json().get("results")) == 2
+    assert resp.json().get("results")[0]["Transaction Description"] == "description for award 3"
+    assert resp.json().get("results")[1]["Transaction Description"] == "test"
+
+    fields = ["Award ID", "Action Type"]
+
+    request = {
+        "filters": {"award_type_codes": ["A", "10"]},
+        "fields": fields,
+        "page": 1,
+        "limit": 5,
+        "sort": "Action Type",
+    }
+
+    resp = client.post(ENDPOINT, content_type="application/json", data=json.dumps(request))
+    assert len(resp.json().get("results")) == 3
+    assert resp.json().get("results")[0]["Action Type"] == "A"
+    assert resp.json().get("results")[2]["Action Type"] == "10"
