@@ -621,7 +621,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 "county_name": hit.get("sub_recipient_location_county_name"),
                 "address_line1": hit.get("sub_recipient_location_address_line1"),
                 "congressional_code": hit.get("sub_recipient_location_congressional_code"),
-                "zip4": hit.get("sub_recipient_location_zip")[-4:],
+                "zip4": hit.get("sub_recipient_location_zip")[5:],
                 "zip5": hit.get("sub_recipient_location_zip5"),
                 "foreign_postal_code": hit.get("sub_recipient_location_foreign_posta"),
             }
@@ -636,7 +636,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 "county_code": hit.get("sub_pop_county_code"),
                 "county_name": hit.get("sub_pop_county_name"),
                 "congressional_code": hit.get("sub_pop_congressional_code"),
-                "zip4": hit.get("sub_pop_zip")[-4:],
+                "zip4": hit.get("sub_pop_zip")[5:],
                 "zip5": hit.get("sub_pop_zip")[0:5],
             }
 
