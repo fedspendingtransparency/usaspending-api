@@ -163,6 +163,9 @@ class FinancialAccountsByAwards(AbstractFinancialAccountsByAwards):
         ]
         indexes = [
             models.Index(
+                fields=["submission_id", "object_class_id"], condition=Q(transaction_obligation_amount__isnull=False)
+            ),
+            models.Index(
                 fields=[
                     "submission",
                     "distinct_award_key",
@@ -174,5 +177,5 @@ class FinancialAccountsByAwards(AbstractFinancialAccountsByAwards):
                 ],
                 name="faba_subid_awardkey_sums_idx",
                 condition=Q(disaster_emergency_fund__in=["L", "M", "N", "O", "P", "U", "V"]),
-            )
+            ),
         ]
