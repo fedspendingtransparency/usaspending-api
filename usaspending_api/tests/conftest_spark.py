@@ -1321,7 +1321,7 @@ def populate_usas_data_and_recipients_from_broker(db, populate_usas_data, popula
     yield
 
 
-def create_and_load_all_delta_tables(spark: SparkSession, s3_bucket: str, tables_to_load: list):
+def create_all_delta_tables(spark: SparkSession, s3_bucket: str, tables_to_load: list):
     load_query_tables = [val for val in tables_to_load if val in LOAD_QUERY_TABLE_SPEC]
     load_table_tables = [val for val in tables_to_load if val in LOAD_TABLE_TABLE_SPEC]
     for dest_table in load_table_tables + load_query_tables:
@@ -1340,6 +1340,13 @@ def create_and_load_all_delta_tables(spark: SparkSession, s3_bucket: str, tables
             )
         else:
             call_command("create_delta_table", f"--destination-table={dest_table}", f"--spark-s3-bucket={s3_bucket}")
+
+
+def create_and_load_all_delta_tables(spark: SparkSession, s3_bucket: str, tables_to_load: list):
+    create_all_delta_tables(spark, s3_bucket, tables_to_load)
+
+    load_query_tables = [val for val in tables_to_load if val in LOAD_QUERY_TABLE_SPEC]
+    load_table_tables = [val for val in tables_to_load if val in LOAD_TABLE_TABLE_SPEC]
 
     for dest_table in load_table_tables:
         if dest_table in [
