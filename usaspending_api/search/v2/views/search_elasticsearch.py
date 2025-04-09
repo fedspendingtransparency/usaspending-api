@@ -2,6 +2,7 @@ import copy
 import logging
 
 from django.conf import settings
+from django.utils.text import slugify
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -22,6 +23,7 @@ from usaspending_api.common.validator.award_filter import (
 )
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
+from usaspending_api.references.models import ToptierAgencyPublishedDABSView
 from usaspending_api.search.v2.elasticsearch_helper import spending_by_transaction_count
 from usaspending_api.search.v2.es_sanitization import es_minimal_sanitize
 from usaspending_api.search.v2.elasticsearch_helper import spending_by_transaction_sum_and_count
@@ -187,6 +189,8 @@ class SpendingByTransactionVisualizationViewSet(APIView):
                         "code": hit.get("product_or_service_code"),
                         "description": hit.get("product_or_service_description"),
                     }
+                elif field == "agency_slug":
+                    row[field] = self.get_agency_slug(hit.get(TRANSACTIONS_SOURCE_LOOKUP["agency_code"]))
                 else:
                     row[field] = hit.get(TRANSACTIONS_SOURCE_LOOKUP[field])
             row["generated_internal_id"] = hit["generated_unique_award_id"]
@@ -202,6 +206,13 @@ class SpendingByTransactionVisualizationViewSet(APIView):
             "page_metadata": metadata,
             "messages": get_generic_filters_message(request["filters"].keys(), [elem["name"] for elem in self.models]),
         }
+
+    def get_agency_slug(self, code):
+        code = str(code).zfill(3)
+        submission = ToptierAgencyPublishedDABSView.objects.filter(toptier_code=code).first()
+        if submission is None:
+            return None
+        return slugify(submission.name)
 
 
 @api_transformations(api_version=API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)

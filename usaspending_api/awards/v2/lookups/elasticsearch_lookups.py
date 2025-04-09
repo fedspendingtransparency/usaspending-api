@@ -28,6 +28,7 @@ TRANSACTIONS_LOOKUP = {
     "Transaction Description": "transaction_description.keyword",
     "Action Type": "action_type",
     "Recipient UEI": "recipient_uei.keyword",
+    "agency_code": "awarding_toptier_agency_id",
 }
 
 base_mapping = {
