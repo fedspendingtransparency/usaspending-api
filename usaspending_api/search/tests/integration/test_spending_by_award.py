@@ -2451,3 +2451,269 @@ def test_spending_by_award_keyword_specificity(
 
     assert resp.status_code == status.HTTP_200_OK
     assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
+
+
+def test_spending_by_award_new_subcontract_fields(
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
+
+    # get award with naics_description "the test test test" and not "the description for test"
+    test_payload = {
+        "subawards": True,
+        "fields": [
+            "Sub-Award ID",
+            "Sub-Award Description",
+            "Sub-Recipient UEI",
+            "Sub-Recipient Location",
+            "Sub-Award Primary Place of Performance",
+            "Prime Award Recipient UEI",
+            "NAICS",
+            "PSC",
+            "sub_award_recipient_id",
+        ],
+        "filters": {"award_type_codes": ["A", "B", "C", "D"], "keyword": "the test"},
+    }
+    expected_response = [
+        {
+            "internal_id": "11111",
+            "prime_award_internal_id": 1,
+            "Sub-Award ID": "11111",
+            "prime_award_generated_internal_id": "CONT_AWD_TESTING_1",
+            "Sub-Award Description": "the test test test",
+            "Sub-Recipient UEI": "UEI_10010001",
+            "Sub-Recipient Location": {
+                "location_country_code": "USA",
+                "country_name": "UNITED STATES",
+                "state_code": "VA",
+                "state_name": "Virginia",
+                "city_name": "ARLINGTON",
+                "county_code": "013",
+                "county_name": "ARLINGTON",
+                "address_line1": "1 Memorial Drive",
+                "congressional_code": "08",
+                "zip4": "9040",
+                "zip5": "55455",
+                "foreign_postal_code": "55455",
+            },
+            "Sub-Award Primary Place of Performance": {
+                "location_country_code": "USA",
+                "country_name": "UNITED STATES",
+                "state_code": "VA",
+                "state_name": "Virginia",
+                "city_name": "ARLINGTON",
+                "county_code": "013",
+                "county_name": "ARLINGTON",
+                "congressional_code": "08",
+                "zip4": "9040",
+                "zip5": "55455",
+            },
+            "Prime Award Recipient UEI": "testuei",
+            "NAICS": {"code": "112233", "description": "the test test test"},
+            "PSC": {"code": "PSC2", "description": "the test test test"},
+            "sub_award_recipient_id": "EXAM-PLE-ID-P",
+        },
+    ]
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
+
+
+def test_spending_by_award_new_subgrant_fields(
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
+
+    # get award with naics_description "the test test test" and not "the description for test"
+    test_payload = {
+        "subawards": True,
+        "fields": [
+            "Sub-Award ID",
+            "Sub-Award Description",
+            "Sub-Recipient UEI",
+            "Sub-Recipient Location",
+            "Sub-Award Primary Place of Performance",
+            "Prime Award Recipient UEI",
+            "Assistance Listing",
+            "sub_award_recipient_id",
+        ],
+        "filters": {"award_type_codes": ["08"]},
+    }
+    expected_response = [
+        {
+            "internal_id": "45509",
+            "prime_award_internal_id": 1,
+            "Sub-Award ID": "45509",
+            "prime_award_generated_internal_id": "CONT_AWD_TESTING_1",
+            "Sub-Award Description": "the test test test",
+            "Sub-Recipient UEI": "UEI_10010001",
+            "Sub-Recipient Location": {
+                "location_country_code": "USA",
+                "country_name": "UNITED STATES",
+                "state_code": "VA",
+                "state_name": "Virginia",
+                "city_name": "ARLINGTON",
+                "county_code": "013",
+                "county_name": "ARLINGTON",
+                "address_line1": "1 Memorial Drive",
+                "congressional_code": "08",
+                "zip4": "9040",
+                "zip5": "55455",
+                "foreign_postal_code": "55455",
+            },
+            "Sub-Award Primary Place of Performance": {
+                "location_country_code": "USA",
+                "country_name": "UNITED STATES",
+                "state_code": "VA",
+                "state_name": "Virginia",
+                "city_name": "ARLINGTON",
+                "county_code": "013",
+                "county_name": "ARLINGTON",
+                "congressional_code": "08",
+                "zip4": "9040",
+                "zip5": "55455",
+            },
+            "Prime Award Recipient UEI": "testuei",
+            "Assistance Listing": {"cfda_number": "1.234", "cfda_program_title": "test cfda"},
+            "sub_award_recipient_id": "EXAM-PLE-ID-P",
+        },
+    ]
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
+
+
+def test_spending_by_award_new_contract_fields(
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    # get award with naics_description "the test test test" and not "the description for test"
+    test_payload = {
+        "subawards": False,
+        "fields": ["Award ID", "Recipient UEI", "Recipient Location", "Primary Place of Performance", "NAICS", "PSC"],
+        "filters": {"award_type_codes": ["A", "B", "C", "D"], "keyword": "the test"},
+    }
+    expected_response = [
+        {
+            "internal_id": 1,
+            "Award ID": "abc111",
+            "generated_internal_id": "CONT_AWD_TESTING_1",
+            "Recipient UEI": "testuei",
+            "Recipient Location": {
+                "location_country_code": "USA",
+                "country_name": "UNITED STATES",
+                "state_code": "VA",
+                "state_name": "Virginia",
+                "city_name": "ARLINGTON",
+                "county_code": "013",
+                "county_name": "ARLINGTON",
+                "address_line1": "1 Memorial Drive",
+                "address_line2": "Room 324",
+                "address_line3": "Desk 5",
+                "congressional_code": "08",
+                "zip4": "9040",
+                "zip5": "55455",
+                "foreign_postal_code": "55455",
+                "foreign_province": "Manitoba",
+            },
+            "Primary Place of Performance": {
+                "location_country_code": "USA",
+                "country_name": "UNITED STATES",
+                "state_code": "VA",
+                "state_name": "Virginia",
+                "city_name": "ARLINGTON",
+                "county_code": "013",
+                "county_name": "ARLINGTON",
+                "congressional_code": "08",
+                "zip4": "9040",
+                "zip5": "55455",
+            },
+            "NAICS": {"code": "112233", "description": "the test test test"},
+            "PSC": {"code": "PSC1", "description": "the test test test"},
+        },
+    ]
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
+
+
+def test_spending_by_award_new_assistance_fields(
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    # get award with naics_description "the test test test" and not "the description for test"
+    test_payload = {
+        "subawards": False,
+        "fields": [
+            "Award ID",
+            "Recipient UEI",
+            "Recipient Location",
+            "Primary Place of Performance",
+            "Assistance Listings",
+            "primary_assistance_listing",
+        ],
+        "filters": {"award_type_codes": ["08"]},
+    }
+    expected_response = [
+        {
+            "internal_id": 5145,
+            "Award ID": "award5145",
+            "generated_internal_id": "ASST_NON_TESTING_5145",
+            "Recipient UEI": "acmeuei",
+            "Recipient Location": {
+                "location_country_code": "USA",
+                "country_name": "UNITED STATES",
+                "state_code": "VA",
+                "state_name": "Virginia",
+                "city_name": "ARLINGTON",
+                "county_code": "013",
+                "county_name": "ARLINGTON",
+                "address_line1": "1 Memorial Drive",
+                "address_line2": "Room 324",
+                "address_line3": "Desk 5",
+                "congressional_code": "08",
+                "zip4": "9040",
+                "zip5": "55455",
+                "foreign_postal_code": "55455",
+                "foreign_province": "Manitoba",
+            },
+            "Primary Place of Performance": {
+                "location_country_code": "USA",
+                "country_name": "UNITED STATES",
+                "state_code": "VA",
+                "state_name": "Virginia",
+                "city_name": "ARLINGTON",
+                "county_code": "013",
+                "county_name": "ARLINGTON",
+                "congressional_code": "08",
+                "zip4": "9040",
+                "zip5": "55455",
+            },
+            "Assistance Listings": [
+                {"cfda_number": "64.114", "cfda_program_title": "VETERANS HOUSING GUARANTEED AND INSURED LOANS"}
+            ],
+            "primary_assistance_listing": {
+                "cfda_number": "64.114",
+                "cfda_program_title": "VETERANS HOUSING GUARANTEED AND INSURED LOANS",
+            },
+        },
+    ]
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.json().get("results"), "Unexpected or missing content!"

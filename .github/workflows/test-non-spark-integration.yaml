@@ -57,11 +57,5 @@ jobs:
         with:
           cov-report-name: 'non-spark-integration-tests'
           include-glob: '**/tests/integration/*'
-          marker: '(not spark)'
+          marker: '(not signal_handling and not spark)'
           working-directory: ./usaspending-api
-
-  Cancel-Running-Workflow:
-    name: Cancel Running Workflow
-    needs: Run
-    if: failure()
-    uses: ./.github/workflows/cancel-running-workflow.yaml
