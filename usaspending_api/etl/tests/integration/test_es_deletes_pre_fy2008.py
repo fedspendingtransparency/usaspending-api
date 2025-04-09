@@ -57,6 +57,7 @@ def test_find_modified_awards_before_fy2008(test_data_fixture):
     """
 
     # Modify the existing DB award to now have an `action_date` before 2007-10-01
+    delete_window_start = datetime.utcnow() - timedelta(days=1)
     baker.make(
         "search.AwardSearch",
         award_id=1,
@@ -65,7 +66,9 @@ def test_find_modified_awards_before_fy2008(test_data_fixture):
         update_date=datetime.now(),
     )
 
-    recently_modified_awards_before_fy2008 = _check_awards_for_pre_fy2008()
+    recently_modified_awards_before_fy2008 = _check_awards_for_pre_fy2008(
+        config={"verbose": False}, delete_window_start=delete_window_start
+    )
 
     assert len(recently_modified_awards_before_fy2008) == 1
 
@@ -75,6 +78,7 @@ def test_find_modified_transactions_before_fy2008(test_data_fixture):
     """Test that we can find any transactions that PREVIOUSLY had an `action_date` on or after FY2008 (2007-10-01), but have
     have been recently updated to have an `action_date` before FY2008 now.
     """
+    delete_window_start = datetime.now() - timedelta(days=1)
 
     # Modify the existing DB transactions to now have an `action_date` before 2007-10-01
     baker.make(
@@ -88,7 +92,10 @@ def test_find_modified_transactions_before_fy2008(test_data_fixture):
         etl_update_date=datetime.now(),
     )
 
-    recently_modified_awards_before_fy2008 = _gather_modified_transactions_pre_fy2008(config={"process_deletes": True})
+    recently_modified_awards_before_fy2008 = _gather_modified_transactions_pre_fy2008(
+        config={"process_deletes": True, "verbose": False},
+        delete_window_start=delete_window_start,
+    )
 
     assert len(recently_modified_awards_before_fy2008) == 1
 
@@ -108,6 +115,7 @@ def test_delete_modified_awards_before_fy2008(elasticsearch_award_index, test_da
     assert original_es_count == 2
 
     # Modify the existing DB award to now have an `action_date` before 2007-10-01
+    delete_window_start = datetime.now() - timedelta(days=1)
     baker.make(
         "search.AwardSearch",
         award_id=1,
@@ -116,7 +124,10 @@ def test_delete_modified_awards_before_fy2008(elasticsearch_award_index, test_da
         update_date=datetime.now(),
     )
 
-    modified_awards_to_delete = _check_awards_for_pre_fy2008()
+    modified_awards_to_delete = _check_awards_for_pre_fy2008(
+        config={"verbose": False},
+        delete_window_start=delete_window_start,
+    )
     number_of_deleted_awards = delete_docs_by_unique_key(
         client=client,
         key="generated_unique_award_id",
@@ -145,6 +156,7 @@ def test_delete_modified_transactions_before_fy2008(elasticsearch_transaction_in
     assert original_es_count == 2
 
     # Modify the existing DB transaction to now have an `action_date` before 2007-10-01
+    delete_window_start = datetime.now() - timedelta(days=1)
     baker.make(
         "search.TransactionSearch",
         transaction_id=1,
@@ -156,7 +168,9 @@ def test_delete_modified_transactions_before_fy2008(elasticsearch_transaction_in
         etl_update_date=datetime.now(),
     )
 
-    modified_transactions_to_delete = _gather_modified_transactions_pre_fy2008(config={"process_deletes": True})
+    modified_transactions_to_delete = _gather_modified_transactions_pre_fy2008(
+        config={"process_deletes": True, "verbose": False}, delete_window_start=delete_window_start
+    )
     number_of_deleted_transactions = delete_docs_by_unique_key(
         client=client,
         key="generated_unique_transaction_id",
