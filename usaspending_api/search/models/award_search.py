@@ -31,7 +31,7 @@ class AwardSearch(models.Model):
 
     recipient_hash = models.UUIDField(null=True)
     recipient_levels = ArrayField(models.TextField(), default=list, null=True)
-    recipient_name = models.TextField(null=True)
+    recipient_name = models.TextField(null=True, db_index=True)
     recipient_unique_id = models.TextField(null=True)
     parent_recipient_unique_id = models.TextField(null=True)
     recipient_uei = models.TextField(null=True, blank=True)

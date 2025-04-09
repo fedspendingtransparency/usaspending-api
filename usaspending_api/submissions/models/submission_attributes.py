@@ -11,9 +11,9 @@ class SubmissionAttributes(models.Model):
     reporting_agency_name = models.TextField(blank=True, null=True)
     reporting_period_start = models.DateField(blank=True, null=True)
     reporting_period_end = models.DateField(blank=True, null=True)
-    reporting_fiscal_year = models.IntegerField(blank=True, null=True)
-    reporting_fiscal_quarter = models.IntegerField(blank=True, null=True)
-    reporting_fiscal_period = models.IntegerField(blank=True, null=True)
+    reporting_fiscal_year = models.IntegerField(blank=True, null=True, db_index=True)
+    reporting_fiscal_quarter = models.IntegerField(blank=True, null=True, db_index=True)
+    reporting_fiscal_period = models.IntegerField(blank=True, null=True, db_index=True)
     quarter_format_flag = models.BooleanField(default=True)
     is_final_balances_for_fy = models.BooleanField(default=False)
     create_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
@@ -25,8 +25,8 @@ class SubmissionAttributes(models.Model):
     class Meta:
         db_table = "submission_attributes"
         indexes = [
-            models.Index(fields=["reporting_fiscal_period"], name="as_idx_reporting_fiscal_period"),
             models.Index(fields=["reporting_fiscal_year"], name="as_idx_reporting_fiscal_year"),
+            models.Index(fields=["reporting_fiscal_period"], name="as_idx_reporting_fiscal_period"),
             models.Index(fields=["reporting_fiscal_quarter"], name="as_idx_reporting_fiscal_quart"),
         ]
 
