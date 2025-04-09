@@ -75,9 +75,9 @@ runs:
       if: ${{ inputs.is-spark-test == 'true' }}
       shell: bash
       run: |
-        PIP_SPARK_HOME=$(python -c "import site;print(f'{site.getsitepackages()[0]}/pyspark')")
-        mkdir $PIP_SPARK_HOME/conf
-        touch $PIP_SPARK_HOME/conf/log4j2.properties
+        echo "SPARK_HOME=$(python -c "import site;print(f'{site.getsitepackages()[0]}/pyspark')")" >> $GITHUB_ENV
+        mkdir $SPARK_HOME/conf
+        touch $SPARK_HOME/conf/log4j2.properties
         echo "
         # This takes the log4j2.properties.template and changes log_level to warning
         rootLogger.level = warn
@@ -107,7 +107,7 @@ runs:
         logger.RetryingHMSHandler.level = fatal
         logger.FunctionRegistry.name = org.apache.hadoop.hive.ql.exec.FunctionRegistry
         logger.FunctionRegistry.level = error
-        " >> $PIP_SPARK_HOME/conf/log4j2.properties
+        " >> $SPARK_HOME/conf/log4j2.properties
 
     - name: Run initial test to trigger DB creation
       if: ${{ inputs.is-integration-test == 'true' }}
