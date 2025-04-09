@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime, timezone
+from time import time
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
@@ -48,7 +49,9 @@ class Command(BaseCommand):
         logger.info(f"Deleting all existing offices that are not linked to a transaction in {DEFAULT_DB_ALIAS}")
         # Identify offices that do not correspond to any transactions, using only USAS DB
         with connections[DEFAULT_DB_ALIAS].cursor() as cursor:
+            start_time = time()
             cursor.execute(self.usas_unlinked_offices_sql)
+            logger.info(f"Office deletes took: {time() - start_time:.2f} seconds")
 
     @property
     def broker_fetch_sql(self):
