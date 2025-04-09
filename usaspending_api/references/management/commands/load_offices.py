@@ -51,7 +51,7 @@ class Command(BaseCommand):
         with connections[DEFAULT_DB_ALIAS].cursor() as cursor:
             start_time = time()
             cursor.execute(self.usas_unlinked_offices_sql)
-            logger.info(f"Office deletes took: {time() - start_time:.2f} seconds")
+            logger.info(f"Office deletes took {time() - start_time:.2f} seconds")
 
     @property
     def broker_fetch_sql(self):
@@ -71,6 +71,8 @@ class Command(BaseCommand):
     @property
     def usas_unlinked_offices_sql(self):
         return """
+        ANALYZE source_assistance_transaction;
+        ANALYZE source_procurement_transaction;
         DROP TABLE IF EXISTS temp_unique_office_codes_from_source;
         CREATE TEMPORARY TABLE temp_unique_office_codes_from_source (
             awarding_office_code TEXT,
