@@ -77,3 +77,4 @@ class ObjectClass(models.Model):
     class Meta:
         db_table = "object_class"
         unique_together = ("object_class", "direct_reimbursable")
+        indexes = [models.Index(fields=["major_object_class"], name="as_idx_major_object_class")]

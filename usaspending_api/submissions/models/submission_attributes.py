@@ -24,6 +24,11 @@ class SubmissionAttributes(models.Model):
 
     class Meta:
         db_table = "submission_attributes"
+        indexes = [
+            models.Index(fields=["reporting_fiscal_period"], name="as_idx_reporting_fiscal_period"),
+            models.Index(fields=["reporting_fiscal_year"], name="as_idx_reporting_fiscal_year"),
+            models.Index(fields=["reporting_fiscal_quarter"], name="as_idx_reporting_fiscal_quart"),
+        ]
 
     def __str__(self):
         return (
