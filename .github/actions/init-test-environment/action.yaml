@@ -71,11 +71,15 @@ runs:
         psql $DATABASE_URL -c "SELECT 'GRANT SELECT ON ALL TABLES IN SCHEMA ' || nspname || ' TO readonly' FROM pg_namespace WHERE nspname IN ('raw','int','rpt','temp','public')"
         psql $DATABASE_URL -c "SELECT 'ALTER DEFAULT PRIVILEGES IN SCHEMA ' || nspname || ' GRANT SELECT ON TABLES TO readonly' FROM pg_namespace WHERE nspname IN ('raw','int','rpt','temp','public')"
 
+    - name: Capture SPARK_HOME environment variable
+      if: ${{ inputs.is-spark-test == 'true' }}
+      shell: bash
+      run: echo "SPARK_HOME=$(python -c "import site;print(f'{site.getsitepackages()[0]}/pyspark')")" >> $GITHUB_ENV
+
     - name: Setting spark log levels to warning
       if: ${{ inputs.is-spark-test == 'true' }}
       shell: bash
       run: |
-        echo "SPARK_HOME=$(python -c "import site;print(f'{site.getsitepackages()[0]}/pyspark')")" >> $GITHUB_ENV
         mkdir $SPARK_HOME/conf
         touch $SPARK_HOME/conf/log4j2.properties
         echo "
