@@ -517,6 +517,7 @@ class Command(BaseCommand):
                     VALUES ({insert_values})
         """
 
+        self.logger.info(f"Running update_awards SQL:\n{sql}")
         self.spark.sql(sql)
 
         # Now that the award table update is done, we can empty the award_ids_delete_modified table.
