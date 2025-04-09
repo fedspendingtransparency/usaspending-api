@@ -1,7 +1,6 @@
 import copy
 import logging
 import re
-
 from contextlib import contextmanager
 from datetime import datetime, timezone
 
@@ -25,20 +24,19 @@ from usaspending_api.broker.helpers.last_load_date import (
 from usaspending_api.common.data_classes import TransactionColumn
 from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.helpers.spark_helpers import (
-    get_active_spark_session,
     configure_spark_session,
-    get_jvm_logger,
+    get_active_spark_session,
 )
 from usaspending_api.config import CONFIG
 from usaspending_api.transactions.delta_models.transaction_fabs import (
+    FABS_TO_NORMALIZED_COLUMN_INFO,
     TRANSACTION_FABS_COLUMN_INFO,
     TRANSACTION_FABS_COLUMNS,
-    FABS_TO_NORMALIZED_COLUMN_INFO,
 )
 from usaspending_api.transactions.delta_models.transaction_fpds import (
+    DAP_TO_NORMALIZED_COLUMN_INFO,
     TRANSACTION_FPDS_COLUMN_INFO,
     TRANSACTION_FPDS_COLUMNS,
-    DAP_TO_NORMALIZED_COLUMN_INFO,
 )
 from usaspending_api.transactions.delta_models.transaction_normalized import TRANSACTION_NORMALIZED_COLUMNS
 
@@ -197,7 +195,7 @@ class Command(BaseCommand):
             self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)  # type: SparkSession
 
         # Setup Logger
-        self.logger = get_jvm_logger(self.spark, __name__)
+        self.logger = logging.getLogger("script")
 
         # Create UDFs for Business Categories
         self.spark.udf.register(
@@ -287,7 +285,7 @@ class Command(BaseCommand):
             """
         elif self.etl_level == "awards":
             id_col = "id"
-            subquery = f"""
+            subquery = """
                 SELECT awards.id AS id_to_remove
                 FROM int.awards LEFT JOIN int.award_id_lookup ON awards.id = award_id_lookup.award_id
                 WHERE awards.id IS NOT NULL AND award_id_lookup.award_id IS NULL
@@ -1066,7 +1064,7 @@ class Command(BaseCommand):
         def prepare_orphaned_transaction_temp_table():
             # Since the table to track the orphaned transactions is only needed for this function, just using a
             # managed table in the temp database.
-            self.spark.sql(f"CREATE DATABASE IF NOT EXISTS temp")
+            self.spark.sql("CREATE DATABASE IF NOT EXISTS temp")
             self.spark.sql(
                 """
                     CREATE OR REPLACE TABLE temp.orphaned_transaction_info (
@@ -1292,7 +1290,7 @@ class Command(BaseCommand):
                 # Make sure to get the maximum transaction id from the raw table in case there are records in
                 # raw.transaction_normalized that don't correspond to a record in either of the source tables.
                 # This way, new transaction_ids won't repeat the ids of any of those "orphaned" transaction records.
-                max_id = self.spark.sql(f"SELECT MAX(id) AS max_id FROM raw.transaction_normalized").collect()[0][
+                max_id = self.spark.sql("SELECT MAX(id) AS max_id FROM raw.transaction_normalized").collect()[0][
                     "max_id"
                 ]
 
@@ -1464,7 +1462,7 @@ class Command(BaseCommand):
                 # As for transaction_id_seq, make sure to get the maximum award id from the raw table in case there are
                 # records in raw.awards that don't correspond to any records in either of the source tables.
                 # This way, new award_ids won't repeat the ids of any of those "orphaned" award records.
-                max_id = self.spark.sql(f"SELECT MAX(award_id) AS max_id FROM raw.transaction_normalized").collect()[0][
+                max_id = self.spark.sql("SELECT MAX(award_id) AS max_id FROM raw.transaction_normalized").collect()[0][
                     "max_id"
                 ]
 
@@ -1495,6 +1493,7 @@ class Command(BaseCommand):
                     list(AWARDS_COLUMNS),
                 ),
                 ("transaction_id", "transaction_id", "id", "id"),
+                strict=False,
             ):
                 call_command(
                     "create_delta_table",
