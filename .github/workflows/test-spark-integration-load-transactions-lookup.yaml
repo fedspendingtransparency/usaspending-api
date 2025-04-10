@@ -59,10 +59,5 @@ jobs:
           include-glob: 'test_*.py *_test.py'
           keyword: 'test_load_transactions_in_delta_lookups.py'
           marker: 'spark'
+          num-processes: 0
           working-directory: ./usaspending-api
-
-  Cancel-Running-Workflow:
-    name: Cancel Running Workflow
-    needs: Run
-    if: failure()
-    uses: ./.github/workflows/cancel-running-workflow.yaml
