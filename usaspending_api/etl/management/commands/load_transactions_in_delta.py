@@ -811,6 +811,7 @@ class Command(BaseCommand):
                     VALUES ({silver_table_cols})
         """
 
+        self.logger.info(f"Running transaction_fabs_fpds_merge_into_sql SQL:\n{sql}")
         return sql
 
     def transaction_normalized_merge_into_sql(self, transaction_type):
