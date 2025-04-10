@@ -31,7 +31,7 @@ class AwardSearch(models.Model):
 
     recipient_hash = models.UUIDField(null=True)
     recipient_levels = ArrayField(models.TextField(), default=list, null=True)
-    recipient_name = models.TextField(null=True, db_index=True)
+    recipient_name = models.TextField(null=True)
     recipient_unique_id = models.TextField(null=True)
     parent_recipient_unique_id = models.TextField(null=True)
     recipient_uei = models.TextField(null=True, blank=True)
@@ -208,9 +208,6 @@ class AwardSearch(models.Model):
     class Meta:
         db_table = "award_search"
         indexes = [
-            models.Index(
-                fields=["recipient_name"], name="as_idx_recipient_name", condition=Q(action_date__gte="2007-10-01")
-            ),
             models.Index(
                 fields=["recipient_hash"], name="as_idx_recipient_hash", condition=Q(action_date__gte="2007-10-01")
             ),
