@@ -189,8 +189,8 @@ class SpendingByTransactionVisualizationViewSet(APIView):
                         "code": hit.get("product_or_service_code"),
                         "description": hit.get("product_or_service_description"),
                     }
-                elif field == "agency_slug":
-                    row[field] = self.get_agency_slug(hit.get(TRANSACTIONS_SOURCE_LOOKUP["agency_code"]))
+                elif field == "awarding_agency_slug" or field == "funding_agency_slug":
+                    row[field] = slugify(hit.get(TRANSACTIONS_SOURCE_LOOKUP[field]))
                 else:
                     row[field] = hit.get(TRANSACTIONS_SOURCE_LOOKUP[field])
             row["generated_internal_id"] = hit["generated_unique_award_id"]

@@ -71,6 +71,8 @@ def transaction_data():
         generated_unique_award_id="IND12PB00323-generated",
         cfda_number="59",
         cfda_title="cfdatitle",
+        awarding_toptier_agency_name="Award agency name",
+        funding_toptier_agency_name="Funding agency name",
     )
 
     baker.make(
@@ -531,3 +533,25 @@ def test_sorting_on_additional_fields(client, monkeypatch, elasticsearch_transac
     assert len(resp.json().get("results")) == 3
     assert resp.json().get("results")[0]["Action Type"] == "A"
     assert resp.json().get("results")[2]["Action Type"] == "10"
+
+
+def test_slugify_agencies(client, monkeypatch, elasticsearch_transaction_index, transaction_data):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
+    fields = ["Award ID", "awarding_agency_slug", "funding_agency_slug"]
+
+    request = {
+        "filters": {"award_type_codes": ["10"]},
+        "fields": fields,
+        "page": 1,
+        "limit": 5,
+        "sort": "Award ID",
+        "order": "desc",
+    }
+
+    resp = client.post(ENDPOINT, content_type="application/json", data=json.dumps(request))
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.json().get("results")) == 1
+    assert resp.json().get("results")[0]["awarding_agency_slug"] == "award-agency-name"
+    assert resp.json().get("results")[0]["funding_agency_slug"] == "funding-agency-name"
