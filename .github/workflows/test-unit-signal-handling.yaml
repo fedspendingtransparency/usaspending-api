@@ -1,4 +1,4 @@
-name: Unit Tests
+name: Unit Tests with Signal Handling
 
 env:
   BROKER_DB_HOST: localhost
@@ -46,8 +46,9 @@ jobs:
         id: run-test-cases
         uses: ./usaspending-api/.github/actions/run-pytest
         with:
-          cov-report-name: 'unit-tests'
+          cov-report-name: 'unit-signal-handling-tests'
           ignore-glob: '**/tests/integration/*'
           include-glob: 'test_*.py *_test.py'
-          marker: '(not signal_handling)'
+          marker: '(signal_handling)'
+          num-processes: 0
           working-directory: ./usaspending-api

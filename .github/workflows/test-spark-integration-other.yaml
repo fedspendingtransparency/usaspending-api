@@ -60,9 +60,3 @@ jobs:
           keyword: '(not test_load_to_from_delta.py and not test_load_transactions_in_delta_lookups.py and not test_load_transactions_in_delta_fabs_fpds.py)'
           marker: 'spark'
           working-directory: ./usaspending-api
-
-  Cancel-Running-Workflow:
-    name: Cancel Running Workflow
-    needs: Run
-    if: failure()
-    uses: ./.github/workflows/cancel-running-workflow.yaml

@@ -295,7 +295,7 @@ def configure_logging(service_name="usaspending-api"):
 
         exporter = ConsoleSpanExporter()
 
-    else:
+    elif not IS_LOCAL:
         exporter = OTLPSpanExporter(
             endpoint=os.getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"),
         )
