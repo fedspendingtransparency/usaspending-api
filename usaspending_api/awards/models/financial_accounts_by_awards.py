@@ -9,7 +9,7 @@ class AbstractFinancialAccountsByAwards(DataSourceTrackedModel):
     financial_accounts_by_awards_id = models.AutoField(primary_key=True)
     distinct_award_key = models.TextField(db_index=True)
     treasury_account = models.ForeignKey("accounts.TreasuryAppropriationAccount", models.CASCADE, null=True)
-    submission = models.ForeignKey("submissions.SubmissionAttributes", models.CASCADE)
+    submission = models.ForeignKey("submissions.SubmissionAttributes", models.CASCADE, db_index=True)
     award = models.ForeignKey("search.AwardSearch", models.SET_NULL, null=True, related_name="financial_set")
     program_activity = models.ForeignKey("references.RefProgramActivity", models.DO_NOTHING, null=True, db_index=True)
     object_class = models.ForeignKey("references.ObjectClass", models.DO_NOTHING, null=True, db_index=True)
