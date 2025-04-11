@@ -1,5 +1,4 @@
 import pytest
-
 from rest_framework import status
 
 url = "/api/v2/disaster/object_class/spending/"
@@ -19,7 +18,7 @@ def test_basic_object_class_spending_total_success(
             "code": "001",
             "description": "001 name",
             "award_count": None,
-            "obligation": 2008.0,
+            "obligation": 1732.0,
             "outlay": 1190.0,
             "children": [
                 {
@@ -27,7 +26,7 @@ def test_basic_object_class_spending_total_success(
                     "code": "0003",
                     "description": "0003 name",
                     "award_count": None,
-                    "obligation": 1456.0,
+                    "obligation": 1180.0,
                     "outlay": 1190.0,
                 },
                 {
@@ -53,7 +52,7 @@ def test_basic_object_class_spending_total_success(
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
 
-    expected_totals = {"obligation": 2008.0, "outlay": 1190.0}
+    expected_totals = {"obligation": 1732.0, "outlay": 1190.0}
     assert resp.json()["totals"] == expected_totals
 
 

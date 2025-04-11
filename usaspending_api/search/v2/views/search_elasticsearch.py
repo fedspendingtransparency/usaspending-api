@@ -2,6 +2,7 @@ import copy
 import logging
 
 from django.conf import settings
+from django.utils.text import slugify
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -12,6 +13,7 @@ from usaspending_api.common.exceptions import (
     InvalidParameterException,
     UnprocessableEntityException,
 )
+from usaspending_api.common.helpers.data_constants import state_name_from_code
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata, get_generic_filters_message
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.search.filters.elasticsearch.filter import QueryType
@@ -21,6 +23,7 @@ from usaspending_api.common.validator.award_filter import (
 )
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
+from usaspending_api.references.models import ToptierAgencyPublishedDABSView
 from usaspending_api.search.v2.elasticsearch_helper import spending_by_transaction_count
 from usaspending_api.search.v2.es_sanitization import es_minimal_sanitize
 from usaspending_api.search.v2.elasticsearch_helper import spending_by_transaction_sum_and_count
@@ -136,7 +139,60 @@ class SpendingByTransactionVisualizationViewSet(APIView):
             # which lookup dict to use, and then use that lookup to retrieve the correct value requested from `fields`
             row = {}
             for field in request["fields"]:
-                row[field] = hit.get(TRANSACTIONS_SOURCE_LOOKUP[field])
+                if field == "Assistance Listing":
+                    row["Assistance Listing"] = {
+                        "cfda_number": hit.get("cfda_number"),
+                        "cfda_title": hit.get("cfda_title"),
+                    }
+
+                elif field == "Recipient Location":
+                    row["Recipient Location"] = {
+                        "location_country_code": hit.get("recipient_location_country_code"),
+                        "country_name": hit.get("recipient_location_country_name"),
+                        "state_code": hit.get("recipient_location_state_code"),
+                        "state_name": state_name_from_code(hit.get("recipient_location_state_code")),
+                        "city_name": hit.get("recipient_location_city_name"),
+                        "county_code": hit.get("recipient_location_county_code"),
+                        "county_name": hit.get("recipient_location_county_name"),
+                        "address_line1": hit.get("legal_entity_address_line1"),
+                        "address_line2": hit.get("legal_entity_address_line2"),
+                        "address_line3": hit.get("legal_entity_address_line3"),
+                        "congressional_code": hit.get("recipient_location_congressional_code"),
+                        "zip4": hit.get("legal_entity_zip_last4"),
+                        "zip5": hit.get("recipient_location_zip5"),
+                        "foreign_postal_code": hit.get("legal_entity_foreign_posta"),
+                        "foreign_province": hit.get("legal_entity_foreign_provi"),
+                    }
+
+                elif field == "Primary Place of Performance":
+                    row["Primary Place of Performance"] = {
+                        "location_country_code": hit.get("pop_country_code"),
+                        "country_name": hit.get("pop_country_name"),
+                        "state_code": hit.get("pop_state_code"),
+                        "state_name": state_name_from_code(hit.get("pop_state_code")),
+                        "city_name": hit.get("pop_city_name"),
+                        "county_code": hit.get("pop_county_code"),
+                        "county_name": hit.get("pop_county_name"),
+                        "congressional_code": hit.get("pop_congressional_code"),
+                        "zip4": hit.get("place_of_perform_zip_last4"),
+                        "zip5": hit.get("pop_zip5"),
+                    }
+
+                elif field == "NAICS":
+                    row["NAICS"] = {
+                        "code": hit.get("naics_code"),
+                        "description": hit.get("naics_description"),
+                    }
+
+                elif field == "PSC":
+                    row["PSC"] = {
+                        "code": hit.get("product_or_service_code"),
+                        "description": hit.get("product_or_service_description"),
+                    }
+                elif field == "awarding_agency_slug" or field == "funding_agency_slug":
+                    row[field] = slugify(hit.get(TRANSACTIONS_SOURCE_LOOKUP[field]))
+                else:
+                    row[field] = hit.get(TRANSACTIONS_SOURCE_LOOKUP[field])
             row["generated_internal_id"] = hit["generated_unique_award_id"]
             row["internal_id"] = hit["award_id"]
 
@@ -150,6 +206,13 @@ class SpendingByTransactionVisualizationViewSet(APIView):
             "page_metadata": metadata,
             "messages": get_generic_filters_message(request["filters"].keys(), [elem["name"] for elem in self.models]),
         }
+
+    def get_agency_slug(self, code):
+        code = str(code).zfill(3)
+        submission = ToptierAgencyPublishedDABSView.objects.filter(toptier_code=code).first()
+        if submission is None:
+            return None
+        return slugify(submission.name)
 
 
 @api_transformations(api_version=API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)

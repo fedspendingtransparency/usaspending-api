@@ -12,7 +12,6 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.api_helper import (
     DUPLICATE_DISTRICT_LOCATION_PARAMETERS,
     INCOMPATIBLE_DISTRICT_LOCATION_PARAMETERS,
-    NOT_DEFINED_FOR_TRANSACTIONS,
 )
 from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.references.models.psc import PSC
@@ -923,12 +922,11 @@ class _AwardUniqueId(_Filter):
 
     @classmethod
     def generate_elasticsearch_query(cls, filter_values: str, query_type: QueryType, **options) -> ES_Q:
-        if query_type == QueryType.TRANSACTIONS:
-            raise InvalidParameterException(NOT_DEFINED_FOR_TRANSACTIONS)
 
         fields = {
             QueryType.AWARDS: ["generated_unique_award_id"],
             QueryType.SUBAWARDS: ["unique_award_key"],
+            QueryType.TRANSACTIONS: ["generated_unique_award_id"],
         }
 
         query = es_sanitize(filter_values)
