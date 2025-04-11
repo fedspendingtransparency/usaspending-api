@@ -67,35 +67,42 @@ class Command(BaseCommand):
             create_ref_temp_views(self.spark, create_broker_views=True)
         
         # Run command and log
-        self.logger.info(f"====== Standard LOGGER - RESET VERSION =======")
-        df = self.spark.sql("RESTORE TABLE emr_testing.transaction_search TO VERSION AS OF 14")
+        df = self.spark.sql(
+            rf"""
+                SELECT
+                    REGEXP_REPLACE(MD5(UPPER(
+                        CASE
+                            WHEN COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei) IS NOT NULL
+                                THEN CONCAT('uei-', COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei))
+                            WHEN COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) IS NOT NULL
+                                THEN CONCAT('duns-', COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu))
+                            ELSE CONCAT('name-', COALESCE(transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal, ''))
+                        END
+                    )), '^(\.{{{{8}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{12}}}})$', '\$1-\$2-\$3-\$4-\$5') as joined_recipient_hash,
+                    recipient_lookup.recipient_hash
+                FROM
+                    int.transaction_normalized
+                LEFT OUTER JOIN
+                    int.transaction_fabs ON (transaction_normalized.id = transaction_fabs.transaction_id AND transaction_normalized.is_fpds = false)
+                LEFT OUTER JOIN
+                    int.transaction_fpds ON (transaction_normalized.id = transaction_fpds.transaction_id AND transaction_normalized.is_fpds = true)
+                LEFT OUTER JOIN
+                    rpt.recipient_lookup ON (
+                        recipient_lookup.recipient_hash = REGEXP_REPLACE(MD5(UPPER(
+                            CASE
+                                WHEN COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei) IS NOT NULL
+                                    THEN CONCAT('uei-', COALESCE(transaction_fpds.awardee_or_recipient_uei, transaction_fabs.uei))
+                                WHEN COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu) IS NOT NULL
+                                    THEN CONCAT('duns-', COALESCE(transaction_fpds.awardee_or_recipient_uniqu, transaction_fabs.awardee_or_recipient_uniqu))
+                                ELSE CONCAT('name-', COALESCE(transaction_fpds.awardee_or_recipient_legal, transaction_fabs.awardee_or_recipient_legal, ''))
+                            END
+                        )), '^(\.{{{{8}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{4}}}})(\.{{{{12}}}})$', '\$1-\$2-\$3-\$4-\$5')
+                    )
+            """
+        )
+        self.log("Recipient Hash Comparison", df.show(500))
 
-        df = self.spark.sql("""
-            SELECT * FROM rpt.recipient_profile
-        """)
-        self.log("Recipient Profile", df.show(100))
 
-
-        df = self.spark.sql("""
-            SELECT recipient_hash, uei, SORT_ARRAY(COLLECT_SET(recipient_level)) AS recipient_levels
-            FROM rpt.recipient_profile
-            GROUP BY recipient_hash, uei
-        """)
-        self.log("Recipient Levels", df.show(500))
-
-        df = self.spark.sql("""
-           SELECT * FROM (
-              SELECT recipient_hash, uei, SORT_ARRAY(COLLECT_SET(recipient_level)) AS recipient_levels
-              FROM rpt.recipient_profile
-              GROUP BY recipient_hash, uei
-            ) WHERE recipient_levels IS NOT NULL 
-        """)
-        self.log("Recipient Levels - No NULLS", df.show(500))
-
-        df = self.spark.sql("""
-            SELECT * FROM rpt.recipient_lookup
-        """)
-        self.log("Recipient Lookup", df.show(100))
 
         if spark_created_by_command:
             self.spark.stop()
