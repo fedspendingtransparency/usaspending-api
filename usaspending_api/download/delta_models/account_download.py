@@ -91,9 +91,9 @@ account_download_create_sql_string = rf"""
         {", ".join([f'{key} {val}' for key, val in ACCOUNT_DOWNLOAD_COLUMNS.items()])}
     )
     USING DELTA
-    PARTITIONED BY (reporting_fiscal_year)
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
     """
+    # PARTITIONED BY (reporting_fiscal_year)
 
 account_download_load_sql_string = rf"""
     INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} (
