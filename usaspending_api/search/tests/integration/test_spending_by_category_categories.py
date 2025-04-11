@@ -905,7 +905,14 @@ def test_category_funding_agency_transactions(agency_test_data, monkeypatch, ela
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 15, "name": "Funding Toptier Agency 2", "code": "TA2", "id": 1002, "total_outlays": None}
+            {
+                "amount": 15,
+                "name": "Funding Toptier Agency 2",
+                "code": "TA2",
+                "id": 1002,
+                "total_outlays": None,
+                "agency_slug": None,
+            }
         ],
         "messages": _expected_messages(),
         "spending_level": "transactions",
@@ -926,7 +933,14 @@ def test_category_funding_agency_subawards(agency_test_data, monkeypatch, elasti
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 150, "name": "Funding Toptier Agency 4", "code": "TA4", "id": 1004, "total_outlays": None}
+            {
+                "amount": 150,
+                "name": "Funding Toptier Agency 4",
+                "code": "TA4",
+                "id": 1004,
+                "total_outlays": None,
+                "agency_slug": None,
+            }
         ],
         "messages": _expected_messages(),
         "spending_level": "subawards",
