@@ -9,7 +9,7 @@ class AbstractFinancialAccountsByAwards(DataSourceTrackedModel):
     financial_accounts_by_awards_id = models.AutoField(primary_key=True)
     distinct_award_key = models.TextField(db_index=True)
     treasury_account = models.ForeignKey("accounts.TreasuryAppropriationAccount", models.CASCADE, null=True)
-    submission = models.ForeignKey("submissions.SubmissionAttributes", models.CASCADE, db_index=True)
+    submission = models.ForeignKey("submissions.SubmissionAttributes", models.CASCADE)
     award = models.ForeignKey("search.AwardSearch", models.SET_NULL, null=True, related_name="financial_set")
     program_activity = models.ForeignKey("references.RefProgramActivity", models.DO_NOTHING, null=True, db_index=True)
     object_class = models.ForeignKey("references.ObjectClass", models.DO_NOTHING, null=True, db_index=True)
@@ -165,6 +165,11 @@ class FinancialAccountsByAwards(AbstractFinancialAccountsByAwards):
             models.Index(
                 fields=["submission_id", "object_class_id"],
                 name="faba_object_sumission_idx",
+                condition=Q(transaction_obligated_amount=False),
+            ),
+            models.Index(
+                fields=["submission_id", "treasury_account_id"],
+                name="faba_treasury_submission_idx",
                 condition=Q(transaction_obligated_amount=False),
             ),
             models.Index(
