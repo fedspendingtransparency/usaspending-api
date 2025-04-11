@@ -163,13 +163,13 @@ class FinancialAccountsByAwards(AbstractFinancialAccountsByAwards):
         ]
         indexes = [
             models.Index(
-                fields=["submission_id", "object_class_id"],
-                name="faba_object_sumission_idx",
+                fields=["submission_id", "treasury_account_id"],
+                name="faba_treasury_submission_idx",
                 condition=Q(transaction_obligated_amount=False),
             ),
             models.Index(
-                fields=["submission_id", "treasury_account_id"],
-                name="faba_treasury_submission_idx",
+                fields=["submission_id", "object_class_id"],
+                name="faba_object_sumission_idx",
                 condition=Q(transaction_obligated_amount=False),
             ),
             models.Index(
