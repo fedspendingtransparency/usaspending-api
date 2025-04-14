@@ -70,6 +70,9 @@ class Command(BaseCommand):
         self.spark.conf.set('spark.sql.caseSensitive', False)
 
         # Run command and log
+        df = self.spark.sql("DESCRIBE DETAIL rpt.recipient_lookup")
+        self.log("Describe detail", df.show())
+        
         df = self.spark.sql(
             rf"""
                 SELECT
@@ -163,6 +166,8 @@ class Command(BaseCommand):
         """)
         self.log("Recipient Lookup - Filtered", df.show(30, truncate=False))
 
+        df = self.spark.read.format("delta").load("s3://dti-da-usaspending-spark-qat/data/delta/rpt/recipient_lookup/")
+        self.log("Direct file read", df.show(30))
 
 
 
