@@ -71,7 +71,7 @@ class Command(BaseCommand):
 
         # Run command and log
         df = self.spark.sql("DESCRIBE DETAIL rpt.recipient_lookup")
-        self.log("Describe detail", df.show())
+        self.log("Describe detail", df.show(truncate=False))
         
         df = self.spark.sql(
             rf"""
@@ -169,7 +169,8 @@ class Command(BaseCommand):
         df = self.spark.read.format("delta").load("s3://dti-da-usaspending-spark-qat/data/delta/rpt/recipient_lookup/")
         self.log("Direct file read", df.show(30))
 
-
+        df = self.spark.sql("DESCRIBE HISTORY rpt.recpient_lookup")
+        self.log("Describe history", df.show(truncate=False))
 
 
         if spark_created_by_command:
