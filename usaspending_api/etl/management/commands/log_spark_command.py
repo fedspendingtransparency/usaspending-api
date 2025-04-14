@@ -76,7 +76,36 @@ class Command(BaseCommand):
                     transaction_fpds.ultimate_parent_unique_ide,
                     transaction_fabs.ultimate_parent_unique_ide,
                     transaction_fpds.ultimate_parent_legal_enti,
-                    transaction_fabs.ultimate_parent_legal_enti
+                    transaction_fabs.ultimate_parent_legal_enti,
+                    REGEXP_REPLACE(MD5(UPPER(
+                        CASE
+                            WHEN COALESCE(transaction_fpds.ultimate_parent_uei, transaction_fabs.ultimate_parent_uei) IS NOT NULL
+                                THEN CONCAT('uei-', COALESCE(transaction_fpds.ultimate_parent_uei, transaction_fabs.ultimate_parent_uei))
+                            WHEN COALESCE(transaction_fpds.ultimate_parent_unique_ide, transaction_fabs.ultimate_parent_unique_ide) IS NOT NULL
+                                THEN CONCAT('duns-', COALESCE(transaction_fpds.ultimate_parent_unique_ide, transaction_fabs.ultimate_parent_unique_ide))
+                            ELSE CONCAT('name-', COALESCE(transaction_fpds.ultimate_parent_legal_enti, transaction_fabs.ultimate_parent_legal_enti, ''))
+                        END
+                    )), '^(\.{{8}})(\.{{4}})(\.{{4}})(\.{{4}})(\.{{12}})$', '\$1-\$2-\$3-\$4-\$5') AS generated_hash
+                    MD5(UPPER(
+
+                        CASE
+                            WHEN COALESCE(transaction_fpds.ultimate_parent_uei, transaction_fabs.ultimate_parent_uei) IS NOT NULL
+                                THEN CONCAT('uei-', COALESCE(transaction_fpds.ultimate_parent_uei, transaction_fabs.ultimate_parent_uei))
+                            WHEN COALESCE(transaction_fpds.ultimate_parent_unique_ide, transaction_fabs.ultimate_parent_unique_ide) IS NOT NULL
+                                THEN CONCAT('duns-', COALESCE(transaction_fpds.ultimate_parent_unique_ide, transaction_fabs.ultimate_parent_unique_ide))
+                            ELSE CONCAT('name-', COALESCE(transaction_fpds.ultimate_parent_legal_enti, transaction_fabs.ultimate_parent_legal_enti, ''))
+                        END
+                    )) AS generated_hash_no_regex,
+                    UPPER(
+
+                        CASE
+                            WHEN COALESCE(transaction_fpds.ultimate_parent_uei, transaction_fabs.ultimate_parent_uei) IS NOT NULL
+                                THEN CONCAT('uei-', COALESCE(transaction_fpds.ultimate_parent_uei, transaction_fabs.ultimate_parent_uei))
+                            WHEN COALESCE(transaction_fpds.ultimate_parent_unique_ide, transaction_fabs.ultimate_parent_unique_ide) IS NOT NULL
+                                THEN CONCAT('duns-', COALESCE(transaction_fpds.ultimate_parent_unique_ide, transaction_fabs.ultimate_parent_unique_ide))
+                            ELSE CONCAT('name-', COALESCE(transaction_fpds.ultimate_parent_legal_enti, transaction_fabs.ultimate_parent_legal_enti, ''))
+                        END
+                    ) AS generated_hash_no_hash
                 FROM
                     int.transaction_normalized
                 LEFT OUTER JOIN
