@@ -126,7 +126,7 @@ class Command(BaseCommand):
                         )
             """
         )
-        self.log("Recipient Hash Comparison", df.show(500))
+        self.log("Recipient Hash Comparison", df.show(500, truncate=False))
 
 
 
