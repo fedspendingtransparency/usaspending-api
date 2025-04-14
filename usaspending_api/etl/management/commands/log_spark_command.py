@@ -66,6 +66,9 @@ class Command(BaseCommand):
         if options['create_temp_tables']:
             create_ref_temp_views(self.spark, create_broker_views=True)
         
+
+        self.spark.conf.set('spark.sql.caseSensitive', False)
+
         # Run command and log
         df = self.spark.sql(
             rf"""
@@ -105,7 +108,9 @@ class Command(BaseCommand):
                                 THEN CONCAT('duns-', COALESCE(transaction_fpds.ultimate_parent_unique_ide, transaction_fabs.ultimate_parent_unique_ide))
                             ELSE CONCAT('name-', COALESCE(transaction_fpds.ultimate_parent_legal_enti, transaction_fabs.ultimate_parent_legal_enti, ''))
                         END
-                    ) AS generated_hash_no_hash
+                    ) AS generated_hash_no_hash,
+                    LENGTH(recipient_hash) as hash_length,
+                    HEX(recipient_hash) as hash_hex
                 FROM
                     int.transaction_normalized
                 LEFT OUTER JOIN
@@ -126,7 +131,39 @@ class Command(BaseCommand):
                         )
             """
         )
-        self.log("Recipient Hash Comparison", df.show(500, truncate=False))
+        self.log("Recipient Hash Comparison", df.show(30, truncate=False))
+
+        df = self.spark.sql("""
+            SELECT
+                recipient_hash,
+                LENGTH(recipient_hash) as hash_length,
+                HEX(recipient_hash) as hash_hex,
+                *
+            FROM
+                rpt.recipient_lookup
+        """)
+        self.log("Recipient Lookup", df.show(30, truncate=False))
+
+        df = self.spark.sql("""
+            SELECT
+                recipient_hash,
+                LENGTH(recipient_hash) as hash_length,
+                HEX(recipient_hash) as hash_hex,
+                *
+            FROM
+                rpt.recipient_lookup
+            WHERE 
+                recipient_hash in (
+                    'f042b1dc-eaaa-5dc0-9233-7754f8b7fcc2',
+                    'ec30e06e-225b-8259-5146-73388a55d759',
+                    'dcfedc40-311d-15c6-3741-8bd2d7779a42',
+                    'ec30e06e-225b-8259-5146-73388a55d759',
+                    'd4121a6f-6b24-52b6-1ede-4dbdbf428306'
+                )
+        """)
+        self.log("Recipient Lookup - Filtered", df.show(30, truncate=False))
+
+
 
 
 
