@@ -70,7 +70,13 @@ class Command(BaseCommand):
         df = self.spark.sql(
             rf"""
                 SELECT
-                    PRL.recipient_hash
+                    PRL.recipient_hash,
+                    transaction_fpds.ultimate_parent_uei,
+                    transaction_fabs.ultimate_parent_uei,
+                    transaction_fpds.ultimate_parent_unique_ide,
+                    transaction_fabs.ultimate_parent_unique_ide,
+                    transaction_fpds.ultimate_parent_legal_enti,
+                    transaction_fabs.ultimate_parent_legal_enti
                 FROM
                     int.transaction_normalized
                 LEFT OUTER JOIN
