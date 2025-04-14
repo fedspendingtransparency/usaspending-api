@@ -169,7 +169,7 @@ class Command(BaseCommand):
         df = self.spark.read.format("delta").load("s3://dti-da-usaspending-spark-qat/data/delta/rpt/recipient_lookup/")
         self.log("Direct file read", df.show(30))
 
-        df = self.spark.sql("DESCRIBE HISTORY rpt.recpient_lookup")
+        df = self.spark.sql("DESCRIBE HISTORY rpt.recipient_lookup")
         self.log("Describe history", df.show(truncate=False))
 
 
