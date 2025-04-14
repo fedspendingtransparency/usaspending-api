@@ -85,7 +85,7 @@ class Command(BaseCommand):
                                 THEN CONCAT('duns-', COALESCE(transaction_fpds.ultimate_parent_unique_ide, transaction_fabs.ultimate_parent_unique_ide))
                             ELSE CONCAT('name-', COALESCE(transaction_fpds.ultimate_parent_legal_enti, transaction_fabs.ultimate_parent_legal_enti, ''))
                         END
-                    )), '^(\.{{8}})(\.{{4}})(\.{{4}})(\.{{4}})(\.{{12}})$', '\$1-\$2-\$3-\$4-\$5') AS generated_hash
+                    )), '^(\.{{8}})(\.{{4}})(\.{{4}})(\.{{4}})(\.{{12}})$', '\$1-\$2-\$3-\$4-\$5') AS generated_hash,
                     MD5(UPPER(
 
                         CASE
