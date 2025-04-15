@@ -364,7 +364,7 @@ class Command(BaseCommand):
             for udf_args in table_spec["user_defined_functions"]:
                 self.spark.udf.register(**udf_args)
 
-        create_ref_temp_views(self.spark, create_broker_views=True)
+        # create_ref_temp_views(self.spark, create_broker_views=True)
 
         load_query = table_spec["source_query"]
         if isinstance(load_query, list):
