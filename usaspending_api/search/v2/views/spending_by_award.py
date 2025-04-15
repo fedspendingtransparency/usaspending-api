@@ -1,5 +1,6 @@
 import copy
 import logging
+import json
 from ast import literal_eval
 from sys import maxsize
 from typing import (
@@ -53,6 +54,7 @@ from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyT
 from usaspending_api.search.filters.time_period.query_types import AwardSearchTimePeriod, SubawardSearchTimePeriod
 from usaspending_api.search.v2.views.enums import SpendingLevel
 from usaspending_api.submissions.models import SubmissionAttributes
+from usaspending_api.common.helpers.data_constants import state_name_from_code
 
 logger = logging.getLogger(__name__)
 
@@ -504,6 +506,60 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 if self.filters.get("def_codes"):
                     row["def_codes"] = list(filter(lambda x: x in self.filters.get("def_codes"), row["def_codes"]))
 
+            if row.get("Assistance Listings"):
+                row["Assistance Listings"] = list(map(json.loads, row["Assistance Listings"]))
+
+            if "Recipient Location" in self.fields:
+                row["Recipient Location"] = {
+                    "location_country_code": hit.get("recipient_location_country_code"),
+                    "country_name": hit.get("recipient_location_country_name"),
+                    "state_code": hit.get("recipient_location_state_code"),
+                    "state_name": state_name_from_code(hit.get("recipient_location_state_code")),
+                    "city_name": hit.get("recipient_location_city_name"),
+                    "county_code": hit.get("recipient_location_county_code"),
+                    "county_name": hit.get("recipient_location_county_name"),
+                    "address_line1": hit.get("recipient_location_address_line1"),
+                    "address_line2": hit.get("recipient_location_address_line2"),
+                    "address_line3": hit.get("recipient_location_address_line3"),
+                    "congressional_code": hit.get("recipient_location_congressional_code"),
+                    "zip4": hit.get("recipient_location_zip4"),
+                    "zip5": hit.get("recipient_location_zip5"),
+                    "foreign_postal_code": hit.get("recipient_location_foreign_postal_code"),
+                    "foreign_province": hit.get("recipient_location_foreign_province"),
+                }
+
+            if "Primary Place of Performance" in self.fields:
+                row["Primary Place of Performance"] = {
+                    "location_country_code": hit.get("pop_country_code"),
+                    "country_name": hit.get("pop_country_name"),
+                    "state_code": hit.get("pop_state_code"),
+                    "state_name": state_name_from_code(hit.get("pop_state_code")),
+                    "city_name": hit.get("pop_city_name"),
+                    "county_code": hit.get("pop_county_code"),
+                    "county_name": hit.get("pop_county_name"),
+                    "congressional_code": hit.get("pop_congressional_code"),
+                    "zip4": hit.get("pop_zip4"),
+                    "zip5": hit.get("pop_zip5"),
+                }
+
+            if "NAICS" in self.fields:
+                row["NAICS"] = {
+                    "code": hit.get("naics_code"),
+                    "description": hit.get("naics_description"),
+                }
+
+            if "PSC" in self.fields:
+                row["PSC"] = {
+                    "code": hit.get("product_or_service_code"),
+                    "description": hit.get("product_or_service_description"),
+                }
+
+            if "primary_assistance_listing" in self.fields:
+                row["primary_assistance_listing"] = {
+                    "cfda_number": hit.get("cfda_number"),
+                    "cfda_program_title": hit.get("cfda_title"),
+                }
+
             row["generated_internal_id"] = hit["generated_unique_award_id"]
 
             if should_return_display_award_id:
@@ -528,14 +584,70 @@ class SpendingByAwardVisualizationViewSet(APIView):
             for field in self.fields:
                 row[field] = hit.get(self.constants["elasticsearch_type_code_to_field_map"].get(field))
 
-            if row.get("Sub-Award Amount"):
-                row["Sub-Award Amount"] = float(row["Sub-Award Amount"])
-
-            row["prime_award_generated_internal_id"] = hit["unique_award_key"]
-
-            results.append(row)
+            results.append(self.calculate_complex_fields(row, hit))
 
         return self.construct_es_response(results, response)
+
+    def calculate_complex_fields(self, row, hit):
+        if row.get("Sub-Award Amount"):
+            row["Sub-Award Amount"] = float(row["Sub-Award Amount"])
+
+        if "NAICS" in self.fields:
+            row["NAICS"] = {
+                "code": hit.get("naics"),
+                "description": hit.get("naics_description"),
+            }
+
+        if "PSC" in self.fields:
+            row["PSC"] = {
+                "code": hit.get("product_or_service_code"),
+                "description": hit.get("product_or_service_description"),
+            }
+
+        if "Assistance Listing" in self.fields:
+            row["Assistance Listing"] = {
+                "cfda_number": hit.get("cfda_number"),
+                "cfda_program_title": hit.get("cfda_titles"),
+            }
+
+        if "Sub-Recipient Location" in self.fields:
+            row["Sub-Recipient Location"] = {
+                "location_country_code": hit.get("sub_recipient_location_country_code"),
+                "country_name": hit.get("sub_recipient_location_country_name"),
+                "state_code": hit.get("sub_recipient_location_state_code"),
+                "state_name": state_name_from_code(hit.get("sub_recipient_location_state_code")),
+                "city_name": hit.get("sub_recipient_location_city_name"),
+                "county_code": hit.get("sub_recipient_location_county_code"),
+                "county_name": hit.get("sub_recipient_location_county_name"),
+                "address_line1": hit.get("sub_recipient_location_address_line1"),
+                "congressional_code": hit.get("sub_recipient_location_congressional_code"),
+                "zip4": hit.get("sub_recipient_location_zip")[5:],
+                "zip5": hit.get("sub_recipient_location_zip5"),
+                "foreign_postal_code": hit.get("sub_recipient_location_foreign_posta"),
+            }
+
+        if "Sub-Award Primary Place of Performance" in self.fields:
+            row["Sub-Award Primary Place of Performance"] = {
+                "location_country_code": hit.get("sub_pop_country_code"),
+                "country_name": hit.get("sub_pop_country_name"),
+                "state_code": hit.get("sub_pop_state_code"),
+                "state_name": state_name_from_code(hit.get("sub_pop_state_code")),
+                "city_name": hit.get("sub_pop_city_name"),
+                "county_code": hit.get("sub_pop_county_code"),
+                "county_name": hit.get("sub_pop_county_name"),
+                "congressional_code": hit.get("sub_pop_congressional_code"),
+                "zip4": hit.get("sub_pop_zip")[5:],
+                "zip5": hit.get("sub_pop_zip")[0:5],
+            }
+
+        if "sub_award_recipient_id" in self.fields:
+            row["sub_award_recipient_id"] = (
+                hit.get("subaward_recipient_hash") + "-" + hit.get("subaward_recipient_level")
+            )
+
+        row["prime_award_generated_internal_id"] = hit["unique_award_key"]
+
+        return row
 
     def construct_es_response(self, results: list[dict[str, Any]], response: Response) -> dict[str, Any]:
         last_record_unique_id = None
