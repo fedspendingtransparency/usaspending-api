@@ -43,14 +43,14 @@ class Command(BaseCommand):
         dest_alias = 'dest'
         historic_alias = 'historic'
 
-        update_cols = ', '.join([f'{self.dest_schema}.{preserved_field} = {self.historic_schema}.{preserved_field}'
+        update_cols = ', '.join([f'{self.dest_alias}.{preserved_field} = {self.historic_alias}.{preserved_field}'
                                  for preserved_field in self.preserved_fields])
 
         if self.table == 'awards':
             unique_fields = ['generated_unique_award_id']
         else:
             unique_fields = ['unique_award_key', 'transaction_unique_id']
-        join_condition = ' AND '.join([f'{self.dest_schema}.{unique_field} = {self.historic_schema}.{unique_field}'
+        join_condition = ' AND '.join([f'{self.dest_alias}.{unique_field} = {self.historic_alias}.{unique_field}'
                                        for unique_field in unique_fields])
 
         copy_sql = f"""
