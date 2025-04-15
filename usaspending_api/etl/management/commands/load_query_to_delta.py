@@ -18,7 +18,7 @@ from usaspending_api.disaster.delta_models import (
 )
 from usaspending_api.disaster.models import CovidFABASpending
 from usaspending_api.download.delta_models.account_download import (
-    ACCOUNT_DOWNLOAD_COLUMNS,
+    ACCOUNT_DOWNLOAD_POSTGRES_COLUMNS,
     account_download_create_sql_string,
     account_download_load_sql_string,
 )
@@ -303,15 +303,15 @@ TABLE_SPEC = {
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
-        "swap_table": "account_download",
-        "swap_schema": "rpt",
+        "swap_table": None,
+        "swap_schema": None,
         "partition_column": "financial_accounts_by_awards_id",
         "partition_column_type": "numeric",
         "is_partition_column_unique": False,
         "delta_table_create_sql": account_download_create_sql_string,
-        "source_schema": ACCOUNT_DOWNLOAD_COLUMNS,
+        "source_schema": ACCOUNT_DOWNLOAD_POSTGRES_COLUMNS,
         "custom_schema": None,
-        "column_names": list(ACCOUNT_DOWNLOAD_COLUMNS),
+        "column_names": list(ACCOUNT_DOWNLOAD_POSTGRES_COLUMNS),
         "postgres_seq_name": None,
         "tsvectors": None,
         "postgres_partition_spec": None,
