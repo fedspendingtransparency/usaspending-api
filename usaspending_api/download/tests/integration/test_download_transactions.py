@@ -80,7 +80,7 @@ def download_test_data():
         modification_number=1,
         awarding_agency_id=aa1.id,
         piid="tc1piid",
-        award_date_signed="2018-01-15",
+        award_date_signed="2017-12-31",
         naics_code="100",
     )
     baker.make(
@@ -94,6 +94,7 @@ def download_test_data():
         awarding_agency_id=aa2.id,
         piid="tc2piid",
         naics_code="200",
+        award_date_signed="2017-12-31",
     )
     baker.make(
         TransactionSearch,
@@ -106,6 +107,7 @@ def download_test_data():
         awarding_agency_id=aa2.id,
         fain="ta1fain",
         naics_code="300",
+        award_date_signed="2017-12-31",
     )
 
     # Set latest_award for each award
