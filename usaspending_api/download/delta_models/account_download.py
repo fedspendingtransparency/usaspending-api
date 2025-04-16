@@ -72,7 +72,7 @@ ACCOUNT_DOWNLOAD_COLUMNS = {
         "postgres": "NUMERIC(23,2)",
     },
     "ussgl497200_downward_adj_of_prior_year_paid_deliv_orders_oblig": {
-        "delta": "NUMERIC(23},2)",
+        "delta": "NUMERIC(23,2)",
         "postgres": "NUMERIC(23,2)",
     },
     "award_base_action_date_fiscal_year": {"delta": "INTEGER", "postgres": "INTEGER"},
