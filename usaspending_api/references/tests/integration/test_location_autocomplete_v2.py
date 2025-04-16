@@ -82,6 +82,70 @@ def location_data_fixture(db):
     )
 
 
+@pytest.fixture
+def location_data_fixture_multiple_locations(db):
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=100,
+        is_fpds=False,
+        transaction_unique_id="TRANSACTION100",
+        pop_country_name="UNITED STATES",
+        pop_state_name="TEXAS",
+        pop_city_name="TEXAS A CITY",
+        pop_county_name=None,
+        pop_zip5=None,
+        pop_congressional_code_current=None,
+        pop_congressional_code=None,
+        recipient_location_country_name="UNITED STATES",
+        recipient_location_state_name="TEXAS",
+        recipient_location_city_name="TEXAS B CITY",
+        recipient_location_county_name="FAKE COUNTY",
+        recipient_location_zip5=75001,
+        recipient_location_congressional_code_current="30",
+        recipient_location_congressional_code="30",
+    )
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=101,
+        is_fpds=False,
+        transaction_unique_id="TRANSACTION101",
+        pop_country_name="UNITED STATES",
+        pop_state_name="ILLINOIS",
+        pop_city_name="TEXAS C CITY",
+        pop_county_name=None,
+        pop_zip5=None,
+        pop_congressional_code_current=None,
+        pop_congressional_code=None,
+        recipient_location_country_name="UNITED STATES",
+        recipient_location_state_name="OKLAHOMA",
+        recipient_location_city_name="TEXAS D CITY",
+        recipient_location_county_name=None,
+        recipient_location_zip5=75001,
+        recipient_location_congressional_code_current="30",
+        recipient_location_congressional_code="30",
+    )
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=102,
+        is_fpds=False,
+        transaction_unique_id="TRANSACTION102",
+        pop_country_name="UNITED STATES",
+        pop_state_name="TEXAS",
+        pop_city_name="TEXAS E CITY",
+        pop_county_name=None,
+        pop_zip5=None,
+        pop_congressional_code_current=None,
+        pop_congressional_code=None,
+        recipient_location_country_name="UNITED STATES",
+        recipient_location_state_name="CALIFORNIA",
+        recipient_location_city_name="TEXAS F CITY",
+        recipient_location_county_name=None,
+        recipient_location_zip5=75001,
+        recipient_location_congressional_code_current="30",
+        recipient_location_congressional_code="30",
+    )
+
+
 def test_exact_match(client, monkeypatch, location_data_fixture, elasticsearch_location_index):
     """Test searching ES and finding an exact match"""
 
@@ -189,3 +253,36 @@ def test_verify_no_missing_fields(client, monkeypatch, location_data_fixture, el
     results = search.execute()
 
     assert len(results.hits) == 0
+
+
+def test_limits_by_location_type(
+    client, monkeypatch, location_data_fixture_multiple_locations, elasticsearch_location_index
+):
+    """Test that the endpoint returns (at most) 5 results of each `location_type` by default"""
+
+    monkeypatch.setattr(
+        "usaspending_api.common.elasticsearch.search_wrappers.LocationSearch._index_name",
+        settings.ES_LOCATIONS_QUERY_ALIAS_PREFIX,
+    )
+    elasticsearch_location_index.update_index()
+
+    response = client.post(
+        "/api/v2/autocomplete/location", content_type="application/json", data=json.dumps({"search_text": "texas"})
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.data) == 3
+    assert response.data["count"] == 6
+    assert response.data["messages"] == [""]
+    assert 0 < len(response.data["results"]["cities"]) <= 5
+    assert 0 < len(response.data["results"]["states"]) <= 5
+    assert response.data["results"] == {
+        "cities": [
+            {"city_name": "TEXAS A CITY", "state_name": "TEXAS", "country_name": "UNITED STATES"},
+            {"city_name": "TEXAS B CITY", "state_name": "TEXAS", "country_name": "UNITED STATES"},
+            {"city_name": "TEXAS D CITY", "state_name": "OKLAHOMA", "country_name": "UNITED STATES"},
+            {"city_name": "TEXAS E CITY", "state_name": "TEXAS", "country_name": "UNITED STATES"},
+            {"city_name": "TEXAS C CITY", "state_name": "ILLINOIS", "country_name": "UNITED STATES"},
+        ],
+        "states": [{"state_name": "TEXAS", "country_name": "UNITED STATES"}],
+    }
