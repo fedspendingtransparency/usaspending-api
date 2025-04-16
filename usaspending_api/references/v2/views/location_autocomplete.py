@@ -87,7 +87,15 @@ class LocationAutocompleteViewSet(APIView):
         ]
 
         query = ES_Q("bool", should=should_query, minimum_should_match=1)
-        search: LocationSearch = LocationSearch().extra(size=0).query(query)
+        search: LocationSearch = (
+            LocationSearch()
+            .extra(size=0)
+            .query(query)
+            .sort(
+                {"_score": {"order": "desc"}},
+                {"location.keyword": {"order": "asc"}},
+            )
+        )
         # Group by location_type then get the top `limit` results for each bucket
         search.aggs.bucket("location_types", "terms", field="location_type").metric(
             "most_relevant", "top_hits", size=limit, _source=["location_json", "location_type"]
