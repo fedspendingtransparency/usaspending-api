@@ -77,7 +77,12 @@
       },
       "transaction_description": {
         "type": "text",
-        "analyzer": "stemmer_analyzer"
+        "analyzer": "stemmer_analyzer",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
       },
       "product_or_service_code": {
         "type": "text",
@@ -615,6 +620,55 @@
       },
       "recipient_location_county_fips": {
         "type": "keyword"
+      },
+      "action_type": {
+        "type": "keyword"
+      },
+      "legal_entity_address_line1": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "legal_entity_address_line2": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "legal_entity_address_line3": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "legal_entity_foreign_posta": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "legal_entity_foreign_provi": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "legal_entity_zip_last4": {
+        "type": "text"
+      },
+      "place_of_perform_zip_last4": {
+        "type": "text"
       },
       "tas_paths": {
         "type": "keyword"

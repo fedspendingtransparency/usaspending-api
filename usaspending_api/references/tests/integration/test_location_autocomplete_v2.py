@@ -2,8 +2,11 @@ import json
 
 import pytest
 from django.conf import settings
+from elasticsearch_dsl import Q as ES_Q
 from model_bakery import baker
 from rest_framework import status
+
+from usaspending_api.common.elasticsearch.search_wrappers import LocationSearch
 
 
 @pytest.fixture
@@ -15,6 +18,7 @@ def location_data_fixture(db):
         transaction_unique_id="TRANSACTION500",
         pop_country_name="UNITED STATES",
         pop_state_name="CALIFORNIA",
+        pop_state_code="CA",
         pop_city_name="LOS ANGELES",
         pop_county_name="LOS ANGELES",
         pop_zip5=90001,
@@ -76,9 +80,6 @@ def location_data_fixture(db):
         recipient_location_congressional_code_current="30",
         recipient_location_congressional_code="30",
     )
-    baker.make("recipient.StateData", id=10, fips="11", code="CA", name="California", type="state", year=2024)
-    baker.make("recipient.StateData", id=20, fips="22", code="CO", name="Colorado", type="state", year=2024)
-    baker.make("recipient.StateData", id=30, fips="13", code="GA", name="Georgia", type="state", year=2024)
 
 
 def test_exact_match(client, monkeypatch, location_data_fixture, elasticsearch_location_index):
@@ -98,7 +99,7 @@ def test_exact_match(client, monkeypatch, location_data_fixture, elasticsearch_l
     assert len(response.data) == 3
     assert response.data["count"] == 1
     assert response.data["messages"] == [""]
-    assert response.data["results"] == {"countries": ["DENMARK"]}
+    assert response.data["results"] == {"countries": [{"country_name": "DENMARK"}]}
 
 
 def test_multiple_types_of_matches(client, monkeypatch, location_data_fixture, elasticsearch_location_index):
@@ -116,15 +117,11 @@ def test_multiple_types_of_matches(client, monkeypatch, location_data_fixture, e
 
     assert response.status_code == status.HTTP_200_OK
     assert len(response.data) == 3
-    assert response.data["count"] == 4
+    assert response.data["count"] == 2
     assert response.data["messages"] == [""]
     assert response.data["results"] == {
-        "countries": ["DENMARK"],
-        "cities": ["DENVER, COLORADO"],
-        "counties": [
-            {"county_fips": "22222", "county_name": "DENVER COUNTY, COLORADO"},
-            {"county_fips": "13444", "county_name": "CAMDEN COUNTY, GEORGIA"},
-        ],
+        "countries": [{"country_name": "DENMARK"}],
+        "cities": [{"city_name": "DENVER", "state_name": "COLORADO", "country_name": "UNITED STATES"}],
     }
 
 
@@ -146,8 +143,8 @@ def test_congressional_district_results(client, monkeypatch, location_data_fixtu
     assert response.data["count"] == 2
     assert response.data["messages"] == [""]
     assert response.data["results"] == {
-        "districts_current": ["CA-34, CALIFORNIA"],
-        "districts_original": ["CA-34, CALIFORNIA"],
+        "districts_current": [{"current_cd": "CA-34", "state_name": "CALIFORNIA", "country_name": "UNITED STATES"}],
+        "districts_original": [{"original_cd": "CA-34", "state_name": "CALIFORNIA", "country_name": "UNITED STATES"}],
     }
 
 
@@ -169,3 +166,26 @@ def test_no_results(client, monkeypatch, location_data_fixture, elasticsearch_lo
     assert response.data["count"] == 0
     assert response.data["messages"] == [""]
     assert response.data["results"] == {}
+
+
+def test_verify_no_missing_fields(client, monkeypatch, location_data_fixture, elasticsearch_location_index):
+    """Verify that every document has all of the appropriate fields:
+    - location
+    - location_json
+    - location_type
+    """
+
+    monkeypatch.setattr(
+        "usaspending_api.common.elasticsearch.search_wrappers.LocationSearch._index_name",
+        settings.ES_LOCATIONS_QUERY_ALIAS_PREFIX,
+    )
+    elasticsearch_location_index.update_index()
+
+    location_index_fields = ["location", "location_json", "location_type"]
+
+    must_not_queries = [ES_Q("exists", field=field) for field in location_index_fields]
+    must_not_exist_query = ES_Q("bool", must_not=must_not_queries, minimum_should_match=1)
+    search = LocationSearch().query(must_not_exist_query)
+    results = search.execute()
+
+    assert len(results.hits) == 0

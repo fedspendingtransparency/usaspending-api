@@ -9,6 +9,7 @@ from usaspending_api.etl.elasticsearch_loader_helpers.utilities import (
     TaskSpec,
     convert_json_array_to_list_of_str,
     convert_json_data_to_dict,
+    dump_dict_to_string,
     format_log,
 )
 
@@ -22,6 +23,7 @@ def transform_award_data(worker: TaskSpec, records: List[dict]) -> List[dict]:
         "federal_accounts": convert_json_array_to_list_of_str,
         "program_activities": convert_json_data_to_dict,
     }
+    # TODO: Move some of the 1:1 agg_keys that match a field already on Elasticsearch
     agg_key_creations = {
         "awarding_subtier_agency_agg_key": lambda x: x["awarding_subtier_agency_code"],
         "awarding_toptier_agency_agg_key": lambda x: x["awarding_toptier_agency_code"],
@@ -66,6 +68,7 @@ def transform_transaction_data(worker: TaskSpec, records: List[dict]) -> List[di
         "federal_accounts": convert_json_array_to_list_of_str,
         "program_activities": convert_json_data_to_dict,
     }
+    # TODO: Move some of the 1:1 agg_keys that match a field already on Elasticsearch
     agg_key_creations = {
         "recipient_agg_key": funcs.transaction_recipient_agg_key,
         "awarding_subtier_agency_agg_key": lambda x: x["awarding_sub_tier_agency_c"],
@@ -108,7 +111,33 @@ def transform_subaward_data(worker: TaskSpec, records: List[dict]) -> List[dict]
     converters = {
         "program_activities": convert_json_data_to_dict,
     }
-    agg_key_creations = {}
+    agg_key_creations = {
+        "sub_pop_country_agg_key": lambda x: x["sub_pop_country_code"],
+        "sub_pop_congressional_cur_agg_key": funcs.sub_pop_congressional_cur_agg_key,
+        "sub_pop_county_agg_key": funcs.sub_pop_county_agg_key,
+        "sub_pop_state_agg_key": lambda x: x["sub_pop_state_code"],
+        "sub_recipient_location_congressional_cur_agg_key": funcs.sub_recipient_location_congressional_cur_agg_key,
+        "sub_recipient_location_county_agg_key": funcs.sub_recipient_location_county_agg_key,
+        "awarding_subtier_agency_agg_key": lambda x: x["awarding_subtier_agency_code"],
+        "funding_subtier_agency_agg_key": lambda x: x["funding_subtier_agency_code"],
+        "awarding_toptier_agency_agg_key": lambda x: x["awarding_toptier_agency_code"],
+        "funding_toptier_agency_agg_key": lambda x: x["funding_toptier_agency_code"],
+        "naics_agg_key": lambda x: x["naics"],
+        "psc_agg_key": lambda x: x["product_or_service_code"],
+        "defc_agg_key": lambda x: x["disaster_emergency_fund_codes"],
+        "cfda_agg_key": lambda x: x["cfda_number"],
+        "sub_recipient_agg_key": funcs.subaward_recipient_agg_key,
+    }
+    drop_fields = []
+
+    return transform_data(worker, records, converters, agg_key_creations, drop_fields, None)
+
+
+def transform_location_data(worker: TaskSpec, records: List[dict]) -> List[dict]:
+    converters = {
+        "location_json": dump_dict_to_string,
+    }
+    agg_key_creations = {"location_type": funcs.location_type_agg_key}
     drop_fields = []
 
     return transform_data(worker, records, converters, agg_key_creations, drop_fields, None)

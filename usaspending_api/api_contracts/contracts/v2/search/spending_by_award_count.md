@@ -19,8 +19,15 @@ This endpoint takes award filters, and returns the number of awards in each awar
 
     + Attributes (object)
         + `filters` (required, AdvancedFilterObject)
+        + `spending_level` (optional, enum[string])
+            Group the spending by level. This also determines what data source is used for the totals.
+            + Members
+                + `awards` 
+                + `subawards`
+            + Default
+                + `awards`
         + `subawards`: false (optional, boolean)
-            True when you want to group by Subawards instead of Awards. Defaulted to False.
+            True when you want to group by Subawards instead of Awards. Defaulted to False unless spending_level is set to `subawards`, then the default is True.
     + Body
 
             {
@@ -32,6 +39,11 @@ This endpoint takes award filters, and returns the number of awards in each awar
 + Response 200 (application/json)
     + Attributes (object)
         + `results` (AwardTypeResult)
+        + `spending_level` (required, enum[string])
+            Spending level value that was provided in the request.
+            + Members
+                + `awards`
+                + `subawards`
         + `messages` (optional, array[string])
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
 
@@ -45,6 +57,9 @@ This endpoint takes award filters, and returns the number of awards in each awar
 + `other` (required, number)
 + `idvs` (required, number)
 
+## SubawardTypeResult (object)
++ `subgrants` (required, number)
++ `subcontracts` (required, number)
 
 ## Filter Objects
 ### AdvancedFilterObject (object)
