@@ -841,36 +841,36 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
         # Trace library parses the SQL, but cannot understand the psql-specific \COPY command. Use standard COPY here.
         download_sql = download_sql[1:]
 
-    # Stack 3 context managers: (1) psql code, (2) Download replica query, (3) (same) Postgres query
-    subprocess_trace = SubprocessTrace(
-        name=f"job.{JOB_TYPE}.download.psql",
-        kind=SpanKind.INTERNAL,
-        service="bulk-download",
-    )
-
-    with subprocess_trace as span:
-        span.set_attributes(
-            {
-                "service": "bulk-download",
-                "resource": str(download_sql),
-                "span_type": "Internal",
-                "source_path": str(source_path),
-                # download job details
-                "download_job_id": str(download_job.download_job_id),
-                "download_job_status": str(download_job.job_status.name),
-                "download_file_name": str(download_job.file_name),
-                "download_file_size": download_job.file_size if download_job.file_size is not None else 0,
-                "number_of_rows": download_job.number_of_rows if download_job.number_of_rows is not None else 0,
-                "number_of_columns": (
-                    download_job.number_of_columns if download_job.number_of_columns is not None else 0
-                ),
-                "error_message": download_job.error_message if download_job.error_message else "",
-                "monthly_download": str(download_job.monthly_download),
-                "json_request": str(download_job.json_request) if download_job.json_request else "",
-            }
-        )
-
         try:
+            # Stack 3 context managers: (1) psql code, (2) Download replica query, (3) (same) Postgres query
+            subprocess_trace = SubprocessTrace(
+                name=f"job.{JOB_TYPE}.download.psql",
+                kind=SpanKind.INTERNAL,
+                service="bulk-download",
+            )
+
+            with subprocess_trace as span:
+                span.set_attributes(
+                    {
+                        "service": "bulk-download",
+                        "resource": str(download_sql),
+                        "span_type": "Internal",
+                        "source_path": str(source_path),
+                        # download job details
+                        "download_job_id": str(download_job.download_job_id),
+                        "download_job_status": str(download_job.job_status.name),
+                        "download_file_name": str(download_job.file_name),
+                        "download_file_size": download_job.file_size if download_job.file_size is not None else 0,
+                        "number_of_rows": download_job.number_of_rows if download_job.number_of_rows is not None else 0,
+                        "number_of_columns": (
+                            download_job.number_of_columns if download_job.number_of_columns is not None else 0
+                        ),
+                        "error_message": download_job.error_message if download_job.error_message else "",
+                        "monthly_download": str(download_job.monthly_download),
+                        "json_request": str(download_job.json_request) if download_job.json_request else "",
+                    }
+                )
+
             log_time = time.perf_counter()
             temp_env = os.environ.copy()
             if download_job and not download_job.monthly_download:
