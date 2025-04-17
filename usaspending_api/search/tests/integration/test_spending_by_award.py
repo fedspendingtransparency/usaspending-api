@@ -2824,19 +2824,40 @@ def test_spending_by_award_sort_naics(
         "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
     )
 
-    naics_1 = {"naics_code": "123456", "naics_description": "1"}
+    naics_1 = {"code": "123456", "description": "1"}
 
-    naics_2 = {"naics_code": "123456", "naics_description": "2"}
+    naics_2 = {"code": "123456", "description": "2"}
 
-    naics_3 = {"naics_code": "123457", "naics_description": "naics description 1"}
+    naics_3 = {"code": "123457", "description": "naics description 1"}
 
     assert resp.status_code == status.HTTP_200_OK
     results = resp.json().get("results")
-    print("results: ", results)
     assert len(results) == 3
     assert results[0]["NAICS"] == naics_1
     assert results[1]["NAICS"] == naics_2
     assert results[2]["NAICS"] == naics_3
+
+    test_payload = {
+        "subawards": False,
+        "fields": [
+            "Award ID",
+            "NAICS",
+        ],
+        "filters": {"award_type_codes": ["B"]},
+        "sort": "NAICS",
+        "order": "desc",
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    assert len(results) == 3
+    assert results[0]["NAICS"] == naics_3
+    assert results[1]["NAICS"] == naics_2
+    assert results[2]["NAICS"] == naics_1
 
 
 def test_spending_by_award_sort_psc(
@@ -2868,8 +2889,29 @@ def test_spending_by_award_sort_psc(
 
     assert resp.status_code == status.HTTP_200_OK
     results = resp.json().get("results")
-    print("results: ", results)
     assert len(results) == 3
     assert results[0]["PSC"] == psc1
     assert results[1]["PSC"] == psc2
     assert results[2]["PSC"] == psc3
+
+    test_payload = {
+        "subawards": False,
+        "fields": [
+            "Award ID",
+            "PSC",
+        ],
+        "filters": {"award_type_codes": ["B"]},
+        "sort": "PSC",
+        "order": "desc",
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    assert len(results) == 3
+    assert results[0]["PSC"] == psc3
+    assert results[1]["PSC"] == psc2
+    assert results[2]["PSC"] == psc1

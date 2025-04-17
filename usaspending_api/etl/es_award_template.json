@@ -625,7 +625,12 @@
         }
       },
       "product_or_service_description": {
-        "type": "text"
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
       },
       "psc_agg_key": {
         "type": "keyword",
@@ -645,7 +650,12 @@
         }
       },
       "naics_description": {
-        "type": "text"
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
       },
       "naics_agg_key": {
         "type": "keyword",

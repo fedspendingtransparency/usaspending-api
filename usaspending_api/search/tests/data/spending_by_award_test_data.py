@@ -505,7 +505,7 @@ def spending_by_award_test_data():
         generated_unique_award_id="ASST_NON_TESTING_5451",
         recipient_name="ACME INC.",
         naics_code="123456",
-        naics_description="b",
+        naics_description="2",
         product_or_service_code="PSC1",
         product_or_service_description="PSC description 2",
     )
@@ -522,7 +522,7 @@ def spending_by_award_test_data():
         generated_unique_award_id="ASST_NON_TESTING_5452",
         recipient_name="ACME INC.",
         naics_code="123456",
-        naics_description="a",
+        naics_description="1",
         product_or_service_code="PSC1",
         product_or_service_description="PSC description 1",
     )

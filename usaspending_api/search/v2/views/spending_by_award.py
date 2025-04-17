@@ -419,9 +419,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         elif self.pagination["sort_key"] == "Recipient Location":
             return self.query_elasticsearch(AwardSearch(), filter_query, sort_field)
         else:
-            sorts = [
-                {field: {"order": self.pagination["sort_order"], "unmapped_type": "keyword"}} for field in sort_field
-            ]
+            sorts = [{field: {"order": self.pagination["sort_order"]}} for field in sort_field]
             print("sorts: ", sorts)
         return self.query_elasticsearch(AwardSearch(), filter_query, sorts)
 
