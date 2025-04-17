@@ -134,7 +134,7 @@ class AbstractElasticsearchIndexerController(ABC):
             # all other load types are set to the original default of "auto".
             slice_count = "auto"
         else:
-            slice_count = 2
+            slice_count = 10
         self.config["slices"] = slice_count
         logger.info(
             format_log(f"Setting the value of {self.config['load_type']} index slices: {self.config['slices']}")
