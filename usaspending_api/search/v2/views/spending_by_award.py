@@ -115,9 +115,14 @@ class SpendingByAwardVisualizationViewSet(APIView):
             return Response(self.populate_response(results=[], has_next=False, models=models))
 
         raise_if_award_types_not_valid_subset(self.filters["award_type_codes"], self.is_subaward)
-        raise_if_sort_key_not_valid(
-            self.pagination["sort_key"], self.fields, self.filters["award_type_codes"], self.is_subaward
-        )
+        if (
+            self.pagination["sort_key"] != "NAICS"
+            and self.pagination["sort_key"] != "PSC"
+            and self.pagination["sort_key"] != "Recipient Location"
+        ):
+            raise_if_sort_key_not_valid(
+                self.pagination["sort_key"], self.fields, self.filters["award_type_codes"], self.is_subaward
+            )
 
         self.last_record_unique_id = json_request.get("last_record_unique_id")
         self.last_record_sort_value = json_request.get("last_record_sort_value")
@@ -248,6 +253,34 @@ class SpendingByAwardVisualizationViewSet(APIView):
     def get_elastic_sort_by_fields(self):
         if self.pagination["sort_key"] == "Award ID" or self.pagination["sort_key"] == "Sub-Award ID":
             sort_by_fields = ["display_award_id"]
+        elif self.pagination["sort_key"] == "NAICS":
+            sort_by_fields = [contracts_mapping["naics_code"]]
+            sort_by_fields.append(contracts_mapping["naics_description"])
+        elif self.pagination["sort_key"] == "PSC":
+            sort_by_fields = [contracts_mapping["psc_code"]]
+            sort_by_fields.append(contracts_mapping["psc_description"])
+        elif self.pagination["sort_key"] == "Recipient Location":
+            sort_by_fields = [
+                {
+                    "_script": {
+                        "type": "string",
+                        "script": {
+                            "lang": "painless",
+                            "source": "if(doc['recipient_location_city_name'].size() != 0) { return doc['recipient_location_city_name'].toString(); }  if(doc['recipient_location_state_code'].size() != 0) { return doc['recipient_location_state_code'].toString(); } return doc['recipient_location_country_name'].toString();",
+                        },
+                        "order": self.pagination["sort_order"],
+                    }
+                }
+            ]
+            sort_by_fields.append(
+                {
+                    contracts_mapping["recipient_location_address_line1"]: {
+                        "order": self.pagination["sort_order"],
+                        "unmapped_type": "keyword",
+                    }
+                }
+            )
+            print("sort_by_fields: ", sort_by_fields)
         else:
             if self.is_subaward:
                 sort_by_fields = [subaward_mapping[self.pagination["sort_key"]]]
@@ -383,9 +416,13 @@ class SpendingByAwardVisualizationViewSet(APIView):
                     {"filter": {"terms": {"covid_spending_by_defc.defc": self.filters.get("def_codes", [])}}}
                 )
             sorts.extend([{field: self.pagination["sort_order"]} for field in sort_field])
+        elif self.pagination["sort_key"] == "Recipient Location":
+            return self.query_elasticsearch(AwardSearch(), filter_query, sort_field)
         else:
-            sorts = [{field: self.pagination["sort_order"]} for field in sort_field]
-
+            sorts = [
+                {field: {"order": self.pagination["sort_order"], "unmapped_type": "keyword"}} for field in sort_field
+            ]
+            print("sorts: ", sorts)
         return self.query_elasticsearch(AwardSearch(), filter_query, sorts)
 
     def query_elasticsearch_subawards(self) -> Response:

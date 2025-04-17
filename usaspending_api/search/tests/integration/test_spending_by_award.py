@@ -2717,3 +2717,159 @@ def test_spending_by_award_new_assistance_fields(
 
     assert resp.status_code == status.HTTP_200_OK
     assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
+
+
+def test_spending_by_award_sort_recipient_location(
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
+):
+
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    test_payload = {
+        "subawards": False,
+        "fields": [
+            "Award ID",
+            "Recipient Location",
+        ],
+        "filters": {"award_type_codes": ["08"]},
+        "sort": "Recipient Location",
+        "order": "desc",
+    }
+
+    recipient_location1 = {
+        "location_country_code": "USA",
+        "country_name": "UNITED STATES",
+        "state_code": "VA",
+        "state_name": "Virginia",
+        "city_name": "ARLINGTON",
+        "county_code": "013",
+        "county_name": "ARLINGTON",
+        "address_line1": "1 Memorial Drive",
+        "address_line2": "Room 324",
+        "address_line3": "Desk 5",
+        "congressional_code": "08",
+        "zip4": "9040",
+        "zip5": "55455",
+        "foreign_postal_code": "55455",
+        "foreign_province": "Manitoba",
+    }
+
+    recipient_location2 = {
+        "location_country_code": "USA",
+        "country_name": "UNITED STATES",
+        "state_code": "NE",
+        "state_name": "Nebraska",
+        "city_name": "OMAHA",
+        "county_code": "013",
+        "county_name": "OMAHA",
+        "address_line1": "1 Memorial Drive",
+        "address_line2": "Room 324",
+        "address_line3": "Desk 5",
+        "congressional_code": "08",
+        "zip4": "9040",
+        "zip5": "55455",
+        "foreign_postal_code": "55455",
+        "foreign_province": "Manitoba",
+    }
+
+    recipient_location3 = {
+        "location_country_code": "USA",
+        "country_name": "UNITED STATES",
+        "state_code": "MO",
+        "state_name": "Missouri",
+        "city_name": "KANSAS CITY",
+        "county_code": "013",
+        "county_name": "KANSAS CITY",
+        "address_line1": "1 Memorial Drive",
+        "address_line2": "Room 324",
+        "address_line3": "Desk 5",
+        "congressional_code": "08",
+        "zip4": "9040",
+        "zip5": "55455",
+        "foreign_postal_code": "55455",
+        "foreign_province": "Manitoba",
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    print("results: ", results)
+    assert len(results) == 6
+    assert results[0]["Recipient Location"] == recipient_location1
+    assert results[1]["Recipient Location"] == recipient_location3
+    assert results[2]["Recipient Location"] == recipient_location2
+
+
+def test_spending_by_award_sort_naics(
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
+):
+
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    test_payload = {
+        "subawards": False,
+        "fields": [
+            "Award ID",
+            "NAICS",
+        ],
+        "filters": {"award_type_codes": ["B"]},
+        "sort": "NAICS",
+        "order": "asc",
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    naics_1 = {"naics_code": "123456", "naics_description": "1"}
+
+    naics_2 = {"naics_code": "123456", "naics_description": "2"}
+
+    naics_3 = {"naics_code": "123457", "naics_description": "naics description 1"}
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    print("results: ", results)
+    assert len(results) == 3
+    assert results[0]["NAICS"] == naics_1
+    assert results[1]["NAICS"] == naics_2
+    assert results[2]["NAICS"] == naics_3
+
+
+def test_spending_by_award_sort_psc(
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
+):
+
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    test_payload = {
+        "subawards": False,
+        "fields": [
+            "Award ID",
+            "PSC",
+        ],
+        "filters": {"award_type_codes": ["B"]},
+        "sort": "PSC",
+        "order": "asc",
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    psc1 = {"code": "PSC1", "description": "PSC description 1"}
+
+    psc2 = {"code": "PSC1", "description": "PSC description 2"}
+
+    psc3 = {"code": "PSC2", "description": "PSC description 1"}
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    print("results: ", results)
+    assert len(results) == 3
+    assert results[0]["PSC"] == psc1
+    assert results[1]["PSC"] == psc2
+    assert results[2]["PSC"] == psc3

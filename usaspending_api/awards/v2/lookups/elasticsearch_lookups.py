@@ -60,6 +60,14 @@ base_mapping = {
     "Infrastructure Obligations": "iija_spending_by_defc",
     "Infrastructure Outlays": "iija_spending_by_defc",
     "Recipient UEI": "recipient_uei",
+    "naics_code": "naics_code.keyword",
+    "naics_description": "naics_description.keyword",
+    "psc_code": "product_or_service_code.keyword",
+    "psc_description": "product_or_service_description.keyword",
+    "recipient_location_city_name": "recipient_location_city_name.keyword",
+    "recipient_location_state_code": "recipient_location_state_code",
+    "recipient_location_country_name": "recipient_location_country_name.keyword",
+    "recipient_location_address_line1": "recipient_location_address_line1.keyword",
 }
 contracts_mapping = {
     **base_mapping,
