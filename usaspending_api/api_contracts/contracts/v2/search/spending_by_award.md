@@ -72,6 +72,13 @@ This endpoint takes award filters and fields, and returns the fields of the filt
 
 + Response 200 (application/json)
     + Attributes (object)
+        + `spending_level` (required, enum[string])
+            Group the spending by level. This also determines what data source is used for the totals.
+            + Members
+                + `awards`
+                + `subawards`
+            + Default
+                + `awards`
         + `limit` (required, number)
         + `results` (required, array[SpendingByAwardResponse], fixed-type)
         + `page_metadata` (PageMetadataObject)
