@@ -240,66 +240,70 @@ def test_spending_by_award_subaward_success(
     assert resp.status_code == status.HTTP_200_OK
 
     # Testing contents of what is returned
-    resp = client.post(
-        "/api/v2/search/spending_by_award",
-        content_type="application/json",
-        data=json.dumps(
-            {
-                "subawards": True,
-                "fields": [
-                    "Sub-Award ID",
-                    "Sub-Awardee Name",
-                    "Sub-Award Date",
-                    "Sub-Award Amount",
-                    "Awarding Agency",
-                    "Awarding Sub Agency",
-                    "Prime Award ID",
-                    "Prime Recipient Name",
-                    "recipient_id",
-                    "prime_award_recipient_id",
-                ],
-                "sort": "Sub-Award ID",
-                "filters": {"award_type_codes": ["A"]},
-                "limit": 2,
-                "page": 1,
-            }
-        ),
-    )
-    assert resp.status_code == status.HTTP_200_OK
-    assert resp.json()["page_metadata"]["page"] == 1
-    assert resp.json()["page_metadata"]["hasNext"]
-    assert resp.json()["limit"] == 2
-    assert len(resp.json()["results"]) == 2
-    assert resp.json()["results"][0] == {
-        "Awarding Agency": "awarding toptier 8006",
-        "Awarding Sub Agency": "awarding subtier 8006",
-        "Prime Award ID": "PIID6003",
-        "Prime Recipient Name": "recipient_name_for_award_1003",
-        "Sub-Award Amount": 60000.0,
-        "Sub-Award Date": "2019-01-01",
-        "Sub-Award ID": "66666",
-        "Sub-Awardee Name": "RECIPIENT_NAME_FOR_AWARD_1003",
-        "prime_award_internal_id": 3,
-        "internal_id": "66666",
-        "prime_award_recipient_id": "41874914-2c27-813b-1505-df94f35b42dc-R",
-        "recipient_id": None,
-        "prime_award_generated_internal_id": "CONT_AWD_TESTING_3",
-    }
-    assert resp.json()["results"][1] == {
-        "Awarding Agency": "awarding toptier 8003",
-        "Awarding Sub Agency": "awarding subtier 8003",
-        "Prime Award ID": "PIID3002",
-        "Prime Recipient Name": "recipient_name_for_award_1002",
-        "Sub-Award Amount": 30000.0,
-        "Sub-Award Date": "2016-01-01",
-        "Sub-Award ID": "33333",
-        "Sub-Awardee Name": "RECIPIENT_NAME_FOR_AWARD_1002",
-        "prime_award_internal_id": 2,
-        "internal_id": "33333",
-        "prime_award_recipient_id": "0c324830-6283-38d3-d52e-00a71847d92d-R",
-        "recipient_id": None,
-        "prime_award_generated_internal_id": "CONT_AWD_TESTING_2",
-    }
+    spending_level_filter_list = [{"spending_level": "subawards"}, {"subawards": True}]
+
+    for spending_level_filter in spending_level_filter_list:
+        resp = client.post(
+            "/api/v2/search/spending_by_award",
+            content_type="application/json",
+            data=json.dumps(
+                {
+                    "fields": [
+                        "Sub-Award ID",
+                        "Sub-Awardee Name",
+                        "Sub-Award Date",
+                        "Sub-Award Amount",
+                        "Awarding Agency",
+                        "Awarding Sub Agency",
+                        "Prime Award ID",
+                        "Prime Recipient Name",
+                        "recipient_id",
+                        "prime_award_recipient_id",
+                    ],
+                    "sort": "Sub-Award ID",
+                    "filters": {"award_type_codes": ["A"]},
+                    "limit": 2,
+                    "page": 1,
+                    **spending_level_filter,
+                }
+            ),
+        )
+        assert resp.status_code == status.HTTP_200_OK
+        assert resp.json()["page_metadata"]["page"] == 1
+        assert resp.json()["page_metadata"]["hasNext"]
+        assert resp.json()["limit"] == 2
+        assert len(resp.json()["results"]) == 2
+        assert resp.json()["spending_level"] == "subawards"
+        assert resp.json()["results"][0] == {
+            "Awarding Agency": "awarding toptier 8006",
+            "Awarding Sub Agency": "awarding subtier 8006",
+            "Prime Award ID": "PIID6003",
+            "Prime Recipient Name": "recipient_name_for_award_1003",
+            "Sub-Award Amount": 60000.0,
+            "Sub-Award Date": "2019-01-01",
+            "Sub-Award ID": "66666",
+            "Sub-Awardee Name": "RECIPIENT_NAME_FOR_AWARD_1003",
+            "prime_award_internal_id": 3,
+            "internal_id": "66666",
+            "prime_award_recipient_id": "41874914-2c27-813b-1505-df94f35b42dc-R",
+            "recipient_id": None,
+            "prime_award_generated_internal_id": "CONT_AWD_TESTING_3",
+        }
+        assert resp.json()["results"][1] == {
+            "Awarding Agency": "awarding toptier 8003",
+            "Awarding Sub Agency": "awarding subtier 8003",
+            "Prime Award ID": "PIID3002",
+            "Prime Recipient Name": "recipient_name_for_award_1002",
+            "Sub-Award Amount": 30000.0,
+            "Sub-Award Date": "2016-01-01",
+            "Sub-Award ID": "33333",
+            "Sub-Awardee Name": "RECIPIENT_NAME_FOR_AWARD_1002",
+            "prime_award_internal_id": 2,
+            "internal_id": "33333",
+            "prime_award_recipient_id": "0c324830-6283-38d3-d52e-00a71847d92d-R",
+            "recipient_id": None,
+            "prime_award_generated_internal_id": "CONT_AWD_TESTING_2",
+        }
 
 
 @pytest.mark.django_db
