@@ -787,6 +787,14 @@
                 "type": "keyword"
               }
             }
+          },
+          "recipient_location_address_line1": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
           }
         }
       }

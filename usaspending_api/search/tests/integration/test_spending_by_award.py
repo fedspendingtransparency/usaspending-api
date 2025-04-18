@@ -2797,7 +2797,7 @@ def test_spending_by_award_sort_recipient_location(
     assert resp.status_code == status.HTTP_200_OK
     results = resp.json().get("results")
     print("results: ", results)
-    assert len(results) == 6
+    assert len(results) == 7
     assert results[0]["Recipient Location"] == recipient_location1
     assert results[1]["Recipient Location"] == recipient_location3
     assert results[2]["Recipient Location"] == recipient_location2

@@ -260,27 +260,10 @@ class SpendingByAwardVisualizationViewSet(APIView):
             sort_by_fields = [contracts_mapping["psc_code"]]
             sort_by_fields.append(contracts_mapping["psc_description"])
         elif self.pagination["sort_key"] == "Recipient Location":
-            sort_by_fields = [
-                {
-                    "_script": {
-                        "type": "string",
-                        "script": {
-                            "lang": "painless",
-                            "source": "if(doc['recipient_location_city_name'].size() != 0) { return doc['recipient_location_city_name'].toString(); }  if(doc['recipient_location_state_code'].size() != 0) { return doc['recipient_location_state_code'].toString(); } return doc['recipient_location_country_name'].toString();",
-                        },
-                        "order": self.pagination["sort_order"],
-                    }
-                }
-            ]
-            sort_by_fields.append(
-                {
-                    contracts_mapping["recipient_location_address_line1"]: {
-                        "order": self.pagination["sort_order"],
-                        "unmapped_type": "keyword",
-                    }
-                }
-            )
-            print("sort_by_fields: ", sort_by_fields)
+            sort_by_fields = [contracts_mapping["recipient_location_city_name"]]
+            sort_by_fields.append(contracts_mapping["recipient_location_state_code"])
+            sort_by_fields.append(contracts_mapping["recipient_location_country_name"])
+            sort_by_fields.append(contracts_mapping["recipient_location_address_line1"])
         else:
             if self.is_subaward:
                 sort_by_fields = [subaward_mapping[self.pagination["sort_key"]]]
@@ -416,8 +399,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
                     {"filter": {"terms": {"covid_spending_by_defc.defc": self.filters.get("def_codes", [])}}}
                 )
             sorts.extend([{field: self.pagination["sort_order"]} for field in sort_field])
-        elif self.pagination["sort_key"] == "Recipient Location":
-            return self.query_elasticsearch(AwardSearch(), filter_query, sort_field)
         else:
             sorts = [{field: {"order": self.pagination["sort_order"]}} for field in sort_field]
             print("sorts: ", sorts)
