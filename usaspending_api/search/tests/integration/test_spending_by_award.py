@@ -2733,7 +2733,7 @@ def test_spending_by_award_sort_recipient_location(
         ],
         "filters": {"award_type_codes": ["08"]},
         "sort": "Recipient Location",
-        "order": "desc",
+        "order": "asc",
     }
 
     recipient_location1 = {
@@ -2754,7 +2754,7 @@ def test_spending_by_award_sort_recipient_location(
         "foreign_province": "Manitoba",
     }
 
-    recipient_location2 = {
+    recipient_location4 = {
         "location_country_code": "USA",
         "country_name": "UNITED STATES",
         "state_code": "NE",
@@ -2762,6 +2762,24 @@ def test_spending_by_award_sort_recipient_location(
         "city_name": "OMAHA",
         "county_code": "013",
         "county_name": "OMAHA",
+        "address_line1": "1 Memorial Drive",
+        "address_line2": "Room 324",
+        "address_line3": "Desk 5",
+        "congressional_code": "08",
+        "zip4": "9040",
+        "zip5": "55455",
+        "foreign_postal_code": "55455",
+        "foreign_province": "Manitoba",
+    }
+
+    recipient_location2 = {
+        "location_country_code": "USA",
+        "country_name": "UNITED STATES",
+        "state_code": "MO",
+        "state_name": "Missouri",
+        "city_name": "KANSAS CITY",
+        "county_code": "013",
+        "county_name": "KANSAS CITY",
         "address_line1": "1 Memorial Drive",
         "address_line2": "Room 324",
         "address_line3": "Desk 5",
@@ -2780,6 +2798,60 @@ def test_spending_by_award_sort_recipient_location(
         "city_name": "KANSAS CITY",
         "county_code": "013",
         "county_name": "KANSAS CITY",
+        "address_line1": "7 Memorial Drive",
+        "address_line2": "Room 324",
+        "address_line3": "Desk 5",
+        "congressional_code": "08",
+        "zip4": "9040",
+        "zip5": "55455",
+        "foreign_postal_code": "55455",
+        "foreign_province": "Manitoba",
+    }
+
+    recipient_location5 = {
+        "location_country_code": "USA",
+        "country_name": "UNITED STATES",
+        "state_code": "CO",
+        "state_name": "Colorado",
+        "city_name": None,
+        "county_code": "013",
+        "county_name": None,
+        "address_line1": "1 Memorial Drive",
+        "address_line2": "Room 324",
+        "address_line3": "Desk 5",
+        "congressional_code": "08",
+        "zip4": "9040",
+        "zip5": "55455",
+        "foreign_postal_code": "55455",
+        "foreign_province": "Manitoba",
+    }
+
+    recipient_location6 = {
+        "location_country_code": "USA",
+        "country_name": "UNITED STATES",
+        "state_code": "IL",
+        "state_name": "Illinois",
+        "city_name": None,
+        "county_code": None,
+        "county_name": None,
+        "address_line1": "1 Memorial Drive",
+        "address_line2": "Room 324",
+        "address_line3": "Desk 5",
+        "congressional_code": "08",
+        "zip4": "9040",
+        "zip5": "55455",
+        "foreign_postal_code": "55455",
+        "foreign_province": "Manitoba",
+    }
+
+    recipient_location7 = {
+        "location_country_code": "ITA",
+        "country_name": "Italy",
+        "state_code": None,
+        "state_name": None,
+        "city_name": None,
+        "county_name": None,
+        "county_code": "013",
         "address_line1": "1 Memorial Drive",
         "address_line2": "Room 324",
         "address_line3": "Desk 5",
@@ -2796,11 +2868,40 @@ def test_spending_by_award_sort_recipient_location(
 
     assert resp.status_code == status.HTTP_200_OK
     results = resp.json().get("results")
-    print("results: ", results)
     assert len(results) == 7
     assert results[0]["Recipient Location"] == recipient_location1
+    assert results[1]["Recipient Location"] == recipient_location2
+    assert results[2]["Recipient Location"] == recipient_location3
+    assert results[3]["Recipient Location"] == recipient_location4
+    assert results[4]["Recipient Location"] == recipient_location5
+    assert results[5]["Recipient Location"] == recipient_location6
+    assert results[6]["Recipient Location"] == recipient_location7
+
+    test_payload = {
+        "subawards": False,
+        "fields": [
+            "Award ID",
+            "Recipient Location",
+        ],
+        "filters": {"award_type_codes": ["08"]},
+        "sort": "Recipient Location",
+        "order": "desc",
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    assert len(results) == 7
+    assert results[0]["Recipient Location"] == recipient_location4
     assert results[1]["Recipient Location"] == recipient_location3
     assert results[2]["Recipient Location"] == recipient_location2
+    assert results[3]["Recipient Location"] == recipient_location1
+    assert results[4]["Recipient Location"] == recipient_location6
+    assert results[5]["Recipient Location"] == recipient_location5
+    assert results[6]["Recipient Location"] == recipient_location7
 
 
 def test_spending_by_award_sort_naics(

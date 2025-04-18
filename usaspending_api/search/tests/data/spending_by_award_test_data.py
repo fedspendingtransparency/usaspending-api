@@ -388,14 +388,6 @@ def spending_by_award_test_data():
         recipient_location_address_line3="Desk 5",
         recipient_location_foreign_postal_code="55455",
         recipient_location_foreign_province="Manitoba",
-        pop_country_name="UNITED STATES",
-        pop_county_name="ARLINGTON",
-        pop_congressional_code="08",
-        pop_zip5="55455",
-        pop_zip4="9040",
-        cfda_number="64.114",
-        cfda_program_title="VETERANS HOUSING GUARANTEED AND INSURED LOANS",
-        cfdas=['{"cfda_number": "64.114", "cfda_program_title": "VETERANS HOUSING GUARANTEED AND INSURED LOANS"}'],
     )
 
     baker.make(
@@ -428,14 +420,6 @@ def spending_by_award_test_data():
         recipient_location_address_line3="Desk 5",
         recipient_location_foreign_postal_code="55455",
         recipient_location_foreign_province="Manitoba",
-        pop_country_name="UNITED STATES",
-        pop_county_name="ARLINGTON",
-        pop_congressional_code="08",
-        pop_zip5="55455",
-        pop_zip4="9040",
-        cfda_number="64.114",
-        cfda_program_title="VETERANS HOUSING GUARANTEED AND INSURED LOANS",
-        cfdas=['{"cfda_number": "64.114", "cfda_program_title": "VETERANS HOUSING GUARANTEED AND INSURED LOANS"}'],
     )
 
     baker.make(
@@ -457,7 +441,6 @@ def spending_by_award_test_data():
         recipient_location_state_code="IL",
         recipient_location_country_code="USA",
         recipient_location_country_name="UNITED STATES",
-        recipient_location_county_code="013",
         recipient_location_congressional_code="08",
         recipient_location_zip5="55455",
         recipient_location_zip4="9040",
@@ -466,14 +449,6 @@ def spending_by_award_test_data():
         recipient_location_address_line3="Desk 5",
         recipient_location_foreign_postal_code="55455",
         recipient_location_foreign_province="Manitoba",
-        pop_country_name="UNITED STATES",
-        pop_county_name="ARLINGTON",
-        pop_congressional_code="08",
-        pop_zip5="55455",
-        pop_zip4="9040",
-        cfda_number="64.114",
-        cfda_program_title="VETERANS HOUSING GUARANTEED AND INSURED LOANS",
-        cfdas=['{"cfda_number": "64.114", "cfda_program_title": "VETERANS HOUSING GUARANTEED AND INSURED LOANS"}'],
     )
 
     baker.make(
