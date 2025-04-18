@@ -111,7 +111,7 @@ class Explorer(object):
         alt_set = (
             self.alt_set.filter(transaction_obligated_amount__isnull=False)
             .annotate(
-                id=F("award__recipient_unique_id"),
+                id=F("award__recipient_hash"),
                 type=Value("recipient", output_field=TextField()),
                 name=F("award__recipient_name"),
                 code=F("award__recipient_name"),
