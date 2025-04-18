@@ -611,7 +611,15 @@ class SpendingByAwardVisualizationViewSet(APIView):
             }
 
         if "Sub-Recipient Location" in self.fields:
-            zip4 = hit.get("sub_recipient_location_zip")[5:] if hit.get("sub_recipient_location_zip") else None
+            if hit.get("sub_recipient_location_zip"):
+                match len(hit.get("sub_recipient_location_zip")):
+                    case 9:
+                        zip4 = hit.get("sub_recipient_location_zip")[5:]
+                    case _:
+                        zip4 = None
+            else:
+                zip4 = None
+
             row["Sub-Recipient Location"] = {
                 "location_country_code": hit.get("sub_recipient_location_country_code"),
                 "country_name": hit.get("sub_recipient_location_country_name"),
@@ -629,8 +637,16 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         if "Sub-Award Primary Place of Performance" in self.fields:
             if hit.get("sub_pop_zip"):
-                zip4 = hit.get("sub_pop_zip")[5:]
-                zip5 = hit.get("sub_pop_zip")[0:5]
+                match len(hit.get("sub_pop_zip")):
+                    case 9:
+                        zip4 = hit.get("sub_pop_zip")[5:]
+                        zip5 = hit.get("sub_pop_zip")[0:5]
+                    case 5:
+                        zip4 = None
+                        zip5 = hit.get("sub_pop_zip")
+                    case _:
+                        zip4 = None
+                        zip5 = None
             else:
                 zip4 = None
                 zip5 = None
