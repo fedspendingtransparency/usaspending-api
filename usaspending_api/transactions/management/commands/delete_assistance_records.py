@@ -31,8 +31,8 @@ class Command(AgnosticDeletes, BaseCommand):
         sql = """
         select  published_fabs_id
         from    published_fabs
-        where   afa_generated_unique in (
-                    select  afa_generated_unique
+        where   UPPER(afa_generated_unique) in (
+                    select  UPPER(afa_generated_unique)
                     from    published_fabs
                     where   updated_at >= %s and
                             upper(correction_delete_indicatr) = 'D'

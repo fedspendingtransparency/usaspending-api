@@ -7,6 +7,7 @@ import pytest
 from django.conf import settings
 from django.core.management import call_command
 from django.db import connections, DEFAULT_DB_ALIAS
+from django.test import override_settings
 from model_bakery import baker
 
 from usaspending_api.transactions.models import SourceProcurementTransaction
@@ -469,3 +470,41 @@ def test_data_transfer_from_broker(load_broker_data):
             True,
             "D&B",
         )
+
+
+@override_settings(IS_LOCAL=False)
+@pytest.mark.django_db(databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
+def test_delete(monkeypatch, load_broker_data):
+    # Load initial Broker data into USAspending
+    call_command("transfer_procurement_records", "--reload-all")
+    table = SourceProcurementTransaction().table_name
+    transaction_unique_field = "detached_award_procurement_id"
+
+    with connections[settings.DEFAULT_DB_ALIAS].cursor() as cursor:
+        cursor.execute(f"SELECT COUNT(*) FROM {table}")
+        broker_count = cursor.fetchall()[0][0]
+        assert broker_count == NUMBER_OF_RECORDS, "Wrong number of records copied"
+
+    # Mock the unique ids that would be pulled from S3
+    deleted_transactions = ("17731286", "17731321", "20186158", "20186190")
+    monkeypatch.setattr(
+        "usaspending_api.transactions.management.commands.delete_procurement_records.retrieve_deleted_fpds_transactions",
+        lambda start_datetime: {"2025-01-01": deleted_transactions},
+    )
+
+    # Validate that the specific delete records exist in USAspending
+    with connections[settings.DEFAULT_DB_ALIAS].cursor() as cursor:
+        cursor.execute(f"SELECT COUNT(*) FROM {table} WHERE {transaction_unique_field} IN %s", (deleted_transactions,))
+        assert cursor.fetchall()[0][0] == len(deleted_transactions), "Transactions under test don't exist"
+
+    # Run deletions
+    call_command("delete_procurement_records", "--skip-upload", "--date=2008-10-01")
+
+    with connections[settings.DEFAULT_DB_ALIAS].cursor() as cursor:
+        # Validate that the deleted records have been removed
+        cursor.execute(f"SELECT COUNT(*) FROM {table} WHERE {transaction_unique_field} IN %s", (deleted_transactions,))
+        assert cursor.fetchall()[0][0] == 0, "Failed to delete transactions"
+
+        # Validate that only those transactions were deleted
+        cursor.execute(f"SELECT COUNT(*) FROM {table}")
+        assert cursor.fetchall()[0][0] == NUMBER_OF_RECORDS - 4, "Failed to delete transactions"

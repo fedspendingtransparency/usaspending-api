@@ -112,10 +112,21 @@ def transform_subaward_data(worker: TaskSpec, records: List[dict]) -> List[dict]
         "program_activities": convert_json_data_to_dict,
     }
     agg_key_creations = {
+        "sub_pop_country_agg_key": lambda x: x["sub_pop_country_code"],
         "sub_pop_congressional_cur_agg_key": funcs.sub_pop_congressional_cur_agg_key,
         "sub_pop_county_agg_key": funcs.sub_pop_county_agg_key,
+        "sub_pop_state_agg_key": lambda x: x["sub_pop_state_code"],
         "sub_recipient_location_congressional_cur_agg_key": funcs.sub_recipient_location_congressional_cur_agg_key,
         "sub_recipient_location_county_agg_key": funcs.sub_recipient_location_county_agg_key,
+        "awarding_subtier_agency_agg_key": lambda x: x["awarding_subtier_agency_code"],
+        "funding_subtier_agency_agg_key": lambda x: x["funding_subtier_agency_code"],
+        "awarding_toptier_agency_agg_key": lambda x: x["awarding_toptier_agency_code"],
+        "funding_toptier_agency_agg_key": lambda x: x["funding_toptier_agency_code"],
+        "naics_agg_key": lambda x: x["naics"],
+        "psc_agg_key": lambda x: x["product_or_service_code"],
+        "defc_agg_key": lambda x: x["disaster_emergency_fund_codes"],
+        "cfda_agg_key": lambda x: x["cfda_number"],
+        "sub_recipient_agg_key": funcs.subaward_recipient_agg_key,
     }
     drop_fields = []
 

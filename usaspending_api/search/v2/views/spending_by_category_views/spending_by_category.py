@@ -5,34 +5,27 @@ from dataclasses import dataclass
 from typing import List, Optional, Union
 
 from django.conf import settings
-from django.db.models import QuerySet, Sum
-from elasticsearch_dsl import Q as ES_Q, A
+from elasticsearch_dsl import A, Q as ES_Q
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from usaspending_api.awards.v2.filters.sub_award import subaward_filter
-from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
+from usaspending_api.common.api_versioning import API_TRANSFORM_FUNCTIONS, api_transformations
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_classes import Pagination
-from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
-from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
+from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, SubawardSearch, TransactionSearch
 from usaspending_api.common.exceptions import ElasticsearchConnectionException, NotImplementedException
-from usaspending_api.common.helpers.generic_helper import (
-    get_simple_pagination_metadata,
-    get_generic_filters_message,
-)
+from usaspending_api.common.helpers.generic_helper import get_generic_filters_message, get_simple_pagination_metadata
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.references.models import DisasterEmergencyFundCode
+from usaspending_api.search.filters.elasticsearch.filter import QueryType
 from usaspending_api.search.v2.elasticsearch_helper import (
-    get_number_of_unique_terms_for_transactions,
-    get_number_of_unique_terms_for_awards,
+    get_number_of_unique_terms,
     get_scaled_sum_aggregations,
 )
-from usaspending_api.search.filters.elasticsearch.filter import QueryType
 from usaspending_api.search.v2.views.enums import SpendingLevel
 
 logger = logging.getLogger(__name__)
@@ -56,6 +49,15 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
     pagination: Pagination
     high_cardinality_categories: List[str] = ["recipient", "recipient_duns"]
     spending_level: Optional[SpendingLevel]
+    subaward_agg_key_mapper: dict[str, str] = {
+        "pop_country_agg_key": "sub_pop_country_agg_key",
+        "pop_congressional_cur_agg_key": "sub_pop_congressional_cur_agg_key",
+        "pop_county_agg_key": "sub_pop_county_agg_key",
+        "pop_state_agg_key": "sub_pop_state_agg_key",
+        "recipient_location_congressional_cur_agg_key": "sub_recipient_location_congressional_cur_agg_key",
+        "recipient_location_county_agg_key": "sub_recipient_location_county_agg_key",
+        "recipient_agg_key": "sub_recipient_agg_key",
+    }
 
     @cache_response()
     def post(self, request: Request) -> Response:
@@ -105,10 +107,17 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
             "subawards" if validated_payload.get("subawards") else validated_payload.get("spending_level")
         )
 
+        # Federal accounts are not implemented for Subawards
+        if self.category.name == "federal_account" and self.spending_level == SpendingLevel.SUBAWARD:
+            self._raise_not_implemented()
+
         if self.spending_level == SpendingLevel.SUBAWARD:
-            base_queryset = subaward_filter(self.filters)
-            self.obligation_column = "subaward_amount"
-            results = self.query_django_for_subawards(base_queryset)
+            # Swap the agg_key fields for the equivilant Subaward fields, if applicable
+            self.category.agg_key = self.subaward_agg_key_mapper.get(self.category.agg_key, self.category.agg_key)
+
+            query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
+            filter_query = query_with_filters.generate_elasticsearch_query(self.filters)
+            results = self.query_elasticsearch(filter_query)
         elif self.spending_level == SpendingLevel.TRANSACTION:
             query_with_filters = QueryWithFilters(QueryType.TRANSACTIONS)
             filter_query = query_with_filters.generate_elasticsearch_query(self.filters)
@@ -139,7 +148,7 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
 
     def _raise_not_implemented(self):
         msg = "Category '{}' is not implemented"
-        if self.subawards:
+        if self.spending_level == SpendingLevel.SUBAWARD:
             msg += " when `subawards` is True"
         raise NotImplementedException(msg.format(self.category.name))
 
@@ -159,21 +168,17 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
             upper_limit=payload["page"] * payload["limit"] + 1,
         )
 
-    def common_db_query(self, queryset: QuerySet, django_filters: dict, django_values: list) -> QuerySet:
-        return (
-            queryset.filter(**django_filters)
-            .values(*django_values)
-            .annotate(amount=Sum(self.obligation_column))
-            .order_by("-amount")
-        )
-
     def build_elasticsearch_search_with_aggregations(
         self, filter_query: ES_Q
-    ) -> Optional[Union[AwardSearch, TransactionSearch]]:
+    ) -> Optional[Union[AwardSearch, SubawardSearch, TransactionSearch]]:
         """
         Using the provided ES_Q object creates a TransactionSearch object with the necessary applied aggregations.
         """
-        sum_aggregations = get_scaled_sum_aggregations("generated_pragmatic_obligation", self.pagination)
+        sum_aggregations = (
+            get_scaled_sum_aggregations("subaward_amount", self.pagination)
+            if self.spending_level == SpendingLevel.SUBAWARD
+            else get_scaled_sum_aggregations("generated_pragmatic_obligation", self.pagination)
+        )
 
         # Need to handle high cardinality categories differently; this assumes that the Search object references
         # an Elasticsearch cluster that has a "routing" equal to "self.category.agg_key"
@@ -186,10 +191,12 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         else:
             # Get count of unique buckets; terminate early if there are no buckets matching criteria
             if self.spending_level == SpendingLevel.AWARD:
-                bucket_count = get_number_of_unique_terms_for_awards(filter_query, f"{self.category.agg_key}.hash")
+                bucket_count = get_number_of_unique_terms(AwardSearch, filter_query, f"{self.category.agg_key}.hash")
+            elif self.spending_level == SpendingLevel.SUBAWARD:
+                bucket_count = get_number_of_unique_terms(SubawardSearch, filter_query, f"{self.category.agg_key}.hash")
             else:
-                bucket_count = get_number_of_unique_terms_for_transactions(
-                    filter_query, f"{self.category.agg_key}.hash"
+                bucket_count = get_number_of_unique_terms(
+                    TransactionSearch, filter_query, f"{self.category.agg_key}.hash"
                 )
             if bucket_count == 0:
                 return None
@@ -226,7 +233,11 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
             )
             search = AwardSearch().filter(filter_query)
         else:
-            search = TransactionSearch().filter(filter_query)
+            search = (
+                SubawardSearch().filter(filter_query)
+                if self.spending_level == SpendingLevel.SUBAWARD
+                else TransactionSearch().filter(filter_query)
+            )
 
         # Apply the aggregations to the TransactionSearch object
         search.aggs.bucket("group_by_agg_key", group_by_agg_key).metric("sum_field", sum_field).pipeline(
@@ -250,13 +261,5 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
     def build_elasticsearch_result(self, response: dict) -> List[dict]:
         """
         Parses the response from Search.execute() as a dictionary and builds the results for the endpoint response.
-        """
-        pass
-
-    @abstractmethod
-    def query_django_for_subawards(self, base_queryset: QuerySet) -> List[dict]:
-        """
-        Sub-awards are still implemented with Postgres and thus this function is called when a request is received
-        to query a category for sub-awards.
         """
         pass

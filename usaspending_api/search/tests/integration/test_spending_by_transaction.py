@@ -60,6 +60,7 @@ def transaction_data():
         award_id=2,
         action_date="2010-10-01",
         is_fpds=True,
+        action_type="10",
         type="10",
         transaction_description="award 1",
         federal_action_obligation=35.00,
@@ -70,6 +71,21 @@ def transaction_data():
         generated_unique_award_id="IND12PB00323-generated",
         cfda_number="59",
         cfda_title="cfdatitle",
+        awarding_toptier_agency_name="Award agency name",
+        funding_toptier_agency_name="Funding agency name",
+    )
+
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=3,
+        award_id=3,
+        piid="IND12PB00001",
+        action_date="2010-10-01",
+        is_fpds=True,
+        action_type="A",
+        type="A",
+        generated_unique_award_id="ASST_NON_WY99M000020-18Z_8630",
+        transaction_description="description for award 3",
     )
     baker.make(
         "search.AwardSearch",
@@ -369,6 +385,29 @@ def test_spending_by_txn_program_activity(client, monkeypatch, elasticsearch_tra
 
 
 @pytest.mark.django_db
+def test_spending_by_transaction_award_unique_id_filter(
+    client, monkeypatch, elasticsearch_transaction_index, transaction_data
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
+    test_payload = {
+        "fields": ["Award ID"],
+        "sort": "Award ID",
+        "filters": {"award_type_codes": ["A", "B", "C", "D"], "award_unique_id": "ASST_NON_WY99M000020-18Z_8630"},
+    }
+
+    expected_response = [
+        {"Award ID": "IND12PB00001", "generated_internal_id": "ASST_NON_WY99M000020-18Z_8630", "internal_id": 3}
+    ]
+
+    resp = client.post(ENDPOINT, content_type="application/json", data=json.dumps(test_payload))
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    assert len(results) == 1
+    assert expected_response == results
+
+
+@pytest.mark.django_db
 def test_additional_fields(client, monkeypatch, elasticsearch_transaction_index, transaction_data):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
@@ -459,3 +498,60 @@ def test_assistance_listing(client, monkeypatch, elasticsearch_transaction_index
     assert len(resp.json().get("results")) == 1
     result = resp.json().get("results")[0]
     assert result["Assistance Listing"] == {"cfda_number": "59", "cfda_title": "cfdatitle"}
+
+
+def test_sorting_on_additional_fields(client, monkeypatch, elasticsearch_transaction_index, transaction_data):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
+    fields = ["Award ID", "Transaction Description"]
+
+    request = {
+        "filters": {"award_type_codes": ["A"]},
+        "fields": fields,
+        "page": 1,
+        "limit": 5,
+        "sort": "Transaction Description",
+        "order": "asc",
+    }
+
+    resp = client.post(ENDPOINT, content_type="application/json", data=json.dumps(request))
+    assert len(resp.json().get("results")) == 2
+    assert resp.json().get("results")[0]["Transaction Description"] == "description for award 3"
+    assert resp.json().get("results")[1]["Transaction Description"] == "test"
+
+    fields = ["Award ID", "Action Type"]
+
+    request = {
+        "filters": {"award_type_codes": ["A", "10"]},
+        "fields": fields,
+        "page": 1,
+        "limit": 5,
+        "sort": "Action Type",
+    }
+
+    resp = client.post(ENDPOINT, content_type="application/json", data=json.dumps(request))
+    assert len(resp.json().get("results")) == 3
+    assert resp.json().get("results")[0]["Action Type"] == "A"
+    assert resp.json().get("results")[2]["Action Type"] == "10"
+
+
+def test_slugify_agencies(client, monkeypatch, elasticsearch_transaction_index, transaction_data):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
+    fields = ["Award ID", "awarding_agency_slug", "funding_agency_slug"]
+
+    request = {
+        "filters": {"award_type_codes": ["10"]},
+        "fields": fields,
+        "page": 1,
+        "limit": 5,
+        "sort": "Award ID",
+        "order": "desc",
+    }
+
+    resp = client.post(ENDPOINT, content_type="application/json", data=json.dumps(request))
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.json().get("results")) == 1
+    assert resp.json().get("results")[0]["awarding_agency_slug"] == "award-agency-name"
+    assert resp.json().get("results")[0]["funding_agency_slug"] == "funding-agency-name"
