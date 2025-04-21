@@ -44,7 +44,7 @@ from usaspending_api.common.helpers.s3_helpers import download_s3_object
 
 DOWNLOAD_VISIBILITY_TIMEOUT = 60 * 10
 MAX_VISIBILITY_TIMEOUT = 60 * 60 * settings.DOWNLOAD_DB_TIMEOUT_IN_HOURS
-EXCEL_ROW_LIMIT = 1000000
+EXCEL_ROW_LIMIT = 1_000_000
 WAIT_FOR_PROCESS_SLEEP = 5
 JOB_TYPE = "USAspendingDownloader"
 
