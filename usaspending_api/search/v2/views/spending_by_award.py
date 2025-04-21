@@ -401,6 +401,13 @@ class SpendingByAwardVisualizationViewSet(APIView):
                     {"filter": {"terms": {"covid_spending_by_defc.defc": self.filters.get("def_codes", [])}}}
                 )
             sorts.extend([{field: self.pagination["sort_order"]} for field in sort_field])
+        elif self.pagination["sort_key"] == "Recipient Location":
+            sorts = {}
+            for field in sort_field:
+                if field.__contains__("recipient_location_address"):
+                    sorts[field] = {"order": self.pagination["sort_order"], "unmapped_type": "keyword"}
+                else:
+                    sorts[field] = self.pagination["sort_order"]
         else:
             sorts = [{field: self.pagination["sort_order"]} for field in sort_field]
         return self.query_elasticsearch(AwardSearch(), filter_query, sorts)
