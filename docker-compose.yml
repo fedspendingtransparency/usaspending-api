@@ -217,7 +217,7 @@ services:
         # Create the bucket within MinIO and file path for the data dict
         mkdir -p data/dti-da-public-files-nonprod/user_reference_docs
         # Create the bucket within MinIO used for endpoints that list generated downloads
-        mkdir -p data/bulk_download
+        mkdir -p data/bulk-download
         cp dockermount/usaspending_api/data/Data_Dictionary_Crosswalk.xlsx data/dti-da-public-files-nonprod/user_reference_docs/Data_Dictionary_Crosswalk.xlsx
         minio server --address ":10001" --console-address ":10002" /data
       "
