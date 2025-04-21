@@ -115,11 +115,14 @@ class SpendingByAwardVisualizationViewSet(APIView):
             return Response(self.populate_response(results=[], has_next=False, models=models))
 
         raise_if_award_types_not_valid_subset(self.filters["award_type_codes"], self.is_subaward)
+
+        # These are the objects returned rather than a single field
         if (
             self.pagination["sort_key"] != "NAICS"
             and self.pagination["sort_key"] != "PSC"
             and self.pagination["sort_key"] != "Recipient Location"
             and self.pagination["sort_key"] != "Primary Place of Performance"
+            and self.pagination["sort_key"] != "Assistance Listings"
         ):
             raise_if_sort_key_not_valid(
                 self.pagination["sort_key"], self.fields, self.filters["award_type_codes"], self.is_subaward
@@ -271,6 +274,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
             sort_by_fields = [contracts_mapping["pop_city_name"]]
             sort_by_fields.append(contracts_mapping["pop_state_code"])
             sort_by_fields.append(contracts_mapping["pop_country_name"])
+        elif self.pagination["sort_key"] == "Assistance Listing":
+            sort_by_fields = [contracts_mapping["cfda_number"]]
+            sort_by_fields.append(contracts_mapping["cfda_program_title"])
         else:
             if self.is_subaward:
                 sort_by_fields = [subaward_mapping[self.pagination["sort_key"]]]
@@ -406,10 +412,10 @@ class SpendingByAwardVisualizationViewSet(APIView):
                     {"filter": {"terms": {"covid_spending_by_defc.defc": self.filters.get("def_codes", [])}}}
                 )
             sorts.extend([{field: self.pagination["sort_order"]} for field in sort_field])
-        elif self.pagination["sort_key"] == "Recipient Location":
+        elif self.pagination["sort_key"] == "Recipient Location" or self.pagination["sort_key"] == "Assistance Listing":
             sorts = {}
             for field in sort_field:
-                if field.__contains__("recipient_location_address"):
+                if field.__contains__("recipient_location_address") or field == "cfda_title.keyword":
                     sorts[field] = {"order": self.pagination["sort_order"], "unmapped_type": "keyword"}
                 else:
                     sorts[field] = self.pagination["sort_order"]

@@ -64,6 +64,8 @@ base_mapping = {
     "naics_description": "naics_description.keyword",
     "psc_code": "product_or_service_code.keyword",
     "psc_description": "product_or_service_description.keyword",
+    "cfda_number": "cfda_number.keyword",
+    "cfda_program_title": "cfda_title.keyword",
     "recipient_location_city_name": "recipient_location_city_name.keyword",
     "recipient_location_state_code": "recipient_location_state_code",
     "recipient_location_country_name": "recipient_location_country_name.keyword",

@@ -525,6 +525,54 @@ def spending_by_award_test_data():
 
     baker.make(
         "search.AwardSearch",
+        award_id=5159,
+        type="03",
+        category="contract",
+        date_signed="2019-01-01",
+        action_date="2019-01-01",
+        fain="fain5159",
+        display_award_id="award5159",
+        generated_unique_award_id="ASST_NON_TESTING_5159",
+        recipient_name="ACME INC",
+        cfda_number="12",
+        cfda_program_title="program1",
+        cfdas=['{"cfda_number": "12", "cfda_program_title": "program1"}'],
+    )
+
+    baker.make(
+        "search.AwardSearch",
+        award_id=5160,
+        type="03",
+        category="contract",
+        date_signed="2019-01-01",
+        action_date="2019-01-01",
+        fain="fain5160",
+        display_award_id="award5160",
+        generated_unique_award_id="ASST_NON_TESTING_5160",
+        recipient_name="ACME INC",
+        cfda_number="12",
+        cfda_program_title="program2",
+        cfdas=['{"cfda_number": "12", "cfda_program_title": "program2"}'],
+    )
+
+    baker.make(
+        "search.AwardSearch",
+        award_id=5161,
+        type="03",
+        category="contract",
+        date_signed="2019-01-01",
+        action_date="2019-01-01",
+        fain="fain5161",
+        display_award_id="award5161",
+        generated_unique_award_id="ASST_NON_TESTING_5161",
+        recipient_name="ACME INC",
+        cfda_number="13",
+        cfda_program_title="program1",
+        cfdas=['{"cfda_number": "13", "cfda_program_title": "program1"}'],
+    )
+
+    baker.make(
+        "search.AwardSearch",
         award_id=5148,
         type="08",
         category="loan",

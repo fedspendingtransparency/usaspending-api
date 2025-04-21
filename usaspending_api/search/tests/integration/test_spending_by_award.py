@@ -3146,3 +3146,62 @@ def test_spending_by_award_sort_psc(
     assert results[0]["PSC"] == psc3
     assert results[1]["PSC"] == psc2
     assert results[2]["PSC"] == psc1
+
+
+def test_spending_by_award_assistance_listings(
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
+):
+
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    test_payload = {
+        "subawards": False,
+        "fields": [
+            "Award ID",
+            "Assistance Listings",
+        ],
+        "filters": {"award_type_codes": ["03"]},
+        "sort": "Assistance Listings",
+        "order": "asc",
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assisance_listing1 = [{"cfda_number": "12", "cfda_program_title": "program1"}]
+
+    assisance_listing2 = [{"cfda_number": "12", "cfda_program_title": "program2"}]
+
+    assisance_listing3 = [{"cfda_number": "13", "cfda_program_title": "program1"}]
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    assert len(results) == 3
+    print("results: ", results)
+    print("results[0][Assistance Listings]", results[0]["Assistance Listings"])
+    assert results[0]["Assistance Listings"] == assisance_listing1
+    assert results[1]["Assistance Listings"] == assisance_listing2
+    assert results[2]["Assistance Listings"] == assisance_listing3
+
+    test_payload = {
+        "subawards": False,
+        "fields": [
+            "Award ID",
+            "Assistance Listings",
+        ],
+        "filters": {"award_type_codes": ["03"]},
+        "sort": "Assistance Listings",
+        "order": "desc",
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    assert len(results) == 3
+    assert results[0]["Assistance Listings"] == assisance_listing3
+    assert results[1]["Assistance Listings"] == assisance_listing2
+    assert results[2]["Assistance Listings"] == assisance_listing1
