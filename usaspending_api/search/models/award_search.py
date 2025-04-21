@@ -16,6 +16,7 @@ class AwardSearch(models.Model):
     type = models.TextField(null=True, db_index=True)
     type_description = models.TextField(null=True)
     generated_unique_award_id = models.TextField(null=False, unique=True)
+    generated_unique_award_id_legacy = models.TextField(null=True, unique=True)
     display_award_id = models.TextField(null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
     piid = models.TextField(null=True, db_index=True)
