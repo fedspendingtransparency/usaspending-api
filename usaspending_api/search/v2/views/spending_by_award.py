@@ -264,6 +264,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
             sort_by_fields.append(contracts_mapping["recipient_location_state_code"])
             sort_by_fields.append(contracts_mapping["recipient_location_country_name"])
             sort_by_fields.append(contracts_mapping["recipient_location_address_line1"])
+            sort_by_fields.append(contracts_mapping["recipient_location_address_line2"])
+            sort_by_fields.append(contracts_mapping["recipient_location_address_line3"])
         else:
             if self.is_subaward:
                 sort_by_fields = [subaward_mapping[self.pagination["sort_key"]]]
@@ -400,8 +402,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 )
             sorts.extend([{field: self.pagination["sort_order"]} for field in sort_field])
         else:
-            sorts = [{field: {"order": self.pagination["sort_order"]}} for field in sort_field]
-            print("sorts: ", sorts)
+            sorts = [{field: self.pagination["sort_order"]} for field in sort_field]
         return self.query_elasticsearch(AwardSearch(), filter_query, sorts)
 
     def query_elasticsearch_subawards(self) -> Response:

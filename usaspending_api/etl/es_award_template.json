@@ -795,6 +795,22 @@
                 "type": "keyword"
               }
             }
+          },
+          "recipient_location_address_line2": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          },
+          "recipient_location_address_line3": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
           }
         }
       }
