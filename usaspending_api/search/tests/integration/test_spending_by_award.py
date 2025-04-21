@@ -2845,6 +2845,24 @@ def test_spending_by_award_sort_recipient_location(
     }
 
     recipient_location7 = {
+        "location_country_code": "BAH",
+        "country_name": "Bahamas",
+        "state_code": None,
+        "state_name": None,
+        "city_name": None,
+        "county_name": None,
+        "county_code": "013",
+        "address_line1": "1 Memorial Drive",
+        "address_line2": "Room 324",
+        "address_line3": "Desk 5",
+        "congressional_code": "08",
+        "zip4": "9040",
+        "zip5": "55455",
+        "foreign_postal_code": "55455",
+        "foreign_province": "Manitoba",
+    }
+
+    recipient_location8 = {
         "location_country_code": "ITA",
         "country_name": "Italy",
         "state_code": None,
@@ -2868,7 +2886,7 @@ def test_spending_by_award_sort_recipient_location(
 
     assert resp.status_code == status.HTTP_200_OK
     results = resp.json().get("results")
-    assert len(results) == 7
+    assert len(results) == 8
     assert results[0]["Recipient Location"] == recipient_location1
     assert results[1]["Recipient Location"] == recipient_location2
     assert results[2]["Recipient Location"] == recipient_location3
@@ -2876,6 +2894,7 @@ def test_spending_by_award_sort_recipient_location(
     assert results[4]["Recipient Location"] == recipient_location5
     assert results[5]["Recipient Location"] == recipient_location6
     assert results[6]["Recipient Location"] == recipient_location7
+    assert results[7]["Recipient Location"] == recipient_location8
 
     test_payload = {
         "subawards": False,
@@ -2894,14 +2913,15 @@ def test_spending_by_award_sort_recipient_location(
 
     assert resp.status_code == status.HTTP_200_OK
     results = resp.json().get("results")
-    assert len(results) == 7
+    assert len(results) == 8
     assert results[0]["Recipient Location"] == recipient_location4
     assert results[1]["Recipient Location"] == recipient_location3
     assert results[2]["Recipient Location"] == recipient_location2
     assert results[3]["Recipient Location"] == recipient_location1
     assert results[4]["Recipient Location"] == recipient_location6
     assert results[5]["Recipient Location"] == recipient_location5
-    assert results[6]["Recipient Location"] == recipient_location7
+    assert results[6]["Recipient Location"] == recipient_location8
+    assert results[7]["Recipient Location"] == recipient_location7
 
 
 def test_spending_by_award_sort_naics(
