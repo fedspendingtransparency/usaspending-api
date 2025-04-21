@@ -162,12 +162,6 @@ class Award(DataSourceTrackedModel):
     generated_unique_award_id = models.TextField(
         blank=False, null=False, default="NONE", verbose_name="Generated Unique Award ID"
     )
-    generated_unique_award_id_legacy = models.TextField(
-        blank=False,
-        null=False,
-        default="NONE",
-        verbose_name="Legacy generated unique award ID built using subtier awarding agency code",
-    )
     is_fpds = models.BooleanField(blank=False, null=False, default=False, verbose_name="Is FPDS")
     transaction_unique_id = models.TextField(
         blank=False, null=False, default="NONE", verbose_name="Transaction Unique ID"
@@ -230,7 +224,6 @@ vw_awards_sql = """
         SELECT
             award_id AS id,
             generated_unique_award_id,
-            generated_unique_award_id_legacy,
             is_fpds,
             transaction_unique_id,
             data_source,
