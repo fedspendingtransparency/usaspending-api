@@ -640,10 +640,12 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 "zip5": hit.get("sub_pop_zip")[0:5],
             }
 
-        if "sub_award_recipient_id" in self.fields:
-            row["sub_award_recipient_id"] = (
-                hit.get("subaward_recipient_hash") + "-" + hit.get("subaward_recipient_level")
-            )
+        if (
+            "sub_award_recipient_id" in self.fields
+            and hit.get("subaward_recipient_hash") is not None
+            and hit.get("subaward_recipient_level") is not None
+        ):
+            row["sub_award_recipient_id"] = f'{hit["subaward_recipient_hash"]}-{hit["subaward_recipient_level"]}'
 
         row["prime_award_generated_internal_id"] = hit["unique_award_key"]
 

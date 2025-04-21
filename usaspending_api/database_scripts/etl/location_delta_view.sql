@@ -84,7 +84,7 @@ CREATE VIEW location_delta_view AS
             pop_country_name IN ('UNITED STATES OF AMERICA', 'UNITED STATES')
             AND pop_state_name IS NOT NULL
             AND pop_state_fips IS NOT NULL
-            AND pop_state_code IS NOT NULL
+            AND pop_county_code IS NOT NULL
             AND pop_county_name IS NOT NULL
         )
             THEN TO_JSONB(
@@ -266,7 +266,7 @@ CREATE VIEW location_delta_view AS
             recipient_location_country_name IN ('UNITED STATES OF AMERICA', 'UNITED STATES')
             AND recipient_location_state_name IS NOT NULL
             AND recipient_location_state_fips IS NOT NULL
-            AND recipient_location_state_code IS NOT NULL
+            AND recipient_location_county_code IS NOT NULL
             AND recipient_location_county_name IS NOT NULL
         )
             THEN TO_JSONB(
