@@ -119,6 +119,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
             self.pagination["sort_key"] != "NAICS"
             and self.pagination["sort_key"] != "PSC"
             and self.pagination["sort_key"] != "Recipient Location"
+            and self.pagination["sort_key"] != "Primary Place of Performance"
         ):
             raise_if_sort_key_not_valid(
                 self.pagination["sort_key"], self.fields, self.filters["award_type_codes"], self.is_subaward
@@ -266,6 +267,10 @@ class SpendingByAwardVisualizationViewSet(APIView):
             sort_by_fields.append(contracts_mapping["recipient_location_address_line1"])
             sort_by_fields.append(contracts_mapping["recipient_location_address_line2"])
             sort_by_fields.append(contracts_mapping["recipient_location_address_line3"])
+        elif self.pagination["sort_key"] == "Primary Place of Performance":
+            sort_by_fields = [contracts_mapping["pop_city_name"]]
+            sort_by_fields.append(contracts_mapping["pop_state_code"])
+            sort_by_fields.append(contracts_mapping["pop_country_name"])
         else:
             if self.is_subaward:
                 sort_by_fields = [subaward_mapping[self.pagination["sort_key"]]]

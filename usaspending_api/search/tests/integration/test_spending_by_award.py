@@ -2924,6 +2924,116 @@ def test_spending_by_award_sort_recipient_location(
     assert results[7]["Recipient Location"] == recipient_location7
 
 
+def test_spending_by_primary_place_of_performance(
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
+):
+
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    test_payload = {
+        "subawards": False,
+        "fields": [
+            "Award ID",
+            "Primary Place of Performance",
+        ],
+        "filters": {"award_type_codes": ["09"]},
+        "sort": "Primary Place of Performance",
+        "order": "asc",
+    }
+
+    pop1 = {
+        "location_country_code": "USA",
+        "country_name": None,
+        "state_code": "VA",
+        "state_name": "Virginia",
+        "city_name": "ARLINGTON",
+        "county_code": "013",
+        "county_name": None,
+        "congressional_code": None,
+        "zip4": None,
+        "zip5": None,
+    }
+
+    pop2 = {
+        "location_country_code": "USA",
+        "country_name": None,
+        "state_code": "VA",
+        "state_name": "Virginia",
+        "city_name": "Z CITY",
+        "county_code": "013",
+        "county_name": None,
+        "congressional_code": None,
+        "zip4": None,
+        "zip5": None,
+    }
+
+    pop3 = {
+        "location_country_code": "USA",
+        "country_name": None,
+        "state_code": "IL",
+        "state_name": "Illinois",
+        "city_name": None,
+        "county_code": "013",
+        "county_name": None,
+        "congressional_code": None,
+        "zip4": None,
+        "zip5": None,
+    }
+
+    pop4 = {
+        "location_country_code": "USA",
+        "country_name": None,
+        "state_code": "VA",
+        "state_name": "Virginia",
+        "city_name": None,
+        "county_code": "013",
+        "county_name": None,
+        "congressional_code": None,
+        "zip4": None,
+        "zip5": None,
+    }
+
+    pop5 = {
+        "location_country_code": "BAH",
+        "country_name": "BAHAMAS",
+        "state_code": None,
+        "state_name": None,
+        "city_name": None,
+        "county_code": "013",
+        "county_name": None,
+        "congressional_code": None,
+        "zip4": None,
+        "zip5": None,
+    }
+
+    pop6 = {
+        "location_country_code": "USA",
+        "country_name": "UNITED STATES",
+        "state_code": None,
+        "state_name": None,
+        "city_name": None,
+        "county_code": "013",
+        "county_name": None,
+        "congressional_code": None,
+        "zip4": None,
+        "zip5": None,
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    assert len(results) == 6
+    assert results[0]["Primary Place of Performance"] == pop1
+    assert results[1]["Primary Place of Performance"] == pop2
+    assert results[2]["Primary Place of Performance"] == pop3
+    assert results[3]["Primary Place of Performance"] == pop4
+    assert results[4]["Primary Place of Performance"] == pop5
+    assert results[5]["Primary Place of Performance"] == pop6
+
+
 def test_spending_by_award_sort_naics(
     client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
 ):

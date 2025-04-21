@@ -70,6 +70,9 @@ base_mapping = {
     "recipient_location_address_line1": "recipient_location_address_line1.keyword",
     "recipient_location_address_line2": "recipient_location_address_line2.keyword",
     "recipient_location_address_line3": "recipient_location_address_line3.keyword",
+    "pop_city_name": "pop_city_name.keyword",
+    "pop_state_code": "pop_state_code",
+    "pop_country_name": "pop_country_name.keyword",
 }
 contracts_mapping = {
     **base_mapping,
