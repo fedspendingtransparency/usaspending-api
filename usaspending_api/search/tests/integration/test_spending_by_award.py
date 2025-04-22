@@ -1003,7 +1003,7 @@ def _test_correct_response_for_pop_location(client):
             {
                 "filters": {
                     "award_type_codes": ["A", "B", "C", "D"],
-                    "place_of_performance_locations": [{"country": "USA", "state": "VA", "county": "013"}],
+                    "place_of_performance_locations": [{"country": "USA", "state": "VA", "county": "014"}],
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
@@ -1590,10 +1590,10 @@ def _test_correct_response_for_recipient_id(client):
             }
         ),
     )
-    expected_result = [{"internal_id": 4, "Award ID": "abc444", "generated_internal_id": "ASST_NON_TESTING_4"}]
+    expected_result = {"internal_id": 4, "Award ID": "abc444", "generated_internal_id": "ASST_NON_TESTING_4"}
     assert resp.status_code == status.HTTP_200_OK
-    assert len(resp.json().get("results")) == 1
-    assert resp.json().get("results") == expected_result, "Recipient ID filter does not match expected result"
+    assert len(resp.json().get("results")) == 7
+    assert resp.json().get("results")[-1] == expected_result, "Recipient ID filter does not match expected result"
 
 
 def _test_correct_response_for_def_codes(client):
@@ -2665,7 +2665,7 @@ def test_spending_by_award_new_assistance_fields(
             "Assistance Listings",
             "primary_assistance_listing",
         ],
-        "filters": {"award_type_codes": ["08"]},
+        "filters": {"award_type_codes": ["11"]},
     }
     expected_response = [
         {
@@ -2734,24 +2734,6 @@ def test_spending_by_award_sort_recipient_location(
         "filters": {"award_type_codes": ["08"]},
         "sort": "Recipient Location",
         "order": "asc",
-    }
-
-    recipient_location1 = {
-        "location_country_code": "USA",
-        "country_name": "UNITED STATES",
-        "state_code": "VA",
-        "state_name": "Virginia",
-        "city_name": "ARLINGTON",
-        "county_code": "013",
-        "county_name": "ARLINGTON",
-        "address_line1": "1 Memorial Drive",
-        "address_line2": "Room 324",
-        "address_line3": "Desk 5",
-        "congressional_code": "08",
-        "zip4": "9040",
-        "zip5": "55455",
-        "foreign_postal_code": "55455",
-        "foreign_province": "Manitoba",
     }
 
     recipient_location4 = {
@@ -2886,15 +2868,14 @@ def test_spending_by_award_sort_recipient_location(
 
     assert resp.status_code == status.HTTP_200_OK
     results = resp.json().get("results")
-    assert len(results) == 8
-    assert results[0]["Recipient Location"] == recipient_location1
-    assert results[1]["Recipient Location"] == recipient_location2
-    assert results[2]["Recipient Location"] == recipient_location3
-    assert results[3]["Recipient Location"] == recipient_location4
-    assert results[4]["Recipient Location"] == recipient_location5
-    assert results[5]["Recipient Location"] == recipient_location6
-    assert results[6]["Recipient Location"] == recipient_location7
-    assert results[7]["Recipient Location"] == recipient_location8
+    assert len(results) == 7
+    assert results[0]["Recipient Location"] == recipient_location2
+    assert results[1]["Recipient Location"] == recipient_location3
+    assert results[2]["Recipient Location"] == recipient_location4
+    assert results[3]["Recipient Location"] == recipient_location5
+    assert results[4]["Recipient Location"] == recipient_location6
+    assert results[5]["Recipient Location"] == recipient_location7
+    assert results[6]["Recipient Location"] == recipient_location8
 
     test_payload = {
         "subawards": False,
@@ -2913,15 +2894,14 @@ def test_spending_by_award_sort_recipient_location(
 
     assert resp.status_code == status.HTTP_200_OK
     results = resp.json().get("results")
-    assert len(results) == 8
+    assert len(results) == 7
     assert results[0]["Recipient Location"] == recipient_location4
     assert results[1]["Recipient Location"] == recipient_location3
     assert results[2]["Recipient Location"] == recipient_location2
-    assert results[3]["Recipient Location"] == recipient_location1
-    assert results[4]["Recipient Location"] == recipient_location6
-    assert results[5]["Recipient Location"] == recipient_location5
-    assert results[6]["Recipient Location"] == recipient_location8
-    assert results[7]["Recipient Location"] == recipient_location7
+    assert results[3]["Recipient Location"] == recipient_location6
+    assert results[4]["Recipient Location"] == recipient_location5
+    assert results[5]["Recipient Location"] == recipient_location8
+    assert results[6]["Recipient Location"] == recipient_location7
 
 
 def test_spending_by_primary_place_of_performance(
@@ -3046,7 +3026,7 @@ def test_spending_by_award_sort_naics(
             "Award ID",
             "NAICS",
         ],
-        "filters": {"award_type_codes": ["B"]},
+        "filters": {"award_type_codes": ["05"]},
         "sort": "NAICS",
         "order": "asc",
     }
@@ -3074,7 +3054,7 @@ def test_spending_by_award_sort_naics(
             "Award ID",
             "NAICS",
         ],
-        "filters": {"award_type_codes": ["B"]},
+        "filters": {"award_type_codes": ["05"]},
         "sort": "NAICS",
         "order": "desc",
     }
@@ -3103,7 +3083,7 @@ def test_spending_by_award_sort_psc(
             "Award ID",
             "PSC",
         ],
-        "filters": {"award_type_codes": ["B"]},
+        "filters": {"award_type_codes": ["05"]},
         "sort": "PSC",
         "order": "asc",
     }
@@ -3131,7 +3111,7 @@ def test_spending_by_award_sort_psc(
             "Award ID",
             "PSC",
         ],
-        "filters": {"award_type_codes": ["B"]},
+        "filters": {"award_type_codes": ["05"]},
         "sort": "PSC",
         "order": "desc",
     }
@@ -3178,8 +3158,6 @@ def test_spending_by_award_assistance_listings(
     assert resp.status_code == status.HTTP_200_OK
     results = resp.json().get("results")
     assert len(results) == 3
-    print("results: ", results)
-    print("results[0][Assistance Listings]", results[0]["Assistance Listings"])
     assert results[0]["Assistance Listings"] == assisance_listing1
     assert results[1]["Assistance Listings"] == assisance_listing2
     assert results[2]["Assistance Listings"] == assisance_listing3

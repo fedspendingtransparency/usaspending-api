@@ -414,14 +414,15 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 )
             sorts.extend([{field: self.pagination["sort_order"]} for field in sort_field])
         elif self.pagination["sort_key"] == "Recipient Location" or self.pagination["sort_key"] == "Assistance Listing":
-            sorts = {}
+            sorts = []
             for field in sort_field:
                 if "recipient_location_address" in field or field == "cfda_title.keyword":
-                    sorts[field] = {"order": self.pagination["sort_order"], "unmapped_type": "keyword"}
+                    sorts.append({field: {"order": self.pagination["sort_order"], "unmapped_type": "keyword"}})
                 else:
-                    sorts[field] = self.pagination["sort_order"]
+                    sorts.append({field: self.pagination["sort_order"]})
         else:
             sorts = [{field: self.pagination["sort_order"]} for field in sort_field]
+
         return self.query_elasticsearch(AwardSearch(), filter_query, sorts)
 
     def query_elasticsearch_subawards(self) -> Response:
