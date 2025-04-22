@@ -234,72 +234,81 @@ def test_spending_by_award_subaward_success(
         "/api/v2/search/spending_by_award",
         content_type="application/json",
         data=json.dumps(
-            {"subawards": True, "fields": ["Sub-Award ID"], "sort": "Sub-Award ID", "filters": non_legacy_filters()}
+            {
+                "spending_level": "subawards",
+                "fields": ["Sub-Award ID"],
+                "sort": "Sub-Award ID",
+                "filters": non_legacy_filters(),
+            }
         ),
     )
     assert resp.status_code == status.HTTP_200_OK
 
     # Testing contents of what is returned
-    resp = client.post(
-        "/api/v2/search/spending_by_award",
-        content_type="application/json",
-        data=json.dumps(
-            {
-                "subawards": True,
-                "fields": [
-                    "Sub-Award ID",
-                    "Sub-Awardee Name",
-                    "Sub-Award Date",
-                    "Sub-Award Amount",
-                    "Awarding Agency",
-                    "Awarding Sub Agency",
-                    "Prime Award ID",
-                    "Prime Recipient Name",
-                    "recipient_id",
-                    "prime_award_recipient_id",
-                ],
-                "sort": "Sub-Award ID",
-                "filters": {"award_type_codes": ["A"]},
-                "limit": 2,
-                "page": 1,
-            }
-        ),
-    )
-    assert resp.status_code == status.HTTP_200_OK
-    assert resp.json()["page_metadata"]["page"] == 1
-    assert resp.json()["page_metadata"]["hasNext"]
-    assert resp.json()["limit"] == 2
-    assert len(resp.json()["results"]) == 2
-    assert resp.json()["results"][0] == {
-        "Awarding Agency": "awarding toptier 8006",
-        "Awarding Sub Agency": "awarding subtier 8006",
-        "Prime Award ID": "PIID6003",
-        "Prime Recipient Name": "recipient_name_for_award_1003",
-        "Sub-Award Amount": 60000.0,
-        "Sub-Award Date": "2019-01-01",
-        "Sub-Award ID": "66666",
-        "Sub-Awardee Name": "RECIPIENT_NAME_FOR_AWARD_1003",
-        "prime_award_internal_id": 3,
-        "internal_id": "66666",
-        "prime_award_recipient_id": "41874914-2c27-813b-1505-df94f35b42dc-R",
-        "recipient_id": None,
-        "prime_award_generated_internal_id": "CONT_AWD_TESTING_3",
-    }
-    assert resp.json()["results"][1] == {
-        "Awarding Agency": "awarding toptier 8003",
-        "Awarding Sub Agency": "awarding subtier 8003",
-        "Prime Award ID": "PIID3002",
-        "Prime Recipient Name": "recipient_name_for_award_1002",
-        "Sub-Award Amount": 30000.0,
-        "Sub-Award Date": "2016-01-01",
-        "Sub-Award ID": "33333",
-        "Sub-Awardee Name": "RECIPIENT_NAME_FOR_AWARD_1002",
-        "prime_award_internal_id": 2,
-        "internal_id": "33333",
-        "prime_award_recipient_id": "0c324830-6283-38d3-d52e-00a71847d92d-R",
-        "recipient_id": None,
-        "prime_award_generated_internal_id": "CONT_AWD_TESTING_2",
-    }
+    spending_level_filter_list = [{"spending_level": "subawards"}, {"spending_level": "subawards"}]
+
+    for spending_level_filter in spending_level_filter_list:
+        resp = client.post(
+            "/api/v2/search/spending_by_award",
+            content_type="application/json",
+            data=json.dumps(
+                {
+                    "fields": [
+                        "Sub-Award ID",
+                        "Sub-Awardee Name",
+                        "Sub-Award Date",
+                        "Sub-Award Amount",
+                        "Awarding Agency",
+                        "Awarding Sub Agency",
+                        "Prime Award ID",
+                        "Prime Recipient Name",
+                        "recipient_id",
+                        "prime_award_recipient_id",
+                    ],
+                    "sort": "Sub-Award ID",
+                    "filters": {"award_type_codes": ["A"]},
+                    "limit": 2,
+                    "page": 1,
+                    **spending_level_filter,
+                }
+            ),
+        )
+        assert resp.status_code == status.HTTP_200_OK
+        assert resp.json()["page_metadata"]["page"] == 1
+        assert resp.json()["page_metadata"]["hasNext"]
+        assert resp.json()["limit"] == 2
+        assert len(resp.json()["results"]) == 2
+        assert resp.json()["spending_level"] == "subawards"
+        assert resp.json()["results"][0] == {
+            "Awarding Agency": "awarding toptier 8006",
+            "Awarding Sub Agency": "awarding subtier 8006",
+            "Prime Award ID": "PIID6003",
+            "Prime Recipient Name": "recipient_name_for_award_1003",
+            "Sub-Award Amount": 60000.0,
+            "Sub-Award Date": "2019-01-01",
+            "Sub-Award ID": "66666",
+            "Sub-Awardee Name": "RECIPIENT_NAME_FOR_AWARD_1003",
+            "prime_award_internal_id": 3,
+            "internal_id": "66666",
+            "prime_award_recipient_id": "41874914-2c27-813b-1505-df94f35b42dc-R",
+            "recipient_id": None,
+            "prime_award_generated_internal_id": "CONT_AWD_TESTING_3",
+        }
+        assert resp.json()["results"][1] == {
+            "Awarding Agency": "awarding toptier 8003",
+            "Awarding Sub Agency": "awarding subtier 8003",
+            "Prime Award ID": "PIID3002",
+            "Prime Recipient Name": "recipient_name_for_award_1002",
+            "Sub-Award Amount": 30000.0,
+            "Sub-Award Date": "2016-01-01",
+            "Sub-Award ID": "33333",
+            "Sub-Awardee Name": "RECIPIENT_NAME_FOR_AWARD_1002",
+            "prime_award_internal_id": 2,
+            "internal_id": "33333",
+            "prime_award_recipient_id": "0c324830-6283-38d3-d52e-00a71847d92d-R",
+            "recipient_id": None,
+            "prime_award_generated_internal_id": "CONT_AWD_TESTING_2",
+        }
 
 
 @pytest.mark.django_db
@@ -309,7 +318,9 @@ def test_spending_by_award_legacy_filters(client, monkeypatch, elasticsearch_awa
     resp = client.post(
         "/api/v2/search/spending_by_award",
         content_type="application/json",
-        data=json.dumps({"subawards": False, "fields": ["Award ID"], "sort": "Award ID", "filters": legacy_filters()}),
+        data=json.dumps(
+            {"spending_level": "awards", "fields": ["Award ID"], "sort": "Award ID", "filters": legacy_filters()}
+        ),
     )
     assert resp.status_code == status.HTTP_200_OK
 
@@ -323,7 +334,7 @@ def test_no_intersection(client, monkeypatch, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     request = {
-        "subawards": False,
+        "spending_level": "awards",
         "fields": ["Award ID"],
         "sort": "Award ID",
         "filters": {"award_type_codes": ["A", "B", "C", "D"]},
@@ -414,7 +425,7 @@ def test_date_range_search_with_one_range(
 
     # Test with contracts
     request_with_contracts = {
-        "subawards": False,
+        "spending_level": "awards",
         "fields": ["Award ID"],
         "sort": "Award ID",
         "limit": 50,
@@ -433,7 +444,7 @@ def test_date_range_search_with_one_range(
 
     # Test with grants
     request_with_grants = {
-        "subawards": False,
+        "spending_level": "awards",
         "fields": ["Award ID"],
         "sort": "Award ID",
         "limit": 50,
@@ -452,7 +463,7 @@ def test_date_range_search_with_one_range(
 
     # Test with only one specific award showing
     request_for_one_award = {
-        "subawards": False,
+        "spending_level": "awards",
         "fields": ["Award ID"],
         "sort": "Award ID",
         "limit": 50,
@@ -472,7 +483,7 @@ def test_date_range_search_with_one_range(
 
     # Test with no award showing
     request_for_no_awards = {
-        "subawards": False,
+        "spending_level": "awards",
         "fields": ["Award ID"],
         "sort": "Award ID",
         "limit": 50,
@@ -501,7 +512,7 @@ def test_date_range_search_with_two_ranges(
 
     # Test with contracts
     request_with_contracts = {
-        "subawards": False,
+        "spending_level": "awards",
         "fields": ["Award ID"],
         "sort": "Award ID",
         "limit": 50,
@@ -523,7 +534,7 @@ def test_date_range_search_with_two_ranges(
 
     # Test with grants
     request_with_grants = {
-        "subawards": False,
+        "spending_level": "awards",
         "fields": ["Award ID"],
         "sort": "Award ID",
         "limit": 50,
@@ -545,7 +556,7 @@ def test_date_range_search_with_two_ranges(
 
     # Test with two specific awards showing
     request_for_two_awards = {
-        "subawards": False,
+        "spending_level": "awards",
         "fields": ["Award ID"],
         "sort": "Award ID",
         "limit": 50,
@@ -571,7 +582,7 @@ def test_date_range_search_with_two_ranges(
 
     # Test with no award showing
     request_for_no_awards = {
-        "subawards": False,
+        "spending_level": "awards",
         "fields": ["Award ID"],
         "sort": "Award ID",
         "limit": 50,
@@ -598,7 +609,7 @@ def test_date_range_with_date_signed(client, monkeypatch, elasticsearch_award_in
     contract_type_list = all_award_types_mappings["contracts"]
 
     request_for_2015 = {
-        "subawards": False,
+        "spending_level": "awards",
         "fields": ["Award ID"],
         "sort": "Award ID",
         "limit": 50,
@@ -618,7 +629,7 @@ def test_date_range_with_date_signed(client, monkeypatch, elasticsearch_award_in
     assert len(resp.data["results"]) == 5
 
     request_for_2016 = {
-        "subawards": False,
+        "spending_level": "awards",
         "fields": ["Award ID"],
         "sort": "Award ID",
         "limit": 50,
@@ -645,7 +656,7 @@ def test_messages_not_nested(client, monkeypatch, elasticsearch_award_index, awa
     contract_type_list = all_award_types_mappings["contracts"]
 
     request_for_2015 = {
-        "subawards": False,
+        "spending_level": "awards",
         "fields": ["Award ID"],
         "sort": "Award ID",
         "limit": 50,
@@ -689,7 +700,7 @@ def test_success_with_all_filters(client, monkeypatch, elasticsearch_award_index
                 "limit": 60,
                 "sort": "Award ID",
                 "order": "desc",
-                "subawards": False,
+                "spending_level": "awards",
             }
         ),
     )
@@ -718,7 +729,7 @@ def test_inclusive_naics_code(client, monkeypatch, spending_by_award_test_data, 
                 "limit": 60,
                 "sort": "Award ID",
                 "order": "desc",
-                "subawards": False,
+                "spending_level": "awards",
             }
         ),
     )
@@ -748,7 +759,7 @@ def test_exclusive_naics_code(client, monkeypatch, spending_by_award_test_data, 
                 "limit": 60,
                 "sort": "Award ID",
                 "order": "desc",
-                "subawards": False,
+                "spending_level": "awards",
             }
         ),
     )
@@ -804,7 +815,7 @@ def test_mixed_naics_codes(client, monkeypatch, spending_by_award_test_data, ela
                 "limit": 60,
                 "sort": "Award ID",
                 "order": "desc",
-                "subawards": False,
+                "spending_level": "awards",
             }
         ),
     )
@@ -866,7 +877,7 @@ def _test_correct_response_for_keywords(client):
                 "limit": 60,
                 "sort": "Award ID",
                 "order": "desc",
-                "subawards": False,
+                "spending_level": "awards",
             }
         ),
     )
@@ -894,7 +905,7 @@ def _test_correct_response_for_time_period(client):
                 "limit": 60,
                 "sort": "Award ID",
                 "order": "desc",
-                "subawards": False,
+                "spending_level": "awards",
             }
         ),
     )
@@ -919,7 +930,7 @@ def _test_correct_response_for_award_type_codes(client):
                 "limit": 60,
                 "sort": "Award ID",
                 "order": "desc",
-                "subawards": False,
+                "spending_level": "awards",
             }
         ),
     )
@@ -956,7 +967,7 @@ def _test_correct_response_for_agencies(client):
                 "limit": 60,
                 "sort": "Award ID",
                 "order": "desc",
-                "subawards": False,
+                "spending_level": "awards",
             }
         ),
     )
@@ -982,7 +993,7 @@ def _test_correct_response_for_tas_components(client):
                 "limit": 60,
                 "sort": "Award ID",
                 "order": "desc",
-                "subawards": False,
+                "spending_level": "awards",
             }
         ),
     )
@@ -1011,7 +1022,7 @@ def _test_correct_response_for_pop_location(client):
                 "limit": 60,
                 "sort": "Award ID",
                 "order": "desc",
-                "subawards": False,
+                "spending_level": "awards",
             }
         ),
     )
@@ -1040,7 +1051,7 @@ def _test_correct_response_for_recipient_location(client):
                 "limit": 60,
                 "sort": "Award ID",
                 "order": "asc",
-                "subawards": False,
+                "spending_level": "awards",
             }
         ),
     )
@@ -1069,7 +1080,7 @@ def _test_correct_response_for_recipient_search_text(client):
                 "limit": 60,
                 "sort": "Award ID",
                 "order": "desc",
-                "subawards": False,
+                "spending_level": "awards",
             }
         ),
     )
@@ -1095,7 +1106,7 @@ def _test_correct_response_for_recipient_search_text(client):
                 "limit": 60,
                 "sort": "Award ID",
                 "order": "desc",
-                "subawards": False,
+                "spending_level": "awards",
             }
         ),
     )
@@ -1140,7 +1151,7 @@ def _test_correct_response_for_recipient_search_text(client):
                 "limit": 60,
                 "sort": "Award ID",
                 "order": "desc",
-                "subawards": False,
+                "spending_level": "awards",
             }
         ),
     )
@@ -1180,7 +1191,7 @@ def _test_correct_response_for_recipient_type_names(client):
                 "limit": 60,
                 "sort": "Award ID",
                 "order": "asc",
-                "subawards": False,
+                "spending_level": "awards",
             }
         ),
     )
@@ -1209,7 +1220,7 @@ def _test_correct_response_for_award_amounts(client):
                 "limit": 60,
                 "sort": "Award ID",
                 "order": "asc",
-                "subawards": False,
+                "spending_level": "awards",
             }
         ),
     )
@@ -1239,7 +1250,7 @@ def _test_correct_response_for_cfda_program(client):
                 "limit": 60,
                 "sort": "Award ID",
                 "order": "desc",
-                "subawards": False,
+                "spending_level": "awards",
             }
         ),
     )
@@ -1265,7 +1276,7 @@ def _test_correct_response_for_cfda_program_subawards(client):
                 "limit": 60,
                 "sort": "Sub-Award ID",
                 "order": "desc",
-                "subawards": True,
+                "spending_level": "subawards",
             }
         ),
     )
@@ -1298,7 +1309,7 @@ def _test_correct_response_for_naics_codes(client):
                 "limit": 60,
                 "sort": "Award ID",
                 "order": "desc",
-                "subawards": False,
+                "spending_level": "awards",
             }
         ),
     )
@@ -1324,7 +1335,7 @@ def _test_correct_response_for_psc_code_list(client):
                 "limit": 60,
                 "sort": "Award ID",
                 "order": "desc",
-                "subawards": False,
+                "spending_level": "awards",
             }
         ),
     )
@@ -1353,7 +1364,7 @@ def _test_correct_response_for_psc_code_object(client):
                 "limit": 60,
                 "sort": "Award ID",
                 "order": "desc",
-                "subawards": False,
+                "spending_level": "awards",
             }
         ),
     )
@@ -1380,7 +1391,7 @@ def _test_correct_response_for_psc_code_list_subawards(client):
                 "limit": 60,
                 "sort": "Sub-Award ID",
                 "order": "desc",
-                "subawards": True,
+                "spending_level": "subawards",
             }
         ),
     )
@@ -1417,7 +1428,7 @@ def _test_correct_response_for_psc_code_object_subawards(client):
                 "limit": 60,
                 "sort": "Sub-Award ID",
                 "order": "desc",
-                "subawards": True,
+                "spending_level": "subawards",
             }
         ),
     )
@@ -1453,7 +1464,7 @@ def _test_more_sophisticated_eclipsed_psc_code_1(client):
                 "limit": 60,
                 "sort": "Award ID",
                 "order": "desc",
-                "subawards": False,
+                "spending_level": "awards",
             }
         ),
     )
@@ -1480,7 +1491,7 @@ def _test_more_sophisticated_eclipsed_psc_code_2(client):
                 "limit": 60,
                 "sort": "Award ID",
                 "order": "desc",
-                "subawards": False,
+                "spending_level": "awards",
             }
         ),
     )
@@ -1504,7 +1515,7 @@ def _test_correct_response_for_contract_pricing_type_codes(client):
                 "limit": 60,
                 "sort": "Award ID",
                 "order": "desc",
-                "subawards": False,
+                "spending_level": "awards",
             }
         ),
     )
@@ -1532,7 +1543,7 @@ def _test_correct_response_for_set_aside_type_codes(client):
                 "limit": 60,
                 "sort": "Award ID",
                 "order": "desc",
-                "subawards": False,
+                "spending_level": "awards",
             }
         ),
     )
@@ -1558,7 +1569,7 @@ def _test_correct_response_for_set_extent_competed_type_codes(client):
                 "limit": 60,
                 "sort": "Award ID",
                 "order": "desc",
-                "subawards": False,
+                "spending_level": "awards",
             }
         ),
     )
@@ -1586,7 +1597,7 @@ def _test_correct_response_for_recipient_id(client):
                 "limit": 60,
                 "sort": "Award ID",
                 "order": "desc",
-                "subawards": False,
+                "spending_level": "awards",
             }
         ),
     )
@@ -1612,7 +1623,7 @@ def _test_correct_response_for_def_codes(client):
                 "limit": 60,
                 "sort": "Award ID",
                 "order": "desc",
-                "subawards": False,
+                "spending_level": "awards",
             }
         ),
     )
@@ -1639,7 +1650,7 @@ def _test_correct_response_for_def_codes(client):
                 "limit": 60,
                 "sort": "Award ID",
                 "order": "desc",
-                "subawards": False,
+                "spending_level": "awards",
             }
         ),
     )
@@ -1665,7 +1676,7 @@ def _test_correct_response_for_def_codes_subaward(client):
                 "limit": 60,
                 "sort": "Sub-Award ID",
                 "order": "desc",
-                "subawards": True,
+                "spending_level": "subawards",
             }
         ),
     )
@@ -1702,7 +1713,7 @@ def _test_correct_response_for_def_codes_subaward(client):
                 "limit": 60,
                 "sort": "Sub-Award ID",
                 "order": "desc",
-                "subawards": True,
+                "spending_level": "subawards",
             }
         ),
     )
@@ -1725,7 +1736,7 @@ def test_failure_with_invalid_filters(client, monkeypatch, elasticsearch_award_i
     resp = client.post(
         "/api/v2/search/spending_by_award",
         content_type="application/json",
-        data=json.dumps({"fields": [], "filters": {}, "page": 1, "limit": 60, "subawards": False}),
+        data=json.dumps({"fields": [], "filters": {}, "page": 1, "limit": 60, "spending_level": "awards"}),
     )
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     assert resp.json().get("detail") == "Missing value: 'filters|award_type_codes' is a required field"
@@ -1743,7 +1754,7 @@ def test_failure_with_invalid_filters(client, monkeypatch, elasticsearch_award_i
                 },
                 "page": 1,
                 "limit": 60,
-                "subawards": False,
+                "spending_level": "awards",
             }
         ),
     )
@@ -1766,7 +1777,7 @@ def test_search_after(client, monkeypatch, spending_by_award_test_data, elastics
                 "limit": 60,
                 "sort": "Award ID",
                 "order": "asc",
-                "subawards": False,
+                "spending_level": "awards",
                 "last_record_unique_id": 1,
                 "last_record_sort_value": "abc111",
             }
@@ -1804,7 +1815,7 @@ def test_no_0_covid_amounts(client, monkeypatch, spending_by_award_test_data, el
                 "limit": 60,
                 "sort": "Award ID",
                 "order": "desc",
-                "subawards": False,
+                "spending_level": "awards",
             }
         ),
     )
@@ -1833,7 +1844,7 @@ def test_uei_keyword_filter(client, monkeypatch, spending_by_award_test_data, el
                 "limit": 60,
                 "sort": "Award ID",
                 "order": "desc",
-                "subawards": False,
+                "spending_level": "awards",
             }
         ),
     )
@@ -1862,7 +1873,7 @@ def test_parent_uei_keyword_filter(client, monkeypatch, spending_by_award_test_d
                 "limit": 60,
                 "sort": "Award ID",
                 "order": "desc",
-                "subawards": False,
+                "spending_level": "awards",
             }
         ),
     )
@@ -1907,7 +1918,7 @@ def test_uei_recipient_filter_subaward(
                 "limit": 60,
                 "sort": "Sub-Award ID",
                 "order": "desc",
-                "subawards": True,
+                "spending_level": "subawards",
             }
         ),
     )
@@ -1934,7 +1945,7 @@ def test_date_range_with_new_awards_only(
     contract_type_list = all_award_types_mappings["contracts"]
 
     request_for_2015 = {
-        "subawards": False,
+        "spending_level": "awards",
         "fields": ["Award ID"],
         "sort": "Award ID",
         "limit": 50,
@@ -1954,7 +1965,7 @@ def test_date_range_with_new_awards_only(
     assert len(resp.data["results"]) == 5
 
     request_for_2015 = {
-        "subawards": True,
+        "spending_level": "subawards",
         "fields": ["Sub-Award ID"],
         "sort": "Sub-Award ID",
         "limit": 50,
@@ -1986,7 +1997,7 @@ def test_spending_by_award_program_activity_subawards(
 
     # Program Activites filter test
     test_payload = {
-        "subawards": True,
+        "spending_level": "subawards",
         "fields": ["Sub-Award ID"],
         "filters": {
             "program_activities": [{"name": "program_activity_123"}],
@@ -2011,7 +2022,7 @@ def test_spending_by_award_program_activity_subawards(
     assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
 
     test_payload = {
-        "subawards": True,
+        "spending_level": "subawards",
         "fields": ["Sub-Award ID"],
         "filters": {
             "program_activities": [{"name": "program_activity_123"}, {"code": "123"}],
@@ -2036,7 +2047,7 @@ def test_spending_by_award_program_activity_subawards(
     assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
 
     test_payload = {
-        "subawards": True,
+        "spending_level": "subawards",
         "fields": ["Sub-Award ID"],
         "filters": {
             "program_activities": [{"name": "program_activity_123", "code": "321"}],
@@ -2060,7 +2071,7 @@ def test_spending_by_award_program_activity(client, monkeypatch, elasticsearch_a
 
     # Program Activites filter test
     test_payload = {
-        "subawards": False,
+        "spending_level": "awards",
         "fields": ["Award ID"],
         "filters": {
             "program_activities": [{"name": "program_activity_123"}],
@@ -2084,7 +2095,7 @@ def test_spending_by_award_program_activity(client, monkeypatch, elasticsearch_a
     assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
 
     test_payload = {
-        "subawards": False,
+        "spending_level": "awards",
         "fields": ["Award ID"],
         "filters": {
             "program_activities": [{"name": "program_activity_123", "code": "321"}],
@@ -2102,7 +2113,7 @@ def test_spending_by_award_program_activity(client, monkeypatch, elasticsearch_a
     assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
 
     test_payload = {
-        "subawards": False,
+        "spending_level": "awards",
         "fields": ["Award ID"],
         "filters": {
             "program_activities": [{"name": "program_activity_123", "code": "123"}],
@@ -2126,7 +2137,7 @@ def test_spending_by_award_program_activity(client, monkeypatch, elasticsearch_a
     assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
 
     test_payload = {
-        "subawards": False,
+        "spending_level": "awards",
         "fields": ["Award ID"],
         "filters": {
             "program_activities": [{"name": "program_activity_123"}, {"code": "123"}],
@@ -2158,7 +2169,7 @@ def test_spending_by_award_subawards_award_id_filter(
 
     # Test finding a Subaward by it's `subaward_number`
     payload = {
-        "subawards": True,
+        "spending_level": "subawards",
         "fields": ["Sub-Award ID"],
         "filters": {
             "award_type_codes": ["07"],
@@ -2180,7 +2191,7 @@ def test_spending_by_award_subawards_award_id_filter(
 
     # Test finding a Subaward by it's `award_piid_fain`
     payload = {
-        "subawards": True,
+        "spending_level": "subawards",
         "fields": ["Sub-Award ID"],
         "filters": {
             "award_type_codes": ["07"],
@@ -2210,7 +2221,7 @@ def test_spending_by_award_unique_id_award(
 
     # Test with a real award_unique_id
     test_payload = {
-        "subawards": False,
+        "spending_level": "awards",
         "fields": ["Award ID"],
         "filters": {
             "award_type_codes": ["A", "B", "C", "D"],
@@ -2233,7 +2244,7 @@ def test_spending_by_award_unique_id_award(
 
     # Test with an undefined award_unique_id
     test_payload = {
-        "subawards": False,
+        "spending_level": "awards",
         "fields": ["Award ID"],
         "filters": {
             "award_type_codes": ["A", "B", "C", "D"],
@@ -2258,7 +2269,7 @@ def test_spending_by_award_unique_id_subaward(
 
     # Test with multiple subawards
     test_payload = {
-        "subawards": True,
+        "spending_level": "subawards",
         "fields": ["Sub-Award ID"],
         "filters": {
             "award_type_codes": ["A", "B", "C", "D"],
@@ -2288,7 +2299,7 @@ def test_spending_by_award_unique_id_subaward(
 
     # Test with a single subaward
     test_payload = {
-        "subawards": True,
+        "spending_level": "subawards",
         "fields": ["Sub-Award ID"],
         "filters": {
             "award_type_codes": ["A", "B", "C", "D"],
@@ -2312,7 +2323,7 @@ def test_spending_by_award_unique_id_subaward(
 
     # Test with no subawards
     test_payload = {
-        "subawards": True,
+        "spending_level": "subawards",
         "fields": ["Sub-Award ID"],
         "filters": {
             "award_type_codes": ["A", "B", "C", "D"],
@@ -2336,7 +2347,7 @@ def test_spending_by_award_description_specificity(
 
     # get award with description "the test test test" and not "the description for test"
     test_payload = {
-        "subawards": False,
+        "spending_level": "awards",
         "fields": ["Award ID"],
         "filters": {"award_type_codes": ["A", "B", "C", "D"], "description": "the test"},
     }
@@ -2356,7 +2367,7 @@ def test_spending_by_award_description_specificity(
 
     # get subaward with description "the test test test" and not "the description for test"
     test_payload = {
-        "subawards": True,
+        "spending_level": "subawards",
         "fields": ["Sub-Award ID"],
         "filters": {"award_type_codes": ["A", "B", "C", "D"], "description": "the test"},
     }
@@ -2377,7 +2388,7 @@ def test_spending_by_award_description_specificity(
 
     # ensure only queries for text in the correct order
     test_payload = {
-        "subawards": True,
+        "spending_level": "subawards",
         "fields": ["Sub-Award ID"],
         "filters": {"award_type_codes": ["A", "B", "C", "D"], "description": "test the"},
     }
@@ -2398,7 +2409,7 @@ def test_spending_by_award_keyword_specificity(
 
     # get award with naics_description "the test test test" and not "the description for test"
     test_payload = {
-        "subawards": False,
+        "spending_level": "awards",
         "fields": ["Award ID"],
         "filters": {"award_type_codes": ["A", "B", "C", "D"], "keyword": "the test"},
     }
@@ -2419,7 +2430,7 @@ def test_spending_by_award_keyword_specificity(
     # get subaward with product_or_service_description "the test test test" and not
     # "the description for test"
     test_payload = {
-        "subawards": True,
+        "spending_level": "subawards",
         "fields": ["Sub-Award ID"],
         "filters": {"award_type_codes": ["A", "B", "C", "D"], "keyword": "the test"},
     }
@@ -2440,7 +2451,7 @@ def test_spending_by_award_keyword_specificity(
 
     # ensure only queries for text in the correct order
     test_payload = {
-        "subawards": True,
+        "spending_level": "subawards",
         "fields": ["Sub-Award ID"],
         "filters": {"award_type_codes": ["A", "B", "C", "D"], "keyword": "test the"},
     }
@@ -2461,7 +2472,7 @@ def test_spending_by_award_new_subcontract_fields(
 
     # get award with naics_description "the test test test" and not "the description for test"
     test_payload = {
-        "subawards": True,
+        "spending_level": "subawards",
         "fields": [
             "Sub-Award ID",
             "Sub-Award Description",
@@ -2531,7 +2542,7 @@ def test_spending_by_award_new_subgrant_fields(
 
     # get award with naics_description "the test test test" and not "the description for test"
     test_payload = {
-        "subawards": True,
+        "spending_level": "subawards",
         "fields": [
             "Sub-Award ID",
             "Sub-Award Description",
@@ -2598,7 +2609,7 @@ def test_spending_by_award_new_contract_fields(
 
     # get award with naics_description "the test test test" and not "the description for test"
     test_payload = {
-        "subawards": False,
+        "spending_level": "awards",
         "fields": ["Award ID", "Recipient UEI", "Recipient Location", "Primary Place of Performance", "NAICS", "PSC"],
         "filters": {"award_type_codes": ["A", "B", "C", "D"], "keyword": "the test"},
     }
@@ -2656,7 +2667,7 @@ def test_spending_by_award_new_assistance_fields(
 
     # get award with naics_description "the test test test" and not "the description for test"
     test_payload = {
-        "subawards": False,
+        "spending_level": "awards",
         "fields": [
             "Award ID",
             "Recipient UEI",
@@ -2726,7 +2737,7 @@ def test_spending_by_award_sort_recipient_location(
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     test_payload = {
-        "subawards": False,
+        "spending_level": "awards",
         "fields": [
             "Award ID",
             "Recipient Location",
@@ -2878,7 +2889,7 @@ def test_spending_by_award_sort_recipient_location(
     assert results[6]["Recipient Location"] == recipient_location8
 
     test_payload = {
-        "subawards": False,
+        "spending_level": "awards",
         "fields": [
             "Award ID",
             "Recipient Location",
@@ -2911,7 +2922,7 @@ def test_spending_by_primary_place_of_performance(
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     test_payload = {
-        "subawards": False,
+        "spending_level": "awards",
         "fields": [
             "Award ID",
             "Primary Place of Performance",
@@ -3021,7 +3032,7 @@ def test_spending_by_award_sort_naics(
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     test_payload = {
-        "subawards": False,
+        "spending_level": "awards",
         "fields": [
             "Award ID",
             "NAICS",
@@ -3049,7 +3060,7 @@ def test_spending_by_award_sort_naics(
     assert results[2]["NAICS"] == naics_3
 
     test_payload = {
-        "subawards": False,
+        "spending_level": "awards",
         "fields": [
             "Award ID",
             "NAICS",
@@ -3078,7 +3089,7 @@ def test_spending_by_award_sort_psc(
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     test_payload = {
-        "subawards": False,
+        "spending_level": "awards",
         "fields": [
             "Award ID",
             "PSC",
@@ -3106,7 +3117,7 @@ def test_spending_by_award_sort_psc(
     assert results[2]["PSC"] == psc3
 
     test_payload = {
-        "subawards": False,
+        "spending_level": "awards",
         "fields": [
             "Award ID",
             "PSC",
@@ -3135,7 +3146,7 @@ def test_spending_by_award_assistance_listings(
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     test_payload = {
-        "subawards": False,
+        "spending_level": "awards",
         "fields": [
             "Award ID",
             "Assistance Listings",
@@ -3163,7 +3174,7 @@ def test_spending_by_award_assistance_listings(
     assert results[2]["Assistance Listings"] == assisance_listing3
 
     test_payload = {
-        "subawards": False,
+        "spending_level": "awards",
         "fields": [
             "Award ID",
             "Assistance Listings",
