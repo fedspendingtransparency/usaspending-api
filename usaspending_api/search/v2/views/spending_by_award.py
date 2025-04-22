@@ -284,7 +284,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
             case "Assistance Listings":
                 sort_by_fields = [contracts_mapping["cfda_number"], contracts_mapping["cfda_program_title"]]
             case _:
-                if self.is_subaward:
+                if self.spending_level == SpendingLevel.SUBAWARD:
                     sort_by_fields = [subaward_mapping[self.pagination["sort_key"]]]
                 elif set(self.filters["award_type_codes"]) <= set(contract_type_mapping):
                     sort_by_fields = [contracts_mapping[self.pagination["sort_key"]]]
