@@ -255,40 +255,41 @@ class SpendingByAwardVisualizationViewSet(APIView):
         return records
 
     def get_elastic_sort_by_fields(self):
-        if self.pagination["sort_key"] == "Award ID" or self.pagination["sort_key"] == "Sub-Award ID":
-            sort_by_fields = ["display_award_id"]
-        elif self.pagination["sort_key"] == "NAICS":
-            sort_by_fields = [contracts_mapping["naics_code"], contracts_mapping["naics_description"]]
-        elif self.pagination["sort_key"] == "PSC":
-            sort_by_fields = [contracts_mapping["psc_code"], contracts_mapping["psc_description"]]
-        elif self.pagination["sort_key"] == "Recipient Location":
-            sort_by_fields = [
-                contracts_mapping["recipient_location_city_name"],
-                contracts_mapping["recipient_location_state_code"],
-                contracts_mapping["recipient_location_country_name"],
-                contracts_mapping["recipient_location_address_line1"],
-                contracts_mapping["recipient_location_address_line2"],
-                contracts_mapping["recipient_location_address_line3"],
-            ]
-        elif self.pagination["sort_key"] == "Primary Place of Performance":
-            sort_by_fields = [
-                contracts_mapping["pop_city_name"],
-                contracts_mapping["pop_state_code"],
-                contracts_mapping["pop_country_name"],
-            ]
-        elif self.pagination["sort_key"] == "Assistance Listings":
-            sort_by_fields = [contracts_mapping["cfda_number"], contracts_mapping["cfda_program_title"]]
-        else:
-            if self.is_subaward:
-                sort_by_fields = [subaward_mapping[self.pagination["sort_key"]]]
-            elif set(self.filters["award_type_codes"]) <= set(contract_type_mapping):
-                sort_by_fields = [contracts_mapping[self.pagination["sort_key"]]]
-            elif set(self.filters["award_type_codes"]) <= set(loan_type_mapping):
-                sort_by_fields = [loan_mapping[self.pagination["sort_key"]]]
-            elif set(self.filters["award_type_codes"]) <= set(idv_type_mapping):
-                sort_by_fields = [idv_mapping[self.pagination["sort_key"]]]
-            elif set(self.filters["award_type_codes"]) <= set(non_loan_assistance_type_mapping):
-                sort_by_fields = [non_loan_assist_mapping[self.pagination["sort_key"]]]
+        match self.pagination["sort_key"]:
+            case "Award ID" | "Sub-Award ID":
+                sort_by_fields = ["display_award_id"]
+            case "NAICS":
+                sort_by_fields = [contracts_mapping["naics_code"], contracts_mapping["naics_description"]]
+            case "PSC":
+                sort_by_fields = [contracts_mapping["psc_code"], contracts_mapping["psc_description"]]
+            case "Recipient Location":
+                sort_by_fields = [
+                    contracts_mapping["recipient_location_city_name"],
+                    contracts_mapping["recipient_location_state_code"],
+                    contracts_mapping["recipient_location_country_name"],
+                    contracts_mapping["recipient_location_address_line1"],
+                    contracts_mapping["recipient_location_address_line2"],
+                    contracts_mapping["recipient_location_address_line3"],
+                ]
+            case "Primary Place of Performance":
+                sort_by_fields = [
+                    contracts_mapping["pop_city_name"],
+                    contracts_mapping["pop_state_code"],
+                    contracts_mapping["pop_country_name"],
+                ]
+            case "Assistance Listings":
+                sort_by_fields = [contracts_mapping["cfda_number"], contracts_mapping["cfda_program_title"]]
+            case _:
+                if self.is_subaward:
+                    sort_by_fields = [subaward_mapping[self.pagination["sort_key"]]]
+                elif set(self.filters["award_type_codes"]) <= set(contract_type_mapping):
+                    sort_by_fields = [contracts_mapping[self.pagination["sort_key"]]]
+                elif set(self.filters["award_type_codes"]) <= set(loan_type_mapping):
+                    sort_by_fields = [loan_mapping[self.pagination["sort_key"]]]
+                elif set(self.filters["award_type_codes"]) <= set(idv_type_mapping):
+                    sort_by_fields = [idv_mapping[self.pagination["sort_key"]]]
+                elif set(self.filters["award_type_codes"]) <= set(non_loan_assistance_type_mapping):
+                    sort_by_fields = [non_loan_assist_mapping[self.pagination["sort_key"]]]
 
         sort_by_fields.append("award_id")
 
