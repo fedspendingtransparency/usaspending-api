@@ -122,7 +122,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
             "PSC",
             "Recipient Location",
             "Primary Place of Performance",
-            "Assistance Listings",
+            "Assistance Listing",
+            "Sub-Recipient Location",
+            "Sub-Award Primary Place of Performance",
         ]:
             raise_if_sort_key_not_valid(
                 self.pagination["sort_key"], self.fields, self.filters["award_type_codes"], self.spending_level
@@ -265,7 +267,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
             case "NAICS":
                 sort_by_fields = (
                     [contracts_mapping["sub_naics_code"], contracts_mapping["naics_description"]]
-                    if self.is_subaward
+                    if self.spending_level == SpendingLevel.SUBAWARD
                     else [contracts_mapping["naics_code"], contracts_mapping["naics_description"]]
                 )
             case "PSC":
@@ -303,7 +305,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                     contracts_mapping["sub_pop_country_name"],
                 ]
             case _:
-                if self.is_subaward:
+                if self.spending_level == SpendingLevel.SUBAWARD:
                     sort_by_fields = [subaward_mapping[self.pagination["sort_key"]]]
                 elif set(self.filters["award_type_codes"]) <= set(contract_type_mapping):
                     sort_by_fields = [contracts_mapping[self.pagination["sort_key"]]]

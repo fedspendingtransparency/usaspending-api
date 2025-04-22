@@ -3202,7 +3202,7 @@ def test_spending_by_award_sort_sub_recipient_locations(
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     test_payload = {
-        "subawards": True,
+        "spending_level": "subawards",
         "fields": [
             "Sub-Award ID",
             "Sub-Recipient Location",
@@ -3234,7 +3234,7 @@ def test_spending_by_award_sort_sub_recipient_locations(
     assert results[6]["Sub-Recipient Location"]["state_code"] is None
 
     test_payload = {
-        "subawards": True,
+        "spending_level": "subawards",
         "fields": [
             "Sub-Award ID",
             "Sub-Recipient Location",
@@ -3269,7 +3269,7 @@ def test_spending_by_award_sort_sub_pop_location(
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
 
     test_payload = {
-        "subawards": True,
+        "spending_level": "subawards",
         "fields": [
             "Sub-Award ID",
             "Sub-Award Primary Place of Performance",
@@ -3299,7 +3299,7 @@ def test_spending_by_award_sort_sub_pop_location(
     assert results[6]["Sub-Award Primary Place of Performance"]["country_name"] == "UNITED STATES"
 
     test_payload = {
-        "subawards": True,
+        "spending_level": "subawards",
         "fields": [
             "Sub-Award ID",
             "Sub-Award Primary Place of Performance",
@@ -3332,7 +3332,7 @@ def test_spending_by_award_sort_sub_assistance_listing(
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
 
     test_payload = {
-        "subawards": True,
+        "spending_level": "subawards",
         "fields": [
             "Sub-Award ID",
             "Assistance Listing",
@@ -3359,7 +3359,7 @@ def test_spending_by_award_sort_sub_assistance_listing(
     assert results[3]["Assistance Listing"]["cfda_program_title"] == "cfda titles 1"
 
     test_payload = {
-        "subawards": True,
+        "spending_level": "subawards",
         "fields": [
             "Sub-Award ID",
             "Assistance Listing",
@@ -3391,7 +3391,7 @@ def test_spending_by_award_sort_sub_naics(
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
 
     test_payload = {
-        "subawards": True,
+        "spending_level": "subawards",
         "fields": [
             "Sub-Award ID",
             "NAICS",
@@ -3416,7 +3416,7 @@ def test_spending_by_award_sort_sub_naics(
     assert results[2]["NAICS"]["description"] == "naics description 1"
 
     test_payload = {
-        "subawards": True,
+        "spending_level": "subawards",
         "fields": [
             "Sub-Award ID",
             "NAICS",
@@ -3448,7 +3448,7 @@ def test_spending_by_award_sort_sub_psc(
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
 
     test_payload = {
-        "subawards": True,
+        "spending_level": "subawards",
         "fields": [
             "Sub-Award ID",
             "PSC",
@@ -3473,7 +3473,7 @@ def test_spending_by_award_sort_sub_psc(
     assert results[2]["PSC"]["description"] == "psc description 1"
 
     test_payload = {
-        "subawards": True,
+        "spending_level": "subawards",
         "fields": [
             "Sub-Award ID",
             "PSC",
