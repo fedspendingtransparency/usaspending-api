@@ -59,7 +59,7 @@ from usaspending_api.submissions.models import SubmissionAttributes
 logger = logging.getLogger(__name__)
 
 GLOBAL_MAP = {
-    "award": {
+    "awards": {
         "award_semaphore": "type",
         "internal_id_fields": {"internal_id": "award_id"},
         "elasticsearch_type_code_to_field_map": {
@@ -69,7 +69,7 @@ GLOBAL_MAP = {
             **dict.fromkeys(non_loan_assistance_type_mapping, NON_LOAN_ASST_SOURCE_LOOKUP),
         },
     },
-    "subaward": {
+    "subawards": {
         "minimum_db_fields": {"subaward_number", "piid", "fain", "prime_award_group", "award_id"},
         "api_to_db_mapping_list": [subaward_mapping],
         "award_semaphore": "prime_award_group",
@@ -97,8 +97,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
         """Return all awards matching the provided filters and limits"""
         self.original_filters = request.data.get("filters")
         json_request, models = self.validate_request_data(request.data)
-        self.is_subaward = json_request["subawards"]
-        self.constants = GLOBAL_MAP["subaward"] if self.is_subaward else GLOBAL_MAP["award"]
+        self.spending_level = SpendingLevel(json_request["spending_level"])
+        self.constants = GLOBAL_MAP[self.spending_level.value]
         filters = json_request.get("filters", {})
         self.filters = filters
         self.fields = json_request["fields"]
@@ -114,15 +114,15 @@ class SpendingByAwardVisualizationViewSet(APIView):
         if self.if_no_intersection():  # Like an exception, but API response is a HTTP 200 with a JSON payload
             return Response(self.populate_response(results=[], has_next=False, models=models))
 
-        raise_if_award_types_not_valid_subset(self.filters["award_type_codes"], self.is_subaward)
+        raise_if_award_types_not_valid_subset(self.filters["award_type_codes"], self.spending_level)
         raise_if_sort_key_not_valid(
-            self.pagination["sort_key"], self.fields, self.filters["award_type_codes"], self.is_subaward
+            self.pagination["sort_key"], self.fields, self.filters["award_type_codes"], self.spending_level
         )
 
         self.last_record_unique_id = json_request.get("last_record_unique_id")
         self.last_record_sort_value = json_request.get("last_record_sort_value")
 
-        if self.is_subaward:
+        if self.spending_level == SpendingLevel.SUBAWARD:
             return Response(self.construct_es_response_for_subawards(self.query_elasticsearch_subawards()))
         else:
             return Response(self.construct_es_response_for_prime_awards(self.query_elasticsearch_awards()))
@@ -143,7 +143,11 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         subaward_ts = TinyShield(spending_type_models)
         tiny_shield_response = subaward_ts.block(request_data)
-        is_subaward = tiny_shield_response["subawards"] or tiny_shield_response["spending_level"] == "subawards"
+        if tiny_shield_response["subawards"]:
+            request_data["spending_level"] = SpendingLevel.SUBAWARD.value
+        else:
+            # In the case of the user not supplying the spending_level we grab the default defined by TinyShield
+            request_data["spending_level"] = tiny_shield_response["spending_level"]
 
         program_activities_rule = {
             "name": "program_activities",
@@ -160,7 +164,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
         }
         models = [
             {"name": "fields", "key": "fields", "type": "array", "array_type": "text", "text_type": "search", "min": 1},
-            {"name": "subawards", "key": "subawards", "type": "boolean", "default": False},
             {
                 "name": "object_class",
                 "key": "filter|object_class",
@@ -194,10 +197,11 @@ class SpendingByAwardVisualizationViewSet(APIView):
         ]
         models.extend(copy.deepcopy(AWARD_FILTER_NO_RECIPIENT_ID))
         models.extend(copy.deepcopy(PAGINATION))
+        models.extend(copy.deepcopy(spending_type_models))
         for m in models:
             if m["name"] in ("award_type_codes", "fields"):
                 m["optional"] = False
-            elif is_subaward and m["name"] == "time_period":
+            elif request_data["spending_level"] == SpendingLevel.SUBAWARD.value and m["name"] == "time_period":
                 m["object_keys"]["date_type"]["enum_values"] = [
                     "action_date",
                     "last_modified_date",
@@ -249,7 +253,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         if self.pagination["sort_key"] == "Award ID" or self.pagination["sort_key"] == "Sub-Award ID":
             sort_by_fields = ["display_award_id"]
         else:
-            if self.is_subaward:
+            if self.spending_level == SpendingLevel.SUBAWARD:
                 sort_by_fields = [subaward_mapping[self.pagination["sort_key"]]]
             elif set(self.filters["award_type_codes"]) <= set(contract_type_mapping):
                 sort_by_fields = [contracts_mapping[self.pagination["sort_key"]]]
@@ -693,6 +697,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
             last_record_sort_value = response[len(response) - offset].meta.sort[0]
 
         return {
+            "spending_level": self.spending_level.value,
             "limit": self.pagination["limit"],
             "results": results[: self.pagination["limit"]],
             "page_metadata": {
