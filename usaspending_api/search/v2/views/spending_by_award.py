@@ -117,13 +117,13 @@ class SpendingByAwardVisualizationViewSet(APIView):
         raise_if_award_types_not_valid_subset(self.filters["award_type_codes"], self.is_subaward)
 
         # These are the objects returned rather than a single field
-        if (
-            self.pagination["sort_key"] != "NAICS"
-            and self.pagination["sort_key"] != "PSC"
-            and self.pagination["sort_key"] != "Recipient Location"
-            and self.pagination["sort_key"] != "Primary Place of Performance"
-            and self.pagination["sort_key"] != "Assistance Listings"
-        ):
+        if self.pagination["sort_key"] not in [
+            "NAICS",
+            "PSC",
+            "Recipient Location",
+            "Primary Place of Performance",
+            "Assistance Listings",
+        ]:
             raise_if_sort_key_not_valid(
                 self.pagination["sort_key"], self.fields, self.filters["award_type_codes"], self.is_subaward
             )
