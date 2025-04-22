@@ -1,6 +1,6 @@
 import copy
-import logging
 import json
+import logging
 from ast import literal_eval
 from sys import maxsize
 from typing import (
@@ -39,6 +39,7 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, SubawardSearch
 from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.common.helpers.api_helper import raise_if_award_types_not_valid_subset, raise_if_sort_key_not_valid
+from usaspending_api.common.helpers.data_constants import state_name_from_code
 from usaspending_api.common.helpers.generic_helper import (
     get_generic_filters_message,
 )
@@ -54,7 +55,6 @@ from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyT
 from usaspending_api.search.filters.time_period.query_types import AwardSearchTimePeriod, SubawardSearchTimePeriod
 from usaspending_api.search.v2.views.enums import SpendingLevel
 from usaspending_api.submissions.models import SubmissionAttributes
-from usaspending_api.common.helpers.data_constants import state_name_from_code
 
 logger = logging.getLogger(__name__)
 
@@ -63,10 +63,10 @@ GLOBAL_MAP = {
         "award_semaphore": "type",
         "internal_id_fields": {"internal_id": "award_id"},
         "elasticsearch_type_code_to_field_map": {
-            **{award_type: CONTRACT_SOURCE_LOOKUP for award_type in contract_type_mapping},
-            **{award_type: IDV_SOURCE_LOOKUP for award_type in idv_type_mapping},
-            **{award_type: LOAN_SOURCE_LOOKUP for award_type in loan_type_mapping},
-            **{award_type: NON_LOAN_ASST_SOURCE_LOOKUP for award_type in non_loan_assistance_type_mapping},
+            **dict.fromkeys(contract_type_mapping, CONTRACT_SOURCE_LOOKUP),
+            **dict.fromkeys(idv_type_mapping, IDV_SOURCE_LOOKUP),
+            **dict.fromkeys(loan_type_mapping, LOAN_SOURCE_LOOKUP),
+            **dict.fromkeys(non_loan_assistance_type_mapping, NON_LOAN_ASST_SOURCE_LOOKUP),
         },
     },
     "subawards": {
@@ -615,6 +615,15 @@ class SpendingByAwardVisualizationViewSet(APIView):
             }
 
         if "Sub-Recipient Location" in self.fields:
+            if hit.get("sub_recipient_location_zip"):
+                match len(hit.get("sub_recipient_location_zip")):
+                    case 9:
+                        zip4 = hit.get("sub_recipient_location_zip")[5:]
+                    case _:
+                        zip4 = None
+            else:
+                zip4 = None
+
             row["Sub-Recipient Location"] = {
                 "location_country_code": hit.get("sub_recipient_location_country_code"),
                 "country_name": hit.get("sub_recipient_location_country_name"),
@@ -625,12 +634,27 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 "county_name": hit.get("sub_recipient_location_county_name"),
                 "address_line1": hit.get("sub_recipient_location_address_line1"),
                 "congressional_code": hit.get("sub_recipient_location_congressional_code"),
-                "zip4": hit.get("sub_recipient_location_zip")[5:],
+                "zip4": zip4,
                 "zip5": hit.get("sub_recipient_location_zip5"),
                 "foreign_postal_code": hit.get("sub_recipient_location_foreign_posta"),
             }
 
         if "Sub-Award Primary Place of Performance" in self.fields:
+            if hit.get("sub_pop_zip"):
+                match len(hit.get("sub_pop_zip")):
+                    case 9:
+                        zip4 = hit.get("sub_pop_zip")[5:]
+                        zip5 = hit.get("sub_pop_zip")[0:5]
+                    case 5:
+                        zip4 = None
+                        zip5 = hit.get("sub_pop_zip")
+                    case _:
+                        zip4 = None
+                        zip5 = None
+            else:
+                zip4 = None
+                zip5 = None
+
             row["Sub-Award Primary Place of Performance"] = {
                 "location_country_code": hit.get("sub_pop_country_code"),
                 "country_name": hit.get("sub_pop_country_name"),
@@ -640,8 +664,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 "county_code": hit.get("sub_pop_county_code"),
                 "county_name": hit.get("sub_pop_county_name"),
                 "congressional_code": hit.get("sub_pop_congressional_code"),
-                "zip4": hit.get("sub_pop_zip")[5:],
-                "zip5": hit.get("sub_pop_zip")[0:5],
+                "zip4": zip4,
+                "zip5": zip5,
             }
 
         if (
