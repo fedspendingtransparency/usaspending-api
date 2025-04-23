@@ -368,63 +368,45 @@ class _RecipientSearchText(_Filter):
 
         for filter_value in filter_values:
 
-            parent_recipient_unique_id_field = None
-            parent_uei_field = None
+            is_exact_match = re.match(r'^".*"$', filter_value) is not None
+            search_text = es_sanitize(filter_value.upper())
 
             if query_type == QueryType.SUBAWARDS:
-                fields = ["sub_awardee_or_recipient_legal"]
-                upper_recipient_string = es_sanitize(filter_value.upper())
-                query = es_sanitize(upper_recipient_string)
-                recipient_unique_id_field = "sub_awardee_or_recipient_uniqu"
-                recipient_uei_field = "sub_awardee_or_recipient_uei"
+                recipient_name_fields = ["sub_awardee_or_recipient_legal"]
+                recipient_detail_fields = [
+                    "sub_awardee_or_recipient_uei",
+                    "sub_awardee_or_recipient_uniqu",
+                ]
             else:
-                fields = ["recipient_name", "parent_recipient_name"]
-                upper_recipient_string = es_sanitize(filter_value.upper())
-                query = es_sanitize(upper_recipient_string) + "*"
-                if "\\" in es_sanitize(upper_recipient_string):
-                    query = es_sanitize(upper_recipient_string) + r"\*"
-                recipient_unique_id_field = "recipient_unique_id"
-                recipient_uei_field = "recipient_uei"
-                parent_recipient_unique_id_field = "parent_recipient_unique_id"
-                parent_uei_field = "parent_uei"
+                recipient_name_fields = ["recipient_name", "parent_recipient_name"]
+                recipient_detail_fields = [
+                    "recipient_uei",
+                    "recipient_unique_id",
+                    "parent_uei",
+                    "parent_recipient_unique_id",
+                ]
 
             for special_word in words_to_escape:
-                if len(re.findall(rf"\b{special_word}\b", query)) > 0:
-                    query = re.sub(rf"\b{special_word}\b", rf"\\{special_word}", query)
-            recipient_name_query = ES_Q("query_string", query=query, default_operator="AND", fields=fields)
+                if len(re.findall(rf"\b{special_word}\b", search_text)) > 0:
+                    search_text = re.sub(rf"\b{special_word}\b", rf"\\{special_word}", search_text)
 
-            if len(upper_recipient_string) == 9 and upper_recipient_string[:5].isnumeric():
-                recipient_duns_query = ES_Q("match", **{recipient_unique_id_field: upper_recipient_string})
-                recipient_search_query.append(ES_Q("dis_max", queries=[recipient_name_query, recipient_duns_query]))
-                if parent_recipient_unique_id_field is not None:
-                    parent_recipient_duns_query = ES_Q(
-                        "match", **{parent_recipient_unique_id_field: upper_recipient_string}
-                    )
-                    recipient_search_query.append(
-                        ES_Q("dis_max", queries=[recipient_name_query, parent_recipient_duns_query])
-                    )
-                else:
-                    recipient_search_query.append(ES_Q("dis_max", queries=[recipient_name_query]))
-            if len(upper_recipient_string) == 12:
-                recipient_uei_query = ES_Q("match", **{recipient_uei_field: upper_recipient_string})
-                recipient_search_query.append(ES_Q("dis_max", queries=[recipient_name_query, recipient_uei_query]))
-                if parent_uei_field is not None:
-                    parent_recipient_uei_query = ES_Q("match", **{parent_uei_field: upper_recipient_string})
-                    recipient_search_query.append(
-                        ES_Q("dis_max", queries=[recipient_name_query, parent_recipient_uei_query])
-                    )
-                else:
-                    recipient_search_query.append(ES_Q("dis_max", queries=[recipient_name_query]))
-            # If the recipient name ends with a period, then add a regex query to find results ending with a
-            #   period and results with a period in the same location but with characters following it.
-            # Example: A query for COMPANY INC. will return both COMPANY INC. and COMPANY INC.XYZ
-            if upper_recipient_string.endswith(".") and query_type != QueryType.SUBAWARDS:
-                recipient_search_query.append(recipient_name_query)
-                recipient_search_query.append(
-                    ES_Q({"regexp": {"recipient_name.keyword": f"{upper_recipient_string.rstrip('.')}\\..*"}})
-                )
+            query_options = {"query": search_text}
+            if is_exact_match:
+                extra_options = {
+                    "fields": [f"{field}.keyword" for field in [*recipient_name_fields, *recipient_detail_fields]]
+                }
             else:
-                recipient_search_query.append(recipient_name_query)
+                extra_options = {
+                    "fields": [
+                        *[f"{field}.contains" for field in recipient_name_fields],
+                        *recipient_detail_fields,
+                    ],
+                    "operator": "AND",
+                    "type": "phrase_prefix",
+                }
+
+            recipient_query = ES_Q("multi_match", **query_options, **extra_options)
+            recipient_search_query.append(recipient_query)
 
         return ES_Q("bool", should=recipient_search_query, minimum_should_match=1)
 
