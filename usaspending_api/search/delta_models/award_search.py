@@ -16,6 +16,7 @@ AWARD_SEARCH_COLUMNS = {
     "type_description": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "is_fpds": {"delta": "boolean", "postgres": "boolean", "gold": True},
     "generated_unique_award_id": {"delta": "STRING", "postgres": "TEXT", "gold": False},
+    "generated_unique_award_id_legacy": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "display_award_id": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "update_date": {"delta": "TIMESTAMP", "postgres": "TIMESTAMP", "gold": False},
     "certified_date": {"delta": "DATE", "postgres": "DATE", "gold": True},
@@ -204,6 +205,25 @@ award_search_load_sql_string = rf"""
   END AS type_description,
   awards.is_fpds,
   awards.generated_unique_award_id,
+  CASE
+    WHEN awards.is_fpds = FALSE AND transaction_fabs.record_type = 1
+        THEN UPPER(CONCAT(
+            'ASST_AGG',
+            '_',
+            COALESCE(transaction_fabs.uri, '-none-'),
+            '_',
+            COALESCE(SAA.subtier_code, '-none-')
+        ))
+    WHEN awards.is_fpds = FALSE
+        THEN UPPER(CONCAT(
+            'ASST_NON',
+            '_',
+            COALESCE(transaction_fabs.fain, '-none-'),
+            '_',
+            COALESCE(SAA.subtier_code, '-none-')
+        ))
+    ELSE NULL
+  END AS generated_unique_award_id_legacy,
   CASE
     WHEN awards.type IN ('02', '03', '04', '05', '06', '10', '07', '08', '09', '11') AND awards.fain IS NOT NULL THEN awards.fain
     WHEN awards.piid IS NOT NULL THEN awards.piid  -- contracts. Did it this way to easily handle IDV contracts
