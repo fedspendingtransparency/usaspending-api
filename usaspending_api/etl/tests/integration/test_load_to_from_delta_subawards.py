@@ -934,6 +934,7 @@ def test_load_table_to_from_delta_for_subawards(
         {"id": 1, "subaward_count": 0, "total_subaward_amount": None},
         {"id": 2, "subaward_count": 0, "total_subaward_amount": None},
         {"id": 3, "subaward_count": 2, "total_subaward_amount": Decimal("918.00")},
+        {"id": 4, "subaward_count": 0, "total_subaward_amount": None},
     ]
 
     assert [{k: v for k, v in row.items() if k != "update_date"} for row in delta_data] == expected_data
