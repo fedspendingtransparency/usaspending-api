@@ -1111,7 +1111,6 @@ def spending_by_award_test_data():
         sub_place_of_perform_city_name="ARLINGTON",
         sub_place_of_perform_country_name="UNITED STATES",
         sub_place_of_perform_county_name="ARLINGTON",
-        sub_place_of_perform_congressio="08",
         sub_place_of_performance_zip="554559040",
         sub_cfda_numbers="1234",
         cfda_number="1234",
@@ -1125,7 +1124,7 @@ def spending_by_award_test_data():
 
     baker.make(
         "search.SubawardSearch",
-        broker_subaward_id=6,
+        broker_subaward_id=11,
         award=award_6,
         subaward_number=44446,
         awardee_or_recipient_uniqu="duns_1003",
@@ -1143,7 +1142,6 @@ def spending_by_award_test_data():
         sub_place_of_perform_city_name="LOS ANGELES",
         sub_place_of_perform_country_name="UNITED STATES",
         sub_place_of_perform_county_name="ARLINGTON",
-        sub_place_of_perform_congressio="08",
         sub_place_of_performance_zip="554559040",
         sub_cfda_numbers="1234",
         cfda_number="1234",
@@ -1173,7 +1171,6 @@ def spending_by_award_test_data():
         sub_place_of_perform_county_code="013",
         sub_place_of_perform_country_name="UNITED STATES",
         sub_place_of_perform_county_name="ARLINGTON",
-        sub_place_of_perform_congressio="08",
         sub_place_of_performance_zip="554559040",
         sub_cfda_numbers="9876",
         cfda_number="9876",
@@ -1204,13 +1201,12 @@ def spending_by_award_test_data():
         sub_place_of_perform_county_code="013",
         sub_place_of_perform_country_name="UNITED STATES",
         sub_place_of_perform_county_name="ARLINGTON",
-        sub_place_of_perform_congressio="08",
         sub_place_of_performance_zip="554559040",
     )
 
     baker.make(
         "search.SubawardSearch",
-        broker_subaward_id=9,
+        broker_subaward_id=99,
         award=award_6,
         subaward_number=44449,
         awardee_or_recipient_uniqu="duns_1003",
@@ -1224,7 +1220,6 @@ def spending_by_award_test_data():
         sub_place_of_perform_county_code="013",
         sub_place_of_perform_country_name="UNITED STATES",
         sub_place_of_perform_county_name="ARLINGTON",
-        sub_place_of_perform_congressio="08",
         sub_place_of_performance_zip="554559040",
     )
 
@@ -1243,7 +1238,6 @@ def spending_by_award_test_data():
         sub_place_of_perform_county_code="013",
         sub_place_of_perform_country_name="LAOS",
         sub_place_of_perform_county_name="ARLINGTON",
-        sub_place_of_perform_congressio="08",
         sub_place_of_performance_zip="554559040",
     )
 

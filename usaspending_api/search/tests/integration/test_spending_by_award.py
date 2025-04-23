@@ -2553,7 +2553,7 @@ def test_spending_by_award_new_subgrant_fields(
             "Assistance Listing",
             "sub_award_recipient_id",
         ],
-        "filters": {"award_type_codes": ["08"]},
+        "filters": {"award_type_codes": ["08"], "award_ids": ["45509"]},
     }
     expected_response = [
         {
