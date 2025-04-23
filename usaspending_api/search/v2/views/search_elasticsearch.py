@@ -148,9 +148,8 @@ class SpendingByTransactionVisualizationViewSet(APIView):
             case "Assistance Listing":
                 sort_by_fields = [TRANSACTIONS_LOOKUP["cfda_number"], TRANSACTIONS_LOOKUP["cfda_title"]]
             case _:
-                sorts = [{TRANSACTIONS_LOOKUP[payload_sort_key]: validated_payload["order"]}]
-        if len(sort_by_fields) > 0:
-            sorts = [{field: validated_payload["order"] for field in sort_by_fields}]
+                sort_by_fields = [TRANSACTIONS_LOOKUP[payload_sort_key]]
+        sorts = [{field: validated_payload["order"] for field in sort_by_fields}]
 
         lower_limit = (validated_payload["page"] - 1) * validated_payload["limit"]
         upper_limit = (validated_payload["page"]) * validated_payload["limit"] + 1

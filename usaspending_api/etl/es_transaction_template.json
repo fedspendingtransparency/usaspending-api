@@ -413,6 +413,9 @@
         "fields": {
           "hash": {
             "type": "murmur3"
+          },
+          "keyword": {
+            "type": "keyword"
           }
         }
       },
