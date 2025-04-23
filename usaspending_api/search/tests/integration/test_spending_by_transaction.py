@@ -37,11 +37,11 @@ def transaction_data():
         recipient_location_county_code="001",
         recipient_location_county_name="testcountyname",
         recipient_location_congressional_code="congressionalcode",
-        recipient_location_city_name="cityname",
+        recipient_location_city_name="ARLINGTON",
         pop_country_code="popcountrycode",
         pop_country_name="UNITED STATES",
         pop_state_code="TX",
-        pop_city_name="popcityname",
+        pop_city_name="ARLINGTON",
         pop_county_code="popcountycode",
         pop_county_name="popcountyname",
         pop_congressional_code="popcongressionalcode",
@@ -73,6 +73,12 @@ def transaction_data():
         cfda_title="cfdatitle",
         awarding_toptier_agency_name="Award agency name",
         funding_toptier_agency_name="Funding agency name",
+        recipient_location_state_code="TX",
+        recipient_location_country_name="UNITED STATES",
+        recipient_location_city_name="AUSTIN",
+        pop_country_name="UNITED STATES",
+        pop_state_code="TX",
+        pop_city_name="AUSTIN",
     )
 
     baker.make(
@@ -86,7 +92,51 @@ def transaction_data():
         type="A",
         generated_unique_award_id="ASST_NON_WY99M000020-18Z_8630",
         transaction_description="description for award 3",
+        recipient_location_state_code="TX",
+        recipient_location_country_name="UNITED STATES",
+        pop_country_name="UNITED STATES",
+        pop_state_code="TX",
     )
+
+    # baker.make(
+    #     "search.Transaction",
+    #     transaction_id=4,
+    #     award_id=4,
+    #     piid="IND12PB00002",
+    #     action_date="2010-10-01",
+    #     is_fpds=True,
+    #     action_type="A",
+    #     type="A",
+    #     generated_unique_award_id="ASST_NON_WY99M000020-18Z_8633",
+    #     transaction_description="description for award 4",
+    #     recipient_location_state_code="AL",
+    #     recipient_location_country_name="UNITED STATES",
+    #     pop_country_name="UNITED STATES",
+    #     pop_state_code="AL",
+    # )
+
+    # baker.make(
+    #     "search.Transaction",
+    #     transaction_id=5,
+    #     award_id=3,
+    #     action_type="A",
+    #     type="A",
+    #     generated_unique_award_id="ASST_NON_WY99M000020-18Z_8634",
+    #     recipient_location_country_name="UNITED STATES",
+    #     pop_country_name="UNITED STATES",
+    # )
+
+    # baker.make(
+    #     "search.Transaction",
+    #     transaction_id=6,
+    #     award_id=3,
+    #     action_type="A",
+    #     type="A",
+    #     generated_unique_award_id="ASST_NON_WY99M000020-18Z_8635",
+    #     recipient_location_country_name="FRANCE",
+    #     pop_country_name="FRANCE",
+    # )
+
     baker.make(
         "search.AwardSearch",
         award_id=2,
@@ -525,7 +575,7 @@ def test_sorting_on_additional_fields(client, monkeypatch, elasticsearch_transac
         "filters": {"award_type_codes": ["A", "10"]},
         "fields": fields,
         "page": 1,
-        "limit": 5,
+        "limit": 2,
         "sort": "Action Type",
     }
 
@@ -555,3 +605,23 @@ def test_slugify_agencies(client, monkeypatch, elasticsearch_transaction_index, 
     assert len(resp.json().get("results")) == 1
     assert resp.json().get("results")[0]["awarding_agency_slug"] == "award-agency-name"
     assert resp.json().get("results")[0]["funding_agency_slug"] == "funding-agency-name"
+
+
+def test_recipient_location_sorting(client, monkeypatch, elasticsearch_transaction_index, transaction_data):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
+    fields = ["Award ID", "Recipient Location"]
+
+    request = {
+        "filters": {"award_type_codes": ["10", "A"]},
+        "fields": fields,
+        "page": 1,
+        "limit": 6,
+        "sort": "Recipient Location",
+        "order": "desc",
+    }
+
+    resp = client.post(ENDPOINT, content_type="application/json", data=json.dumps(request))
+
+    assert resp.status_code == status.HTTP_200_OK
+    print("results length: ", len(resp.json().get("results")))
