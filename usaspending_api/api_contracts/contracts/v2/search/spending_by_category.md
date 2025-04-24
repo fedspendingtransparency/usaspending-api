@@ -30,6 +30,7 @@ This endpoint returns a list of the top results of specific categories sorted by
                 + `funding_agency`
                 + `funding_subagency`
                 + `naics`
+                + `object_class`
                 + `program_activity`
                 + `psc`
                 + `recipient_duns`
@@ -125,6 +126,7 @@ This endpoint returns a list of the top results of specific categories sorted by
 + `set_aside_type_codes`: `NONE` (optional, array[string])
 + `extent_competed_type_codes`: `A` (optional, array[string])
 + `treasury_account_components` (optional, array[TreasuryAccountComponentsObject], fixed-type)
++ `object_class` (optional, array[string])
 + `program_activity` (optional, array[number])
 + `def_codes` (optional, array[DEFC], fixed-type)
   If the `def_codes` provided are in the COVID-19 or IIJA group, the query will only return results of transactions where the `action_date` is on or after the enactment date of the public law associated with that disaster code.
