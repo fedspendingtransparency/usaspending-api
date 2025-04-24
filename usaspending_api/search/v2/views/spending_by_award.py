@@ -174,13 +174,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
         models = [
             {"name": "fields", "key": "fields", "type": "array", "array_type": "text", "text_type": "search", "min": 1},
             {
-                "name": "object_class",
-                "key": "filter|object_class",
-                "type": "array",
-                "array_type": "text",
-                "text_type": "search",
-            },
-            {
                 "name": "program_activity",
                 "key": "filter|program_activity",
                 "type": "array",
