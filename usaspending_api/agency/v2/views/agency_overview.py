@@ -70,7 +70,7 @@ class AgencyOverview(AgencyBase):
         )
         results = [
             {
-                "code": x["disaster_emergency_fund"],
+                "code": x["disaster_emergency_fund"].upper(),
                 "public_law": x["disaster_emergency_fund__public_law"],
                 "title": x["disaster_emergency_fund__title"],
                 "urls": x["disaster_emergency_fund__urls"],
