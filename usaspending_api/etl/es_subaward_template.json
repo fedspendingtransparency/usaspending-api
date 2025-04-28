@@ -298,7 +298,12 @@
         }
       },
       "naics_description": {
-        "type": "text"
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
       },
       "cfda_number": {
         "type": "text",
@@ -433,7 +438,12 @@
         "type": "text"
       },
       "sub_recipient_location_city_name": {
-        "type": "text"
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
       },
       "sub_recipient_location_county_agg_key": {
         "type": "keyword",
@@ -450,6 +460,14 @@
         "fields": {
           "hash": {
             "type": "murmur3"
+          }
+        }
+      },
+      "sub_recipient_location_address_line1": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
           }
         }
       },
@@ -623,7 +641,12 @@
         }
       },
       "product_or_service_description": {
-        "type": "text"
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
       },
       "treasury_account_identifiers": {
         "type": "keyword"
