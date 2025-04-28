@@ -2553,7 +2553,7 @@ def test_spending_by_award_new_subgrant_fields(
             "Assistance Listing",
             "sub_award_recipient_id",
         ],
-        "filters": {"award_type_codes": ["08"]},
+        "filters": {"award_type_codes": ["08"], "award_ids": ["45509"]},
     }
     expected_response = [
         {
@@ -3194,3 +3194,305 @@ def test_spending_by_award_assistance_listings(
     assert results[0]["Assistance Listings"] == assisance_listing3
     assert results[1]["Assistance Listings"] == assisance_listing2
     assert results[2]["Assistance Listings"] == assisance_listing1
+
+
+def test_spending_by_award_sort_sub_recipient_locations(
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
+    test_payload = {
+        "spending_level": "subawards",
+        "fields": [
+            "Sub-Award ID",
+            "Sub-Recipient Location",
+        ],
+        "filters": {"award_type_codes": ["08"]},
+        "sort": "Sub-Recipient Location",
+        "order": "asc",
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    assert len(results) == 7
+    assert results[0]["Sub-Recipient Location"]["city_name"] == "ARLINGTON"
+    assert results[0]["Sub-Recipient Location"]["address_line1"] == "1 Memorial Drive"
+    assert results[1]["Sub-Recipient Location"]["city_name"] == "ARLINGTON"
+    assert results[1]["Sub-Recipient Location"]["address_line1"] == "600 CALIFORNIA STREET FL 18"
+    assert results[2]["Sub-Recipient Location"]["city_name"] == "SAN FRANCISCO"
+    assert results[3]["Sub-Recipient Location"]["state_code"] == "CA"
+    assert results[3]["Sub-Recipient Location"]["city_name"] is None
+    assert results[4]["Sub-Recipient Location"]["state_code"] == "NE"
+    assert results[4]["Sub-Recipient Location"]["city_name"] is None
+    assert results[5]["Sub-Recipient Location"]["country_name"] == "ARUBA"
+    assert results[5]["Sub-Recipient Location"]["state_code"] is None
+    assert results[6]["Sub-Recipient Location"]["country_name"] == "UNITED STATES"
+    assert results[6]["Sub-Recipient Location"]["state_code"] is None
+
+    test_payload = {
+        "spending_level": "subawards",
+        "fields": [
+            "Sub-Award ID",
+            "Sub-Recipient Location",
+        ],
+        "filters": {"award_type_codes": ["08"]},
+        "sort": "Sub-Recipient Location",
+        "order": "desc",
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    assert len(results) == 7
+    assert results[0]["Sub-Recipient Location"]["city_name"] == "SAN FRANCISCO"
+    assert results[1]["Sub-Recipient Location"]["city_name"] == "ARLINGTON"
+    assert results[1]["Sub-Recipient Location"]["address_line1"] == "600 CALIFORNIA STREET FL 18"
+    assert results[2]["Sub-Recipient Location"]["city_name"] == "ARLINGTON"
+    assert results[2]["Sub-Recipient Location"]["address_line1"] == "1 Memorial Drive"
+    assert results[3]["Sub-Recipient Location"]["state_code"] == "NE"
+    assert results[4]["Sub-Recipient Location"]["state_code"] == "CA"
+    assert results[5]["Sub-Recipient Location"]["country_name"] == "UNITED STATES"
+    assert results[6]["Sub-Recipient Location"]["country_name"] == "ARUBA"
+
+
+def test_spending_by_award_sort_sub_pop_location(
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
+
+    test_payload = {
+        "spending_level": "subawards",
+        "fields": [
+            "Sub-Award ID",
+            "Sub-Award Primary Place of Performance",
+        ],
+        "filters": {"award_type_codes": ["08"]},
+        "sort": "Sub-Award Primary Place of Performance",
+        "order": "asc",
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    assert len(results) == 7
+    assert results[0]["Sub-Award Primary Place of Performance"]["city_name"] == "ARLINGTON"
+    assert results[1]["Sub-Award Primary Place of Performance"]["city_name"] == "ARLINGTON"
+    assert results[2]["Sub-Award Primary Place of Performance"]["city_name"] == "LOS ANGELES"
+    assert results[3]["Sub-Award Primary Place of Performance"]["city_name"] is None
+    assert results[3]["Sub-Award Primary Place of Performance"]["state_code"] == "IL"
+    assert results[4]["Sub-Award Primary Place of Performance"]["city_name"] is None
+    assert results[4]["Sub-Award Primary Place of Performance"]["state_code"] == "VA"
+    assert results[5]["Sub-Award Primary Place of Performance"]["state_code"] is None
+    assert results[5]["Sub-Award Primary Place of Performance"]["country_name"] == "LAOS"
+    assert results[6]["Sub-Award Primary Place of Performance"]["state_code"] is None
+    assert results[6]["Sub-Award Primary Place of Performance"]["country_name"] == "UNITED STATES"
+
+    test_payload = {
+        "spending_level": "subawards",
+        "fields": [
+            "Sub-Award ID",
+            "Sub-Award Primary Place of Performance",
+        ],
+        "filters": {"award_type_codes": ["08"]},
+        "sort": "Sub-Award Primary Place of Performance",
+        "order": "desc",
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    assert len(results) == 7
+    assert results[0]["Sub-Award Primary Place of Performance"]["city_name"] == "LOS ANGELES"
+    assert results[1]["Sub-Award Primary Place of Performance"]["city_name"] == "ARLINGTON"
+    assert results[2]["Sub-Award Primary Place of Performance"]["city_name"] == "ARLINGTON"
+    assert results[3]["Sub-Award Primary Place of Performance"]["state_code"] == "VA"
+    assert results[4]["Sub-Award Primary Place of Performance"]["state_code"] == "IL"
+    assert results[5]["Sub-Award Primary Place of Performance"]["country_name"] == "UNITED STATES"
+    assert results[6]["Sub-Award Primary Place of Performance"]["country_name"] == "LAOS"
+
+
+def test_spending_by_award_sort_sub_assistance_listing(
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
+
+    test_payload = {
+        "spending_level": "subawards",
+        "fields": [
+            "Sub-Award ID",
+            "Assistance Listing",
+        ],
+        "filters": {"award_type_codes": ["08"]},
+        "sort": "Assistance Listing",
+        "order": "asc",
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    assert len(results) == 7
+    assert results[0]["Assistance Listing"]["cfda_number"] == "1.234"
+    assert results[0]["Assistance Listing"]["cfda_program_title"] == "test cfda"
+    assert results[1]["Assistance Listing"]["cfda_number"] == "1234"
+    assert results[1]["Assistance Listing"]["cfda_program_title"] == "cfda titles 1"
+    assert results[2]["Assistance Listing"]["cfda_number"] == "1234"
+    assert results[2]["Assistance Listing"]["cfda_program_title"] == "cfda titles 2"
+    assert results[3]["Assistance Listing"]["cfda_number"] == "9876"
+    assert results[3]["Assistance Listing"]["cfda_program_title"] == "cfda titles 1"
+
+    test_payload = {
+        "spending_level": "subawards",
+        "fields": [
+            "Sub-Award ID",
+            "Assistance Listing",
+        ],
+        "filters": {"award_type_codes": ["08"]},
+        "sort": "Assistance Listing",
+        "order": "desc",
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    assert len(results) == 7
+    assert results[0]["Assistance Listing"]["cfda_number"] == "9876"
+    assert results[0]["Assistance Listing"]["cfda_program_title"] == "cfda titles 1"
+    assert results[1]["Assistance Listing"]["cfda_number"] == "1234"
+    assert results[1]["Assistance Listing"]["cfda_program_title"] == "cfda titles 2"
+    assert results[2]["Assistance Listing"]["cfda_number"] == "1234"
+    assert results[2]["Assistance Listing"]["cfda_program_title"] == "cfda titles 1"
+
+
+def test_spending_by_award_sort_sub_naics(
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
+
+    test_payload = {
+        "spending_level": "subawards",
+        "fields": [
+            "Sub-Award ID",
+            "NAICS",
+        ],
+        "filters": {"award_type_codes": ["08"]},
+        "sort": "NAICS",
+        "order": "asc",
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    assert len(results) == 7
+    assert results[0]["NAICS"]["code"] == "1234"
+    assert results[0]["NAICS"]["description"] == "naics description 1"
+    assert results[1]["NAICS"]["code"] == "1234"
+    assert results[1]["NAICS"]["description"] == "naics description 2"
+    assert results[2]["NAICS"]["code"] == "9876"
+    assert results[2]["NAICS"]["description"] == "naics description 1"
+
+    test_payload = {
+        "spending_level": "subawards",
+        "fields": [
+            "Sub-Award ID",
+            "NAICS",
+        ],
+        "filters": {"award_type_codes": ["08"]},
+        "sort": "NAICS",
+        "order": "desc",
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    assert len(results) == 7
+    assert results[0]["NAICS"]["code"] == "9876"
+    assert results[0]["NAICS"]["description"] == "naics description 1"
+    assert results[1]["NAICS"]["code"] == "1234"
+    assert results[1]["NAICS"]["description"] == "naics description 2"
+    assert results[2]["NAICS"]["code"] == "1234"
+    assert results[2]["NAICS"]["description"] == "naics description 1"
+
+
+def test_spending_by_award_sort_sub_psc(
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
+
+    test_payload = {
+        "spending_level": "subawards",
+        "fields": [
+            "Sub-Award ID",
+            "PSC",
+        ],
+        "filters": {"award_type_codes": ["08"]},
+        "sort": "PSC",
+        "order": "asc",
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    assert len(results) == 7
+    assert results[0]["PSC"]["code"] == "1234"
+    assert results[0]["PSC"]["description"] == "psc description 1"
+    assert results[1]["PSC"]["code"] == "1234"
+    assert results[1]["PSC"]["description"] == "psc description 2"
+    assert results[2]["PSC"]["code"] == "9876"
+    assert results[2]["PSC"]["description"] == "psc description 1"
+
+    test_payload = {
+        "spending_level": "subawards",
+        "fields": [
+            "Sub-Award ID",
+            "PSC",
+        ],
+        "filters": {"award_type_codes": ["08"]},
+        "sort": "PSC",
+        "order": "desc",
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    assert len(results) == 7
+    assert results[0]["PSC"]["code"] == "9876"
+    assert results[0]["PSC"]["description"] == "psc description 1"
+    assert results[1]["PSC"]["code"] == "1234"
+    assert results[1]["PSC"]["description"] == "psc description 2"
+    assert results[2]["PSC"]["code"] == "1234"
+    assert results[2]["PSC"]["description"] == "psc description 1"
