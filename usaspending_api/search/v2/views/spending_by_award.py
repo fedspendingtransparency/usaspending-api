@@ -122,7 +122,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
             "PSC",
             "Recipient Location",
             "Primary Place of Performance",
-            "Assistance Listings",
+            "Assistance Listing",
+            "Sub-Recipient Location",
+            "Sub-Award Primary Place of Performance",
         ]:
             raise_if_sort_key_not_valid(
                 self.pagination["sort_key"], self.fields, self.filters["award_type_codes"], self.spending_level
@@ -256,7 +258,11 @@ class SpendingByAwardVisualizationViewSet(APIView):
             case "Award ID" | "Sub-Award ID":
                 sort_by_fields = ["display_award_id"]
             case "NAICS":
-                sort_by_fields = [contracts_mapping["naics_code"], contracts_mapping["naics_description"]]
+                sort_by_fields = (
+                    [contracts_mapping["sub_naics_code"], contracts_mapping["naics_description"]]
+                    if self.spending_level == SpendingLevel.SUBAWARD
+                    else [contracts_mapping["naics_code"], contracts_mapping["naics_description"]]
+                )
             case "PSC":
                 sort_by_fields = [contracts_mapping["psc_code"], contracts_mapping["psc_description"]]
             case "Recipient Location":
@@ -276,6 +282,21 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 ]
             case "Assistance Listings":
                 sort_by_fields = [contracts_mapping["cfda_number"], contracts_mapping["cfda_program_title"]]
+            case "Assistance Listing":
+                sort_by_fields = [contracts_mapping["cfda_number"], contracts_mapping["sub_cfda_program_titles"]]
+            case "Sub-Recipient Location":
+                sort_by_fields = [
+                    contracts_mapping["sub_recipient_location_city_name"],
+                    contracts_mapping["sub_recipient_location_state_code"],
+                    contracts_mapping["sub_recipient_location_country_name"],
+                    contracts_mapping["sub_recipient_location_address_line1"],
+                ]
+            case "Sub-Award Primary Place of Performance":
+                sort_by_fields = [
+                    contracts_mapping["sub_pop_city_name"],
+                    contracts_mapping["sub_pop_state_code"],
+                    contracts_mapping["sub_pop_country_name"],
+                ]
             case _:
                 if self.spending_level == SpendingLevel.SUBAWARD:
                     sort_by_fields = [subaward_mapping[self.pagination["sort_key"]]]
@@ -411,10 +432,10 @@ class SpendingByAwardVisualizationViewSet(APIView):
                     {"filter": {"terms": {"covid_spending_by_defc.defc": self.filters.get("def_codes", [])}}}
                 )
             sorts.extend([{field: self.pagination["sort_order"]} for field in sort_field])
-        elif self.pagination["sort_key"] == "Recipient Location" or self.pagination["sort_key"] == "Assistance Listing":
+        elif "Recipient Location" in self.pagination["sort_key"]:
             sorts = []
             for field in sort_field:
-                if "recipient_location_address" in field or field == "cfda_title.keyword":
+                if "recipient_location_address" in field:
                     sorts.append({field: {"order": self.pagination["sort_order"], "unmapped_type": "keyword"}})
                 else:
                     sorts.append({field: self.pagination["sort_order"]})

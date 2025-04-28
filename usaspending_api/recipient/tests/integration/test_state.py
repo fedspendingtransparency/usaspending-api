@@ -397,7 +397,7 @@ def state_breakdown_result():
     return expected_result
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 def test_state_metadata_success(client, state_data):
     # test small request - state
     resp = client.get(state_metadata_endpoint("01"))
