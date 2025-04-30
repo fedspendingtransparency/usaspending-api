@@ -1,6 +1,6 @@
 import json
-import pytest
 
+import pytest
 from model_bakery import baker
 from rest_framework import status
 
@@ -18,7 +18,7 @@ def award_data_fixture(db):
     baker.make("search.TransactionSearch", transaction_id=765432107, action_date="2013-09-17")
     baker.make("search.TransactionSearch", transaction_id=876543210, action_date="2013-09-17")
     baker.make("search.TransactionSearch", transaction_id=987654321, action_date="2013-09-17")
-    baker.make(
+    award1 = baker.make(
         "search.AwardSearch",
         category="loans",
         date_signed="2012-09-10",
@@ -32,8 +32,9 @@ def award_data_fixture(db):
         piid=None,
         type="07",
         uri=None,
+        program_activities=[{"code": "0123", "name": "PROGRAM_ACTIVITY_123"}],
     )
-    baker.make(
+    award2 = baker.make(
         "search.AwardSearch",
         category="idvs",
         date_signed="2009-12-10",
@@ -168,6 +169,53 @@ def award_data_fixture(db):
         type="A",
         uri=None,
     )
+    baker.make("awards.FinancialAccountsByAwards", financial_accounts_by_awards_id=1, award_id=award1.award_id)
+
+    baker.make(
+        "search.SubawardSearch",
+        broker_subaward_id=1,
+        award=award1,
+        sub_action_date="2023-01-01",
+        action_date="2023-01-01",
+        prime_award_group="grant",
+        prime_award_type="07",
+        program_activities=[{"name": "PROGRAM_ACTIVITY_123", "code": "0123"}],
+    )
+    baker.make(
+        "search.SubawardSearch",
+        broker_subaward_id=2,
+        award=award1,
+        sub_action_date="2023-01-01",
+        action_date="2023-01-01",
+        prime_award_group="procurement",
+        prime_award_type="07",
+        program_activities=[{"name": "PROGRAM_ACTIVITY_123", "code": "0123"}],
+    )
+    ref_program_activity1 = baker.make(
+        "references.RefProgramActivity",
+        id=1,
+        program_activity_code=123,
+        program_activity_name="PROGRAM_ACTIVITY_123",
+    )
+    baker.make(
+        "awards.FinancialAccountsByAwards",
+        financial_accounts_by_awards_id=1,
+        award_id=award1.award_id,
+        program_activity_id=ref_program_activity1.id,
+    )
+
+    ref_program_activity2 = baker.make(
+        "references.RefProgramActivity",
+        id=2,
+        program_activity_code=2,
+        program_activity_name="PROGRAM_ACTIVITY_2",
+    )
+    baker.make(
+        "awards.FinancialAccountsByAwards",
+        financial_accounts_by_awards_id=2,
+        award_id=award2.award_id,
+        program_activity_id=ref_program_activity2.id,
+    )
 
 
 def get_spending_by_award_count_url():
@@ -190,6 +238,7 @@ def test_spending_by_award_count(client, monkeypatch, elasticsearch_award_index,
 
     expected_response = {
         "results": {"contracts": 2, "idvs": 4, "loans": 1, "direct_payments": 0, "grants": 0, "other": 1},
+        "spending_level": "awards",
         "messages": [get_time_period_message()],
     }
 
@@ -215,6 +264,7 @@ def test_spending_by_award_count_idvs(client, monkeypatch, elasticsearch_award_i
 
     expected_response = {
         "results": {"contracts": 0, "idvs": 3, "loans": 0, "direct_payments": 0, "grants": 0, "other": 0},
+        "spending_level": "awards",
         "messages": [get_time_period_message()],
     }
 
@@ -242,6 +292,7 @@ def test_spending_by_award_count_new_awards_only(client, monkeypatch, elasticsea
 
     expected_response = {
         "results": {"contracts": 0, "direct_payments": 0, "grants": 0, "idvs": 0, "loans": 1, "other": 0},
+        "spending_level": "awards",
         "messages": [get_time_period_message()],
     }
 
@@ -264,6 +315,7 @@ def test_spending_by_award_count_new_awards_only(client, monkeypatch, elasticsea
 
     expected_response = {
         "results": {"contracts": 0, "direct_payments": 0, "grants": 0, "idvs": 0, "loans": 0, "other": 0},
+        "spending_level": "awards",
         "messages": [get_time_period_message()],
     }
 
@@ -273,3 +325,226 @@ def test_spending_by_award_count_new_awards_only(client, monkeypatch, elasticsea
 
     assert resp.status_code == status.HTTP_200_OK
     assert expected_response == resp.data, "Unexpected or missing content!"
+
+
+@pytest.mark.django_db
+def test_spending_by_award_count_program_activity_subawards(
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, award_data_fixture
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
+
+    # Program Activites filter test
+    test_payload = {
+        "subawards": True,
+        "filters": {
+            "program_activities": [{"name": "program_activity_123"}],
+        },
+    }
+
+    expected_response = {
+        "results": {"subcontracts": 1, "subgrants": 1},
+        "spending_level": "subawards",
+        "messages": [get_time_period_message()],
+    }
+
+    resp = client.post(
+        get_spending_by_award_count_url(), content_type="application/json", data=json.dumps(test_payload)
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.data, "Unexpected or missing content!"
+
+    test_payload = {
+        "subawards": True,
+        "filters": {
+            "program_activities": [{"name": "program_activity_123"}, {"code": "123"}],
+        },
+    }
+
+    expected_response = {
+        "results": {"subcontracts": 1, "subgrants": 1},
+        "spending_level": "subawards",
+        "messages": [get_time_period_message()],
+    }
+
+    resp = client.post(
+        get_spending_by_award_count_url(), content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.data, "Unexpected or missing content!"
+
+    test_payload = {
+        "subawards": True,
+        "filters": {
+            "program_activities": [{"name": "program_activity_123", "code": "321"}],
+        },
+    }
+
+    expected_response = {
+        "results": {"subcontracts": 0, "subgrants": 0},
+        "spending_level": "subawards",
+        "messages": [get_time_period_message()],
+    }
+
+    resp = client.post(
+        get_spending_by_award_count_url(), content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.data, "Unexpected or missing content!"
+
+
+@pytest.mark.django_db
+def test_spending_by_award_count_program_activity(client, monkeypatch, elasticsearch_award_index, award_data_fixture):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    # Program Activites filter test
+    test_payload = {
+        "subawards": False,
+        "filters": {
+            "program_activities": [{"name": "program_activity_123"}],
+        },
+    }
+
+    expected_response = {
+        "results": {"contracts": 0, "direct_payments": 0, "grants": 0, "idvs": 0, "loans": 1, "other": 0},
+        "spending_level": "awards",
+        "messages": [get_time_period_message()],
+    }
+
+    resp = client.post(
+        get_spending_by_award_count_url(), content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.data, "Unexpected or missing content!"
+
+    test_payload = {
+        "subawards": False,
+        "filters": {
+            "program_activities": [{"name": "program_activity_123", "code": "321"}],
+        },
+    }
+
+    expected_response = {
+        "results": {"contracts": 0, "direct_payments": 0, "grants": 0, "idvs": 0, "loans": 0, "other": 0},
+        "spending_level": "awards",
+        "messages": [get_time_period_message()],
+    }
+
+    resp = client.post(
+        get_spending_by_award_count_url(), content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.data, "Unexpected or missing content!"
+
+    test_payload = {
+        "subawards": False,
+        "filters": {
+            "program_activities": [{"name": "program_activity_123", "code": "123"}],
+        },
+    }
+
+    expected_response = {
+        "results": {"contracts": 0, "direct_payments": 0, "grants": 0, "idvs": 0, "loans": 1, "other": 0},
+        "spending_level": "awards",
+        "messages": [get_time_period_message()],
+    }
+
+    resp = client.post(
+        get_spending_by_award_count_url(), content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.data, "Unexpected or missing content!"
+
+    test_payload = {
+        "subawards": False,
+        "filters": {
+            "program_activities": [{"name": "program_activity_123"}, {"code": "123"}],
+        },
+    }
+
+    expected_response = {
+        "results": {"contracts": 0, "direct_payments": 0, "grants": 0, "idvs": 0, "loans": 1, "other": 0},
+        "spending_level": "awards",
+        "messages": [get_time_period_message()],
+    }
+
+    resp = client.post(
+        get_spending_by_award_count_url(), content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.data, "Unexpected or missing content!"
+
+
+@pytest.mark.django_db
+def test_spending_level_filter(client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
+
+    request = {
+        "subawards": False,
+        "spending_level": "awards",
+        "filters": {
+            "program_activities": [{"name": "program_activity_123", "code": "321"}],
+        },
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award_count", content_type="application/json", data=json.dumps(request)
+    )
+
+    expected_response = {
+        "results": {"contracts": 0, "direct_payments": 0, "grants": 0, "idvs": 0, "loans": 0, "other": 0},
+        "spending_level": "awards",
+        "messages": [get_time_period_message()],
+    }
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.data
+
+    request = {
+        "spending_level": "subawards",
+        "filters": {
+            "program_activities": [{"name": "program_activity_123", "code": "321"}],
+        },
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award_count", content_type="application/json", data=json.dumps(request)
+    )
+
+    expected_response = {
+        "results": {"subgrants": 0, "subcontracts": 0},
+        "spending_level": "subawards",
+        "messages": [get_time_period_message()],
+    }
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.data
+
+    # Checks that subawards = true takes precedent over spending_level = awards
+    request = {
+        "subawards": True,
+        "spending_level": "awards",
+        "filters": {
+            "program_activities": [{"name": "program_activity_123", "code": "321"}],
+        },
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award_count", content_type="application/json", data=json.dumps(request)
+    )
+
+    expected_response = {
+        "results": {"subgrants": 0, "subcontracts": 0},
+        "spending_level": "subawards",
+        "messages": [get_time_period_message()],
+    }
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.data

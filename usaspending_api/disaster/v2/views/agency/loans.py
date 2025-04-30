@@ -1,18 +1,19 @@
 import logging
 from decimal import Decimal
+from typing import List
 
 from django.contrib.postgres.fields import ArrayField
-from django.db.models import F, Value, IntegerField, Subquery, OuterRef
+from django.db.models import F, IntegerField, OuterRef, Subquery, Value
 from django.views.decorators.csrf import csrf_exempt
-from typing import List
+from rest_framework.response import Response
+
 from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.disaster.v2.views.disaster_base import (
     DisasterBase,
-    LoansPaginationMixin,
     LoansMixin,
-    FabaOutlayMixin,
+    LoansPaginationMixin,
 )
-from usaspending_api.disaster.v2.views.elasticsearch_account_base import ElasticsearchAccountDisasterBase
 from usaspending_api.disaster.v2.views.elasticsearch_base import (
     ElasticsearchDisasterBase,
     ElasticsearchLoansPaginationMixin,
@@ -43,47 +44,78 @@ def route_agency_loans_backend(**initkwargs):
     return route_agency_loans_backend
 
 
-class LoansByAgencyViewSet(LoansPaginationMixin, ElasticsearchAccountDisasterBase, LoansMixin, FabaOutlayMixin):
+class LoansByAgencyViewSet(LoansPaginationMixin, DisasterBase, LoansMixin):
     """
     This endpoint provides insights on the Agencies awarding loans from
     disaster/emergency funding per the requested filters.
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/agency/loans.md"
+    # Filters that will NOT be stripped from request (only `def_codes` is actually REQUIRED)
     required_filters = ["def_codes", "query"]
-    query_fields = ["funding_toptier_agency_name.contains"]
-    agg_key = "financial_accounts_by_award.funding_toptier_agency_id"  # primary (tier-1) aggregation key
-    nested_nonzero_fields = {"obligation": "transaction_obligated_amount", "outlay": "gross_outlay_amount_by_award_cpe"}
-    top_hits_fields = [
-        "financial_accounts_by_award.funding_toptier_agency_code",
-        "financial_accounts_by_award.funding_toptier_agency_name",
-    ]
 
     @cache_response()
     def post(self, request):
         self.filters.update({"award_type_codes": ["07", "08"]})
-        return self.perform_elasticsearch_search(loans=True)
 
-    def build_elasticsearch_result(self, info_buckets: List[dict]) -> List[dict]:
-        results = []
-        for bucket in info_buckets:
-            results.append(self._build_json_result(bucket))
-        return results
+        covid_faba_spending_by_toptier_agency = self.get_covid_faba_spending(
+            spending_level="subtier_agency",
+            def_codes=self.filters["def_codes"],
+            columns_to_return=[
+                "funding_toptier_agency_id",
+                "funding_toptier_agency_code",
+                "funding_toptier_agency_name",
+            ],
+            award_types=self.filters["award_type_codes"],
+            search_query=self.query,
+            search_query_fields="funding_toptier_agency_name",
+        )
+        json_result = self._build_json_result(covid_faba_spending_by_toptier_agency)
+        sorted_json_result = self.sort_json_result(
+            data_to_sort=json_result,
+            sort_key=self.pagination.sort_key,
+            sort_order=self.pagination.sort_order,
+            has_children=False,
+        )
 
-    def _build_json_result(self, bucket: dict):
-        return {
-            "id": int(bucket["key"]),
-            "code": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["funding_toptier_agency_code"],
-            "description": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["funding_toptier_agency_name"],
-            "children": [],
-            # the count of distinct awards contributing to the totals
-            "award_count": int(bucket["count_awards_by_dim"]["award_count"]["value"]),
-            **{
-                key: Decimal(bucket.get(f"sum_{val}", {"value": 0})["value"])
-                for key, val in self.nested_nonzero_fields.items()
-            },
-            "face_value_of_loan": bucket["count_awards_by_dim"]["sum_loan_value"]["value"],
+        return Response(sorted_json_result)
+
+    def _build_json_result(self, queryset: List[dict]) -> dict:
+        """Build the JSON response that will be returned for this endpoint.
+
+        Args:
+            queryset: Database query results.
+
+        Returns:
+            Formatted JSON response.
+        """
+
+        response = {}
+
+        results = [
+            {
+                "id": int(row["funding_toptier_agency_id"]),
+                "code": row["funding_toptier_agency_code"],
+                "description": row["funding_toptier_agency_name"],
+                "children": [],  # This type of spending will never have children
+                "award_count": int(row["award_count"]),
+                "obligation": Decimal(row["obligation_sum"]),
+                "outlay": Decimal(row["outlay_sum"]),
+                "face_value_of_loan": row["face_value_of_loan"],
+            }
+            for row in queryset
+        ]
+
+        response["totals"] = {
+            "obligation": sum(result["obligation"] for result in results),
+            "outlay": sum(result["outlay"] for result in results),
+            "award_count": sum(result["award_count"] for result in results),
+            "face_value_of_loan": sum(result["face_value_of_loan"] for result in results),
         }
+        response["results"] = results[self.pagination.lower_limit : self.pagination.upper_limit]
+        response["page_metadata"] = get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
+
+        return response
 
     @property
     def queryset(self):
@@ -159,9 +191,11 @@ class LoansBySubtierAgencyViewSet(ElasticsearchLoansPaginationMixin, Elasticsear
             "award_count": int(bucket.get("doc_count", 0)),
             **{
                 column: get_summed_value_as_float(
-                    bucket.get("nested", {}).get("filtered_aggs", {})
-                    if column != "face_value_of_loan"
-                    else bucket.get("nested", {}).get("filtered_aggs", {}).get("reverse_nested"),
+                    (
+                        bucket.get("nested", {}).get("filtered_aggs", {})
+                        if column != "face_value_of_loan"
+                        else bucket.get("nested", {}).get("filtered_aggs", {}).get("reverse_nested")
+                    ),
                     self.sum_column_mapping[column],
                 )
                 for column in self.sum_column_mapping

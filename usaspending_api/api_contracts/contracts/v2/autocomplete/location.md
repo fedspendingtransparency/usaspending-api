@@ -19,7 +19,7 @@ This route sends a request to the backend to retrieve locations matching the spe
 
     + Attributes (object)
         + `limit` (optional, number)
-            + Default: 10
+            + Default: 5
         + `search_text` (required, string)
     + Body
 
@@ -84,16 +84,20 @@ This route sends a request to the backend to retrieve locations matching the spe
 
 ## CityMatch (object)
 + `city_name` (required, string)
-+ `state_name` (required, string)
++ `state_name` (required, string, nullable)
+    This is `NULL` for foreign cities.
 + `country_name` (required, string)
 
 ## CountyMatch (object)
++ `county_fips` (required, string)
+    The 5 digit FIPS code (2 digit state FIPS code + 3 digit county FIPS code)
 + `county_name` (required, string)
 + `state_name` (required, string)
 + `country_name` (required, string)
 
 ## ZipCodeMatch (object)
-+ `zip_code` (required, number) The 5 digit zip code
++ `zip_code` (required, number)
+    The 5 digit zip code
 + `state_name` (required, string)
 + `country_name` (required, string)
 

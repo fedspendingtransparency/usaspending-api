@@ -432,7 +432,10 @@ def test_download_success(client, monkeypatch, awards_and_transactions, elastics
     assert resp_json["download_request"]["file_format"] == "csv"
 
 
-def test_tsv_download_success(client, monkeypatch, awards_and_transactions, elasticsearch_award_index):
+def test_tsv_download_success(
+    client, monkeypatch, awards_and_transactions, elasticsearch_award_index, elasticsearch_subaward_index
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     resp = _post(client, def_codes=["L", "M"], file_format="tsv")
@@ -449,7 +452,10 @@ def test_tsv_download_success(client, monkeypatch, awards_and_transactions, elas
     assert resp_json["download_request"]["file_format"] == "tsv"
 
 
-def test_pstxt_download_success(client, monkeypatch, awards_and_transactions, elasticsearch_award_index):
+def test_pstxt_download_success(
+    client, monkeypatch, awards_and_transactions, elasticsearch_award_index, elasticsearch_subaward_index
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     resp = _post(client, def_codes=["L", "M"], award_type_codes=["07", "08"], file_format="pstxt")

@@ -1,7 +1,7 @@
 from django.urls import re_path
 
 from usaspending_api.download.v2 import views
-from usaspending_api.download.v2.download_transaction_count import DownloadTransactionCountViewSet
+from usaspending_api.download.v2.download_count import DownloadTransactionCountViewSet
 from usaspending_api.download.v2.download_status import DownloadStatusViewSet
 
 urlpatterns = [

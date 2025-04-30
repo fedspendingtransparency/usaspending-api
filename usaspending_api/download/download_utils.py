@@ -41,7 +41,7 @@ def create_unique_filename(json_request, origination=None):
 
         # Since Keyword Search using the "Bulk Download" Endpoint for unknown reasons
         # Check for the specific filter to mimic the Advanced Search download filename
-        if origination == "bulk_download" and "elasticsearch_keyword" not in json_request["filters"]:
+        if origination == "bulk_download" and "transaction_keyword_search" not in json_request["filters"]:
             agency = obtain_filename_prefix_from_agency_id(request_agency) + "_"
 
         award_type_name = create_award_level_string(json_request["download_types"])

@@ -54,16 +54,16 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
         elif self.config["load_type"] == "award":
             identifier_replacements["award_search"] = "rpt.award_search"
         elif self.config["load_type"] == "subaward":
-            identifier_replacements = None
-        elif self.config["load_type"] == "covid19-faba":
-            identifier_replacements["financial_accounts_by_awards"] = "int.financial_accounts_by_awards"
-            identifier_replacements["vw_awards"] = "int.awards"
+            identifier_replacements["toptier_agency"] = "global_temp.toptier_agency"
         elif self.config["load_type"] == "recipient":
-            identifier_replacements["recipient_profile"] = "rpt.recipient_profile"
+            identifier_replacements = None
         elif self.config["load_type"] == "location":
+            identifier_replacements["array_agg"] = "collect_list"
+            identifier_replacements["json_agg"] = "collect_list"
             # Replace the Postgres regex operator with the Databricks regex operator
             identifier_replacements["~"] = "rlike"
-            identifier_replacements["state_data"] = "global_temp.state_data"
+            identifier_replacements["jsonb_build_object"] = "map"
+            identifier_replacements["to_jsonb"] = "to_json"
         else:
             raise ValueError(
                 f"Unrecognized load_type {self.config['load_type']}, or this function does not yet support it"
@@ -114,7 +114,9 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
         logger.info(format_log(f"Using extract_sql:\n{extract_sql}", action="Extract"))
         df = self.spark.sql(extract_sql)
         df_record_count = df.count()  # safe to doublecheck the count of the *actual* data being processed
-
+        if not df_record_count:
+            logger.info(format_log("No records found. Index will not be updated."))
+            return
         if self.config["extra_null_partition"]:
             # Data which may have a "NULL Partition" is parent-child grouped data, where child records are grouped by
             # the config["primary_key"], which is the PK field of the parent records.
@@ -214,10 +216,9 @@ def transform_and_load_partition(task: TaskSpec, partition_data) -> List[Tuple[i
 
     client = instantiate_elasticsearch_client()
     try:
+        records = [row.asDict(recursive=True) for row in partition_data]
         if task.transform_func is not None:
-            records = task.transform_func(task, [row.asDict() for row in partition_data])
-        else:
-            records = [row.asDict() for row in partition_data]
+            records = task.transform_func(task, records)
         if len(records) > 0:
             success, fail = load_data(task, records, client)
         else:

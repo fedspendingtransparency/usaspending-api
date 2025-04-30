@@ -16,7 +16,8 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     format_log,
     toggle_refresh_off,
     transform_award_data,
-    transform_covid19_faba_data,
+    transform_location_data,
+    transform_subaward_data,
     transform_transaction_data,
 )
 from usaspending_api.etl.elasticsearch_loader_helpers.controller import (
@@ -25,11 +26,10 @@ from usaspending_api.etl.elasticsearch_loader_helpers.controller import (
 )
 from usaspending_api.etl.elasticsearch_loader_helpers.index_config import (
     ES_AWARDS_UNIQUE_KEY_FIELD,
-    ES_COVID19_FABA_UNIQUE_KEY_FIELD,
     ES_LOCATION_UNIQUE_KEY_FIELD,
     ES_RECIPIENT_UNIQUE_KEY_FIELD,
-    ES_TRANSACTIONS_UNIQUE_KEY_FIELD,
     ES_SUBAWARD_UNIQUE_KEY_FIELD,
+    ES_TRANSACTIONS_UNIQUE_KEY_FIELD,
 )
 
 logger = logging.getLogger("script")
@@ -78,7 +78,7 @@ class AbstractElasticsearchIndexer(ABC, BaseCommand):
             type=str,
             required=True,
             help="Select which data the ETL will process.",
-            choices=["transaction", "award", "covid19-faba", "recipient", "location", "subaward"],
+            choices=["transaction", "award", "recipient", "location", "subaward"],
         )
         parser.add_argument(
             "--processes",
@@ -114,6 +114,8 @@ class AbstractElasticsearchIndexer(ABC, BaseCommand):
         error_addition = ""
         controller = self.create_controller(config)
         controller.ensure_view_exists(config["sql_view"])
+
+        controller.set_slice_count()
 
         if config["is_incremental_load"]:
             toggle_refresh_off(elasticsearch_client, config["index_name"])  # Turned back on at end.
@@ -308,7 +310,7 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             "base_table": "subaward_search",
             "base_table_id": "broker_subaward_id",
             "create_award_type_aliases": False,
-            "data_transform_func": None,
+            "data_transform_func": transform_subaward_data,
             "data_type": "subaward",
             "execute_sql_func": execute_sql_statement,
             "extra_null_partition": False,
@@ -345,27 +347,6 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             "unique_key_field": ES_TRANSACTIONS_UNIQUE_KEY_FIELD,
             "write_alias": settings.ES_TRANSACTIONS_WRITE_ALIAS,
         }
-    elif arg_parse_options["load_type"] == "covid19-faba":
-        config = {
-            "base_table": "financial_accounts_by_awards",
-            "base_table_id": "financial_accounts_by_awards_id",
-            "create_award_type_aliases": False,
-            "data_transform_func": transform_covid19_faba_data,
-            "data_type": "covid19-faba",
-            "execute_sql_func": execute_sql_statement,
-            "extra_null_partition": True,
-            "field_for_es_id": "financial_account_distinct_award_key",
-            "initial_datetime": datetime.strptime("2020-04-01+0000", "%Y-%m-%d%z"),
-            "max_query_size": settings.ES_COVID19_FABA_MAX_RESULT_WINDOW,
-            "optional_predicate": "",
-            "primary_key": "award_id",
-            "query_alias_prefix": settings.ES_COVID19_FABA_QUERY_ALIAS_PREFIX,
-            "required_index_name": settings.ES_COVID19_FABA_NAME_SUFFIX,
-            "sql_view": settings.ES_COVID19_FABA_ETL_VIEW_NAME,
-            "stored_date_key": None,
-            "unique_key_field": ES_COVID19_FABA_UNIQUE_KEY_FIELD,
-            "write_alias": settings.ES_COVID19_FABA_WRITE_ALIAS,
-        }
     elif arg_parse_options["load_type"] == "recipient":
         config = {
             "base_table": "recipient_profile",
@@ -392,7 +373,7 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             "base_table": "transaction_search",
             "base_table_id": "transaction_id",
             "create_award_type_aliases": False,
-            "data_transform_func": None,
+            "data_transform_func": transform_location_data,
             "data_type": "location",
             "execute_sql_func": execute_sql_statement,
             "extra_null_partition": False,

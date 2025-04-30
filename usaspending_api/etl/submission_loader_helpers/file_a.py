@@ -24,7 +24,7 @@ def get_file_a(submission_attributes, db_cursor):
 
 
 def load_file_a(submission_attributes, appropriation_data, db_cursor):
-    """ Process and load file A broker data (aka TAS balances, aka appropriation account balances). """
+    """Process and load file A broker data (aka TAS balances, aka appropriation account balances)."""
     reverse = re.compile("gross_outlay_amount_by_tas_cpe")
     skipped_tas = defaultdict(int)  # tracks count of rows skipped due to "missing" TAS
     bulk_treasury_appropriation_account_tas_lookup(appropriation_data, db_cursor)
@@ -41,7 +41,7 @@ def load_file_a(submission_attributes, appropriation_data, db_cursor):
 
         # Now that we have the account, we can load the appropriation balances
         # TODO: Figure out how we want to determine what row is overridden by what row
-        # If we want to correlate, the following attributes are available in the data broker data that might be useful:
+        # If we want to correlate, the following attributes are available in data broker data that might be useful:
         # appropriation_id, row_number appropriation_balances = something something get appropriation balances...
         appropriation_balances = AppropriationAccountBalances()
 

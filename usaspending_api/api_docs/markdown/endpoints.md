@@ -65,6 +65,7 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/autocomplete/glossary/](/api/v2/autocomplete/glossary/)|POST| Returns glossary terms matching provided search text |
 |[/api/v2/autocomplete/naics/](/api/v2/autocomplete/naics/)|POST| Returns NAICS objects matching the specified search text |
 |[/api/v2/autocomplete/psc/](/api/v2/autocomplete/psc/)|POST| Returns product or service (PSC) codes and their descriptions based on a search string. This may be the 4-character PSC code or a description string. |
+|[/api/v2/autocomplete/program_activity/](/api/v2/autocomplete/program_activity/)|POST| Returns program activities and their names based on a search string. This may be the 4-character program activity code or a name string. |
 |[/api/v2/autocomplete/location](/api/v2/autocomplete/location)|POST| Returns locations based on search text |
 |[/api/v2/award_spending/recipient/](/api/v2/award_spending/recipient/?fiscal_year=2016&awarding_agency_id=183)|GET| Returns all award spending by recipient for a given fiscal year and agency id |
 |[/api/v2/awards/<AWARD_ID\>/](/api/v2/awards/CONT_IDV_TMHQ10C0040_2044/)|GET| Returns details about specific award |
@@ -183,10 +184,12 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/search/spending_by_category/recipient](/api/v2/search/spending_by_category/recipient)|POST| Returns data that is grouped in preset units to support the Spending by Recipient data visualizations on USAspending.gov's Advanced Search page |
 |[/api/v2/search/spending_by_category/recipient_duns/](/api/v2/search/spending_by_category/recipient_duns/)|POST| Returns data that is grouped in preset units to support the Spending by Recipient DUNS data visualizations on USAspending.gov's Advanced Search page |
 |[/api/v2/search/spending_by_category/state_territory/](/api/v2/search/spending_by_category/state_territory/)|POST| Returns data that is grouped in preset units to support the Spending by State Territory data visualizations on USAspending.gov's Recipient Profile page |
+|[/api/v2/search/spending_by_category/defc/](/api/v2/search/spending_by_category/defc/)|POST| Returns data that is grouped in preset units to support the Spending by DEFC data visualizations on USAspending.gov's Advanced Search page |
 |[/api/v2/search/spending_by_geography/](/api/v2/search/spending_by_geography/)|POST| Returns Spending by state code, county code, or congressional district code |
+|[/api/v2/search/spending_by_subaward_grouped/](/api/v2/search/spending_by_subaward_grouped/)|POST| Returns the award id, number of Subawards for the award, total amount of Subaward obligations for the award, and the award generated internal id |
 |[/api/v2/search/spending_by_transaction/](/api/v2/search/spending_by_transaction/)|POST| Returns awards where a certain subset of fields match against search term |
 |[/api/v2/search/spending_by_transaction_count/](/api/v2/search/spending_by_transaction_count/)|POST| Returns counts of awards where a certain subset of fields match against search term |
-|[/api/v2/search/spending_by_transaction_grouped/](/api/v2/search/spending_by_transaction_grouped/)|POST| Returns transactions where a certain subset of fields match against search terms and results are grouped by their prime award. |
+|[/api/v2/search/spending_by_transaction_grouped/](/api/v2/search/spending_by_transaction_grouped/)|POST| Returns information about transactions where a certain subset of fields match against search terms and results are grouped by their prime award. |
 |[/api/v2/search/spending_over_time/](/api/v2/search/spending_over_time/)|POST| Returns transaction aggregated amounts for Spending Over Time data visualizations on USAspending.gov |
 |[/api/v2/search/transaction_spending_summary/](/api/v2/search/transaction_spending_summary/)|POST| Returns the number of transactions and the sum of federal action obligations for prime awards given a set of award of filters |
 |[/api/v2/spending/](/api/v2/spending/)|POST| Returns spending data information through various types and filters |

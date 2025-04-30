@@ -66,9 +66,15 @@ def download_test_data():
     baker.make("references.Agency", id=3, toptier_agency=ata3, toptier_flag=False, _fill_optional=True)
 
     # Create Awards
-    award1 = baker.make("search.AwardSearch", award_id=123, category="idv")
-    award2 = baker.make("search.AwardSearch", award_id=456, category="contracts")
-    award3 = baker.make("search.AwardSearch", award_id=789, category="assistance")
+    award1 = baker.make(
+        "search.AwardSearch", award_id=123, display_award_id="123", action_date="2018-01-01", category="idv"
+    )
+    award2 = baker.make(
+        "search.AwardSearch", award_id=456, display_award_id="456", action_date="2018-01-02", category="contracts"
+    )
+    award3 = baker.make(
+        "search.AwardSearch", award_id=789, display_award_id="789", action_date="2018-01-03", category="assistance"
+    )
 
     # Create Transactions
     baker.make(
@@ -131,9 +137,9 @@ def test_download_count(client, download_test_data, monkeypatch, elasticsearch_t
     resp_json = resp.json()
 
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
-    assert resp_json["calculated_transaction_count"] == 1
-    assert resp_json["maximum_transaction_limit"] == settings.MAX_DOWNLOAD_LIMIT
-    assert resp_json["transaction_rows_gt_limit"] is False
+    assert resp_json["calculated_count"] == 1
+    assert resp_json["maximum_limit"] == settings.MAX_DOWNLOAD_LIMIT
+    assert resp_json["rows_gt_limit"] is False
 
 
 @pytest.mark.django_db(transaction=True)
@@ -150,16 +156,17 @@ def test_download_count_with_date_type_filter_default(
             {
                 "filters": {
                     "time_period": [{"start_date": "2018-01-01", "end_date": "2018-01-03"}],
-                }
+                },
+                "spending_level": "transactions",
             }
         ),
     )
     resp_json = resp.json()
 
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
-    assert resp_json["calculated_transaction_count"] == 3
-    assert resp_json["maximum_transaction_limit"] == settings.MAX_DOWNLOAD_LIMIT
-    assert resp_json["transaction_rows_gt_limit"] is False
+    assert resp_json["calculated_count"] == 3
+    assert resp_json["maximum_limit"] == settings.MAX_DOWNLOAD_LIMIT
+    assert resp_json["rows_gt_limit"] is False
 
 
 @pytest.mark.django_db(transaction=True)
@@ -178,9 +185,15 @@ def test_messages_not_nested(client, download_test_data, monkeypatch, elasticsea
     resp_json = resp.json()
 
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
-    assert resp_json["messages"] == get_generic_filters_message(
-        request_data["filters"].keys(), {"time_period", "award_type_codes"}
+    message_list = get_generic_filters_message(request_data["filters"].keys(), {"time_period", "award_type_codes"})
+    message_list.append(
+        "'subawards' will be deprecated in the future. Set ‘spending_level’ to ‘subawards’ instead. See documentation for more information. "
     )
+    message_list.append(
+        "The above fields containing the transaction_* naming convention will be deprecated and replaced with fields without the transaction_*. "
+    )
+
+    assert resp_json["messages"] == message_list
 
 
 @pytest.mark.django_db(transaction=True)
@@ -204,9 +217,9 @@ def test_download_count_with_date_type_filter_date_signed(
     resp_json = resp.json()
 
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
-    assert resp_json["calculated_transaction_count"] == 0
-    assert resp_json["maximum_transaction_limit"] == settings.MAX_DOWNLOAD_LIMIT
-    assert resp_json["transaction_rows_gt_limit"] is False
+    assert resp_json["calculated_count"] == 0
+    assert resp_json["maximum_limit"] == settings.MAX_DOWNLOAD_LIMIT
+    assert resp_json["rows_gt_limit"] is False
 
     resp = client.post(
         "/api/v2/download/count/",
@@ -222,6 +235,26 @@ def test_download_count_with_date_type_filter_date_signed(
     resp_json = resp.json()
 
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
-    assert resp_json["calculated_transaction_count"] == 1
-    assert resp_json["maximum_transaction_limit"] == settings.MAX_DOWNLOAD_LIMIT
-    assert resp_json["transaction_rows_gt_limit"] is False
+    assert resp_json["calculated_count"] == 1
+    assert resp_json["maximum_limit"] == settings.MAX_DOWNLOAD_LIMIT
+    assert resp_json["rows_gt_limit"] is False
+
+
+@pytest.mark.django_db(transaction=True)
+def test_download_count_with_spending_level(client, download_test_data, monkeypatch, elasticsearch_award_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
+
+    request_data = {"filters": {"award_ids": ["123", "456", "789"]}, "spending_level": "awards"}
+    resp = client.post(
+        "/api/v2/download/count/",
+        content_type="application/json",
+        data=json.dumps(request_data),
+    )
+    resp_json = resp.json()
+
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+    assert resp_json["calculated_count"] == 3
+    assert resp_json["spending_level"] == "awards"
+    assert resp_json["maximum_limit"] == settings.MAX_DOWNLOAD_LIMIT
+    assert resp_json["rows_gt_limit"] is False

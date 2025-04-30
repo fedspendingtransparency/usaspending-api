@@ -26,8 +26,17 @@ This endpoint returns a list of the top results of Federal Accounts sorted by th
         + `page`: 1 (optional, number)
             The page of results to return based on the limit
             + Default: 1
+        + `spending_level` (optional, enum[string])
+            Group the spending by level. This also determines what data source is used for the totals.
+            + Members
+                + `transactions`
+                + `awards`
+                + `subawards`
+            + Default
+                + `transactions`
         + `subawards` (optional, boolean)
-            Determines whether Prime Awards or Sub Awards are searched
+            Determines whether Prime Awards or Sub Awards are searched. This field will be depreciated soon.
+        
     + Body
 
 
@@ -43,12 +52,19 @@ This endpoint returns a list of the top results of Federal Accounts sorted by th
                 },
                 "category": "federal_account",
                 "limit": 5,
-                "page": 1
+                "page": 1,
+                "spending_level": "transactions"
             }
 
 + Response 200 (application/json)
     + Attributes (object)
         + `category`: `federal_account` (required, string)
+        + `spending_level` (required, enum[string])
+            Spending level value that was provided in the request.
+            + Members
+                + `transactions`
+                + `awards`
+                + `subawards`
         + `results` (required, array[CategoryResult], fixed-type)
         + `limit`: 10 (required, number)
         + `page_metadata` (PageMetadataObject)
@@ -59,6 +75,7 @@ This endpoint returns a list of the top results of Federal Accounts sorted by th
 
             {
                 "category": "federal_account",
+                "spending_level": "transactions",
                 "limit": 10,
                 "page_metadata": {
                     "page": 1,
@@ -72,13 +89,15 @@ This endpoint returns a list of the top results of Federal Accounts sorted by th
                         "amount": 4575113.34,
                         "id": 3573,
                         "code": "012-4336",
-                        "name": "Commodity Credit Corporation Fund, Agriculture"
+                        "name": "Commodity Credit Corporation Fund, Agriculture",
+                        "total_outlays": null,
                     },
                     {
                         "amount": 548022.0,
                         "id": 5184,
                         "code": "070-0411",
-                        "name": "Federal Assistance, Domestic Nuclear Detection Office, Homeland Security"
+                        "name": "Federal Assistance, Domestic Nuclear Detection Office, Homeland Security",
+                        "total_outlays": null,
                     }
                 ],
                 "messages": [
@@ -95,6 +114,7 @@ This endpoint returns a list of the top results of Federal Accounts sorted by th
 + `code` (required, string, nullable)
     `code` is a user-displayable code (such as a program activity or NAICS code, but **not** a database ID). When no such code is relevant, return a `null`.
 + `amount` (required, number)
++ `total_outlays` (required, number, nullable)
 
 ## PageMetadataObject (object)
 + `page` (required, number)
@@ -103,6 +123,7 @@ This endpoint returns a list of the top results of Federal Accounts sorted by th
 ## Filter Objects
 ### FilterObject (object)
 + `keywords` : [`transport`] (optional, array[string])
++ `description` (optional, string)
 + `time_period` (optional, array[TimePeriodObject], fixed-type)
 + `place_of_performance_scope` (optional, enum[string])
     + Members
@@ -112,7 +133,7 @@ This endpoint returns a list of the top results of Federal Accounts sorted by th
 + `agencies` (optional, array[AgencyObject], fixed-type)
 + `recipient_search_text`: [`Hampton`, `Roads`] (optional, array[string])
 + `recipient_id` (optional, string)
-    A unique identifier for the recipient which includes the recipient hash and level.
+    A unique identifier for the recipient which includes the recipient hash and level. This filter is not supported by subawards.
 + `recipient_scope` (optional, enum[string])
     + Members
         + `domestic`

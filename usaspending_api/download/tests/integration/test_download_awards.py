@@ -119,8 +119,11 @@ def download_test_data():
 
 
 @pytest.mark.django_db(transaction=True)
-def test_download_awards_without_columns(client, monkeypatch, download_test_data, elasticsearch_award_index):
+def test_download_awards_without_columns(
+    client, monkeypatch, download_test_data, elasticsearch_award_index, elasticsearch_subaward_index
+):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
 
     resp = client.post(
@@ -134,8 +137,11 @@ def test_download_awards_without_columns(client, monkeypatch, download_test_data
 
 
 @pytest.mark.django_db(transaction=True)
-def test_tsv_download_awards_without_columns(client, monkeypatch, download_test_data, elasticsearch_award_index):
+def test_tsv_download_awards_without_columns(
+    client, monkeypatch, download_test_data, elasticsearch_award_index, elasticsearch_subaward_index
+):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
 
     resp = client.post(
@@ -149,8 +155,11 @@ def test_tsv_download_awards_without_columns(client, monkeypatch, download_test_
 
 
 @pytest.mark.django_db(transaction=True)
-def test_pstxt_download_awards_without_columns(client, monkeypatch, download_test_data, elasticsearch_award_index):
+def test_pstxt_download_awards_without_columns(
+    client, monkeypatch, download_test_data, elasticsearch_award_index, elasticsearch_subaward_index
+):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
 
     resp = client.post(
@@ -164,8 +173,11 @@ def test_pstxt_download_awards_without_columns(client, monkeypatch, download_tes
 
 
 @pytest.mark.django_db(transaction=True)
-def test_download_awards_with_columns(client, monkeypatch, download_test_data, elasticsearch_award_index):
+def test_download_awards_with_columns(
+    client, monkeypatch, download_test_data, elasticsearch_award_index, elasticsearch_subaward_index
+):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
 
     resp = client.post(

@@ -1,12 +1,16 @@
 """
 Code for loaders in management/commands to inherit from or share.
 """
+
 import dateutil
 import logging
 
 from decimal import Decimal
+
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import connections
+
 from usaspending_api.common.long_to_terse import LONG_TO_TERSE_LABELS
 from usaspending_api.etl.broker_etl_helpers import PhonyCursor
 
@@ -31,10 +35,10 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        # Grab the data broker database connections
+        # Grab data broker database connections
         if not options["test"]:
             try:
-                db_conn = connections["data_broker"]
+                db_conn = connections[settings.DATA_BROKER_DB_ALIAS]
                 db_cursor = db_conn.cursor()
             except Exception as err:
                 logger.critical("Could not connect to database. Is DATA_BROKER_DATABASE_URL set?")

@@ -19,6 +19,12 @@ Returns the number of transactions that would be included in a download request 
 
     + Attributes (object)
         + `filters` (required, AdvancedFilterObject)
+        + `spending_level` (optional, enum[string])
+            + Members
+                + `subawards`
+                + `transactions`
+                + `awards`
+            + Default: `transactions`
     + Body
 
 
@@ -38,17 +44,26 @@ Returns the number of transactions that would be included in a download request 
                     "recipient_type_names": ["higher_education"],
                     "place_of_performance_locations": [{"country": "USA", "state": "WI"}],
                     "psc_codes": {"require": [["Product","10","1035"]]}
-                }
+                },
+                "spending_level": "awards"
             }
 
 + Response 200 (application/json)
     + Attributes (object)
-        + `transaction_rows_gt_limit` (required, boolean)
-            A boolean returning whether the transaction count is over the maximum row limit.
         + `calculated_transaction_count` (required, number)
             The calculated count of all transactions which would be included in the download files.
         + `maximum_transaction_limit` (required, number)
             The current allowed maximum number of transactions in a row-limited download. Visit https://www.usaspending.gov/download_center/custom_award_data to download larger volumes of data.
+        + `transaction_rows_gt_limit` (required, boolean)
+            A boolean returning whether the transaction count is over the maximum row limit.
+        + `calculated_count` (required, number)
+            The calculated count of Awards, Transactions, or Subawards included in the download files.
+        + `spending_level` (required, string)
+            The spending_level provided by the user or the default value of transactions.
+        + `maximum_limit` (required, number)
+            The current allowed maximum number of Awards, Transactions, or Subawards in a row-limited download. Visit https://www.usaspending.gov/download_center/custom_award_data to download larger volumes of data.
+        + `rows_gt_limit` (required, boolean)
+            A boolean returning whether the Awards, Transactions, or Subawards count is over the maximum row limit.
         + `messages` (optional, array[string])
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
     + Body
@@ -58,6 +73,10 @@ Returns the number of transactions that would be included in a download request 
                 "calculated_transaction_count": 87343,
                 "maximum_transaction_limit": 500000,
                 "transaction_rows_gt_limit": false,
+                "calculated_count": 87343,
+                "spending_level": "awards",
+                "maximum_limit": 500000,
+                "rows_gt_limit": false,
                 "messages": ["For searches, time period start and end dates are currently limited to an earliest date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom Award Download feature on the website or one of our download or bulk_download API endpoints as listed on https://api.usaspending.gov/docs/endpoints."]
             }
 
@@ -74,7 +93,7 @@ Returns the number of transactions that would be included in a download request 
 + `agencies` (optional, array[AgencyObject], fixed-type)
 + `recipient_search_text`: `Hampton` (optional, array[string])
 + `recipient_id` (optional, string)
-    A hash of recipient UEI, DUNS, name, and level. A unique identifier for recipients, used for profile page urls.
+    A hash of recipient UEI, DUNS, name, and level. A unique identifier for recipients, used for profile page urls. This filter is not supported by subawards.
 + `recipient_scope` (optional, enum[string])
     + Members
         + `domestic`

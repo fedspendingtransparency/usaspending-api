@@ -17,7 +17,6 @@ CURL_COMMANDS = {
 
 FILES = {
     "award_template": settings.APP_DIR / "etl" / "es_award_template.json",
-    "covid19_faba_template": settings.APP_DIR / "etl" / "es_covid19_faba_template.json",
     "settings": settings.APP_DIR / "etl" / "es_config_objects.json",
     "transaction_template": settings.APP_DIR / "etl" / "es_transaction_template.json",
     "subaward_template": settings.APP_DIR / "etl" / "es_subaward_template.json",
@@ -73,10 +72,6 @@ class Command(BaseCommand):
             self.index_pattern = f"*{settings.ES_SUBAWARD_NAME_SUFFIX}"
             self.max_result_window = settings.ES_SUBAWARD_MAX_RESULT_WINDOW
             self.template_name = "subaward_template"
-        elif options["load_type"] == "covid19-faba":
-            self.index_pattern = f"*{settings.ES_COVID19_FABA_NAME_SUFFIX}"
-            self.max_result_window = settings.ES_COVID19_FABA_MAX_RESULT_WINDOW
-            self.template_name = "covid19_faba_template"
         elif options["load_type"] == "recipient":
             self.index_pattern = f"*{settings.ES_RECIPIENTS_NAME_SUFFIX}"
             self.max_result_window = settings.ES_RECIPIENTS_MAX_RESULT_WINDOW

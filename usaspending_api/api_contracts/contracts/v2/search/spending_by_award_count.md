@@ -19,8 +19,15 @@ This endpoint takes award filters, and returns the number of awards in each awar
 
     + Attributes (object)
         + `filters` (required, AdvancedFilterObject)
+        + `spending_level` (optional, enum[string])
+            Group the spending by level. This also determines what data source is used for the totals.
+            + Members
+                + `awards` 
+                + `subawards`
+            + Default
+                + `awards`
         + `subawards`: false (optional, boolean)
-            True when you want to group by Subawards instead of Awards. Defaulted to False.
+            True when you want to group by Subawards instead of Awards. Defaulted to False unless spending_level is set to `subawards`, then the default is True.
     + Body
 
             {
@@ -32,6 +39,11 @@ This endpoint takes award filters, and returns the number of awards in each awar
 + Response 200 (application/json)
     + Attributes (object)
         + `results` (AwardTypeResult)
+        + `spending_level` (required, enum[string])
+            Spending level value that was provided in the request.
+            + Members
+                + `awards`
+                + `subawards`
         + `messages` (optional, array[string])
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
 
@@ -45,10 +57,14 @@ This endpoint takes award filters, and returns the number of awards in each awar
 + `other` (required, number)
 + `idvs` (required, number)
 
+## SubawardTypeResult (object)
++ `subgrants` (required, number)
++ `subcontracts` (required, number)
 
 ## Filter Objects
 ### AdvancedFilterObject (object)
 + `keywords` : [`transport`] (optional, array[string])
++ `description` (optional, string)
 + `time_period` (optional, array[TimePeriodObject], fixed-type)
 + `place_of_performance_scope` (optional, enum[string])
     + Members
@@ -79,6 +95,8 @@ This endpoint takes award filters, and returns the number of awards in each awar
 + `treasury_account_components` (optional, array[TreasuryAccountComponentsObject], fixed-type)
 + `object_class` (optional, array[string])
 + `program_activity` (optional, array[number])
++ `program_activities` (optional, array[ProgramActivityObject])
+    A filter option that supports filtering by a program activity name or code. Please note that if this filter is used at least one of the members of the object, ProgramActivityObject, need to be provided.
 + `def_codes` (optional, array[DEFC], fixed-type)
   If the `def_codes` provided are in the COVID-19 group and the subaward flag is set to `False`, the query will only return prime awards that have at least one File C record with the supplied DEFC and also have non-zero COVID-19 related obligations or outlays.
   If the `def_codes` provided are in the COVID-19 or IIJA group and the subaward parameter is set to `True`, the query will only return results that have a sub_action_date on or after the enactment date of the public law associated with that disaster code.
@@ -118,6 +136,11 @@ These fields are defined in the [StandardLocationObject](../../../search_filters
 ### NAICSCodeObject (object)
 + `require`: [`33`] (optional, array[string], fixed-type)
 + `exclude`: [`3333`] (optional, array[string], fixed-type)
+
+### ProgramActivityObject (object)
+At least one of the following fields are required when using the ProgramActivityObject.
++ `name`: (optional, string)
++ `code`: (optional, number)
 
 ### PSCCodeObject (object)
 + `require`: [[`Service`, `B`, `B5`]] (optional, array[array[string]], fixed-type)

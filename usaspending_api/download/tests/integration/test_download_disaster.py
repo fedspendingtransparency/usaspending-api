@@ -4,6 +4,7 @@ from unittest.mock import Mock
 import pytest
 import re
 
+from django.conf import settings
 from model_bakery import baker
 from rest_framework import status
 
@@ -433,8 +434,11 @@ def awards_and_transactions():
     update_awards()
 
 
-@pytest.mark.django_db(transaction=True)
-def test_csv_download_success(client, monkeypatch, awards_and_transactions, elasticsearch_award_index):
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
+def test_csv_download_success(
+    client, monkeypatch, awards_and_transactions, elasticsearch_award_index, elasticsearch_subaward_index
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
@@ -457,7 +461,10 @@ def test_csv_download_success(client, monkeypatch, awards_and_transactions, elas
 
 
 @pytest.mark.django_db(transaction=True)
-def test_tsv_download_success(client, monkeypatch, awards_and_transactions, elasticsearch_award_index):
+def test_tsv_download_success(
+    client, monkeypatch, awards_and_transactions, elasticsearch_award_index, elasticsearch_subaward_index
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     resp = _post(client, def_codes=["L"], file_format="tsv")
@@ -469,7 +476,10 @@ def test_tsv_download_success(client, monkeypatch, awards_and_transactions, elas
 
 
 @pytest.mark.django_db(transaction=True)
-def test_pstxt_download_success(client, monkeypatch, awards_and_transactions, elasticsearch_award_index):
+def test_pstxt_download_success(
+    client, monkeypatch, awards_and_transactions, elasticsearch_award_index, elasticsearch_subaward_index
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     resp = _post(client, def_codes=["L"], file_format="pstxt")

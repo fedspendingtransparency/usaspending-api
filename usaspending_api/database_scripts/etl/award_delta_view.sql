@@ -29,6 +29,7 @@ SELECT
   "parent_recipient_unique_id",
   "recipient_uei",
   "parent_uei",
+  "parent_recipient_name",
   "business_categories",
 
   "action_date",
@@ -55,6 +56,8 @@ SELECT
   "awarding_subtier_agency_code",
   "funding_subtier_agency_code",
 
+  "federal_accounts",
+  
   "recipient_location_country_code",
   "recipient_location_country_name",
   "recipient_location_state_code",
@@ -70,6 +73,12 @@ SELECT
   "recipient_location_zip5",
   "recipient_location_city_name",
   "recipient_location_county_fips",
+  "recipient_location_address_line1",
+  "recipient_location_address_line2",
+  "recipient_location_address_line3",
+  "recipient_location_zip4",
+  "recipient_location_foreign_postal_code",
+  "recipient_location_foreign_province",
 
   "pop_country_code",
   "pop_country_name",
@@ -87,6 +96,7 @@ SELECT
   "pop_city_name",
   "pop_city_code",
   "pop_county_fips",
+  "pop_zip4",
 
   "cfda_number",
   "cfda_program_title" as cfda_title,
@@ -111,7 +121,10 @@ SELECT
 
   "iija_spending_by_defc"::JSON,
   "total_iija_outlay",
-  "total_iija_obligation"
+  "total_iija_obligation",
+
+  "generated_pragmatic_obligation",
+  "program_activities"::JSON
 
 FROM "award_search"
 WHERE "action_date" >= '2007-10-01';

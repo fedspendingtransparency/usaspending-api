@@ -1,5 +1,4 @@
 import pytest
-
 from rest_framework import status
 
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
@@ -95,7 +94,7 @@ def test_agency_types(client, monkeypatch, sub_agency_data_1, elasticsearch_tran
 
 
 @pytest.mark.django_db
-def test_invalid_agency(client, monkeypatch, sub_agency_data_1, elasticsearch_account_index):
+def test_invalid_agency(client, monkeypatch, sub_agency_data_1):
     resp = client.get(url.format(toptier_code="XXX", filter="?fiscal_year=2021"))
     assert resp.status_code == status.HTTP_404_NOT_FOUND
 

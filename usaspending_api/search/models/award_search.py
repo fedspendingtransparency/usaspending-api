@@ -36,6 +36,7 @@ class AwardSearch(models.Model):
     parent_recipient_unique_id = models.TextField(null=True)
     recipient_uei = models.TextField(null=True, blank=True)
     parent_uei = models.TextField(null=True, blank=True)
+    parent_recipient_name = models.TextField(null=True, blank=True)
     business_categories = ArrayField(models.TextField(), default=list, null=True)
 
     action_date = models.DateField(null=True)
@@ -74,6 +75,8 @@ class AwardSearch(models.Model):
     awarding_subtier_agency_code_raw = models.TextField(null=True)
     funding_subtier_agency_code_raw = models.TextField(null=True)
 
+    federal_accounts = models.JSONField(null=True)
+
     recipient_location_country_code = models.TextField(null=True)
     recipient_location_country_name = models.TextField(null=True)
     recipient_location_state_code = models.TextField(null=True)
@@ -89,6 +92,12 @@ class AwardSearch(models.Model):
     recipient_location_county_population = models.IntegerField(null=True)
     recipient_location_congressional_population = models.IntegerField(null=True)
     recipient_location_county_fips = models.TextField(null=True)
+    recipient_location_address_line1 = models.TextField(null=True)
+    recipient_location_address_line2 = models.TextField(null=True)
+    recipient_location_address_line3 = models.TextField(null=True)
+    recipient_location_zip4 = models.TextField(null=True)
+    recipient_location_foreign_postal_code = models.TextField(null=True)
+    recipient_location_foreign_province = models.TextField(null=True)
 
     pop_country_code = models.TextField(null=True)
     pop_country_name = models.TextField(null=True)
@@ -106,6 +115,7 @@ class AwardSearch(models.Model):
     pop_county_population = models.IntegerField(null=True)
     pop_congressional_population = models.IntegerField(null=True)
     pop_county_fips = models.TextField(null=True)
+    pop_zip4 = models.TextField(null=True)
 
     cfda_program_title = models.TextField(null=True)
     cfda_number = models.TextField(null=True)
@@ -190,6 +200,9 @@ class AwardSearch(models.Model):
     transaction_unique_id = models.TextField(null=True)
     raw_recipient_name = models.TextField(null=True)
     data_source = models.TextField(null=True)
+    generated_pragmatic_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    program_activities = models.JSONField(null=True)
+
     objects = CTEManager()
 
     class Meta:
@@ -238,4 +251,5 @@ class AwardSearch(models.Model):
             models.Index(Upper("parent_award_piid"), name="as_idx_parent_award_piid_upper"),
             models.Index(Upper("fain"), name="as_idx_fain_upper"),
             models.Index(Upper("uri"), name="as_idx_uri_upper"),
+            models.Index(F("update_date").desc(nulls_last=True), name="as_idx_update_date_desc"),
         ]

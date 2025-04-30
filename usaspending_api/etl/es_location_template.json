@@ -11,9 +11,28 @@
       "analyzer": {
         "contains_analyzer": {
           "type": "custom",
-          "tokenizer": "ngram",
+          "tokenizer": "edge_ngram_tokenizer",
           "filter": [
             "uppercase"
+          ]
+        },
+        "whole_string_analyzer": {
+          "type": "custom",
+          "tokenizer": "keyword",
+          "filter": [
+            "uppercase"
+          ]
+        }
+      },
+      "tokenizer": {
+        "edge_ngram_tokenizer": {
+          "type": "edge_ngram",
+          "min_gram": 2,
+          "max_gram": 20,
+          "token_chars": [
+            "letter",
+            "digit",
+            "whitespace"
           ]
         }
       }
@@ -21,8 +40,9 @@
   },
   "mappings": {
     "properties": {
-      "country_name": {
+      "location": {
         "type": "text",
+        "analyzer": "whole_string_analyzer",
         "fields": {
           "contains": {
             "type": "text",
@@ -33,77 +53,12 @@
           }
         }
       },
-      "state_name": {
-        "type": "text",
-        "fields": {
-          "contains": {
-            "type": "text",
-            "analyzer": "contains_analyzer"
-          },
-          "keyword": {
-            "type": "keyword"
-          }
-        }
+      "location_json": {
+        "type": "object",
+        "enabled": false
       },
-      "cities": {
-        "type": "text",
-        "fields": {
-          "contains": {
-            "type": "text",
-            "analyzer": "contains_analyzer"
-          },
-          "keyword": {
-            "type": "keyword"
-          }
-        }
-      },
-      "counties": {
-        "type": "text",
-        "fields": {
-          "contains": {
-            "type": "text",
-            "analyzer": "contains_analyzer"
-          },
-          "keyword": {
-            "type": "keyword"
-          }
-        }
-      },
-      "zip_codes": {
-        "type": "text",
-        "fields": {
-          "contains": {
-            "type": "text",
-            "analyzer": "contains_analyzer"
-          },
-          "keyword": {
-            "type": "keyword"
-          }
-        }
-      },
-      "current_congressional_districts": {
-        "type": "text",
-        "fields": {
-          "contains": {
-            "type": "text",
-            "analyzer": "contains_analyzer"
-          },
-          "keyword": {
-            "type": "keyword"
-          }
-        }
-      },
-      "original_congressional_districts": {
-        "type": "text",
-        "fields": {
-          "contains": {
-            "type": "text",
-            "analyzer": "contains_analyzer"
-          },
-          "keyword": {
-            "type": "keyword"
-          }
-        }
+      "location_type": {
+        "type": "keyword"
       }
     }
   }

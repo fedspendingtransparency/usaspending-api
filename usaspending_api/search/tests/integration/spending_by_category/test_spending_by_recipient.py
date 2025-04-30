@@ -1,14 +1,23 @@
 import json
 import logging
 
-from model_bakery import baker
 from elasticsearch_dsl import A
+from model_bakery import baker
 from rest_framework import status
 
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
 from usaspending_api.search.tests.data.search_filters_test_data import non_legacy_filters
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
+
+
+def _expected_messages():
+    expected_messages = [get_time_period_message()]
+    expected_messages.append(
+        "'subawards' will be deprecated in the future. Set ‘spending_level’ to ‘subawards’ instead. "
+        "See documentation for more information. "
+    )
+    return expected_messages
 
 
 def _make_fpds_transaction(
@@ -233,13 +242,21 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 5000000.0, "code": None, "name": "MULTIPLE RECIPIENTS", "recipient_id": None, "uei": None},
+            {
+                "amount": 5000000.0,
+                "code": None,
+                "name": "MULTIPLE RECIPIENTS",
+                "recipient_id": None,
+                "uei": None,
+                "total_outlays": None,
+            },
             {
                 "amount": 5000000.0,
                 "code": None,
                 "name": "MULTIPLE RECIPIENTS",
                 "recipient_id": "64af1cb7-993c-b64b-1c58-f5289af014c0-R",
                 "uei": None,
+                "total_outlays": None,
             },
             {
                 "amount": 550000.0,
@@ -247,6 +264,7 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
                 "name": None,
                 "recipient_id": "f1400310-181e-9a06-ac94-0d80a819bb5e-R",
                 "uei": "123456789AAA",
+                "total_outlays": None,
             },
             {
                 "amount": 5000.0,
@@ -254,6 +272,7 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
                 "name": "MULTIPLE RECIPIENTS",
                 "recipient_id": "b1bcf17e-d0dc-d9ad-866c-ca262cb05029-R",
                 "uei": "096354360AAA",
+                "total_outlays": None,
             },
             {
                 "amount": 500.0,
@@ -261,6 +280,7 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
                 "name": "RECIPIENT 3",
                 "recipient_id": "3523fd0b-c1f0-ddac-e217-7b7b25fad06f-C",
                 "uei": "987654321AAA",
+                "total_outlays": None,
             },
             {
                 "amount": 50.0,
@@ -268,17 +288,20 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
                 "name": "RECIPIENT 2",
                 "recipient_id": "7976667a-dd95-2b65-5f4e-e340c686a346-R",
                 "uei": "UEIAAABBBCCC",
+                "total_outlays": None,
             },
-            {"amount": 30.0, "code": None, "name": None, "recipient_id": None, "uei": None},
+            {"amount": 30.0, "code": None, "name": None, "recipient_id": None, "uei": None, "total_outlays": None},
             {
                 "amount": 5.0,
                 "code": None,
                 "name": "RECIPIENT 1",
                 "recipient_id": "5f572ec9-8b49-e5eb-22c7-f6ef316f7689-R",
                 "uei": None,
+                "total_outlays": None,
             },
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
     assert resp.json() == expected_response
@@ -298,7 +321,8 @@ def test_correct_response_of_empty_list(client, monkeypatch, elasticsearch_trans
         "limit": 10,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
     assert resp.json() == expected_response
@@ -324,9 +348,11 @@ def test_recipient_search_text_uei(client, monkeypatch, elasticsearch_transactio
                 "name": "RECIPIENT 2",
                 "recipient_id": "7976667a-dd95-2b65-5f4e-e340c686a346-R",
                 "uei": "UEIAAABBBCCC",
+                "total_outlays": None,
             }
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
     assert resp.json() == expected_response
@@ -352,9 +378,11 @@ def test_recipient_search_text_duns(client, monkeypatch, elasticsearch_transacti
                 "name": "RECIPIENT 3",
                 "recipient_id": "3523fd0b-c1f0-ddac-e217-7b7b25fad06f-C",
                 "uei": "987654321AAA",
+                "total_outlays": None,
             }
         ],
-        "messages": [get_time_period_message()],
+        "messages": _expected_messages(),
+        "spending_level": "transactions",
     }
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
     assert resp.json() == expected_response

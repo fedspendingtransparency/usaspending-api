@@ -4,6 +4,7 @@ import logging
 from django.db.models import Exists, OuterRef, Q
 
 from usaspending_api.awards.models import TransactionNormalized
+from usaspending_api.awards.models.financial_accounts_by_awards import FinancialAccountsByAwards
 from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset, total_obligation_queryset
 from usaspending_api.awards.v2.filters.location_filter_geocode import ALL_FOREIGN_COUNTRIES, create_nested_object
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -119,7 +120,8 @@ def subaward_filter(filters, for_downloads=False):
 
         key_list = [
             "keywords",
-            "elasticsearch_keyword",
+            "description",
+            "transaction_keyword_search",
             "time_period",
             "award_type_codes",
             "prime_and_sub_award_types",
@@ -142,6 +144,7 @@ def subaward_filter(filters, for_downloads=False):
             TasCodes.underscore_name,
             TreasuryAccounts.underscore_name,
             "def_codes",
+            "program_activities",
         ]
 
         if key not in key_list:
@@ -154,7 +157,7 @@ def subaward_filter(filters, for_downloads=False):
                 # keyword_ts_vector = recipient_name + psc_description + subaward_description
                 # award_ts_vector = piid + fain + uri + subaward_number
                 filter_obj = Q(keyword_ts_vector=keyword) | Q(award_ts_vector=keyword)
-                # Commenting out until NAICS is associated with subawards in DAIMS 1.3.1
+                # Commenting out until NAICS is associated with subawards in GSDM 1.3.1
                 # if keyword.isnumeric():
                 #     filter_obj |= Q(naics_code__contains=keyword)
                 if len(keyword) == 4 and PSC.objects.filter(code__iexact=keyword).exists():
@@ -183,7 +186,10 @@ def subaward_filter(filters, for_downloads=False):
 
             queryset = queryset.filter(filter_obj)
 
-        elif key == "elasticsearch_keyword":
+        elif key == "description":
+            queryset = queryset.filter(subaward_description__icontains=value)
+
+        elif key == "transaction_keyword_search":
             keyword = value
             transaction_ids = elasticsearch_helper.get_download_ids(keyword=keyword, field="transaction_id")
             # flatten IDs
@@ -358,4 +364,18 @@ def subaward_filter(filters, for_downloads=False):
         elif key == "def_codes":
             queryset = queryset.filter(DefCodes.build_def_codes_filter(value))
 
+        elif key == "program_activities":
+            query_filter_predicates = [Q(program_activity_id__isnull=False)]
+            award_ids_filtered_by_program_activities = []
+            for program_activity in value:
+                if "name" in program_activity:
+                    query_filter_predicates.append(
+                        Q(program_activity__program_activity_name=program_activity["name"].upper())
+                    )
+                if "code" in program_activity:
+                    query_filter_predicates.append(Q(program_activity__program_activity_code=program_activity["code"]))
+                filter_ = FinancialAccountsByAwards.objects.filter(*query_filter_predicates)
+                award_ids_filtered_by_program_activities.extend(list(filter_.values_list("award_id", flat=True)))
+
+            queryset &= SubawardSearch.objects.filter(award_id__in=award_ids_filtered_by_program_activities)
     return queryset

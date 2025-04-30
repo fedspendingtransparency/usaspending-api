@@ -5,6 +5,7 @@ from typing import Any, List
 from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount
 from usaspending_api.agency.v2.views.agency_base import AgencyBase
 from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.common.calculations.file_b import FileBCalculations
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.submissions.helpers import get_latest_submission_ids_for_fiscal_year
 
@@ -35,16 +36,12 @@ class FederalAccountCount(AgencyBase):
         )
 
     def get_federal_account_count(self, submission_ids: List[int]):
+        file_b_calculations = FileBCalculations()
         filters = [
             Q(treasury_account__federal_account_id=OuterRef("pk")),
             Q(submission_id__in=submission_ids),
             Q(treasury_account__funding_toptier_agency=self.toptier_agency),
-            Q(
-                Q(obligations_incurred_by_program_object_class_cpe__gt=0)
-                | Q(obligations_incurred_by_program_object_class_cpe__lt=0)
-                | Q(gross_outlay_amount_by_program_object_class_cpe__gt=0)
-                | Q(gross_outlay_amount_by_program_object_class_cpe__lt=0)
-            ),
+            file_b_calculations.is_non_zero_total_spending(),
         ]
         return (
             FederalAccount.objects.annotate(

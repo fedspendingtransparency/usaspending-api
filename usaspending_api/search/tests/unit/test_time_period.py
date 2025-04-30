@@ -1,6 +1,10 @@
-from usaspending_api.search.filters.time_period.query_types import AwardSearchTimePeriod, TransactionSearchTimePeriod
+from usaspending_api.search.filters.time_period.query_types import (
+    AwardSearchTimePeriod,
+    SubawardSearchTimePeriod,
+    TransactionSearchTimePeriod,
+)
 from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
-from usaspending_api.search.filters.elasticsearch.filter import _QueryType
+from usaspending_api.search.filters.elasticsearch.filter import QueryType
 
 
 def test_transaction_search_time_period():
@@ -74,7 +78,7 @@ def test_new_awards_only_transaction_search_time_period():
         default_start_date=default_start_date, default_end_date=default_end_date
     )
     transaction_search_decorator = NewAwardsOnlyTimePeriod(
-        time_period_obj=transaction_search, query_type=_QueryType.TRANSACTIONS
+        time_period_obj=transaction_search, query_type=QueryType.TRANSACTIONS
     )
 
     # Testing for correct output of start and end date
@@ -130,7 +134,7 @@ def test_new_awards_only_award_search_time_period():
     default_start_date = "1111-11-11"
     default_end_date = "9999-99-99"
     search_obj = AwardSearchTimePeriod(default_start_date=default_start_date, default_end_date=default_end_date)
-    search_obj_decorator = NewAwardsOnlyTimePeriod(time_period_obj=search_obj, query_type=_QueryType.AWARDS)
+    search_obj_decorator = NewAwardsOnlyTimePeriod(time_period_obj=search_obj, query_type=QueryType.AWARDS)
 
     # Testing for correct output of start and end date
     time_period_filter = {"start_date": "2020-10-01", "end_date": "2021-09-30"}
@@ -182,3 +186,55 @@ def test_new_awards_only_award_search_time_period():
     assert search_obj_decorator.gte_date_range() == expected_gte_date_type_range
     assert search_obj_decorator.lte_date_range() == expected_lte_date_type_range
     assert search_obj_decorator._new_awards_only() == expected_new_awards_only
+
+
+def test_subaward_search_time_period():
+    default_start_date = "1111-11-11"
+    default_end_date = "9999-99-99"
+    time_period_obj = SubawardSearchTimePeriod(
+        default_start_date=default_start_date,
+        default_end_date=default_end_date,
+    )
+
+    # Testing for correct output of start and end date
+    time_period_filter = {"start_date": "2020-10-01", "end_date": "2021-09-30"}
+    time_period_obj.filter_value = time_period_filter
+    expected_start_date = "2020-10-01"
+    expected_end_date = "2021-09-30"
+    assert time_period_obj.start_date() == expected_start_date
+    assert time_period_obj.end_date() == expected_end_date
+
+    time_period_filter = {"end_date": "2021-09-30"}
+    time_period_obj.filter_value = time_period_filter
+    assert time_period_obj.start_date() == default_start_date
+
+    time_period_filter = {"start_date": "2020-10-01"}
+    time_period_obj.filter_value = time_period_filter
+    assert time_period_obj.end_date() == default_end_date
+
+    time_period_filter = {}
+    time_period_obj.filter_value = time_period_filter
+    assert time_period_obj.end_date() == default_end_date
+    assert time_period_obj.start_date() == default_start_date
+
+    # Testing for correct output of date type
+    time_period_filter = {"date_type": "date_signed", "start_date": "2020-10-01", "end_date": "2021-09-30"}
+    time_period_obj.filter_value = time_period_filter
+    expected_gte_date_type = "date_signed"
+    expected_lte_date_type = "date_signed"
+    assert time_period_obj.gte_date_type() == expected_gte_date_type
+    assert time_period_obj.lte_date_type() == expected_lte_date_type
+
+    time_period_filter = {"date_type": "last_modified_date", "start_date": "2020-10-01", "end_date": "2021-09-30"}
+    time_period_obj.filter_value = time_period_filter
+    expected_gte_date_type = "last_modified_date"
+    expected_lte_date_type = "last_modified_date"
+    assert time_period_obj.gte_date_type() == expected_gte_date_type
+    assert time_period_obj.lte_date_type() == expected_lte_date_type
+
+    time_period_filter = {"start_date": "2020-10-01", "end_date": "2021-09-30"}
+    time_period_obj.filter_value = time_period_filter
+    expected_gte_date_type = "sub_action_date"
+    expected_lte_date_type = "sub_action_date"
+    assert time_period_obj.gte_date_type() == expected_gte_date_type
+    assert time_period_obj.lte_date_type() == expected_lte_date_type

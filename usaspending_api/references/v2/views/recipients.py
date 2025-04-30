@@ -45,6 +45,7 @@ class RecipientAutocompleteViewSet(APIView):
                     "search_text": str
                     "recipient_levels": [""] (optional)
                     "limit": int (optional)
+                    "duns": string (optional)
                 }
             format: The format of the response (default=None).
 
@@ -78,22 +79,25 @@ class RecipientAutocompleteViewSet(APIView):
         Args:
             search_text: The search text entered by the user.
             recipient_levels: The list of recipient levels to filter by.
+            duns: Any specific duns key specified by the user.
             limit: The maximum number of results to return.
 
         Returns:
             An Elasticsearch search query.
         """
-        es_recipient_search_fields = ["recipient_name", "uei"]
+        es_recipient_search_fields = ["recipient_name", "uei", "duns"]
 
-        query = ES_Q(
-            "bool",
-            should=[
-                ES_Q("query_string", query=search_text, fields=es_recipient_search_fields),
-                ES_Q("match", recipient_name=search_text),
-                ES_Q("match", uei=search_text),
-            ],
-            minimum_should_match=1,
-        )
+        should_query = [
+            query
+            for search_field in es_recipient_search_fields
+            for query in [
+                ES_Q("match_phrase_prefix", **{f"{search_field}": {"query": search_text, "boost": 5}}),
+                ES_Q("match_phrase_prefix", **{f"{search_field}.contains": {"query": search_text, "boost": 3}}),
+                ES_Q("match", **{f"{search_field}": {"query": search_text, "operator": "and", "boost": 1}}),
+            ]
+        ]
+
+        query = ES_Q("bool", should=should_query, minimum_should_match=1)
 
         if recipient_levels:
             recipient_should_clause = [
@@ -151,6 +155,7 @@ class RecipientAutocompleteViewSet(APIView):
                         ("recipient_name", recipient["recipient_name"]),
                         ("uei", recipient["uei"]),
                         ("recipient_level", recipient["recipient_level"]),
+                        ("duns", recipient["duns"] if "duns" in recipient else None),
                     ]
                 )
             )

@@ -18,7 +18,7 @@ class FilterEndpoint(APIView):
         Create a MD5 hash from a Python dict
         (Some tomfoolery here due to Python's handling of byte strings)
         """
-        m = hashlib.md5()
+        m = hashlib.md5(usedforsecurity=False)
         m.update(payload)
         hash_key = m.hexdigest().encode("utf8")
         if len(str(hash_key)) > 2 and str(hash_key)[:2] == "b'":

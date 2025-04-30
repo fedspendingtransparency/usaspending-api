@@ -1,18 +1,11 @@
 import pytest
-
 from rest_framework import status
-from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 url = "/api/v2/disaster/object_class/loans/"
 
 
 @pytest.mark.django_db
-def test_basic_object_class_award_success(
-    client, basic_object_class_faba_with_loan_value, elasticsearch_account_index, monkeypatch, helpers
-):
-    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
-    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
-
+def test_basic_object_class_award_success(client, basic_object_class_faba_with_loan_value, helpers):
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M"])
     expected_results = [
         {
@@ -44,12 +37,7 @@ def test_basic_object_class_award_success(
 
 
 @pytest.mark.django_db
-def test_object_class_spending_filters_on_defc(
-    client, basic_object_class_faba_with_loan_value, elasticsearch_account_index, monkeypatch, helpers
-):
-    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
-    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
-
+def test_object_class_spending_filters_on_defc(client, basic_object_class_faba_with_loan_value, helpers):
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["A"])
     assert len(resp.json()["results"]) == 0
 
@@ -58,41 +46,65 @@ def test_object_class_spending_filters_on_defc(
 
 
 @pytest.mark.django_db
-def test_object_class_adds_value_across_awards(
-    client,
-    elasticsearch_account_index,
-    basic_object_class_multiple_faba_with_loan_value_with_single_object_class,
-    monkeypatch,
-    helpers,
-):
-    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
-    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
-    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M"])
-    assert resp.json()["results"][0]["face_value_of_loan"] == 10
+def test_object_class_spending_query_filter(client, basic_object_class_faba_with_loan_value, helpers):
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M", "N"], query="structures")
+    expected_results = [
+        {
+            "id": "003",
+            "code": "003",
+            "description": "Acquisition of assets",
+            "award_count": 5,
+            "obligation": 111.0,
+            "outlay": 111.0,
+            "face_value_of_loan": 555.0,
+            "children": [
+                {
+                    "id": 3,
+                    "code": "0003",
+                    "description": "Land and structures",
+                    "award_count": 5,
+                    "obligation": 111.0,
+                    "outlay": 111.0,
+                    "face_value_of_loan": 555.0,
+                }
+            ],
+        }
+    ]
+    assert resp.status_code == 200
+    assert len(resp.json()["results"]) == 1
+    assert resp.json()["results"] == expected_results
+
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["L", "M", "N"], query="supplies")
+    expected_results = [
+        {
+            "id": "002",
+            "code": "002",
+            "description": "Contractual services and supplies",
+            "award_count": 5,
+            "obligation": 111.0,
+            "outlay": 111.0,
+            "face_value_of_loan": 555.0,
+            "children": [
+                {
+                    "id": 2,
+                    "code": "0002",
+                    "description": "Research and development contracts",
+                    "award_count": 5,
+                    "obligation": 111.0,
+                    "outlay": 111.0,
+                    "face_value_of_loan": 555.0,
+                }
+            ],
+        }
+    ]
+    assert resp.status_code == 200
+    assert len(resp.json()["results"]) == 1
+    assert resp.json()["results"] == expected_results
 
 
 @pytest.mark.django_db
-def test_object_class_doesnt_add_across_object_classes(
-    client,
-    elasticsearch_account_index,
-    basic_object_class_multiple_faba_with_loan_value_with_two_object_classes,
-    monkeypatch,
-    helpers,
-):
-    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
-    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
+def test_bad_defc(client, basic_object_class_faba_with_loan_value, helpers):
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["BAD"])
 
-    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M"])
-    assert resp.json()["results"][0]["face_value_of_loan"] == 5
-    assert resp.json()["results"][1]["face_value_of_loan"] == 5
-
-
-@pytest.mark.django_db
-def test_object_class_spending_filters_on_object_class_existence(
-    client, elasticsearch_account_index, award_count_sub_schedule, basic_faba, monkeypatch, helpers
-):
-    setup_elasticsearch_test(monkeypatch, elasticsearch_account_index)
-    helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
-
-    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M"])
-    assert len(resp.json()["results"]) == 0
+    assert resp.status_code == 400
+    assert resp.json()["detail"] == "Field 'filter|def_codes' is outside valid values ['A', 'L', 'M', 'N']"

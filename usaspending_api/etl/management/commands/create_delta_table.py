@@ -1,5 +1,4 @@
 from django.core.management.base import BaseCommand
-from pyspark.sql import SparkSession
 
 from usaspending_api.config import CONFIG
 from usaspending_api.common.helpers.spark_helpers import (
@@ -7,11 +6,12 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_jvm_logger,
     get_active_spark_session,
 )
+from usaspending_api.etl.management.commands.archive_table_in_delta import TABLE_SPEC as ARCHIVE_TABLE_SPEC
 from usaspending_api.etl.management.commands.load_query_to_delta import TABLE_SPEC as LOAD_QUERY_TABLE_SPEC
 from usaspending_api.etl.management.commands.load_table_to_delta import TABLE_SPEC as LOAD_TABLE_TABLE_SPEC
 
 
-TABLE_SPEC = {**LOAD_TABLE_TABLE_SPEC, **LOAD_QUERY_TABLE_SPEC}
+TABLE_SPEC = {**ARCHIVE_TABLE_SPEC, **LOAD_TABLE_TABLE_SPEC, **LOAD_QUERY_TABLE_SPEC}
 
 
 class Command(BaseCommand):
@@ -64,7 +64,7 @@ class Command(BaseCommand):
         spark_created_by_command = False
         if not spark:
             spark_created_by_command = True
-            spark = configure_spark_session(**extra_conf, spark_context=spark)  # type: SparkSession
+            spark = configure_spark_session(**extra_conf, spark_context=spark)
 
         # Setup Logger
         logger = get_jvm_logger(spark)

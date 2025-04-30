@@ -120,7 +120,7 @@ def _setup_agency(id, subtiers, special_name):
 @pytest.fixture
 def awards_and_transactions(db):
     # Awards
-    baker.make("search.AwardSearch", award_id=1, latest_transaction_id=10, action_date="2020-01-01")
+    award1 = baker.make("search.AwardSearch", award_id=1, latest_transaction_id=10, action_date="2020-01-01")
     baker.make("search.AwardSearch", award_id=2, latest_transaction_id=20, action_date="2020-01-01")
     baker.make("search.AwardSearch", award_id=3, latest_transaction_id=30, action_date="2020-01-01")
     baker.make("search.AwardSearch", award_id=4, latest_transaction_id=40, action_date="2020-01-01")
@@ -128,8 +128,19 @@ def awards_and_transactions(db):
     baker.make("search.AwardSearch", award_id=6, latest_transaction_id=60, action_date="2020-01-01")
     baker.make("search.AwardSearch", award_id=7, latest_transaction_id=70, action_date="2020-01-01")
     baker.make("search.AwardSearch", award_id=8, latest_transaction_id=80, action_date="2020-01-01")
-
-    baker.make("awards.FinancialAccountsByAwards", pk=1, award_id=1, treasury_account_id=1)
+    ref_program_activity1 = baker.make(
+        "references.RefProgramActivity",
+        id=1,
+        program_activity_code=123,
+        program_activity_name="PROGRAM_ACTIVITY_123",
+    )
+    baker.make(
+        "awards.FinancialAccountsByAwards",
+        financial_accounts_by_awards_id=1,
+        award_id=award1.award_id,
+        treasury_account_id=1,
+        program_activity_id=ref_program_activity1.id,
+    )
     baker.make("accounts.TreasuryAppropriationAccount", pk=1, federal_account_id=1)
     baker.make(
         "accounts.FederalAccount",
@@ -207,6 +218,14 @@ def awards_and_transactions(db):
         recipient_unique_id=None,
         recipient_uei=None,
         federal_accounts=[fa1],
+        award_category="grant",
+        fiscal_year="2020",
+        program_activities=[
+            {
+                "code": str(ref_program_activity1.program_activity_code).zfill(4),
+                "name": ref_program_activity1.program_activity_name,
+            }
+        ],
     )
     baker.make(
         "search.TransactionSearch",
@@ -512,7 +531,11 @@ def awards_and_transactions(db):
         subaward_amount=12345,
         sub_place_of_perform_country_co="CAN",
         sub_legal_entity_country_code="USA",
-        sub_action_date="2020-01-07",
+        sub_action_date="2019-01-07",
+        action_date="2019-01-07",
+        sub_fiscal_year=2019,
+        subaward_type="sub-contract",
+        program_activities=[{"name": "PROGRAM_1", "code": "0001"}],
     )
     baker.make(
         "search.SubawardSearch",
@@ -522,6 +545,10 @@ def awards_and_transactions(db):
         sub_place_of_perform_country_co="USA",
         sub_legal_entity_country_code="JPN",
         sub_action_date="2020-01-07",
+        action_date="2020-01-07",
+        sub_fiscal_year=2020,
+        subaward_type="sub-contract",
+        program_activities=[{"name": "PROGRAM_2", "code": "0002"}],
     )
     baker.make(
         "search.SubawardSearch",
@@ -531,6 +558,11 @@ def awards_and_transactions(db):
         sub_place_of_perform_country_co="USA",
         sub_legal_entity_country_code="USA",
         sub_action_date="2020-01-07",
+        action_date="2020-01-07",
+        prime_award_group="grant",
+        sub_fiscal_year=2020,
+        subaward_type="sub-grant",
+        program_activities=[{"name": "PROGRAM_ACTIVITY_123", "code": "0003"}],
     )
 
     # References State Data

@@ -2,7 +2,7 @@ import pytest
 from django.db.models import Q
 
 from usaspending_api.common.exceptions import UnprocessableEntityException
-from usaspending_api.search.filters.elasticsearch.filter import _QueryType
+from usaspending_api.search.filters.elasticsearch.filter import QueryType
 from usaspending_api.search.filters.elasticsearch.psc import PSCCodes as ESPSCCodes
 from usaspending_api.search.filters.mixins.psc import PSCCodesMixin
 from usaspending_api.search.filters.postgres.psc import PSCCodes as PGPSCCodes
@@ -15,7 +15,7 @@ def test_generate_elasticsearch_query():
             "require": [["Product", "1", "1111"], ["Research and Development"]],
             "exclude": [["Product", "1"], ["Research and Development", "A", "A5"]],
         },
-        _QueryType.AWARDS,
+        QueryType.AWARDS,
     ).to_dict() == {
         "query_string": {
             "query": "((((A*)) AND (((NOT (A* AND A5*)))))) OR ((((1* AND 1111))))",
@@ -26,15 +26,13 @@ def test_generate_elasticsearch_query():
 
 def test_generate_postgres_query():
     # Just a simple happy path test to detect potentially breaking changes.
-    assert (
-        PGPSCCodes.build_tas_codes_filter(
-            {
-                "require": [["Product", "1", "1111"], ["Research and Development"]],
-                "exclude": [["Product", "1"], ["Research and Development", "A", "A5"]],
-            }
-        )
-        == Q(Q(product_or_service_code__istartswith="A") & ~Q(product_or_service_code__istartswith="A5"))
-        | Q(product_or_service_code="1111")
+    assert PGPSCCodes.build_tas_codes_filter(
+        {
+            "require": [["Product", "1", "1111"], ["Research and Development"]],
+            "exclude": [["Product", "1"], ["Research and Development", "A", "A5"]],
+        }
+    ) == Q(Q(product_or_service_code__istartswith="A") & ~Q(product_or_service_code__istartswith="A5")) | Q(
+        product_or_service_code="1111"
     )
 
 

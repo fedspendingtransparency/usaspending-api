@@ -7,29 +7,38 @@ from datetime import datetime, timezone
 from typing import Union
 
 from django.conf import settings
-from django.db.models import QuerySet
+from django.db.models import Model, QuerySet
 from elasticsearch_dsl import A
 
-from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, TransactionSearch
+from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, SubawardSearch, TransactionSearch
 from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.download.models import DownloadJob
 from usaspending_api.download.models.download_job_lookup import DownloadJobLookup
 from usaspending_api.download.helpers import write_to_download_log as write_to_log
-from usaspending_api.search.filters.elasticsearch.filter import _QueryType
-from usaspending_api.search.models import AwardSearch as DBAwardSearch, TransactionSearch as DBTransactionSearch
-from usaspending_api.search.filters.time_period.query_types import AwardSearchTimePeriod, TransactionSearchTimePeriod
+from usaspending_api.search.filters.elasticsearch.filter import QueryType
+from usaspending_api.search.models import (
+    AwardSearch as DBAwardSearch,
+    SubawardSearch as DBSubawardSearch,
+    TransactionSearch as DBTransactionSearch,
+)
+from usaspending_api.search.filters.time_period.query_types import (
+    AwardSearchTimePeriod,
+    SubawardSearchTimePeriod,
+    TransactionSearchTimePeriod,
+)
 
 logger = logging.getLogger(__name__)
 
 
 class _ElasticsearchDownload(metaclass=ABCMeta):
     _source_field = None
-    _filter_query_func = None
     _search_type = None
+    _base_model: Model = None
+    _query_with_filters = None
 
     @classmethod
-    def _get_download_ids_generator(cls, search: Union[AwardSearch, TransactionSearch], size: int):
+    def _get_download_ids_generator(cls, search: Union[AwardSearch, TransactionSearch, SubawardSearch], size: int):
         """
         Takes an AwardSearch or TransactionSearch object (that specifies the index, filter, and source) and returns
         a generator that yields list of IDs in chunksize SIZE.
@@ -73,7 +82,7 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
         """
         Takes a dictionary of the different download filters and returns a flattened list of ids.
         """
-        filter_query = cls._filter_query_func(filters, **filter_options)
+        filter_query = cls._query_with_filters.generate_elasticsearch_query(filters, **filter_options)
         search = cls._search_type().filter(filter_query).source([cls._source_field])
         ids = cls._get_download_ids_generator(search, size)
         lookup_id_type = cls._search_type.type_as_string()
@@ -129,6 +138,25 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
                 raise TimeoutError(message)
 
     @classmethod
+    def download_lookup_queryset(cls, base_queryset: QuerySet, download_job: DownloadJob):
+        """
+        Adds onto a queryset the necessary filter in order to find IDs that are relevant to the specific
+        Download type and job.
+        """
+        download_job_id = download_job.download_job_id
+        download_lookup_table_name = DownloadJobLookup._meta.db_table
+        search_table_name = cls._base_model._meta.db_table
+        queryset = base_queryset.extra(
+            tables=[download_lookup_table_name],
+            where=[
+                f'"{download_lookup_table_name}"."download_job_id" = {download_job_id} '
+                f'AND "{download_lookup_table_name}"."lookup_id" = "{search_table_name}"."{cls._source_field}" '
+                f'AND "{download_lookup_table_name}"."lookup_id_type" = \'{search_table_name}\''
+            ],
+        )
+        return queryset
+
+    @classmethod
     @abstractmethod
     def query(cls, filters: dict, download_job: DownloadJob) -> QuerySet:
         pass
@@ -136,8 +164,9 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
 
 class AwardsElasticsearchDownload(_ElasticsearchDownload):
     _source_field = "award_id"
-    _filter_query_func = QueryWithFilters.generate_awards_elasticsearch_query
+    _query_with_filters = QueryWithFilters(QueryType.AWARDS)
     _search_type = AwardSearch
+    _base_model = DBAwardSearch
 
     @classmethod
     def query(cls, filters: dict, download_job: DownloadJob) -> QuerySet:
@@ -146,27 +175,20 @@ class AwardsElasticsearchDownload(_ElasticsearchDownload):
             default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
         )
         new_awards_only_decorator = NewAwardsOnlyTimePeriod(
-            time_period_obj=time_period_obj, query_type=_QueryType.AWARDS
+            time_period_obj=time_period_obj, query_type=QueryType.AWARDS
         )
         filter_options["time_period_obj"] = new_awards_only_decorator
         base_queryset = DBAwardSearch.objects.all()
         cls._populate_download_lookups(filters, download_job, **filter_options)
-        queryset = base_queryset.extra(
-            tables=["download_job_lookup"],
-            where=[
-                '"download_job_lookup"."download_job_id" = %s '
-                'AND "download_job_lookup"."lookup_id" = "award_search"."award_id"'
-            ],
-            params=[download_job.download_job_id],
-        )
 
-        return queryset
+        return cls.download_lookup_queryset(base_queryset, download_job)
 
 
 class TransactionsElasticsearchDownload(_ElasticsearchDownload):
     _source_field = "transaction_id"
-    _filter_query_func = QueryWithFilters.generate_transactions_elasticsearch_query
+    _query_with_filters = QueryWithFilters(QueryType.TRANSACTIONS)
     _search_type = TransactionSearch
+    _base_model = DBTransactionSearch
 
     @classmethod
     def query(cls, filters: dict, download_job: DownloadJob) -> QuerySet:
@@ -175,18 +197,29 @@ class TransactionsElasticsearchDownload(_ElasticsearchDownload):
             default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
         )
         new_awards_only_decorator = NewAwardsOnlyTimePeriod(
-            time_period_obj=time_period_obj, query_type=_QueryType.TRANSACTIONS
+            time_period_obj=time_period_obj, query_type=QueryType.TRANSACTIONS
         )
         filter_options["time_period_obj"] = new_awards_only_decorator
         base_queryset = DBTransactionSearch.objects.all()
         cls._populate_download_lookups(filters, download_job, **filter_options)
-        queryset = base_queryset.extra(
-            tables=["download_job_lookup"],
-            where=[
-                '"download_job_lookup"."download_job_id" = %s '
-                'AND "download_job_lookup"."lookup_id" = "transaction_search"."transaction_id"'
-            ],
-            params=[download_job.download_job_id],
-        )
 
-        return queryset
+        return cls.download_lookup_queryset(base_queryset, download_job)
+
+
+class SubawardsElasticsearchDownload(_ElasticsearchDownload):
+    _source_field = "broker_subaward_id"
+    _query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
+    _search_type = SubawardSearch
+    _base_model = DBSubawardSearch
+
+    @classmethod
+    def query(cls, filters: dict, download_job: DownloadJob) -> QuerySet:
+        filter_options = {}
+        time_period_obj = SubawardSearchTimePeriod(
+            default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_MIN_DATE
+        )
+        filter_options["time_period_obj"] = time_period_obj
+        base_queryset = DBSubawardSearch.objects.all()
+        cls._populate_download_lookups(filters, download_job, **filter_options)
+
+        return cls.download_lookup_queryset(base_queryset, download_job)

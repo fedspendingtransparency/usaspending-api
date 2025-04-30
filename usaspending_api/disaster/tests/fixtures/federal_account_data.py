@@ -1,8 +1,104 @@
 import pytest
-
 from model_bakery import baker
 
 from usaspending_api.references.models.disaster_emergency_fund_code import DisasterEmergencyFundCode
+
+
+@pytest.fixture
+def covid_faba_spending_data():
+    # Loan type awards
+    baker.make(
+        "disaster.CovidFABASpending",
+        spending_level="treasury_account",
+        funding_federal_account_id="21",
+        funding_federal_account_code="000-0000",
+        funding_federal_account_name="gifts",
+        funding_treasury_account_id=23,
+        funding_treasury_account_code="2020/98",
+        funding_treasury_account_name="evergreens",
+        defc="L",
+        award_type="07",
+        award_count=1,
+        obligation_sum=1.0,
+        outlay_sum=1.0,
+        face_value_of_loan=3333.0,
+    )
+    baker.make(
+        "disaster.CovidFABASpending",
+        spending_level="treasury_account",
+        funding_federal_account_id="21",
+        funding_federal_account_code="000-0000",
+        funding_federal_account_name="gifts",
+        funding_treasury_account_id=24,
+        funding_treasury_account_code="2020/52",
+        funding_treasury_account_name="ferns",
+        defc="L",
+        award_type="08",
+        award_count=1,
+        obligation_sum=3.0,
+        outlay_sum=333.0,
+        face_value_of_loan=4444.0,
+    )
+
+    # Non-loan type awards
+    baker.make(
+        "disaster.CovidFABASpending",
+        spending_level="treasury_account",
+        funding_federal_account_id="21",
+        funding_federal_account_code="000-0000",
+        funding_federal_account_name="gifts",
+        funding_treasury_account_id=22,
+        funding_treasury_account_code="2020/99",
+        funding_treasury_account_name="flowers",
+        defc="M",
+        award_type="A",
+        award_count=1,
+        obligation_sum=100.0,
+        outlay_sum=111.0,
+    )
+    baker.make(
+        "disaster.CovidFABASpending",
+        spending_level="treasury_account",
+        funding_federal_account_id="21",
+        funding_federal_account_code="000-0000",
+        funding_federal_account_name="gifts",
+        funding_treasury_account_id=23,
+        funding_treasury_account_code="2020/98",
+        funding_treasury_account_name="evergreens",
+        defc="L",
+        award_type="B",
+        award_count=1,
+        obligation_sum=200.0,
+        outlay_sum=222.0,
+    )
+
+    baker.make(
+        "references.DisasterEmergencyFundCode",
+        code="L",
+        public_law="Law for code L",
+    )
+    baker.make(
+        "references.DisasterEmergencyFundCode",
+        code="M",
+        public_law="Law for code M",
+    )
+    baker.make(
+        "references.DisasterEmergencyFundCode",
+        code="N",
+        public_law="Law for code N",
+    )
+    baker.make(
+        "references.DisasterEmergencyFundCode",
+        code="O",
+        public_law="Law for code O",
+    )
+    baker.make(
+        "references.DisasterEmergencyFundCode",
+        code="P",
+        public_law="Law for code P",
+    )
+    baker.make("references.DisasterEmergencyFundCode", code="A", public_law="Law for code A")
+    baker.make("references.DisasterEmergencyFundCode", code="9", public_law="Law for code 9")
 
 
 @pytest.fixture
@@ -95,10 +191,24 @@ def generic_account_data():
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         submission=sub1,
         obligations_incurred_by_program_object_class_cpe=1000,
-        gross_outlay_amount_by_program_object_class_cpe=100,
+        gross_outlay_amount_by_program_object_class_cpe=500,
         deobligations_recoveries_refund_pri_program_object_class_cpe=-900,
         ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=10,
         ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=1,
+        prior_year_adjustment="X",
+        ussgl480100_undelivered_orders_obligations_unpaid_cpe=15,
+        ussgl480200_undelivered_orders_oblig_prepaid_advanced_cpe=20,
+        ussgl487100_down_adj_pri_unpaid_undel_orders_oblig_recov_cpe=15,
+        ussgl488100_upward_adjust_pri_undeliv_order_oblig_unpaid_cpe=5,
+        ussgl488200_up_adjust_pri_undeliv_order_oblig_ppaid_adv_cpe=6,
+        ussgl490100_delivered_orders_obligations_unpaid_cpe=7,
+        ussgl490200_delivered_orders_obligations_paid_cpe=8,
+        ussgl490800_authority_outlayed_not_yet_disbursed_cpe=100,
+        ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=13,
+        ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=9,
+        ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=14,
+        ussgl480110_rein_undel_ord_cpe=75,
+        ussgl490110_rein_deliv_ord_cpe=63,
         disaster_emergency_fund=defc_m,
         treasury_account=tre_acct1,
     )
@@ -110,6 +220,20 @@ def generic_account_data():
         deobligations_recoveries_refund_pri_program_object_class_cpe=-300,
         ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=2,
         ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=200,
+        prior_year_adjustment="P",
+        ussgl480100_undelivered_orders_obligations_unpaid_cpe=15,
+        ussgl480200_undelivered_orders_oblig_prepaid_advanced_cpe=20,
+        ussgl487100_down_adj_pri_unpaid_undel_orders_oblig_recov_cpe=15,
+        ussgl488100_upward_adjust_pri_undeliv_order_oblig_unpaid_cpe=5,
+        ussgl488200_up_adjust_pri_undeliv_order_oblig_ppaid_adv_cpe=6,
+        ussgl490100_delivered_orders_obligations_unpaid_cpe=7,
+        ussgl490200_delivered_orders_obligations_paid_cpe=8,
+        ussgl490800_authority_outlayed_not_yet_disbursed_cpe=100,
+        ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=13,
+        ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=9,
+        ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=14,
+        ussgl480110_rein_undel_ord_cpe=75,
+        ussgl490110_rein_deliv_ord_cpe=63,
         disaster_emergency_fund=defc_l,
         treasury_account=tre_acct2,
     )
@@ -122,6 +246,20 @@ def generic_account_data():
         ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=-2,
         ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=-3,
         disaster_emergency_fund=defc_9,
+        prior_year_adjustment="X",
+        ussgl480100_undelivered_orders_obligations_unpaid_cpe=15,
+        ussgl480200_undelivered_orders_oblig_prepaid_advanced_cpe=20,
+        ussgl487100_down_adj_pri_unpaid_undel_orders_oblig_recov_cpe=15,
+        ussgl488100_upward_adjust_pri_undeliv_order_oblig_unpaid_cpe=5,
+        ussgl488200_up_adjust_pri_undeliv_order_oblig_ppaid_adv_cpe=6,
+        ussgl490100_delivered_orders_obligations_unpaid_cpe=7,
+        ussgl490200_delivered_orders_obligations_paid_cpe=8,
+        ussgl490800_authority_outlayed_not_yet_disbursed_cpe=100,
+        ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=13,
+        ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=9,
+        ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=14,
+        ussgl480110_rein_undel_ord_cpe=75,
+        ussgl490110_rein_deliv_ord_cpe=63,
         treasury_account=tre_acct2,
     )
     baker.make(
@@ -133,6 +271,20 @@ def generic_account_data():
         ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=-1,
         ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=-2,
         disaster_emergency_fund=defc_o,
+        prior_year_adjustment="B",
+        ussgl480100_undelivered_orders_obligations_unpaid_cpe=15,
+        ussgl480200_undelivered_orders_oblig_prepaid_advanced_cpe=20,
+        ussgl487100_down_adj_pri_unpaid_undel_orders_oblig_recov_cpe=15,
+        ussgl488100_upward_adjust_pri_undeliv_order_oblig_unpaid_cpe=5,
+        ussgl488200_up_adjust_pri_undeliv_order_oblig_ppaid_adv_cpe=6,
+        ussgl490100_delivered_orders_obligations_unpaid_cpe=7,
+        ussgl490200_delivered_orders_obligations_paid_cpe=8,
+        ussgl490800_authority_outlayed_not_yet_disbursed_cpe=100,
+        ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=13,
+        ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=9,
+        ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=14,
+        ussgl480110_rein_undel_ord_cpe=75,
+        ussgl490110_rein_deliv_ord_cpe=63,
         treasury_account=tre_acct2,
     )
     baker.make(
@@ -144,6 +296,20 @@ def generic_account_data():
         ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=30,
         ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=7,
         disaster_emergency_fund=defc_n,
+        prior_year_adjustment="B",
+        ussgl480100_undelivered_orders_obligations_unpaid_cpe=15,
+        ussgl480200_undelivered_orders_oblig_prepaid_advanced_cpe=20,
+        ussgl487100_down_adj_pri_unpaid_undel_orders_oblig_recov_cpe=15,
+        ussgl488100_upward_adjust_pri_undeliv_order_oblig_unpaid_cpe=5,
+        ussgl488200_up_adjust_pri_undeliv_order_oblig_ppaid_adv_cpe=6,
+        ussgl490100_delivered_orders_obligations_unpaid_cpe=7,
+        ussgl490200_delivered_orders_obligations_paid_cpe=8,
+        ussgl490800_authority_outlayed_not_yet_disbursed_cpe=100,
+        ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=13,
+        ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=9,
+        ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=14,
+        ussgl480110_rein_undel_ord_cpe=75,
+        ussgl490110_rein_deliv_ord_cpe=63,
         treasury_account=tre_acct3,
     )
     baker.make(
@@ -252,6 +418,52 @@ def generic_account_data():
         total_budgetary_resources_cpe=394368.87,
         deobligations_or_recoveries_or_refunds_from_prior_year_cpe=999.99,
         prior_year_paid_obligation_recoveries=888.88,
+    )
+    baker.make(
+        "disaster.CovidFABASpending",
+        spending_level="awards",
+        defc="L",
+        award_type="A",
+        award_count=1,
+        outlay_sum=222.0,
+        obligation_sum=200.0,
+    )
+    baker.make(
+        "disaster.CovidFABASpending",
+        spending_level="awards",
+        defc="N",
+        award_type="09",
+        award_count=1,
+        outlay_sum=100.0,
+        obligation_sum=2.0,
+    )
+    baker.make(
+        "disaster.CovidFABASpending",
+        spending_level="awards",
+        defc="N",
+        award_type="A",
+        award_count=2,
+        outlay_sum=334.0,
+        obligation_sum=4.0,
+    )
+    baker.make(
+        "disaster.CovidFABASpending",
+        spending_level="awards",
+        defc="O",
+        award_type="10",
+        award_count=1,
+        outlay_sum=234.0,
+        obligation_sum=2.0,
+    )
+    baker.make(
+        "disaster.CovidFABASpending",
+        spending_level="awards",
+        defc="P",
+        award_type="07",
+        award_count=2,
+        outlay_sum=334.0,
+        obligation_sum=4.0,
+        face_value_of_loan=7777.0,
     )
 
 

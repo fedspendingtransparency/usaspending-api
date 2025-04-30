@@ -12,6 +12,7 @@ Code to generate these from spreadsheets:
 tail -n +3 'usaspending_api/data/DAIMS_IDD_Resorted+DRW+KB+GGv7/D2-Award (Financial Assistance)-Table 1.csv' >
 d2_columns.csv
 """
+
 import copy
 from collections import OrderedDict
 
@@ -2142,9 +2143,9 @@ query_paths = {
                     "latest_transaction__national_interest_desc",
                 ),
                 ("subaward_type", "subaward_type"),
-                ("subaward_fsrs_report_id", "internal_id"),
-                ("subaward_fsrs_report_year", "subaward_report_year"),
-                ("subaward_fsrs_report_month", "subaward_report_month"),
+                ("subaward_sam_report_id", "internal_id"),
+                ("subaward_sam_report_year", "subaward_report_year"),
+                ("subaward_sam_report_month", "subaward_report_month"),
                 ("subaward_number", "subaward_number"),
                 ("subaward_amount", "subaward_amount"),
                 ("subaward_action_date", "sub_action_date"),
@@ -2202,7 +2203,7 @@ query_paths = {
                 ("subawardee_highly_compensated_officer_5_name", "sub_high_comp_officer5_full_na"),
                 ("subawardee_highly_compensated_officer_5_amount", "sub_high_comp_officer5_amount"),
                 ("usaspending_permalink", None),  # to be filled in by annotation
-                ("subaward_fsrs_report_last_modified_date", "date_submitted"),
+                ("subaward_sam_report_last_modified_date", "date_submitted"),
             ]
         ),
         "d2": OrderedDict(
@@ -2304,9 +2305,9 @@ query_paths = {
                 ("prime_award_base_transaction_description", "award_description"),
                 ("prime_award_cfda_numbers_and_titles", None),  # Annotation is used to create this column
                 ("subaward_type", "subaward_type"),
-                ("subaward_fsrs_report_id", "internal_id"),
-                ("subaward_fsrs_report_year", "subaward_report_year"),
-                ("subaward_fsrs_report_month", "subaward_report_month"),
+                ("subaward_sam_report_id", "internal_id"),
+                ("subaward_sam_report_year", "subaward_report_year"),
+                ("subaward_sam_report_month", "subaward_report_month"),
                 ("subaward_number", "subaward_number"),
                 ("subaward_amount", "subaward_amount"),
                 ("subaward_action_date", "sub_action_date"),
@@ -2364,7 +2365,7 @@ query_paths = {
                 ("subawardee_highly_compensated_officer_5_name", "sub_high_comp_officer5_full_na"),
                 ("subawardee_highly_compensated_officer_5_amount", "sub_high_comp_officer5_amount"),
                 ("usaspending_permalink", None),  # to be filled in by annotation
-                ("subaward_fsrs_report_last_modified_date", "date_submitted"),
+                ("subaward_sam_report_last_modified_date", "date_submitted"),
             ]
         ),
     },

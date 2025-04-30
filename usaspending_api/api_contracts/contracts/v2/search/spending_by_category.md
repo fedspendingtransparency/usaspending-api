@@ -43,6 +43,16 @@ This endpoint returns a list of the top results of specific categories sorted by
             The number of results to include per page
         + `page` (optional, number)
             The page of results to return based on the limit
+        + `spending_level` (optional, enum[string])
+            Group the spending by level. This also determines what data source is used for the totals.
+            + Members
+                + `transactions`
+                + `awards`
+                + `subawards`
+            + Default
+                + `transactions`
+        + `subawards` (optional, boolean)
+            Determines whether Prime Awards or Sub Awards are searched. This field will be depreciated soon.
     + Body
 
             {
@@ -55,6 +65,12 @@ This endpoint returns a list of the top results of specific categories sorted by
 + Response 200 (application/json)
     + Attributes (object)
         + `category` (required, string)
+        + `spending_level` (required, enum[string])
+            Spending level value that was provided in the request.
+            + Members
+                + `transactions`
+                + `awards`
+                + `subawards`
         + `results` (required, array[CategoryResult], fixed-type)
         + `limit` (required, number)
         + `page_metadata` (PageMetadataObject)
@@ -72,6 +88,7 @@ This endpoint returns a list of the top results of specific categories sorted by
 + `code` (required, string, nullable)
     `code` is a user-displayable code (such as a program activity or NAICS code, but **not** a database ID). When no such code is relevant, return a `null`.
 + `amount` (required, number)
++ `total_outlays` (required, number, nullable)
 
 ## PageMetadataObject (object)
 + `page` (required, number)
@@ -80,6 +97,7 @@ This endpoint returns a list of the top results of specific categories sorted by
 ## Filter Objects
 ### AdvancedFilterObject (object)
 + `keywords` : `transport` (optional, array[string])
++ `description` (optional, string)
 + `time_period` (optional, array[TimePeriodObject], fixed-type)
 + `place_of_performance_scope` (optional, enum[string])
     + Members

@@ -22,7 +22,7 @@ _data_types = OrderedDict(
 
 
 def _get_whatever(table_name: str, schema_name: str, dblink_name: str, sql: str, data_types: DataTypes):
-    """ The common bits of subsequent functions. """
+    """The common bits of subsequent functions."""
     table = make_composed_qualified_table_name(table_name, schema_name)
     sql = SQL(sql).format(table=table)
     if dblink_name is not None:
@@ -34,7 +34,7 @@ def _get_whatever(table_name: str, schema_name: str, dblink_name: str, sql: str,
 
 
 def get_columns(table_name: str, schema_name: Optional[str] = None, dblink_name: Optional[str] = None) -> List[str]:
-    """ Grab column names from the table. """
+    """Grab column names from the table."""
     sql = """
         select    attname as column_name
         from      pg_attribute
@@ -46,7 +46,7 @@ def get_columns(table_name: str, schema_name: Optional[str] = None, dblink_name:
 
 
 def get_data_types(table_name: str, schema_name: Optional[str] = None, dblink_name: Optional[str] = None) -> DataTypes:
-    """ Grab column names and database data types. """
+    """Grab column names and database data types."""
     sql = """
         select    attname as column_name,
                   pg_catalog.format_type(atttypid, atttypmod) as data_type,
@@ -70,7 +70,7 @@ def get_data_types(table_name: str, schema_name: Optional[str] = None, dblink_na
 def get_primary_key_columns(
     table_name: str, schema_name: Optional[str] = None, dblink_name: Optional[str] = None
 ) -> List[str]:
-    """ Grab column names comprising the primary key. """
+    """Grab column names comprising the primary key."""
     sql = """
         select  a.attname as column_name
         from    pg_constraint as c
@@ -83,7 +83,7 @@ def get_primary_key_columns(
 
 
 def get_query_columns(sql: str) -> List[str]:
-    """ Run a NOOP version of the query so we can ascertain its columns. """
+    """Run a NOOP version of the query so we can ascertain its columns."""
     sql = SQL("select * from ({}) as t where false").format(SQL(sql))
     # IMPORTANT:  Even though this is a read only operation, since this is being run in support of
     # a writable operation, we need to run it against the writable connection else we will be

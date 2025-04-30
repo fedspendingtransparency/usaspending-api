@@ -30,7 +30,13 @@ FROM (
             sa.reporting_fiscal_period AS fiscal_period,
             sa.reporting_fiscal_year AS fiscal_year,
             treasury_account_id AS tas_id,
-            SUM(obligations_incurred_by_program_object_class_cpe) AS object_class_pa_obligated_amount
+            SUM(
+                CASE
+                    WHEN prior_year_adjustment = 'X' OR prior_year_adjustment IS NULL
+                        THEN obligations_incurred_by_program_object_class_cpe
+                    ELSE 0
+                END
+            ) AS object_class_pa_obligated_amount
         FROM financial_accounts_by_program_activity_object_class AS fapaoc
         INNER JOIN submission_attributes AS sa
             ON sa.submission_id = fapaoc.submission_id

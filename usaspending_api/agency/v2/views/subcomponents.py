@@ -5,6 +5,7 @@ from typing import Any
 from usaspending_api.accounts.models.appropriation_account_balances import AppropriationAccountBalances
 from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
 from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.common.calculations.file_b import FileBCalculations
 from usaspending_api.common.helpers.date_helper import now
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata, sort_with_null_last
 from usaspending_api.common.helpers.orm_helpers import ConcatAll
@@ -65,9 +66,9 @@ class SubcomponentList(PaginationMixin, AgencyBase):
                     "id": x["bureau_info"].split(";")[1] if x.get("bureau_info") is not None else None,
                     "total_obligations": x["total_obligations"] if x["total_obligations"] else None,
                     "total_outlays": x["total_outlays"] if x["total_outlays"] else None,
-                    "total_budgetary_resources": x["total_budgetary_resources"]
-                    if x["total_budgetary_resources"]
-                    else None,
+                    "total_budgetary_resources": (
+                        x["total_budgetary_resources"] if x["total_budgetary_resources"] else None
+                    ),
                 }
                 for x in combined_response
             ],
@@ -99,14 +100,14 @@ class SubcomponentList(PaginationMixin, AgencyBase):
         Query Obligations and Outlays per Bureau from File B for a single Period
         """
         filters, bureau_info_subquery = self.get_common_query_objects("treasury_account")
-
+        file_b_calculations = FileBCalculations()
         results = (
             (FinancialAccountsByProgramActivityObjectClass.objects.filter(*filters))
             .annotate(bureau_info=bureau_info_subquery)
             .values("bureau_info")
             .annotate(
-                total_obligations=Sum("obligations_incurred_by_program_object_class_cpe"),
-                total_outlays=Sum("gross_outlay_amount_by_program_object_class_cpe"),
+                total_obligations=Sum(file_b_calculations.get_obligations()),
+                total_outlays=Sum(file_b_calculations.get_outlays()),
             )
             .exclude(bureau_info__isnull=True)
             .values("bureau_info", "total_obligations", "total_outlays")

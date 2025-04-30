@@ -197,6 +197,8 @@ AWARD_FILTER = [
         ],
     },
     {"name": "def_codes", "type": "array", "array_type": "text", "text_type": "search"},
+    {"name": "description", "type": "text", "text_type": "search"},
+    {"name": "award_unique_id", "type": "text", "text_type": "search"},
 ]
 
 for a in AWARD_FILTER:
@@ -204,3 +206,4 @@ for a in AWARD_FILTER:
     a["key"] = "filters{sep}{name}".format(sep=TINY_SHIELD_SEPARATOR, name=a["name"])
 
 AWARD_FILTER_NO_RECIPIENT_ID = [elem for elem in copy.deepcopy(AWARD_FILTER) if elem["name"] != "recipient_id"]
+AWARD_FILTER_W_FILTERS = [elem for elem in copy.deepcopy(AWARD_FILTER)]

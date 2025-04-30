@@ -1,105 +1,131 @@
-from typing import List
 from decimal import Decimal
+from typing import List
 
-from django.db.models import F
+from django.db.models import F, QuerySet
+from rest_framework.response import Response
+
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.disaster.v2.views.disaster_base import (
-    LoansPaginationMixin,
-    LoansMixin,
+    DisasterBase,
     FabaOutlayMixin,
+    LoansMixin,
+    LoansPaginationMixin,
 )
-from usaspending_api.disaster.v2.views.elasticsearch_account_base import ElasticsearchAccountDisasterBase
 
 
-class LoansViewSet(LoansMixin, LoansPaginationMixin, FabaOutlayMixin, ElasticsearchAccountDisasterBase):
-    """ Returns loan disaster spending by federal account. """
+class LoansViewSet(LoansMixin, LoansPaginationMixin, DisasterBase, FabaOutlayMixin):
+    """Returns loan disaster spending by federal account."""
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/federal_account/loans.md"
-    agg_key = "financial_accounts_by_award.treasury_account_id"  # primary (tier-1) aggregation key
-    nested_nonzero_fields = {"obligation": "transaction_obligated_amount", "outlay": "gross_outlay_amount_by_award_cpe"}
-    query_fields = [
-        "federal_account_symbol",
-        "federal_account_symbol.contains",
-        "federal_account_title",
-        "federal_account_title.contains",
-        "treasury_account_symbol",
-        "treasury_account_symbol.contains",
-        "treasury_account_title",
-        "treasury_account_title.contains",
-    ]
-    top_hits_fields = [
-        "financial_accounts_by_award.federal_account_symbol",
-        "financial_accounts_by_award.federal_account_title",
-        "financial_accounts_by_award.treasury_account_symbol",
-        "financial_accounts_by_award.treasury_account_title",
-        "financial_accounts_by_award.federal_account_id",
-    ]
 
     @cache_response()
     def post(self, request):
         self.filters.update({"award_type_codes": ["07", "08"]})
         self.has_children = True
-        return self.perform_elasticsearch_search(loans=True)
 
-    def build_elasticsearch_result(self, info_buckets: List[dict]) -> List[dict]:
-        temp_results = {}
-        child_results = []
-        for bucket in info_buckets:
-            child = self._build_child_json_result(bucket)
-            child_results.append(child)
-        for child in child_results:
-            result = self._build_json_result(child)
-            child.pop("parent_data")
-            if result["id"] in temp_results.keys():
-                temp_results[result["id"]] = {
-                    "id": int(result["id"]),
-                    "code": result["code"],
-                    "description": result["description"],
-                    "award_count": temp_results[result["id"]]["award_count"] + result["award_count"],
-                    # the count of distinct awards contributing to the totals
-                    "obligation": temp_results[result["id"]]["obligation"] + result["obligation"],
-                    "outlay": temp_results[result["id"]]["outlay"] + result["outlay"],
-                    "children": temp_results[result["id"]]["children"] + result["children"],
-                    "face_value_of_loan": temp_results[result["id"]]["face_value_of_loan"]
-                    + result["face_value_of_loan"],
-                }
-            else:
-                temp_results[result["id"]] = result
-        results = [x for x in temp_results.values()]
-        return results
-
-    def _build_json_result(self, child):
-        return {
-            "id": child["parent_data"][2],
-            "code": child["parent_data"][1],
-            "description": child["parent_data"][0],
-            "award_count": child["award_count"],
-            # the count of distinct awards contributing to the totals
-            "obligation": child["obligation"],
-            "outlay": child["outlay"],
-            "children": [child],
-            "face_value_of_loan": child["face_value_of_loan"],
-        }
-
-    def _build_child_json_result(self, bucket: dict):
-        return {
-            "id": int(bucket["key"]),
-            "code": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["treasury_account_symbol"],
-            "description": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["treasury_account_title"],
-            # the count of distinct awards contributing to the totals
-            "award_count": int(bucket["count_awards_by_dim"]["award_count"]["value"]),
-            **{
-                key: Decimal(bucket.get(f"sum_{val}", {"value": 0})["value"])
-                for key, val in self.nested_nonzero_fields.items()
-            },
-            "face_value_of_loan": bucket["count_awards_by_dim"]["sum_loan_value"]["value"],
-            "parent_data": [
-                bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["federal_account_title"],
-                bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["federal_account_symbol"],
-                bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["federal_account_id"],
+        account_db_results = self.get_covid_faba_spending(
+            spending_level="treasury_account",
+            def_codes=self.filters["def_codes"],
+            columns_to_return=[
+                "funding_federal_account_id",
+                "funding_federal_account_code",
+                "funding_federal_account_name",
+                "funding_treasury_account_id",
+                "funding_treasury_account_code",
+                "funding_treasury_account_name",
             ],
-        }
+            award_types=self.filters["award_type_codes"],
+            search_query=self.query,
+            search_query_fields=["funding_federal_account_name", "funding_treasury_account_name"],
+        )
+
+        json_result = self._build_json_result(account_db_results)
+        sorted_json_result = self.sort_json_result(
+            data_to_sort=json_result,
+            sort_key=self.pagination.sort_key,
+            sort_order=self.pagination.sort_order,
+            has_children=self.has_children,
+        )
+
+        return Response(sorted_json_result)
+
+    def _build_json_result(self, queryset: List[QuerySet]) -> dict:
+        """Build the JSON response that will be returned for this endpoint.
+
+        Args:
+            queryset: Database query results.
+
+        Returns:
+            Formatted JSON response.
+        """
+
+        response = {"totals": {"obligation": 0, "outlay": 0, "award_count": 0, "face_value_of_loan": 0}, "results": []}
+
+        parent_lookup = {}
+        child_lookup = {}
+
+        for row in queryset:
+            parent_federal_account_id = int(row["funding_federal_account_id"])
+
+            if parent_federal_account_id not in parent_lookup.keys():
+                parent_lookup[parent_federal_account_id] = {
+                    "id": parent_federal_account_id,
+                    "code": row["funding_federal_account_code"],
+                    "description": row["funding_federal_account_name"],
+                    "award_count": 0,
+                    "obligation": Decimal(0),
+                    "outlay": Decimal(0),
+                    "face_value_of_loan": Decimal(0),
+                    "children": [],
+                }
+
+            if parent_federal_account_id not in child_lookup.keys():
+                child_lookup[parent_federal_account_id] = [
+                    {
+                        "id": int(row["funding_treasury_account_id"]),
+                        "code": row["funding_treasury_account_code"],
+                        "description": row["funding_treasury_account_name"],
+                        "award_count": int(row["award_count"]),
+                        "obligation": Decimal(row["obligation_sum"]),
+                        "outlay": Decimal(row["outlay_sum"]),
+                        "face_value_of_loan": Decimal(row["face_value_of_loan"]),
+                    }
+                ]
+            else:
+                child_lookup[parent_federal_account_id].append(
+                    {
+                        "id": int(row["funding_treasury_account_id"]),
+                        "code": row["funding_treasury_account_code"],
+                        "description": row["funding_treasury_account_name"],
+                        "award_count": int(row["award_count"]),
+                        "obligation": Decimal(row["obligation_sum"]),
+                        "outlay": Decimal(row["outlay_sum"]),
+                        "face_value_of_loan": Decimal(row["face_value_of_loan"]),
+                    }
+                )
+
+            response["totals"]["obligation"] += Decimal(row["obligation_sum"])
+            response["totals"]["outlay"] += Decimal(row["outlay_sum"])
+            response["totals"]["award_count"] += row["award_count"]
+            response["totals"]["face_value_of_loan"] += Decimal(row["face_value_of_loan"])
+
+        for parent_account_id, children in child_lookup.items():
+            for child_ta_account in children:
+                parent_lookup[parent_account_id]["children"].append(child_ta_account)
+                parent_lookup[parent_account_id]["award_count"] += child_ta_account["award_count"]
+                parent_lookup[parent_account_id]["obligation"] += child_ta_account["obligation"]
+                parent_lookup[parent_account_id]["outlay"] += child_ta_account["outlay"]
+                parent_lookup[parent_account_id]["face_value_of_loan"] += child_ta_account["face_value_of_loan"]
+
+        response["results"] = list(parent_lookup.values())
+
+        response["page_metadata"] = get_pagination_metadata(
+            len(response["results"]), self.pagination.limit, self.pagination.page
+        )
+
+        return response
 
     @property
     def queryset(self):

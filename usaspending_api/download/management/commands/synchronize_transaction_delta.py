@@ -13,6 +13,7 @@ database, we need to remove those records from the transaction_delta table in th
 So, in a nutshell, this function will delete transaction_delta records from the "live" database
 with a created_at date <= the max(created_at) from the snapshot database.
 """
+
 import logging
 import os
 import psycopg2

@@ -7,7 +7,7 @@ This endpoint is used by the Recipient autocomplete filter on the Advanced Searc
 
 ## POST
 
-This route sends a request to the backend to retrieve recipients matching the specified search text. The endpoint will search for `search_text` in the `recipient_name` and `uei` fields. The `recipient_levels` value can also be included to further filter results, but is not required.
+This route sends a request to the backend to retrieve recipients matching the specified search text. The endpoint will search for `search_text` in the `recipient_name`, `uei` and `duns` fields. The `recipient_levels` value can also be included to further filter results, but is not required.
 
 + Request (application/json)
     + Schema
@@ -57,19 +57,22 @@ This route sends a request to the backend to retrieve recipients matching the sp
             {
                 "results": [
                     {
-                        "recipient_name": "ABC Holdings Inc.",
+                        "recipient_name": "LOCKHEED MARTIN",
                         "recipient_level": "P",
-                        "uei": "ABCDEF12345"
+                        "uei": "PUETYBNR91Z3"
+                        "duns": "956973523"
                     },
                     {
-                        "recipient_name": "ABC Holdings Inc.",
-                        "recipient_level": "R",
-                        "uei": "ABCDEF12345"
-                    },
-                    {
-                        "recipient_name": "XYZ Holdings",
+                        "recipient_name": "LOCKHEED MARTIN",
                         "recipient_level": "C",
-                        "uei": "ASDFGH67890"
+                        "uei": "PUETYBNR91Z3",
+                        "duns": "956973523"
+                    },
+                    {
+                        "recipient_name": "LOCKHEED MARTIN",
+                        "recipient_level": "R",
+                        "uei": "null",
+                        "duns": "null"
                     }
                 ]
             }
@@ -79,4 +82,5 @@ This route sends a request to the backend to retrieve recipients matching the sp
 ## RecipientMatch (object)
 + `recipient_name` (required, string)
 + `recipient_level` (required, string)
-+ `uei` (optional, string)
++ `uei` (required, string)
++ `duns` (required, string)

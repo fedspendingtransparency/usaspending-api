@@ -22,6 +22,7 @@ from usaspending_api.recipient.v2.lookups import RECIPIENT_LEVELS, SPECIAL_CASES
 from usaspending_api.references.models import RefCountryCode
 from usaspending_api.search.models import TransactionSearch as TransactionSearchModel
 from usaspending_api.common.api_versioning import deprecated
+from usaspending_api.search.filters.elasticsearch.filter import QueryType
 from usaspending_api.search.v2.elasticsearch_helper import (
     get_scaled_sum_aggregations,
     get_number_of_unique_terms_for_transactions,
@@ -256,7 +257,8 @@ def obtain_recipient_totals(recipient_id, children=False, year="latest"):
         list of dictionaries representing hashes and their totals/counts
     """
     filters = reshape_filters(recipient_id=recipient_id, year=year)
-    filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(filters)
+    query_with_filters = QueryWithFilters(QueryType.TRANSACTIONS)
+    filter_query = query_with_filters.generate_elasticsearch_query(filters)
 
     search = TransactionSearch().filter(filter_query)
 

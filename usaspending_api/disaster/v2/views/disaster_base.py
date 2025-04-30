@@ -1,22 +1,23 @@
 import json
-
 from datetime import date
-from django.db.models import Case, Count, DecimalField, F, Max, Q, Sum, Value, When
+from functools import lru_cache
+from typing import List, Optional
+
+from django.db.models import Case, Count, DecimalField, F, Max, Q, QuerySet, Sum, Value, When
 from django.db.models.functions import Coalesce
 from django.http import HttpRequest
 from django.utils.functional import cached_property
 from django_cte import With
-from functools import lru_cache
 from rest_framework.views import APIView
-from typing import List
 
 from usaspending_api.awards.models.financial_accounts_by_awards import FinancialAccountsByAwards
-from usaspending_api.awards.v2.lookups.lookups import award_type_mapping, loan_type_mapping, assistance_type_mapping
+from usaspending_api.awards.v2.lookups.lookups import assistance_type_mapping, award_type_mapping, loan_type_mapping
 from usaspending_api.common.containers import Bunch
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.helpers.date_helper import now
 from usaspending_api.common.helpers.fiscal_year_helpers import generate_fiscal_year_and_month
-from usaspending_api.common.validator import customize_pagination_with_sort_columns, TinyShield
+from usaspending_api.common.validator import TinyShield, customize_pagination_with_sort_columns
+from usaspending_api.disaster.models import CovidFABASpending
 from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.references.models.gtas_sf133_balances import GTASSF133Balances
 from usaspending_api.submissions.helpers import get_last_closed_submission_date
@@ -189,24 +190,6 @@ class DisasterBase(APIView):
     def is_in_provided_def_codes(self):
         return Q(disaster_emergency_fund__code__in=self.def_codes)
 
-    @property
-    def is_non_zero_total_spending(self):
-        return ~Q(
-            Q(
-                obligations_incurred_by_program_object_class_cpe=F(
-                    "deobligations_recoveries_refund_pri_program_object_class_cpe"
-                )
-                * -1
-            )
-            & Q(
-                gross_outlay_amount_by_program_object_class_cpe=F(
-                    "ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe"
-                )
-                * -1
-                - F("ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe")
-            )
-        )
-
     def has_award_of_provided_type(self, should_join_awards: bool = True) -> Q:
         award_type_codes = self.filters.get("award_type_codes")
         if award_type_codes is not None:
@@ -328,6 +311,93 @@ class DisasterBase(APIView):
                 totals[key] += res.get(key) or 0
 
         return totals
+
+    @staticmethod
+    def sort_json_result(data_to_sort: dict, sort_key: str, sort_order: str, has_children: bool) -> dict:
+        """Sort the JSON by the appropriate field and in the appropriate order before returning it.
+
+        This assumes we're sorting the items within the `results` list within the provided dictionary.
+
+        Args:
+            data_to_sort: Unsorted JSON data.
+            sort_key: The field to sort by.
+            sort_order: Whether to sort the data in ascending or descending order.
+            has_children: Does the JSON data contain child entries underneath a parent entry.
+
+        Returns:
+            Sorted JSON result.
+        """
+
+        if sort_key == "description":
+            data_to_sort["results"] = sorted(
+                data_to_sort["results"],
+                key=lambda val: val.get("description", "id").lower(),
+                reverse=sort_order == "desc",
+            )
+        else:
+            data_to_sort["results"] = sorted(
+                data_to_sort["results"],
+                key=lambda val: val.get(sort_key, "id"),
+                reverse=sort_order == "desc",
+            )
+
+        if has_children:
+            for parent in data_to_sort["results"]:
+                parent["children"] = sorted(
+                    parent.get("children", []),
+                    key=lambda val: val.get(sort_key, "id"),
+                    reverse=sort_order == "desc",
+                )
+
+        return data_to_sort
+
+    @staticmethod
+    def get_covid_faba_spending(
+        spending_level: str,
+        def_codes: List[str],
+        columns_to_return: List[str],
+        award_types: Optional[List[str]] = None,
+        search_query: Optional[str] = None,
+        search_query_fields: Optional[List[str]] = None,
+    ) -> QuerySet:
+        """Query the covid_faba_spending table and return COVID-19 FABA spending grouped by the provided `spending_level`
+
+        Args:
+            spending_level: Spending level to group by
+            def_codes: Disaster codes to filter by
+            columns_to_return: List of columns to SELECT from the table
+            award_types: Award types to filter by
+            search_query: Text to search for in `search_query_fields`
+            search_query_fields: Field to search for `search_query` in
+
+        Returns:
+            Matching rows from the covid_faba_spending table
+        """
+
+        queryset = (
+            CovidFABASpending.objects.filter(spending_level=spending_level)
+            .filter(defc__in=def_codes)
+            .values(*columns_to_return)
+            .annotate(
+                award_count=Sum("award_count"),
+                obligation_sum=Sum("obligation_sum"),
+                outlay_sum=Sum("outlay_sum"),
+                face_value_of_loan=Sum("face_value_of_loan"),
+            )
+        )
+
+        if award_types is not None:
+            queryset = queryset.filter(award_type__in=award_types)
+
+        if search_query is not None and search_query_fields is not None:
+            or_query = Q()
+
+            for field in search_query_fields:
+                or_query |= Q(**{f"{field}__icontains": search_query})
+
+            queryset = queryset.filter(or_query)
+
+        return queryset
 
 
 class AwardTypeMixin:

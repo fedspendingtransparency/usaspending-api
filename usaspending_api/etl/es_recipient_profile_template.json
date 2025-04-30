@@ -15,6 +15,20 @@
           "filter": [
             "uppercase"
           ]
+        },
+        "edge_ngram_analyzer": {
+          "tokenizer": "edge_ngram_tokenizer"
+        }
+      },
+      "tokenizer": {
+        "edge_ngram_tokenizer": {
+          "type": "edge_ngram",
+          "min_gram": 2,
+          "max_gram": 10,
+          "token_char": [
+            "letter",
+            "digit"
+          ]
         }
       }
     }
@@ -53,6 +67,18 @@
       },
       "recipient_level": {
         "type": "keyword"
+      },
+      "duns": {
+        "type": "text",
+        "fields": {
+          "contains": {
+            "type": "text",
+            "analyzer": "contains_analyzer"
+          },
+          "keyword": {
+            "type": "keyword"
+          }
+        }
       }
     }
   }

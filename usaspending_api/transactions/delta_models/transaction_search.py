@@ -390,6 +390,7 @@ TRANSACTION_SEARCH_COLUMNS = {
     "veterinary_hospital": {"delta": "BOOLEAN", "postgres": "BOOLEAN", "gold": True},
     "woman_owned_business": {"delta": "BOOLEAN", "postgres": "BOOLEAN", "gold": True},
     "women_owned_small_business": {"delta": "BOOLEAN", "postgres": "BOOLEAN", "gold": True},
+    "program_activities": {"delta": "STRING", "postgres": "JSONB", "gold": False},
 }
 TRANSACTION_SEARCH_DELTA_COLUMNS = {k: v["delta"] for k, v in TRANSACTION_SEARCH_COLUMNS.items() if not v["gold"]}
 TRANSACTION_SEARCH_GOLD_DELTA_COLUMNS = {k: v["delta"] for k, v in TRANSACTION_SEARCH_COLUMNS.items()}
@@ -461,10 +462,9 @@ transaction_search_load_sql_string = rf"""
         SAA.abbreviation AS awarding_subtier_agency_abbreviation,
         SFA.abbreviation AS funding_subtier_agency_abbreviation,
         COALESCE(transaction_fabs.awarding_office_code, transaction_fpds.awarding_office_code) AS awarding_office_code,
-        COALESCE(transaction_fabs.awarding_office_name, transaction_fpds.awarding_office_name) AS awarding_office_name,
+        COALESCE(awarding_office.office_name, transaction_fabs.awarding_office_name, transaction_fpds.awarding_office_name) AS awarding_office_name,
         COALESCE(transaction_fabs.funding_office_code, transaction_fpds.funding_office_code) AS funding_office_code,
-        COALESCE(transaction_fabs.funding_office_name, transaction_fpds.funding_office_name) AS funding_office_name,
-
+        COALESCE(funding_office.office_name, transaction_fabs.funding_office_name, transaction_fpds.funding_office_name) AS funding_office_name,
         -- Typing
         transaction_normalized.is_fpds,
         transaction_normalized.type AS type_raw,
@@ -899,7 +899,8 @@ transaction_search_load_sql_string = rf"""
         transaction_fpds.veterinary_college,
         transaction_fpds.veterinary_hospital,
         transaction_fpds.woman_owned_business,
-        transaction_fpds.women_owned_small_business
+        transaction_fpds.women_owned_small_business,
+        FED_AND_TRES_ACCT.program_activities
 
     FROM
         int.transaction_normalized
@@ -1016,6 +1017,11 @@ transaction_search_load_sql_string = rf"""
         int.transaction_current_cd_lookup AS CURRENT_CD ON (
             transaction_normalized.id = CURRENT_CD.transaction_id
         )
+    LEFT OUTER JOIN
+        global_temp.office awarding_office ON (awarding_office.office_code = COALESCE(transaction_fabs.awarding_office_code, transaction_fpds.awarding_office_code))
+    LEFT OUTER JOIN
+        global_temp.office funding_office ON (funding_office.office_code = COALESCE(transaction_fabs.funding_office_code, transaction_fpds.funding_office_code))
+
     LEFT OUTER JOIN (
         SELECT
             faba.award_id,
@@ -1066,11 +1072,20 @@ transaction_search_load_sql_string = rf"""
                     )
                 ),
                 TRUE
-            ) AS tas_components
+            ) AS tas_components,
+            COLLECT_SET(
+                TO_JSON(
+                    NAMED_STRUCT(
+                        'name', UPPER(rpa.program_activity_name),
+                        'code', LPAD(rpa.program_activity_code, 4, "0")
+                    )
+                )
+            ) AS program_activities
         FROM int.financial_accounts_by_awards AS faba
         INNER JOIN global_temp.treasury_appropriation_account AS taa ON taa.treasury_account_identifier = faba.treasury_account_id
         INNER JOIN global_temp.federal_account AS fa ON fa.id = taa.federal_account_id
         INNER JOIN global_temp.toptier_agency agency ON (fa.parent_toptier_agency_id = agency.toptier_agency_id)
+        LEFT JOIN global_temp.ref_program_activity rpa ON (faba.program_activity_id = rpa.id)
         WHERE faba.award_id IS NOT NULL
         GROUP BY faba.award_id
     ) FED_AND_TRES_ACCT ON (FED_AND_TRES_ACCT.award_id = transaction_normalized.award_id)

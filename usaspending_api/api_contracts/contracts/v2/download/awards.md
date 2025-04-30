@@ -133,13 +133,13 @@ This route sends a request to the backend to begin generating a zipfile of award
 ## Filter Objects
 
 ### Filters (object)
++ `agencies` (optional, array[Agency], fixed-type)
 + `award_amounts` (optional, array[AwardAmount], fixed-type)
 + `award_ids` (optional, array[string])
     Award IDs surrounded by double quotes (e.g. `"SPE30018FLJFN"`) will perform exact matches as opposed to the default, fuzzier full text matches.  Useful for Award IDs that contain spaces or other word delimiters.
 + `award_type_codes` (optional, array[string])
-+ `agencies` (optional, array[Agency], fixed-type)
 + `contract_pricing_type_codes` (optional, array[string])
-+ `elasticsearch_keyword` (optional, string)
++ `def_codes` (optional, array[DEFC], fixed-type)
 + `extent_competed_type_codes` (optional, array[string])
 + `federal_account_ids` (optional, array[string])
 + `keywords` (optional, array[string])
@@ -153,17 +153,15 @@ This route sends a request to the backend to begin generating a zipfile of award
 + `psc_codes` (optional, enum[PSCCodeObject, array[string]])
     Supports new PSCCodeObject or legacy array of codes.
 + `recipient_locations` (optional, array[Location], fixed-type)
-+ `recipient_search_text` (optional, string)
 + `recipient_scope` (optional, string)
-+ `recipient_type_names` (optional, array[string])
++ `recipient_search_text` (optional, string)
 + `set_aside_type_codes` (optional, array[string])
-+ `time_period` (optional, array[TimePeriod], fixed-type)
++ `recipient_type_names` (optional, array[string])
 + `tas_codes` (optional, array[TASCodeObject], fixed-type)
++ `time_period` (optional, array[TimePeriod], fixed-type)
++ `transaction_keyword_search` (optional, string)
+    Filter awards by keywords in the award's transactions.
 + `treasury_account_components` (optional, array[TreasuryAccountComponentsObject], fixed-type)
-
-### AwardAmount (object)
-+ `lower_bound` (optional, number)
-+ `upper_bound` (optional, number)
 
 ### Agency (object)
 + `name` (required, string)
@@ -178,11 +176,14 @@ This route sends a request to the backend to begin generating a zipfile of award
 + `toptier_name` (optional, string)
     Provided when the `name` belongs to a subtier agency
 
+### AwardAmount (object)
++ `lower_bound` (optional, number)
++ `upper_bound` (optional, number)
 
-### TimePeriod (object)
-+ `start_date` (required, string)
-+ `end_date` (required, string)
-+ `date_type` (optional, enum[string])
+### DEFC (enum[string])
+List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing.
+A list of current DEFC can be found [here.](https://files.usaspending.gov/reference_data/def_codes.csv)
+
 
 ### Location (object)
 + `country`(required, string)
@@ -214,6 +215,11 @@ This route sends a request to the backend to begin generating a zipfile of award
 ### TASCodeObject (object)
 + `require`: [[`091`]] (optional, array[array[string]], fixed-type)
 + `exclude`: [[`091`, `091-0800`]] (optional, array[array[string]], fixed-type)
+
+### TimePeriod (object)
++ `start_date` (required, string)
++ `end_date` (required, string)
++ `date_type` (optional, enum[string])
 
 ### TreasuryAccountComponentsObject (object)
 + `ata` (optional, string, nullable)

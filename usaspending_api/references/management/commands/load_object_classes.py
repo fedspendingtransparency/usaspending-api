@@ -149,13 +149,13 @@ class Command(mixins.ETLMixin, BaseCommand):
             )
 
     def _keep_only_3_digit_object_classes(self):
-        """ While the file and users can provide both versions, this loader only needs the 3-digits when processing """
+        """While the file and users can provide both versions, this loader only needs the 3-digits when processing"""
         self.raw_object_classes = [
             raw_object_class for raw_object_class in self.raw_object_classes if len(raw_object_class.object_class) == 3
         ]
 
     def _add_unknown_object_classes(self):
-        """ These are not officially sanctioned object classes but we use them on the website. """
+        """These are not officially sanctioned object classes but we use them on the website."""
 
         unknown = ObjectClass.MAJOR_OBJECT_CLASS.UNKNOWN_NAME
         self.raw_object_classes = [
@@ -163,7 +163,7 @@ class Command(mixins.ETLMixin, BaseCommand):
         ] + self.raw_object_classes
 
     def _derive_remaining_fields(self):
-        """ The remaining object class data are derived. """
+        """The remaining object class data are derived."""
 
         # Alias to cut down on line lengths below.
         ocdr = ObjectClass.DIRECT_REIMBURSABLE

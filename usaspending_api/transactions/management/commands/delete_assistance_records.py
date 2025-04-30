@@ -31,15 +31,15 @@ class Command(AgnosticDeletes, BaseCommand):
         sql = """
         select  published_fabs_id
         from    published_fabs
-        where   afa_generated_unique in (
-                    select  afa_generated_unique
+        where   UPPER(afa_generated_unique) in (
+                    select  UPPER(afa_generated_unique)
                     from    published_fabs
                     where   updated_at >= %s and
                             upper(correction_delete_indicatr) = 'D'
                 ) and
                 is_active is not true
         """
-        with connections["data_broker"].cursor() as cursor:
+        with connections[settings.DATA_BROKER_DB_ALIAS].cursor() as cursor:
             cursor.execute(sql, [date_time])
             results = cursor.fetchall()
 
@@ -67,7 +67,7 @@ class Command(AgnosticDeletes, BaseCommand):
                 id_list += id_list
 
             if len(id_list) > 0:
-                with connections["data_broker"].cursor() as cursor:
+                with connections[settings.DATA_BROKER_DB_ALIAS].cursor() as cursor:
                     cursor.execute(sql.format(ids=tuple(id_list)))
                     afa_id_list = cursor.fetchall()
                     records = [afa_id[0] for afa_id in afa_id_list]

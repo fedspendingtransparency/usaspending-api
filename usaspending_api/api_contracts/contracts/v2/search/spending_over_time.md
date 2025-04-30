@@ -30,6 +30,14 @@ This endpoint returns a list of aggregated award amounts grouped by time period 
         + `subawards` (optional, boolean)
             True to group by sub-awards instead of prime awards. Defaults to false.
             + Default: false
+        + `spending_level` (optional, enum[string])
+            Group the spending by level. This also determines what data source is used for the totals.
+            + Members
+                + `transactions`
+                + `awards`
+                + `subawards`
+            + Default
+                + `transactions`
     + Body
 
             {
@@ -47,6 +55,12 @@ This endpoint returns a list of aggregated award amounts grouped by time period 
                 + `fiscal_year`
                 + `quarter`
                 + `month`
+        + `spending_level` (required, enum[string])
+            Spending level value that was provided in the request.
+            + Members
+                + `transactions`
+                + `awards`
+                + `subawards`
         + `results` (array[TimeResult], fixed-type)
         + `messages` (optional, array[string])
             An array of warnings or instructional directives to aid consumers of this endpoint with development and debugging.
@@ -57,12 +71,20 @@ This endpoint returns a list of aggregated award amounts grouped by time period 
 + `time_period` (required, TimePeriodGroup)
 + `aggregated_amount` (required, number)
     The aggregate award amount for this time period and the given filters.
-+ `contract_obligations` (required, number)
-+ `loan_obligations` (required, number)
-+ `idv_obligations` (required, number)
-+ `grant_obligations` (required, number)
-+ `direct_payment_obligations` (required, number)
-+ `other_obligations` (required, number)
++ `Contract_Obligations` (required, number)
++ `Loan_Obligations` (required, number)
++ `Idv_Obligations` (required, number)
++ `Grant_Obligations` (required, number)
++ `Direct_Obligations` (required, number)
++ `Other_Obligations` (required, number)
++ `total_outlays` (required, number, nullable)
+    The aggregate outlay amount for this time period and the given filters.
++ `Contract_Outlays` (required, number, nullable)
++ `Loan_Outlays` (required, number, nullable)
++ `Idv_Outlays` (required, number, nullable)
++ `Grant_outlays` (required, number, nullable)
++ `Direct_Outlays` (required, number, nullable)
++ `Other_Outlays` (required, number, nullable)
 
 ## TimePeriodGroup (object)
 + `calendar_year` (optional, string)
@@ -77,6 +99,7 @@ This endpoint returns a list of aggregated award amounts grouped by time period 
 ## Filter Objects
 ### AdvancedFilterObject (object)
 + `keywords` : `transport` (optional, array[string])
++ `description` (optional, string)
 + `time_period` (optional, array[TimePeriodObject], fixed-type)
 + `place_of_performance_scope` (optional, enum[string])
     + Members
@@ -107,6 +130,8 @@ This endpoint returns a list of aggregated award amounts grouped by time period 
 + `treasury_account_components` (optional, array[TreasuryAccountComponentsObject], fixed-type)
 + `object_class` (optional, array[string])
 + `program_activity` (optional, array[number])
++ `program_activities` (optional, array[ProgramActivityObject])
+    A filter option that supports filtering by a program activity name or code. Please note that if this filter is used at least one of the members of the object, ProgramActivityObject, need to be provided.
 + `def_codes` (optional, array[DEFC], fixed-type)
   If the `def_codes` provided are in the COVID-19 or IIJA group, the query will only return results of transactions where the `action_date` is on or after the enactment date of the public law associated with that disaster code.
 
@@ -122,6 +147,11 @@ This TimePeriodObject can fall into different categories based on the request.
 
 ### LocationObject (object)
 These fields are defined in the [StandardLocationObject](../../../search_filters.md#standard-location-object)
+
+### ProgramActivityObject (object)
+At least one of the following fields are required when using the ProgramActivityObject.
++ `name`: (optional, string)
++ `code`: (optional, number)
 
 ### AgencyObject (object)
 + `type` (required, enum[string])

@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from typing import Any
 from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
 from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.common.calculations.file_b import FileBCalculations
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.submissions.helpers import get_latest_submission_ids_for_fiscal_year
@@ -59,16 +60,12 @@ class BudgetFunctionList(PaginationMixin, AgencyBase):
         )
 
     def get_budget_function_queryset(self):
+        file_b_calculations = FileBCalculations()
         submission_ids = get_latest_submission_ids_for_fiscal_year(self.fiscal_year)
         filters = [
             Q(submission_id__in=submission_ids),
             Q(treasury_account__funding_toptier_agency=self.toptier_agency),
-            Q(
-                Q(obligations_incurred_by_program_object_class_cpe__gt=0)
-                | Q(obligations_incurred_by_program_object_class_cpe__lt=0)
-                | Q(gross_outlay_amount_by_program_object_class_cpe__gt=0)
-                | Q(gross_outlay_amount_by_program_object_class_cpe__lt=0)
-            ),
+            file_b_calculations.is_non_zero_total_spending(),
         ]
         if self.filter is not None:
             filters.append(
@@ -87,8 +84,8 @@ class BudgetFunctionList(PaginationMixin, AgencyBase):
                 "treasury_account__budget_subfunction_title",
             )
             .annotate(
-                obligated_amount=Sum("obligations_incurred_by_program_object_class_cpe"),
-                gross_outlay_amount=Sum("gross_outlay_amount_by_program_object_class_cpe"),
+                obligated_amount=Sum(file_b_calculations.get_obligations()),
+                gross_outlay_amount=Sum(file_b_calculations.get_outlays()),
             )
         )
         return results

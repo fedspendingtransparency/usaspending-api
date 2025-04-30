@@ -6,7 +6,6 @@ For the full list of settings and their values: https://docs.djangoproject.com/e
 import os
 from pathlib import Path
 
-import ddtrace
 import dj_database_url
 from django.db import DEFAULT_DB_ALIAS
 from django.utils.crypto import get_random_string
@@ -41,7 +40,7 @@ DEFAULT_TEXT_SEARCH_CONFIG = "pg_catalog.simple"
 # MAX_CONNECTIONS in this case refers to those serving downloads
 DOWNLOAD_DB_WORK_MEM_IN_MB = os.environ.get("DOWNLOAD_DB_WORK_MEM_IN_MB", 128)
 
-API_MAX_DATE = "2024-09-30"  # End of FY2024
+API_MAX_DATE = "2027-09-30"  # End of FY2027
 API_MIN_DATE = "2000-10-01"  # Beginning of FY2001
 API_SEARCH_MIN_DATE = "2007-10-01"  # Beginning of FY2008
 
@@ -61,6 +60,10 @@ ALLOWED_HOSTS = ["*"]
 # Define local flag to affect location of downloads
 IS_LOCAL = True
 
+# Indicates which environment is sending traces to Grafana.
+# This will be overwritten by Ansible
+TRACE_ENV = "unspecified"
+
 # How to handle downloads locally
 # True: process it right away by the API;
 # False: leave the message in the local file-backed queue to be picked up and processed by the bulk-download container
@@ -76,9 +79,11 @@ CSV_LOCAL_PATH = str(REPO_DIR / "csv_downloads") + "/"
 DOWNLOAD_ENV = ""
 BULK_DOWNLOAD_LOCAL_PATH = str(REPO_DIR / "bulk_downloads") + "/"
 
+DATABASE_DOWNLOAD_S3_BUCKET_NAME = CONFIG.DATABASE_DOWNLOAD_S3_BUCKET_NAME
 BULK_DOWNLOAD_S3_BUCKET_NAME = CONFIG.BULK_DOWNLOAD_S3_BUCKET_NAME
 BULK_DOWNLOAD_S3_REDIRECT_DIR = "generated_downloads"
 BULK_DOWNLOAD_SQS_QUEUE_NAME = ""
+DATABASE_DOWNLOAD_S3_REDIRECT_DIR = "database_download"
 MONTHLY_DOWNLOAD_S3_BUCKET_NAME = ""
 MONTHLY_DOWNLOAD_S3_REDIRECT_DIR = "award_data_archive"
 BROKER_AGENCY_BUCKET_NAME = ""
@@ -158,12 +163,6 @@ ES_SUBAWARD_MAX_RESULT_WINDOW = 50000
 ES_SUBAWARD_QUERY_ALIAS_PREFIX = "subaward-query"
 ES_SUBAWARD_WRITE_ALIAS = "subaward-load-alias"
 
-ES_COVID19_FABA_ETL_VIEW_NAME = "covid19_faba_view"
-ES_COVID19_FABA_MAX_RESULT_WINDOW = 50000
-ES_COVID19_FABA_NAME_SUFFIX = "covid19-faba"
-ES_COVID19_FABA_QUERY_ALIAS_PREFIX = "covid19-faba-query"
-ES_COVID19_FABA_WRITE_ALIAS = "covid19-faba-load-alias"
-
 ES_TRANSACTIONS_ETL_VIEW_NAME = "transaction_delta_view"
 ES_TRANSACTIONS_MAX_RESULT_WINDOW = 50000
 ES_TRANSACTIONS_NAME_SUFFIX = "transactions"
@@ -205,6 +204,7 @@ INSTALLED_APPS = [
     "debug_toolbar",
     "django_extensions",
     "django_spaghetti",
+    "opentelemetry",
     "rest_framework",
     "rest_framework_tracking",
     # Project applications
@@ -229,40 +229,6 @@ INSTALLED_APPS = [
 ]
 
 INTERNAL_IPS = ()
-
-# Replace below param with enabled=True during env-deploys to turn on
-ddtrace.tracer.configure(enabled=False)
-if ddtrace.tracer.enabled:
-    ddtrace.config.django["service_name"] = "api"
-    ddtrace.config.django["analytics_enabled"] = True  # capture APM "Traces" & "Analyzed Spans" in App Analytics
-    ddtrace.config.django["analytics_sample_rate"] = 1.0  # Including 100% of traces in sample
-    ddtrace.config.django["trace_query_string"] = True
-    # Distributed tracing only needed if picking up disjoint traces by HTTP Header value
-    ddtrace.config.django["distributed_tracing_enabled"] = False
-    # Trace HTTP Request or Response Headers listed in this whitelist
-    ddtrace.config.trace_headers(
-        [
-            "content-length",  # req and resp
-            "content-type",  # req and resp
-            "host",
-            "origin",
-            "referer",
-            "ua-is-bot",
-            "user-agent",
-            "x-forwarded-for",
-            "x-requested-with",
-            # Response Headers
-            "allow",
-            "cache-trace",
-            "is-dynamically-rendered",
-            "key",  # cache key
-            "strict-transport-security",
-        ]
-    )
-    # patch_all() captures traces from integrated components' libraries by patching them. See:
-    # - http://pypi.datadoghq.com/trace/docs/advanced_usage.html#patch-all
-    # - Integrated Libs: http://pypi.datadoghq.com/trace/docs/index.html#supported-libraries
-    ddtrace.patch_all()
 
 DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": lambda request: DEBUG}
 
@@ -355,7 +321,7 @@ if os.environ.get("DOWNLOAD_DATABASE_URL"):
         "DOWNLOAD_DATABASE_URL", test_options={"MIRROR": DEFAULT_DB_ALIAS}
     )
 
-# import a second database connection for ETL, connecting to the data broker
+# import a second database connection for ETL, connecting to data broker
 # using the environment variable, DATA_BROKER_DATABASE_URL - only if it is set
 DATA_BROKER_DB_ALIAS = "data_broker"
 if os.environ.get("DATA_BROKER_DATABASE_URL"):

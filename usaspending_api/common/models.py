@@ -4,7 +4,7 @@ from django.db import models
 # This is an abstract model that should be the foundation for any model that requires data source tracking - history
 # tracking will then be added to this and it will cascade down to appropriate classes
 class DataSourceTrackedModel(models.Model):
-    DATASOURCES = (("USA", "USAspending"), ("DBR", "DATA Act Broker"))
+    DATASOURCES = (("USA", "USAspending"), ("DBR", "Data Broker"))
 
     # Allowing null for the time being
     data_source = models.TextField(

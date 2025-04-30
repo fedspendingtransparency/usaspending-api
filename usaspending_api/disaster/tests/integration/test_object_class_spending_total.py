@@ -1,5 +1,4 @@
 import pytest
-
 from rest_framework import status
 
 url = "/api/v2/disaster/object_class/spending/"
@@ -12,24 +11,40 @@ def test_basic_object_class_spending_total_success(
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     helpers.reset_dabs_cache()
 
-    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M"], spending_type="total")
+    resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M", "N", "O"], spending_type="total")
     expected_results = [
         {
             "id": "001",
             "code": "001",
             "description": "001 name",
             "award_count": None,
-            "obligation": 9.0,
-            "outlay": 0.0,
+            "obligation": 1732.0,
+            "outlay": 1190.0,
             "children": [
+                {
+                    "id": "3",
+                    "code": "0003",
+                    "description": "0003 name",
+                    "award_count": None,
+                    "obligation": 1180.0,
+                    "outlay": 1190.0,
+                },
+                {
+                    "id": "2",
+                    "code": "0002",
+                    "description": "0002 name",
+                    "award_count": None,
+                    "obligation": 345.0,
+                    "outlay": 0.0,
+                },
                 {
                     "id": "1",
                     "code": "0001",
                     "description": "0001 name",
                     "award_count": None,
-                    "obligation": 9.0,
+                    "obligation": 207.0,
                     "outlay": 0.0,
-                }
+                },
             ],
         }
     ]
@@ -37,7 +52,7 @@ def test_basic_object_class_spending_total_success(
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
 
-    expected_totals = {"obligation": 9.0, "outlay": 0}
+    expected_totals = {"obligation": 1732.0, "outlay": 1190.0}
     assert resp.json()["totals"] == expected_totals
 
 

@@ -1,6 +1,7 @@
 """
 Look ups for elasticsearch fields to be displayed for the front end
 """
+
 from copy import deepcopy
 
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
@@ -24,6 +25,11 @@ TRANSACTIONS_LOOKUP = {
     "generated_internal_id": "generated_unique_award_id",
     "Last Date to Order": "ordering_period_end_date",
     "def_codes": "disaster_emergency_fund_codes",
+    "Transaction Description": "transaction_description.keyword",
+    "Action Type": "action_type",
+    "Recipient UEI": "recipient_uei.keyword",
+    "awarding_agency_slug": "awarding_toptier_agency_name.keyword",
+    "funding_agency_slug": "funding_toptier_agency_name.keyword",
 }
 
 base_mapping = {
@@ -53,6 +59,7 @@ base_mapping = {
     "COVID-19 Outlays": "covid_spending_by_defc",
     "Infrastructure Obligations": "iija_spending_by_defc",
     "Infrastructure Outlays": "iija_spending_by_defc",
+    "Recipient UEI": "recipient_uei",
 }
 contracts_mapping = {
     **base_mapping,
@@ -82,6 +89,7 @@ loan_mapping = {
         "Subsidy Cost": "total_subsidy_cost",
         "SAI Number": "sai_number.keyword",
         "CFDA Number": "cfda_number.keyword",
+        "Assistance Listings": "cfdas",
     },
 }
 non_loan_assist_mapping = {
@@ -94,6 +102,7 @@ non_loan_assist_mapping = {
         "Award Type": "type_description",
         "SAI Number": "sai_number.keyword",
         "CFDA Number": "cfda_number.keyword",
+        "Assistance Listings": "cfdas",
     },
 }
 

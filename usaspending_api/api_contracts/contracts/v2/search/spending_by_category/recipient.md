@@ -24,8 +24,16 @@ This endpoint returns a list of the top results of Recipients sorted by the tota
             The number of results to include per page
         + `page`: 1 (optional, number)
             The page of results to return based on the limit
+        + `spending_level` (optional, enum[string])
+            Group the spending by level. This also determines what data source is used for the totals.
+            + Members
+                + `transactions`
+                + `awards`
+                + `subawards`
+            + Default
+                + `transactions`
         + `subawards` (optional, boolean)
-            Determines whether Prime Awards or Sub Awards are searched
+            Determines whether Prime Awards or Sub Awards are searched. This field will be depreciated soon.
     + Body
 
 
@@ -41,12 +49,19 @@ This endpoint returns a list of the top results of Recipients sorted by the tota
                 },
                 "category": "recipient",
                 "limit": 5,
-                "page": 1
+                "page": 1,
+                "spending_level": "transactions"
             }
 
 + Response 200 (application/json)
     + Attributes (object)
         + `category`: `recipient` (required, string)
+        + `spending_level` (required, enum[string])
+            Spending level value that was provided in the request.
+            + Members
+                + `transactions`
+                + `awards`
+                + `subawards`
         + `results` (required, array[CategoryResult], fixed-type)
         + `limit`: 10 (required, number)
         + `page_metadata` (PageMetadataObject)
@@ -57,6 +72,7 @@ This endpoint returns a list of the top results of Recipients sorted by the tota
 
             {
                 "category": "recipient",
+                "spending_level": "transactions",
                 "limit": 10,
                 "page_metadata": {
                     "page": 1,
@@ -71,14 +87,16 @@ This endpoint returns a list of the top results of Recipients sorted by the tota
                         "recipient_id": null,
                         "name": "MULTIPLE RECIPIENTS",
                         "code": null,
-                        "uei": null
+                        "uei": null,
+                        "total_outlays": null,
                     },
                     {
                         "amount": 17388378311.33,
                         "recipient_id": "005a8812-bab5-2780-533b-b62c33271882-C",
                         "name": "LOCKHEED MARTIN CORPORATION",
                         "code": "008016958",
-                        "uei": null
+                        "uei": null,
+                        "total_outlays": null,
                     }
                 ],
                 "messages": [
@@ -97,6 +115,7 @@ This endpoint returns a list of the top results of Recipients sorted by the tota
     The Recipient's DUNS code. If it doesn't have a DUNS code, this field will be null.
 + `amount` (required, number)
 + `uei` (required, string, nullable)
++ `total_outlays` (required, number, nullable)
 
 ## PageMetadataObject (object)
 + `page` (required, number)
@@ -105,6 +124,7 @@ This endpoint returns a list of the top results of Recipients sorted by the tota
 ## Filter Objects
 ### FilterObject (object)
 + `keywords` : [`transport`] (optional, array[string])
++ `description` (optional, string)
 + `time_period` (optional, array[TimePeriodObject], fixed-type)
 + `place_of_performance_scope` (optional, enum[string])
     + Members
@@ -114,7 +134,7 @@ This endpoint returns a list of the top results of Recipients sorted by the tota
 + `agencies` (optional, array[AgencyObject], fixed-type)
 + `recipient_search_text`: [`Hampton`] (optional, array[string])
 + `recipient_id` (optional, string)
-    A unique identifier for the recipient which includes the recipient hash and level.
+    A unique identifier for the recipient which includes the recipient hash and level. This filter is not supported by subawards.
 + `recipient_scope` (optional, enum[string])
     + Members
         + `domestic`

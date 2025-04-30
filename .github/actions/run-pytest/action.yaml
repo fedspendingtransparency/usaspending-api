@@ -1,0 +1,83 @@
+name: Run Pytest
+
+inputs:
+  cov-report-name:
+    description: Name used in the title of the coverage report output
+    required: true
+  db-state:
+    description: Whether the DB should be reused from a previous run or recreated
+    default: "--reuse-db"
+  ignore-glob:
+    description: Glob pattern of files that should be ignored
+    default: ""
+  include-glob:
+    description: Glob pattern of the files that should be tested
+    required: true
+  keyword:
+    description: Keyword expression to determine which tests to run
+    default: ""
+  marker:
+    description: Marker to decide which tests should be run
+    default: ""
+  num-processes:
+    description: The number of processes to use for this test suite
+    default: "logical"
+  working-directory:
+    description: Directory where the requirements can be found; used when multiple repos are checked out
+    default: "."
+
+runs:
+  using: composite
+  steps:
+    - name: Create environment variables
+      shell: bash
+      run: |
+        echo "COV_REPORT_NAME=coverage.${{ inputs.cov-report-name }}.xml" >> $GITHUB_ENV
+        echo "DB_STATE=${{ inputs.db-state }}" >> $GITHUB_ENV
+        echo "IGNORE_GLOB=${{ inputs.ignore-glob }}" >> $GITHUB_ENV
+        echo "INCLUDE_GLOB=${{ inputs.include-glob }}" >> $GITHUB_ENV
+        echo "KEYWORD=${{ inputs.keyword }}" >> $GITHUB_ENV
+        echo "MARKER=${{ inputs.marker }}" >> $GITHUB_ENV
+        echo "NUM_PROCESSES=${{ inputs.num-processes }}" >> $GITHUB_ENV
+
+    - name: Build pytest command
+      working-directory: ${{ inputs.working-directory }}
+      id: build-pytest-command
+      shell: bash
+      run: >
+        echo pytest-command=$(python -c 'import os;print(
+        "pytest
+        -r=fEs
+        -x
+        --cov=usaspending_api
+        --cov-report term
+        --cov-report xml:{cov_report_name}
+        --dist worksteal
+        --durations 50
+        --numprocesses {num_processes}
+        --override-ini=python_files=\"{include_glob}\"
+        --verbosity=1
+        {db_state}
+        {keyword}
+        {marker}
+        {ignore_glob}
+        ".format(
+        db_state=os.environ["DB_STATE"],
+        cov_report_name=os.environ["COV_REPORT_NAME"],
+        ignore_glob="--ignore-glob=\"{}\"".format(os.environ["IGNORE_GLOB"]) if os.environ.get("IGNORE_GLOB") else "",
+        include_glob=os.environ["INCLUDE_GLOB"],
+        keyword="-k \"{}\"".format(os.environ["KEYWORD"]) if os.environ.get("KEYWORD") else "",
+        marker="-m \"{}\"".format(os.environ["MARKER"]) if os.environ.get("MARKER") else "",
+        num_processes=os.environ["NUM_PROCESSES"]
+        ))') >> $GITHUB_OUTPUT
+
+    - name: Run tests
+      working-directory: ${{ inputs.working-directory }}
+      shell: bash
+      run: ${{ steps.build-pytest-command.outputs.pytest-command }}
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage.${{ inputs.cov-report-name }}.xml
+        path: ${{ inputs.working-directory}}/coverage.${{ inputs.cov-report-name }}.xml

@@ -12,6 +12,7 @@ from collections import namedtuple, OrderedDict
 from usaspending_api.accounts.v2.filters.account_download import account_download_filter
 from usaspending_api.download.helpers.elasticsearch_download_functions import (
     AwardsElasticsearchDownload,
+    SubawardsElasticsearchDownload,
     TransactionsElasticsearchDownload,
 )
 from usaspending_api.download.helpers.disaster_filter_functions import disaster_filter_function
@@ -104,6 +105,16 @@ VALUE_MAPPINGS = {
         "download_name": "{agency}{type}_Subawards_{timestamp}",
         "is_fpds_join": "latest_transaction__",
         "filter_function": subaward_download,
+        "annotations_function": subaward_annotations,
+    },
+    "elasticsearch_sub_awards": {
+        "source_type": "award",
+        "table": SubawardSearch,
+        "table_name": "subaward_search",
+        "type_name": "Subawards",
+        "download_name": "{agency}{type}_Subawards_{timestamp}",
+        "is_fpds_join": "latest_transaction__",
+        "filter_function": SubawardsElasticsearchDownload.query,
         "annotations_function": subaward_annotations,
     },
     # Appropriations Account Data

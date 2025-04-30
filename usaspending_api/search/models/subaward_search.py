@@ -2,7 +2,7 @@ from django.contrib.postgres.fields import ArrayField
 from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVectorField
 from django.db import models
-from django.db.models import Q, F
+from django.db.models import F, Q
 from django.db.models.functions import Upper
 
 
@@ -68,8 +68,8 @@ class SubawardSearch(models.Model):
 
     # Subaward Fields (from Broker)
     subaward_type = models.TextField(null=True, blank=True)
-    subaward_report_year = models.SmallIntegerField()
-    subaward_report_month = models.SmallIntegerField()
+    subaward_report_year = models.SmallIntegerField(null=True, blank=True)
+    subaward_report_month = models.SmallIntegerField(null=True, blank=True)
     subaward_number = models.TextField(null=True, blank=True)
     subaward_amount = models.DecimalField(max_digits=23, decimal_places=2, null=True, blank=True)
     sub_action_date = models.DateField(blank=True, null=True)
@@ -238,6 +238,13 @@ class SubawardSearch(models.Model):
     keyword_ts_vector = SearchVectorField(null=True)
     award_ts_vector = SearchVectorField(null=True)
     recipient_name_ts_vector = SearchVectorField(null=True)
+
+    program_activities = models.JSONField(null=True)
+    prime_award_recipient_id = models.TextField(null=True, blank=True)
+    subaward_recipient_hash = models.TextField(null=True, blank=True)
+    subaward_recipient_level = models.TextField(null=True, blank=True)
+    awarding_toptier_agency_code = models.TextField(null=True, blank=True)
+    funding_toptier_agency_code = models.TextField(null=True, blank=True)
 
     class Meta:
         db_table = "subaward_search"

@@ -18,6 +18,7 @@ def recipient_data_fixture(db):
         recipient_hash="521bb024-054c-4c81-8615-372f81629664",
         uei="UEI-01",
         recipient_name="Spiderman",
+        recipient_unique_id="hero1",  # aka duns
     )
 
     baker.make(
@@ -27,6 +28,7 @@ def recipient_data_fixture(db):
         recipient_hash="a70b86c3-5a12-4623-963b-9d96c4810163",
         uei="UEI-02",
         recipient_name="Batman",
+        recipient_unique_id="hero2",
     )
 
     baker.make(
@@ -36,6 +38,7 @@ def recipient_data_fixture(db):
         recipient_hash="a70b86c3-5a12-4623-963b-9d96c4810345",
         uei="UEI-03",
         recipient_name="Batman",
+        recipient_unique_id="hero3",
     )
 
     baker.make(
@@ -45,6 +48,7 @@ def recipient_data_fixture(db):
         recipient_hash="9159db20-d2f7-42d4-88e2-a69759987520",
         uei="UEI-04",
         recipient_name="Superman",
+        recipient_unique_id="hero4",
     )
 
     baker.make(
@@ -54,6 +58,7 @@ def recipient_data_fixture(db):
         recipient_hash="9159db20-d2f7-42d4-88e2-a69759987908",
         uei="UEI-05",
         recipient_name="sdfsdg",
+        recipient_unique_id="hero5",
     )
 
 
@@ -75,6 +80,7 @@ def test_create_es_search():
     search_text = "test"
     recipient_levels = ["C", "P"]
     limit = 20
+
     expected_query = {
         "query": {
             "bool": {
@@ -100,9 +106,23 @@ def test_create_es_search():
                                 {
                                     "bool": {
                                         "should": [
-                                            {"query_string": {"query": "test", "fields": ["recipient_name", "uei"]}},
-                                            {"match": {"recipient_name": "test"}},
-                                            {"match": {"uei": "test"}},
+                                            {"match_phrase_prefix": {"recipient_name": {"query": "test", "boost": 5}}},
+                                            {
+                                                "match_phrase_prefix": {
+                                                    "recipient_name.contains": {"query": "test", "boost": 3}
+                                                }
+                                            },
+                                            {
+                                                "match": {
+                                                    "recipient_name": {"query": "test", "operator": "and", "boost": 1}
+                                                }
+                                            },
+                                            {"match_phrase_prefix": {"uei": {"query": "test", "boost": 5}}},
+                                            {"match_phrase_prefix": {"uei.contains": {"query": "test", "boost": 3}}},
+                                            {"match": {"uei": {"query": "test", "operator": "and", "boost": 1}}},
+                                            {"match_phrase_prefix": {"duns": {"query": "test", "boost": 5}}},
+                                            {"match_phrase_prefix": {"duns.contains": {"query": "test", "boost": 3}}},
+                                            {"match": {"duns": {"query": "test", "operator": "and", "boost": 1}}},
                                         ],
                                         "minimum_should_match": 1,
                                     }
@@ -116,7 +136,6 @@ def test_create_es_search():
         "from": 0,
         "size": 20,
     }
-
     assert view_set_instance._create_es_search(search_text, recipient_levels, limit).to_dict() == expected_query
 
     search_text = "test"
@@ -126,9 +145,15 @@ def test_create_es_search():
         "query": {
             "bool": {
                 "should": [
-                    {"query_string": {"query": "test", "fields": ["recipient_name", "uei"]}},
-                    {"match": {"recipient_name": "test"}},
-                    {"match": {"uei": "test"}},
+                    {"match_phrase_prefix": {"recipient_name": {"query": "test", "boost": 5}}},
+                    {"match_phrase_prefix": {"recipient_name.contains": {"query": "test", "boost": 3}}},
+                    {"match": {"recipient_name": {"query": "test", "operator": "and", "boost": 1}}},
+                    {"match_phrase_prefix": {"uei": {"query": "test", "boost": 5}}},
+                    {"match_phrase_prefix": {"uei.contains": {"query": "test", "boost": 3}}},
+                    {"match": {"uei": {"query": "test", "operator": "and", "boost": 1}}},
+                    {"match_phrase_prefix": {"duns": {"query": "test", "boost": 5}}},
+                    {"match_phrase_prefix": {"duns.contains": {"query": "test", "boost": 3}}},
+                    {"match": {"duns": {"query": "test", "operator": "and", "boost": 1}}},
                 ],
                 "minimum_should_match": 1,
             }
@@ -136,7 +161,6 @@ def test_create_es_search():
         "from": 0,
         "size": 20,
     }
-
     assert view_set_instance._create_es_search(search_text, recipient_levels, limit).to_dict() == expected_query
 
 
@@ -169,7 +193,7 @@ def test_parse_elasticsearch_response():
     hits_with_data = {
         "hits": {"hits": [{"_source": {"recipient_name": "Test", "uei": "UEI-01", "recipient_level": "C"}}]}
     }
-    expected_results = [{"recipient_name": "Test", "uei": "UEI-01", "recipient_level": "C"}]
+    expected_results = [{"recipient_name": "Test", "uei": "UEI-01", "recipient_level": "C", "duns": None}]
     assert view_set_instance._parse_elasticsearch_response(hits_with_data) == expected_results
 
     hits_without_data = {"hits": {"hits": []}}
@@ -184,6 +208,21 @@ def test_recipient_search_matches_found(client, monkeypatch, recipient_data_fixt
     )
     elasticsearch_recipient_index.update_index()
     body = {"search_text": "superman", "recipient_levels": ["R"], "limit": 20}
+    response = client.post("/api/v2/autocomplete/recipient", content_type="application/json", data=json.dumps(body))
+    assert response.data["count"] == 1
+    for entry in response.data["results"]:
+        assert entry["recipient_name"].lower().find("superman") > -1
+
+
+def test_recipient_partial_search_matches_found(
+    client, monkeypatch, recipient_data_fixture, elasticsearch_recipient_index
+):
+    monkeypatch.setattr(
+        "usaspending_api.common.elasticsearch.search_wrappers.RecipientSearch._index_name",
+        settings.ES_RECIPIENTS_QUERY_ALIAS_PREFIX,
+    )
+    elasticsearch_recipient_index.update_index()
+    body = {"search_text": "super", "recipient_levels": ["R"], "limit": 20}
     response = client.post("/api/v2/autocomplete/recipient", content_type="application/json", data=json.dumps(body))
     assert response.data["count"] == 1
     for entry in response.data["results"]:

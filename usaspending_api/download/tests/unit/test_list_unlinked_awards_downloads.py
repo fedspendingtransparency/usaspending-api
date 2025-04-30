@@ -1,7 +1,7 @@
 import datetime
 from unittest.mock import MagicMock
 
-from usaspending_api.download.v2.list_unlinked_awards_downloads import ListUnlinkedAwardsDownloadsViewSet
+from usaspending_api.download.helpers.download_file_helpers import get_last_modified_file
 
 
 def test_get_last_modified_file():
@@ -17,12 +17,10 @@ def test_get_last_modified_file():
     mock_s3_object_summary_b.last_modified = datetime.date(2024, 2, 11)
     mock_s3_object_summary.append(mock_s3_object_summary_b)
 
-    view_set = ListUnlinkedAwardsDownloadsViewSet()
-    actual_last_modified_file = view_set._get_last_modified_file(mock_s3_object_summary)
+    actual_last_modified_file = get_last_modified_file(mock_s3_object_summary)
     assert actual_last_modified_file == expected_last_modified_file
 
 
 def test_get_last_modified_file_none_input():
-    view_set = ListUnlinkedAwardsDownloadsViewSet()
-    actual_last_modified_file = view_set._get_last_modified_file([])
+    actual_last_modified_file = get_last_modified_file([])
     assert actual_last_modified_file is None

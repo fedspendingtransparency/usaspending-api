@@ -177,7 +177,7 @@ def test_object_class_list_ignore_duplicates(client, agency_account_data):
 
 @pytest.mark.django_db
 def test_object_class_list_sort_by_name(client, agency_account_data):
-    query_params = f"?fiscal_year={2020}&order=asc&sort=name"
+    query_params = "?fiscal_year=2020&order=asc&sort=name"
     resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
         "fiscal_year": 2020,
@@ -203,7 +203,7 @@ def test_object_class_list_sort_by_name(client, agency_account_data):
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_result
 
-    query_params = f"?fiscal_year={2020}&order=desc&sort=name"
+    query_params = "?fiscal_year=2020&order=desc&sort=name"
     resp = client.get(url.format(code="007", query_params=query_params))
     expected_result = {
         "fiscal_year": 2020,

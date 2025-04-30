@@ -1,5 +1,6 @@
 import logging
 
+from django.conf import settings
 from django.db import connection, connections
 
 from usaspending_api.etl.broker_etl_helpers import dictfetchall, PhonyCursor
@@ -10,18 +11,18 @@ logger = logging.getLogger("script")
 
 class Command(load_base.Command):
     """
-    This command will derive all FABS office names from the office codes in the Office table in the DATA Act broker. It
+    This command will derive all FABS office names from the office codes in the Office table in Data broker. It
     will create a temporary Office table to JOIN on.
     """
 
-    help = "Derives all FABS office names from the office codes in the Office table in the DATA Act broker. The \
+    help = "Derives all FABS office names from the office codes in the Office table in Data broker. The \
                 DATA_BROKER_DATABASE_URL environment variable must set so we can pull Office data from their db."
 
     def handle(self, *args, **options):
-        # Grab the data broker database connections
+        # Grab data broker database connections
         if not options["test"]:
             try:
-                db_conn = connections["data_broker"]
+                db_conn = connections[settings.DATA_BROKER_DB_ALIAS]
                 db_cursor = db_conn.cursor()
             except Exception as err:
                 logger.critical("Could not connect to database. Is DATA_BROKER_DATABASE_URL set?")

@@ -1,23 +1,24 @@
-from typing import List
 from decimal import Decimal
+from typing import List
 
-from django.db.models import Case, DecimalField, F, IntegerField, Min, Q, Sum, TextField, Value, When
-from django.db.models.functions import Coalesce, Cast
+from django.db.models import F, IntegerField, Min, Q, QuerySet, Sum, TextField, Value
+from django.db.models.functions import Cast
 from rest_framework.response import Response
 
 from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.common.calculations.file_b import FileBCalculations
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
-from usaspending_api.disaster.v2.views.elasticsearch_account_base import ElasticsearchAccountDisasterBase
-from usaspending_api.disaster.v2.views.object_class.object_class_result import (
-    ObjectClassResults,
-    MajorClass,
-    ObjectClass,
-)
 from usaspending_api.disaster.v2.views.disaster_base import (
+    DisasterBase,
+    FabaOutlayMixin,
     PaginationMixin,
     SpendingMixin,
-    FabaOutlayMixin,
+)
+from usaspending_api.disaster.v2.views.object_class.object_class_result import (
+    MajorClass,
+    ObjectClass,
+    ObjectClassResults,
 )
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 
@@ -37,32 +38,38 @@ def construct_response(results: list, pagination: Pagination, strip_total_budget
     }
 
 
-class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin, ElasticsearchAccountDisasterBase):
+class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin, DisasterBase):
     """View to implement the API"""
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/disaster/object_class/spending.md"
-
-    # Defined for the Elasticsearch implementation of Spending by Award
-    agg_key = "financial_accounts_by_award.object_class"  # primary (tier-1) aggregation key
-    nested_nonzero_fields = {"obligation": "transaction_obligated_amount", "outlay": "gross_outlay_amount_by_award_cpe"}
-    query_fields = [
-        "major_object_class_name",
-        "major_object_class_name.contains",
-        "object_class_name",
-        "object_class_name.contains",
-    ]
-    top_hits_fields = [
-        "financial_accounts_by_award.object_class_id",
-        "financial_accounts_by_award.major_object_class_name",
-        "financial_accounts_by_award.object_class_name",
-        "financial_accounts_by_award.major_object_class",
-    ]
 
     @cache_response()
     def post(self, request):
         if self.spending_type == "award":
             self.has_children = True
-            return self.perform_elasticsearch_search()
+            object_class_spending = self.get_covid_faba_spending(
+                spending_level="object_class",
+                def_codes=self.filters["def_codes"],
+                columns_to_return=[
+                    "funding_major_object_class_id",
+                    "funding_major_object_class_code",
+                    "funding_major_object_class_name",
+                    "funding_object_class_id",
+                    "funding_object_class_code",
+                    "funding_object_class_name",
+                ],
+                award_types=self.filters.get("award_type_codes"),
+                search_query=self.query,
+                search_query_fields=["funding_major_object_class_name", "funding_object_class_name"],
+            )
+            json_result = self._build_json_result(object_class_spending)
+            response = self.sort_json_result(
+                data_to_sort=json_result,
+                sort_key=self.pagination.sort_key,
+                sort_order=self.pagination.sort_order,
+                has_children=self.has_children,
+            )
+
         else:
             results = list(self.total_queryset)
             extra_columns = []
@@ -73,10 +80,11 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
 
     @property
     def total_queryset(self):
+        file_b_calculations = FileBCalculations(include_final_sub_filter=True, is_covid_page=True)
         filters = [
             self.is_in_provided_def_codes,
-            self.is_non_zero_total_spending,
             self.all_closed_defc_submissions,
+            file_b_calculations.is_non_zero_total_spending(),
             Q(object_class__isnull=False),
         ]
 
@@ -90,37 +98,8 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
 
         annotations = {
             **object_class_annotations,
-            "obligation": Coalesce(
-                Sum(
-                    Case(
-                        When(
-                            self.final_period_submission_query_filters,
-                            then=F("obligations_incurred_by_program_object_class_cpe")
-                            + F("deobligations_recoveries_refund_pri_program_object_class_cpe"),
-                        ),
-                        default=Value(0),
-                        output_field=DecimalField(max_digits=23, decimal_places=2),
-                    )
-                ),
-                0,
-                output_field=DecimalField(max_digits=23, decimal_places=2),
-            ),
-            "outlay": Coalesce(
-                Sum(
-                    Case(
-                        When(
-                            self.final_period_submission_query_filters,
-                            then=F("gross_outlay_amount_by_program_object_class_cpe")
-                            + F("ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe")
-                            + F("ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe"),
-                        ),
-                        default=Value(0),
-                        output_field=DecimalField(max_digits=23, decimal_places=2),
-                    )
-                ),
-                0,
-                output_field=DecimalField(max_digits=23, decimal_places=2),
-            ),
+            "obligation": Sum(file_b_calculations.get_obligations()),
+            "outlay": Sum(file_b_calculations.get_outlays()),
             "award_count": Value(None, output_field=IntegerField()),
         }
 
@@ -133,56 +112,73 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
             .values(*annotations.keys())
         )
 
-    def build_elasticsearch_result(self, info_buckets: List[dict]) -> List[dict]:
-        temp_results = {}
-        child_results = []
-        for bucket in info_buckets:
-            child = self._build_child_json_result(bucket)
-            child_results.append(child)
-        for child in child_results:
-            result = self._build_json_result(child)
-            child.pop("parent_data")
-            if result["code"] in temp_results.keys():
-                temp_results[result["code"]] = {
-                    "id": result["id"],
-                    "code": result["code"],
-                    "description": result["description"],
-                    "award_count": temp_results[result["code"]]["award_count"] + result["award_count"],
-                    # the count of distinct awards contributing to the totals
-                    "obligation": temp_results[result["code"]]["obligation"] + result["obligation"],
-                    "outlay": temp_results[result["code"]]["outlay"] + result["outlay"],
-                    "children": temp_results[result["code"]]["children"] + result["children"],
+    def _build_json_result(self, queryset: List[QuerySet]) -> dict:
+        """Build the JSON response that will be returned for this endpoint.
+
+        Args:
+            queryset: Database query results.
+
+        Returns:
+            Formatted JSON response.
+        """
+
+        response = {"totals": {"award_count": 0, "obligation": 0, "outlay": 0}, "results": []}
+
+        parent_lookup = {}
+        child_lookup = {}
+
+        for row in queryset:
+            parent_major_object_class_id = row["funding_major_object_class_id"]
+
+            if parent_major_object_class_id not in parent_lookup.keys():
+                parent_lookup[parent_major_object_class_id] = {
+                    "id": parent_major_object_class_id,
+                    "code": row["funding_major_object_class_code"],
+                    "description": row["funding_major_object_class_name"],
+                    "award_count": 0,
+                    "obligation": Decimal(0),
+                    "outlay": Decimal(0),
+                    "children": [],
                 }
+
+            if parent_major_object_class_id not in child_lookup.keys():
+                child_lookup[parent_major_object_class_id] = [
+                    {
+                        "id": int(row["funding_object_class_id"]),
+                        "code": row["funding_object_class_code"],
+                        "description": row["funding_object_class_name"],
+                        "award_count": int(row["award_count"]),
+                        "obligation": Decimal(row["obligation_sum"]),
+                        "outlay": Decimal(row["outlay_sum"]),
+                    }
+                ]
             else:
-                temp_results[result["code"]] = result
-        results = [x for x in temp_results.values()]
-        return results
+                child_lookup[parent_major_object_class_id].append(
+                    {
+                        "id": int(row["funding_object_class_id"]),
+                        "code": row["funding_object_class_code"],
+                        "description": row["funding_object_class_name"],
+                        "award_count": int(row["award_count"]),
+                        "obligation": Decimal(row["obligation_sum"]),
+                        "outlay": Decimal(row["outlay_sum"]),
+                    }
+                )
 
-    def _build_json_result(self, child):
-        return {
-            "id": str(child["parent_data"][1]),
-            "code": child["parent_data"][1],
-            "description": child["parent_data"][0],
-            "award_count": child["award_count"],
-            # the count of distinct awards contributing to the totals
-            "obligation": child["obligation"],
-            "outlay": child["outlay"],
-            "children": [child],
-        }
+            response["totals"]["obligation"] += Decimal(row["obligation_sum"])
+            response["totals"]["outlay"] += Decimal(row["outlay_sum"])
+            response["totals"]["award_count"] += row["award_count"]
 
-    def _build_child_json_result(self, bucket: dict):
-        return {
-            "id": str(bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["object_class_id"]),
-            "code": bucket["key"],
-            "description": bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["object_class_name"],
-            # the count of distinct awards contributing to the totals
-            "award_count": int(bucket["count_awards_by_dim"]["award_count"]["value"]),
-            **{
-                key: Decimal(bucket.get(f"sum_{val}", {"value": 0})["value"])
-                for key, val in self.nested_nonzero_fields.items()
-            },
-            "parent_data": [
-                bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["major_object_class_name"],
-                bucket["dim_metadata"]["hits"]["hits"][0]["_source"]["major_object_class"],
-            ],
-        }
+        for parent_account_id, children in child_lookup.items():
+            for child_ta_account in children:
+                parent_lookup[parent_account_id]["children"].append(child_ta_account)
+                parent_lookup[parent_account_id]["award_count"] += child_ta_account["award_count"]
+                parent_lookup[parent_account_id]["obligation"] += child_ta_account["obligation"]
+                parent_lookup[parent_account_id]["outlay"] += child_ta_account["outlay"]
+
+        response["results"] = list(parent_lookup.values())
+
+        response["page_metadata"] = get_pagination_metadata(
+            len(response["results"]), self.pagination.limit, self.pagination.page
+        )
+
+        return response

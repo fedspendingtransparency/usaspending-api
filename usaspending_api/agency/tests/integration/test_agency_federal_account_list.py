@@ -730,7 +730,12 @@ def test_latest_submission_per_agency_used(client, agency_account_data, helpers)
         "results": [
             {
                 "children": [
-                    {"code": "005-X-0000-000", "gross_outlay_amount": 7000.0, "name": "TA 7", "obligated_amount": 700.0}
+                    {
+                        "code": "005-X-0000-000",
+                        "gross_outlay_amount": 7000.0,
+                        "name": "TA 7",
+                        "obligated_amount": 700.0,
+                    }
                 ],
                 "code": "005-0000",
                 "gross_outlay_amount": 7000.0,

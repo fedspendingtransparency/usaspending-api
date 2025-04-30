@@ -1,6 +1,5 @@
-django-elasticache==1.0.*
-django-redis==4.12.*
-packaging==16.8
-pyparsing==2.2.0
+django-redis==5.4.*
+packaging==22.0
+pyparsing==3.2.1
 supervisor==4.1.0
 uwsgi==2.0.23

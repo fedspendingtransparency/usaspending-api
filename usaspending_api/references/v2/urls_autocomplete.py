@@ -9,6 +9,7 @@ from usaspending_api.references.v2.views.autocomplete import (
     GlossaryAutocompleteViewSet,
     NAICSAutocompleteViewSet,
     PSCAutocompleteViewSet,
+    ProgramActivityAutocompleteViewSet,
 )
 from usaspending_api.references.v2.views.city import CityAutocompleteViewSet
 from usaspending_api.references.v2.views.location_autocomplete import LocationAutocompleteViewSet
@@ -31,6 +32,7 @@ urlpatterns = [
     re_path(r"^cfda", CFDAAutocompleteViewSet.as_view()),
     re_path(r"^naics", NAICSAutocompleteViewSet.as_view()),
     re_path(r"^psc", PSCAutocompleteViewSet.as_view()),
+    re_path(r"^program_activity", ProgramActivityAutocompleteViewSet.as_view()),
     re_path(r"^recipient", RecipientAutocompleteViewSet.as_view()),
     re_path(r"^glossary", GlossaryAutocompleteViewSet.as_view()),
     re_path(r"^city", CityAutocompleteViewSet.as_view()),
