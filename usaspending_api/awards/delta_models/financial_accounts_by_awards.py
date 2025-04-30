@@ -78,7 +78,8 @@ c_to_d_linkage_view_sql_strings = [
             UPPER(faba.piid) AS piid,
             UPPER(faba.parent_award_id) AS parent_award_id,
             UPPER(faba.fain) AS fain,
-            UPPER(faba.uri) AS uri
+            UPPER(faba.uri) AS uri,
+            UPPER(disaster_emergency_fund_code) as disaster_emergency_fund_code
         FROM
             raw.financial_accounts_by_awards AS faba
         LEFT JOIN
@@ -98,7 +99,8 @@ c_to_d_linkage_view_sql_strings = [
             UPPER(piid) AS piid,
             UPPER(parent_award_piid) AS parent_award_piid,
             UPPER(fain) AS fain,
-            UPPER(uri) AS uri
+            UPPER(uri) AS uri,
+            UPPER(disaster_emergency_fund_code) as disaster_emergency_fund_code
         FROM
             int.awards
     );

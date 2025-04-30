@@ -16,7 +16,7 @@ def test_program_activity_fresh_load(monkeypatch):
     Test the gtas totals load to ensure data is loaded with the correct totals.
     """
 
-    baker.make("references.DisasterEmergencyFundCode", code="A")
+    baker.make("references.DisasterEmergencyFundCode", code="a")
     baker.make("accounts.TreasuryAppropriationAccount", tas_rendering_label="999-X-111")
 
     data_broker_mock = MagicMock()
