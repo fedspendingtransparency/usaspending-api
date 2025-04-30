@@ -72,6 +72,13 @@ This endpoint takes award filters and fields, and returns the fields of the filt
 
 + Response 200 (application/json)
     + Attributes (object)
+        + `spending_level` (required, enum[string])
+            Group the spending by level. This also determines what data source is used for the totals.
+            + Members
+                + `awards`
+                + `subawards`
+            + Default
+                + `awards`
         + `limit` (required, number)
         + `results` (required, array[SpendingByAwardResponse], fixed-type)
         + `page_metadata` (PageMetadataObject)
@@ -315,7 +322,6 @@ Non Loan Assistance Awards can be searched for specifically by using the Non Loa
 + `set_aside_type_codes`: [`NONE`] (optional, array[string])
 + `extent_competed_type_codes`: [`A`] (optional, array[string])
 + `treasury_account_components` (optional, array[TreasuryAccountComponentsObject], fixed-type)
-+ `object_class` (optional, array[string])
 + `program_activity` (optional, array[number])
 + `program_activities` (optional, array[ProgramActivityObject])
     A filter option that supports filtering by a program activity name or code. Please note that if this filter is used at least one of the members of the object, ProgramActivityObject, need to be provided.
