@@ -30,6 +30,21 @@ TRANSACTIONS_LOOKUP = {
     "Recipient UEI": "recipient_uei.keyword",
     "awarding_agency_slug": "awarding_toptier_agency_name.keyword",
     "funding_agency_slug": "funding_toptier_agency_name.keyword",
+    "recipient_location_city_name": "recipient_location_city_name.keyword",
+    "recipient_location_state_code": "recipient_location_state_code",
+    "recipient_location_country_name": "recipient_location_country_name.keyword",
+    "recipient_location_address_line1": "recipient_location_address_line1.keyword",
+    "recipient_location_address_line2": "recipient_location_address_line2.keyword",
+    "recipient_location_address_line3": "recipient_location_address_line3.keyword",
+    "pop_city_name": "pop_city_name.keyword",
+    "pop_state_code": "pop_state_code",
+    "pop_country_name": "pop_country_name.keyword",
+    "naics_code": "naics_code.keyword",
+    "naics_description": "naics_description.keyword",
+    "product_or_service_code": "product_or_service_code.keyword",
+    "product_or_service_description": "product_or_service_description.keyword",
+    "cfda_number": "cfda_number.keyword",
+    "cfda_title": "cfda_title.keyword",
 }
 
 base_mapping = {

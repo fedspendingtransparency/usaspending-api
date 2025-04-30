@@ -96,7 +96,13 @@ class SpendingByTransactionVisualizationViewSet(APIView):
             raise InvalidParameterException("Sort value not found in fields: {}".format(payload_sort_key))
 
         permitted_sort_values = TRANSACTIONS_LOOKUP
-        if payload_sort_key not in TRANSACTIONS_LOOKUP:
+        if payload_sort_key not in TRANSACTIONS_LOOKUP and payload_sort_key not in [
+            "Recipient Location",
+            "Primary Place of Performance",
+            "NAICS",
+            "PSC",
+            "Assistance Listing",
+        ]:
             raise InvalidParameterException(
                 f"Sort value is not currently supported: {payload_sort_key}. Allowed values are: [{', '.join(permitted_sort_values.keys())}]"
             )
@@ -116,7 +122,35 @@ class SpendingByTransactionVisualizationViewSet(APIView):
                     },
                 }
             )
-        sorts = {TRANSACTIONS_LOOKUP[payload_sort_key]: validated_payload["order"]}
+        match payload_sort_key:
+            case "Recipient Location":
+                sort_by_fields = [
+                    TRANSACTIONS_LOOKUP["recipient_location_city_name"],
+                    TRANSACTIONS_LOOKUP["recipient_location_state_code"],
+                    TRANSACTIONS_LOOKUP["recipient_location_country_name"],
+                    TRANSACTIONS_LOOKUP["recipient_location_address_line1"],
+                    TRANSACTIONS_LOOKUP["recipient_location_address_line2"],
+                    TRANSACTIONS_LOOKUP["recipient_location_address_line3"],
+                ]
+            case "Primary Place of Performance":
+                sort_by_fields = [
+                    TRANSACTIONS_LOOKUP["pop_city_name"],
+                    TRANSACTIONS_LOOKUP["pop_state_code"],
+                    TRANSACTIONS_LOOKUP["pop_country_name"],
+                ]
+            case "NAICS":
+                sort_by_fields = [TRANSACTIONS_LOOKUP["naics_code"], TRANSACTIONS_LOOKUP["naics_description"]]
+            case "PSC":
+                sort_by_fields = [
+                    TRANSACTIONS_LOOKUP["product_or_service_code"],
+                    TRANSACTIONS_LOOKUP["product_or_service_description"],
+                ]
+            case "Assistance Listing":
+                sort_by_fields = [TRANSACTIONS_LOOKUP["cfda_number"], TRANSACTIONS_LOOKUP["cfda_title"]]
+            case _:
+                sort_by_fields = [TRANSACTIONS_LOOKUP[payload_sort_key]]
+        sorts = [{field: validated_payload["order"] for field in sort_by_fields}]
+
         lower_limit = (validated_payload["page"] - 1) * validated_payload["limit"]
         upper_limit = (validated_payload["page"]) * validated_payload["limit"] + 1
         if "keywords" in validated_payload["filters"]:
@@ -126,7 +160,7 @@ class SpendingByTransactionVisualizationViewSet(APIView):
             validated_payload["filters"].pop("keywords")
         query_with_filters = QueryWithFilters(QueryType.TRANSACTIONS)
         filter_query = query_with_filters.generate_elasticsearch_query(validated_payload["filters"])
-        search = TransactionSearch().filter(filter_query).sort(sorts)[lower_limit:upper_limit]
+        search = TransactionSearch().filter(filter_query).sort(*sorts)[lower_limit:upper_limit]
         response = search.handle_execute()
         return Response(self.build_elasticsearch_result(validated_payload, response))
 
