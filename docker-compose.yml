@@ -165,7 +165,7 @@ services:
       - bootstrap.memory_lock=true
       - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m" # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
       - plugins.security.ssl.http.enabled=false # Use this to Disable SSL for HTTP connections
-      - opensearch.security.disable=true # Disable security for local testing
+      - opensearch.security.disable=false # Disable security for local testing
       - OPENSEARCH_USERNAME=admin # Use this to test locally/change as required
       - OPENSEARCH_PASSWORD=admin
     ulimits:
