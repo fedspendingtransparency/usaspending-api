@@ -28,7 +28,7 @@ DATA_DICTIONARY_DOWNLOAD_RETRY_COOLDOWN = 15
 
 # Default timeout for SQL statements in Django
 DEFAULT_DB_TIMEOUT_IN_SECONDS = int(os.environ.get("DEFAULT_DB_TIMEOUT_IN_SECONDS", 0))
-DOWNLOAD_DB_TIMEOUT_IN_HOURS = 4
+DOWNLOAD_DB_TIMEOUT_IN_HOURS = 6
 CONNECTION_MAX_SECONDS = 10
 
 # Default type for when a Primary Key is not specified
