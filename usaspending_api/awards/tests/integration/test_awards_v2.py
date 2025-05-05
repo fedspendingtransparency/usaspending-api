@@ -720,6 +720,7 @@ def awards_and_transactions(db):
         "date_signed": "2005-04-03",
         "description": "lorem ipsum",
         "generated_unique_award_id": "ASST_AGG_1830212.0481163_3620",
+        "generated_unique_award_id_legacy": "ASST_AGG_LEGACY_KEY",
         "officer_1_amount": 50000.00,
         "officer_1_name": "John Apple",
         "officer_2_amount": 4623.00,
@@ -1010,6 +1011,10 @@ def test_award_endpoint_generated_id(client, awards_and_transactions):
     resp = client.get("/api/v2/awards/2/")
     assert resp.status_code == status.HTTP_200_OK
     assert json.loads(resp.content.decode("utf-8")) == expected_response_cont
+
+    resp = client.get("/api/v2/awards/ASST_AGG_LEGACY_KEY/")
+    assert resp.status_code == status.HTTP_200_OK
+    assert json.loads(resp.content.decode("utf-8")) == expected_response_asst
 
 
 def test_award_endpoint_parent_award(client, awards_and_transactions):
