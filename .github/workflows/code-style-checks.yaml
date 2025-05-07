@@ -1,0 +1,65 @@
+name: Code Style Checks
+
+env:
+  BROKER_DB_HOST: localhost
+  BROKER_DB_PORT: 5432
+  BROKER_DB_USER: admin
+  BROKER_DB_PASSWORD: root
+  BROKER_DB_NAME: data_broker
+  DJANGO_SETTINGS_MODULE: usaspending_api.settings
+  ES_SCHEME: http
+  ES_HOST: localhost
+  ES_PORT: 9200
+  MINIO_HOST: localhost
+  USASPENDING_DB_HOST: localhost
+  USASPENDING_DB_PORT: 5432
+  USASPENDING_DB_USER: usaspending
+  USASPENDING_DB_PASSWORD: usaspender
+  USASPENDING_DB_NAME: data_store_api
+
+on:
+  workflow_call:
+
+jobs:
+  Run:
+    # These checks are not broken out into multiple jobs because the steps to prepare the environment
+    # take the bulk of the time. Running them in parallel saves minimal time at the cost of using more
+    # runners than needed.
+    name: Run
+    runs-on: ${{ vars.RUNNER_VERSION }}
+    steps:
+      - name: Checkout Source Repository
+        uses: actions/checkout@v4
+
+      - name: Set Combined ENV
+        run: |
+          echo "DATA_BROKER_DATABASE_URL=postgres://$BROKER_DB_USER:$BROKER_DB_PASSWORD@$BROKER_DB_HOST:$BROKER_DB_PORT/$BROKER_DB_NAME" >> $GITHUB_ENV
+          echo "DATABASE_URL=postgres://$USASPENDING_DB_USER:$USASPENDING_DB_PASSWORD@$USASPENDING_DB_HOST:$USASPENDING_DB_PORT/$USASPENDING_DB_NAME" >> $GITHUB_ENV
+          echo "DOWNLOAD_DATABASE_URL=postgres://$USASPENDING_DB_USER:$USASPENDING_DB_PASSWORD@$USASPENDING_DB_HOST:$USASPENDING_DB_PORT/$USASPENDING_DB_NAME" >> $GITHUB_ENV
+          echo "ES_HOSTNAME=$ES_SCHEME://$ES_HOST:$ES_PORT" >> $GITHUB_ENV
+          echo "MINIO_DATA_DIR=$HOME/Development/data/usaspending/docker/usaspending-s3" >> $GITHUB_ENV
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: latest
+
+      - name: Install Dredd
+        run: npm install --global dredd@13.1.2
+
+      # While we could adjust this to only install necessary packages for linting, the benefit of doing
+      # all packages is that it will cache the entirety of the required packages for the downstream tests.
+      - name: Init Python Environment
+        uses: ./.github/actions/init-python-environment
+
+      - name: Run Flake8
+        run: flake8
+
+      - name: Run Black
+        run: black --check --diff .
+
+      - name: Run Check For Endpoint Documentation
+        run: python manage.py check_for_endpoint_documentation
+
+      - name: Run Dredd
+        run: dredd > dredd-results.txt && echo '! grep -E "^[warn:|error:]" dredd-results.txt' | bash

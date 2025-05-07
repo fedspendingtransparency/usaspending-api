@@ -1,4 +1,4 @@
-from usaspending_api.search.filters.elasticsearch.filter import _QueryType
+from usaspending_api.search.filters.elasticsearch.filter import QueryType
 from usaspending_api.search.filters.time_period import AbstractTimePeriod
 
 
@@ -10,7 +10,7 @@ class NewAwardsOnlyTimePeriod(AbstractTimePeriod):
     new awards only filter logic on top of a concrete AbstractTimePeriod subclass.
     """
 
-    def __init__(self, time_period_obj: AbstractTimePeriod, query_type: _QueryType):
+    def __init__(self, time_period_obj: AbstractTimePeriod, query_type: QueryType):
         """A constructor for NewAwardsOnlyTimePeriod.
 
         Args:
@@ -26,11 +26,11 @@ class NewAwardsOnlyTimePeriod(AbstractTimePeriod):
         # end date on the fly in case it wasn't set before
         # instantiating this class.
         return {
-            _QueryType.TRANSACTIONS: [
+            QueryType.TRANSACTIONS: [
                 {"action_date": {"lte": self.end_date()}},
                 {"award_date_signed": {"lte": self.end_date()}},
             ],
-            _QueryType.AWARDS: [
+            QueryType.AWARDS: [
                 {"date_signed": {"lte": self.end_date()}},
             ],
         }
@@ -41,11 +41,11 @@ class NewAwardsOnlyTimePeriod(AbstractTimePeriod):
         # end date on the fly in case it wasn't set before
         # instantiating this class.
         return {
-            _QueryType.TRANSACTIONS: [
+            QueryType.TRANSACTIONS: [
                 {"action_date": {"gte": self.start_date()}},
                 {"award_date_signed": {"gte": self.start_date()}},
             ],
-            _QueryType.AWARDS: [
+            QueryType.AWARDS: [
                 {"date_signed": {"gte": self.start_date()}},
             ],
         }

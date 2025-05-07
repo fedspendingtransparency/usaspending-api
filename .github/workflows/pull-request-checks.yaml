@@ -1,0 +1,138 @@
+name: Pull Request Checks
+
+on:
+  pull_request:
+    types:
+      - opened
+      - ready_for_review
+      - reopened
+      - synchronize
+
+# Only allow a single run of the PR checks for each branch. This means that in the case of multiple
+# PRs opened from a single branch into multiple others (e.g., hotfixes) a single run of the PR checks
+# will occur. However, additional runs of the PR checks will be triggered when the source branch
+# is re-synced with the target branch.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # There isn't a good way to avoid running a workflow when a Draft PR is opened. As a result, we
+  # first check if a Draft PR triggered this workflow and cancel the workflow if that is the case.
+  Cancel-If-Draft-Pull-Request:
+    if: github.event.pull_request.draft == true
+    uses: ./.github/workflows/cancel-running-workflow.yaml
+
+  # The conditional in each of the workflows below is required. Without these checks they will be skipped
+  # when the "Cancel-If-Draft-Pull-Request" workflow is skipped.
+  Run-Code-Style-Checks:
+    name: Run Code Style Checks
+    needs: Cancel-If-Draft-Pull-Request
+    if: |
+      always() &&
+      needs.Cancel-If-Draft-Pull-Request.result == 'skipped'
+    uses: ./.github/workflows/code-style-checks.yaml
+
+  # Many of the integration tests below rely on testing against Broker which requires building the
+  # Broker backend image. To avoid having to run this multiple times we instead build it once
+  # and store it as an artifact on the workflow.
+  Build-Broker-Docker-Image:
+    name: Build Broker Docker Image
+    needs: Cancel-If-Draft-Pull-Request
+    if: |
+      always() &&
+      needs.Cancel-If-Draft-Pull-Request.result == 'skipped'
+    uses: ./.github/workflows/build-broker-docker-image-for-test.yaml
+
+  # Prepare Code Climate to receive coverage report
+  Code-Climate-Before-Build:
+    name: Code Climate Before Build
+    needs: Run-Code-Style-Checks
+    if: ${{ !failure() && !cancelled() }}
+    uses: ./.github/workflows/code-climate-before-build.yaml
+    with:
+      source-branch: ${{ github.head_ref }}
+      source-commit-sha: ${{ github.event.pull_request.head.sha }}
+    secrets:
+      cc_test_reporter_id: ${{ secrets.CC_TEST_REPORTER_ID }}
+
+  # The test suite is broken into multiple groups based on a combination of what is under test
+  # and the time that it takes to run tests for that group.
+  Run-Spark-Integration-Load-Transaction-FABS-and-FPDS-Tests:
+    name: Run Spark Integration Load Transactions FABS and FPDS Tests
+    needs:
+      - Code-Climate-Before-Build
+      - Build-Broker-Docker-Image
+    if: ${{ !failure() && !cancelled() }}
+    uses: ./.github/workflows/test-spark-integration-load-transactions-fabs-fpds.yaml
+
+  Run-Spark-Integration-Load-Transactions-Lookup-Tests:
+    name: Run Spark Integration Load Transactions Lookup Tests
+    needs:
+      - Code-Climate-Before-Build
+      - Build-Broker-Docker-Image
+    if: ${{ !failure() && !cancelled() }}
+    uses: ./.github/workflows/test-spark-integration-load-transactions-lookup.yaml
+
+  Run-Spark-Integration-Load-To-From-Delta-Tests:
+    name: Run Spark Integration Load To From Delta Tests
+    needs:
+      - Code-Climate-Before-Build
+      - Build-Broker-Docker-Image
+    if: ${{ !failure() && !cancelled() }}
+    uses: ./.github/workflows/test-spark-integration-load-to-from-delta.yaml
+
+  Run-Spark-Integration-Other-Tests:
+    name: Run Spark Integration Other Tests
+    needs:
+      - Code-Climate-Before-Build
+      - Build-Broker-Docker-Image
+    if: ${{ !failure() && !cancelled() }}
+    uses: ./.github/workflows/test-spark-integration-other.yaml
+
+  Run-Non-Spark-Integration-Tests:
+    name: Run Non-Spark Integration Tests
+    needs:
+      - Code-Climate-Before-Build
+      - Build-Broker-Docker-Image
+    if: ${{ !failure() && !cancelled() }}
+    uses: ./.github/workflows/test-non-spark-integration.yaml
+
+  Run-Non-Spark-Integration-Tests-With-Signal-Handling:
+    name: Run Non-Spark Integration Tests With Signal Handling
+    needs:
+      - Code-Climate-Before-Build
+      - Build-Broker-Docker-Image
+    if: ${{ !failure() && !cancelled() }}
+    uses: ./.github/workflows/test-non-spark-integration-signal-handling.yaml
+
+  Run-Unit-Tests:
+    name: Run Unit Tests
+    needs: Code-Climate-Before-Build
+    if: ${{ !failure() && !cancelled() }}
+    uses: ./.github/workflows/test-unit.yaml
+
+  Run-Unit-Tests-With-Signal-Handling:
+    name: Run Unit Tests With Signal Handling
+    needs: Code-Climate-Before-Build
+    if: ${{ !failure() && !cancelled() }}
+    uses: ./.github/workflows/test-unit-signal-handling.yaml
+
+  Code-Climate-Report-Coverage:
+    name: Code Climate Report Coverage
+    needs:
+      - Run-Spark-Integration-Load-Transaction-FABS-and-FPDS-Tests
+      - Run-Spark-Integration-Load-Transactions-Lookup-Tests
+      - Run-Spark-Integration-Load-To-From-Delta-Tests
+      - Run-Spark-Integration-Other-Tests
+      - Run-Non-Spark-Integration-Tests
+      - Run-Non-Spark-Integration-Tests-With-Signal-Handling
+      - Run-Unit-Tests
+      - Run-Unit-Tests-With-Signal-Handling
+    if: ${{ !failure() && !cancelled() }}
+    uses: ./.github/workflows/code-climate-report-coverage.yaml
+    with:
+      source-branch: ${{ github.head_ref }}
+      source-commit-sha: ${{ github.event.pull_request.head.sha }}
+    secrets:
+      cc_test_reporter_id: ${{ secrets.CC_TEST_REPORTER_ID }}

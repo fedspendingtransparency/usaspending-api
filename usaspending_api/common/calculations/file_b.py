@@ -1,9 +1,8 @@
 import enum
-
 from functools import cached_property
 from typing import Dict, Union
 
-from django.db.models import DecimalField, F, Q, When, Case, Value
+from django.db.models import Case, DecimalField, F, Q, Value, When
 from django.db.models.functions import Coalesce
 
 from usaspending_api.common.helpers.orm_helpers import sum_column_list
@@ -78,7 +77,6 @@ class FileBCalculations:
 
         # Some PYA values share columns, so we handle that here
         # !!! The order of the statements is important !!!
-        pya_columns["X"].extend(pya_columns["P"])
         pya_columns["P"].extend(pya_columns["B"])
 
         return self._build_columns("obligations_incurred_by_program_object_class_cpe", pya_columns)

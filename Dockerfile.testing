@@ -8,19 +8,22 @@
 
 FROM usaspending-backend:latest
 
+# Install dependencies
+RUN apt update && apt install -y \
+    build-essential \
+    coreutils \
+    procps \
+    wget
+
+# Install Amazon Corretto 8 (a Long-Term Supported (LTS) distribution of OpenJDK 8)
+RUN wget -qO - https://apt.corretto.aws/corretto.key | gpg --dearmor -o /usr/share/keyrings/corretto-keyring.gpg && \
+    echo "deb [signed-by=/usr/share/keyrings/corretto-keyring.gpg] https://apt.corretto.aws stable main" | tee /etc/apt/sources.list.d/corretto.list
+RUN apt update && \
+    apt install -y java-1.8.0-amazon-corretto-jdk
+RUN export JAVA_HOME=/usr/lib/jvm/java-1.8.0-amazon-corretto
+RUN export PATH=${JAVA_HOME}/bin:$PATH
+
 WORKDIR /usaspending-api
-
-# Install Java for PySpark
-RUN yum install -y java-1.8.0-openjdk-devel
-RUN export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.382.b05-1.el7_9.x86_64
-RUN export PATH=$JAVA_HOME/bin:$PATHv
-
-# Prevent a Pytest RuntimeError where it expects the parent directory to be the name of an installed Django app
-# This will cause a RuntimeError because `dockermount` isn't the name of an installed Django app, so we move the files
-#   to a `/usaspending-api` parent directory which is the name of an installed Django app.
-RUN mv /dockermount/* /usaspending-api/
-
-# Copy .env.template file for config tests
-COPY .env.template /usaspending-api/
+COPY requirements/requirements-dev.txt requirements/requirements-dev.txt
 
 RUN python3 -m pip install -r requirements/requirements-dev.txt

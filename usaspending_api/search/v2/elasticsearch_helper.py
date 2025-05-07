@@ -11,9 +11,10 @@ from usaspending_api.awards.v2.lookups.elasticsearch_lookups import (
     TRANSACTIONS_SOURCE_LOOKUP,
 )
 from usaspending_api.common.data_classes import Pagination
-from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, TransactionSearch
+from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, Search, TransactionSearch
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.search.v2.es_sanitization import es_minimal_sanitize
+from usaspending_api.search.filters.elasticsearch.filter import QueryType
 
 logger = logging.getLogger("console")
 
@@ -38,9 +39,8 @@ def get_total_results(keyword):
         "filters": {category: {"terms": {"type": types}} for category, types in INDEX_ALIASES_TO_AWARD_TYPES.items()}
     }
     aggs = A("filters", **group_by_agg_key_values)
-    filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(
-        {"keyword_search": [es_minimal_sanitize(keyword)]}
-    )
+    query_with_filters = QueryWithFilters(QueryType.TRANSACTIONS)
+    filter_query = query_with_filters.generate_elasticsearch_query({"keyword_search": [es_minimal_sanitize(keyword)]})
     search = TransactionSearch().filter(filter_query)
     search.aggs.bucket("types", aggs)
     response = search.handle_execute()
@@ -82,9 +82,8 @@ def spending_by_transaction_count(search_query):
 def get_sum_aggregation_results(keyword, field="federal_action_obligation"):
     group_by_agg_key_values = {"field": field}
     aggs = A("sum", **group_by_agg_key_values)
-    filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(
-        {"keywords": es_minimal_sanitize(keyword)}
-    )
+    query_with_filters = QueryWithFilters(QueryType.TRANSACTIONS)
+    filter_query = query_with_filters.generate_elasticsearch_query({"keyword_search": [es_minimal_sanitize(keyword)]})
     search = TransactionSearch().filter(filter_query)
     search.aggs.bucket("transaction_sum", aggs)
     response = search.handle_execute()
@@ -117,7 +116,8 @@ def get_download_ids(keyword, field, size=10000):
     required_iter = (total // size) + 1
     n_iter = min(max(1, required_iter), n_iter)
     for i in range(n_iter):
-        filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(
+        query_with_filters = QueryWithFilters(QueryType.TRANSACTIONS)
+        filter_query = query_with_filters.generate_elasticsearch_query(
             {"keyword_search": [es_minimal_sanitize(keyword)]}
         )
         search = TransactionSearch().filter(filter_query)
@@ -139,9 +139,8 @@ def get_download_ids(keyword, field, size=10000):
 
 
 def get_sum_and_count_aggregation_results(keyword):
-    filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(
-        {"keyword_search": [es_minimal_sanitize(keyword)]}
-    )
+    query_with_filters = QueryWithFilters(QueryType.TRANSACTIONS)
+    filter_query = query_with_filters.generate_elasticsearch_query({"keyword_search": [es_minimal_sanitize(keyword)]})
     search = TransactionSearch().filter(filter_query)
     search.aggs.bucket("prime_awards_obligation_amount", {"sum": {"field": "federal_action_obligation"}})
     search.aggs.bucket("prime_awards_count", {"value_count": {"field": "transaction_id"}})
@@ -173,7 +172,8 @@ def get_number_of_unique_terms_for_transactions(filter_query: ES_Q, field: str) 
           11k to ensure that endpoints using Elasticsearch do not cross the 10k threshold. Elasticsearch endpoints
           should be implemented with a safeguard in case this count is above 10k.
     """
-    return _get_number_of_unique_terms(TransactionSearch().filter(filter_query), field)
+    # TODO: Should update references to this function to use "get_number_of_unique_terms" directly
+    return get_number_of_unique_terms(TransactionSearch, filter_query, field)
 
 
 def get_number_of_unique_terms_for_awards(filter_query: ES_Q, field: str) -> int:
@@ -184,10 +184,11 @@ def get_number_of_unique_terms_for_awards(filter_query: ES_Q, field: str) -> int
           11k to ensure that endpoints using Elasticsearch do not cross the 10k threshold. Elasticsearch endpoints
           should be implemented with a safeguard in case this count is above 10k.
     """
-    return _get_number_of_unique_terms(AwardSearch().filter(filter_query), field)
+    # TODO: Should update references to this function to use "get_number_of_unique_terms" directly
+    return get_number_of_unique_terms(AwardSearch, filter_query, field)
 
 
-def _get_number_of_unique_terms(search, field: str) -> int:
+def get_number_of_unique_terms(search_type: Search, query: ES_Q, field: str) -> int:
     """
     Returns the count for a specific filter_query.
     NOTE: Counts below the precision_threshold are expected to be close to accurate (per the Elasticsearch
@@ -195,6 +196,7 @@ def _get_number_of_unique_terms(search, field: str) -> int:
           11k to ensure that endpoints using Elasticsearch do not cross the 10k threshold. Elasticsearch endpoints
           should be implemented with a safeguard in case this count is above 10k.
     """
+    search = search_type().filter(query)
     cardinality_aggregation = A("cardinality", field=field, precision_threshold=11000)
     search.aggs.metric("field_count", cardinality_aggregation)
     response = search.handle_execute()

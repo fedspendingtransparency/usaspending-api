@@ -11,6 +11,7 @@ from usaspending_api.search.v2.elasticsearch_helper import (
     get_download_ids,
 )
 from usaspending_api.search.v2.es_sanitization import es_minimal_sanitize
+from usaspending_api.search.filters.elasticsearch.filter import QueryType
 
 
 @pytest.fixture
@@ -95,7 +96,8 @@ def test_spending_by_transaction_count(monkeypatch, transaction_type_data, elast
     request_data = {"filters": {"keywords": ["pop tart"]}}
     request_data["filters"]["keyword_search"] = [es_minimal_sanitize(x) for x in request_data["filters"]["keywords"]]
     request_data["filters"].pop("keywords")
-    filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(request_data["filters"])
+    query_with_filters = QueryWithFilters(QueryType.TRANSACTIONS)
+    filter_query = query_with_filters.generate_elasticsearch_query(request_data["filters"])
     search = TransactionSearch().filter(filter_query)
     results = spending_by_transaction_count(search)
     expected_results = {"contracts": 1, "grants": 1, "idvs": 1, "loans": 1, "direct_payments": 1, "other": 1}

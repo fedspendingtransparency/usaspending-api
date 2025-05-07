@@ -7,6 +7,7 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 from usaspending_api.common.elasticsearch.aggregation_helpers import create_count_aggregation
 from usaspending_api.common.query_with_filters import QueryWithFilters
+from usaspending_api.search.filters.elasticsearch.filter import QueryType
 
 
 class SubAgencyCount(PaginationMixin, AgencyBase):
@@ -38,7 +39,8 @@ class SubAgencyCount(PaginationMixin, AgencyBase):
 
     def query_elasticsearch(self):
         fiscal_year = FiscalYear(self.fiscal_year)
-        filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(
+        query_with_filters = QueryWithFilters(QueryType.TRANSACTIONS)
+        filter_query = query_with_filters.generate_elasticsearch_query(
             {
                 "agencies": [{"type": self.agency_type, "tier": "toptier", "name": self.toptier_agency.name}],
                 "time_period": [{"start_date": fiscal_year.start.date(), "end_date": fiscal_year.end.date()}],

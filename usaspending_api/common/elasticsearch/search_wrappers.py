@@ -5,13 +5,13 @@ from typing import Callable, Optional, Union
 from django.conf import settings
 from elasticsearch import ConnectionError, ConnectionTimeout, Elasticsearch, NotFoundError, TransportError
 from elasticsearch.connection import create_ssl_context
-from elasticsearch_dsl import Search
+from elasticsearch_dsl import Search as SearchBase
 from elasticsearch_dsl.response import Response
 
 logger = logging.getLogger("console")
 
 
-class _Search(Search):
+class Search(SearchBase):
     _index_name = None
 
     def __init__(self, **kwargs) -> None:
@@ -90,7 +90,7 @@ class _Search(Search):
         return self._handle_errors(self._count, retries, None)
 
 
-class TransactionSearch(_Search):
+class TransactionSearch(Search):
     _index_name = f"{settings.ES_TRANSACTIONS_QUERY_ALIAS_PREFIX}*"
 
     @staticmethod
@@ -98,7 +98,7 @@ class TransactionSearch(_Search):
         return "transaction_search"
 
 
-class AwardSearch(_Search):
+class AwardSearch(Search):
     _index_name = f"{settings.ES_AWARDS_QUERY_ALIAS_PREFIX}*"
 
     @staticmethod
@@ -106,7 +106,7 @@ class AwardSearch(_Search):
         return "award_search"
 
 
-class SubawardSearch(_Search):
+class SubawardSearch(Search):
     _index_name = f"{settings.ES_SUBAWARD_QUERY_ALIAS_PREFIX}*"
 
     @staticmethod
@@ -114,7 +114,7 @@ class SubawardSearch(_Search):
         return "subaward_search"
 
 
-class RecipientSearch(_Search):
+class RecipientSearch(Search):
     _index_name = f"{settings.ES_RECIPIENTS_QUERY_ALIAS_PREFIX}*"
 
     @staticmethod
@@ -122,7 +122,7 @@ class RecipientSearch(_Search):
         return "recipient_search"
 
 
-class LocationSearch(_Search):
+class LocationSearch(Search):
     _index_name = f"{settings.ES_LOCATIONS_QUERY_ALIAS_PREFIX}*"
 
     @staticmethod

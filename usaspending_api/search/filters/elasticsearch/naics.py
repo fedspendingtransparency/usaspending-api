@@ -1,5 +1,5 @@
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.search.filters.elasticsearch.filter import _Filter, _QueryType
+from usaspending_api.search.filters.elasticsearch.filter import _Filter, QueryType
 from usaspending_api.search.filters.elasticsearch.HierarchicalFilter import HierarchicalFilter, Node
 from elasticsearch_dsl import Q as ES_Q
 
@@ -8,7 +8,7 @@ class NaicsCodes(_Filter, HierarchicalFilter):
     underscore_name = "naics_codes"
 
     @classmethod
-    def generate_elasticsearch_query(cls, filter_values, query_type: _QueryType, **options) -> ES_Q:
+    def generate_elasticsearch_query(cls, filter_values, query_type: QueryType, **options) -> ES_Q:
         # legacy functionality permits sending a single list of naics codes, which is treated as the required list
         if isinstance(filter_values, list):
             require = [cls.naics_code_to_naics_code_path(str(code)) for code in filter_values]

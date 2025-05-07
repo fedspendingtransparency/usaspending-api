@@ -1,6 +1,6 @@
 import pytest
 
-from usaspending_api.awards.v2.lookups.lookups import contract_subaward_mapping, grant_subaward_mapping
+from usaspending_api.awards.v2.lookups.lookups import subaward_mapping
 from usaspending_api.common.helpers.api_helper import (
     raise_if_award_types_not_valid_subset,
     raise_if_sort_key_not_valid,
@@ -256,10 +256,7 @@ def test_get_award_type_and_mapping_values():
     subaward_results = get_award_type_and_mapping_values(
         award_type_codes=example_contract_award_codes, is_subaward=True
     )
-    assert subaward_results == (
-        "Sub-Award",
-        (list(contract_subaward_mapping.keys()) + list(grant_subaward_mapping.keys())),
-    )
+    assert subaward_results == ("Sub-Award", list(subaward_mapping.keys()))
 
     contract_results = get_award_type_and_mapping_values(
         award_type_codes=example_contract_award_codes, is_subaward=False
@@ -283,21 +280,6 @@ def test_get_award_type_and_mapping_values():
             award_type_codes=invalid_award_type_codes,
             is_subaward=False,
         )
-
-
-def test_get_queryset():
-    view = instantiate_view_for_tests()
-
-    assert view.construct_queryset() is not None, "Failed to return a queryset object"
-
-    db_fields_from_api = set([contract_subaward_mapping[field] for field in view.fields])
-    db_fields_from_api |= set(GLOBAL_MAP["subaward"]["minimum_db_fields"])
-
-    assert db_fields_from_api == set(view.get_database_fields())
-
-    qs_fields = set(view.construct_queryset().__dict__["_fields"])
-
-    assert qs_fields == db_fields_from_api
 
 
 def test_populate_response():

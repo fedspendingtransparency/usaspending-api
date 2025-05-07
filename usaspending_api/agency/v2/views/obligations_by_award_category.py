@@ -7,6 +7,7 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.filter_helpers import create_fiscal_year_filter
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 from usaspending_api.common.query_with_filters import QueryWithFilters
+from usaspending_api.search.filters.elasticsearch.filter import QueryType
 
 
 class ObligationsByAwardCategory(AgencyBase):
@@ -34,8 +35,8 @@ class ObligationsByAwardCategory(AgencyBase):
         filters = {}
         filters["time_period"] = create_fiscal_year_filter(self.fiscal_year)
         filters["agencies"] = [{"toptier_id": self.agency_id, "type": "awarding", "tier": "toptier"}]
-
-        filter_query = QueryWithFilters.generate_transactions_elasticsearch_query(filters)
+        query_with_filters = QueryWithFilters(QueryType.TRANSACTIONS)
+        filter_query = query_with_filters.generate_elasticsearch_query(filters)
         search = TransactionSearch().filter(filter_query)
 
         search.aggs.bucket("group_by_award_category", "terms", field="award_category").metric(

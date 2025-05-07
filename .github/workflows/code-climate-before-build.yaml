@@ -1,0 +1,33 @@
+name: Code Climate Before Build
+
+on:
+  workflow_call:
+    inputs:
+      source-branch:
+        description: The branch that tests are run against
+        type: string
+        required: true
+      source-commit-sha:
+        description: The specific commit on the branch that tests are run against
+        type: string
+        required: true
+    secrets:
+      cc_test_reporter_id:
+        required: true
+
+jobs:
+  Run:
+    name: Run
+    runs-on: ${{ vars.RUNNER_VERSION }}
+    env:
+      GIT_BRANCH: ${{ inputs.source-branch }}
+      GIT_COMMIT_SHA: ${{ inputs.source-commit-sha }}
+      CC_TEST_REPORTER_ID: ${{ secrets.cc_test_reporter_id }}
+    steps:
+      - name: Install Dependency
+        run: |
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter
+
+      - name: Run Before Build
+        run: ./cc-test-reporter before-build

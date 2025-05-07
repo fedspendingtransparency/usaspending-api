@@ -75,6 +75,7 @@ def stop_spark_context() -> bool:
             sc = SparkContext._active_spark_context
             if (
                 sc._jvm
+                and hasattr(sc._jvm, "SparkSession")
                 and sc._jvm.SparkSession
                 and not sc._jvm.SparkSession.getDefaultSession().get().sparkContext().isStopped()
             ):

@@ -26,7 +26,7 @@ def test_basic_success(client, disaster_account_data, monkeypatch, helpers):
             "description": "Agency 009",
             "children": [],
             "award_count": None,
-            "obligation": 11000276.0,
+            "obligation": 11000000.0,
             "outlay": 11.0,
             "total_budgetary_resources": 23984722890.78,
         },
@@ -36,7 +36,7 @@ def test_basic_success(client, disaster_account_data, monkeypatch, helpers):
             "description": "Agency 008",
             "children": [],
             "award_count": None,
-            "obligation": 1138.0,
+            "obligation": 1000.0,
             "outlay": 10000.0,
             "total_budgetary_resources": 8927429230.12,
         },
@@ -54,7 +54,7 @@ def test_basic_success(client, disaster_account_data, monkeypatch, helpers):
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
 
-    expected_totals = {"obligation": 11001414.0, "outlay": 10011.0, "total_budgetary_resources": 32912152120.9}
+    expected_totals = {"obligation": 11001000.0, "outlay": 10011.0, "total_budgetary_resources": 32912152120.9}
     assert resp.json()["totals"] == expected_totals
 
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M", "L"], spending_type="total")

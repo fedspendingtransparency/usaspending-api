@@ -98,8 +98,9 @@ def cfda_test_data(db):
         award_id=1,
         subaward_amount=1,
         cfda_id=1,
-        cfda_number="CFDA1234",
+        cfda_numbers="CFDA1234",
         cfda_title="CFDA TITLE 1234",
+        action_date="2020-01-01",
     )
     baker.make(
         "search.SubawardSearch",
@@ -107,8 +108,9 @@ def cfda_test_data(db):
         award_id=2,
         subaward_amount=1,
         cfda_id=1,
-        cfda_number="CFDA1234",
+        cfda_numbers="CFDA1234",
         cfda_title="CFDA TITLE 1234",
+        action_date="2020-01-02",
     )
 
     baker.make(
@@ -213,6 +215,11 @@ def agency_test_data(db):
         awarding_subtier_agency_abbreviation="SA3",
         funding_toptier_agency_abbreviation="TA4",
         funding_subtier_agency_abbreviation="SA4",
+        action_date="2020-01-01",
+        awarding_sub_tier_agency_c="SA3",
+        funding_sub_tier_agency_co="SA4",
+        funding_toptier_agency_code="TA4",
+        awarding_toptier_agency_code="TA3",
     )
     baker.make(
         "search.SubawardSearch",
@@ -229,6 +236,11 @@ def agency_test_data(db):
         awarding_subtier_agency_abbreviation="SA3",
         funding_toptier_agency_abbreviation="TA4",
         funding_subtier_agency_abbreviation="SA4",
+        action_date="2020-01-02",
+        awarding_sub_tier_agency_c="SA3",
+        funding_sub_tier_agency_co="SA4",
+        funding_toptier_agency_code="TA4",
+        awarding_toptier_agency_code="TA3",
     )
 
     baker.make(
@@ -377,6 +389,9 @@ def recipient_test_data(db):
         sub_awardee_or_recipient_legal_raw="UNIVERSITY OF PAWNEE",
         sub_awardee_or_recipient_legal="UNIVERSITY OF PAWNEE",
         sub_awardee_or_recipient_uniqu="00UOP00",
+        subaward_recipient_hash="2af2a5a5-3126-2c76-3681-dec2cf148f1a",
+        subaward_recipient_level="P",
+        action_date="2020-01-01",
     )
     baker.make(
         "search.SubawardSearch",
@@ -386,6 +401,9 @@ def recipient_test_data(db):
         sub_awardee_or_recipient_legal_raw="UNIVERSITY OF PAWNEE",
         sub_awardee_or_recipient_legal="UNIVERSITY OF PAWNEE",
         sub_awardee_or_recipient_uniqu="00UOP00",
+        subaward_recipient_hash="2af2a5a5-3126-2c76-3681-dec2cf148f1a",
+        subaward_recipient_level="P",
+        action_date="2020-01-02",
     )
     baker.make(
         "search.SubawardSearch",
@@ -395,6 +413,9 @@ def recipient_test_data(db):
         sub_awardee_or_recipient_legal_raw="JOHN DOE",
         sub_awardee_or_recipient_legal="JOHN DOE",
         sub_awardee_or_recipient_uniqu="1234JD4321",
+        subaward_recipient_hash="0b54895d-2393-ea12-48e3-deae990614d9",
+        subaward_recipient_level="C",
+        action_date="2020-02-01",
     )
     baker.make(
         "search.SubawardSearch",
@@ -404,6 +425,9 @@ def recipient_test_data(db):
         sub_awardee_or_recipient_legal_raw="JOHN DOE",
         sub_awardee_or_recipient_legal="JOHN DOE",
         sub_awardee_or_recipient_uniqu="1234JD4321",
+        subaward_recipient_hash="0b54895d-2393-ea12-48e3-deae990614d9",
+        subaward_recipient_level="C",
+        action_date="2020-02-02",
     )
     baker.make(
         "search.SubawardSearch",
@@ -413,6 +437,8 @@ def recipient_test_data(db):
         sub_awardee_or_recipient_legal_raw="MULTIPLE RECIPIENTS",
         sub_awardee_or_recipient_legal="MULTIPLE RECIPIENTS",
         sub_awardee_or_recipient_uniqu=None,
+        subaward_recipient_hash="64af1cb7-993c-b64b-1c58-f5289af014c0",
+        action_date="2020-03-01",
     )
 
     baker.make(
@@ -540,6 +566,7 @@ def geo_test_data(db):
         sub_place_of_perform_congressio_raw="06",
         sub_place_of_perform_congressio="06",
         sub_place_of_performance_congressional_current="90",
+        action_date="2020-01-01",
     )
     baker.make(
         "search.SubawardSearch",
@@ -556,6 +583,7 @@ def geo_test_data(db):
         sub_place_of_perform_congressio_raw="06",
         sub_place_of_perform_congressio="06",
         sub_place_of_performance_congressional_current="90",
+        action_date="2020-02-01",
     )
     baker.make(
         "search.SubawardSearch",
@@ -572,6 +600,7 @@ def geo_test_data(db):
         sub_place_of_perform_congressio_raw="90",
         sub_place_of_perform_congressio="90",
         sub_place_of_performance_congressional_current="05",
+        action_date="2020-03-01",
     )
     baker.make(
         "search.SubawardSearch",
@@ -588,6 +617,7 @@ def geo_test_data(db):
         sub_place_of_perform_congressio_raw="90",
         sub_place_of_perform_congressio="90",
         sub_place_of_performance_congressional_current="05",
+        action_date="2020-04-01",
     )
 
     baker.make(
@@ -769,7 +799,9 @@ def test_category_awarding_agency_transactions(agency_test_data, monkeypatch, el
 
 
 @pytest.mark.django_db
-def test_category_awarding_agency_subawards(agency_test_data):
+def test_category_awarding_agency_subawards(agency_test_data, monkeypatch, elasticsearch_subaward_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
+
     test_payload = {"category": "awarding_agency", "spending_level": "subawards", "page": 1, "limit": 50}
 
     spending_by_category_logic = AwardingAgencyViewSet().perform_search(test_payload, {})
@@ -778,7 +810,16 @@ def test_category_awarding_agency_subawards(agency_test_data):
         "category": "awarding_agency",
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
-        "results": [{"amount": 150, "name": "Awarding Toptier Agency 3", "code": "TA3", "id": 1003}],
+        "results": [
+            {
+                "amount": 150,
+                "name": "Awarding Toptier Agency 3",
+                "code": "TA3",
+                "id": 1003,
+                "agency_slug": None,
+                "total_outlays": None,
+            }
+        ],
         "messages": _expected_messages(),
         "spending_level": "subawards",
     }
@@ -820,9 +861,10 @@ def test_category_awarding_subagency_transactions(agency_test_data, monkeypatch,
 
 
 @pytest.mark.django_db
-def test_category_awarding_subagency_subawards(agency_test_data):
-    test_payload = {"category": "awarding_subagency", "spending_level": "subawards", "page": 1, "limit": 50}
+def test_category_awarding_subagency_subawards(agency_test_data, monkeypatch, elasticsearch_subaward_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
 
+    test_payload = {"category": "awarding_subagency", "spending_level": "subawards", "page": 1, "limit": 50}
     spending_by_category_logic = AwardingSubagencyViewSet().perform_search(test_payload, {})
 
     expected_response = {
@@ -840,6 +882,7 @@ def test_category_awarding_subagency_subawards(agency_test_data):
                 "agency_abbreviation": "TA3",
                 "agency_name": "Awarding Toptier Agency 3",
                 "agency_slug": "awarding-toptier-agency-3",
+                "total_outlays": None,
             }
         ],
         "messages": _expected_messages(),
@@ -872,16 +915,19 @@ def test_category_funding_agency_transactions(agency_test_data, monkeypatch, ela
 
 
 @pytest.mark.django_db
-def test_category_funding_agency_subawards(agency_test_data):
-    test_payload = {"category": "funding_agency", "spending_level": "subawards", "page": 1, "limit": 50}
+def test_category_funding_agency_subawards(agency_test_data, monkeypatch, elasticsearch_subaward_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
 
+    test_payload = {"category": "funding_agency", "spending_level": "subawards", "page": 1, "limit": 50}
     spending_by_category_logic = FundingAgencyViewSet().perform_search(test_payload, {})
 
     expected_response = {
         "category": "funding_agency",
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
-        "results": [{"amount": 150, "name": "Funding Toptier Agency 4", "code": "TA4", "id": 1004}],
+        "results": [
+            {"amount": 150, "name": "Funding Toptier Agency 4", "code": "TA4", "id": 1004, "total_outlays": None}
+        ],
         "messages": _expected_messages(),
         "spending_level": "subawards",
     }
@@ -923,9 +969,10 @@ def test_category_funding_subagency_transactions(agency_test_data, monkeypatch, 
 
 
 @pytest.mark.django_db
-def test_category_funding_subagency_subawards(agency_test_data):
-    test_payload = {"category": "funding_subagency", "spending_level": "subawards", "page": 1, "limit": 50}
+def test_category_funding_subagency_subawards(agency_test_data, monkeypatch, elasticsearch_subaward_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
 
+    test_payload = {"category": "funding_subagency", "spending_level": "subawards", "page": 1, "limit": 50}
     spending_by_category_logic = FundingSubagencyViewSet().perform_search(test_payload, {})
 
     expected_response = {
@@ -943,6 +990,7 @@ def test_category_funding_subagency_subawards(agency_test_data):
                 "agency_abbreviation": "TA4",
                 "agency_name": "Funding Toptier Agency 4",
                 "agency_slug": "funding-toptier-agency-4",
+                "total_outlays": None,
             }
         ],
         "messages": _expected_messages(),
@@ -998,7 +1046,8 @@ def test_category_recipient_transactions(recipient_test_data, monkeypatch, elast
 
 
 @pytest.mark.django_db
-def test_category_recipient_subawards(recipient_test_data):
+def test_category_recipient_subawards(recipient_test_data, monkeypatch, elasticsearch_subaward_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     test_payload = {"category": "recipient", "spending_level": "subawards", "page": 1, "limit": 50}
 
     spending_by_category_logic = RecipientViewSet().perform_search(test_payload, {})
@@ -1008,18 +1057,29 @@ def test_category_recipient_subawards(recipient_test_data):
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 10000, "code": None, "name": "MULTIPLE RECIPIENTS", "recipient_id": None},
+            {
+                "amount": 10000,
+                "code": None,
+                "name": "MULTIPLE RECIPIENTS",
+                "recipient_id": None,
+                "total_outlays": None,
+                "uei": None,
+            },
             {
                 "amount": 1100,
                 "code": "1234JD4321",
                 "recipient_id": "0b54895d-2393-ea12-48e3-deae990614d9-C",
                 "name": "JOHN DOE",
+                "total_outlays": None,
+                "uei": None,
             },
             {
                 "amount": 11,
                 "code": "00UOP00",
                 "recipient_id": "2af2a5a5-3126-2c76-3681-dec2cf148f1a-P",
                 "name": "UNIVERSITY OF PAWNEE",
+                "total_outlays": None,
+                "uei": None,
             },
         ],
         "messages": _expected_messages(),
@@ -1030,9 +1090,10 @@ def test_category_recipient_subawards(recipient_test_data):
 
 
 @pytest.mark.django_db
-def test_category_recipient_duns_subawards_deprecated(recipient_test_data):
-    test_payload = {"category": "recipient_duns", "spending_level": "subawards", "page": 1, "limit": 50}
+def test_category_recipient_duns_subawards_deprecated(recipient_test_data, monkeypatch, elasticsearch_subaward_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
 
+    test_payload = {"category": "recipient_duns", "spending_level": "subawards", "page": 1, "limit": 50}
     spending_by_category_logic = RecipientDunsViewSet().perform_search(test_payload, {})
 
     expected_response = {
@@ -1040,18 +1101,29 @@ def test_category_recipient_duns_subawards_deprecated(recipient_test_data):
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 10000, "code": None, "name": "MULTIPLE RECIPIENTS", "recipient_id": None},
+            {
+                "amount": 10000,
+                "code": None,
+                "name": "MULTIPLE RECIPIENTS",
+                "recipient_id": None,
+                "total_outlays": None,
+                "uei": None,
+            },
             {
                 "amount": 1100,
                 "code": "1234JD4321",
                 "recipient_id": "0b54895d-2393-ea12-48e3-deae990614d9-C",
                 "name": "JOHN DOE",
+                "total_outlays": None,
+                "uei": None,
             },
             {
                 "amount": 11,
                 "code": "00UOP00",
                 "recipient_id": "2af2a5a5-3126-2c76-3681-dec2cf148f1a-P",
                 "name": "UNIVERSITY OF PAWNEE",
+                "total_outlays": None,
+                "uei": None,
             },
         ],
         "messages": _expected_messages(),
@@ -1082,16 +1154,17 @@ def test_category_cfda_transactions(cfda_test_data, monkeypatch, elasticsearch_t
 
 
 @pytest.mark.django_db
-def test_category_cfda_subawards(cfda_test_data):
-    test_payload = {"category": "cfda", "spending_level": "subawards", "page": 1, "limit": 50}
+def test_category_cfda_subawards(cfda_test_data, monkeypatch, elasticsearch_subaward_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
 
+    test_payload = {"category": "cfda", "spending_level": "subawards", "page": 1, "limit": 50}
     spending_by_category_logic = CfdaViewSet().perform_search(test_payload, {})
 
     expected_response = {
         "category": "cfda",
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
-        "results": [{"amount": 2, "code": "CFDA1234", "name": "CFDA TITLE 1234", "id": 1}],
+        "results": [{"amount": 2, "code": "CFDA1234", "name": "CFDA TITLE 1234", "id": 1, "total_outlays": None}],
         "messages": _expected_messages(),
         "spending_level": "subawards",
     }
@@ -1100,8 +1173,9 @@ def test_category_cfda_subawards(cfda_test_data):
 
 
 @pytest.mark.django_db
-def test_category_defc_subawards(client):
-    # TODO: This test should be updated to include data
+def test_category_defc_subawards(client, monkeypatch, elasticsearch_subaward_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
+
     resp = client.post(
         "/api/v2/search/spending_by_category",
         content_type="application/json",
@@ -1194,7 +1268,8 @@ def test_category_county_transactions(geo_test_data, monkeypatch, elasticsearch_
 
 
 @pytest.mark.django_db
-def test_category_county_subawards(geo_test_data):
+def test_category_county_subawards(geo_test_data, monkeypatch, elasticsearch_subaward_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     test_payload = {"category": "county", "spending_level": "subawards", "page": 1, "limit": 50}
 
     spending_by_category_logic = CountyViewSet().perform_search(test_payload, {})
@@ -1204,8 +1279,8 @@ def test_category_county_subawards(geo_test_data):
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 1100, "code": "001", "id": None, "name": "SOMEWHEREVILLE"},
-            {"amount": 11, "code": "004", "id": None, "name": "COUNTYSVILLE"},
+            {"amount": 1100, "code": "001", "id": None, "name": "SOMEWHEREVILLE", "total_outlays": None},
+            {"amount": 11, "code": "004", "id": None, "name": "COUNTYSVILLE", "total_outlays": None},
         ],
         "messages": _expected_messages(),
         "spending_level": "subawards",
@@ -1238,7 +1313,8 @@ def test_category_district_transactions(geo_test_data, monkeypatch, elasticsearc
 
 
 @pytest.mark.django_db
-def test_category_district_subawards(geo_test_data):
+def test_category_district_subawards(geo_test_data, monkeypatch, elasticsearch_subaward_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     test_payload = {"category": "district", "spending_level": "subawards", "page": 1, "limit": 50}
 
     spending_by_category_logic = DistrictViewSet().perform_search(test_payload, {})
@@ -1248,8 +1324,8 @@ def test_category_district_subawards(geo_test_data):
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {"amount": 1100, "code": "05", "id": None, "name": "XY-05"},
-            {"amount": 11, "code": "90", "id": None, "name": "XY-MULTIPLE DISTRICTS"},
+            {"amount": 1100, "code": "05", "id": None, "name": "XY-05", "total_outlays": None},
+            {"amount": 11, "code": "90", "id": None, "name": "XY-MULTIPLE DISTRICTS", "total_outlays": None},
         ],
         "messages": _expected_messages(),
         "spending_level": "subawards",
@@ -1279,7 +1355,8 @@ def test_category_state_territory(geo_test_data, monkeypatch, elasticsearch_tran
 
 
 @pytest.mark.django_db
-def test_category_state_territory_subawards(geo_test_data):
+def test_category_state_territory_subawards(geo_test_data, monkeypatch, elasticsearch_subaward_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     test_payload = {"category": "state_territory", "spending_level": "subawards", "page": 1, "limit": 50}
 
     spending_by_category_logic = StateTerritoryViewSet().perform_search(test_payload, {})
@@ -1288,7 +1365,7 @@ def test_category_state_territory_subawards(geo_test_data):
         "category": "state_territory",
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
-        "results": [{"amount": 1111, "code": "XY", "id": None, "name": "Test State"}],
+        "results": [{"amount": 1111, "code": "XY", "id": None, "name": "Test State", "total_outlays": None}],
         "messages": _expected_messages(),
         "spending_level": "subawards",
     }
@@ -1317,7 +1394,8 @@ def test_category_country(geo_test_data, monkeypatch, elasticsearch_transaction_
 
 
 @pytest.mark.django_db
-def test_category_country_subawards(geo_test_data):
+def test_category_country_subawards(geo_test_data, monkeypatch, elasticsearch_subaward_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     test_payload = {"category": "country", "spending_level": "subawards", "page": 1, "limit": 50}
 
     spending_by_category_logic = CountryViewSet().perform_search(test_payload, {})
@@ -1326,7 +1404,7 @@ def test_category_country_subawards(geo_test_data):
         "category": "country",
         "limit": 50,
         "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
-        "results": [{"amount": 1111, "code": "US", "id": None, "name": "UNITED STATES"}],
+        "results": [{"amount": 1111, "code": "US", "id": None, "name": "UNITED STATES", "total_outlays": None}],
         "messages": _expected_messages(),
         "spending_level": "subawards",
     }
