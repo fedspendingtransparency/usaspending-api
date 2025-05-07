@@ -486,7 +486,7 @@ POSTGRES_DOWNLOAD_QUERY = """
         usaspending_permalink,
         MAX(last_modified_date)
     FROM temp.account_download_temp
-    WHERE   
+    WHERE
         (
             (
                 (
@@ -571,7 +571,7 @@ POSTGRES_DOWNLOAD_QUERY = """
         prime_award_summary_recipient_cd_current,
         prime_award_summary_place_of_performance_cd_original,
         prime_award_summary_place_of_performance_cd_current
-    HAVING        
+    HAVING
         SUM(
             CASE
                 WHEN

@@ -4,7 +4,7 @@ import os
 import traceback
 from logging import Logger
 from pathlib import Path
-from typing import Optional, Dict, Tuple, Type, List, Union
+from typing import Optional, Dict, Tuple, Type
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
