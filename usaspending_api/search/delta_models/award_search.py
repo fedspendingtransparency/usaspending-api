@@ -393,7 +393,6 @@ award_search_load_sql_string = rf"""
   transaction_fabs.cfda_number AS cfda_number,
   CASE WHEN awards.is_fpds = FALSE THEN transaction_cfdas.cfdas ELSE NULL END AS cfdas,
 
-
   transaction_fabs.sai_number AS sai_number,
   transaction_fpds.type_of_contract_pricing,
   transaction_fpds.extent_competed,
@@ -538,15 +537,21 @@ LEFT OUTER JOIN (
         )
         AND recipient_lookup.legal_business_name IS NOT NULL
     )
--- COVID spending
+-- DEFC spending
 LEFT OUTER JOIN (
   SELECT
         GROUPED_BY_DEFC.award_id,
         COLLECT_SET(
-            TO_JSON(NAMED_STRUCT('defc', GROUPED_BY_DEFC.def_code, 'outlay', GROUPED_BY_DEFC.outlay, 'obligation', GROUPED_BY_DEFC.obligation))
-        ) AS covid_spending_by_defc,
-        sum(GROUPED_BY_DEFC.outlay) AS total_covid_outlay,
-        sum(GROUPED_BY_DEFC.obligation) AS total_covid_obligation
+            TO_JSON(
+                NAMED_STRUCT(
+                    'defc', GROUPED_BY_DEFC.def_code,
+                    'outlay', GROUPED_BY_DEFC.outlay,
+                    'obligation', GROUPED_BY_DEFC.obligation
+                )
+            )
+        ) AS spending_by_defc,
+        sum(GROUPED_BY_DEFC.outlay) AS total_defc_outlay,
+        sum(GROUPED_BY_DEFC.obligation) AS total_defc_obligation
     FROM (
         SELECT
             faba.award_id,
@@ -564,7 +569,7 @@ LEFT OUTER JOIN (
         FROM
             int.financial_accounts_by_awards AS faba
         INNER JOIN
-            global_temp.disaster_emergency_fund_code AS defc ON (faba.disaster_emergency_fund_code = defc.code AND defc.group_name = 'covid_19')
+            global_temp.disaster_emergency_fund_code AS defc ON faba.disaster_emergency_fund_code = defc.code
         INNER JOIN
             global_temp.submission_attributes AS sa ON (faba.submission_id = sa.submission_id)
         INNER JOIN
@@ -576,45 +581,7 @@ LEFT OUTER JOIN (
         GROUPED_BY_DEFC.award_id IS NOT NULL
     GROUP BY
         GROUPED_BY_DEFC.award_id
-) COVID_DEFC on COVID_DEFC.award_id = awards.id
--- Infrastructure Investment and Jobs Act (IIJA) spending
-LEFT OUTER JOIN (
-    SELECT
-        GROUPED_BY_DEFC.award_id,
-        COLLECT_SET(
-            TO_JSON(NAMED_STRUCT('defc', GROUPED_BY_DEFC.def_code, 'outlay', GROUPED_BY_DEFC.outlay, 'obligation', GROUPED_BY_DEFC.obligation))
-        ) AS iija_spending_by_defc,
-        sum(GROUPED_BY_DEFC.outlay) AS total_iija_outlay,
-        sum(GROUPED_BY_DEFC.obligation) AS total_iija_obligation
-    FROM (
-        SELECT
-            faba.award_id,
-            faba.disaster_emergency_fund_code AS def_code,
-            COALESCE(sum(
-                CASE
-                    WHEN sa.is_final_balances_for_fy = true THEN COALESCE(faba.gross_outlay_amount_by_award_cpe, 0) + COALESCE(
-                        faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe,
-                        0
-                        ) + COALESCE(faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe, 0)
-                    ELSE NULL
-                END), 0) AS outlay,
-            COALESCE(sum(faba.transaction_obligated_amount), 0) AS obligation
-        FROM
-            int.financial_accounts_by_awards AS faba
-        INNER JOIN
-            global_temp.disaster_emergency_fund_code AS defc ON (faba.disaster_emergency_fund_code = defc.code AND defc.group_name = 'infrastructure')
-        INNER JOIN
-            global_temp.submission_attributes AS sa ON (faba.submission_id = sa.submission_id)
-        INNER JOIN
-            global_temp.dabs_submission_window_schedule AS dsws ON (sa.submission_window_id = dsws.id AND dsws.submission_reveal_date <= now())
-        GROUP BY
-            faba.award_id, faba.disaster_emergency_fund_code
-    ) AS GROUPED_BY_DEFC
-    WHERE
-        GROUPED_BY_DEFC.award_id IS NOT NULL
-    GROUP BY
-        GROUPED_BY_DEFC.award_id
-) IIJA_DEFC on IIJA_DEFC.award_id = awards.id
+) SPENDING_BY_DEFC on SPENDING_BY_DEFC.award_id = awards.id
 -- Total outlays calculation
 LEFT JOIN (
     SELECT award_id,
