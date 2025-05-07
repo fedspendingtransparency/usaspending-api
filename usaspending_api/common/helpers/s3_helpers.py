@@ -4,7 +4,6 @@ import logging
 import math
 import time
 
-from boto3.resources.base import ServiceResource
 from boto3.s3.transfer import TransferConfig, S3Transfer
 from botocore.exceptions import ClientError
 from django.conf import settings
@@ -59,13 +58,6 @@ def retrieve_s3_bucket_object_list(bucket_name: str) -> List["boto3.resources.fa
         logger.exception(message)
         raise RuntimeError(message) from e
     return bucket_objects
-
-
-def get_s3_bucket(
-    bucket_name: str, region_name: str = settings.USASPENDING_AWS_REGION
-) -> "boto3.resources.factory.s3.Instance":
-    s3 = _get_boto3("client", "s3", region_name=region_name)
-    return s3.Bucket(bucket_name)
 
 
 def access_s3_object(bucket_name: str, obj: "boto3.resources.factory.s3.ObjectSummary") -> io.BytesIO:
