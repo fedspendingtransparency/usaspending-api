@@ -28,7 +28,7 @@ DOWNLOAD_QUERY = """
                             quarter_format_flag = FALSE
                             AND reporting_fiscal_period = 12
                         )
-                    ) AND reporting_fiscal_year = 2021
+                    ) AND reporting_fiscal_year = 2024
                 THEN
                     gross_outlay_amount_FYB_to_period_end
             ElSE CAST(NULL as NUMERIC(23, 2))
@@ -46,7 +46,7 @@ DOWNLOAD_QUERY = """
                             quarter_format_flag = FALSE
                             AND reporting_fiscal_period = 12
                         )
-                    ) AND reporting_fiscal_year = 2021
+                    ) AND reporting_fiscal_year = 2024
                 THEN
                     USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig
             ElSE CAST(NULL as NUMERIC(23, 2))
@@ -64,7 +64,7 @@ DOWNLOAD_QUERY = """
                             quarter_format_flag = FALSE
                             AND reporting_fiscal_period = 12
                         )
-                    ) AND reporting_fiscal_year = 2021
+                    ) AND reporting_fiscal_year = 2024
                 THEN
                     USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig
             ElSE CAST(NULL as NUMERIC(23, 2))
@@ -144,7 +144,7 @@ DOWNLOAD_QUERY = """
                         AND quarter_format_flag
                     )
                 )
-                AND reporting_fiscal_year = 2021
+                AND reporting_fiscal_year = 2024
             )
         )
     GROUP BY
@@ -233,7 +233,7 @@ DOWNLOAD_QUERY = """
                             quarter_format_flag = FALSE
                             AND reporting_fiscal_period = 12
                         )
-                    ) AND reporting_fiscal_year = 2021
+                    ) AND reporting_fiscal_year = 2024
                 THEN
                     gross_outlay_amount_FYB_to_period_end
             ElSE CAST(NULL as NUMERIC(23, 2))
@@ -251,7 +251,7 @@ DOWNLOAD_QUERY = """
                             quarter_format_flag = FALSE
                             AND reporting_fiscal_period = 12
                         )
-                    ) AND reporting_fiscal_year = 2021
+                    ) AND reporting_fiscal_year = 2024
                 THEN
                     gross_outlay_amount_FYB_to_period_end
             ElSE CAST(NULL as NUMERIC(23, 2))
@@ -269,7 +269,7 @@ DOWNLOAD_QUERY = """
                             quarter_format_flag = FALSE
                             AND reporting_fiscal_period = 12
                         )
-                    ) AND reporting_fiscal_year = 2021
+                    ) AND reporting_fiscal_year = 2024
                 THEN
                     USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig
             ElSE CAST(NULL as NUMERIC(23, 2))
@@ -287,7 +287,7 @@ DOWNLOAD_QUERY = """
                             quarter_format_flag = FALSE
                             AND reporting_fiscal_period = 12
                         )
-                    ) AND reporting_fiscal_year = 2021
+                    ) AND reporting_fiscal_year = 2024
                 THEN
                     USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig
             ElSE CAST(NULL as NUMERIC(23, 2))
@@ -305,7 +305,7 @@ DOWNLOAD_QUERY = """
                             quarter_format_flag = FALSE
                             AND reporting_fiscal_period = 12
                         )
-                    ) AND reporting_fiscal_year = 2021
+                    ) AND reporting_fiscal_year = 2024
                 THEN
                     USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig
             ElSE CAST(NULL as NUMERIC(23, 2))
@@ -323,7 +323,7 @@ DOWNLOAD_QUERY = """
                             quarter_format_flag = FALSE
                             AND reporting_fiscal_period = 12
                         )
-                    ) AND reporting_fiscal_year = 2021
+                    ) AND reporting_fiscal_year = 2024
                 THEN
                     USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig
             ElSE CAST(NULL as NUMERIC(23, 2))
@@ -340,7 +340,7 @@ SUBMISSION_ID_QUERY = """
     WHERE   (toptier_code, reporting_fiscal_year, reporting_fiscal_period) IN (
                 SELECT  toptier_code, reporting_fiscal_year, reporting_fiscal_period
                 FROM    global_temp.submission_attributes
-                WHERE   reporting_fiscal_year = 2021 AND
+                WHERE   reporting_fiscal_year = 2024 AND
                         (
                             (reporting_fiscal_quarter <= 4 AND quarter_format_flag is true) OR
                             (reporting_fiscal_period <= 12 AND quarter_format_flag is false)

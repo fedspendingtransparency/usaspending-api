@@ -146,7 +146,7 @@ class Command(BaseCommand):
                 "budget_function": "all",
                 "budget_subfunction": "all",
                 "federal_account": "all",
-                "fy": 2021,
+                "fy": 2024,
                 "period": 12,
                 "submission_types": ["award_financial"],
             },
