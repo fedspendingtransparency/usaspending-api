@@ -4,8 +4,8 @@ grant_award_mapping = {
     "Start Date": "period_of_performance_start_date",
     "End Date": "period_of_performance_current_end_date",
     "Award Amount": "total_obligation",
-    "Awarding Agency": "awarding_agency__toptier_agency__name.keyword",
-    "Awarding Sub Agency": "awarding_agency__subtier_agency__name.keyword",
+    "Awarding Agency": "awarding_agency__toptier_agency__name",
+    "Awarding Sub Agency": "awarding_agency__subtier_agency__name",
     "Award Type": "type_description",
     "Funding Agency": "funding_agency__toptier_agency__name",
     "Funding Sub Agency": "funding_agency__subtier_agency__name",
@@ -144,3 +144,5 @@ all_awards_types_to_category = {
 }
 
 all_subaward_types = ["grant", "procurement"]
+
+SUBAWARD_MAPPING_LOOKUP = {key: value.replace(".keyword", "") for key, value in subaward_mapping.items()}
