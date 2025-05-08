@@ -2561,7 +2561,7 @@ def test_spending_by_award_new_subgrant_fields(
             "prime_award_internal_id": 1,
             "Sub-Award ID": "45509",
             "prime_award_generated_internal_id": "CONT_AWD_TESTING_1",
-            "Sub-Award Description": "the test test test",
+            "Sub-Award Description": "sub description 1",
             "Sub-Recipient UEI": "UEI_10010001",
             "Sub-Recipient Location": {
                 "location_country_code": "USA",
@@ -2589,7 +2589,7 @@ def test_spending_by_award_new_subgrant_fields(
                 "zip4": "9040",
                 "zip5": "55455",
             },
-            "Prime Award Recipient UEI": "testuei",
+            "Prime Award Recipient UEI": "uei 1",
             "Assistance Listing": {"cfda_number": "1.234", "cfda_program_title": "test cfda"},
             "sub_award_recipient_id": "EXAM-PLE-ID-P",
         },
