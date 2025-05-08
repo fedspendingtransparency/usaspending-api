@@ -11,7 +11,7 @@ def get_disaster_emergency_fund(row: dict) -> Optional[dict]:
     global DISASTER_EMERGENCY_FUND_CODES
     if not DISASTER_EMERGENCY_FUND_CODES:  # testing for falsy values instead of just null
         DISASTER_EMERGENCY_FUND_CODES = {defc.code: defc for defc in DisasterEmergencyFundCode.objects.all()}
-    disaster_emergency_fund_code = row["disaster_emergency_fund_code"]
+    disaster_emergency_fund_code = row["disaster_emergency_fund_code"].upper()
     if not disaster_emergency_fund_code:
         return None
     try:

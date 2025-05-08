@@ -65,22 +65,11 @@ def agency_data(helpers):
         "references.DisasterEmergencyFundCode", code="L", group_name="covid_19", public_law="LAW", title="title"
     )
 
-    defc2 = baker.make(
-        "references.DisasterEmergencyFundCode", code="q", group_name="covid_19", public_law="LAW", title="title"
-    )
-
     baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         submission=sub1,
         treasury_account=tas1,
         disaster_emergency_fund=defc,
-    )
-
-    baker.make(
-        "financial_activities.FinancialAccountsByProgramActivityObjectClass",
-        submission=sub1,
-        treasury_account=tas1,
-        disaster_emergency_fund=defc2,
     )
 
 
@@ -101,8 +90,7 @@ def test_happy_path(client, monkeypatch, agency_data, helpers):
     assert resp.data["icon_filename"] == "HAI.jpg"
     assert resp.data["subtier_agency_count"] == 1
     assert resp.data["def_codes"] == [
-        {"code": "L", "public_law": "LAW", "title": "title", "urls": None, "disaster": "covid_19"},
-        {"code": "Q", "public_law": "LAW", "title": "title", "urls": None, "disaster": "covid_19"},
+        {"code": "L", "public_law": "LAW", "title": "title", "urls": None, "disaster": "covid_19"}
     ]
     assert resp.data["messages"] == []
 
