@@ -1,5 +1,4 @@
 import pytest
-
 from django.db.models import Sum
 from model_bakery import baker
 
@@ -227,7 +226,7 @@ def test_is_non_zero_total_spending_filter(non_zero_test_data):
     nonzero_count = FinancialAccountsByProgramActivityObjectClass.objects.filter(
         covid_calc.is_non_zero_total_spending()
     ).count()
-    assert nonzero_count == 4
+    assert nonzero_count == 5
 
     single_year_calc = FileBCalculations(is_covid_page=False)
     nonzero_count = FinancialAccountsByProgramActivityObjectClass.objects.filter(
@@ -244,7 +243,7 @@ def test_get_obligations(obligation_and_outlay_data):
         .annotate(total=Sum(covid_calc.get_obligations()))
         .get()
     )
-    assert result["total"] == 125200
+    assert result["total"] == 85200
 
     covid_final_sub_calc = FileBCalculations(include_final_sub_filter=True, is_covid_page=True)
     result = (
@@ -252,7 +251,7 @@ def test_get_obligations(obligation_and_outlay_data):
         .annotate(total=Sum(covid_final_sub_calc.get_obligations()))
         .get()
     )
-    assert result["total"] == 62600
+    assert result["total"] == 42600
 
     single_year_calc = FileBCalculations(include_final_sub_filter=False, is_covid_page=False)
     result = (

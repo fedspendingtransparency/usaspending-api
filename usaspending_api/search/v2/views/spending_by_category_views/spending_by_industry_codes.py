@@ -3,15 +3,9 @@ from decimal import Decimal
 from enum import Enum
 from typing import List
 
-from django.db.models import F, QuerySet
+from django.db.models import F
 
 from usaspending_api.references.models import NAICS, PSC, Cfda, DisasterEmergencyFundCode
-from usaspending_api.search.helpers.spending_by_category_helpers import (
-    fetch_cfda_id_title_by_number,
-    fetch_defc_title_by_code,
-    fetch_naics_description_from_code,
-    fetch_psc_description_by_code,
-)
 from usaspending_api.search.v2.views.enums import SpendingLevel
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_category import (
     AbstractSpendingByCategoryViewSet,
@@ -91,69 +85,6 @@ class AbstractIndustryCodeViewSet(AbstractSpendingByCategoryViewSet, metaclass=A
                 }
             )
         return results
-
-    def query_django_for_subawards(self, base_queryset: QuerySet) -> List[dict]:
-        if self.industry_code_type == IndustryCodeType.PSC or self.industry_code_type == IndustryCodeType.NAICS:
-            self._raise_not_implemented()
-
-        if self.industry_code_type == IndustryCodeType.DEFC:
-            return custom_defc_query(self, base_queryset)
-        else:
-            django_filters = {f"{self.industry_code_type.value}__isnull": False}
-            django_values = [self.industry_code_type.value]
-
-            queryset = self.common_db_query(base_queryset, django_filters, django_values).annotate(
-                code=F(self.industry_code_type.value)
-            )
-
-            lower_limit = self.pagination.lower_limit
-            upper_limit = self.pagination.upper_limit
-            query_results = list(queryset[lower_limit:upper_limit])
-            for row in query_results:
-                if self.industry_code_type == IndustryCodeType.CFDA:
-                    row["id"], row["name"] = fetch_cfda_id_title_by_number(row["code"])
-                elif self.industry_code_type == IndustryCodeType.PSC:
-                    row["id"] = None
-                    row["name"] = fetch_psc_description_by_code(row["code"])
-                elif self.industry_code_type == IndustryCodeType.NAICS:
-                    row["id"] = None
-                    row["name"] = fetch_naics_description_from_code(row["code"], row.get("name"))
-                row.pop(self.industry_code_type.value)
-
-            return query_results
-
-
-def custom_defc_query(self, base_queryset):
-    django_filters = {"award__disaster_emergency_fund_codes__isnull": False}
-    django_values = ["award__disaster_emergency_fund_codes"]
-    queryset = self.common_db_query(base_queryset, django_filters, django_values).annotate(
-        code=F("award__disaster_emergency_fund_codes")
-    )
-
-    lower_limit = self.pagination.lower_limit
-    upper_limit = self.pagination.upper_limit
-    query_results = list(queryset[lower_limit:upper_limit])
-
-    output_map = {}
-    # Iterate over each of the codes within the results
-    for grouping in query_results:
-        for defc in grouping["code"]:
-            # If we've already defined the code in the output map, increment it.
-            # Otherwise initialize it as the result amount
-            if defc in output_map:
-                output_map[defc] += grouping["amount"]
-            else:
-                output_map[defc] = grouping["amount"]
-    transformed_list = [
-        {
-            "id": None,
-            "name": fetch_defc_title_by_code(key),
-            "code": key,
-            "amount": value,
-        }
-        for idx, (key, value) in enumerate(output_map.items())
-    ]
-    return transformed_list
 
 
 class CfdaViewSet(AbstractIndustryCodeViewSet):

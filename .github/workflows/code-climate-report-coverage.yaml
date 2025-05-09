@@ -1,0 +1,52 @@
+name: Code Climate Report Coverage
+
+on:
+  workflow_call:
+    inputs:
+      source-branch:
+        description: The branch that tests are run against
+        type: string
+        required: true
+      source-commit-sha:
+        description: The specific commit on the branch that tests are run against
+        type: string
+        required: true
+    secrets:
+      cc_test_reporter_id:
+        description: ID assigned by Code Climate for writing test coverage
+        required: true
+
+jobs:
+  Run:
+    name: Run
+    runs-on: ${{ vars.RUNNER_VERSION }}
+    env:
+      GIT_BRANCH: ${{ inputs.source-branch }}
+      GIT_COMMIT_SHA: ${{ inputs.source-commit-sha }}
+      CC_TEST_REPORTER_ID: ${{ secrets.cc_test_reporter_id }}
+    steps:
+      - name: Checkout Source Repository
+        uses: actions/checkout@v4
+        with:
+          path: usaspending-api
+
+      - name: Install Dependency
+        working-directory: ./usaspending-api
+        run: |
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter
+
+      - name: Download coverage reports
+        uses: actions/download-artifact@v4
+        with:
+          merge-multiple: 'true'
+          pattern: coverage.*.xml
+          path: ./usaspending-api
+
+      - name: Report Test Coverage
+        working-directory: ./usaspending-api
+        run: |
+          ls -lh coverage.*.xml
+          for cf in coverage.*.xml; do ./cc-test-reporter format-coverage --input-type coverage.py --output coverage/codeclimate.$(echo "$cf" | cut -d'.' -f2).xml coverage.$(echo "$cf" | cut -d'.' -f2).xml; done
+          ls coverage/
+          ./cc-test-reporter sum-coverage --output - --parts $(find . -maxdepth 1 -name 'coverage.*.xml' | wc -l) ./coverage/codeclimate.*.xml | ./cc-test-reporter upload-coverage --input -

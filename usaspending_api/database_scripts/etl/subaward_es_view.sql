@@ -79,6 +79,8 @@ SELECT
 	s.sub_legal_entity_congressional_current AS sub_recipient_location_congressional_code_current,
 	s.sub_legal_entity_foreign_posta AS sub_recipient_location_foreign_posta,
 	s.sub_legal_entity_city_name AS sub_recipient_location_city_name,
+	s.sub_legal_entity_county_name AS sub_recipient_location_county_name,
+	s.sub_legal_entity_address_line1 AS sub_recipient_location_address_line1,
 	s.sub_business_types,
 	s.sub_place_of_perform_country_co AS sub_pop_country_code,
 	s.sub_place_of_perform_country_name AS sub_pop_country_name,
@@ -90,6 +92,7 @@ SELECT
 	s.sub_place_of_performance_congressional_current AS sub_pop_congressional_code_current,
 	s.sub_place_of_perform_city_name AS sub_pop_city_name,
 	s.sub_place_of_perform_street AS sub_pop_street,
+	s.sub_place_of_perform_county_name AS sub_pop_county_name,
 	s.subaward_description,
 	s.prime_award_group,
 	s.prime_award_type,
@@ -112,9 +115,16 @@ SELECT
     a.disaster_emergency_fund_codes,
     a.recipient_hash,
     a.parent_uei,
-    s.program_activities::JSON
+    s.program_activities::JSON,
+    s.prime_award_recipient_id,
+    a.tas_paths,
+    a.tas_components,
+    s.subaward_recipient_hash,
+    s.subaward_recipient_level,
+    s.awarding_toptier_agency_code,
+    s.funding_toptier_agency_code
 FROM
 	rpt.subaward_search s
 LEFT JOIN rpt.award_search a
-ON s.award_id = a.award_id
+    ON s.award_id = a.award_id
 WHERE s.action_date >= '2007-10-01';

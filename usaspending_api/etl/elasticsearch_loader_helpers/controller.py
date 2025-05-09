@@ -5,10 +5,7 @@ from multiprocessing import Event, Pool, Value
 from time import perf_counter
 from typing import Dict, Tuple
 
-from django.conf import settings
 from django.core.management import call_command
-from elasticsearch.exceptions import NotFoundError
-from elasticsearch_dsl import Index
 
 from usaspending_api.broker.helpers.last_load_date import get_earliest_load_date, update_last_load_date
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
@@ -67,9 +64,6 @@ class AbstractElasticsearchIndexerController(ABC):
 
         self.config["partitions"] = self.determine_partitions()
         self.config["processes"] = min(self.config["processes"], self.config["partitions"])
-
-        # Need to update the slices for any changes in number of processes
-        self.set_slice_count()
 
         self.tasks = self.construct_tasks()
 
@@ -134,76 +128,14 @@ class AbstractElasticsearchIndexerController(ABC):
         """
         Retrieves the number of slices that should be used when performing any type
         of scroll operation (e.g., delete_by_query).
-
-        # TODO: This currently makes a couple of assumptions that we should look to improve.
-        #       * currently only the Award and Transaction Indexes run in parallel for Deletes
-        #       * the Award Index is set to 5 shards and runs with only 5 slices
-        #       * the maximum number of open scroll contexts is 500
         """
         if self.config["create_new_index"] or self.config["load_type"] != "transaction":
             # Only transactions are currently processing with more than 5 shards. As a result,
             # all other load types are set to the original default of "auto".
-            self.config["slices"] = "auto"
-            logger.info(
-                format_log(f"Setting the value of {self.config['load_type']} index slices: {self.config['slices']}")
-            )
-            return
-
-        client = instantiate_elasticsearch_client()
-
-        transaction_index_name_or_alias = self.config["index_name"]
-        transaction_index = Index(name=transaction_index_name_or_alias, using=client)
-        transaction_index_settings = transaction_index.get_settings()
-
-        # The Index object can utilize either a Name or Alias up above. However, for the purpose of using
-        # the Index object to capture settings we need the actual name.
-        transaction_index_name = list(transaction_index_settings)[0]
-        transaction_num_shards = int(
-            transaction_index_settings[transaction_index_name]["settings"]["index"]["number_of_shards"]
-        )
-        transaction_shard_stores = transaction_index.shard_stores(status="all")
-
-        # To get the number of nodes that the shards are distributed across we look at the shard store.
-        # Each shard store in the response is formatted such as the following:
-        # { "<NODE_ID>": {"name": ..., "ephemeral_id": ...}, "allocation_id": ..., "allocation": ... }
-        num_nodes = len(
-            set(
-                [
-                    value.get("name")
-                    for store_list in transaction_shard_stores["indices"][transaction_index_name]["shards"].values()
-                    for store in store_list["stores"]
-                    for value in store.values()
-                    if store["allocation"] == "primary" and isinstance(value, dict)
-                ]
-            )
-        )
-
-        try:
-            award_index = Index(name=settings.ES_AWARDS_WRITE_ALIAS, using=client)
-            award_index_settings = award_index.get_settings()
-            award_index_name = list(award_index_settings)[0]
-            award_num_shards = int(award_index_settings[award_index_name]["settings"]["index"]["number_of_shards"])
-        except NotFoundError:
-            # If the Award index hasn't been created yet then we assume the current default
-            logger.error("Failed to find the Award index; assuming it contains 5 shards")
-            award_num_shards = 5
-
-        # The value of "auto" is used for awards
-        award_slices = award_num_shards
-
-        max_scroll_contexts = 500
-        award_index_scroll_context_count = (self.config["processes"] * (award_num_shards * award_slices)) // num_nodes
-        transaction_index_slice_count = ((max_scroll_contexts - award_index_scroll_context_count) * num_nodes) // (
-            self.config["processes"] * transaction_num_shards
-        )
-
-        if transaction_index_slice_count < 1:
-            raise ValueError(
-                f"A value of {transaction_index_slice_count} was calculated for the number of slices."
-                " This value is too low to allow the processing of deletes."
-            )
-
-        self.config["slices"] = transaction_index_slice_count
+            slice_count = "auto"
+        else:
+            slice_count = 1
+        self.config["slices"] = slice_count
         logger.info(
             format_log(f"Setting the value of {self.config['load_type']} index slices: {self.config['slices']}")
         )
@@ -308,15 +240,28 @@ class PostgresElasticsearchIndexerController(AbstractElasticsearchIndexerControl
 
     def _run_award_deletes(self):
         client = instantiate_elasticsearch_client()
-        delete_awards(client=client, config=self.config)
+        delete_awards(
+            client=client,
+            config=self.config,
+            fabs_external_data_load_date_key="transaction_fabs",
+            fpds_external_data_load_date_key="transaction_fpds",
+        )
 
     def _run_transaction_deletes(self):
         client = instantiate_elasticsearch_client()
-        delete_transactions(client=client, config=self.config)
+        delete_transactions(
+            client=client,
+            config=self.config,
+            fabs_external_data_load_date_key="transaction_fabs",
+            fpds_external_data_load_date_key="transaction_fpds",
+        )
         # Use the lesser of the fabs/fpds load dates as the es_deletes load date. This
         # ensures all records deleted since either job was run are taken into account
-        last_db_delete_time = get_earliest_load_date(["fabs", "fpds"])
+        last_db_delete_time = get_earliest_load_date(
+            ["transaction_fabs", "transaction_fpds"], format_func=(lambda log_msg: format_log(log_msg, action="Delete"))
+        )
         update_last_load_date("es_deletes", last_db_delete_time)
+        logger.info(format_log(f"Updating `es_deletes`: {last_db_delete_time}", action="Delete"))
 
     def cleanup(self) -> None:
         pass

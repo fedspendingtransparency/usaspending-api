@@ -19,7 +19,7 @@ This route sends a request to the backend to retrieve locations matching the spe
 
     + Attributes (object)
         + `limit` (optional, number)
-            + Default: 10
+            + Default: 5
         + `search_text` (required, string)
     + Body
 
@@ -36,22 +36,28 @@ This route sends a request to the backend to retrieve locations matching the spe
             {
                 "results": {
                     "countries": [
-                        "Denmark"
-                        "Sweden"
-                    ],
-                    "cities": [
-                        "Denver, Colorado, United States",
-                        "Gadsden, Alabama, United States",
-                        "Camden, Arkansas, United States"
-                    ],
-                    "counties": [
                         {
-                            "county_fips": "12345",
-                            "county_name": "DENVER COUNTY, COLORADO, UNITED STATES"
+                            "country_name": "Denmark"
                         },
                         {
-                            "county_fips": "67890",
-                            "county_name": "CAMDEN COUNTY, GEORGIA, UNITED STATES"
+                            "country_name": "Sweden"
+                        }
+                    ],
+                    "cities": [
+                        {
+                            "city_name": "Denver",
+                            "state_name": "Colorado",
+                            "country_name": "United States"
+                        },
+                        {
+                            "city_name": "Gadsden",
+                            "state_name": "Alabama",
+                            "country_name": "United States"
+                        },
+                        {
+                            "city_name": "Camden",
+                            "state_name": "Arkansas",
+                            "country_name": "United States"
                         }
                     ]
                 },
@@ -61,14 +67,46 @@ This route sends a request to the backend to retrieve locations matching the spe
 # Data Structures
 
 ## Locations (object)
-+ `countries` (optional, array[string])
-+ `states` (optional, array[string])
-+ `cities` (optional, array[string])
++ `countries` (optional, array[CountryMatch])
++ `states` (optional, array[StateMatch])
++ `cities` (optional, array[CityMatch])
 + `counties` (optional, array[CountyMatch])
-+ `zip_codes` (optional, array[string])
-+ `districts_original` (optional, array[string])
-+ `districts_current` (optional, array[string])
++ `zip_codes` (optional, array[ZipCodeMatch])
++ `districts_original` (optional, array[OriginalCongressionalDistrictMatch])
++ `districts_current` (optional, array[CurrentCongressionalDistrictMatch])
+
+## CountryMatch (object)
++ `country_name` (required, string)
+
+## StateMatch (object)
++ `state_name` (required, string)
++ `country_name` (required, string)
+
+## CityMatch (object)
++ `city_name` (required, string)
++ `state_name` (required, string, nullable)
+    This is `NULL` for foreign cities.
++ `country_name` (required, string)
 
 ## CountyMatch (object)
-+ `county_fips` (required, string) The 5 digit FIPS code (2 digit state FIPS code + 3 digit county FIPS code)
++ `county_fips` (required, string)
+    The 5 digit FIPS code (2 digit state FIPS code + 3 digit county FIPS code)
 + `county_name` (required, string)
++ `state_name` (required, string)
++ `country_name` (required, string)
+
+## ZipCodeMatch (object)
++ `zip_code` (required, number)
+    The 5 digit zip code
++ `state_name` (required, string)
++ `country_name` (required, string)
+
+## OriginalCongressionalDistrictMatch (object)
++ `original_cd` (required, string)
++ `state_name` (required, string)
++ `country_name` (required, string)
+
+## CurrentCongressionalDistrictMatch (object)
++ `current_cd` (required, string)
++ `state_name` (required, string)
++ `country_name` (required, string)

@@ -12,6 +12,7 @@ ATA_TAS = 1
 BPOA_TAS = 2
 ATA_BPOA_TAS = 3
 SISTER_TAS = [1, 4, 5]
+UNINTUITIVE_BASIC_TAS = 6
 TAS_STRINGS = [
     "000-X-0126-000",
     "010-024-X-8445-002",
@@ -22,6 +23,15 @@ TAS_STRINGS = [
 ]
 TAS_DICTIONARIES = [
     TreasuryAppropriationAccount.tas_rendering_label_to_component_dictionary(tas) for tas in TAS_STRINGS
+]
+TAS_PATHS = [
+    "agency=000faaid=000famain=0126aid=000main=0126ata=sub=000bpoa=????epoa=????a=X",
+    "agency=024faaid=024famain=8445aid=024main=8445ata=010sub=002bpoa=????epoa=????a=X",
+    "agency=012faaid=012famain=1231aid=012main=1231ata=sub=000bpoa=2000epoa=2000a=",
+    "agency=020faaid=020famain=1231aid=020main=1231ata=sub=000bpoa=2000epoa=2000a=",
+    "agency=024faaid=024famain=8445aid=024main=8445ata=010sub=552bpoa=????epoa=????a=X",
+    "agency=024faaid=024famain=8445aid=024main=8445ata=010sub=578bpoa=????epoa=????a=X",
+    "agency=898faaid=000famain=0126aid=000main=0126ata=sub=000bpoa=????epoa=????a=X",
 ]
 
 
