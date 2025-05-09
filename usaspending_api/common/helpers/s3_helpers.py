@@ -111,7 +111,7 @@ def upload_download_file_to_s3(file_path, sub_dir=None):
 
 
 def multipart_upload(bucketname, region_name, source_path, keyname, sub_dir=None):
-    s3_client = _get_boto3_s3_client(region_name)
+    s3_client = _get_boto3("client", "s3", region_name=region_name)
     source_size = Path(source_path).stat().st_size
     # Sets the chunksize at minimum ~5MB to sqrt(5MB) * sqrt(source size)
     bytes_per_chunk = max(int(math.sqrt(5242880) * math.sqrt(source_size)), 5242880)
