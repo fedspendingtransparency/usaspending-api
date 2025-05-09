@@ -195,7 +195,7 @@ def delete_s3_objects(
     if key_list:
         object_list.extend([{"Key": key} for key in key_list])
 
-    s3_client = _get_boto3("client", region_name)
+    s3_client = _get_boto3("client", "s3", region_name)
     resp = s3_client.delete_objects(Bucket=bucket_name, Delete={"Objects": object_list})
 
     return len(resp.get("Deleted", []))
