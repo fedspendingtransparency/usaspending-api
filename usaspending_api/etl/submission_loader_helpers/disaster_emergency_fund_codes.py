@@ -16,7 +16,7 @@ def get_disaster_emergency_fund(row: dict) -> Optional[dict]:
     if not disaster_emergency_fund_code:
         return None
     try:
-        return DISASTER_EMERGENCY_FUND_CODES[disaster_emergency_fund_code.upper()]
+        return DISASTER_EMERGENCY_FUND_CODES[disaster_emergency_fund_code]
     except KeyError:
         raise DisasterEmergencyFundCode.DoesNotExist(
             f"Unable to find disaster emergency fund code for '{disaster_emergency_fund_code}'."

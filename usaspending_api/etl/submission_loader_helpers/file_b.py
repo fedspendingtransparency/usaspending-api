@@ -48,7 +48,7 @@ def get_file_b(submission_attributes, db_cursor):
         select      count(*)
         from        published_object_class_program_activity
         where       submission_id = %s and length(object_class) = 4
-        group by    account_num, program_activity_code, object_class, disaster_emergency_fund_code,
+        group by    account_num, program_activity_code, object_class, upper(disaster_emergency_fund_code),
                     upper(prior_year_adjustment), upper(program_activity_reporting_key)
         having      count(*) > 1
     """
