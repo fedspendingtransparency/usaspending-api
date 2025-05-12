@@ -167,7 +167,7 @@ award_search_create_sql_string = rf"""
         {", ".join([f'{key} {val}' for key, val in AWARD_SEARCH_DELTA_COLUMNS.items()])}
     )
     USING DELTA
-    LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'\
+    LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
     TBLPROPERTIES (delta.enableChangeDataFeed = {{CHANGE_DATA_FEED}})
 """
 
@@ -682,14 +682,14 @@ LEFT OUTER JOIN (
         ELSE NULL
     END AS disaster_emergency_fund_codes,
     SORT_ARRAY(COLLECT_SET(taa.treasury_account_identifier)) AS treasury_account_identifiers,
-    SORT_ARRAY(COLLECT_SET(
+    CAST(SORT_ARRAY(COLLECT_SET(
         TO_JSON(
             NAMED_STRUCT(
                 'name', UPPER(rpa.program_activity_name),
                 'code', LPAD(rpa.program_activity_code, 4, "0")
             )
         )
-    )) AS program_activities
+    )) AS STRING) AS program_activities
   FROM
     global_temp.treasury_appropriation_account taa
   INNER JOIN int.financial_accounts_by_awards faba ON (taa.treasury_account_identifier = faba.treasury_account_id)
@@ -710,7 +710,7 @@ award_search_incremental_load_sql_string = [
     )
     """,
     f"""
-    MERGE INTO rpt.award_search AS t
+    MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS t
     USING (SELECT * FROM temp_award_search_view) AS s
     ON t.award_id = s.award_id
     WHEN MATCHED AND
