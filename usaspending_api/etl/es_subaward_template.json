@@ -566,11 +566,7 @@
       },
       "subaward_description": {
         "type": "text",
-        "fields": {
-          "keyword": {
-            "type": "keyword"
-          }
-        }
+        "fielddata": "true"
       },
       "prime_award_group": {
         "type": "keyword"
