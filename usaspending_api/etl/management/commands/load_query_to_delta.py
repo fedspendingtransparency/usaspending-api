@@ -61,7 +61,8 @@ from usaspending_api.transactions.delta_models import (
     transaction_current_cd_lookup_create_sql_string,
     transaction_current_cd_lookup_load_sql_string,
     transaction_search_create_sql_string,
-    transaction_search_load_sql_string,
+    transaction_search_incremental_load_sql_string,
+    transaction_search_overwrite_load_sql_string,
 )
 
 TABLE_SPEC = {
@@ -192,7 +193,8 @@ TABLE_SPEC = {
     "transaction_search": {
         "model": TransactionSearch,
         "is_from_broker": False,
-        "source_query": transaction_search_load_sql_string,
+        "source_query": transaction_search_overwrite_load_sql_string,
+        "source_query_incremental": transaction_search_incremental_load_sql_string,
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
@@ -212,7 +214,8 @@ TABLE_SPEC = {
     "transaction_search_gold": {
         "model": TransactionSearch,
         "is_from_broker": False,
-        "source_query": transaction_search_load_sql_string,
+        "source_query": transaction_search_overwrite_load_sql_string,
+        "source_query_incremental": transaction_search_incremental_load_sql_string,
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",

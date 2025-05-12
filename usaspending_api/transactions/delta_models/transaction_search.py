@@ -405,13 +405,10 @@ transaction_search_create_sql_string = rf"""
     )
     USING DELTA
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
+    TBLPROPERTIES (delta.enableChangeDataFeed = {{CHANGE_DATA_FEED}})
 """
 
-transaction_search_load_sql_string = rf"""
-    INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
-    (
-        {",".join([col for col in TRANSACTION_SEARCH_POSTGRES_GOLD_COLUMNS])}
-    )
+_base_load_sql_string = rf"""
     SELECT
         -- Keys
         transaction_normalized.id AS transaction_id,
@@ -900,7 +897,7 @@ transaction_search_load_sql_string = rf"""
         transaction_fpds.veterinary_hospital,
         transaction_fpds.woman_owned_business,
         transaction_fpds.women_owned_small_business,
-        FED_AND_TRES_ACCT.program_activities
+        CAST(FED_AND_TRES_ACCT.program_activities AS STRING)
 
     FROM
         int.transaction_normalized
@@ -1089,4 +1086,30 @@ transaction_search_load_sql_string = rf"""
         WHERE faba.award_id IS NOT NULL
         GROUP BY faba.award_id
     ) FED_AND_TRES_ACCT ON (FED_AND_TRES_ACCT.award_id = transaction_normalized.award_id)
+"""
+
+transaction_search_incremental_load_sql_string = [
+    f"""
+    CREATE OR REPLACE TEMPORARY VIEW temp_transaction_search_view AS (
+        {_base_load_sql_string}
+    )
+    """,
+    f"""
+    MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS t
+    USING (SELECT * FROM temp_transaction_search_view) AS s
+    ON t.transaction_id = s.transaction_id
+    WHEN MATCHED AND
+      ({" OR ".join([f"NOT (s.{col} <=> t.{col})" for col in TRANSACTION_SEARCH_DELTA_COLUMNS])})
+      THEN UPDATE SET *
+    WHEN NOT MATCHED THEN INSERT *
+    WHEN NOT MATCHED BY SOURCE THEN DELETE
+    """,
+]
+
+transaction_search_overwrite_load_sql_string = f"""
+INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
+    (
+        {",".join([col for col in TRANSACTION_SEARCH_DELTA_COLUMNS])}
+    )
+    {_base_load_sql_string}
 """
