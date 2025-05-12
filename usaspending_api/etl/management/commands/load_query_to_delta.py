@@ -1,3 +1,5 @@
+from argparse import ArgumentTypeError
+
 from django.core.management.base import BaseCommand
 from pyspark.sql import SparkSession
 
@@ -37,7 +39,8 @@ from usaspending_api.search.delta_models.award_search import (
     AWARD_SEARCH_POSTGRES_COLUMNS,
     AWARD_SEARCH_POSTGRES_GOLD_COLUMNS,
     award_search_create_sql_string,
-    award_search_load_sql_string,
+    award_search_incremental_load_sql_string,
+    award_search_overwrite_load_sql_string,
 )
 from usaspending_api.search.delta_models.subaward_search import (
     SUBAWARD_SEARCH_COLUMNS,
@@ -65,7 +68,8 @@ TABLE_SPEC = {
     "award_search": {
         "model": AwardSearch,
         "is_from_broker": False,
-        "source_query": award_search_load_sql_string,
+        "source_query": award_search_overwrite_load_sql_string,
+        "source_query_incremental": award_search_incremental_load_sql_string,
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
@@ -86,7 +90,8 @@ TABLE_SPEC = {
     "award_search_gold": {
         "model": AwardSearch,
         "is_from_broker": False,
-        "source_query": award_search_load_sql_string,
+        "source_query": award_search_overwrite_load_sql_string,
+        "source_query_incremental": award_search_incremental_load_sql_string,
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
@@ -328,6 +333,12 @@ class Command(BaseCommand):
             help="An alternate delta table name for the created table, overriding the TABLE_SPEC destination_table "
             "name",
         )
+        parser.add_argument(
+            "--incremental",
+            action="store_true",
+            required=False,
+            help="Whether or note the table will be updated incrementally",
+        )
 
     def handle(self, *args, **options):
         extra_conf = {
@@ -354,6 +365,10 @@ class Command(BaseCommand):
         table_spec = TABLE_SPEC[destination_table]
         self.destination_database = options["alt_db"] or table_spec["destination_database"]
         self.destination_table_name = options["alt_name"] or destination_table.split(".")[-1]
+        source_query_key = "source_query_incremental" if options["incremental"] else "source_query"
+        load_query = table_spec.get(source_query_key)
+        if load_query is None:
+            raise ArgumentTypeError(f"Invalid source query. `{source_query_key}` must be specified in the TABLE_SPEC.")
 
         # Set the database that will be interacted with for all Delta Lake table Spark-based activity
         logger.info(f"Using Spark Database: {self.destination_database}")
@@ -366,7 +381,6 @@ class Command(BaseCommand):
 
         create_ref_temp_views(self.spark, create_broker_views=True)
 
-        load_query = table_spec["source_query"]
         if isinstance(load_query, list):
             for index, query in enumerate(load_query):
                 logger.info(f"Running query number: {index + 1}\nPreview of query: {query[:100]}")
