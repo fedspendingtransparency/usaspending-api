@@ -71,10 +71,9 @@ def get_file_b(submission_attributes, db_cursor):
             "sub_account_code",
             "tas",
             "account_num",
-            "disaster_emergency_fund_code",
         ],
         "left": ["object_class"],
-        "upper": ["prior_year_adjustment", "program_activity_reporting_key"],
+        "upper": ["prior_year_adjustment", "program_activity_reporting_key", "disaster_emergency_fund_code"],
         "numeric": [
             "deobligations_recov_by_pro_cpe",
             "gross_outlay_amount_by_pro_cpe",
