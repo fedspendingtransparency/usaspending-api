@@ -401,9 +401,9 @@ def test_budgetary_resources_before_2022(client, before_2022_data_fixture):
                 {
                     "fiscal_year": year,
                     "agency_budgetary_resources": None,
-                    "total_budgetary_resources": Decimal(f"{year}.00"),
                     "agency_total_outlayed": None,
                     "agency_total_obligated": None,
+                    "total_budgetary_resources": Decimal(f"{year}.00"),
                     "agency_obligation_by_period": [],
                 }
             )
@@ -426,9 +426,9 @@ def test_budgetary_resources_after_2022(client, after_2022_data_fixture):
         {
             "fiscal_year": FY2022,
             "agency_budgetary_resources": Decimal("4.00"),
-            "total_budgetary_resources": Decimal(f"{FY2022}.00"),
             "agency_total_obligated": Decimal("3.00"),
             "agency_total_outlayed": None,
+            "total_budgetary_resources": Decimal(f"{FY2022}.00"),
             "agency_obligation_by_period": [
                 {"obligated": Decimal("8883.00"), "period": 3},
                 {"obligated": Decimal("8886.00"), "period": 6},
