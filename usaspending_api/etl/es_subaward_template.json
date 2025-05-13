@@ -565,8 +565,13 @@
         }
       },
       "subaward_description": {
+        "type": "text"
+      },
+      "subaward_description_sort": {
         "type": "text",
-        "fielddata": "true"
+        "fields": {
+          "type": "keyword"
+        }
       },
       "prime_award_group": {
         "type": "keyword"

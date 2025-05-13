@@ -94,6 +94,7 @@ SELECT
 	s.sub_place_of_perform_street AS sub_pop_street,
 	s.sub_place_of_perform_county_name AS sub_pop_county_name,
 	s.subaward_description,
+	LEFT(s.subaward_description, 8190) as subaward_description_sort,
 	s.prime_award_group,
 	s.prime_award_type,
 	s.latest_transaction_id,

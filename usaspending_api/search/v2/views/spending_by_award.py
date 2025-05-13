@@ -298,6 +298,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
                     contracts_mapping["sub_pop_state_code"],
                     contracts_mapping["sub_pop_country_name"],
                 ]
+            case "Sub-Award Description":
+                sort_by_fields = [subaward_mapping["subaward_description_sorted"]]
             case _:
                 if self.spending_level == SpendingLevel.SUBAWARD:
                     sort_by_fields = [subaward_mapping[self.pagination["sort_key"]]]
