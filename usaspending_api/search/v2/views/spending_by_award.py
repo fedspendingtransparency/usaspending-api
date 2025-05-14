@@ -298,6 +298,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                     contracts_mapping["sub_pop_state_code"],
                     contracts_mapping["sub_pop_country_name"],
                 ]
+            # TODO: Add additional field for Award Descriptions in case they exceed the keyword limit like subawards
             case "Sub-Award Description":
                 sort_by_fields = [subaward_mapping["subaward_description_sorted"]]
             case _:
