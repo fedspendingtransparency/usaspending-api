@@ -23,7 +23,8 @@ from usaspending_api.transactions.delta_models.transaction_search import (
     TRANSACTION_SEARCH_POSTGRES_COLUMNS,
     TRANSACTION_SEARCH_POSTGRES_GOLD_COLUMNS,
     transaction_search_create_sql_string,
-    transaction_search_load_sql_string,
+    transaction_search_incremental_load_sql_string,
+    transaction_search_overwrite_load_sql_string,
 )
 from usaspending_api.transactions.delta_models.transaction_current_cd_lookup import (
     TRANSACTION_CURRENT_CD_LOOKUP_COLUMNS,
@@ -65,7 +66,8 @@ __all__ = [
     "TRANSACTION_SEARCH_POSTGRES_COLUMNS",
     "TRANSACTION_SEARCH_POSTGRES_GOLD_COLUMNS",
     "transaction_search_create_sql_string",
-    "transaction_search_load_sql_string",
+    "transaction_search_incremental_load_sql_string",
+    "transaction_search_overwrite_load_sql_string",
     "SUMMARY_STATE_VIEW_COLUMNS",
     "SUMMARY_STATE_VIEW_DELTA_COLUMNS",
     "SUMMARY_STATE_VIEW_POSTGRES_COLUMNS",
