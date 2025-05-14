@@ -33,6 +33,7 @@ from usaspending_api.awards.v2.lookups.lookups import (
     loan_type_mapping,
     non_loan_assistance_type_mapping,
     subaward_mapping,
+    SUBAWARD_MAPPING_LOOKUP,
 )
 from usaspending_api.common.api_versioning import API_TRANSFORM_FUNCTIONS, api_transformations
 from usaspending_api.common.cache_decorator import cache_response
@@ -71,15 +72,15 @@ GLOBAL_MAP = {
     },
     "subawards": {
         "minimum_db_fields": {"subaward_number", "piid", "fain", "prime_award_group", "award_id"},
-        "api_to_db_mapping_list": [subaward_mapping],
+        "api_to_db_mapping_list": [SUBAWARD_MAPPING_LOOKUP],
         "award_semaphore": "prime_award_group",
         "award_id_fields": ["award__piid", "award__fain"],
         "internal_id_fields": {"internal_id": "subaward_number", "prime_award_internal_id": "award_id"},
         "generated_award_field": ("prime_award_generated_internal_id", "prime_award_internal_id"),
-        "type_code_to_field_map": {"procurement": subaward_mapping, "grant": subaward_mapping},
+        "type_code_to_field_map": {"procurement": SUBAWARD_MAPPING_LOOKUP, "grant": SUBAWARD_MAPPING_LOOKUP},
         "annotations": {"_prime_award_recipient_id": annotate_prime_award_recipient_id},
         "filter_queryset_func": subaward_filter,
-        "elasticsearch_type_code_to_field_map": subaward_mapping,
+        "elasticsearch_type_code_to_field_map": SUBAWARD_MAPPING_LOOKUP,
     },
 }
 

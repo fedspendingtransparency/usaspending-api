@@ -2561,7 +2561,7 @@ def test_spending_by_award_new_subgrant_fields(
             "prime_award_internal_id": 1,
             "Sub-Award ID": "45509",
             "prime_award_generated_internal_id": "CONT_AWD_TESTING_1",
-            "Sub-Award Description": "the test test test",
+            "Sub-Award Description": "sub description 1",
             "Sub-Recipient UEI": "UEI_10010001",
             "Sub-Recipient Location": {
                 "location_country_code": "USA",
@@ -2589,7 +2589,7 @@ def test_spending_by_award_new_subgrant_fields(
                 "zip4": "9040",
                 "zip5": "55455",
             },
-            "Prime Award Recipient UEI": "testuei",
+            "Prime Award Recipient UEI": "uei 1",
             "Assistance Listing": {"cfda_number": "1.234", "cfda_program_title": "test cfda"},
             "sub_award_recipient_id": "EXAM-PLE-ID-P",
         },
@@ -3496,3 +3496,158 @@ def test_spending_by_award_sort_sub_psc(
     assert results[1]["PSC"]["description"] == "psc description 2"
     assert results[2]["PSC"]["code"] == "1234"
     assert results[2]["PSC"]["description"] == "psc description 1"
+
+
+def test_spending_by_subaward_new_sort_fields(
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
+):
+
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
+
+    test_payload = {
+        "spending_level": "subawards",
+        "fields": [
+            "Sub-Award ID",
+            "Prime Recipient Name",
+        ],
+        "filters": {"award_type_codes": ["08"]},
+        "sort": "Prime Recipient Name",
+        "order": "desc",
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    assert len(results) == 7
+    assert results[0]["Prime Recipient Name"] == "name 7"
+    assert results[6]["Prime Recipient Name"] == "name 1"
+
+    test_payload = {
+        "spending_level": "subawards",
+        "fields": [
+            "Sub-Award ID",
+            "Prime Award Recipient UEI",
+        ],
+        "filters": {"award_type_codes": ["08"]},
+        "sort": "Prime Award Recipient UEI",
+        "order": "desc",
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    assert len(results) == 7
+    assert results[0]["Prime Award Recipient UEI"] == "uei 7"
+    assert results[6]["Prime Award Recipient UEI"] == "uei 1"
+
+    test_payload = {
+        "spending_level": "subawards",
+        "fields": [
+            "Sub-Award ID",
+            "Awarding Agency",
+        ],
+        "filters": {"award_type_codes": ["08"]},
+        "sort": "Awarding Agency",
+        "order": "desc",
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    assert len(results) == 7
+    assert results[0]["Awarding Agency"] == "agency 7"
+    assert results[6]["Awarding Agency"] == "agency 1"
+
+    test_payload = {
+        "spending_level": "subawards",
+        "fields": [
+            "Sub-Award ID",
+            "Awarding Sub Agency",
+        ],
+        "filters": {"award_type_codes": ["08"]},
+        "sort": "Awarding Sub Agency",
+        "order": "desc",
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    assert len(results) == 7
+    assert results[0]["Awarding Sub Agency"] == "sub agency 7"
+    assert results[6]["Awarding Sub Agency"] == "sub agency 1"
+
+    test_payload = {
+        "spending_level": "subawards",
+        "fields": [
+            "Sub-Award ID",
+            "Sub-Awardee Name",
+        ],
+        "filters": {"award_type_codes": ["08"]},
+        "sort": "Sub-Awardee Name",
+        "order": "desc",
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    assert len(results) == 7
+    assert results[0]["Sub-Awardee Name"] == "sub awardee 7"
+    assert results[6]["Sub-Awardee Name"] == "sub awardee 1"
+
+    test_payload = {
+        "spending_level": "subawards",
+        "fields": [
+            "Sub-Award ID",
+            "Sub-Award Description",
+        ],
+        "filters": {"award_type_codes": ["08"]},
+        "sort": "Sub-Award Description",
+        "order": "desc",
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    assert len(results) == 7
+    assert results[0]["Sub-Award Description"] == "sub description 7"
+    assert results[6]["Sub-Award Description"] == "sub description 1"
+
+    test_payload = {
+        "spending_level": "subawards",
+        "fields": [
+            "Sub-Award ID",
+            "Sub-Award Type",
+        ],
+        "filters": {"award_type_codes": ["08"]},
+        "sort": "Sub-Award Type",
+        "order": "desc",
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    assert len(results) == 7
+    assert results[0]["Sub-Award Type"] == "sub type 7"
+    assert results[6]["Sub-Award Type"] == "sub type 1"
