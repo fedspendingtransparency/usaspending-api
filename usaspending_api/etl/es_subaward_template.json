@@ -570,7 +570,9 @@
       "subaward_description_sort": {
         "type": "text",
         "fields": {
-          "type": "keyword"
+          "keyword": {
+            "type": "keyword"
+          }
         }
       },
       "prime_award_group": {
