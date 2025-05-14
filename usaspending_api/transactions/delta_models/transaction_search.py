@@ -1099,7 +1099,7 @@ transaction_search_incremental_load_sql_string = [
     USING (SELECT * FROM temp_transaction_search_view) AS s
     ON t.transaction_id = s.transaction_id
     WHEN MATCHED AND
-      ({" OR ".join([f"NOT (s.{col} <=> t.{col})" for col in TRANSACTION_SEARCH_DELTA_COLUMNS])})
+      ({" OR ".join([f"NOT (s.{col} <=> t.{col})" for col in TRANSACTION_SEARCH_GOLD_DELTA_COLUMNS])})
       THEN UPDATE SET *
     WHEN NOT MATCHED THEN INSERT *
     WHEN NOT MATCHED BY SOURCE THEN DELETE
@@ -1109,7 +1109,7 @@ transaction_search_incremental_load_sql_string = [
 transaction_search_overwrite_load_sql_string = f"""
 INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
     (
-        {",".join([col for col in TRANSACTION_SEARCH_DELTA_COLUMNS])}
+        {",".join([col for col in TRANSACTION_SEARCH_GOLD_DELTA_COLUMNS])}
     )
     {_base_load_sql_string}
 """
