@@ -62,7 +62,7 @@ class Command(BaseCommand):
             ),
         )
         broker_group.add_argument(
-            "--broker-table",
+            "--broker-table-name",
             type=str,
             required=False,
             help="Table name in the Broker DB to update",
@@ -87,11 +87,10 @@ class Command(BaseCommand):
     def get_match_field_range(self) -> tuple[int, int]:
         with connections[DATA_BROKER_DB_ALIAS].cursor() as cursor:
             cursor.execute(
-                """
-                SELECT min(%(match_field)s), max(%(match_field)s)
-                FROM %(table_name)s
-            """,
-                params={"match_field": self.broker_match_field, "table_name": self.broker_table_name},
+                f"""
+                SELECT min({self.broker_match_field}), max({self.broker_match_field})
+                FROM {self.broker_table_name}
+            """
             )
             min_val, max_val = cursor.fetchone()
         if min_val is None or max_val is None:
@@ -152,9 +151,9 @@ class Command(BaseCommand):
         self.usas_load_field = options["load_field"]
         self.usas_match_field = options["match_field"]
 
-        self.broker_table_name = options.get("broker_table_name", self.usas_table_name)
-        self.broker_load_field = options.get("broker_load_field", self.usas_load_field)
-        self.broker_match_field = options.get("broker_match_field", self.usas_match_field)
+        self.broker_table_name = options["broker_table_name"] or self.usas_table_name
+        self.broker_load_field = options["broker_load_field"] or self.usas_load_field
+        self.broker_match_field = options["broker_match_field"] or self.usas_match_field
 
         logger.info(
             f'Copying "{self.broker_table_name}"."{self.broker_load_field}" from Broker to '
