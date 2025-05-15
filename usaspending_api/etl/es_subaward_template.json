@@ -568,12 +568,7 @@
         "type": "text"
       },
       "subaward_description_sort": {
-        "type": "text",
-        "fields": {
-          "keyword": {
-            "type": "keyword"
-          }
-        }
+        "type": "keyword"
       },
       "prime_award_group": {
         "type": "keyword"
