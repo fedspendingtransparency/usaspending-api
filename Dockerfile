@@ -24,9 +24,11 @@ RUN python3 -m pip install -r requirements/requirements.txt && \
 
 RUN mkdir /duckdb_plugins && \
     curl -L -o /duckdb_plugins/delta.duckdb_extension.gz http://extensions.duckdb.org/v1.2.2/linux_amd64_gcc4/delta.duckdb_extension.gz && \
+    curl -L -o /duckdb_plugins/aws.duckdb_extension.gz http://extensions.duckdb.org/v1.2.2/linux_amd64_gcc4/aws.duckdb_extension.gz && \
     curl -L -o /duckdb_plugins/httpfs.duckdb_extension.gz http://extensions.duckdb.org/v1.2.2/linux_amd64_gcc4/httpfs.duckdb_extension.gz
 
 RUN gunzip /duckdb_plugins/delta.duckdb_extension.gz && \
+RUN gunzip /duckdb_plugins/aws.duckdb_extension.gz && \
     gunzip /duckdb_plugins/httpfs.duckdb_extension.gz 
 
 ##### Ensure Python STDOUT gets sent to container logs
