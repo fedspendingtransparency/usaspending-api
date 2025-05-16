@@ -164,9 +164,8 @@ class Command(BaseCommand):
             spark = configure_spark_session(**extra_conf, spark_context=spark)  # type: SparkSession
 
         # Setup Logger
-        logging.debug("set up")
-        logging.basicConfig(level=logging.INFO)
         self.logger = get_jvm_logger(spark, __name__)
+        self.logger.setLevel(logging.INFO)
         self.logger.info("test test test")
 
         # Resolve Parameters
