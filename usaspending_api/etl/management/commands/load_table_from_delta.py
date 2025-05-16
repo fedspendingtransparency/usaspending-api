@@ -165,7 +165,7 @@ class Command(BaseCommand):
 
         # Setup Logger
         self.logger = get_jvm_logger(spark, __name__)
-        self.logger.setLevel(logging.INFO)
+        logging.basicConfig(level=logging.DEBUG)
         self.logger.info("test test test")
 
         # Resolve Parameters
