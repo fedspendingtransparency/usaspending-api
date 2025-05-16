@@ -54,8 +54,11 @@ class Command(BaseCommand):
             );
             """)
 
-
         query = f"SELECT * FROM delta_scan('{S3_DELTA_PATH}');"
+
+        print(f"Attempting to read from S3 Location: {S3_DELTA_PATH}")
+        print(f"Running Query: {query}")
+
         df = conn.execute(query).fetchdf()
 
         print(df)
