@@ -28,11 +28,9 @@ class Command(BaseCommand):
         # Read arguments
         is_local = options["is_local"]
 
-        # Establish DuckDB connection and install plugins
+        # Establish DuckDB connection and load plugins
         conn = duckdb.connect()
         conn.query(f"LOAD '{DELTA_EXTENSION_PATH}'")
-
-        conn.query("INSTALL httpfs")
         conn.query("LOAD httpfs")
 
         if is_local:
