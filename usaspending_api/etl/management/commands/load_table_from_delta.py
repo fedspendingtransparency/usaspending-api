@@ -165,8 +165,8 @@ class Command(BaseCommand):
 
         # Setup Logger
         self.logger = get_jvm_logger(spark, __name__)
-        logging.basicConfig(level=logging.DEBUG)
-        self.logger.warning("test test test")
+        logging.basicConfig(level=logging.INFO)
+        self.logger.info("test test test")
 
         # Resolve Parameters
         delta_table = options["delta_table"]
@@ -203,7 +203,7 @@ class Command(BaseCommand):
         summary_msg = f"Copying delta table {delta_table} to a Postgres temp table {temp_table}."
         if postgres_table:
             summary_msg = f"{summary_msg} The temp table will be based on the postgres table {postgres_table}"
-        self.logger.warning(summary_msg)
+        self.logger.info(summary_msg)
 
         # Checking if the temp destination table already exists
         temp_dest_table_exists_sql = f"""
@@ -219,12 +219,12 @@ class Command(BaseCommand):
 
         # If it does, and we're recreating it, drop it first
         if temp_dest_table_exists and recreate:
-            self.logger.warning(f"{temp_table} exists and recreate argument provided. Dropping first.")
+            self.logger.info(f"{temp_table} exists and recreate argument provided. Dropping first.")
             # If the schema has changed and we need to do a complete reload, just drop the table and rebuild it
             clear_table_sql = f"DROP TABLE {temp_table}"
             with db.connection.cursor() as cursor:
                 cursor.execute(clear_table_sql)
-            self.logger.warning(f"{temp_table} dropped.")
+            self.logger.info(f"{temp_table} dropped.")
             temp_dest_table_exists = False
         make_new_table = not temp_dest_table_exists
 
@@ -272,27 +272,27 @@ class Command(BaseCommand):
                         "populated for the target delta table in the TABLE_SPEC"
                     )
                 with db.connection.cursor() as cursor:
-                    self.logger.warning(f"Creating {temp_table}")
+                    self.logger.info(f"Creating {temp_table}")
                     cursor.execute(create_temp_sql)
-                    self.logger.warning(f"{temp_table} created.")
+                    self.logger.info(f"{temp_table} created.")
 
                     if is_postgres_table_partitioned and partitions_sql:
                         for create_partition in partitions_sql:
-                            self.logger.warning(f"Creating partition of {temp_table} with SQL:\n{create_partition}")
+                            self.logger.info(f"Creating partition of {temp_table} with SQL:\n{create_partition}")
                             cursor.execute(create_partition)
-                            self.logger.warning("Partition created.")
+                            self.logger.info("Partition created.")
 
                     # If there are vectors, add the triggers that will populate them based on other calls
                     # NOTE: Undetermined whether tsvector triggers can be applied on partitioned tables,
                     #       at the top-level virtual/partitioned table (versus having to apply on each partition)
                     for tsvector_name, derived_from_cols in tsvectors.items():
-                        self.logger.warning(
+                        self.logger.info(
                             f"To prevent any confusion or duplicates, dropping the trigger"
                             f" tsvector_update_{tsvector_name} if it exists before potentially recreating it."
                         )
                         cursor.execute(f"DROP TRIGGER IF EXISTS tsvector_update_{tsvector_name} ON {temp_table}")
 
-                        self.logger.warning(
+                        self.logger.info(
                             f"Adding tsvector trigger for column {tsvector_name}"
                             f" based on the following columns: {derived_from_cols}"
                         )
@@ -304,7 +304,7 @@ class Command(BaseCommand):
                                                     {derived_from_cols_str})
                         """
                         cursor.execute(tsvector_trigger_sql)
-                        self.logger.warning(f"tsvector trigger for column {tsvector_name} added.")
+                        self.logger.info(f"tsvector trigger for column {tsvector_name} added.")
 
         # Read from Delta
         df = spark.table(delta_table)
@@ -317,10 +317,10 @@ class Command(BaseCommand):
 
         # If we're working off an existing table, truncate before loading in all the data
         if not make_new_table:
-            self.logger.warning(f"Truncating existing table {temp_table}")
+            self.logger.info(f"Truncating existing table {temp_table}")
             with db.connection.cursor() as cursor:
                 cursor.execute(f"TRUNCATE {temp_table}")
-                self.logger.warning(f"{temp_table} truncated.")
+                self.logger.info(f"{temp_table} truncated.")
 
         # Reset the sequence before load for a table if it exists
         if options["reset_sequence"] and table_spec.get("postgres_seq_name"):
@@ -331,7 +331,7 @@ class Command(BaseCommand):
         # Write to Postgres
         use_jdbc_inserts = options["jdbc_inserts"]
         strategy = "JDBC INSERTs" if use_jdbc_inserts else "SQL bulk COPY CSV"
-        self.logger.warning(
+        self.logger.info(
             f"LOAD (START): Loading data from Delta table {delta_table} to {temp_table} using {strategy} " f"strategy"
         )
 
@@ -377,7 +377,7 @@ class Command(BaseCommand):
             spark.stop()
 
         if postgres_table:
-            self.logger.warning(
+            self.logger.info(
                 f"Note: this has merely loaded the data from Delta. For various reasons, we've separated the"
                 f" metadata portion of the table download to a separate script. If not already done so,"
                 f" please run the following additional command to complete the process: "
@@ -393,7 +393,7 @@ class Command(BaseCommand):
         Returns the previous value use by the sequence.
         """
         new_seq_val = val if val else 1
-        self.logger.warning(f"Setting the Postgres sequence to {new_seq_val} for: {seq_name}")
+        self.logger.info(f"Setting the Postgres sequence to {new_seq_val} for: {seq_name}")
         with db.connection.cursor() as cursor:
             cursor.execute(f"SELECT last_value FROM {seq_name}")
             last_value = cursor.fetchone()[0]
