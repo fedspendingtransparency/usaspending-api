@@ -34,14 +34,26 @@ class Command(BaseCommand):
         conn.query(f"LOAD '{DELTA_EXTENSION_PATH}'")
         conn.query(f"LOAD '{HTTPFS_EXTENSION_PATH}'")
 
-
         if is_local:
-            conn.execute(f"SET s3_region='us-east-1'")
-            conn.execute(f"SET s3_endpoint='http://minio:10001';")
-            conn.execute(f"SET s3_use_ssl=false;")
-            conn.execute(f"SET s3_access_key_id='usaspending';")
-            conn.execute(f"SET s3_secret_access_key='usaspender';")
-            conn.execute(f"SET s3_url_style='path';")
+            conn.execute("""
+            CREATE SECRET secret1 (
+                TYPE s3,
+                KEY_ID 'usaspending',
+                SECRET 'usaspender',
+                REGION 'us-east-1',
+                ENDPOINT 'minio:10001',
+                URL_STYLE 'path',
+                USE_SSL 'false'
+            );
+            """)
+        else:
+            conn.execute("""
+            CREATE SECRET secret1 (
+                TYPE s3,
+                REGION 'us-gov-west-1',
+            );
+            """)
+
 
         query = f"SELECT * FROM delta_scan('{S3_DELTA_PATH}');"
         df = conn.execute(query).fetchdf()
