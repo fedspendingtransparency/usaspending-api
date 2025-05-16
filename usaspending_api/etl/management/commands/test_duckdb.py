@@ -50,7 +50,7 @@ class Command(BaseCommand):
             conn.execute("""
             CREATE SECRET secret1 (
                 TYPE s3,
-                REGION 'us-gov-west-1',
+                REGION 'us-gov-west-1'
             );
             """)
 
