@@ -546,7 +546,7 @@ def _build_usas_data_for_spark():
         disaster_emergency_fund_codes=["L", "M"],
         total_covid_outlay=0.0,
         total_covid_obligation=2.0,
-        covid_spending_by_defc=[
+        spending_by_defc=[
             {"defc": "L", "outlay": 0.0, "obligation": 1.0},
             {"defc": "M", "outlay": 0.0, "obligation": 1.0},
         ],
@@ -656,7 +656,7 @@ def _build_usas_data_for_spark():
         disaster_emergency_fund_codes=None,
         total_covid_outlay=None,
         total_covid_obligation=None,
-        covid_spending_by_defc=None,
+        spending_by_defc=None,
         business_categories=None,
         original_loan_subsidy_cost=0.00,
         face_value_loan_guarantee=0.00,
@@ -826,7 +826,7 @@ def _build_usas_data_for_spark():
         tas_paths=None,
         tas_components=None,
         disaster_emergency_fund_codes=None,
-        covid_spending_by_defc=None,
+        spending_by_defc=None,
         recipient_location_county_fips=None,
         pop_county_fips=None,
         generated_pragmatic_obligation=0.00,
