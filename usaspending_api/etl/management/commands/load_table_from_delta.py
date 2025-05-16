@@ -165,8 +165,9 @@ class Command(BaseCommand):
 
         # Setup Logger
         logging.debug("set up")
+        logging.basicConfig(level=logging.INFO)
         self.logger = get_jvm_logger(spark, __name__)
-        self.logger.setLevel(logging.INFO)
+        self.logger.info("test test test")
 
         # Resolve Parameters
         delta_table = options["delta_table"]
