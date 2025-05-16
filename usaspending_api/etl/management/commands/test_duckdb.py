@@ -30,7 +30,6 @@ class Command(BaseCommand):
 
         # Establish DuckDB connection and install plugins
         conn = duckdb.connect()
-        conn.query("INSTALL delta")
         conn.query(f"LOAD '{DELTA_EXTENSION_PATH}'")
 
         conn.query("INSTALL httpfs")
