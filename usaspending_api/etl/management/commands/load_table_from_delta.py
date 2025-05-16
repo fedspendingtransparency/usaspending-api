@@ -164,7 +164,9 @@ class Command(BaseCommand):
             spark = configure_spark_session(**extra_conf, spark_context=spark)  # type: SparkSession
 
         # Setup Logger
+        logging.debug("set up")
         self.logger = get_jvm_logger(spark, __name__)
+        self.logger.setLevel(logging.INFO)
 
         # Resolve Parameters
         delta_table = options["delta_table"]
