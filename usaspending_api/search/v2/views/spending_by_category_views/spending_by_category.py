@@ -35,6 +35,9 @@ logger = logging.getLogger(__name__)
 class Category:
     name: str
     agg_key: str
+    nested_path: str | None = None
+    obligation_field: str | None = None
+    outlay_field: str | None = None
 
 
 @api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
@@ -45,10 +48,9 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
 
     category: Category
     filters: dict
-    obligation_column: str
     pagination: Pagination
     high_cardinality_categories: List[str] = ["recipient", "recipient_duns"]
-    spending_level: Optional[SpendingLevel]
+    spending_level: SpendingLevel
     subaward_agg_key_mapper: dict[str, str] = {
         "pop_country_agg_key": "sub_pop_country_agg_key",
         "pop_congressional_cur_agg_key": "sub_pop_congressional_cur_agg_key",
@@ -60,7 +62,20 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
     }
 
     @cache_response()
-    def post(self, request: Request) -> Response:
+    def post(self, request: Request, *args, **kwargs) -> Response:
+        original_filters = request.data.get("filters")
+
+        # Handles case where the request has already been validated by an implementation of the abstract class
+        validated_payload = kwargs.get("validated_payload", self.validate_payload(request))
+
+        self.filters = validated_payload.get("filters", {})
+        self.pagination = self._get_pagination(validated_payload)
+
+        raw_response = self.perform_search(original_filters)
+
+        return Response(raw_response)
+
+    def validate_payload(self, request: Request) -> dict:
         models = [
             {"name": "subawards", "key": "subawards", "type": "boolean", "default": False, "optional": True},
             {
@@ -75,7 +90,6 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         models.extend(copy.deepcopy(AWARD_FILTER))
         models.extend(copy.deepcopy(PAGINATION))
 
-        original_filters = request.data.get("filters")
         validated_payload = TinyShield(models).block(request.data)
 
         # Because Subawards and Transactions are associated with DEFCs via their Prime Award, which
@@ -94,25 +108,21 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
                 def_codes = list(DisasterEmergencyFundCode.objects.values_list("code", flat=True))
                 validated_payload["filters"]["def_codes"] = def_codes
 
-        raw_response = self.perform_search(validated_payload, original_filters)
-
-        return Response(raw_response)
-
-    def perform_search(self, validated_payload: dict, original_filters: dict) -> dict:
-
-        self.filters = validated_payload.get("filters", {})
-        self.pagination = self._get_pagination(validated_payload)
-
         self.spending_level = SpendingLevel(
             "subawards" if validated_payload.get("subawards") else validated_payload.get("spending_level")
         )
 
-        # Federal accounts are not implemented for Subawards
-        if self.category.name == "federal_account" and self.spending_level == SpendingLevel.SUBAWARD:
+        # Federal accounts are not implemented for Subawards and File C spending_level is only implemented for DEFC
+        if (self.category.name == "federal_account" and self.spending_level == SpendingLevel.SUBAWARD) or (
+            self.category.name != "defc" and self.spending_level == SpendingLevel.FILE_C
+        ):
             self._raise_not_implemented()
 
+        return validated_payload
+
+    def perform_search(self, original_filters: dict) -> dict:
         if self.spending_level == SpendingLevel.SUBAWARD:
-            # Swap the agg_key fields for the equivilant Subaward fields, if applicable
+            # Swap the agg_key fields for the equivalent Subaward fields, if applicable
             self.category.agg_key = self.subaward_agg_key_mapper.get(self.category.agg_key, self.category.agg_key)
 
             query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
@@ -123,6 +133,7 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
             filter_query = query_with_filters.generate_elasticsearch_query(self.filters)
             results = self.query_elasticsearch(filter_query)
         else:
+            # This case handles both Award and File C spending levels since we join to File C via the Award
             query_with_filters = QueryWithFilters(QueryType.AWARDS)
             filter_query = query_with_filters.generate_elasticsearch_query(self.filters)
             results = self.query_elasticsearch(filter_query)
@@ -174,11 +185,10 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         """
         Using the provided ES_Q object creates a TransactionSearch object with the necessary applied aggregations.
         """
-        sum_aggregations = (
-            get_scaled_sum_aggregations("subaward_amount", self.pagination)
-            if self.spending_level == SpendingLevel.SUBAWARD
-            else get_scaled_sum_aggregations("generated_pragmatic_obligation", self.pagination)
+        obligation_field = self.category.obligation_field or (
+            "subaward_amount" if self.spending_level == SpendingLevel.SUBAWARD else "generated_pragmatic_obligation"
         )
+        obligation_sum_agg = get_scaled_sum_aggregations(obligation_field, self.pagination)
 
         # Need to handle high cardinality categories differently; this assumes that the Search object references
         # an Elasticsearch cluster that has a "routing" equal to "self.category.agg_key"
@@ -186,17 +196,20 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
             # 10k is the maximum number of allowed buckets
             size = self.pagination.upper_limit
             shard_size = size
-            sum_bucket_sort = sum_aggregations["sum_bucket_truncate"]
+            sum_bucket_sort = obligation_sum_agg["sum_bucket_truncate"]
             group_by_agg_key_values = {"order": {"sum_field": "desc"}}
         else:
             # Get count of unique buckets; terminate early if there are no buckets matching criteria
-            if self.spending_level == SpendingLevel.AWARD:
-                bucket_count = get_number_of_unique_terms(AwardSearch, filter_query, f"{self.category.agg_key}.hash")
-            elif self.spending_level == SpendingLevel.SUBAWARD:
-                bucket_count = get_number_of_unique_terms(SubawardSearch, filter_query, f"{self.category.agg_key}.hash")
+            hash_suffix = "" if self.category.nested_path else ".hash"
+            cardinality_field = f"{self.category.agg_key}{hash_suffix}"
+            if self.spending_level == SpendingLevel.SUBAWARD:
+                bucket_count = get_number_of_unique_terms(SubawardSearch, filter_query, cardinality_field)
+            elif self.spending_level == SpendingLevel.TRANSACTION:
+                bucket_count = get_number_of_unique_terms(TransactionSearch, filter_query, cardinality_field)
             else:
+                # This case handles both Award and File C spending levels since we join to File C via the Award
                 bucket_count = get_number_of_unique_terms(
-                    TransactionSearch, filter_query, f"{self.category.agg_key}.hash"
+                    AwardSearch, filter_query, cardinality_field, self.category.nested_path
                 )
             if bucket_count == 0:
                 return None
@@ -205,7 +218,7 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
                 # Only needed for non high-cardinality fields since those are being routed
                 size = bucket_count
                 shard_size = bucket_count + 100
-                sum_bucket_sort = sum_aggregations["sum_bucket_sort"]
+                sum_bucket_sort = obligation_sum_agg["sum_bucket_sort"]
                 group_by_agg_key_values = {}
 
         if shard_size > 10000:
@@ -218,11 +231,12 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         group_by_agg_key_values.update({"field": self.category.agg_key, "size": size, "shard_size": shard_size})
         group_by_agg_key = A("terms", **group_by_agg_key_values)
 
-        sum_field = sum_aggregations["sum_field"]
+        sum_field = obligation_sum_agg["sum_field"]
 
         # Create the filtered Search Object
-        if self.spending_level == SpendingLevel.AWARD:
-            sum_as_cents_agg_outlay = A("sum", field="total_outlays", script={"source": "_value * 100"})
+        if self.spending_level == SpendingLevel.AWARD or self.spending_level == SpendingLevel.FILE_C:
+            outlay_field = self.category.outlay_field or "total_outlays"
+            sum_as_cents_agg_outlay = A("sum", field=outlay_field, script={"source": "_value * 100"})
             sum_as_dollars_agg_outlay = A(
                 "bucket_script",
                 buckets_path={"sum_as_cents_outlay": "sum_as_cents_outlay"},
@@ -239,10 +253,15 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
                 else TransactionSearch().filter(filter_query)
             )
 
-        # Apply the aggregations to the TransactionSearch object
-        search.aggs.bucket("group_by_agg_key", group_by_agg_key).metric("sum_field", sum_field).pipeline(
-            "sum_bucket_sort", sum_bucket_sort
-        )
+        # Apply the aggregations
+        if self.category.nested_path:
+            search.aggs.bucket("nested_agg", A("nested", path=self.category.nested_path)).bucket(
+                "group_by_agg_key", group_by_agg_key
+            ).metric("sum_field", sum_field).pipeline("sum_bucket_sort", sum_bucket_sort)
+        else:
+            search.aggs.bucket("group_by_agg_key", group_by_agg_key).metric("sum_field", sum_field).pipeline(
+                "sum_bucket_sort", sum_bucket_sort
+            )
 
         # Set size to 0 since we don't care about documents returned
         search.update_from_dict({"size": 0})
