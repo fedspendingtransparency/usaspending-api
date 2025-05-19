@@ -1,4 +1,3 @@
-from collections import OrderedDict
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -9,6 +8,7 @@ from elasticsearch import Elasticsearch
 from model_bakery import baker
 
 from usaspending_api.awards.models import Award, TransactionNormalized
+from usaspending_api.broker.lookups import EXTERNAL_DATA_TYPE_DICT
 from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensure_view_exists
 from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
 from usaspending_api.conftest_helpers import TestElasticSearchIndex
@@ -33,10 +33,28 @@ from usaspending_api.etl.management.commands.elasticsearch_indexer import (
 from usaspending_api.recipient.models import RecipientProfile
 from usaspending_api.search.models import AwardSearch, TransactionSearch
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
+from usaspending_api.tests.conftest_spark import create_and_load_all_delta_tables
 
 
 @pytest.fixture
 def award_data_fixture(db):
+    external_load_dates = [
+        {
+            "external_data_type__external_data_type_id": EXTERNAL_DATA_TYPE_DICT["transaction_fabs"],
+            "last_load_date": datetime(2021, 1, 30, 12, 0, 0, 0, timezone.utc),
+        },
+        {
+            "external_data_type__external_data_type_id": EXTERNAL_DATA_TYPE_DICT["transaction_fpds"],
+            "last_load_date": datetime(2021, 1, 30, 12, 0, 0, 0, timezone.utc),
+        },
+        {
+            "external_data_type__external_data_type_id": EXTERNAL_DATA_TYPE_DICT["es_deletes"],
+            "last_load_date": datetime(2021, 1, 17, 16, 0, 0, 0, timezone.utc),
+        },
+    ]
+    for load_date in external_load_dates:
+        baker.make("broker.ExternalDataLoadDate", **load_date)
+
     fpds_unique_key = "fpds_transaction_id_1".upper()  # our ETL UPPERs all these when brought from Broker
     baker.make(
         "search.TransactionSearch",
@@ -107,6 +125,8 @@ def award_data_fixture(db):
         funding_agency_id=1,
         update_date="2012-05-19",
         action_date="2012-05-19",
+        subaward_count=0,
+        transaction_unique_id=fpds_unique_key,
     )
     baker.make(
         "search.AwardSearch",
@@ -123,6 +143,29 @@ def award_data_fixture(db):
         date_signed="2016-10-01",
         update_date="2014-07-21",
         action_date="2016-10-01",
+        subaward_count=0,
+        transaction_unique_id=fabs_unique_key,
+    )
+    baker.make(
+        "search.AwardSearch",
+        award_id=3,
+        generated_unique_award_id="'CONT_AWD_IND12PB00323",
+        latest_transaction_id=1,
+        earliest_transaction_search_id=1,
+        latest_transaction_search_id=1,
+        is_fpds=True,
+        type="A",
+        category="contracts",
+        piid="IND12PB00323",
+        description="pop tarts and assorted cereals",
+        total_obligation=500000.00,
+        date_signed="2010-10-1",
+        awarding_agency_id=1,
+        funding_agency_id=1,
+        update_date="2012-05-19",
+        action_date="2012-05-19",
+        subaward_count=0,
+        transaction_unique_id=fpds_unique_key,
     )
     baker.make("accounts.FederalAccount", id=1)
     baker.make(
@@ -488,17 +531,38 @@ def test_delete_docs_by_unique_key_exceed_max_results_window(award_data_fixture,
             assert "controlled by the [index.max_result_window] index level setting" in str(exc_info.value)
 
 
-def test__check_awards_for_deletes(award_data_fixture, monkeypatch, db):
+@pytest.mark.django_db(transaction=True)
+def test__check_awards_for_deletes(
+    award_data_fixture, monkeypatch, spark, s3_unittest_data_bucket, hive_unittest_metastore_db
+):
+    test_config = {"verbose": False}
     monkeypatch.setattr(
         "usaspending_api.etl.elasticsearch_loader_helpers.delete_data.execute_sql_statement", mock_execute_sql
     )
     id_list = ["CONT_AWD_IND12PB00323"]
-    awards = _check_awards_for_deletes(id_list)
+    awards = _check_awards_for_deletes(test_config, id_list)
     assert awards == []
 
     id_list = ["CONT_AWD_WHATEVER", "CONT_AWD_IND12PB00323"]
-    awards = _check_awards_for_deletes(id_list)
-    assert awards == [OrderedDict([("generated_unique_award_id", "CONT_AWD_WHATEVER")])]
+    awards = _check_awards_for_deletes(test_config, id_list)
+    assert awards == ["CONT_AWD_WHATEVER"]
+
+    # Check to ensure sql properly escapes characters
+    id_list = ["CONT_AWD_SOMETHING_BEFORE", "'CONT_AWD_IND12PB00323", "CONT_AWD_SOMETHING_AFTER"]
+    awards = _check_awards_for_deletes(test_config, id_list)
+    assert sorted(awards) == [
+        "CONT_AWD_SOMETHING_AFTER",
+        "CONT_AWD_SOMETHING_BEFORE",
+    ]
+
+    tables_to_load = ["awards"]
+    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
+    id_list = ["CONT_AWD_SOMETHING_BEFORE", "'CONT_AWD_IND12PB00323", "CONT_AWD_SOMETHING_AFTER"]
+    awards = _check_awards_for_deletes(test_config, id_list, spark)
+    assert sorted(awards) == [
+        "CONT_AWD_SOMETHING_AFTER",
+        "CONT_AWD_SOMETHING_BEFORE",
+    ]
 
 
 def test_delete_awards(award_data_fixture, elasticsearch_transaction_index, elasticsearch_award_index, monkeypatch, db):
@@ -522,12 +586,12 @@ def test_delete_awards(award_data_fixture, elasticsearch_transaction_index, elas
         "ASST_TX_" + key.upper()
         for key in TransactionNormalized.objects.filter(is_fpds=False).values_list("transaction_unique_id", flat=True)
     ]
-    deleted_tx = {key: {"timestamp": delete_time} for key in fpds_keys + fabs_keys}
+    deleted_tx = [key for key in fpds_keys + fabs_keys]
     # Patch the function that fetches deleted transaction keys from the CSV delete-log file
     # in S3, and provide fake transaction keys
     monkeypatch.setattr(
         "usaspending_api.etl.elasticsearch_loader_helpers.delete_data._gather_deleted_transaction_keys",
-        lambda cfg, fabs_external_data_load_data_key, fpds_external_data_load_data_key: deleted_tx,
+        lambda cfg, delete_window_start, fabs_external_data_load_data_key, fpds_external_data_load_data_key: deleted_tx,
     )
 
     original_db_awards_count = Award.objects.count()
@@ -546,7 +610,7 @@ def test_delete_awards(award_data_fixture, elasticsearch_transaction_index, elas
     )
     delete_awards(client, es_etl_config)
     es_award_docs = client.count(index=elasticsearch_award_index.index_name)["count"]
-    assert es_award_docs == 0
+    assert es_award_docs == 1
 
 
 def test_delete_awards_zero_for_unmatched_transactions(
@@ -566,11 +630,11 @@ def test_delete_awards_zero_for_unmatched_transactions(
     # in S3, and provide fake transaction keys
     monkeypatch.setattr(
         "usaspending_api.etl.elasticsearch_loader_helpers.delete_data._gather_deleted_transaction_keys",
-        lambda cfg, fabs_external_data_load_data_key, fpds_external_data_load_data_key: {
-            "unmatchable_tx_key1": {"timestamp": delete_time},
-            "unmatchable_tx_key2": {"timestamp": delete_time},
-            "unmatchable_tx_key3": {"timestamp": delete_time},
-        },
+        lambda cfg, delete_window_start, fabs_external_data_load_data_key, fpds_external_data_load_data_key: [
+            "unmatchable_tx_key1",
+            "unmatchable_tx_key2",
+            "unmatchable_tx_key3",
+        ],
     )
 
     client = elasticsearch_award_index.client  # type: Elasticsearch
@@ -598,13 +662,12 @@ def test_delete_one_assistance_award(
 
     # Get FABS transaction with the lowest ID. This ONE will be deleted.
     tx = TransactionNormalized.objects.filter(is_fpds=False).order_by("pk").first()  # type: TransactionNormalized
-    fabs_key = "ASST_TX_" + tx.transaction_unique_id.upper()
-    deleted_tx = {fabs_key: {"timestamp": delete_time}}
+    deleted_tx = ["ASST_TX_" + tx.transaction_unique_id.upper()]
     # Patch the function that fetches deleted transaction keys from the CSV delete-log file
     # in S3, and provide fake transaction keys
     monkeypatch.setattr(
         "usaspending_api.etl.elasticsearch_loader_helpers.delete_data._gather_deleted_transaction_keys",
-        lambda cfg, fabs_external_data_load_data_key, fpds_external_data_load_data_key: deleted_tx,
+        lambda cfg, delete_window_start, fabs_external_data_load_data_key, fpds_external_data_load_data_key: deleted_tx,
     )
 
     original_db_awards_count = Award.objects.count()
@@ -636,13 +699,12 @@ def test_delete_one_assistance_transaction(award_data_fixture, elasticsearch_tra
 
     # Get FABS transaction with the lowest ID. This ONE will be deleted.
     tx = TransactionNormalized.objects.filter(is_fpds=False).order_by("pk").first()  # type: TransactionNormalized
-    fabs_key = "ASST_TX_" + tx.transaction_unique_id.upper()
-    deleted_tx = {fabs_key: {"timestamp": delete_time}}
+    deleted_tx = ["ASST_TX_" + tx.transaction_unique_id.upper()]
     # Patch the function that fetches deleted transaction keys from the CSV delete-log file
     # in S3, and provide fake transaction keys
     monkeypatch.setattr(
         "usaspending_api.etl.elasticsearch_loader_helpers.delete_data._gather_deleted_transaction_keys",
-        lambda cfg, fabs_external_data_load_data_key, fpds_external_data_load_data_key: deleted_tx,
+        lambda cfg, delete_window_start, fabs_external_data_load_data_key, fpds_external_data_load_data_key: deleted_tx,
     )
 
     original_db_tx_count = TransactionNormalized.objects.count()

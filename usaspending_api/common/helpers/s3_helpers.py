@@ -4,7 +4,6 @@ import logging
 import math
 import time
 
-from boto3.resources.base import ServiceResource
 from boto3.s3.transfer import TransferConfig, S3Transfer
 from botocore.exceptions import ClientError
 from django.conf import settings
@@ -17,57 +16,34 @@ from usaspending_api.config import CONFIG
 logger = logging.getLogger("script")
 
 
-def _get_boto3_s3_client(region_name=CONFIG.AWS_REGION) -> BaseClient:
-    """Returns the correct boto3 client based on the
-    environment.
-
-    Returns:
-        BaseClient: Boto3 client implementatoin
+def _get_boto3(method_name: str, *args, region_name=CONFIG.AWS_REGION, **kwargs):
     """
-    if not CONFIG.USE_AWS:
-        boto3_session = boto3.session.Session(
-            region_name=region_name,
-            aws_access_key_id=CONFIG.AWS_ACCESS_KEY.get_secret_value(),
-            aws_secret_access_key=CONFIG.AWS_SECRET_KEY.get_secret_value(),
-        )
-        s3_client = boto3_session.client(
-            service_name="s3",
-            region_name=region_name,
-            endpoint_url=f"http://{CONFIG.AWS_S3_ENDPOINT}",
-        )
-    else:
-        s3_client = boto3.client(
-            service_name="s3",
-            region_name=region_name,
-            endpoint_url=f"https://{CONFIG.AWS_S3_ENDPOINT}",
-        )
-    return s3_client
-
-
-def _get_boto3_s3_resource(region_name=CONFIG.AWS_REGION) -> ServiceResource:
-    """Returns the correct boto3 resource based on the environment.
-
-    Returns:
-        ServiceResource: Boto3 resource
+    A wrapper for attributes of boto3 that creates a session to support Minio when running in a local dev
+    environment. For non-local environments this will function similarly to a normal call to boto3.
+    For example:
+        - OLD: boto3.client('s3')  # This would require handling of the session for local development
+        - NEW: _get_boto3("client", "s3")
     """
-    if not CONFIG.USE_AWS:
-        boto3_session = boto3.session.Session(
-            region_name=region_name,
-            aws_access_key_id=CONFIG.AWS_ACCESS_KEY.get_secret_value(),
-            aws_secret_access_key=CONFIG.AWS_SECRET_KEY.get_secret_value(),
-        )
-        s3_resource = boto3_session.resource(
-            service_name="s3",
-            region_name=region_name,
-            endpoint_url=f"http://{CONFIG.AWS_S3_ENDPOINT}",
-        )
-    else:
-        s3_resource = boto3.resource(
-            service_name="s3",
-            region_name=region_name,
-            endpoint_url=f"https://{CONFIG.AWS_S3_ENDPOINT}",
-        )
-    return s3_resource
+    attr = getattr(boto3, method_name)
+    kwargs.update({"region_name": region_name})
+    if callable(attr):
+        if not CONFIG.USE_AWS:
+            session = boto3.Session(
+                region_name=region_name,
+                aws_access_key_id=CONFIG.AWS_ACCESS_KEY.get_secret_value(),
+                aws_secret_access_key=CONFIG.AWS_SECRET_KEY.get_secret_value(),
+            )
+            attr = getattr(session, method_name)
+            kwargs.update({"endpoint_url": f"http://{CONFIG.AWS_S3_ENDPOINT}"})
+        else:
+            kwargs.update({"endpoint_url": f"https://{CONFIG.AWS_S3_ENDPOINT}"})
+        return attr(*args, **kwargs)
+    return attr
+
+
+def get_s3_bucket(bucket_name: str, region_name: str = CONFIG.AWS_REGION) -> "boto3.resources.factory.s3.Instance":
+    s3 = _get_boto3("resource", "s3", region_name=region_name)
+    return s3.Bucket(bucket_name)
 
 
 def retrieve_s3_bucket_object_list(bucket_name: str) -> List["boto3.resources.factory.s3.ObjectSummary"]:
@@ -82,13 +58,6 @@ def retrieve_s3_bucket_object_list(bucket_name: str) -> List["boto3.resources.fa
         logger.exception(message)
         raise RuntimeError(message) from e
     return bucket_objects
-
-
-def get_s3_bucket(
-    bucket_name: str, region_name: str = settings.USASPENDING_AWS_REGION
-) -> "boto3.resources.factory.s3.Instance":
-    s3 = _get_boto3_s3_resource(region_name)
-    return s3.Bucket(bucket_name)
 
 
 def access_s3_object(bucket_name: str, obj: "boto3.resources.factory.s3.ObjectSummary") -> io.BytesIO:
@@ -107,13 +76,13 @@ def upload_download_file_to_s3(file_path, sub_dir=None):
     multipart_upload(bucket, region, str(file_path), keyname, sub_dir)
 
 
-def multipart_upload(bucketname, region_name, source_path, keyname, sub_dir=None):
-    s3_client = _get_boto3_s3_client(region_name)
+def multipart_upload(bucketname, regionname, source_path, keyname, sub_dir=None):
+    s3client = boto3.client("s3", region_name=regionname)
     source_size = Path(source_path).stat().st_size
     # Sets the chunksize at minimum ~5MB to sqrt(5MB) * sqrt(source size)
     bytes_per_chunk = max(int(math.sqrt(5242880) * math.sqrt(source_size)), 5242880)
     config = TransferConfig(multipart_chunksize=bytes_per_chunk)
-    transfer = S3Transfer(s3_client, config)
+    transfer = S3Transfer(s3client, config)
     file_name = Path(keyname).name
     if sub_dir is not None:
         file_name = f"{sub_dir}/{file_name}"
@@ -139,7 +108,7 @@ def download_s3_object(
         region_name: AWS region
     """
     if not s3_client:
-        s3_client = _get_boto3_s3_client(region_name)
+        s3_client = _get_boto3("client", "s3", region_name=region_name)
     for attempt in range(retry_count + 1):
         try:
             s3_client.download_file(bucket_name, key, file_path)
@@ -161,7 +130,7 @@ def delete_s3_object(bucket_name: str, key: str, region_name: str = settings.USA
         bucket_name: The name of the bucket where the key is located.
         key: The name of the key to delete
     """
-    s3 = _get_boto3_s3_client(region_name)
+    s3 = _get_boto3("client", "s3", region_name=region_name)
     s3.delete_object(Bucket=bucket_name, Key=key)
 
 
@@ -192,7 +161,7 @@ def delete_s3_objects(
     if key_list:
         object_list.extend([{"Key": key} for key in key_list])
 
-    s3_client = _get_boto3_s3_client(region_name)
+    s3_client = _get_boto3("client", "s3", region_name=region_name)
     resp = s3_client.delete_objects(Bucket=bucket_name, Delete={"Objects": object_list})
 
     return len(resp.get("Deleted", []))

@@ -95,9 +95,9 @@ SELECT
     "transaction_fpds"."national_interest_action" AS "prime_award_national_interest_action_code",
     "transaction_fpds"."national_interest_desc" AS "prime_award_national_interest_action",
     "subaward_search"."subaward_type" AS "subaward_type",
-    "subaward_search"."internal_id" AS "subaward_fsrs_report_id",
-    "subaward_search"."subaward_report_year" AS "subaward_fsrs_report_year",
-    "subaward_search"."subaward_report_month" AS "subaward_fsrs_report_month",
+    "subaward_search"."internal_id" AS "subaward_sam_report_id",
+    "subaward_search"."subaward_report_year" AS "subaward_sam_report_year",
+    "subaward_search"."subaward_report_month" AS "subaward_sam_report_month",
     "subaward_search"."subaward_number" AS "subaward_number",
     "subaward_search"."subaward_amount" AS "subaward_amount",
     "subaward_search"."sub_action_date" AS "subaward_action_date",
@@ -163,7 +163,7 @@ SELECT
     "subaward_search"."sub_high_comp_officer5_full_na" AS "subawardee_highly_compensated_officer_5_name",
     "subaward_search"."sub_high_comp_officer5_amount" AS "subawardee_highly_compensated_officer_5_amount",
     CONCAT ('https://www.usaspending.gov/award/' , urlencode("awards"."generated_unique_award_id"), '/') AS "usaspending_permalink",
-    "subaward_search"."date_submitted" AS "subaward_fsrs_report_last_modified_date"
+    "subaward_search"."date_submitted" AS "subaward_sam_report_last_modified_date"
 FROM "subaward_search"
 INNER JOIN "award_search" AS "awards" ON ("subaward_search"."award_id" = "awards"."award_id")
 INNER JOIN "transaction_search" AS "transaction_fpds" ON ("transaction_fpds"."is_fpds" = TRUE AND "awards"."latest_transaction_id" = "transaction_fpds"."transaction_id")

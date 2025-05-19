@@ -168,7 +168,8 @@ def spark(tmp_path_factory) -> SparkSession:
         # YARN or Mesos or Kubernetes) cluster manager, only client mode is supported.
         "spark.submit.deployMode": "client",
         # Default of 1g (1GiB) for Driver. Increase here if the Java process is crashing with memory errors
-        "spark.driver.memory": "512m",
+        "spark.driver.memory": "1g",
+        "spark.executor.memory": "1g",
         "spark.ui.enabled": "false",  # Does the same as setting SPARK_TESTING=true env var
         "spark.jars.packages": ",".join(SPARK_SESSION_JARS),
         # Delta Lake config for Delta tables and SQL. Need these to keep Delta table metadata in the metastore
@@ -1320,7 +1321,7 @@ def populate_usas_data_and_recipients_from_broker(db, populate_usas_data, popula
     yield
 
 
-def create_and_load_all_delta_tables(spark: SparkSession, s3_bucket: str, tables_to_load: list):
+def create_all_delta_tables(spark: SparkSession, s3_bucket: str, tables_to_load: list):
     load_query_tables = [val for val in tables_to_load if val in LOAD_QUERY_TABLE_SPEC]
     load_table_tables = [val for val in tables_to_load if val in LOAD_TABLE_TABLE_SPEC]
     for dest_table in load_table_tables + load_query_tables:
@@ -1339,6 +1340,13 @@ def create_and_load_all_delta_tables(spark: SparkSession, s3_bucket: str, tables
             )
         else:
             call_command("create_delta_table", f"--destination-table={dest_table}", f"--spark-s3-bucket={s3_bucket}")
+
+
+def create_and_load_all_delta_tables(spark: SparkSession, s3_bucket: str, tables_to_load: list):
+    create_all_delta_tables(spark, s3_bucket, tables_to_load)
+
+    load_query_tables = [val for val in tables_to_load if val in LOAD_QUERY_TABLE_SPEC]
+    load_table_tables = [val for val in tables_to_load if val in LOAD_TABLE_TABLE_SPEC]
 
     for dest_table in load_table_tables:
         if dest_table in [

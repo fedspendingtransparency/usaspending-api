@@ -33,7 +33,7 @@ from usaspending_api.download.v2.request_validations import AccountDownloadValid
 DOWNLOAD_SPEC = {
     "award_financial": {
         "federal_account": {
-            "query": federal_account.DOWNLOAD_QUERY,
+            "query": federal_account.DELTA_DOWNLOAD_QUERY,
             "select_in_formats": [("submission_id", federal_account.SUBMISSION_ID_QUERY)],
             "validator_type": AccountDownloadValidator,
         }

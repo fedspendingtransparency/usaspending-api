@@ -1,0 +1,63 @@
+name: Spark Integration Tests - test_load_transactions_in_delta_lookups.py
+
+env:
+  BROKER_DB_HOST: localhost
+  BROKER_DB_PORT: 5432
+  BROKER_DB_USER: admin
+  BROKER_DB_PASSWORD: root
+  BROKER_DB_NAME: data_broker
+  DJANGO_SETTINGS_MODULE: usaspending_api.settings
+  ES_SCHEME: http
+  ES_HOST: localhost
+  ES_PORT: 9200
+  MINIO_HOST: localhost
+  USASPENDING_DB_HOST: localhost
+  USASPENDING_DB_PORT: 5432
+  USASPENDING_DB_USER: usaspending
+  USASPENDING_DB_PASSWORD: usaspender
+  USASPENDING_DB_NAME: data_store_api
+
+on:
+  workflow_call:
+
+defaults:
+  run:
+    working-directory: ./usaspending-api
+
+jobs:
+  Run:
+    name: Run
+    runs-on: ${{ vars.RUNNER_VERSION }}
+    steps:
+      - name: Checkout Source Repository
+        uses: actions/checkout@v4
+        with:
+          path: usaspending-api
+
+      - name: Checkout Broker Backend Repository
+        uses: actions/checkout@v4
+        with:
+          repository: fedspendingtransparency/data-act-broker-backend
+          path: data-act-broker-backend
+
+      - name: Init Python Environment
+        uses: ./usaspending-api/.github/actions/init-python-environment
+        with:
+          working-directory: ./usaspending-api
+
+      - name: Init Test Environment
+        uses: ./usaspending-api/.github/actions/init-test-environment
+        with:
+          is-integration-test: true
+          is-spark-test: true
+          working-directory: ./usaspending-api
+
+      - name: Run Test Cases
+        uses: ./usaspending-api/.github/actions/run-pytest
+        with:
+          cov-report-name: 'spark-load-transactions-lookup-tests'
+          include-glob: 'test_*.py *_test.py'
+          keyword: 'test_load_transactions_in_delta_lookups.py'
+          marker: 'spark'
+          num-processes: 0
+          working-directory: ./usaspending-api
