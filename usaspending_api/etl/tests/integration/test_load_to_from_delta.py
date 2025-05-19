@@ -854,7 +854,6 @@ def test_incremental_load_table_to_delta_for_award_search(
         f"--spark-s3-bucket={s3_unittest_data_bucket}",
         f"--destination-table=award_search",
         "--alt-db=int",
-        "--enable-cdf",
     )
 
     # load in award_search data
@@ -935,7 +934,6 @@ def test_incremental_load_table_to_delta_for_transaction_search(
         f"--spark-s3-bucket={s3_unittest_data_bucket}",
         f"--destination-table=transaction_search",
         "--alt-db=int",
-        "--enable-cdf",
     )
 
     # load in award_search data
