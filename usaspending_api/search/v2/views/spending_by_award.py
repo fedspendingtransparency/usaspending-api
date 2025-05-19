@@ -141,9 +141,10 @@ class SpendingByAwardVisualizationViewSet(APIView):
             "Infrastructure Obligations": {"group_name": "infrastructure", "field_type": "obligation"},
             "Infrastructure Outlays": {"group_name": "infrastructure", "field_type": "outlay"},
         }
-        defc_groups = [val["group_name"] for val in self.spending_by_defc_lookup.values()]
         self.def_codes_by_group = (
-            get_def_codes_by_group(defc_groups) if set(self.fields) & set(self.spending_by_defc_lookup) else {}
+            get_def_codes_by_group([val["group_name"] for val in self.spending_by_defc_lookup.values()])
+            if set(self.fields) & set(self.spending_by_defc_lookup)
+            else {}
         )
         if self.filters.get("def_codes"):
             self.def_codes_by_group = {
@@ -512,54 +513,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 code = row.pop("agency_code")
                 row["awarding_agency_id"] = self.get_agency_database_id(code)
                 row["agency_slug"] = self.get_agency_slug(code)
-            if row.get("COVID-19 Obligations"):
-                row["COVID-19 Obligations"] = sum(
-                    [
-                        (
-                            x["obligation"]
-                            if (self.filters.get("def_codes") is not None and x["defc"] in self.filters["def_codes"])
-                            or self.filters.get("def_codes") is None
-                            else 0
-                        )
-                        for x in row.get("COVID-19 Obligations")
-                    ]
-                )
-            if row.get("COVID-19 Outlays"):
-                row["COVID-19 Outlays"] = sum(
-                    [
-                        (
-                            x["outlay"]
-                            if (self.filters.get("def_codes") is not None and x["defc"] in self.filters["def_codes"])
-                            or self.filters.get("def_codes") is None
-                            else 0
-                        )
-                        for x in row.get("COVID-19 Outlays")
-                    ]
-                )
-            if row.get("Infrastructure Obligations"):
-                row["Infrastructure Obligations"] = sum(
-                    [
-                        (
-                            x["obligation"]
-                            if (self.filters.get("def_codes") is not None and x["defc"] in self.filters["def_codes"])
-                            or self.filters.get("def_codes") is None
-                            else 0
-                        )
-                        for x in row.get("Infrastructure Obligations")
-                    ]
-                )
-            if row.get("Infrastructure Outlays"):
-                row["Infrastructure Outlays"] = sum(
-                    [
-                        (
-                            x["outlay"]
-                            if (self.filters.get("def_codes") is not None and x["defc"] in self.filters["def_codes"])
-                            or self.filters.get("def_codes") is None
-                            else 0
-                        )
-                        for x in row.get("Infrastructure Outlays")
-                    ]
-                )
             if row.get("def_codes"):
                 if self.filters.get("def_codes"):
                     row["def_codes"] = list(filter(lambda x: x in self.filters.get("def_codes"), row["def_codes"]))
@@ -625,6 +578,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
             if should_return_recipient_id:
                 row["recipient_id"] = self.get_recipient_hash_with_level(hit)
+
+            row.update(self.get_defc_row_values(row))
 
             results.append(row)
 
