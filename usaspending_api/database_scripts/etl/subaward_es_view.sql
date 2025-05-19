@@ -95,7 +95,7 @@ SELECT
 	s.sub_place_of_perform_county_name AS sub_pop_county_name,
 	s.subaward_description,
 	-- Keywords have a byte limit in elasticsearch that subaward_description was exceeding when sorting
-	s.subaward_description::VARCHAR(8190) AS subaward_description_sort,
+	s.subaward_description::LEFT(8190) AS subaward_description_sort,
 	s.prime_award_group,
 	s.prime_award_type,
 	s.latest_transaction_id,
