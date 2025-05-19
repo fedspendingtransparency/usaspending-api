@@ -64,6 +64,7 @@ def agency_data(helpers):
     defc = baker.make(
         "references.DisasterEmergencyFundCode", code="L", group_name="covid_19", public_law="LAW", title="title"
     )
+
     baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         submission=sub1,
