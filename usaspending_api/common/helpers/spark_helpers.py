@@ -269,7 +269,8 @@ def configure_spark_session(
             log_level_name = "WARN"  # tranlate to short-form used by log4j
         spark.sparkContext.setLogLevel(log_level_name)
 
-    logger = get_jvm_logger(spark)
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger(__name__)
     logger.info("PySpark Job started!")
     logger.info(
         f"""
@@ -532,7 +533,8 @@ def configure_s3_credentials(
 
 def log_spark_config(spark: SparkSession, config_key_contains=""):
     """Log at log4j INFO the values of the SparkConf object in the current SparkSession"""
-    logger = get_jvm_logger(spark)
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger(__name__)
     [
         logger.info(f"{item[0]}={item[1]}")
         for item in spark.sparkContext.getConf().getAll()
@@ -544,7 +546,8 @@ def log_hadoop_config(spark: SparkSession, config_key_contains=""):
     """Print out to the log the current config values for hadoop. Limit to only those whose key contains the string
     provided to narrow in on a particular subset of config values.
     """
-    logger = get_jvm_logger(spark)
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger(__name__)
     conf = spark.sparkContext._jsc.hadoopConfiguration()
     [
         logger.info(f"{k}={v}")

@@ -1,3 +1,4 @@
+import logging
 import psycopg2
 
 from datetime import datetime, timedelta
@@ -9,7 +10,6 @@ from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
     get_jdbc_connection_properties,
-    get_jvm_logger,
     get_usas_jdbc_url,
 )
 from usaspending_api.download.delta_models.download_job import download_job_create_sql_string
@@ -80,7 +80,8 @@ class Command(BaseCommand):
             spark = configure_spark_session(**extra_conf, spark_context=spark)
 
         # Setup Logger
-        logger = get_jvm_logger(spark)
+        logging.basicConfig(level=logging.INFO)
+        logger = logging.getLogger(__name__)
 
         # Resolve Parameters
         destination_table = options["destination_table"]

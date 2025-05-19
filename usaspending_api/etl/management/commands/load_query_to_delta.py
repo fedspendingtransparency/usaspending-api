@@ -1,3 +1,5 @@
+import logging
+
 from django.core.management.base import BaseCommand
 from pyspark.sql import SparkSession
 
@@ -7,7 +9,6 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_active_spark_session,
     get_broker_jdbc_url,
     get_jdbc_connection_properties,
-    get_jvm_logger,
 )
 from usaspending_api.config import CONFIG
 from usaspending_api.disaster.delta_models import (
@@ -347,7 +348,8 @@ class Command(BaseCommand):
             self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)  # type: SparkSession
 
         # Setup Logger
-        logger = get_jvm_logger(self.spark, __name__)
+        logging.basicConfig(level=logging.INFO)
+        logger = logging.getLogger(__name__)
 
         # Resolve Parameters
         destination_table = options["destination_table"]

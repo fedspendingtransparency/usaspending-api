@@ -27,7 +27,6 @@ from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.helpers.spark_helpers import (
     get_active_spark_session,
     configure_spark_session,
-    get_jvm_logger,
 )
 from usaspending_api.config import CONFIG
 from usaspending_api.transactions.delta_models.transaction_fabs import (
@@ -197,7 +196,8 @@ class Command(BaseCommand):
             self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)  # type: SparkSession
 
         # Setup Logger
-        self.logger = get_jvm_logger(self.spark, __name__)
+        logging.basicConfig(level=logging.INFO)
+        self.logger = logging.getLogger(__name__)
 
         # Create UDFs for Business Categories
         self.spark.udf.register(

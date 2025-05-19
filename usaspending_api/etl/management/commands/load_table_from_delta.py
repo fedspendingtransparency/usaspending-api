@@ -21,7 +21,6 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_active_spark_session,
     get_jdbc_connection_properties,
     get_usas_jdbc_url,
-    get_jvm_logger,
 )
 from usaspending_api.config import CONFIG
 from usaspending_api.settings import DEFAULT_TEXT_SEARCH_CONFIG
@@ -164,12 +163,8 @@ class Command(BaseCommand):
             spark = configure_spark_session(**extra_conf, spark_context=spark)  # type: SparkSession
 
         # Setup Logger
-        # logging.basicConfig(level=logging.INFO)
-        # self.logger = logging.getLogger(__name__)
-        # self.logger.info("test test test")
-        self.logger = get_jvm_logger(spark, __name__)
-        self.logger.setLevel(spark._jvm.org.apache.log4j.Level.INFO)
-        self.logger.info("test test test")
+        logging.basicConfig(level=logging.INFO)
+        self.logger = logging.getLogger(__name__)
 
         # Resolve Parameters
         delta_table = options["delta_table"]

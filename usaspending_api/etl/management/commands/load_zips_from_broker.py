@@ -1,3 +1,5 @@
+import logging
+
 from datetime import datetime
 
 from django.core.management import BaseCommand, call_command
@@ -7,7 +9,6 @@ from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
-    get_jvm_logger,
 )
 
 
@@ -51,7 +52,8 @@ class Command(BaseCommand):
             spark = configure_spark_session(**extra_conf, spark_context=spark)
 
         # Setup Logger
-        logger = get_jvm_logger(spark)
+        logging.basicConfig(level=logging.INFO)
+        logger = logging.getLogger(__name__)
 
         logger.info("Creating global_temp views")
         create_ref_temp_views(spark=spark, create_broker_views=True)
