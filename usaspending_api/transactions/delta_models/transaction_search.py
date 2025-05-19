@@ -405,7 +405,7 @@ transaction_search_create_sql_string = rf"""
     )
     USING DELTA
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
-    TBLPROPERTIES (delta.enableChangeDataFeed = {{CHANGE_DATA_FEED}})
+    TBLPROPERTIES (delta.enableChangeDataFeed = true)
 """
 
 _base_load_sql_string = rf"""
