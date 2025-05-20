@@ -180,9 +180,10 @@ class DisasterBase(APIView):
         # While the filters for this method don't limit requests to only COVID DEFC, much of the logic does currently
         # limit outlay and obligations to only those relevant to COVID. A change was made that groups all DEFC
         # outlays and obligations together, but we still need to respect the limit to only COVID.
-        covid_def_codes = set(get_def_codes_by_group(["covid_19"]))
-        filter_def_codes = list(covid_def_codes & set(self.def_codes))
-        return filter_def_codes
+        covid_def_codes = get_def_codes_by_group(["covid_19"])["covid_19"]
+        if self.def_codes:
+            covid_def_codes = list(set(covid_def_codes) & set(self.def_codes))
+        return covid_def_codes
 
     @cached_property
     def final_period_submission_query_filters(self):
