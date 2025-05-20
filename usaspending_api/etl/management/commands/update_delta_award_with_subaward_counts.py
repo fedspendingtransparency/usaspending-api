@@ -8,6 +8,8 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_active_spark_session,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class Command(BaseCommand):
 
@@ -36,10 +38,6 @@ class Command(BaseCommand):
         if not self.spark:
             spark_created_by_command = True
             self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)  # type: SparkSession
-
-        # Setup Logger
-        logging.basicConfig(level=logging.INFO)
-        logger = logging.getLogger(__name__)
 
         award_table = "int.awards"
         update_award_query = f"""

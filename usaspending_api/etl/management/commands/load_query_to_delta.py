@@ -62,6 +62,8 @@ from usaspending_api.transactions.delta_models import (
     transaction_search_load_sql_string,
 )
 
+logger = logging.getLogger(__name__)
+
 TABLE_SPEC = {
     "award_search": {
         "model": AwardSearch,
@@ -346,10 +348,6 @@ class Command(BaseCommand):
         if not self.spark:
             spark_created_by_command = True
             self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)  # type: SparkSession
-
-        # Setup Logger
-        logging.basicConfig(level=logging.INFO)
-        logger = logging.getLogger(__name__)
 
         # Resolve Parameters
         destination_table = options["destination_table"]

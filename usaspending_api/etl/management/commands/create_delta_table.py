@@ -14,6 +14,8 @@ from usaspending_api.etl.management.commands.load_table_to_delta import TABLE_SP
 
 TABLE_SPEC = {**ARCHIVE_TABLE_SPEC, **LOAD_TABLE_TABLE_SPEC, **LOAD_QUERY_TABLE_SPEC}
 
+logger = logging.getLogger(__name__)
+
 
 class Command(BaseCommand):
 
@@ -66,10 +68,6 @@ class Command(BaseCommand):
         if not spark:
             spark_created_by_command = True
             spark = configure_spark_session(**extra_conf, spark_context=spark)
-
-        # Setup Logger
-        logging.basicConfig(level=logging.INFO)
-        logger = logging.getLogger(__name__)
 
         # Resolve Parameters
         destination_table = options["destination_table"]

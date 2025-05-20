@@ -56,6 +56,7 @@ from usaspending_api.awards.models import (
     TransactionNormalized,
 )
 
+logger = logging.getLogger(__name__)
 
 TABLE_SPEC = {
     "awards": {
@@ -352,10 +353,6 @@ class Command(BaseCommand):
         if not spark:
             spark_created_by_command = True
             spark = configure_spark_session(**extra_conf, spark_context=spark)
-
-        # Setup Logger
-        logging.basicConfig(level=logging.INFO)
-        logger = logging.getLogger(__name__)
 
         # Resolve Parameters
         destination_table = options["destination_table"]

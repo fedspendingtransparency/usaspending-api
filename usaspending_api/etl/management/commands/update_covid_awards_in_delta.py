@@ -10,6 +10,8 @@ from usaspending_api.common.helpers.spark_helpers import (
 )
 from usaspending_api.etl.management.helpers.recent_periods import retrieve_recent_periods
 
+logger = logging.getLogger(__name__)
+
 UPDATE_AWARDS_SQL = """
   WITH recent_covid_awards AS (
     SELECT
@@ -107,10 +109,6 @@ class Command(BaseCommand):
             self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)  # type: SparkSession
 
         create_ref_temp_views(self.spark)
-
-        # Setup Logger
-        logging.basicConfig(level=logging.INFO)
-        logger = logging.getLogger(__name__)
 
         # Read arguments
         dry_run = options["dry_run"]

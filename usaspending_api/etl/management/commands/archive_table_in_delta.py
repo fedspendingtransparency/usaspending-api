@@ -14,6 +14,8 @@ from usaspending_api.common.helpers.spark_helpers import (
 )
 from usaspending_api.download.delta_models.download_job import download_job_create_sql_string
 
+logger = logging.getLogger(__name__)
+
 TABLE_SPEC = {
     "download_job": {
         "destination_database": "arc",
@@ -78,10 +80,6 @@ class Command(BaseCommand):
         if spark is None:
             spark_created_by_command = True
             spark = configure_spark_session(**extra_conf, spark_context=spark)
-
-        # Setup Logger
-        logging.basicConfig(level=logging.INFO)
-        logger = logging.getLogger(__name__)
 
         # Resolve Parameters
         destination_table = options["destination_table"]

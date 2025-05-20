@@ -27,6 +27,8 @@ from usaspending_api.common.etl.spark import _USAS_RDS_REF_TABLES, _BROKER_REF_T
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.config import CONFIG
 
+logger = logging.getLogger(__name__)
+
 
 def test_jvm_sparksession(spark: SparkSession):
     with SparkContext._lock:
@@ -88,8 +90,6 @@ def test_spark_app_run_local_master(spark: SparkSession):
     discovered in the PYTHONPATH, and treat the client machine as the spark driver.
     And furthermore, the default config for spark.master property if not set is local[*]
     """
-    logging.basicConfig(level=logging.INFO)
-    logger = logging.getLogger(__name__)
 
     versions = f"""
     @       Python Version: {sys.version}
@@ -180,14 +180,12 @@ def test_spark_write_to_s3_delta_from_db(
 
     # ==== transaction_normalized ====
     table_name = "vw_transaction_normalized"
-    logging.info(f"Reading db records for {table_name} from connection: {jdbc_url}")
+    logger.info(f"Reading db records for {table_name} from connection: {jdbc_url}")
     df = spark.read.jdbc(url=jdbc_url, table=table_name, properties=get_jdbc_connection_properties())
     # NOTE! NOTE! NOTE! MinIO locally does not support a TRAILING SLASH after object (folder) name
     path = f"s3a://{s3_unittest_data_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/{table_name}"
 
-    logging.basicConfig(level=logging.INFO)
-    log = logging.getLogger(__name__)
-    log.info(f"Loading {df.count()} rows from DB to Delta table named {schema_name}.{table_name} at path {path}")
+    logger.info(f"Loading {df.count()} rows from DB to Delta table named {schema_name}.{table_name} at path {path}")
 
     # Create table in the metastore using DataFrame's schema and write data to the table
     df.write.saveAsTable(
@@ -199,14 +197,12 @@ def test_spark_write_to_s3_delta_from_db(
 
     # ==== transaction_fabs ====
     table_name = "vw_transaction_fabs"
-    logging.info(f"Reading db records for {table_name} from connection: {jdbc_url}")
+    logger.info(f"Reading db records for {table_name} from connection: {jdbc_url}")
     df = spark.read.jdbc(url=jdbc_url, table=table_name, properties=get_jdbc_connection_properties())
     # NOTE! NOTE! NOTE! MinIO locally does not support a TRAILING SLASH after object (folder) name
     path = f"s3a://{s3_unittest_data_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/{table_name}"
 
-    logging.basicConfig(level=logging.INFO)
-    log = logging.getLogger(__name__)
-    log.info(f"Loading {df.count()} rows from DB to Delta table named {schema_name}.{table_name} at path {path}")
+    logger.info(f"Loading {df.count()} rows from DB to Delta table named {schema_name}.{table_name} at path {path}")
 
     # Create table in the metastore using DataFrame's schema and write data to the table
     df.write.saveAsTable(
@@ -218,14 +214,12 @@ def test_spark_write_to_s3_delta_from_db(
 
     # ==== transaction_fpds ====
     table_name = "vw_transaction_fpds"
-    logging.info(f"Reading db records for {table_name} from connection: {jdbc_url}")
+    logger.info(f"Reading db records for {table_name} from connection: {jdbc_url}")
     df = spark.read.jdbc(url=jdbc_url, table=table_name, properties=get_jdbc_connection_properties())
     # NOTE! NOTE! NOTE! MinIO locally does not support a TRAILING SLASH after object (folder) name
     path = f"s3a://{s3_unittest_data_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/{table_name}"
 
-    logging.basicConfig(level=logging.INFO)
-    log = logging.getLogger(__name__)
-    log.info(f"Loading {df.count()} rows from DB to Delta table named {schema_name}.{table_name} at path {path}")
+    logger.info(f"Loading {df.count()} rows from DB to Delta table named {schema_name}.{table_name} at path {path}")
 
     # Create table in the metastore using DataFrame's schema and write data to the table
     df.write.saveAsTable(

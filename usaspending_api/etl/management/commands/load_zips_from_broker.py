@@ -11,6 +11,8 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_active_spark_session,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class Command(BaseCommand):
 
@@ -50,10 +52,6 @@ class Command(BaseCommand):
         if not spark:
             spark_created_by_command = True
             spark = configure_spark_session(**extra_conf, spark_context=spark)
-
-        # Setup Logger
-        logging.basicConfig(level=logging.INFO)
-        logger = logging.getLogger(__name__)
 
         logger.info("Creating global_temp views")
         create_ref_temp_views(spark=spark, create_broker_views=True)

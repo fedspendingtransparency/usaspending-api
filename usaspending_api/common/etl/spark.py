@@ -77,6 +77,8 @@ _USAS_RDS_REF_TABLES = [
 
 _BROKER_REF_TABLES = ["zips_grouped", "cd_state_grouped", "cd_zips_grouped", "cd_county_grouped", "cd_city_grouped"]
 
+logger = logging.getLogger(__name__)
+
 
 def extract_db_data_frame(
     spark: SparkSession,
@@ -90,8 +92,6 @@ def extract_db_data_frame(
     is_date_partitioning_col: bool = False,
     custom_schema: StructType = None,
 ) -> DataFrame:
-    logging.basicConfig(level=logging.INFO)
-    logger = logging.getLogger(__name__)
 
     logger.info(f"Getting partition bounds using SQL:\n{min_max_sql}")
 
@@ -294,8 +294,6 @@ def load_delta_table(
             If left False (the default), the DataFrame data will be appended to existing data.
     Returns: None
     """
-    logging.basicConfig(level=logging.INFO)
-    logger = logging.getLogger(__name__)
     logger.info(f"LOAD (START): Loading data into Delta table {delta_table_name}")
     # NOTE: Best to (only?) use .saveAsTable(name=<delta_table>) rather than .insertInto(tableName=<delta_table>)
     # ... The insertInto does not seem to align/merge columns from DataFrame to table columns (defaults to column order)
@@ -557,8 +555,6 @@ def create_ref_temp_views(spark: SparkSession, create_broker_views: bool = False
     Setting create_broker_views to True will create views for all tables list in _BROKER_REF_TABLES
     Note: They will all be listed under global_temp.{table_name}
     """
-    logging.basicConfig(level=logging.INFO)
-    logger = logging.getLogger(__name__)
 
     # Create USAS temp views
     rds_ref_tables = build_ref_table_name_list()
@@ -606,9 +602,6 @@ def write_csv_file(
     Returns:
         record count of the DataFrame that was used to populate the CSV file(s)
     """
-    if not logger:
-        logging.basicConfig(level=logging.INFO)
-        logger = logging.getLogger(__name__)
     # Delete output data dir if it already exists
     parts_dir_path = spark.sparkContext._jvm.org.apache.hadoop.fs.Path(parts_dir)
     fs = parts_dir_path.getFileSystem(spark.sparkContext._jsc.hadoopConfiguration())
@@ -663,9 +656,6 @@ def hadoop_copy_merge(
             a merged file that was generated during the copy merge.
     """
     overwrite = True
-    if not logger:
-        logging.basicConfig(level=logging.INFO)
-        logger = logging.getLogger(__name__)
     hadoop = spark.sparkContext._jvm.org.apache.hadoop
     conf = spark.sparkContext._jsc.hadoopConfiguration()
 

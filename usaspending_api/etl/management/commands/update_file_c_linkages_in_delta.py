@@ -13,6 +13,8 @@ from usaspending_api.common.helpers.spark_helpers import (
 )
 from usaspending_api.config import CONFIG
 
+logger = logging.getLogger(__name__)
+
 
 class Command(BaseCommand):
 
@@ -82,10 +84,6 @@ class Command(BaseCommand):
         if not self.spark:
             spark_created_by_command = True
             self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)  # type: SparkSession
-
-        # Setup Logger
-        logging.basicConfig(level=logging.INFO)
-        logger = logging.getLogger(__name__)
 
         # Before we lose history after a clone or drop table of our int.financial_accounts_by_awards table
         #   we need to identify FABA records (file C submissions) that were deleted.
