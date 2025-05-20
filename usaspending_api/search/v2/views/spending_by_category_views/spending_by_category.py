@@ -35,6 +35,7 @@ logger = logging.getLogger(__name__)
 class Category:
     name: str
     agg_key: str
+    agg_key_suffix: str = ".hash"
     nested_path: str | None = None
     obligation_field: str | None = None
     outlay_field: str | None = None
@@ -158,10 +159,10 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         return response
 
     def _raise_not_implemented(self):
-        msg = "Category '{}' is not implemented"
-        if self.spending_level == SpendingLevel.SUBAWARD:
-            msg += " when `subawards` is True"
-        raise NotImplementedException(msg.format(self.category.name))
+        msg = f"Category '{self.category.name}' is not implemented"
+        if self.spending_level == SpendingLevel.SUBAWARD or self.spending_level == SpendingLevel.FILE_C:
+            msg += f" when 'spending_level' is '{self.spending_level.value}'"
+        raise NotImplementedException(msg)
 
     @staticmethod
     def _get_messages(original_filters) -> List:
@@ -200,8 +201,7 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
             group_by_agg_key_values = {"order": {"sum_field": "desc"}}
         else:
             # Get count of unique buckets; terminate early if there are no buckets matching criteria
-            hash_suffix = "" if self.category.nested_path else ".hash"
-            cardinality_field = f"{self.category.agg_key}{hash_suffix}"
+            cardinality_field = f"{self.category.agg_key}{self.category.agg_key_suffix}"
             if self.spending_level == SpendingLevel.SUBAWARD:
                 bucket_count = get_number_of_unique_terms(SubawardSearch, filter_query, cardinality_field)
             elif self.spending_level == SpendingLevel.TRANSACTION:

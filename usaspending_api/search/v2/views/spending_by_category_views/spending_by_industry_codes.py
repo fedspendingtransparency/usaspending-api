@@ -141,6 +141,7 @@ class DEFCViewSet(AbstractIndustryCodeViewSet):
                 self.category,
                 nested_path=nested_path,
                 agg_key=f"{nested_path}.defc",
+                agg_key_suffix="",
                 obligation_field=f"{nested_path}.obligation",
                 outlay_field=f"{nested_path}.outlay",
             )
