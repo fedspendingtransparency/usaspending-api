@@ -66,7 +66,7 @@ class Command(BaseCommand):
         usas_conn = connections[settings.DEFAULT_DB_ALIAS]
         schema_query = f"""
             SELECT column_name, data_type
-            FROM information_schema.columns 
+            FROM information_schema.columns
             WHERE table_name='{broker_table_name}' AND table_schema='{broker_schema_name}'
         """
         with broker_conn.cursor() as cursor:

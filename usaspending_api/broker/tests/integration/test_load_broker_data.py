@@ -15,7 +15,7 @@ def broker_zips_grouped():
                 zip5 text,
                 state_abbreviation text,
                 county_number text,
-                congressional_district_no text               
+                congressional_district_no text
             );
         """
         )
