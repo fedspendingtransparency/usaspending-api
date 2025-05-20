@@ -57,7 +57,7 @@ class Command(BaseCommand):
             );
             """)
         
-        conn.execute("SELECT * FROM read_parquet('s3://dti-da-usaspending-spark-qat/data/delta/rpt/award_search/part-00000-b0a97813-ade0-4f32-9a13-89f23472850c.c000.snappy.parquet', SECRET secret1);")
+        conn.execute("SELECT * FROM read_parquet('s3://dti-da-usaspending-spark-qat/data/delta/rpt/award_search/part-00000-b0a97813-ade0-4f32-9a13-89f23472850c.c000.snappy.parquet');")
         print("Successfully read from Parquet file")
 
         query = f"SELECT * FROM delta_scan('{S3_DELTA_PATH}');"
