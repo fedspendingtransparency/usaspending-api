@@ -473,7 +473,7 @@ def _build_usas_data_for_spark():
         action_date="2020-04-01",
         fiscal_year=2020,
         award_amount=0.00,
-        total_obligation=0.00,
+        total_obligation=10.00,  # Temp change to allow testing a failed Spark test
         total_subsidy_cost=0.00,
         total_loan_value=0.00,
         total_obl_bin="<1M",
