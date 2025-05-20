@@ -82,7 +82,7 @@ class AbstractIndustryCodeViewSet(AbstractSpendingByCategoryViewSet, metaclass=A
                     "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
                     "total_outlays": (
                         bucket.get("sum_as_dollars_outlay", {"value": None}).get("value")
-                        if self.spending_level == SpendingLevel.AWARD
+                        if self.spending_level == SpendingLevel.AWARD or self.spending_level == SpendingLevel.FILE_C
                         else None
                     ),
                 }
