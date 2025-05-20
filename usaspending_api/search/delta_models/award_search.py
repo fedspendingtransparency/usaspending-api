@@ -570,6 +570,11 @@ LEFT OUTER JOIN (
             global_temp.dabs_submission_window_schedule AS dsws ON (sa.submission_window_id = dsws.id AND dsws.submission_reveal_date <= now())
         LEFT OUTER JOIN
             global_temp.disaster_emergency_fund_code AS defc ON (faba.disaster_emergency_fund_code = defc.code)
+        WHERE
+            faba.gross_outlay_amount_by_award_cpe IS NOT NULL
+            OR faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe IS NOT NULL
+            OR faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe IS NOT NULL
+            OR faba.transaction_obligated_amount IS NOT NULL
         GROUP BY
             faba.award_id, faba.disaster_emergency_fund_code, defc.group_name
     ) AS GROUPED_BY_DEFC
