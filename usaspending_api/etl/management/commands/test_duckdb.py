@@ -53,9 +53,12 @@ class Command(BaseCommand):
             CREATE SECRET secret1 (
                 TYPE s3,
                 REGION 'us-gov-west-1',
-                PROVIDER credential_chain
+                PROVIDER 'credential_chain'
             );
             """)
+        
+        conn.execute("SELECT * FROM read_parquet('s3://dti-da-usaspending-spark-qat/data/delta/rpt/award_search/part-00000-b0a97813-ade0-4f32-9a13-89f23472850c.c000.snappy.parquet', SECRET secret1);")
+        print("Successfully read from Parquet file")
 
         query = f"SELECT * FROM delta_scan('{S3_DELTA_PATH}');"
 
