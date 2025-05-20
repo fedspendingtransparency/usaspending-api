@@ -1,10 +1,10 @@
+import csv
 import logging
 
 from django.conf import settings
 from django.core.management import BaseCommand
 from django.db import connections
-import pandas as pd
-
+from io import StringIO
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +39,7 @@ class Command(BaseCommand):
             description="Optional fields that reference components of the USAspending DB.  Defaults to Broker DB counterpart",
         )
         usaspending_group.add_argument(
-            "--usasspending-table-name",
+            "--usaspending-table-name",
             type=str,
             required=False,
             help="Table name in the USAspending DB to load table into",
@@ -60,22 +60,36 @@ class Command(BaseCommand):
 
         logger.info(
             f'Copying "{broker_schema_name}"."{broker_table_name}" from Broker to '
-            f'"{usas_table_name}"."{usas_schema_name}" in USAspending.'
+            f'"{usas_schema_name}"."{usas_table_name}" in USAspending.'
         )
         broker_conn = connections[settings.DATA_BROKER_DB_ALIAS]
         usas_conn = connections[settings.DEFAULT_DB_ALIAS]
-        first_load = True
-        for chunk in pd.read_sql_table(
-            table_name=broker_table_name,
-            schema_name=broker_schema_name,
-            con=broker_conn,
-            chunksize=self.CHUNK_SIZE,
-        ):
-            chunk.to_sql(
-                table_name=usas_table_name,
-                schema=usas_schema_name,
-                con=usas_conn,
-                if_exists="replace" if first_load else "append",
-                index=False,
-            )
-            first_load = False
+        schema_query = f"""
+            SELECT column_name, data_type
+            FROM information_schema.columns 
+            WHERE table_name='{broker_table_name}' AND table_schema='{broker_schema_name}'
+        """
+        with broker_conn.cursor() as cursor:
+            cursor.execute(schema_query)
+            columns = cursor.fetchall()
+            col_defs = ", ".join([" ".join(col) for col in columns])
+            create_table_query = f"CREATE TABLE {usas_schema_name}.{usas_table_name} ({col_defs});"
+        with usas_conn.cursor() as cursor:
+            cursor.execute(create_table_query)
+        with broker_conn.cursor() as cursor:
+            cursor.itersize = self.CHUNK_SIZE
+            cursor.execute(f"SELECT * FROM {broker_schema_name}.{broker_table_name}")
+            while True:
+                rows = cursor.fetchmany(self.CHUNK_SIZE)
+                if not rows:
+                    break
+                f = StringIO()
+                writer = csv.writer(f)
+                writer.writerows(rows)
+                f.seek(0)
+                with usas_conn.cursor() as usas_cursor:
+                    usas_cursor.copy_expert(
+                        f"COPY {usas_schema_name}.{usas_table_name} FROM STDIN WITH (DELIMITER ',', FORMAT CSV)",
+                        f,
+                    )
+                    usas_conn.commit()
