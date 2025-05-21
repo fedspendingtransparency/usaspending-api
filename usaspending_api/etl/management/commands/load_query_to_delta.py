@@ -1,3 +1,4 @@
+import logging
 from argparse import ArgumentTypeError
 
 from django.core.management.base import BaseCommand
@@ -9,7 +10,6 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_active_spark_session,
     get_broker_jdbc_url,
     get_jdbc_connection_properties,
-    get_jvm_logger,
 )
 from usaspending_api.config import CONFIG
 from usaspending_api.disaster.delta_models import (
@@ -64,6 +64,8 @@ from usaspending_api.transactions.delta_models import (
     transaction_search_incremental_load_sql_string,
     transaction_search_overwrite_load_sql_string,
 )
+
+logger = logging.getLogger(__name__)
 
 TABLE_SPEC = {
     "award_search": {
@@ -366,9 +368,6 @@ class Command(BaseCommand):
         if not self.spark:
             spark_created_by_command = True
             self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)  # type: SparkSession
-
-        # Setup Logger
-        logger = get_jvm_logger(self.spark, __name__)
 
         # Resolve Parameters
         destination_table = options["destination_table"]
