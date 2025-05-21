@@ -172,10 +172,20 @@
         "type": "text"
       },
       "awardee_or_recipient_uei": {
-        "type": "text"
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
       },
       "awardee_or_recipient_legal": {
-        "type": "text"
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
       },
       "dba_name": {
         "type": "text"
@@ -365,7 +375,12 @@
         "type": "keyword"
       },
       "sub_awardee_or_recipient_legal": {
-        "type": "text"
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
       },
       "sub_dba_name": {
         "type": "text"
@@ -551,6 +566,9 @@
       },
       "subaward_description": {
         "type": "text"
+      },
+      "subaward_description_sort": {
+        "type": "keyword"
       },
       "prime_award_group": {
         "type": "keyword"
