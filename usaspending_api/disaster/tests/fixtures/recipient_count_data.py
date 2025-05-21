@@ -54,7 +54,7 @@ def basic_fpds_award(award_count_sub_schedule, award_count_submission, defc_code
             disaster_emergency_fund_codes=["M"],
             total_covid_outlay=8,
             total_covid_obligation=0,
-            covid_spending_by_defc=[{"defc": "M", "outlay": 8, "obligation": 0}],
+            spending_by_defc=[{"defc": "M", "outlay": 8, "obligation": 0}],
         )
     )
     baker.make(
@@ -101,7 +101,7 @@ def double_fpds_awards_with_distinct_recipients(award_count_sub_schedule, award_
             disaster_emergency_fund_codes=["M"],
             total_covid_outlay=8,
             total_covid_obligation=0,
-            covid_spending_by_defc=[{"defc": "M", "outlay": 8, "obligation": 0}],
+            spending_by_defc=[{"defc": "M", "outlay": 8, "obligation": 0}],
         )
     )
 
@@ -146,7 +146,7 @@ def double_fpds_awards_with_distinct_recipients(award_count_sub_schedule, award_
             disaster_emergency_fund_codes=["M"],
             total_covid_outlay=8,
             total_covid_obligation=0,
-            covid_spending_by_defc=[{"defc": "M", "outlay": 8, "obligation": 0}],
+            spending_by_defc=[{"defc": "M", "outlay": 8, "obligation": 0}],
         )
     )
 
@@ -187,7 +187,7 @@ def double_fpds_awards_with_same_recipients(award_count_sub_schedule, award_coun
             disaster_emergency_fund_codes=["M"],
             total_covid_outlay=8,
             total_covid_obligation=0,
-            covid_spending_by_defc=[{"defc": "M", "outlay": 8, "obligation": 0}],
+            spending_by_defc=[{"defc": "M", "outlay": 8, "obligation": 0}],
         )
     )
     transaction_fpds_2 = baker.make(
@@ -212,7 +212,7 @@ def double_fpds_awards_with_same_recipients(award_count_sub_schedule, award_coun
             disaster_emergency_fund_codes=["M"],
             total_covid_outlay=8,
             total_covid_obligation=0,
-            covid_spending_by_defc=[{"defc": "M", "outlay": 8, "obligation": 0}],
+            spending_by_defc=[{"defc": "M", "outlay": 8, "obligation": 0}],
         )
     )
 
@@ -245,7 +245,7 @@ def double_fpds_awards_with_same_special_case_recipients(award_count_sub_schedul
             disaster_emergency_fund_codes=["M"],
             total_covid_outlay=8,
             total_covid_obligation=0,
-            covid_spending_by_defc=[{"defc": "M", "outlay": 8, "obligation": 0}],
+            spending_by_defc=[{"defc": "M", "outlay": 8, "obligation": 0}],
         )
     )
 
@@ -274,7 +274,7 @@ def double_fpds_awards_with_same_special_case_recipients(award_count_sub_schedul
             disaster_emergency_fund_codes=["M"],
             total_covid_outlay=8,
             total_covid_obligation=0,
-            covid_spending_by_defc=[{"defc": "M", "outlay": 8, "obligation": 0}],
+            spending_by_defc=[{"defc": "M", "outlay": 8, "obligation": 0}],
         )
     )
 
@@ -438,7 +438,7 @@ def _normal_fabs(id):
         disaster_emergency_fund_codes=["M"],
         total_covid_outlay=8,
         total_covid_obligation=0,
-        covid_spending_by_defc=[{"defc": "M", "outlay": 8, "obligation": 0}],
+        spending_by_defc=[{"defc": "M", "outlay": 8, "obligation": 0}],
     )
     baker.make(
         "search.TransactionSearch",

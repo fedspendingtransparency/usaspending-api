@@ -34,7 +34,7 @@ def awards_and_transactions():
         disaster_emergency_fund_codes=["L"],
         total_covid_outlay=1,
         total_covid_obligation=2,
-        covid_spending_by_defc=[{"defc": "L", "outlay": 1, "obligation": 2}],
+        spending_by_defc=[{"defc": "L", "outlay": 1, "obligation": 2}],
     )
     award2 = baker.make(
         "search.AwardSearch",
@@ -66,7 +66,7 @@ def awards_and_transactions():
         disaster_emergency_fund_codes=["L"],
         total_covid_outlay=10,
         total_covid_obligation=20,
-        covid_spending_by_defc=[{"defc": "L", "outlay": 10, "obligation": 20}],
+        spending_by_defc=[{"defc": "L", "outlay": 10, "obligation": 20}],
     )
     award3 = baker.make(
         "search.AwardSearch",
@@ -98,7 +98,7 @@ def awards_and_transactions():
         disaster_emergency_fund_codes=["L"],
         total_covid_outlay=100,
         total_covid_obligation=200,
-        covid_spending_by_defc=[{"defc": "L", "outlay": 100, "obligation": 200}],
+        spending_by_defc=[{"defc": "L", "outlay": 100, "obligation": 200}],
     )
     award4 = baker.make(
         "search.AwardSearch",
@@ -129,7 +129,7 @@ def awards_and_transactions():
         disaster_emergency_fund_codes=["L"],
         total_covid_outlay=1000,
         total_covid_obligation=2000,
-        covid_spending_by_defc=[{"defc": "L", "outlay": 1000, "obligation": 2000}],
+        spending_by_defc=[{"defc": "L", "outlay": 1000, "obligation": 2000}],
     )
     award5 = baker.make(
         "search.AwardSearch",
@@ -160,7 +160,7 @@ def awards_and_transactions():
         disaster_emergency_fund_codes=["M"],
         total_covid_outlay=10000,
         total_covid_obligation=20000,
-        covid_spending_by_defc=[{"defc": "M", "outlay": 10000, "obligation": 20000}],
+        spending_by_defc=[{"defc": "M", "outlay": 10000, "obligation": 20000}],
     )
     award6 = baker.make(
         "search.AwardSearch",
@@ -191,7 +191,7 @@ def awards_and_transactions():
         disaster_emergency_fund_codes=["M"],
         total_covid_outlay=100000,
         total_covid_obligation=200000,
-        covid_spending_by_defc=[{"defc": "M", "outlay": 100000, "obligation": 200000}],
+        spending_by_defc=[{"defc": "M", "outlay": 100000, "obligation": 200000}],
     )
     award7 = baker.make(
         "search.AwardSearch",
@@ -222,7 +222,7 @@ def awards_and_transactions():
         disaster_emergency_fund_codes=["M"],
         total_covid_outlay=1000000,
         total_covid_obligation=2000000,
-        covid_spending_by_defc=[{"defc": "M", "outlay": 1000000, "obligation": 2000000}],
+        spending_by_defc=[{"defc": "M", "outlay": 1000000, "obligation": 2000000}],
     )
 
     # Disaster Emergency Fund Code
