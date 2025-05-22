@@ -2,9 +2,12 @@ from typing import Union, Optional
 
 import certifi
 import logging
+import boto3
 
 from django.conf import settings
-from elasticsearch import Elasticsearch
+from elasticsearch import Elasticsearch, RequestsHttpConnection
+from requests_aws4auth import AWS4Auth
+
 from elasticsearch.connection import create_ssl_context
 from ssl import CERT_NONE
 
@@ -17,10 +20,26 @@ ElasticsearchResponse = Optional[Union[dict, Response]]
 
 def instantiate_elasticsearch_client() -> Elasticsearch:
     es_kwargs = {"timeout": 300}
+    
+    try:
+        credentials = boto3.Session().get_credentials()
+        # Required for Opensearch Connection, uses IAM Role attached to API EC2
+        awsauth = AWS4Auth(credentials.access_key,
+                        credentials.secret_key,
+                        settings.REGION,
+                        service="es",
+                        session_token=credentials.token)
 
-    if "https" in settings.ES_HOSTNAME:
-        es_kwargs.update({"use_ssl": True, "verify_certs": True, "ca_certs": certifi.where()})
+        es_kwargs.update({"hosts": [{"host": settings.ES_HOSTNAME, "port": settings.ES_PORT}], 
+                    "http_auth": awsauth,
+                    "use_ssl": True,
+                    "verify_certs": True,
+                    "connection_class": RequestsHttpConnection
+        })
 
+    except Exception as e:
+        logger.error("Error creating the elasticsearch client: {}".format(e))
+        
     return Elasticsearch(settings.ES_HOSTNAME, **es_kwargs)
 
 
@@ -28,8 +47,23 @@ def create_es_client() -> Elasticsearch:
     if settings.ES_HOSTNAME is None or settings.ES_HOSTNAME == "":
         logger.error("env var 'ES_HOSTNAME' needs to be set for Elasticsearch connection")
     global CLIENT
-    es_config = {"hosts": [settings.ES_HOSTNAME], "timeout": settings.ES_TIMEOUT}
     try:
+        credentials = boto3.Session().get_credentials()
+        # Required for Opensearch Connection, uses IAM Role attached to API EC2
+        awsauth = AWS4Auth(credentials.access_key,
+                        credentials.secret_key,
+                        settings.REGION,
+                        service="es",
+                        session_token=credentials.token)
+    
+        es_config = {"hosts": [{"host": settings.ES_HOSTNAME, "port": settings.ES_PORT], 
+                    "timeout": settings.ES_TIMEOUT,     
+                    "http_auth": awsauth,
+                    "use_ssl": True,
+                    "verify_certs": True,
+                    "connection_class": RequestsHttpConnection
+        }
+
         # If the connection string is using SSL with localhost, disable verifying
         # the certificates to allow testing in a development environment
         # Also allow host.docker.internal, when SSH-tunneling on localhost to a remote nonprod instance over HTTPS
