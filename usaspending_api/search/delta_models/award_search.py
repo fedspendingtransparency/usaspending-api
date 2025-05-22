@@ -168,14 +168,11 @@ award_search_create_sql_string = rf"""
     )
     USING DELTA
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
+    TBLPROPERTIES (delta.enableChangeDataFeed = true)
 """
 
-award_search_load_sql_string = rf"""
-    INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
-        (
-            {",".join([col for col in AWARD_SEARCH_DELTA_COLUMNS])}
-        )
-    SELECT
+_base_load_sql_string = rf"""
+  SELECT
   TREASURY_ACCT.treasury_account_identifiers,
   awards.id AS award_id,
   awards.data_source AS data_source,
@@ -456,7 +453,7 @@ LEFT OUTER JOIN
   global_temp.psc ON (transaction_fpds.product_or_service_code = psc.code)
   LEFT OUTER JOIN
     (SELECT
-      award_id, COLLECT_SET(DISTINCT TO_JSON(NAMED_STRUCT('cfda_number', cfda_number, 'cfda_program_title', cfda_title))) as cfdas
+      award_id, SORT_ARRAY(COLLECT_SET(DISTINCT TO_JSON(NAMED_STRUCT('cfda_number', cfda_number, 'cfda_program_title', cfda_title)))) as cfdas
       FROM
          int.transaction_fabs tf
        INNER JOIN int.transaction_normalized tn ON
@@ -542,9 +539,9 @@ LEFT OUTER JOIN (
 LEFT OUTER JOIN (
   SELECT
         GROUPED_BY_DEFC.award_id,
-        COLLECT_SET(
+        CAST(SORT_ARRAY(COLLECT_SET(
             TO_JSON(NAMED_STRUCT('defc', GROUPED_BY_DEFC.def_code, 'outlay', GROUPED_BY_DEFC.outlay, 'obligation', GROUPED_BY_DEFC.obligation))
-        ) AS covid_spending_by_defc,
+        )) AS STRING) AS covid_spending_by_defc,
         sum(GROUPED_BY_DEFC.outlay) AS total_covid_outlay,
         sum(GROUPED_BY_DEFC.obligation) AS total_covid_obligation
     FROM (
@@ -581,9 +578,9 @@ LEFT OUTER JOIN (
 LEFT OUTER JOIN (
     SELECT
         GROUPED_BY_DEFC.award_id,
-        COLLECT_SET(
+        CAST(SORT_ARRAY(COLLECT_SET(
             TO_JSON(NAMED_STRUCT('defc', GROUPED_BY_DEFC.def_code, 'outlay', GROUPED_BY_DEFC.outlay, 'obligation', GROUPED_BY_DEFC.obligation))
-        ) AS iija_spending_by_defc,
+        )) AS STRING) AS iija_spending_by_defc,
         sum(GROUPED_BY_DEFC.outlay) AS total_iija_outlay,
         sum(GROUPED_BY_DEFC.obligation) AS total_iija_obligation
     FROM (
@@ -653,7 +650,7 @@ LEFT OUTER JOIN (
             )
         )
     ) AS federal_accounts,
-    COLLECT_SET(
+    SORT_ARRAY(COLLECT_SET(
       DISTINCT CONCAT(
         'agency=', COALESCE(agency.toptier_code, ''),
         'faaid=', COALESCE(fa.agency_identifier, ''),
@@ -666,8 +663,8 @@ LEFT OUTER JOIN (
         'epoa=', COALESCE(taa.ending_period_of_availability, ''),
         'a=', COALESCE(taa.availability_type_code, '')
       )
-    ) AS tas_paths,
-    COLLECT_SET(
+    )) AS tas_paths,
+    SORT_ARRAY(COLLECT_SET(
       CONCAT(
         'aid=', COALESCE(taa.agency_id, ''),
         'main=', COALESCE(taa.main_account_code, ''),
@@ -677,22 +674,22 @@ LEFT OUTER JOIN (
         'epoa=', COALESCE(taa.ending_period_of_availability, ''),
         'a=', COALESCE(taa.availability_type_code, '')
       )
-    ) AS tas_components,
+    )) AS tas_components,
     -- "CASE" put in place so that Spark value matches Postgres; can most likely be refactored out in the future
     CASE
         WHEN SIZE(COLLECT_SET(faba.disaster_emergency_fund_code)) > 0
             THEN SORT_ARRAY(COLLECT_SET(faba.disaster_emergency_fund_code))
         ELSE NULL
     END AS disaster_emergency_fund_codes,
-    COLLECT_SET(taa.treasury_account_identifier) AS treasury_account_identifiers,
-    COLLECT_SET(
+    SORT_ARRAY(COLLECT_SET(taa.treasury_account_identifier)) AS treasury_account_identifiers,
+    CAST(SORT_ARRAY(COLLECT_SET(
         TO_JSON(
             NAMED_STRUCT(
                 'name', UPPER(rpa.program_activity_name),
                 'code', LPAD(rpa.program_activity_code, 4, "0")
             )
         )
-    ) AS program_activities
+    )) AS STRING) AS program_activities
   FROM
     global_temp.treasury_appropriation_account taa
   INNER JOIN int.financial_accounts_by_awards faba ON (taa.treasury_account_identifier = faba.treasury_account_id)
@@ -704,4 +701,30 @@ LEFT OUTER JOIN (
   GROUP BY
     faba.award_id
 ) TREASURY_ACCT ON (TREASURY_ACCT.award_id = awards.id)
+"""
+
+award_search_incremental_load_sql_string = [
+    f"""
+    CREATE OR REPLACE TEMPORARY VIEW temp_award_search_view AS (
+        {_base_load_sql_string}
+    )
+    """,
+    f"""
+    MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS t
+    USING (SELECT * FROM temp_award_search_view) AS s
+    ON t.award_id = s.award_id
+    WHEN MATCHED AND
+      ({" OR ".join([f"NOT (s.{col} <=> t.{col})" for col in AWARD_SEARCH_DELTA_COLUMNS])})
+      THEN UPDATE SET *
+    WHEN NOT MATCHED THEN INSERT *
+    WHEN NOT MATCHED BY SOURCE THEN DELETE
+    """,
+]
+
+award_search_overwrite_load_sql_string = f"""
+INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
+    (
+        {",".join([col for col in AWARD_SEARCH_DELTA_COLUMNS])}
+    )
+    {_base_load_sql_string}
 """

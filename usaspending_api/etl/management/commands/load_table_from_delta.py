@@ -21,12 +21,13 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_active_spark_session,
     get_jdbc_connection_properties,
     get_usas_jdbc_url,
-    get_jvm_logger,
 )
 from usaspending_api.config import CONFIG
 from usaspending_api.settings import DEFAULT_TEXT_SEARCH_CONFIG
 
 from usaspending_api.etl.management.commands.create_delta_table import TABLE_SPEC
+
+logger = logging.getLogger(__name__)
 
 # Note: the `delta` type is not actually in Spark SQL. It's how we're temporarily storing the data before converting it
 #       to the proper postgres type, since pySpark doesn't automatically support this conversion.
@@ -45,8 +46,6 @@ _PG_WORK_MEM_FOR_LARGE_CSV_COPY = 256 * 1024  # MiB of work_mem * KiBs in 1 MiB
 
 
 class Command(BaseCommand):
-
-    logger: logging.Logger
 
     help = """
     This command reads data from a Delta table and copies it into a corresponding Postgres database table (under a
@@ -163,9 +162,6 @@ class Command(BaseCommand):
             spark_created_by_command = True
             spark = configure_spark_session(**extra_conf, spark_context=spark)  # type: SparkSession
 
-        # Setup Logger
-        self.logger = get_jvm_logger(spark, __name__)
-
         # Resolve Parameters
         delta_table = options["delta_table"]
         recreate = options["recreate"]
@@ -201,7 +197,7 @@ class Command(BaseCommand):
         summary_msg = f"Copying delta table {delta_table} to a Postgres temp table {temp_table}."
         if postgres_table:
             summary_msg = f"{summary_msg} The temp table will be based on the postgres table {postgres_table}"
-        self.logger.info(summary_msg)
+        logger.info(summary_msg)
 
         # Checking if the temp destination table already exists
         temp_dest_table_exists_sql = f"""
@@ -217,12 +213,12 @@ class Command(BaseCommand):
 
         # If it does, and we're recreating it, drop it first
         if temp_dest_table_exists and recreate:
-            self.logger.info(f"{temp_table} exists and recreate argument provided. Dropping first.")
+            logger.info(f"{temp_table} exists and recreate argument provided. Dropping first.")
             # If the schema has changed and we need to do a complete reload, just drop the table and rebuild it
             clear_table_sql = f"DROP TABLE {temp_table}"
             with db.connection.cursor() as cursor:
                 cursor.execute(clear_table_sql)
-            self.logger.info(f"{temp_table} dropped.")
+            logger.info(f"{temp_table} dropped.")
             temp_dest_table_exists = False
         make_new_table = not temp_dest_table_exists
 
@@ -270,27 +266,27 @@ class Command(BaseCommand):
                         "populated for the target delta table in the TABLE_SPEC"
                     )
                 with db.connection.cursor() as cursor:
-                    self.logger.info(f"Creating {temp_table}")
+                    logger.info(f"Creating {temp_table}")
                     cursor.execute(create_temp_sql)
-                    self.logger.info(f"{temp_table} created.")
+                    logger.info(f"{temp_table} created.")
 
                     if is_postgres_table_partitioned and partitions_sql:
                         for create_partition in partitions_sql:
-                            self.logger.info(f"Creating partition of {temp_table} with SQL:\n{create_partition}")
+                            logger.info(f"Creating partition of {temp_table} with SQL:\n{create_partition}")
                             cursor.execute(create_partition)
-                            self.logger.info("Partition created.")
+                            logger.info("Partition created.")
 
                     # If there are vectors, add the triggers that will populate them based on other calls
                     # NOTE: Undetermined whether tsvector triggers can be applied on partitioned tables,
                     #       at the top-level virtual/partitioned table (versus having to apply on each partition)
                     for tsvector_name, derived_from_cols in tsvectors.items():
-                        self.logger.info(
+                        logger.info(
                             f"To prevent any confusion or duplicates, dropping the trigger"
                             f" tsvector_update_{tsvector_name} if it exists before potentially recreating it."
                         )
                         cursor.execute(f"DROP TRIGGER IF EXISTS tsvector_update_{tsvector_name} ON {temp_table}")
 
-                        self.logger.info(
+                        logger.info(
                             f"Adding tsvector trigger for column {tsvector_name}"
                             f" based on the following columns: {derived_from_cols}"
                         )
@@ -302,7 +298,7 @@ class Command(BaseCommand):
                                                     {derived_from_cols_str})
                         """
                         cursor.execute(tsvector_trigger_sql)
-                        self.logger.info(f"tsvector trigger for column {tsvector_name} added.")
+                        logger.info(f"tsvector trigger for column {tsvector_name} added.")
 
         # Read from Delta
         df = spark.table(delta_table)
@@ -315,10 +311,10 @@ class Command(BaseCommand):
 
         # If we're working off an existing table, truncate before loading in all the data
         if not make_new_table:
-            self.logger.info(f"Truncating existing table {temp_table}")
+            logger.info(f"Truncating existing table {temp_table}")
             with db.connection.cursor() as cursor:
                 cursor.execute(f"TRUNCATE {temp_table}")
-                self.logger.info(f"{temp_table} truncated.")
+                logger.info(f"{temp_table} truncated.")
 
         # Reset the sequence before load for a table if it exists
         if options["reset_sequence"] and table_spec.get("postgres_seq_name"):
@@ -329,7 +325,7 @@ class Command(BaseCommand):
         # Write to Postgres
         use_jdbc_inserts = options["jdbc_inserts"]
         strategy = "JDBC INSERTs" if use_jdbc_inserts else "SQL bulk COPY CSV"
-        self.logger.info(
+        logger.info(
             f"LOAD (START): Loading data from Delta table {delta_table} to {temp_table} using {strategy} " f"strategy"
         )
 
@@ -360,13 +356,13 @@ class Command(BaseCommand):
                 )
         except Exception as exc:
             if postgres_seq_last_value:
-                self.logger.error(
+                logger.error(
                     f"Command failed unexpectedly; resetting the sequence to previous value: {postgres_seq_last_value}"
                 )
                 self._set_sequence_value(table_spec["postgres_seq_name"], postgres_seq_last_value)
             raise Exception(exc)
 
-        self.logger.info(
+        logger.info(
             f"LOAD (FINISH): Loaded data from Delta table {delta_table} to {temp_table} using {strategy} " f"strategy"
         )
 
@@ -375,7 +371,7 @@ class Command(BaseCommand):
             spark.stop()
 
         if postgres_table:
-            self.logger.info(
+            logger.info(
                 f"Note: this has merely loaded the data from Delta. For various reasons, we've separated the"
                 f" metadata portion of the table download to a separate script. If not already done so,"
                 f" please run the following additional command to complete the process: "
@@ -391,7 +387,7 @@ class Command(BaseCommand):
         Returns the previous value use by the sequence.
         """
         new_seq_val = val if val else 1
-        self.logger.info(f"Setting the Postgres sequence to {new_seq_val} for: {seq_name}")
+        logger.info(f"Setting the Postgres sequence to {new_seq_val} for: {seq_name}")
         with db.connection.cursor() as cursor:
             cursor.execute(f"SELECT last_value FROM {seq_name}")
             last_value = cursor.fetchone()[0]
@@ -480,14 +476,14 @@ class Command(BaseCommand):
         initial_size = sum(1 for _ in objs_collection)
 
         if initial_size > 0:
-            self.logger.info(f"LOAD: Starting to delete {initial_size} previous objects in {s3_bucket_with_csv_path}")
+            logger.info(f"LOAD: Starting to delete {initial_size} previous objects in {s3_bucket_with_csv_path}")
             objs_collection.delete()
             post_delete_size = sum(1 for _ in objs_collection)
-            self.logger.info(f"LOAD: Finished deleting. {post_delete_size} objects remain in {s3_bucket_with_csv_path}")
+            logger.info(f"LOAD: Finished deleting. {post_delete_size} objects remain in {s3_bucket_with_csv_path}")
         else:
-            self.logger.info(f"LOAD: Target S3 path {s3_bucket_with_csv_path} is empty or yet to be created")
+            logger.info(f"LOAD: Target S3 path {s3_bucket_with_csv_path} is empty or yet to be created")
 
-        self.logger.info(f"LOAD: Starting dump of Delta table to temp gzipped CSV files in {s3_bucket_with_csv_path}")
+        logger.info(f"LOAD: Starting dump of Delta table to temp gzipped CSV files in {s3_bucket_with_csv_path}")
         df_no_arrays = convert_array_cols_to_string(df, is_postgres_array_format=True, is_for_csv_export=True)
         df_no_arrays.write.options(
             maxRecordsPerFile=_SPARK_CSV_WRITE_TO_PG_MAX_RECORDS_PER_FILE,
@@ -499,16 +495,16 @@ class Command(BaseCommand):
             timestampFormat=CONFIG.SPARK_CSV_TIMEZONE_FORMAT,
         ).mode(saveMode="overwrite" if not keep_csv_files else "errorifexists").csv(s3_bucket_with_csv_path)
 
-        self.logger.debug(
+        logger.debug(
             f"Connecting to S3 at endpoint_url={CONFIG.AWS_S3_ENDPOINT}, region_name={CONFIG.AWS_REGION} to "
             f"get listing of contents of Bucket={spark_s3_bucket_name} with Prefix={csv_path}"
         )
 
         gzipped_csv_files = [f.key for f in s3_bucket.objects.filter(Prefix=csv_path) if f.key.endswith(".csv.gz")]
         file_count = len(gzipped_csv_files)
-        self.logger.info(f"LOAD: Finished dumping {file_count} CSV files in {s3_bucket_with_csv_path}")
+        logger.info(f"LOAD: Finished dumping {file_count} CSV files in {s3_bucket_with_csv_path}")
 
-        self.logger.info(f"LOAD: Starting SQL bulk COPY of {file_count} CSV files to Postgres {temp_table} table")
+        logger.info(f"LOAD: Starting SQL bulk COPY of {file_count} CSV files to Postgres {temp_table} table")
 
         db_dsn = get_database_dsn_string()
         with psycopg2.connect(dsn=db_dsn) as connection:
@@ -551,7 +547,7 @@ class Command(BaseCommand):
             ),
         ).collect()
 
-        self.logger.info(f"LOAD: Finished SQL bulk COPY of {file_count} CSV files to Postgres {temp_table} table")
+        logger.info(f"LOAD: Finished SQL bulk COPY of {file_count} CSV files to Postgres {temp_table} table")
 
     def _write_with_jdbc_inserts(
         self,
@@ -613,14 +609,14 @@ class Command(BaseCommand):
                 )
             for i, split_df in enumerate(split_dfs):
                 # Note: we're only appending here as we don't want to re-truncate or overwrite with multiple dataframes
-                self.logger.info(f"LOAD: Loading part {i + 1} of {split_df_count} (note: unequal part sizes)")
+                logger.info(f"LOAD: Loading part {i + 1} of {split_df_count} (note: unequal part sizes)")
                 split_df.write.jdbc(
                     url=get_usas_jdbc_url(),
                     table=temp_table,
                     mode=save_mode,
                     properties=get_jdbc_connection_properties(),
                 )
-                self.logger.info(f"LOAD: Part {i + 1} of {split_df_count} loaded (note: unequal part sizes)")
+                logger.info(f"LOAD: Part {i + 1} of {split_df_count} loaded (note: unequal part sizes)")
         else:
             # Do it in one shot
             df.write.jdbc(
