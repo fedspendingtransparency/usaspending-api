@@ -30,6 +30,7 @@ py-gfm==2.0.0
 pydantic[dotenv]==1.9.*
 python-json-logger==2.0.7
 requests==2.31.*
+requests-aws4auth
 retrying==1.3.4
 urllib3==1.26.*
 

@@ -1,12 +1,17 @@
 import logging
+import boto3
+
 from ssl import CERT_NONE
 from typing import Callable, Optional, Union
 
 from django.conf import settings
-from elasticsearch import ConnectionError, ConnectionTimeout, Elasticsearch, NotFoundError, TransportError
+from elasticsearch import ConnectionError, ConnectionTimeout, Elasticsearch, NotFoundError, TransportError, RequestsHttpConnection
 from elasticsearch.connection import create_ssl_context
 from elasticsearch_dsl import Search as SearchBase
 from elasticsearch_dsl.response import Response
+
+from requests_aws4auth import AWS4Auth
+
 
 logger = logging.getLogger("console")
 
@@ -23,8 +28,24 @@ class Search(SearchBase):
     def _create_es_client() -> Elasticsearch:
         if settings.ES_HOSTNAME is None or settings.ES_HOSTNAME == "":
             logger.error("env var 'ES_HOSTNAME' needs to be set for Elasticsearch connection")
-        es_config = {"hosts": [settings.ES_HOSTNAME], "timeout": settings.ES_TIMEOUT}
+        global CLIENT
         try:
+            credentials = boto3.Session().get_credentials()
+            # Required for Opensearch Connection, uses IAM Role attached to API EC2
+            awsauth = AWS4Auth(credentials.access_key,
+                            credentials.secret_key,
+                            settings.REGION,
+                            service="es",
+                            session_token=credentials.token)
+        
+            es_config = {"hosts": [{"host": settings.ES_HOSTNAME, "port": settings.ES_PORT}], 
+                        "timeout": settings.ES_TIMEOUT,     
+                        "http_auth": awsauth,
+                        "use_ssl": True,
+                        "verify_certs": True,
+                        "connection_class": RequestsHttpConnection
+            }
+
             # If the connection string is using SSL with localhost, disable verifying
             # the certificates to allow testing in a development environment
             # Also allow host.docker.internal, when SSH-tunneling on localhost to a remote nonprod instance over HTTPS
@@ -38,7 +59,7 @@ class Search(SearchBase):
                 ssl_context.verify_mode = CERT_NONE
                 es_config["ssl_context"] = ssl_context
 
-            return Elasticsearch(**es_config)
+            CLIENT = Elasticsearch(**es_config)
         except Exception as e:
             logger.error("Error creating the elasticsearch client: {}".format(e))
 
