@@ -26,7 +26,7 @@ def instantiate_elasticsearch_client() -> Elasticsearch:
         # Required for Opensearch Connection, uses IAM Role attached to API EC2
         awsauth = AWS4Auth(credentials.access_key,
                         credentials.secret_key,
-                        settings.REGION,
+                        settings.USASPENDING_AWS_REGION,
                         service="es",
                         session_token=credentials.token)
 
@@ -52,7 +52,7 @@ def create_es_client() -> Elasticsearch:
         # Required for Opensearch Connection, uses IAM Role attached to API EC2
         awsauth = AWS4Auth(credentials.access_key,
                         credentials.secret_key,
-                        settings.REGION,
+                        settings.USASPENDING_AWS_REGION,
                         service="es",
                         session_token=credentials.token)
     

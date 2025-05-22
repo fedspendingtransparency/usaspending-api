@@ -33,8 +33,8 @@ class Search(SearchBase):
             # Required for Opensearch Connection, uses IAM Role attached to API EC2
             awsauth = AWS4Auth(credentials.access_key,
                             credentials.secret_key,
-                            settings.REGION,
-                            service="es",
+                            settings.USASPENDING_AWS_REGION,
+                            "es",
                             session_token=credentials.token)
         
             es_config = {"hosts": [{"host": settings.ES_HOSTNAME, "port": settings.ES_PORT}], 
