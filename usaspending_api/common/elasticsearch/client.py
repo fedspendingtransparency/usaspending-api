@@ -38,8 +38,8 @@ def instantiate_elasticsearch_client() -> Elasticsearch:
         })
 
     except Exception as e:
-        logger.error("Error creating the elasticsearch client: {}".format(e))
-        
+        logger.error("Error obtaining credentials for the elasticsearch client: {}".format(e))
+
     return Elasticsearch(settings.ES_HOSTNAME, **es_kwargs)
 
 
@@ -56,7 +56,7 @@ def create_es_client() -> Elasticsearch:
                         service="es",
                         session_token=credentials.token)
     
-        es_config = {"hosts": [{"host": settings.ES_HOSTNAME, "port": settings.ES_PORT], 
+        es_config = {"hosts": [{"host": settings.ES_HOSTNAME, "port": settings.ES_PORT}], 
                     "timeout": settings.ES_TIMEOUT,     
                     "http_auth": awsauth,
                     "use_ssl": True,
