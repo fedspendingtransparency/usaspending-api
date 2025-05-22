@@ -28,7 +28,6 @@ class Search(SearchBase):
     def _create_es_client() -> Elasticsearch:
         if settings.ES_HOSTNAME is None or settings.ES_HOSTNAME == "":
             logger.error("env var 'ES_HOSTNAME' needs to be set for Elasticsearch connection")
-        global CLIENT
         try:
             credentials = boto3.Session().get_credentials()
             # Required for Opensearch Connection, uses IAM Role attached to API EC2
@@ -59,7 +58,7 @@ class Search(SearchBase):
                 ssl_context.verify_mode = CERT_NONE
                 es_config["ssl_context"] = ssl_context
 
-            CLIENT = Elasticsearch(**es_config)
+            return Elasticsearch(**es_config)
         except Exception as e:
             logger.error("Error creating the elasticsearch client: {}".format(e))
 
