@@ -42,7 +42,6 @@ from usaspending_api.download.lookups import JOB_STATUS_DICT, VALUE_MAPPINGS, FI
 from usaspending_api.download.models.download_job import DownloadJob
 from usaspending_api.common.helpers.s3_helpers import download_s3_object
 
-DOWNLOAD_VISIBILITY_TIMEOUT = 60 * 10
 MAX_VISIBILITY_TIMEOUT = 60 * 60 * settings.DOWNLOAD_DB_TIMEOUT_IN_HOURS
 EXCEL_ROW_LIMIT = 1000000
 WAIT_FOR_PROCESS_SLEEP = 5
@@ -652,6 +651,10 @@ def wait_for_process(process, start_time, download_job):
             e = Exception("Command failed. Please see the logs for details.")
 
         raise e
+
+    # Make sure the process is terminated and resources used by the process are freed up
+    process.join()
+    process.close()
 
     return time.perf_counter() - log_time
 
