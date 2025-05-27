@@ -48,7 +48,7 @@ def get_file_b(submission_attributes, db_cursor):
         select      count(*)
         from        published_object_class_program_activity
         where       submission_id = %s and length(object_class) = 4
-        group by    account_num, program_activity_code, object_class, disaster_emergency_fund_code,
+        group by    account_num, program_activity_code, object_class, upper(disaster_emergency_fund_code),
                     upper(prior_year_adjustment), upper(program_activity_reporting_key)
         having      count(*) > 1
     """
@@ -71,10 +71,9 @@ def get_file_b(submission_attributes, db_cursor):
             "sub_account_code",
             "tas",
             "account_num",
-            "disaster_emergency_fund_code",
         ],
         "left": ["object_class"],
-        "upper": ["prior_year_adjustment", "program_activity_reporting_key"],
+        "upper": ["prior_year_adjustment", "program_activity_reporting_key", "disaster_emergency_fund_code"],
         "numeric": [
             "deobligations_recov_by_pro_cpe",
             "gross_outlay_amount_by_pro_cpe",
