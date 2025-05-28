@@ -16,13 +16,13 @@ from opentelemetry.trace import SpanKind
 from opentelemetry.trace.status import Status, StatusCode
 
 # The tracer provider should only be set up once, typically in the settings or a dedicated setup module
-_logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 tracer = trace.get_tracer_provider().get_tracer(__name__)
 
 
 def _activate_trace_filter(filter_class: Callable) -> None:
     if not hasattr(tracer, "_filters"):
-        _logger.warning("OpenTelemetry does not support direct filter activation on tracer")
+        logger.warning("OpenTelemetry does not support direct filter activation on tracer")
     else:
         if tracer._filters:
             tracer._filters.append(filter_class())
@@ -83,14 +83,18 @@ class SubprocessTrace:
         return self.span
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.span.__exit__(exc_type, exc_val, exc_tb)
-        # End the span or handle any cleanup
-        if self.span:
-            if exc_type:
-                # Handle exception metadata
-                self.span.set_status(trace.Status(trace.StatusCode.ERROR, description=str(exc_val)))
-                self.span.record_exception(exc_val)
-            self.span.end()
+        try:
+            self.span.__exit__(exc_type, exc_val, exc_tb)
+            # End the span or handle any cleanup
+            if self.span:
+                if exc_type:
+                    # Handle exception metadata
+                    self.span.set_status(trace.Status(trace.StatusCode.ERROR, description=str(exc_val)))
+                    self.span.record_exception(exc_val)
+                self.span.end()
+        except Exception:
+            logger.exception("Exception caught while processing context manager exit")
+            raise
 
 
 class OpenTelemetryLoggingTraceFilter:
