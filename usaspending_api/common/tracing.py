@@ -84,7 +84,7 @@ class SubprocessTrace:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         try:
-            self.span.__exit__(exc_type, exc_val, exc_tb)
+            # self.span.__exit__(exc_type, exc_val, exc_tb)
             # End the span or handle any cleanup
             if self.span:
                 if exc_type:
