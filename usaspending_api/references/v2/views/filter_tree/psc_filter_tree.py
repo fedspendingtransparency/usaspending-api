@@ -108,7 +108,7 @@ class PSCFilterTree(FilterTree):
         filters = [
             Q(
                 Q(Q(length=2) & ~Q(code__startswith=PSC_GROUPS["Research and Development"]["terms"][0]))
-                | Q(Q(length=3) & Q(code__startswith=PSC_GROUPS["Research and Development"]["terms"][0]))
+                | Q(Q(code__iregex=r"^.{3,}$") & Q(code__startswith=PSC_GROUPS["Research and Development"]["terms"][0]))
             )
         ]
         query = Q()
