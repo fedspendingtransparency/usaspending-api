@@ -80,7 +80,7 @@ class PSCFilterTree(FilterTree):
                             Q(code__iregex=r".*[^0]$")
                             & Q(code__startswith=PSC_GROUPS["Research and Development"]["terms"][0])
                         )
-                        | Q(~Q(code__startswith=PSC_GROUPS["Research and Development"]["terms"][0]))
+                        | ~Q(code__startswith=PSC_GROUPS["Research and Development"]["terms"][0])
                     )
                 )
         if filter_string:
