@@ -27,7 +27,6 @@ def test_tier_two_rnd(client, basic_rnd):
 
 def test_tier_three_rnd(client, basic_rnd):
     resp = _call_and_expect_200(client, base_query + "Research%20and%20Development/AA/")
-    print("results: ", resp.json())
     assert resp.json() == {"results": [rnd_tier_three()]}
 
 
