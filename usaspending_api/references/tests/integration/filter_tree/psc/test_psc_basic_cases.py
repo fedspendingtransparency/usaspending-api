@@ -42,6 +42,7 @@ def test_tier_two_product(client, basic_product):
 
 def test_tier_three_product(client, basic_product):
     resp = _call_and_expect_200(client, base_query + "Product/10/")
+    print(resp.json())
     assert resp.json() == {"results": [product_tier_three()]}
 
 

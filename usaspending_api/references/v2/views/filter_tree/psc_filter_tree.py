@@ -73,7 +73,16 @@ class PSCFilterTree(FilterTree):
             if len(parent) > 3:
                 filters.append(Q(code__iregex=PSC_GROUPS.get(parent, {}).get("count_pattern") or "(?!)"))
             else:
-                filters.append(Q(Q(code__startswith=parent) & Q(code__iregex=r".*[^0]$")))
+                filters.append(
+                    Q(
+                        Q(code__startswith=parent)
+                        & (
+                            Q(code__iregex=r".*[^0]$")
+                            & Q(code__startswith=PSC_GROUPS["Research and Development"]["terms"][0])
+                        )
+                        | Q(~Q(code__startswith=PSC_GROUPS["Research and Development"]["terms"][0]))
+                    )
+                )
         if filter_string:
             filters.append(Q(Q(code__icontains=filter_string) | Q(description__icontains=filter_string)))
         retval = []
