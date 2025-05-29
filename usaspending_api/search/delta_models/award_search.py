@@ -538,7 +538,7 @@ LEFT OUTER JOIN (
         GROUPED_BY_DEFC.award_id,
         CAST(SORT_ARRAY(COLLECT_SET(
             TO_JSON(NAMED_STRUCT('defc', GROUPED_BY_DEFC.def_code, 'outlay', GROUPED_BY_DEFC.outlay, 'obligation', GROUPED_BY_DEFC.obligation))
-        )) AS STRING) FILTER (WHERE GROUPED_BY_DEFC.def_code IS NOT NULL) AS spending_by_defc,
+        ) FILTER (WHERE GROUPED_BY_DEFC.def_code IS NOT NULL)) AS STRING) AS spending_by_defc,
         sum(GROUPED_BY_DEFC.outlay) AS total_outlays,
         sum(GROUPED_BY_DEFC.outlay) FILTER (WHERE GROUPED_BY_DEFC.group_name = 'covid_19') AS total_covid_outlay,
         sum(GROUPED_BY_DEFC.obligation) FILTER (WHERE GROUPED_BY_DEFC.group_name = 'covid_19') AS total_covid_obligation,
