@@ -11,7 +11,7 @@ def no_data(db):
 @pytest.fixture
 def basic_rnd(db):
     _psc(db, rnd_tier_two())
-    _psc(db, rnd_tier_three())
+    _psc(db, rnd_tier_three_setup())
     _psc(db, rnd_tier_four())
 
 
@@ -66,6 +66,16 @@ def rnd_tier_two():
     }
 
 
+def rnd_tier_three_setup():
+    return {
+        "id": "AA90",
+        "description": "tier three R&D",
+        "ancestors": ["Research and Development", "AA"],
+        "count": 1,
+        "children": None,
+    }
+
+
 def rnd_tier_three():
     return {
         "id": "AA9",
@@ -78,7 +88,7 @@ def rnd_tier_three():
 
 def rnd_tier_four():
     return {
-        "id": "AA90",
+        "id": "AA91",
         "description": "tier four R&D",
         "ancestors": ["Research and Development", "AA", "AA9"],
         "count": 0,

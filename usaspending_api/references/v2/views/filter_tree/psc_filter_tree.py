@@ -73,7 +73,7 @@ class PSCFilterTree(FilterTree):
             if len(parent) > 3:
                 filters.append(Q(code__iregex=PSC_GROUPS.get(parent, {}).get("count_pattern") or "(?!)"))
             else:
-                filters.append(Q(code__startswith=parent))
+                filters.append(Q(Q(code__startswith=parent) & Q(code__iregex=r".*[^0]$")))
         if filter_string:
             filters.append(Q(Q(code__icontains=filter_string) | Q(description__icontains=filter_string)))
         retval = []
@@ -108,7 +108,11 @@ class PSCFilterTree(FilterTree):
         filters = [
             Q(
                 Q(Q(length=2) & ~Q(code__startswith=PSC_GROUPS["Research and Development"]["terms"][0]))
-                | Q(Q(code__iregex=r"^.{3,}$") & Q(code__startswith=PSC_GROUPS["Research and Development"]["terms"][0]))
+                | Q(
+                    Q(code__iregex=r".*0$")
+                    & Q(code__startswith=PSC_GROUPS["Research and Development"]["terms"][0])
+                    & Q(length=4)
+                )
             )
         ]
         query = Q()
@@ -138,17 +142,19 @@ class PSCFilterTree(FilterTree):
         retval = []
         for object in PSC.objects.filter(*filters):
             ancestors = []
+            code = object.code
             if object.code.isdigit():
                 ancestors.append("Product")
             elif object.code[0] in PSC_GROUPS["Research and Development"]["terms"]:
                 ancestors.append("Research and Development")
                 ancestors.append(object.code[:2])
+                code = object.code[:3]
             else:
                 ancestors.append("Service")
                 ancestors.append(object.code[:1])
             retval.append(
                 {
-                    "id": object.code,
+                    "id": code,
                     "ancestors": ancestors,
                     "description": object.description,
                     "count": self.get_count([object.code], object.code),
