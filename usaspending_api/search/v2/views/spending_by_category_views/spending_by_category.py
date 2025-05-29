@@ -181,7 +181,7 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         )
 
     def build_elasticsearch_search_with_aggregations(
-        self, filter_query: ES_Q
+        self, filter_query: ES_Q, result_size: int, shard_size: int
     ) -> Optional[Union[AwardSearch, SubawardSearch, TransactionSearch]]:
         """
         Using the provided ES_Q object creates a TransactionSearch object with the necessary applied aggregations.
@@ -194,41 +194,14 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         # Need to handle high cardinality categories differently; this assumes that the Search object references
         # an Elasticsearch cluster that has a "routing" equal to "self.category.agg_key"
         if self.category.name in self.high_cardinality_categories:
-            # 10k is the maximum number of allowed buckets
-            size = self.pagination.upper_limit
-            shard_size = size
             sum_bucket_sort = obligation_sum_agg["sum_bucket_truncate"]
             group_by_agg_key_values = {"order": {"sum_field": "desc"}}
         else:
-            # Get count of unique buckets; terminate early if there are no buckets matching criteria
-            cardinality_field = f"{self.category.agg_key}{self.category.agg_key_suffix}"
-            if self.spending_level == SpendingLevel.SUBAWARD:
-                bucket_count = get_number_of_unique_terms(SubawardSearch, filter_query, cardinality_field)
-            elif self.spending_level == SpendingLevel.TRANSACTION:
-                bucket_count = get_number_of_unique_terms(TransactionSearch, filter_query, cardinality_field)
-            else:
-                # This case handles both Award and File C spending levels since we join to File C via the Award
-                bucket_count = get_number_of_unique_terms(
-                    AwardSearch, filter_query, cardinality_field, self.category.nested_path
-                )
-            if bucket_count == 0:
-                return None
-            else:
-                # Add 100 to make sure that we consider enough records in each shard for accurate results;
-                # Only needed for non high-cardinality fields since those are being routed
-                size = bucket_count
-                shard_size = bucket_count + 100
-                sum_bucket_sort = obligation_sum_agg["sum_bucket_sort"]
-                group_by_agg_key_values = {}
-
-        if shard_size > 10000:
-            logger.warning(f"Max number of buckets reached for aggregation key: {self.category.agg_key}.")
-            raise ElasticsearchConnectionException(
-                "Current filters return too many unique items. Narrow filters to return results."
-            )
+            sum_bucket_sort = obligation_sum_agg["sum_bucket_sort"]
+            group_by_agg_key_values = {}
 
         # Define all aggregations needed to build the response
-        group_by_agg_key_values.update({"field": self.category.agg_key, "size": size, "shard_size": shard_size})
+        group_by_agg_key_values.update({"field": self.category.agg_key, "size": result_size, "shard_size": shard_size})
         group_by_agg_key = A("terms", **group_by_agg_key_values)
 
         sum_field = obligation_sum_agg["sum_field"]
@@ -269,12 +242,37 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
         return search
 
     def query_elasticsearch(self, filter_query: ES_Q) -> list:
-        search = self.build_elasticsearch_search_with_aggregations(filter_query)
-        if search is None:
+        result_size, shard_size = self.get_result_and_shard_size(filter_query)
+        if result_size == 0:
             return []
+        search = self.build_elasticsearch_search_with_aggregations(filter_query, result_size, shard_size)
         response = search.handle_execute()
         results = self.build_elasticsearch_result(response.aggs.to_dict())
         return results
+
+    def get_result_and_shard_size(self, filter_query: ES_Q) -> tuple[int, int]:
+        if self.category.name in self.high_cardinality_categories:
+            return self.pagination.upper_limit, self.pagination.upper_limit
+
+        cardinality_field = f"{self.category.agg_key}{self.category.agg_key_suffix}"
+        if self.spending_level == SpendingLevel.SUBAWARD:
+            result_size = get_number_of_unique_terms(SubawardSearch, filter_query, cardinality_field)
+        elif self.spending_level == SpendingLevel.TRANSACTION:
+            result_size = get_number_of_unique_terms(TransactionSearch, filter_query, cardinality_field)
+        else:
+            # This case handles both Award and File C spending levels since we join to File C via the Award
+            result_size = get_number_of_unique_terms(
+                AwardSearch, filter_query, cardinality_field, self.category.nested_path
+            )
+        # Add 100 to make sure that we consider enough records in each shard for accurate results;
+        # Only needed for non high-cardinality fields since those are being routed
+        shard_size = result_size + 100
+        if shard_size > 10000:
+            logger.warning(f"Max number of buckets reached for aggregation key: {self.category.agg_key}.")
+            raise ElasticsearchConnectionException(
+                "Current filters return too many unique items. Narrow filters to return results."
+            )
+        return result_size, shard_size
 
     @abstractmethod
     def build_elasticsearch_result(self, response: dict) -> List[dict]:
