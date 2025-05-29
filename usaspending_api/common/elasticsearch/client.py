@@ -33,14 +33,14 @@ def instantiate_elasticsearch_client() -> Elasticsearch:
         es_kwargs.update({"hosts": [{"host": settings.ES_HOSTNAME, "port": settings.ES_PORT}], 
                     "http_auth": awsauth,
                     "use_ssl": True,
-                    "verify_certs": True,
+                    "verify_certs": False,
                     "connection_class": RequestsHttpConnection
         })
 
     except Exception as e:
         logger.error("Error obtaining credentials for the elasticsearch client: {}".format(e))
 
-    return Elasticsearch(settings.ES_HOSTNAME, **es_kwargs)
+    return Elasticsearch(**es_kwargs)
 
 
 def create_es_client() -> Elasticsearch:

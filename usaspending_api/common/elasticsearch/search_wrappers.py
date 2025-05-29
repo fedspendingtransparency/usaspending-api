@@ -41,7 +41,7 @@ class Search(SearchBase):
                         "timeout": settings.ES_TIMEOUT,     
                         "http_auth": awsauth,
                         "use_ssl": True,
-                        "verify_certs": True,
+                        "verify_certs": False,
                         "connection_class": RequestsHttpConnection
             }
 
