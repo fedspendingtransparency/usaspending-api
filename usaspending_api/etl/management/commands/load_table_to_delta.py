@@ -1,3 +1,5 @@
+import logging
+
 from django.core.management import BaseCommand
 
 from usaspending_api.awards.delta_models import (
@@ -16,7 +18,6 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_jdbc_connection_properties,
     get_usas_jdbc_url,
     get_broker_jdbc_url,
-    get_jvm_logger,
 )
 from usaspending_api.config import CONFIG
 from usaspending_api.recipient.delta_models import (
@@ -55,6 +56,7 @@ from usaspending_api.awards.models import (
     TransactionNormalized,
 )
 
+logger = logging.getLogger(__name__)
 
 TABLE_SPEC = {
     "awards": {
@@ -351,9 +353,6 @@ class Command(BaseCommand):
         if not spark:
             spark_created_by_command = True
             spark = configure_spark_session(**extra_conf, spark_context=spark)
-
-        # Setup Logger
-        logger = get_jvm_logger(spark)
 
         # Resolve Parameters
         destination_table = options["destination_table"]
