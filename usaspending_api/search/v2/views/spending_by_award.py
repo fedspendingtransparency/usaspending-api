@@ -142,7 +142,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
             "Infrastructure Outlays": {"group_name": "infrastructure", "field_type": "outlay"},
         }
         self.def_codes_by_group = (
-            get_def_codes_by_group([val["group_name"] for val in self.spending_by_defc_lookup.values()])
+            get_def_codes_by_group(list({val["group_name"] for val in self.spending_by_defc_lookup.values()}))
             if set(self.fields) & set(self.spending_by_defc_lookup)
             else {}
         )
