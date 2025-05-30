@@ -77,7 +77,7 @@ class PSCFilterTree(FilterTree):
                     Q(
                         Q(code__startswith=parent)
                         & (
-                            Q(code__iregex=r".*[^0]$")
+                            ~Q(code__endswith="0")
                             & Q(code__startswith=PSC_GROUPS["Research and Development"]["terms"][0])
                         )
                         | ~Q(code__startswith=PSC_GROUPS["Research and Development"]["terms"][0])
