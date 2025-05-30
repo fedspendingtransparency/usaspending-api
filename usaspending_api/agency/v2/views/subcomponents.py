@@ -64,10 +64,10 @@ class SubcomponentList(PaginationMixin, AgencyBase):
                 {
                     "name": x["bureau_info"].split(";")[0] if x.get("bureau_info") is not None else None,
                     "id": x["bureau_info"].split(";")[1] if x.get("bureau_info") is not None else None,
-                    "total_obligations": x["total_obligations"] if "total_obligations" in x else None,
-                    "total_outlays": x["total_outlays"] if "total_outlays" in x else None,
+                    "total_obligations": x["total_obligations"] if x["total_obligations"] else None,
+                    "total_outlays": x["total_outlays"] if x["total_outlays"] else None,
                     "total_budgetary_resources": (
-                        x["total_budgetary_resources"] if "total_budgetary_resources" in x else None
+                        x["total_budgetary_resources"] if x["total_budgetary_resources"] else None
                     ),
                 }
                 for x in combined_response
