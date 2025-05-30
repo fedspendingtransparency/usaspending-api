@@ -64,30 +64,29 @@ class Command(BaseCommand):
         )
         broker_conn = connections[settings.DATA_BROKER_DB_ALIAS]
         usas_conn = connections[settings.DEFAULT_DB_ALIAS]
-        schema_query = f"""
-            SELECT column_name, data_type
-            FROM information_schema.columns
-            WHERE table_name='{broker_table_name}' AND table_schema='{broker_schema_name}'
+        table_exists_query = f"""
+            SELECT EXISTS (
+                SELECT 1
+                FROM pg_tables
+                WHERE schemaname = '{usas_schema_name}'
+                AND tablename = '{usas_table_name}'
+            );            
         """
-        with broker_conn.cursor() as cursor:
-            cursor.execute(schema_query)
-            columns = cursor.fetchall()
-            col_defs = ", ".join([" ".join(col) for col in columns])
-            create_table_query = f"CREATE TABLE {usas_schema_name}.{usas_table_name} ({col_defs});"
-        with usas_conn.cursor() as cursor:
-            cursor.execute(create_table_query)
-        with broker_conn.cursor() as cursor:
-            cursor.itersize = self.CHUNK_SIZE
-            cursor.execute(f"SELECT * FROM {broker_schema_name}.{broker_table_name}")
-            while True:
-                rows = cursor.fetchmany(self.CHUNK_SIZE)
-                if not rows:
-                    break
-                f = StringIO()
-                writer = csv.writer(f)
-                writer.writerows(rows)
-                f.seek(0)
-                with usas_conn.cursor() as usas_cursor:
+        with usas_conn.cursor() as usas_cursor:
+            usas_cursor.execute(table_exists_query)
+            table_exists = usas_cursor.fetchall()
+            if not table_exists:
+                raise ValueError(f"Table '{usas_schema_name}.{usas_table_name}' does not exist")
+            with broker_conn.cursor() as broker_cursor:
+                broker_cursor.execute(f"SELECT * FROM {broker_schema_name}.{broker_table_name}")
+                while True:
+                    rows = broker_cursor.fetchmany(self.CHUNK_SIZE)
+                    if not rows:
+                        break
+                    f = StringIO()
+                    writer = csv.writer(f)
+                    writer.writerows(rows)
+                    f.seek(0)
                     usas_cursor.copy_expert(
                         f"COPY {usas_schema_name}.{usas_table_name} FROM STDIN WITH (DELIMITER ',', FORMAT CSV)",
                         f,

@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 import pytest
 from django.core.management import call_command
 from django.db import connections
@@ -5,12 +7,19 @@ from django.db import connections
 from usaspending_api.settings import DATA_BROKER_DB_ALIAS, DEFAULT_DB_ALIAS
 
 
+@pytest.fixture(scope="module")
+def now():
+    return datetime.now().replace(tzinfo=timezone.utc)
+
+
 @pytest.fixture
-def broker_zips_grouped():
+def broker_zips_grouped(now):
     with connections[DATA_BROKER_DB_ALIAS].cursor() as cursor:
         cursor.execute(
             """
             CREATE TABLE zips_grouped_test (
+                created_at TIMESTAMP NOT NULL,
+                updated_at TIMESTAMP NOT NULL,
                 zips_grouped_id INT NOT NULL,
                 zip5 text,
                 state_abbreviation text,
@@ -21,10 +30,10 @@ def broker_zips_grouped():
         )
         cursor.execute(
             f"""
-            INSERT INTO zips_grouped_test (zips_grouped_id, zip5, state_abbreviation, county_number, congressional_district_no)
+            INSERT INTO zips_grouped_test (created_at, updated_at, zips_grouped_id, zip5, state_abbreviation, county_number, congressional_district_no)
             VALUES
-                (1, '00001', 'KS', '01', '01' ),
-                (2, '00002', 'KS', '02', '02' )
+                ('{now}', '{now}', 1, '00001', 'KS', '01', '01' ),
+                ('{now}', '{now}', 2, '00002', 'KS', '02', '02' )
         """
         )
     yield
@@ -33,40 +42,20 @@ def broker_zips_grouped():
 
 
 @pytest.mark.django_db(databases=[DATA_BROKER_DB_ALIAS, DEFAULT_DB_ALIAS], transaction=True)
-def test_load_broker_table(broker_zips_grouped):
+def test_load_broker_table(broker_zips_grouped, now):
     call_command(
         "load_broker_table",
         "--table-name=zips_grouped_test",
         "--schema-name=public",
+        "--usaspending-table-name=zips_grouped",
     )
     with connections[DEFAULT_DB_ALIAS].cursor() as cursor:
         cursor.execute(
             """
             SELECT *
-            FROM public.zips_grouped_test
+            FROM public.zips_grouped
             ORDER BY zips_grouped_id
         """
         )
         rows = cursor.fetchall()
-        assert rows == [(1, "00001", "KS", "01", "01"), (2, "00002", "KS", "02", "02")]
-
-
-@pytest.mark.django_db(databases=[DATA_BROKER_DB_ALIAS, DEFAULT_DB_ALIAS], transaction=True)
-def test_load_broker_table_rename_table_and_schema(broker_zips_grouped):
-    call_command(
-        "load_broker_table",
-        "--table-name=zips_grouped_test",
-        "--schema-name=public",
-        "--usaspending-table-name=zips_grouped_test2",
-        "--usaspending-schema-name=temp",
-    )
-    with connections[DEFAULT_DB_ALIAS].cursor() as cursor:
-        cursor.execute(
-            """
-            SELECT *
-            FROM temp.zips_grouped_test2
-            ORDER BY zips_grouped_id
-        """
-        )
-        rows = cursor.fetchall()
-        assert rows == [(1, "00001", "KS", "01", "01"), (2, "00002", "KS", "02", "02")]
+        assert rows == [(now, now, 1, "00001", "KS", "01", "01"), (now, now, 2, "00002", "KS", "02", "02")]
