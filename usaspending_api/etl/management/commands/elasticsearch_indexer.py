@@ -12,6 +12,7 @@ from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import drop_
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
 from usaspending_api.etl.elasticsearch_loader_helpers import (
     check_new_index_name_is_ok,
+    check_pipeline_dates,
     execute_sql_statement,
     format_log,
     toggle_refresh_off,
@@ -101,6 +102,15 @@ class AbstractElasticsearchIndexer(ABC, BaseCommand):
             action="store_true",
             help="After completing the ETL, drop the SQL view used for the data extraction",
         )
+        parser.add_argument(
+            "--skip-date-check",
+            action="store_true",
+            help=(
+                "When creating a new index it is verified that the es_deletes timestamp occurs after the earliest"
+                " timestamp associated with the Transaction loader. If that check fails it is recommended that the"
+                " es_deletes and other Elasticsearch timestamps are updated manually prior to proceeding."
+            ),
+        )
 
     def handle(self, *args, **options):
         elasticsearch_client = instantiate_elasticsearch_client()
@@ -183,6 +193,7 @@ def parse_cli_args(options: dict, es_client) -> dict:
         "processes",
         "skip_counts",
         "skip_delete_index",
+        "skip_date_check",
     ]
     config = set_config(passthrough_values, options)
 
@@ -192,6 +203,8 @@ def parse_cli_args(options: dict, es_client) -> dict:
         config["index_name"] = config["index_name"].lower()
         config["starting_date"] = config["initial_datetime"]
         check_new_index_name_is_ok(config["index_name"], config["required_index_name"])
+        if not config["skip_date_check"]:
+            check_pipeline_dates(config["load_type"])
     elif options["start_datetime"]:
         config["starting_date"] = options["start_datetime"]
     else:
