@@ -5,6 +5,7 @@ import time
 from django.conf import settings
 
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import INDEX_ALIASES_TO_AWARD_TYPES
+from usaspending_api.broker.helpers.last_load_date import get_earliest_load_date, get_last_load_date
 from usaspending_api.etl.elasticsearch_loader_helpers.utilities import format_log, is_snapshot_running
 
 logger = logging.getLogger("script")
@@ -145,3 +146,21 @@ def toggle_refresh_on(client, index):
 def check_new_index_name_is_ok(provided_name: str, suffix: str) -> None:
     if not provided_name.endswith(suffix):
         raise SystemExit(f"new index name doesn't end with the expected pattern: '{suffix}'")
+
+
+def check_pipeline_dates(load_type: str) -> None:
+    if load_type in ("award", "transaction"):
+        es_deletes_date = get_last_load_date("es_deletes")
+        earliest_transaction_date = get_earliest_load_date(
+            ["awards", "transaction_fabs", "transaction_fpds", "transaction_normalized"]
+        )
+        if es_deletes_date < earliest_transaction_date:
+            msg = (
+                f"The earliest Transaction / Award load date of {earliest_transaction_date} is later than the value"
+                f" of 'es_deletes' ({es_deletes_date}). To reduce the amount of data loaded in the next incremental"
+                " load the values of 'es_deletes', 'es_awards', and 'es_transactions' should most likely be updated to"
+                f" {earliest_transaction_date} before proceeding. This recommendation assumes that the 'rpt' tables are"
+                f" up to date. Optionally, this can be bypassed with the '--skip-date-check' option."
+            )
+            logger.error(format_log(msg, action="ES Settings"))
+            raise SystemExit(msg)
