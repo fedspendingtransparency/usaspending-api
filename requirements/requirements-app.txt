@@ -1,7 +1,7 @@
 asyncpg==0.29.*
 attrs==23.2.*
 boto3==1.34.*
-certifi==2024.2.2
+certifi==2024.7.4
 dataclasses-json==0.6.*
 dj-database-url==2.1.0
 django-cors-headers==4.3.*
