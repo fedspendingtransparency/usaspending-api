@@ -70,7 +70,7 @@ class Command(BaseCommand):
                 FROM pg_tables
                 WHERE schemaname = '{usas_schema_name}'
                 AND tablename = '{usas_table_name}'
-            );            
+            );
         """
         with usas_conn.cursor() as usas_cursor:
             usas_cursor.execute(table_exists_query)
