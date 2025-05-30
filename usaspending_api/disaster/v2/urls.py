@@ -20,6 +20,8 @@ from usaspending_api.disaster.v2.views.recipient.loans import RecipientLoansView
 from usaspending_api.disaster.v2.views.recipient.spending import RecipientSpendingViewSet
 from usaspending_api.disaster.v2.views.spending_by_geography import SpendingByGeographyViewSet
 
+from usaspending_api.disaster.v2.views.test_opensearch_endpoint import OpenSearchTestViewSet
+
 urlpatterns = [
     re_path(r"^agency/count/$", AgencyCountViewSet.as_view()),
     re_path(r"^agency/loans/$", route_agency_loans_backend()),
@@ -41,4 +43,5 @@ urlpatterns = [
     re_path(r"^recipient/loans/$", RecipientLoansViewSet.as_view()),
     re_path(r"^recipient/spending/$", RecipientSpendingViewSet.as_view()),
     re_path(r"^spending_by_geography/$", SpendingByGeographyViewSet.as_view()),
+    re_path(r"^opensearch_test/$", OpenSearchTestViewSet.as_view()),
 ]
