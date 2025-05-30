@@ -50,6 +50,7 @@ from usaspending_api.common.validator.award_filter import AWARD_FILTER_NO_RECIPI
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.recipient.models import RecipientProfile
+from usaspending_api.references.helpers import get_def_codes_by_group
 from usaspending_api.references.models import Agency, ToptierAgencyPublishedDABSView
 from usaspending_api.search.filters.elasticsearch.filter import QueryType
 from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
@@ -133,6 +134,23 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         self.last_record_unique_id = json_request.get("last_record_unique_id")
         self.last_record_sort_value = json_request.get("last_record_sort_value")
+
+        self.spending_by_defc_lookup = {
+            "COVID-19 Obligations": {"group_name": "covid_19", "field_type": "obligation"},
+            "COVID-19 Outlays": {"group_name": "covid_19", "field_type": "outlay"},
+            "Infrastructure Obligations": {"group_name": "infrastructure", "field_type": "obligation"},
+            "Infrastructure Outlays": {"group_name": "infrastructure", "field_type": "outlay"},
+        }
+        self.def_codes_by_group = (
+            get_def_codes_by_group(list({val["group_name"] for val in self.spending_by_defc_lookup.values()}))
+            if set(self.fields) & set(self.spending_by_defc_lookup)
+            else {}
+        )
+        if self.filters.get("def_codes"):
+            self.def_codes_by_group = {
+                group_name: list(set(def_codes) & set(self.filters["def_codes"]))
+                for group_name, def_codes in self.def_codes_by_group.items()
+            }
 
         if self.spending_level == SpendingLevel.SUBAWARD:
             return Response(self.construct_es_response_for_subawards(self.query_elasticsearch_subawards()))
@@ -397,44 +415,28 @@ class SpendingByAwardVisualizationViewSet(APIView):
         query_with_filters = QueryWithFilters(QueryType.AWARDS)
         filter_query = query_with_filters.generate_elasticsearch_query(self.filters, **filter_options)
         sort_field = self.get_elastic_sort_by_fields()
-        covid_sort_fields = {"COVID-19 Obligations": "obligation", "COVID-19 Outlays": "outlay"}
-        iija_sort_fields = {"Infrastructure Obligations": "obligation", "Infrastructure Outlays": "outlay"}
 
-        if "iija_spending_by_defc" in sort_field:
-            sort_field.remove("iija_spending_by_defc")
+        if "spending_by_defc" in sort_field:
+            sort_field.remove("spending_by_defc")
+            group_name = self.spending_by_defc_lookup[self.pagination["sort_key"]]["group_name"]
+            field_type = self.spending_by_defc_lookup[self.pagination["sort_key"]]["field_type"]
+            defc_for_group = self.def_codes_by_group[group_name]
             sorts = [
                 {
-                    f"iija_spending_by_defc.{iija_sort_fields[self.pagination['sort_key']]}": {
+                    f"spending_by_defc.{field_type}": {
                         "mode": "sum",
                         "order": self.pagination["sort_order"],
                         "nested": {
-                            "path": "iija_spending_by_defc",
+                            "path": "spending_by_defc",
+                            "filter": {
+                                "terms": {
+                                    "spending_by_defc.defc": defc_for_group,
+                                }
+                            },
                         },
                     }
                 }
             ]
-            if self.filters.get("def_codes") is not None:
-                sorts[0][f"iija_spending_by_defc.{iija_sort_fields[self.pagination['sort_key']]}"]["nested"].update(
-                    {"filter": {"terms": {"iija_spending_by_defc.defc": self.filters.get("def_codes", [])}}}
-                )
-            sorts.extend([{field: self.pagination["sort_order"]} for field in sort_field])
-        elif "covid_spending_by_defc" in sort_field:
-            sort_field.remove("covid_spending_by_defc")
-            sorts = [
-                {
-                    f"covid_spending_by_defc.{covid_sort_fields[self.pagination['sort_key']]}": {
-                        "mode": "sum",
-                        "order": self.pagination["sort_order"],
-                        "nested": {
-                            "path": "covid_spending_by_defc",
-                        },
-                    }
-                }
-            ]
-            if self.filters.get("def_codes") is not None:
-                sorts[0][f"covid_spending_by_defc.{covid_sort_fields[self.pagination['sort_key']]}"]["nested"].update(
-                    {"filter": {"terms": {"covid_spending_by_defc.defc": self.filters.get("def_codes", [])}}}
-                )
             sorts.extend([{field: self.pagination["sort_order"]} for field in sort_field])
         elif "Recipient Location" in self.pagination["sort_key"]:
             sorts = []
@@ -514,54 +516,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 code = row.pop("agency_code")
                 row["awarding_agency_id"] = self.get_agency_database_id(code)
                 row["agency_slug"] = self.get_agency_slug(code)
-            if row.get("COVID-19 Obligations"):
-                row["COVID-19 Obligations"] = sum(
-                    [
-                        (
-                            x["obligation"]
-                            if (self.filters.get("def_codes") is not None and x["defc"] in self.filters["def_codes"])
-                            or self.filters.get("def_codes") is None
-                            else 0
-                        )
-                        for x in row.get("COVID-19 Obligations")
-                    ]
-                )
-            if row.get("COVID-19 Outlays"):
-                row["COVID-19 Outlays"] = sum(
-                    [
-                        (
-                            x["outlay"]
-                            if (self.filters.get("def_codes") is not None and x["defc"] in self.filters["def_codes"])
-                            or self.filters.get("def_codes") is None
-                            else 0
-                        )
-                        for x in row.get("COVID-19 Outlays")
-                    ]
-                )
-            if row.get("Infrastructure Obligations"):
-                row["Infrastructure Obligations"] = sum(
-                    [
-                        (
-                            x["obligation"]
-                            if (self.filters.get("def_codes") is not None and x["defc"] in self.filters["def_codes"])
-                            or self.filters.get("def_codes") is None
-                            else 0
-                        )
-                        for x in row.get("Infrastructure Obligations")
-                    ]
-                )
-            if row.get("Infrastructure Outlays"):
-                row["Infrastructure Outlays"] = sum(
-                    [
-                        (
-                            x["outlay"]
-                            if (self.filters.get("def_codes") is not None and x["defc"] in self.filters["def_codes"])
-                            or self.filters.get("def_codes") is None
-                            else 0
-                        )
-                        for x in row.get("Infrastructure Outlays")
-                    ]
-                )
             if row.get("def_codes"):
                 if self.filters.get("def_codes"):
                     row["def_codes"] = list(filter(lambda x: x in self.filters.get("def_codes"), row["def_codes"]))
@@ -627,6 +581,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
             if should_return_recipient_id:
                 row["recipient_id"] = self.get_recipient_hash_with_level(hit)
+
+            row.update(self.get_defc_row_values(row))
 
             results.append(row)
 
@@ -781,3 +737,24 @@ class SpendingByAwardVisualizationViewSet(APIView):
         recipient_level = RecipientProfile.return_one_level(recipient_levels)
 
         return f"{recipient_hash}-{recipient_level}"
+
+    def get_defc_row_values(self, row: dict[str, any]) -> dict[str, any]:
+        """
+        Fields powered by DEFC outlays and obligations all come from the same spending_by_defc field. The final outlay
+        and obligation total for each field depends on the DEFC that fall under the specific group represented by each
+        field. If the specific DEFC based fields are part of the row then they will be returned for the row to update.
+        """
+        result = {}
+        for field, lookup_values in self.spending_by_defc_lookup.items():
+            if field in row:
+                result[field] = sum(
+                    [
+                        (
+                            spending_by_defc[lookup_values["field_type"]]
+                            if spending_by_defc["defc"] in self.def_codes_by_group[lookup_values["group_name"]]
+                            else 0
+                        )
+                        for spending_by_defc in row.get(field)
+                    ]
+                )
+        return result

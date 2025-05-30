@@ -112,7 +112,7 @@ def spending_by_award_test_data():
         disaster_emergency_fund_codes=["L"],
         total_covid_obligation=100,
         total_covid_outlay=100,
-        covid_spending_by_defc=[{"defc": "L", "outlay": 100, "obligation": 100}],
+        spending_by_defc=[{"defc": "L", "outlay": 100, "obligation": 100}],
         tas_paths=["aid=097main=4930"],
         tas_components=["aid=097main=4930ata=sub=bpoa=epoa=a="],
     )
@@ -200,7 +200,7 @@ def spending_by_award_test_data():
         disaster_emergency_fund_codes=["Q"],
         total_covid_outlay=0,
         total_covid_obligation=0,
-        covid_spending_by_defc=[{"defc": "Q", "outlay": 0, "obligation": 0}],
+        spending_by_defc=[{"defc": "Q", "outlay": 0, "obligation": 0}],
     )
 
     # Awards only used for testing their `recipient_name` values

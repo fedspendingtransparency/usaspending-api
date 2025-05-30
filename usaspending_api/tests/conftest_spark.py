@@ -473,6 +473,7 @@ def _build_usas_data_for_spark():
         action_date="2020-04-01",
         fiscal_year=2020,
         award_amount=0.00,
+        total_outlays=2.0,
         total_obligation=0.00,
         total_subsidy_cost=0.00,
         total_loan_value=0.00,
@@ -544,11 +545,11 @@ def _build_usas_data_for_spark():
             f"aid={tas.agency_id}main={tas.main_account_code}ata={tas.allocation_transfer_agency_id or ''}sub={tas.sub_account_code}bpoa={tas.beginning_period_of_availability or ''}epoa={tas.ending_period_of_availability or ''}a={tas.availability_type_code}"
         ],
         disaster_emergency_fund_codes=["L", "M"],
-        total_covid_outlay=0.0,
+        total_covid_outlay=2.0,
         total_covid_obligation=2.0,
-        covid_spending_by_defc=[
-            {"defc": "L", "outlay": 0.0, "obligation": 1.0},
-            {"defc": "M", "outlay": 0.0, "obligation": 1.0},
+        spending_by_defc=[
+            {"defc": "L", "outlay": 1.0, "obligation": 1.0},
+            {"defc": "M", "outlay": 1.0, "obligation": 1.0},
         ],
         business_categories=None,
         original_loan_subsidy_cost=0.00,
@@ -587,6 +588,7 @@ def _build_usas_data_for_spark():
         action_date="2020-04-01",
         fiscal_year=2020,
         award_amount=0.00,
+        total_outlays=None,
         total_obligation=0.00,
         total_subsidy_cost=0.00,
         total_loan_value=0.00,
@@ -656,7 +658,7 @@ def _build_usas_data_for_spark():
         disaster_emergency_fund_codes=None,
         total_covid_outlay=None,
         total_covid_obligation=None,
-        covid_spending_by_defc=None,
+        spending_by_defc=None,
         business_categories=None,
         original_loan_subsidy_cost=0.00,
         face_value_loan_guarantee=0.00,
@@ -684,6 +686,7 @@ def _build_usas_data_for_spark():
         update_date="2020-01-01",
         action_date="2020-10-01",
         award_amount=0.00,
+        total_outlays=3.0,
         total_obligation=0.00,
         total_subsidy_cost=0.00,
         total_obl_bin="<1M",
@@ -742,6 +745,7 @@ def _build_usas_data_for_spark():
             f"aid={tas.agency_id}main={tas.main_account_code}ata={tas.allocation_transfer_agency_id or ''}sub={tas.sub_account_code}bpoa={tas.beginning_period_of_availability or ''}epoa={tas.ending_period_of_availability or ''}a={tas.availability_type_code}"
         ],
         disaster_emergency_fund_codes=["Q"],
+        spending_by_defc=[{"defc": "Q", "outlay": 1.00, "obligation": 1.00}],
         business_categories=None,
         original_loan_subsidy_cost=0.00,
         face_value_loan_guarantee=0.00,
@@ -776,6 +780,7 @@ def _build_usas_data_for_spark():
         period_of_performance_current_end_date="2022-01-01",
         date_signed="2020-01-01",
         award_amount=0.00,
+        total_outlays=None,
         total_obligation=0.00,
         total_subsidy_cost=0.00,
         total_obl_bin="<1M",
@@ -826,7 +831,7 @@ def _build_usas_data_for_spark():
         tas_paths=None,
         tas_components=None,
         disaster_emergency_fund_codes=None,
-        covid_spending_by_defc=None,
+        spending_by_defc=None,
         recipient_location_county_fips=None,
         pop_county_fips=None,
         generated_pragmatic_obligation=0.00,
@@ -1445,7 +1450,12 @@ def _build_usas_data_for_spark():
     )
 
     dabs = baker.make("submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2020-05-01")
-    sa = baker.make("submissions.SubmissionAttributes", reporting_period_start="2020-04-02", submission_window=dabs)
+    sa = baker.make(
+        "submissions.SubmissionAttributes",
+        reporting_period_start="2020-04-02",
+        submission_window=dabs,
+        is_final_balances_for_fy=True,
+    )
 
     baker.make(
         "awards.FinancialAccountsByAwards",
@@ -1491,6 +1501,10 @@ def _build_usas_data_for_spark():
         award_id=cont_award.award_id,
         treasury_account=tas,
         disaster_emergency_fund=None,
+        gross_outlay_amount_by_award_cpe=2,
+        transaction_obligated_amount=2,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0,
         submission=sa,
         program_activity=rpa_3,
         _fill_optional=True,
