@@ -444,7 +444,7 @@ def convert_array_cols_to_string(
     is_postgres_array_format=False,
     is_for_csv_export=False,
 ) -> DataFrame:
-    """For each column that is an Array of ANYTHING, transfrom it to a string-ified representation of that Array.
+    """For each column that is an Array of ANYTHING, transform it to a string-ified representation of that Array.
 
     This will:
       1. cast each array element to a STRING representation
@@ -691,7 +691,7 @@ def hadoop_copy_merge(
             logger.debug(f"Including part file: {file_path.getName()}")
             part_files.append(f.getPath())
     if not part_files:
-        logger.warn("Source directory is empty with no part files. Attempting creation of file with CSV header only")
+        logger.warning("Source directory is empty with no part files. Attempting creation of file with CSV header only")
         out_stream = None
         try:
             merged_file_path = f"{parts_dir}.{file_format}"
