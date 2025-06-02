@@ -42,7 +42,6 @@ from usaspending_api.download.lookups import JOB_STATUS_DICT, VALUE_MAPPINGS, FI
 from usaspending_api.download.models.download_job import DownloadJob
 from usaspending_api.common.helpers.s3_helpers import download_s3_object
 
-DOWNLOAD_VISIBILITY_TIMEOUT = 60 * 10
 MAX_VISIBILITY_TIMEOUT = 60 * 60 * settings.DOWNLOAD_DB_TIMEOUT_IN_HOURS
 EXCEL_ROW_LIMIT = 1000000
 WAIT_FOR_PROCESS_SLEEP = 5
@@ -649,7 +648,7 @@ def wait_for_process(process, start_time, download_job):
             )
         else:
             # An error occurred in the process
-            e = Exception("Command failed. Please see the logs for details.")
+            e = Exception(f"Command failed. Please see the logs for details. Exit Code: {process.exitcode}")
 
         raise e
 
@@ -881,7 +880,7 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
                 )
 
             cat_command = subprocess.Popen(["cat", temp_sql_file_path], stdout=subprocess.PIPE)
-            subprocess.check_output(
+            output = subprocess.check_output(
                 ["psql", "-q", "-o", source_path, retrieve_db_string(), "-v", "ON_ERROR_STOP=1"],
                 stdin=cat_command.stdout,
                 stderr=subprocess.STDOUT,
@@ -890,7 +889,7 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
 
             duration = time.perf_counter() - log_time
             write_to_log(
-                message=f"Wrote {os.path.basename(source_path)}, took {duration:.4f} seconds",
+                message=f"Wrote {os.path.basename(source_path)}, took {duration:.4f} seconds; Output: {output.decode()}",
                 download_job=download_job,
             )
         except subprocess.CalledProcessError as e:
