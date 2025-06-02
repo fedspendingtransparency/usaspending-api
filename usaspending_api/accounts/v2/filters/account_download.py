@@ -171,22 +171,16 @@ def get_submission_filter(account_type, filters):
     filter_quarter = int(filters.get("quarter") or -1)
     filter_month = int(filters.get("period") or -1)
 
-    submission_ids = get_submission_ids_for_periods(filter_year, filter_quarter, filter_month)
-    if submission_ids:
-        submission_id_filter = Q(submission_id__in=submission_ids)
-    else:
-        submission_id_filter = Q(submission_id__isnull=True)
-
     if account_type in ["account_balances", "object_class_program_activity"]:
-        submission_filter = submission_id_filter
-
+        submission_ids = get_submission_ids_for_periods(filter_year, filter_quarter, filter_month)
+        submission_filter = Q(submission_id__in=submission_ids) if submission_ids else Q(submission_id__isnull=True)
     else:
         # For File C, we want:
         #   - outlays in the most recent agency submission period matching the filter criteria
         #   - obligations in any period matching the filter criteria or earlier
         # Specific filtering to limit outlays to most recent submission period can be found
         # with the outlay related fields
-        submission_date_filter = Q(
+        submission_filter = Q(
             Q(
                 Q(Q(submission__reporting_fiscal_period__lte=filter_month) & Q(submission__quarter_format_flag=False))
                 | Q(
@@ -196,8 +190,6 @@ def get_submission_filter(account_type, filters):
             )
             & Q(submission__reporting_fiscal_year=filter_year)
         )
-
-        submission_filter = submission_id_filter | submission_date_filter
 
     return submission_filter
 

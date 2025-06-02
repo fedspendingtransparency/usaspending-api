@@ -1,6 +1,6 @@
 import copy
-import logging
 import json
+import logging
 from ast import literal_eval
 from sys import maxsize
 from typing import (
@@ -33,12 +33,14 @@ from usaspending_api.awards.v2.lookups.lookups import (
     loan_type_mapping,
     non_loan_assistance_type_mapping,
     subaward_mapping,
+    SUBAWARD_MAPPING_LOOKUP,
 )
 from usaspending_api.common.api_versioning import API_TRANSFORM_FUNCTIONS, api_transformations
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, SubawardSearch
 from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.common.helpers.api_helper import raise_if_award_types_not_valid_subset, raise_if_sort_key_not_valid
+from usaspending_api.common.helpers.data_constants import state_name_from_code
 from usaspending_api.common.helpers.generic_helper import (
     get_generic_filters_message,
 )
@@ -54,32 +56,31 @@ from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyT
 from usaspending_api.search.filters.time_period.query_types import AwardSearchTimePeriod, SubawardSearchTimePeriod
 from usaspending_api.search.v2.views.enums import SpendingLevel
 from usaspending_api.submissions.models import SubmissionAttributes
-from usaspending_api.common.helpers.data_constants import state_name_from_code
 
 logger = logging.getLogger(__name__)
 
 GLOBAL_MAP = {
-    "award": {
+    "awards": {
         "award_semaphore": "type",
         "internal_id_fields": {"internal_id": "award_id"},
         "elasticsearch_type_code_to_field_map": {
-            **{award_type: CONTRACT_SOURCE_LOOKUP for award_type in contract_type_mapping},
-            **{award_type: IDV_SOURCE_LOOKUP for award_type in idv_type_mapping},
-            **{award_type: LOAN_SOURCE_LOOKUP for award_type in loan_type_mapping},
-            **{award_type: NON_LOAN_ASST_SOURCE_LOOKUP for award_type in non_loan_assistance_type_mapping},
+            **dict.fromkeys(contract_type_mapping, CONTRACT_SOURCE_LOOKUP),
+            **dict.fromkeys(idv_type_mapping, IDV_SOURCE_LOOKUP),
+            **dict.fromkeys(loan_type_mapping, LOAN_SOURCE_LOOKUP),
+            **dict.fromkeys(non_loan_assistance_type_mapping, NON_LOAN_ASST_SOURCE_LOOKUP),
         },
     },
-    "subaward": {
+    "subawards": {
         "minimum_db_fields": {"subaward_number", "piid", "fain", "prime_award_group", "award_id"},
-        "api_to_db_mapping_list": [subaward_mapping],
+        "api_to_db_mapping_list": [SUBAWARD_MAPPING_LOOKUP],
         "award_semaphore": "prime_award_group",
         "award_id_fields": ["award__piid", "award__fain"],
         "internal_id_fields": {"internal_id": "subaward_number", "prime_award_internal_id": "award_id"},
         "generated_award_field": ("prime_award_generated_internal_id", "prime_award_internal_id"),
-        "type_code_to_field_map": {"procurement": subaward_mapping, "grant": subaward_mapping},
+        "type_code_to_field_map": {"procurement": SUBAWARD_MAPPING_LOOKUP, "grant": SUBAWARD_MAPPING_LOOKUP},
         "annotations": {"_prime_award_recipient_id": annotate_prime_award_recipient_id},
         "filter_queryset_func": subaward_filter,
-        "elasticsearch_type_code_to_field_map": subaward_mapping,
+        "elasticsearch_type_code_to_field_map": SUBAWARD_MAPPING_LOOKUP,
     },
 }
 
@@ -97,8 +98,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
         """Return all awards matching the provided filters and limits"""
         self.original_filters = request.data.get("filters")
         json_request, models = self.validate_request_data(request.data)
-        self.is_subaward = json_request["subawards"]
-        self.constants = GLOBAL_MAP["subaward"] if self.is_subaward else GLOBAL_MAP["award"]
+        self.spending_level = SpendingLevel(json_request["spending_level"])
+        self.constants = GLOBAL_MAP[self.spending_level.value]
         filters = json_request.get("filters", {})
         self.filters = filters
         self.fields = json_request["fields"]
@@ -114,15 +115,26 @@ class SpendingByAwardVisualizationViewSet(APIView):
         if self.if_no_intersection():  # Like an exception, but API response is a HTTP 200 with a JSON payload
             return Response(self.populate_response(results=[], has_next=False, models=models))
 
-        raise_if_award_types_not_valid_subset(self.filters["award_type_codes"], self.is_subaward)
-        raise_if_sort_key_not_valid(
-            self.pagination["sort_key"], self.fields, self.filters["award_type_codes"], self.is_subaward
-        )
+        raise_if_award_types_not_valid_subset(self.filters["award_type_codes"], self.spending_level)
+
+        # These are the objects returned rather than a single field
+        if self.pagination["sort_key"] not in [
+            "NAICS",
+            "PSC",
+            "Recipient Location",
+            "Primary Place of Performance",
+            "Assistance Listing",
+            "Sub-Recipient Location",
+            "Sub-Award Primary Place of Performance",
+        ]:
+            raise_if_sort_key_not_valid(
+                self.pagination["sort_key"], self.fields, self.filters["award_type_codes"], self.spending_level
+            )
 
         self.last_record_unique_id = json_request.get("last_record_unique_id")
         self.last_record_sort_value = json_request.get("last_record_sort_value")
 
-        if self.is_subaward:
+        if self.spending_level == SpendingLevel.SUBAWARD:
             return Response(self.construct_es_response_for_subawards(self.query_elasticsearch_subawards()))
         else:
             return Response(self.construct_es_response_for_prime_awards(self.query_elasticsearch_awards()))
@@ -143,7 +155,11 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         subaward_ts = TinyShield(spending_type_models)
         tiny_shield_response = subaward_ts.block(request_data)
-        is_subaward = tiny_shield_response["subawards"] or tiny_shield_response["spending_level"] == "subawards"
+        if tiny_shield_response["subawards"]:
+            request_data["spending_level"] = SpendingLevel.SUBAWARD.value
+        else:
+            # In the case of the user not supplying the spending_level we grab the default defined by TinyShield
+            request_data["spending_level"] = tiny_shield_response["spending_level"]
 
         program_activities_rule = {
             "name": "program_activities",
@@ -160,14 +176,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
         }
         models = [
             {"name": "fields", "key": "fields", "type": "array", "array_type": "text", "text_type": "search", "min": 1},
-            {"name": "subawards", "key": "subawards", "type": "boolean", "default": False},
-            {
-                "name": "object_class",
-                "key": "filter|object_class",
-                "type": "array",
-                "array_type": "text",
-                "text_type": "search",
-            },
             {
                 "name": "program_activity",
                 "key": "filter|program_activity",
@@ -194,10 +202,11 @@ class SpendingByAwardVisualizationViewSet(APIView):
         ]
         models.extend(copy.deepcopy(AWARD_FILTER_NO_RECIPIENT_ID))
         models.extend(copy.deepcopy(PAGINATION))
+        models.extend(copy.deepcopy(spending_type_models))
         for m in models:
             if m["name"] in ("award_type_codes", "fields"):
                 m["optional"] = False
-            elif is_subaward and m["name"] == "time_period":
+            elif request_data["spending_level"] == SpendingLevel.SUBAWARD.value and m["name"] == "time_period":
                 m["object_keys"]["date_type"]["enum_values"] = [
                     "action_date",
                     "last_modified_date",
@@ -246,19 +255,63 @@ class SpendingByAwardVisualizationViewSet(APIView):
         return records
 
     def get_elastic_sort_by_fields(self):
-        if self.pagination["sort_key"] == "Award ID" or self.pagination["sort_key"] == "Sub-Award ID":
-            sort_by_fields = ["display_award_id"]
-        else:
-            if self.is_subaward:
-                sort_by_fields = [subaward_mapping[self.pagination["sort_key"]]]
-            elif set(self.filters["award_type_codes"]) <= set(contract_type_mapping):
-                sort_by_fields = [contracts_mapping[self.pagination["sort_key"]]]
-            elif set(self.filters["award_type_codes"]) <= set(loan_type_mapping):
-                sort_by_fields = [loan_mapping[self.pagination["sort_key"]]]
-            elif set(self.filters["award_type_codes"]) <= set(idv_type_mapping):
-                sort_by_fields = [idv_mapping[self.pagination["sort_key"]]]
-            elif set(self.filters["award_type_codes"]) <= set(non_loan_assistance_type_mapping):
-                sort_by_fields = [non_loan_assist_mapping[self.pagination["sort_key"]]]
+        match self.pagination["sort_key"]:
+            case "Award ID" | "Sub-Award ID":
+                sort_by_fields = ["display_award_id"]
+            case "NAICS":
+                sort_by_fields = (
+                    [contracts_mapping["sub_naics_code"], contracts_mapping["naics_description"]]
+                    if self.spending_level == SpendingLevel.SUBAWARD
+                    else [contracts_mapping["naics_code"], contracts_mapping["naics_description"]]
+                )
+            case "PSC":
+                sort_by_fields = [contracts_mapping["psc_code"], contracts_mapping["psc_description"]]
+            case "Recipient Location":
+                sort_by_fields = [
+                    contracts_mapping["recipient_location_city_name"],
+                    contracts_mapping["recipient_location_state_code"],
+                    contracts_mapping["recipient_location_country_name"],
+                    contracts_mapping["recipient_location_address_line1"],
+                    contracts_mapping["recipient_location_address_line2"],
+                    contracts_mapping["recipient_location_address_line3"],
+                ]
+            case "Primary Place of Performance":
+                sort_by_fields = [
+                    contracts_mapping["pop_city_name"],
+                    contracts_mapping["pop_state_code"],
+                    contracts_mapping["pop_country_name"],
+                ]
+            case "Assistance Listings":
+                sort_by_fields = [contracts_mapping["cfda_number"], contracts_mapping["cfda_program_title"]]
+            case "Assistance Listing":
+                sort_by_fields = [contracts_mapping["cfda_number"], contracts_mapping["sub_cfda_program_titles"]]
+            case "Sub-Recipient Location":
+                sort_by_fields = [
+                    contracts_mapping["sub_recipient_location_city_name"],
+                    contracts_mapping["sub_recipient_location_state_code"],
+                    contracts_mapping["sub_recipient_location_country_name"],
+                    contracts_mapping["sub_recipient_location_address_line1"],
+                ]
+            case "Sub-Award Primary Place of Performance":
+                sort_by_fields = [
+                    contracts_mapping["sub_pop_city_name"],
+                    contracts_mapping["sub_pop_state_code"],
+                    contracts_mapping["sub_pop_country_name"],
+                ]
+            # TODO: Add additional field for Award Descriptions in case they exceed the keyword limit like subawards
+            case "Sub-Award Description":
+                sort_by_fields = [subaward_mapping["subaward_description_sorted"]]
+            case _:
+                if self.spending_level == SpendingLevel.SUBAWARD:
+                    sort_by_fields = [subaward_mapping[self.pagination["sort_key"]]]
+                elif set(self.filters["award_type_codes"]) <= set(contract_type_mapping):
+                    sort_by_fields = [contracts_mapping[self.pagination["sort_key"]]]
+                elif set(self.filters["award_type_codes"]) <= set(loan_type_mapping):
+                    sort_by_fields = [loan_mapping[self.pagination["sort_key"]]]
+                elif set(self.filters["award_type_codes"]) <= set(idv_type_mapping):
+                    sort_by_fields = [idv_mapping[self.pagination["sort_key"]]]
+                elif set(self.filters["award_type_codes"]) <= set(non_loan_assistance_type_mapping):
+                    sort_by_fields = [non_loan_assist_mapping[self.pagination["sort_key"]]]
 
         sort_by_fields.append("award_id")
 
@@ -383,6 +436,13 @@ class SpendingByAwardVisualizationViewSet(APIView):
                     {"filter": {"terms": {"covid_spending_by_defc.defc": self.filters.get("def_codes", [])}}}
                 )
             sorts.extend([{field: self.pagination["sort_order"]} for field in sort_field])
+        elif "Recipient Location" in self.pagination["sort_key"]:
+            sorts = []
+            for field in sort_field:
+                if "recipient_location_address" in field:
+                    sorts.append({field: {"order": self.pagination["sort_order"], "unmapped_type": "keyword"}})
+                else:
+                    sorts.append({field: self.pagination["sort_order"]})
         else:
             sorts = [{field: self.pagination["sort_order"]} for field in sort_field]
 
@@ -611,6 +671,15 @@ class SpendingByAwardVisualizationViewSet(APIView):
             }
 
         if "Sub-Recipient Location" in self.fields:
+            if hit.get("sub_recipient_location_zip"):
+                match len(hit.get("sub_recipient_location_zip")):
+                    case 9:
+                        zip4 = hit.get("sub_recipient_location_zip")[5:]
+                    case _:
+                        zip4 = None
+            else:
+                zip4 = None
+
             row["Sub-Recipient Location"] = {
                 "location_country_code": hit.get("sub_recipient_location_country_code"),
                 "country_name": hit.get("sub_recipient_location_country_name"),
@@ -621,12 +690,27 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 "county_name": hit.get("sub_recipient_location_county_name"),
                 "address_line1": hit.get("sub_recipient_location_address_line1"),
                 "congressional_code": hit.get("sub_recipient_location_congressional_code"),
-                "zip4": hit.get("sub_recipient_location_zip")[5:],
+                "zip4": zip4,
                 "zip5": hit.get("sub_recipient_location_zip5"),
                 "foreign_postal_code": hit.get("sub_recipient_location_foreign_posta"),
             }
 
         if "Sub-Award Primary Place of Performance" in self.fields:
+            if hit.get("sub_pop_zip"):
+                match len(hit.get("sub_pop_zip")):
+                    case 9:
+                        zip4 = hit.get("sub_pop_zip")[5:]
+                        zip5 = hit.get("sub_pop_zip")[0:5]
+                    case 5:
+                        zip4 = None
+                        zip5 = hit.get("sub_pop_zip")
+                    case _:
+                        zip4 = None
+                        zip5 = None
+            else:
+                zip4 = None
+                zip5 = None
+
             row["Sub-Award Primary Place of Performance"] = {
                 "location_country_code": hit.get("sub_pop_country_code"),
                 "country_name": hit.get("sub_pop_country_name"),
@@ -636,14 +720,16 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 "county_code": hit.get("sub_pop_county_code"),
                 "county_name": hit.get("sub_pop_county_name"),
                 "congressional_code": hit.get("sub_pop_congressional_code"),
-                "zip4": hit.get("sub_pop_zip")[5:],
-                "zip5": hit.get("sub_pop_zip")[0:5],
+                "zip4": zip4,
+                "zip5": zip5,
             }
 
-        if "sub_award_recipient_id" in self.fields:
-            row["sub_award_recipient_id"] = (
-                hit.get("subaward_recipient_hash") + "-" + hit.get("subaward_recipient_level")
-            )
+        if (
+            "sub_award_recipient_id" in self.fields
+            and hit.get("subaward_recipient_hash") is not None
+            and hit.get("subaward_recipient_level") is not None
+        ):
+            row["sub_award_recipient_id"] = f'{hit["subaward_recipient_hash"]}-{hit["subaward_recipient_level"]}'
 
         row["prime_award_generated_internal_id"] = hit["unique_award_key"]
 
@@ -667,6 +753,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
             last_record_sort_value = response[len(response) - offset].meta.sort[0]
 
         return {
+            "spending_level": self.spending_level.value,
             "limit": self.pagination["limit"],
             "results": results[: self.pagination["limit"]],
             "page_metadata": {

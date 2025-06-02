@@ -37,20 +37,22 @@ def transaction_data():
         recipient_location_county_code="001",
         recipient_location_county_name="testcountyname",
         recipient_location_congressional_code="congressionalcode",
-        recipient_location_city_name="cityname",
+        recipient_location_city_name="ARLINGTON",
         pop_country_code="popcountrycode",
         pop_country_name="UNITED STATES",
         pop_state_code="TX",
-        pop_city_name="popcityname",
+        pop_city_name="ARLINGTON",
         pop_county_code="popcountycode",
         pop_county_name="popcountyname",
         pop_congressional_code="popcongressionalcode",
         place_of_perform_zip_last4="popziplast4",
         pop_zip5="popzip5",
-        naics_code="naicscode",
-        naics_description="naicsdescription",
-        product_or_service_code="psccode",
-        product_or_service_description="pscdescription",
+        naics_code="naics code 1",
+        naics_description="naics description 1",
+        product_or_service_code="psc code 1",
+        product_or_service_description="psc description 1",
+        cfda_number="1234",
+        cfda_title="cfda title 1",
         program_activities=[{"code": "0123", "name": "PROGRAM_ACTIVITY_123"}],
     )
 
@@ -69,10 +71,20 @@ def transaction_data():
         recipient_uei="testuei",
         parent_uei="test_parent_uei",
         generated_unique_award_id="IND12PB00323-generated",
-        cfda_number="59",
-        cfda_title="cfdatitle",
         awarding_toptier_agency_name="Award agency name",
         funding_toptier_agency_name="Funding agency name",
+        recipient_location_state_code="TX",
+        recipient_location_country_name="UNITED STATES",
+        recipient_location_city_name="AUSTIN",
+        pop_country_name="UNITED STATES",
+        pop_state_code="TX",
+        pop_city_name="AUSTIN",
+        naics_code="naics code 1",
+        naics_description="naics description 2",
+        product_or_service_code="psc code 1",
+        product_or_service_description="psc description 2",
+        cfda_number="1234",
+        cfda_title="cfda title 2",
     )
 
     baker.make(
@@ -86,7 +98,65 @@ def transaction_data():
         type="A",
         generated_unique_award_id="ASST_NON_WY99M000020-18Z_8630",
         transaction_description="description for award 3",
+        recipient_location_state_code="TX",
+        recipient_location_country_name="UNITED STATES",
+        pop_country_name="UNITED STATES",
+        pop_state_code="TX",
+        naics_code="naics code 2",
+        naics_description="naics description 1",
+        product_or_service_code="psc code 2",
+        product_or_service_description="psc description 1",
+        cfda_number="9876",
+        cfda_title="cfda title 1",
     )
+
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=4,
+        award_id=4,
+        piid="IND12PB00001",
+        action_date="2010-10-01",
+        is_fpds=True,
+        action_type="08",
+        type="08",
+        generated_unique_award_id="ASST_NON_WY99M000020-18Z_8639",
+        transaction_description="description for award 4",
+        recipient_location_state_code="AL",
+        recipient_location_country_name="UNITED STATES",
+        pop_country_name="UNITED STATES",
+        pop_state_code="AL",
+    )
+
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=5,
+        award_id=5,
+        piid="IND12PB00001",
+        action_date="2010-10-01",
+        is_fpds=True,
+        action_type="08",
+        type="08",
+        generated_unique_award_id="ASST_NON_WY99M000020-18Z_8637",
+        transaction_description="description for award 4",
+        recipient_location_country_name="UNITED STATES",
+        pop_country_name="UNITED STATES",
+    )
+
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=6,
+        award_id=6,
+        piid="IND12PB00001",
+        action_date="2010-10-01",
+        is_fpds=True,
+        action_type="08",
+        type="08",
+        generated_unique_award_id="ASST_NON_WY99M000020-18Z_8637",
+        transaction_description="description for award 4",
+        recipient_location_country_name="FRANCE",
+        pop_country_name="FRANCE",
+    )
+
     baker.make(
         "search.AwardSearch",
         award_id=2,
@@ -448,7 +518,7 @@ def test_additional_fields(client, monkeypatch, elasticsearch_transaction_index,
         "country_name": "UNITED STATES",
         "state_code": "TX",
         "state_name": "Texas",
-        "city_name": "cityname",
+        "city_name": "ARLINGTON",
         "county_code": "001",
         "county_name": "testcountyname",
         "address_line1": "test address line",
@@ -465,7 +535,7 @@ def test_additional_fields(client, monkeypatch, elasticsearch_transaction_index,
         "country_name": "UNITED STATES",
         "state_code": "TX",
         "state_name": "Texas",
-        "city_name": "popcityname",
+        "city_name": "ARLINGTON",
         "county_code": "popcountycode",
         "county_name": "popcountyname",
         "congressional_code": "popcongressionalcode",
@@ -473,9 +543,9 @@ def test_additional_fields(client, monkeypatch, elasticsearch_transaction_index,
         "zip5": "popzip5",
     }
 
-    assert result["NAICS"] == {"code": "naicscode", "description": "naicsdescription"}
+    assert result["NAICS"] == {"code": "naics code 1", "description": "naics description 1"}
 
-    assert result["PSC"] == {"code": "psccode", "description": "pscdescription"}
+    assert result["PSC"] == {"code": "psc code 1", "description": "psc description 1"}
 
 
 def test_assistance_listing(client, monkeypatch, elasticsearch_transaction_index, transaction_data):
@@ -497,7 +567,7 @@ def test_assistance_listing(client, monkeypatch, elasticsearch_transaction_index
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
     result = resp.json().get("results")[0]
-    assert result["Assistance Listing"] == {"cfda_number": "59", "cfda_title": "cfdatitle"}
+    assert result["Assistance Listing"] == {"cfda_number": "1234", "cfda_title": "cfda title 2"}
 
 
 def test_sorting_on_additional_fields(client, monkeypatch, elasticsearch_transaction_index, transaction_data):
@@ -525,7 +595,7 @@ def test_sorting_on_additional_fields(client, monkeypatch, elasticsearch_transac
         "filters": {"award_type_codes": ["A", "10"]},
         "fields": fields,
         "page": 1,
-        "limit": 5,
+        "limit": 3,
         "sort": "Action Type",
     }
 
@@ -555,3 +625,242 @@ def test_slugify_agencies(client, monkeypatch, elasticsearch_transaction_index, 
     assert len(resp.json().get("results")) == 1
     assert resp.json().get("results")[0]["awarding_agency_slug"] == "award-agency-name"
     assert resp.json().get("results")[0]["funding_agency_slug"] == "funding-agency-name"
+
+
+def test_recipient_location_sorting(client, monkeypatch, elasticsearch_transaction_index, transaction_data):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
+    fields = ["Award ID", "Recipient Location"]
+
+    request = {
+        "filters": {"award_type_codes": ["10", "A", "08"]},
+        "fields": fields,
+        "page": 1,
+        "limit": 6,
+        "sort": "Recipient Location",
+        "order": "asc",
+    }
+
+    resp = client.post(ENDPOINT, content_type="application/json", data=json.dumps(request))
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    assert len(results) == 6
+    assert results[0]["Recipient Location"]["city_name"] == "ARLINGTON"
+    assert results[1]["Recipient Location"]["city_name"] == "AUSTIN"
+    assert results[2]["Recipient Location"]["state_code"] == "AL"
+    assert results[3]["Recipient Location"]["state_code"] == "TX"
+    assert results[4]["Recipient Location"]["country_name"] == "FRANCE"
+    assert results[5]["Recipient Location"]["country_name"] == "UNITED STATES"
+
+    request = {
+        "filters": {"award_type_codes": ["10", "A", "08"]},
+        "fields": fields,
+        "page": 1,
+        "limit": 6,
+        "sort": "Recipient Location",
+        "order": "desc",
+    }
+
+    resp = client.post(ENDPOINT, content_type="application/json", data=json.dumps(request))
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    assert len(results) == 6
+    assert results[0]["Recipient Location"]["city_name"] == "AUSTIN"
+    assert results[1]["Recipient Location"]["city_name"] == "ARLINGTON"
+    assert results[2]["Recipient Location"]["state_code"] == "TX"
+    assert results[3]["Recipient Location"]["state_code"] == "AL"
+    assert results[4]["Recipient Location"]["country_name"] == "UNITED STATES"
+    assert results[5]["Recipient Location"]["country_name"] == "FRANCE"
+
+
+def test_place_of_performance_sorting(client, monkeypatch, elasticsearch_transaction_index, transaction_data):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
+    fields = ["Award ID", "Primary Place of Performance"]
+
+    request = {
+        "filters": {"award_type_codes": ["10", "A", "08"]},
+        "fields": fields,
+        "page": 1,
+        "limit": 6,
+        "sort": "Primary Place of Performance",
+        "order": "asc",
+    }
+
+    resp = client.post(ENDPOINT, content_type="application/json", data=json.dumps(request))
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    assert len(results) == 6
+    assert results[0]["Primary Place of Performance"]["city_name"] == "ARLINGTON"
+    assert results[1]["Primary Place of Performance"]["city_name"] == "AUSTIN"
+    assert results[2]["Primary Place of Performance"]["state_code"] == "AL"
+    assert results[3]["Primary Place of Performance"]["state_code"] == "TX"
+    assert results[4]["Primary Place of Performance"]["country_name"] == "FRANCE"
+    assert results[5]["Primary Place of Performance"]["country_name"] == "UNITED STATES"
+
+    request = {
+        "filters": {"award_type_codes": ["10", "A", "08"]},
+        "fields": fields,
+        "page": 1,
+        "limit": 6,
+        "sort": "Primary Place of Performance",
+        "order": "desc",
+    }
+
+    resp = client.post(ENDPOINT, content_type="application/json", data=json.dumps(request))
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    assert results[0]["Primary Place of Performance"]["city_name"] == "AUSTIN"
+    assert results[1]["Primary Place of Performance"]["city_name"] == "ARLINGTON"
+    assert results[2]["Primary Place of Performance"]["state_code"] == "TX"
+    assert results[3]["Primary Place of Performance"]["state_code"] == "AL"
+    assert results[4]["Primary Place of Performance"]["country_name"] == "UNITED STATES"
+    assert results[5]["Primary Place of Performance"]["country_name"] == "FRANCE"
+
+
+def test_naics_sorting(client, monkeypatch, elasticsearch_transaction_index, transaction_data):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
+    fields = ["Award ID", "NAICS"]
+
+    request = {
+        "filters": {"award_type_codes": ["10", "A", "08"]},
+        "fields": fields,
+        "page": 1,
+        "limit": 6,
+        "sort": "NAICS",
+        "order": "asc",
+    }
+
+    resp = client.post(ENDPOINT, content_type="application/json", data=json.dumps(request))
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    assert len(results) == 6
+    assert results[0]["NAICS"]["code"] == "naics code 1"
+    assert results[0]["NAICS"]["description"] == "naics description 1"
+    assert results[1]["NAICS"]["code"] == "naics code 1"
+    assert results[1]["NAICS"]["description"] == "naics description 2"
+    assert results[2]["NAICS"]["code"] == "naics code 2"
+    assert results[2]["NAICS"]["description"] == "naics description 1"
+
+    request = {
+        "filters": {"award_type_codes": ["10", "A", "08"]},
+        "fields": fields,
+        "page": 1,
+        "limit": 6,
+        "sort": "NAICS",
+        "order": "desc",
+    }
+
+    resp = client.post(ENDPOINT, content_type="application/json", data=json.dumps(request))
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    assert len(results) == 6
+    assert results[0]["NAICS"]["code"] == "naics code 2"
+    assert results[0]["NAICS"]["description"] == "naics description 1"
+    assert results[1]["NAICS"]["code"] == "naics code 1"
+    assert results[1]["NAICS"]["description"] == "naics description 2"
+    assert results[2]["NAICS"]["code"] == "naics code 1"
+    assert results[2]["NAICS"]["description"] == "naics description 1"
+
+
+def test_psc_sorting(client, monkeypatch, elasticsearch_transaction_index, transaction_data):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
+    fields = ["Award ID", "PSC"]
+
+    request = {
+        "filters": {"award_type_codes": ["10", "A", "08"]},
+        "fields": fields,
+        "page": 1,
+        "limit": 6,
+        "sort": "PSC",
+        "order": "asc",
+    }
+
+    resp = client.post(ENDPOINT, content_type="application/json", data=json.dumps(request))
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    assert len(results) == 6
+    assert results[0]["PSC"]["code"] == "psc code 1"
+    assert results[0]["PSC"]["description"] == "psc description 1"
+    assert results[1]["PSC"]["code"] == "psc code 1"
+    assert results[1]["PSC"]["description"] == "psc description 2"
+    assert results[2]["PSC"]["code"] == "psc code 2"
+    assert results[2]["PSC"]["description"] == "psc description 1"
+
+    request = {
+        "filters": {"award_type_codes": ["10", "A", "08"]},
+        "fields": fields,
+        "page": 1,
+        "limit": 6,
+        "sort": "PSC",
+        "order": "desc",
+    }
+
+    resp = client.post(ENDPOINT, content_type="application/json", data=json.dumps(request))
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    assert len(results) == 6
+    assert results[0]["PSC"]["code"] == "psc code 2"
+    assert results[0]["PSC"]["description"] == "psc description 1"
+    assert results[1]["PSC"]["code"] == "psc code 1"
+    assert results[1]["PSC"]["description"] == "psc description 2"
+    assert results[2]["PSC"]["code"] == "psc code 1"
+    assert results[2]["PSC"]["description"] == "psc description 1"
+
+
+def test_assistance_listing_sorting(client, monkeypatch, elasticsearch_transaction_index, transaction_data):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+
+    fields = ["Award ID", "Assistance Listing"]
+
+    request = {
+        "filters": {"award_type_codes": ["10", "A", "08"]},
+        "fields": fields,
+        "page": 1,
+        "limit": 6,
+        "sort": "Assistance Listing",
+        "order": "asc",
+    }
+
+    resp = client.post(ENDPOINT, content_type="application/json", data=json.dumps(request))
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    assert len(results) == 6
+    assert results[0]["Assistance Listing"]["cfda_number"] == "1234"
+    assert results[0]["Assistance Listing"]["cfda_title"] == "cfda title 1"
+    assert results[1]["Assistance Listing"]["cfda_number"] == "1234"
+    assert results[1]["Assistance Listing"]["cfda_title"] == "cfda title 2"
+    assert results[2]["Assistance Listing"]["cfda_number"] == "9876"
+    assert results[2]["Assistance Listing"]["cfda_title"] == "cfda title 1"
+
+    request = {
+        "filters": {"award_type_codes": ["10", "A", "08"]},
+        "fields": fields,
+        "page": 1,
+        "limit": 6,
+        "sort": "Assistance Listing",
+        "order": "desc",
+    }
+
+    resp = client.post(ENDPOINT, content_type="application/json", data=json.dumps(request))
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    assert len(results) == 6
+    assert results[0]["Assistance Listing"]["cfda_number"] == "9876"
+    assert results[0]["Assistance Listing"]["cfda_title"] == "cfda title 1"
+    assert results[1]["Assistance Listing"]["cfda_number"] == "1234"
+    assert results[1]["Assistance Listing"]["cfda_title"] == "cfda title 2"
+    assert results[2]["Assistance Listing"]["cfda_number"] == "1234"
+    assert results[2]["Assistance Listing"]["cfda_title"] == "cfda title 1"
