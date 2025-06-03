@@ -8,7 +8,7 @@ from boto3.s3.transfer import TransferConfig, S3Transfer
 from botocore.exceptions import ClientError
 from django.conf import settings
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 from botocore.client import BaseClient
 
 from usaspending_api.config import CONFIG
@@ -77,12 +77,12 @@ def upload_download_file_to_s3(file_path, sub_dir=None):
 
 
 def multipart_upload(bucketname, regionname, source_path, keyname, sub_dir=None):
-    s3client = boto3.client("s3", region_name=regionname)
+    s3_client = _get_boto3("client", "s3", region_name=regionname)
     source_size = Path(source_path).stat().st_size
     # Sets the chunksize at minimum ~5MB to sqrt(5MB) * sqrt(source size)
     bytes_per_chunk = max(int(math.sqrt(5242880) * math.sqrt(source_size)), 5242880)
     config = TransferConfig(multipart_chunksize=bytes_per_chunk)
-    transfer = S3Transfer(s3client, config)
+    transfer = S3Transfer(s3_client, config)
     file_name = Path(keyname).name
     if sub_dir is not None:
         file_name = f"{sub_dir}/{file_name}"
@@ -132,3 +132,36 @@ def delete_s3_object(bucket_name: str, key: str, region_name: str = settings.USA
     """
     s3 = _get_boto3("client", "s3", region_name=region_name)
     s3.delete_object(Bucket=bucket_name, Key=key)
+
+
+def delete_s3_objects(
+    bucket_name: str,
+    *,
+    key_list: Optional[List[str]] = None,
+    key_prefix: Optional[str] = None,
+    region_name: Optional[str] = settings.USASPENDING_AWS_REGION,
+) -> int:
+    """Deletes all objects based on a list of keys
+    Args:
+        bucket_name: The name of the bucket where the objects are located
+        key_list: A list of keys representing objects in the bucket to delete
+        key_prefix: A prefix in the bucket used to generate a list of objects to delete
+        region_name: AWS region to use; defaults to the settings provided region
+
+    Returns:
+        Number of objects delete
+    """
+    object_list = []
+
+    if key_prefix:
+        bucket = get_s3_bucket(bucket_name, region_name)
+        objects = bucket.objects.filter(Prefix=key_prefix)
+        object_list.extend([{"Key": obj.key} for obj in objects])
+
+    if key_list:
+        object_list.extend([{"Key": key} for key in key_list])
+
+    s3_client = _get_boto3("client", "s3", region_name=region_name)
+    resp = s3_client.delete_objects(Bucket=bucket_name, Delete={"Objects": object_list})
+
+    return len(resp.get("Deleted", []))

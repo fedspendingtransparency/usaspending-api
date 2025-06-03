@@ -236,7 +236,8 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
                 start_uploading = time.perf_counter()
                 multipart_upload(bucket, region, zip_file_path, os.path.basename(zip_file_path))
                 write_to_log(
-                    message=f"Uploading took {time.perf_counter() - start_uploading:.2f}s", download_job=download_job
+                    message=f"Uploading took {time.perf_counter() - start_uploading:.2f}s",
+                    download_job=download_job,
                 )
             except Exception as e:
                 exc_msg = "An exception was raised while attempting to upload the file"
