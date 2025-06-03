@@ -103,7 +103,11 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 "name": "spending_level",
                 "key": "spending_level",
                 "type": "enum",
-                "enum_values": [level.value for level in SpendingLevel],
+                "enum_values": [
+                    SpendingLevel.AWARD.value,
+                    SpendingLevel.SUBAWARD.value,
+                    SpendingLevel.TRANSACTION.value,
+                ],
                 "optional": True,
                 "default": "transactions",
             },
@@ -144,7 +148,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
     def awards_group_by_time_period_agg(self) -> A:
         if self.group == "fiscal_year":
-            return A("terms", field="fiscal_year")
+            return A("terms", field="fiscal_year", size="100", order={"_key": "asc"})
         else:
             return A(
                 "date_histogram",

@@ -27,7 +27,6 @@ from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.helpers.spark_helpers import (
     get_active_spark_session,
     configure_spark_session,
-    get_jvm_logger,
 )
 from usaspending_api.config import CONFIG
 from usaspending_api.transactions.delta_models.transaction_fabs import (
@@ -41,6 +40,8 @@ from usaspending_api.transactions.delta_models.transaction_fpds import (
     DAP_TO_NORMALIZED_COLUMN_INFO,
 )
 from usaspending_api.transactions.delta_models.transaction_normalized import TRANSACTION_NORMALIZED_COLUMNS
+
+logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
@@ -61,7 +62,6 @@ class Command(BaseCommand):
     last_etl_date: str
     spark_s3_bucket: str
     no_initial_copy: bool
-    logger: logging.Logger
     spark: SparkSession
     # See comments in delete_records_sql, transaction_id_lookup ETL level, for more info about logic in the
     # query below.
@@ -131,7 +131,7 @@ class Command(BaseCommand):
             )
 
             if self.etl_level == "initial_run":
-                self.logger.info("Running initial setup")
+                logger.info("Running initial setup")
                 self.initial_run(next_last_load)
                 return
 
@@ -142,14 +142,14 @@ class Command(BaseCommand):
                 raise Exception(f"Table: int.{self.etl_level} does not exist.")
 
             if self.etl_level == "award_id_lookup":
-                self.logger.info(f"Running pre-delete SQL for '{self.etl_level}' ETL")
+                logger.info(f"Running pre-delete SQL for '{self.etl_level}' ETL")
                 possibly_modified_award_ids = self.award_id_lookup_pre_delete()
 
-            self.logger.info(f"Running delete SQL for '{self.etl_level}' ETL")
+            logger.info(f"Running delete SQL for '{self.etl_level}' ETL")
             self.spark.sql(self.delete_records_sql())
 
             if self.etl_level == "award_id_lookup":
-                self.logger.info(f"Running post-delete SQL for '{self.etl_level}' ETL")
+                logger.info(f"Running post-delete SQL for '{self.etl_level}' ETL")
                 self.award_id_lookup_post_delete(possibly_modified_award_ids)
 
             last_etl_date = get_last_load_date(self.etl_level)
@@ -159,7 +159,7 @@ class Command(BaseCommand):
                 last_etl_date = datetime.utcfromtimestamp(0)
             self.last_etl_date = str(last_etl_date)
 
-            self.logger.info(f"Running UPSERT SQL for '{self.etl_level}' ETL")
+            logger.info(f"Running UPSERT SQL for '{self.etl_level}' ETL")
             if self.etl_level == "transaction_id_lookup":
                 self.update_transaction_lookup_ids()
             elif self.etl_level == "award_id_lookup":
@@ -195,9 +195,6 @@ class Command(BaseCommand):
         if not self.spark:
             spark_created_by_command = True
             self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)  # type: SparkSession
-
-        # Setup Logger
-        self.logger = get_jvm_logger(self.spark, __name__)
 
         # Create UDFs for Business Categories
         self.spark.udf.register(
@@ -863,13 +860,13 @@ class Command(BaseCommand):
         return sql
 
     def update_transaction_lookup_ids(self):
-        self.logger.info("Getting the next transaction_id from transaction_id_seq")
+        logger.info("Getting the next transaction_id from transaction_id_seq")
         with connection.cursor() as cursor:
             cursor.execute("SELECT nextval('transaction_id_seq')")
             # Since all calls to setval() set the is_called flag to false, nextval() returns the actual maximum id
             previous_max_id = cursor.fetchone()[0]
 
-        self.logger.info("Creating new 'transaction_id_lookup' records for new transactions")
+        logger.info("Creating new 'transaction_id_lookup' records for new transactions")
         self.spark.sql(
             f"""
             WITH
@@ -927,7 +924,7 @@ class Command(BaseCommand):
         """
         )
 
-        self.logger.info("Updating transaction_id_seq to the new maximum id value seen so far")
+        logger.info("Updating transaction_id_seq to the new maximum id value seen so far")
         poss_max_id = self.spark.sql("SELECT MAX(transaction_id) AS max_id FROM int.transaction_id_lookup").collect()[
             0
         ]["max_id"]
@@ -949,13 +946,13 @@ class Command(BaseCommand):
             cursor.execute(f"SELECT setval('transaction_id_seq', {max(poss_max_id, previous_max_id)}, false)")
 
     def update_award_lookup_ids(self):
-        self.logger.info("Getting the next award_id from award_id_seq")
+        logger.info("Getting the next award_id from award_id_seq")
         with connection.cursor() as cursor:
             cursor.execute("SELECT nextval('award_id_seq')")
             # Since all calls to setval() set the is_called flag to false, nextval() returns the actual maximum id
             previous_max_id = cursor.fetchone()[0]
 
-        self.logger.info("Creating new 'award_id_lookup' records for new awards")
+        logger.info("Creating new 'award_id_lookup' records for new awards")
         self.spark.sql(
             f"""
             WITH
@@ -1037,7 +1034,7 @@ class Command(BaseCommand):
         """
         )
 
-        self.logger.info("Updating award_id_seq to the new maximum id value seen so far")
+        logger.info("Updating award_id_seq to the new maximum id value seen so far")
         poss_max_id = self.spark.sql("SELECT MAX(award_id) AS max_id FROM int.award_id_lookup").collect()[0]["max_id"]
         if poss_max_id is None:
             # Since initial_run will always start the id sequence from at least 1, and we take the max of
@@ -1111,10 +1108,10 @@ class Command(BaseCommand):
         destination_table = "transaction_id_lookup"
         set_last_load_date = True
 
-        self.logger.info(f"Creating database {destination_database}, if not already existing.")
+        logger.info(f"Creating database {destination_database}, if not already existing.")
         self.spark.sql(f"CREATE DATABASE IF NOT EXISTS {destination_database}")
 
-        self.logger.info(f"Creating {destination_table} table")
+        logger.info(f"Creating {destination_table} table")
         self.spark.sql(
             f"""
                 CREATE OR REPLACE TABLE {destination_database}.{destination_table} (
@@ -1149,7 +1146,7 @@ class Command(BaseCommand):
                     re.MULTILINE,
                 ):
                     # In this case, we just don't populate transaction_id_lookup
-                    self.logger.warn(
+                    logger.warn(
                         "Skipping population of transaction_id_lookup table; no raw.transaction_normalized table."
                     )
                     raw_transaction_normalized_exists = False
@@ -1177,7 +1174,7 @@ class Command(BaseCommand):
                         re.MULTILINE,
                     ):
                         # In this case, we just skip extending the orphaned transactions with this table
-                        self.logger.warn(
+                        logger.warn(
                             "Skipping extension of orphaned_transaction_info table using raw.transaction_fabs table."
                         )
 
@@ -1205,7 +1202,7 @@ class Command(BaseCommand):
                         re.MULTILINE,
                     ):
                         # In this case, we just skip extending the orphaned transactions with this table
-                        self.logger.warn(
+                        logger.warn(
                             "Skipping extension of orphaned_transaction_info table using raw.transaction_fpds table."
                         )
 
@@ -1237,7 +1234,7 @@ class Command(BaseCommand):
                         # raw.transaction_fpds exists, but not raw.transaction_fabs
                         where_str = "".join(("WHERE ", fpds_transaction_id_where, " AND ", fpds_is_fpds_where))
 
-                    self.logger.info(
+                    logger.info(
                         "Finding additional orphaned transactions in raw.transaction_normalized (those with missing "
                         "records in raw.transaction_fabs or raw.transaction_fpds)"
                     )
@@ -1253,13 +1250,13 @@ class Command(BaseCommand):
                         """
                     )
                 else:
-                    self.logger.warn(
+                    logger.warn(
                         "No raw.transaction_fabs or raw.transaction_fpds tables, so not finding additional orphaned "
                         "transactions in raw.transaction_normalized"
                     )
 
                 # Insert existing non-orphaned transactions into the lookup table
-                self.logger.info("Populating transaction_id_lookup table")
+                logger.info("Populating transaction_id_lookup table")
 
                 # Note that the transaction loader code will convert string fields to upper case, so we have to match
                 # on the upper-cased versions of the strings.
@@ -1288,7 +1285,7 @@ class Command(BaseCommand):
                     """
                 )
 
-                self.logger.info("Updating transaction_id_seq to the max transaction_id value")
+                logger.info("Updating transaction_id_seq to the max transaction_id value")
                 # Make sure to get the maximum transaction id from the raw table in case there are records in
                 # raw.transaction_normalized that don't correspond to a record in either of the source tables.
                 # This way, new transaction_ids won't repeat the ids of any of those "orphaned" transaction records.
@@ -1316,7 +1313,7 @@ class Command(BaseCommand):
             # Need a table to keep track of awards in which some, but not all, transactions are deleted.
             destination_table = "award_ids_delete_modified"
 
-            self.logger.info(f"Creating {destination_table} table")
+            logger.info(f"Creating {destination_table} table")
             self.spark.sql(
                 f"""
                     CREATE OR REPLACE TABLE {destination_database}.{destination_table} (
@@ -1336,7 +1333,7 @@ class Command(BaseCommand):
             if raw_transaction_normalized_exists:
                 # Before creating table or running INSERT, make sure unique_award_key has no NULLs
                 # (nothing needed to check before transaction_id_lookup table creation)
-                self.logger.info("Checking for NULLs in unique_award_key")
+                logger.info("Checking for NULLs in unique_award_key")
                 num_nulls = self.spark.sql(
                     "SELECT COUNT(*) AS count FROM raw.transaction_normalized WHERE unique_award_key IS NULL"
                 ).collect()[0]["count"]
@@ -1347,7 +1344,7 @@ class Command(BaseCommand):
                         "raw.transaction_normalized!"
                     )
 
-            self.logger.info(f"Creating {destination_table} table")
+            logger.info(f"Creating {destination_table} table")
             self.spark.sql(
                 f"""
                     CREATE OR REPLACE TABLE {destination_database}.{destination_table} (
@@ -1367,13 +1364,13 @@ class Command(BaseCommand):
 
             if not raw_transaction_normalized_exists:
                 # In this case, we just don't populate award_id_lookup
-                self.logger.warn("Skipping population of award_id_lookup table; no raw.transaction_normalized table.")
+                logger.warn("Skipping population of award_id_lookup table; no raw.transaction_normalized table.")
 
                 # Without a raw.transaction_normalized table, can't get a maximum award_id from it, either.
                 max_id = None
             else:
                 # Insert existing non-orphaned transactions and their corresponding award_ids into the lookup table
-                self.logger.info("Populating award_id_lookup table")
+                logger.info("Populating award_id_lookup table")
 
                 # Once again we have to match on the upper-cased versions of the strings from published_fabs
                 # and detached_award_procurement.
@@ -1433,7 +1430,7 @@ class Command(BaseCommand):
                 # Any award that has a transaction inserted into award_id_lookup table that also has an orphaned
                 # transaction is an award that will have to be updated the first time this command is called with the
                 # awards ETL level, so add those awards to the award_ids_delete_modified table.
-                self.logger.info("Updating award_ids_delete_modified table")
+                logger.info("Updating award_ids_delete_modified table")
                 self.spark.sql(
                     """
                         INSERT INTO int.award_ids_delete_modified
@@ -1448,7 +1445,7 @@ class Command(BaseCommand):
                 # Awards that have orphaned transactions, but that *aren't* in the award_ids_delete_modified table are
                 # orphaned awards (those with no remaining transactions), so put those into the orphaned_award_info
                 # table.
-                self.logger.info("Populating orphaned_award_info table")
+                logger.info("Populating orphaned_award_info table")
                 self.spark.sql(
                     """
                         INSERT INTO temp.orphaned_award_info
@@ -1460,7 +1457,7 @@ class Command(BaseCommand):
                     """
                 )
 
-                self.logger.info("Updating award_id_seq to the max award_id value")
+                logger.info("Updating award_id_seq to the max award_id value")
                 # As for transaction_id_seq, make sure to get the maximum award id from the raw table in case there are
                 # records in raw.awards that don't correspond to any records in either of the source tables.
                 # This way, new award_ids won't repeat the ids of any of those "orphaned" award records.
@@ -1517,7 +1514,7 @@ class Command(BaseCommand):
                             re.MULTILINE,
                         ):
                             # In this case, we just don't copy anything over
-                            self.logger.warn(
+                            logger.warn(
                                 f"Skipping copy of {destination_table} table from 'raw' to 'int' database; "
                                 f"no raw.{destination_table} table."
                             )
@@ -1557,7 +1554,7 @@ class Command(BaseCommand):
 
     def _insert_orphaned_transactions(self):
         # First, find orphaned transactions
-        self.logger.info(
+        logger.info(
             "Finding orphaned transactions in raw.transaction_normalized (those with missing records in "
             "the source tables)"
         )

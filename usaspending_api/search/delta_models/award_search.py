@@ -132,7 +132,7 @@ AWARD_SEARCH_COLUMNS = {
     "tas_components": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]", "gold": False},
     "federal_accounts": {"delta": "STRING", "postgres": "JSONB", "gold": False},
     "disaster_emergency_fund_codes": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]", "gold": False},
-    "covid_spending_by_defc": {"delta": "STRING", "postgres": "JSONB", "gold": False},
+    "spending_by_defc": {"delta": "STRING", "postgres": "JSONB", "gold": False},
     "total_covid_outlay": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": False},
     "total_covid_obligation": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": False},
     "officer_1_amount": {
@@ -149,7 +149,6 @@ AWARD_SEARCH_COLUMNS = {
     "officer_4_name": {"delta": "STRING", "postgres": "TEXT", "gold": True},
     "officer_5_amount": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": True},
     "officer_5_name": {"delta": "STRING", "postgres": "TEXT", "gold": True},
-    "iija_spending_by_defc": {"delta": "STRING", "postgres": "JSONB", "gold": True},
     "total_iija_outlay": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": True},
     "total_iija_obligation": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": True},
     "total_outlays": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": False},
@@ -168,14 +167,11 @@ award_search_create_sql_string = rf"""
     )
     USING DELTA
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
+    TBLPROPERTIES (delta.enableChangeDataFeed = true)
 """
 
-award_search_load_sql_string = rf"""
-    INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
-        (
-            {",".join([col for col in AWARD_SEARCH_DELTA_COLUMNS])}
-        )
-    SELECT
+_base_load_sql_string = rf"""
+  SELECT
   TREASURY_ACCT.treasury_account_identifiers,
   awards.id AS award_id,
   awards.data_source AS data_source,
@@ -408,9 +404,9 @@ award_search_load_sql_string = rf"""
   TREASURY_ACCT.tas_components,
   TREASURY_ACCT.federal_accounts,
   TREASURY_ACCT.disaster_emergency_fund_codes,
-  COVID_DEFC.covid_spending_by_defc,
-  COVID_DEFC.total_covid_outlay,
-  COVID_DEFC.total_covid_obligation,
+  OUTLAYS_AND_OBLIGATIONS.spending_by_defc,
+  OUTLAYS_AND_OBLIGATIONS.total_covid_outlay,
+  OUTLAYS_AND_OBLIGATIONS.total_covid_obligation,
   awards.officer_1_amount,
   awards.officer_1_name,
   awards.officer_2_amount,
@@ -422,10 +418,9 @@ award_search_load_sql_string = rf"""
   awards.officer_5_amount,
   awards.officer_5_name,
 
-  IIJA_DEFC.iija_spending_by_defc,
-  IIJA_DEFC.total_iija_outlay,
-  IIJA_DEFC.total_iija_obligation,
-  CAST(AWARD_TOTAL_OUTLAYS.total_outlays AS NUMERIC(23, 2)) AS total_outlays,
+  OUTLAYS_AND_OBLIGATIONS.total_iija_outlay,
+  OUTLAYS_AND_OBLIGATIONS.total_iija_obligation,
+  CAST(OUTLAYS_AND_OBLIGATIONS.total_outlays AS NUMERIC(23, 2)) AS total_outlays,
   CAST(COALESCE(
         CASE
             WHEN awards.type IN('07', '08') THEN awards.total_subsidy_cost
@@ -456,7 +451,7 @@ LEFT OUTER JOIN
   global_temp.psc ON (transaction_fpds.product_or_service_code = psc.code)
   LEFT OUTER JOIN
     (SELECT
-      award_id, COLLECT_SET(DISTINCT TO_JSON(NAMED_STRUCT('cfda_number', cfda_number, 'cfda_program_title', cfda_title))) as cfdas
+      award_id, SORT_ARRAY(COLLECT_SET(DISTINCT TO_JSON(NAMED_STRUCT('cfda_number', cfda_number, 'cfda_program_title', cfda_title)))) as cfdas
       FROM
          int.transaction_fabs tf
        INNER JOIN int.transaction_normalized tn ON
@@ -538,19 +533,22 @@ LEFT OUTER JOIN (
         )
         AND recipient_lookup.legal_business_name IS NOT NULL
     )
--- COVID spending
 LEFT OUTER JOIN (
   SELECT
         GROUPED_BY_DEFC.award_id,
-        COLLECT_SET(
+        CAST(SORT_ARRAY(COLLECT_SET(
             TO_JSON(NAMED_STRUCT('defc', GROUPED_BY_DEFC.def_code, 'outlay', GROUPED_BY_DEFC.outlay, 'obligation', GROUPED_BY_DEFC.obligation))
-        ) AS covid_spending_by_defc,
-        sum(GROUPED_BY_DEFC.outlay) AS total_covid_outlay,
-        sum(GROUPED_BY_DEFC.obligation) AS total_covid_obligation
+        ) FILTER (WHERE GROUPED_BY_DEFC.def_code IS NOT NULL)) AS STRING) AS spending_by_defc,
+        sum(GROUPED_BY_DEFC.outlay) AS total_outlays,
+        sum(GROUPED_BY_DEFC.outlay) FILTER (WHERE GROUPED_BY_DEFC.group_name = 'covid_19') AS total_covid_outlay,
+        sum(GROUPED_BY_DEFC.obligation) FILTER (WHERE GROUPED_BY_DEFC.group_name = 'covid_19') AS total_covid_obligation,
+        sum(GROUPED_BY_DEFC.outlay) FILTER (WHERE GROUPED_BY_DEFC.group_name = 'infrastructure') AS total_iija_outlay,
+        sum(GROUPED_BY_DEFC.obligation) FILTER (WHERE GROUPED_BY_DEFC.group_name = 'infrastructure') AS total_iija_obligation
     FROM (
         SELECT
             faba.award_id,
             faba.disaster_emergency_fund_code AS def_code,
+            defc.group_name,
             COALESCE(sum(
                 CASE
                     WHEN sa.is_final_balances_for_fy = true
@@ -564,81 +562,24 @@ LEFT OUTER JOIN (
         FROM
             int.financial_accounts_by_awards AS faba
         INNER JOIN
-            global_temp.disaster_emergency_fund_code AS defc ON (faba.disaster_emergency_fund_code = defc.code AND defc.group_name = 'covid_19')
-        INNER JOIN
             global_temp.submission_attributes AS sa ON (faba.submission_id = sa.submission_id)
         INNER JOIN
             global_temp.dabs_submission_window_schedule AS dsws ON (sa.submission_window_id = dsws.id AND dsws.submission_reveal_date <= now())
+        LEFT OUTER JOIN
+            global_temp.disaster_emergency_fund_code AS defc ON (faba.disaster_emergency_fund_code = defc.code)
+        WHERE
+            faba.gross_outlay_amount_by_award_cpe IS NOT NULL
+            OR faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe IS NOT NULL
+            OR faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe IS NOT NULL
+            OR faba.transaction_obligated_amount IS NOT NULL
         GROUP BY
-            faba.award_id, faba.disaster_emergency_fund_code
+            faba.award_id, faba.disaster_emergency_fund_code, defc.group_name
     ) AS GROUPED_BY_DEFC
     WHERE
         GROUPED_BY_DEFC.award_id IS NOT NULL
     GROUP BY
         GROUPED_BY_DEFC.award_id
-) COVID_DEFC on COVID_DEFC.award_id = awards.id
--- Infrastructure Investment and Jobs Act (IIJA) spending
-LEFT OUTER JOIN (
-    SELECT
-        GROUPED_BY_DEFC.award_id,
-        COLLECT_SET(
-            TO_JSON(NAMED_STRUCT('defc', GROUPED_BY_DEFC.def_code, 'outlay', GROUPED_BY_DEFC.outlay, 'obligation', GROUPED_BY_DEFC.obligation))
-        ) AS iija_spending_by_defc,
-        sum(GROUPED_BY_DEFC.outlay) AS total_iija_outlay,
-        sum(GROUPED_BY_DEFC.obligation) AS total_iija_obligation
-    FROM (
-        SELECT
-            faba.award_id,
-            faba.disaster_emergency_fund_code AS def_code,
-            COALESCE(sum(
-                CASE
-                    WHEN sa.is_final_balances_for_fy = true THEN COALESCE(faba.gross_outlay_amount_by_award_cpe, 0) + COALESCE(
-                        faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe,
-                        0
-                        ) + COALESCE(faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe, 0)
-                    ELSE NULL
-                END), 0) AS outlay,
-            COALESCE(sum(faba.transaction_obligated_amount), 0) AS obligation
-        FROM
-            int.financial_accounts_by_awards AS faba
-        INNER JOIN
-            global_temp.disaster_emergency_fund_code AS defc ON (faba.disaster_emergency_fund_code = defc.code AND defc.group_name = 'infrastructure')
-        INNER JOIN
-            global_temp.submission_attributes AS sa ON (faba.submission_id = sa.submission_id)
-        INNER JOIN
-            global_temp.dabs_submission_window_schedule AS dsws ON (sa.submission_window_id = dsws.id AND dsws.submission_reveal_date <= now())
-        GROUP BY
-            faba.award_id, faba.disaster_emergency_fund_code
-    ) AS GROUPED_BY_DEFC
-    WHERE
-        GROUPED_BY_DEFC.award_id IS NOT NULL
-    GROUP BY
-        GROUPED_BY_DEFC.award_id
-) IIJA_DEFC on IIJA_DEFC.award_id = awards.id
--- Total outlays calculation
-LEFT JOIN (
-    SELECT award_id,
-            COALESCE(total_gross_outlay_amount_by_award_cpe, 0)
-            + COALESCE(total_ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe, 0)
-            + COALESCE(total_ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe, 0) AS total_outlays
-        FROM (
-            SELECT faba.award_id,
-                    SUM(faba.gross_outlay_amount_by_award_cpe) AS total_gross_outlay_amount_by_award_cpe,
-                    SUM(faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe) AS total_ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe,
-                    SUM(faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe) AS total_ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe
-                FROM int.financial_accounts_by_awards faba
-
-                INNER JOIN global_temp.submission_attributes sa
-                    ON faba.submission_id = sa.submission_id
-
-                WHERE sa.is_final_balances_for_fy = TRUE
-                GROUP BY faba.award_id
-            ) s
-        WHERE total_gross_outlay_amount_by_award_cpe IS NOT NULL
-            OR total_ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe IS NOT NULL
-            OR total_ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe IS NOT NULL
-) AWARD_TOTAL_OUTLAYS
-    ON awards.id = AWARD_TOTAL_OUTLAYS.award_id
+) OUTLAYS_AND_OBLIGATIONS on (OUTLAYS_AND_OBLIGATIONS.award_id = awards.id)
 LEFT OUTER JOIN (
   SELECT
     faba.award_id,
@@ -653,7 +594,7 @@ LEFT OUTER JOIN (
             )
         )
     ) AS federal_accounts,
-    COLLECT_SET(
+    SORT_ARRAY(COLLECT_SET(
       DISTINCT CONCAT(
         'agency=', COALESCE(agency.toptier_code, ''),
         'faaid=', COALESCE(fa.agency_identifier, ''),
@@ -666,8 +607,8 @@ LEFT OUTER JOIN (
         'epoa=', COALESCE(taa.ending_period_of_availability, ''),
         'a=', COALESCE(taa.availability_type_code, '')
       )
-    ) AS tas_paths,
-    COLLECT_SET(
+    )) AS tas_paths,
+    SORT_ARRAY(COLLECT_SET(
       CONCAT(
         'aid=', COALESCE(taa.agency_id, ''),
         'main=', COALESCE(taa.main_account_code, ''),
@@ -677,22 +618,22 @@ LEFT OUTER JOIN (
         'epoa=', COALESCE(taa.ending_period_of_availability, ''),
         'a=', COALESCE(taa.availability_type_code, '')
       )
-    ) AS tas_components,
+    )) AS tas_components,
     -- "CASE" put in place so that Spark value matches Postgres; can most likely be refactored out in the future
     CASE
         WHEN SIZE(COLLECT_SET(faba.disaster_emergency_fund_code)) > 0
             THEN SORT_ARRAY(COLLECT_SET(faba.disaster_emergency_fund_code))
         ELSE NULL
     END AS disaster_emergency_fund_codes,
-    COLLECT_SET(taa.treasury_account_identifier) AS treasury_account_identifiers,
-    COLLECT_SET(
+    SORT_ARRAY(COLLECT_SET(taa.treasury_account_identifier)) AS treasury_account_identifiers,
+    CAST(SORT_ARRAY(COLLECT_SET(
         TO_JSON(
             NAMED_STRUCT(
                 'name', UPPER(rpa.program_activity_name),
                 'code', LPAD(rpa.program_activity_code, 4, "0")
             )
         )
-    ) AS program_activities
+    )) AS STRING) AS program_activities
   FROM
     global_temp.treasury_appropriation_account taa
   INNER JOIN int.financial_accounts_by_awards faba ON (taa.treasury_account_identifier = faba.treasury_account_id)
@@ -704,4 +645,30 @@ LEFT OUTER JOIN (
   GROUP BY
     faba.award_id
 ) TREASURY_ACCT ON (TREASURY_ACCT.award_id = awards.id)
+"""
+
+award_search_incremental_load_sql_string = [
+    f"""
+    CREATE OR REPLACE TEMPORARY VIEW temp_award_search_view AS (
+        {_base_load_sql_string}
+    )
+    """,
+    f"""
+    MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS t
+    USING (SELECT * FROM temp_award_search_view) AS s
+    ON t.award_id = s.award_id
+    WHEN MATCHED AND
+      ({" OR ".join([f"NOT (s.{col} <=> t.{col})" for col in AWARD_SEARCH_DELTA_COLUMNS])})
+      THEN UPDATE SET *
+    WHEN NOT MATCHED THEN INSERT *
+    WHEN NOT MATCHED BY SOURCE THEN DELETE
+    """,
+]
+
+award_search_overwrite_load_sql_string = f"""
+INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}}
+    (
+        {",".join([col for col in AWARD_SEARCH_DELTA_COLUMNS])}
+    )
+    {_base_load_sql_string}
 """

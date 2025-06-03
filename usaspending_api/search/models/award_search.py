@@ -138,10 +138,9 @@ class AwardSearch(models.Model):
     tas_components = ArrayField(models.TextField(), default=list, null=True)
 
     disaster_emergency_fund_codes = ArrayField(models.TextField(), default=list, null=True)
-    covid_spending_by_defc = models.JSONField(null=True)
+    spending_by_defc = models.JSONField(null=True)
     total_covid_outlay = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     total_covid_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
-    iija_spending_by_defc = models.JSONField(null=True)
     total_iija_outlay = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     total_iija_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     officer_1_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
