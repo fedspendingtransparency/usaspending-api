@@ -30,7 +30,8 @@ class Command(BaseCommand):
         broker_group.add_argument(
             "--schema-name",
             type=str,
-            required=True,
+            required=False,
+            default="public",
             help="Schema name in the Broker DB to load into USAspending",
         )
 
@@ -76,7 +77,9 @@ class Command(BaseCommand):
             usas_cursor.execute(table_exists_query)
             table_exists = usas_cursor.fetchall()
             if not table_exists:
-                raise ValueError(f"Table '{usas_schema_name}.{usas_table_name}' does not exist")
+                raise ValueError(f"Table '{usas_schema_name}.{usas_table_name}' does not exist.")
+            truncate_sql = f"TRUNCATE TABLE {usas_schema_name}.{usas_table_name}"
+            usas_cursor.execute(truncate_sql)
             with broker_conn.cursor() as broker_cursor:
                 broker_cursor.execute(f"SELECT * FROM {broker_schema_name}.{broker_table_name}")
                 while True:
