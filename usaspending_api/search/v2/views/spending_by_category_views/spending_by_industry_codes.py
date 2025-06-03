@@ -32,6 +32,8 @@ class AbstractIndustryCodeViewSet(AbstractSpendingByCategoryViewSet, metaclass=A
         # Get the codes
         if self.category.nested_path:
             response = response.get("nested_agg")
+        if self.category.filter_key_to_limit:
+            response = response.get("filter_agg")
         industry_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
         code_list = [bucket.get("key") for bucket in industry_info_buckets if bucket.get("key")]
 
@@ -144,6 +146,7 @@ class DEFCViewSet(AbstractIndustryCodeViewSet):
                 agg_key_suffix="",
                 obligation_field=f"{nested_path}.obligation",
                 outlay_field=f"{nested_path}.outlay",
+                filter_key_to_limit="def_codes",
             )
 
         return super().post(request, validated_payload=validated_payload)
