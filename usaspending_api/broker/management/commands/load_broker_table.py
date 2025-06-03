@@ -75,7 +75,7 @@ class Command(BaseCommand):
         """
         with usas_conn.cursor() as usas_cursor:
             usas_cursor.execute(table_exists_query)
-            table_exists = usas_cursor.fetchall()
+            table_exists = all(usas_cursor.fetchone())
             if not table_exists:
                 raise ValueError(f"Table '{usas_schema_name}.{usas_table_name}' does not exist.")
             truncate_sql = f"TRUNCATE TABLE {usas_schema_name}.{usas_table_name}"

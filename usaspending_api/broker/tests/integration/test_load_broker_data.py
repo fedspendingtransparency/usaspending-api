@@ -59,3 +59,14 @@ def test_load_broker_table(broker_zips_grouped, now):
         )
         rows = cursor.fetchall()
         assert rows == [(now, now, 1, "00001", "KS", "01", "01"), (now, now, 2, "00002", "KS", "02", "02")]
+
+
+@pytest.mark.django_db(databases=[DATA_BROKER_DB_ALIAS, DEFAULT_DB_ALIAS], transaction=True)
+def test_load_broker_table_exists_failure(broker_zips_grouped):
+    with pytest.raises(ValueError):
+        call_command(
+            "load_broker_table",
+            "--table-name=zips_grouped_test",
+            "--schema-name=public",
+            "--usaspending-table-name=zips_grouped_test",
+        )
