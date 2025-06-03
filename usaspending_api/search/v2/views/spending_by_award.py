@@ -746,7 +746,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         """
         result = {}
         for field, lookup_values in self.spending_by_defc_lookup.items():
-            if field in row:
+            if field in row and row[field] is not None:
                 result[field] = sum(
                     [
                         (
@@ -754,7 +754,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                             if spending_by_defc["defc"] in self.def_codes_by_group[lookup_values["group_name"]]
                             else 0
                         )
-                        for spending_by_defc in row.get(field)
+                        for spending_by_defc in row[field]
                     ]
                 )
         return result
