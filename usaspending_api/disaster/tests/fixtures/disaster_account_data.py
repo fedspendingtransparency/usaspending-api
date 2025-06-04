@@ -644,7 +644,7 @@ def disaster_account_data():
         disaster_emergency_fund_codes=["O"],
         total_covid_obligation=2000,
         total_covid_outlay=20000,
-        covid_spending_by_defc=[
+        spending_by_defc=[
             {"defc": "O", "outlay": 20000, "obligation": 2000},
         ],
     )  # Loan
@@ -663,7 +663,7 @@ def disaster_account_data():
         disaster_emergency_fund_codes=["O"],
         total_covid_obligation=2000000,
         total_covid_outlay=20,
-        covid_spending_by_defc=[
+        spending_by_defc=[
             {"defc": "O", "outlay": 20, "obligation": 2000000},
         ],
     )  # Block Grant - subtier sister to a4
@@ -682,7 +682,7 @@ def disaster_account_data():
         disaster_emergency_fund_codes=["M", "P", "N", "O", "Q"],
         total_covid_obligation=20200222,
         total_covid_outlay=2200204,
-        covid_spending_by_defc=[
+        spending_by_defc=[
             {"defc": "Q", "outlay": 2, "obligation": 2},
             {"defc": "M", "outlay": 2000000, "obligation": 20},
             {"defc": "N", "outlay": 200, "obligation": 200000},
@@ -705,7 +705,7 @@ def disaster_account_data():
         disaster_emergency_fund_codes=["O"],
         total_covid_obligation=200000000,
         total_covid_outlay=-2,
-        covid_spending_by_defc=[
+        spending_by_defc=[
             {"defc": "O", "outlay": 200000000, "obligation": -2},
         ],
     )  # Block Grant - subtier sister to a2
@@ -724,7 +724,7 @@ def disaster_account_data():
         disaster_emergency_fund_codes=["O"],
         total_covid_obligation=1000,
         total_covid_outlay=1000,
-        covid_spending_by_defc=[
+        spending_by_defc=[
             {"defc": "O", "outlay": 1000, "obligation": 1000},
         ],
     )
