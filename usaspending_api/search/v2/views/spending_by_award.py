@@ -744,17 +744,15 @@ class SpendingByAwardVisualizationViewSet(APIView):
         and obligation total for each field depends on the DEFC that fall under the specific group represented by each
         field. If the specific DEFC based fields are part of the row then they will be returned for the row to update.
         """
-        result = {}
-        for field, lookup_values in self.spending_by_defc_lookup.items():
-            if field in row:
-                result[field] = sum(
-                    [
-                        (
-                            spending_by_defc[lookup_values["field_type"]]
-                            if spending_by_defc["defc"] in self.def_codes_by_group[lookup_values["group_name"]]
-                            else 0
-                        )
-                        for spending_by_defc in row.get(field)
-                    ]
-                )
+        result = {
+            field: sum(
+                [
+                    spending_by_defc[lookup_values["field_type"]]
+                    for spending_by_defc in row[field]
+                    if spending_by_defc["defc"] in self.def_codes_by_group[lookup_values["group_name"]]
+                ]
+            )
+            for field, lookup_values in self.spending_by_defc_lookup.items()
+            if field in row and row[field] is not None
+        }
         return result
