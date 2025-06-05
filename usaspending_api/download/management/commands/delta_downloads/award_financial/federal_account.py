@@ -1,21 +1,23 @@
-from typing import Any
+from typing import Any, Literal
 
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as sf, Column
+
+from usaspending_api.submissions.helpers import get_submission_ids_for_periods
 
 
 class AccountDownloadDataFrameBuilder:
 
     def __init__(
         self,
-        reporting_fiscal_year: int,
-        reporting_fiscal_quarter: int,
-        reporting_fiscal_period: int,
         spark: SparkSession,
+        year: int,
+        period: int,
+        period_type: Literal["month", "quarter"] = "month",
     ):
-        self.reporting_fiscal_year = reporting_fiscal_year
-        self.reporting_fiscal_quarter = reporting_fiscal_quarter
-        self.reporting_fiscal_period = reporting_fiscal_period
+        self.reporting_fiscal_year = year
+        self.reporting_fiscal_quarter = period if period_type == "quarter" else period // 3
+        self.reporting_fiscal_period = period if period_type == "month" else period * 3
         self.df = spark.table("rpt.account_download")
         self.groupby_cols = [
             "owning_agency_name",
@@ -172,26 +174,24 @@ class AccountDownloadDataFrameBuilder:
             "last_modified_date",
         ]
 
-    @staticmethod
-    def collect_concat(col_name: str, concat_str: str = "; ") -> Column:
-        return sf.concat_ws(concat_str, sf.collect_set(col_name)).alias(col_name)
-
-    def handle_quarter_period(self, col_name: str, otherwise: Any = None) -> Column:
+    def filter_to_latest_submissions_for_agencies(self, col_name: str, otherwise: Any = None) -> Column:
+        """Filter to the latest submission regardless of whether the agency submitted on a monthly or quarterly basis"""
         return (
             sf.when(
-                (
-                    (sf.col("quarter_format_flag") == True)
-                    & (sf.col("reporting_fiscal_quarter") == self.reporting_fiscal_quarter)
-                )
-                | (
-                    (sf.col("quarter_format_flag") == False)
-                    & (sf.col("reporting_fiscal_period") == self.reporting_fiscal_period)
+                sf.col("submission_id").isin(
+                    get_submission_ids_for_periods(
+                        self.reporting_fiscal_year, self.reporting_fiscal_quarter, self.reporting_fiscal_period
+                    )
                 ),
                 sf.col(col_name),
             )
             .otherwise(otherwise)
             .alias(col_name)
         )
+
+    @staticmethod
+    def collect_concat(col_name: str, concat_str: str = "; ") -> Column:
+        return sf.concat_ws(concat_str, sf.collect_set(col_name)).alias(col_name)
 
     @property
     def source_df(self):
@@ -217,7 +217,7 @@ class AccountDownloadDataFrameBuilder:
                 ],
                 sf.sum("transaction_obligated_amount").alias("transaction_obligated_amount"),
                 *[
-                    sf.sum(self.handle_quarter_period(col)).alias(col)
+                    sf.sum(self.filter_to_latest_submissions_for_agencies(col)).alias(col)
                     for col in [
                         "gross_outlay_amount_FYB_to_period_end",
                         "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig",
