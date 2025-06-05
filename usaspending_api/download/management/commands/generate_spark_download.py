@@ -136,7 +136,7 @@ class Command(BaseCommand):
 
     def get_download_job(self) -> Tuple[DownloadJob, DownloadSource]:
         download_job = DownloadJob.objects.get(download_job_id=self.download_job_id)
-        if download_job.job_status != JOB_STATUS_DICT["ready"]:
+        if download_job.job_status_id != JOB_STATUS_DICT["ready"]:
             raise InvalidParameterException(f"Download Job {self.download_job_id} is not ready.")
         json_request = json.loads(download_job.json_request)
         download_source = DownloadSource(
@@ -157,13 +157,20 @@ class Command(BaseCommand):
         try:
             spark_to_csv_strategy = SparkToCSVStrategy(self.logger)
             zip_file_path = self.working_dir_path / f"{self.download_name}.zip"
+            download_request = json.loads(self.download_job.json_request)
+            year = download_request["filters"]["fy"]
+            period, period_type = (
+                (download_request["filters"]["period"], "month")
+                if download_request["filters"]["period"]
+                else (download_request["filters"]["quarter"], "quarter")
+            )
             csv_metadata = spark_to_csv_strategy.download_to_csv(
                 source_sql=None,
                 destination_path=self.working_dir_path / self.download_name,
                 destination_file_name=self.download_name,
                 working_dir_path=self.working_dir_path,
                 download_zip_path=zip_file_path,
-                source_df=self.df_builder(2021, 4, 12).source_df,
+                source_df=self.df_builder(self.spark, year, period, period_type).source_df,
             )
             files_to_cleanup.extend(csv_metadata.filepaths)
             self.download_job.file_size = os.stat(zip_file_path).st_size
