@@ -10,6 +10,7 @@ from django.core.management.base import BaseCommand
 from django.utils.functional import cached_property
 from pyspark.sql import SparkSession
 
+from usaspending_api.accounts.urls_federal_accounts_v2 import federal_account
 from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.download_csv_strategies import SparkToCSVStrategy
@@ -161,16 +162,28 @@ class Command(BaseCommand):
             year = download_request["filters"]["fy"]
             period, period_type = (
                 (download_request["filters"]["period"], "month")
-                if download_request["filters"]["period"]
+                if "period" in download_request["filters"]
                 else (download_request["filters"]["quarter"], "quarter")
             )
+            agency = download_request["filters"].get("agency")
+            federal_account = download_request["filters"].get("federal_account")
+            def_codes = download_request["filters"].get("def_codes")
+            source_df = self.df_builder(
+                spark=self.spark,
+                year=int(year),
+                period=int(period),
+                period_type=period_type,
+                agency=int(agency),
+                federal_account_id=int(federal_account),
+                def_codes=def_codes,
+            ).source_df
             csv_metadata = spark_to_csv_strategy.download_to_csv(
                 source_sql=None,
                 destination_path=self.working_dir_path / self.download_name,
                 destination_file_name=self.download_name,
                 working_dir_path=self.working_dir_path,
                 download_zip_path=zip_file_path,
-                source_df=self.df_builder(self.spark, year, period, period_type).source_df,
+                source_df=source_df,
             )
             files_to_cleanup.extend(csv_metadata.filepaths)
             self.download_job.file_size = os.stat(zip_file_path).st_size

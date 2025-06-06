@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+from functools import reduce
 from typing import Any, Literal
 
 from pyspark.sql import DataFrame, SparkSession
@@ -14,10 +16,16 @@ class AccountDownloadDataFrameBuilder:
         year: int,
         period: int,
         period_type: Literal["month", "quarter"] = "month",
+        agency: int | None = None,
+        federal_account_id: int | None = None,
+        def_codes: list[str] | None = None,
     ):
         self.reporting_fiscal_year = year
         self.reporting_fiscal_quarter = period if period_type == "quarter" else period // 3
         self.reporting_fiscal_period = period if period_type == "month" else period * 3
+        self.agency = agency
+        self.federal_account_id = federal_account_id
+        self.def_codes = def_codes
         self.df = spark.table("rpt.account_download")
         self.groupby_cols = [
             "owning_agency_name",
@@ -189,6 +197,46 @@ class AccountDownloadDataFrameBuilder:
             .alias(col_name)
         )
 
+    @property
+    def combined_filters(self):
+
+        @dataclass
+        class Condition:
+            name: str
+            condition: Column
+            apply: bool
+
+        conditions = [
+            Condition(name="year", condition=sf.col("reporting_fiscal_year") == self.reporting_fiscal_year, apply=True),
+            Condition(
+                name="quarter or month",
+                condition=(
+                    (sf.col("reporting_fiscal_period") <= self.reporting_fiscal_period)
+                    & (sf.col("quarter_format_flag") == False)
+                )
+                | (
+                    (sf.col("reporting_fiscal_quarter") <= self.reporting_fiscal_quarter)
+                    & (sf.col("quarter_format_flag") == True)
+                ),
+                apply=True,
+            ),
+            Condition(name="agency", condition=sf.col("agency_code") == self.agency, apply=bool(self.agency)),
+            Condition(
+                name="federal account",
+                condition=sf.col("federal_account_id") == self.federal_account_id,
+                apply=bool(self.federal_account_id),
+            ),
+            Condition(
+                name="def_codes",
+                condition=sf.col("disaster_emergency_fund_code").isin(self.def_codes),
+                apply=bool(self.def_codes),
+            ),
+        ]
+        return reduce(
+            lambda x, y: x & y,
+            [condition.condition for condition in conditions if condition.apply],
+        )
+
     @staticmethod
     def collect_concat(col_name: str, concat_str: str = "; ") -> Column:
         return sf.concat_ws(concat_str, sf.collect_set(col_name)).alias(col_name)
@@ -196,19 +244,7 @@ class AccountDownloadDataFrameBuilder:
     @property
     def source_df(self):
         return (
-            self.df.filter(
-                (
-                    (
-                        (sf.col("reporting_fiscal_period") <= self.reporting_fiscal_period)
-                        & (sf.col("quarter_format_flag") == False)
-                    )
-                    | (
-                        (sf.col("reporting_fiscal_quarter") <= self.reporting_fiscal_quarter)
-                        & (sf.col("quarter_format_flag") == True)
-                    )
-                )
-                & (sf.col("reporting_fiscal_year") == self.reporting_fiscal_year)
-            )
+            self.df.filter(self.combined_filters)
             .groupBy(self.groupby_cols)
             .agg(
                 *[
