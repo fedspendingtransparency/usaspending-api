@@ -68,7 +68,7 @@ class EmrServerlessStrategy(_AbstractStrategy):
 
     def handle_start(self, job_name: str, command_name: str, command_options: list[str], **kwargs) -> dict[str, str]:
         # TODO: This will be implemented as we migrate, but added as a placeholder for now
-        ...
+        pass
 
 
 class LocalStrategy(_AbstractStrategy):
