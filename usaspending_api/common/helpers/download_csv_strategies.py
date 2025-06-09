@@ -1,12 +1,13 @@
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
+import logging
 import multiprocessing
 import time
-import logging
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
-from django.conf import settings
+from typing import List, Optional
 
+from django.conf import settings
+from pyspark.sql import DataFrame
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
 from usaspending_api.common.helpers.s3_helpers import delete_s3_objects, download_s3_object
 from usaspending_api.common.helpers.sql_helpers import read_sql_file_to_text
@@ -19,7 +20,6 @@ from usaspending_api.download.filestreaming.download_generation import (
 )
 from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_file
 from usaspending_api.download.lookups import FILE_FORMATS
-from typing import List
 
 
 @dataclass
@@ -45,12 +45,12 @@ class AbstractToCSVStrategy(ABC):
     @abstractmethod
     def download_to_csv(
         self,
-        source_sql: str,
+        source_sql: str | None,
         destination_path: Path,
         destination_file_name: str,
         working_dir_path: Path,
         download_zip_path: Path,
-        source_df=None,
+        source_df: DataFrame | None = None,
     ) -> CSVDownloadMetadata:
         """
         Args:
@@ -59,6 +59,7 @@ class AbstractToCSVStrategy(ABC):
             destination_file_name: The name of the file in destination path without a file extension
             working_dir_path: The working directory path as a string
             download_zip_path: The path (as a string) to the download zip file
+            source_df: A pyspark DataFrame that contains the data to be downloaded
 
         Returns:
             Returns a CSVDownloadMetadata object (a dataclass containing metadata about the download)

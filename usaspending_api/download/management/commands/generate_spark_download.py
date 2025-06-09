@@ -25,6 +25,7 @@ from usaspending_api.download.filestreaming.download_generation import build_dat
 from usaspending_api.download.filestreaming.download_source import DownloadSource
 from usaspending_api.download.management.commands.delta_downloads.award_financial.federal_account import (
     AccountDownloadDataFrameBuilder,
+    AccountDownloadFilter,
 )
 from usaspending_api.download.lookups import JOB_STATUS_DICT, FILE_FORMATS, VALUE_MAPPINGS
 from usaspending_api.download.models import DownloadJob
@@ -158,24 +159,17 @@ class Command(BaseCommand):
             spark_to_csv_strategy = SparkToCSVStrategy(self.logger)
             zip_file_path = self.working_dir_path / f"{self.download_name}.zip"
             download_request = json.loads(self.download_job.json_request)
-            year = download_request["filters"]["fy"]
-            period, period_type = (
-                (download_request["filters"]["period"], "month")
-                if "period" in download_request["filters"]
-                else (download_request["filters"]["quarter"], "quarter")
+            account_download_filter = AccountDownloadFilter(
+                year=int(download_request["filters"]["fy"]),
+                month=int(download_request["filters"]["period"]) if "period" in download_request["filters"] else None,
+                quarter=(
+                    int(download_request["filters"]["quarter"]) if "quarter" in download_request["filters"] else None
+                ),
+                agency=download_request["filters"].get("agency"),
+                federal_account_id=download_request["filters"].get("federal_account"),
+                def_codes=download_request["filters"].get("def_codes"),
             )
-            agency = download_request["filters"].get("agency")
-            federal_account = download_request["filters"].get("federal_account")
-            def_codes = download_request["filters"].get("def_codes")
-            source_df = self.df_builder(
-                spark=self.spark,
-                year=int(year),
-                period=int(period),
-                period_type=period_type,
-                agency=int(agency),
-                federal_account_id=int(federal_account),
-                def_codes=def_codes,
-            ).source_df
+            source_df = self.df_builder(spark=self.spark, account_download_filter=account_download_filter).source_df
             csv_metadata = spark_to_csv_strategy.download_to_csv(
                 source_sql=None,
                 destination_path=self.working_dir_path / self.download_name,
