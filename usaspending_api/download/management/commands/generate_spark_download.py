@@ -10,7 +10,6 @@ from django.core.management.base import BaseCommand
 from django.utils.functional import cached_property
 from pyspark.sql import SparkSession
 
-from usaspending_api.accounts.urls_federal_accounts_v2 import federal_account
 from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.download_csv_strategies import SparkToCSVStrategy

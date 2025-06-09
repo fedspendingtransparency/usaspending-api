@@ -198,7 +198,7 @@ class AccountDownloadDataFrameBuilder:
         )
 
     @property
-    def combined_filters(self):
+    def combined_filters(self) -> Column:
 
         @dataclass
         class Condition:
@@ -211,12 +211,11 @@ class AccountDownloadDataFrameBuilder:
             Condition(
                 name="quarter or month",
                 condition=(
-                    (sf.col("reporting_fiscal_period") <= self.reporting_fiscal_period)
-                    & (sf.col("quarter_format_flag") == False)
+                    (sf.col("reporting_fiscal_period") <= self.reporting_fiscal_period) & ~sf.col("quarter_format_flag")
                 )
                 | (
                     (sf.col("reporting_fiscal_quarter") <= self.reporting_fiscal_quarter)
-                    & (sf.col("quarter_format_flag") == True)
+                    & sf.col("quarter_format_flag")
                 ),
                 apply=True,
             ),
@@ -242,7 +241,7 @@ class AccountDownloadDataFrameBuilder:
         return sf.concat_ws(concat_str, sf.collect_set(col_name)).alias(col_name)
 
     @property
-    def source_df(self):
+    def source_df(self) -> DataFrame:
         return (
             self.df.filter(self.combined_filters)
             .groupBy(self.groupby_cols)
