@@ -74,7 +74,11 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                 "name": "spending_level",
                 "key": "spending_level",
                 "type": "enum",
-                "enum_values": [level.value for level in SpendingLevel],
+                "enum_values": [
+                    SpendingLevel.AWARD.value,
+                    SpendingLevel.SUBAWARD.value,
+                    SpendingLevel.TRANSACTION.value,
+                ],
                 "optional": True,
                 "default": "transactions",
             },

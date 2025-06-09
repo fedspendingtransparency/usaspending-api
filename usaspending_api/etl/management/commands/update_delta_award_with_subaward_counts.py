@@ -1,11 +1,14 @@
+import logging
+
 from django.core.management.base import BaseCommand
 from pyspark.sql import SparkSession
 
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
-    get_jvm_logger,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
@@ -35,9 +38,6 @@ class Command(BaseCommand):
         if not self.spark:
             spark_created_by_command = True
             self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)  # type: SparkSession
-
-        # Setup Logger
-        logger = get_jvm_logger(self.spark, __name__)
 
         award_table = "int.awards"
         update_award_query = f"""
