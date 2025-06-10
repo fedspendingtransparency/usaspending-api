@@ -36,8 +36,8 @@ class AccountDownloadDataFrameBuilder:
         account_download_filter: AccountDownloadFilter,
     ):
         self.reporting_fiscal_year = account_download_filter.year
-        self.reporting_fiscal_quarter = account_download_filter.quarter
-        self.reporting_fiscal_period = account_download_filter.month
+        self.reporting_fiscal_quarter = account_download_filter.quarter or account_download_filter.month // 3
+        self.reporting_fiscal_period = account_download_filter.month or account_download_filter.quarter * 3
         self.agency = account_download_filter.agency
         self.federal_account_id = account_download_filter.federal_account_id
         self.def_codes = account_download_filter.def_codes
@@ -101,7 +101,7 @@ class AccountDownloadDataFrameBuilder:
 
     @staticmethod
     def collect_concat(col_name: str, concat_str: str = "; ") -> Column:
-        return sf.concat_ws(concat_str, sf.collect_set(col_name)).alias(col_name)
+        return sf.concat_ws(concat_str, sf.sort_array(sf.collect_set(col_name))).alias(col_name)
 
     @property
     def source_df(self) -> DataFrame:
