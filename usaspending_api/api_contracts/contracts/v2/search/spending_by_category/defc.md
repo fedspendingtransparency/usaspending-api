@@ -29,6 +29,7 @@ This endpoint should return a an aggregate list of DEFC's sorted by the total am
                 + `transactions`
                 + `awards`
                 + `subawards`
+                + `award_financial` - Filters to an award(s) and uses obligation and outlays from the linked File C records
             + Default
                 + `transactions`
         + `subawards` (optional, boolean)

@@ -172,10 +172,20 @@
         "type": "text"
       },
       "awardee_or_recipient_uei": {
-        "type": "text"
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
       },
       "awardee_or_recipient_legal": {
-        "type": "text"
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
       },
       "dba_name": {
         "type": "text"
@@ -298,7 +308,12 @@
         }
       },
       "naics_description": {
-        "type": "text"
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
       },
       "cfda_number": {
         "type": "text",
@@ -360,7 +375,12 @@
         "type": "keyword"
       },
       "sub_awardee_or_recipient_legal": {
-        "type": "text"
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
       },
       "sub_dba_name": {
         "type": "text"
@@ -433,7 +453,12 @@
         "type": "text"
       },
       "sub_recipient_location_city_name": {
-        "type": "text"
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
       },
       "sub_recipient_location_county_agg_key": {
         "type": "keyword",
@@ -450,6 +475,14 @@
         "fields": {
           "hash": {
             "type": "murmur3"
+          }
+        }
+      },
+      "sub_recipient_location_address_line1": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
           }
         }
       },
@@ -533,6 +566,9 @@
       },
       "subaward_description": {
         "type": "text"
+      },
+      "subaward_description_sort": {
+        "type": "keyword"
       },
       "prime_award_group": {
         "type": "keyword"
@@ -623,7 +659,12 @@
         }
       },
       "product_or_service_description": {
-        "type": "text"
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
       },
       "treasury_account_identifiers": {
         "type": "keyword"

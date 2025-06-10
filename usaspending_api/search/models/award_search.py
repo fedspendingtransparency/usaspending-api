@@ -1,4 +1,5 @@
 from django.contrib.postgres.fields import ArrayField
+from django.contrib.postgres.constraints import OpClass
 from django.db import models
 from django.db.models import F, Q
 from django.db.models.functions import Upper
@@ -16,6 +17,9 @@ class AwardSearch(models.Model):
     type = models.TextField(null=True, db_index=True)
     type_description = models.TextField(null=True)
     generated_unique_award_id = models.TextField(null=False, unique=True)
+    generated_unique_award_id_legacy = models.TextField(
+        null=True, unique=True, help_text="Legacy generated unique award ID built using subtier awarding agency code"
+    )
     display_award_id = models.TextField(null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
     piid = models.TextField(null=True, db_index=True)
@@ -134,10 +138,9 @@ class AwardSearch(models.Model):
     tas_components = ArrayField(models.TextField(), default=list, null=True)
 
     disaster_emergency_fund_codes = ArrayField(models.TextField(), default=list, null=True)
-    covid_spending_by_defc = models.JSONField(null=True)
+    spending_by_defc = models.JSONField(null=True)
     total_covid_outlay = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     total_covid_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
-    iija_spending_by_defc = models.JSONField(null=True)
     total_iija_outlay = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     total_iija_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     officer_1_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
@@ -207,6 +210,12 @@ class AwardSearch(models.Model):
 
     class Meta:
         db_table = "award_search"
+        constraints = [
+            models.UniqueConstraint(
+                OpClass("generated_unique_award_id_legacy", name="text_pattern_ops"),
+                name="as_idx_unique_award_id_legacy",
+            )
+        ]
         indexes = [
             models.Index(
                 fields=["recipient_hash"], name="as_idx_recipient_hash", condition=Q(action_date__gte="2007-10-01")

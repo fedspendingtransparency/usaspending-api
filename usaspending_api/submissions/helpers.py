@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+from functools import lru_cache
+
 from django.db import connection
 from django.db.models import Q, Max, Case, When, F, IntegerField, Value
 from typing import Optional, List
@@ -170,6 +172,7 @@ def get_last_closed_month_relative_to_quarter(fiscal_year: int, fiscal_quarter: 
     )
 
 
+@lru_cache(maxsize=50)
 def get_submission_ids_for_periods(
     fiscal_year: int, fiscal_quarter: Optional[int], fiscal_month: Optional[int]
 ) -> List[int]:
@@ -178,6 +181,11 @@ def get_submission_ids_for_periods(
     monthly filter.  The catch is that we need to account for agencies that fall in both.  For
     example, if DOT submitted for Q2 and P07, we only care about their P07 submissions.  This can
     happen when agencies first transition from quarterly submissions to monthly submissions.
+
+    NOTE: A cache size of 50 is used as it represents the majority of the possible combinations
+    for parameters and will continue to be a large percentage of combinations for years to come.
+    Additionally, this method is used mostly for downloads where 50 is much larger than the number
+    of concurrent downloads that process at a time.
     """
     sql = f"""
         select  submission_id
