@@ -162,9 +162,9 @@ class Command(BaseCommand):
             logger.info(f"Created database record {db_id} for future retrieval")
             logger.info("Marking zip file for deletion in cleanup")
         else:
-            logger.warn("Not uploading zip file to S3. Leaving file locally")
+            logger.warning("Not uploading zip file to S3. Leaving file locally")
             self.filepaths_to_delete.remove(self.zip_file_path)
-            logger.warn("Not creating database record")
+            logger.warning("Not creating database record")
 
     @property
     def download_file_list(self):
