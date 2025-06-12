@@ -41,9 +41,9 @@ class AccountDownloadDataFrameBuilder:
         self.agency = account_download_filter.agency
         self.federal_account_id = account_download_filter.federal_account_id
         self.def_codes = account_download_filter.def_codes
-        self.df = spark.table("rpt.account_download")
-        self.groupby_cols = groupby_cols
-        self.select_cols = select_cols
+        self.df: str = spark.table("rpt.account_download")
+        self.groupby_cols: list[str] = groupby_cols
+        self.select_cols: list[str] = select_cols
 
     def filter_to_latest_submissions_for_agencies(self, col_name: str, otherwise: Any = None) -> Column:
         """Filter to the latest submission regardless of whether the agency submitted on a monthly or quarterly basis"""
