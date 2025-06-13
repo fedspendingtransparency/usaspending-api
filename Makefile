@@ -52,49 +52,23 @@ printvars: ## Print the Environment variables present in calls to make, plus var
 	@printf "\n==== Environment Variables ====\n\n"
 	@printenv
 
-.venv: ## Ensure a virtual environment is established at .venv with the specified python version
-	@( \
-		set -x; \
-		test -d .venv || uv venv --python ${PYTHON_VERSION} .venv/${venv_name}; \
-	)
-
-.PHONY: requirements-dev
-upgrade :=  #unset it
-requirements-dev: .venv ## Install pip packages in dev virtual env. Add upgrade=true to upgrade required packages to newest version (can be lengthy)
-	# Because this depends on .venv, the virtual env should exist to activate
-	# This will "activate" the virtual env only for the duration of the scripts in the parens-scope
-	# Then when this make rule recipe is complete, the virtual env will be dropped
-	# But it IS there and populated
-	# Must _manually_ reactivate the virtual env to interact with it on the command line
-	@( \
-		source .venv/${venv_name}/bin/activate; \
-		echo "virtual env at .venv/${venv_name} activated (temporarily)"; \
-		src_roots=(${src_root_paths}); \
-		for src_root in "$${src_roots[@]}"; do \
-			uv pip install ${if ${upgrade},--upgrade,} --editable "$${src_root}[dev]"; \
-		done; \
-	)
-
 .ivy2: ## Ensure user has a ~/.ivy2 dir, which will be bound to in a docker container volume to save on dependency downloads
 	@mkdir -p ~/.ivy2
 
-.PHONY: activate
-activate: ## Spit out the command to run to activate the virtual env, since you can't do it within a make shell process. Use this like: source $(make activate)
-	@echo ".venv/${venv_name}/bin/activate"
-
 .PHONY: local-dev-setup
-local-dev-setup: requirements-dev check-dependencies .ivy2 ## Setup virtual environment and pip dependencies, then check version info
+local-dev-setup: check-dependencies .ivy2 ## Setup virtual environment and pip dependencies, then check version info
 
 .PHONY: check-dependencies
 check-dependencies: ## Prints out the versions of dependencies in use
 	@printf "\n==== [PYTHON VERSIONS] ====\n\n"
-	@echo "python -> $$(python -V) ... python3 -> $$(python3 -V)"
+	@python --version
+	@python3 --version
 	@printf "\n==== [PIP PACKAGE VERSIONS] ====\n\n"
-	@source .venv/${venv_name}/bin/activate && pip list
+	@uv pip list
 	@printf "\n==== [SPARK VERSION] ====\n\n"
-	@source .venv/${venv_name}/bin/activate && pyspark --version
+	@pyspark --version
 	@printf "\n==== [HADOOP VERSION] ====\n\n"
-	@source .venv/${venv_name}/bin/activate && python3 -c "from pyspark.sql import SparkSession; \
+	@python3 -c "from pyspark.sql import SparkSession; \
 spark = spark = SparkSession.builder.getOrCreate(); \
 print('Hadoop ' + spark.sparkContext._gateway.jvm.org.apache.hadoop.util.VersionInfo.getVersion());"
 

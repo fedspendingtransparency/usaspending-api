@@ -23,9 +23,10 @@ RUN apt update && \
 RUN export JAVA_HOME=/usr/lib/jvm/java-1.8.0-amazon-corretto
 RUN export PATH=${JAVA_HOME}/bin:$PATH
 
-WORKDIR /dockermount
-
-# Install dependencies
+# Install dev dependencies
 RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv sync --extra dev --locked
 
+WORKDIR /usaspending-api
