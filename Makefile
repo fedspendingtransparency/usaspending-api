@@ -107,13 +107,9 @@ endif
 dry-run := 'false'
 clean-all: confirm-clean-all  ## Remove all tmp artifacts and artifacts created as part of local dev env setup. To avoid prompt (e.g. in script) call like: make clean-all no-prompt=true. To only see what WOULD be deleted, include dry-run=true
 ifeq ($(strip ${dry-run}),'false')
-	rm -rf .venv
 	@git clean -xfd --exclude='\.env' --exclude='\.envrc' --exclude='\.idea/' --exclude='spark-warehouse/' --exclude='\.vscode/'
-	deactivate || true
-	#if command -v deactivate &> /dev/null; then deactivate; fi;
 else  # this is a dry-run, spit out what would be removed
-	@printf "Would remove .venv\n"
-	@git clean --dry-run -xfd --exclude='\.env' --exclude='\.envrc' --exclude='\.idea/' --exclude='spark-warehouse/'
+	@git clean --dry-run -xfd --exclude='\.env' --exclude='\.envrc' --exclude='\.idea/' --exclude='spark-warehouse/' --exclude='\.vscode/'
 endif
 
 
