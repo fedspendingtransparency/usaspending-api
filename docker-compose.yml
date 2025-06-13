@@ -52,7 +52,7 @@ services:
     image: usaspending-testing  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
     build:
       context: .
-      dockerfile: Dockerfile.testing
+      dockerfile: testing.Dockerfile
     container_name: usaspending-test
     volumes:
       - .:/usaspending-api
@@ -239,7 +239,7 @@ services:
     # build context path needs to be relative to project root, from where docker compose will be run
     build:
       context: .
-      dockerfile: Dockerfile.spark
+      dockerfile: spark.Dockerfile
       args:
         PROJECT_LOG_DIR: ${PROJECT_LOG_DIR}
     container_name: spark-master
@@ -269,7 +269,7 @@ services:
     # build context path needs to be relative to project root, from where docker compose will be run
     build:
       context: .
-      dockerfile: Dockerfile.spark
+      dockerfile: spark.Dockerfile
       args:
         PROJECT_LOG_DIR: ${PROJECT_LOG_DIR}
     container_name: spark-worker
@@ -299,7 +299,7 @@ services:
     # build context path needs to be relative to project root, from where docker compose will be run
     build:
       context: .
-      dockerfile: Dockerfile.spark
+      dockerfile: spark.Dockerfile
       args:
         PROJECT_LOG_DIR: ${PROJECT_LOG_DIR}
     container_name: spark-history-server
@@ -344,7 +344,7 @@ services:
     # build context path needs to be relative to project root, from where docker compose will be run
     build:
       context: .
-      dockerfile: Dockerfile.spark
+      dockerfile: spark.Dockerfile
       args:
         PROJECT_LOG_DIR: ${PROJECT_LOG_DIR}
     container_name: spark-submit
