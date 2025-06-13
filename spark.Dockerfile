@@ -1,0 +1,77 @@
+FROM python:3.10.12-slim-bullseye
+
+# Build ARGs
+ARG HADOOP_VERSION=3.3.4
+ARG SPARK_VERSION=3.5.0
+ARG PROJECT_LOG_DIR=/logs
+
+# Install dependencies
+RUN apt update && apt install -y \
+    build-essential \
+    coreutils \
+    curl \
+    gcc \
+    libbz2-dev \
+    libpq-dev \
+    libssl-dev \
+    openssl \
+    procps \
+    wget
+
+# Install Amazon Corretto 8 (a Long-Term Supported (LTS) distribution of OpenJDK 8)
+RUN wget -qO - https://apt.corretto.aws/corretto.key | gpg --dearmor -o /usr/share/keyrings/corretto-keyring.gpg && \
+    echo "deb [signed-by=/usr/share/keyrings/corretto-keyring.gpg] https://apt.corretto.aws stable main" | tee /etc/apt/sources.list.d/corretto.list
+RUN apt update && \
+    apt install -y java-1.8.0-amazon-corretto-jdk
+ENV JAVA_HOME=/usr/lib/jvm/java-1.8.0-amazon-corretto
+
+# Install Hadoop and Spark
+WORKDIR /usr/local
+
+RUN wget --quiet https://archive.apache.org/dist/hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}.tar.gz \
+    && tar xzf hadoop-${HADOOP_VERSION}.tar.gz \
+    && ln -sfn /usr/local/hadoop-${HADOOP_VERSION} /usr/local/hadoop \
+    && wget --quiet https://archive.apache.org/dist/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-without-hadoop.tgz \
+    && tar xzf spark-${SPARK_VERSION}-bin-without-hadoop.tgz \
+    && ln -sfn /usr/local/spark-${SPARK_VERSION}-bin-without-hadoop /usr/local/spark \
+    && echo "Installed $(/usr/local/hadoop/bin/hadoop version)"
+ENV HADOOP_HOME=/usr/local/hadoop
+ENV SPARK_HOME=/usr/local/spark
+# Cannot set ENV var = command-result, [i.e. doing: ENV SPARK_DIST_CLASSPATH=$(${HADOOP_HOME}/bin/hadoop classpath)], so interpolating the hadoop classpath the long way
+ENV SPARK_DIST_CLASSPATH="$HADOOP_HOME/etc/hadoop/*:$HADOOP_HOME/share/hadoop/common/lib/*:$HADOOP_HOME/share/hadoop/common/*:$HADOOP_HOME/share/hadoop/hdfs/*:$HADOOP_HOME/share/hadoop/hdfs/lib/*:$HADOOP_HOME/share/hadoop/hdfs/*:$HADOOP_HOME/share/hadoop/yarn/lib/*:$HADOOP_HOME/share/hadoop/yarn/*:$HADOOP_HOME/share/hadoop/mapreduce/lib/*:$HADOOP_HOME/share/hadoop/mapreduce/*:$HADOOP_HOME/share/hadoop/tools/lib/*"
+ENV PATH=${SPARK_HOME}/bin:${HADOOP_HOME}/bin:${JAVA_HOME}/bin:${PATH}
+RUN echo "Installed Spark" && echo "$(${SPARK_HOME}/bin/pyspark --version)"
+
+# Config for starting up the Spark History Server
+# This allows a web entrypoint to see past job runs, and bring up their Spark UI
+# It allows job-run event logs to be monitored (e.g. at /tmp/spark-events)
+# NOTE: The specified eventlog dir and its path does not exist. It is assumed that a host dir will be bind-mounted at /project
+#       so that all containers that do the same can share the events.
+RUN cp $SPARK_HOME/conf/spark-defaults.conf.template $SPARK_HOME/conf/spark-defaults.conf \
+    && sed -i "s|^# spark.eventLog.dir.*$|spark.eventLog.dir                 file:///project/$PROJECT_LOG_DIR/spark-events|g" $SPARK_HOME/conf/spark-defaults.conf \
+    && sed -i '/spark.eventLog.enabled/s/^# //g' $SPARK_HOME/conf/spark-defaults.conf \
+    && echo "spark.history.fs.logDirectory      file:///project/$PROJECT_LOG_DIR/spark-events" >> $SPARK_HOME/conf/spark-defaults.conf
+
+# Bake project dependencies into any spark-base -based container that will run Project python code (and require these dependencies)
+# NOTE: We must exclude any dependencies on the host machine installed in a virtual environment (assumed to be stored under ./.venv)
+WORKDIR /project
+##### The following ENV vars are optimizations from https://github.com/astral-sh/uv-docker-example/blob/main/Dockerfile
+##### and https://docs.astral.sh/uv/guides/integration/docker/#optimizations
+# Enable bytecode compilation
+ENV UV_COMPILE_BYTECODE=1
+
+# Copy from the cache instead of linking since it's a mounted volume
+ENV UV_LINK_MODE=copy
+
+# Use the system Python environment since the container is already isolated
+ENV UV_PROJECT_ENVIRONMENT=/usr/local
+ENV UV_SYSTEM_PYTHON=1
+
+# Install dependencies
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --locked --no-install-project --no-dev
+
+# Allow for entrypoints and commands to infer that they are running relative to this directory
+WORKDIR ${SPARK_HOME}
