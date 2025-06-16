@@ -1,4 +1,3 @@
-import copy
 import logging
 
 from django.conf import settings
@@ -9,10 +8,7 @@ from rest_framework.views import APIView
 from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import NotImplementedException
-from usaspending_api.common.validator.award_filter import AWARD_FILTER
-from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
-from usaspending_api.search.v2.views.enums import SpendingLevel
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_agency_types import (
     AwardingAgencyViewSet,
     AwardingSubagencyViewSet,
@@ -72,50 +68,33 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             "federal_account",
             "defc",
         ]
-        models = [
-            {"name": "category", "key": "category", "type": "enum", "enum_values": categories, "optional": False},
-            {"name": "subawards", "key": "subawards", "type": "boolean", "default": False, "optional": True},
-            {
-                "name": "spending_level",
-                "key": "spending_level",
-                "type": "enum",
-                "enum_values": [level.value for level in SpendingLevel],
-                "optional": True,
-                "default": "transactions",
-            },
-        ]
-        models.extend(copy.deepcopy(AWARD_FILTER))
-        models.extend(copy.deepcopy(PAGINATION))
+        models = [{"name": "category", "key": "category", "type": "enum", "enum_values": categories, "optional": False}]
 
         # Apply/enforce POST body schema and data validation in request
-        original_filters = request.data.get("filters")
         validated_payload = TinyShield(models).block(request.data)
 
-        # Execute the business logic for the endpoint and return a python dict to be converted to a Django response
-        business_logic_lookup = {
-            "awarding_agency": AwardingAgencyViewSet().perform_search,
-            "awarding_subagency": AwardingSubagencyViewSet().perform_search,
-            "cfda": CfdaViewSet().perform_search,
-            "country": CountryViewSet().perform_search,
-            "county": CountyViewSet().perform_search,
-            "district": DistrictViewSet().perform_search,
-            "federal_account": FederalAccountViewSet().perform_search,
-            "funding_agency": FundingAgencyViewSet().perform_search,
-            "funding_subagency": FundingSubagencyViewSet().perform_search,
-            "naics": NAICSViewSet().perform_search,
-            "psc": PSCViewSet().perform_search,
-            "recipient": RecipientViewSet().perform_search,
-            "recipient_duns": RecipientDunsViewSet().perform_search,
-            "state_territory": StateTerritoryViewSet().perform_search,
-            "defc": DEFCViewSet().perform_search,
+        view_set_lookup = {
+            "awarding_agency": AwardingAgencyViewSet,
+            "awarding_subagency": AwardingSubagencyViewSet,
+            "cfda": CfdaViewSet,
+            "country": CountryViewSet,
+            "county": CountyViewSet,
+            "district": DistrictViewSet,
+            "federal_account": FederalAccountViewSet,
+            "funding_agency": FundingAgencyViewSet,
+            "funding_subagency": FundingSubagencyViewSet,
+            "naics": NAICSViewSet,
+            "psc": PSCViewSet,
+            "recipient": RecipientViewSet,
+            "recipient_duns": RecipientDunsViewSet,
+            "state_territory": StateTerritoryViewSet,
+            "defc": DEFCViewSet,
         }
-        business_logic_func = business_logic_lookup.get(validated_payload["category"])
-        if not business_logic_func:
+        view_set = view_set_lookup.get(validated_payload["category"])
+        if not view_set:
             self.raise_not_implemented(validated_payload)
 
-        raw_response = business_logic_func(validated_payload, original_filters)
-
-        return Response(raw_response)
+        return view_set.as_view()(request._request)
 
     @staticmethod
     def raise_not_implemented(payload):
