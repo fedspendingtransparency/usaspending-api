@@ -35,6 +35,11 @@ def award_data_fixture(db):
         program_activity_name="PROGRAM_ACTIVITY_2",
     )
 
+    baker.make("references.DisasterEmergencyFundCode", code="L", group_name="covid_19", public_law="LAW", title="title")
+    baker.make(
+        "references.DisasterEmergencyFundCode", code="Z", group_name="infrastructure", public_law="LAW", title="title"
+    )
+
     award1 = baker.make(
         "search.AwardSearch",
         category="loans",
@@ -51,6 +56,7 @@ def award_data_fixture(db):
         uri=None,
         display_award_id="award200",
         program_activities=[{"code": "0123", "name": "PROGRAM_ACTIVITY_123"}],
+        spending_by_defc=None,
     )
     award2 = baker.make(
         "search.AwardSearch",
@@ -60,12 +66,17 @@ def award_data_fixture(db):
         fain=None,
         generated_unique_award_id="CONT_IDV_YUGGY2_8900",
         award_id=300,
+        display_award_id="award300",
         latest_transaction_id=321032103,
         period_of_performance_current_end_date="2019-09-09",
         period_of_performance_start_date="2014-09-10",
         piid="YUGGY2",
         type="IDV_B_A",
         uri=None,
+        spending_by_defc=[
+            {"defc": "L", "outlay": 100.0, "obligation": 10.0},
+            {"defc": "Z", "outlay": 200.0, "obligation": 20.0},
+        ],
     )
     baker.make(
         "search.AwardSearch",
@@ -3651,3 +3662,79 @@ def test_spending_by_subaward_new_sort_fields(
     assert len(results) == 7
     assert results[0]["Sub-Award Type"] == "sub type 7"
     assert results[6]["Sub-Award Type"] == "sub type 1"
+
+
+@pytest.mark.django_db
+def test_covid_and_iija_values(client, monkeypatch, elasticsearch_award_index, award_data_fixture):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    request_body = {
+        "spending_level": "awards",
+        "fields": [
+            "Award ID",
+            "COVID-19 Obligations",
+            "COVID-19 Outlays",
+            "Infrastructure Obligations",
+            "Infrastructure Outlays",
+        ],
+        "sort": "Award ID",
+        "limit": 50,
+        "page": 1,
+        "filters": {
+            "award_ids": ["award200"],
+            "time_period": [{"start_date": "2008-01-01", "end_date": "2015-12-31"}],
+            "award_type_codes": ["07"],
+        },
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(request_body)
+    )
+    expected_result = [
+        {
+            "internal_id": 200,
+            "generated_internal_id": "ASST_NON_DECF0000058_8900",
+            "Award ID": "award200",
+            "COVID-19 Obligations": None,
+            "COVID-19 Outlays": None,
+            "Infrastructure Obligations": None,
+            "Infrastructure Outlays": None,
+        }
+    ]
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.data["results"] == expected_result
+
+    request_body = {
+        "spending_level": "awards",
+        "fields": [
+            "Award ID",
+            "COVID-19 Obligations",
+            "COVID-19 Outlays",
+            "Infrastructure Obligations",
+            "Infrastructure Outlays",
+        ],
+        "sort": "Award ID",
+        "limit": 50,
+        "page": 1,
+        "filters": {
+            "award_ids": ["award300"],
+            "time_period": [{"start_date": "2008-01-01", "end_date": "2015-12-31"}],
+            "award_type_codes": ["IDV_B_A"],
+        },
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(request_body)
+    )
+    expected_result = [
+        {
+            "internal_id": 300,
+            "generated_internal_id": "CONT_IDV_YUGGY2_8900",
+            "Award ID": "award300",
+            "COVID-19 Obligations": 10.0,
+            "COVID-19 Outlays": 100.0,
+            "Infrastructure Obligations": 20.0,
+            "Infrastructure Outlays": 200.0,
+        }
+    ]
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.data["results"] == expected_result
