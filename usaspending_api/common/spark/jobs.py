@@ -1,12 +1,13 @@
 import logging
 from abc import ABC, abstractmethod
+from contextlib import contextmanager
 from typing import TYPE_CHECKING, Generator
 
 from databricks.sdk import WorkspaceClient
 from django.core.management import call_command
 
 from usaspending_api.common.helpers.spark_helpers import configure_spark_session, get_active_spark_session
-from usaspending_api.tests.conftest_spark import SPARK_SESSION_JARS
+from usaspending_api.common.spark.configs import LOCAL_EXTENDED_EXTRA_CONF
 
 if TYPE_CHECKING:
     from pyspark.sql import SparkSession
@@ -78,27 +79,13 @@ class LocalStrategy(_AbstractStrategy):
         return "LOCAL"
 
     @staticmethod
+    @contextmanager
     def _get_spark_session() -> Generator["SparkSession", None, None]:
         extra_conf = {
-            # This is the default, but being explicit
-            "spark.master": "local[*]",
-            "spark.driver.host": "127.0.0.1",  # if not set fails in local envs, trying to use network IP instead
-            # Client deploy mode is the default, but being explicit.
-            # Means the driver node is the place where the SparkSession is instantiated (and/or where spark-submit
-            # process is started from, even if started under the hood of a Py4J JavaGateway). With a "standalone" (not
-            # YARN or Mesos or Kubernetes) cluster manager, only client mode is supported.
-            "spark.submit.deployMode": "client",
-            # Default of 1g (1GiB) for Driver. Increase here if the Java process is crashing with memory errors
+            **LOCAL_EXTENDED_EXTRA_CONF,
+            # Overwrite to allow more memory given this will process more data than test cases
             "spark.driver.memory": "2g",
             "spark.executor.memory": "2g",
-            "spark.jars.packages": ",".join(SPARK_SESSION_JARS),
-            # Delta Lake config for Delta tables and SQL. Need these to keep Delta table metadata in the metastore
-            "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension",
-            "spark.sql.catalog.spark_catalog": "org.apache.spark.sql.delta.catalog.DeltaCatalog",
-            # See comment below about old date and time values cannot parsed without these
-            "spark.sql.legacy.parquet.datetimeRebaseModeInWrite": "LEGACY",  # for dates at/before 1900
-            "spark.sql.legacy.parquet.int96RebaseModeInWrite": "LEGACY",  # for timestamps at/before 1900
-            "spark.sql.jsonGenerator.ignoreNullFields": "false",  # keep nulls in our json
         }
         spark = get_active_spark_session()
         spark_created_for_job = False
@@ -113,8 +100,8 @@ class LocalStrategy(_AbstractStrategy):
 
     def handle_start(self, job_name: str, command_name: str, command_options: list[str], **kwargs) -> None:
         try:
-            self._get_spark_session()
-            call_command(command_name, *command_options)
+            with self._get_spark_session():
+                call_command(command_name, *command_options)
         except Exception:
             logger.exception(f"Failed on command: {command_name} {' '.join(command_options)}")
             raise
