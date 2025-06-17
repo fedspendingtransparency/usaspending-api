@@ -47,6 +47,8 @@ def award_financial_data():
         action_date="2020-01-01",
         spending_by_defc=None,
         disaster_emergency_fund_codes=None,
+        generated_pragmatic_obligation=1000,
+        total_outlays=10000,
     )
     baker.make(
         "search.AwardSearch",
@@ -59,6 +61,8 @@ def award_financial_data():
         total_covid_outlay=100.0,
         total_iija_obligation=0.0,
         total_iija_outlay=0.0,
+        generated_pragmatic_obligation=10.0,
+        total_outlays=100.0,
     )
     baker.make(
         "search.AwardSearch",
@@ -74,6 +78,8 @@ def award_financial_data():
         total_covid_outlay=500.0,
         total_iija_obligation=0.0,
         total_iija_outlay=0.0,
+        generated_pragmatic_obligation=50.0,
+        total_outlays=500.0,
     )
     baker.make(
         "search.AwardSearch",
@@ -89,6 +95,8 @@ def award_financial_data():
         total_covid_outlay=400.0,
         total_iija_obligation=0.0,
         total_iija_outlay=0.0,
+        generated_pragmatic_obligation=90.0,
+        total_outlays=900.0,
     )
     baker.make(
         "search.AwardSearch",
@@ -104,6 +112,8 @@ def award_financial_data():
         total_covid_outlay=0.0,
         total_iija_obligation=60.0,
         total_iija_outlay=600.0,
+        generated_pragmatic_obligation=130.0,
+        total_outlays=1300.0,
     )
 
 
@@ -197,6 +207,35 @@ def test_award_financial_spending_level(client, monkeypatch, elasticsearch_award
     resp = client.post(
         "/api/v2/search/spending_by_category/defc",
         content_type="application/json",
+        data=json.dumps(
+            {
+                "spending_level": "award_financial",
+                "filters": {"award_ids": ["1", "2", "3", "4", "5"], "def_codes": ["Q", "L"]},
+            }
+        ),
+    )
+    expected_result = [
+        {
+            "id": None,
+            "code": "Q",
+            "name": "DEFC Q",
+            "amount": 120.0,
+            "total_outlays": 1200.0,
+        },
+        {
+            "id": None,
+            "code": "L",
+            "name": "DEFC L",
+            "amount": 30.0,
+            "total_outlays": 300.0,
+        },
+    ]
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+    assert resp.json()["results"] == expected_result
+
+    resp = client.post(
+        "/api/v2/search/spending_by_category/defc",
+        content_type="application/json",
         data=json.dumps({"spending_level": "award_financial", "filters": {"award_ids": ["5"]}}),
     )
     expected_result = [
@@ -213,6 +252,105 @@ def test_award_financial_spending_level(client, monkeypatch, elasticsearch_award
             "name": "DEFC Z",
             "amount": 60.0,
             "total_outlays": 600.0,
+        },
+    ]
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+    assert resp.json()["results"] == expected_result
+
+
+def test_awards_spending_level(client, monkeypatch, elasticsearch_award_index, award_financial_data):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    resp = client.post(
+        "/api/v2/search/spending_by_category/defc",
+        content_type="application/json",
+        data=json.dumps({"spending_level": "awards", "filters": {"award_ids": ["1", "2", "3", "4", "5"]}}),
+    )
+    expected_result = [
+        {
+            "id": None,
+            "code": "Q",
+            "name": "DEFC Q",
+            "amount": 220.0,
+            "total_outlays": 2200.0,
+        },
+        {
+            "id": None,
+            "code": "M",
+            "name": "DEFC M",
+            "amount": 140.0,
+            "total_outlays": 1400.0,
+        },
+        {
+            "id": None,
+            "code": "Z",
+            "name": "DEFC Z",
+            "amount": 130.0,
+            "total_outlays": 1300.0,
+        },
+        {
+            "id": None,
+            "code": "L",
+            "name": "DEFC L",
+            "amount": 60.0,
+            "total_outlays": 600.0,
+        },
+    ]
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+    assert resp.json()["results"] == expected_result
+
+    resp = client.post(
+        "/api/v2/search/spending_by_category/defc",
+        content_type="application/json",
+        data=json.dumps(
+            {"spending_level": "awards", "filters": {"award_ids": ["1", "2", "3", "4", "5"], "def_codes": ["Q"]}}
+        ),
+    )
+    expected_result = [
+        {
+            "id": None,
+            "code": "Q",
+            "name": "DEFC Q",
+            "amount": 220.0,
+            "total_outlays": 2200.0,
+        },
+        {
+            "id": None,
+            "code": "Z",
+            "name": "DEFC Z",
+            "amount": 130.0,
+            "total_outlays": 1300.0,
+        },
+        {
+            "id": None,
+            "code": "M",
+            "name": "DEFC M",
+            "amount": 90.0,
+            "total_outlays": 900.0,
+        },
+    ]
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+    assert resp.json()["results"] == expected_result
+
+    resp = client.post(
+        "/api/v2/search/spending_by_category/defc",
+        content_type="application/json",
+        data=json.dumps({"spending_level": "awards", "filters": {"award_ids": ["5"]}}),
+    )
+    expected_result = [
+        {
+            "id": None,
+            "code": "Q",
+            "name": "DEFC Q",
+            "amount": 130.0,
+            "total_outlays": 1300.0,
+        },
+        {
+            "id": None,
+            "code": "Z",
+            "name": "DEFC Z",
+            "amount": 130.0,
+            "total_outlays": 1300.0,
         },
     ]
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"

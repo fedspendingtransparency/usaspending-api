@@ -39,6 +39,7 @@ class Category:
     nested_path: str | None = None
     obligation_field: str | None = None
     outlay_field: str | None = None
+    filter_key_to_limit: str | None = None
 
 
 @api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
@@ -227,14 +228,21 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
             )
 
         # Apply the aggregations
+        base_aggregation = search.aggs
         if self.category.nested_path:
-            search.aggs.bucket("nested_agg", A("nested", path=self.category.nested_path)).bucket(
-                "group_by_agg_key", group_by_agg_key
-            ).metric("sum_field", sum_field).pipeline("sum_bucket_sort", sum_bucket_sort)
-        else:
-            search.aggs.bucket("group_by_agg_key", group_by_agg_key).metric("sum_field", sum_field).pipeline(
-                "sum_bucket_sort", sum_bucket_sort
+            base_aggregation = base_aggregation.bucket("nested_agg", A("nested", path=self.category.nested_path))
+        if self.category.filter_key_to_limit and self.category.filter_key_to_limit in self.filters:
+            base_aggregation = base_aggregation.bucket(
+                "filter_agg",
+                A(
+                    "filter",
+                    terms={self.category.agg_key: self.filters[self.category.filter_key_to_limit]},
+                ),
             )
+
+        base_aggregation.bucket("group_by_agg_key", group_by_agg_key).metric("sum_field", sum_field).pipeline(
+            "sum_bucket_sort", sum_bucket_sort
+        )
 
         # Set size to 0 since we don't care about documents returned
         search.update_from_dict({"size": 0})
