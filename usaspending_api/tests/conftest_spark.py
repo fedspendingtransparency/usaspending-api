@@ -3,6 +3,7 @@ import logging
 import uuid
 from datetime import datetime
 from pathlib import Path
+from typing import TYPE_CHECKING, Generator
 
 import boto3
 import pytest
@@ -10,7 +11,6 @@ from django.core.management import call_command
 from django.db import connections
 from model_bakery import baker
 from psycopg2.extensions import AsIs
-from pyspark.sql import SparkSession
 from usaspending_api import settings
 from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.helpers.spark_helpers import (
@@ -18,9 +18,13 @@ from usaspending_api.common.helpers.spark_helpers import (
     is_spark_context_stopped,
     stop_spark_context,
 )
+from usaspending_api.common.spark.configs import LOCAL_BASIC_EXTRA_CONF
 from usaspending_api.config import CONFIG
 from usaspending_api.etl.award_helpers import update_awards
 from usaspending_api.etl.management.commands.create_delta_table import LOAD_QUERY_TABLE_SPEC, LOAD_TABLE_TABLE_SPEC
+
+if TYPE_CHECKING:
+    from pyspark.sql import SparkSession
 
 # ==== Spark Automated Integration Test Fixtures ==== #
 
@@ -36,26 +40,6 @@ from usaspending_api.etl.management.commands.create_delta_table import LOAD_QUER
 #    and look to see what version its dependent JARs are at that your code requires are runtime. If seeing errors or are
 #    uncertain of compatibility, see what working version-sets are aligned to an Amazon EMR release here:
 #    https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-app-versions-6.x.html
-
-# The versions below are determined by the current version of Databricks in use
-_SCALA_VERSION = "2.12"
-_HADOOP_VERSION = "3.3.4"
-_SPARK_VERSION = "3.5.0"
-_DELTA_VERSION = "3.1.0"
-
-
-# List of Maven coordinates for required JAR files used by running code, which can be added to the driver and
-# executor class paths
-SPARK_SESSION_JARS = [
-    # "com.amazonaws:aws-java-sdk:1.12.31",
-    # hadoop-aws is an add-on to hadoop with Classes that allow hadoop to interface with an S3A (AWS S3) FileSystem
-    # NOTE That in order to work, the version number should be the same as the Hadoop version used by your Spark runtime
-    # It SHOULD pull in (via Ivy package manager from maven repo) the version of com.amazonaws:aws-java-sdk that is
-    # COMPATIBLE with it (so that should not  be set as a dependent package by us)
-    f"org.apache.hadoop:hadoop-aws:{_HADOOP_VERSION}",
-    "org.postgresql:postgresql:42.2.23",
-    f"io.delta:delta-spark_{_SCALA_VERSION}:{_DELTA_VERSION}",
-]
 
 DELTA_LAKE_UNITTEST_SCHEMA_NAME = "unittest"
 
@@ -138,7 +122,7 @@ def s3_unittest_data_bucket(s3_unittest_data_bucket_setup_and_teardown):
 
 
 @pytest.fixture(scope="session")
-def spark(tmp_path_factory) -> SparkSession:
+def spark(tmp_path_factory) -> Generator["SparkSession", None, None]:
     """Throw an error if coming into a test using this fixture which needs to create a
     NEW SparkContext (i.e. new JVM invocation to run Spark in a java process)
     AND, proactively cleanup any SparkContext created by this test after it completes
@@ -157,31 +141,10 @@ def spark(tmp_path_factory) -> SparkSession:
     # another test-scoped fixture should be created, pulling this in, and blowing away all schemas and tables as part
     # of each run
     spark_sql_warehouse_dir = str(tmp_path_factory.mktemp(basename="spark-warehouse", numbered=False))
-
     extra_conf = {
-        # This is the default, but being explicit
-        "spark.master": "local[*]",
-        "spark.driver.host": "127.0.0.1",  # if not set fails in local envs, trying to use network IP instead
-        # Client deploy mode is the default, but being explicit.
-        # Means the driver node is the place where the SparkSession is instantiated (and/or where spark-submit
-        # process is started from, even if started under the hood of a Py4J JavaGateway). With a "standalone" (not
-        # YARN or Mesos or Kubernetes) cluster manager, only client mode is supported.
-        "spark.submit.deployMode": "client",
-        # Default of 1g (1GiB) for Driver. Increase here if the Java process is crashing with memory errors
-        "spark.driver.memory": "1g",
-        "spark.executor.memory": "1g",
-        "spark.ui.enabled": "false",  # Does the same as setting SPARK_TESTING=true env var
-        "spark.jars.packages": ",".join(SPARK_SESSION_JARS),
-        # Delta Lake config for Delta tables and SQL. Need these to keep Delta table metadata in the metastore
-        "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension",
-        "spark.sql.catalog.spark_catalog": "org.apache.spark.sql.delta.catalog.DeltaCatalog",
-        # See comment below about old date and time values cannot parsed without these
-        "spark.sql.legacy.parquet.datetimeRebaseModeInWrite": "LEGACY",  # for dates at/before 1900
-        "spark.sql.legacy.parquet.int96RebaseModeInWrite": "LEGACY",  # for timestamps at/before 1900
-        # For Spark SQL warehouse dir and Hive metastore_db
+        **LOCAL_BASIC_EXTRA_CONF,
         "spark.sql.warehouse.dir": spark_sql_warehouse_dir,
         "spark.hadoop.javax.jdo.option.ConnectionURL": f"jdbc:derby:;databaseName={spark_sql_warehouse_dir}/metastore_db;create=true",
-        "spark.sql.jsonGenerator.ignoreNullFields": "false",  # keep nulls in our json
     }
     spark = configure_spark_session(
         app_name="Unit Test Session",
@@ -197,7 +160,7 @@ def spark(tmp_path_factory) -> SparkSession:
 
 
 @pytest.fixture
-def hive_unittest_metastore_db(spark: SparkSession):
+def hive_unittest_metastore_db(spark: "SparkSession"):
     """A fixture that WIPES all of the schemas (aka databases) and tables in each schema from the hive metastore_db
     at the end of each test run, so that the metastore is fresh.
 
@@ -234,7 +197,7 @@ def hive_unittest_metastore_db(spark: SparkSession):
 
 
 @pytest.fixture
-def delta_lake_unittest_schema(spark: SparkSession, hive_unittest_metastore_db):
+def delta_lake_unittest_schema(spark: "SparkSession", hive_unittest_metastore_db):
     """Specify which Delta 'SCHEMA' to use (NOTE: 'SCHEMA' and 'DATABASE' are interchangeable in Delta Spark SQL),
     and cleanup any objects created in the schema after the test run."""
 
@@ -1534,7 +1497,7 @@ def populate_usas_data_and_recipients_from_broker(db, populate_usas_data, popula
     yield
 
 
-def create_all_delta_tables(spark: SparkSession, s3_bucket: str, tables_to_load: list):
+def create_all_delta_tables(spark: "SparkSession", s3_bucket: str, tables_to_load: list):
     load_query_tables = [val for val in tables_to_load if val in LOAD_QUERY_TABLE_SPEC]
     load_table_tables = [val for val in tables_to_load if val in LOAD_TABLE_TABLE_SPEC]
     for dest_table in load_table_tables + load_query_tables:
@@ -1555,7 +1518,7 @@ def create_all_delta_tables(spark: SparkSession, s3_bucket: str, tables_to_load:
             call_command("create_delta_table", f"--destination-table={dest_table}", f"--spark-s3-bucket={s3_bucket}")
 
 
-def create_and_load_all_delta_tables(spark: SparkSession, s3_bucket: str, tables_to_load: list):
+def create_and_load_all_delta_tables(spark: "SparkSession", s3_bucket: str, tables_to_load: list):
     create_all_delta_tables(spark, s3_bucket, tables_to_load)
 
     load_query_tables = [val for val in tables_to_load if val in LOAD_QUERY_TABLE_SPEC]
