@@ -2,6 +2,7 @@ from unittest.mock import patch
 
 import pandas as pd
 import pytest
+from django.core.management import call_command
 from usaspending_api.download.management.commands.delta_downloads.award_financial.columns import (
     select_cols,
     groupby_cols,
@@ -12,9 +13,15 @@ from usaspending_api.download.management.commands.delta_downloads.award_financia
 )
 
 
-@pytest.fixture(scope="module")
-def account_download_table(spark):
+@pytest.fixture(scope="function")
+def account_download_table(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
     spark.sql("CREATE DATABASE IF NOT EXISTS rpt")
+    call_command(
+        "create_delta_table",
+        f"--destination-table=account_download",
+        "--alt-db=int",
+        f"--spark-s3-bucket={s3_unittest_data_bucket}",
+    )
     columns = list(set(select_cols + groupby_cols)) + [
         "reporting_fiscal_year",
         "reporting_fiscal_quarter",
@@ -44,7 +51,6 @@ def account_download_table(spark):
     ).fillna("dummy_text")
     spark.createDataFrame(test_data_df).write.format("delta").mode("overwrite").saveAsTable("rpt.account_download")
     yield
-    spark.sql("DROP TABLE IF EXISTS rpt.account_download")
 
 
 @patch(
