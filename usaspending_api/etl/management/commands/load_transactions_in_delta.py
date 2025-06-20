@@ -1143,7 +1143,7 @@ class Command(BaseCommand):
             except AnalysisException as e:
                 if re.match(
                     r"^\[TABLE_OR_VIEW_NOT_FOUND\] The table or view `raw`\.`transaction_normalized` cannot be found\..*$",
-                    e.desc,
+                    str(e),
                     re.MULTILINE,
                 ):
                     # In this case, we just don't populate transaction_id_lookup
@@ -1171,7 +1171,7 @@ class Command(BaseCommand):
                 except AnalysisException as e:
                     if re.match(
                         r"^\[TABLE_OR_VIEW_NOT_FOUND\] The table or view `raw`\.`transaction_fabs` cannot be found\..*$",
-                        e.desc,
+                        str(e),
                         re.MULTILINE,
                     ):
                         # In this case, we just skip extending the orphaned transactions with this table
@@ -1199,7 +1199,7 @@ class Command(BaseCommand):
                 except AnalysisException as e:
                     if re.match(
                         r"^\[TABLE_OR_VIEW_NOT_FOUND\] The table or view `raw`\.`transaction_fpds` cannot be found\..*$",
-                        e.desc,
+                        str(e),
                         re.MULTILINE,
                     ):
                         # In this case, we just skip extending the orphaned transactions with this table
@@ -1511,7 +1511,7 @@ class Command(BaseCommand):
                     except AnalysisException as e:
                         if re.match(
                             rf"^\[TABLE_OR_VIEW_NOT_FOUND\] The table or view `raw`\.`{destination_table}` cannot be found\..*$",
-                            e.desc,
+                            str(e),
                             re.MULTILINE,
                         ):
                             # In this case, we just don't copy anything over
