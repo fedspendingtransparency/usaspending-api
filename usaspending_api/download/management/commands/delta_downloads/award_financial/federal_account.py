@@ -34,6 +34,7 @@ class AccountDownloadDataFrameBuilder:
         self,
         spark: SparkSession,
         account_download_filter: AccountDownloadFilter,
+        table_name: str = "rpt.account_download",
     ):
         self.reporting_fiscal_year = account_download_filter.year
         self.reporting_fiscal_quarter = account_download_filter.quarter or account_download_filter.month // 3
@@ -41,7 +42,7 @@ class AccountDownloadDataFrameBuilder:
         self.agency = account_download_filter.agency
         self.federal_account_id = account_download_filter.federal_account_id
         self.def_codes = account_download_filter.def_codes
-        self.df: str = spark.table("rpt.account_download")
+        self.df: str = spark.table(table_name)
         self.groupby_cols: list[str] = groupby_cols
         self.select_cols: list[str] = select_cols
 
