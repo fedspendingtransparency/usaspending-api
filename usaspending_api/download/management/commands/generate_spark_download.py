@@ -12,7 +12,6 @@ from pyspark.sql import SparkSession
 
 from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers.dict_helpers import order_nested_object
 from usaspending_api.common.helpers.download_csv_strategies import SparkToCSVStrategy
 from usaspending_api.common.helpers.s3_helpers import upload_download_file_to_s3
 from usaspending_api.common.helpers.spark_helpers import (
@@ -24,8 +23,10 @@ from usaspending_api.common.helpers.spark_helpers import (
 )
 from usaspending_api.download.filestreaming.download_generation import build_data_file_name
 from usaspending_api.download.filestreaming.download_source import DownloadSource
-from usaspending_api.download.management.commands.delta_downloads.award_financial import federal_account
-from usaspending_api.download.download_utils import create_unique_filename
+from usaspending_api.download.management.commands.delta_downloads.award_financial.federal_account import (
+    AccountDownloadDataFrameBuilder,
+    AccountDownloadFilter,
+)
 from usaspending_api.download.lookups import JOB_STATUS_DICT, FILE_FORMATS, VALUE_MAPPINGS
 from usaspending_api.download.models import DownloadJob
 from usaspending_api.download.v2.request_validations import AccountDownloadValidator, DownloadValidatorBase
@@ -33,8 +34,7 @@ from usaspending_api.download.v2.request_validations import AccountDownloadValid
 DOWNLOAD_SPEC = {
     "award_financial": {
         "federal_account": {
-            "query": federal_account.DELTA_DOWNLOAD_QUERY,
-            "select_in_formats": [("submission_id", federal_account.SUBMISSION_ID_QUERY)],
+            "df_builder": AccountDownloadDataFrameBuilder,
             "validator_type": AccountDownloadValidator,
         }
     }
@@ -45,6 +45,7 @@ class Command(BaseCommand):
 
     help = "Generate a download zip file based on the provided type and level."
 
+    download_job_id: int
     download_job: DownloadJob
     download_level: str
     download_query: str
@@ -73,6 +74,7 @@ class Command(BaseCommand):
                 for download_level in download_level_list
             ),
         )
+        parser.add_argument("--download-job-id", type=int, required=True)
         parser.add_argument("--file-format", type=str, required=False, choices=list(FILE_FORMATS), default="csv")
         parser.add_argument("--file-prefix", type=str, required=False, default="")
         parser.add_argument("--skip-local-cleanup", action="store_true")
@@ -100,6 +102,7 @@ class Command(BaseCommand):
         # Resolve Parameters
         self.download_type = options["download_type"]
         self.download_level = options["download_level"]
+        self.download_job_id = options["download_job_id"]
         self.file_prefix = options["file_prefix"]
         self.should_cleanup = not options["skip_local_cleanup"]
 
@@ -111,7 +114,7 @@ class Command(BaseCommand):
 
         download_spec = DOWNLOAD_SPEC[self.download_type][self.download_level]
         self.file_format_spec = FILE_FORMATS[options["file_format"]]
-        self.download_query = download_spec["query"]
+        self.df_builder = download_spec["df_builder"]
         self.download_validator_type = download_spec["validator_type"]
         self.jdbc_properties = get_jdbc_connection_properties()
         self.jdbc_url = get_usas_jdbc_url()
@@ -122,68 +125,26 @@ class Command(BaseCommand):
 
         create_ref_temp_views(self.spark)
 
-        self.download_job, self.download_source = self.create_download_job()
-        self.modify_download_query(download_spec["select_in_formats"] or [])
+        self.download_job, self.download_source = self.get_download_job()
         self.process_download()
 
         if spark_created_by_command:
             self.spark.stop()
 
-    def modify_download_query(self, select_in_formats: List[Tuple[str, str]]) -> None:
-        formats_to_apply = []
-        for select_col, query in select_in_formats:
-            formats_to_apply.append(tuple(val[select_col] for val in self.spark.sql(query).collect()))
-        self.download_query = self.download_query.format(*formats_to_apply)
-
-    @cached_property
-    def json_request(self) -> Dict:
-        request_data = {
-            "account_level": "federal_account",
-            "download_types": ["award_financial"],
-            "file_format": "csv",
-            "filters": {
-                "agency": "all",
-                "budget_function": "all",
-                "budget_subfunction": "all",
-                "federal_account": "all",
-                "fy": 2021,
-                "period": 12,
-                "submission_types": ["award_financial"],
-            },
-            "request_type": "account",
-        }
-        validator = self.download_validator_type(request_data)
-        processed_request = order_nested_object(validator.json_request)
-
-        return processed_request
-
-    @cached_property
-    def json_request_string(self) -> str:
-        return json.dumps(self.json_request)
-
     @cached_property
     def download_name(self) -> str:
         return self.download_job.file_name.replace(".zip", "")
 
-    def create_download_job(self) -> Tuple[DownloadJob, DownloadSource]:
-        self.logger.info(f"Creating Download Job for {self.download_type} -> {self.download_level}")
-
-        final_output_zip_name = f"{self.file_prefix}{create_unique_filename(self.json_request)}"
-        download_job_ready_status = JOB_STATUS_DICT["ready"]
-
-        # Create a download_job object for use by the application
-        download_job = DownloadJob.objects.create(
-            job_status_id=download_job_ready_status,
-            file_name=final_output_zip_name,
-            json_request=self.json_request_string,
-        )
-
-        # TODO: This should be updated to be more dynamic to the download type
+    def get_download_job(self) -> Tuple[DownloadJob, DownloadSource]:
+        download_job = DownloadJob.objects.get(download_job_id=self.download_job_id)
+        if download_job.job_status_id != JOB_STATUS_DICT["ready"]:
+            raise InvalidParameterException(f"Download Job {self.download_job_id} is not ready.")
+        json_request = json.loads(download_job.json_request)
         download_source = DownloadSource(
             VALUE_MAPPINGS[self.download_type]["table_name"],
             self.download_level,
             self.download_type,
-            self.json_request.get("agency", "all"),
+            json_request.get("agency", "all"),
             # TODO: Is this necessary for Spark downloads? It was originally added to File C downloads for performance.
             extra_file_type="",
         )
@@ -196,18 +157,28 @@ class Command(BaseCommand):
         files_to_cleanup = []
         try:
             spark_to_csv_strategy = SparkToCSVStrategy(self.logger)
-
             zip_file_path = self.working_dir_path / f"{self.download_name}.zip"
-
+            download_request = json.loads(self.download_job.json_request)
+            account_download_filter = AccountDownloadFilter(
+                year=int(download_request["filters"]["fy"]),
+                month=int(download_request["filters"]["period"]) if "period" in download_request["filters"] else None,
+                quarter=(
+                    int(download_request["filters"]["quarter"]) if "quarter" in download_request["filters"] else None
+                ),
+                agency=download_request["filters"].get("agency"),
+                federal_account_id=download_request["filters"].get("federal_account"),
+                def_codes=download_request["filters"].get("def_codes"),
+            )
+            source_df = self.df_builder(spark=self.spark, account_download_filter=account_download_filter).source_df
             csv_metadata = spark_to_csv_strategy.download_to_csv(
-                self.download_query,
-                self.working_dir_path / self.download_name,
-                self.download_name,
-                self.working_dir_path,
-                zip_file_path,
+                source_sql=None,
+                destination_path=self.working_dir_path / self.download_name,
+                destination_file_name=self.download_name,
+                working_dir_path=self.working_dir_path,
+                download_zip_path=zip_file_path,
+                source_df=source_df,
             )
             files_to_cleanup.extend(csv_metadata.filepaths)
-
             self.download_job.file_size = os.stat(zip_file_path).st_size
             self.download_job.number_of_rows = csv_metadata.number_of_rows
             self.download_job.number_of_columns = csv_metadata.number_of_columns
@@ -223,7 +194,6 @@ class Command(BaseCommand):
         finally:
             if self.should_cleanup:
                 self.cleanup(files_to_cleanup)
-
         self.finish_download()
 
     def start_download(self) -> None:

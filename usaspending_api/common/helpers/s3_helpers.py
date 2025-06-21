@@ -77,12 +77,12 @@ def upload_download_file_to_s3(file_path, sub_dir=None):
 
 
 def multipart_upload(bucketname, regionname, source_path, keyname, sub_dir=None):
-    s3client = boto3.client("s3", region_name=regionname)
+    s3_client = _get_boto3("client", "s3", region_name=regionname)
     source_size = Path(source_path).stat().st_size
     # Sets the chunksize at minimum ~5MB to sqrt(5MB) * sqrt(source size)
     bytes_per_chunk = max(int(math.sqrt(5242880) * math.sqrt(source_size)), 5242880)
     config = TransferConfig(multipart_chunksize=bytes_per_chunk)
-    transfer = S3Transfer(s3client, config)
+    transfer = S3Transfer(s3_client, config)
     file_name = Path(keyname).name
     if sub_dir is not None:
         file_name = f"{sub_dir}/{file_name}"

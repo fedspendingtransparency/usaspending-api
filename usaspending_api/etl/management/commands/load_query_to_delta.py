@@ -317,6 +317,7 @@ TABLE_SPEC = {
         "model": None,
         "is_from_broker": False,
         "source_query": [account_download_load_sql_string],
+        "source_query_incremental": None,
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
