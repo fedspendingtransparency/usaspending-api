@@ -3,7 +3,6 @@ from unittest.mock import patch
 import pandas as pd
 import pytest
 from django.core.management import call_command
-from pyspark.sql.functions import col, to_date
 from usaspending_api.download.management.commands.delta_downloads.award_financial.columns import (
     select_cols,
     groupby_cols,
