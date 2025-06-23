@@ -1,10 +1,10 @@
 import pytest
-
 from django.conf import settings
 from model_bakery import baker
 from rest_framework import status
 
 from usaspending_api.agency.v2.views.agency_base import AgencyBase
+from usaspending_api.reporting.models import ReportingAgencyOverview
 
 url = "/api/v2/reporting/agencies/123/overview/"
 
@@ -30,6 +30,7 @@ def setup_test_data(db):
         reporting_fiscal_period=12,
         published_date="2021-02-11",
     )
+
     agency = baker.make(
         "references.ToptierAgency", toptier_code="123", abbreviation="ABC", name="Test Agency", _fill_optional=True
     )
@@ -50,6 +51,12 @@ def setup_test_data(db):
         baker.make(
             "accounts.TreasuryAppropriationAccount",
             treasury_account_identifier=3,
+            awarding_toptier_agency_id=agency.toptier_agency_id,
+            tas_rendering_label="tas-3-overview",
+        ),
+        baker.make(
+            "accounts.TreasuryAppropriationAccount",
+            treasury_account_identifier=996,
             awarding_toptier_agency_id=agency.toptier_agency_id,
             tas_rendering_label="tas-3-overview",
         ),
@@ -795,3 +802,161 @@ def test_invalid_monthly_period_filter(client):
     response = resp.json()
 
     assert len(response["results"]) == 30
+
+
+@pytest.mark.django_db
+def test_agency_with_only_file_c_or_d_awards(client):
+    sub = baker.make(
+        "submissions.SubmissionAttributes",
+        submission_id=1,
+        toptier_code="999",
+        quarter_format_flag=False,
+        reporting_fiscal_year=2019,
+        reporting_fiscal_period=9,
+        published_date="2019-07-03",
+    )
+    agency = baker.make(
+        "references.ToptierAgency", toptier_code="999", abbreviation="ABC", name="Test Agency", _fill_optional=True
+    )
+    ta = baker.make(
+        "accounts.TreasuryAppropriationAccount",
+        treasury_account_identifier=999,
+        awarding_toptier_agency_id=agency.toptier_agency_id,
+        tas_rendering_label="tas-999-overview",
+    )
+    baker.make(
+        "accounts.AppropriationAccountBalances",
+        submission_id=sub.submission_id,
+        treasury_account_identifier=ta,
+        total_budgetary_resources_amount_cpe=10,
+    )
+    baker.make(
+        "reporting.ReportingAgencyTas",
+        fiscal_year=sub.reporting_fiscal_year,
+        fiscal_period=sub.reporting_fiscal_period,
+        tas_rendering_label=ta.tas_rendering_label,
+        toptier_code=agency.toptier_code,
+        diff_approp_ocpa_obligated_amounts=0,
+        appropriation_obligated_amount=100,
+    )
+    baker.make(
+        "reporting.ReportingAgencyOverview",
+        reporting_agency_overview_id=999,
+        toptier_code=999,
+        fiscal_year=2019,
+        fiscal_period=9,
+        total_budgetary_resources=None,
+        unlinked_procurement_c_awards=5,
+        unlinked_procurement_d_awards=None,
+        unlinked_assistance_c_awards=None,
+        unlinked_assistance_d_awards=None,
+    )
+
+    # Only unlinked procurement awards from File C
+    response = client.get("/api/v2/reporting/agencies/999/overview/").json()
+    expected_results = [
+        {
+            "fiscal_year": 2019,
+            "fiscal_period": 9,
+            "current_total_budget_authority_amount": None,
+            "total_budgetary_resources": None,
+            "percent_of_total_budgetary_resources": None,
+            "recent_publication_date": "2019-07-03T00:00:00Z",
+            "recent_publication_date_certified": False,
+            "tas_account_discrepancies_totals": {
+                "gtas_obligation_total": None,
+                "tas_accounts_total": 100,
+                "tas_obligation_not_in_gtas_total": 0,
+                "missing_tas_accounts_count": 0,
+            },
+            "obligation_difference": None,
+            "unlinked_contract_award_count": 5,
+            "unlinked_assistance_award_count": None,
+            "assurance_statement_url": f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/2019-P09-999_Test%20Agency%20(ABC)-Agency_Comments.txt",
+        },
+    ]
+    assert response["results"] == expected_results
+
+    # Only unlinked procurement awards from File D
+    ReportingAgencyOverview.objects.filter(reporting_agency_overview_id=999).update(
+        unlinked_procurement_c_awards=None, unlinked_procurement_d_awards=10
+    )
+    response = client.get("/api/v2/reporting/agencies/999/overview/").json()
+    expected_results = [
+        {
+            "fiscal_year": 2019,
+            "fiscal_period": 9,
+            "current_total_budget_authority_amount": None,
+            "total_budgetary_resources": None,
+            "percent_of_total_budgetary_resources": None,
+            "recent_publication_date": "2019-07-03T00:00:00Z",
+            "recent_publication_date_certified": False,
+            "tas_account_discrepancies_totals": {
+                "gtas_obligation_total": None,
+                "tas_accounts_total": 100,
+                "tas_obligation_not_in_gtas_total": 0,
+                "missing_tas_accounts_count": 0,
+            },
+            "obligation_difference": None,
+            "unlinked_contract_award_count": 10,
+            "unlinked_assistance_award_count": None,
+            "assurance_statement_url": f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/2019-P09-999_Test%20Agency%20(ABC)-Agency_Comments.txt",
+        },
+    ]
+    assert response["results"] == expected_results
+
+    # Only unlinked assistance awards from File C
+    ReportingAgencyOverview.objects.filter(reporting_agency_overview_id=999).update(
+        unlinked_procurement_d_awards=None, unlinked_assistance_c_awards=15
+    )
+    response = client.get("/api/v2/reporting/agencies/999/overview/").json()
+    expected_results = [
+        {
+            "fiscal_year": 2019,
+            "fiscal_period": 9,
+            "current_total_budget_authority_amount": None,
+            "total_budgetary_resources": None,
+            "percent_of_total_budgetary_resources": None,
+            "recent_publication_date": "2019-07-03T00:00:00Z",
+            "recent_publication_date_certified": False,
+            "tas_account_discrepancies_totals": {
+                "gtas_obligation_total": None,
+                "tas_accounts_total": 100,
+                "tas_obligation_not_in_gtas_total": 0,
+                "missing_tas_accounts_count": 0,
+            },
+            "obligation_difference": None,
+            "unlinked_contract_award_count": None,
+            "unlinked_assistance_award_count": 15,
+            "assurance_statement_url": f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/2019-P09-999_Test%20Agency%20(ABC)-Agency_Comments.txt",
+        },
+    ]
+    assert response["results"] == expected_results
+
+    # Only unlinked assistance awards from File D
+    ReportingAgencyOverview.objects.filter(reporting_agency_overview_id=999).update(
+        unlinked_assistance_c_awards=None, unlinked_assistance_d_awards=20
+    )
+    response = client.get("/api/v2/reporting/agencies/999/overview/").json()
+    expected_results = [
+        {
+            "fiscal_year": 2019,
+            "fiscal_period": 9,
+            "current_total_budget_authority_amount": None,
+            "total_budgetary_resources": None,
+            "percent_of_total_budgetary_resources": None,
+            "recent_publication_date": "2019-07-03T00:00:00Z",
+            "recent_publication_date_certified": False,
+            "tas_account_discrepancies_totals": {
+                "gtas_obligation_total": None,
+                "tas_accounts_total": 100,
+                "tas_obligation_not_in_gtas_total": 0,
+                "missing_tas_accounts_count": 0,
+            },
+            "obligation_difference": None,
+            "unlinked_contract_award_count": None,
+            "unlinked_assistance_award_count": 20,
+            "assurance_statement_url": f"{settings.FILES_SERVER_BASE_URL}/agency_submissions/2019-P09-999_Test%20Agency%20(ABC)-Agency_Comments.txt",
+        },
+    ]
+    assert response["results"] == expected_results
