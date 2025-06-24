@@ -49,41 +49,45 @@ WITH
     -- City (foreign)
     city_foreign_pop_cte AS (
         SELECT
-            CONCAT(UPPER(pop_city_name), ', ', UPPER(pop_country_name)) AS location,
+            CONCAT(UPPER(pop_city_name), ', ', rcc.country_name) AS location,
             TO_JSONB(
                 JSONB_BUILD_OBJECT(
                     'city_name', UPPER(pop_city_name),
                     'state_name', NULL,
-                    'country_name', UPPER(pop_country_name),
+                    'country_name', rcc.country_name,
                     'location_type', 'city'
                 )
             ) AS location_json
         FROM
             rpt.transaction_search
+        JOIN
+            ref_country_code AS rcc ON pop_country_code = rcc.country_code
         WHERE
-            UPPER(pop_country_name) NOT IN ('UNITED STATES OF AMERICA', 'UNITED STATES')
+            rcc.country_name NOT IN ('UNITED STATES OF AMERICA', 'UNITED STATES')
             AND
-            pop_country_name IS NOT NULL
+            rcc.country_name IS NOT NULL
             AND
             pop_city_name IS NOT NULL
     ),
     city_foreign_rl_cte AS (
         SELECT
-            CONCAT(UPPER(recipient_location_city_name), ', ', UPPER(recipient_location_country_name)) AS location,
+            CONCAT(UPPER(recipient_location_city_name), ', ', rcc.country_name) AS location,
             TO_JSONB(
                 JSONB_BUILD_OBJECT(
                     'city_name', UPPER(recipient_location_city_name),
                     'state_name', NULL,
-                    'country_name', UPPER(recipient_location_country_name),
+                    'country_name', rcc.country_name,
                     'location_type', 'city'
                 )
             ) AS location_json
         FROM
             rpt.transaction_search
+        JOIN ref_country_code AS rcc ON
+            recipient_location_country_code = rcc.country_code
         WHERE
-            UPPER(recipient_location_country_name) NOT IN ('UNITED STATES OF AMERICA', 'UNITED STATES')
+            rcc.country_name NOT IN ('UNITED STATES OF AMERICA', 'UNITED STATES')
             AND
-            recipient_location_country_name IS NOT NULL
+            rcc.country_name IS NOT NULL
             AND
             recipient_location_city_name IS NOT NULL
     ),
