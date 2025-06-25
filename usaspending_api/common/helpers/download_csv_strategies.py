@@ -10,7 +10,6 @@ from django.conf import settings
 from pyspark.sql import DataFrame
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
 from usaspending_api.common.helpers.s3_helpers import delete_s3_objects, download_s3_object
-from usaspending_api.common.helpers.sql_helpers import read_sql_file_to_text
 from usaspending_api.download.filestreaming.download_generation import (
     EXCEL_ROW_LIMIT,
     split_and_zip_data_files,

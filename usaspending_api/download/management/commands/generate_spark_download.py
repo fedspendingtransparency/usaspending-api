@@ -20,6 +20,7 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_jdbc_connection_properties,
     get_usas_jdbc_url,
 )
+from usaspending_api.common.spark.configs import DEFAULT_EXTRA_CONF
 from usaspending_api.download.filestreaming.download_generation import build_data_file_name
 from usaspending_api.download.filestreaming.download_source import DownloadSource
 from usaspending_api.download.management.commands.delta_downloads.award_financial.federal_account import (
@@ -80,21 +81,11 @@ class Command(BaseCommand):
         parser.add_argument("--skip-local-cleanup", action="store_true")
 
     def handle(self, *args, **options):
-        extra_conf = {
-            # Config for Delta Lake tables and SQL. Need these to keep Dela table metadata in the metastore
-            "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension",
-            "spark.sql.catalog.spark_catalog": "org.apache.spark.sql.delta.catalog.DeltaCatalog",
-            # See comment below about old date and time values cannot parsed without these
-            "spark.sql.legacy.parquet.datetimeRebaseModeInWrite": "LEGACY",  # for dates at/before 1900
-            "spark.sql.legacy.parquet.int96RebaseModeInWrite": "LEGACY",  # for timestamps at/before 1900
-            "spark.sql.jsonGenerator.ignoreNullFields": "false",  # keep nulls in our json
-        }
-
         self.spark = get_active_spark_session()
         spark_created_by_command = False
         if not self.spark:
             spark_created_by_command = True
-            self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)
+            self.spark = configure_spark_session(**DEFAULT_EXTRA_CONF, spark_context=self.spark)
 
         # Resolve Parameters
         self.download_type = options["download_type"]
