@@ -24,6 +24,11 @@ from usaspending_api.download.models.download_job import DownloadJob
 from usaspending_api.download.v2.request_validations import DownloadValidatorBase
 from usaspending_api.routers.replicas import ReadReplicaRouter
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
+from usaspending_api.common.experimental_api_flags import is_experimental_download_api
+
+# from usaspending_api.download.management.commands.generate_spark_download.py import Command
+
+# from usaspending_api.common.spark.jobs import DatabricksStrategy, LocalStrategy, SparkJobs
 
 
 @api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
@@ -68,7 +73,21 @@ class BaseDownloadViewSet(APIView):
         )
 
         log_new_download_job(request, download_job)
-        self.process_request(download_job)
+        if (
+            is_experimental_download_api(request)
+            and json_request["request_type"] == "account"
+            and "award_financial" in json_request["download_types"]
+        ):
+            # goes to spark for File C account download
+            self.process_account_download_in_spark(download_job=download_job)
+            # remove File C from json request
+            if len(json_request["download_types"]) > 1:
+                str_to_json = json.loads(download_job.json_request)
+                str_to_json["download_types"].remove("award_financial")
+                download_job.json_request = json.dumps(str_to_json)
+                self.process_request(download_job)
+        else:
+            self.process_request(download_job)
 
         return self.get_download_response(file_name=final_output_zip_name)
 
@@ -84,6 +103,20 @@ class BaseDownloadViewSet(APIView):
             )
             queue = get_sqs_queue(queue_name=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
             queue.send_message(MessageBody=str(download_job.download_job_id))
+
+    def process_account_download_in_spark(self, download_job: DownloadJob):
+        """
+        Process File C downloads through spark instead of sqs for better performance
+        """
+        # waiting for zach's pr to merge in
+        # spark_command = Command()
+        # spark_command.download_job = download_job
+        # spark_command.download_job_id = download_job.download_job_id
+        # spark_command.download_type = "award_financial"
+        # spark_command.download_level = "federal_award"
+        # spark_command.add_arguments()
+        # spark_command.handle()
+        print("process")
 
     def get_download_response(self, file_name: str):
         """
