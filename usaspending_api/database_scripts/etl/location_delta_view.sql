@@ -1,6 +1,6 @@
 DROP VIEW IF EXISTS location_delta_view;
 
-CREATE TEMPORARY VIEW location_delta_view AS
+CREATE VIEW location_delta_view AS
 -- Country
 WITH
     country_cte AS (
