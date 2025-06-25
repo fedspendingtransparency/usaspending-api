@@ -2,6 +2,7 @@ ACCOUNT_DOWNLOAD_COLUMNS = {
     "financial_accounts_by_awards_id": {"delta": "INTEGER NOT NULL", "postgres": "INTEGER NOT NULL"},
     "submission_id": {"delta": "INTEGER NOT NULL", "postgres": "INTEGER NOT NULL"},
     "owning_agency_name": {"delta": "STRING", "postgres": "TEXT"},
+    "federal_account_id": {"delta": "INTEGER", "postgres": "INTEGER"},
     "federal_account_symbol": {"delta": "STRING", "postgres": "TEXT"},
     "federal_account_name": {"delta": "STRING", "postgres": "TEXT"},
     "agency_identifier_name": {"delta": "STRING", "postgres": "TEXT"},
