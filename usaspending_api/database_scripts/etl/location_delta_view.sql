@@ -209,6 +209,7 @@ WITH
             recipient_location_congressional_code_current ~ '^[0-9]{2}$'
     )
 SELECT
+    ROW_NUMBER() OVER (ORDER BY location, location_json) AS id,
     location,
     location_json
 FROM
