@@ -1,6 +1,6 @@
-DROP VIEW IF EXISTS LOCATION_DELTA_VIEW;
+DROP VIEW IF EXISTS location_delta_view;
 
-CREATE TEMPORARY VIEW LOCATION_DELTA_VIEW AS
+CREATE TEMPORARY VIEW location_delta_view AS
 -- Country
 WITH
     country_cte AS (
@@ -94,11 +94,11 @@ WITH
     -- County
     county_cte AS (
         SELECT
-            CONCAT(UPPER(ref_county.county_name), ' COUNTY, ', UPPER(ref_state.name), ', ', 'UNITED STATES') AS location,
+            CONCAT(UPPER(ref_county.county_name), ' COUNTY, ', UPPER(sd.name), ', ', 'UNITED STATES') AS location,
             TO_JSONB(
                 JSONB_BUILD_OBJECT(
                     'county_name', UPPER(ref_county.county_name),
-                    'state_name', UPPER(ref_state.name),
+                    'state_name', UPPER(sd.name),
                     'country_name', 'UNITED STATES',
                     'location_type', 'county'
                 )
@@ -106,16 +106,16 @@ WITH
         FROM
             ref_city_county_state_code AS ref_county
         JOIN
-            state_data AS ref_state ON ref_state.code = ref_county.state_alpha
+            state_data AS sd ON sd.code = ref_county.state_alpha
     ),
     -- Zip code
     zip_cte AS (
         SELECT
-            CONCAT(zips.zip5, ', ', UPPER(ref_state.name), ', ', 'UNITED STATES') AS location,
+            CONCAT(zips.zip5, ', ', UPPER(sd.name), ', ', 'UNITED STATES') AS location,
             TO_JSONB(
                 JSONB_BUILD_OBJECT(
                     'zip_code', zips.zip5,
-                    'state_name', UPPER(ref_state.name),
+                    'state_name', UPPER(sd.name),
                     'country_name', 'UNITED STATES',
                     'location_type', 'zip_code'
                 )
@@ -123,16 +123,16 @@ WITH
         FROM
             zips_grouped AS zips
         JOIN
-            state_data AS ref_state ON ref_state.code = zips.state_abbreviation
+            state_data AS sd ON sd.code = zips.state_abbreviation
     ),
     -- Current Congressional district
     current_cd_pop_cte AS (
         SELECT
-            CONCAT(UPPER(pop_state_code), '-', pop_congressional_code_current) AS location,
+            CONCAT(UPPER(pop_state_code), pop_congressional_code_current) AS location,
             TO_JSONB(
                 JSONB_BUILD_OBJECT(
                     'current_cd', CONCAT(UPPER(pop_state_code), '-', pop_congressional_code_current),
-                    'state_name', UPPER(pop_state_name),
+                    'state_name', UPPER(sd.name),
                     'country_name', 'UNITED STATES',
                     'location_type', 'current_cd'
                 )
@@ -140,7 +140,7 @@ WITH
         FROM
             rpt.transaction_search
         RIGHT JOIN
-            state_data ON state_data.code = pop_state_code
+            state_data AS sd ON sd.code = pop_state_code
         WHERE
             pop_state_code IS NOT NULL
             AND
@@ -148,12 +148,12 @@ WITH
     ),
     current_cd_rl_cte AS (
         SELECT
-            CONCAT(UPPER(recipient_location_state_code), '-', recipient_location_congressional_code_current) AS location,
+            CONCAT(UPPER(recipient_location_state_code), recipient_location_congressional_code_current) AS location,
             TO_JSONB(
                 JSONB_BUILD_OBJECT(
                     'current_cd',
                     CONCAT(UPPER(recipient_location_state_code), '-', recipient_location_congressional_code_current),
-                    'state_name', UPPER(recipient_location_state_name),
+                    'state_name', UPPER(sd.name),
                     'country_name', 'UNITED STATES',
                     'location_type', 'current_cd'
                 )
@@ -161,7 +161,7 @@ WITH
         FROM
             rpt.transaction_search
         RIGHT JOIN
-            state_data ON state_data.code = recipient_location_state_code
+            state_data AS sd ON sd.code = recipient_location_state_code
         WHERE
             recipient_location_state_code IS NOT NULL
             AND
@@ -170,11 +170,11 @@ WITH
     -- Original Congressional district
     original_cd_pop_cte AS (
         SELECT
-            CONCAT(UPPER(pop_state_code), '-', pop_congressional_code) AS location,
+            CONCAT(UPPER(pop_state_code), pop_congressional_code) AS location,
             TO_JSONB(
                 JSONB_BUILD_OBJECT(
                     'original_cd', CONCAT(UPPER(pop_state_code), '-', pop_congressional_code),
-                    'state_name', UPPER(pop_state_name),
+                    'state_name', UPPER(sd.name),
                     'country_name', 'UNITED STATES',
                     'location_type', 'original_cd'
                 )
@@ -182,7 +182,7 @@ WITH
         FROM
             rpt.transaction_search
         RIGHT JOIN
-            state_data ON state_data.code = pop_state_code
+            state_data AS sd ON sd.code = pop_state_code
         WHERE
             pop_state_code IS NOT NULL
             AND
@@ -190,11 +190,11 @@ WITH
     ),
     original_cd_rl_cte AS (
         SELECT
-            CONCAT(UPPER(recipient_location_state_code), '-', recipient_location_congressional_code) AS location,
+            CONCAT(UPPER(recipient_location_state_code), recipient_location_congressional_code) AS location,
             TO_JSONB(
                 JSONB_BUILD_OBJECT(
                     'original_cd', CONCAT(UPPER(recipient_location_state_code), '-', recipient_location_congressional_code),
-                    'state_name', UPPER(recipient_location_state_name),
+                    'state_name', UPPER(sd.name),
                     'country_name', 'UNITED STATES',
                     'location_type', 'original_cd'
                 )
@@ -202,11 +202,11 @@ WITH
         FROM
             rpt.transaction_search
         RIGHT JOIN
-            state_data ON state_data.code = recipient_location_state_code
+            state_data AS sd ON sd.code = recipient_location_state_code
         WHERE
             recipient_location_state_code IS NOT NULL
             AND
-            recipient_location_congressional_code_current ~ '^[0-9]{2}$'
+            recipient_location_congressional_code ~ '^[0-9]{2}$'
     )
 SELECT
     ROW_NUMBER() OVER (ORDER BY location, location_json) AS id,
