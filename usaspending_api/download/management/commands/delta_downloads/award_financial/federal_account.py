@@ -7,8 +7,8 @@ from pyspark.sql import functions as sf, Column
 
 from usaspending_api.submissions.helpers import get_submission_ids_for_periods
 from usaspending_api.download.management.commands.delta_downloads.award_financial.columns import (
-    groupby_cols,
-    select_cols,
+    federal_account_groupby_cols,
+    federal_account_select_cols,
 )
 
 
@@ -43,8 +43,8 @@ class AccountDownloadDataFrameBuilder:
         self.federal_account_id = account_download_filter.federal_account_id
         self.def_codes = account_download_filter.def_codes
         self.df: str = spark.table(table_name)
-        self.groupby_cols: list[str] = groupby_cols
-        self.select_cols: list[str] = select_cols
+        self.groupby_cols: list[str] = federal_account_groupby_cols
+        self.select_cols: list[str] = federal_account_select_cols
 
     def filter_to_latest_submissions_for_agencies(self, col_name: str, otherwise: Any = None) -> Column:
         """Filter to the latest submission regardless of whether the agency submitted on a monthly or quarterly basis"""

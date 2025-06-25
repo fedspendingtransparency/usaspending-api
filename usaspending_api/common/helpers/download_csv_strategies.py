@@ -24,9 +24,9 @@ from usaspending_api.download.lookups import FILE_FORMATS
 
 @dataclass
 class CSVDownloadMetadata:
-    filepaths: List[str]
+    filepaths: list[str]
     number_of_rows: int
-    number_of_columns: Optional[int]
+    number_of_columns: Optional[int] = None
 
 
 class AbstractToCSVStrategy(ABC):
@@ -75,12 +75,11 @@ class PostgresToCSVStrategy(AbstractToCSVStrategy):
     def download_to_csv(
         self, source_sql, destination_path, destination_file_name, working_dir_path, download_zip_path, source_df=None
     ):
-        source_sql = Path(source_sql)
         start_time = time.perf_counter()
         self._logger.info(f"Downloading data to {destination_path}")
         temp_data_file_name = destination_path.parent / (destination_path.name + "_temp")
         options = FILE_FORMATS[self.file_format]["options"]
-        export_query = r"\COPY ({}) TO STDOUT {}".format(read_sql_file_to_text(source_sql), options)
+        export_query = r"\COPY ({}) TO STDOUT {}".format(source_sql, options)
         try:
             temp_file, temp_file_path = generate_export_query_temp_file(export_query, None, working_dir_path)
             # Create a separate process to run the PSQL command; wait

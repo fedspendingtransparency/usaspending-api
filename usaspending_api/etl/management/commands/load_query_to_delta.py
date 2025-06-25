@@ -55,6 +55,7 @@ from usaspending_api.search.delta_models.subaward_search import (
     subaward_search_load_sql_string,
 )
 from usaspending_api.search.models import AwardSearch, SubawardSearch, SummaryStateView, TransactionSearch
+from usaspending_api.settings import HOST
 from usaspending_api.transactions.delta_models import (
     SUMMARY_STATE_VIEW_COLUMNS,
     SUMMARY_STATE_VIEW_POSTGRES_COLUMNS,
@@ -69,6 +70,8 @@ from usaspending_api.transactions.delta_models import (
     transaction_search_incremental_load_sql_string,
     transaction_search_overwrite_load_sql_string,
 )
+
+AWARD_URL = f"{HOST}/award/" if "localhost" in HOST else f"https://{HOST}/award/"
 
 logger = logging.getLogger(__name__)
 
@@ -436,5 +439,6 @@ class Command(BaseCommand):
                 JDBC_DRIVER=jdbc_conn_props["driver"],
                 JDBC_FETCHSIZE=jdbc_conn_props["fetchsize"],
                 JDBC_URL=get_broker_jdbc_url(),
+                AWARD_URL=AWARD_URL,
             )
         )

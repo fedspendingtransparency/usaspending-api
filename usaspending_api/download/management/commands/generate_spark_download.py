@@ -1,7 +1,7 @@
 import json
+import logging
 import os
 import traceback
-from logging import Logger
 from pathlib import Path
 from typing import Optional, Dict, Tuple, Type, List, Union
 
@@ -18,7 +18,6 @@ from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
     get_jdbc_connection_properties,
-    get_jvm_logger,
     get_usas_jdbc_url,
 )
 from usaspending_api.download.filestreaming.download_generation import build_data_file_name
@@ -30,6 +29,8 @@ from usaspending_api.download.management.commands.delta_downloads.award_financia
 from usaspending_api.download.lookups import JOB_STATUS_DICT, FILE_FORMATS, VALUE_MAPPINGS
 from usaspending_api.download.models import DownloadJob
 from usaspending_api.download.v2.request_validations import AccountDownloadValidator, DownloadValidatorBase
+
+logger = logging.getLogger(__name__)
 
 DOWNLOAD_SPEC = {
     "award_financial": {
@@ -57,7 +58,6 @@ class Command(BaseCommand):
     file_prefix: str
     jdbc_properties: Dict
     jdbc_url: str
-    logger: Logger
     should_cleanup: bool
     spark: SparkSession
     working_dir_path: Path
@@ -95,9 +95,6 @@ class Command(BaseCommand):
         if not self.spark:
             spark_created_by_command = True
             self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)
-
-        # Setup Logger
-        self.logger = get_jvm_logger(self.spark, __name__)
 
         # Resolve Parameters
         self.download_type = options["download_type"]
@@ -145,8 +142,6 @@ class Command(BaseCommand):
             self.download_level,
             self.download_type,
             json_request.get("agency", "all"),
-            # TODO: Is this necessary for Spark downloads? It was originally added to File C downloads for performance.
-            extra_file_type="",
         )
         download_source.file_name = build_data_file_name(download_source, download_job, piid=None, assistance_id=None)
 
@@ -156,7 +151,7 @@ class Command(BaseCommand):
         self.start_download()
         files_to_cleanup = []
         try:
-            spark_to_csv_strategy = SparkToCSVStrategy(self.logger)
+            spark_to_csv_strategy = SparkToCSVStrategy(logger)
             zip_file_path = self.working_dir_path / f"{self.download_name}.zip"
             download_request = json.loads(self.download_job.json_request)
             account_download_filter = AccountDownloadFilter(
@@ -199,7 +194,7 @@ class Command(BaseCommand):
     def start_download(self) -> None:
         self.download_job.job_status_id = JOB_STATUS_DICT["running"]
         self.download_job.save()
-        self.logger.info(f"Starting DownloadJob {self.download_job.download_job_id}")
+        logger.info(f"Starting DownloadJob {self.download_job.download_job_id}")
 
     def fail_download(self, msg: str, e: Optional[Exception] = None) -> None:
         if e:
@@ -207,18 +202,18 @@ class Command(BaseCommand):
             self.download_job.error_message = f"{msg}:\n{stack_trace}"
         else:
             self.download_job.error_message = msg
-        self.logger.error(msg)
+        logger.error(msg)
         self.download_job.job_status_id = JOB_STATUS_DICT["failed"]
         self.download_job.save()
 
     def finish_download(self) -> None:
         self.download_job.job_status_id = JOB_STATUS_DICT["finished"]
         self.download_job.save()
-        self.logger.info(f"Finished processing DownloadJob {self.download_job.download_job_id}")
+        logger.info(f"Finished processing DownloadJob {self.download_job.download_job_id}")
 
     def cleanup(self, path_list: List[Union[Path, str]]) -> None:
         for path in path_list:
             if isinstance(path, str):
                 path = Path(path)
-            self.logger.info(f"Removing {path}")
+            logger.info(f"Removing {path}")
             path.unlink()

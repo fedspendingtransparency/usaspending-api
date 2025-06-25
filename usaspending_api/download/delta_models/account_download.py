@@ -290,7 +290,7 @@ account_download_load_sql_string = rf"""
             WHEN award_search.generated_unique_award_id IS NOT NULL
                 THEN
                     CONCAT(
-                        'localhost:3000/award/',
+                        '{{AWARD_URL}}',
                         URL_ENCODE(award_search.generated_unique_award_id),
                         '/'
                     )
