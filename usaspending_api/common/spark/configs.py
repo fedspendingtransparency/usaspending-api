@@ -49,9 +49,9 @@ LOCAL_BASIC_EXTRA_CONF = {
 
 LOCAL_EXTENDED_EXTRA_CONF = {
     **LOCAL_BASIC_EXTRA_CONF,
-    "spark.hadoop.fs.s3a.endpoint": f"{CONFIG.MINIO_HOST}:{CONFIG.MINIO_PORT}",
-    "spark.hadoop.fs.s3a.access.key": CONFIG.MINIO_ACCESS_KEY.get_secret_value(),
-    "spark.hadoop.fs.s3a.secret.key": CONFIG.MINIO_SECRET_KEY.get_secret_value(),
+    "spark.hadoop.fs.s3a.endpoint": CONFIG.AWS_S3_ENDPOINT,
+    "spark.hadoop.fs.s3a.access.key": CONFIG.AWS_ACCESS_KEY.get_secret_value(),
+    "spark.hadoop.fs.s3a.secret.key": CONFIG.AWS_SECRET_KEY.get_secret_value(),
     "spark.hadoop.fs.s3a.connection.ssl.enabled": False,
     "spark.hadoop.fs.s3a.path.style.access": True,
     "spark.sql.catalogImplementation": "hive",
