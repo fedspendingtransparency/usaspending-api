@@ -26,7 +26,7 @@ def account_download_table(spark, s3_unittest_data_bucket, hive_unittest_metasto
         "reporting_fiscal_period",
         "quarter_format_flag",
         "submission_id",
-        "agency_code",
+        "owning_agency_id",
         "federal_account_id",
     ]
     test_data_df = pd.DataFrame(
@@ -42,7 +42,7 @@ def account_download_table(spark, s3_unittest_data_bucket, hive_unittest_metasto
             "budget_function": ["A", "B", "C", "D", "E"],
             "budget_subfunction": ["A", "B", "C", "D", "E"],
             "gross_outlay_amount_FYB_to_period_end": [100, 100, 100, 100, 100],
-            "agency_code": [1, 2, 2, 2, 3],
+            "owning_agency_id": [1, 2, 2, 2, 3],
             "federal_account_id": [1, 2, 2, 2, 3],
         },
         columns=columns,

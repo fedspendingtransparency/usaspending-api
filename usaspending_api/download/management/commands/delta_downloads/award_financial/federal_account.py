@@ -83,7 +83,7 @@ class AccountDownloadDataFrameBuilder:
                 ),
                 apply=True,
             ),
-            Condition(name="agency", condition=sf.col("agency_code") == self.agency, apply=bool(self.agency)),
+            Condition(name="agency", condition=sf.col("owning_agency_id") == self.agency, apply=bool(self.agency)),
             Condition(
                 name="federal account",
                 condition=sf.col("federal_account_id") == self.federal_account_id,
