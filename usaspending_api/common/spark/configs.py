@@ -60,5 +60,9 @@ LOCAL_EXTENDED_EXTRA_CONF = {
     "spark.hadoop.fs.s3a.path.style.access": True,
     "spark.sql.catalogImplementation": "hive",
     "spark.sql.warehouse.dir": getattr(CONFIG, "SPARK_SQL_WAREHOUSE_DIR", ""),
-    "spark.hadoop.javax.jdo.option.ConnectionURL": f"jdbc:derby:;databaseName={getattr(CONFIG, "HIVE_METASTORE_DERBY_DB_DIR", "")};create=true",
+    "spark.hadoop.javax.jdo.option.ConnectionURL": (
+        f"jdbc:derby:;databaseName={CONFIG.HIVE_METASTORE_DERBY_DB_DIR};create=true"
+        if getattr(CONFIG, "HIVE_METASTORE_DERBY_DB_DIR", False)
+        else ""
+    ),
 }
