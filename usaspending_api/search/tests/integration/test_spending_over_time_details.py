@@ -5,7 +5,7 @@ import pytest
 from model_bakery import baker
 from rest_framework import status
 
-from usaspending_api.common.helpers.fiscal_year_helpers import generate_fiscal_year
+from usaspending_api.common.helpers.fiscal_year_helpers import generate_fiscal_year, generate_date_range
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
@@ -114,7 +114,7 @@ def populate_models(db):
         latest_transaction_id=1,
         latest_transaction_search=ts1,
         category="direct payment",
-        action_date=datetime(2011, 3, 1),
+        action_date=ts1.action_date,
         date_signed=datetime(2010, 3, 1),
         fiscal_year=generate_fiscal_year(ts1.fiscal_action_date),
         total_outlays=0.00,
@@ -126,7 +126,7 @@ def populate_models(db):
         latest_transaction_id=2,
         latest_transaction_search=ts2,
         category="idv",
-        action_date=datetime(2011, 3, 1),
+        action_date=ts2.action_date,
         date_signed=datetime(2010, 3, 1),
         fiscal_year=generate_fiscal_year(ts2.fiscal_action_date),
         total_outlays=10.00,
@@ -138,7 +138,7 @@ def populate_models(db):
         latest_transaction_id=3,
         latest_transaction_search=ts3,
         category="loans",
-        action_date=datetime(2012, 3, 1),
+        action_date=ts3.action_date,
         date_signed=datetime(2011, 3, 1),
         fiscal_year=generate_fiscal_year(ts3.fiscal_action_date),
         total_outlays=20.00,
@@ -150,7 +150,7 @@ def populate_models(db):
         latest_transaction_id=4,
         latest_transaction_search=ts4,
         category="other",
-        action_date=datetime(2013, 3, 1),
+        action_date=ts4.action_date,
         date_signed=datetime(2012, 3, 1),
         fiscal_year=generate_fiscal_year(ts4.fiscal_action_date),
         total_outlays=30.00,
@@ -162,7 +162,7 @@ def populate_models(db):
         latest_transaction_id=5,
         latest_transaction_search=ts5,
         category="grant",
-        action_date=datetime(2014, 3, 1),
+        action_date=ts5.action_date,
         date_signed=datetime(2013, 3, 1),
         fiscal_year=generate_fiscal_year(ts5.fiscal_action_date),
         total_outlays=40.00,
@@ -174,7 +174,7 @@ def populate_models(db):
         latest_transaction_id=6,
         latest_transaction_search=ts6,
         category="grant",
-        action_date=datetime(2015, 3, 1),
+        action_date=ts6.action_date,
         date_signed=datetime(2014, 3, 1),
         fiscal_year=generate_fiscal_year(ts6.fiscal_action_date),
         total_outlays=50.00,
@@ -186,7 +186,7 @@ def populate_models(db):
         latest_transaction_id=7,
         latest_transaction_search=ts7,
         category="grant",
-        action_date=datetime(2016, 3, 1),
+        action_date=ts7.action_date,
         date_signed=datetime(2015, 3, 1),
         fiscal_year=generate_fiscal_year(ts7.fiscal_action_date),
         total_outlays=60.00,
@@ -198,7 +198,7 @@ def populate_models(db):
         latest_transaction_id=8,
         latest_transaction_search=ts8,
         category="loans",
-        action_date=datetime(2017, 3, 1),
+        action_date=ts8.action_date,
         date_signed=datetime(2016, 3, 1),
         fiscal_year=generate_fiscal_year(ts8.fiscal_action_date),
         total_outlays=70.00,
@@ -765,23 +765,6 @@ def test_spending_over_time_fy_ordering_awards(client, monkeypatch, elasticsearc
                 "Loan_Outlays": 0,
                 "Other_Outlays": 0,
             },
-            {
-                "aggregated_amount": 120.0,
-                "time_period": {"fiscal_year": "2012"},
-                "Contract_Obligations": 0,
-                "Direct_Obligations": 0,
-                "Grant_Obligations": 0,
-                "Idv_Obligations": 0,
-                "Loan_Obligations": 120.0,
-                "Other_Obligations": 0,
-                "total_outlays": 20.0,
-                "Contract_Outlays": 0,
-                "Direct_Outlays": 0,
-                "Grant_Outlays": 0,
-                "Idv_Outlays": 0,
-                "Loan_Outlays": 20.0,
-                "Other_Outlays": 0,
-            },
         ],
         "messages": expected_messages,
     }
@@ -793,7 +776,7 @@ def test_spending_over_time_fy_ordering_awards(client, monkeypatch, elasticsearc
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert expected_response == resp.data, "Unexpected or missing content!"
+    assert expected_response == resp.json(), "Unexpected or missing content!"
 
     # ensure ordering is correct
     confirm_proper_ordering(group, resp.data["results"])
@@ -1809,6 +1792,157 @@ def test_spending_over_time_new_awards_only_filter(
 
     assert resp.status_code == status.HTTP_200_OK
     assert expected_response == resp.data, "Unexpected or missing content!"
+
+    # ensure ordering is correct
+    confirm_proper_ordering(group, resp.data["results"])
+
+
+@pytest.mark.django_db
+def test_spending_over_time_month_awards(client, monkeypatch, elasticsearch_award_index, populate_models):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    group = "month"
+
+    test_payload = {
+        "group": group,
+        "spending_level": "awards",
+        "filters": {
+            "time_period": [
+                {"start_date": "2009-10-01", "end_date": "2010-09-30"},
+            ]
+        },
+    }
+    populated_results = {
+        (2010, 6): {
+            "aggregated_amount": 100.0,
+            "time_period": {"fiscal_year": "2010", "month": "6"},
+            "Contract_Obligations": 0,
+            "Direct_Obligations": 100.0,
+            "Grant_Obligations": 0,
+            "Idv_Obligations": 0,
+            "Loan_Obligations": 0,
+            "Other_Obligations": 0,
+            "total_outlays": 0.0,
+            "Contract_Outlays": 0,
+            "Direct_Outlays": 0,
+            "Grant_Outlays": 0,
+            "Idv_Outlays": 0,
+            "Loan_Outlays": 0,
+            "Other_Outlays": 0,
+        },
+        (2011, 6): {
+            "aggregated_amount": 110.0,
+            "time_period": {"fiscal_year": "2011", "month": "6"},
+            "Contract_Obligations": 0,
+            "Direct_Obligations": 0,
+            "Grant_Obligations": 0,
+            "Idv_Obligations": 110.0,
+            "Loan_Obligations": 0,
+            "Other_Obligations": 0,
+            "total_outlays": 10.0,
+            "Contract_Outlays": 0,
+            "Direct_Outlays": 0,
+            "Grant_Outlays": 0,
+            "Idv_Outlays": 10.0,
+            "Loan_Outlays": 0,
+            "Other_Outlays": 0,
+        },
+    }
+    expected_response = {
+        "group": group,
+        "spending_level": "awards",
+        "results": [
+            populated_results.get(
+                (date_range["fiscal_year"], date_range["fiscal_month"]),
+                {
+                    "aggregated_amount": 0,
+                    "time_period": {
+                        "fiscal_year": str(date_range["fiscal_year"]),
+                        "month": str(date_range["fiscal_month"]),
+                    },
+                    "Contract_Obligations": 0,
+                    "Direct_Obligations": 0,
+                    "Grant_Obligations": 0,
+                    "Idv_Obligations": 0,
+                    "Loan_Obligations": 0,
+                    "Other_Obligations": 0,
+                    "total_outlays": 0.0,
+                    "Contract_Outlays": 0,
+                    "Direct_Outlays": 0,
+                    "Grant_Outlays": 0,
+                    "Idv_Outlays": 0,
+                    "Loan_Outlays": 0,
+                    "Other_Outlays": 0,
+                },
+            )
+            for date_range in generate_date_range(datetime(2009, 10, 1), datetime(2011, 6, 1), group)
+        ],
+        "messages": expected_messages,
+    }
+
+    resp = client.post(
+        get_spending_over_time_url(),
+        content_type="application/json",
+        data=json.dumps(test_payload),
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.json(), "Unexpected or missing content!"
+
+    # ensure ordering is correct
+    confirm_proper_ordering(group, resp.data["results"])
+
+
+@pytest.mark.django_db
+def test_spending_over_time_month_subawards(client, monkeypatch, elasticsearch_subaward_index, populate_models):
+    baker.make(
+        "search.SubawardSearch",
+        broker_subaward_id=1,
+        action_date="2010-11-01",
+        sub_action_date="2010-11-01",
+        subaward_amount=500.00,
+        subaward_type="grant",
+    )
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
+
+    group = "month"
+
+    test_payload = {
+        "group": group,
+        "spending_level": "subawards",
+        "filters": {
+            "time_period": [
+                {"start_date": "2010-10-01", "end_date": "2011-09-30"},
+            ]
+        },
+    }
+
+    expected_response = {
+        "group": group,
+        "spending_level": "subawards",
+        "results": [
+            {
+                "aggregated_amount": 500.0 if month == 2 else 0,
+                "time_period": {"fiscal_year": "2011", "month": str(month)},
+                "Contract_Obligations": 0,
+                "Grant_Obligations": 500.0 if month == 2 else 0,
+                "total_outlays": None,
+                "Contract_Outlays": None,
+                "Grant_Outlays": None,
+            }
+            for month in range(1, 13)
+        ],
+        "messages": expected_messages,
+    }
+
+    resp = client.post(
+        get_spending_over_time_url(),
+        content_type="application/json",
+        data=json.dumps(test_payload),
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert expected_response == resp.json(), "Unexpected or missing content!"
 
     # ensure ordering is correct
     confirm_proper_ordering(group, resp.data["results"])

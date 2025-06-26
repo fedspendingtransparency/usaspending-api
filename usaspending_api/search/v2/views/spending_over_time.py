@@ -312,9 +312,13 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         results = []
         min_date, max_date = min_and_max_from_date_ranges([asdict(time_period) for time_period in time_periods])
+        date_buckets = agg_response.group_by_time_period.buckets
+
+        if self.spending_level == SpendingLevel.AWARD and date_buckets:
+            max_date_from_results = datetime.strptime(date_buckets[-1]["key_as_string"], "%Y-%m-%d")
+            max_date = max(max_date, max_date_from_results)
 
         date_range = generate_date_range(min_date, max_date, self.group)
-        date_buckets = agg_response.group_by_time_period.buckets
         parsed_bucket = None
 
         for fiscal_date in date_range:
@@ -339,7 +343,24 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                     "aggregated_amount": 0,
                     "time_period": time_period,
                 }
-                if self.spending_level == SpendingLevel.SUBAWARD:
+                if self.spending_level == SpendingLevel.AWARD:
+                    default_value = {
+                        **default_value,
+                        "Contract_Obligations": 0,
+                        "Direct_Obligations": 0,
+                        "Grant_Obligations": 0,
+                        "Idv_Obligations": 0,
+                        "Loan_Obligations": 0,
+                        "Other_Obligations": 0,
+                        "total_outlays": 0,
+                        "Contract_Outlays": 0,
+                        "Direct_Outlays": 0,
+                        "Grant_Outlays": 0,
+                        "Idv_Outlays": 0,
+                        "Loan_Outlays": 0,
+                        "Other_Outlays": 0,
+                    }
+                elif self.spending_level == SpendingLevel.SUBAWARD:
                     default_value = {
                         **default_value,
                         "Contract_Obligations": 0,
