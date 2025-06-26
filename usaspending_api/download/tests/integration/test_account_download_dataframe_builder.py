@@ -4,8 +4,8 @@ import pandas as pd
 import pytest
 from django.core.management import call_command
 from usaspending_api.download.management.commands.delta_downloads.award_financial.columns import (
-    select_cols,
-    groupby_cols,
+    federal_account_select_cols,
+    federal_account_groupby_cols,
 )
 from usaspending_api.download.management.commands.delta_downloads.award_financial.federal_account import (
     AccountDownloadDataFrameBuilder,
@@ -20,7 +20,7 @@ def account_download_table(spark, s3_unittest_data_bucket, hive_unittest_metasto
         f"--destination-table=account_download",
         f"--spark-s3-bucket={s3_unittest_data_bucket}",
     )
-    columns = list(set(select_cols + groupby_cols)) + [
+    columns = list(set(federal_account_select_cols + federal_account_groupby_cols)) + [
         "reporting_fiscal_year",
         "reporting_fiscal_quarter",
         "reporting_fiscal_period",
