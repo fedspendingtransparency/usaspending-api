@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from functools import reduce
 from typing import Any
@@ -5,27 +6,15 @@ from typing import Any
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as sf, Column
 
-from usaspending_api.submissions.helpers import get_submission_ids_for_periods
+from usaspending_api.download.management.commands.delta_downloads.award_financial.filters import AccountDownloadFilter
 from usaspending_api.download.management.commands.delta_downloads.award_financial.columns import (
     federal_account_groupby_cols,
     federal_account_select_cols,
 )
+from usaspending_api.submissions.helpers import get_submission_ids_for_periods
 
 
-@dataclass
-class AccountDownloadFilter:
-    year: int
-    month: int | None = None
-    quarter: int | None = None
-    agency: int | None = None
-    federal_account_id: int | None = None
-    def_codes: list[str] | None = None
-
-    def __post_init__(self):
-        if self.month is None and self.quarter is None:
-            raise ValueError("Must define month or quarter.")
-        elif self.month is not None and self.quarter is not None:
-            raise ValueError("Month and quarter are mutually exclusive.")
+logger = logging.getLogger(__name__)
 
 
 class AccountDownloadDataFrameBuilder:
@@ -36,11 +25,13 @@ class AccountDownloadDataFrameBuilder:
         account_download_filter: AccountDownloadFilter,
         table_name: str = "rpt.account_download",
     ):
-        self.reporting_fiscal_year = account_download_filter.year
-        self.reporting_fiscal_quarter = account_download_filter.quarter or account_download_filter.month // 3
-        self.reporting_fiscal_period = account_download_filter.month or account_download_filter.quarter * 3
+        self.reporting_fiscal_year = account_download_filter.fy
+        self.reporting_fiscal_quarter = account_download_filter.quarter or account_download_filter.period // 3
+        self.reporting_fiscal_period = account_download_filter.period or account_download_filter.quarter * 3
         self.agency = account_download_filter.agency
-        self.federal_account_id = account_download_filter.federal_account_id
+        self.federal_account_id = account_download_filter.federal_account
+        self.budget_function = account_download_filter.budget_function
+        self.budget_subfunction = account_download_filter.budget_subfunction
         self.def_codes = account_download_filter.def_codes
         self.df: str = spark.table(table_name)
         self.groupby_cols: list[str] = federal_account_groupby_cols
@@ -83,11 +74,23 @@ class AccountDownloadDataFrameBuilder:
                 ),
                 apply=True,
             ),
-            Condition(name="agency", condition=sf.col("owning_agency_id") == self.agency, apply=bool(self.agency)),
+            Condition(
+                name="agency", condition=sf.col("funding_toptier_agency_id") == self.agency, apply=bool(self.agency)
+            ),
             Condition(
                 name="federal account",
                 condition=sf.col("federal_account_id") == self.federal_account_id,
                 apply=bool(self.federal_account_id),
+            ),
+            Condition(
+                name="budget function",
+                condition=sf.col("budget_function_code") == self.budget_function,
+                apply=bool(self.budget_function),
+            ),
+            Condition(
+                name="budget subfunction",
+                condition=sf.col("budget_subfunction_code") == self.budget_subfunction,
+                apply=bool(self.budget_subfunction),
             ),
             Condition(
                 name="def_codes",
