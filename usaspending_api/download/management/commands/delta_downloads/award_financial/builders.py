@@ -1,4 +1,3 @@
-import logging
 from dataclasses import dataclass
 from functools import reduce
 from typing import Any
@@ -12,9 +11,6 @@ from usaspending_api.download.management.commands.delta_downloads.award_financia
     federal_account_select_cols,
 )
 from usaspending_api.submissions.helpers import get_submission_ids_for_periods
-
-
-logger = logging.getLogger(__name__)
 
 
 class AccountDownloadDataFrameBuilder:
