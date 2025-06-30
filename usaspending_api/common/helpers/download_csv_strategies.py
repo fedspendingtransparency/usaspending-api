@@ -10,7 +10,6 @@ from django.conf import settings
 from pyspark.sql import DataFrame
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
 from usaspending_api.common.helpers.s3_helpers import delete_s3_objects, download_s3_object
-from usaspending_api.common.helpers.sql_helpers import strip_sql_whitespace
 from usaspending_api.download.filestreaming.download_generation import (
     EXCEL_ROW_LIMIT,
     split_and_zip_data_files,
@@ -24,9 +23,9 @@ from usaspending_api.download.lookups import FILE_FORMATS
 
 @dataclass
 class CSVDownloadMetadata:
-    filepaths: List[str]
+    filepaths: list[str]
     number_of_rows: int
-    number_of_columns: Optional[int]
+    number_of_columns: Optional[int] = None
 
 
 class AbstractToCSVStrategy(ABC):
@@ -79,7 +78,7 @@ class PostgresToCSVStrategy(AbstractToCSVStrategy):
         self._logger.info(f"Downloading data to {destination_path}")
         temp_data_file_name = destination_path.parent / (destination_path.name + "_temp")
         options = FILE_FORMATS[self.file_format]["options"]
-        export_query = r"\COPY ({}) TO STDOUT {}".format(strip_sql_whitespace(source_sql), options)
+        export_query = r"\COPY ({}) TO STDOUT {}".format(source_sql, options)
         try:
             temp_file, temp_file_path = generate_export_query_temp_file(export_query, None, working_dir_path)
             # Create a separate process to run the PSQL command; wait
@@ -115,8 +114,8 @@ class PostgresToCSVStrategy(AbstractToCSVStrategy):
         except Exception as e:
             raise e
         finally:
-            Path(temp_data_file_name).unlink()
-        return CSVDownloadMetadata([destination_path], row_count, None)
+            Path(temp_file_path).unlink()
+        return CSVDownloadMetadata([str(destination_path)], row_count)
 
 
 class SparkToCSVStrategy(AbstractToCSVStrategy):

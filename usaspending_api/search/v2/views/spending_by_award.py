@@ -12,6 +12,7 @@ from django.conf import settings
 from django.db.models import F
 from django.utils.text import slugify
 from elasticsearch_dsl import Q as ES_Q
+from elasticsearch_dsl.response import Response as ES_Response
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -28,12 +29,12 @@ from usaspending_api.awards.v2.lookups.elasticsearch_lookups import (
     non_loan_assist_mapping,
 )
 from usaspending_api.awards.v2.lookups.lookups import (
+    SUBAWARD_MAPPING_LOOKUP,
     contract_type_mapping,
     idv_type_mapping,
     loan_type_mapping,
     non_loan_assistance_type_mapping,
     subaward_mapping,
-    SUBAWARD_MAPPING_LOOKUP,
 )
 from usaspending_api.common.api_versioning import API_TRANSFORM_FUNCTIONS, api_transformations
 from usaspending_api.common.cache_decorator import cache_response
@@ -51,7 +52,7 @@ from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.recipient.models import RecipientProfile
 from usaspending_api.references.helpers import get_def_codes_by_group
-from usaspending_api.references.models import Agency, ToptierAgencyPublishedDABSView
+from usaspending_api.references.models import Agency
 from usaspending_api.search.filters.elasticsearch.filter import QueryType
 from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
 from usaspending_api.search.filters.time_period.query_types import AwardSearchTimePeriod, SubawardSearchTimePeriod
@@ -367,7 +368,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
     def query_elasticsearch(
         self, base_search: AwardSearch | SubawardSearch, filter_query: ES_Q, sorts: list[dict[str, str]]
-    ) -> Response:
+    ) -> ES_Response:
         record_num = (self.pagination["page"] - 1) * self.pagination["limit"]
         # random page jumping was removed due to performance concerns
         if (self.last_record_sort_value is None and self.last_record_unique_id is not None) or (
@@ -403,7 +404,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         return response
 
-    def query_elasticsearch_awards(self) -> Response:
+    def query_elasticsearch_awards(self) -> ES_Response:
         filter_options = {}
         time_period_obj = AwardSearchTimePeriod(
             default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
@@ -450,7 +451,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         return self.query_elasticsearch(AwardSearch(), filter_query, sorts)
 
-    def query_elasticsearch_subawards(self) -> Response:
+    def query_elasticsearch_subawards(self) -> ES_Response:
         filter_options = {}
         time_period_obj = SubawardSearchTimePeriod(
             default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
@@ -466,25 +467,31 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         return self.query_elasticsearch(SubawardSearch(), filter_query, sorts)
 
-    # For an unknown reason, ES tends to return the awarding agency toptier codes as integers or floats, instead of as
-    # text. This function casts the code back to a string and appends any leading zeroes that were lost.
-    def get_agency_database_id(self, code):
-        code = str(code).zfill(3)
-        agency_id = Agency.objects.filter(toptier_agency__toptier_code=code, toptier_flag=True).first()
-        submission = SubmissionAttributes.objects.filter(toptier_code=code).first()
-        if submission is None or agency_id is None:
-            return None
-        return agency_id.id
+    def _get_lookup_data(self) -> dict[str, dict[str, str | int]]:
+        # { <toptier_code>: {"id": <id>, "slug": <slug>} }
+        agency_lookup: dict[str, dict[str, str | int]] = {
+            ag["code"]: {"id": ag["id"], "slug": slugify(ag["name"])}
+            for ag in (
+                Agency.objects.filter(
+                    toptier_flag=True,
+                    toptier_agency__toptier_code__in=SubmissionAttributes.objects.values("toptier_code"),
+                )
+                .select_related("toptieragencypublisheddabsview")
+                .annotate(code=F("toptier_agency__toptier_code"), name=F("toptieragencypublisheddabsview__name"))
+                .values("id", "code", "name")
+                .all()
+            )
+        }
 
-    def get_agency_slug(self, code):
-        code = str(code).zfill(3)
-        submission = ToptierAgencyPublishedDABSView.objects.filter(toptier_code=code).first()
-        if submission is None:
-            return None
-        return slugify(submission.name)
+        return agency_lookup
 
-    def construct_es_response_for_prime_awards(self, response) -> dict:
+    def construct_es_response_for_prime_awards(self, response: ES_Response) -> dict:
         results = []
+
+        if len(response) == 0:
+            return self.construct_es_response(results, response)
+
+        agency_lookup = self._get_lookup_data()
         should_return_display_award_id = "Award ID" in self.fields
         should_return_recipient_id = "recipient_id" in self.fields
         for res in response:
@@ -513,9 +520,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
             if row.get("Total Outlays"):
                 row["Total Outlays"] = float(row["Total Outlays"])
             if row.get("Awarding Agency"):
-                code = row.pop("agency_code")
-                row["awarding_agency_id"] = self.get_agency_database_id(code)
-                row["agency_slug"] = self.get_agency_slug(code)
+                code = str(row.pop("agency_code")).zfill(3)
+                row["awarding_agency_id"] = agency_lookup.get(code, {}).get("id", None)
+                row["agency_slug"] = agency_lookup.get(code, {}).get("slug", None)
             if row.get("def_codes"):
                 if self.filters.get("def_codes"):
                     row["def_codes"] = list(filter(lambda x: x in self.filters.get("def_codes"), row["def_codes"]))
@@ -588,7 +595,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         return self.construct_es_response(results, response)
 
-    def construct_es_response_for_subawards(self, response: Response) -> dict[str, Any]:
+    def construct_es_response_for_subawards(self, response: ES_Response) -> dict[str, Any]:
         results = []
         for res in response:
             hit = res.to_dict()
@@ -691,7 +698,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         return row
 
-    def construct_es_response(self, results: list[dict[str, Any]], response: Response) -> dict[str, Any]:
+    def construct_es_response(self, results: list[dict[str, Any]] | list, response: ES_Response) -> dict[str, Any]:
         last_record_unique_id = None
         last_record_sort_value = None
         offset = 1

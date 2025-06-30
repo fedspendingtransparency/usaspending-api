@@ -63,8 +63,12 @@ ACCOUNT_DOWNLOAD_COLUMNS = {
     "national_interest_action": {"delta": "STRING", "postgres": "TEXT"},
     "reporting_agency_name": {"delta": "STRING", "postgres": "TEXT"},
     "submission_period": {"delta": "STRING", "postgres": "TEXT"},
+    "funding_toptier_agency_id": {"delta": "INTEGER", "postgres": "INTEGER"},
+    "federal_account_id": {"delta": "INTEGER", "postgres": "INTEGER"},
     "budget_function": {"delta": "STRING", "postgres": "TEXT"},
+    "budget_function_code": {"delta": "STRING", "postgres": "TEXT"},
     "budget_subfunction": {"delta": "STRING", "postgres": "TEXT"},
+    "budget_subfunction_code": {"delta": "STRING", "postgres": "TEXT"},
     "transaction_obligated_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
     "gross_outlay_amount_fyb_to_period_end": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
     "ussgl487200_downward_adj_prior_year_prepaid_undeliv_order_oblig": {
@@ -199,8 +203,13 @@ account_download_load_sql_string = rf"""
         END AS submission_period,
         treasury_appropriation_account.allocation_transfer_agency_id AS allocation_transfer_agency_identifier_code,
         treasury_appropriation_account.agency_id AS agency_identifier_code,        
+        treasury_appropriation_account.funding_toptier_agency_id AS funding_toptier_agency_id,
+        treasury_appropriation_account.federal_account_id AS federal_account_id,
         treasury_appropriation_account.budget_function_title AS budget_function,
+        treasury_appropriation_account.budget_function_code AS budget_function_code,
         treasury_appropriation_account.budget_subfunction_title AS budget_subfunction,
+        treasury_appropriation_account.budget_subfunction_code AS budget_subfunction_code,
+
         financial_accounts_by_awards.transaction_obligated_amount AS transaction_obligated_amount,
         financial_accounts_by_awards.gross_outlay_amount_by_award_cpe as gross_outlay_amount_fyb_to_period_end,
         financial_accounts_by_awards.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe as ussgl487200_downward_adj_prior_year_prepaid_undeliv_order_oblig,
@@ -292,7 +301,7 @@ account_download_load_sql_string = rf"""
             WHEN award_search.generated_unique_award_id IS NOT NULL
                 THEN
                     CONCAT(
-                        'localhost:3000/award/',
+                        '{{AWARD_URL}}',
                         URL_ENCODE(award_search.generated_unique_award_id),
                         '/'
                     )

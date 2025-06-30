@@ -8,7 +8,7 @@ from boto3.s3.transfer import TransferConfig, S3Transfer
 from botocore.exceptions import ClientError
 from django.conf import settings
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 from botocore.client import BaseClient
 
 from usaspending_api.config import CONFIG
@@ -46,7 +46,7 @@ def get_s3_bucket(bucket_name: str, region_name: str = CONFIG.AWS_REGION) -> "bo
     return s3.Bucket(bucket_name)
 
 
-def retrieve_s3_bucket_object_list(bucket_name: str) -> List["boto3.resources.factory.s3.ObjectSummary"]:
+def retrieve_s3_bucket_object_list(bucket_name: str) -> list["boto3.resources.factory.s3.ObjectSummary"]:
     try:
         bucket = get_s3_bucket(bucket_name=bucket_name)
         bucket_objects = list(bucket.objects.all())
@@ -137,7 +137,7 @@ def delete_s3_object(bucket_name: str, key: str, region_name: str = settings.USA
 def delete_s3_objects(
     bucket_name: str,
     *,
-    key_list: Optional[List[str]] = None,
+    key_list: Optional[list[str]] = None,
     key_prefix: Optional[str] = None,
     region_name: Optional[str] = settings.USASPENDING_AWS_REGION,
 ) -> int:
