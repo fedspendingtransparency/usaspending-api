@@ -1,10 +1,12 @@
 ACCOUNT_DOWNLOAD_COLUMNS = {
     "financial_accounts_by_awards_id": {"delta": "INTEGER NOT NULL", "postgres": "INTEGER NOT NULL"},
     "submission_id": {"delta": "INTEGER NOT NULL", "postgres": "INTEGER NOT NULL"},
-    "owning_agency_name": {"delta": "STRING", "postgres": "TEXT"},
+    "federal_owning_agency_name": {"delta": "STRING", "postgres": "TEXT"},
+    "treasury_owning_agency_name": {"delta": "STRING", "postgres": "TEXT"},
     "federal_account_symbol": {"delta": "STRING", "postgres": "TEXT"},
     "federal_account_name": {"delta": "STRING", "postgres": "TEXT"},
     "agency_identifier_name": {"delta": "STRING", "postgres": "TEXT"},
+    "allocation_transfer_agency_identifier_name": {"delta": "STRING", "postgres": "TEXT"},
     "program_activity_code": {"delta": "STRING", "postgres": "TEXT"},
     "program_activity_name": {"delta": "STRING", "postgres": "TEXT"},
     "object_class_code": {"delta": "STRING", "postgres": "TEXT"},
@@ -63,6 +65,15 @@ ACCOUNT_DOWNLOAD_COLUMNS = {
     "national_interest_action": {"delta": "STRING", "postgres": "TEXT"},
     "reporting_agency_name": {"delta": "STRING", "postgres": "TEXT"},
     "submission_period": {"delta": "STRING", "postgres": "TEXT"},
+    "allocation_transfer_agency_identifier_code": {"delta": "STRING", "postgres": "TEXT"},
+    "agency_identifier_code": {"delta": "STRING", "postgres": "TEXT"},
+    "beginning_period_of_availability": {"delta": "DATE", "postgres": "DATE"},
+    "ending_period_of_availability": {"delta": "DATE", "postgres": "DATE"},
+    "availability_type_code": {"delta": "STRING", "postgres": "TEXT"},
+    "main_account_code": {"delta": "STRING", "postgres": "TEXT"},
+    "sub_account_code": {"delta": "STRING", "postgres": "TEXT"},
+    "treasury_account_symbol": {"delta": "STRING", "postgres": "TEXT"},
+    "treasury_account_name": {"delta": "STRING", "postgres": "TEXT"},
     "funding_toptier_agency_id": {"delta": "INTEGER", "postgres": "INTEGER"},
     "federal_account_id": {"delta": "INTEGER", "postgres": "INTEGER"},
     "budget_function": {"delta": "STRING", "postgres": "TEXT"},
@@ -114,7 +125,8 @@ account_download_load_sql_string = rf"""
     SELECT
         financial_accounts_by_awards.financial_accounts_by_awards_id,
         financial_accounts_by_awards.submission_id,
-        toptier_agency.name AS owning_agency_name,
+        federal_toptier_agency.name AS federal_owning_agency_name,
+        treasury_toptier_agency.name AS treasury_owning_agency_name,
         federal_account.federal_account_code AS federal_account_symbol,
         federal_account.account_title AS federal_account_name,
         cgac_aid.agency_name AS agency_identifier_name,
@@ -202,14 +214,20 @@ account_download_load_sql_string = rf"""
                 )
         END AS submission_period,
         treasury_appropriation_account.allocation_transfer_agency_id AS allocation_transfer_agency_identifier_code,
-        treasury_appropriation_account.agency_id AS agency_identifier_code,        
+        treasury_appropriation_account.agency_id AS agency_identifier_code,
+        treasury_appropriation_account.beginning_period_of_availability AS beginning_period_of_availability,
+        treasury_appropriation_account.ending_period_of_availability AS ending_period_of_availability,
+        treasury_appropriation_account.availability_type_code AS availability_type_code,
+        treasury_appropriation_account.main_account_code AS main_account_code,
+        treasury_appropriation_account.sub_account_code AS sub_account_code,
+        treasury_appropriation_account.tas_rendering_label AS treasury_account_symbol,
+        treasury_appropriation_account.account_title AS treasury_account_name,
         treasury_appropriation_account.funding_toptier_agency_id AS funding_toptier_agency_id,
         treasury_appropriation_account.federal_account_id AS federal_account_id,
         treasury_appropriation_account.budget_function_title AS budget_function,
         treasury_appropriation_account.budget_function_code AS budget_function_code,
         treasury_appropriation_account.budget_subfunction_title AS budget_subfunction,
         treasury_appropriation_account.budget_subfunction_code AS budget_subfunction_code,
-
         financial_accounts_by_awards.transaction_obligated_amount AS transaction_obligated_amount,
         financial_accounts_by_awards.gross_outlay_amount_by_award_cpe as gross_outlay_amount_fyb_to_period_end,
         financial_accounts_by_awards.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe as ussgl487200_downward_adj_prior_year_prepaid_undeliv_order_oblig,
@@ -314,7 +332,7 @@ account_download_load_sql_string = rf"""
         submission_attributes.quarter_format_flag
     FROM
         raw.financial_accounts_by_awards
-        INNER JOIN global_temp.submission_attributes AS submission_attributes
+        INNER JOIN global_temp.submission_attributes
             ON (financial_accounts_by_awards.submission_id = submission_attributes.submission_id)
         LEFT OUTER JOIN global_temp.treasury_appropriation_account
             ON (financial_accounts_by_awards.treasury_account_id = treasury_appropriation_account.treasury_account_identifier)
@@ -330,8 +348,10 @@ account_download_load_sql_string = rf"""
             ON (financial_accounts_by_awards.disaster_emergency_fund_code = disaster_emergency_fund_code.code)
         LEFT OUTER JOIN global_temp.federal_account
             ON (treasury_appropriation_account.federal_account_id = federal_account.id)
-        LEFT OUTER JOIN global_temp.toptier_agency
-            ON (federal_account.parent_toptier_agency_id = toptier_agency.toptier_agency_id)
+        LEFT OUTER JOIN global_temp.toptier_agency as federal_toptier_agency
+            ON (federal_account.parent_toptier_agency_id = federal_toptier_agency.toptier_agency_id)
+        LEFT OUTER JOIN global_temp.toptier_agency as treasury_toptier_agency
+            ON (treasury_appropriation_account.funding_toptier_agency_id = treasury_toptier_agency.toptier_agency_id)
         LEFT OUTER JOIN global_temp.cgac AS cgac_aid
             ON (treasury_appropriation_account.agency_id = cgac_aid.cgac_code)
         LEFT OUTER JOIN global_temp.cgac AS cgac_ata

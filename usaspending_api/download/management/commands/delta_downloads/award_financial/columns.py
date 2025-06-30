@@ -1,7 +1,7 @@
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 
 federal_account_groupby_cols = [
-    "owning_agency_name",
+    "federal_owning_agency_name",
     "federal_account_symbol",
     "federal_account_name",
     "agency_identifier_name",
@@ -74,7 +74,13 @@ federal_account_groupby_cols = [
     "prime_award_summary_place_of_performance_cd_current",
 ]
 
-federal_account_select_cols = [
-    col if not col.startswith("last_modified_date") else "last_modified_date"
-    for col in query_paths["award_financial"]["federal_account"].keys()
-]
+
+treasury_account_select_cols = (
+    ["treasury_owning_agency_name"]
+    + [
+        col
+        for col in query_paths["award_financial"]["treasury_account"].keys()
+        if col != "owning_agency_name" and not col.startswith("last_modified_date")
+    ]
+    + ["last_modified_date"]
+)

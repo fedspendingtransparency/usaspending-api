@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from functools import reduce
 from typing import Any
@@ -8,12 +9,13 @@ from pyspark.sql import functions as sf, Column
 from usaspending_api.download.management.commands.delta_downloads.award_financial.filters import AccountDownloadFilter
 from usaspending_api.download.management.commands.delta_downloads.award_financial.columns import (
     federal_account_groupby_cols,
-    federal_account_select_cols,
+    treasury_account_select_cols,
 )
+from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 from usaspending_api.submissions.helpers import get_submission_ids_for_periods
 
 
-class AccountDownloadDataFrameBuilder:
+class AbstractAccountDownloadDataFrameBuilder(ABC):
 
     def __init__(
         self,
@@ -29,27 +31,10 @@ class AccountDownloadDataFrameBuilder:
         self.budget_function = account_download_filter.budget_function
         self.budget_subfunction = account_download_filter.budget_subfunction
         self.def_codes = account_download_filter.def_codes
-        self.df: str = spark.table(table_name)
-        self.groupby_cols: list[str] = federal_account_groupby_cols
-        self.select_cols: list[str] = federal_account_select_cols
-
-    def filter_to_latest_submissions_for_agencies(self, col_name: str, otherwise: Any = None) -> Column:
-        """Filter to the latest submission regardless of whether the agency submitted on a monthly or quarterly basis"""
-        return (
-            sf.when(
-                sf.col("submission_id").isin(
-                    get_submission_ids_for_periods(
-                        self.reporting_fiscal_year, self.reporting_fiscal_quarter, self.reporting_fiscal_period
-                    )
-                ),
-                sf.col(col_name),
-            )
-            .otherwise(otherwise)
-            .alias(col_name)
-        )
+        self.df: DataFrame = spark.table(table_name)
 
     @property
-    def combined_filters(self) -> Column:
+    def dynamic_filters(self) -> Column:
 
         @dataclass
         class Condition:
@@ -99,14 +84,54 @@ class AccountDownloadDataFrameBuilder:
             [condition.condition for condition in conditions if condition.apply],
         )
 
+    @property
+    def non_zero_filters(self) -> Column:
+        return (
+            (sf.col("gross_outlay_amount_FYB_to_period_end") != 0)
+            | (sf.col("USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig") != 0)
+            | (sf.col("USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig") != 0)
+            | (sf.col("transaction_obligated_amount") != 0)
+        )
+
     @staticmethod
     def collect_concat(col_name: str, concat_str: str = "; ") -> Column:
         return sf.concat_ws(concat_str, sf.sort_array(sf.collect_set(col_name))).alias(col_name)
 
     @property
+    @abstractmethod
+    def source_df(self) -> DataFrame: ...
+
+
+class FederalAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBuilder):
+
+    def __init__(
+        self,
+        spark: SparkSession,
+        account_download_filter: AccountDownloadFilter,
+        table_name: str = "rpt.account_download",
+    ):
+        super().__init__(spark, account_download_filter, table_name)
+        self.groupby_cols: list[str] = federal_account_groupby_cols
+
+    def filter_to_latest_submissions_for_agencies(self, col_name: str, otherwise: Any = None) -> Column:
+        """Filter to the latest submission regardless of whether the agency submitted on a monthly or quarterly basis"""
+        return (
+            sf.when(
+                sf.col("submission_id").isin(
+                    get_submission_ids_for_periods(
+                        self.reporting_fiscal_year, self.reporting_fiscal_quarter, self.reporting_fiscal_period
+                    )
+                ),
+                sf.col(col_name),
+            )
+            .otherwise(otherwise)
+            .alias(col_name)
+        )
+
+    @property
     def source_df(self) -> DataFrame:
         return (
-            self.df.filter(self.combined_filters)
+            self.df.filter(self.dynamic_filters)
             .groupBy(self.groupby_cols)
             .agg(
                 *[
@@ -124,11 +149,29 @@ class AccountDownloadDataFrameBuilder:
                 ],
                 sf.max(sf.col("last_modified_date")).alias("last_modified_date"),
             )
-            .filter(
-                (sf.col("gross_outlay_amount_FYB_to_period_end") != 0)
-                | (sf.col("USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig") != 0)
-                | (sf.col("USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig") != 0)
-                | (sf.col("transaction_obligated_amount") != 0)
+            .filter(self.non_zero_filters)
+            .select(
+                [sf.col("federal_owning_agency_name").alias("owning_agency_name")]
+                + [
+                    col
+                    for col in query_paths["award_financial"]["federal_account"].keys()
+                    if col != "owning_agency_name" and not col.startswith("last_modified_date")
+                ]
+                + ["last_modified_date"]
             )
-            .select(self.select_cols)
+        )
+
+
+class TreasuryAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBuilder):
+
+    @property
+    def source_df(self) -> DataFrame:
+        return self.df.filter(self.dynamic_filters & self.non_zero_filters).select(
+            [sf.col("treasury_owning_agency_name").alias("owning_agency_name")]
+            + [
+                col
+                for col in query_paths["award_financial"]["treasury_account"].keys()
+                if col != "owning_agency_name" and not col.startswith("last_modified_date")
+            ]
+            + ["last_modified_date"]
         )

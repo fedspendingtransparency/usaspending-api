@@ -1,6 +1,7 @@
 TREASURY_ACCOUNT_DOWNLOAD_COLUMNS = {
     "financial_accounts_by_awards_id",
-    "submission_id" "owning_agency_name",
+    "submission_id",
+    "owning_agency_name",
     "reporting_agency_name",
     "submission_period",
     "allocation_transfer_agency_identifier_code",

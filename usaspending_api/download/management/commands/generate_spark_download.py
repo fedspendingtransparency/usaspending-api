@@ -25,7 +25,8 @@ from usaspending_api.download.filestreaming.download_generation import build_dat
 from usaspending_api.download.filestreaming.download_source import DownloadSource
 from usaspending_api.download.lookups import JOB_STATUS_DICT, FILE_FORMATS, VALUE_MAPPINGS
 from usaspending_api.download.management.commands.delta_downloads.award_financial.builders import (
-    AccountDownloadDataFrameBuilder,
+    FederalAccountDownloadDataFrameBuilder,
+    TreasuryAccountDownloadDataFrameBuilder,
 )
 from usaspending_api.download.management.commands.delta_downloads.award_financial.filters import AccountDownloadFilter
 from usaspending_api.download.models import DownloadJob
@@ -36,9 +37,13 @@ logger = logging.getLogger(__name__)
 DOWNLOAD_SPEC = {
     "award_financial": {
         "federal_account": {
-            "df_builder": AccountDownloadDataFrameBuilder,
+            "df_builder": FederalAccountDownloadDataFrameBuilder,
             "validator_type": AccountDownloadValidator,
-        }
+        },
+        "treasury_account": {
+            "df_builder": TreasuryAccountDownloadDataFrameBuilder,
+            "validator_type": AccountDownloadValidator,
+        },
     }
 }
 
