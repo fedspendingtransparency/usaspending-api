@@ -236,6 +236,3 @@ FROM
         UNION
         SELECT * FROM original_cd_rl_cte
     ) AS union_all
-GROUP BY
-    location,
-    location_json
