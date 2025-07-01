@@ -4,14 +4,11 @@ import pandas as pd
 import pytest
 from django.core.management import call_command
 from model_bakery import baker
-from usaspending_api.download.management.commands.delta_downloads.award_financial.columns import (
-    federal_account_select_cols,
-    federal_account_groupby_cols,
-)
 from usaspending_api.download.management.commands.delta_downloads.award_financial.builders import (
-    AccountDownloadDataFrameBuilder,
+    FederalAccountDownloadDataFrameBuilder,
 )
 from usaspending_api.download.management.commands.delta_downloads.award_financial.filters import AccountDownloadFilter
+from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 
 
 @pytest.fixture(scope="function")
@@ -21,7 +18,14 @@ def account_download_table(spark, s3_unittest_data_bucket, hive_unittest_metasto
         f"--destination-table=account_download",
         f"--spark-s3-bucket={s3_unittest_data_bucket}",
     )
-    columns = list(set(federal_account_select_cols + federal_account_groupby_cols)) + [
+    columns = [
+        col
+        for col in query_paths["award_financial"]["federal_account"].keys()
+        if col != "owning_agency_name" and not col.startswith("last_modified_date")
+    ] + [
+        "federal_owning_agency_name",
+        "treasury_owning_agency_name",
+        "last_modified_date",
         "reporting_fiscal_year",
         "reporting_fiscal_quarter",
         "reporting_fiscal_period",
@@ -40,7 +44,7 @@ def account_download_table(spark, s3_unittest_data_bucket, hive_unittest_metasto
             "reporting_fiscal_period": [None, None, 5, None, None],
             "transaction_obligated_amount": [100, 100, 100, 100, 100],
             "submission_id": [1, 2, 3, 4, 5],
-            "owning_agency_name": ["test1", "test2", "test2", "test2", "test3"],
+            "federal_owning_agency_name": ["test1", "test2", "test2", "test2", "test3"],
             "reporting_agency_name": ["A", "B", "C", "D", "E"],
             "budget_function": ["A", "B", "C", "D", "E"],
             "budget_subfunction": ["A", "B", "C", "D", "E"],
@@ -83,7 +87,7 @@ def test_account_download_dataframe_builder(mock_get_submission_ids_for_periods,
         fy=2018,
         quarter=4,
     )
-    builder = AccountDownloadDataFrameBuilder(spark, account_download_filter, "rpt.account_download")
+    builder = FederalAccountDownloadDataFrameBuilder(spark, account_download_filter, "rpt.account_download")
     result = builder.source_df
     for col in ["reporting_agency_name", "budget_function", "budget_subfunction"]:
         assert sorted(result.toPandas()[col].to_list()) == ["A", "B; C; D"]
@@ -102,7 +106,7 @@ def test_filter_by_agency(mock_get_submission_ids_for_periods, spark, account_do
         quarter=4,
         agency=2,
     )
-    builder = AccountDownloadDataFrameBuilder(spark, account_download_filter)
+    builder = FederalAccountDownloadDataFrameBuilder(spark, account_download_filter)
     result = builder.source_df
     for col in ["reporting_agency_name", "budget_function", "budget_subfunction"]:
         assert sorted(result.toPandas()[col].to_list()) == ["B; C; D"]
@@ -123,7 +127,7 @@ def test_filter_by_federal_account_id(
         quarter=4,
         federal_account=1,
     )
-    builder = AccountDownloadDataFrameBuilder(spark, account_download_filter)
+    builder = FederalAccountDownloadDataFrameBuilder(spark, account_download_filter)
     result = builder.source_df
     for col in ["reporting_agency_name", "budget_function", "budget_subfunction"]:
         assert sorted(result.toPandas()[col].to_list()) == ["A"]

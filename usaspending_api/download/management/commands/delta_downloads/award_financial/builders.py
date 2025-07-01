@@ -7,10 +7,6 @@ from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as sf, Column
 
 from usaspending_api.download.management.commands.delta_downloads.award_financial.filters import AccountDownloadFilter
-from usaspending_api.download.management.commands.delta_downloads.award_financial.columns import (
-    federal_account_groupby_cols,
-    treasury_account_select_cols,
-)
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 from usaspending_api.submissions.helpers import get_submission_ids_for_periods
 
@@ -111,7 +107,44 @@ class FederalAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBui
         table_name: str = "rpt.account_download",
     ):
         super().__init__(spark, account_download_filter, table_name)
-        self.groupby_cols: list[str] = federal_account_groupby_cols
+        self.agg_cols = {
+            "reporting_agency_name": self.collect_concat,
+            "budget_function": self.collect_concat,
+            "budget_subfunction": self.collect_concat,
+            "transaction_obligated_amount": lambda col: sf.sum(col).alias(col),
+            "gross_outlay_amount_FYB_to_period_end": self.filter_and_sum,
+            "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig": self.filter_and_sum,
+            "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig": self.filter_and_sum,
+            "last_modified_date": lambda col: sf.max(col).alias(col),
+        }
+        self.select_cols = (
+            [sf.col("federal_owning_agency_name").alias("owning_agency_name")]
+            + [
+                col
+                for col in query_paths["award_financial"]["federal_account"].keys()
+                if col != "owning_agency_name" and not col.startswith("last_modified_date")
+            ]
+            + ["last_modified_date"]
+        )
+        self.groupby_cols = [
+            col
+            for col in self.df.columns
+            if col
+            not in (
+                list(self.agg_cols)
+                + [
+                    "submission_id",
+                    "federal_account_id",
+                    "funding_toptier_agency_id",
+                    "budget_function_code",
+                    "budget_subfunction_code",
+                    "reporting_fiscal_period",
+                    "reporting_fiscal_quarter",
+                    "reporting_fiscal_year",
+                    "quarter_format_flag",
+                ]
+            )
+        ]
 
     def filter_to_latest_submissions_for_agencies(self, col_name: str, otherwise: Any = None) -> Column:
         """Filter to the latest submission regardless of whether the agency submitted on a monthly or quarterly basis"""
@@ -128,37 +161,17 @@ class FederalAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBui
             .alias(col_name)
         )
 
+    def filter_and_sum(self, col_name: str) -> Column:
+        return sf.sum(self.filter_to_latest_submissions_for_agencies(col_name)).alias(col_name)
+
     @property
     def source_df(self) -> DataFrame:
         return (
             self.df.filter(self.dynamic_filters)
             .groupBy(self.groupby_cols)
-            .agg(
-                *[
-                    self.collect_concat(col)
-                    for col in ["reporting_agency_name", "budget_function", "budget_subfunction"]
-                ],
-                sf.sum("transaction_obligated_amount").alias("transaction_obligated_amount"),
-                *[
-                    sf.sum(self.filter_to_latest_submissions_for_agencies(col)).alias(col)
-                    for col in [
-                        "gross_outlay_amount_FYB_to_period_end",
-                        "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig",
-                        "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig",
-                    ]
-                ],
-                sf.max(sf.col("last_modified_date")).alias("last_modified_date"),
-            )
+            .agg(*[agg_func(col) for col, agg_func in self.agg_cols.items()])
             .filter(self.non_zero_filters)
-            .select(
-                [sf.col("federal_owning_agency_name").alias("owning_agency_name")]
-                + [
-                    col
-                    for col in query_paths["award_financial"]["federal_account"].keys()
-                    if col != "owning_agency_name" and not col.startswith("last_modified_date")
-                ]
-                + ["last_modified_date"]
-            )
+            .select(self.select_cols)
         )
 
 
