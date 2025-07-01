@@ -122,6 +122,9 @@ class Command(BaseCommand):
                                 'broker_server','(
                                     SELECT {self.broker_match_field}, {self.broker_load_field}
                                     FROM {self.broker_table_name}
+                                    WHERE
+                                        {self.broker_match_field} >= {chunk_min_id}
+                                        AND {self.broker_match_field} <= {chunk_max_id}
                                 )') AS broker_table
                                      (
                                           lookup_id bigint,
@@ -129,8 +132,6 @@ class Command(BaseCommand):
                                      )
                             WHERE
                                 usas_table.{self.usas_match_field} = broker_table.lookup_id
-                                AND usas_table.{self.usas_match_field} >= {chunk_min_id}
-                                AND usas_table.{self.usas_match_field} <= {chunk_max_id}
                         ;
                         """
                     )
