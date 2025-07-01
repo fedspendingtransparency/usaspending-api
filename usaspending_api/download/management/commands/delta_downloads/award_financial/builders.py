@@ -126,25 +126,18 @@ class FederalAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBui
             ]
             + ["last_modified_date"]
         )
-        self.groupby_cols = [
-            col
-            for col in self.df.columns
-            if col
-            not in (
-                list(self.agg_cols)
-                + [
-                    "submission_id",
-                    "federal_account_id",
-                    "funding_toptier_agency_id",
-                    "budget_function_code",
-                    "budget_subfunction_code",
-                    "reporting_fiscal_period",
-                    "reporting_fiscal_quarter",
-                    "reporting_fiscal_year",
-                    "quarter_format_flag",
-                ]
-            )
+        filter_cols = [
+            "submission_id",
+            "federal_account_id",
+            "funding_toptier_agency_id",
+            "budget_function_code",
+            "budget_subfunction_code",
+            "reporting_fiscal_period",
+            "reporting_fiscal_quarter",
+            "reporting_fiscal_year",
+            "quarter_format_flag",
         ]
+        self.groupby_cols = [col for col in self.df.columns if col not in list(self.agg_cols) + filter_cols]
 
     def filter_to_latest_submissions_for_agencies(self, col_name: str, otherwise: Any = None) -> Column:
         """Filter to the latest submission regardless of whether the agency submitted on a monthly or quarterly basis"""
@@ -179,7 +172,7 @@ class TreasuryAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBu
 
     @property
     def source_df(self) -> DataFrame:
-        return self.df.filter(self.dynamic_filters & self.non_zero_filters).select(
+        select_cols = (
             [sf.col("treasury_owning_agency_name").alias("owning_agency_name")]
             + [
                 col
@@ -188,3 +181,4 @@ class TreasuryAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBu
             ]
             + ["last_modified_date"]
         )
+        return self.df.filter(self.dynamic_filters & self.non_zero_filters).select(select_cols)
