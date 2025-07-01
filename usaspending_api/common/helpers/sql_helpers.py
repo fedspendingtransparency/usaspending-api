@@ -41,12 +41,6 @@ def read_sql_file_to_text(file_path: Path) -> str:
     return p.sub(" ", str(file_path.read_text().replace("\n", "  ")))
 
 
-def strip_sql_whitespace(query: str) -> str:
-    """Open file and return text with most whitespace removed"""
-    p = re.compile(r"\s\s+")
-    return p.sub(" ", str(query.replace("\n", "  ")))
-
-
 def read_sql_file(file_path):
     # Read in SQL file and extract commands into a list
     _, file_extension = os.path.splitext(file_path)

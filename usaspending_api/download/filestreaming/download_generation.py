@@ -236,8 +236,7 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
                 start_uploading = time.perf_counter()
                 multipart_upload(bucket, region, zip_file_path, os.path.basename(zip_file_path))
                 write_to_log(
-                    message=f"Uploading took {time.perf_counter() - start_uploading:.2f}s",
-                    download_job=download_job,
+                    message=f"Uploading took {time.perf_counter() - start_uploading:.2f}s", download_job=download_job
                 )
             except Exception as e:
                 exc_msg = "An exception was raised while attempting to upload the file"
@@ -848,63 +847,63 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
         kind=SpanKind.INTERNAL,
         service="bulk-download",
     )
-    if download_job:
-        with subprocess_trace as span:
-            span.set_attributes(
-                {
-                    "service": "bulk-download",
-                    "resource": str(download_sql),
-                    "span_type": "Internal",
-                    "source_path": str(source_path),
-                    # download job details
-                    "download_job_id": str(download_job.download_job_id),
-                    "download_job_status": str(download_job.job_status.name),
-                    "download_file_name": str(download_job.file_name),
-                    "download_file_size": download_job.file_size if download_job.file_size is not None else 0,
-                    "number_of_rows": download_job.number_of_rows if download_job.number_of_rows is not None else 0,
-                    "number_of_columns": (
-                        download_job.number_of_columns if download_job.number_of_columns is not None else 0
-                    ),
-                    "error_message": download_job.error_message if download_job.error_message else "",
-                    "monthly_download": str(download_job.monthly_download),
-                    "json_request": str(download_job.json_request) if download_job.json_request else "",
-                }
-            )
 
-    try:
-        log_time = time.perf_counter()
-        temp_env = os.environ.copy()
-        if download_job and not download_job.monthly_download:
-            # Since terminating the process isn't guaranteed to end the DB statement, add timeout to client connection
-            temp_env["PGOPTIONS"] = (
-                f"--statement-timeout={settings.DOWNLOAD_DB_TIMEOUT_IN_HOURS}h "
-                f"--work-mem={settings.DOWNLOAD_DB_WORK_MEM_IN_MB}MB"
-            )
-
-        cat_command = subprocess.Popen(["cat", temp_sql_file_path], stdout=subprocess.PIPE)
-        subprocess.check_output(
-            ["psql", "-q", "-o", source_path, retrieve_db_string(), "-v", "ON_ERROR_STOP=1"],
-            stdin=cat_command.stdout,
-            stderr=subprocess.STDOUT,
-            env=temp_env,
+    with subprocess_trace as span:
+        span.set_attributes(
+            {
+                "service": "bulk-download",
+                "resource": str(download_sql),
+                "span_type": "Internal",
+                "source_path": str(source_path),
+                # download job details
+                "download_job_id": str(download_job.download_job_id),
+                "download_job_status": str(download_job.job_status.name),
+                "download_file_name": str(download_job.file_name),
+                "download_file_size": download_job.file_size if download_job.file_size is not None else 0,
+                "number_of_rows": download_job.number_of_rows if download_job.number_of_rows is not None else 0,
+                "number_of_columns": (
+                    download_job.number_of_columns if download_job.number_of_columns is not None else 0
+                ),
+                "error_message": download_job.error_message if download_job.error_message else "",
+                "monthly_download": str(download_job.monthly_download),
+                "json_request": str(download_job.json_request) if download_job.json_request else "",
+            }
         )
 
-        duration = time.perf_counter() - log_time
-        write_to_log(
-            message=f"Wrote {os.path.basename(source_path)}, took {duration:.4f} seconds",
-            download_job=download_job,
-        )
-    except subprocess.CalledProcessError as e:
-        write_to_log(message=f"PSQL Error: {e.output.decode()}", is_error=True, download_job=download_job)
-        raise e
-    except Exception as e:
-        if not settings.IS_LOCAL:
-            # Not logging the command as it can contain the database connection string
-            e.cmd = "[redacted psql command]"
-        write_to_log(message=e, is_error=True, download_job=download_job)
-        sql = subprocess.check_output(["cat", temp_sql_file_path]).decode()
-        write_to_log(message=f"Faulty SQL: {sql}", is_error=True, download_job=download_job)
-        raise e
+        try:
+            log_time = time.perf_counter()
+            temp_env = os.environ.copy()
+            if download_job and not download_job.monthly_download:
+                # Since terminating the process isn't guaranteed to end the DB statement, add timeout to client connection
+                temp_env["PGOPTIONS"] = (
+                    f"--statement-timeout={settings.DOWNLOAD_DB_TIMEOUT_IN_HOURS}h "
+                    f"--work-mem={settings.DOWNLOAD_DB_WORK_MEM_IN_MB}MB"
+                )
+
+            cat_command = subprocess.Popen(["cat", temp_sql_file_path], stdout=subprocess.PIPE)
+            subprocess.check_output(
+                ["psql", "-q", "-o", source_path, retrieve_db_string(), "-v", "ON_ERROR_STOP=1"],
+                stdin=cat_command.stdout,
+                stderr=subprocess.STDOUT,
+                env=temp_env,
+            )
+
+            duration = time.perf_counter() - log_time
+            write_to_log(
+                message=f"Wrote {os.path.basename(source_path)}, took {duration:.4f} seconds",
+                download_job=download_job,
+            )
+        except subprocess.CalledProcessError as e:
+            write_to_log(message=f"PSQL Error: {e.output.decode()}", is_error=True, download_job=download_job)
+            raise e
+        except Exception as e:
+            if not settings.IS_LOCAL:
+                # Not logging the command as it can contain the database connection string
+                e.cmd = "[redacted psql command]"
+            write_to_log(message=e, is_error=True, download_job=download_job)
+            sql = subprocess.check_output(["cat", temp_sql_file_path]).decode()
+            write_to_log(message=f"Faulty SQL: {sql}", is_error=True, download_job=download_job)
+            raise e
 
 
 def retrieve_db_string():
