@@ -30,7 +30,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--load-field-type",
             type=str,
-            required=True,
+            required=False,
             default="text",
             help="Postgres data type of the field that will be copied from Broker",
         )
@@ -127,7 +127,10 @@ class Command(BaseCommand):
                                           lookup_id bigint,
                                           load_field {self.load_field_type}
                                      )
-                            WHERE usas_table.{self.usas_match_field} = broker_table.lookup_id
+                            WHERE
+                                usas_table.{self.usas_match_field} = broker_table.lookup_id
+                                AND usas_table.{self.usas_match_field} >= {chunk_min_id}
+                                AND usas_table.{self.usas_match_field} <= {chunk_max_id}
                         ;
                         """
                     )
