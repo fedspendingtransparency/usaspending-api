@@ -138,11 +138,11 @@ class Command(BaseCommand):
                 row_count = cursor.rowcount
                 total_row_count += row_count
                 ratio = (chunk_max_id - min_id + 1) / estimated_id_count
-                logging.info(
+                logger.info(
                     f'Updated {row_count:,d} rows with "{self.usas_match_field}" between {chunk_min_id:,d} and {chunk_max_id:,d}.'
                     f" Estimated time remaining: {timer.estimated_remaining_runtime(ratio)}"
                 )
-        logging.info(
+        logger.info(
             f'Finished updating {total_row_count:,d} rows for "{self.usas_table_name}"."{self.usas_load_field}" '
             f"in {timer}"
         )
