@@ -10,6 +10,7 @@ from usaspending_api.common.etl.spark import create_ref_temp_views
 
 from usaspending_api.common.helpers.s3_helpers import upload_download_file_to_s3
 from usaspending_api.common.helpers.spark_helpers import configure_spark_session, get_active_spark_session
+from usaspending_api.common.helpers.sql_helpers import read_sql_file_to_text
 from usaspending_api.common.helpers.download_csv_strategies import (
     PostgresToCSVStrategy,
     SparkToCSVStrategy,
@@ -145,10 +146,11 @@ class Command(BaseCommand):
         for sql_file, final_name in self.download_file_list:
             final_path = self._create_data_csv_dest_path(final_name)
             intermediate_data_file_path = final_path.parent / (final_path.name + "_temp")
-            data_file_names, count = self.download_to_csv(
-                sql_file, final_path, final_name, str(intermediate_data_file_path)
+            source_sql = read_sql_file_to_text(Path(sql_file))
+            download_metadata = self.download_to_csv(
+                source_sql, final_path, final_name, str(intermediate_data_file_path)
             )
-            if count <= 0:
+            if download_metadata.number_of_rows <= 0:
                 logger.warning(f"Empty data file generated: {final_path}!")
 
             self.filepaths_to_delete.extend(self.working_dir_path.glob(f"{final_path.stem}*"))
@@ -162,9 +164,9 @@ class Command(BaseCommand):
             logger.info(f"Created database record {db_id} for future retrieval")
             logger.info("Marking zip file for deletion in cleanup")
         else:
-            logger.warn("Not uploading zip file to S3. Leaving file locally")
+            logger.warning("Not uploading zip file to S3. Leaving file locally")
             self.filepaths_to_delete.remove(self.zip_file_path)
-            logger.warn("Not creating database record")
+            logger.warning("Not creating database record")
 
     @property
     def download_file_list(self):

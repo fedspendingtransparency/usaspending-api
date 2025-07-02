@@ -159,7 +159,7 @@ class Command(BaseCommand):
             upload_download_file_to_s3(zip_file_path, settings.UNLINKED_AWARDS_DOWNLOAD_REDIRECT_DIR)
             logger.info("Marking zip file for deletion in cleanup")
         else:
-            logger.warn("Not uploading zip file to S3. Leaving file locally")
+            logger.warning("Not uploading zip file to S3. Leaving file locally")
             self.filepaths_to_delete.remove(zip_file_path)
 
     @property

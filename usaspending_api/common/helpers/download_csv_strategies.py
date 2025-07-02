@@ -1,14 +1,15 @@
-from abc import ABC, abstractmethod
+import logging
 import multiprocessing
 import time
-import logging
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Tuple
-from django.conf import settings
+from typing import List, Optional
 
+from django.conf import settings
+from pyspark.sql import DataFrame
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
-from usaspending_api.common.helpers.s3_helpers import delete_s3_object, download_s3_object
-from usaspending_api.common.helpers.sql_helpers import read_sql_file_to_text
+from usaspending_api.common.helpers.s3_helpers import delete_s3_objects, download_s3_object
 from usaspending_api.download.filestreaming.download_generation import (
     EXCEL_ROW_LIMIT,
     split_and_zip_data_files,
@@ -18,7 +19,13 @@ from usaspending_api.download.filestreaming.download_generation import (
 )
 from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_file
 from usaspending_api.download.lookups import FILE_FORMATS
-from typing import List
+
+
+@dataclass
+class CSVDownloadMetadata:
+    filepaths: list[str]
+    number_of_rows: int
+    number_of_columns: Optional[int] = None
 
 
 class AbstractToCSVStrategy(ABC):
@@ -37,13 +44,13 @@ class AbstractToCSVStrategy(ABC):
     @abstractmethod
     def download_to_csv(
         self,
-        source_sql: str,
+        source_sql: str | None,
         destination_path: Path,
         destination_file_name: str,
         working_dir_path: Path,
         download_zip_path: Path,
-        source_df=None,
-    ) -> Tuple[List[str], int]:
+        source_df: DataFrame | None = None,
+    ) -> CSVDownloadMetadata:
         """
         Args:
             source_sql: Some string that can be used as the source sql
@@ -51,9 +58,10 @@ class AbstractToCSVStrategy(ABC):
             destination_file_name: The name of the file in destination path without a file extension
             working_dir_path: The working directory path as a string
             download_zip_path: The path (as a string) to the download zip file
+            source_df: A pyspark DataFrame that contains the data to be downloaded
 
         Returns:
-            Returns a list of paths to the downloaded csv files and the total record count of all those files.
+            Returns a CSVDownloadMetadata object (a dataclass containing metadata about the download)
         """
         pass
 
@@ -66,12 +74,11 @@ class PostgresToCSVStrategy(AbstractToCSVStrategy):
     def download_to_csv(
         self, source_sql, destination_path, destination_file_name, working_dir_path, download_zip_path, source_df=None
     ):
-        source_sql = Path(source_sql)
         start_time = time.perf_counter()
         self._logger.info(f"Downloading data to {destination_path}")
         temp_data_file_name = destination_path.parent / (destination_path.name + "_temp")
         options = FILE_FORMATS[self.file_format]["options"]
-        export_query = r"\COPY ({}) TO STDOUT {}".format(read_sql_file_to_text(source_sql), options)
+        export_query = r"\COPY ({}) TO STDOUT {}".format(source_sql, options)
         try:
             temp_file, temp_file_path = generate_export_query_temp_file(export_query, None, working_dir_path)
             # Create a separate process to run the PSQL command; wait
@@ -86,8 +93,8 @@ class PostgresToCSVStrategy(AbstractToCSVStrategy):
             # Log how many rows we have
             self._logger.info(f"Counting rows in delimited text file {temp_data_file_name}")
             try:
-                count = count_rows_in_delimited_file(filename=temp_data_file_name, has_header=True, delimiter=delim)
-                self._logger.info(f"{destination_path} contains {count:,} rows of data")
+                row_count = count_rows_in_delimited_file(filename=temp_data_file_name, has_header=True, delimiter=delim)
+                self._logger.info(f"{destination_path} contains {row_count:,} rows of data")
             except Exception:
                 self._logger.exception("Unable to obtain delimited text file line count")
 
@@ -108,7 +115,7 @@ class PostgresToCSVStrategy(AbstractToCSVStrategy):
             raise e
         finally:
             Path(temp_file_path).unlink()
-        return [destination_path], count
+        return CSVDownloadMetadata([destination_path], row_count)
 
 
 class SparkToCSVStrategy(AbstractToCSVStrategy):
@@ -161,6 +168,7 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
                 max_records_per_file=EXCEL_ROW_LIMIT,
                 logger=self._logger,
             )
+            column_count = len(df.columns)
             # When combining these later, will prepend the extracted header to each resultant file.
             # The parts therefore must NOT have headers or the headers will show up in the data when combined.
             header = ",".join([_.name for _ in df.schema.fields])
@@ -179,12 +187,12 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
             self._logger.exception("Exception encountered. See logs")
             raise
         finally:
-            delete_s3_object(s3_bucket_name, s3_destination_path)
+            delete_s3_objects(s3_bucket_name, key_prefix=f"{s3_bucket_sub_path}/{destination_file_name}")
             if self.spark_created_by_command:
                 self.spark.stop()
         append_files_to_zip_file(final_csv_data_file_locations, download_zip_path)
         self._logger.info(f"Generated the following data csv files {final_csv_data_file_locations}")
-        return final_csv_data_file_locations, record_count
+        return CSVDownloadMetadata(final_csv_data_file_locations, record_count, column_count)
 
     def _move_data_csv_s3_to_local(
         self, bucket_name, s3_file_paths, s3_bucket_path, s3_bucket_sub_path, destination_path_dir

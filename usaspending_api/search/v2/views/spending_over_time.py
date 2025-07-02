@@ -135,27 +135,16 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         return validated_data, models
 
-    def subawards_group_by_time_period_agg(self) -> A:
-        if self.group == "fiscal_year":
-            return A("terms", field="sub_fiscal_year")
-        else:
-            return A(
-                "date_histogram",
-                field="sub_action_date",
-                interval="year" if (self.group == "calendar_year") else self.group,
-                format="yyyy-MM-dd",
-            )
-
-    def awards_group_by_time_period_agg(self) -> A:
-        if self.group == "fiscal_year":
-            return A("terms", field="fiscal_year", size="100", order={"_key": "asc"})
-        else:
-            return A(
-                "date_histogram",
-                field="action_date",
-                interval="year" if (self.group == "calendar_year") else self.group,
-                format="yyyy-MM-dd",
-            )
+    def get_time_period_aggregation(self):
+        field_prefix = "sub_" if self.spending_level == SpendingLevel.SUBAWARD else ""
+        field = "action_date" if self.group == "calendar_year" else "fiscal_action_date"
+        interval = "year" if self.group in ["calendar_year", "fiscal_year"] else self.group
+        return A(
+            "date_histogram",
+            field=f"{field_prefix}{field}",
+            interval=interval,
+            format="yyyy-MM-dd",
+        )
 
     def apply_elasticsearch_aggregations(self, search: Search) -> None:
         """
@@ -169,22 +158,14 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         if isinstance(search, AwardSearch):
             category_field = "category.keyword"
             obligation_field = "generated_pragmatic_obligation"
-            group_by_time_period_agg = self.awards_group_by_time_period_agg()
-        elif isinstance(search, TransactionSearch):
-            category_field = "award_category"
-            obligation_field = "generated_pragmatic_obligation"
-
-            group_by_time_period_agg = A(
-                "date_histogram",
-                field="action_date" if self.group == "calendar_year" else "fiscal_action_date",
-                interval="year" if (self.group == "fiscal_year" or self.group == "calendar_year") else self.group,
-                format="yyyy-MM-dd",
-            )
-
         elif isinstance(search, SubawardSearch):
             category_field = "subaward_type.keyword"
             obligation_field = "subaward_amount"
-            group_by_time_period_agg = self.subawards_group_by_time_period_agg()
+        else:
+            category_field = "award_category"
+            obligation_field = "generated_pragmatic_obligation"
+
+        group_by_time_period_agg = self.get_time_period_aggregation()
 
         """
         The individual aggregations that are needed; with two different sum aggregations to handle issues with
@@ -221,12 +202,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
     def set_time_period(self, bucket: dict) -> dict:
         time_period = {}
-
-        if self.group == "fiscal_year" and self.spending_level != SpendingLevel.TRANSACTION:
-            key_as_date = datetime.strptime(str(bucket["key"]), "%Y")
-        else:
-            key_as_date = datetime.strptime(bucket["key_as_string"], "%Y-%m-%d")
-
+        key_as_date = datetime.strptime(bucket["key_as_string"], "%Y-%m-%d")
         time_period["calendar_year" if self.group == "calendar_year" else "fiscal_year"] = str(key_as_date.year)
         if self.group == "quarter":
             quarter = (key_as_date.month - 1) // 3 + 1
@@ -318,9 +294,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
 
         return response_object
 
-    def build_elasticsearch_result_transactions(
-        self, agg_response: AggResponse, time_periods: list[TimePeriod]
-    ) -> list:
+    def build_elasticsearch_result(self, agg_response: AggResponse, time_periods: list[TimePeriod]) -> list:
         """
         In this function we are just taking the elasticsearch aggregate response and looping through the
         buckets to create a results object for each time interval.
@@ -332,15 +306,19 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             * "calendar_year" returns a list of dictionaries containing {calendar year}
             * "fiscal_year" returns list of dictionaries containing {fiscal year}
             * "quarter" returns a list of dictionaries containing {fiscal year and quarter}
-            * "month" returns a list of dictionaries containg {fiscal year and month}
+            * "month" returns a list of dictionaries containing {fiscal year and month}
         NOTE the generate_date_range() can also generate non fiscal date range (calendar ranges) as well.
         """
 
         results = []
         min_date, max_date = min_and_max_from_date_ranges([asdict(time_period) for time_period in time_periods])
+        date_buckets = agg_response.group_by_time_period.buckets
+
+        if self.spending_level == SpendingLevel.AWARD and date_buckets:
+            max_date_from_results = datetime.strptime(date_buckets[-1]["key_as_string"], "%Y-%m-%d")
+            max_date = max(max_date, max_date_from_results)
 
         date_range = generate_date_range(min_date, max_date, self.group)
-        date_buckets = agg_response.group_by_time_period.buckets
         parsed_bucket = None
 
         for fiscal_date in date_range:
@@ -361,10 +339,39 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 results.append(parsed_bucket)
                 parsed_bucket = None
             else:
-                results.append(
-                    {
-                        "aggregated_amount": 0,
-                        "time_period": time_period,
+                default_value = {
+                    "aggregated_amount": 0,
+                    "time_period": time_period,
+                }
+                if self.spending_level == SpendingLevel.AWARD:
+                    default_value = {
+                        **default_value,
+                        "Contract_Obligations": 0,
+                        "Direct_Obligations": 0,
+                        "Grant_Obligations": 0,
+                        "Idv_Obligations": 0,
+                        "Loan_Obligations": 0,
+                        "Other_Obligations": 0,
+                        "total_outlays": 0,
+                        "Contract_Outlays": 0,
+                        "Direct_Outlays": 0,
+                        "Grant_Outlays": 0,
+                        "Idv_Outlays": 0,
+                        "Loan_Outlays": 0,
+                        "Other_Outlays": 0,
+                    }
+                elif self.spending_level == SpendingLevel.SUBAWARD:
+                    default_value = {
+                        **default_value,
+                        "Contract_Obligations": 0,
+                        "Grant_Obligations": 0,
+                        "total_outlays": None,
+                        "Contract_Outlays": None,
+                        "Grant_Outlays": None,
+                    }
+                else:
+                    default_value = {
+                        **default_value,
                         "Contract_Obligations": 0,
                         "Direct_Obligations": 0,
                         "Grant_Obligations": 0,
@@ -379,64 +386,9 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                         "Loan_Outlays": None,
                         "Other_Outlays": None,
                     }
-                )
+                results.append(default_value)
 
         return results
-
-    def build_elasticsearch_result_awards_subawards(self, agg_response: AggResponse) -> list:
-        """
-        In this function we are just taking the elasticsearch aggregate response and looping through the
-        buckets to create a results object for each time interval.
-
-        Using a min_date, max_date, and a frequency indicator generates either a list of dictionaries
-        containing fiscal year information (fiscal year, fiscal quarter, and fiscal month) or a list
-        of dictionaries containing calendar year information (calendar year). The following are the format
-        of date_range based on the frequency:
-            * "calendar_year" returns a list of dictionaries containing {calendar year}
-            * "fiscal_year" returns list of dictionaries containing {fiscal year}
-            * "quarter" returns a list of dictionaries containing {fiscal year and quarter}
-            * "month" returns a list of dictionaries containg {fiscal year and month}
-        NOTE the generate_date_range() can also generate non fiscal date range (calendar ranges) as well.
-        """
-
-        results = []
-        date_buckets = agg_response.group_by_time_period.buckets
-        parsed_bucket = None
-
-        if date_buckets is not None:
-            for bucket in date_buckets:
-                parsed_bucket = self.parse_elasticsearch_bucket(bucket.to_dict())
-                results.append(parsed_bucket)
-
-        return results
-
-    def set_default_for_subawards(self, time_periods: list[TimePeriod], overall_results: list) -> list:
-        """if there is no data for that fiscal year, set default overall_results for that year"""
-
-        min_date, max_date = min_and_max_from_date_ranges([asdict(time_period) for time_period in time_periods])
-        date_range = generate_date_range(min_date, max_date, self.group)
-        if date_range.count != overall_results.count:
-            for year in date_range:
-                if not (
-                    any(
-                        overall_result["time_period"] == {"fiscal_year": str(year["fiscal_year"])}
-                        for overall_result in overall_results
-                    )
-                ):
-                    overall_results.append(
-                        {
-                            "aggregated_amount": 0,
-                            "total_outlays": None,
-                            "time_period": {"fiscal_year": str(year["fiscal_year"])},
-                            "Contract_Obligations": 0,
-                            "Contract_Outlays": None,
-                            "Grant_Obligations": 0,
-                            "Grant_Outlays": None,
-                        }
-                    )
-            overall_results = sorted(overall_results, key=lambda x: x["time_period"]["fiscal_year"])
-
-        return overall_results
 
     @cache_response()
     def post(self, request: Request) -> Response:
@@ -468,7 +420,6 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         default_time_period = {"start_date": settings.API_SEARCH_MIN_DATE, "end_date": end_date}
 
         # if time periods have been passed in use those, otherwise use the one calculated above
-        results = None
         time_periods = [
             TimePeriod(**time_period) for time_period in self.filters.get("time_period", [default_time_period])
         ]
@@ -477,22 +428,17 @@ class SpendingOverTimeVisualizationViewSet(APIView):
         query_type = QueryType(self.spending_level.value)
         query_with_filters = QueryWithFilters(query_type)
         filter_query = query_with_filters.generate_elasticsearch_query(self.filters)
-        if self.spending_level == SpendingLevel.SUBAWARD:
-            search = SubawardSearch().filter(filter_query)
-            self.apply_elasticsearch_aggregations(search)
-            response = search.handle_execute()
-            results_with_values = self.build_elasticsearch_result_awards_subawards(response.aggs)
-            results = self.set_default_for_subawards(time_periods, results_with_values)
-        elif self.spending_level == SpendingLevel.TRANSACTION:
-            search = TransactionSearch().filter(filter_query)
-            self.apply_elasticsearch_aggregations(search)
-            response = search.handle_execute()
-            results = self.build_elasticsearch_result_transactions(response.aggs, time_periods)
-        elif self.spending_level == SpendingLevel.AWARD:
-            search = AwardSearch().filter(filter_query)
-            self.apply_elasticsearch_aggregations(search)
-            response = search.handle_execute()
-            results = self.build_elasticsearch_result_awards_subawards(response.aggs)
+        match self.spending_level:
+            case SpendingLevel.AWARD:
+                search = AwardSearch
+            case SpendingLevel.SUBAWARD:
+                search = SubawardSearch
+            case _:
+                search = TransactionSearch
+        search = search().filter(filter_query)
+        self.apply_elasticsearch_aggregations(search)
+        response = search.handle_execute()
+        results = self.build_elasticsearch_result(response.aggs, time_periods)
 
         raw_response = OrderedDict(
             [
