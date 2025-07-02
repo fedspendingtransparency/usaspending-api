@@ -47,14 +47,23 @@ LOCAL_BASIC_EXTRA_CONF = {
     "spark.jars.packages": ",".join(SPARK_SESSION_JARS),
 }
 
+
 LOCAL_EXTENDED_EXTRA_CONF = {
     **LOCAL_BASIC_EXTRA_CONF,
-    "spark.hadoop.fs.s3a.endpoint": f"{CONFIG.MINIO_HOST}:{CONFIG.MINIO_PORT}",
-    "spark.hadoop.fs.s3a.access.key": CONFIG.MINIO_ACCESS_KEY.get_secret_value(),
-    "spark.hadoop.fs.s3a.secret.key": CONFIG.MINIO_SECRET_KEY.get_secret_value(),
+    "spark.hadoop.fs.s3a.endpoint": getattr(CONFIG, "MINIO_HOST", ""),
     "spark.hadoop.fs.s3a.connection.ssl.enabled": False,
     "spark.hadoop.fs.s3a.path.style.access": True,
     "spark.sql.catalogImplementation": "hive",
-    "spark.sql.warehouse.dir": CONFIG.SPARK_SQL_WAREHOUSE_DIR,
-    "spark.hadoop.javax.jdo.option.ConnectionURL": f"jdbc:derby:;databaseName={CONFIG.HIVE_METASTORE_DERBY_DB_DIR};create=true",
+    "spark.sql.warehouse.dir": getattr(CONFIG, "SPARK_SQL_WAREHOUSE_DIR", ""),
 }
+
+if getattr(CONFIG, "MINIO_ACCESS_KEY", False) and getattr(CONFIG.MINIO_ACCESS_KEY, "get_secret_value", False):
+    LOCAL_EXTENDED_EXTRA_CONF["spark.hadoop.fs.s3a.access.key"] = CONFIG.MINIO_ACCESS_KEY.get_secret_value()
+
+if getattr(CONFIG, "MINIO_SECRET_KEY", False):
+    LOCAL_EXTENDED_EXTRA_CONF["spark.hadoop.fs.s3a.secret.key"] = CONFIG.MINIO_SECRET_KEY.get_secret_value()
+
+if getattr(CONFIG, "HIVE_METASTORE_DERBY_DB_DIR", False):
+    LOCAL_EXTENDED_EXTRA_CONF["spark.hadoop.javax.jdo.option.ConnectionURL"] = (
+        f"jdbc:derby:;databaseName={CONFIG.HIVE_METASTORE_DERBY_DB_DIR};create=true"
+    )
