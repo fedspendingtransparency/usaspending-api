@@ -1,6 +1,9 @@
+import datetime
 import json
 import logging
 from typing import Optional
+
+from dateutil.relativedelta import relativedelta
 
 from usaspending_api.recipient.models import RecipientProfile
 
@@ -197,3 +200,15 @@ def location_type_agg_key(record: dict) -> Optional[str]:
         return json_data.get("location_type")
     else:
         raise ValueError("Unable to get the 'location_type' key from the 'location_json' field")
+
+
+def fiscal_action_date(record: dict) -> Optional[datetime.date]:
+    if record.get("action_date") is None:
+        return None
+    return record["action_date"] + relativedelta(months=3)
+
+
+def sub_fiscal_action_date(record: dict) -> Optional[datetime.date]:
+    if record.get("sub_action_date") is None:
+        return None
+    return record["sub_action_date"] + relativedelta(months=3)
