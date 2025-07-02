@@ -23,16 +23,17 @@ class AccountDownloadFilter(BaseModel):
     @classmethod
     def ensure_int_or_none(cls, value: Any, field: ModelField) -> Any:
         if value == "all":
-            return None
+            result = None
         elif value is None:
-            return value
+            result = value
         elif not isinstance(value, int):
             try:
-                return int(value)
+                result = int(value)
             except ValueError:
                 raise InvalidParameterException(f"{field.name} must be an integer.")
         else:
-            return value
+            result = value
+        return result
 
     @validator("budget_function", "budget_subfunction", pre=True)
     @classmethod
