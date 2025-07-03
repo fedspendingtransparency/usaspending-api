@@ -49,6 +49,7 @@ runs:
         "pytest
         -r=fEs
         -x
+        -s
         --cov=usaspending_api
         --cov-report term
         --cov-report xml:{cov_report_name}
