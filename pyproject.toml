@@ -25,6 +25,7 @@ dependencies = [
     "attrs==23.2.*",
     "boto3>=1.34,<1.36",
     "certifi==2024.7.4",
+    "databricks-sdk==0.44.1",
     "dataclasses-json==0.6.*",
     "dj-database-url==2.1.0",
     "django-cors-headers==4.3.*",
