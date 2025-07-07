@@ -1,49 +1,50 @@
-import duckdb
 import os
 
+import duckdb
 from django.core.management.base import BaseCommand
 
 from usaspending_api.config import CONFIG
-from usaspending_api import settings
 
 SPARK_S3_BUCKET = CONFIG.SPARK_S3_BUCKET
 DELTA_LAKE_S3_PATH = CONFIG.DELTA_LAKE_S3_PATH
 
 S3_DELTA_PATH = f"s3://{SPARK_S3_BUCKET}/{DELTA_LAKE_S3_PATH}/rpt/award_search"
 
-DELTA_EXTENSION_PATH = os.path.abspath("/duckdb_plugins/delta.duckdb_extension")
-AWS_EXTENSION_PATH = os.path.abspath("/duckdb_plugins/aws.duckdb_extension")
-HTTPFS_EXTENSION_PATH = os.path.abspath("/duckdb_plugins/httpfs.duckdb_extension")
+DUCKDB_EXTENSIONS = ["delta", "httpfs", "aws"]
+
 
 class Command(BaseCommand):
-
     def add_arguments(self, parser):
-
-        parser.add_argument(
-            "--is-local",
-            action="store_true"
-        )
-
+        parser.add_argument("--is-local", action="store_true")
 
     def handle(self, *args, **options):
-
         # Read arguments
         is_local = options["is_local"]
 
         # Establish DuckDB connection and install plugins
         conn = duckdb.connect()
-        conn.query(f"LOAD '{DELTA_EXTENSION_PATH}'")
-        conn.query(f"LOAD '{HTTPFS_EXTENSION_PATH}'")
-        conn.query(f"LOAD '{AWS_EXTENSION_PATH}'")
+
+        # Try to load the required extensions and install them only if they are missing
+        for extension in DUCKDB_EXTENSIONS:
+            try:
+                conn.load_extension(extension)
+            except duckdb.IOException:
+                conn.install_extension(extension)
+                conn.load_extension(extension)
 
         if is_local:
-            conn.execute("""
+            minio_host = os.getenv("MINIO_HOST", "minio")
+            minio_port = os.getenv("MINIO_PORT", "10001")
+            minio_user = os.getenv("MINIO_ROOT_USER", "usaspending")
+            minio_pass = os.getenv("MINIO_ROOT_PASSWORD", "usaspender")
+
+            conn.execute(f"""
             CREATE SECRET secret1 (
                 TYPE s3,
-                KEY_ID 'usaspending',
-                SECRET 'usaspender',
+                KEY_ID '{minio_user}',
+                SECRET '{minio_pass}',
                 REGION 'us-east-1',
-                ENDPOINT 'minio:10001',
+                ENDPOINT '{minio_host}:{minio_port}',
                 URL_STYLE 'path',
                 USE_SSL 'false'
             );
@@ -56,7 +57,7 @@ class Command(BaseCommand):
                 PROVIDER 'credential_chain'
             );
             """)
-        
+
         # conn.execute("SELECT * FROM read_parquet('s3://dti-da-usaspending-spark-qat/data/delta/rpt/award_search/part-00000-b0a97813-ade0-4f32-9a13-89f23472850c.c000.snappy.parquet');")
         # print("Successfully read from Parquet file")
 
