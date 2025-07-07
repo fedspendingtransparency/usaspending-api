@@ -8,7 +8,7 @@
 
 FROM python:3.10.12-slim-bullseye
 
-COPY --from=ghcr.io/astral-sh/uv:0.7.12 /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:0.7.19 /uv /uvx /bin/
 
 WORKDIR /dockermount
 

@@ -52,23 +52,26 @@ printvars: ## Print the Environment variables present in calls to make, plus var
 	@printf "\n==== Environment Variables ====\n\n"
 	@printenv
 
+uv-sync:
+	uv sync --no-cache --extra dev --locked
+
 .ivy2: ## Ensure user has a ~/.ivy2 dir, which will be bound to in a docker container volume to save on dependency downloads
 	@mkdir -p ~/.ivy2
 
 .PHONY: local-dev-setup
-local-dev-setup: check-dependencies .ivy2 ## Setup virtual environment and pip dependencies, then check version info
+local-dev-setup: uv-sync check-dependencies .ivy2 ## Setup virtual environment and pip dependencies, then check version info
 
 .PHONY: check-dependencies
 check-dependencies: ## Prints out the versions of dependencies in use
 	@printf "\n==== [PYTHON VERSIONS] ====\n\n"
-	@python --version
-	@python3 --version
+	@uv run python --version
+	@uv run python3 --version
 	@printf "\n==== [PIP PACKAGE VERSIONS] ====\n\n"
 	@uv pip list
 	@printf "\n==== [SPARK VERSION] ====\n\n"
-	@pyspark --version
+	@uv run --no-project pyspark --version
 	@printf "\n==== [HADOOP VERSION] ====\n\n"
-	@python3 -c "from pyspark.sql import SparkSession; \
+	@uv run python3 -c "from pyspark.sql import SparkSession; \
 spark = spark = SparkSession.builder.getOrCreate(); \
 print('Hadoop ' + spark.sparkContext._gateway.jvm.org.apache.hadoop.util.VersionInfo.getVersion());"
 
@@ -79,19 +82,19 @@ env-code:  ## Print the value of ENV_CODE environment variable
 .PHONY: test-dbs
 createdb :=  #unset it
 test-dbs:  ## Trigger the setup of multiple test DBs that can be reused with pytest --numprocesses. Add createdb=true to force (re-)creation of Test DBs rather than reuse.
-	pytest ${if ${createdb},--create-db,} --reuse-db --numprocesses=auto --no-cov --disable-warnings -rP -vvv --capture=no --log-cli-level=WARNING --show-capture=log 2> /dev/null 'usaspending_api/tests/integration/test_setup_of_test_dbs.py::test_trigger_test_db_setup'
+	uv run --no-project pytest ${if ${createdb},--create-db,} --reuse-db --numprocesses=auto --no-cov --disable-warnings -rP -vvv --capture=no --log-cli-level=WARNING --show-capture=log 2> /dev/null 'usaspending_api/tests/integration/test_setup_of_test_dbs.py::test_trigger_test_db_setup'
 
 .PHONY: test-spark-deps
 test-spark-deps:  ## Trigger a singular test in one pytest session that does nothing but cause Maven dependencies to be downloaded and cached through Ivy; reduces contention when parallel spark builds need the depdencies
-	pytest --no-cov --disable-warnings -r=fEs --verbosity=3 'usaspending_api/tests/integration/test_setup_of_spark_dependencies.py::test_preload_spark_jars'
+	uv run pytest --no-cov --disable-warnings -r=fEs --verbosity=3 'usaspending_api/tests/integration/test_setup_of_spark_dependencies.py::test_preload_spark_jars'
 
 .PHONY: tests
 tests: local-dev-setup test-dbs test-spark-deps ## Run automated unit/integration tests. Configured for useful logging. add args="..." to append additional pytest args
-	pytest --failed-first --reuse-db --numprocesses=auto --dist=worksteal -rP -vv --capture=no --show-capture=log 2> /dev/null ${args}
+	uv run --no-project pytest --failed-first --reuse-db --numprocesses=auto --dist=worksteal -rP -vv --capture=no --show-capture=log 2> /dev/null ${args}
 
 .PHONY: tests-failed
 tests-failed: local-dev-setup test-dbs test-spark-deps ## Re-run only automated unit/integration tests that failed on the previous run. Configured for verbose logging to get more detail on failures. logging. add args="..." to append additional pytest args
-	pytest --last-failed --reuse-db --numprocesses=auto --dist=worksteal -rP -vvv ${args}
+	uv run pytest --last-failed --reuse-db --numprocesses=auto --dist=worksteal -rP -vvv ${args}
 
 .PHONY: confirm-clean-all
 no-prompt := 'false'
