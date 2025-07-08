@@ -62,7 +62,8 @@ class Command(BaseCommand):
             CREATE SECRET secret1 (
                 TYPE s3,
                 REGION 'us-gov-west-1',
-                PROVIDER 'credential_chain'
+                PROVIDER 'credential_chain',
+                ENDPOINT 's3-us-gov-west-1.amazonaws.com',
             );
             """)
 
