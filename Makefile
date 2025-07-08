@@ -90,7 +90,7 @@ test-spark-deps:  ## Trigger a singular test in one pytest session that does not
 
 .PHONY: tests
 tests: local-dev-setup test-dbs test-spark-deps ## Run automated unit/integration tests. Configured for useful logging. add args="..." to append additional pytest args
-	uv run pytest --failed-first --reuse-db --numprocesses=auto --dist=worksteal -rP -vv --capture=no --show-capture=log 2> /dev/null ${args}
+	uv run pytest --failed-first --reuse-db --numprocesses=auto --dist=worksteal -rP -vv --capture=no --show-capture=log 2> /dev/null ${args} 'usaspending_api/'
 
 .PHONY: tests-failed
 tests-failed: local-dev-setup test-dbs test-spark-deps ## Re-run only automated unit/integration tests that failed on the previous run. Configured for verbose logging to get more detail on failures. logging. add args="..." to append additional pytest args
