@@ -63,7 +63,7 @@ class Command(BaseCommand):
                 TYPE s3,
                 REGION 'us-gov-west-1',
                 PROVIDER 'credential_chain',
-                ENDPOINT 's3-us-gov-west-1.amazonaws.com',
+                ENDPOINT 's3.us-gov-west-1.amazonaws.com'
             );
             """)
 
