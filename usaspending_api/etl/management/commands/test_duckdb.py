@@ -70,6 +70,10 @@ class Command(BaseCommand):
         # conn.execute("SELECT * FROM read_parquet('s3://dti-da-usaspending-spark-qat/data/delta/rpt/award_search/part-00000-b0a97813-ade0-4f32-9a13-89f23472850c.c000.snappy.parquet');")
         # print("Successfully read from Parquet file")
 
+        print("Reading CSV from S3 bucket")
+        result = conn.read_csv("s3://dti-da-public-files-nonprod/broker_reference_data/agency_codes.csv").fetchall()
+        print(f"Found {len(result)} rows in agency_codes.csv")
+
         query = f"SELECT * FROM delta_scan('{S3_DELTA_PATH}');"
         print(f"Attempting to read from S3 Location: {S3_DELTA_PATH}")
         print(f"Running Query: {query}")
