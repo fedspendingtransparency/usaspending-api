@@ -82,7 +82,7 @@ env-code:  ## Print the value of ENV_CODE environment variable
 .PHONY: test-dbs
 createdb :=  #unset it
 test-dbs:  ## Trigger the setup of multiple test DBs that can be reused with pytest --numprocesses. Add createdb=true to force (re-)creation of Test DBs rather than reuse.
-	uv run --no-project pytest ${if ${createdb},--create-db,} --reuse-db --numprocesses=auto --no-cov --disable-warnings -rP -vvv --capture=no --log-cli-level=WARNING --show-capture=log 2> /dev/null 'usaspending_api/tests/integration/test_setup_of_test_dbs.py::test_trigger_test_db_setup'
+	uv run pytest ${if ${createdb},--create-db,} --reuse-db --numprocesses=auto --no-cov --disable-warnings -rP -vvv --capture=no --log-cli-level=WARNING --show-capture=log 2> /dev/null 'usaspending_api/tests/integration/test_setup_of_test_dbs.py::test_trigger_test_db_setup'
 
 .PHONY: test-spark-deps
 test-spark-deps:  ## Trigger a singular test in one pytest session that does nothing but cause Maven dependencies to be downloaded and cached through Ivy; reduces contention when parallel spark builds need the depdencies
@@ -90,7 +90,7 @@ test-spark-deps:  ## Trigger a singular test in one pytest session that does not
 
 .PHONY: tests
 tests: local-dev-setup test-dbs test-spark-deps ## Run automated unit/integration tests. Configured for useful logging. add args="..." to append additional pytest args
-	uv run --no-project pytest --failed-first --reuse-db --numprocesses=auto --dist=worksteal -rP -vv --capture=no --show-capture=log 2> /dev/null ${args}
+	uv run pytest --failed-first --reuse-db --numprocesses=auto --dist=worksteal -rP -vv --capture=no --show-capture=log 2> /dev/null ${args}
 
 .PHONY: tests-failed
 tests-failed: local-dev-setup test-dbs test-spark-deps ## Re-run only automated unit/integration tests that failed on the previous run. Configured for verbose logging to get more detail on failures. logging. add args="..." to append additional pytest args
