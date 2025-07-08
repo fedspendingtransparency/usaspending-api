@@ -143,10 +143,11 @@ class Command(BaseCommand):
         logger.info(f"Creating new COVID-19 download zip file: {self.zip_file_path}")
         self.filepaths_to_delete.append(self.zip_file_path)
 
-        for sql_file, final_name in self.download_file_list:
+        for source_sql, final_name in self.download_file_list:
             final_path = self._create_data_csv_dest_path(final_name)
             intermediate_data_file_path = final_path.parent / (final_path.name + "_temp")
-            source_sql = read_sql_file_to_text(Path(sql_file))
+            if self.compute_type_arg == ComputeTypeEnum.POSTGRES.value:
+                source_sql = read_sql_file_to_text(Path(source_sql))
             download_metadata = self.download_to_csv(
                 source_sql, final_path, final_name, str(intermediate_data_file_path)
             )
