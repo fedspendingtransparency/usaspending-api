@@ -27,10 +27,18 @@ class Command(BaseCommand):
         # Try to load the required extensions and install them only if they are missing
         for extension in DUCKDB_EXTENSIONS:
             try:
+                print(f"Loading extension: {extension}")
                 conn.load_extension(extension)
             except duckdb.IOException:
-                conn.install_extension(extension)
-                conn.load_extension(extension)
+                try:
+                    print(f"Failed to load extension '{extension}', so trying to install it.")
+                    conn.install_extension(extension)
+                    print(f"Successfully installed: {extension}. Trying to load it again.\n")
+                    conn.load_extension(extension)
+                except duckdb.IOException:
+                    print(f"Failed to install extension: {extension}. Exiting.")
+                    exit(1)
+            print(f"Successfully loaded: {extension}\n")
 
         if is_local:
             minio_host = os.getenv("MINIO_HOST", "minio")
@@ -62,10 +70,8 @@ class Command(BaseCommand):
         # print("Successfully read from Parquet file")
 
         query = f"SELECT * FROM delta_scan('{S3_DELTA_PATH}');"
-
         print(f"Attempting to read from S3 Location: {S3_DELTA_PATH}")
         print(f"Running Query: {query}")
 
         df = conn.execute(query).fetchdf()
-
         print(df)
