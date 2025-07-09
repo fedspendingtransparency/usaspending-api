@@ -293,7 +293,7 @@ class TestInitialRun:
                 except pyspark.sql.utils.AnalysisException as e:
                     if re.match(
                         rf"^\[TABLE_OR_VIEW_NOT_FOUND\] The table or view `raw`\.`{table_name}` cannot be found\..*$",
-                        e.desc,
+                        str(e),
                         re.MULTILINE,
                     ):
                         pass
