@@ -7786,6 +7786,10 @@ button.close {
     position: fixed
 }
 
+.request-info {
+    clear: both
+}
+
 @-ms-viewport {
     width: device-width
 }

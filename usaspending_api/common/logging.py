@@ -126,7 +126,7 @@ class LoggingMiddleware(MiddlewareMixin):
                 self.log["error_msg"] = str(response.data)
             except AttributeError:
                 # For cases when Django responds with an error template, get the response content (byte string)
-                self.log["error_msg"] = response.getvalue().decode("ASCII")
+                self.log["error_msg"] = response.getvalue().decode("UTF-8")
 
             # Adding separate error message to message field for user to view error on Kibana default view
             error_msg_str = "[" + self.log["error_msg"] + "]"

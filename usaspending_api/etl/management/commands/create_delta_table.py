@@ -1,9 +1,10 @@
+import logging
+
 from django.core.management.base import BaseCommand
 
 from usaspending_api.config import CONFIG
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
-    get_jvm_logger,
     get_active_spark_session,
 )
 from usaspending_api.etl.management.commands.archive_table_in_delta import TABLE_SPEC as ARCHIVE_TABLE_SPEC
@@ -12,6 +13,8 @@ from usaspending_api.etl.management.commands.load_table_to_delta import TABLE_SP
 
 
 TABLE_SPEC = {**ARCHIVE_TABLE_SPEC, **LOAD_TABLE_TABLE_SPEC, **LOAD_QUERY_TABLE_SPEC}
+
+logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
@@ -65,9 +68,6 @@ class Command(BaseCommand):
         if not spark:
             spark_created_by_command = True
             spark = configure_spark_session(**extra_conf, spark_context=spark)
-
-        # Setup Logger
-        logger = get_jvm_logger(spark)
 
         # Resolve Parameters
         destination_table = options["destination_table"]

@@ -1,4 +1,5 @@
 from abc import ABCMeta
+from dataclasses import replace
 from decimal import Decimal
 from enum import Enum
 from typing import List
@@ -29,6 +30,10 @@ class AbstractIndustryCodeViewSet(AbstractSpendingByCategoryViewSet, metaclass=A
 
     def build_elasticsearch_result(self, response: dict) -> List[dict]:
         # Get the codes
+        if self.category.nested_path:
+            response = response.get("nested_agg")
+        if self.category.filter_key_to_limit:
+            response = response.get("filter_agg")
         industry_info_buckets = response.get("group_by_agg_key", {}).get("buckets", [])
         code_list = [bucket.get("key") for bucket in industry_info_buckets if bucket.get("key")]
 
@@ -79,7 +84,7 @@ class AbstractIndustryCodeViewSet(AbstractSpendingByCategoryViewSet, metaclass=A
                     "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
                     "total_outlays": (
                         bucket.get("sum_as_dollars_outlay", {"value": None}).get("value")
-                        if self.spending_level == SpendingLevel.AWARD
+                        if self.spending_level == SpendingLevel.AWARD or self.spending_level == SpendingLevel.FILE_C
                         else None
                     ),
                 }
@@ -129,3 +134,19 @@ class DEFCViewSet(AbstractIndustryCodeViewSet):
 
     industry_code_type = IndustryCodeType.DEFC
     category = Category(name="defc", agg_key="defc_agg_key")
+
+    def post(self, request, *args, **kwargs):
+        validated_payload = self.validate_payload(request)
+        nested_path = "spending_by_defc"
+        if self.spending_level == SpendingLevel.FILE_C:
+            self.category = replace(
+                self.category,
+                nested_path=nested_path,
+                agg_key=f"{nested_path}.defc",
+                agg_key_suffix="",
+                obligation_field=f"{nested_path}.obligation",
+                outlay_field=f"{nested_path}.outlay",
+                filter_key_to_limit="def_codes",
+            )
+
+        return super().post(request, validated_payload=validated_payload)

@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -281,11 +282,12 @@ def mock_execute_sql(sql, results, verbosity=None):
     return execute_sql_to_ordered_dictionary(sql)
 
 
-def test_create_and_load_new_award_index(award_data_fixture, elasticsearch_award_index, monkeypatch):
+def test_create_and_load_new_award_index(award_data_fixture, elasticsearch_award_index, monkeypatch, caplog):
     """Test the ``elasticsearch_loader`` django management command to create a new awards index and load it
     with data from the DB
     """
     client = elasticsearch_award_index.client  # type: Elasticsearch
+    monkeypatch.setattr("usaspending_api.etl.elasticsearch_loader_helpers.index_config.logger", logging.getLogger())
 
     # Ensure index is not yet created
     assert not client.indices.exists(elasticsearch_award_index.index_name)
@@ -293,7 +295,20 @@ def test_create_and_load_new_award_index(award_data_fixture, elasticsearch_award
 
     # Inject ETL arg into config for this run, which loads a newly created index
     elasticsearch_award_index.etl_config["create_new_index"] = True
-    es_etl_config = _process_es_etl_test_config(client, elasticsearch_award_index)
+    try:
+        _process_es_etl_test_config(client, elasticsearch_award_index)
+    except SystemExit:
+        assert (
+            f"The earliest Transaction / Award load date of 2021-01-30 12:00:00+00:00 is later than the value"
+            f" of 'es_deletes' (2021-01-17 16:00:00+00:00). To reduce the amount of data loaded in the next incremental"
+            " load the values of 'es_deletes', 'es_awards', and 'es_transactions' should most likely be updated to"
+            f" 2021-01-30 12:00:00+00:00 before proceeding. This recommendation assumes that the 'rpt' tables are"
+            f" up to date. Optionally, this can be bypassed with the '--skip-date-check' option."
+        ) in caplog.records[-1].message
+    else:
+        assert False, "No exception or the wrong exception was raised"
+
+    es_etl_config = _process_es_etl_test_config(client, elasticsearch_award_index, options={"skip_date_check": True})
 
     # Must use mock sql function to share test DB conn+transaction in ETL code
     # Patching on the module into which it is imported, not the module where it is defined
@@ -728,7 +743,9 @@ def test_delete_one_assistance_transaction(award_data_fixture, elasticsearch_tra
     assert es_award_docs == original_db_tx_count - 1
 
 
-def _process_es_etl_test_config(client: Elasticsearch, test_es_index: TestElasticSearchIndex):
+def _process_es_etl_test_config(
+    client: Elasticsearch, test_es_index: TestElasticSearchIndex, options: dict | None = None
+):
     """Use the Django mgmt cmd to extract args with default values, then update those with test ETL config values"""
     cmd = ElasticsearchIndexerCommand()
     cmd_name = cmd.__module__.split(".")[-1]  # should give "elasticsearch_indexer" unless name changed
@@ -738,6 +755,8 @@ def _process_es_etl_test_config(client: Elasticsearch, test_es_index: TestElasti
     test_args = [arg_item for kvpair in list_of_arg_kvs for arg_item in kvpair]
     cli_args, _ = parser.parse_known_args(args=test_args)  # parse the known args programmatically
     cli_opts = {**vars(cli_args), **test_es_index.etl_config}  # update defaults with test config
+    if options:
+        cli_opts.update(options)
     es_etl_config = parse_cli_args(cli_opts, client)  # use command's config parser for final config for testing ETL
     es_etl_config["slices"] = "auto"  # no need to calculate slices for testing
     return es_etl_config

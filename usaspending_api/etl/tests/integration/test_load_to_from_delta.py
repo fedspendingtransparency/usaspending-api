@@ -8,6 +8,7 @@ import json
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Union
 
+import pandas as pd
 import psycopg2
 import pytest
 import pytz
@@ -810,6 +811,166 @@ def test_load_table_to_from_delta_for_award_search(
     )
     verify_delta_table_loaded_from_delta(spark, "award_search", spark_s3_bucket=s3_unittest_data_bucket)
     verify_delta_table_loaded_from_delta(spark, "award_search", jdbc_inserts=True)  # test alt write strategy
+
+
+@pytest.mark.django_db(databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
+def test_incremental_load_table_to_delta_for_award_search(
+    spark, s3_unittest_data_bucket, populate_usas_data_and_recipients_from_broker, hive_unittest_metastore_db
+):
+    # Load in data that award_search depends on
+    last_load_datetime = datetime.now(timezone.utc)
+    insert_datetime = last_load_datetime + timedelta(minutes=-15)
+    assist = deepcopy(_NEW_ASSIST)
+    assist.update(
+        {"action_date": insert_datetime.isoformat(), "created_at": insert_datetime, "updated_at": insert_datetime}
+    )
+    baker.make("transactions.SourceAssistanceTransaction", **assist)
+    load_delta_table_from_postgres("published_fabs", s3_unittest_data_bucket)
+
+    procure = deepcopy(_NEW_PROCURE)
+    procure.update(
+        {"action_date": insert_datetime.isoformat(), "created_at": insert_datetime, "updated_at": insert_datetime}
+    )
+    baker.make("transactions.SourceProcurementTransaction", **procure)
+    load_delta_table_from_postgres("detached_award_procurement", s3_unittest_data_bucket)
+
+    tables_to_load = [
+        "awards",
+        "financial_accounts_by_awards",
+        "recipient_lookup",
+        "recipient_profile",
+        "sam_recipient",
+        "transaction_current_cd_lookup",
+        "transaction_fabs",
+        "transaction_fpds",
+        "transaction_normalized",
+        "zips",
+    ]
+    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
+
+    # create award_search table with cdf enabled
+    call_command(
+        "create_delta_table",
+        f"--spark-s3-bucket={s3_unittest_data_bucket}",
+        f"--destination-table=award_search",
+        "--alt-db=int",
+    )
+
+    # load in award_search data
+    call_command(
+        "load_query_to_delta",
+        f"--destination-table=award_search",
+        "--incremental",
+        "--alt-db=int",
+    )
+
+    # Delete one of the awards
+    spark.sql("DELETE FROM int.award_search WHERE award_id = 4")
+
+    # Reload the data
+    call_command(
+        "load_query_to_delta",
+        f"--destination-table=award_search",
+        "--incremental",
+        "--alt-db=int",
+    )
+
+    result = (
+        spark.read.format("delta")
+        .option("readChangeFeed", "true")
+        .option("startingVersion", 0)
+        .table("award_search")
+        .select(["award_id", "_change_type", "_commit_version"])
+        .toPandas()
+    )
+    expected = pd.DataFrame(
+        {
+            "award_id": [4, 4, 1, 3, 2, 4],
+            "_change_type": ["delete", "insert", "insert", "insert", "insert", "insert"],
+            "_commit_version": [2, 3, 1, 1, 1, 1],
+        }
+    )
+    pd.testing.assert_frame_equal(result, expected)
+
+
+@pytest.mark.django_db(databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
+def test_incremental_load_table_to_delta_for_transaction_search(
+    spark, s3_unittest_data_bucket, populate_usas_data_and_recipients_from_broker, hive_unittest_metastore_db
+):
+    # Load in data that transaction_search depends on
+    last_load_datetime = datetime.now(timezone.utc)
+    insert_datetime = last_load_datetime + timedelta(minutes=-15)
+    assist = deepcopy(_NEW_ASSIST)
+    assist.update(
+        {"action_date": insert_datetime.isoformat(), "created_at": insert_datetime, "updated_at": insert_datetime}
+    )
+    baker.make("transactions.SourceAssistanceTransaction", **assist)
+    load_delta_table_from_postgres("published_fabs", s3_unittest_data_bucket)
+
+    procure = deepcopy(_NEW_PROCURE)
+    procure.update(
+        {"action_date": insert_datetime.isoformat(), "created_at": insert_datetime, "updated_at": insert_datetime}
+    )
+    baker.make("transactions.SourceProcurementTransaction", **procure)
+    load_delta_table_from_postgres("detached_award_procurement", s3_unittest_data_bucket)
+
+    tables_to_load = [
+        "awards",
+        "financial_accounts_by_awards",
+        "recipient_lookup",
+        "recipient_profile",
+        "sam_recipient",
+        "transaction_current_cd_lookup",
+        "transaction_fabs",
+        "transaction_fpds",
+        "transaction_normalized",
+        "zips",
+    ]
+    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
+
+    # create award_search table with cdf enabled
+    call_command(
+        "create_delta_table",
+        f"--spark-s3-bucket={s3_unittest_data_bucket}",
+        f"--destination-table=transaction_search",
+        "--alt-db=int",
+    )
+
+    # load in award_search data
+    call_command(
+        "load_query_to_delta",
+        f"--destination-table=transaction_search",
+        "--incremental",
+        "--alt-db=int",
+    )
+
+    # Delete one of the awards
+    spark.sql("DELETE FROM int.transaction_search WHERE transaction_id = 4")
+
+    # Reload the data
+    call_command(
+        "load_query_to_delta",
+        f"--destination-table=transaction_search",
+        "--incremental",
+        "--alt-db=int",
+    )
+
+    result = (
+        spark.read.format("delta")
+        .option("readChangeFeed", "true")
+        .option("startingVersion", 0)
+        .table("transaction_search")
+        .select(["transaction_id", "_change_type", "_commit_version"])
+        .toPandas()
+    )
+    expected = pd.DataFrame(
+        {
+            "transaction_id": [4, 4, 1, 2, 434, 3, 4, 5],
+            "_change_type": ["delete", "insert", "insert", "insert", "insert", "insert", "insert", "insert"],
+            "_commit_version": [2, 3, 1, 1, 1, 1, 1, 1],
+        }
+    )
+    pd.testing.assert_frame_equal(result, expected)
 
 
 @pytest.mark.django_db(databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)

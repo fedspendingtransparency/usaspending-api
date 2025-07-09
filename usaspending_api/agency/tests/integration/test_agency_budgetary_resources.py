@@ -243,6 +243,7 @@ def _build_dabs_reporting_data(fy_reported):
     baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         obligations_incurred_by_program_object_class_cpe=1,
+        gross_outlay_amount_by_program_object_class_cpe=14,
         treasury_account=tas1,
         submission=sa1_12,
         deobligations_recoveries_refund_pri_program_object_class_cpe=0,
@@ -266,6 +267,7 @@ def _build_dabs_reporting_data(fy_reported):
     baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         obligations_incurred_by_program_object_class_cpe=2,
+        gross_outlay_amount_by_program_object_class_cpe=13,
         treasury_account=tas1,
         submission=sa1_12,
         deobligations_recoveries_refund_pri_program_object_class_cpe=0,
@@ -289,6 +291,7 @@ def _build_dabs_reporting_data(fy_reported):
     baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         obligations_incurred_by_program_object_class_cpe=5,
+        gross_outlay_amount_by_program_object_class_cpe=9,
         treasury_account=tas1,
         submission=sa2_12,
         deobligations_recoveries_refund_pri_program_object_class_cpe=0,
@@ -378,6 +381,7 @@ def test_budgetary_resources_before_2022(client, before_2022_data_fixture):
             "agency_budgetary_resources": Decimal("4.00"),
             "total_budgetary_resources": Decimal(f"{FY2021}.00"),
             "agency_total_obligated": Decimal("3.00"),
+            "agency_total_outlayed": Decimal("27.00"),
             "agency_obligation_by_period": [
                 {"obligated": Decimal("8883.00"), "period": 3},
                 {"obligated": Decimal("8886.00"), "period": 6},
@@ -390,6 +394,7 @@ def test_budgetary_resources_before_2022(client, before_2022_data_fixture):
             "agency_budgetary_resources": Decimal("15.00"),
             "total_budgetary_resources": Decimal(f"{FY2020}.00"),
             "agency_total_obligated": Decimal("5.00"),
+            "agency_total_outlayed": Decimal("9.00"),
             "agency_obligation_by_period": [{"period": 12, "obligated": Decimal("5.00")}],
         },
     ]
@@ -400,6 +405,7 @@ def test_budgetary_resources_before_2022(client, before_2022_data_fixture):
                     "fiscal_year": year,
                     "agency_budgetary_resources": None,
                     "total_budgetary_resources": Decimal(f"{year}.00"),
+                    "agency_total_outlayed": None,
                     "agency_total_obligated": None,
                     "agency_obligation_by_period": [],
                 }
@@ -423,6 +429,7 @@ def test_budgetary_resources_after_2022(client, after_2022_data_fixture):
             "agency_budgetary_resources": Decimal("4.00"),
             "total_budgetary_resources": Decimal(f"{FY2022}.00"),
             "agency_total_obligated": Decimal("3.00"),
+            "agency_total_outlayed": Decimal("27.00"),
             "agency_obligation_by_period": [
                 {"obligated": Decimal("8883.00"), "period": 3},
                 {"obligated": Decimal("8886.00"), "period": 6},
@@ -437,6 +444,7 @@ def test_budgetary_resources_after_2022(client, after_2022_data_fixture):
             "agency_budgetary_resources": Decimal("15.00"),
             "total_budgetary_resources": Decimal(f"{FY2021}.00"),
             "agency_total_obligated": Decimal("5.00"),
+            "agency_total_outlayed": Decimal("9.00"),
             "agency_obligation_by_period": [{"period": 12, "obligated": Decimal("5.00")}],
         },
     ]
@@ -447,6 +455,7 @@ def test_budgetary_resources_after_2022(client, after_2022_data_fixture):
                     "fiscal_year": year,
                     "agency_budgetary_resources": None,
                     "total_budgetary_resources": Decimal(f"{year}.00"),
+                    "agency_total_outlayed": None,
                     "agency_total_obligated": None,
                     "agency_obligation_by_period": [],
                 }

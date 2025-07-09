@@ -21,8 +21,8 @@ Generate files and return metadata using filters on custom account
         + `account_level` (required, enum[string])
             The account level is used to filter for a specific type of file.
             + Members
-                + `treasury_account`
                 + `federal_account`
+                + `treasury_account`
         + `file_format` (optional, enum[string])
             The format of the file(s) in the zip file containing the data.
             + Default: `csv`
@@ -87,9 +87,20 @@ Generate files and return metadata using filters on custom account
 + `agency` (optional, string)
     The agency on which to filter.  This field expects an internal toptier agency identifier also known as the `toptier_agency_id`.
     + Default: `all`
++ `budget_function` (optional, string)
+    The budget function code on which to filter.
++ `budget_subfunction` (optional, string)
+    The budget subfunction code on whicn to filter
 + `federal_account`(optional, string)
     This field is an internal id.
-+ `submission_types` (required, array)
++ `submission_type` (optional, enum[string])
+    Either `submission_type` or `submission_types` is required.
+    + Members
+        + `account_balances`
+        + `object_class_program_activity`
+        + `award_financial`
++ `submission_types` (optional, array)
+    Either `submission_type` or `submission_types` is required.
     + (enum[string])
         + `account_balances`
         + `object_class_program_activity`

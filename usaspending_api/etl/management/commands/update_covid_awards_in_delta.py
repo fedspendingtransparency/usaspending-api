@@ -1,3 +1,5 @@
+import logging
+
 from django.core.management.base import BaseCommand
 from pyspark.sql import SparkSession
 
@@ -5,9 +7,10 @@ from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
-    get_jvm_logger,
 )
 from usaspending_api.etl.management.helpers.recent_periods import retrieve_recent_periods
+
+logger = logging.getLogger(__name__)
 
 UPDATE_AWARDS_SQL = """
   WITH recent_covid_awards AS (
@@ -106,9 +109,6 @@ class Command(BaseCommand):
             self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)  # type: SparkSession
 
         create_ref_temp_views(self.spark)
-
-        # Setup Logger
-        logger = get_jvm_logger(self.spark, __name__)
 
         # Read arguments
         dry_run = options["dry_run"]

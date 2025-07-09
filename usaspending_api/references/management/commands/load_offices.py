@@ -52,7 +52,7 @@ class Command(BaseCommand):
 
     @property
     def broker_fetch_sql(self):
-        return f"""
+        return """
             SELECT
                 office_code,
                 office_name,
@@ -82,15 +82,11 @@ class Command(BaseCommand):
                 ) s;
         CREATE INDEX awarding_office_code_idx_temp ON temp_unique_office_codes_from_source (awarding_office_code);
         CREATE INDEX funding_office_code_idx_temp ON temp_unique_office_codes_from_source (funding_office_code);
-        DELETE FROM office WHERE office_code IN (
-            SELECT DISTINCT office_code
-            FROM office AS o
-            LEFT JOIN temp_unique_office_codes_from_source s
-            ON s.awarding_office_code = o.office_code
-                OR s.funding_office_code = o.office_code
-
-            WHERE s.awarding_office_code IS NULL
-                AND s.funding_office_code IS NULL
+        DELETE FROM office
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM temp_unique_office_codes_from_source AS s
+            WHERE s.awarding_office_code = office.office_code OR s.funding_office_code = office.office_code
         );
         DROP TABLE IF EXISTS temp_unique_office_codes_from_source;
         """

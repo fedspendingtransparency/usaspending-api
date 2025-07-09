@@ -5,46 +5,48 @@ NOTE: This is distinguished from the usaspending_api.common.helpers.spark_helper
 functions for setup and configuration of the spark environment
 """
 
-from itertools import chain
-from typing import List
-from pyspark.sql.functions import to_date, lit, expr, concat, concat_ws, col, regexp_replace, transform, when
-from pyspark.sql.types import StructType, DecimalType, StringType, ArrayType
-from pyspark.sql import DataFrame, SparkSession
+import logging
 import time
 from collections import namedtuple
+from itertools import chain
+from typing import List
+
 from py4j.protocol import Py4JError
+from pyspark.sql import DataFrame, SparkSession
+from pyspark.sql.functions import col, concat, concat_ws, expr, lit, regexp_replace, to_date, transform, when
+from pyspark.sql.types import ArrayType, DecimalType, StringType, StructType
 
 from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount
-from usaspending_api.config import CONFIG
 from usaspending_api.common.helpers.spark_helpers import (
-    get_jvm_logger,
+    get_broker_jdbc_url,
     get_jdbc_connection_properties,
     get_usas_jdbc_url,
-    get_broker_jdbc_url,
 )
+from usaspending_api.config import CONFIG
+from usaspending_api.download.filestreaming.download_generation import EXCEL_ROW_LIMIT
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.recipient.models import StateData
 from usaspending_api.references.models import (
-    Cfda,
-    Agency,
-    ToptierAgency,
-    SubtierAgency,
-    NAICS,
-    Office,
-    PSC,
-    RefCountryCode,
-    CityCountyStateCode,
-    PopCounty,
-    PopCongressionalDistrict,
-    DisasterEmergencyFundCode,
-    RefProgramActivity,
-    ObjectClass,
-    GTASSF133Balances,
     CGAC,
+    NAICS,
+    PSC,
+    Agency,
+    Cfda,
+    CityCountyStateCode,
+    DisasterEmergencyFundCode,
+    GTASSF133Balances,
+    ObjectClass,
+    Office,
+    PopCongressionalDistrict,
+    PopCounty,
+    RefCountryCode,
+    RefProgramActivity,
+    SubtierAgency,
+    ToptierAgency,
+    ZipsGrouped,
 )
 from usaspending_api.reporting.models import ReportingAgencyMissingTas, ReportingAgencyOverview
-from usaspending_api.submissions.models import SubmissionAttributes, DABSSubmissionWindowSchedule
-from usaspending_api.download.filestreaming.download_generation import EXCEL_ROW_LIMIT
+from usaspending_api.submissions.models import DABSSubmissionWindowSchedule, SubmissionAttributes
 
 MAX_PARTITIONS = CONFIG.SPARK_MAX_PARTITIONS
 _USAS_RDS_REF_TABLES = [
@@ -72,9 +74,12 @@ _USAS_RDS_REF_TABLES = [
     TreasuryAppropriationAccount,
     ReportingAgencyOverview,
     ReportingAgencyMissingTas,
+    ZipsGrouped,
 ]
 
-_BROKER_REF_TABLES = ["zips_grouped", "cd_state_grouped", "cd_zips_grouped", "cd_county_grouped", "cd_city_grouped"]
+_BROKER_REF_TABLES = ["cd_state_grouped", "cd_zips_grouped", "cd_county_grouped", "cd_city_grouped"]
+
+logger = logging.getLogger(__name__)
 
 
 def extract_db_data_frame(
@@ -89,7 +94,6 @@ def extract_db_data_frame(
     is_date_partitioning_col: bool = False,
     custom_schema: StructType = None,
 ) -> DataFrame:
-    logger = get_jvm_logger(spark)
 
     logger.info(f"Getting partition bounds using SQL:\n{min_max_sql}")
 
@@ -292,7 +296,6 @@ def load_delta_table(
             If left False (the default), the DataFrame data will be appended to existing data.
     Returns: None
     """
-    logger = get_jvm_logger(spark)
     logger.info(f"LOAD (START): Loading data into Delta table {delta_table_name}")
     # NOTE: Best to (only?) use .saveAsTable(name=<delta_table>) rather than .insertInto(tableName=<delta_table>)
     # ... The insertInto does not seem to align/merge columns from DataFrame to table columns (defaults to column order)
@@ -443,7 +446,7 @@ def convert_array_cols_to_string(
     is_postgres_array_format=False,
     is_for_csv_export=False,
 ) -> DataFrame:
-    """For each column that is an Array of ANYTHING, transfrom it to a string-ified representation of that Array.
+    """For each column that is an Array of ANYTHING, transform it to a string-ified representation of that Array.
 
     This will:
       1. cast each array element to a STRING representation
@@ -554,7 +557,6 @@ def create_ref_temp_views(spark: SparkSession, create_broker_views: bool = False
     Setting create_broker_views to True will create views for all tables list in _BROKER_REF_TABLES
     Note: They will all be listed under global_temp.{table_name}
     """
-    logger = get_jvm_logger(spark)
 
     # Create USAS temp views
     rds_ref_tables = build_ref_table_name_list()
@@ -576,7 +578,7 @@ def create_ref_temp_views(spark: SparkSession, create_broker_views: bool = False
         for sql_statement in broker_sql_strings:
             spark.sql(sql_statement)
 
-    logger.info(f"Created the reference views in the global_temp database")
+    logger.info("Created the reference views in the global_temp database")
 
 
 def write_csv_file(
@@ -602,8 +604,6 @@ def write_csv_file(
     Returns:
         record count of the DataFrame that was used to populate the CSV file(s)
     """
-    if not logger:
-        logger = get_jvm_logger(spark)
     # Delete output data dir if it already exists
     parts_dir_path = spark.sparkContext._jvm.org.apache.hadoop.fs.Path(parts_dir)
     fs = parts_dir_path.getFileSystem(spark.sparkContext._jsc.hadoopConfiguration())
@@ -658,8 +658,6 @@ def hadoop_copy_merge(
             a merged file that was generated during the copy merge.
     """
     overwrite = True
-    if not logger:
-        logger = get_jvm_logger(spark)
     hadoop = spark.sparkContext._jvm.org.apache.hadoop
     conf = spark.sparkContext._jsc.hadoopConfiguration()
 
@@ -695,7 +693,7 @@ def hadoop_copy_merge(
             logger.debug(f"Including part file: {file_path.getName()}")
             part_files.append(f.getPath())
     if not part_files:
-        logger.warn("Source directory is empty with no part files. Attempting creation of file with CSV header only")
+        logger.warning("Source directory is empty with no part files. Attempting creation of file with CSV header only")
         out_stream = None
         try:
             merged_file_path = f"{parts_dir}.{file_format}"

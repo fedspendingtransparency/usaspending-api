@@ -58,12 +58,14 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
         elif self.config["load_type"] == "recipient":
             identifier_replacements = None
         elif self.config["load_type"] == "location":
-            identifier_replacements["array_agg"] = "collect_list"
-            identifier_replacements["json_agg"] = "collect_list"
-            # Replace the Postgres regex operator with the Databricks regex operator
             identifier_replacements["~"] = "rlike"
             identifier_replacements["jsonb_build_object"] = "map"
             identifier_replacements["to_jsonb"] = "to_json"
+            identifier_replacements["state_data"] = "global_temp.state_data"
+            identifier_replacements["ref_country_code"] = "global_temp.ref_country_code"
+            identifier_replacements["ref_city_county_state_code"] = "global_temp.ref_city_county_state_code"
+            identifier_replacements["zips_grouped"] = "global_temp.zips_grouped"
+
         else:
             raise ValueError(
                 f"Unrecognized load_type {self.config['load_type']}, or this function does not yet support it"

@@ -105,10 +105,10 @@ class SpendingByGeographyViewSet(DisasterBase):
         # Set which field will be the aggregation amount
         if self.spending_type == "obligation":
             self.metric_field = "total_covid_obligation"
-            self.metric_agg = A("sum", field="covid_spending_by_defc.obligation", script="_value * 100")
+            self.metric_agg = A("sum", field="spending_by_defc.obligation", script="_value * 100")
         elif self.spending_type == "outlay":
             self.metric_field = "total_covid_outlay"
-            self.metric_agg = A("sum", field="covid_spending_by_defc.outlay", script="_value * 100")
+            self.metric_agg = A("sum", field="spending_by_defc.outlay", script="_value * 100")
         elif self.spending_type == "face_value_of_loan":
             self.metric_field = "total_loan_value"
             self.metric_agg = A("reverse_nested", **{}).metric(
@@ -161,19 +161,19 @@ class SpendingByGeographyViewSet(DisasterBase):
         # Add 100 to make sure that we consider enough records in each shard for accurate results
         # We have to group by state no matter what since congressional districts and counties aren't unique between states
         group_by_agg_key = A("terms", field=self.agg_key, size=bucket_count, shard_size=bucket_count + 100)
-        filter_agg_query = ES_Q("terms", **{"covid_spending_by_defc.defc": self.filters.get("def_codes")})
+        filter_agg_query = ES_Q("terms", **{"spending_by_defc.defc": self.covid_def_codes})
         if self.sub_agg_key:
             group_by_sub_agg_key = A("terms", field=self.sub_agg_key, size=bucket_count, shard_size=bucket_count + 100)
             search.aggs.bucket("group_by_agg_key", group_by_agg_key).bucket(
                 "group_by_sub_agg_key", group_by_sub_agg_key
-            ).bucket("nested", A("nested", path="covid_spending_by_defc")).bucket(
+            ).bucket("nested", A("nested", path="spending_by_defc")).bucket(
                 "filtered_aggs", A("filter", filter_agg_query)
             ).metric(
                 self.spending_type, self.metric_agg
             )
         else:
             search.aggs.bucket("group_by_agg_key", group_by_agg_key).bucket(
-                "nested", A("nested", path="covid_spending_by_defc")
+                "nested", A("nested", path="spending_by_defc")
             ).bucket("filtered_aggs", A("filter", filter_agg_query)).metric(self.spending_type, self.metric_agg)
         # Set size to 0 since we don't care about documents returned
         search.update_from_dict({"size": 0})
