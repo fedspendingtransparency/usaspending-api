@@ -72,7 +72,7 @@ class Command(BaseCommand):
 
         print("Reading CSV from S3 bucket")
         result = conn.read_csv("s3://dti-da-public-files-nonprod/broker_reference_data/agency_codes.csv").fetchall()
-        print(f"Found {len(result)} rows in agency_codes.csv")
+        print(f"Found {len(result)} rows in agency_codes.csv\n")
 
         query = f"SELECT * FROM delta_scan('{S3_DELTA_PATH}');"
         print(f"Attempting to read from S3 Location: {S3_DELTA_PATH}")
