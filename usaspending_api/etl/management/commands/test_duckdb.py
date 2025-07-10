@@ -47,7 +47,7 @@ class Command(BaseCommand):
             minio_pass = os.getenv("MINIO_ROOT_PASSWORD", "usaspender")
 
             conn.execute(f"""
-            CREATE SECRET secret1 (
+            CREATE SECRET delta_secret (
                 TYPE s3,
                 KEY_ID '{minio_user}',
                 SECRET '{minio_pass}',
@@ -59,7 +59,7 @@ class Command(BaseCommand):
             """)
         else:
             conn.execute("""
-            CREATE SECRET secret1 (
+            CREATE SECRET delta_secret (
                 TYPE s3,
                 REGION 'us-gov-west-1',
                 PROVIDER 'credential_chain',
