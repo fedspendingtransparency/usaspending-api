@@ -308,7 +308,7 @@ account_download_load_sql_string = rf"""
         submission_attributes.reporting_fiscal_quarter,
         submission_attributes.reporting_fiscal_year,
         submission_attributes.quarter_format_flag
-    FROM raw.financial_accounts_by_awards
+    FROM int.financial_accounts_by_awards
     INNER JOIN global_temp.submission_attributes AS submission_attributes
         ON (
             financial_accounts_by_awards.submission_id
@@ -319,11 +319,11 @@ account_download_load_sql_string = rf"""
             financial_accounts_by_awards.treasury_account_id
             = treasury_appropriation_account.treasury_account_identifier
         )
-    LEFT OUTER JOIN award_search
+    LEFT OUTER JOIN rpt.award_search
         ON (
             financial_accounts_by_awards.award_id = award_search.award_id
         )
-    LEFT OUTER JOIN transaction_search
+    LEFT OUTER JOIN rpt.transaction_search
         ON (
             award_search.latest_transaction_search_id
             = transaction_search.transaction_id
