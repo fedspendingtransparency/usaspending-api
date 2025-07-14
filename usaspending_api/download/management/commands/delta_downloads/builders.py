@@ -6,7 +6,7 @@ from typing import Any
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as sf, Column
 
-from usaspending_api.download.management.commands.delta_downloads.award_financial.filters import AccountDownloadFilter
+from usaspending_api.download.management.commands.delta_downloads.filters import AccountDownloadFilter
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 from usaspending_api.submissions.helpers import get_submission_ids_for_periods
 
@@ -20,6 +20,7 @@ class AbstractAccountDownloadDataFrameBuilder(ABC):
         table_name: str = "rpt.account_download",
     ):
         self.reporting_fiscal_year = account_download_filter.fy
+        self.submission_types = account_download_filter.submission_types
         self.reporting_fiscal_quarter = account_download_filter.quarter or account_download_filter.period // 3
         self.reporting_fiscal_period = account_download_filter.period or account_download_filter.quarter * 3
         self.agency = account_download_filter.agency
@@ -95,7 +96,11 @@ class AbstractAccountDownloadDataFrameBuilder(ABC):
 
     @property
     @abstractmethod
-    def source_df(self) -> DataFrame: ...
+    def award_financial(self) -> DataFrame: ...
+
+    @property
+    def source_dfs(self) -> list[DataFrame]:
+        return [getattr(self, submission_type) for submission_type in self.submission_types]
 
 
 class FederalAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBuilder):
@@ -158,11 +163,13 @@ class FederalAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBui
         return sf.sum(self.filter_to_latest_submissions_for_agencies(col_name)).alias(col_name)
 
     @property
-    def source_df(self) -> DataFrame:
+    def award_financial(self) -> DataFrame:
         return (
             self.df.filter(self.dynamic_filters)
             .groupBy(self.groupby_cols)
             .agg(*[agg_func(col) for col, agg_func in self.agg_cols.items()])
+            # drop original agg columns from the dataframe to avoid ambiguous column names
+            .drop(*[sf.col(f"account_download.{col}") for col in self.agg_cols])
             .filter(self.non_zero_filters)
             .select(self.select_cols)
         )
@@ -171,7 +178,7 @@ class FederalAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBui
 class TreasuryAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBuilder):
 
     @property
-    def source_df(self) -> DataFrame:
+    def award_financial(self) -> DataFrame:
         select_cols = (
             [sf.col("treasury_owning_agency_name").alias("owning_agency_name")]
             + [

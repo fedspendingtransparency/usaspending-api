@@ -4,11 +4,11 @@ import pandas as pd
 import pytest
 from django.core.management import call_command
 from model_bakery import baker
-from usaspending_api.download.management.commands.delta_downloads.award_financial.builders import (
+from usaspending_api.download.management.commands.delta_downloads.builders import (
     FederalAccountDownloadDataFrameBuilder,
     TreasuryAccountDownloadDataFrameBuilder,
 )
-from usaspending_api.download.management.commands.delta_downloads.award_financial.filters import AccountDownloadFilter
+from usaspending_api.download.management.commands.delta_downloads.filters import AccountDownloadFilter
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 
 
@@ -96,10 +96,11 @@ def test_federal_account_download_dataframe_builder(mock_get_submission_ids_for_
     mock_get_submission_ids_for_periods.return_value = [1, 2, 4, 5]
     account_download_filter = AccountDownloadFilter(
         fy=2018,
+        submission_types=["award_financial"],
         quarter=4,
     )
     builder = FederalAccountDownloadDataFrameBuilder(spark, account_download_filter, "rpt.account_download")
-    result = builder.source_df
+    result = builder.source_dfs[0]
     result_df = result.toPandas()
     for col in ["reporting_agency_name", "budget_function", "budget_subfunction"]:
         assert sorted(result_df[col].to_list()) == ["A", "B; C; D"]
@@ -115,11 +116,12 @@ def test_filter_federal_by_agency(mock_get_submission_ids_for_periods, spark, ac
 
     account_download_filter = AccountDownloadFilter(
         fy=2018,
+        submission_types=["award_financial"],
         quarter=4,
         agency=2,
     )
     builder = FederalAccountDownloadDataFrameBuilder(spark, account_download_filter)
-    result = builder.source_df
+    result = builder.source_dfs[0]
     result_df = result.toPandas()
     for col in ["reporting_agency_name", "budget_function", "budget_subfunction"]:
         assert sorted(result_df[col].to_list()) == ["B; C; D"]
@@ -137,11 +139,12 @@ def test_filter_federal_by_federal_account_id(
 
     account_download_filter = AccountDownloadFilter(
         fy=2018,
+        submission_types=["award_financial"],
         quarter=4,
         federal_account=1,
     )
     builder = FederalAccountDownloadDataFrameBuilder(spark, account_download_filter)
-    result = builder.source_df
+    result = builder.source_dfs[0]
     result_df = result.toPandas()
     for col in ["reporting_agency_name", "budget_function", "budget_subfunction"]:
         assert sorted(result_df[col].to_list()) == ["A"]
@@ -152,10 +155,11 @@ def test_filter_federal_by_federal_account_id(
 def test_treasury_account_download_dataframe_builder(spark, account_download_table):
     account_download_filter = AccountDownloadFilter(
         fy=2018,
+        submission_types=["award_financial"],
         quarter=4,
     )
     builder = TreasuryAccountDownloadDataFrameBuilder(spark, account_download_filter)
-    result = builder.source_df
+    result = builder.source_dfs[0]
     result_df = result.toPandas()
     for col in ["reporting_agency_name", "budget_function", "budget_subfunction"]:
         assert sorted(result_df[col].to_list()) == ["A", "B", "C", "D"]
@@ -167,11 +171,12 @@ def test_filter_treasury_by_agency(spark, account_download_table, agency_models)
 
     account_download_filter = AccountDownloadFilter(
         fy=2018,
+        submission_types=["award_financial"],
         quarter=4,
         agency=2,
     )
     builder = TreasuryAccountDownloadDataFrameBuilder(spark, account_download_filter)
-    result = builder.source_df
+    result = builder.source_dfs[0]
     result_df = result.toPandas()
     for col in ["reporting_agency_name", "budget_function", "budget_subfunction"]:
         assert sorted(result_df[col].to_list()) == ["B", "C", "D"]
