@@ -90,7 +90,7 @@ def federal_account_models(db):
 
 
 @patch(
-    "usaspending_api.download.management.commands.delta_downloads.award_financial.builders.get_submission_ids_for_periods"
+    "usaspending_api.download.management.commands.delta_downloads.builders.get_submission_ids_for_periods"
 )
 def test_federal_account_download_dataframe_builder(mock_get_submission_ids_for_periods, spark, account_download_table):
     mock_get_submission_ids_for_periods.return_value = [1, 2, 4, 5]
@@ -109,7 +109,7 @@ def test_federal_account_download_dataframe_builder(mock_get_submission_ids_for_
 
 
 @patch(
-    "usaspending_api.download.management.commands.delta_downloads.award_financial.builders.get_submission_ids_for_periods"
+    "usaspending_api.download.management.commands.delta_downloads.builders.get_submission_ids_for_periods"
 )
 def test_filter_federal_by_agency(mock_get_submission_ids_for_periods, spark, account_download_table, agency_models):
     mock_get_submission_ids_for_periods.return_value = [1, 2, 4, 5]
@@ -130,7 +130,7 @@ def test_filter_federal_by_agency(mock_get_submission_ids_for_periods, spark, ac
 
 
 @patch(
-    "usaspending_api.download.management.commands.delta_downloads.award_financial.builders.get_submission_ids_for_periods"
+    "usaspending_api.download.management.commands.delta_downloads.builders.get_submission_ids_for_periods"
 )
 def test_filter_federal_by_federal_account_id(
     mock_get_submission_ids_for_periods, spark, account_download_table, federal_account_models
