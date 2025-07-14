@@ -89,9 +89,7 @@ def federal_account_models(db):
     baker.make("accounts.FederalAccount", pk=3, agency_identifier="345", main_account_code="0333")
 
 
-@patch(
-    "usaspending_api.download.management.commands.delta_downloads.builders.get_submission_ids_for_periods"
-)
+@patch("usaspending_api.download.management.commands.delta_downloads.builders.get_submission_ids_for_periods")
 def test_federal_account_download_dataframe_builder(mock_get_submission_ids_for_periods, spark, account_download_table):
     mock_get_submission_ids_for_periods.return_value = [1, 2, 4, 5]
     account_download_filter = AccountDownloadFilter(
@@ -108,9 +106,7 @@ def test_federal_account_download_dataframe_builder(mock_get_submission_ids_for_
     assert sorted(result_df.gross_outlay_amount_FYB_to_period_end.to_list()) == [100, 200]
 
 
-@patch(
-    "usaspending_api.download.management.commands.delta_downloads.builders.get_submission_ids_for_periods"
-)
+@patch("usaspending_api.download.management.commands.delta_downloads.builders.get_submission_ids_for_periods")
 def test_filter_federal_by_agency(mock_get_submission_ids_for_periods, spark, account_download_table, agency_models):
     mock_get_submission_ids_for_periods.return_value = [1, 2, 4, 5]
 
@@ -129,9 +125,7 @@ def test_filter_federal_by_agency(mock_get_submission_ids_for_periods, spark, ac
     assert result_df.gross_outlay_amount_FYB_to_period_end.to_list() == [200]
 
 
-@patch(
-    "usaspending_api.download.management.commands.delta_downloads.builders.get_submission_ids_for_periods"
-)
+@patch("usaspending_api.download.management.commands.delta_downloads.builders.get_submission_ids_for_periods")
 def test_filter_federal_by_federal_account_id(
     mock_get_submission_ids_for_periods, spark, account_download_table, federal_account_models
 ):
