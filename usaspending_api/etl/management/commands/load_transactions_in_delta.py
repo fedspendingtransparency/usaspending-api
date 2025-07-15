@@ -1087,11 +1087,12 @@ class Command(BaseCommand):
         def prepare_orphaned_award_temp_table():
             # We actually need another temporary table to handle orphaned awards
             self.spark.sql(
-                """
+                f"""
                     CREATE OR REPLACE TABLE temp.orphaned_award_info (
                         award_id LONG NOT NULL
                     )
                     USING DELTA
+                    LOCATION 's3a://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.DELTA_LAKE_S3_PATH}/temp/orphaned_award_info'
                 """
             )
 
