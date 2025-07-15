@@ -1065,7 +1065,7 @@ class Command(BaseCommand):
             # managed table in the temp database.
             self.spark.sql(f"CREATE DATABASE IF NOT EXISTS temp")
             self.spark.sql(
-                """
+                f"""
                     CREATE OR REPLACE TABLE temp.orphaned_transaction_info (
                         transaction_id        LONG NOT NULL,
                         transaction_unique_id STRING NOT NULL,
