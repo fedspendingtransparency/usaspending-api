@@ -1073,6 +1073,7 @@ class Command(BaseCommand):
                         unique_award_key      STRING NOT NULL
                     )
                     USING DELTA
+                    LOCATION 's3a://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.DELTA_LAKE_S3_PATH}/temp/orphaned_transaction_info'
                 """
             )
 
