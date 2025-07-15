@@ -6,10 +6,7 @@ from django.conf import settings
 from elasticsearch_dsl import A
 from elasticsearch_dsl import Q as ES_Q
 
-from usaspending_api.awards.v2.lookups.elasticsearch_lookups import (
-    INDEX_ALIASES_TO_AWARD_TYPES,
-    TRANSACTIONS_SOURCE_LOOKUP,
-)
+from usaspending_api.awards.v2.lookups.elasticsearch_lookups import INDEX_ALIASES_TO_AWARD_TYPES
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, Search, TransactionSearch
 from usaspending_api.common.query_with_filters import QueryWithFilters
@@ -19,19 +16,6 @@ from usaspending_api.search.filters.elasticsearch.filter import QueryType
 logger = logging.getLogger("console")
 
 DOWNLOAD_QUERY_SIZE = settings.MAX_DOWNLOAD_LIMIT
-TRANSACTIONS_SOURCE_LOOKUP.update({v: k for k, v in TRANSACTIONS_SOURCE_LOOKUP.items()})
-
-
-def swap_keys(dictionary_):
-    return dict(
-        (TRANSACTIONS_SOURCE_LOOKUP.get(old_key, old_key), new_key) for (old_key, new_key) in dictionary_.items()
-    )
-
-
-def format_for_frontend(response):
-    """calls reverse key from TRANSACTIONS_LOOKUP"""
-    response = [result["_source"] for result in response]
-    return [swap_keys(result) for result in response]
 
 
 def get_total_results(keyword):
