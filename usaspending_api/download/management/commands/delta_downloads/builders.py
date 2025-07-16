@@ -98,6 +98,56 @@ class AbstractAccountDownloadDataFrameBuilder(ABC):
         return sf.concat_ws(concat_str, sf.sort_array(sf.collect_set(col_name))).alias(alias)
 
     @property
+    def fy_quarter_period(self) -> Column:
+        return sf.when(
+            sf.col("quarter_format_flag"),
+            sf.concat(sf.lit("FY"), sf.col("reporting_fiscal_year"), sf.lit("Q"), sf.col("reporting_fiscal_quarter")),
+        ).otherwise(
+            sf.concat(
+                sf.lit("FY"),
+                sf.col("reporting_fiscal_year"),
+                sf.lit("P"),
+                sf.lpad(sf.col("reporting_fiscal_period"), 2, "0"),
+            )
+        )
+
+    @property
+    def _account_balances_df(self) -> DataFrame:
+        aab = self.spark.table("global_temp.appropriation_account_balances")
+        sa = self.spark.table("global_temp.submission_attributes")
+        taa = self.spark.table("global_temp.treasury_appropriation_account")
+        cgac_aid = self.spark.table("global_temp.cgac")
+        cgac_ata = self.spark.table("global_temp.cgac")
+        fa = self.spark.table("global_temp.federal_account")
+        ta = self.spark.table("global_temp.toptier_agency")
+
+        return (
+            aab.join(sa, on="submission_id", how="inner")
+            .join(taa, on="treasury_account_identifier", how="leftouter")
+            .join(
+                cgac_aid.withColumnRenamed("agency_name", "agency_identifier_name"),
+                on=(taa.agency_id == cgac_aid.cgac_code),
+                how="leftouter",
+            )
+            .join(
+                cgac_ata.withColumnRenamed("agency_name", "allocation_transfer_agency_identifier_name"),
+                on=(taa.allocation_transfer_agency_id == cgac_ata.cgac_code),
+                how="leftouter",
+            )
+            .join(fa, on=taa.federal_account_id == fa.id, how="leftouter")
+            .join(ta, on=fa.parent_toptier_agency_id == ta.toptier_agency_id, how="leftouter")
+            .filter(
+                sf.col("submission_id").isin(
+                    get_submission_ids_for_periods(
+                        self.reporting_fiscal_year, self.reporting_fiscal_quarter, self.reporting_fiscal_period
+                    )
+                )
+            )
+            .filter(self.dynamic_filters)
+            .withColumn("submission_period", self.fy_quarter_period)
+        )
+
+    @property
     @abstractmethod
     def account_balances(self) -> DataFrame: ...
 
@@ -182,20 +232,6 @@ class FederalAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBui
         return sf.sum(self.filter_to_latest_submissions_for_agencies(col_name)).alias(col_name)
 
     @property
-    def fy_quarter_period(self) -> Column:
-        return sf.when(
-            sf.col("quarter_format_flag"),
-            sf.concat(sf.lit("FY"), sf.col("reporting_fiscal_year"), sf.lit("Q"), sf.col("reporting_fiscal_quarter")),
-        ).otherwise(
-            sf.concat(
-                sf.lit("FY"),
-                sf.col("reporting_fiscal_year"),
-                sf.lit("P"),
-                sf.lpad(sf.col("reporting_fiscal_period"), 2, "0"),
-            )
-        )
-
-    @property
     def account_balances_agg_cols(self) -> list[Column]:
         return [
             self.collect_concat("submission_attributes.reporting_agency_name", alias="reporting_agency_name"),
@@ -270,39 +306,10 @@ class FederalAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBui
 
     @property
     def account_balances(self) -> DataFrame:
-        aab = self.spark.table("global_temp.appropriation_account_balances")
-        sa = self.spark.table("global_temp.submission_attributes")
-        taa = self.spark.table("global_temp.treasury_appropriation_account")
-        cgac_aid = self.spark.table("global_temp.cgac")
-        cgac_ata = self.spark.table("global_temp.cgac")
-        fa = self.spark.table("global_temp.federal_account")
-        ta = self.spark.table("global_temp.toptier_agency")
-
         return (
-            aab.join(sa, on="submission_id", how="inner")
-            .join(taa, on="treasury_account_identifier", how="leftouter")
-            .join(
-                cgac_aid.withColumnRenamed("agency_name", "agency_identifier_name"),
-                on=(taa.agency_id == cgac_aid.cgac_code),
-                how="leftouter",
+            self._account_balances_df.groupby(
+                "federal_account_code", "name", "federal_account.account_title", "submission_period"
             )
-            .join(
-                cgac_ata.withColumnRenamed("agency_name", "allocation_transfer_agency_identifier_name"),
-                on=(taa.allocation_transfer_agency_id == cgac_ata.cgac_code),
-                how="leftouter",
-            )
-            .join(fa, on=taa.federal_account_id == fa.id, how="leftouter")
-            .join(ta, on=fa.parent_toptier_agency_id == ta.toptier_agency_id, how="leftouter")
-            .filter(
-                sf.col("submission_id").isin(
-                    get_submission_ids_for_periods(
-                        self.reporting_fiscal_year, self.reporting_fiscal_quarter, self.reporting_fiscal_period
-                    )
-                )
-            )
-            .filter(self.dynamic_filters)
-            .withColumn("submission_period", self.fy_quarter_period)
-            .groupby(fa.federal_account_code, ta.name, fa.account_title, "submission_period")
             .agg(*self.account_balances_agg_cols)
             .select(*self.account_balances_select_cols)
         )
@@ -325,6 +332,142 @@ class FederalAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBui
 
 
 class TreasuryAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBuilder):
+
+    @property
+    def account_balances_groupby_cols(self) -> list[Column]:
+        return [
+            sf.col(col)
+            for col in [
+                "appropriation_account_balances.data_source",
+                "appropriation_account_balances.appropriation_account_balances_id",
+                "appropriation_account_balances.budget_authority_unobligated_balance_brought_forward_fyb",
+                "appropriation_account_balances.adjustments_to_unobligated_balance_brought_forward_cpe",
+                "appropriation_account_balances.budget_authority_appropriated_amount_cpe",
+                "appropriation_account_balances.borrowing_authority_amount_total_cpe",
+                "appropriation_account_balances.contract_authority_amount_total_cpe",
+                "appropriation_account_balances.spending_authority_from_offsetting_collections_amount_cpe",
+                "appropriation_account_balances.other_budgetary_resources_amount_cpe",
+                "appropriation_account_balances.total_budgetary_resources_amount_cpe",
+                "appropriation_account_balances.gross_outlay_amount_by_tas_cpe",
+                "appropriation_account_balances.deobligations_recoveries_refunds_by_tas_cpe",
+                "appropriation_account_balances.unobligated_balance_cpe",
+                "appropriation_account_balances.status_of_budgetary_resources_total_cpe",
+                "appropriation_account_balances.obligations_incurred_total_by_tas_cpe",
+                "appropriation_account_balances.drv_appropriation_availability_period_start_date",
+                "appropriation_account_balances.drv_appropriation_availability_period_end_date",
+                "appropriation_account_balances.drv_appropriation_account_expired_status",
+                "appropriation_account_balances.drv_obligations_unpaid_amount",
+                "appropriation_account_balances.drv_other_obligated_amount",
+                "appropriation_account_balances.reporting_period_start",
+                "appropriation_account_balances.reporting_period_end",
+                "appropriation_account_balances.last_modified_date",
+                "appropriation_account_balances.certified_date",
+                "appropriation_account_balances.create_date",
+                "appropriation_account_balances.update_date",
+                "appropriation_account_balances.final_of_fy",
+                "appropriation_account_balances.submission_id",
+                "appropriation_account_balances.treasury_account_identifier",
+                "agency_identifier_name",
+                "allocation_transfer_agency_identifier_name",
+                "submission_period",
+                "toptier_agency.name",
+                "submission_attributes.reporting_agency_name",
+                "treasury_appropriation_account.allocation_transfer_agency_id",
+                "treasury_appropriation_account.agency_id",
+                "treasury_appropriation_account.beginning_period_of_availability",
+                "treasury_appropriation_account.ending_period_of_availability",
+                "treasury_appropriation_account.availability_type_code",
+                "treasury_appropriation_account.main_account_code",
+                "treasury_appropriation_account.sub_account_code",
+                "treasury_appropriation_account.tas_rendering_label",
+                "treasury_appropriation_account.account_title",
+                "treasury_appropriation_account.budget_function_title",
+                "treasury_appropriation_account.budget_subfunction_title",
+                "federal_account.federal_account_code",
+                "federal_account.account_title",
+            ]
+        ]
+
+    @property
+    def account_balances_agg_cols(self) -> list[Column]:
+        return [sf.max("published_date").alias("max_last_modified_date")]
+
+    @property
+    def account_balances_select_cols(self) -> list[Column]:
+        return [
+            sf.col("toptier_agency.name").alias("owning_agency_name"),
+            sf.col("submission_attributes.reporting_agency_name").alias("reporting_agency_name"),
+            sf.col("submission_period"),
+            sf.col("treasury_appropriation_account.allocation_transfer_agency_id").alias(
+                "allocation_transfer_agency_identifier_code"
+            ),
+            sf.col("treasury_appropriation_account.agency_id").alias("agency_identifier_code"),
+            sf.col("treasury_appropriation_account.beginning_period_of_availability").alias(
+                "beginning_period_of_availability"
+            ),
+            sf.col("treasury_appropriation_account.ending_period_of_availability").alias(
+                "ending_period_of_availability"
+            ),
+            sf.col("treasury_appropriation_account.availability_type_code").alias("availability_type_code"),
+            sf.col("treasury_appropriation_account.main_account_code").alias("main_account_code"),
+            sf.col("treasury_appropriation_account.sub_account_code").alias("sub_account_code"),
+            sf.col("treasury_appropriation_account.tas_rendering_label").alias("treasury_account_symbol"),
+            sf.col("treasury_appropriation_account.account_title").alias("treasury_account_name"),
+            sf.col("agency_identifier_name"),
+            sf.col("allocation_transfer_agency_identifier_name"),
+            sf.col("treasury_appropriation_account.budget_function_title").alias("budget_function"),
+            sf.col("treasury_appropriation_account.budget_subfunction_title").alias("budget_subfunction"),
+            sf.col("federal_account.federal_account_code").alias("federal_account_symbol"),
+            sf.col("federal_account.account_title").alias("federal_account_name"),
+            sf.col("appropriation_account_balances.budget_authority_unobligated_balance_brought_forward_fyb").alias(
+                "budget_authority_unobligated_balance_brought_forward"
+            ),
+            sf.col("appropriation_account_balances.adjustments_to_unobligated_balance_brought_forward_cpe").alias(
+                "adjustments_to_unobligated_balance_brought_forward_cpe"
+            ),
+            sf.col("appropriation_account_balances.budget_authority_appropriated_amount_cpe").alias(
+                "budget_authority_appropriated_amount"
+            ),
+            sf.col("appropriation_account_balances.borrowing_authority_amount_total_cpe").alias(
+                "borrowing_authority_amount"
+            ),
+            sf.col("appropriation_account_balances.contract_authority_amount_total_cpe").alias(
+                "contract_authority_amount"
+            ),
+            sf.col("appropriation_account_balances.spending_authority_from_offsetting_collections_amount_cpe").alias(
+                "spending_authority_from_offsetting_collections_amount"
+            ),
+            sf.col("appropriation_account_balances.other_budgetary_resources_amount_cpe").alias(
+                "total_other_budgetary_resources_amount"
+            ),
+            sf.col("appropriation_account_balances.total_budgetary_resources_amount_cpe").alias(
+                "total_budgetary_resources"
+            ),
+            sf.col("appropriation_account_balances.obligations_incurred_total_by_tas_cpe").alias(
+                "obligations_incurred"
+            ),
+            sf.col("appropriation_account_balances.deobligations_recoveries_refunds_by_tas_cpe").alias(
+                "deobligations_or_recoveries_or_refunds_from_prior_year"
+            ),
+            sf.col("appropriation_account_balances.unobligated_balance_cpe").alias("unobligated_balance"),
+            sf.col("appropriation_account_balances.gross_outlay_amount_by_tas_cpe").alias("gross_outlay_amount"),
+            sf.col("appropriation_account_balances.status_of_budgetary_resources_total_cpe").alias(
+                "status_of_budgetary_resources_total"
+            ),
+            sf.col("max_last_modified_date").alias("last_modified_date"),
+        ]
+
+    @property
+    def account_balances(self) -> DataFrame:
+        return (
+            self._account_balances_df.groupby(*self.account_balances_groupby_cols)
+            .agg(*self.account_balances_agg_cols)
+            .select(*self.account_balances_select_cols)
+        )
+
+    @property
+    def object_class_program_activity(self) -> DataFrame:
+        return None
 
     @property
     def award_financial(self) -> DataFrame:
