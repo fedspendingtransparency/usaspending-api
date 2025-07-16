@@ -19,6 +19,7 @@ class AbstractAccountDownloadDataFrameBuilder(ABC):
         account_download_filter: AccountDownloadFilter,
         table_name: str = "rpt.account_download",
     ):
+        self.spark = spark
         self.reporting_fiscal_year = account_download_filter.fy
         self.submission_types = account_download_filter.submission_types
         self.reporting_fiscal_quarter = account_download_filter.quarter or account_download_filter.period // 3
@@ -28,7 +29,7 @@ class AbstractAccountDownloadDataFrameBuilder(ABC):
         self.budget_function = account_download_filter.budget_function
         self.budget_subfunction = account_download_filter.budget_subfunction
         self.def_codes = account_download_filter.def_codes
-        self.df: DataFrame = spark.table(table_name)
+        self.award_financial_df: DataFrame = spark.table(table_name)
 
     @property
     def dynamic_filters(self) -> Column:
@@ -91,8 +92,18 @@ class AbstractAccountDownloadDataFrameBuilder(ABC):
         )
 
     @staticmethod
-    def collect_concat(col_name: str, concat_str: str = "; ") -> Column:
-        return sf.concat_ws(concat_str, sf.sort_array(sf.collect_set(col_name))).alias(col_name)
+    def collect_concat(col_name: str, concat_str: str = "; ", alias: str | None = None) -> Column:
+        if alias is None:
+            alias = col_name
+        return sf.concat_ws(concat_str, sf.sort_array(sf.collect_set(col_name))).alias(alias)
+
+    @property
+    @abstractmethod
+    def account_balances(self) -> DataFrame: ...
+
+    @property
+    @abstractmethod
+    def object_class_program_activity(self) -> DataFrame: ...
 
     @property
     @abstractmethod
@@ -105,14 +116,9 @@ class AbstractAccountDownloadDataFrameBuilder(ABC):
 
 class FederalAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBuilder):
 
-    def __init__(
-        self,
-        spark: SparkSession,
-        account_download_filter: AccountDownloadFilter,
-        table_name: str = "rpt.account_download",
-    ):
-        super().__init__(spark, account_download_filter, table_name)
-        self.agg_cols = {
+    @property
+    def award_financial_agg_cols(self) -> dict[str, Column]:
+        return {
             "reporting_agency_name": self.collect_concat,
             "budget_function": self.collect_concat,
             "budget_subfunction": self.collect_concat,
@@ -122,7 +128,10 @@ class FederalAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBui
             "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig": self.filter_and_sum,
             "last_modified_date": lambda col: sf.max(col).alias(col),
         }
-        self.select_cols = (
+
+    @property
+    def award_financial_select_cols(self) -> list[Any]:
+        return (
             [sf.col("federal_owning_agency_name").alias("owning_agency_name")]
             + [
                 col
@@ -131,7 +140,10 @@ class FederalAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBui
             ]
             + ["last_modified_date"]
         )
-        filter_cols = [
+
+    @property
+    def award_financial_filter_cols(self) -> list[str]:
+        return [
             "submission_id",
             "federal_account_id",
             "funding_toptier_agency_id",
@@ -142,7 +154,14 @@ class FederalAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBui
             "reporting_fiscal_year",
             "quarter_format_flag",
         ]
-        self.groupby_cols = [col for col in self.df.columns if col not in list(self.agg_cols) + filter_cols]
+
+    @property
+    def award_financial_groupby_cols(self) -> list[Any]:
+        return [
+            col
+            for col in self.award_financial_df.columns
+            if col not in list(self.award_financial_agg_cols) + self.award_financial_filter_cols
+        ]
 
     def filter_to_latest_submissions_for_agencies(self, col_name: str, otherwise: Any = None) -> Column:
         """Filter to the latest submission regardless of whether the agency submitted on a monthly or quarterly basis"""
@@ -163,15 +182,133 @@ class FederalAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBui
         return sf.sum(self.filter_to_latest_submissions_for_agencies(col_name)).alias(col_name)
 
     @property
+    def fy_quarter_period(self) -> Column:
+        return sf.when(
+            sf.col("quarter_format_flag"),
+            sf.concat(sf.lit("FY"), sf.col("reporting_fiscal_year"), sf.lit("Q"), sf.col("reporting_fiscal_quarter")),
+        ).otherwise(
+            sf.concat(
+                sf.lit("FY"),
+                sf.col("reporting_fiscal_year"),
+                sf.lit("P"),
+                sf.lpad(sf.col("reporting_fiscal_period"), 2, "0"),
+            )
+        )
+
+    @property
+    def account_balances_agg_cols(self) -> list[Column]:
+        return [
+            self.collect_concat("reporting_agency_name"),
+            self.collect_concat("agency_identifier_name"),
+            self.collect_concat("budget_function_title", alias="budget_function"),
+            self.collect_concat("budget_subfunction_title", alias="budget_subfunction"),
+            sf.sum(sf.col("budget_authority_unobligated_balance_brought_forward_fyb")).alias(
+                "budget_authority_unobligated_balance_brought_forward"
+            ),
+            sf.sum(sf.col("adjustments_to_unobligated_balance_brought_forward_cpe")).alias(
+                "adjustments_to_unobligated_balance_brought_forward_cpe"
+            ),
+            sf.sum(sf.col("budget_authority_appropriated_amount_cpe")).alias("budget_authority_appropriated_amount"),
+            sf.sum(sf.col("borrowing_authority_amount_total_cpe")).alias("borrowing_authority_amount"),
+            sf.sum(sf.col("contract_authority_amount_total_cpe")).alias("contract_authority_amount"),
+            sf.sum(sf.col("spending_authority_from_offsetting_collections_amount_cpe")).alias(
+                "spending_authority_from_offsetting_collections_amount"
+            ),
+            sf.sum(sf.col("other_budgetary_resources_amount_cpe")).alias("total_other_budgetary_resources_amount"),
+            sf.sum(sf.col("total_budgetary_resources_amount_cpe")).alias("total_budgetary_resources"),
+            sf.sum(sf.col("obligations_incurred_total_by_tas_cpe")).alias("obligations_incurred"),
+            sf.sum(sf.col("deobligations_recoveries_refunds_by_tas_cpe")).alias(
+                "deobligations_or_recoveries_or_refunds_from_prior_year"
+            ),
+            sf.sum(sf.col("unobligated_balance_cpe")).alias("unobligated_balance"),
+            sf.sum(
+                sf.when(
+                    (
+                        (
+                            sf.col("quarter_format_flag")
+                            & (sf.col("reporting_fiscal_quarter") == self.reporting_fiscal_quarter)
+                        )
+                        | (
+                            ~sf.col("quarter_format_flag") & sf.col("reporting_fiscal_period")
+                            == self.reporting_fiscal_period
+                        )
+                    )
+                    & sf.col("reporting_fiscal_year")
+                    == self.reporting_fiscal_year,
+                    sf.col("gross_outlay_amount_by_tas_cpe"),
+                ).otherwise(0)
+            ).alias("gross_outlay_amount"),
+            sf.sum(sf.col("status_of_budgetary_resources_total_cpe")).alias("status_of_budgetary_resources_total"),
+            sf.max("published_date").alias("last_modified_date"),
+        ]
+
+    @property
+    def account_balances_select_cols(self) -> list[Column]:
+        return [
+            sf.col("name").alias("owning_agency_name"),
+            sf.col("reporting_agency_name"),
+            sf.col("submission_period"),
+            sf.col("federal_account_code").alias("federal_account_symbol"),
+            sf.col("federal_account_title").alias("federal_account_name"),
+            sf.col("agency_identifier_name"),
+            sf.col("budget_function"),
+            sf.col("budget_subfunction"),
+            sf.col("budget_authority_unobligated_balance_brought_forward"),
+            sf.col("adjustments_to_unobligated_balance_brought_forward_cpe"),
+            sf.col("budget_authority_appropriated_amount"),
+            sf.col("borrowing_authority_amount"),
+            sf.col("contract_authority_amount"),
+            sf.col("spending_authority_from_offsetting_collections_amount"),
+            sf.col("total_other_budgetary_resources_amount"),
+            sf.col("total_budgetary_resources"),
+            sf.col("obligations_incurred"),
+            sf.col("deobligations_or_recoveries_or_refunds_from_prior_year"),
+            sf.col("unobligated_balance"),
+            sf.col("gross_outlay_amount"),
+            sf.col("status_of_budgetary_resources_total"),
+            sf.col("last_modified_date"),
+        ]
+
+    @property
+    def account_balances(self) -> DataFrame:
+        aab = self.spark.table("global_temp.appropriation_account_balances")
+        sa = self.spark.table("global_temp.submission_attributes")
+        taa = self.spark.table("global_temp.treasury_appropriation_account")
+        cgac_aid = self.spark.table("global_temp.cgac")
+        cgac_ata = self.spark.table("global_temp.cgac")
+        fa = self.spark.table("global_temp.federal_account")
+        ta = self.spark.table("global_temp.toptier_agency")
+
+        return (
+            aab.join(sa, on="submission_id", how="inner")
+            .join(taa, on="treasury_account_identifier", how="leftouter")
+            .join(cgac_aid, on=(taa.agency_id == cgac_aid.cgac_code), how="leftouter")
+            .join(cgac_ata, on=(taa.allocation_transfer_agency_id == cgac_ata.cgac_code), how="leftouter")
+            .join(fa, on=taa.federal_account_id == fa.id, how="leftouter")
+            .join(ta, on=fa.parent_toptier_agency_id == ta.toptier_agency_id, how="leftouter")
+            .filter(
+                sf.col("submission_id").isin(
+                    get_submission_ids_for_periods(
+                        self.reporting_fiscal_year, self.reporting_fiscal_quarter, self.reporting_fiscal_period
+                    )
+                )
+            )
+            .filter(self.dynamic_filters)
+            .groupby(fa.federal_account_code, ta.name, fa.account_title, self.fy_quarter_period)
+            .agg(*self.account_balances_agg_cols)
+            .select(*self.account_balances_select_cols)
+        )
+
+    @property
     def award_financial(self) -> DataFrame:
         return (
-            self.df.filter(self.dynamic_filters)
-            .groupBy(self.groupby_cols)
-            .agg(*[agg_func(col) for col, agg_func in self.agg_cols.items()])
+            self.award_financial_df.filter(self.dynamic_filters)
+            .groupBy(self.award_financial_groupby_cols)
+            .agg(*[agg_func(col) for col, agg_func in self.award_financial_agg_cols.items()])
             # drop original agg columns from the dataframe to avoid ambiguous column names
-            .drop(*[sf.col(f"account_download.{col}") for col in self.agg_cols])
+            .drop(*[sf.col(f"account_download.{col}") for col in self.award_financial_agg_cols])
             .filter(self.non_zero_filters)
-            .select(self.select_cols)
+            .select(self.award_financial_select_cols)
         )
 
 
@@ -188,4 +325,4 @@ class TreasuryAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBu
             ]
             + ["last_modified_date"]
         )
-        return self.df.filter(self.dynamic_filters & self.non_zero_filters).select(select_cols)
+        return self.award_financial_df.filter(self.dynamic_filters & self.non_zero_filters).select(select_cols)
