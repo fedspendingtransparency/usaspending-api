@@ -198,7 +198,7 @@ class FederalAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBui
     @property
     def account_balances_agg_cols(self) -> list[Column]:
         return [
-            self.collect_concat("reporting_agency_name"),
+            self.collect_concat("submission_attributes.reporting_agency_name"),
             self.collect_concat("agency_identifier_name"),
             self.collect_concat("budget_function_title", alias="budget_function"),
             self.collect_concat("budget_subfunction_title", alias="budget_subfunction"),
@@ -284,6 +284,13 @@ class FederalAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBui
             .join(taa, on="treasury_account_identifier", how="leftouter")
             .join(cgac_aid, on=(taa.agency_id == cgac_aid.cgac_code), how="leftouter")
             .join(cgac_ata, on=(taa.allocation_transfer_agency_id == cgac_ata.cgac_code), how="leftouter")
+            .select(
+                *aab.columns,
+                *sa.columns,
+                *taa.columns,
+                cgac_aid.agency_name.alias("agency_identifier_name"),
+                cgac_ata.agency_name.alias("allocation_transfer_agency_identifier_name"),
+            )
             .join(fa, on=taa.federal_account_id == fa.id, how="leftouter")
             .join(ta, on=fa.parent_toptier_agency_id == ta.toptier_agency_id, how="leftouter")
             .filter(
@@ -298,6 +305,10 @@ class FederalAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBui
             .agg(*self.account_balances_agg_cols)
             .select(*self.account_balances_select_cols)
         )
+
+    @property
+    def object_class_program_activity(self) -> DataFrame:
+        return None
 
     @property
     def award_financial(self) -> DataFrame:
