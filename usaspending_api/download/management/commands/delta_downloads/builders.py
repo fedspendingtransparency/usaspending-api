@@ -198,7 +198,7 @@ class FederalAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBui
     @property
     def account_balances_agg_cols(self) -> list[Column]:
         return [
-            self.collect_concat("submission_attributes.reporting_agency_name"),
+            self.collect_concat("submission_attributes.reporting_agency_name", alias="reporting_agency_name"),
             self.collect_concat("agency_identifier_name"),
             self.collect_concat("budget_function_title", alias="budget_function"),
             self.collect_concat("budget_subfunction_title", alias="budget_subfunction"),
@@ -229,12 +229,11 @@ class FederalAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBui
                             & (sf.col("reporting_fiscal_quarter") == self.reporting_fiscal_quarter)
                         )
                         | (
-                            ~sf.col("quarter_format_flag") & sf.col("reporting_fiscal_period")
-                            == self.reporting_fiscal_period
+                            ~sf.col("quarter_format_flag")
+                            & (sf.col("reporting_fiscal_period") == self.reporting_fiscal_period)
                         )
                     )
-                    & sf.col("reporting_fiscal_year")
-                    == self.reporting_fiscal_year,
+                    & (sf.col("reporting_fiscal_year") == self.reporting_fiscal_year),
                     sf.col("gross_outlay_amount_by_tas_cpe"),
                 ).otherwise(0)
             ).alias("gross_outlay_amount"),
@@ -249,7 +248,7 @@ class FederalAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBui
             sf.col("reporting_agency_name"),
             sf.col("submission_period"),
             sf.col("federal_account_code").alias("federal_account_symbol"),
-            sf.col("federal_account_title").alias("federal_account_name"),
+            sf.col("account_title").alias("federal_account_name"),
             sf.col("agency_identifier_name"),
             sf.col("budget_function"),
             sf.col("budget_subfunction"),
@@ -282,14 +281,15 @@ class FederalAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBui
         return (
             aab.join(sa, on="submission_id", how="inner")
             .join(taa, on="treasury_account_identifier", how="leftouter")
-            .join(cgac_aid, on=(taa.agency_id == cgac_aid.cgac_code), how="leftouter")
-            .join(cgac_ata, on=(taa.allocation_transfer_agency_id == cgac_ata.cgac_code), how="leftouter")
-            .select(
-                *aab.columns,
-                *sa.columns,
-                *taa.columns,
-                cgac_aid.agency_name.alias("agency_identifier_name"),
-                cgac_ata.agency_name.alias("allocation_transfer_agency_identifier_name"),
+            .join(
+                cgac_aid.withColumnRenamed("agency_name", "agency_identifier_name"),
+                on=(taa.agency_id == cgac_aid.cgac_code),
+                how="leftouter",
+            )
+            .join(
+                cgac_ata.withColumnRenamed("agency_name", "allocation_transfer_agency_identifier_name"),
+                on=(taa.allocation_transfer_agency_id == cgac_ata.cgac_code),
+                how="leftouter",
             )
             .join(fa, on=taa.federal_account_id == fa.id, how="leftouter")
             .join(ta, on=fa.parent_toptier_agency_id == ta.toptier_agency_id, how="leftouter")
@@ -301,7 +301,8 @@ class FederalAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBui
                 )
             )
             .filter(self.dynamic_filters)
-            .groupby(fa.federal_account_code, ta.name, fa.account_title, self.fy_quarter_period)
+            .withColumn("submission_period", self.fy_quarter_period)
+            .groupby(fa.federal_account_code, ta.name, fa.account_title, "submission_period")
             .agg(*self.account_balances_agg_cols)
             .select(*self.account_balances_select_cols)
         )
