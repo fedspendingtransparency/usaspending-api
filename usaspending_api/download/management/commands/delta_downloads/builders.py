@@ -35,7 +35,8 @@ class AbstractAccountDownloadDataFrameBuilder(ABC):
         self.aab = spark.table("global_temp.appropriation_account_balances")
         self.sa = spark.table("global_temp.submission_attributes")
         self.taa = spark.table("global_temp.treasury_appropriation_account")
-        self.cgac = spark.table("global_temp.cgac")
+        self.cgac_aid = spark.table("global_temp.cgac")
+        self.cgac_ata = spark.table("global_temp.cgac")
         self.fa = spark.table("global_temp.federal_account")
         self.ta = spark.table("global_temp.toptier_agency")
 
@@ -125,13 +126,13 @@ class AbstractAccountDownloadDataFrameBuilder(ABC):
             self.aab.join(self.sa, on="submission_id", how="inner")
             .join(self.taa, on="treasury_account_identifier", how="leftouter")
             .join(
-                self.cgac.withColumnRenamed("agency_name", "agency_identifier_name"),
-                on=(self.taa.agency_id == self.cgac.cgac_code),
+                self.cgac_aid.withColumnRenamed("agency_name", "agency_identifier_name"),
+                on=(self.taa.agency_id == self.cgac_aid.cgac_code),
                 how="leftouter",
             )
             .join(
-                self.cgac.withColumnRenamed("agency_name", "allocation_transfer_agency_identifier_name"),
-                on=(self.taa.allocation_transfer_agency_id == self.cgac.cgac_code),
+                self.cgac_ata.withColumnRenamed("agency_name", "allocation_transfer_agency_identifier_name"),
+                on=(self.taa.allocation_transfer_agency_id == self.cgac_ata.cgac_code),
                 how="leftouter",
             )
             .join(self.fa, on=self.taa.federal_account_id == self.fa.id, how="leftouter")

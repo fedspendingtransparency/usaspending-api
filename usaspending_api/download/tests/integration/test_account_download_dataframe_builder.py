@@ -110,6 +110,7 @@ def test_federal_account_download_dataframe_builder(mock_get_submission_ids_for_
 
 @patch("usaspending_api.download.management.commands.delta_downloads.builders.get_submission_ids_for_periods")
 def test_filter_federal_by_agency(mock_get_submission_ids_for_periods, spark, account_download_table, agency_models):
+    create_ref_temp_views(spark)
     mock_get_submission_ids_for_periods.return_value = [1, 2, 4, 5]
 
     account_download_filter = AccountDownloadFilter(
@@ -131,6 +132,7 @@ def test_filter_federal_by_agency(mock_get_submission_ids_for_periods, spark, ac
 def test_filter_federal_by_federal_account_id(
     mock_get_submission_ids_for_periods, spark, account_download_table, federal_account_models
 ):
+    create_ref_temp_views(spark)
     mock_get_submission_ids_for_periods.return_value = [1, 2, 4, 5]
 
     account_download_filter = AccountDownloadFilter(
@@ -164,7 +166,7 @@ def test_treasury_account_download_dataframe_builder(spark, account_download_tab
 
 
 def test_filter_treasury_by_agency(spark, account_download_table, agency_models):
-
+    create_ref_temp_views(spark)
     account_download_filter = AccountDownloadFilter(
         fy=2018,
         submission_types=["award_financial"],
@@ -231,7 +233,7 @@ def test_account_balances(mock_get_submission_ids_for_periods, spark, account_do
     baker.make("accounts.AppropriationAccountBalances", submission_id=3, treasury_account_identifier_id=2).save()
 
     mock_get_submission_ids_for_periods.return_value = [1, 2, 3]
-    # make the temp views
+
     create_ref_temp_views(spark)
 
     account_download_filter = AccountDownloadFilter(
