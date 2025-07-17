@@ -368,6 +368,10 @@
         "type": "date",
         "format": "yyyy-MM-dd"
       },
+      "sub_fiscal_action_date": {
+        "type": "date",
+        "format": "yyyy-MM-dd"
+      },
       "sub_awardee_or_recipient_uniqu": {
         "type": "text"
       },

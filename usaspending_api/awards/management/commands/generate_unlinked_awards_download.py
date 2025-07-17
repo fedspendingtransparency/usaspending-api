@@ -144,10 +144,10 @@ class Command(BaseCommand):
             sql_file = None
             final_path = self._create_data_csv_dest_path(final_name)
             intermediate_data_file_path = final_path.parent / (final_path.name + "_temp")
-            data_file_names, count = self.download_to_csv(
+            download_metadata = self.download_to_csv(
                 sql_file, final_path, final_name, str(intermediate_data_file_path), zip_file_path, df
             )
-            if count <= 0:
+            if download_metadata.number_of_rows <= 0:
                 logger.warning(f"Empty data file generated: {final_path}!")
 
             self.filepaths_to_delete.extend(self.working_dir_path.glob(f"{final_path.stem}*"))
@@ -159,7 +159,7 @@ class Command(BaseCommand):
             upload_download_file_to_s3(zip_file_path, settings.UNLINKED_AWARDS_DOWNLOAD_REDIRECT_DIR)
             logger.info("Marking zip file for deletion in cleanup")
         else:
-            logger.warn("Not uploading zip file to S3. Leaving file locally")
+            logger.warning("Not uploading zip file to S3. Leaving file locally")
             self.filepaths_to_delete.remove(zip_file_path)
 
     @property

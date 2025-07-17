@@ -224,7 +224,7 @@ class Command(BaseCommand):
         """
 
         # TODO: The values returned here are put into a list in an 'IN' clause in award_id_lookup_post_delete.
-        #       However, there is a limit on the number of values one can manually put into an 'IN' cluase (i.e., not
+        #       However, there is a limit on the number of values one can manually put into an 'IN' clause (i.e., not
         #       returned by a SELECT subquery inside the 'IN').  Thus, this code should return a dataframe directly,
         #       create a temporary view from the dataframe in award_id_lookup_post_delete, and use that temporary
         #       view to either do a subquery in the 'IN' clause or to JOIN against.
@@ -1144,11 +1144,11 @@ class Command(BaseCommand):
             except AnalysisException as e:
                 if re.match(
                     r"^\[TABLE_OR_VIEW_NOT_FOUND\] The table or view `raw`\.`transaction_normalized` cannot be found\..*$",
-                    e.desc,
+                    str(e),
                     re.MULTILINE,
                 ):
                     # In this case, we just don't populate transaction_id_lookup
-                    logger.warn(
+                    logger.warning(
                         "Skipping population of transaction_id_lookup table; no raw.transaction_normalized table."
                     )
                     raw_transaction_normalized_exists = False
@@ -1172,11 +1172,11 @@ class Command(BaseCommand):
                 except AnalysisException as e:
                     if re.match(
                         r"^\[TABLE_OR_VIEW_NOT_FOUND\] The table or view `raw`\.`transaction_fabs` cannot be found\..*$",
-                        e.desc,
+                        str(e),
                         re.MULTILINE,
                     ):
                         # In this case, we just skip extending the orphaned transactions with this table
-                        logger.warn(
+                        logger.warning(
                             "Skipping extension of orphaned_transaction_info table using raw.transaction_fabs table."
                         )
 
@@ -1200,11 +1200,11 @@ class Command(BaseCommand):
                 except AnalysisException as e:
                     if re.match(
                         r"^\[TABLE_OR_VIEW_NOT_FOUND\] The table or view `raw`\.`transaction_fpds` cannot be found\..*$",
-                        e.desc,
+                        str(e),
                         re.MULTILINE,
                     ):
                         # In this case, we just skip extending the orphaned transactions with this table
-                        logger.warn(
+                        logger.warning(
                             "Skipping extension of orphaned_transaction_info table using raw.transaction_fpds table."
                         )
 
@@ -1252,7 +1252,7 @@ class Command(BaseCommand):
                         """
                     )
                 else:
-                    logger.warn(
+                    logger.warning(
                         "No raw.transaction_fabs or raw.transaction_fpds tables, so not finding additional orphaned "
                         "transactions in raw.transaction_normalized"
                     )
@@ -1366,7 +1366,7 @@ class Command(BaseCommand):
 
             if not raw_transaction_normalized_exists:
                 # In this case, we just don't populate award_id_lookup
-                logger.warn("Skipping population of award_id_lookup table; no raw.transaction_normalized table.")
+                logger.warning("Skipping population of award_id_lookup table; no raw.transaction_normalized table.")
 
                 # Without a raw.transaction_normalized table, can't get a maximum award_id from it, either.
                 max_id = None
@@ -1512,11 +1512,11 @@ class Command(BaseCommand):
                     except AnalysisException as e:
                         if re.match(
                             rf"^\[TABLE_OR_VIEW_NOT_FOUND\] The table or view `raw`\.`{destination_table}` cannot be found\..*$",
-                            e.desc,
+                            str(e),
                             re.MULTILINE,
                         ):
                             # In this case, we just don't copy anything over
-                            logger.warn(
+                            logger.warning(
                                 f"Skipping copy of {destination_table} table from 'raw' to 'int' database; "
                                 f"no raw.{destination_table} table."
                             )

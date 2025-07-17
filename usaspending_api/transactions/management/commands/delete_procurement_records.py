@@ -42,7 +42,7 @@ class Command(AgnosticDeletes, BaseCommand):
                 logger.info(f"Obtained {len(numeric_ids)} IDs for {date_}")
                 ids_to_delete[date_].extend(numeric_ids)
             else:
-                logger.warn(f"No {'valid ' if bool(string_ids) else ''}IDs for {date_}!")
+                logger.warning(f"No {'valid ' if bool(string_ids) else ''}IDs for {date_}!")
 
         total_ids = sum([len(v) for v in ids_to_delete.values()])
         logger.info(f"Total number of delete records to process: {total_ids}")
