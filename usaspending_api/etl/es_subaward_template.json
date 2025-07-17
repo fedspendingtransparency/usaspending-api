@@ -358,7 +358,12 @@
         "type": "integer"
       },
       "subaward_number": {
-        "type": "text"
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
       },
       "subaward_amount": {
         "type": "scaled_float",
@@ -526,6 +531,14 @@
         "type": "keyword"
       },
       "sub_pop_zip": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "sub_pop_zip5": {
         "type": "text",
         "fields": {
           "keyword": {
