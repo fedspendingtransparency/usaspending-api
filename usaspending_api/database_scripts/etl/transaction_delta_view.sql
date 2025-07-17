@@ -124,8 +124,8 @@ SELECT
   "funding_subtier_agency_abbreviation",
   "tas_paths",
   "tas_components",
-  "federal_accounts"::JSON,
+  CAST("federal_accounts" AS STRING),
   "disaster_emergency_fund_codes",
-  "program_activities"::JSON
+  CAST("program_activities" AS STRING)
 FROM "transaction_search"
 WHERE "action_date" >= '2007-10-01';

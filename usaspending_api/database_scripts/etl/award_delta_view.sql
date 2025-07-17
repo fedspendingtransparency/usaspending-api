@@ -99,7 +99,7 @@ SELECT
   "pop_zip4",
 
   "cfda_number",
-  "cfda_program_title" as cfda_title,
+  "cfda_program_title" AS cfda_title,
   "cfdas",
 
   "sai_number",
@@ -115,7 +115,7 @@ SELECT
   "tas_paths",
   "tas_components",
   "disaster_emergency_fund_codes",
-  "spending_by_defc"::JSON,
+  CAST("spending_by_defc" AS STRING),
   "total_covid_outlay",
   "total_covid_obligation",
 
@@ -123,7 +123,7 @@ SELECT
   "total_iija_obligation",
 
   "generated_pragmatic_obligation",
-  "program_activities"::JSON
+  CAST("program_activities" AS STRING)
 
 FROM "award_search"
 WHERE "action_date" >= '2007-10-01';
