@@ -13,7 +13,6 @@ from usaspending_api.awards.models.transaction_fpds import FPDS_TO_TRANSACTION_S
 from usaspending_api.awards.models.transaction_normalized import NORM_TO_TRANSACTION_SEARCH_COL_MAP
 from usaspending_api.download.filestreaming import NAMING_CONFLICT_DISCRIMINATOR
 
-
 query_paths = {
     "award": {
         "d1": OrderedDict(
@@ -278,11 +277,11 @@ query_paths = {
                 (
                     "award_type_code",
                     f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['contract_award_type']}",
-                ),  # Column is appended to in account_download.py
+                ),  # Column is appended to in award_financial.py
                 (
                     "award_type",
                     f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['contract_award_type_desc']}",
-                ),  # Column is appended to in account_download.py
+                ),  # Column is appended to in award_financial.py
                 ("idv_type_code", f"latest_transaction_search__{FPDS_TO_TRANSACTION_SEARCH_COL_MAP['idv_type']}"),
                 (
                     "idv_type",
@@ -1471,11 +1470,11 @@ query_paths = {
                 (
                     "award_type_code",
                     FPDS_TO_TRANSACTION_SEARCH_COL_MAP["contract_award_type"],
-                ),  # Column is appended to in account_download.py
+                ),  # Column is appended to in award_financial.py
                 (
                     "award_type",
                     FPDS_TO_TRANSACTION_SEARCH_COL_MAP["contract_award_type_desc"],
-                ),  # Column is appended to in account_download.py
+                ),  # Column is appended to in award_financial.py
                 ("idv_type_code", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["idv_type"]),
                 ("idv_type", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["idv_type_description"]),
                 ("multiple_or_single_award_idv_code", FPDS_TO_TRANSACTION_SEARCH_COL_MAP["multiple_or_single_award_i"]),
@@ -1627,11 +1626,11 @@ query_paths = {
                 (
                     "parent_award_type_code",
                     FPDS_TO_TRANSACTION_SEARCH_COL_MAP["referenced_idv_type"],
-                ),  # Column is appended to in account_download.py
+                ),  # Column is appended to in award_financial.py
                 (
                     "parent_award_type",
                     FPDS_TO_TRANSACTION_SEARCH_COL_MAP["referenced_idv_type_desc"],
-                ),  # Column is appended to in account_download.py
+                ),  # Column is appended to in award_financial.py
                 (
                     "parent_award_single_or_multiple_code",
                     FPDS_TO_TRANSACTION_SEARCH_COL_MAP["referenced_mult_or_single"],
@@ -2365,30 +2364,30 @@ query_paths = {
         "treasury_account": OrderedDict(
             [
                 ("owning_agency_name", "treasury_account_identifier__federal_account__parent_toptier_agency__name"),
-                ("submission_period", "submission_period"),  # Column is annotated in account_download.py
+                ("submission_period", "submission_period"),  # Column is annotated in award_financial.py
                 (
                     "allocation_transfer_agency_identifier_code",
                     "allocation_transfer_agency_identifier_code",
-                ),  # Column is annotated in account_download.py
-                ("agency_identifier_code", "agency_identifier_code"),  # Column is annotated in account_download.py
+                ),  # Column is annotated in award_financial.py
+                ("agency_identifier_code", "agency_identifier_code"),  # Column is annotated in award_financial.py
                 (
                     "beginning_period_of_availability",
                     "beginning_period_of_availability",
-                ),  # Column is annotated in account_download.py
+                ),  # Column is annotated in award_financial.py
                 (
                     "ending_period_of_availability",
                     "ending_period_of_availability",
-                ),  # Column is annotated in account_download.py
-                ("availability_type_code", "availability_type_code"),  # Column is annotated in account_download.py
-                ("main_account_code", "main_account_code"),  # Column is annotated in account_download.py
-                ("sub_account_code", "sub_account_code"),  # Column is annotated in account_download.py
+                ),  # Column is annotated in award_financial.py
+                ("availability_type_code", "availability_type_code"),  # Column is annotated in award_financial.py
+                ("main_account_code", "main_account_code"),  # Column is annotated in award_financial.py
+                ("sub_account_code", "sub_account_code"),  # Column is annotated in award_financial.py
                 ("treasury_account_symbol", "tas_rendering_label"),
                 ("treasury_account_name", "treasury_account_identifier__account_title"),
-                ("agency_identifier_name", "agency_identifier_name"),  # Column is annotated in account_download.py
+                ("agency_identifier_name", "agency_identifier_name"),  # Column is annotated in award_financial.py
                 (
                     "allocation_transfer_agency_identifier_name",
                     "allocation_transfer_agency_identifier_name",
-                ),  # Column is annotated in account_download.py
+                ),  # Column is annotated in award_financial.py
                 ("budget_function", "treasury_account_identifier__budget_function_title"),
                 ("budget_subfunction", "treasury_account_identifier__budget_subfunction_title"),
                 ("federal_account_symbol", "treasury_account_identifier__federal_account__federal_account_code"),
@@ -2434,7 +2433,7 @@ query_paths = {
             [
                 ("owning_agency_name", "treasury_account_identifier__funding_toptier_agency__name"),
                 ("reporting_agency_name", "submission__reporting_agency_name"),
-                ("submission_period", "submission_period"),  # Column is appended to in account_download.py
+                ("submission_period", "submission_period"),  # Column is appended to in award_financial.py
                 (
                     "allocation_transfer_agency_identifier_code",
                     "treasury_account_identifier__allocation_transfer_agency_id",
@@ -2476,24 +2475,24 @@ query_paths = {
                     "deobligations_recoveries_refunds_by_tas_cpe",
                 ),
                 ("unobligated_balance", "unobligated_balance_cpe"),
-                ("gross_outlay_amount", "gross_outlay_amount"),  # Column is annotated in account_download.py
+                ("gross_outlay_amount", "gross_outlay_amount"),  # Column is annotated in award_financial.py
                 ("status_of_budgetary_resources_total", "status_of_budgetary_resources_total_cpe"),
                 (
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
-                ),  # Column is annotated in account_download.py
+                ),  # Column is annotated in award_financial.py
             ]
         ),
         "federal_account": OrderedDict(
             [
                 ("owning_agency_name", "treasury_account_identifier__federal_account__parent_toptier_agency__name"),
-                ("reporting_agency_name", "reporting_agency_name"),  # Column is annotated in account_download.py
-                ("submission_period", "submission_period"),  # Column is annotated in account_download.py
+                ("reporting_agency_name", "reporting_agency_name"),  # Column is annotated in award_financial.py
+                ("submission_period", "submission_period"),  # Column is annotated in award_financial.py
                 ("federal_account_symbol", "treasury_account_identifier__federal_account__federal_account_code"),
                 ("federal_account_name", "treasury_account_identifier__federal_account__account_title"),
                 ("agency_identifier_name", "agency_identifier_name"),
-                ("budget_function", "budget_function"),  # Column is annotated in account_download.py
-                ("budget_subfunction", "budget_subfunction"),  # Column is annotated in account_download.py
+                ("budget_function", "budget_function"),  # Column is annotated in award_financial.py
+                ("budget_subfunction", "budget_subfunction"),  # Column is annotated in award_financial.py
                 (
                     "budget_authority_unobligated_balance_brought_forward",
                     "budget_authority_unobligated_balance_brought_forward",
@@ -2517,12 +2516,12 @@ query_paths = {
                     "deobligations_or_recoveries_or_refunds_from_prior_year",
                 ),
                 ("unobligated_balance", "unobligated_balance"),
-                ("gross_outlay_amount", "gross_outlay_amount"),  # Column is annotated in account_download.py
+                ("gross_outlay_amount", "gross_outlay_amount"),  # Column is annotated in award_financial.py
                 ("status_of_budgetary_resources_total", "status_of_budgetary_resources_total"),
                 (
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
-                ),  # Column is annotated in account_download.py
+                ),  # Column is annotated in award_financial.py
             ]
         ),
     },
@@ -2531,7 +2530,7 @@ query_paths = {
             [
                 ("owning_agency_name", "treasury_account__funding_toptier_agency__name"),
                 ("reporting_agency_name", "submission__reporting_agency_name"),
-                ("submission_period", "submission_period"),  # Column is annotated in account_download.py
+                ("submission_period", "submission_period"),  # Column is annotated in award_financial.py
                 ("allocation_transfer_agency_identifier_code", "treasury_account__allocation_transfer_agency_id"),
                 ("agency_identifier_code", "treasury_account__agency_id"),
                 ("beginning_period_of_availability", "treasury_account__beginning_period_of_availability"),
@@ -2586,7 +2585,7 @@ query_paths = {
                 (
                     "gross_outlay_amount_FYB_to_period_end",
                     "gross_outlay_amount_FYB_to_period_end",
-                ),  # Column is annotated in account_download.py
+                ),  # Column is annotated in award_financial.py
                 ("gross_outlay_amount_FYB", "gross_outlay_amount_by_program_object_class_fyb"),
                 (
                     "gross_outlays_undelivered_orders_prepaid_total",
@@ -2642,7 +2641,7 @@ query_paths = {
                 (
                     "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig",
                     "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig",
-                ),  # Column is annotated in account_download.py
+                ),  # Column is annotated in award_financial.py
                 (
                     "USSGL483100_undelivered_orders_obligations_transferred_unpaid",
                     "ussgl483100_undelivered_orders_oblig_transferred_unpaid_cpe",
@@ -2658,17 +2657,17 @@ query_paths = {
                 (
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
-                ),  # Column is annotated in account_download.py
+                ),  # Column is annotated in award_financial.py
             ]
         ),
         "federal_account": OrderedDict(
             [
                 ("owning_agency_name", "treasury_account__federal_account__parent_toptier_agency__name"),
-                ("reporting_agency_name", "reporting_agency_name"),  # Column is annotated in account_download.py
-                ("submission_period", "submission_period"),  # Column is annotated in account_download.py
+                ("reporting_agency_name", "reporting_agency_name"),  # Column is annotated in award_financial.py
+                ("submission_period", "submission_period"),  # Column is annotated in award_financial.py
                 ("agency_identifier_name", "agency_identifier_name"),
-                ("budget_function", "budget_function"),  # Column is annotated in account_download.py
-                ("budget_subfunction", "budget_subfunction"),  # Column is annotated in account_download.py
+                ("budget_function", "budget_function"),  # Column is annotated in award_financial.py
+                ("budget_subfunction", "budget_subfunction"),  # Column is annotated in award_financial.py
                 ("federal_account_symbol", "treasury_account__federal_account__federal_account_code"),
                 ("federal_account_name", "treasury_account__federal_account__account_title"),
                 ("program_activity_code", "program_activity__program_activity_code"),
@@ -2716,7 +2715,7 @@ query_paths = {
                 (
                     "gross_outlay_amount_FYB_to_period_end",
                     "gross_outlay_amount_FYB_to_period_end",
-                ),  # Column is annotated in account_download.py
+                ),  # Column is annotated in award_financial.py
                 ("gross_outlay_amount_FYB", None),  # annotated in download_annotation_functions.py
                 (
                     "gross_outlays_undelivered_orders_prepaid_total",
@@ -2778,7 +2777,7 @@ query_paths = {
                 (
                     "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig",
                     "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig",
-                ),  # Column is annotated in account_download.py
+                ),  # Column is annotated in award_financial.py
                 (
                     "USSGL483100_undelivered_orders_obligations_transferred_unpaid",
                     None,
@@ -2794,7 +2793,7 @@ query_paths = {
                 (
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
-                ),  # Column is annotated in account_download.py
+                ),  # Column is annotated in award_financial.py
             ]
         ),
     },
@@ -2804,7 +2803,7 @@ query_paths = {
             [
                 ("owning_agency_name", "treasury_account__funding_toptier_agency__name"),
                 ("reporting_agency_name", "submission__reporting_agency_name"),
-                ("submission_period", "submission_period"),  # Column is annotated in account_download.py
+                ("submission_period", "submission_period"),  # Column is annotated in award_financial.py
                 ("allocation_transfer_agency_identifier_code", "treasury_account__allocation_transfer_agency_id"),
                 ("agency_identifier_code", "treasury_account__agency_id"),
                 ("beginning_period_of_availability", "treasury_account__beginning_period_of_availability"),
@@ -2831,15 +2830,15 @@ query_paths = {
                 (
                     "gross_outlay_amount_FYB_to_period_end",
                     "gross_outlay_amount_FYB_to_period_end",
-                ),  # Column is annotated in account_download.py
+                ),  # Column is annotated in award_financial.py
                 (
                     "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig",
                     "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig",
-                ),  # Column is annotated in account_download.py
+                ),  # Column is annotated in award_financial.py
                 (
                     "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig",
                     "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig",
-                ),  # Column is annotated in account_download.py
+                ),  # Column is annotated in award_financial.py
                 ("award_unique_key", "award__generated_unique_award_id"),
                 ("award_id_piid", "piid"),
                 ("parent_award_id_piid", "parent_award_id"),
@@ -2849,17 +2848,17 @@ query_paths = {
                 (
                     "award_base_action_date_fiscal_year",
                     "award_base_action_date_fiscal_year",
-                ),  # Column is annotated in account_download.py
+                ),  # Column is annotated in award_financial.py
                 ("award_latest_action_date", "award__certified_date"),
                 (
                     "award_latest_action_date_fiscal_year",
                     "award_latest_action_date_fiscal_year",
-                ),  # Column is annotated in account_download.py
+                ),  # Column is annotated in award_financial.py
                 ("period_of_performance_start_date", "award__period_of_performance_start_date"),
                 ("period_of_performance_current_end_date", "award__period_of_performance_current_end_date"),
                 ("ordering_period_end_date", "award__latest_transaction_search__ordering_period_end_date"),
-                ("award_type_code", "award_type_code"),  # Column is annotated in account_download.py
-                ("award_type", "award_type"),  # Column is annotated in account_download.py
+                ("award_type_code", "award_type_code"),  # Column is annotated in award_financial.py
+                ("award_type", "award_type"),  # Column is annotated in award_financial.py
                 ("idv_type_code", "award__latest_transaction_search__idv_type"),
                 ("idv_type", "award__latest_transaction_search__idv_type_description"),
                 ("prime_award_base_transaction_description", "award__description"),
@@ -2890,23 +2889,23 @@ query_paths = {
                 (
                     "prime_award_summary_recipient_cd_original",
                     "prime_award_summary_recipient_cd_original",
-                ),  # Column is annotated in account_download.py, function generate_treasury_account_query
+                ),  # Column is annotated in award_financial.py, function generate_treasury_account_query
                 (
                     "prime_award_summary_recipient_cd_current",
                     "prime_award_summary_recipient_cd_current",
-                ),  # Column is annotated in account_download.py, function generate_treasury_account_query
-                ("recipient_zip_code", "recipient_zip_code"),  # Column is annotated in account_download.py
+                ),  # Column is annotated in award_financial.py, function generate_treasury_account_query
+                ("recipient_zip_code", "recipient_zip_code"),  # Column is annotated in award_financial.py
                 ("primary_place_of_performance_country", "award__latest_transaction_search__pop_country_name"),
                 ("primary_place_of_performance_state", "award__latest_transaction_search__pop_state_name"),
                 ("primary_place_of_performance_county", "award__latest_transaction_search__pop_county_name"),
                 (
                     "prime_award_summary_place_of_performance_cd_original",
                     "prime_award_summary_place_of_performance_cd_original",
-                ),  # Column is annotated in account_download.py, function generate_treasury_account_query
+                ),  # Column is annotated in award_financial.py, function generate_treasury_account_query
                 (
                     "prime_award_summary_place_of_performance_cd_current",
                     "prime_award_summary_place_of_performance_cd_current",
-                ),  # Column is annotated in account_download.py, function generate_treasury_account_query
+                ),  # Column is annotated in award_financial.py, function generate_treasury_account_query
                 (
                     "primary_place_of_performance_zip_code",
                     "award__latest_transaction_search__place_of_performance_zip4a",
@@ -2926,19 +2925,19 @@ query_paths = {
                 (
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
-                ),  # Column is annotated in account_download.py
+                ),  # Column is annotated in award_financial.py
             ]
         ),
         "federal_account": OrderedDict(
             [
                 ("owning_agency_name", "treasury_account__federal_account__parent_toptier_agency__name"),
-                ("reporting_agency_name", "reporting_agency_name"),  # Column is annotated in account_download.py
-                ("submission_period", "submission_period"),  # Column is annotated in account_download.py
+                ("reporting_agency_name", "reporting_agency_name"),  # Column is annotated in award_financial.py
+                ("submission_period", "submission_period"),  # Column is annotated in award_financial.py
                 ("federal_account_symbol", "treasury_account__federal_account__federal_account_code"),
                 ("federal_account_name", "treasury_account__federal_account__account_title"),
                 ("agency_identifier_name", "agency_identifier_name"),
-                ("budget_function", "budget_function"),  # Column is annotated in account_download.py
-                ("budget_subfunction", "budget_subfunction"),  # Column is annotated in account_download.py
+                ("budget_function", "budget_function"),  # Column is annotated in award_financial.py
+                ("budget_subfunction", "budget_subfunction"),  # Column is annotated in award_financial.py
                 ("program_activity_code", "program_activity__program_activity_code"),
                 ("program_activity_name", "program_activity__program_activity_name"),
                 ("object_class_code", "object_class__object_class"),
@@ -2950,15 +2949,15 @@ query_paths = {
                 (
                     "gross_outlay_amount_FYB_to_period_end",
                     "gross_outlay_amount_FYB_to_period_end",
-                ),  # Column is annotated in account_download.py
+                ),  # Column is annotated in award_financial.py
                 (
                     "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig",
                     "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig",
-                ),  # Column is annotated in account_download.py
+                ),  # Column is annotated in award_financial.py
                 (
                     "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig",
                     "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig",
-                ),  # Column is annotated in account_download.py
+                ),  # Column is annotated in award_financial.py
                 ("award_unique_key", "award__generated_unique_award_id"),
                 ("award_id_piid", "piid"),
                 ("parent_award_id_piid", "parent_award_id"),
@@ -2968,17 +2967,17 @@ query_paths = {
                 (
                     "award_base_action_date_fiscal_year",
                     "award_base_action_date_fiscal_year",
-                ),  # Column is annotated in account_download.py
+                ),  # Column is annotated in award_financial.py
                 ("award_latest_action_date", "award__certified_date"),
                 (
                     "award_latest_action_date_fiscal_year",
                     "award_latest_action_date_fiscal_year",
-                ),  # Column is annotated in account_download.py
+                ),  # Column is annotated in award_financial.py
                 ("period_of_performance_start_date", "award__period_of_performance_start_date"),
                 ("period_of_performance_current_end_date", "award__period_of_performance_current_end_date"),
                 ("ordering_period_end_date", "award__latest_transaction_search__ordering_period_end_date"),
-                ("award_type_code", "award_type_code"),  # Column is annotated in account_download.py
-                ("award_type", "award_type"),  # Column is annotated in account_download.py
+                ("award_type_code", "award_type_code"),  # Column is annotated in award_financial.py
+                ("award_type", "award_type"),  # Column is annotated in award_financial.py
                 ("idv_type_code", "award__latest_transaction_search__idv_type"),
                 ("idv_type", "award__latest_transaction_search__idv_type_description"),
                 ("prime_award_base_transaction_description", "award__description"),
@@ -3009,23 +3008,23 @@ query_paths = {
                 (
                     "prime_award_summary_recipient_cd_original",
                     "prime_award_summary_recipient_cd_original",
-                ),  # Column is annotated in account_download.py, function generate_treasury_account_query
+                ),  # Column is annotated in award_financial.py, function generate_treasury_account_query
                 (
                     "prime_award_summary_recipient_cd_current",
                     "prime_award_summary_recipient_cd_current",
-                ),  # Column is annotated in account_download.py, function generate_treasury_account_query
-                ("recipient_zip_code", "recipient_zip_code"),  # Column is annotated in account_download.py
+                ),  # Column is annotated in award_financial.py, function generate_treasury_account_query
+                ("recipient_zip_code", "recipient_zip_code"),  # Column is annotated in award_financial.py
                 ("primary_place_of_performance_country", "award__latest_transaction_search__pop_country_name"),
                 ("primary_place_of_performance_state", "award__latest_transaction_search__pop_state_name"),
                 ("primary_place_of_performance_county", "award__latest_transaction_search__pop_county_name"),
                 (
                     "prime_award_summary_place_of_performance_cd_original",
                     "prime_award_summary_place_of_performance_cd_original",
-                ),  # Column is annotated in account_download.py, function generate_treasury_account_query
+                ),  # Column is annotated in award_financial.py, function generate_treasury_account_query
                 (
                     "prime_award_summary_place_of_performance_cd_current",
                     "prime_award_summary_place_of_performance_cd_current",
-                ),  # Column is annotated in account_download.py, function generate_treasury_account_query
+                ),  # Column is annotated in award_financial.py, function generate_treasury_account_query
                 (
                     "primary_place_of_performance_zip_code",
                     "award__latest_transaction_search__place_of_performance_zip4a",
@@ -3045,7 +3044,7 @@ query_paths = {
                 (
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
                     "last_modified_date" + NAMING_CONFLICT_DISCRIMINATOR,
-                ),  # Column is annotated in account_download.py
+                ),  # Column is annotated in award_financial.py
             ]
         ),
     },

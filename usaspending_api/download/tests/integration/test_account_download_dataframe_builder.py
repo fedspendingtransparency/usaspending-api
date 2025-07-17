@@ -4,12 +4,13 @@ import pandas as pd
 import pytest
 from django.core.management import call_command
 from model_bakery import baker
-from usaspending_api.download.management.commands.delta_downloads.award_financial.columns import (
-    federal_account_select_cols,
-    federal_account_groupby_cols,
-)
+
 from usaspending_api.download.management.commands.delta_downloads.award_financial.builders import (
     AccountDownloadDataFrameBuilder,
+)
+from usaspending_api.download.management.commands.delta_downloads.award_financial.columns import (
+    federal_account_groupby_cols,
+    federal_account_select_cols,
 )
 from usaspending_api.download.management.commands.delta_downloads.award_financial.filters import AccountDownloadFilter
 
@@ -18,7 +19,7 @@ from usaspending_api.download.management.commands.delta_downloads.award_financia
 def account_download_table(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
     call_command(
         "create_delta_table",
-        f"--destination-table=account_download",
+        "--destination-table=award_financial",
         f"--spark-s3-bucket={s3_unittest_data_bucket}",
     )
     columns = list(set(federal_account_select_cols + federal_account_groupby_cols)) + [

@@ -19,10 +19,15 @@ from usaspending_api.disaster.delta_models import (
     covid_faba_spending_load_sql_strings,
 )
 from usaspending_api.disaster.models import CovidFABASpending
-from usaspending_api.download.delta_models.account_download import (
-    ACCOUNT_DOWNLOAD_POSTGRES_COLUMNS,
-    account_download_create_sql_string,
-    account_download_load_sql_string,
+from usaspending_api.download.delta_models.award_financial import (
+    AWARD_FINANCIAL_POSTGRES_COLUMNS,
+    award_financial_create_sql_string,
+    award_financial_load_sql_string,
+)
+from usaspending_api.download.delta_models.object_class_program_activity import (
+    OBJECT_CLASS_PROGRAM_ACTIVITY_DOWNLOAD_POSTGRES_COLUMNS,
+    object_class_program_activity_download_create_sql_string,
+    object_class_program_activity_download_load_sql_string,
 )
 from usaspending_api.recipient.delta_models import (
     RECIPIENT_LOOKUP_POSTGRES_COLUMNS,
@@ -316,10 +321,10 @@ TABLE_SPEC = {
         "tsvectors": None,
         "postgres_partition_spec": None,
     },
-    "account_download": {
+    "award_financial": {
         "model": None,
         "is_from_broker": False,
-        "source_query": [account_download_load_sql_string],
+        "source_query": [award_financial_load_sql_string],
         "source_query_incremental": None,
         "source_database": None,
         "source_table": None,
@@ -329,10 +334,31 @@ TABLE_SPEC = {
         "partition_column": "financial_accounts_by_awards_id",
         "partition_column_type": "numeric",
         "is_partition_column_unique": False,
-        "delta_table_create_sql": account_download_create_sql_string,
-        "source_schema": ACCOUNT_DOWNLOAD_POSTGRES_COLUMNS,
+        "delta_table_create_sql": award_financial_create_sql_string,
+        "source_schema": AWARD_FINANCIAL_POSTGRES_COLUMNS,
         "custom_schema": None,
-        "column_names": list(ACCOUNT_DOWNLOAD_POSTGRES_COLUMNS),
+        "column_names": list(AWARD_FINANCIAL_POSTGRES_COLUMNS),
+        "postgres_seq_name": None,
+        "tsvectors": None,
+        "postgres_partition_spec": None,
+    },
+    "object_class_program_activity": {
+        "model": None,
+        "is_from_broker": False,
+        "source_query": [object_class_program_activity_download_load_sql_string],
+        "source_query_incremental": None,
+        "source_database": None,
+        "source_table": None,
+        "destination_database": "rpt",
+        "swap_table": None,
+        "swap_schema": None,
+        "partition_column": "financial_accounts_by_program_activity_object_class_id",
+        "partition_column_type": "numeric",
+        "is_partition_column_unique": False,
+        "delta_table_create_sql": object_class_program_activity_download_create_sql_string,
+        "source_schema": OBJECT_CLASS_PROGRAM_ACTIVITY_DOWNLOAD_POSTGRES_COLUMNS,
+        "custom_schema": None,
+        "column_names": list(OBJECT_CLASS_PROGRAM_ACTIVITY_DOWNLOAD_POSTGRES_COLUMNS),
         "postgres_seq_name": None,
         "tsvectors": None,
         "postgres_partition_spec": None,
@@ -341,7 +367,6 @@ TABLE_SPEC = {
 
 
 class Command(BaseCommand):
-
     help = """
     This command reads data via a Spark SQL query that relies on delta tables that have already been loaded paired
     with temporary views of tables in a Postgres database. As of now, it only supports a full reload of a table.
