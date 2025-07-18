@@ -115,7 +115,7 @@ class PostgresToCSVStrategy(AbstractToCSVStrategy):
             raise e
         finally:
             Path(temp_file_path).unlink()
-        return CSVDownloadMetadata([destination_path], row_count)
+        return CSVDownloadMetadata([str(destination_path)], row_count)
 
 
 class SparkToCSVStrategy(AbstractToCSVStrategy):
