@@ -74,13 +74,14 @@ class Command(BaseCommand):
         # result = conn.read_csv("s3://dti-da-public-files-nonprod/broker_reference_data/agency_codes.csv").fetchall()
         # print(f"Found {len(result)} rows in agency_codes.csv\n")
 
-        columns = [
-            duckdb.ColumnExpression("award_id"),
-            duckdb.ColumnExpression("award_amount"),
-        ]
-        query = (
-            conn.from_query(f"FROM delta_scan('{S3_DELTA_PATH}');").select(*columns).order("award_amount desc").limit(5)
-        )
+        # columns = [
+        #     duckdb.ColumnExpression("award_id"),
+        #     duckdb.ColumnExpression("award_amount"),
+        # ]
+        # query = (
+        #     conn.from_query(f"FROM delta_scan('{S3_DELTA_PATH}');").select(*columns).order("award_amount desc").limit(5)
+        # )
+        query = conn.from_query(f"FROM delta_scan('{S3_DELTA_PATH}');").select("*").order("award_amount desc")
         print(f"Attempting to read from S3 Location: {S3_DELTA_PATH}")
         print("Generated query:")
         print(query.sql_query())
