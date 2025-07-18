@@ -8,7 +8,7 @@ from usaspending_api.config import CONFIG
 SPARK_S3_BUCKET = CONFIG.SPARK_S3_BUCKET
 DELTA_LAKE_S3_PATH = CONFIG.DELTA_LAKE_S3_PATH
 
-S3_DELTA_PATH = f"s3://{SPARK_S3_BUCKET}/{DELTA_LAKE_S3_PATH}/rpt/subaward_search"
+S3_DELTA_PATH = f"s3://{SPARK_S3_BUCKET}/{DELTA_LAKE_S3_PATH}/rpt/award_search"
 
 DUCKDB_EXTENSIONS = ["delta", "httpfs", "aws"]
 
@@ -75,14 +75,11 @@ class Command(BaseCommand):
         # print(f"Found {len(result)} rows in agency_codes.csv\n")
 
         columns = [
-            duckdb.ColumnExpression("broker_subaward_id").alias("subaward_id"),
-            duckdb.ColumnExpression("subaward_amount"),
+            duckdb.ColumnExpression("award_id"),
+            duckdb.ColumnExpression("award_amount"),
         ]
         query = (
-            conn.from_query(f"FROM delta_scan('{S3_DELTA_PATH}');")
-            .select(*columns)
-            .order("subaward_amount desc")
-            .limit(5)
+            conn.from_query(f"FROM delta_scan('{S3_DELTA_PATH}');").select(*columns).order("award_amount desc").limit(5)
         )
         print(f"Attempting to read from S3 Location: {S3_DELTA_PATH}")
         print("Generated query:")
