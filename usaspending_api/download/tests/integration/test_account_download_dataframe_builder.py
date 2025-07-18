@@ -1,3 +1,4 @@
+from datetime import datetime
 from unittest.mock import patch
 
 import pandas as pd
@@ -92,7 +93,9 @@ def federal_account_models(db):
 
 
 @patch("usaspending_api.download.management.commands.delta_downloads.builders.get_submission_ids_for_periods")
-def test_federal_account_download_dataframe_builder(mock_get_submission_ids_for_periods, spark, account_download_table):
+def test_federal_account_download_dataframe_builder(
+    mock_get_submission_ids_for_periods, spark, account_download_table, agency_models
+):
     create_ref_temp_views(spark)
     mock_get_submission_ids_for_periods.return_value = [1, 2, 4, 5]
     account_download_filter = AccountDownloadFilter(
@@ -131,7 +134,7 @@ def test_filter_federal_by_agency(mock_get_submission_ids_for_periods, spark, ac
 
 @patch("usaspending_api.download.management.commands.delta_downloads.builders.get_submission_ids_for_periods")
 def test_filter_federal_by_federal_account_id(
-    mock_get_submission_ids_for_periods, spark, account_download_table, federal_account_models
+    mock_get_submission_ids_for_periods, spark, account_download_table, federal_account_models, agency_models
 ):
     create_ref_temp_views(spark)
     mock_get_submission_ids_for_periods.return_value = [1, 2, 4, 5]
@@ -151,7 +154,7 @@ def test_filter_federal_by_federal_account_id(
     assert sorted(result_df.gross_outlay_amount_FYB_to_period_end.to_list()) == [100]
 
 
-def test_treasury_account_download_dataframe_builder(spark, account_download_table):
+def test_treasury_account_download_dataframe_builder(spark, account_download_table, agency_models):
     create_ref_temp_views(spark)
     account_download_filter = AccountDownloadFilter(
         fy=2018,
@@ -186,13 +189,13 @@ def test_filter_treasury_by_agency(spark, account_download_table, agency_models)
 
 @pytest.mark.django_db(transaction=True)
 @patch("usaspending_api.download.management.commands.delta_downloads.builders.get_submission_ids_for_periods")
-def test_account_balances(mock_get_submission_ids_for_periods, spark, account_download_table):
+def test_account_balances(mock_get_submission_ids_for_periods, spark, account_download_table, agency_models):
     baker.make("references.CGAC", cgac_code="1").save()
     baker.make("references.CGAC", cgac_code="2").save()
     baker.make("references.CGAC", cgac_code="3").save()
     baker.make("references.CGAC", cgac_code="4").save()
-    baker.make("references.ToptierAgency", toptier_agency_id=1).save()
-    baker.make("references.ToptierAgency", toptier_agency_id=2).save()
+    baker.make("references.ToptierAgency", toptier_agency_id=1, create_date=datetime.now()).save()
+    baker.make("references.ToptierAgency", toptier_agency_id=2, create_date=datetime.now()).save()
     baker.make("accounts.FederalAccount", id=1, parent_toptier_agency_id=1).save()
     baker.make("accounts.FederalAccount", id=2, parent_toptier_agency_id=2).save()
     baker.make(
