@@ -24,6 +24,11 @@ from usaspending_api.download.delta_models.account_download import (
     account_download_create_sql_string,
     account_download_load_sql_string,
 )
+from usaspending_api.download.delta_models.object_class_program_activity import (
+    OBJECT_CLASS_PROGRAM_ACTIVITY_DOWNLOAD_POSTGRES_COLUMNS,
+    object_class_program_activity_download_create_sql_string,
+    object_class_program_activity_download_load_sql_string,
+)
 from usaspending_api.recipient.delta_models import (
     RECIPIENT_LOOKUP_POSTGRES_COLUMNS,
     RECIPIENT_PROFILE_POSTGRES_COLUMNS,
@@ -337,11 +342,31 @@ TABLE_SPEC = {
         "tsvectors": None,
         "postgres_partition_spec": None,
     },
+    "object_class_program_activity": {
+        "model": None,
+        "is_from_broker": False,
+        "source_query": [object_class_program_activity_download_load_sql_string],
+        "source_query_incremental": None,
+        "source_database": None,
+        "source_table": None,
+        "destination_database": "rpt",
+        "swap_table": None,
+        "swap_schema": None,
+        "partition_column": "financial_accounts_by_program_activity_object_class_id",
+        "partition_column_type": "numeric",
+        "is_partition_column_unique": False,
+        "delta_table_create_sql": object_class_program_activity_download_create_sql_string,
+        "source_schema": OBJECT_CLASS_PROGRAM_ACTIVITY_DOWNLOAD_POSTGRES_COLUMNS,
+        "custom_schema": None,
+        "column_names": list(OBJECT_CLASS_PROGRAM_ACTIVITY_DOWNLOAD_POSTGRES_COLUMNS),
+        "postgres_seq_name": None,
+        "tsvectors": None,
+        "postgres_partition_spec": None,
+    },
 }
 
 
 class Command(BaseCommand):
-
     help = """
     This command reads data via a Spark SQL query that relies on delta tables that have already been loaded paired
     with temporary views of tables in a Postgres database. As of now, it only supports a full reload of a table.
