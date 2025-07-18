@@ -107,7 +107,7 @@ def test_create_delta_table_for_recipient_lookup_with_alt_db_and_name(
     )
 
 
-def test_create_delta_table_for_object_class_program_activity(
+def test_create_delta_table_for_object_class_program_activity_download(
     spark, s3_unittest_data_bucket, hive_unittest_metastore_db
 ):
-    _verify_delta_table_creation(spark, "object_class_program_activity", s3_unittest_data_bucket)
+    _verify_delta_table_creation(spark, "object_class_program_activity_download", s3_unittest_data_bucket)

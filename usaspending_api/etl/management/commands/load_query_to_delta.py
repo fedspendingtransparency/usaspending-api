@@ -24,7 +24,7 @@ from usaspending_api.download.delta_models.account_download import (
     account_download_create_sql_string,
     account_download_load_sql_string,
 )
-from usaspending_api.download.delta_models.object_class_program_activity import (
+from usaspending_api.download.delta_models.object_class_program_activity_download import (
     OBJECT_CLASS_PROGRAM_ACTIVITY_DOWNLOAD_POSTGRES_COLUMNS,
     object_class_program_activity_download_create_sql_string,
     object_class_program_activity_download_load_sql_string,
@@ -342,7 +342,7 @@ TABLE_SPEC = {
         "tsvectors": None,
         "postgres_partition_spec": None,
     },
-    "object_class_program_activity": {
+    "object_class_program_activity_download": {
         "model": None,
         "is_from_broker": False,
         "source_query": [object_class_program_activity_download_load_sql_string],
