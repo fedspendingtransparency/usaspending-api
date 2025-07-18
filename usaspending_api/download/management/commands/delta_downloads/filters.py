@@ -1,5 +1,5 @@
 import warnings
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, root_validator, validator
 from pydantic.fields import ModelField
@@ -11,6 +11,7 @@ from usaspending_api.references.models import ToptierAgency
 
 class AccountDownloadFilter(BaseModel):
     fy: int
+    submission_types: list[Literal["account_balances", "object_class_program_activity", "award_financial"]]
     period: int | None = None
     quarter: int | None = None
     agency: int | None = None

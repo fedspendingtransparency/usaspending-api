@@ -50,7 +50,7 @@ LOCAL_BASIC_EXTRA_CONF = {
 
 LOCAL_EXTENDED_EXTRA_CONF = {
     **LOCAL_BASIC_EXTRA_CONF,
-    "spark.hadoop.fs.s3a.endpoint": getattr(CONFIG, "MINIO_HOST", ""),
+    "spark.hadoop.fs.s3a.endpoint": getattr(CONFIG, "AWS_S3_ENDPOINT", ""),
     "spark.hadoop.fs.s3a.connection.ssl.enabled": False,
     "spark.hadoop.fs.s3a.path.style.access": True,
     "spark.sql.catalogImplementation": "hive",
