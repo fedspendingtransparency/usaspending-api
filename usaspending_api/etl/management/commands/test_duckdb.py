@@ -70,9 +70,6 @@ class Command(BaseCommand):
         # conn.execute("SELECT * FROM read_parquet('s3://dti-da-usaspending-spark-qat/data/delta/rpt/award_search/part-00000-b0a97813-ade0-4f32-9a13-89f23472850c.c000.snappy.parquet');")
         # print("Successfully read from Parquet file")
 
-        print("Credentials:")
-        print(conn.query("FROM duckdb_secrets();"))
-
         print("Reading CSV from S3 bucket")
         result = conn.read_csv("s3://dti-da-public-files-nonprod/broker_reference_data/agency_codes.csv").fetchall()
         print(f"Found {len(result)} rows in agency_codes.csv\n")
@@ -81,12 +78,13 @@ class Command(BaseCommand):
             duckdb.ColumnExpression("recipient_name"),
             duckdb.ColumnExpression("recipient_unique_id"),
         ]
-        recipient_profile_query = conn.from_query(f"FROM delta_scan('{S3_DELTA_PATH}');").select(*columns).limit(5)
+        query = conn.from_query(f"FROM delta_scan('{S3_DELTA_PATH}');").select(*columns).limit(5)
         print(f"Attempting to read from S3 Location: {S3_DELTA_PATH}")
-        print(f"Generated query: {recipient_profile_query.sql_query()}")
+        print("Generated query:")
+        print(query.sql_query())
 
-        print("Results using .show():")
-        recipient_profile_query.show()
+        print("\nSQL results:")
+        print(query)
 
-        print("\nResults using print():")
-        print(recipient_profile_query)
+        print("\nDF results:")
+        print(query.fetchdf())
