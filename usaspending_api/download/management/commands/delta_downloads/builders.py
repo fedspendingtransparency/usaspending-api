@@ -317,7 +317,7 @@ class FederalAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBui
 
     @property
     def object_class_program_activity(self) -> DataFrame:
-        return None
+        raise NotImplementedError
 
     @property
     def award_financial(self) -> DataFrame:
@@ -443,7 +443,7 @@ class TreasuryAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBu
 
     @property
     def object_class_program_activity(self) -> DataFrame:
-        return None
+        raise NotImplementedError
 
     @property
     def award_financial(self) -> DataFrame:
