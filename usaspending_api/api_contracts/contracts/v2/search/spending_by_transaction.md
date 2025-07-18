@@ -396,6 +396,7 @@ List of column names to request
 - `NAICS`
 - `PSC`
 - `Primary Place of Performance`
+- `recipient_id`
 - `Recipient Location`
 - `Recipient Name`
 - `Recipient UEI`
@@ -415,6 +416,7 @@ List of column names to request
 + `internal_id`: `68856340` (required, string, nullable)
 + `generated_internal_id`: `CONT_AWD_00013U_7090_KJ88_4735` (required, string, nullable)
 + `Mod`: `P00206` (required, string, nullable)
++ `recipient_id`: `1e5032cf-11df-a3bf-4240-6dda5f6d45ff-C` (optional, string, nullable)
 + `Recipient Name`: `LEIDOS INNOVATIONS CORPORATION` (required, string, nullable)
 + `Transaction Amount`: `40000000.00` (required, string, nullable)
 
@@ -433,6 +435,7 @@ List of column names to request
 + `Last Date to Order` (required, string, nullable)
 + `Loan Value` (required, string, nullable)
 + `Mod` (required, string, nullable)
++ `recipient_id` (optional, string, nullable)
 + `Recipient Name` (required, string, nullable)
 + `Subsidy Cost` (required, string, nullable)
 + `Transaction Amount` (required, string, nullable)

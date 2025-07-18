@@ -23,6 +23,8 @@ def transaction_data():
         recipient_location_zip5="abcde",
         piid="IND12PB00323",
         recipient_uei="testuei",
+        recipient_hash="1e5032cf-11df-a3bf-4240-6dda5f6d45ff",
+        recipient_levels=["C", "P", "R"],
         parent_uei="test_parent_uei",
         action_type="A",
         legal_entity_address_line1="test address line",
@@ -270,6 +272,7 @@ def test_all_fields_returned(client, monkeypatch, transaction_data, elasticsearc
         "NAICS",
         "PSC",
         "Assistance Listing",
+        "recipient_id",
     ]
 
     request = {
@@ -284,13 +287,64 @@ def test_all_fields_returned(client, monkeypatch, transaction_data, elasticsearc
     resp = client.post(ENDPOINT, content_type="application/json", data=json.dumps(request))
 
     assert resp.status_code == status.HTTP_200_OK
-    assert len(resp.data["results"]) > 0
-    for result in resp.data["results"]:
-        for field in fields:
-            assert field in result, f"Response item is missing field {field}"
-
-        assert "Sausage" not in result
-        assert "A" not in result
+    assert len(resp.data["results"]) == 1
+    assert resp.data["results"] == [
+        {
+            "Action Date": "2010-10-01",
+            "Action Type": "A",
+            "Assistance Listing": {"cfda_number": "1234", "cfda_title": "cfda title 1"},
+            "Award ID": "IND12PB00323",
+            "Award Type": None,
+            "Awarding Agency": None,
+            "Awarding Sub Agency": None,
+            "Funding Agency": None,
+            "Funding Sub Agency": None,
+            "Issued Date": None,
+            "Last Date to Order": None,
+            "Loan Value": None,
+            "Mod": None,
+            "NAICS": {"code": "naics code 1", "description": "naics description 1"},
+            "PSC": {"code": "psc code 1", "description": "psc description 1"},
+            "Primary Place of Performance": {
+                "city_name": "ARLINGTON",
+                "congressional_code": "popcongressionalcode",
+                "country_name": "UNITED STATES",
+                "county_code": "popcountycode",
+                "county_name": "popcountyname",
+                "location_country_code": "popcountrycode",
+                "state_code": "TX",
+                "state_name": "Texas",
+                "zip4": "popziplast4",
+                "zip5": "popzip5",
+            },
+            "Recipient Location": {
+                "address_line1": "test address line",
+                "address_line2": "address2",
+                "address_line3": "address3",
+                "city_name": "ARLINGTON",
+                "congressional_code": "congressionalcode",
+                "country_name": "UNITED STATES",
+                "county_code": "001",
+                "county_name": "testcountyname",
+                "foreign_postal_code": "foreignpostalcode",
+                "foreign_province": "foreignprovince",
+                "location_country_code": "USA",
+                "state_code": "TX",
+                "state_name": "Texas",
+                "zip4": "6789",
+                "zip5": "abcde",
+            },
+            "Recipient Name": None,
+            "Recipient UEI": "testuei",
+            "Subsidy Cost": None,
+            "Transaction Amount": None,
+            "Transaction Description": "test",
+            "awarding_agency_id": None,
+            "generated_internal_id": None,
+            "internal_id": 1,
+            "recipient_id": "1e5032cf-11df-a3bf-4240-6dda5f6d45ff-C",
+        }
+    ]
 
 
 @pytest.mark.django_db
