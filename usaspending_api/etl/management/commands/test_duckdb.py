@@ -8,7 +8,7 @@ from usaspending_api.config import CONFIG
 SPARK_S3_BUCKET = CONFIG.SPARK_S3_BUCKET
 DELTA_LAKE_S3_PATH = CONFIG.DELTA_LAKE_S3_PATH
 
-S3_DELTA_PATH = f"s3://{SPARK_S3_BUCKET}/{DELTA_LAKE_S3_PATH}/rpt/recipient_profile"
+S3_DELTA_PATH = f"s3://{SPARK_S3_BUCKET}/{DELTA_LAKE_S3_PATH}/rpt/subaward_search"
 
 DUCKDB_EXTENSIONS = ["delta", "httpfs", "aws"]
 
@@ -70,15 +70,20 @@ class Command(BaseCommand):
         # conn.execute("SELECT * FROM read_parquet('s3://dti-da-usaspending-spark-qat/data/delta/rpt/award_search/part-00000-b0a97813-ade0-4f32-9a13-89f23472850c.c000.snappy.parquet');")
         # print("Successfully read from Parquet file")
 
-        print("Reading CSV from S3 bucket")
-        result = conn.read_csv("s3://dti-da-public-files-nonprod/broker_reference_data/agency_codes.csv").fetchall()
-        print(f"Found {len(result)} rows in agency_codes.csv\n")
+        # print("Reading CSV from S3 bucket")
+        # result = conn.read_csv("s3://dti-da-public-files-nonprod/broker_reference_data/agency_codes.csv").fetchall()
+        # print(f"Found {len(result)} rows in agency_codes.csv\n")
 
         columns = [
-            duckdb.ColumnExpression("recipient_name"),
-            duckdb.ColumnExpression("recipient_unique_id"),
+            duckdb.ColumnExpression("broker_subaward_id").alias("subaward_id"),
+            duckdb.ColumnExpression("subaward_amount"),
         ]
-        query = conn.from_query(f"FROM delta_scan('{S3_DELTA_PATH}');").select(*columns).limit(5)
+        query = (
+            conn.from_query(f"FROM delta_scan('{S3_DELTA_PATH}');")
+            .select(*columns)
+            .order("subaward_amount desc")
+            .limit(5)
+        )
         print(f"Attempting to read from S3 Location: {S3_DELTA_PATH}")
         print("Generated query:")
         print(query.sql_query())
