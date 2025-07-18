@@ -93,6 +93,7 @@ def federal_account_models(db):
 
 @patch("usaspending_api.download.management.commands.delta_downloads.builders.get_submission_ids_for_periods")
 def test_federal_account_download_dataframe_builder(mock_get_submission_ids_for_periods, spark, account_download_table):
+    create_ref_temp_views(spark)
     mock_get_submission_ids_for_periods.return_value = [1, 2, 4, 5]
     account_download_filter = AccountDownloadFilter(
         fy=2018,
@@ -151,6 +152,7 @@ def test_filter_federal_by_federal_account_id(
 
 
 def test_treasury_account_download_dataframe_builder(spark, account_download_table):
+    create_ref_temp_views(spark)
     account_download_filter = AccountDownloadFilter(
         fy=2018,
         submission_types=["award_financial"],
