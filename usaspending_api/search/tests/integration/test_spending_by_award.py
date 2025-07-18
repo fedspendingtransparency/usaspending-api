@@ -234,6 +234,36 @@ def award_data_fixture(db):
     )
 
 
+@pytest.fixture
+def subaward_data(db):
+    baker.make(
+        "search.SubawardSearch",
+        broker_subaward_id=1,
+        sub_action_date="2023-01-01",
+        prime_award_group="grant",
+        prime_award_type="07",
+        subaward_number=99999,
+        action_date="2023-01-01",
+        sub_legal_entity_zip5="12345",
+        sub_legal_entity_country_code="USA",
+        sub_place_of_perform_zip5="23456",
+        sub_place_of_perform_country_co="USA",
+    )
+    baker.make(
+        "search.SubawardSearch",
+        broker_subaward_id=2,
+        sub_action_date="2023-01-01",
+        prime_award_group="procurement",
+        prime_award_type="08",
+        subaward_number=99998,
+        action_date="2023-01-01",
+        sub_legal_entity_zip5="54321",
+        sub_legal_entity_country_code="USA",
+        sub_place_of_perform_zip5="65432",
+        sub_place_of_perform_country_co="USA",
+    )
+
+
 @pytest.mark.django_db
 def test_spending_by_award_subaward_success(
     client, monkeypatch, elasticsearch_subaward_index, spending_by_award_test_data
@@ -3738,3 +3768,52 @@ def test_covid_and_iija_values(client, monkeypatch, elasticsearch_award_index, a
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["results"] == expected_result
+
+
+def test_spending_by_subaward_place_of_perf_zip_filter(
+    client, monkeypatch, elasticsearch_subaward_index, subaward_data
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
+
+    test_payload = {
+        "spending_level": "subawards",
+        "fields": ["Sub-Award ID"],
+        "filters": {
+            "award_type_codes": ["07", "08"],
+            "place_of_performance_locations": [{"country": "USA", "zip": "65432"}],
+        },
+        "sort": "Sub-Award ID",
+        "order": "desc",
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    assert len(results) == 1
+    assert results[0]["Sub-Award ID"] == "99998"
+
+
+def test_spending_by_subaward_recipient_location_zip_filter(
+    client, monkeypatch, elasticsearch_subaward_index, subaward_data
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
+
+    test_payload = {
+        "spending_level": "subawards",
+        "fields": ["Sub-Award ID"],
+        "filters": {"award_type_codes": ["07", "08"], "recipient_locations": [{"country": "USA", "zip": "12345"}]},
+        "sort": "Sub-Award ID",
+        "order": "desc",
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    results = resp.json().get("results")
+    assert len(results) == 1
+    assert results[0]["Sub-Award ID"] == "99999"
