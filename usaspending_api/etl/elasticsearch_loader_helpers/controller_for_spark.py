@@ -38,7 +38,7 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
             return
 
         # Ensure reference tables the TEMP VIEW may depend on exist
-        create_ref_temp_views(self.spark)
+        create_ref_temp_views(self.spark, create_broker_views=True)
 
         view_file_path = settings.APP_DIR / "database_scripts" / "etl" / f"{sql_view_name}.sql"
 
