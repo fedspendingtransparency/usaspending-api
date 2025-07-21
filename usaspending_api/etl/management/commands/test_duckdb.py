@@ -10,7 +10,7 @@ DELTA_LAKE_S3_PATH = CONFIG.DELTA_LAKE_S3_PATH
 
 S3_DELTA_PATH = f"s3://{SPARK_S3_BUCKET}/{DELTA_LAKE_S3_PATH}/rpt/award_search"
 
-DUCKDB_EXTENSIONS = ["delta", "httpfs", "aws"]
+DUCKDB_EXTENSIONS = ["delta", "httpfs", "aws", "postgres"]
 
 
 class Command(BaseCommand):
@@ -67,27 +67,29 @@ class Command(BaseCommand):
             );
             """)
 
-        # conn.execute("SELECT * FROM read_parquet('s3://dti-da-usaspending-spark-qat/data/delta/rpt/award_search/part-00000-b0a97813-ade0-4f32-9a13-89f23472850c.c000.snappy.parquet');")
-        # print("Successfully read from Parquet file")
+        conn.execute(f"""
+        CREATE SECRET postgres_secret (
+            TYPE postgres,
+            HOST {os.getenv("USASPENDING_DB_HOST", "localhost")},
+            PORT 5432,
+            DATABASE {os.getenv("USASPENDING_DB_NAME", "data_store_api")},
+            USER {os.getenv("USASPENDING_DB_USER", "usaspending")},
+            PASSWORD {os.getenv("USASPENDING_DB_PASSWORD", "usaspender")}
+        );
+        """)
 
-        # print("Reading CSV from S3 bucket")
-        # result = conn.read_csv("s3://dti-da-public-files-nonprod/broker_reference_data/agency_codes.csv").fetchall()
-        # print(f"Found {len(result)} rows in agency_codes.csv\n")
+        # query = conn.from_query(f"FROM delta_scan('{S3_DELTA_PATH}');").select("*").order("award_amount desc")
+        # print(f"Attempting to read from S3 Location: {S3_DELTA_PATH}")
+        # print("SQL results:")
+        # print(query)
 
-        # columns = [
-        #     duckdb.ColumnExpression("award_id"),
-        #     duckdb.ColumnExpression("award_amount"),
-        # ]
-        # query = (
-        #     conn.from_query(f"FROM delta_scan('{S3_DELTA_PATH}');").select(*columns).order("award_amount desc").limit(5)
-        # )
-        query = conn.from_query(f"FROM delta_scan('{S3_DELTA_PATH}');").select("*").order("award_amount desc")
-        print(f"Attempting to read from S3 Location: {S3_DELTA_PATH}")
-        print("Generated query:")
-        print(query.sql_query())
-
-        print("\nSQL results:")
-        print(query)
-
-        print("\nDF results:")
-        print(query.fetchdf())
+        print("Counting the occurrences of each DEFC in the FABA table")
+        conn.execute("ATTACH '' AS usas_pg (TYPE postgres, SECRET postgres_secret);")
+        conn.sql("""
+        SELECT
+            COUNT(financial_accounts_by_awards_id) AS faba_count,
+            disaster_emergency_fund_code AS defc
+        FROM usas_pg.public.financial_accounts_by_awards
+        GROUP BY defc
+        ORDER BY faba_count DESC;
+        """).show()
