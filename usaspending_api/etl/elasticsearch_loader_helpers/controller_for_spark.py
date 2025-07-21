@@ -64,7 +64,7 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
             identifier_replacements["state_data"] = "global_temp.state_data"
             identifier_replacements["ref_country_code"] = "global_temp.ref_country_code"
             identifier_replacements["ref_city_county_state_code"] = "global_temp.ref_city_county_state_code"
-            identifier_replacements["zips_grouped"] = "global_temp.zips_grouped"
+            identifier_replacements["zips_grouped"] = "global_temp.cd_zips_grouped"
 
         else:
             raise ValueError(
