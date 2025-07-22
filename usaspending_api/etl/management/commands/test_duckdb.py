@@ -505,7 +505,9 @@ class Command(BaseCommand):
                             (
                                 CONCAT(
                                     ('Q') :: text,
-                                    submission_attributes.reporting_fiscal_quarter :: varchar
+                                    (
+                                        (submission_attributes.reporting_fiscal_quarter) :: varchar
+                                    ) :: text
                                 )
                             ) :: text
                         )
@@ -523,9 +525,9 @@ class Command(BaseCommand):
                                     ('P') :: text,
                                     (
                                         LPAD(
-                                            submission_attributes.reporting_fiscal_period :: VARCHAR,
+                                            (submission_attributes.reporting_fiscal_period) :: varchar,
                                             2,
-                                            '0' :: VARCHAR
+                                            '0'
                                         )
                                     ) :: text
                                 )
@@ -594,6 +596,15 @@ class Command(BaseCommand):
             INNER JOIN usas.public.submission_attributes ON (
                 vw_financial_accounts_by_program_activity_object_class_download.submission_id = submission_attributes.submission_id
             )
+            INNER JOIN usas.public.treasury_appropriation_account ON (
+                vw_financial_accounts_by_program_activity_object_class_download.treasury_account_id = treasury_appropriation_account.treasury_account_identifier
+            )
+            INNER JOIN usas.public.federal_account ON (
+                treasury_appropriation_account.federal_account_id = federal_account.id
+            )
+            INNER JOIN usas.public.toptier_agency ON (
+                treasury_appropriation_account.funding_toptier_agency_id = toptier_agency.toptier_agency_id
+            )
             LEFT OUTER JOIN usas.public.ref_program_activity ON (
                 vw_financial_accounts_by_program_activity_object_class_download.program_activity_id = ref_program_activity.id
             )
@@ -603,17 +614,115 @@ class Command(BaseCommand):
             LEFT OUTER JOIN usas.public.disaster_emergency_fund_code ON (
                 vw_financial_accounts_by_program_activity_object_class_download.disaster_emergency_fund_code = disaster_emergency_fund_code.code
             )
-            LEFT OUTER JOIN usas.public.treasury_appropriation_account ON (
-                vw_financial_accounts_by_program_activity_object_class_download.treasury_account_id = treasury_appropriation_account.treasury_account_identifier
-            )
-            LEFT OUTER JOIN usas.public.toptier_agency ON (
-                treasury_appropriation_account.funding_toptier_agency_id = toptier_agency.toptier_agency_id
-            )
-            LEFT OUTER JOIN usas.public.federal_account ON (
-                treasury_appropriation_account.federal_account_id = federal_account.id
-            )
         WHERE
-            vw_financial_accounts_by_program_activity_object_class_download.submission_id IS NULL
+            (
+                vw_financial_accounts_by_program_activity_object_class_download.submission_id IN (
+                    69225,
+                    69175,
+                    69218,
+                    69856,
+                    69886,
+                    69128,
+                    70277,
+                    69108,
+                    69041,
+                    69182,
+                    69720,
+                    69000,
+                    69216,
+                    69228,
+                    69221,
+                    69039,
+                    69219,
+                    69313,
+                    69066,
+                    69217,
+                    69215,
+                    69224,
+                    69230,
+                    69070,
+                    69115,
+                    69149,
+                    69063,
+                    68753,
+                    68937,
+                    69001,
+                    69010,
+                    69223,
+                    69154,
+                    69472,
+                    69233,
+                    68825,
+                    69181,
+                    68877,
+                    69144,
+                    69146,
+                    69237,
+                    69341,
+                    69185,
+                    69526,
+                    68887,
+                    69029,
+                    69110,
+                    69316,
+                    69734,
+                    69081,
+                    69100,
+                    69164,
+                    69236,
+                    69337,
+                    69451,
+                    69816,
+                    69186,
+                    69234,
+                    69325,
+                    69357,
+                    69020,
+                    69045,
+                    69808,
+                    69760,
+                    69788,
+                    68989,
+                    69103,
+                    69222,
+                    69269,
+                    69696,
+                    69463,
+                    68908,
+                    68993,
+                    69011,
+                    69446,
+                    68847,
+                    68990,
+                    69042,
+                    69068,
+                    69094,
+                    69166,
+                    69378,
+                    69456,
+                    69488,
+                    69529,
+                    69553,
+                    69572,
+                    69574,
+                    69589,
+                    69592,
+                    69721,
+                    69769,
+                    69854,
+                    69884,
+                    69757,
+                    69744,
+                    69274,
+                    69863,
+                    69136,
+                    69220
+                )
+                AND treasury_appropriation_account.budget_function_code = '300'
+                AND treasury_appropriation_account.budget_subfunction_code = '304'
+                AND treasury_appropriation_account.federal_account_id = 4872
+                AND treasury_appropriation_account.funding_toptier_agency_id = 61
+            )
         GROUP BY
             vw_financial_accounts_by_program_activity_object_class_download.data_source,
             vw_financial_accounts_by_program_activity_object_class_download.financial_accounts_by_program_activity_object_class_id,
@@ -668,7 +777,48 @@ class Command(BaseCommand):
             vw_financial_accounts_by_program_activity_object_class_download.treasury_account_id,
             vw_financial_accounts_by_program_activity_object_class_download.agency_identifier_name,
             vw_financial_accounts_by_program_activity_object_class_download.allocation_transfer_agency_identifier_name,
-            submission_period,
+            CASE
+                WHEN submission_attributes.quarter_format_flag THEN CONCAT(
+                    ('FY') :: text,
+                    (
+                        CONCAT(
+                            (
+                                (submission_attributes.reporting_fiscal_year) :: varchar
+                            ) :: text,
+                            (
+                                CONCAT(
+                                    ('Q') :: text,
+                                    (
+                                        (submission_attributes.reporting_fiscal_quarter) :: varchar
+                                    ) :: text
+                                )
+                            ) :: text
+                        )
+                    ) :: text
+                )
+                ELSE CONCAT(
+                    ('FY') :: text,
+                    (
+                        CONCAT(
+                            (
+                                (submission_attributes.reporting_fiscal_year) :: varchar
+                            ) :: text,
+                            (
+                                CONCAT(
+                                    ('P') :: text,
+                                    (
+                                        LPAD(
+                                            (submission_attributes.reporting_fiscal_period) :: varchar,
+                                            2,
+                                            '0'
+                                        )
+                                    ) :: text
+                                )
+                            ) :: text
+                        )
+                    ) :: text
+                )
+            END,
             toptier_agency.name,
             submission_attributes.reporting_agency_name,
             treasury_appropriation_account.allocation_transfer_agency_id,
@@ -689,7 +839,7 @@ class Command(BaseCommand):
             object_class.object_class,
             object_class.object_class_name,
             object_class.direct_reimbursable,
-            disaster_emergency_fund_code.title;
+            disaster_emergency_fund_code.title
         """
         conn.sql(file_b_ta_download_sql).to_csv(f"{S3_DOWNLOAD_PATH}/file_b_ta_download_duckdb.csv", header=True)
         print(f"File B Treasury Account download generated in: {round(time.perf_counter() - start_time, 3)} seconds")
