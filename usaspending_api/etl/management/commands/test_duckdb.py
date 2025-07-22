@@ -83,13 +83,17 @@ class Command(BaseCommand):
         # print("SQL results:")
         # print(query)
 
-        print("Counting the occurrences of each DEFC in the FABA table")
-        conn.execute("ATTACH '' AS usas_pg (TYPE postgres, SECRET postgres_secret);")
-        conn.sql("""
-        SELECT
-            COUNT(financial_accounts_by_awards_id) AS faba_count,
-            disaster_emergency_fund_code AS defc
-        FROM usas_pg.public.financial_accounts_by_awards
-        GROUP BY defc
-        ORDER BY faba_count DESC;
-        """).show()
+        print(f"DB_SOURCE: {os.getenv('DB_SOURCE')}")
+        print(f"DB_R1: {os.getenv('DB_R1')}")
+        print(f"DATABASE_URL: {os.getenv('DATABASE_URL')}")
+
+        # print("Counting the occurrences of each DEFC in the FABA table")
+        # conn.execute("ATTACH '' AS usas_pg (TYPE postgres, SECRET postgres_secret);")
+        # conn.sql("""
+        # SELECT
+        #     COUNT(financial_accounts_by_awards_id) AS faba_count,
+        #     disaster_emergency_fund_code AS defc
+        # FROM usas_pg.public.financial_accounts_by_awards
+        # GROUP BY defc
+        # ORDER BY faba_count DESC;
+        # """).show()
