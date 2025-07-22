@@ -90,7 +90,8 @@ class Command(BaseCommand):
         start_time = time.perf_counter()
         conn.execute(f"ATTACH '{os.getenv('DATABASE_URL')}' AS usas (TYPE postgres, READ_ONLY);")
 
-        file_b_download_sql = """
+        # File B: Federal Account
+        file_b_fa_download_sql = """
         SELECT
             toptier_agency.name AS owning_agency_name,
             STRING_AGG(
@@ -484,7 +485,212 @@ class Command(BaseCommand):
                 )
             END
         """
+        conn.sql(file_b_fa_download_sql).to_csv(f"{S3_DOWNLOAD_PATH}/file_b_fa_download_duckdb.csv", header=True)
+        print(f"File B Federal Account download generated in: {round(time.perf_counter() - start_time, 3)} seconds")
+        print(f"File B Federal Account download saved in {S3_DOWNLOAD_PATH}/file_b_fa_download_duckdb.csv")
 
-        conn.sql(file_b_download_sql).to_csv(f"{S3_DOWNLOAD_PATH}/file_b_download_duckdb.csv", header=True)
-        print(f"File B download generated in: {round(time.perf_counter() - start_time, 3)} seconds")
-        print(f"File B download saved in {S3_DOWNLOAD_PATH}/file_b_download_duckdb.csv")
+        # File B: Treasury Account
+        file_b_ta_download_sql = """
+        SELECT
+            toptier_agency.name AS owning_agency_name,
+            submission_attributes.reporting_agency_name AS reporting_agency_name,
+            CASE
+                WHEN submission_attributes.quarter_format_flag THEN CONCAT(
+                    ('FY') :: text,
+                    (
+                        CONCAT(
+                            (
+                                (submission_attributes.reporting_fiscal_year) :: varchar
+                            ) :: text,
+                            (
+                                CONCAT(
+                                    ('Q') :: text,
+                                    submission_attributes.reporting_fiscal_quarter :: varchar
+                                )
+                            ) :: text
+                        )
+                    ) :: text
+                )
+                ELSE CONCAT(
+                    ('FY') :: text,
+                    (
+                        CONCAT(
+                            (
+                                (submission_attributes.reporting_fiscal_year) :: varchar
+                            ) :: text,
+                            (
+                                CONCAT(
+                                    ('P') :: text,
+                                    (
+                                        LPAD(
+                                            submission_attributes.reporting_fiscal_period :: VARCHAR,
+                                            2,
+                                            '0' :: VARCHAR
+                                        )
+                                    ) :: text
+                                )
+                            ) :: text
+                        )
+                    ) :: text
+                )
+            END AS submission_period,
+            treasury_appropriation_account.allocation_transfer_agency_id AS allocation_transfer_agency_identifier_code,
+            treasury_appropriation_account.agency_id AS agency_identifier_code,
+            treasury_appropriation_account.beginning_period_of_availability AS beginning_period_of_availability,
+            treasury_appropriation_account.ending_period_of_availability AS ending_period_of_availability,
+            treasury_appropriation_account.availability_type_code AS availability_type_code,
+            treasury_appropriation_account.main_account_code AS main_account_code,
+            treasury_appropriation_account.sub_account_code AS sub_account_code,
+            treasury_appropriation_account.tas_rendering_label AS treasury_account_symbol,
+            treasury_appropriation_account.account_title AS treasury_account_name,
+            vw_financial_accounts_by_program_activity_object_class_download.agency_identifier_name AS agency_identifier_name,
+            vw_financial_accounts_by_program_activity_object_class_download.allocation_transfer_agency_identifier_name AS allocation_transfer_agency_identifier_name,
+            treasury_appropriation_account.budget_function_title AS budget_function,
+            treasury_appropriation_account.budget_subfunction_title AS budget_subfunction,
+            federal_account.federal_account_code AS federal_account_symbol,
+            federal_account.account_title AS federal_account_name,
+            ref_program_activity.program_activity_code AS program_activity_code,
+            ref_program_activity.program_activity_name AS program_activity_name,
+            object_class.object_class AS object_class_code,
+            object_class.object_class_name AS object_class_name,
+            object_class.direct_reimbursable AS direct_or_reimbursable_funding_source,
+            vw_financial_accounts_by_program_activity_object_class_download.disaster_emergency_fund_code AS disaster_emergency_fund_code,
+            disaster_emergency_fund_code.title AS disaster_emergency_fund_name,
+            vw_financial_accounts_by_program_activity_object_class_download.obligations_incurred_by_program_object_class_cpe AS obligations_incurred,
+            vw_financial_accounts_by_program_activity_object_class_download.obligations_undelivered_orders_unpaid_total_cpe AS obligations_undelivered_orders_unpaid_total,
+            vw_financial_accounts_by_program_activity_object_class_download.obligations_undelivered_orders_unpaid_total_fyb AS obligations_undelivered_orders_unpaid_total_FYB,
+            vw_financial_accounts_by_program_activity_object_class_download.ussgl480100_undelivered_orders_obligations_unpaid_cpe AS USSGL480100_undelivered_orders_obligations_unpaid,
+            vw_financial_accounts_by_program_activity_object_class_download.ussgl480100_undelivered_orders_obligations_unpaid_fyb AS USSGL480100_undelivered_orders_obligations_unpaid_FYB,
+            vw_financial_accounts_by_program_activity_object_class_download.ussgl488100_upward_adjust_pri_undeliv_order_oblig_unpaid_cpe AS USSGL488100_upward_adj_prior_year_undeliv_orders_oblig_unpaid,
+            vw_financial_accounts_by_program_activity_object_class_download.obligations_delivered_orders_unpaid_total_cpe AS obligations_delivered_orders_unpaid_total,
+            vw_financial_accounts_by_program_activity_object_class_download.obligations_delivered_orders_unpaid_total_cpe AS obligations_delivered_orders_unpaid_total_FYB,
+            vw_financial_accounts_by_program_activity_object_class_download.ussgl490100_delivered_orders_obligations_unpaid_cpe AS USSGL490100_delivered_orders_obligations_unpaid,
+            vw_financial_accounts_by_program_activity_object_class_download.ussgl490100_delivered_orders_obligations_unpaid_fyb AS USSGL490100_delivered_orders_obligations_unpaid_FYB,
+            vw_financial_accounts_by_program_activity_object_class_download.ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe AS USSGL498100_upward_adj_of_prior_year_deliv_orders_oblig_unpaid,
+            vw_financial_accounts_by_program_activity_object_class_download.gross_outlay_amount_by_program_object_class_cpe AS gross_outlay_amount_FYB_to_period_end,
+            vw_financial_accounts_by_program_activity_object_class_download.gross_outlay_amount_by_program_object_class_fyb AS gross_outlay_amount_FYB,
+            vw_financial_accounts_by_program_activity_object_class_download.gross_outlays_undelivered_orders_prepaid_total_cpe AS gross_outlays_undelivered_orders_prepaid_total,
+            vw_financial_accounts_by_program_activity_object_class_download.gross_outlays_undelivered_orders_prepaid_total_cpe AS gross_outlays_undelivered_orders_prepaid_total_FYB,
+            vw_financial_accounts_by_program_activity_object_class_download.ussgl480200_undelivered_orders_oblig_prepaid_advanced_cpe AS USSGL480200_undelivered_orders_obligations_prepaid_advanced,
+            vw_financial_accounts_by_program_activity_object_class_download.ussgl480200_undelivered_orders_oblig_prepaid_advanced_fyb AS USSGL480200_undelivered_orders_obligations_prepaid_advanced_FYB,
+            vw_financial_accounts_by_program_activity_object_class_download.ussgl488200_up_adjust_pri_undeliv_order_oblig_ppaid_adv_cpe AS USSGL488200_upward_adj_prior_year_undeliv_orders_oblig_prepaid,
+            vw_financial_accounts_by_program_activity_object_class_download.gross_outlays_delivered_orders_paid_total_cpe AS gross_outlays_delivered_orders_paid_total,
+            vw_financial_accounts_by_program_activity_object_class_download.gross_outlays_delivered_orders_paid_total_fyb AS gross_outlays_delivered_orders_paid_total_FYB,
+            vw_financial_accounts_by_program_activity_object_class_download.ussgl490200_delivered_orders_obligations_paid_cpe AS USSGL490200_delivered_orders_obligations_paid,
+            vw_financial_accounts_by_program_activity_object_class_download.ussgl490800_authority_outlayed_not_yet_disbursed_cpe AS USSGL490800_authority_outlayed_not_yet_disbursed,
+            vw_financial_accounts_by_program_activity_object_class_download.ussgl490800_authority_outlayed_not_yet_disbursed_fyb AS USSGL490800_authority_outlayed_not_yet_disbursed_FYB,
+            vw_financial_accounts_by_program_activity_object_class_download.ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe AS USSGL498200_upward_adj_of_prior_year_deliv_orders_oblig_paid,
+            vw_financial_accounts_by_program_activity_object_class_download.deobligations_recoveries_refund_pri_program_object_class_cpe AS deobligations_or_recoveries_or_refunds_from_prior_year,
+            vw_financial_accounts_by_program_activity_object_class_download.ussgl487100_down_adj_pri_unpaid_undel_orders_oblig_recov_cpe AS USSGL487100_downward_adj_prior_year_unpaid_undeliv_orders_oblig,
+            vw_financial_accounts_by_program_activity_object_class_download.ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe AS USSGL497100_downward_adj_prior_year_unpaid_deliv_orders_oblig,
+            vw_financial_accounts_by_program_activity_object_class_download.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe AS USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig,
+            vw_financial_accounts_by_program_activity_object_class_download.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe AS USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig,
+            vw_financial_accounts_by_program_activity_object_class_download.ussgl483100_undelivered_orders_oblig_transferred_unpaid_cpe AS USSGL483100_undelivered_orders_obligations_transferred_unpaid,
+            vw_financial_accounts_by_program_activity_object_class_download.ussgl493100_delivered_orders_oblig_transferred_unpaid_cpe AS USSGL493100_delivered_orders_obligations_transferred_unpaid,
+            vw_financial_accounts_by_program_activity_object_class_download.ussgl483200_undeliv_orders_oblig_transferred_prepaid_adv_cpe AS USSGL483200_undeliv_orders_oblig_transferred_prepaid_advanced,
+            (MAX(submission_attributes.published_date)) :: date AS last_modified_date
+        FROM
+            usas.public.vw_financial_accounts_by_program_activity_object_class_download
+            INNER JOIN usas.public.submission_attributes ON (
+                vw_financial_accounts_by_program_activity_object_class_download.submission_id = submission_attributes.submission_id
+            )
+            LEFT OUTER JOIN usas.public.ref_program_activity ON (
+                vw_financial_accounts_by_program_activity_object_class_download.program_activity_id = ref_program_activity.id
+            )
+            LEFT OUTER JOIN usas.public.object_class ON (
+                vw_financial_accounts_by_program_activity_object_class_download.object_class_id = object_class.id
+            )
+            LEFT OUTER JOIN usas.public.disaster_emergency_fund_code ON (
+                vw_financial_accounts_by_program_activity_object_class_download.disaster_emergency_fund_code = disaster_emergency_fund_code.code
+            )
+            LEFT OUTER JOIN usas.public.treasury_appropriation_account ON (
+                vw_financial_accounts_by_program_activity_object_class_download.treasury_account_id = treasury_appropriation_account.treasury_account_identifier
+            )
+            LEFT OUTER JOIN usas.public.toptier_agency ON (
+                treasury_appropriation_account.funding_toptier_agency_id = toptier_agency.toptier_agency_id
+            )
+            LEFT OUTER JOIN usas.public.federal_account ON (
+                treasury_appropriation_account.federal_account_id = federal_account.id
+            )
+        WHERE
+            vw_financial_accounts_by_program_activity_object_class_download.submission_id IS NULL
+        GROUP BY
+            vw_financial_accounts_by_program_activity_object_class_download.data_source,
+            vw_financial_accounts_by_program_activity_object_class_download.financial_accounts_by_program_activity_object_class_id,
+            vw_financial_accounts_by_program_activity_object_class_download.program_activity_id,
+            vw_financial_accounts_by_program_activity_object_class_download.object_class_id,
+            vw_financial_accounts_by_program_activity_object_class_download.prior_year_adjustment,
+            vw_financial_accounts_by_program_activity_object_class_download.program_activity_reporting_key,
+            vw_financial_accounts_by_program_activity_object_class_download.disaster_emergency_fund_code,
+            vw_financial_accounts_by_program_activity_object_class_download.ussgl480100_undelivered_orders_obligations_unpaid_fyb,
+            vw_financial_accounts_by_program_activity_object_class_download.ussgl480100_undelivered_orders_obligations_unpaid_cpe,
+            vw_financial_accounts_by_program_activity_object_class_download.ussgl480110_rein_undel_ord_cpe,
+            vw_financial_accounts_by_program_activity_object_class_download.ussgl483100_undelivered_orders_oblig_transferred_unpaid_cpe,
+            vw_financial_accounts_by_program_activity_object_class_download.ussgl488100_upward_adjust_pri_undeliv_order_oblig_unpaid_cpe,
+            vw_financial_accounts_by_program_activity_object_class_download.ussgl490100_delivered_orders_obligations_unpaid_fyb,
+            vw_financial_accounts_by_program_activity_object_class_download.ussgl490100_delivered_orders_obligations_unpaid_cpe,
+            vw_financial_accounts_by_program_activity_object_class_download.ussgl490110_rein_deliv_ord_cpe,
+            vw_financial_accounts_by_program_activity_object_class_download.ussgl493100_delivered_orders_oblig_transferred_unpaid_cpe,
+            vw_financial_accounts_by_program_activity_object_class_download.ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe,
+            vw_financial_accounts_by_program_activity_object_class_download.ussgl480200_undelivered_orders_oblig_prepaid_advanced_fyb,
+            vw_financial_accounts_by_program_activity_object_class_download.ussgl480200_undelivered_orders_oblig_prepaid_advanced_cpe,
+            vw_financial_accounts_by_program_activity_object_class_download.ussgl483200_undeliv_orders_oblig_transferred_prepaid_adv_cpe,
+            vw_financial_accounts_by_program_activity_object_class_download.ussgl488200_up_adjust_pri_undeliv_order_oblig_ppaid_adv_cpe,
+            vw_financial_accounts_by_program_activity_object_class_download.ussgl490200_delivered_orders_obligations_paid_cpe,
+            vw_financial_accounts_by_program_activity_object_class_download.ussgl490800_authority_outlayed_not_yet_disbursed_fyb,
+            vw_financial_accounts_by_program_activity_object_class_download.ussgl490800_authority_outlayed_not_yet_disbursed_cpe,
+            vw_financial_accounts_by_program_activity_object_class_download.ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe,
+            vw_financial_accounts_by_program_activity_object_class_download.obligations_undelivered_orders_unpaid_total_fyb,
+            vw_financial_accounts_by_program_activity_object_class_download.obligations_undelivered_orders_unpaid_total_cpe,
+            vw_financial_accounts_by_program_activity_object_class_download.obligations_delivered_orders_unpaid_total_fyb,
+            vw_financial_accounts_by_program_activity_object_class_download.obligations_delivered_orders_unpaid_total_cpe,
+            vw_financial_accounts_by_program_activity_object_class_download.gross_outlays_undelivered_orders_prepaid_total_fyb,
+            vw_financial_accounts_by_program_activity_object_class_download.gross_outlays_undelivered_orders_prepaid_total_cpe,
+            vw_financial_accounts_by_program_activity_object_class_download.gross_outlays_delivered_orders_paid_total_fyb,
+            vw_financial_accounts_by_program_activity_object_class_download.gross_outlays_delivered_orders_paid_total_cpe,
+            vw_financial_accounts_by_program_activity_object_class_download.gross_outlay_amount_by_program_object_class_fyb,
+            vw_financial_accounts_by_program_activity_object_class_download.gross_outlay_amount_by_program_object_class_cpe,
+            vw_financial_accounts_by_program_activity_object_class_download.obligations_incurred_by_program_object_class_cpe,
+            vw_financial_accounts_by_program_activity_object_class_download.ussgl487100_down_adj_pri_unpaid_undel_orders_oblig_recov_cpe,
+            vw_financial_accounts_by_program_activity_object_class_download.ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe,
+            vw_financial_accounts_by_program_activity_object_class_download.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe,
+            vw_financial_accounts_by_program_activity_object_class_download.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe,
+            vw_financial_accounts_by_program_activity_object_class_download.deobligations_recoveries_refund_pri_program_object_class_cpe,
+            vw_financial_accounts_by_program_activity_object_class_download.drv_obligations_incurred_by_program_object_class,
+            vw_financial_accounts_by_program_activity_object_class_download.drv_obligations_undelivered_orders_unpaid,
+            vw_financial_accounts_by_program_activity_object_class_download.reporting_period_start,
+            vw_financial_accounts_by_program_activity_object_class_download.reporting_period_end,
+            vw_financial_accounts_by_program_activity_object_class_download.last_modified_date,
+            vw_financial_accounts_by_program_activity_object_class_download.certified_date,
+            vw_financial_accounts_by_program_activity_object_class_download.create_date,
+            vw_financial_accounts_by_program_activity_object_class_download.update_date,
+            vw_financial_accounts_by_program_activity_object_class_download.submission_id,
+            vw_financial_accounts_by_program_activity_object_class_download.treasury_account_id,
+            vw_financial_accounts_by_program_activity_object_class_download.agency_identifier_name,
+            vw_financial_accounts_by_program_activity_object_class_download.allocation_transfer_agency_identifier_name,
+            submission_period,
+            toptier_agency.name,
+            submission_attributes.reporting_agency_name,
+            treasury_appropriation_account.allocation_transfer_agency_id,
+            treasury_appropriation_account.agency_id,
+            treasury_appropriation_account.beginning_period_of_availability,
+            treasury_appropriation_account.ending_period_of_availability,
+            treasury_appropriation_account.availability_type_code,
+            treasury_appropriation_account.main_account_code,
+            treasury_appropriation_account.sub_account_code,
+            treasury_appropriation_account.tas_rendering_label,
+            treasury_appropriation_account.account_title,
+            treasury_appropriation_account.budget_function_title,
+            treasury_appropriation_account.budget_subfunction_title,
+            federal_account.federal_account_code,
+            federal_account.account_title,
+            ref_program_activity.program_activity_code,
+            ref_program_activity.program_activity_name,
+            object_class.object_class,
+            object_class.object_class_name,
+            object_class.direct_reimbursable,
+            disaster_emergency_fund_code.title;
+        """
+        conn.sql(file_b_ta_download_sql).to_csv(f"{S3_DOWNLOAD_PATH}/file_b_ta_download_duckdb.csv", header=True)
+        print(f"File B Treasury Account download generated in: {round(time.perf_counter() - start_time, 3)} seconds")
+        print(f"File B Treasury Account download saved in {S3_DOWNLOAD_PATH}/file_b_ta_download_duckdb.csv")
