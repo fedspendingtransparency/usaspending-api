@@ -2,6 +2,7 @@ import os
 import time
 
 import duckdb
+import psutil
 from django.core.management.base import BaseCommand
 
 from usaspending_api.config import CONFIG
@@ -86,10 +87,12 @@ class Command(BaseCommand):
         # print("SQL results:")
         # print(query)
 
+        memory = psutil.virtual_memory()
         filename = "ta_duckdb_pg.csv"
 
         conn.execute(f"ATTACH '{os.getenv('DATABASE_URL')}' AS usas (TYPE postgres, READ_ONLY);")
 
+        print(f"Starting available memory: {memory.available / (1024**3):.2f} GB")
         print("Generating File A download")
         start_time = time.perf_counter()
         file_a_ta_query = """
@@ -330,6 +333,7 @@ class Command(BaseCommand):
         conn.sql(file_a_ta_query).to_csv(f"{S3_DOWNLOAD_PATH}/file_a_{filename}", header=True)
         print(f"File A Treasury Account download generated in: {round(time.perf_counter() - start_time, 3)} seconds")
 
+        print(f"\nStarting available memory: {memory.available / (1024**3):.2f} GB")
         print("Generating File B download")
         start_time = time.perf_counter()
         file_b_ta_query = """
@@ -633,6 +637,7 @@ class Command(BaseCommand):
         conn.sql(file_b_ta_query).to_csv(f"{S3_DOWNLOAD_PATH}/file_b_{filename}", header=True)
         print(f"File B Treasury Account download generated in: {round(time.perf_counter() - start_time, 3)} seconds")
 
+        print(f"\nStarting available memory: {memory.available / (1024**3):.2f} GB")
         print("Generating File C download")
         start_time = time.perf_counter()
         file_c_ta_query = """
