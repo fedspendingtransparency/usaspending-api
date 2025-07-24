@@ -30,7 +30,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--load-field-type",
             type=str,
-            required=True,
+            required=False,
             default="text",
             help="Postgres data type of the field that will be copied from Broker",
         )
@@ -122,12 +122,16 @@ class Command(BaseCommand):
                                 'broker_server','(
                                     SELECT {self.broker_match_field}, {self.broker_load_field}
                                     FROM {self.broker_table_name}
+                                    WHERE
+                                        {self.broker_match_field} >= {chunk_min_id}
+                                        AND {self.broker_match_field} <= {chunk_max_id}
                                 )') AS broker_table
                                      (
                                           lookup_id bigint,
                                           load_field {self.load_field_type}
                                      )
-                            WHERE usas_table.{self.usas_match_field} = broker_table.lookup_id
+                            WHERE
+                                usas_table.{self.usas_match_field} = broker_table.lookup_id
                         ;
                         """
                     )
@@ -135,11 +139,11 @@ class Command(BaseCommand):
                 row_count = cursor.rowcount
                 total_row_count += row_count
                 ratio = (chunk_max_id - min_id + 1) / estimated_id_count
-                logging.info(
+                logger.info(
                     f'Updated {row_count:,d} rows with "{self.usas_match_field}" between {chunk_min_id:,d} and {chunk_max_id:,d}.'
                     f" Estimated time remaining: {timer.estimated_remaining_runtime(ratio)}"
                 )
-        logging.info(
+        logger.info(
             f'Finished updating {total_row_count:,d} rows for "{self.usas_table_name}"."{self.usas_load_field}" '
             f"in {timer}"
         )
