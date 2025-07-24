@@ -87,7 +87,6 @@ class Command(BaseCommand):
         # print("SQL results:")
         # print(query)
 
-        memory = psutil.virtual_memory()
         filename = "ta_duckdb_pg.csv"
 
         conn.execute(f"ATTACH '{os.getenv('DATABASE_URL')}' AS usas (TYPE postgres, READ_ONLY);")
@@ -95,7 +94,7 @@ class Command(BaseCommand):
         ##########
         # File A #
         ##########
-        print(f"Starting available memory: {memory.available / (1024**3):.2f} GB")
+        print(f"Starting available memory: {psutil.virtual_memory().available / (1024**3):.2f} GB")
         print("Generating File A download")
         start_time = time.perf_counter()
         file_a_ta_query = """
@@ -348,7 +347,7 @@ class Command(BaseCommand):
         ##########
         # File B #
         ##########
-        print(f"\nStarting available memory: {memory.available / (1024**3):.2f} GB")
+        print(f"\nStarting available memory: {psutil.virtual_memory().available / (1024**3):.2f} GB")
         print("Generating File B download")
         start_time = time.perf_counter()
         file_b_ta_query = """
@@ -664,7 +663,7 @@ class Command(BaseCommand):
         ##########
         # File C #
         ##########
-        print(f"\nStarting available memory: {memory.available / (1024**3):.2f} GB")
+        print(f"\nStarting available memory: {psutil.virtual_memory().available / (1024**3):.2f} GB")
         print("Generating File C download")
         start_time = time.perf_counter()
         file_c_ta_query = """
