@@ -92,6 +92,9 @@ class Command(BaseCommand):
 
         conn.execute(f"ATTACH '{os.getenv('DATABASE_URL')}' AS usas (TYPE postgres, READ_ONLY);")
 
+        ##########
+        # File A #
+        ##########
         print(f"Starting available memory: {memory.available / (1024**3):.2f} GB")
         print("Generating File A download")
         start_time = time.perf_counter()
@@ -332,7 +335,19 @@ class Command(BaseCommand):
         """
         conn.sql(file_a_ta_query).to_csv(f"{S3_DOWNLOAD_PATH}/file_a_{filename}", header=True)
         print(f"File A Treasury Account download generated in: {round(time.perf_counter() - start_time, 3)} seconds")
+        memory_df = conn.sql(
+            "SELECT tag, memory_usage_bytes FROM duckdb_memory() WHERE tag IN ('BASE_TABLE', 'IN_MEMORY_TABLE');"
+        ).to_df()
+        for index, row in memory_df.iterrows():
+            print(f"{row['tag']}: {row['memory_usage_bytes']:.2f} GB")
 
+        temporary_files_df = conn.sql("SELECT * FROM duckdb_temporary_files();").to_df()
+        for index, row in temporary_files_df.iterrows():
+            print(f"{row['path']}: {row['size']} bytes")
+
+        ##########
+        # File B #
+        ##########
         print(f"\nStarting available memory: {memory.available / (1024**3):.2f} GB")
         print("Generating File B download")
         start_time = time.perf_counter()
@@ -632,11 +647,23 @@ class Command(BaseCommand):
             object_class.object_class,
             object_class.object_class_name,
             object_class.direct_reimbursable,
-            disaster_emergency_fund_code.title                
+            disaster_emergency_fund_code.title
         """
         conn.sql(file_b_ta_query).to_csv(f"{S3_DOWNLOAD_PATH}/file_b_{filename}", header=True)
         print(f"File B Treasury Account download generated in: {round(time.perf_counter() - start_time, 3)} seconds")
+        memory_df = conn.sql(
+            "SELECT tag, memory_usage_bytes FROM duckdb_memory() WHERE tag IN ('BASE_TABLE', 'IN_MEMORY_TABLE');"
+        ).to_df()
+        for index, row in memory_df.iterrows():
+            print(f"{row['tag']}: {row['memory_usage_bytes']} bytes")
 
+        temporary_files_df = conn.sql("SELECT * FROM duckdb_temporary_files();").to_df()
+        for index, row in temporary_files_df.iterrows():
+            print(f"{row['path']}: {row['size']:.2f} GB")
+
+        ##########
+        # File C #
+        ##########
         print(f"\nStarting available memory: {memory.available / (1024**3):.2f} GB")
         print("Generating File C download")
         start_time = time.perf_counter()
@@ -853,7 +880,7 @@ class Command(BaseCommand):
             CASE
                 WHEN award_search.generated_unique_award_id IS NOT NULL THEN CONCAT(
                     'localhost:3000/award/',
-                    urlencode(award_search.generated_unique_award_id),
+                    URL_ENCODE(award_search.generated_unique_award_id),
                     '/'
                 )
                 ELSE ''
@@ -864,10 +891,10 @@ class Command(BaseCommand):
             INNER JOIN usas.public.submission_attributes ON (
                 vw_financial_accounts_by_awards_download.submission_id = submission_attributes.submission_id
             )
-            INNER JOIN usas.public.award_search ON (
+            INNER JOIN usas.rpt.award_search ON (
                 vw_financial_accounts_by_awards_download.award_id = award_search.award_id
             )
-            INNER JOIN usas.public.transaction_search ON (
+            INNER JOIN usas.rpt.transaction_search ON (
                 award_search.latest_transaction_search_id = transaction_search.transaction_id
             )
             INNER JOIN usas.public.treasury_appropriation_account ON (
@@ -913,7 +940,16 @@ class Command(BaseCommand):
                 )
                 AND transaction_search.is_fpds
                 AND treasury_appropriation_account.funding_toptier_agency_id = 63
-            )                      
+            )
         """
         conn.sql(file_c_ta_query).to_csv(f"{S3_DOWNLOAD_PATH}/file_c_{filename}", header=True)
         print(f"File C Treasury Account download generated in: {round(time.perf_counter() - start_time, 3)} seconds")
+        memory_df = conn.sql(
+            "SELECT tag, memory_usage_bytes FROM duckdb_memory() WHERE tag IN ('BASE_TABLE', 'IN_MEMORY_TABLE');"
+        ).to_df()
+        for index, row in memory_df.iterrows():
+            print(f"{row['tag']}: {row['memory_usage_bytes']} bytes")
+
+        temporary_files_df = conn.sql("SELECT * FROM duckdb_temporary_files();").to_df()
+        for index, row in temporary_files_df.iterrows():
+            print(f"{row['path']}: {row['size']:.2f} GB")
