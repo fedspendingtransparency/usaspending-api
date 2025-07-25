@@ -10,7 +10,9 @@ from usaspending_api.config import CONFIG
 
 SPARK_S3_BUCKET = CONFIG.SPARK_S3_BUCKET
 DELTA_LAKE_S3_PATH = CONFIG.DELTA_LAKE_S3_PATH
-S3_DELTA_PATH = f"s3://{SPARK_S3_BUCKET}/{DELTA_LAKE_S3_PATH}/rpt/award_search"
+DELTA_LAKE_SCHEMA = "int"
+DELTA_TABLE_NAME = "financial_accounts_by_awards"
+S3_DELTA_PATH = f"s3://{SPARK_S3_BUCKET}/{DELTA_LAKE_S3_PATH}/{DELTA_LAKE_SCHEMA}/{DELTA_TABLE_NAME}"
 
 DOWNLOAD_S3_BUCKET = CONFIG.BULK_DOWNLOAD_S3_BUCKET_NAME
 S3_DOWNLOAD_PATH = f"s3://{DOWNLOAD_S3_BUCKET}"
@@ -71,16 +73,8 @@ class Command(BaseCommand):
             );
             """)
 
-        # conn.execute(f"""
-        # CREATE SECRET postgres_secret (
-        #     TYPE postgres,
-        #     HOST {os.getenv("USASPENDING_DB_HOST", "localhost")},
-        #     PORT 5432,
-        #     DATABASE {os.getenv("USASPENDING_DB_NAME", "data_store_api")},
-        #     USER {os.getenv("USASPENDING_DB_USER", "usaspending")},
-        #     PASSWORD {os.getenv("USASPENDING_DB_PASSWORD", "usaspender")}
-        # );
-        # """)
+        conn.execute(f"ATTACH '{os.getenv('DATABASE_URL')}' AS usas (TYPE postgres, READ_ONLY);")
+        FILE_PREFIX = "ta_duckdb_pg.csv"
 
         # query = conn.from_query(f"FROM delta_scan('{S3_DELTA_PATH}');").select("*").order("award_amount desc")
         # print(f"Attempting to read from S3 Location: {S3_DELTA_PATH}")
@@ -99,11 +93,11 @@ class Command(BaseCommand):
         available_memory = math.floor(psutil.virtual_memory().available / (1024**3))
         print(f"OS available memory:\t\t{available_memory} GB")
 
-        safe_memory_limit = int(psutil.virtual_memory().available / (1024**3) * 0.8)
+        safe_memory_limit = int(psutil.virtual_memory().available / (1024**3) * 0.25)
         print(f"Manual DuckDB memory limit:\t{safe_memory_limit} GB")
 
-        # Manually set the memory limit to 80%, because DuckDB sees the amount of RAM on the EC2 instance (1,300 PB)
-        #   instead of the memory available in the container
+        # Manually set the memory limit to 50%, because DuckDB sees the amount of RAM on the EC2 instance (Petabytes)
+        #   instead of the memory available in the container (Gigabytes)
         conn.execute(f"SET memory_limit = '{safe_memory_limit}GB';")
         duckdb_memory_limit = conn.sql("SELECT current_setting('memory_limit') AS memory_limit;").to_df()[
             "memory_limit"
@@ -113,9 +107,6 @@ class Command(BaseCommand):
         duckdb_threads_limit = conn.sql("SELECT current_setting('threads') AS threads;").to_df()["threads"][0]
         print(f"DuckDB threads limit:\t\t{duckdb_threads_limit}")
         print("#" * 50)
-
-        filename = "ta_duckdb_pg.csv"
-        conn.execute(f"ATTACH '{os.getenv('DATABASE_URL')}' AS usas (TYPE postgres, READ_ONLY);")
 
         ##########
         # File A #
@@ -358,7 +349,7 @@ class Command(BaseCommand):
             federal_account.federal_account_code,
             federal_account.account_title
         """
-        conn.sql(file_a_ta_query).to_csv(f"{S3_DOWNLOAD_PATH}/file_a_{filename}", header=True)
+        conn.sql(file_a_ta_query).to_csv(f"{S3_DOWNLOAD_PATH}/file_a_{FILE_PREFIX}", header=True)
         print(f"File A Treasury Account download generated in: {round(time.perf_counter() - start_time, 3)} seconds")
 
         ##########
@@ -665,7 +656,7 @@ class Command(BaseCommand):
             object_class.direct_reimbursable,
             disaster_emergency_fund_code.title
         """
-        conn.sql(file_b_ta_query).to_csv(f"{S3_DOWNLOAD_PATH}/file_b_{filename}", header=True)
+        conn.sql(file_b_ta_query).to_csv(f"{S3_DOWNLOAD_PATH}/file_b_{FILE_PREFIX}", header=True)
         print(f"File B Treasury Account download generated in: {round(time.perf_counter() - start_time, 3)} seconds")
 
         ##########
@@ -674,7 +665,7 @@ class Command(BaseCommand):
         print(f"\nStarting available memory: {psutil.virtual_memory().available / (1024**3):.2f} GB")
         print("Generating File C download")
         start_time = time.perf_counter()
-        file_c_ta_query = """
+        file_c_ta_query = f"""
         SELECT
             toptier_agency.name AS owning_agency_name,
             submission_attributes.reporting_agency_name AS reporting_agency_name,
@@ -733,8 +724,8 @@ class Command(BaseCommand):
             treasury_appropriation_account.sub_account_code AS sub_account_code,
             treasury_appropriation_account.tas_rendering_label AS treasury_account_symbol,
             treasury_appropriation_account.account_title AS treasury_account_name,
-            vw_financial_accounts_by_awards_download.agency_identifier_name AS agency_identifier_name,
-            vw_financial_accounts_by_awards_download.allocation_transfer_agency_identifier_name AS allocation_transfer_agency_identifier_name,
+            cgac_aid.agency_name AS agency_identifier_name,
+            cgac_ata.agency_name AS allocation_transfer_agency_identifier_name,
             treasury_appropriation_account.budget_function_title AS budget_function,
             treasury_appropriation_account.budget_subfunction_title AS budget_subfunction,
             federal_account.federal_account_code AS federal_account_symbol,
@@ -744,17 +735,17 @@ class Command(BaseCommand):
             object_class.object_class AS object_class_code,
             object_class.object_class_name AS object_class_name,
             object_class.direct_reimbursable AS direct_or_reimbursable_funding_source,
-            vw_financial_accounts_by_awards_download.disaster_emergency_fund_code AS disaster_emergency_fund_code,
+            faba.disaster_emergency_fund_code AS disaster_emergency_fund_code,
             disaster_emergency_fund_code.title AS disaster_emergency_fund_name,
-            vw_financial_accounts_by_awards_download.transaction_obligated_amount AS transaction_obligated_amount,
-            vw_financial_accounts_by_awards_download.gross_outlay_amount_by_award_cpe AS gross_outlay_amount_FYB_to_period_end,
-            vw_financial_accounts_by_awards_download.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe AS USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig,
-            vw_financial_accounts_by_awards_download.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe AS USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig,
+            faba.transaction_obligated_amount AS transaction_obligated_amount,
+            faba.gross_outlay_amount_by_award_cpe AS gross_outlay_amount_FYB_to_period_end,
+            faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe AS USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig,
+            faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe AS USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig,
             award_search.generated_unique_award_id AS award_unique_key,
-            vw_financial_accounts_by_awards_download.piid AS award_id_piid,
-            vw_financial_accounts_by_awards_download.parent_award_id AS parent_award_id_piid,
-            vw_financial_accounts_by_awards_download.fain AS award_id_fain,
-            vw_financial_accounts_by_awards_download.uri AS award_id_uri,
+            faba.piid AS award_id_piid,
+            faba.parent_award_id AS parent_award_id_piid,
+            faba.fain AS award_id_fain,
+            faba.uri AS award_id_uri,
             award_search.date_signed AS award_base_action_date,
             EXTRACT(
                 YEAR
@@ -894,18 +885,18 @@ class Command(BaseCommand):
             END AS usaspending_permalink,
             (submission_attributes.published_date) :: date AS last_modified_date
         FROM
-            usas.public.vw_financial_accounts_by_awards_download
+            delta_scan('{S3_DELTA_PATH}') AS faba
             INNER JOIN usas.public.submission_attributes ON (
-                vw_financial_accounts_by_awards_download.submission_id = submission_attributes.submission_id
+                faba.submission_id = submission_attributes.submission_id
             )
             INNER JOIN usas.rpt.award_search ON (
-                vw_financial_accounts_by_awards_download.award_id = award_search.award_id
+                faba.award_id = award_search.award_id
             )
             INNER JOIN usas.rpt.transaction_search ON (
                 award_search.latest_transaction_search_id = transaction_search.transaction_id
             )
             INNER JOIN usas.public.treasury_appropriation_account ON (
-                vw_financial_accounts_by_awards_download.treasury_account_id = treasury_appropriation_account.treasury_account_identifier
+                faba.treasury_account_id = treasury_appropriation_account.treasury_account_identifier
             )
             INNER JOIN usas.public.toptier_agency ON (
                 treasury_appropriation_account.funding_toptier_agency_id = toptier_agency.toptier_agency_id
@@ -914,13 +905,19 @@ class Command(BaseCommand):
                 treasury_appropriation_account.federal_account_id = federal_account.id
             )
             LEFT OUTER JOIN usas.public.ref_program_activity ON (
-                vw_financial_accounts_by_awards_download.program_activity_id = ref_program_activity.id
+                faba.program_activity_id = ref_program_activity.id
             )
             LEFT OUTER JOIN usas.public.object_class ON (
-                vw_financial_accounts_by_awards_download.object_class_id = object_class.id
+                faba.object_class_id = object_class.id
             )
             LEFT OUTER JOIN usas.public.disaster_emergency_fund_code ON (
-                vw_financial_accounts_by_awards_download.disaster_emergency_fund_code = disaster_emergency_fund_code.code
+                faba.disaster_emergency_fund_code = disaster_emergency_fund_code.code
+            )
+            LEFT OUTER JOIN usas.public.cgac AS cgac_aid ON (
+                treasury_appropriation_account.agency_id = cgac_aid.cgac_code
+            )
+            LEFT OUTER JOIN usas.public.cgac AS cgac_ata ON (
+                treasury_appropriation_account.allocation_transfer_agency_id = cgac_ata.cgac_code
             )
         WHERE
             (
@@ -936,18 +933,18 @@ class Command(BaseCommand):
                 )
                 AND submission_attributes.reporting_fiscal_year = 2023
                 AND (
-                    vw_financial_accounts_by_awards_download.gross_outlay_amount_by_award_cpe > 0
-                    OR vw_financial_accounts_by_awards_download.gross_outlay_amount_by_award_cpe < 0
-                    OR vw_financial_accounts_by_awards_download.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe > 0
-                    OR vw_financial_accounts_by_awards_download.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe < 0
-                    OR vw_financial_accounts_by_awards_download.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe > 0
-                    OR vw_financial_accounts_by_awards_download.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe < 0
-                    OR vw_financial_accounts_by_awards_download.transaction_obligated_amount > 0
-                    OR vw_financial_accounts_by_awards_download.transaction_obligated_amount < 0
+                    faba.gross_outlay_amount_by_award_cpe > 0
+                    OR faba.gross_outlay_amount_by_award_cpe < 0
+                    OR faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe > 0
+                    OR faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe < 0
+                    OR faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe > 0
+                    OR faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe < 0
+                    OR faba.transaction_obligated_amount > 0
+                    OR faba.transaction_obligated_amount < 0
                 )
                 AND transaction_search.is_fpds
                 AND treasury_appropriation_account.funding_toptier_agency_id = 63
             )
         """
-        conn.sql(file_c_ta_query).to_csv(f"{S3_DOWNLOAD_PATH}/file_c_{filename}", header=True)
+        conn.sql(file_c_ta_query).to_csv(f"{S3_DOWNLOAD_PATH}/file_c_{FILE_PREFIX}", header=True)
         print(f"File C Treasury Account download generated in: {round(time.perf_counter() - start_time, 3)} seconds")
