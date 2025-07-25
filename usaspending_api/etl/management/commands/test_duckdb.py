@@ -92,6 +92,10 @@ class Command(BaseCommand):
         ###################
         print()
         print("#" * 50)
+        conn.execute("SET enable_progress_bar = true;")
+        conn.execute("SET preserve_insertion_order = false;")
+        conn.execute("SET threads = 2;")
+
         available_memory = math.floor(psutil.virtual_memory().available / (1024**3))
         print(f"OS available memory:\t\t{available_memory} GB")
 
@@ -109,8 +113,6 @@ class Command(BaseCommand):
         duckdb_threads_limit = conn.sql("SELECT current_setting('threads') AS threads;").to_df()["threads"][0]
         print(f"DuckDB threads limit:\t\t{duckdb_threads_limit}")
         print("#" * 50)
-
-        conn.execute("SET enable_progress_bar = true;")
 
         filename = "ta_duckdb_pg.csv"
         conn.execute(f"ATTACH '{os.getenv('DATABASE_URL')}' AS usas (TYPE postgres, READ_ONLY);")
