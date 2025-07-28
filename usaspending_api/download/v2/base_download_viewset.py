@@ -13,6 +13,7 @@ from rest_framework.views import APIView
 from usaspending_api.broker.lookups import EXTERNAL_DATA_TYPE_DICT
 from usaspending_api.broker.models import ExternalDataLoadDate
 from usaspending_api.common.api_versioning import API_TRANSFORM_FUNCTIONS, api_transformations
+from usaspending_api.common.experimental_api_flags import is_experimental_download_api
 from usaspending_api.common.helpers.dict_helpers import order_nested_object
 from usaspending_api.common.sqs.sqs_handler import get_sqs_queue
 from usaspending_api.download.download_utils import create_unique_filename, log_new_download_job
@@ -24,11 +25,9 @@ from usaspending_api.download.models.download_job import DownloadJob
 from usaspending_api.download.v2.request_validations import DownloadValidatorBase
 from usaspending_api.routers.replicas import ReadReplicaRouter
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
-from usaspending_api.common.experimental_api_flags import is_experimental_download_api
+from usaspending_api.settings import IS_LOCAL
 
-# from usaspending_api.download.management.commands.generate_spark_download.py import Command
-
-# from usaspending_api.common.spark.jobs import DatabricksStrategy, LocalStrategy, SparkJobs
+from usaspending_api.common.spark.jobs import DatabricksStrategy, LocalStrategy, SparkJobs
 
 
 @api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
@@ -108,15 +107,10 @@ class BaseDownloadViewSet(APIView):
         """
         Process File C downloads through spark instead of sqs for better performance
         """
-        # waiting for zach's pr to merge in
-        # spark_command = Command()
-        # spark_command.download_job = download_job
-        # spark_command.download_job_id = download_job.download_job_id
-        # spark_command.download_type = "award_financial"
-        # spark_command.download_level = "federal_award"
-        # spark_command.add_arguments()
-        # spark_command.handle()
-        print("process")
+        spark_jobs = SparkJobs(LocalStrategy()) if IS_LOCAL else SparkJobs(DatabricksStrategy())
+        spark_jobs.start(job_name="download_delta_table-award_search",
+                         command_name="generate_spark_download",
+                         command_options=[f"--download-job-id={download_job.download_job_id}"])
 
     def get_download_response(self, file_name: str):
         """
