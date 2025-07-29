@@ -24,7 +24,7 @@ DEFAULT_EXTRA_CONF = {
     # Config for Delta Lake tables and SQL. Need these to keep Dela table metadata in the metastore
     "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension",
     "spark.sql.catalog.spark_catalog": "org.apache.spark.sql.delta.catalog.DeltaCatalog",
-    # See comment be~low about old date and time values cannot parse without these
+    # See comment below about old date and time values cannot parse without these
     "spark.sql.legacy.parquet.datetimeRebaseModeInWrite": "LEGACY",  # for dates at/before 1900
     "spark.sql.legacy.parquet.int96RebaseModeInWrite": "LEGACY",  # for timestamps at/before 1900
     "spark.sql.jsonGenerator.ignoreNullFields": "false",  # keep nulls in our json

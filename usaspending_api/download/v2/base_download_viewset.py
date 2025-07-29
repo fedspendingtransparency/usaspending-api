@@ -77,14 +77,27 @@ class BaseDownloadViewSet(APIView):
             and json_request["request_type"] == "account"
             and "award_financial" in json_request["download_types"]
         ):
+            # create download job for award_financial off of download job
+            download_award_financial = download_job
+            str_to_json_award_financial = json.loads(download_job.json_request).copy()
+            str_to_json_award_financial['download_types'] = ['award_financial']
+            str_to_json_award_financial['filters']['submission_types'] = ['award_financial']
+            download_award_financial.json_request = json.dumps(str_to_json_award_financial)
+            download_award_financial.save()
             # goes to spark for File C account download
-            self.process_account_download_in_spark(download_job=download_job)
-            # remove File C from json request
+            self.process_account_download_in_spark(download_job=download_award_financial)
+            # remove award_financial from json request
             if len(json_request["download_types"]) > 1:
-                str_to_json = json.loads(download_job.json_request)
-                str_to_json["download_types"].remove("award_financial")
-                download_job.json_request = json.dumps(str_to_json)
+                str_to_json_original = json.loads(download_job.json_request)
+                str_to_json_original['filters']['submission_types'].remove('award_financial')
+                str_to_json_original['download_types'].remove('award_financial')
+                download_job.json_request = json.dumps(str_to_json_original)
+                download_job.save()
                 self.process_request(download_job)
+                str_to_json_original['filters']['submission_types'].append('award_financial')
+                str_to_json_original['download_types'].append('award_financial')
+                download_job.json_request = json.dumps(str_to_json_original)
+                download_job.save()
         else:
             self.process_request(download_job)
 
