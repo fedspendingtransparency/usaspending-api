@@ -498,6 +498,7 @@ def test_empty_array_filter_fail(client, download_test_data):
         "Field 'filters|def_codes' value '[]' is below min '1' items" in resp.json()["detail"]
     ), "Incorrect error message"
 
+
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
 def test_file_c_spark_download(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
@@ -508,16 +509,14 @@ def test_file_c_spark_download(client, download_test_data):
         data=json.dumps(
             {
                 "account_level": "federal_account",
-                "filters": { "budget_function": "all", "agency": "all",
-                            "submission_types": [
-                                "account_balances",
-                                "object_class_program_activity",
-                                "award_financial"
-                            ],
-                            "fy": "2021",
-                            "period": 12
+                "filters": {
+                    "budget_function": "all",
+                    "agency": "all",
+                    "submission_types": ["account_balances", "object_class_program_activity", "award_financial"],
+                    "fy": "2021",
+                    "period": 12,
                 },
-                "file_format": "csv"
+                "file_format": "csv",
             }
         ),
     )

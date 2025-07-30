@@ -24,6 +24,7 @@ ELASTICSEARCH_HEADER_VALUE = "elasticsearch"
 DOWNLOAD_API_HEADER = "HTTP-X-DOWNLOAD-API"
 DOWNLOAD_HEADER_VALUE = "download"
 
+
 def is_experimental_elasticsearch_api(request: Request) -> bool:
     """
     Returns True or False depending on if the expected_header_value matches what is sent with the request.
@@ -36,6 +37,7 @@ def is_experimental_download_api(request: Request) -> bool:
     Returns True or False depending on if the expected_header_value matches what is sent with the request
     """
     return request.headers.get(DOWNLOAD_API_HEADER) == DOWNLOAD_HEADER_VALUE
+
 
 def mirror_request_to_elasticsearch(request: Union[HttpRequest, Request]):
     """Duplicate request and send-again against this server, with the ES header attached to mirror

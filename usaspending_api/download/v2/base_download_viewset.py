@@ -28,6 +28,7 @@ from usaspending_api.routers.replicas import ReadReplicaRouter
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 from usaspending_api.settings import IS_LOCAL
 
+
 @api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
 class BaseDownloadViewSet(APIView):
     def post(
@@ -78,22 +79,22 @@ class BaseDownloadViewSet(APIView):
             # run spark download with only award_financial in download type
             str_to_json_original = json.loads(download_job.json_request).copy()
             str_to_json_award_financial = json.loads(download_job.json_request)
-            str_to_json_award_financial['download_types'] = ['award_financial']
-            str_to_json_award_financial['filters']['submission_types'] = ['award_financial']
+            str_to_json_award_financial["download_types"] = ["award_financial"]
+            str_to_json_award_financial["filters"]["submission_types"] = ["award_financial"]
             download_job.json_request = json.dumps(str_to_json_award_financial)
             download_job.save()
             # goes to spark for File C account download
             self.process_account_download_in_spark(download_job=download_job)
             # remove award_financial from json request to run download with remaining types
             if len(json_request["download_types"]) > 1:
-                str_to_json_original['filters']['submission_types'].remove('award_financial')
-                str_to_json_original['download_types'].remove('award_financial')
+                str_to_json_original["filters"]["submission_types"].remove("award_financial")
+                str_to_json_original["download_types"].remove("award_financial")
                 download_job.json_request = json.dumps(str_to_json_original)
                 download_job.save()
                 self.process_request(download_job)
                 # add award_financial back for the final response
-                str_to_json_original['filters']['submission_types'].append('award_financial')
-                str_to_json_original['download_types'].append('award_financial')
+                str_to_json_original["filters"]["submission_types"].append("award_financial")
+                str_to_json_original["download_types"].append("award_financial")
                 download_job.json_request = json.dumps(str_to_json_original)
                 download_job.save()
         else:
@@ -119,9 +120,11 @@ class BaseDownloadViewSet(APIView):
         Process File C downloads through spark instead of sqs for better performance
         """
         spark_jobs = SparkJobs(LocalStrategy()) if IS_LOCAL else SparkJobs(DatabricksStrategy())
-        spark_jobs.start(job_name="download_delta_table-award_search",
-                         command_name="generate_spark_download",
-                         command_options=[f"--download-job-id={download_job.download_job_id}"])
+        spark_jobs.start(
+            job_name="download_delta_table-award_search",
+            command_name="generate_spark_download",
+            command_options=[f"--download-job-id={download_job.download_job_id}"],
+        )
 
     def get_download_response(self, file_name: str):
         """
