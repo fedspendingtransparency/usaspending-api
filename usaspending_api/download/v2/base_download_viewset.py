@@ -15,6 +15,7 @@ from usaspending_api.broker.models import ExternalDataLoadDate
 from usaspending_api.common.api_versioning import API_TRANSFORM_FUNCTIONS, api_transformations
 from usaspending_api.common.experimental_api_flags import is_experimental_download_api
 from usaspending_api.common.helpers.dict_helpers import order_nested_object
+from usaspending_api.common.spark.jobs import DatabricksStrategy, LocalStrategy, SparkJobs
 from usaspending_api.common.sqs.sqs_handler import get_sqs_queue
 from usaspending_api.download.download_utils import create_unique_filename, log_new_download_job
 from usaspending_api.download.filestreaming import download_generation
@@ -26,9 +27,6 @@ from usaspending_api.download.v2.request_validations import DownloadValidatorBas
 from usaspending_api.routers.replicas import ReadReplicaRouter
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 from usaspending_api.settings import IS_LOCAL
-
-from usaspending_api.common.spark.jobs import DatabricksStrategy, LocalStrategy, SparkJobs
-
 
 @api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
 class BaseDownloadViewSet(APIView):
@@ -77,23 +75,23 @@ class BaseDownloadViewSet(APIView):
             and json_request["request_type"] == "account"
             and "award_financial" in json_request["download_types"]
         ):
-            # create download job for award_financial off of download job
-            download_award_financial = download_job
-            str_to_json_award_financial = json.loads(download_job.json_request).copy()
+            # run spark download with only award_financial in download type
+            str_to_json_original = json.loads(download_job.json_request).copy()
+            str_to_json_award_financial = json.loads(download_job.json_request)
             str_to_json_award_financial['download_types'] = ['award_financial']
             str_to_json_award_financial['filters']['submission_types'] = ['award_financial']
-            download_award_financial.json_request = json.dumps(str_to_json_award_financial)
-            download_award_financial.save()
+            download_job.json_request = json.dumps(str_to_json_award_financial)
+            download_job.save()
             # goes to spark for File C account download
-            self.process_account_download_in_spark(download_job=download_award_financial)
-            # remove award_financial from json request
+            self.process_account_download_in_spark(download_job=download_job)
+            # remove award_financial from json request to run download with remaining types
             if len(json_request["download_types"]) > 1:
-                str_to_json_original = json.loads(download_job.json_request)
                 str_to_json_original['filters']['submission_types'].remove('award_financial')
                 str_to_json_original['download_types'].remove('award_financial')
                 download_job.json_request = json.dumps(str_to_json_original)
                 download_job.save()
                 self.process_request(download_job)
+                # add award_financial back for the final response
                 str_to_json_original['filters']['submission_types'].append('award_financial')
                 str_to_json_original['download_types'].append('award_financial')
                 download_job.json_request = json.dumps(str_to_json_original)
