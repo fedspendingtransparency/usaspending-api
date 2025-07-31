@@ -14,6 +14,7 @@ from psycopg2 import sql as psycopg2_sql
 from usaspending_api.broker.helpers.last_load_date import (
     get_last_load_date,
     get_latest_load_date,
+    get_second_to_last_load_data
 )
 from usaspending_api.common.helpers.s3_helpers import (
     access_s3_object,
@@ -315,11 +316,15 @@ def delete_awards(
 
     Returns: Number of ES docs deleted in the index
     """
+    es_delete_window_start = get_second_to_last_load_data(
+        "es_deletes", format_func=(lambda log_msg: format_log(log_msg, action="Delete"))
+    )
+
     delete_window_start = get_last_load_date(
         "es_deletes", format_func=(lambda log_msg: format_log(log_msg, action="Delete"))
     )
     deleted_tx_keys = _gather_deleted_transaction_keys(
-        config, delete_window_start, fabs_external_data_load_date_key, fpds_external_data_load_date_key
+        config, es_delete_window_start, fabs_external_data_load_date_key, fpds_external_data_load_date_key
     )
     awards_to_delete = []
 
@@ -388,12 +393,14 @@ def delete_transactions(
 
     tx_keys_to_delete = []
 
+    es_delete_window_start = get_second_to_last_load_data("es_deletes", format_func=(lambda log_msg: format_log(log_msg, action="Delete")))
+
     delete_window_start = get_last_load_date(
         "es_deletes", format_func=(lambda log_msg: format_log(log_msg, action="Delete"))
     )
 
     deleted_tx_keys = _gather_deleted_transaction_keys(
-        config, delete_window_start, fabs_external_data_load_date_key, fpds_external_data_load_date_key
+        config, es_delete_window_start, fabs_external_data_load_date_key, fpds_external_data_load_date_key
     )
     tx_keys_to_delete.extend(deleted_tx_keys)
 
