@@ -1,6 +1,7 @@
 import logging
 
 from datetime import timedelta
+from itertools import islice
 
 from usaspending_api.broker import lookups
 from usaspending_api.broker.models import ExternalDataLoadDate
@@ -98,3 +99,34 @@ def update_last_load_date(key, last_load_date):
         external_data_type_id=lookups.EXTERNAL_DATA_TYPE_DICT[key],
         defaults={"last_load_date": cast_datetime_to_utc(last_load_date)},
     )
+
+def get_second_to_last_load_data(key, lookback_minutes=None, default=None, format_func: callable = (lambda _: _)):
+    """
+    Retrieve the second_to_last_load_date from the USAspending database.
+
+    Valid keys are dictated by the keys in EXTERNAL_DATA_TYPE_DICT.
+
+    lookback_minutes is used to provide some protection against gaps caused by
+    long transactions or race conditions.  It will be subtracted from
+    second_to_last_load_data.  NOTE:  It will not be subtracted from the default in the
+    case where no second_to_last_load_data is found.
+
+    default will be returned if no second_to_last_load_data is found in the database.
+    """
+    external_data_type_id = lookups.EXTERNAL_DATA_TYPE_DICT[key]
+    load_date = (
+        ExternalDataLoadDate.objects.filter(external_data_type_id=external_data_type_id)
+        .values_list("last_load_date", flat=True)
+    )
+    if load_date is None:
+        logger.warning(format_func(f"No record of a previous run for `{key}` was found!"))
+        return default
+    second_to_last_load_data = next(islice(load_date.iterator(), 1, 2), None)
+    if second_to_last_load_data is None:
+        logger.warning(format_func(f"No record of a previous run for `{key}` was found!"))
+        return default
+    else:
+        logger.info(format_func(f"Value for previous `{key}` ETL: {second_to_last_load_data}"))
+    if lookback_minutes is not None:
+        second_to_last_load_data -= timedelta(minutes=lookback_minutes)
+    return second_to_last_load_data
