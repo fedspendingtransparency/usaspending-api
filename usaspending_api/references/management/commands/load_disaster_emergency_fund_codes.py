@@ -192,5 +192,5 @@ class Command(mixins.ETLMixin, BaseCommand):
 
     def _vacuum_tables(self):
         self._execute_dml_sql(
-            "vacuum (full, analyze) disaster_emergency_fund_code", "Vacuum disaster_emergency_fund_code table"
+            "vacuum (analyze) disaster_emergency_fund_code", "Vacuum disaster_emergency_fund_code table"
         )
