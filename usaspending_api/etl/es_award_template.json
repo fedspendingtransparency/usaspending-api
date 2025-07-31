@@ -186,6 +186,10 @@
         "type": "date",
         "format": "yyyy-MM-dd"
       },
+      "fiscal_action_date": {
+        "type": "date",
+        "format": "yyyy-MM-dd"
+      },
       "fiscal_year": {
         "type": "integer"
       },

@@ -44,24 +44,12 @@ jobs:
       needs.Cancel-If-Draft-Pull-Request.result == 'skipped'
     uses: ./.github/workflows/build-broker-docker-image-for-test.yaml
 
-  # Prepare Code Climate to receive coverage report
-  Code-Climate-Before-Build:
-    name: Code Climate Before Build
-    needs: Run-Code-Style-Checks
-    if: ${{ !failure() && !cancelled() }}
-    uses: ./.github/workflows/code-climate-before-build.yaml
-    with:
-      source-branch: ${{ github.head_ref }}
-      source-commit-sha: ${{ github.event.pull_request.head.sha }}
-    secrets:
-      cc_test_reporter_id: ${{ secrets.CC_TEST_REPORTER_ID }}
-
   # The test suite is broken into multiple groups based on a combination of what is under test
   # and the time that it takes to run tests for that group.
   Run-Spark-Integration-Load-Transaction-FABS-and-FPDS-Tests:
     name: Run Spark Integration Load Transactions FABS and FPDS Tests
     needs:
-      - Code-Climate-Before-Build
+      - Run-Code-Style-Checks
       - Build-Broker-Docker-Image
     if: ${{ !failure() && !cancelled() }}
     uses: ./.github/workflows/test-spark-integration-load-transactions-fabs-fpds.yaml
@@ -69,7 +57,7 @@ jobs:
   Run-Spark-Integration-Load-Transactions-Lookup-Tests:
     name: Run Spark Integration Load Transactions Lookup Tests
     needs:
-      - Code-Climate-Before-Build
+      - Run-Code-Style-Checks
       - Build-Broker-Docker-Image
     if: ${{ !failure() && !cancelled() }}
     uses: ./.github/workflows/test-spark-integration-load-transactions-lookup.yaml
@@ -77,7 +65,7 @@ jobs:
   Run-Spark-Integration-Load-To-From-Delta-Tests:
     name: Run Spark Integration Load To From Delta Tests
     needs:
-      - Code-Climate-Before-Build
+      - Run-Code-Style-Checks
       - Build-Broker-Docker-Image
     if: ${{ !failure() && !cancelled() }}
     uses: ./.github/workflows/test-spark-integration-load-to-from-delta.yaml
@@ -85,7 +73,7 @@ jobs:
   Run-Spark-Integration-Other-Tests:
     name: Run Spark Integration Other Tests
     needs:
-      - Code-Climate-Before-Build
+      - Run-Code-Style-Checks
       - Build-Broker-Docker-Image
     if: ${{ !failure() && !cancelled() }}
     uses: ./.github/workflows/test-spark-integration-other.yaml
@@ -93,7 +81,7 @@ jobs:
   Run-Non-Spark-Integration-Tests:
     name: Run Non-Spark Integration Tests
     needs:
-      - Code-Climate-Before-Build
+      - Run-Code-Style-Checks
       - Build-Broker-Docker-Image
     if: ${{ !failure() && !cancelled() }}
     uses: ./.github/workflows/test-non-spark-integration.yaml
@@ -101,38 +89,19 @@ jobs:
   Run-Non-Spark-Integration-Tests-With-Signal-Handling:
     name: Run Non-Spark Integration Tests With Signal Handling
     needs:
-      - Code-Climate-Before-Build
+      - Run-Code-Style-Checks
       - Build-Broker-Docker-Image
     if: ${{ !failure() && !cancelled() }}
     uses: ./.github/workflows/test-non-spark-integration-signal-handling.yaml
 
   Run-Unit-Tests:
     name: Run Unit Tests
-    needs: Code-Climate-Before-Build
+    needs: Run-Code-Style-Checks
     if: ${{ !failure() && !cancelled() }}
     uses: ./.github/workflows/test-unit.yaml
 
   Run-Unit-Tests-With-Signal-Handling:
     name: Run Unit Tests With Signal Handling
-    needs: Code-Climate-Before-Build
+    needs: Run-Code-Style-Checks
     if: ${{ !failure() && !cancelled() }}
     uses: ./.github/workflows/test-unit-signal-handling.yaml
-
-  Code-Climate-Report-Coverage:
-    name: Code Climate Report Coverage
-    needs:
-      - Run-Spark-Integration-Load-Transaction-FABS-and-FPDS-Tests
-      - Run-Spark-Integration-Load-Transactions-Lookup-Tests
-      - Run-Spark-Integration-Load-To-From-Delta-Tests
-      - Run-Spark-Integration-Other-Tests
-      - Run-Non-Spark-Integration-Tests
-      - Run-Non-Spark-Integration-Tests-With-Signal-Handling
-      - Run-Unit-Tests
-      - Run-Unit-Tests-With-Signal-Handling
-    if: ${{ !failure() && !cancelled() }}
-    uses: ./.github/workflows/code-climate-report-coverage.yaml
-    with:
-      source-branch: ${{ github.head_ref }}
-      source-commit-sha: ${{ github.event.pull_request.head.sha }}
-    secrets:
-      cc_test_reporter_id: ${{ secrets.CC_TEST_REPORTER_ID }}
