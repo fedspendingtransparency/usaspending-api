@@ -314,9 +314,6 @@ class DefaultConfig(BaseSettings):
     # Ex: 3-data-node cluster of i3.large.elasticsearch = 2 vCPU * 3 nodes = 6 vCPU: 300*6 = 1800 doc batches
     # Ex: 5-data-node cluster of i3.xlarge.elasticsearch = 4 vCPU * 5 nodes = 20 vCPU: 300*20 = 6000 doc batches
     ES_BATCH_ENTRIES: int = 4000
-    # Setting SPARK_COVID19_DOWNLOAD_README_FILE_PATH to the unique location of the README
-    # for the COVID-19 download generation using spark.
-    SPARK_COVID19_DOWNLOAD_README_FILE_PATH: str = f"/dbfs/FileStore/{BRANCH}/COVID-19_download_readme.txt"
 
     # ==== [AWS] ====
     USE_AWS: bool = True
@@ -331,6 +328,11 @@ class DefaultConfig(BaseSettings):
     SPARK_CSV_S3_PATH: str = "data/csv"  # path within SPARK_S3_BUCKET where CSV output data will accumulate
     AWS_S3_ENDPOINT: str = "s3.us-gov-west-1.amazonaws.com"
     AWS_STS_ENDPOINT: str = "sts.us-gov-west-1.amazonaws.com"
+
+    # ==== [MISC] ====
+    # Miscellaneous configs that are used through the codebase but don't fall into one of the categories above
+    COVID19_DOWNLOAD_README_FILE_NAME: str = "COVID-19_download_readme.txt"
+    COVID19_DOWNLOAD_README_OBJECT_KEY: str = f"master/{COVID19_DOWNLOAD_README_FILE_NAME}"
 
     class Config:
         pass
