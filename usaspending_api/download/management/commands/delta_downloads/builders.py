@@ -1,4 +1,3 @@
-import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from functools import reduce
@@ -10,8 +9,6 @@ from pyspark.sql import functions as sf, Column
 from usaspending_api.download.management.commands.delta_downloads.filters import AccountDownloadFilter
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 from usaspending_api.submissions.helpers import get_submission_ids_for_periods
-
-logger = logging.getLogger(__name__)
 
 
 class AbstractAccountDownloadDataFrameBuilder(ABC):
