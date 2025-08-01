@@ -1,3 +1,4 @@
+import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from functools import reduce
@@ -9,6 +10,8 @@ from pyspark.sql import functions as sf, Column
 from usaspending_api.download.management.commands.delta_downloads.filters import AccountDownloadFilter
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 from usaspending_api.submissions.helpers import get_submission_ids_for_periods
+
+logger = logging.getLogger(__name__)
 
 
 class AbstractAccountDownloadDataFrameBuilder(ABC):
@@ -207,11 +210,79 @@ class FederalAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBui
         ]
 
     @property
-    def award_financial_groupby_cols(self) -> list[Any]:
+    def award_financial_groupby_cols(self) -> list[str]:
         return [
-            col
-            for col in self._award_financial_df.columns
-            if col not in list(self.award_financial_agg_cols) + self.award_financial_filter_cols
+            "federal_owning_agency_name",
+            "federal_account_symbol",
+            "federal_account_name",
+            "agency_identifier_name",
+            "program_activity_code",
+            "program_activity_name",
+            "object_class_code",
+            "object_class_name",
+            "direct_or_reimbursable_funding_source",
+            "disaster_emergency_fund_code",
+            "disaster_emergency_fund_name",
+            "award_unique_key",
+            "award_id_piid",
+            "parent_award_id_piid",
+            "award_id_fain",
+            "award_id_uri",
+            "award_base_action_date",
+            "award_latest_action_date",
+            "period_of_performance_start_date",
+            "period_of_performance_current_end_date",
+            "ordering_period_end_date",
+            "idv_type_code",
+            "idv_type",
+            "prime_award_base_transaction_description",
+            "awarding_agency_code",
+            "awarding_agency_name",
+            "awarding_subagency_code",
+            "awarding_subagency_name",
+            "awarding_office_code",
+            "awarding_office_name",
+            "funding_agency_code",
+            "funding_agency_name",
+            "funding_sub_agency_code",
+            "funding_sub_agency_name",
+            "funding_office_code",
+            "funding_office_name",
+            "recipient_uei",
+            "recipient_duns",
+            "recipient_name",
+            "recipient_name_raw",
+            "recipient_parent_uei",
+            "recipient_parent_duns",
+            "recipient_parent_name",
+            "recipient_parent_name_raw",
+            "recipient_country",
+            "recipient_state",
+            "recipient_county",
+            "recipient_city",
+            "primary_place_of_performance_country",
+            "primary_place_of_performance_state",
+            "primary_place_of_performance_county",
+            "primary_place_of_performance_zip_code",
+            "cfda_number",
+            "cfda_title",
+            "product_or_service_code",
+            "product_or_service_code_description",
+            "naics_code",
+            "naics_description",
+            "national_interest_action_code",
+            "national_interest_action",
+            "submission_period",
+            "award_type_code",
+            "award_type",
+            "recipient_zip_code",
+            "award_base_action_date_fiscal_year",
+            "award_latest_action_date_fiscal_year",
+            "usaspending_permalink",
+            "prime_award_summary_recipient_cd_original",
+            "prime_award_summary_recipient_cd_current",
+            "prime_award_summary_place_of_performance_cd_original",
+            "prime_award_summary_place_of_performance_cd_current",
         ]
 
     def filter_to_latest_submissions_for_agencies(self, col_name: str, otherwise: Any = None) -> Column:
