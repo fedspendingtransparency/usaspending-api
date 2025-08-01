@@ -19,6 +19,8 @@ from usaspending_api.disaster.delta_models import (
     covid_faba_spending_load_sql_strings,
 )
 from usaspending_api.disaster.models import CovidFABASpending
+from usaspending_api.download.delta_models.account_balance import build_account_download_df, account_download_schema
+
 from usaspending_api.download.delta_models.account_download import (
     ACCOUNT_DOWNLOAD_POSTGRES_COLUMNS,
     account_download_create_sql_string,
@@ -342,6 +344,27 @@ TABLE_SPEC = {
         "tsvectors": None,
         "postgres_partition_spec": None,
     },
+    "account_balance": {
+        "model": None,
+        "is_from_broker": False,
+        "source_query": build_account_download_df,
+        "source_query_incremental": None,
+        "source_database": None,
+        "source_table": None,
+        "destination_database": "rpt",
+        "swap_table": None,
+        "swap_schema": None,
+        "partition_column": "financial_accounts_by_awards_id",
+        "partition_column_type": "numeric",
+        "is_partition_column_unique": False,
+        "delta_table_create_sql": account_download_schema,
+        "source_schema": None,
+        "custom_schema": None,
+        "column_names": None,
+        "postgres_seq_name": None,
+        "tsvectors": None,
+        "postgres_partition_spec": None,
+    },
     "object_class_program_activity_download": {
         "model": None,
         "is_from_broker": False,
@@ -444,7 +467,12 @@ class Command(BaseCommand):
 
         create_ref_temp_views(self.spark, create_broker_views=True)
 
-        if isinstance(load_query, list):
+        if callable(load_query):
+            df = load_query(self.spark)
+            df.write.format("delta").mode("overwrite").save(
+                f"{self.destination_database}.{self.destination_table_name}"
+            )
+        elif isinstance(load_query, list):
             for index, query in enumerate(load_query):
                 logger.info(f"Running query number: {index + 1}\nPreview of query: {query[:100]}")
                 self.run_spark_sql(query)

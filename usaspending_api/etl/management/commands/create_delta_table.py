@@ -1,6 +1,7 @@
 import logging
 
 from django.core.management.base import BaseCommand
+from pyspark.sql.types import StructType
 
 from usaspending_api.config import CONFIG
 from usaspending_api.common.helpers.spark_helpers import (
@@ -83,14 +84,21 @@ class Command(BaseCommand):
         spark.sql(f"use {destination_database};")
 
         # Define Schema Using CREATE TABLE AS command
-        spark.sql(
-            TABLE_SPEC[destination_table]["delta_table_create_sql"].format(
-                DESTINATION_TABLE=destination_table_name,
-                DESTINATION_DATABASE=destination_database,
-                SPARK_S3_BUCKET=spark_s3_bucket,
-                DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+        create_sql = TABLE_SPEC[destination_table]["delta_table_create_sql"]
+        if isinstance(create_sql, str):
+            spark.sql(
+                TABLE_SPEC[destination_table]["delta_table_create_sql"].format(
+                    DESTINATION_TABLE=destination_table_name,
+                    DESTINATION_DATABASE=destination_database,
+                    SPARK_S3_BUCKET=spark_s3_bucket,
+                    DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+                )
             )
-        )
+        elif isinstance(create_sql, StructType):
+            df = spark.createDataFrame(data=[], schema=create_sql)
+            df.write.format("delta").mode("overwrite").save(f"{destination_database}.{destination_table_name}")
+        else:
+            raise TypeError(f"create_sql must be a string or a StructType")
 
         if spark_created_by_command:
             spark.stop()
