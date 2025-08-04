@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from functools import reduce
 from typing import Any
 
+import pandas as pd
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as sf, Column
 
@@ -174,6 +175,14 @@ class FederalAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBui
             .select(self.select_cols)
         )
 
+    @property
+    def account_balances(self) -> DataFrame:
+        return self.df
+
+    @property
+    def object_class_program_activity(self) -> DataFrame:
+        return self.df
+
 
 class TreasuryAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBuilder):
 
@@ -189,3 +198,11 @@ class TreasuryAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBu
             + ["last_modified_date"]
         )
         return self.df.filter(self.dynamic_filters & self.non_zero_filters).select(select_cols)
+
+    @property
+    def account_balances(self) -> DataFrame:
+        return self.df
+
+    @property
+    def object_class_program_activity(self) -> DataFrame:
+        return self.df

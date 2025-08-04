@@ -26,8 +26,6 @@ from usaspending_api.download.models.download_job import DownloadJob
 from usaspending_api.download.v2.request_validations import DownloadValidatorBase
 from usaspending_api.routers.replicas import ReadReplicaRouter
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
-from usaspending_api.settings import IS_LOCAL
-
 
 @api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
 class BaseDownloadViewSet(APIView):
@@ -71,39 +69,19 @@ class BaseDownloadViewSet(APIView):
         )
 
         log_new_download_job(request, download_job)
+        self.process_request(download_job, request, json_request)
+
+        return self.get_download_response(file_name=final_output_zip_name)
+
+    def process_request(self, download_job: DownloadJob, request: Request, json_request: dict):
         if (
             is_experimental_download_api(request)
             and json_request["request_type"] == "account"
             and "award_financial" in json_request["download_types"]
         ):
-            # run spark download with only award_financial in download type
-            str_to_json_original = json.loads(download_job.json_request).copy()
-            str_to_json_award_financial = json.loads(download_job.json_request)
-            str_to_json_award_financial["download_types"] = ["award_financial"]
-            str_to_json_award_financial["filters"]["submission_types"] = ["award_financial"]
-            download_job.json_request = json.dumps(str_to_json_award_financial)
-            download_job.save()
             # goes to spark for File C account download
             self.process_account_download_in_spark(download_job=download_job)
-            # remove award_financial from json request to run download with remaining types
-            if len(json_request["download_types"]) > 1:
-                str_to_json_original["filters"]["submission_types"].remove("award_financial")
-                str_to_json_original["download_types"].remove("award_financial")
-                download_job.json_request = json.dumps(str_to_json_original)
-                download_job.save()
-                self.process_request(download_job)
-                # add award_financial back for the final response
-                str_to_json_original["filters"]["submission_types"].append("award_financial")
-                str_to_json_original["download_types"].append("award_financial")
-                download_job.json_request = json.dumps(str_to_json_original)
-                download_job.save()
-        else:
-            self.process_request(download_job)
-
-        return self.get_download_response(file_name=final_output_zip_name)
-
-    def process_request(self, download_job: DownloadJob):
-        if settings.IS_LOCAL and settings.RUN_LOCAL_DOWNLOAD_IN_PROCESS:
+        elif settings.IS_LOCAL and settings.RUN_LOCAL_DOWNLOAD_IN_PROCESS:
             # Eagerly execute the download in this running process
             download_generation.generate_download(download_job)
         else:
@@ -119,12 +97,20 @@ class BaseDownloadViewSet(APIView):
         """
         Process File C downloads through spark instead of sqs for better performance
         """
-        spark_jobs = SparkJobs(LocalStrategy()) if IS_LOCAL else SparkJobs(DatabricksStrategy())
-        spark_jobs.start(
-            job_name="download_delta_table-award_search",
-            command_name="generate_spark_download",
-            command_options=[f"--download-job-id={download_job.download_job_id}"],
-        )
+        if settings.IS_LOCAL:
+            spark_jobs = SparkJobs(LocalStrategy())
+            spark_jobs.start(
+                job_name="api_download-accounts",
+                command_name="generate_spark_download",
+                command_options=[f"--download-job-id={download_job.download_job_id}", f"--skip-local-cleanup"],
+            )
+        else:
+            spark_jobs = SparkJobs(DatabricksStrategy())
+            spark_jobs.start(
+                job_name="api_download-accounts",
+                command_name="generate_spark_download",
+                command_options=[f"--download-job-id={download_job.download_job_id}"],
+            )
 
     def get_download_response(self, file_name: str):
         """
