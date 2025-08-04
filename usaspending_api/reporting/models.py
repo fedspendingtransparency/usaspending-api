@@ -19,7 +19,10 @@ class ReportingAgencyTas(models.Model):
     class Meta:
         db_table = "reporting_agency_tas"
         indexes = [
-            models.Index(fields=["fiscal_year", "fiscal_period", "toptier_code"], name="reporting_agency_tas_group_idx")
+            models.Index(
+                fields=["fiscal_year", "fiscal_period", "toptier_code"],
+                name="reporting_agency_tas_group_idx",
+            )
         ]
 
 
@@ -39,7 +42,10 @@ class ReportingAgencyMissingTas(models.Model):
     class Meta:
         db_table = "reporting_agency_missing_tas"
         indexes = [
-            models.Index(fields=["fiscal_year", "fiscal_period", "toptier_code"], name="rpt_agency_missing_tas_grp_idx")
+            models.Index(
+                fields=["fiscal_year", "fiscal_period", "toptier_code"],
+                name="rpt_agency_missing_tas_grp_idx",
+            )
         ]
 
 
@@ -66,5 +72,8 @@ class ReportingAgencyOverview(models.Model):
     class Meta:
         db_table = "reporting_agency_overview"
         indexes = [
-            models.Index(fields=["fiscal_year", "fiscal_period", "toptier_code"], name="reporting_agency_ovr_group_idx")
+            models.Index(
+                fields=["fiscal_year", "fiscal_period", "toptier_code"],
+                name="reporting_agency_ovr_group_idx",
+            )
         ]

@@ -67,7 +67,13 @@ class FilterGenerator:
     def __init__(self, model, filter_map={}, ignored_parameters=[]):
         self.filter_map = filter_map
         self.model = model
-        self.ignored_parameters = ["page", "limit", "last", "req", "verbose"] + ignored_parameters
+        self.ignored_parameters = [
+            "page",
+            "limit",
+            "last",
+            "req",
+            "verbose",
+        ] + ignored_parameters
         # When using full-text search the surrounding code must check for search vectors!
         self.search_vectors = []
 
@@ -270,7 +276,10 @@ class FilterGenerator:
                                     "an array value of length 2, or a single value with "
                                     "value_format set to a ranged format (such as fy)"
                                 )
-                        if filt["operation"] in ["overlap", "contained_by"] and not isinstance(filt["value"], list):
+                        if filt["operation"] in [
+                            "overlap",
+                            "contained_by",
+                        ] and not isinstance(filt["value"], list):
                             raise InvalidParameterException(
                                 "Invalid value. When using operation {}, value must be an "
                                 "array of strings.".format(filt["operation"])
@@ -330,7 +339,11 @@ class FilterGenerator:
             while len(fields) > 1:
                 mf = model_to_check._meta.get_field(fields.pop(0))
                 # Check if this field is a foreign key
-                if mf.get_internal_type() in ["ForeignKey", "ManyToManyField", "OneToOneField"]:
+                if mf.get_internal_type() in [
+                    "ForeignKey",
+                    "ManyToManyField",
+                    "OneToOneField",
+                ]:
                     # Continue traversal
                     related = getattr(mf, "remote_field", None)
                     if related:
@@ -342,7 +355,10 @@ class FilterGenerator:
                     # a lookup, or a field with '__' in the name. In either case, we can return
                     # false here
                     return False
-        return model_to_check._meta.get_field(fields[0]).get_internal_type() in ["TextField", "CharField"]
+        return model_to_check._meta.get_field(fields[0]).get_internal_type() in [
+            "TextField",
+            "CharField",
+        ]
 
 
 # Handles autocomplete requests
@@ -408,7 +424,11 @@ class AutoCompleteHandler:
         return_object = {}
 
         filter_matched_ids, pk_name = AutoCompleteHandler.get_filter_matched_ids(
-            data_set.all(), body["fields"], body["value"], body.get("mode", "contains"), body.get("limit", 10)
+            data_set.all(),
+            body["fields"],
+            body["value"],
+            body.get("mode", "contains"),
+            body.get("limit", 10),
         )
 
         # Get matching string values, and their counts

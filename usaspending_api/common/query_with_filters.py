@@ -19,7 +19,9 @@ from usaspending_api.search.filters.elasticsearch.filter import QueryType, _Filt
 from usaspending_api.search.filters.elasticsearch.naics import NaicsCodes
 from usaspending_api.search.filters.elasticsearch.psc import PSCCodes
 from usaspending_api.search.filters.elasticsearch.tas import TasCodes, TreasuryAccounts
-from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
+from usaspending_api.search.filters.time_period.decorators import (
+    NewAwardsOnlyTimePeriod,
+)
 from usaspending_api.search.filters.time_period.query_types import (
     AwardSearchTimePeriod,
     SubawardSearchTimePeriod,
@@ -115,7 +117,14 @@ class _Keywords(_Filter):
             else:
                 query = query.upper()
 
-            keyword_queries.append(ES_Q("query_string", query=query, default_operator="AND", fields=keyword_fields))
+            keyword_queries.append(
+                ES_Q(
+                    "query_string",
+                    query=query,
+                    default_operator="AND",
+                    fields=keyword_fields,
+                )
+            )
             keyword_queries.append(ES_Q("multi_match", query=query, fields=text_fields, type="phrase_prefix"))
 
         return ES_Q("dis_max", queries=keyword_queries)
@@ -133,7 +142,12 @@ class _Description(_Filter):
         }
         query = es_sanitize(filter_values)
 
-        return ES_Q("multi_match", query=query, fields=fields.get(query_type, []), type="phrase_prefix")
+        return ES_Q(
+            "multi_match",
+            query=query,
+            fields=fields.get(query_type, []),
+            type="phrase_prefix",
+        )
 
 
 class _KeywordSearch(_Filter):
@@ -193,9 +207,21 @@ class _KeywordSearch(_Filter):
             "sub_ultimate_parent_uei",
         ]
         for filter_value in filter_values:
-            keyword_queries.append(ES_Q("multi_match", query=filter_value, fields=text_fields, type="phrase_prefix"))
             keyword_queries.append(
-                ES_Q("query_string", query=filter_value, default_operator="OR", fields=keyword_fields)
+                ES_Q(
+                    "multi_match",
+                    query=filter_value,
+                    fields=text_fields,
+                    type="phrase_prefix",
+                )
+            )
+            keyword_queries.append(
+                ES_Q(
+                    "query_string",
+                    query=filter_value,
+                    default_operator="OR",
+                    fields=keyword_fields,
+                )
             )
 
         return ES_Q("dis_max", queries=keyword_queries)
@@ -217,7 +243,11 @@ class _TransactionKeywordSearch(_Filter):
             logger.info("Found {} transactions based on keyword: {}".format(len(transaction_ids), keyword))
             for transaction_id in transaction_ids:
                 transaction_id_queries.append(
-                    ES_Q("match", latest_transaction_id=str(transaction_id), minimum_should_match=1)
+                    ES_Q(
+                        "match",
+                        latest_transaction_id=str(transaction_id),
+                        minimum_should_match=1,
+                    )
                 )
 
         return ES_Q("bool", must=transaction_id_queries) & ~ES_Q("match", latest_transaction__keyword="NULL")
@@ -261,13 +291,18 @@ class _TimePeriods(_Filter):
 
             gte_range = {filter_value.get("gte_date_type", "action_date"): {"gte": start_date}}
             lte_range = {
-                filter_value.get("lte_date_type", "date_signed" if query_type == QueryType.AWARDS else "action_date"): {
-                    "lte": end_date
-                }
+                filter_value.get(
+                    "lte_date_type",
+                    "date_signed" if query_type == QueryType.AWARDS else "action_date",
+                ): {"lte": end_date}
             }
 
             time_period_query.append(
-                ES_Q("bool", should=[ES_Q("range", **gte_range), ES_Q("range", **lte_range)], minimum_should_match=2)
+                ES_Q(
+                    "bool",
+                    should=[ES_Q("range", **gte_range), ES_Q("range", **lte_range)],
+                    minimum_should_match=2,
+                )
             )
 
         return ES_Q("bool", should=time_period_query, minimum_should_match=1)
@@ -321,7 +356,8 @@ class _Agencies(_Filter):
         if query_type == QueryType.AWARDS:
             if agency_toptier_code:
                 query_object &= ES_Q(
-                    "match", **{f"{agency_type}_{agency_tier}_agency_code__keyword": agency_toptier_code}
+                    "match",
+                    **{f"{agency_type}_{agency_tier}_agency_code__keyword": agency_toptier_code},
                 )
         elif query_type == QueryType.TRANSACTIONS:
             if toptier_id:
@@ -332,7 +368,10 @@ class _Agencies(_Filter):
                 query_object &= ES_Q("match", **{"awarding_toptier_agency_id": toptier_id})
 
         if agency_name:
-            query_object &= ES_Q("match", **{f"{agency_type}_{agency_tier}_agency_name__keyword": agency_name})
+            query_object &= ES_Q(
+                "match",
+                **{f"{agency_type}_{agency_tier}_agency_name__keyword": agency_name},
+            )
 
         if agency_tier == "subtier" and toptier_name is not None:
             query_object &= ES_Q("match", **{f"{agency_type}_toptier_agency_name__keyword": toptier_name})
@@ -364,7 +403,10 @@ class _RecipientSearchText(_Filter):
     @classmethod
     def generate_elasticsearch_query(cls, filter_values: List[str], query_type: QueryType, **options) -> ES_Q:
         recipient_search_query = []
-        words_to_escape = ["AND", "OR"]  # These need to be escaped to be included as text to be searched for
+        words_to_escape = [
+            "AND",
+            "OR",
+        ]  # These need to be escaped to be included as text to be searched for
 
         for filter_value in filter_values:
 
@@ -398,10 +440,14 @@ class _RecipientSearchText(_Filter):
                 recipient_search_query.append(ES_Q("dis_max", queries=[recipient_name_query, recipient_duns_query]))
                 if parent_recipient_unique_id_field is not None:
                     parent_recipient_duns_query = ES_Q(
-                        "match", **{parent_recipient_unique_id_field: upper_recipient_string}
+                        "match",
+                        **{parent_recipient_unique_id_field: upper_recipient_string},
                     )
                     recipient_search_query.append(
-                        ES_Q("dis_max", queries=[recipient_name_query, parent_recipient_duns_query])
+                        ES_Q(
+                            "dis_max",
+                            queries=[recipient_name_query, parent_recipient_duns_query],
+                        )
                     )
                 else:
                     recipient_search_query.append(ES_Q("dis_max", queries=[recipient_name_query]))
@@ -411,7 +457,10 @@ class _RecipientSearchText(_Filter):
                 if parent_uei_field is not None:
                     parent_recipient_uei_query = ES_Q("match", **{parent_uei_field: upper_recipient_string})
                     recipient_search_query.append(
-                        ES_Q("dis_max", queries=[recipient_name_query, parent_recipient_uei_query])
+                        ES_Q(
+                            "dis_max",
+                            queries=[recipient_name_query, parent_recipient_uei_query],
+                        )
                     )
                 else:
                     recipient_search_query.append(ES_Q("dis_max", queries=[recipient_name_query]))
@@ -496,7 +545,10 @@ class _RecipientLocations(_Filter):
                 raise InvalidParameterException(INCOMPATIBLE_DISTRICT_LOCATION_PARAMETERS)
 
             location_query = [
-                ES_Q("match", **{f"{field_prefix}recipient_location_{location_key}": location_value.upper()})
+                ES_Q(
+                    "match",
+                    **{f"{field_prefix}recipient_location_{location_key}": location_value.upper()},
+                )
                 for location_key, location_value in location_lookup.items()
                 if location_value is not None
             ]
@@ -567,7 +619,10 @@ class _PlaceOfPerformanceLocations(_Filter):
             _PlaceOfPerformanceLocations._validate_district(state, country, county, district_current, district_original)
 
             location_query = [
-                ES_Q("match", **{f"{field_prefix}pop_{location_key}": location_value.upper()})
+                ES_Q(
+                    "match",
+                    **{f"{field_prefix}pop_{location_key}": location_value.upper()},
+                )
                 for location_key, location_value in location_lookup.items()
                 if location_value is not None
             ]
@@ -663,14 +718,26 @@ class _ProgramActivities(_Filter):
 
             if "name" in filter_value:
                 temp_must.append(
-                    ES_Q("match", program_activities__name__keyword=filter_value["name"].upper()),
+                    ES_Q(
+                        "match",
+                        program_activities__name__keyword=filter_value["name"].upper(),
+                    ),
                 )
             if "code" in filter_value:
-                temp_must.append(ES_Q("match", program_activities__code__keyword=str(filter_value["code"]).zfill(4)))
+                temp_must.append(
+                    ES_Q(
+                        "match",
+                        program_activities__code__keyword=str(filter_value["code"]).zfill(4),
+                    )
+                )
 
             if temp_must:
                 program_activity_match_queries.append(
-                    ES_Q("nested", path="program_activities", query=ES_Q("bool", must=temp_must))
+                    ES_Q(
+                        "nested",
+                        path="program_activities",
+                        query=ES_Q("bool", must=temp_must),
+                    )
                 )
 
         if len(program_activity_match_queries) == 0:
@@ -726,12 +793,18 @@ class _DisasterEmergencyFundCodes(_Filter):
     def _generate_covid_iija_es_queries_transactions(cls, def_code_field, covid_filters, iija_filters):
         covid_es_queries = [
             ES_Q("match", **{def_code_field: def_code})
-            & ES_Q("range", action_date={"gte": datetime.strftime(enactment_date, "%Y-%m-%d")})
+            & ES_Q(
+                "range",
+                action_date={"gte": datetime.strftime(enactment_date, "%Y-%m-%d")},
+            )
             for def_code, enactment_date in covid_filters.items()
         ]
         iija_es_queries = [
             ES_Q("match", **{def_code_field: def_code})
-            & ES_Q("range", action_date={"gte": datetime.strftime(enactment_date, "%Y-%m-%d")})
+            & ES_Q(
+                "range",
+                action_date={"gte": datetime.strftime(enactment_date, "%Y-%m-%d")},
+            )
             for def_code, enactment_date in iija_filters.items()
         ]
 
@@ -741,12 +814,18 @@ class _DisasterEmergencyFundCodes(_Filter):
     def _generate_covid_iija_es_queries_subawards(cls, def_code_field, covid_filters, iija_filters):
         covid_es_queries = [
             ES_Q("match", **{def_code_field: def_code})
-            & ES_Q("range", **{"sub_action_date": {"gte": datetime.strftime(enactment_date, "%Y-%m-%d")}})
+            & ES_Q(
+                "range",
+                **{"sub_action_date": {"gte": datetime.strftime(enactment_date, "%Y-%m-%d")}},
+            )
             for def_code, enactment_date in covid_filters.items()
         ]
         iija_es_queries = [
             ES_Q("match", **{def_code_field: def_code})
-            & ES_Q("range", **{"sub_action_date": {"gte": datetime.strftime(enactment_date, "%Y-%m-%d")}})
+            & ES_Q(
+                "range",
+                **{"sub_action_date": {"gte": datetime.strftime(enactment_date, "%Y-%m-%d")}},
+            )
             for def_code, enactment_date in iija_filters.items()
         ]
 
@@ -840,7 +919,10 @@ class _DisasterEmergencyFundCodes(_Filter):
                     ["total_covid_outlay", "total_covid_obligation"], query_type
                 )
                 covid_nonzero_query = ES_Q(
-                    "bool", must=[covid_nonzero_limit], should=covid_es_queries, minimum_should_match=1
+                    "bool",
+                    must=[covid_nonzero_limit],
+                    should=covid_es_queries,
+                    minimum_should_match=1,
                 )
 
                 def_codes_query.append(ES_Q("bool", should=covid_nonzero_query, minimum_should_match=1))
@@ -850,7 +932,10 @@ class _DisasterEmergencyFundCodes(_Filter):
                     ["total_iija_outlay", "total_iija_obligation"], query_type
                 )
                 iija_nonzero_query = ES_Q(
-                    "bool", must=[iija_nonzero_limit], should=iija_es_queries, minimum_should_match=1
+                    "bool",
+                    must=[iija_nonzero_limit],
+                    should=iija_es_queries,
+                    minimum_should_match=1,
                 )
 
                 def_codes_query.append(ES_Q("bool", should=iija_nonzero_query, minimum_should_match=1))
@@ -921,7 +1006,12 @@ class _AwardUniqueId(_Filter):
         }
 
         query = es_sanitize(filter_values)
-        id_query = ES_Q("query_string", query=query, default_operator="AND", fields=fields.get(query_type, []))
+        id_query = ES_Q(
+            "query_string",
+            query=query,
+            default_operator="AND",
+            fields=fields.get(query_type, []),
+        )
         return ES_Q("bool", should=id_query, minimum_should_match=1)
 
 
@@ -930,7 +1020,7 @@ class QueryWithFilters:
     @property
     def filter_lookup(self) -> dict[str, _Filter]:
         result = {
-            _Keywords.underscore_name: _SubawardsKeywords if self.query_type == QueryType.SUBAWARDS else _Keywords,
+            _Keywords.underscore_name: (_SubawardsKeywords if self.query_type == QueryType.SUBAWARDS else _Keywords),
             _Description.underscore_name: _Description,
             _KeywordSearch.underscore_name: _KeywordSearch,
             _TransactionKeywordSearch.underscore_name: _TransactionKeywordSearch,
@@ -977,15 +1067,18 @@ class QueryWithFilters:
             self.default_options = {"nested_path": "financial_accounts_by_award"}
         elif self.query_type == QueryType.TRANSACTIONS:
             time_period_obj = TransactionSearchTimePeriod(
-                default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_MIN_DATE
+                default_end_date=settings.API_MAX_DATE,
+                default_start_date=settings.API_MIN_DATE,
             )
         elif self.query_type == QueryType.AWARDS:
             time_period_obj = AwardSearchTimePeriod(
-                default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_MIN_DATE
+                default_end_date=settings.API_MAX_DATE,
+                default_start_date=settings.API_MIN_DATE,
             )
         elif self.query_type == QueryType.SUBAWARDS:
             time_period_obj = SubawardSearchTimePeriod(
-                default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_MIN_DATE
+                default_end_date=settings.API_MAX_DATE,
+                default_start_date=settings.API_MIN_DATE,
             )
 
             self.default_options = {"time_period_obj": time_period_obj}
@@ -1037,7 +1130,11 @@ class QueryWithFilters:
                 list_pointer.extend(query)
             else:
                 list_pointer.append(query)
-        nested_query = ES_Q("nested", path="financial_accounts_by_award", query=ES_Q("bool", must=nested_must_queries))
+        nested_query = ES_Q(
+            "nested",
+            path="financial_accounts_by_award",
+            query=ES_Q("bool", must=nested_must_queries),
+        )
         if must_queries and nested_must_queries:
             must_queries.append(nested_query)
         elif nested_must_queries:

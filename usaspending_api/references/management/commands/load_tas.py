@@ -12,7 +12,9 @@ from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.etl.management.load_base import load_data_into_model
-from usaspending_api.etl.operations.federal_account.update_agency import update_federal_account_agency
+from usaspending_api.etl.operations.federal_account.update_agency import (
+    update_federal_account_agency,
+)
 from usaspending_api.etl.operations.treasury_appropriation_account.update_agencies import (
     update_treasury_appropriation_account_agencies,
 )
@@ -45,7 +47,12 @@ class Command(BaseCommand):
     help = "Update TAS records using either Data Broker or a TAS file if provided."
 
     def add_arguments(self, parser):
-        parser.add_argument("-l", "--location", dest="location", help="(OPTIONAL) location of the TAS file to load")
+        parser.add_argument(
+            "-l",
+            "--location",
+            dest="location",
+            help="(OPTIONAL) location of the TAS file to load",
+        )
 
     @transaction.atomic()
     def handle(self, *args, **options):
@@ -145,12 +152,24 @@ class Command(BaseCommand):
                     logger.info("   Row contains Financing TAS, Skipping...")
                     continue
 
-                load_data_into_model(taa_instance, row, field_map=field_map, value_map=value_map, save=True)
+                load_data_into_model(
+                    taa_instance,
+                    row,
+                    field_map=field_map,
+                    value_map=value_map,
+                    save=True,
+                )
 
                 if count % 1000 == 0:
                     logger.info("   Loaded {} rows of {}".format(count, total_count))
 
     def generate_tas_rendering_label(self, row):
         return TreasuryAppropriationAccount.generate_tas_rendering_label(
-            row["ATA"], row["Agency AID"], row["A"], row["BPOA"], row["EPOA"], row["MAIN"], row["SUB"]
+            row["ATA"],
+            row["Agency AID"],
+            row["A"],
+            row["BPOA"],
+            row["EPOA"],
+            row["MAIN"],
+            row["SUB"],
         )

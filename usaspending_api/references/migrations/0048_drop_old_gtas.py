@@ -6,11 +6,11 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('references', '0047_add_tas'),
+        ("references", "0047_add_tas"),
     ]
 
     operations = [
         migrations.DeleteModel(
-            name='GTASTotalObligation',
+            name="GTASTotalObligation",
         ),
     ]

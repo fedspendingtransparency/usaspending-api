@@ -6,17 +6,17 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('recipient', '0017_recipientprofile_parent_uei'),
+        ("recipient", "0017_recipientprofile_parent_uei"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='summaryawardrecipient',
-            name='parent_recipient_unique_id',
+            model_name="summaryawardrecipient",
+            name="parent_recipient_unique_id",
         ),
         migrations.AddField(
-            model_name='summaryawardrecipient',
-            name='parent_uei',
+            model_name="summaryawardrecipient",
+            name="parent_uei",
             field=models.TextField(db_index=True, null=True),
         ),
     ]

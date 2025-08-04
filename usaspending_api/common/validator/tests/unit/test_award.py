@@ -4,7 +4,10 @@ Some sanity checks for the pre-built TinyShield Awards rules.
 
 import pytest
 
-from usaspending_api.common.exceptions import InvalidParameterException, UnprocessableEntityException
+from usaspending_api.common.exceptions import (
+    InvalidParameterException,
+    UnprocessableEntityException,
+)
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.common.validator.award import (
     get_generated_award_id_model,

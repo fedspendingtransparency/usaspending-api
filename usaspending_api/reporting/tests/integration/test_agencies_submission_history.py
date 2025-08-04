@@ -84,7 +84,10 @@ def test_basic_success(client, setup_test_data):
     response = resp.json()
     assert len(response["results"]) == 1
     assert response["results"] == [
-        {"publication_date": "2019-07-16T16:09:52.125837Z", "certification_date": "2019-07-16T16:09:52.125837Z"}
+        {
+            "publication_date": "2019-07-16T16:09:52.125837Z",
+            "certification_date": "2019-07-16T16:09:52.125837Z",
+        }
     ]
 
     resp = client.get(url.format(agency="075", fy=2019, period=7))
@@ -92,7 +95,10 @@ def test_basic_success(client, setup_test_data):
     response = resp.json()
     assert len(response["results"]) == 1
     assert response["results"] == [
-        {"publication_date": "2017-08-14T14:17:00.729315Z", "certification_date": "2017-08-14T14:17:00.729315Z"}
+        {
+            "publication_date": "2017-08-14T14:17:00.729315Z",
+            "certification_date": "2017-08-14T14:17:00.729315Z",
+        }
     ]
 
 
@@ -102,8 +108,14 @@ def test_multiple_submissions(client, setup_test_data):
     response = resp.json()
     assert len(response["results"]) == 2
     assert response["results"] == [
-        {"publication_date": "2020-08-17T18:37:21.605023Z", "certification_date": "2020-08-17T18:37:21.605023Z"},
-        {"publication_date": "2017-08-14T14:17:00.729315Z", "certification_date": "2017-08-14T14:17:00.729315Z"},
+        {
+            "publication_date": "2020-08-17T18:37:21.605023Z",
+            "certification_date": "2020-08-17T18:37:21.605023Z",
+        },
+        {
+            "publication_date": "2017-08-14T14:17:00.729315Z",
+            "certification_date": "2017-08-14T14:17:00.729315Z",
+        },
     ]
 
     resp = client.get(url.format(agency="020", fy=2019, period=7) + "?sort=publication_date&order=asc")
@@ -111,8 +123,14 @@ def test_multiple_submissions(client, setup_test_data):
     response = resp.json()
     assert len(response["results"]) == 2
     assert response["results"] == [
-        {"publication_date": "2017-08-14T14:17:00.729315Z", "certification_date": "2017-08-14T14:17:00.729315Z"},
-        {"publication_date": "2020-08-17T18:37:21.605023Z", "certification_date": "2020-08-17T18:37:21.605023Z"},
+        {
+            "publication_date": "2017-08-14T14:17:00.729315Z",
+            "certification_date": "2017-08-14T14:17:00.729315Z",
+        },
+        {
+            "publication_date": "2020-08-17T18:37:21.605023Z",
+            "certification_date": "2020-08-17T18:37:21.605023Z",
+        },
     ]
 
 
@@ -127,8 +145,14 @@ def test_certification_nulls(client, setup_test_data):
     response = resp.json()
     assert len(response["results"]) == 4
     assert response["results"] == [
-        {"certification_date": "2021-02-16T14:17:00.729315Z", "publication_date": "2021-02-16T14:16:00.729315Z"},
-        {"certification_date": "2021-02-14T14:17:00.729315Z", "publication_date": "2021-02-14T14:16:00.729315Z"},
+        {
+            "certification_date": "2021-02-16T14:17:00.729315Z",
+            "publication_date": "2021-02-16T14:16:00.729315Z",
+        },
+        {
+            "certification_date": "2021-02-14T14:17:00.729315Z",
+            "publication_date": "2021-02-14T14:16:00.729315Z",
+        },
         {"certification_date": None, "publication_date": "2020-01-17T18:37:21.605023Z"},
         {"certification_date": None, "publication_date": "2020-01-14T14:17:00.729315Z"},
     ]
@@ -140,6 +164,12 @@ def test_certification_nulls(client, setup_test_data):
     assert response["results"] == [
         {"certification_date": None, "publication_date": "2020-01-14T14:17:00.729315Z"},
         {"certification_date": None, "publication_date": "2020-01-17T18:37:21.605023Z"},
-        {"certification_date": "2021-02-14T14:17:00.729315Z", "publication_date": "2021-02-14T14:16:00.729315Z"},
-        {"certification_date": "2021-02-16T14:17:00.729315Z", "publication_date": "2021-02-16T14:16:00.729315Z"},
+        {
+            "certification_date": "2021-02-14T14:17:00.729315Z",
+            "publication_date": "2021-02-14T14:16:00.729315Z",
+        },
+        {
+            "certification_date": "2021-02-16T14:17:00.729315Z",
+            "publication_date": "2021-02-16T14:16:00.729315Z",
+        },
     ]

@@ -19,8 +19,15 @@ from django.db.models import (
 )
 
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.awards.models.transaction_normalized import NORM_TO_TRANSACTION_SEARCH_COL_MAP
-from usaspending_api.common.helpers.orm_helpers import ConcatAll, FiscalYear, StringAggWithDefault, CFDAs
+from usaspending_api.awards.models.transaction_normalized import (
+    NORM_TO_TRANSACTION_SEARCH_COL_MAP,
+)
+from usaspending_api.common.helpers.orm_helpers import (
+    ConcatAll,
+    FiscalYear,
+    StringAggWithDefault,
+    CFDAs,
+)
 from usaspending_api.awards.models import Award, FinancialAccountsByAwards
 from usaspending_api.disaster.v2.views.disaster_base import (
     filter_by_latest_closed_periods,
@@ -45,7 +52,11 @@ def congressional_district_display_name(state_column_name, cd_column_name):
                 & Q(**{f"{cd_column_name}__isnull": False})
                 & ~Q(**{f"{state_column_name}__exact": ""})
             ),
-            then=ConcatAll(F(state_column_name), Value(CONGRESSIONAL_DISTRICT_DISPLAY_NAME_SEP), F(cd_column_name)),
+            then=ConcatAll(
+                F(state_column_name),
+                Value(CONGRESSIONAL_DISTRICT_DISPLAY_NAME_SEP),
+                F(cd_column_name),
+            ),
         ),
         default=F(cd_column_name),
         output_field=TextField(),
@@ -181,7 +192,9 @@ def _outlay_amount_agg_subquery(
         .values("award_id")
         .annotate(
             sum=Coalesce(
-                Sum("gross_outlay_amount_by_award_cpe"), 0, output_field=DecimalField(max_digits=23, decimal_places=2)
+                Sum("gross_outlay_amount_by_award_cpe"),
+                0,
+                output_field=DecimalField(max_digits=23, decimal_places=2),
             )
             + Coalesce(
                 Sum("ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe"),
@@ -238,7 +251,9 @@ def _outlay_amount_agg_subquery_no_coalesce(
         )
         .annotate(
             sum=Coalesce(
-                "total_gross_outlay_amount_by_award_cpe", 0, output_field=DecimalField(max_digits=23, decimal_places=2)
+                "total_gross_outlay_amount_by_award_cpe",
+                0,
+                output_field=DecimalField(max_digits=23, decimal_places=2),
             )
             + Coalesce(
                 "total_ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe",
@@ -277,14 +292,18 @@ def transaction_search_annotations(filters: dict, file_type: str = None):
             .values("award_id")
             .annotate(
                 value=StringAggWithDefault(
-                    "treasury_account__federal_account__federal_account_code", ";", distinct=True
+                    "treasury_account__federal_account__federal_account_code",
+                    ";",
+                    distinct=True,
                 )
             )
             .values("value"),
             output_field=TextField(),
         ),
         "usaspending_permalink": ConcatAll(
-            Value(AWARD_URL), Func(F("generated_unique_award_id"), function="urlencode"), Value("/")
+            Value(AWARD_URL),
+            Func(F("generated_unique_award_id"), function="urlencode"),
+            Value("/"),
         ),
         "disaster_emergency_fund_codes_for_overall_award": Case(
             When(
@@ -312,11 +331,17 @@ def transaction_search_annotations(filters: dict, file_type: str = None):
         "total_outlayed_amount_for_overall_award": _outlay_amount_agg_subquery_no_coalesce(award_id_col="award_id"),
         "object_classes_funding_this_award": Subquery(
             FinancialAccountsByAwards.objects.filter(
-                filter_limit_to_closed_periods(), award_id=OuterRef("award_id"), object_class_id__isnull=False
+                filter_limit_to_closed_periods(),
+                award_id=OuterRef("award_id"),
+                object_class_id__isnull=False,
             )
             .annotate(
                 value=ExpressionWrapper(
-                    ConcatAll(F("object_class__object_class"), Value(": "), F("object_class__object_class_name")),
+                    ConcatAll(
+                        F("object_class__object_class"),
+                        Value(": "),
+                        F("object_class__object_class_name"),
+                    ),
                     output_field=TextField(),
                 )
             )
@@ -327,7 +352,9 @@ def transaction_search_annotations(filters: dict, file_type: str = None):
         ),
         "program_activities_funding_this_award": Subquery(
             FinancialAccountsByAwards.objects.filter(
-                filter_limit_to_closed_periods(), award_id=OuterRef("award_id"), program_activity_id__isnull=False
+                filter_limit_to_closed_periods(),
+                award_id=OuterRef("award_id"),
+                program_activity_id__isnull=False,
             )
             .annotate(
                 value=ExpressionWrapper(
@@ -370,14 +397,18 @@ def award_annotations(filters: dict, file_type: str = None):
             .values("award_id")
             .annotate(
                 value=StringAggWithDefault(
-                    "treasury_account__federal_account__federal_account_code", ";", distinct=True
+                    "treasury_account__federal_account__federal_account_code",
+                    ";",
+                    distinct=True,
                 )
             )
             .values("value"),
             output_field=TextField(),
         ),
         "usaspending_permalink": ConcatAll(
-            Value(AWARD_URL), Func(F("generated_unique_award_id"), function="urlencode"), Value("/")
+            Value(AWARD_URL),
+            Func(F("generated_unique_award_id"), function="urlencode"),
+            Value("/"),
         ),
         "disaster_emergency_fund_codes"
         + NAMING_CONFLICT_DISCRIMINATOR: _disaster_emergency_fund_codes(def_codes=def_codes, award_id_col="award_id"),
@@ -403,11 +434,17 @@ def award_annotations(filters: dict, file_type: str = None):
         ),
         "object_classes_funding_this_award": Subquery(
             FinancialAccountsByAwards.objects.filter(
-                filter_limit_to_closed_periods(), award_id=OuterRef("award_id"), object_class_id__isnull=False
+                filter_limit_to_closed_periods(),
+                award_id=OuterRef("award_id"),
+                object_class_id__isnull=False,
             )
             .annotate(
                 value=ExpressionWrapper(
-                    ConcatAll(F("object_class__object_class"), Value(": "), F("object_class__object_class_name")),
+                    ConcatAll(
+                        F("object_class__object_class"),
+                        Value(": "),
+                        F("object_class__object_class_name"),
+                    ),
                     output_field=TextField(),
                 )
             )
@@ -418,7 +455,9 @@ def award_annotations(filters: dict, file_type: str = None):
         ),
         "program_activities_funding_this_award": Subquery(
             FinancialAccountsByAwards.objects.filter(
-                filter_limit_to_closed_periods(), award_id=OuterRef("award_id"), program_activity_id__isnull=False
+                filter_limit_to_closed_periods(),
+                award_id=OuterRef("award_id"),
+                program_activity_id__isnull=False,
             )
             .annotate(
                 value=ExpressionWrapper(
@@ -464,14 +503,18 @@ def idv_order_annotations(filters: dict, file_type: str = None):
             .values("award_id")
             .annotate(
                 value=StringAggWithDefault(
-                    "treasury_account__federal_account__federal_account_code", ";", distinct=True
+                    "treasury_account__federal_account__federal_account_code",
+                    ";",
+                    distinct=True,
                 )
             )
             .values("value"),
             output_field=TextField(),
         ),
         "usaspending_permalink": ConcatAll(
-            Value(AWARD_URL), Func(F("generated_unique_award_id"), function="urlencode"), Value("/")
+            Value(AWARD_URL),
+            Func(F("generated_unique_award_id"), function="urlencode"),
+            Value("/"),
         ),
         "disaster_emergency_fund_codes"
         + NAMING_CONFLICT_DISCRIMINATOR: _disaster_emergency_fund_codes(award_id_col="award_id"),
@@ -498,7 +541,11 @@ def idv_order_annotations(filters: dict, file_type: str = None):
             FinancialAccountsByAwards.objects.filter(filter_limit_to_closed_periods(), award_id=OuterRef("award_id"))
             .annotate(
                 value=ExpressionWrapper(
-                    ConcatAll(F("object_class__object_class"), Value(": "), F("object_class__object_class_name")),
+                    ConcatAll(
+                        F("object_class__object_class"),
+                        Value(": "),
+                        F("object_class__object_class_name"),
+                    ),
                     output_field=TextField(),
                 )
             )
@@ -509,7 +556,9 @@ def idv_order_annotations(filters: dict, file_type: str = None):
         ),
         "program_activities_funding_this_award": Subquery(
             FinancialAccountsByAwards.objects.filter(
-                filter_limit_to_closed_periods(), award_id=OuterRef("award_id"), program_activity_id__isnull=False
+                filter_limit_to_closed_periods(),
+                award_id=OuterRef("award_id"),
+                program_activity_id__isnull=False,
             )
             .annotate(
                 value=ExpressionWrapper(
@@ -551,14 +600,18 @@ def idv_transaction_annotations(filters: dict, file_type: str = None):
             .values("award_id")
             .annotate(
                 value=StringAggWithDefault(
-                    "treasury_account__federal_account__federal_account_code", ";", distinct=True
+                    "treasury_account__federal_account__federal_account_code",
+                    ";",
+                    distinct=True,
                 )
             )
             .values("value"),
             output_field=TextField(),
         ),
         "usaspending_permalink": ConcatAll(
-            Value(AWARD_URL), Func(F("generated_unique_award_id"), function="urlencode"), Value("/")
+            Value(AWARD_URL),
+            Func(F("generated_unique_award_id"), function="urlencode"),
+            Value("/"),
         ),
         "disaster_emergency_fund_codes_for_overall_award": Case(
             When(
@@ -602,11 +655,17 @@ def idv_transaction_annotations(filters: dict, file_type: str = None):
         "total_outlayed_amount_for_overall_award": _outlay_amount_agg_subquery_no_coalesce(award_id_col="award_id"),
         "object_classes_funding_this_award": Subquery(
             FinancialAccountsByAwards.objects.filter(
-                filter_limit_to_closed_periods(), award_id=OuterRef("award_id"), object_class_id__isnull=False
+                filter_limit_to_closed_periods(),
+                award_id=OuterRef("award_id"),
+                object_class_id__isnull=False,
             )
             .annotate(
                 value=ExpressionWrapper(
-                    ConcatAll(F("object_class__object_class"), Value(": "), F("object_class__object_class_name")),
+                    ConcatAll(
+                        F("object_class__object_class"),
+                        Value(": "),
+                        F("object_class__object_class_name"),
+                    ),
                     output_field=TextField(),
                 )
             )
@@ -617,7 +676,9 @@ def idv_transaction_annotations(filters: dict, file_type: str = None):
         ),
         "program_activities_funding_this_award": Subquery(
             FinancialAccountsByAwards.objects.filter(
-                filter_limit_to_closed_periods(), award_id=OuterRef("award_id"), program_activity_id__isnull=False
+                filter_limit_to_closed_periods(),
+                award_id=OuterRef("award_id"),
+                program_activity_id__isnull=False,
             )
             .annotate(
                 value=ExpressionWrapper(
@@ -673,7 +734,9 @@ def subaward_annotations(filters: dict, file_type: str = None):
             Award.objects.filter(id=OuterRef("award_id"))
             .annotate(
                 value=StringAggWithDefault(
-                    "awardsearch__financial_set__treasury_account__tas_rendering_label", ";", distinct=True
+                    "awardsearch__financial_set__treasury_account__tas_rendering_label",
+                    ";",
+                    distinct=True,
                 )
             )
             .values("value"),
@@ -692,15 +755,23 @@ def subaward_annotations(filters: dict, file_type: str = None):
             output_field=TextField(),
         ),
         "usaspending_permalink": ConcatAll(
-            Value(AWARD_URL), Func(F("award__generated_unique_award_id"), function="urlencode"), Value("/")
+            Value(AWARD_URL),
+            Func(F("award__generated_unique_award_id"), function="urlencode"),
+            Value("/"),
         ),
         "prime_award_object_classes_funding_this_award": Subquery(
             FinancialAccountsByAwards.objects.filter(
-                filter_limit_to_closed_periods(), award_id=OuterRef("award_id"), object_class_id__isnull=False
+                filter_limit_to_closed_periods(),
+                award_id=OuterRef("award_id"),
+                object_class_id__isnull=False,
             )
             .annotate(
                 value=ExpressionWrapper(
-                    ConcatAll(F("object_class__object_class"), Value(": "), F("object_class__object_class_name")),
+                    ConcatAll(
+                        F("object_class__object_class"),
+                        Value(": "),
+                        F("object_class__object_class_name"),
+                    ),
                     output_field=TextField(),
                 )
             )
@@ -711,7 +782,9 @@ def subaward_annotations(filters: dict, file_type: str = None):
         ),
         "prime_award_program_activities_funding_this_award": Subquery(
             FinancialAccountsByAwards.objects.filter(
-                filter_limit_to_closed_periods(), award_id=OuterRef("award_id"), program_activity_id__isnull=False
+                filter_limit_to_closed_periods(),
+                award_id=OuterRef("award_id"),
+                program_activity_id__isnull=False,
             )
             .annotate(
                 value=ExpressionWrapper(

@@ -6,8 +6,12 @@ from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMi
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.calculations.file_b import FileBCalculations
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
-from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
-from usaspending_api.submissions.helpers import get_latest_submission_ids_for_fiscal_year
+from usaspending_api.financial_activities.models import (
+    FinancialAccountsByProgramActivityObjectClass,
+)
+from usaspending_api.submissions.helpers import (
+    get_latest_submission_ids_for_fiscal_year,
+)
 
 
 class BudgetFunctionList(PaginationMixin, AgencyBase):
@@ -39,7 +43,11 @@ class BudgetFunctionList(PaginationMixin, AgencyBase):
             ]
             item["obligated_amount"] = sum([x["obligated_amount"] for x in item["children"]])
             item["gross_outlay_amount"] = sum([x["gross_outlay_amount"] for x in item["children"]])
-            item["children"] = sorted(item["children"], key=lambda x: x[self.pagination.sort_key], reverse=order)
+            item["children"] = sorted(
+                item["children"],
+                key=lambda x: x[self.pagination.sort_key],
+                reverse=order,
+            )
         budget_functions = sorted(budget_functions, key=lambda x: x[self.pagination.sort_key], reverse=order)
         return budget_functions
 

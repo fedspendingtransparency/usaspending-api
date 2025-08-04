@@ -6,7 +6,9 @@ from collections import defaultdict
 from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.management.load_base import load_data_into_model
-from usaspending_api.etl.submission_loader_helpers.bulk_create_manager import BulkCreateManager
+from usaspending_api.etl.submission_loader_helpers.bulk_create_manager import (
+    BulkCreateManager,
+)
 from usaspending_api.etl.submission_loader_helpers.treasury_appropriation_account import (
     bulk_treasury_appropriation_account_tas_lookup,
     get_treasury_appropriation_account_tas_lookup,
@@ -18,7 +20,8 @@ logger = logging.getLogger("script")
 
 def get_file_a(submission_attributes, db_cursor):
     db_cursor.execute(
-        "SELECT * FROM published_appropriation WHERE submission_id = %s", [submission_attributes.submission_id]
+        "SELECT * FROM published_appropriation WHERE submission_id = %s",
+        [submission_attributes.submission_id],
     )
     return dictfetchall(db_cursor)
 
@@ -56,7 +59,12 @@ def load_file_a(submission_attributes, appropriation_data, db_cursor):
 
         save_manager.append(
             load_data_into_model(
-                appropriation_balances, row, field_map=field_map, value_map=value_map, save=False, reverse=reverse
+                appropriation_balances,
+                row,
+                field_map=field_map,
+                value_map=value_map,
+                save=False,
+                reverse=reverse,
             )
         )
 

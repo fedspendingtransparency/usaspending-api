@@ -391,7 +391,12 @@ def state_breakdown_result():
         {"type": "direct_payments", "amount": 0, "total_outlays": 0, "count": 0},
         {"type": "grants", "amount": 0, "total_outlays": 0, "count": 0},
         {"type": "loans", "amount": 0, "total_outlays": 0, "count": 0},
-        {"type": "other_financial_assistance", "amount": 0, "total_outlays": 0, "count": 0},
+        {
+            "type": "other_financial_assistance",
+            "amount": 0,
+            "total_outlays": 0,
+            "count": 0,
+        },
     ]
 
     return expected_result
@@ -518,7 +523,13 @@ def test_state_metadata_failure(client, state_data):
 @pytest.mark.django_db
 def test_obtain_state_totals(state_view_data):
     result = obtain_state_totals("01", str(generate_fiscal_year(OUTSIDE_OF_LATEST)), ["A"])
-    expected = {"pop_state_code": "AB", "total": 10, "count": 1, "total_face_value_loan_amount": 0, "total_outlays": 0}
+    expected = {
+        "pop_state_code": "AB",
+        "total": 10,
+        "count": 1,
+        "total_face_value_loan_amount": 0,
+        "total_outlays": 0,
+    }
     assert result == expected
 
 
@@ -537,9 +548,18 @@ def test_obtain_state_totals_loan_agg(state_view_loan_data):
 
 @pytest.mark.django_db
 def test_obtain_state_totals_none(state_view_data, monkeypatch):
-    monkeypatch.setattr("usaspending_api.recipient.v2.views.states.VALID_FIPS", {"02": {"code": "No State"}})
+    monkeypatch.setattr(
+        "usaspending_api.recipient.v2.views.states.VALID_FIPS",
+        {"02": {"code": "No State"}},
+    )
     result = obtain_state_totals("02")
-    expected = {"pop_state_code": None, "total": 0, "count": 0, "total_face_value_loan_amount": 0, "total_outlays": 0}
+    expected = {
+        "pop_state_code": None,
+        "total": 0,
+        "count": 0,
+        "total_face_value_loan_amount": 0,
+        "total_outlays": 0,
+    }
 
     assert result == expected
 
@@ -592,9 +612,30 @@ def test_state_list_success_state(client, state_data):
     sorted_resp = sort_states_response(resp.data)
 
     expected = [
-        {"name": "Test State", "code": "TS", "fips": "01", "type": "state", "amount": 100000.00, "count": 1},
-        {"name": "Test District", "code": "TD", "fips": "02", "type": "district", "amount": 1000.00, "count": 1},
-        {"name": "Test Territory", "code": "TT", "fips": "03", "type": "territory", "amount": 1000.00, "count": 1},
+        {
+            "name": "Test State",
+            "code": "TS",
+            "fips": "01",
+            "type": "state",
+            "amount": 100000.00,
+            "count": 1,
+        },
+        {
+            "name": "Test District",
+            "code": "TD",
+            "fips": "02",
+            "type": "district",
+            "amount": 1000.00,
+            "count": 1,
+        },
+        {
+            "name": "Test Territory",
+            "code": "TT",
+            "fips": "03",
+            "type": "territory",
+            "amount": 1000.00,
+            "count": 1,
+        },
     ]
 
     assert resp.status_code == status.HTTP_200_OK
@@ -669,8 +710,22 @@ def test_no_state_results(client):
     resp = client.get("/api/v2/recipient/state/")
     sorted_resp = sort_states_response(resp.data)
     expected_result = [
-        {"fips": "01", "code": "TS", "name": "Test State", "type": "state", "amount": 0, "count": 0},
-        {"fips": "03", "code": "TT", "name": "Test Territory", "type": "territory", "amount": 0, "count": 0},
+        {
+            "fips": "01",
+            "code": "TS",
+            "name": "Test State",
+            "type": "state",
+            "amount": 0,
+            "count": 0,
+        },
+        {
+            "fips": "03",
+            "code": "TT",
+            "name": "Test Territory",
+            "type": "territory",
+            "amount": 0,
+            "count": 0,
+        },
     ]
 
     assert resp.status_code == status.HTTP_200_OK

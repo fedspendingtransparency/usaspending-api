@@ -3,7 +3,13 @@ from ssl import CERT_NONE
 from typing import Callable, Optional, Union
 
 from django.conf import settings
-from elasticsearch import ConnectionError, ConnectionTimeout, Elasticsearch, NotFoundError, TransportError
+from elasticsearch import (
+    ConnectionError,
+    ConnectionTimeout,
+    Elasticsearch,
+    NotFoundError,
+    TransportError,
+)
 from elasticsearch.connection import create_ssl_context
 from elasticsearch_dsl import Search as SearchBase
 from elasticsearch_dsl.response import Response

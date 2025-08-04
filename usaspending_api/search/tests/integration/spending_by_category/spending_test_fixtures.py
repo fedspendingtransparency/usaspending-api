@@ -97,7 +97,11 @@ def _setup_agency(id, subtiers, special_name):
         subtier_code=f"100{id}",
     )
     baker.make(
-        "references.Agency", id=id + 1000, toptier_agency_id=id + 2000, subtier_agency_id=id + 3000, toptier_flag=True
+        "references.Agency",
+        id=id + 1000,
+        toptier_agency_id=id + 2000,
+        subtier_agency_id=id + 3000,
+        toptier_flag=True,
     )
 
     for sub_id in subtiers:
@@ -120,14 +124,54 @@ def _setup_agency(id, subtiers, special_name):
 @pytest.fixture
 def awards_and_transactions(db):
     # Awards
-    award1 = baker.make("search.AwardSearch", award_id=1, latest_transaction_id=10, action_date="2020-01-01")
-    baker.make("search.AwardSearch", award_id=2, latest_transaction_id=20, action_date="2020-01-01")
-    baker.make("search.AwardSearch", award_id=3, latest_transaction_id=30, action_date="2020-01-01")
-    baker.make("search.AwardSearch", award_id=4, latest_transaction_id=40, action_date="2020-01-01")
-    baker.make("search.AwardSearch", award_id=5, latest_transaction_id=50, action_date="2020-01-01")
-    baker.make("search.AwardSearch", award_id=6, latest_transaction_id=60, action_date="2020-01-01")
-    baker.make("search.AwardSearch", award_id=7, latest_transaction_id=70, action_date="2020-01-01")
-    baker.make("search.AwardSearch", award_id=8, latest_transaction_id=80, action_date="2020-01-01")
+    award1 = baker.make(
+        "search.AwardSearch",
+        award_id=1,
+        latest_transaction_id=10,
+        action_date="2020-01-01",
+    )
+    baker.make(
+        "search.AwardSearch",
+        award_id=2,
+        latest_transaction_id=20,
+        action_date="2020-01-01",
+    )
+    baker.make(
+        "search.AwardSearch",
+        award_id=3,
+        latest_transaction_id=30,
+        action_date="2020-01-01",
+    )
+    baker.make(
+        "search.AwardSearch",
+        award_id=4,
+        latest_transaction_id=40,
+        action_date="2020-01-01",
+    )
+    baker.make(
+        "search.AwardSearch",
+        award_id=5,
+        latest_transaction_id=50,
+        action_date="2020-01-01",
+    )
+    baker.make(
+        "search.AwardSearch",
+        award_id=6,
+        latest_transaction_id=60,
+        action_date="2020-01-01",
+    )
+    baker.make(
+        "search.AwardSearch",
+        award_id=7,
+        latest_transaction_id=70,
+        action_date="2020-01-01",
+    )
+    baker.make(
+        "search.AwardSearch",
+        award_id=8,
+        latest_transaction_id=80,
+        action_date="2020-01-01",
+    )
     ref_program_activity1 = baker.make(
         "references.RefProgramActivity",
         id=1,

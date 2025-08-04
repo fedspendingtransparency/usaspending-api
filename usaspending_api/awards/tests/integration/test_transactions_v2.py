@@ -8,7 +8,11 @@ from rest_framework import status
 
 @pytest.fixture
 def cfda_transactions(db):
-    award_1 = {"award_id": 1, "category": "grant", "generated_unique_award_id": "whatever"}
+    award_1 = {
+        "award_id": 1,
+        "category": "grant",
+        "generated_unique_award_id": "whatever",
+    }
     trx_norm_1 = {
         "transaction_id": 1,
         "award_id": 1,
@@ -35,7 +39,13 @@ def cfda_transactions(db):
 
 def test_transaction_cfda(client, cfda_transactions):
     expected_response = {
-        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "page_metadata": {
+            "page": 1,
+            "next": None,
+            "previous": None,
+            "hasNext": False,
+            "hasPrevious": False,
+        },
         "results": [
             {
                 "id": "ASST_TX_Q25B9A1MQ0",
@@ -57,7 +67,15 @@ def test_transaction_cfda(client, cfda_transactions):
     resp = client.post(
         "/api/v2/transactions/",
         content_type="application/json",
-        data=json.dumps({"award_id": 1, "page": 1, "sort": "modification_number", "order": "asc", "limit": 15}),
+        data=json.dumps(
+            {
+                "award_id": 1,
+                "page": 1,
+                "sort": "modification_number",
+                "order": "asc",
+                "limit": 15,
+            }
+        ),
     )
     assert resp.status_code == status.HTTP_200_OK
     assert json.loads(resp.content.decode("utf-8")) == expected_response

@@ -6,19 +6,22 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('awards', '0099_auto_20230113_1858'),
+        ("awards", "0099_auto_20230113_1858"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='CToDLinkageUpdates',
+            name="CToDLinkageUpdates",
             fields=[
-                ('financial_accounts_by_awards_id', models.IntegerField(primary_key=True, serialize=False)),
-                ('award_id', models.IntegerField()),
+                (
+                    "financial_accounts_by_awards_id",
+                    models.IntegerField(primary_key=True, serialize=False),
+                ),
+                ("award_id", models.IntegerField()),
             ],
             options={
-                'db_table': 'c_to_d_linkage_updates',
-                'managed': True,
+                "db_table": "c_to_d_linkage_updates",
+                "managed": True,
             },
         ),
     ]

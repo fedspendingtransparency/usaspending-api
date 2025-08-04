@@ -10,8 +10,14 @@ from django.conf import settings
 from django.db.models import Model, QuerySet
 from elasticsearch_dsl import A
 
-from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, SubawardSearch, TransactionSearch
-from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
+from usaspending_api.common.elasticsearch.search_wrappers import (
+    AwardSearch,
+    SubawardSearch,
+    TransactionSearch,
+)
+from usaspending_api.search.filters.time_period.decorators import (
+    NewAwardsOnlyTimePeriod,
+)
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.download.models import DownloadJob
 from usaspending_api.download.models.download_job_lookup import DownloadJobLookup
@@ -77,7 +83,11 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
 
     @classmethod
     def _populate_download_lookups(
-        cls, filters: dict, download_job: DownloadJob, size: int = 10000, **filter_options
+        cls,
+        filters: dict,
+        download_job: DownloadJob,
+        size: int = 10000,
+        **filter_options,
     ) -> None:
         """
         Takes a dictionary of the different download filters and returns a flattened list of ids.
@@ -126,11 +136,15 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
                     .filter(download_job_id=download_job.download_job_id)
                     .exists()
                 )
-                write_to_log(message=f"Waiting on replication for Download Lookup", download_job=download_job)
+                write_to_log(
+                    message=f"Waiting on replication for Download Lookup",
+                    download_job=download_job,
+                )
 
             if is_lookup_replicated:
                 write_to_log(
-                    message="Download Lookup records have been replicated (if applicable)", download_job=download_job
+                    message="Download Lookup records have been replicated (if applicable)",
+                    download_job=download_job,
                 )
             else:
                 message = f"Download Lookup failed to replicate in under {time_to_wait_in_seconds} seconds"
@@ -172,7 +186,8 @@ class AwardsElasticsearchDownload(_ElasticsearchDownload):
     def query(cls, filters: dict, download_job: DownloadJob) -> QuerySet:
         filter_options = {}
         time_period_obj = AwardSearchTimePeriod(
-            default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
+            default_end_date=settings.API_MAX_DATE,
+            default_start_date=settings.API_SEARCH_MIN_DATE,
         )
         new_awards_only_decorator = NewAwardsOnlyTimePeriod(
             time_period_obj=time_period_obj, query_type=QueryType.AWARDS
@@ -194,7 +209,8 @@ class TransactionsElasticsearchDownload(_ElasticsearchDownload):
     def query(cls, filters: dict, download_job: DownloadJob) -> QuerySet:
         filter_options = {}
         time_period_obj = TransactionSearchTimePeriod(
-            default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
+            default_end_date=settings.API_MAX_DATE,
+            default_start_date=settings.API_SEARCH_MIN_DATE,
         )
         new_awards_only_decorator = NewAwardsOnlyTimePeriod(
             time_period_obj=time_period_obj, query_type=QueryType.TRANSACTIONS
@@ -216,7 +232,8 @@ class SubawardsElasticsearchDownload(_ElasticsearchDownload):
     def query(cls, filters: dict, download_job: DownloadJob) -> QuerySet:
         filter_options = {}
         time_period_obj = SubawardSearchTimePeriod(
-            default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_MIN_DATE
+            default_end_date=settings.API_MAX_DATE,
+            default_start_date=settings.API_MIN_DATE,
         )
         filter_options["time_period_obj"] = time_period_obj
         base_queryset = DBSubawardSearch.objects.all()

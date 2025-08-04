@@ -2,7 +2,10 @@ import os
 
 from collections import namedtuple
 from tempfile import NamedTemporaryFile
-from usaspending_api.download.filestreaming.file_description import build_file_description, save_file_description
+from usaspending_api.download.filestreaming.file_description import (
+    build_file_description,
+    save_file_description,
+)
 
 
 def test_save_file_description():

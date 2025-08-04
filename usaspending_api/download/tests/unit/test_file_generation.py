@@ -8,7 +8,11 @@ def test_get_account_balances_csv_sources():
     original = VALUE_MAPPINGS["account_balances"]["filter_function"]
     VALUE_MAPPINGS["account_balances"]["filter_function"] = MagicMock(returned_value="")
     csv_sources = download_generation.get_download_sources(
-        {"download_types": ["account_balances"], "account_level": "treasury_account", "filters": {}}
+        {
+            "download_types": ["account_balances"],
+            "account_level": "treasury_account",
+            "filters": {},
+        }
     )
     VALUE_MAPPINGS["account_balances"]["filter_function"] = original
     assert len(csv_sources) == 1
@@ -20,7 +24,11 @@ def test_get_object_class_program_activity_csv_sources():
     original = VALUE_MAPPINGS["object_class_program_activity"]["filter_function"]
     VALUE_MAPPINGS["object_class_program_activity"]["filter_function"] = MagicMock(returned_value="")
     csv_sources = download_generation.get_download_sources(
-        {"download_types": ["object_class_program_activity"], "account_level": "treasury_account", "filters": {}}
+        {
+            "download_types": ["object_class_program_activity"],
+            "account_level": "treasury_account",
+            "filters": {},
+        }
     )
     VALUE_MAPPINGS["object_class_program_activity"]["filter_function"] = original
     assert len(csv_sources) == 1
@@ -32,7 +40,11 @@ def test_get_award_financial_csv_sources():
     original = VALUE_MAPPINGS["award_financial"]["filter_function"]
     VALUE_MAPPINGS["award_financial"]["filter_function"] = MagicMock(returned_value="")
     csv_sources = download_generation.get_download_sources(
-        {"download_types": ["award_financial"], "account_level": "treasury_account", "filters": {}}
+        {
+            "download_types": ["award_financial"],
+            "account_level": "treasury_account",
+            "filters": {},
+        }
     )
     VALUE_MAPPINGS["award_financial"]["filter_function"] = original
     assert len(csv_sources) == 3

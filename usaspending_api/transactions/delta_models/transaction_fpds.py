@@ -124,7 +124,12 @@ TRANSACTION_FPDS_COLUMN_INFO = [
     TransactionColumn("information_technology_com", "information_technology_com", "STRING"),
     TransactionColumn("inherently_government_desc", "inherently_government_desc", "STRING"),
     TransactionColumn("inherently_government_func", "inherently_government_func", "STRING"),
-    TransactionColumn("initial_report_date", "initial_report_date", "STRING", "string_datetime_remove_timestamp"),
+    TransactionColumn(
+        "initial_report_date",
+        "initial_report_date",
+        "STRING",
+        "string_datetime_remove_timestamp",
+    ),
     TransactionColumn("inter_municipal_local_gove", "inter_municipal_local_gove", "BOOLEAN"),
     TransactionColumn("interagency_contract_desc", "interagency_contract_desc", "STRING"),
     TransactionColumn("interagency_contracting_au", "interagency_contracting_au", "STRING"),
@@ -204,7 +209,10 @@ TRANSACTION_FPDS_COLUMN_INFO = [
     TransactionColumn("officer_5_amount", "high_comp_officer5_amount", "NUMERIC(23,2)", "cast"),
     TransactionColumn("officer_5_name", "high_comp_officer5_full_na", "STRING"),
     TransactionColumn(
-        "ordering_period_end_date", "ordering_period_end_date", "STRING", "string_datetime_remove_timestamp"
+        "ordering_period_end_date",
+        "ordering_period_end_date",
+        "STRING",
+        "string_datetime_remove_timestamp",
     ),
     TransactionColumn("organizational_type", "organizational_type", "STRING"),
     TransactionColumn("other_minority_owned_busin", "other_minority_owned_busin", "BOOLEAN"),
@@ -402,10 +410,16 @@ DAP_TO_NORMALIZED_COLUMN_INFO = [
     # All period_of_performance_* fields seen as: YYYY-MM-DD 00:00:00, so cast works
     # BUT it's still just a string and could morph, so defensively smart-date-parsing the string
     TransactionColumn(
-        "period_of_performance_current_end_date", "period_of_performance_curr", "DATE", "parse_string_datetime_to_date"
+        "period_of_performance_current_end_date",
+        "period_of_performance_curr",
+        "DATE",
+        "parse_string_datetime_to_date",
     ),
     TransactionColumn(
-        "period_of_performance_start_date", "period_of_performance_star", "DATE", "parse_string_datetime_to_date"
+        "period_of_performance_start_date",
+        "period_of_performance_star",
+        "DATE",
+        "parse_string_datetime_to_date",
     ),
     TransactionColumn("transaction_unique_id", "detached_award_proc_unique", "STRING"),
     TransactionColumn("unique_award_key", "unique_award_key", "STRING"),

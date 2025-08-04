@@ -45,8 +45,20 @@ def download_test_data():
     baker.make("references.SubtierAgency", name="Bureau of Things", _fill_optional=True)
 
     # Create Awarding Agencies
-    aa1 = baker.make("references.Agency", id=1, toptier_agency=ata1, toptier_flag=False, _fill_optional=True)
-    aa2 = baker.make("references.Agency", id=2, toptier_agency=ata2, toptier_flag=False, _fill_optional=True)
+    aa1 = baker.make(
+        "references.Agency",
+        id=1,
+        toptier_agency=ata1,
+        toptier_flag=False,
+        _fill_optional=True,
+    )
+    aa2 = baker.make(
+        "references.Agency",
+        id=2,
+        toptier_agency=ata2,
+        toptier_flag=False,
+        _fill_optional=True,
+    )
 
     # Create Funding Top Agency
     ata3 = baker.make(
@@ -62,12 +74,28 @@ def download_test_data():
     baker.make("references.SubtierAgency", name="Bureau of Things", _fill_optional=True)
 
     # Create Funding Agency
-    baker.make("references.Agency", id=3, toptier_agency=ata3, toptier_flag=False, _fill_optional=True)
+    baker.make(
+        "references.Agency",
+        id=3,
+        toptier_agency=ata3,
+        toptier_flag=False,
+        _fill_optional=True,
+    )
 
     # Create Awards
     award1 = baker.make("search.AwardSearch", award_id=123, category="idv", action_date="2020-01-01")
-    award2 = baker.make("search.AwardSearch", award_id=456, category="contracts", action_date="2020-01-01")
-    award3 = baker.make("search.AwardSearch", award_id=789, category="assistance", action_date="2020-01-01")
+    award2 = baker.make(
+        "search.AwardSearch",
+        award_id=456,
+        category="contracts",
+        action_date="2020-01-01",
+    )
+    award3 = baker.make(
+        "search.AwardSearch",
+        award_id=789,
+        category="assistance",
+        action_date="2020-01-01",
+    )
 
     # Create Transactions
     baker.make(
@@ -114,7 +142,11 @@ def download_test_data():
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_transactions_without_columns(
-    client, monkeypatch, download_test_data, elasticsearch_transaction_index, elasticsearch_subaward_index
+    client,
+    monkeypatch,
+    download_test_data,
+    elasticsearch_transaction_index,
+    elasticsearch_subaward_index,
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
@@ -132,7 +164,11 @@ def test_download_transactions_without_columns(
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_transactions_with_columns(
-    client, monkeypatch, download_test_data, elasticsearch_transaction_index, elasticsearch_subaward_index
+    client,
+    monkeypatch,
+    download_test_data,
+    elasticsearch_transaction_index,
+    elasticsearch_subaward_index,
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
@@ -183,7 +219,11 @@ def test_download_transactions_excessive_limit(
         "/api/v2/download/transactions/",
         content_type="application/json",
         data=json.dumps(
-            {"limit": settings.MAX_DOWNLOAD_LIMIT + 1, "filters": {"award_type_codes": ["A"]}, "columns": []}
+            {
+                "limit": settings.MAX_DOWNLOAD_LIMIT + 1,
+                "filters": {"award_type_codes": ["A"]},
+                "columns": [],
+            }
         ),
     )
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
@@ -191,14 +231,25 @@ def test_download_transactions_excessive_limit(
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_transactions_bad_column_list_raises(
-    client, monkeypatch, download_test_data, elasticsearch_transaction_index, elasticsearch_subaward_index
+    client,
+    monkeypatch,
+    download_test_data,
+    elasticsearch_transaction_index,
+    elasticsearch_subaward_index,
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string(settings.DOWNLOAD_DB_ALIAS))
 
-    payload = {"filters": {"award_type_codes": ["A"]}, "columns": ["modification_number", "bogus_column"]}
-    resp = client.post("/api/v2/download/transactions/", content_type="application/json", data=json.dumps(payload))
+    payload = {
+        "filters": {"award_type_codes": ["A"]},
+        "columns": ["modification_number", "bogus_column"],
+    }
+    resp = client.post(
+        "/api/v2/download/transactions/",
+        content_type="application/json",
+        data=json.dumps(payload),
+    )
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
     assert "Unknown columns" in resp.json()["detail"]
     assert "bogus_column" in resp.json()["detail"]
@@ -213,14 +264,22 @@ def test_download_transactions_bad_filter_type_raises(
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string(settings.DOWNLOAD_DB_ALIAS))
 
     payload = {"filters": "01", "columns": []}
-    resp = client.post("/api/v2/download/transactions/", content_type="application/json", data=json.dumps(payload))
+    resp = client.post(
+        "/api/v2/download/transactions/",
+        content_type="application/json",
+        data=json.dumps(payload),
+    )
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
     assert resp.json()["detail"] == "Filters parameter not provided as a dict"
 
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_transactions_with_date_type(
-    client, monkeypatch, download_test_data, elasticsearch_transaction_index, elasticsearch_subaward_index
+    client,
+    monkeypatch,
+    download_test_data,
+    elasticsearch_transaction_index,
+    elasticsearch_subaward_index,
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
@@ -232,7 +291,13 @@ def test_download_transactions_with_date_type(
         data=json.dumps(
             {
                 "filters": {
-                    "time_period": [{"date_type": "date_signed", "start_date": "2017-12-31", "end_date": "2018-01-02"}],
+                    "time_period": [
+                        {
+                            "date_type": "date_signed",
+                            "start_date": "2017-12-31",
+                            "end_date": "2018-01-02",
+                        }
+                    ],
                 }
             }
         ),
@@ -244,7 +309,11 @@ def test_download_transactions_with_date_type(
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_transactions_new_awards_only(
-    client, monkeypatch, download_test_data, elasticsearch_transaction_index, elasticsearch_subaward_index
+    client,
+    monkeypatch,
+    download_test_data,
+    elasticsearch_transaction_index,
+    elasticsearch_subaward_index,
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
@@ -274,7 +343,11 @@ def test_download_transactions_new_awards_only(
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_transactions_naics_exclude_single_value(
-    client, monkeypatch, download_test_data, elasticsearch_transaction_index, elasticsearch_subaward_index
+    client,
+    monkeypatch,
+    download_test_data,
+    elasticsearch_transaction_index,
+    elasticsearch_subaward_index,
 ):
     """Exclude Transactions that have a `naics_code` that starts with 10. This should still return the Transactions
     with a `naics_code` value of 200 and 300 in the test data.
@@ -309,7 +382,11 @@ def test_download_transactions_naics_exclude_single_value(
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_transactions_naics_exclude_multiple_values(
-    client, monkeypatch, download_test_data, elasticsearch_transaction_index, elasticsearch_subaward_index
+    client,
+    monkeypatch,
+    download_test_data,
+    elasticsearch_transaction_index,
+    elasticsearch_subaward_index,
 ):
     """Exclude Transactions that have a `naics_code` that starts with 10 or 20. This should still return the Transaction
     with a `naics_code` value of 300 in the test data.
@@ -344,7 +421,11 @@ def test_download_transactions_naics_exclude_multiple_values(
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_transactions_naics_require(
-    client, monkeypatch, download_test_data, elasticsearch_transaction_index, elasticsearch_subaward_index
+    client,
+    monkeypatch,
+    download_test_data,
+    elasticsearch_transaction_index,
+    elasticsearch_subaward_index,
 ):
     """Require only Transactions that have a `naics_code` that starts with 10. This should only return the Transaction
     with a `naics_code` value of 100 in the test data.

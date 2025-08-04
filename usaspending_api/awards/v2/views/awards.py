@@ -57,7 +57,14 @@ class AwardRetrieveViewSet(APIView):
         ]
         if str(provided_award_id).isdigit():
             request_dict = {"award_id": int(provided_award_id)}
-            models = [{"key": "award_id", "name": "award_id", "type": "integer", "optional": False}]
+            models = [
+                {
+                    "key": "award_id",
+                    "name": "award_id",
+                    "type": "integer",
+                    "optional": False,
+                }
+            ]
 
         validated_request_data = TinyShield(models).block(request_dict)
         return validated_request_data

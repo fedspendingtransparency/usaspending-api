@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('search', '0004_transactionsearch_award_date_signed'),
+        ("search", "0004_transactionsearch_award_date_signed"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='transactionsearch',
-            name='recipient_uei',
+            model_name="transactionsearch",
+            name="recipient_uei",
             field=models.TextField(null=True),
         ),
     ]

@@ -10,17 +10,29 @@ from django_cte import With
 
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.date_helper import now
-from usaspending_api.common.helpers.fiscal_year_helpers import is_final_quarter, is_final_period
-from usaspending_api.submissions.models import DABSSubmissionWindowSchedule, SubmissionAttributes
+from usaspending_api.common.helpers.fiscal_year_helpers import (
+    is_final_quarter,
+    is_final_period,
+)
+from usaspending_api.submissions.models import (
+    DABSSubmissionWindowSchedule,
+    SubmissionAttributes,
+)
 
 
-def get_last_closed_submission_date(is_quarter: Optional[bool] = None) -> Optional[dict]:
+def get_last_closed_submission_date(
+    is_quarter: Optional[bool] = None,
+) -> Optional[dict]:
     filters = {"submission_reveal_date__lte": now()}
     if is_quarter is not None:
         filters["is_quarter"] = is_quarter
     return (
         DABSSubmissionWindowSchedule.objects.filter(**filters)
-        .order_by("-submission_fiscal_year", "-submission_fiscal_quarter", "-submission_fiscal_month")
+        .order_by(
+            "-submission_fiscal_year",
+            "-submission_fiscal_quarter",
+            "-submission_fiscal_month",
+        )
         .values()
         .first()
     )
@@ -96,9 +108,19 @@ class ClosedPeriod:
         prefix = f"{submission_relation_name}__" if submission_relation_name else ""
         q = Q()
         if self.fiscal_quarter:
-            q |= Q(**{f"{prefix}reporting_fiscal_quarter": self.fiscal_quarter, f"{prefix}quarter_format_flag": True})
+            q |= Q(
+                **{
+                    f"{prefix}reporting_fiscal_quarter": self.fiscal_quarter,
+                    f"{prefix}quarter_format_flag": True,
+                }
+            )
         if self.fiscal_month:
-            q |= Q(**{f"{prefix}reporting_fiscal_period": self.fiscal_month, f"{prefix}quarter_format_flag": False})
+            q |= Q(
+                **{
+                    f"{prefix}reporting_fiscal_period": self.fiscal_month,
+                    f"{prefix}quarter_format_flag": False,
+                }
+            )
         return Q(Q(q) & Q(**{f"{prefix}reporting_fiscal_year": self.fiscal_year}))
 
     def build_submission_id_q(self, submission_relation_name: Optional[str] = None) -> Q:
@@ -137,7 +159,11 @@ def get_last_closed_periods_per_year():
         )
     )
     return [
-        ClosedPeriod(r["reporting_fiscal_year"], r["annotated_fiscal_quarter"], r["annotated_fiscal_period"])
+        ClosedPeriod(
+            r["reporting_fiscal_year"],
+            r["annotated_fiscal_quarter"],
+            r["annotated_fiscal_period"],
+        )
         for r in submission_periods
     ]
 
@@ -209,7 +235,11 @@ def get_submission_ids_for_periods(
     with connection.cursor() as cursor:
         cursor.execute(
             sql,
-            {"fiscal_year": fiscal_year, "fiscal_quarter": fiscal_quarter or -1, "fiscal_month": fiscal_month or -1},
+            {
+                "fiscal_year": fiscal_year,
+                "fiscal_quarter": fiscal_quarter or -1,
+                "fiscal_month": fiscal_month or -1,
+            },
         )
         return [r[0] for r in cursor.fetchall()]
 
@@ -222,7 +252,8 @@ def get_latest_submission_ids_for_fiscal_year(fiscal_year: int):
     """
     cte = With(
         SubmissionAttributes.objects.filter(
-            submission_window__submission_reveal_date__lte=now(), reporting_fiscal_year=fiscal_year
+            submission_window__submission_reveal_date__lte=now(),
+            reporting_fiscal_year=fiscal_year,
         )
         .values("toptier_code")
         .annotate(latest_fiscal_period=Max("reporting_fiscal_period"))
@@ -289,5 +320,7 @@ def get_latest_submission_ids_for_each_fiscal_quarter_file_b(
     in the most recent Submission Period but they do have a Submission in the provided Fiscal Year.
     """
     return _get_latest_submission_ids_for_each_fiscal_quarter(
-        "financialaccountsbyprogramactivityobjectclass", fiscal_years, federal_account_id
+        "financialaccountsbyprogramactivityobjectclass",
+        fiscal_years,
+        federal_account_id,
     )

@@ -23,7 +23,11 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_jdbc_connection_properties,
     get_broker_jdbc_url,
 )
-from usaspending_api.common.etl.spark import _USAS_RDS_REF_TABLES, _BROKER_REF_TABLES, create_ref_temp_views
+from usaspending_api.common.etl.spark import (
+    _USAS_RDS_REF_TABLES,
+    _BROKER_REF_TABLES,
+    create_ref_temp_views,
+)
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.config import CONFIG
 
@@ -102,13 +106,48 @@ def test_spark_app_run_local_master(spark: SparkSession):
 def test_spark_write_csv_app_run(spark: SparkSession, s3_unittest_data_bucket):
     """More involved integration test that requires MinIO to be up as an s3 alternative."""
     data = [
-        {"first_col": "row 1", "id": str(uuid.uuid4()), "color": "blue", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 2", "id": str(uuid.uuid4()), "color": "green", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 3", "id": str(uuid.uuid4()), "color": "pink", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 4", "id": str(uuid.uuid4()), "color": "yellow", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 5", "id": str(uuid.uuid4()), "color": "red", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 6", "id": str(uuid.uuid4()), "color": "orange", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 7", "id": str(uuid.uuid4()), "color": "magenta", "numeric_val": random.randint(-100, 100)},
+        {
+            "first_col": "row 1",
+            "id": str(uuid.uuid4()),
+            "color": "blue",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 2",
+            "id": str(uuid.uuid4()),
+            "color": "green",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 3",
+            "id": str(uuid.uuid4()),
+            "color": "pink",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 4",
+            "id": str(uuid.uuid4()),
+            "color": "yellow",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 5",
+            "id": str(uuid.uuid4()),
+            "color": "red",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 6",
+            "id": str(uuid.uuid4()),
+            "color": "orange",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 7",
+            "id": str(uuid.uuid4()),
+            "color": "magenta",
+            "numeric_val": random.randint(-100, 100),
+        },
     ]
 
     df = spark.createDataFrame([Row(**data_row) for data_row in data])

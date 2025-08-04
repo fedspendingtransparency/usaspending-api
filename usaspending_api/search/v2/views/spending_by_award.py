@@ -36,11 +36,20 @@ from usaspending_api.awards.v2.lookups.lookups import (
     non_loan_assistance_type_mapping,
     subaward_mapping,
 )
-from usaspending_api.common.api_versioning import API_TRANSFORM_FUNCTIONS, api_transformations
+from usaspending_api.common.api_versioning import (
+    API_TRANSFORM_FUNCTIONS,
+    api_transformations,
+)
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, SubawardSearch
+from usaspending_api.common.elasticsearch.search_wrappers import (
+    AwardSearch,
+    SubawardSearch,
+)
 from usaspending_api.common.exceptions import UnprocessableEntityException
-from usaspending_api.common.helpers.api_helper import raise_if_award_types_not_valid_subset, raise_if_sort_key_not_valid
+from usaspending_api.common.helpers.api_helper import (
+    raise_if_award_types_not_valid_subset,
+    raise_if_sort_key_not_valid,
+)
 from usaspending_api.common.helpers.data_constants import state_name_from_code
 from usaspending_api.common.helpers.generic_helper import (
     get_generic_filters_message,
@@ -54,8 +63,13 @@ from usaspending_api.recipient.models import RecipientProfile
 from usaspending_api.references.helpers import get_def_codes_by_group
 from usaspending_api.references.models import Agency
 from usaspending_api.search.filters.elasticsearch.filter import QueryType
-from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
-from usaspending_api.search.filters.time_period.query_types import AwardSearchTimePeriod, SubawardSearchTimePeriod
+from usaspending_api.search.filters.time_period.decorators import (
+    NewAwardsOnlyTimePeriod,
+)
+from usaspending_api.search.filters.time_period.query_types import (
+    AwardSearchTimePeriod,
+    SubawardSearchTimePeriod,
+)
 from usaspending_api.search.v2.views.enums import SpendingLevel
 from usaspending_api.submissions.models import SubmissionAttributes
 
@@ -73,13 +87,28 @@ GLOBAL_MAP = {
         },
     },
     "subawards": {
-        "minimum_db_fields": {"subaward_number", "piid", "fain", "prime_award_group", "award_id"},
+        "minimum_db_fields": {
+            "subaward_number",
+            "piid",
+            "fain",
+            "prime_award_group",
+            "award_id",
+        },
         "api_to_db_mapping_list": [SUBAWARD_MAPPING_LOOKUP],
         "award_semaphore": "prime_award_group",
         "award_id_fields": ["award__piid", "award__fain"],
-        "internal_id_fields": {"internal_id": "subaward_number", "prime_award_internal_id": "award_id"},
-        "generated_award_field": ("prime_award_generated_internal_id", "prime_award_internal_id"),
-        "type_code_to_field_map": {"procurement": SUBAWARD_MAPPING_LOOKUP, "grant": SUBAWARD_MAPPING_LOOKUP},
+        "internal_id_fields": {
+            "internal_id": "subaward_number",
+            "prime_award_internal_id": "award_id",
+        },
+        "generated_award_field": (
+            "prime_award_generated_internal_id",
+            "prime_award_internal_id",
+        ),
+        "type_code_to_field_map": {
+            "procurement": SUBAWARD_MAPPING_LOOKUP,
+            "grant": SUBAWARD_MAPPING_LOOKUP,
+        },
         "annotations": {"_prime_award_recipient_id": annotate_prime_award_recipient_id},
         "filter_queryset_func": subaward_filter,
         "elasticsearch_type_code_to_field_map": SUBAWARD_MAPPING_LOOKUP,
@@ -130,17 +159,29 @@ class SpendingByAwardVisualizationViewSet(APIView):
             "Sub-Award Primary Place of Performance",
         ]:
             raise_if_sort_key_not_valid(
-                self.pagination["sort_key"], self.fields, self.filters["award_type_codes"], self.spending_level
+                self.pagination["sort_key"],
+                self.fields,
+                self.filters["award_type_codes"],
+                self.spending_level,
             )
 
         self.last_record_unique_id = json_request.get("last_record_unique_id")
         self.last_record_sort_value = json_request.get("last_record_sort_value")
 
         self.spending_by_defc_lookup = {
-            "COVID-19 Obligations": {"group_name": "covid_19", "field_type": "obligation"},
+            "COVID-19 Obligations": {
+                "group_name": "covid_19",
+                "field_type": "obligation",
+            },
             "COVID-19 Outlays": {"group_name": "covid_19", "field_type": "outlay"},
-            "Infrastructure Obligations": {"group_name": "infrastructure", "field_type": "obligation"},
-            "Infrastructure Outlays": {"group_name": "infrastructure", "field_type": "outlay"},
+            "Infrastructure Obligations": {
+                "group_name": "infrastructure",
+                "field_type": "obligation",
+            },
+            "Infrastructure Outlays": {
+                "group_name": "infrastructure",
+                "field_type": "outlay",
+            },
         }
         self.def_codes_by_group = (
             get_def_codes_by_group(list({val["group_name"] for val in self.spending_by_defc_lookup.values()}))
@@ -161,12 +202,20 @@ class SpendingByAwardVisualizationViewSet(APIView):
     @staticmethod
     def validate_request_data(request_data):
         spending_type_models = [
-            {"name": "subawards", "key": "subawards", "type": "boolean", "default": False},
+            {
+                "name": "subawards",
+                "key": "subawards",
+                "type": "boolean",
+                "default": False,
+            },
             {
                 "name": "spending_level",
                 "key": "spending_level",
                 "type": "enum",
-                "enum_values": [SpendingLevel.AWARD.value, SpendingLevel.SUBAWARD.value],
+                "enum_values": [
+                    SpendingLevel.AWARD.value,
+                    SpendingLevel.SUBAWARD.value,
+                ],
                 "optional": True,
                 "default": SpendingLevel.AWARD.value,
             },
@@ -194,7 +243,14 @@ class SpendingByAwardVisualizationViewSet(APIView):
             },
         }
         models = [
-            {"name": "fields", "key": "fields", "type": "array", "array_type": "text", "text_type": "search", "min": 1},
+            {
+                "name": "fields",
+                "key": "fields",
+                "type": "array",
+                "array_type": "text",
+                "text_type": "search",
+                "min": 1,
+            },
             {
                 "name": "program_activity",
                 "key": "filter|program_activity",
@@ -261,7 +317,11 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         results = self.add_award_generated_id_field(results)
 
-        return self.populate_response(results=results, has_next=len(rows) > self.pagination["limit"], models=models)
+        return self.populate_response(
+            results=results,
+            has_next=len(rows) > self.pagination["limit"],
+            models=models,
+        )
 
     def add_award_generated_id_field(self, records):
         """Obtain the generated_unique_award_id and add to response"""
@@ -281,12 +341,21 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 sort_by_fields = ["subaward_number.keyword"]
             case "NAICS":
                 sort_by_fields = (
-                    [contracts_mapping["sub_naics_code"], contracts_mapping["naics_description"]]
+                    [
+                        contracts_mapping["sub_naics_code"],
+                        contracts_mapping["naics_description"],
+                    ]
                     if self.spending_level == SpendingLevel.SUBAWARD
-                    else [contracts_mapping["naics_code"], contracts_mapping["naics_description"]]
+                    else [
+                        contracts_mapping["naics_code"],
+                        contracts_mapping["naics_description"],
+                    ]
                 )
             case "PSC":
-                sort_by_fields = [contracts_mapping["psc_code"], contracts_mapping["psc_description"]]
+                sort_by_fields = [
+                    contracts_mapping["psc_code"],
+                    contracts_mapping["psc_description"],
+                ]
             case "Recipient Location":
                 sort_by_fields = [
                     contracts_mapping["recipient_location_city_name"],
@@ -303,9 +372,15 @@ class SpendingByAwardVisualizationViewSet(APIView):
                     contracts_mapping["pop_country_name"],
                 ]
             case "Assistance Listings":
-                sort_by_fields = [contracts_mapping["cfda_number"], contracts_mapping["cfda_program_title"]]
+                sort_by_fields = [
+                    contracts_mapping["cfda_number"],
+                    contracts_mapping["cfda_program_title"],
+                ]
             case "Assistance Listing":
-                sort_by_fields = [contracts_mapping["cfda_number"], contracts_mapping["sub_cfda_program_titles"]]
+                sort_by_fields = [
+                    contracts_mapping["cfda_number"],
+                    contracts_mapping["sub_cfda_program_titles"],
+                ]
             case "Sub-Recipient Location":
                 sort_by_fields = [
                     contracts_mapping["sub_recipient_location_city_name"],
@@ -369,7 +444,10 @@ class SpendingByAwardVisualizationViewSet(APIView):
         }
 
     def query_elasticsearch(
-        self, base_search: AwardSearch | SubawardSearch, filter_query: ES_Q, sorts: list[dict[str, str]]
+        self,
+        base_search: AwardSearch | SubawardSearch,
+        filter_query: ES_Q,
+        sorts: list[dict[str, str]],
     ) -> ES_Response:
         record_num = (self.pagination["page"] - 1) * self.pagination["limit"]
         # random page jumping was removed due to performance concerns
@@ -394,7 +472,12 @@ class SpendingByAwardVisualizationViewSet(APIView):
             search = (
                 base_search.filter(filter_query)
                 .sort(*sorts)
-                .extra(search_after=[self.last_record_sort_value, self.last_record_unique_id])[
+                .extra(
+                    search_after=[
+                        self.last_record_sort_value,
+                        self.last_record_unique_id,
+                    ]
+                )[
                     : self.pagination["limit"] + 1
                 ]  # add extra result to check for next page
             )
@@ -409,7 +492,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
     def query_elasticsearch_awards(self) -> ES_Response:
         filter_options = {}
         time_period_obj = AwardSearchTimePeriod(
-            default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
+            default_end_date=settings.API_MAX_DATE,
+            default_start_date=settings.API_SEARCH_MIN_DATE,
         )
         new_awards_only_decorator = NewAwardsOnlyTimePeriod(
             time_period_obj=time_period_obj, query_type=QueryType.AWARDS
@@ -445,7 +529,14 @@ class SpendingByAwardVisualizationViewSet(APIView):
             sorts = []
             for field in sort_field:
                 if "recipient_location_address" in field:
-                    sorts.append({field: {"order": self.pagination["sort_order"], "unmapped_type": "keyword"}})
+                    sorts.append(
+                        {
+                            field: {
+                                "order": self.pagination["sort_order"],
+                                "unmapped_type": "keyword",
+                            }
+                        }
+                    )
                 else:
                     sorts.append({field: self.pagination["sort_order"]})
         else:
@@ -456,7 +547,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
     def query_elasticsearch_subawards(self) -> ES_Response:
         filter_options = {}
         time_period_obj = SubawardSearchTimePeriod(
-            default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
+            default_end_date=settings.API_MAX_DATE,
+            default_start_date=settings.API_SEARCH_MIN_DATE,
         )
         filter_options["time_period_obj"] = time_period_obj
 
@@ -479,7 +571,10 @@ class SpendingByAwardVisualizationViewSet(APIView):
                     toptier_agency__toptier_code__in=SubmissionAttributes.objects.values("toptier_code"),
                 )
                 .select_related("toptieragencypublisheddabsview")
-                .annotate(code=F("toptier_agency__toptier_code"), name=F("toptieragencypublisheddabsview__name"))
+                .annotate(
+                    code=F("toptier_agency__toptier_code"),
+                    name=F("toptieragencypublisheddabsview__name"),
+                )
                 .values("id", "code", "name")
                 .all()
             )
@@ -527,7 +622,12 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 row["agency_slug"] = agency_lookup.get(code, {}).get("slug", None)
             if row.get("def_codes"):
                 if self.filters.get("def_codes"):
-                    row["def_codes"] = list(filter(lambda x: x in self.filters.get("def_codes"), row["def_codes"]))
+                    row["def_codes"] = list(
+                        filter(
+                            lambda x: x in self.filters.get("def_codes"),
+                            row["def_codes"],
+                        )
+                    )
 
             if row.get("Assistance Listings"):
                 row["Assistance Listings"] = list(map(json.loads, row["Assistance Listings"]))
@@ -728,7 +828,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 "last_record_sort_value": str(last_record_sort_value),
             },
             "messages": get_generic_filters_message(
-                self.original_filters.keys(), [elem["name"] for elem in AWARD_FILTER_NO_RECIPIENT_ID]
+                self.original_filters.keys(),
+                [elem["name"] for elem in AWARD_FILTER_NO_RECIPIENT_ID],
             ),
         }
 

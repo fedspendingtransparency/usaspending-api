@@ -19,7 +19,11 @@ EXTERNAL_DATA_TYPE = [
     LookupType(101, "es_awards", "Load elasticsearch with awards from USAspending"),
     LookupType(102, "es_deletes", "Award and Transaction deletions from elasticsearch"),
     # Additional times to keep track of
-    LookupType(120, "touch_last_period_awards", "Touch awards from last period, so they will be updated in ES"),
+    LookupType(
+        120,
+        "touch_last_period_awards",
+        "Touch awards from last period, so they will be updated in ES",
+    ),
     # Transaction ETL types for delta
     LookupType(201, "transaction_fpds", "FPDS transactions in Delta"),
     LookupType(202, "transaction_fabs", "FABS transactions in Delta"),

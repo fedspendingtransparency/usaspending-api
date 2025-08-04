@@ -45,7 +45,9 @@ class Command(BaseCommand):
 
         self.logger.info("Loading ref_city_county_state_code")
         call_command(
-            "load_city_county_state_code", "https://geonames.usgs.gov/docs/federalcodes/NationalFedCodes.zip", "--force"
+            "load_city_county_state_code",
+            "https://geonames.usgs.gov/docs/federalcodes/NationalFedCodes.zip",
+            "--force",
         )
 
         self.logger.info("Loading CFDA data")
@@ -90,7 +92,8 @@ class Command(BaseCommand):
 
         self.logger.info("Loading DABS Submission Schedule Windows")
         call_command(
-            "load_dabs_submission_window_schedule", file="usaspending_api/data/dabs_submission_window_schedule.csv"
+            "load_dabs_submission_window_schedule",
+            file="usaspending_api/data/dabs_submission_window_schedule.csv",
         )
 
         self.logger.info("Reference data loaded.")

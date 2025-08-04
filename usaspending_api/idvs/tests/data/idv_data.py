@@ -13,7 +13,11 @@ def set_up_related_award_objects(db):
     baker.make("references.SubtierAgency", **subag, _fill_optional=True)
     baker.make("references.ToptierAgency", **subag, _fill_optional=True)
 
-    ag = {"pk": 1, "toptier_agency": ToptierAgency.objects.get(pk=1), "subtier_agency": SubtierAgency.objects.get(pk=1)}
+    ag = {
+        "pk": 1,
+        "toptier_agency": ToptierAgency.objects.get(pk=1),
+        "subtier_agency": SubtierAgency.objects.get(pk=1),
+    }
 
     baker.make("references.Agency", **ag, _fill_optional=True)
     cont_data = {

@@ -11,7 +11,10 @@ class AbstractFinancialAccountsByProgramActivityObjectClass(DataSourceTrackedMod
     submission = models.ForeignKey("submissions.SubmissionAttributes", models.CASCADE)
     object_class = models.ForeignKey(ObjectClass, models.DO_NOTHING, null=True, db_index=True)
     treasury_account = models.ForeignKey(
-        "accounts.TreasuryAppropriationAccount", models.CASCADE, related_name="program_balances", null=True
+        "accounts.TreasuryAppropriationAccount",
+        models.CASCADE,
+        related_name="program_balances",
+        null=True,
     )
     prior_year_adjustment = models.TextField(blank=True, null=True)
     program_activity_reporting_key = models.TextField(

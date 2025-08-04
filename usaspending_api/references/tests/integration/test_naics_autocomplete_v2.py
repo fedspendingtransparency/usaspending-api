@@ -20,7 +20,9 @@ def test_naics_autocomplete_success(client, naics_data):
 
     # test for naics code
     resp = client.post(
-        "/api/v2/autocomplete/naics/", content_type="application/json", data=json.dumps({"search_text": "212112"})
+        "/api/v2/autocomplete/naics/",
+        content_type="application/json",
+        data=json.dumps({"search_text": "212112"}),
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 1
@@ -28,7 +30,9 @@ def test_naics_autocomplete_success(client, naics_data):
 
     # test for similarity
     resp = client.post(
-        "/api/v2/autocomplete/naics/", content_type="application/json", data=json.dumps({"search_text": "Mining"})
+        "/api/v2/autocomplete/naics/",
+        content_type="application/json",
+        data=json.dumps({"search_text": "Mining"}),
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 2
@@ -38,6 +42,8 @@ def test_naics_autocomplete_success(client, naics_data):
 def test_naics_autocomplete_failure(client):
     """Empty search string"""
     resp = client.post(
-        "/api/v2/autocomplete/naics/", content_type="application/json", data=json.dumps({"search_text": ""})
+        "/api/v2/autocomplete/naics/",
+        content_type="application/json",
+        data=json.dumps({"search_text": ""}),
     )
     assert resp.status_code == status.HTTP_400_BAD_REQUEST

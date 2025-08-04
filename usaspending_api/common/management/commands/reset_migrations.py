@@ -7,7 +7,14 @@ from django.core.management import call_command
 logger = logging.getLogger("console")
 # if we're ever planning to run this again, update this to receive the app
 # list as a command argument instead of hard-coding here
-app_list = ["accounts", "awards", "common", "financial_activities", "references", "submissions"]
+app_list = [
+    "accounts",
+    "awards",
+    "common",
+    "financial_activities",
+    "references",
+    "submissions",
+]
 
 remove_ghost_migrations = "DELETE FROM django_migrations WHERE app in %s "
 

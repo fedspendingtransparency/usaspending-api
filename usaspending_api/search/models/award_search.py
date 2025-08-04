@@ -18,7 +18,9 @@ class AwardSearch(models.Model):
     type_description = models.TextField(null=True)
     generated_unique_award_id = models.TextField(null=False, unique=True)
     generated_unique_award_id_legacy = models.TextField(
-        null=True, unique=True, help_text="Legacy generated unique award ID built using subtier awarding agency code"
+        null=True,
+        unique=True,
+        help_text="Legacy generated unique award ID built using subtier awarding agency code",
     )
     display_award_id = models.TextField(null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
@@ -218,7 +220,9 @@ class AwardSearch(models.Model):
         ]
         indexes = [
             models.Index(
-                fields=["recipient_hash"], name="as_idx_recipient_hash", condition=Q(action_date__gte="2007-10-01")
+                fields=["recipient_hash"],
+                name="as_idx_recipient_hash",
+                condition=Q(action_date__gte="2007-10-01"),
             ),
             models.Index(
                 fields=["recipient_unique_id"],

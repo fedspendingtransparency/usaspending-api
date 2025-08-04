@@ -17,7 +17,11 @@ class Command(BaseCommand):
     help = "Load CSV files containing population data. "
 
     def add_arguments(self, parser):
-        parser.add_argument("--file", required=True, help="Path or URI of the raw object class CSV file to be loaded.")
+        parser.add_argument(
+            "--file",
+            required=True,
+            help="Path or URI of the raw object class CSV file to be loaded.",
+        )
         parser.add_argument(
             "--type",
             choices=["county", "district", "country"],

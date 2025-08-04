@@ -66,9 +66,21 @@ def account_models():
     prg_atvy_2 = baker.make("references.RefProgramActivity", id=2)
 
     # add tas data
-    tas_1 = baker.make("accounts.TreasuryAppropriationAccount", tas_rendering_label="ABC", _fill_optional=True)
-    tas_2 = baker.make("accounts.TreasuryAppropriationAccount", tas_rendering_label="XYZ", _fill_optional=True)
-    tas_3 = baker.make("accounts.TreasuryAppropriationAccount", tas_rendering_label="ZZZ", _fill_optional=True)
+    tas_1 = baker.make(
+        "accounts.TreasuryAppropriationAccount",
+        tas_rendering_label="ABC",
+        _fill_optional=True,
+    )
+    tas_2 = baker.make(
+        "accounts.TreasuryAppropriationAccount",
+        tas_rendering_label="XYZ",
+        _fill_optional=True,
+    )
+    tas_3 = baker.make(
+        "accounts.TreasuryAppropriationAccount",
+        tas_rendering_label="ZZZ",
+        _fill_optional=True,
+    )
 
     # add file A data
     baker.make(
@@ -194,7 +206,12 @@ def test_tas_categories_total(account_models, client):
     resp = client.post(
         "/api/v1/tas/categories/total/",
         content_type="application/json",
-        data=json.dumps({"field": "obligations_undelivered_orders_unpaid_total_cpe", "group": "program_activity"}),
+        data=json.dumps(
+            {
+                "field": "obligations_undelivered_orders_unpaid_total_cpe",
+                "group": "program_activity",
+            }
+        ),
     )
 
     assert resp.status_code == 200
@@ -206,7 +223,10 @@ def test_tas_categories_total(account_models, client):
         "/api/v1/tas/categories/total/",
         content_type="application/json",
         data=json.dumps(
-            {"field": "obligations_undelivered_orders_unpaid_total_cpe", "group": "object_class__object_class"}
+            {
+                "field": "obligations_undelivered_orders_unpaid_total_cpe",
+                "group": "object_class__object_class",
+            }
         ),
     )
 
@@ -222,7 +242,13 @@ def test_tas_categories_total(account_models, client):
             {
                 "field": "obligations_undelivered_orders_unpaid_total_cpe",
                 "group": "object_class__object_class",
-                "filters": [{"field": "treasury_account__tas_rendering_label", "operation": "equals", "value": "ZZZ"}],
+                "filters": [
+                    {
+                        "field": "treasury_account__tas_rendering_label",
+                        "operation": "equals",
+                        "value": "ZZZ",
+                    }
+                ],
             }
         ),
     )
@@ -246,7 +272,12 @@ def test_tas_categories_quarters_total(account_models, client):
     resp = client.post(
         "/api/v1/tas/categories/quarters/total/",
         content_type="application/json",
-        data=json.dumps({"field": "obligations_undelivered_orders_unpaid_total_cpe", "group": "program_activity"}),
+        data=json.dumps(
+            {
+                "field": "obligations_undelivered_orders_unpaid_total_cpe",
+                "group": "program_activity",
+            }
+        ),
     )
 
     assert resp.status_code == 200
@@ -258,7 +289,10 @@ def test_tas_categories_quarters_total(account_models, client):
         "/api/v1/tas/categories/quarters/total/",
         content_type="application/json",
         data=json.dumps(
-            {"field": "obligations_undelivered_orders_unpaid_total_cpe", "group": "object_class__object_class"}
+            {
+                "field": "obligations_undelivered_orders_unpaid_total_cpe",
+                "group": "object_class__object_class",
+            }
         ),
     )
 
@@ -274,7 +308,13 @@ def test_tas_categories_quarters_total(account_models, client):
             {
                 "field": "obligations_undelivered_orders_unpaid_total_cpe",
                 "group": "object_class__object_class",
-                "filters": [{"field": "treasury_account__tas_rendering_label", "operation": "equals", "value": "ZZZ"}],
+                "filters": [
+                    {
+                        "field": "treasury_account__tas_rendering_label",
+                        "operation": "equals",
+                        "value": "ZZZ",
+                    }
+                ],
             }
         ),
     )

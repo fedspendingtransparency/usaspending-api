@@ -1,4 +1,6 @@
-from usaspending_api.etl.transaction_loaders.data_load_helpers import format_insert_or_update_column_sql
+from usaspending_api.etl.transaction_loaders.data_load_helpers import (
+    format_insert_or_update_column_sql,
+)
 
 
 def insert_award(cursor, load_object):

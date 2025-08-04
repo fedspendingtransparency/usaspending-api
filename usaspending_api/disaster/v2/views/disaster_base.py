@@ -3,20 +3,42 @@ from datetime import date
 from functools import lru_cache
 from typing import List, Optional
 
-from django.db.models import Case, Count, DecimalField, F, Max, Q, QuerySet, Sum, Value, When
+from django.db.models import (
+    Case,
+    Count,
+    DecimalField,
+    F,
+    Max,
+    Q,
+    QuerySet,
+    Sum,
+    Value,
+    When,
+)
 from django.db.models.functions import Coalesce
 from django.http import HttpRequest
 from django.utils.functional import cached_property
 from django_cte import With
 from rest_framework.views import APIView
 
-from usaspending_api.awards.models.financial_accounts_by_awards import FinancialAccountsByAwards
-from usaspending_api.awards.v2.lookups.lookups import assistance_type_mapping, award_type_mapping, loan_type_mapping
+from usaspending_api.awards.models.financial_accounts_by_awards import (
+    FinancialAccountsByAwards,
+)
+from usaspending_api.awards.v2.lookups.lookups import (
+    assistance_type_mapping,
+    award_type_mapping,
+    loan_type_mapping,
+)
 from usaspending_api.common.containers import Bunch
 from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.helpers.date_helper import now
-from usaspending_api.common.helpers.fiscal_year_helpers import generate_fiscal_year_and_month
-from usaspending_api.common.validator import TinyShield, customize_pagination_with_sort_columns
+from usaspending_api.common.helpers.fiscal_year_helpers import (
+    generate_fiscal_year_and_month,
+)
+from usaspending_api.common.validator import (
+    TinyShield,
+    customize_pagination_with_sort_columns,
+)
 from usaspending_api.disaster.models import CovidFABASpending
 from usaspending_api.references.helpers import get_def_codes_by_group
 from usaspending_api.references.models import DisasterEmergencyFundCode
@@ -84,7 +106,10 @@ def final_submissions_for_all_fy() -> List[tuple]:
     return (
         DABSSubmissionWindowSchedule.objects.filter(submission_reveal_date__lte=now())
         .values("submission_fiscal_year", "is_quarter")
-        .annotate(fiscal_year=F("submission_fiscal_year"), fiscal_period=Max("submission_fiscal_month"))
+        .annotate(
+            fiscal_year=F("submission_fiscal_year"),
+            fiscal_period=Max("submission_fiscal_month"),
+        )
         .values_list("fiscal_year", "is_quarter", "fiscal_period", named=True)
     )
 
@@ -224,7 +249,9 @@ class DisasterBase(APIView):
 
         base_values = With(
             FinancialAccountsByAwards.objects.filter(
-                Q(award__type__in=loan_type_mapping), self.all_closed_defc_submissions, self.is_in_provided_def_codes
+                Q(award__type__in=loan_type_mapping),
+                self.all_closed_defc_submissions,
+                self.is_in_provided_def_codes,
             )
             .annotate(
                 grouping_key=grouping_key,
@@ -261,7 +288,9 @@ class DisasterBase(APIView):
             .values("grouping_key")
             .annotate(
                 obligation=Coalesce(
-                    Sum("transaction_obligated_amount"), 0, output_field=DecimalField(max_digits=23, decimal_places=2)
+                    Sum("transaction_obligated_amount"),
+                    0,
+                    output_field=DecimalField(max_digits=23, decimal_places=2),
                 ),
                 outlay=Coalesce(
                     Sum(
@@ -279,7 +308,8 @@ class DisasterBase(APIView):
         )
 
         distinct_awards = With(
-            base_values.queryset().values("grouping_key", "award_id", "total_loan_value").distinct(), "distinct_awards"
+            base_values.queryset().values("grouping_key", "award_id", "total_loan_value").distinct(),
+            "distinct_awards",
         )
 
         aggregate_awards = With(
@@ -288,7 +318,9 @@ class DisasterBase(APIView):
             .annotate(
                 award_count=Count("award_id"),
                 face_value_of_loan=Coalesce(
-                    Sum("total_loan_value"), 0, output_field=DecimalField(max_digits=23, decimal_places=2)
+                    Sum("total_loan_value"),
+                    0,
+                    output_field=DecimalField(max_digits=23, decimal_places=2),
                 ),
             )
             .values("grouping_key", "award_count", "face_value_of_loan"),
@@ -457,7 +489,9 @@ class FabaOutlayMixin:
     @property
     def obligated_field_annotation(self):
         return Coalesce(
-            Sum("transaction_obligated_amount"), 0, output_field=DecimalField(max_digits=23, decimal_places=2)
+            Sum("transaction_obligated_amount"),
+            0,
+            output_field=DecimalField(max_digits=23, decimal_places=2),
         )
 
 
@@ -528,5 +562,13 @@ class PaginationMixin(_BasePaginationMixin):
 class LoansPaginationMixin(_BasePaginationMixin):
     @cached_property
     def pagination(self):
-        sortable_columns = ["id", "code", "description", "award_count", "obligation", "outlay", "face_value_of_loan"]
+        sortable_columns = [
+            "id",
+            "code",
+            "description",
+            "award_count",
+            "obligation",
+            "outlay",
+            "face_value_of_loan",
+        ]
         return self.run_models(sortable_columns)

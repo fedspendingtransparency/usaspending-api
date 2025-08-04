@@ -9,9 +9,16 @@ from rest_framework.views import APIView
 
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
-from usaspending_api.common.helpers.sql_helpers import build_composable_order_by, execute_sql_to_ordered_dictionary
-from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model
-from usaspending_api.common.validator.pagination import customize_pagination_with_sort_columns
+from usaspending_api.common.helpers.sql_helpers import (
+    build_composable_order_by,
+    execute_sql_to_ordered_dictionary,
+)
+from usaspending_api.common.validator.award import (
+    get_internal_or_generated_award_id_model,
+)
+from usaspending_api.common.validator.pagination import (
+    customize_pagination_with_sort_columns,
+)
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.references.helpers import generate_agency_slugs_for_agency_list
 
@@ -24,7 +31,10 @@ SORTABLE_COLUMNS = {
     "object_class": ["oc.object_class_name", "oc.object_class"],
     "piid": ["gfaba.piid"],
     "program_activity": ["rpa.program_activity_code", "rpa.program_activity_name"],
-    "reporting_fiscal_date": ["sa.reporting_fiscal_year", "sa.reporting_fiscal_quarter"],
+    "reporting_fiscal_date": [
+        "sa.reporting_fiscal_year",
+        "sa.reporting_fiscal_quarter",
+    ],
     "transaction_obligated_amount": ["gfaba.transaction_obligated_amount"],
 }
 
@@ -133,7 +143,13 @@ def _prepare_tiny_shield_models():
     models.extend(
         [
             get_internal_or_generated_award_id_model(),
-            {"key": "piid", "name": "piid", "optional": True, "type": "text", "text_type": "search"},
+            {
+                "key": "piid",
+                "name": "piid",
+                "optional": True,
+                "type": "text",
+                "text_type": "search",
+            },
         ]
     )
     return models
@@ -182,7 +198,13 @@ class IDVFundingViewSet(APIView):
         agency_slugs = generate_agency_slugs_for_agency_list(
             list(
                 chain.from_iterable(
-                    [(res["awarding_toptier_agency_id"], res["funding_toptier_agency_id"]) for res in limited_results]
+                    [
+                        (
+                            res["awarding_toptier_agency_id"],
+                            res["funding_toptier_agency_id"],
+                        )
+                        for res in limited_results
+                    ]
                 )
             )
         )

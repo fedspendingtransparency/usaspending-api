@@ -43,5 +43,9 @@ def test_awards_autocomplete(client, tas_data, fields, value, expected):
 def test_bad_awards_autocomplete_request(client):
     """Verify error on bad autocomplete request for awards."""
 
-    resp = client.post("/api/v1/tas/autocomplete/", content_type="application/json", data=json.dumps({}))
+    resp = client.post(
+        "/api/v1/tas/autocomplete/",
+        content_type="application/json",
+        data=json.dumps({}),
+    )
     assert resp.status_code == status.HTTP_400_BAD_REQUEST

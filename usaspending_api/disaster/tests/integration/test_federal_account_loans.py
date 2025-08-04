@@ -46,7 +46,12 @@ def test_federal_account_loans_success(client, covid_faba_spending_data, helpers
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
 
-    expected_totals = {"award_count": 2, "face_value_of_loan": 7777.0, "obligation": 4.0, "outlay": 334.0}
+    expected_totals = {
+        "award_count": 2,
+        "face_value_of_loan": 7777.0,
+        "obligation": 4.0,
+        "outlay": 334.0,
+    }
     assert resp.json()["totals"] == expected_totals
 
 

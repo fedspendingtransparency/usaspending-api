@@ -93,7 +93,10 @@ DETACHED_AWARD_PROCUREMENT_COLUMNS = {
     "fair_opportunity_limited_s": {"delta": "STRING", "postgres": "TEXT"},
     "fed_biz_opps": {"delta": "STRING", "postgres": "TEXT"},
     "fed_biz_opps_description": {"delta": "STRING", "postgres": "TEXT"},
-    "federal_action_obligation": {"delta": "NUMERIC(38, 18)", "postgres": "NUMERIC(38,18"},
+    "federal_action_obligation": {
+        "delta": "NUMERIC(38, 18)",
+        "postgres": "NUMERIC(38,18",
+    },
     "federal_agency": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
     "federally_funded_research": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
     "for_profit_organization": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},

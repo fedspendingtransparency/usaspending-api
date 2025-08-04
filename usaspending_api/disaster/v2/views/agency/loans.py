@@ -121,7 +121,9 @@ class LoansByAgencyViewSet(LoansPaginationMixin, DisasterBase, LoansMixin):
     def queryset(self):
 
         query = self.construct_loan_queryset(
-            "treasury_account__funding_toptier_agency_id", ToptierAgency, "toptier_agency_id"
+            "treasury_account__funding_toptier_agency_id",
+            ToptierAgency,
+            "toptier_agency_id",
         )
 
         annotations = {
@@ -155,8 +157,16 @@ class LoansBySubtierAgencyViewSet(ElasticsearchLoansPaginationMixin, Elasticsear
     query_fields = ["funding_toptier_agency_name.contains"]
     agg_key = "funding_toptier_agency_agg_key"  # primary (tier-1) aggregation key
     sub_agg_key = "funding_subtier_agency_agg_key"  # secondary (tier-2) sub-aggregation key
-    top_hits_fields = ["funding_toptier_agency_name", "funding_toptier_agency_code", "funding_agency_id"]
-    sub_top_hits_fields = ["funding_subtier_agency_name", "funding_subtier_agency_code", "funding_agency_id"]
+    top_hits_fields = [
+        "funding_toptier_agency_name",
+        "funding_toptier_agency_code",
+        "funding_agency_id",
+    ]
+    sub_top_hits_fields = [
+        "funding_subtier_agency_name",
+        "funding_subtier_agency_code",
+        "funding_agency_id",
+    ]
 
     def build_elasticsearch_result(self, info_buckets: List[dict]) -> List[dict]:
         results = []

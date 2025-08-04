@@ -36,7 +36,9 @@ Life expectancy:
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from usaspending_api.common.helpers.timing_helpers import ScriptTimer
-from usaspending_api.database_scripts.job_archive.management.commands import generate_cares_act_test_helpers as helper
+from usaspending_api.database_scripts.job_archive.management.commands import (
+    generate_cares_act_test_helpers as helper,
+)
 
 
 class Command(BaseCommand):
@@ -53,7 +55,14 @@ class Command(BaseCommand):
     #   ratio of $ to be applied to this clone,
     #   denominator of modulus (13 means one in 13 records will be cloned - ish)
     # )
-    clone_factors = [("I", 0.2, 13), ("F", 0.1, 11), ("L", 0.3, 10), ("M", 0.25, 8), ("N", 0.4, 7), ("O", 0.15, 5)]
+    clone_factors = [
+        ("I", 0.2, 13),
+        ("F", 0.1, 11),
+        ("L", 0.3, 10),
+        ("M", 0.25, 8),
+        ("N", 0.4, 7),
+        ("O", 0.15, 5),
+    ]
 
     def add_arguments(self, parser):
         helper.add_argument_fiscal_year(parser)

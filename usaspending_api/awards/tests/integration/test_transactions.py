@@ -22,7 +22,10 @@ from usaspending_api.search.models import AwardSearch
 def test_transaction_endpoint_v2(client):
     """Test the transaction endpoint."""
 
-    resp = client.post("/api/v2/transactions/", {"award_id": "1", "page": "1", "limit": "10", "order": "asc"})
+    resp = client.post(
+        "/api/v2/transactions/",
+        {"award_id": "1", "page": "1", "limit": "10", "order": "asc"},
+    )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data) > 1
 
@@ -68,7 +71,11 @@ def test_txn_total_grouped(client):
 
 def format_response(api_dict):
     svs = TransactionViewSet()
-    dec_fields = ["federal_action_obligation", "face_value_loan_guarantee", "original_loan_subsidy_cost"]
+    dec_fields = [
+        "federal_action_obligation",
+        "face_value_loan_guarantee",
+        "original_loan_subsidy_cost",
+    ]
     resp = {k: v for k, v in api_dict.items() if k != "transaction_id"}
     resp["description"] = resp["transaction_description"]
     resp = svs._format_results([resp])[0]

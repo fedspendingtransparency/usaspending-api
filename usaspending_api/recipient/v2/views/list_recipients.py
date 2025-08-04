@@ -20,7 +20,13 @@ logger = logging.getLogger(__name__)
 award_types = list(AWARD_TYPES.keys()) + ["all"]
 RECIPIENT_MODELS = [
     {"name": "keyword", "key": "keyword", "type": "text", "text_type": "search"},
-    {"name": "award_type", "key": "award_type", "type": "enum", "enum_values": award_types, "default": "all"},
+    {
+        "name": "award_type",
+        "key": "award_type",
+        "type": "enum",
+        "enum_values": award_types,
+        "default": "all",
+    },
 ]
 
 
@@ -48,7 +54,14 @@ def get_recipients(filters={}, count=None):
 
     queryset = (
         RecipientProfile.objects.filter(qs_filter)
-        .values("recipient_level", "recipient_hash", "recipient_unique_id", "recipient_name", amount_column, "uei")
+        .values(
+            "recipient_level",
+            "recipient_hash",
+            "recipient_unique_id",
+            "recipient_name",
+            amount_column,
+            "uei",
+        )
         .exclude(recipient_name__in=SPECIAL_CASES)
     )
     api_to_db_mapper = {
@@ -128,7 +141,11 @@ class ListRecipients(APIView):
             if model["name"] == "limit":
                 model["max"] = 1000
 
-        new_sort = {"type": "enum", "enum_values": ["name", "uei", "duns", "amount"], "default": "amount"}
+        new_sort = {
+            "type": "enum",
+            "enum_values": ["name", "uei", "duns", "amount"],
+            "default": "amount",
+        }
         models = update_model_in_list(models, "sort", new_sort)
         models = update_model_in_list(models, "limit", {"default": 50})
         validated_payload = TinyShield(models).block(request.data)

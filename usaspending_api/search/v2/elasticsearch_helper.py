@@ -6,9 +6,15 @@ from django.conf import settings
 from elasticsearch_dsl import A
 from elasticsearch_dsl import Q as ES_Q
 
-from usaspending_api.awards.v2.lookups.elasticsearch_lookups import INDEX_ALIASES_TO_AWARD_TYPES
+from usaspending_api.awards.v2.lookups.elasticsearch_lookups import (
+    INDEX_ALIASES_TO_AWARD_TYPES,
+)
 from usaspending_api.common.data_classes import Pagination
-from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, Search, TransactionSearch
+from usaspending_api.common.elasticsearch.search_wrappers import (
+    AwardSearch,
+    Search,
+    TransactionSearch,
+)
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.search.v2.es_sanitization import es_minimal_sanitize
 from usaspending_api.search.filters.elasticsearch.filter import QueryType
@@ -126,7 +132,10 @@ def get_sum_and_count_aggregation_results(keyword):
     query_with_filters = QueryWithFilters(QueryType.TRANSACTIONS)
     filter_query = query_with_filters.generate_elasticsearch_query({"keyword_search": [es_minimal_sanitize(keyword)]})
     search = TransactionSearch().filter(filter_query)
-    search.aggs.bucket("prime_awards_obligation_amount", {"sum": {"field": "federal_action_obligation"}})
+    search.aggs.bucket(
+        "prime_awards_obligation_amount",
+        {"sum": {"field": "federal_action_obligation"}},
+    )
     search.aggs.bucket("prime_awards_count", {"value_count": {"field": "transaction_id"}})
     response = search.handle_execute()
 
@@ -222,7 +231,11 @@ def get_scaled_sum_aggregations(field_to_sum: str, pagination: Optional[Paginati
         # sum_bucket_truncate -> used when parent aggregation is sorting and only a specific page is needed
         sum_bucket_sort = A("bucket_sort", sort={"sum_field": {"order": "desc"}}, **bucket_sort_values)
         sum_bucket_truncate = A("bucket_sort", **bucket_sort_values)
-        return {"sum_field": sum_field, "sum_bucket_sort": sum_bucket_sort, "sum_bucket_truncate": sum_bucket_truncate}
+        return {
+            "sum_field": sum_field,
+            "sum_bucket_sort": sum_bucket_sort,
+            "sum_bucket_truncate": sum_bucket_truncate,
+        }
     else:
         return {"sum_field": sum_field}
 

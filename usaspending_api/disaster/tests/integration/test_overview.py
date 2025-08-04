@@ -25,7 +25,12 @@ def test_basic_data_set(client, monkeypatch, helpers, defc_codes, basic_ref_data
     helpers.reset_dabs_cache()
     resp = client.get(OVERVIEW_URL)
     assert resp.data == {
-        "funding": [{"amount": EARLY_GTAS_CALCULATIONS["total_budgetary_resources"], "def_code": "M"}],
+        "funding": [
+            {
+                "amount": EARLY_GTAS_CALCULATIONS["total_budgetary_resources"],
+                "def_code": "M",
+            }
+        ],
         "total_budget_authority": EARLY_GTAS_CALCULATIONS["total_budgetary_resources"],
         "spending": {
             "award_obligations": Decimal("0.0"),
@@ -39,7 +44,14 @@ def test_basic_data_set(client, monkeypatch, helpers, defc_codes, basic_ref_data
 
 @pytest.mark.django_db
 def test_using_only_latest_gtas(
-    client, monkeypatch, helpers, defc_codes, basic_ref_data, late_gtas, early_gtas, basic_faba
+    client,
+    monkeypatch,
+    helpers,
+    defc_codes,
+    basic_ref_data,
+    late_gtas,
+    early_gtas,
+    basic_faba,
 ):
     helpers.patch_datetime_now(monkeypatch, EARLY_YEAR, LATE_MONTH, 25)
     helpers.reset_dabs_cache()
@@ -52,7 +64,13 @@ def test_using_only_latest_gtas(
 
 @pytest.mark.django_db
 def test_total_obligations(
-    client, monkeypatch, helpers, defc_codes, basic_ref_data, unobligated_balance_gtas, basic_faba
+    client,
+    monkeypatch,
+    helpers,
+    defc_codes,
+    basic_ref_data,
+    unobligated_balance_gtas,
+    basic_faba,
 ):
     helpers.patch_datetime_now(monkeypatch, EARLY_YEAR, LATE_MONTH, 25)
     resp = client.get(OVERVIEW_URL)
@@ -61,12 +79,24 @@ def test_total_obligations(
 
 @pytest.mark.django_db
 def test_exclude_gtas_for_incompleted_period(
-    client, monkeypatch, helpers, defc_codes, partially_completed_year, late_gtas, early_gtas, basic_faba
+    client,
+    monkeypatch,
+    helpers,
+    defc_codes,
+    partially_completed_year,
+    late_gtas,
+    early_gtas,
+    basic_faba,
 ):
     helpers.patch_datetime_now(monkeypatch, EARLY_YEAR, LATE_MONTH, 25)
     helpers.reset_dabs_cache()
     resp = client.get(OVERVIEW_URL)
-    assert resp.data["funding"] == [{"amount": EARLY_GTAS_CALCULATIONS["total_budgetary_resources"], "def_code": "M"}]
+    assert resp.data["funding"] == [
+        {
+            "amount": EARLY_GTAS_CALCULATIONS["total_budgetary_resources"],
+            "def_code": "M",
+        }
+    ]
     assert resp.data["total_budget_authority"] == EARLY_GTAS_CALCULATIONS["total_budgetary_resources"]
     assert resp.data["spending"]["total_obligations"] == EARLY_GTAS_CALCULATIONS["total_obligations"]
     assert resp.data["spending"]["total_outlays"] == EARLY_GTAS_CALCULATIONS["total_outlays"]
@@ -74,7 +104,13 @@ def test_exclude_gtas_for_incompleted_period(
 
 @pytest.mark.django_db
 def test_exclude_non_selected_defc_for_gtas(
-    client, monkeypatch, helpers, defc_codes, basic_ref_data, year_2_gtas_non_covid, basic_faba
+    client,
+    monkeypatch,
+    helpers,
+    defc_codes,
+    basic_ref_data,
+    year_2_gtas_non_covid,
+    basic_faba,
 ):
     helpers.patch_datetime_now(monkeypatch, LATE_YEAR, EARLY_MONTH, 25)
     helpers.reset_dabs_cache()
@@ -89,7 +125,15 @@ def test_exclude_non_selected_defc_for_gtas(
 
 @pytest.mark.django_db
 def test_summing_multiple_years(
-    client, monkeypatch, helpers, defc_codes, basic_ref_data, late_gtas, early_gtas, year_2_gtas_covid, basic_faba
+    client,
+    monkeypatch,
+    helpers,
+    defc_codes,
+    basic_ref_data,
+    late_gtas,
+    early_gtas,
+    year_2_gtas_covid,
+    basic_faba,
 ):
     helpers.patch_datetime_now(monkeypatch, LATE_YEAR, EARLY_MONTH, 25)
     helpers.reset_dabs_cache()
@@ -117,7 +161,14 @@ def test_summing_multiple_years(
 
 @pytest.mark.django_db
 def test_summing_period_and_quarterly_in_same_year(
-    client, monkeypatch, helpers, defc_codes, basic_ref_data, late_gtas, quarterly_gtas, basic_faba
+    client,
+    monkeypatch,
+    helpers,
+    defc_codes,
+    basic_ref_data,
+    late_gtas,
+    quarterly_gtas,
+    basic_faba,
 ):
     helpers.patch_datetime_now(monkeypatch, EARLY_YEAR, LATE_MONTH, 25)
     helpers.reset_dabs_cache()
@@ -138,7 +189,15 @@ def test_summing_period_and_quarterly_in_same_year(
 
 @pytest.mark.django_db
 def test_ignore_gtas_not_yet_revealed(
-    client, monkeypatch, helpers, defc_codes, basic_ref_data, late_gtas, early_gtas, year_2_gtas_covid, basic_faba
+    client,
+    monkeypatch,
+    helpers,
+    defc_codes,
+    basic_ref_data,
+    late_gtas,
+    early_gtas,
+    year_2_gtas_covid,
+    basic_faba,
 ):
     helpers.patch_datetime_now(monkeypatch, LATE_YEAR, EARLY_MONTH - 1, 25)
     helpers.reset_dabs_cache()
@@ -151,20 +210,37 @@ def test_ignore_gtas_not_yet_revealed(
 
 @pytest.mark.django_db
 def test_ignore_funding_for_unselected_defc(
-    client, monkeypatch, helpers, defc_codes, basic_ref_data, year_2_gtas_covid, year_2_gtas_covid_2
+    client,
+    monkeypatch,
+    helpers,
+    defc_codes,
+    basic_ref_data,
+    year_2_gtas_covid,
+    year_2_gtas_covid_2,
 ):
     helpers.patch_datetime_now(monkeypatch, LATE_YEAR, EARLY_MONTH, 25)
     helpers.reset_dabs_cache()
     resp = client.get(OVERVIEW_URL + "?def_codes=M,A")
-    assert resp.data["funding"] == [{"amount": YEAR_2_GTAS_CALCULATIONS["total_budgetary_resources"], "def_code": "M"}]
+    assert resp.data["funding"] == [
+        {
+            "amount": YEAR_2_GTAS_CALCULATIONS["total_budgetary_resources"],
+            "def_code": "M",
+        }
+    ]
     assert resp.data["total_budget_authority"] == YEAR_2_GTAS_CALCULATIONS["total_budgetary_resources"]
     assert resp.data["spending"]["total_obligations"] == YEAR_2_GTAS_CALCULATIONS["total_obligations"]
     assert resp.data["spending"]["total_outlays"] == YEAR_2_GTAS_CALCULATIONS["total_outlays"]
 
     resp = client.get(OVERVIEW_URL + "?def_codes=M,N")
     assert resp.data["funding"] == [
-        {"amount": YEAR_2_GTAS_CALCULATIONS["total_budgetary_resources"], "def_code": "M"},
-        {"amount": YEAR_2_GTAS_CALCULATIONS["total_budgetary_resources"], "def_code": "N"},
+        {
+            "amount": YEAR_2_GTAS_CALCULATIONS["total_budgetary_resources"],
+            "def_code": "M",
+        },
+        {
+            "amount": YEAR_2_GTAS_CALCULATIONS["total_budgetary_resources"],
+            "def_code": "N",
+        },
     ]
     assert resp.data["total_budget_authority"] == YEAR_2_GTAS_CALCULATIONS["total_budgetary_resources"] * 2
     assert resp.data["spending"]["total_obligations"] == YEAR_2_GTAS_CALCULATIONS["total_obligations"] * 2
@@ -172,12 +248,22 @@ def test_ignore_funding_for_unselected_defc(
 
 
 @pytest.mark.django_db
-def test_adds_budget_values(client, monkeypatch, helpers, defc_codes, basic_ref_data, other_budget_authority_gtas):
+def test_adds_budget_values(
+    client,
+    monkeypatch,
+    helpers,
+    defc_codes,
+    basic_ref_data,
+    other_budget_authority_gtas,
+):
     helpers.patch_datetime_now(monkeypatch, EARLY_YEAR, EARLY_MONTH, 25)
     helpers.reset_dabs_cache()
     resp = client.get(OVERVIEW_URL)
     assert resp.data["funding"] == [
-        {"amount": OTHER_BUDGET_AUTHORITY_GTAS_CALCULATIONS["total_budgetary_resources"], "def_code": "M"}
+        {
+            "amount": OTHER_BUDGET_AUTHORITY_GTAS_CALCULATIONS["total_budgetary_resources"],
+            "def_code": "M",
+        }
     ]
     assert resp.data["total_budget_authority"] == OTHER_BUDGET_AUTHORITY_GTAS_CALCULATIONS["total_budgetary_resources"]
     assert resp.data["spending"]["total_obligations"] == OTHER_BUDGET_AUTHORITY_GTAS_CALCULATIONS["total_obligations"]
@@ -186,7 +272,13 @@ def test_adds_budget_values(client, monkeypatch, helpers, defc_codes, basic_ref_
 
 @pytest.mark.django_db
 def test_award_obligation_adds_values(
-    client, monkeypatch, helpers, defc_codes, basic_ref_data, early_gtas, faba_with_values
+    client,
+    monkeypatch,
+    helpers,
+    defc_codes,
+    basic_ref_data,
+    early_gtas,
+    faba_with_values,
 ):
     helpers.patch_datetime_now(monkeypatch, EARLY_YEAR, LATE_MONTH, 25)
     helpers.reset_dabs_cache()
@@ -197,7 +289,13 @@ def test_award_obligation_adds_values(
 
 @pytest.mark.django_db
 def test_faba_excludes_non_selected_defc(
-    client, monkeypatch, helpers, defc_codes, basic_ref_data, early_gtas, faba_with_non_covid_values
+    client,
+    monkeypatch,
+    helpers,
+    defc_codes,
+    basic_ref_data,
+    early_gtas,
+    faba_with_non_covid_values,
 ):
     helpers.patch_datetime_now(monkeypatch, EARLY_YEAR, LATE_MONTH, 25)
     helpers.reset_dabs_cache()
@@ -208,7 +306,13 @@ def test_faba_excludes_non_selected_defc(
 
 @pytest.mark.django_db
 def test_award_outlays_sum_multiple_years(
-    client, monkeypatch, helpers, defc_codes, basic_ref_data, early_gtas, multi_year_faba
+    client,
+    monkeypatch,
+    helpers,
+    defc_codes,
+    basic_ref_data,
+    early_gtas,
+    multi_year_faba,
 ):
     helpers.patch_datetime_now(monkeypatch, LATE_YEAR, EARLY_MONTH, 25)
     helpers.reset_dabs_cache()
@@ -218,7 +322,13 @@ def test_award_outlays_sum_multiple_years(
 
 @pytest.mark.django_db
 def test_award_outlays_doesnt_sum_multiple_periods(
-    client, monkeypatch, helpers, defc_codes, basic_ref_data, early_gtas, multi_period_faba
+    client,
+    monkeypatch,
+    helpers,
+    defc_codes,
+    basic_ref_data,
+    early_gtas,
+    multi_period_faba,
 ):
     helpers.patch_datetime_now(monkeypatch, LATE_YEAR, LATE_MONTH, 25)
     helpers.reset_dabs_cache()
@@ -228,7 +338,13 @@ def test_award_outlays_doesnt_sum_multiple_periods(
 
 @pytest.mark.django_db
 def test_award_outlays_ignores_future_faba(
-    client, monkeypatch, helpers, defc_codes, basic_ref_data, early_gtas, multi_period_faba_with_future
+    client,
+    monkeypatch,
+    helpers,
+    defc_codes,
+    basic_ref_data,
+    early_gtas,
+    multi_period_faba_with_future,
 ):
     helpers.patch_datetime_now(monkeypatch, LATE_YEAR, LATE_MONTH, 25)
     helpers.reset_dabs_cache()
@@ -259,15 +375,44 @@ def test_dol_defc_v_special_case(client, monkeypatch, helpers, defc_codes, basic
             "anticipated_prior_year_obligation_recoveries": 1000 * multiplier,
         }
 
-    baker.make("references.GTASSF133Balances", fiscal_year=2020, fiscal_period=12, **_gtas_values(1))
-    baker.make("references.GTASSF133Balances", fiscal_year=2021, fiscal_period=6, **_gtas_values(2))
-    baker.make("references.GTASSF133Balances", fiscal_year=2021, fiscal_period=12, **_gtas_values(3))
-    baker.make("references.GTASSF133Balances", fiscal_year=2022, fiscal_period=5, **_gtas_values(4))
+    baker.make(
+        "references.GTASSF133Balances",
+        fiscal_year=2020,
+        fiscal_period=12,
+        **_gtas_values(1),
+    )
+    baker.make(
+        "references.GTASSF133Balances",
+        fiscal_year=2021,
+        fiscal_period=6,
+        **_gtas_values(2),
+    )
+    baker.make(
+        "references.GTASSF133Balances",
+        fiscal_year=2021,
+        fiscal_period=12,
+        **_gtas_values(3),
+    )
+    baker.make(
+        "references.GTASSF133Balances",
+        fiscal_year=2022,
+        fiscal_period=5,
+        **_gtas_values(4),
+    )
     defc_v_values = _gtas_values(6)
     defc_v_values.update(
-        {"disaster_emergency_fund_id": "V", "treasury_account_identifier": None, "tas_rendering_label": None}
+        {
+            "disaster_emergency_fund_id": "V",
+            "treasury_account_identifier": None,
+            "tas_rendering_label": None,
+        }
     )
-    baker.make("references.GTASSF133Balances", fiscal_year=2022, fiscal_period=5, **defc_v_values)
+    baker.make(
+        "references.GTASSF133Balances",
+        fiscal_year=2022,
+        fiscal_period=5,
+        **defc_v_values,
+    )
     resp = client.get(f"{OVERVIEW_URL}?def_codes=V")
     assert resp.data == {
         "funding": [{"amount": 599334.0, "def_code": "V"}],

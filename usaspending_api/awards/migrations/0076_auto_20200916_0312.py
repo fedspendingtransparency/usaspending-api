@@ -6,12 +6,23 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('awards', '0075_financialaccountsbyawards_distinct_award_key'),
+        ("awards", "0075_financialaccountsbyawards_distinct_award_key"),
     ]
 
     operations = [
         migrations.AddIndex(
-            model_name='financialaccountsbyawards',
-            index=models.Index(condition=models.Q(disaster_emergency_fund__in=['L', 'M', 'N', 'O', 'P']), fields=['submission', 'distinct_award_key', 'transaction_obligated_amount', 'gross_outlay_amount_by_award_cpe'], name='faba_subid_awardkey_sums_idx'),
+            model_name="financialaccountsbyawards",
+            index=models.Index(
+                condition=models.Q(
+                    disaster_emergency_fund__in=["L", "M", "N", "O", "P"]
+                ),
+                fields=[
+                    "submission",
+                    "distinct_award_key",
+                    "transaction_obligated_amount",
+                    "gross_outlay_amount_by_award_cpe",
+                ],
+                name="faba_subid_awardkey_sums_idx",
+            ),
         ),
     ]

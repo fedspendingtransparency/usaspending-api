@@ -59,7 +59,12 @@ from usaspending_api.search.delta_models.subaward_search import (
     subaward_search_create_sql_string,
     subaward_search_load_sql_string,
 )
-from usaspending_api.search.models import AwardSearch, SubawardSearch, SummaryStateView, TransactionSearch
+from usaspending_api.search.models import (
+    AwardSearch,
+    SubawardSearch,
+    SummaryStateView,
+    TransactionSearch,
+)
 from usaspending_api.settings import HOST
 from usaspending_api.transactions.delta_models import (
     SUMMARY_STATE_VIEW_COLUMNS,
@@ -253,8 +258,14 @@ TABLE_SPEC = {
             "partition_keys": ["is_fpds"],
             "partitioning_form": "LIST",
             "partitions": [
-                {"table_suffix": "_fpds", "partitioning_clause": "FOR VALUES IN (TRUE)"},
-                {"table_suffix": "_fabs", "partitioning_clause": "FOR VALUES IN (FALSE)"},
+                {
+                    "table_suffix": "_fpds",
+                    "partitioning_clause": "FOR VALUES IN (TRUE)",
+                },
+                {
+                    "table_suffix": "_fabs",
+                    "partitioning_clause": "FOR VALUES IN (FALSE)",
+                },
             ],
         },
     },

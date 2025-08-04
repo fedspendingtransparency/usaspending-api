@@ -202,7 +202,13 @@ def test_tas_program_activity_multiple_submission_years(client, agency_account_d
                 "gross_outlay_amount": 10000.0,
                 "name": "NAME 4",
                 "obligated_amount": 1000.0,
-                "children": [{"gross_outlay_amount": 10000.0, "name": "Other", "obligated_amount": 1000.0}],
+                "children": [
+                    {
+                        "gross_outlay_amount": 10000.0,
+                        "name": "Other",
+                        "obligated_amount": 1000.0,
+                    }
+                ],
             }
         ],
     }
@@ -298,7 +304,13 @@ def tas_mulitple_oc_per_tas():
 
     ta1 = baker.make("references.ToptierAgency", toptier_code="008", _fill_optional=True)
 
-    baker.make("references.Agency", id=1, toptier_flag=True, toptier_agency=ta1, _fill_optional=True)
+    baker.make(
+        "references.Agency",
+        id=1,
+        toptier_flag=True,
+        toptier_agency=ta1,
+        _fill_optional=True,
+    )
 
     sub1 = baker.make(
         "submissions.SubmissionAttributes",
@@ -322,19 +334,39 @@ def tas_mulitple_oc_per_tas():
         tas_rendering_label="002-X-0000-000",
     )
 
-    baker.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas1, submission=sub1)
+    baker.make(
+        "accounts.AppropriationAccountBalances",
+        treasury_account_identifier=tas1,
+        submission=sub1,
+    )
 
-    pa1 = baker.make("references.RefProgramActivity", program_activity_code="111", program_activity_name="NAME 4")
+    pa1 = baker.make(
+        "references.RefProgramActivity",
+        program_activity_code="111",
+        program_activity_name="NAME 4",
+    )
 
     oc = "references.ObjectClass"
     oc1 = baker.make(
-        oc, major_object_class=10, major_object_class_name="Other", object_class=120, object_class_name="supplies"
+        oc,
+        major_object_class=10,
+        major_object_class_name="Other",
+        object_class=120,
+        object_class_name="supplies",
     )
     oc2 = baker.make(
-        oc, major_object_class=10, major_object_class_name="Other2", object_class=130, object_class_name="interest"
+        oc,
+        major_object_class=10,
+        major_object_class_name="Other2",
+        object_class=130,
+        object_class_name="interest",
     )
     oc3 = baker.make(
-        oc, major_object_class=10, major_object_class_name="Other", object_class=120, object_class_name="supplies"
+        oc,
+        major_object_class=10,
+        major_object_class_name="Other",
+        object_class=120,
+        object_class_name="supplies",
     )
 
     fabpaoc = "financial_activities.FinancialAccountsByProgramActivityObjectClass"

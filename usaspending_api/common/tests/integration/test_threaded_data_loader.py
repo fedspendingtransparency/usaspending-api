@@ -12,7 +12,10 @@ def test_threaded_data_loader():
     """
     # Create the field map, value map, and threaded data loader object
     # The field map is truncated because we don't care about most fields actually getting loaded
-    field_map = {"treasury_account_identifier": "ACCT_NUM", "account_title": "GWA_TAS_NAME"}
+    field_map = {
+        "treasury_account_identifier": "ACCT_NUM",
+        "account_title": "GWA_TAS_NAME",
+    }
 
     loader = ThreadedDataLoader(
         model_class=TreasuryAppropriationAccount,

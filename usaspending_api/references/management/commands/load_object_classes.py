@@ -9,7 +9,10 @@ from psycopg2.sql import SQL
 from usaspending_api.common.csv_helpers import read_csv_file_as_list_of_dictionaries
 from usaspending_api.common.etl.postgres import ETLTable, ETLTemporaryTable
 from usaspending_api.common.etl.postgres import mixins
-from usaspending_api.common.etl.postgres.operations import insert_missing_rows, update_changed_rows
+from usaspending_api.common.etl.postgres.operations import (
+    insert_missing_rows,
+    update_changed_rows,
+)
 from usaspending_api.common.helpers.sql_helpers import get_connection
 from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
 from usaspending_api.references.models import ObjectClass
@@ -213,7 +216,10 @@ class Command(mixins.ETLMixin, BaseCommand):
     def _perform_load(self):
 
         overrides = {
-            "insert_overrides": {"create_date": SQL("now()"), "update_date": SQL("now()")},
+            "insert_overrides": {
+                "create_date": SQL("now()"),
+                "update_date": SQL("now()"),
+            },
             "update_overrides": {"update_date": SQL("now()")},
             "key_overrides": ["object_class", "direct_reimbursable"],
         }
@@ -231,10 +237,16 @@ class Command(mixins.ETLMixin, BaseCommand):
 
         # NOT deleting object classes is intentional for historical reasons.
         self._execute_function_and_log(
-            update_changed_rows, "Update changed object classes", temp_object_class_table, object_class_table
+            update_changed_rows,
+            "Update changed object classes",
+            temp_object_class_table,
+            object_class_table,
         )
         self._execute_function_and_log(
-            insert_missing_rows, "Insert missing object classes", temp_object_class_table, object_class_table
+            insert_missing_rows,
+            "Insert missing object classes",
+            temp_object_class_table,
+            object_class_table,
         )
 
     def _vacuum_tables(self):

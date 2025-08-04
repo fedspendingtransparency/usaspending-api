@@ -7,10 +7,18 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction as db_transaction, IntegrityError
 
-from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
+from usaspending_api.awards.models import (
+    TransactionNormalized,
+    TransactionFABS,
+    TransactionFPDS,
+)
 from usaspending_api.common.helpers.date_helper import fy
 from usaspending_api.common.helpers.timing_helpers import timer
-from usaspending_api.etl.award_helpers import update_awards, update_procurement_awards, update_assistance_awards
+from usaspending_api.etl.award_helpers import (
+    update_awards,
+    update_procurement_awards,
+    update_assistance_awards,
+)
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.management.load_base import format_date, load_data_into_model
 from usaspending_api.references.models import Agency, SubtierAgency, ToptierAgency
@@ -29,7 +37,10 @@ subtier_agency_map = {
     for subtier_agency in SubtierAgency.objects.values("subtier_code", "subtier_agency_id")
 }
 subtier_to_agency_map = {
-    agency["subtier_agency_id"]: {"agency_id": agency["id"], "toptier_agency_id": agency["toptier_agency_id"]}
+    agency["subtier_agency_id"]: {
+        "agency_id": agency["id"],
+        "toptier_agency_id": agency["toptier_agency_id"],
+    }
     for agency in Agency.objects.values("id", "toptier_agency_id", "subtier_agency_id")
 }
 toptier_agency_map = {
@@ -190,7 +201,10 @@ class Command(BaseCommand):
 
         for index, row in enumerate(award_financial_assistance_data, 1):
             financial_assistance_data = load_data_into_model(
-                TransactionFABS(), row, field_map=fabs_field_map, as_dict=True  # thrown away
+                TransactionFABS(),
+                row,
+                field_map=fabs_field_map,
+                as_dict=True,  # thrown away
             )
 
             transaction_assistance = TransactionFABS(
@@ -243,7 +257,10 @@ class Command(BaseCommand):
         logger.info("Running dictfetchall on db_cursor")
         procurement_data = dictfetchall(db_cursor)
 
-        fpds_normalized_field_map = {"type": "contract_award_type", "description": "award_description"}
+        fpds_normalized_field_map = {
+            "type": "contract_award_type",
+            "description": "award_description",
+        }
 
         fpds_field_map = {
             "officer_1_name": "high_comp_officer1_full_na",
@@ -338,7 +355,10 @@ class Command(BaseCommand):
                 transaction.save()
 
                 contract_instance = load_data_into_model(
-                    TransactionFPDS(), row, field_map=fpds_field_map, as_dict=True  # thrown away
+                    TransactionFPDS(),
+                    row,
+                    field_map=fpds_field_map,
+                    as_dict=True,  # thrown away
                 )
 
                 transaction_contract = TransactionFPDS(transaction=transaction, **contract_instance)
@@ -352,7 +372,11 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
 
         parser.add_argument(
-            "--fiscal_year", dest="fiscal_year", nargs="+", type=int, help="Year for which to run the historical load"
+            "--fiscal_year",
+            dest="fiscal_year",
+            nargs="+",
+            type=int,
+            help="Year for which to run the historical load",
         )
 
         parser.add_argument(
@@ -371,9 +395,21 @@ class Command(BaseCommand):
             help="Runs the historical loader only for Award Procurement (Contract) data",
         )
 
-        parser.add_argument("--page", dest="page", nargs="+", type=int, help="Page for batching and parallelization")
+        parser.add_argument(
+            "--page",
+            dest="page",
+            nargs="+",
+            type=int,
+            help="Page for batching and parallelization",
+        )
 
-        parser.add_argument("--limit", dest="limit", nargs="+", type=int, help="Limit for batching and parallelization")
+        parser.add_argument(
+            "--limit",
+            dest="limit",
+            nargs="+",
+            type=int,
+            help="Limit for batching and parallelization",
+        )
 
     # @transaction.atomic
     def handle(self, *args, **options):
@@ -401,13 +437,22 @@ class Command(BaseCommand):
             with timer("D2 historical data load", logger.info):
                 self.update_transaction_assistance(db_cursor=db_cursor, fiscal_year=fiscal_year, page=page, limit=limit)
 
-        with timer("updating awards to reflect their latest associated transaction info", logger.info):
+        with timer(
+            "updating awards to reflect their latest associated transaction info",
+            logger.info,
+        ):
             update_awards(tuple(award_update_id_list))
 
-        with timer("updating assistance-specific awards to reflect their latest transaction info", logger.info):
+        with timer(
+            "updating assistance-specific awards to reflect their latest transaction info",
+            logger.info,
+        ):
             update_assistance_awards(tuple(award_assistance_update_id_list))
 
-        with timer("updating contract-specific awards to reflect their latest transaction info", logger.info):
+        with timer(
+            "updating contract-specific awards to reflect their latest transaction info",
+            logger.info,
+        ):
             update_procurement_awards(tuple(award_contract_update_id_list))
 
         # Done!

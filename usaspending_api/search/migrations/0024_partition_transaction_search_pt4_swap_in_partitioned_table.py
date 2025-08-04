@@ -6,25 +6,37 @@ from django.core.management import call_command
 from django.db import migrations, connection
 from typing import List
 
-from usaspending_api.common.helpers.sql_helpers import is_table_partitioned, get_parent_partitioned_table
+from usaspending_api.common.helpers.sql_helpers import (
+    is_table_partitioned,
+    get_parent_partitioned_table,
+)
 
 logger = logging.getLogger(__name__)
 
+
 def swap_partitioned_table_with_partitions(apps, _):
     # Swap partitions first, then partition table
-    call_command("swap_in_new_table", "--table=transaction_search_fabs", "--keep-old-data")
-    call_command("swap_in_new_table", "--table=transaction_search_fpds", "--keep-old-data")
+    call_command(
+        "swap_in_new_table", "--table=transaction_search_fabs", "--keep-old-data"
+    )
+    call_command(
+        "swap_in_new_table", "--table=transaction_search_fpds", "--keep-old-data"
+    )
     call_command("swap_in_new_table", "--table=transaction_search", "--keep-old-data")
 
 
-def undo_swap_partitioned_table_with_partitions(partition_names: List, assumed_parent_partitioned_table: str):
+def undo_swap_partitioned_table_with_partitions(
+    partition_names: List, assumed_parent_partitioned_table: str
+):
     # Do it in the same order as swapped (partitions first, then partitioned table)
     # Otherwise when cleanup of the "old" partitioned table deletes it,
     # it will cascade-delete its partitions, and prevent "un-swapping" them
 
     # Detach partitions before swapping out
     with connection.cursor() as cursor:
-        is_parent_partitioned = is_table_partitioned(table=assumed_parent_partitioned_table, cursor=cursor)
+        is_parent_partitioned = is_table_partitioned(
+            table=assumed_parent_partitioned_table, cursor=cursor
+        )
         if not is_parent_partitioned:
             logger.warning(
                 f"The assumed parent table '{assumed_parent_partitioned_table}' is NOT partitioned. "
@@ -34,12 +46,18 @@ def undo_swap_partitioned_table_with_partitions(partition_names: List, assumed_p
             try_detach_partition(
                 partition_name=partition_name,
                 assumed_parent_partitioned_table=assumed_parent_partitioned_table,
-                cursor=cursor
+                cursor=cursor,
             )
             table_without_schema = re.sub(rf"^.*?\.(.*?)$", rf"\g<1>", partition_name)
-            call_command("swap_in_new_table", f"--table={table_without_schema}", "--undo")
-        parent_partition_without_schema = re.sub(rf"^.*?\.(.*?)$", rf"\g<1>", assumed_parent_partitioned_table)
-        call_command("swap_in_new_table", f"--table={parent_partition_without_schema}", "--undo")
+            call_command(
+                "swap_in_new_table", f"--table={table_without_schema}", "--undo"
+            )
+        parent_partition_without_schema = re.sub(
+            rf"^.*?\.(.*?)$", rf"\g<1>", assumed_parent_partitioned_table
+        )
+        call_command(
+            "swap_in_new_table", f"--table={parent_partition_without_schema}", "--undo"
+        )
 
 
 def try_detach_partition(partition_name, assumed_parent_partitioned_table, cursor):
@@ -55,9 +73,13 @@ def try_detach_partition(partition_name, assumed_parent_partitioned_table, curso
             f"instead of assumed parent '{assumed_parent_partitioned_table}' "
             f"Will DETACH this partition from '{partition_parent}' instead, before undoing swap"
         )
-        cursor.execute(f"ALTER TABLE {partition_parent} DETACH PARTITION {partition_name}")
+        cursor.execute(
+            f"ALTER TABLE {partition_parent} DETACH PARTITION {partition_name}"
+        )
     else:
-        cursor.execute(f"ALTER TABLE {assumed_parent_partitioned_table} DETACH PARTITION {partition_name}")
+        cursor.execute(
+            f"ALTER TABLE {assumed_parent_partitioned_table} DETACH PARTITION {partition_name}"
+        )
 
 
 class Migration(migrations.Migration):
@@ -88,8 +110,11 @@ class Migration(migrations.Migration):
             atomic=True,
             code=swap_partitioned_table_with_partitions,
             reverse_code=lambda apps, _: undo_swap_partitioned_table_with_partitions(
-                partition_names=["rpt.transaction_search_fabs", "rpt.transaction_search_fpds"],
-                assumed_parent_partitioned_table="rpt.transaction_search"
+                partition_names=[
+                    "rpt.transaction_search_fabs",
+                    "rpt.transaction_search_fpds",
+                ],
+                assumed_parent_partitioned_table="rpt.transaction_search",
             ),
         ),
     ]

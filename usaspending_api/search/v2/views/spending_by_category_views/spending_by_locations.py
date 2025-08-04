@@ -9,7 +9,11 @@ from django.db.models.functions import Concat
 
 from usaspending_api.recipient.models import StateData
 from usaspending_api.references.abbreviations import code_to_state, fips_to_code
-from usaspending_api.references.models import PopCongressionalDistrict, PopCounty, RefCountryCode
+from usaspending_api.references.models import (
+    PopCongressionalDistrict,
+    PopCounty,
+    RefCountryCode,
+)
 from usaspending_api.search.v2.views.enums import SpendingLevel
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_category import (
     AbstractSpendingByCategoryViewSet,
@@ -107,7 +111,11 @@ class AbstractLocationViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMe
             # Get all `shape_code`, `state_code`, and `congressional_district` values for the given state
             location_info_query = (
                 PopCongressionalDistrict.objects.annotate(
-                    shape_code=Concat(F("state_code"), F("congressional_district"), output_field=TextField())
+                    shape_code=Concat(
+                        F("state_code"),
+                        F("congressional_district"),
+                        output_field=TextField(),
+                    )
                 )
                 .filter(state_code__in={sc[:2] for sc in code_list if sc is not None})
                 .values("shape_code", "state_code", "congressional_district")

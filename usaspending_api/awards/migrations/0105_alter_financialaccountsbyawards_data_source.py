@@ -6,13 +6,17 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('awards', '0104_rename_column_data_source'),
+        ("awards", "0104_rename_column_data_source"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='financialaccountsbyawards',
-            name='data_source',
-            field=models.TextField(choices=[('USA', 'USAspending'), ('DBR', 'Data Broker')], help_text='The source of this entry, either Data Broker (DBR) or USASpending (USA)', null=True),
+            model_name="financialaccountsbyawards",
+            name="data_source",
+            field=models.TextField(
+                choices=[("USA", "USAspending"), ("DBR", "Data Broker")],
+                help_text="The source of this entry, either Data Broker (DBR) or USASpending (USA)",
+                null=True,
+            ),
         ),
     ]

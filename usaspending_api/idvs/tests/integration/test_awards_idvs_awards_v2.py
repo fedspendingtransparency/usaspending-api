@@ -6,7 +6,9 @@ from model_bakery import baker
 from rest_framework import status
 from usaspending_api.idvs.tests.data.idv_test_data import IDVS, PARENTS
 from usaspending_api.idvs.v2.views.awards import SORTABLE_COLUMNS
-from usaspending_api.submissions.models.submission_attributes import SubmissionAttributes
+from usaspending_api.submissions.models.submission_attributes import (
+    SubmissionAttributes,
+)
 
 
 ENDPOINT = "/api/v2/idvs/awards/"
@@ -59,7 +61,12 @@ def _generate_expected_response(previous, next, page, has_previous, has_next, no
     return {"results": results, "page_metadata": page_metadata}
 
 
-def _test_post(client, request, expected_response_parameters_tuple=None, expected_status_code=status.HTTP_200_OK):
+def _test_post(
+    client,
+    request,
+    expected_response_parameters_tuple=None,
+    expected_status_code=status.HTTP_200_OK,
+):
     """
     Perform the actual request and interrogates the results.
 
@@ -84,7 +91,11 @@ def test_defaults(client, create_idv_test_data):
 
     _test_post(client, {"award_id": 1}, (None, None, 1, False, False, False, 5, 4, 3))
 
-    _test_post(client, {"award_id": "CONT_IDV_001"}, (None, None, 1, False, False, False, 5, 4, 3))
+    _test_post(
+        client,
+        {"award_id": "CONT_IDV_001"},
+        (None, None, 1, False, False, False, 5, 4, 3),
+    )
 
 
 @pytest.mark.django_db
@@ -104,17 +115,35 @@ def test_with_bogus_id(client):
 @pytest.mark.django_db
 def test_type(client, create_idv_test_data):
 
-    _test_post(client, {"award_id": 1, "type": "child_idvs"}, (None, None, 1, False, False, False, 5, 4, 3))
-
-    _test_post(client, {"award_id": 1, "type": "child_awards"}, (None, None, 1, False, False, False, 6))
-
-    _test_post(client, {"award_id": 1, "type": "grandchild_awards"}, (None, None, 1, False, False, False))
-
     _test_post(
-        client, {"award_id": 2, "type": "grandchild_awards"}, (None, None, 1, False, False, False, 14, 13, 12, 11)
+        client,
+        {"award_id": 1, "type": "child_idvs"},
+        (None, None, 1, False, False, False, 5, 4, 3),
     )
 
-    _test_post(client, {"award_id": 1, "type": "BOGUS TYPE"}, expected_status_code=status.HTTP_400_BAD_REQUEST)
+    _test_post(
+        client,
+        {"award_id": 1, "type": "child_awards"},
+        (None, None, 1, False, False, False, 6),
+    )
+
+    _test_post(
+        client,
+        {"award_id": 1, "type": "grandchild_awards"},
+        (None, None, 1, False, False, False),
+    )
+
+    _test_post(
+        client,
+        {"award_id": 2, "type": "grandchild_awards"},
+        (None, None, 1, False, False, False, 14, 13, 12, 11),
+    )
+
+    _test_post(
+        client,
+        {"award_id": 1, "type": "BOGUS TYPE"},
+        expected_status_code=status.HTTP_400_BAD_REQUEST,
+    )
 
 
 @pytest.mark.django_db
@@ -122,13 +151,29 @@ def test_limit_values(client, create_idv_test_data):
 
     _test_post(client, {"award_id": 1, "limit": 1}, (None, 2, 1, False, True, False, 5))
 
-    _test_post(client, {"award_id": 1, "limit": 5}, (None, None, 1, False, False, False, 5, 4, 3))
+    _test_post(
+        client,
+        {"award_id": 1, "limit": 5},
+        (None, None, 1, False, False, False, 5, 4, 3),
+    )
 
-    _test_post(client, {"award_id": 1, "limit": 0}, expected_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
+    _test_post(
+        client,
+        {"award_id": 1, "limit": 0},
+        expected_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+    )
 
-    _test_post(client, {"award_id": 1, "limit": 2000000000}, expected_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
+    _test_post(
+        client,
+        {"award_id": 1, "limit": 2000000000},
+        expected_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+    )
 
-    _test_post(client, {"award_id": 1, "limit": {"BOGUS": "LIMIT"}}, expected_status_code=status.HTTP_400_BAD_REQUEST)
+    _test_post(
+        client,
+        {"award_id": 1, "limit": {"BOGUS": "LIMIT"}},
+        expected_status_code=status.HTTP_400_BAD_REQUEST,
+    )
 
 
 @pytest.mark.django_db
@@ -136,16 +181,24 @@ def test_page_values(client, create_idv_test_data):
 
     _test_post(client, {"award_id": 1, "limit": 1, "page": 2}, (1, 3, 2, True, True, False, 4))
 
-    _test_post(client, {"award_id": 1, "limit": 1, "page": 3}, (2, None, 3, True, False, False, 3))
+    _test_post(
+        client,
+        {"award_id": 1, "limit": 1, "page": 3},
+        (2, None, 3, True, False, False, 3),
+    )
 
     _test_post(client, {"award_id": 1, "limit": 1, "page": 4}, (3, None, 4, True, False, False))
 
     _test_post(
-        client, {"award_id": 1, "limit": 1, "page": 0}, expected_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY
+        client,
+        {"award_id": 1, "limit": 1, "page": 0},
+        expected_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
     )
 
     _test_post(
-        client, {"award_id": 1, "limit": 1, "page": "BOGUS PAGE"}, expected_status_code=status.HTTP_400_BAD_REQUEST
+        client,
+        {"award_id": 1, "limit": 1, "page": "BOGUS PAGE"},
+        expected_status_code=status.HTTP_400_BAD_REQUEST,
     )
 
 
@@ -166,17 +219,33 @@ def test_sort_columns(client, create_idv_test_data):
             (None, None, 1, False, False, False, 3, 4, 5),
         )
 
-    _test_post(client, {"award_id": 1, "sort": "BOGUS FIELD"}, expected_status_code=status.HTTP_400_BAD_REQUEST)
+    _test_post(
+        client,
+        {"award_id": 1, "sort": "BOGUS FIELD"},
+        expected_status_code=status.HTTP_400_BAD_REQUEST,
+    )
 
 
 @pytest.mark.django_db
 def test_sort_order_values(client, create_idv_test_data):
 
-    _test_post(client, {"award_id": 1, "order": "desc"}, (None, None, 1, False, False, False, 5, 4, 3))
+    _test_post(
+        client,
+        {"award_id": 1, "order": "desc"},
+        (None, None, 1, False, False, False, 5, 4, 3),
+    )
 
-    _test_post(client, {"award_id": 1, "order": "asc"}, (None, None, 1, False, False, False, 3, 4, 5))
+    _test_post(
+        client,
+        {"award_id": 1, "order": "asc"},
+        (None, None, 1, False, False, False, 3, 4, 5),
+    )
 
-    _test_post(client, {"award_id": 1, "order": "BOGUS ORDER"}, expected_status_code=status.HTTP_400_BAD_REQUEST)
+    _test_post(
+        client,
+        {"award_id": 1, "order": "BOGUS ORDER"},
+        expected_status_code=status.HTTP_400_BAD_REQUEST,
+    )
 
 
 @pytest.mark.django_db
@@ -184,13 +253,27 @@ def test_complete_queries(client, create_idv_test_data):
 
     _test_post(
         client,
-        {"award_id": 1, "type": "child_idvs", "limit": 3, "page": 1, "sort": "description", "order": "asc"},
+        {
+            "award_id": 1,
+            "type": "child_idvs",
+            "limit": 3,
+            "page": 1,
+            "sort": "description",
+            "order": "asc",
+        },
         (None, None, 1, False, False, False, 3, 4, 5),
     )
 
     _test_post(
         client,
-        {"award_id": 1, "type": "child_awards", "limit": 3, "page": 1, "sort": "description", "order": "asc"},
+        {
+            "award_id": 1,
+            "type": "child_awards",
+            "limit": 3,
+            "page": 1,
+            "sort": "description",
+            "order": "asc",
+        },
         (None, None, 1, False, False, False, 6),
     )
 
@@ -198,25 +281,49 @@ def test_complete_queries(client, create_idv_test_data):
 @pytest.mark.django_db
 def test_no_grandchildren_returned(client, create_idv_test_data):
 
-    _test_post(client, {"award_id": 2, "type": "child_idvs"}, (None, None, 1, False, False, False, 8, 7))
+    _test_post(
+        client,
+        {"award_id": 2, "type": "child_idvs"},
+        (None, None, 1, False, False, False, 8, 7),
+    )
 
-    _test_post(client, {"award_id": 2, "type": "child_awards"}, (None, None, 1, False, False, False, 10, 9))
+    _test_post(
+        client,
+        {"award_id": 2, "type": "child_awards"},
+        (None, None, 1, False, False, False, 10, 9),
+    )
 
 
 @pytest.mark.django_db
 def test_no_parents_returned(client, create_idv_test_data):
 
-    _test_post(client, {"award_id": 7, "type": "child_idvs"}, (None, None, 1, False, False, False))
+    _test_post(
+        client,
+        {"award_id": 7, "type": "child_idvs"},
+        (None, None, 1, False, False, False),
+    )
 
-    _test_post(client, {"award_id": 7, "type": "child_awards"}, (None, None, 1, False, False, False, 12, 11))
+    _test_post(
+        client,
+        {"award_id": 7, "type": "child_awards"},
+        (None, None, 1, False, False, False, 12, 11),
+    )
 
 
 @pytest.mark.django_db
 def test_nothing_returned_for_bogus_contract_relationship(client):
 
-    _test_post(client, {"award_id": 9, "type": "child_idvs"}, (None, None, 1, False, False, False))
+    _test_post(
+        client,
+        {"award_id": 9, "type": "child_idvs"},
+        (None, None, 1, False, False, False),
+    )
 
-    _test_post(client, {"award_id": 9, "type": "child_awards"}, (None, None, 1, False, False, False))
+    _test_post(
+        client,
+        {"award_id": 9, "type": "child_awards"},
+        (None, None, 1, False, False, False),
+    )
 
 
 @pytest.mark.django_db
@@ -264,6 +371,18 @@ def test_missing_agency(client, create_idv_test_data):
 @pytest.mark.django_db
 def test_no_submission(client, create_idv_test_data):
     SubmissionAttributes.objects.filter(reporting_fiscal_year=2008).delete()
-    _test_post(client, {"award_id": 1, "type": "child_idvs"}, (None, None, 1, False, False, True, 5, 4, 3))
-    _test_post(client, {"award_id": 1, "type": "child_awards"}, (None, None, 1, False, False, True, 6))
-    _test_post(client, {"award_id": 1, "type": "grandchild_awards"}, (None, None, 1, False, False, True))
+    _test_post(
+        client,
+        {"award_id": 1, "type": "child_idvs"},
+        (None, None, 1, False, False, True, 5, 4, 3),
+    )
+    _test_post(
+        client,
+        {"award_id": 1, "type": "child_awards"},
+        (None, None, 1, False, False, True, 6),
+    )
+    _test_post(
+        client,
+        {"award_id": 1, "type": "grandchild_awards"},
+        (None, None, 1, False, False, True),
+    )

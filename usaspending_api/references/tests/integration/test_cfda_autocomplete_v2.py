@@ -34,7 +34,9 @@ def test_cfda_autocomplete_success(client, cfda_data):
 
     # test for program number
     resp = client.post(
-        "/api/v2/autocomplete/cfda/", content_type="application/json", data=json.dumps({"search_text": "10.117"})
+        "/api/v2/autocomplete/cfda/",
+        content_type="application/json",
+        data=json.dumps({"search_text": "10.117"}),
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 1
@@ -42,7 +44,9 @@ def test_cfda_autocomplete_success(client, cfda_data):
 
     # test for program title
     resp = client.post(
-        "/api/v2/autocomplete/cfda/", content_type="application/json", data=json.dumps({"search_text": "Reimbursement"})
+        "/api/v2/autocomplete/cfda/",
+        content_type="application/json",
+        data=json.dumps({"search_text": "Reimbursement"}),
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 1
@@ -50,7 +54,9 @@ def test_cfda_autocomplete_success(client, cfda_data):
 
     # test for popular name
     resp = client.post(
-        "/api/v2/autocomplete/cfda/", content_type="application/json", data=json.dumps({"search_text": "BIP"})
+        "/api/v2/autocomplete/cfda/",
+        content_type="application/json",
+        data=json.dumps({"search_text": "BIP"}),
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 1
@@ -61,6 +67,8 @@ def test_cfda_autocomplete_success(client, cfda_data):
 def test_naics_autocomplete_failure(client):
     """Empty search string test"""
     resp = client.post(
-        "/api/v2/autocomplete/psc/", content_type="application/json", data=json.dumps({"search_text": ""})
+        "/api/v2/autocomplete/psc/",
+        content_type="application/json",
+        data=json.dumps({"search_text": ""}),
     )
     assert resp.status_code == status.HTTP_400_BAD_REQUEST

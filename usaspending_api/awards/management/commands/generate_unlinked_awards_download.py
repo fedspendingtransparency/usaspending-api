@@ -7,16 +7,30 @@ from pathlib import Path
 from usaspending_api.common.etl.spark import create_ref_temp_views
 
 from usaspending_api.common.helpers.s3_helpers import upload_download_file_to_s3
-from usaspending_api.common.helpers.spark_helpers import configure_spark_session, get_active_spark_session
+from usaspending_api.common.helpers.spark_helpers import (
+    configure_spark_session,
+    get_active_spark_session,
+)
 from usaspending_api.common.helpers.download_csv_strategies import (
     SparkToCSVStrategy,
 )
 from enum import Enum
-from usaspending_api.awards.management.sql.spark.unlinked_contracts_file_d1 import file_d1_sql_string
-from usaspending_api.awards.management.sql.spark.unlinked_awards_summary_file import summary_file
-from usaspending_api.awards.management.sql.spark.unlinked_assistance_file_d2 import file_d2_sql_string
-from usaspending_api.awards.management.sql.spark.unlinked_accounts_file_c import file_c_sql_string
-from usaspending_api.download.filestreaming.file_description import build_file_description, save_file_description
+from usaspending_api.awards.management.sql.spark.unlinked_contracts_file_d1 import (
+    file_d1_sql_string,
+)
+from usaspending_api.awards.management.sql.spark.unlinked_awards_summary_file import (
+    summary_file,
+)
+from usaspending_api.awards.management.sql.spark.unlinked_assistance_file_d2 import (
+    file_d2_sql_string,
+)
+from usaspending_api.awards.management.sql.spark.unlinked_accounts_file_c import (
+    file_c_sql_string,
+)
+from usaspending_api.download.filestreaming.file_description import (
+    build_file_description,
+    save_file_description,
+)
 from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_file
 from usaspending_api.references.models.toptier_agency import ToptierAgency
 
@@ -145,7 +159,12 @@ class Command(BaseCommand):
             final_path = self._create_data_csv_dest_path(final_name)
             intermediate_data_file_path = final_path.parent / (final_path.name + "_temp")
             download_metadata = self.download_to_csv(
-                sql_file, final_path, final_name, str(intermediate_data_file_path), zip_file_path, df
+                sql_file,
+                final_path,
+                final_name,
+                str(intermediate_data_file_path),
+                zip_file_path,
+                df,
             )
             if download_metadata.number_of_rows <= 0:
                 logger.warning(f"Empty data file generated: {final_path}!")
@@ -212,8 +231,19 @@ class Command(BaseCommand):
             zip_file_path.parent.mkdir()
 
     def download_to_csv(
-        self, source_sql, destination_path, destination_file_name, intermediate_data_filename, zip_file_path, source_df
+        self,
+        source_sql,
+        destination_path,
+        destination_file_name,
+        intermediate_data_filename,
+        zip_file_path,
+        source_df,
     ):
         return self.download_csv_strategy.download_to_csv(
-            source_sql, destination_path, destination_file_name, self.working_dir_path, zip_file_path, source_df
+            source_sql,
+            destination_path,
+            destination_file_name,
+            self.working_dir_path,
+            zip_file_path,
+            source_df,
         )

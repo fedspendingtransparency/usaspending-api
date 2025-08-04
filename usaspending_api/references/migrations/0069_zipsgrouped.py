@@ -6,23 +6,26 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('references', '0068_alter_office_office_code'),
+        ("references", "0068_alter_office_office_code"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='ZipsGrouped',
+            name="ZipsGrouped",
             fields=[
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('zips_grouped_id', models.IntegerField(primary_key=True, serialize=False)),
-                ('zip5', models.TextField()),
-                ('state_abbreviation', models.TextField()),
-                ('county_number', models.TextField()),
-                ('congressional_district_no', models.TextField()),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "zips_grouped_id",
+                    models.IntegerField(primary_key=True, serialize=False),
+                ),
+                ("zip5", models.TextField()),
+                ("state_abbreviation", models.TextField()),
+                ("county_number", models.TextField()),
+                ("congressional_district_no", models.TextField()),
             ],
             options={
-                'db_table': 'zips_grouped',
+                "db_table": "zips_grouped",
             },
         ),
     ]

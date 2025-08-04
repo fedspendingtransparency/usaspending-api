@@ -38,7 +38,10 @@ class LoansViewSet(LoansMixin, LoansPaginationMixin, DisasterBase, FabaOutlayMix
             ],
             award_types=self.filters["award_type_codes"],
             search_query=self.query,
-            search_query_fields=["funding_federal_account_name", "funding_treasury_account_name"],
+            search_query_fields=[
+                "funding_federal_account_name",
+                "funding_treasury_account_name",
+            ],
         )
 
         json_result = self._build_json_result(account_db_results)
@@ -61,7 +64,15 @@ class LoansViewSet(LoansMixin, LoansPaginationMixin, DisasterBase, FabaOutlayMix
             Formatted JSON response.
         """
 
-        response = {"totals": {"obligation": 0, "outlay": 0, "award_count": 0, "face_value_of_loan": 0}, "results": []}
+        response = {
+            "totals": {
+                "obligation": 0,
+                "outlay": 0,
+                "award_count": 0,
+                "face_value_of_loan": 0,
+            },
+            "results": [],
+        }
 
         parent_lookup = {}
         child_lookup = {}
@@ -130,7 +141,9 @@ class LoansViewSet(LoansMixin, LoansPaginationMixin, DisasterBase, FabaOutlayMix
     @property
     def queryset(self):
         query = self.construct_loan_queryset(
-            "treasury_account__treasury_account_identifier", TreasuryAppropriationAccount, "treasury_account_identifier"
+            "treasury_account__treasury_account_identifier",
+            TreasuryAppropriationAccount,
+            "treasury_account_identifier",
         )
 
         annotations = {

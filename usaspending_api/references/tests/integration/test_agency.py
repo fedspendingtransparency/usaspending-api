@@ -17,7 +17,8 @@ def test_subtier(monkeypatch):
     # Can't run vacuums in a transaction.  Since tests are run in a transaction, we'll NOOP the
     # function that performs the vacuuming.
     monkeypatch.setattr(
-        "usaspending_api.references.management.commands.load_agencies.Command._vacuum_tables", lambda a: None
+        "usaspending_api.references.management.commands.load_agencies.Command._vacuum_tables",
+        lambda a: None,
     )
     call_command("load_agencies", "usaspending_api/references/tests/data/test_load_agencies.csv")
 
@@ -37,10 +38,20 @@ def test_get_by_toptier():
     baker.make(
         "references.Agency",
         toptier_agency=toptier,
-        subtier_agency=baker.make("references.SubtierAgency", subtier_code="bbb", name="no", _fill_optional=True),
+        subtier_agency=baker.make(
+            "references.SubtierAgency",
+            subtier_code="bbb",
+            name="no",
+            _fill_optional=True,
+        ),
         update_date=datetime.date(2017, 10, 10),
     )
-    agency1 = baker.make("references.Agency", toptier_agency=toptier, subtier_agency=subtier, _fill_optional=True)
+    agency1 = baker.make(
+        "references.Agency",
+        toptier_agency=toptier,
+        subtier_agency=subtier,
+        _fill_optional=True,
+    )
 
     # lookup should return agency w/ most recent update_date that
     # matches the cgac code
@@ -60,7 +71,12 @@ def test_get_by_subtier():
         toptier_agency=toptier,
         subtier_agency=baker.make("references.SubtierAgency", subtier_code="bbb", _fill_optional=True),
     )
-    agency1 = baker.make("references.Agency", toptier_agency=toptier, subtier_agency=subtier, _fill_optional=True)
+    agency1 = baker.make(
+        "references.Agency",
+        toptier_agency=toptier,
+        subtier_agency=subtier,
+        _fill_optional=True,
+    )
 
     # lookup should return agency w/ most recent updatea_date that
     # matches the subtier code
@@ -83,7 +99,12 @@ def test_get_by_toptier_subtier():
         toptier_agency=toptier,
         subtier_agency=baker.make("references.SubtierAgency", subtier_code="bbb", _fill_optional=True),
     )
-    agency1 = baker.make("references.Agency", toptier_agency=toptier, subtier_agency=subtier, _fill_optional=True)
+    agency1 = baker.make(
+        "references.Agency",
+        toptier_agency=toptier,
+        subtier_agency=subtier,
+        _fill_optional=True,
+    )
 
     # lookup should return agency w/ most recent updated_date that
     # matches the toptier and subtier code

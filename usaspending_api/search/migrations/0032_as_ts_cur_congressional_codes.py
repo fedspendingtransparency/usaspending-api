@@ -6,28 +6,28 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('search', '0031_add_iija_spending_fields'),
+        ("search", "0031_add_iija_spending_fields"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='awardsearch',
-            name='pop_congressional_code_current',
+            model_name="awardsearch",
+            name="pop_congressional_code_current",
             field=models.TextField(null=True),
         ),
         migrations.AddField(
-            model_name='awardsearch',
-            name='recipient_location_congressional_code_current',
+            model_name="awardsearch",
+            name="recipient_location_congressional_code_current",
             field=models.TextField(null=True),
         ),
         migrations.AddField(
-            model_name='transactionsearch',
-            name='pop_congressional_code_current',
+            model_name="transactionsearch",
+            name="pop_congressional_code_current",
             field=models.TextField(null=True),
         ),
         migrations.AddField(
-            model_name='transactionsearch',
-            name='recipient_location_congressional_code_current',
+            model_name="transactionsearch",
+            name="recipient_location_congressional_code_current",
             field=models.TextField(null=True),
         ),
     ]

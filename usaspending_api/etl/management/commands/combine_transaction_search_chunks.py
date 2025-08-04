@@ -28,8 +28,18 @@ class Command(BaseCommand):
     constraint_names = []
 
     def add_arguments(self, parser):
-        parser.add_argument("--chunk-count", default=10, help="Number of chunked matviews to read from", type=int)
-        parser.add_argument("--index-concurrency", default=20, help="Concurrency limit for index creation", type=int)
+        parser.add_argument(
+            "--chunk-count",
+            default=10,
+            help="Number of chunked matviews to read from",
+            type=int,
+        )
+        parser.add_argument(
+            "--index-concurrency",
+            default=20,
+            help="Concurrency limit for index creation",
+            type=int,
+        )
         parser.add_argument(
             "--matview-dir",
             type=Path,
@@ -48,7 +58,11 @@ class Command(BaseCommand):
             default=False,
             help="Indicates whether or not to empty data from chunked matviews at the end of command",
         )
-        parser.add_argument("--retry-count", default=5, help="Number of retry attempts for removing old data")
+        parser.add_argument(
+            "--retry-count",
+            default=5,
+            help="Number of retry attempts for removing old data",
+        )
 
     def handle(self, *args, **options):
         warnings = []  # Warnings returned to Jenkins to send to Slack
@@ -106,7 +120,8 @@ class Command(BaseCommand):
             if index_name not in self.constraint_names:
                 create_temp_index_sql = row[1].replace(index_name, index_name_temp)
                 create_temp_index_sql = create_temp_index_sql.replace(
-                    f"{TABLE_SCHEMA_NAME}.{TABLE_NAME}", f"{TABLE_SCHEMA_NAME}.{TABLE_NAME}_temp"
+                    f"{TABLE_SCHEMA_NAME}.{TABLE_NAME}",
+                    f"{TABLE_SCHEMA_NAME}.{TABLE_NAME}_temp",
                 )
                 create_temp_indexes.append(create_temp_index_sql)
 

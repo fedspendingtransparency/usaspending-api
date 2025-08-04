@@ -50,7 +50,13 @@ def test_award_count_award_type_codes_and_award_type_unprocessable(client, basic
     resp = client.post(
         url,
         content_type="application/json",
-        data={"filter": {"def_codes": ["M"], "award_type_codes": ["A"], "award_type": "procurement"}},
+        data={
+            "filter": {
+                "def_codes": ["M"],
+                "award_type_codes": ["A"],
+                "award_type": "procurement",
+            }
+        },
     )
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     assert resp.data["detail"] == "Cannot provide both 'award_type_codes' and 'award_type'"

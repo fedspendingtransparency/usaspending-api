@@ -7,12 +7,12 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('awards', '0087_use_new_defc_text_field'),
+        ("awards", "0087_use_new_defc_text_field"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='financialaccountsbyawards',
-            name='disaster_emergency_fund',
+            model_name="financialaccountsbyawards",
+            name="disaster_emergency_fund",
         ),
     ]

@@ -6,18 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('awards', '0082_auto_20210715_1243'),
+        ("awards", "0082_auto_20210715_1243"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='transactionfabs',
-            name='uei',
+            model_name="transactionfabs",
+            name="uei",
             field=models.TextField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='transactionfabs',
-            name='ultimate_parent_uei',
+            model_name="transactionfabs",
+            name="ultimate_parent_uei",
             field=models.TextField(blank=True, null=True),
         ),
     ]

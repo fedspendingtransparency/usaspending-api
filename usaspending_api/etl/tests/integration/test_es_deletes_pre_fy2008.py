@@ -169,7 +169,8 @@ def test_delete_modified_transactions_before_fy2008(elasticsearch_transaction_in
     )
 
     modified_transactions_to_delete = _gather_modified_transactions_pre_fy2008(
-        config={"process_deletes": True, "verbose": False}, delete_window_start=delete_window_start
+        config={"process_deletes": True, "verbose": False},
+        delete_window_start=delete_window_start,
     )
     number_of_deleted_transactions = delete_docs_by_unique_key(
         client=client,

@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('recipient', '0015_recipientlookup_parent_uei'),
+        ("recipient", "0015_recipientlookup_parent_uei"),
     ]
 
     operations = [
@@ -16,12 +16,16 @@ class Migration(migrations.Migration):
             state_operations=[
                 migrations.AddIndex(
                     model_name="recipientlookup",
-                    index=models.Index(name="recipient_l_uei_620159_partial", fields=["uei"], condition=models.Q(uei__isnull=False)),
+                    index=models.Index(
+                        name="recipient_l_uei_620159_partial",
+                        fields=["uei"],
+                        condition=models.Q(uei__isnull=False),
+                    ),
                 )
-            ]
+            ],
         ),
         migrations.RunSQL(
             sql="CREATE INDEX recipient_l_parent__271f5c_partial ON recipient_lookup (parent_uei) WHERE parent_uei IS NOT NULL",
-            reverse_sql="DROP INDEX recipient_l_parent__271f5c_partial"
+            reverse_sql="DROP INDEX recipient_l_parent__271f5c_partial",
         ),
     ]

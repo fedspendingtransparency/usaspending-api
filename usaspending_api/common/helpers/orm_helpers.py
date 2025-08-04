@@ -5,7 +5,18 @@ from typing import List, Union
 
 from django.contrib.postgres.aggregates import StringAgg
 from django.db import DEFAULT_DB_ALIAS
-from django.db.models import Aggregate, Case, CharField, F, Func, IntegerField, QuerySet, TextField, Value, When
+from django.db.models import (
+    Aggregate,
+    Case,
+    CharField,
+    F,
+    Func,
+    IntegerField,
+    QuerySet,
+    TextField,
+    Value,
+    When,
+)
 from django.db.models.functions import Cast, Coalesce, Concat, LPad
 
 from usaspending_api.awards.v2.lookups.lookups import (
@@ -113,7 +124,11 @@ def get_fyp_notation(relation_name=None):
         Value("FY"),
         Cast(f"{prefix}reporting_fiscal_year", output_field=CharField()),
         Value("P"),
-        LPad(Cast(f"{prefix}reporting_fiscal_period", output_field=CharField()), 2, Value("0")),
+        LPad(
+            Cast(f"{prefix}reporting_fiscal_period", output_field=CharField()),
+            2,
+            Value("0"),
+        ),
     )
 
 
@@ -138,7 +153,10 @@ def get_fyp_or_q_notation(relation_name=None):
     """
     prefix = f"{relation_name}__" if relation_name else ""
     return Case(
-        When(**{f"{prefix}quarter_format_flag": True}, then=get_fyq_notation(relation_name)),
+        When(
+            **{f"{prefix}quarter_format_flag": True},
+            then=get_fyq_notation(relation_name),
+        ),
         default=get_fyp_notation(relation_name),
         output_field=TextField(),
     )

@@ -8,8 +8,14 @@ from usaspending_api.common.helpers.api_helper import (
 )
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
 from usaspending_api.search.v2.views.enums import SpendingLevel
-from usaspending_api.search.v2.views.spending_by_award import SpendingByAwardVisualizationViewSet, GLOBAL_MAP
-from usaspending_api.common.exceptions import UnprocessableEntityException, InvalidParameterException
+from usaspending_api.search.v2.views.spending_by_award import (
+    SpendingByAwardVisualizationViewSet,
+    GLOBAL_MAP,
+)
+from usaspending_api.common.exceptions import (
+    UnprocessableEntityException,
+    InvalidParameterException,
+)
 from usaspending_api.awards.v2.lookups.elasticsearch_lookups import (
     contracts_mapping,
     idv_mapping,
@@ -96,7 +102,10 @@ def test_raise_if_sort_key_not_valid():
         "Last Date to Order",
     ] + example_base_award_fields
 
-    example_loan_award_fields = ["Issued Date", "Loan Value"] + example_base_award_fields
+    example_loan_award_fields = [
+        "Issued Date",
+        "Loan Value",
+    ] + example_base_award_fields
 
     example_non_loan_assist_award_fields = [
         "Start Date",
@@ -255,12 +264,14 @@ def test_get_award_type_and_mapping_values():
     invalid_award_type_codes = ["07", "A"]
 
     subaward_results = get_award_type_and_mapping_values(
-        award_type_codes=example_contract_award_codes, spending_level=SpendingLevel.SUBAWARD
+        award_type_codes=example_contract_award_codes,
+        spending_level=SpendingLevel.SUBAWARD,
     )
     assert subaward_results == ("Sub-Award", list(subaward_mapping.keys()))
 
     contract_results = get_award_type_and_mapping_values(
-        award_type_codes=example_contract_award_codes, spending_level=SpendingLevel.AWARD
+        award_type_codes=example_contract_award_codes,
+        spending_level=SpendingLevel.AWARD,
     )
     assert contract_results == ("Contract Award", list(contracts_mapping.keys()))
 
@@ -275,9 +286,13 @@ def test_get_award_type_and_mapping_values():
     assert loan_results == ("Loan Award", list(loan_mapping.keys()))
 
     non_loan_assist_results = get_award_type_and_mapping_values(
-        award_type_codes=example_non_loan_assist_award_codes, spending_level=SpendingLevel.AWARD
+        award_type_codes=example_non_loan_assist_award_codes,
+        spending_level=SpendingLevel.AWARD,
     )
-    assert non_loan_assist_results == ("Non-Loan Assistance Award", list(non_loan_assist_mapping.keys()))
+    assert non_loan_assist_results == (
+        "Non-Loan Assistance Award",
+        list(non_loan_assist_mapping.keys()),
+    )
 
     # Check that it will throw an exception if the award codes do not match any award type mappings
     with pytest.raises(InvalidParameterException):
@@ -297,7 +312,11 @@ def test_populate_response():
         "messages": [get_time_period_message()],
     }
     assert (
-        view.populate_response(results=["item 1", "item 2"], has_next=True, models=[{"name": "award_type_codes"}])
+        view.populate_response(
+            results=["item 1", "item 2"],
+            has_next=True,
+            models=[{"name": "award_type_codes"}],
+        )
         == expected_dictionary
     )
 

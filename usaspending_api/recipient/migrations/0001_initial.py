@@ -13,138 +13,215 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         TrigramExtension(),
         migrations.CreateModel(
-            name='DUNS',
+            name="DUNS",
             fields=[
-                ('awardee_or_recipient_uniqu', models.TextField(primary_key=True, serialize=False)),
-                ('legal_business_name', models.TextField(blank=True, null=True)),
-                ('dba_name', models.TextField(blank=True, null=True)),
-                ('ultimate_parent_unique_ide', models.TextField(blank=True, null=True)),
-                ('ultimate_parent_legal_enti', models.TextField(blank=True, null=True)),
-                ('address_line_1', models.TextField(blank=True, null=True)),
-                ('address_line_2', models.TextField(blank=True, null=True)),
-                ('city', models.TextField(blank=True, null=True)),
-                ('state', models.TextField(blank=True, null=True)),
-                ('zip', models.TextField(blank=True, null=True)),
-                ('zip4', models.TextField(blank=True, null=True)),
-                ('country_code', models.TextField(blank=True, null=True)),
-                ('congressional_district', models.TextField(blank=True, null=True)),
-                ('business_types_codes', django.contrib.postgres.fields.ArrayField(base_field=models.TextField(), default=list, null=True, size=None)),
-                ('entity_structure', models.TextField(blank=True, null=True)),
-                ('broker_duns_id', models.TextField()),
-                ('update_date', models.DateField()),
+                (
+                    "awardee_or_recipient_uniqu",
+                    models.TextField(primary_key=True, serialize=False),
+                ),
+                ("legal_business_name", models.TextField(blank=True, null=True)),
+                ("dba_name", models.TextField(blank=True, null=True)),
+                ("ultimate_parent_unique_ide", models.TextField(blank=True, null=True)),
+                ("ultimate_parent_legal_enti", models.TextField(blank=True, null=True)),
+                ("address_line_1", models.TextField(blank=True, null=True)),
+                ("address_line_2", models.TextField(blank=True, null=True)),
+                ("city", models.TextField(blank=True, null=True)),
+                ("state", models.TextField(blank=True, null=True)),
+                ("zip", models.TextField(blank=True, null=True)),
+                ("zip4", models.TextField(blank=True, null=True)),
+                ("country_code", models.TextField(blank=True, null=True)),
+                ("congressional_district", models.TextField(blank=True, null=True)),
+                (
+                    "business_types_codes",
+                    django.contrib.postgres.fields.ArrayField(
+                        base_field=models.TextField(),
+                        default=list,
+                        null=True,
+                        size=None,
+                    ),
+                ),
+                ("entity_structure", models.TextField(blank=True, null=True)),
+                ("broker_duns_id", models.TextField()),
+                ("update_date", models.DateField()),
             ],
             options={
-                'db_table': 'duns',
+                "db_table": "duns",
             },
         ),
         migrations.CreateModel(
-            name='HistoricParentDUNS',
+            name="HistoricParentDUNS",
             fields=[
-                ('awardee_or_recipient_uniqu', models.TextField()),
-                ('legal_business_name', models.TextField(blank=True, null=True)),
-                ('ultimate_parent_unique_ide', models.TextField(blank=True, null=True)),
-                ('ultimate_parent_legal_enti', models.TextField(blank=True, null=True)),
-                ('broker_historic_duns_id', models.IntegerField(primary_key=True, serialize=False)),
-                ('year', models.IntegerField(blank=True, null=True)),
+                ("awardee_or_recipient_uniqu", models.TextField()),
+                ("legal_business_name", models.TextField(blank=True, null=True)),
+                ("ultimate_parent_unique_ide", models.TextField(blank=True, null=True)),
+                ("ultimate_parent_legal_enti", models.TextField(blank=True, null=True)),
+                (
+                    "broker_historic_duns_id",
+                    models.IntegerField(primary_key=True, serialize=False),
+                ),
+                ("year", models.IntegerField(blank=True, null=True)),
             ],
             options={
-                'db_table': 'historic_parent_duns',
+                "db_table": "historic_parent_duns",
             },
         ),
         migrations.CreateModel(
-            name='RecipientLookup',
+            name="RecipientLookup",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('recipient_hash', models.UUIDField(null=True, unique=True)),
-                ('legal_business_name', models.TextField(db_index=True, null=True)),
-                ('duns', models.TextField(null=True, unique=True)),
-                ('parent_duns', models.TextField(null=True)),
-                ('parent_legal_business_name', models.TextField(null=True)),
-                ('address_line_1', models.TextField(null=True)),
-                ('address_line_2', models.TextField(null=True)),
-                ('city', models.TextField(null=True)),
-                ('state', models.TextField(null=True)),
-                ('zip5', models.TextField(null=True)),
-                ('zip4', models.TextField(null=True)),
-                ('country_code', models.TextField(null=True)),
-                ('congressional_district', models.TextField(null=True)),
-                ('business_types_codes', django.contrib.postgres.fields.ArrayField(base_field=models.TextField(), default=list, null=True, size=None)),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("recipient_hash", models.UUIDField(null=True, unique=True)),
+                ("legal_business_name", models.TextField(db_index=True, null=True)),
+                ("duns", models.TextField(null=True, unique=True)),
+                ("parent_duns", models.TextField(null=True)),
+                ("parent_legal_business_name", models.TextField(null=True)),
+                ("address_line_1", models.TextField(null=True)),
+                ("address_line_2", models.TextField(null=True)),
+                ("city", models.TextField(null=True)),
+                ("state", models.TextField(null=True)),
+                ("zip5", models.TextField(null=True)),
+                ("zip4", models.TextField(null=True)),
+                ("country_code", models.TextField(null=True)),
+                ("congressional_district", models.TextField(null=True)),
+                (
+                    "business_types_codes",
+                    django.contrib.postgres.fields.ArrayField(
+                        base_field=models.TextField(),
+                        default=list,
+                        null=True,
+                        size=None,
+                    ),
+                ),
             ],
             options={
-                'db_table': 'recipient_lookup',
+                "db_table": "recipient_lookup",
             },
         ),
         migrations.CreateModel(
-            name='RecipientProfile',
+            name="RecipientProfile",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('recipient_level', models.CharField(max_length=1)),
-                ('recipient_hash', models.UUIDField(db_index=True, null=True)),
-                ('recipient_unique_id', models.TextField(db_index=True, null=True)),
-                ('recipient_name', models.TextField(db_index=True, null=True)),
-                ('recipient_affiliations', django.contrib.postgres.fields.ArrayField(base_field=models.TextField(), default=list, size=None)),
-                ('award_types', django.contrib.postgres.fields.ArrayField(base_field=models.TextField(), default=list, size=None)),
-                ('last_12_months', models.DecimalField(decimal_places=2, default=0.0, max_digits=23)),
-                ('last_12_contracts', models.DecimalField(decimal_places=2, default=0.0, max_digits=23)),
-                ('last_12_grants', models.DecimalField(decimal_places=2, default=0.0, max_digits=23)),
-                ('last_12_direct_payments', models.DecimalField(decimal_places=2, default=0.0, max_digits=23)),
-                ('last_12_loans', models.DecimalField(decimal_places=2, default=0.0, max_digits=23)),
-                ('last_12_other', models.DecimalField(decimal_places=2, default=0.0, max_digits=23)),
-                ('last_12_months_count', models.IntegerField(default=0)),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("recipient_level", models.CharField(max_length=1)),
+                ("recipient_hash", models.UUIDField(db_index=True, null=True)),
+                ("recipient_unique_id", models.TextField(db_index=True, null=True)),
+                ("recipient_name", models.TextField(db_index=True, null=True)),
+                (
+                    "recipient_affiliations",
+                    django.contrib.postgres.fields.ArrayField(
+                        base_field=models.TextField(), default=list, size=None
+                    ),
+                ),
+                (
+                    "award_types",
+                    django.contrib.postgres.fields.ArrayField(
+                        base_field=models.TextField(), default=list, size=None
+                    ),
+                ),
+                (
+                    "last_12_months",
+                    models.DecimalField(decimal_places=2, default=0.0, max_digits=23),
+                ),
+                (
+                    "last_12_contracts",
+                    models.DecimalField(decimal_places=2, default=0.0, max_digits=23),
+                ),
+                (
+                    "last_12_grants",
+                    models.DecimalField(decimal_places=2, default=0.0, max_digits=23),
+                ),
+                (
+                    "last_12_direct_payments",
+                    models.DecimalField(decimal_places=2, default=0.0, max_digits=23),
+                ),
+                (
+                    "last_12_loans",
+                    models.DecimalField(decimal_places=2, default=0.0, max_digits=23),
+                ),
+                (
+                    "last_12_other",
+                    models.DecimalField(decimal_places=2, default=0.0, max_digits=23),
+                ),
+                ("last_12_months_count", models.IntegerField(default=0)),
             ],
             options={
-                'db_table': 'recipient_profile',
-                'managed': True,
+                "db_table": "recipient_profile",
+                "managed": True,
             },
         ),
         migrations.CreateModel(
-            name='StateData',
+            name="StateData",
             fields=[
-                ('id', models.TextField(primary_key=True, serialize=False)),
-                ('fips', models.TextField(db_index=True)),
-                ('code', models.TextField()),
-                ('name', models.TextField()),
-                ('type', models.TextField()),
-                ('year', models.IntegerField(db_index=True)),
-                ('population', models.BigIntegerField(blank=True, null=True)),
-                ('pop_source', models.TextField(blank=True, null=True)),
-                ('median_household_income', models.DecimalField(blank=True, decimal_places=2, max_digits=23, null=True)),
-                ('mhi_source', models.TextField(blank=True, null=True)),
+                ("id", models.TextField(primary_key=True, serialize=False)),
+                ("fips", models.TextField(db_index=True)),
+                ("code", models.TextField()),
+                ("name", models.TextField()),
+                ("type", models.TextField()),
+                ("year", models.IntegerField(db_index=True)),
+                ("population", models.BigIntegerField(blank=True, null=True)),
+                ("pop_source", models.TextField(blank=True, null=True)),
+                (
+                    "median_household_income",
+                    models.DecimalField(
+                        blank=True, decimal_places=2, max_digits=23, null=True
+                    ),
+                ),
+                ("mhi_source", models.TextField(blank=True, null=True)),
             ],
             options={
-                'db_table': 'state_data',
+                "db_table": "state_data",
             },
         ),
         migrations.CreateModel(
-            name='SummaryAwardRecipient',
+            name="SummaryAwardRecipient",
             fields=[
-                ('award_id', models.BigIntegerField(primary_key=True, serialize=False)),
-                ('action_date', models.DateField(blank=True, db_index=True)),
-                ('recipient_hash', models.UUIDField(db_index=True, null=True)),
-                ('parent_recipient_unique_id', models.TextField(db_index=True, null=True)),
+                ("award_id", models.BigIntegerField(primary_key=True, serialize=False)),
+                ("action_date", models.DateField(blank=True, db_index=True)),
+                ("recipient_hash", models.UUIDField(db_index=True, null=True)),
+                (
+                    "parent_recipient_unique_id",
+                    models.TextField(db_index=True, null=True),
+                ),
             ],
             options={
-                'db_table': 'summary_award_recipient',
-                'managed': True,
+                "db_table": "summary_award_recipient",
+                "managed": True,
             },
         ),
         migrations.AddIndex(
-            model_name='recipientprofile',
-            index=django.contrib.postgres.indexes.GinIndex(fields=['award_types'], name='recipient_p_award_t_211373_gin'),
+            model_name="recipientprofile",
+            index=django.contrib.postgres.indexes.GinIndex(
+                fields=["award_types"], name="recipient_p_award_t_211373_gin"
+            ),
         ),
         migrations.AddIndex(
-            model_name='recipientprofile',
-            index=models.Index(fields=['recipient_unique_id'], name='recipient_p_recipie_7039a5_idx'),
+            model_name="recipientprofile",
+            index=models.Index(
+                fields=["recipient_unique_id"], name="recipient_p_recipie_7039a5_idx"
+            ),
         ),
         migrations.AlterUniqueTogether(
-            name='recipientprofile',
-            unique_together=set([('recipient_hash', 'recipient_level')]),
+            name="recipientprofile",
+            unique_together=set([("recipient_hash", "recipient_level")]),
         ),
         migrations.RunSQL(
             sql="CREATE UNIQUE INDEX recipient_l_duns_bb057a_partial ON recipient_lookup (duns) WHERE duns IS NOT NULL",
@@ -152,13 +229,13 @@ class Migration(migrations.Migration):
         ),
         migrations.RunSQL(
             sql="CREATE INDEX recipient_l_parent__efd6d5_partial ON recipient_lookup (parent_duns) WHERE parent_duns IS NOT NULL",
-            reverse_sql="DROP INDEX recipient_l_parent__efd6d5_partial"
+            reverse_sql="DROP INDEX recipient_l_parent__efd6d5_partial",
         ),
         migrations.RunSQL(
             sql=[
-                'alter table only recipient_profile alter column last_12_months set default 0.00',
+                "alter table only recipient_profile alter column last_12_months set default 0.00",
                 "alter table only recipient_profile alter column recipient_affiliations set default '{}'::text[]",
-                'create index idx_recipient_profile_name on recipient_profile using gin (recipient_name gin_trgm_ops)',
+                "create index idx_recipient_profile_name on recipient_profile using gin (recipient_name gin_trgm_ops)",
             ],
         ),
     ]

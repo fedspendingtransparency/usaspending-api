@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('transactions', '0007_auto_20220106_1824'),
+        ("transactions", "0007_auto_20220106_1824"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='sourceprocurementtransaction',
-            name='entity_data_source',
+            model_name="sourceprocurementtransaction",
+            name="entity_data_source",
             field=models.TextField(blank=True, null=True),
         ),
     ]

@@ -6,13 +6,15 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('search', '0045_index_update_date_on_award_search'),
+        ("search", "0045_index_update_date_on_award_search"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='awardsearch',
-            name='generated_pragmatic_obligation',
-            field=models.DecimalField(blank=True, decimal_places=2, max_digits=23, null=True),
+            model_name="awardsearch",
+            name="generated_pragmatic_obligation",
+            field=models.DecimalField(
+                blank=True, decimal_places=2, max_digits=23, null=True
+            ),
         ),
     ]

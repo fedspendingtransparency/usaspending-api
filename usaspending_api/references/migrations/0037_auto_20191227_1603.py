@@ -8,20 +8,20 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('awards', '0069_auto_20191227_1603'),
-        ('references', '0002_remove_obsolete_index'),
+        ("awards", "0069_auto_20191227_1603"),
+        ("references", "0002_remove_obsolete_index"),
     ]
 
     operations = [
         migrations.AlterIndexTogether(
-            name='legalentity',
+            name="legalentity",
             index_together=set([]),
         ),
         migrations.RemoveField(
-            model_name='legalentity',
-            name='location',
+            model_name="legalentity",
+            name="location",
         ),
         migrations.DeleteModel(
-            name='LegalEntity',
+            name="LegalEntity",
         ),
     ]

@@ -7,16 +7,32 @@ from model_bakery import baker
 @pytest.fixture
 def disaster_account_data():
     ta1 = baker.make(
-        "references.ToptierAgency", toptier_agency_id=7, toptier_code="007", name="Agency 007", _fill_optional=True
+        "references.ToptierAgency",
+        toptier_agency_id=7,
+        toptier_code="007",
+        name="Agency 007",
+        _fill_optional=True,
     )
     ta2 = baker.make(
-        "references.ToptierAgency", toptier_agency_id=8, toptier_code="008", name="Agency 008", _fill_optional=True
+        "references.ToptierAgency",
+        toptier_agency_id=8,
+        toptier_code="008",
+        name="Agency 008",
+        _fill_optional=True,
     )
     ta3 = baker.make(
-        "references.ToptierAgency", toptier_agency_id=9, toptier_code="009", name="Agency 009", _fill_optional=True
+        "references.ToptierAgency",
+        toptier_agency_id=9,
+        toptier_code="009",
+        name="Agency 009",
+        _fill_optional=True,
     )
     ta4 = baker.make(
-        "references.ToptierAgency", toptier_agency_id=10, toptier_code="010", name="Agency 010", _fill_optional=True
+        "references.ToptierAgency",
+        toptier_agency_id=10,
+        toptier_code="010",
+        name="Agency 010",
+        _fill_optional=True,
     )
 
     sa1 = baker.make(
@@ -49,16 +65,36 @@ def disaster_account_data():
     )
 
     ag1 = baker.make(
-        "references.Agency", id=1, toptier_agency=ta1, subtier_agency=sa1, toptier_flag=True, _fill_optional=True
+        "references.Agency",
+        id=1,
+        toptier_agency=ta1,
+        subtier_agency=sa1,
+        toptier_flag=True,
+        _fill_optional=True,
     )
     ag2 = baker.make(
-        "references.Agency", id=2, toptier_agency=ta2, subtier_agency=sa2, toptier_flag=True, _fill_optional=True
+        "references.Agency",
+        id=2,
+        toptier_agency=ta2,
+        subtier_agency=sa2,
+        toptier_flag=True,
+        _fill_optional=True,
     )
     ag3 = baker.make(
-        "references.Agency", id=3, toptier_agency=ta2, subtier_agency=sa3, toptier_flag=False, _fill_optional=True
+        "references.Agency",
+        id=3,
+        toptier_agency=ta2,
+        subtier_agency=sa3,
+        toptier_flag=False,
+        _fill_optional=True,
     )
     ag4 = baker.make(
-        "references.Agency", id=4, toptier_agency=ta3, subtier_agency=sa4, toptier_flag=True, _fill_optional=True
+        "references.Agency",
+        id=4,
+        toptier_agency=ta3,
+        subtier_agency=sa4,
+        toptier_flag=True,
+        _fill_optional=True,
     )
 
     dsws1 = baker.make(
@@ -174,16 +210,28 @@ def disaster_account_data():
     )
 
     fa1 = baker.make(
-        "accounts.FederalAccount", federal_account_code="001-0000", account_title="FA 1", parent_toptier_agency=ta1
+        "accounts.FederalAccount",
+        federal_account_code="001-0000",
+        account_title="FA 1",
+        parent_toptier_agency=ta1,
     )
     fa2 = baker.make(
-        "accounts.FederalAccount", federal_account_code="002-0000", account_title="FA 2", parent_toptier_agency=ta2
+        "accounts.FederalAccount",
+        federal_account_code="002-0000",
+        account_title="FA 2",
+        parent_toptier_agency=ta2,
     )
     fa3 = baker.make(
-        "accounts.FederalAccount", federal_account_code="003-0000", account_title="FA 3", parent_toptier_agency=ta3
+        "accounts.FederalAccount",
+        federal_account_code="003-0000",
+        account_title="FA 3",
+        parent_toptier_agency=ta3,
     )
     fa4 = baker.make(
-        "accounts.FederalAccount", federal_account_code="004-0000", account_title="FA 4", parent_toptier_agency=ta4
+        "accounts.FederalAccount",
+        federal_account_code="004-0000",
+        account_title="FA 4",
+        parent_toptier_agency=ta4,
     )
 
     tas1 = baker.make(
@@ -253,16 +301,52 @@ def disaster_account_data():
         tas_rendering_label="003-2017/2018-0000-000",
     )
 
-    baker.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas1, submission=sub1)
-    baker.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas2, submission=sub2)
-    baker.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas3, submission=sub4)
-    baker.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas4, submission=sub5)
+    baker.make(
+        "accounts.AppropriationAccountBalances",
+        treasury_account_identifier=tas1,
+        submission=sub1,
+    )
+    baker.make(
+        "accounts.AppropriationAccountBalances",
+        treasury_account_identifier=tas2,
+        submission=sub2,
+    )
+    baker.make(
+        "accounts.AppropriationAccountBalances",
+        treasury_account_identifier=tas3,
+        submission=sub4,
+    )
+    baker.make(
+        "accounts.AppropriationAccountBalances",
+        treasury_account_identifier=tas4,
+        submission=sub5,
+    )
 
-    pa1 = baker.make("references.RefProgramActivity", program_activity_code="000", program_activity_name="NAME 1")
-    pa2 = baker.make("references.RefProgramActivity", program_activity_code="1000", program_activity_name="NAME 2")
-    pa3 = baker.make("references.RefProgramActivity", program_activity_code="4567", program_activity_name="NAME 3")
-    pa4 = baker.make("references.RefProgramActivity", program_activity_code="111", program_activity_name="NAME 4")
-    pa5 = baker.make("references.RefProgramActivity", program_activity_code="1234", program_activity_name="NAME 5")
+    pa1 = baker.make(
+        "references.RefProgramActivity",
+        program_activity_code="000",
+        program_activity_name="NAME 1",
+    )
+    pa2 = baker.make(
+        "references.RefProgramActivity",
+        program_activity_code="1000",
+        program_activity_name="NAME 2",
+    )
+    pa3 = baker.make(
+        "references.RefProgramActivity",
+        program_activity_code="4567",
+        program_activity_name="NAME 3",
+    )
+    pa4 = baker.make(
+        "references.RefProgramActivity",
+        program_activity_code="111",
+        program_activity_name="NAME 4",
+    )
+    pa5 = baker.make(
+        "references.RefProgramActivity",
+        program_activity_code="1234",
+        program_activity_name="NAME 5",
+    )
 
     oc = "references.ObjectClass"
     oc1 = baker.make(
@@ -316,23 +400,47 @@ def disaster_account_data():
 
     defc = "references.DisasterEmergencyFundCode"
     defc_l = baker.make(
-        defc, code="L", public_law="PUBLIC LAW FOR CODE L", title="TITLE FOR CODE L", group_name="covid_19"
+        defc,
+        code="L",
+        public_law="PUBLIC LAW FOR CODE L",
+        title="TITLE FOR CODE L",
+        group_name="covid_19",
     )
     defc_m = baker.make(
-        defc, code="M", public_law="PUBLIC LAW FOR CODE M", title="TITLE FOR CODE M", group_name="covid_19"
+        defc,
+        code="M",
+        public_law="PUBLIC LAW FOR CODE M",
+        title="TITLE FOR CODE M",
+        group_name="covid_19",
     )
     defc_n = baker.make(
-        defc, code="N", public_law="PUBLIC LAW FOR CODE N", title="TITLE FOR CODE N", group_name="covid_19"
+        defc,
+        code="N",
+        public_law="PUBLIC LAW FOR CODE N",
+        title="TITLE FOR CODE N",
+        group_name="covid_19",
     )
     defc_o = baker.make(
-        defc, code="O", public_law="PUBLIC LAW FOR CODE O", title="TITLE FOR CODE O", group_name="covid_19"
+        defc,
+        code="O",
+        public_law="PUBLIC LAW FOR CODE O",
+        title="TITLE FOR CODE O",
+        group_name="covid_19",
     )
     defc_p = baker.make(
-        defc, code="P", public_law="PUBLIC LAW FOR CODE P", title="TITLE FOR CODE P", group_name="covid_19"
+        defc,
+        code="P",
+        public_law="PUBLIC LAW FOR CODE P",
+        title="TITLE FOR CODE P",
+        group_name="covid_19",
     )
     baker.make(defc, code="9", public_law="PUBLIC LAW FOR CODE 9", title="TITLE FOR CODE 9")
     defc_q = baker.make(
-        defc, code="Q", public_law="PUBLIC LAW FOR CODE Q", title="TITLE FOR CODE Q", group_name="covid_19"
+        defc,
+        code="Q",
+        public_law="PUBLIC LAW FOR CODE Q",
+        title="TITLE FOR CODE Q",
+        group_name="covid_19",
     )
     fabpaoc = "financial_activities.FinancialAccountsByProgramActivityObjectClass"
     baker.make(

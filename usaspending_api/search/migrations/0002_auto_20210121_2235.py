@@ -9,108 +9,174 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('awards', '0077_auto_20200917_2223'),
-        ('search', '0001_initial'),
+        ("awards", "0077_auto_20200917_2223"),
+        ("search", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='TransactionSearch',
+            name="TransactionSearch",
             fields=[
-                ('transaction', models.BigIntegerField(primary_key=True, serialize=False, db_column="transaction_id")),
-                ('award', models.BigIntegerField(null=True, db_column="award_id")),
-                ('modification_number', models.TextField(null=True)),
-                ('detached_award_proc_unique', models.TextField(null=True)),
-                ('afa_generated_unique', models.TextField(null=True)),
-                ('generated_unique_award_id', models.TextField(null=True)),
-                ('fain', models.TextField(null=True)),
-                ('uri', models.TextField(null=True)),
-                ('piid', models.TextField(null=True)),
-                ('action_date', models.DateField(null=True)),
-                ('fiscal_action_date', models.DateField(null=True)),
-                ('last_modified_date', models.DateField(null=True)),
-                ('fiscal_year', models.IntegerField(null=True)),
-                ('award_certified_date', models.DateField(null=True)),
-                ('award_fiscal_year', models.IntegerField(null=True)),
-                ('update_date', models.DateTimeField(null=True)),
-                ('award_update_date', models.DateTimeField(null=True)),
-                ('etl_update_date', models.DateTimeField(null=True)),
-                ('period_of_performance_start_date', models.DateField(null=True)),
-                ('period_of_performance_current_end_date', models.DateField(null=True)),
-                ('type', models.TextField(null=True)),
-                ('type_description', models.TextField(null=True)),
-                ('award_category', models.TextField(null=True)),
-                ('transaction_description', models.TextField(null=True)),
-                ('award_amount', models.DecimalField(blank=True, decimal_places=2, max_digits=23, null=True)),
-                ('generated_pragmatic_obligation', models.DecimalField(blank=True, decimal_places=2, max_digits=23, null=True)),
-                ('federal_action_obligation', models.DecimalField(blank=True, decimal_places=2, max_digits=23, null=True)),
-                ('original_loan_subsidy_cost', models.DecimalField(blank=True, decimal_places=2, max_digits=23, null=True)),
-                ('face_value_loan_guarantee', models.DecimalField(blank=True, decimal_places=2, max_digits=23, null=True)),
-                ('business_categories', django.contrib.postgres.fields.ArrayField(base_field=models.TextField(), null=True, size=None)),
-                ('naics_code', models.TextField(null=True)),
-                ('naics_description', models.TextField(null=True)),
-                ('product_or_service_code', models.TextField(null=True)),
-                ('product_or_service_description', models.TextField(null=True)),
-                ('type_of_contract_pricing', models.TextField(null=True)),
-                ('type_set_aside', models.TextField(null=True)),
-                ('extent_competed', models.TextField(null=True)),
-                ('ordering_period_end_date', models.TextField(null=True)),
-                ('cfda_number', models.TextField(null=True)),
-                ('cfda_title', models.TextField(null=True)),
-                ('cfda_id', models.IntegerField(null=True)),
-                ('pop_country_name', models.TextField(null=True)),
-                ('pop_country_code', models.TextField(null=True)),
-                ('pop_state_name', models.TextField(null=True)),
-                ('pop_state_code', models.TextField(null=True)),
-                ('pop_county_code', models.TextField(null=True)),
-                ('pop_county_name', models.TextField(null=True)),
-                ('pop_zip5', models.TextField(null=True)),
-                ('pop_congressional_code', models.TextField(null=True)),
-                ('pop_congressional_population', models.IntegerField(null=True)),
-                ('pop_county_population', models.IntegerField(null=True)),
-                ('pop_state_fips', models.TextField(null=True)),
-                ('pop_state_population', models.IntegerField(null=True)),
-                ('pop_city_name', models.TextField(null=True)),
-                ('recipient_location_country_code', models.TextField(null=True)),
-                ('recipient_location_country_name', models.TextField(null=True)),
-                ('recipient_location_state_name', models.TextField(null=True)),
-                ('recipient_location_state_code', models.TextField(null=True)),
-                ('recipient_location_state_fips', models.TextField(null=True)),
-                ('recipient_location_state_population', models.IntegerField(null=True)),
-                ('recipient_location_county_code', models.TextField(null=True)),
-                ('recipient_location_county_name', models.TextField(null=True)),
-                ('recipient_location_county_population', models.IntegerField(null=True)),
-                ('recipient_location_congressional_code', models.TextField(null=True)),
-                ('recipient_location_congressional_population', models.IntegerField(null=True)),
-                ('recipient_location_zip5', models.TextField(null=True)),
-                ('recipient_location_city_name', models.TextField(null=True)),
-                ('recipient_hash', models.UUIDField(null=True)),
-                ('recipient_levels', django.contrib.postgres.fields.ArrayField(base_field=models.TextField(), null=True, size=None)),
-                ('recipient_name', models.TextField(null=True)),
-                ('recipient_unique_id', models.TextField(null=True)),
-                ('parent_recipient_hash', models.UUIDField(null=True)),
-                ('parent_recipient_name', models.TextField(null=True)),
-                ('parent_recipient_unique_id', models.TextField(null=True)),
-                ('awarding_toptier_agency_id', models.IntegerField(null=True)),
-                ('funding_toptier_agency_id', models.IntegerField(null=True)),
-                ('awarding_agency_id', models.IntegerField(null=True)),
-                ('funding_agency_id', models.IntegerField(null=True)),
-                ('awarding_toptier_agency_name', models.TextField(null=True)),
-                ('funding_toptier_agency_name', models.TextField(null=True)),
-                ('awarding_subtier_agency_name', models.TextField(null=True)),
-                ('funding_subtier_agency_name', models.TextField(null=True)),
-                ('awarding_toptier_agency_abbreviation', models.TextField(null=True)),
-                ('funding_toptier_agency_abbreviation', models.TextField(null=True)),
-                ('awarding_subtier_agency_abbreviation', models.TextField(null=True)),
-                ('funding_subtier_agency_abbreviation', models.TextField(null=True)),
-                ('treasury_account_identifiers', django.contrib.postgres.fields.ArrayField(base_field=models.IntegerField(), null=True, size=None)),
-                ('tas_paths', django.contrib.postgres.fields.ArrayField(base_field=models.TextField(), null=True, size=None)),
-                ('tas_components', django.contrib.postgres.fields.ArrayField(base_field=models.TextField(), null=True, size=None)),
-                ('federal_accounts', models.JSONField(null=True)),
-                ('disaster_emergency_fund_codes', django.contrib.postgres.fields.ArrayField(base_field=models.TextField(), null=True, size=None)),
+                (
+                    "transaction",
+                    models.BigIntegerField(
+                        primary_key=True, serialize=False, db_column="transaction_id"
+                    ),
+                ),
+                ("award", models.BigIntegerField(null=True, db_column="award_id")),
+                ("modification_number", models.TextField(null=True)),
+                ("detached_award_proc_unique", models.TextField(null=True)),
+                ("afa_generated_unique", models.TextField(null=True)),
+                ("generated_unique_award_id", models.TextField(null=True)),
+                ("fain", models.TextField(null=True)),
+                ("uri", models.TextField(null=True)),
+                ("piid", models.TextField(null=True)),
+                ("action_date", models.DateField(null=True)),
+                ("fiscal_action_date", models.DateField(null=True)),
+                ("last_modified_date", models.DateField(null=True)),
+                ("fiscal_year", models.IntegerField(null=True)),
+                ("award_certified_date", models.DateField(null=True)),
+                ("award_fiscal_year", models.IntegerField(null=True)),
+                ("update_date", models.DateTimeField(null=True)),
+                ("award_update_date", models.DateTimeField(null=True)),
+                ("etl_update_date", models.DateTimeField(null=True)),
+                ("period_of_performance_start_date", models.DateField(null=True)),
+                ("period_of_performance_current_end_date", models.DateField(null=True)),
+                ("type", models.TextField(null=True)),
+                ("type_description", models.TextField(null=True)),
+                ("award_category", models.TextField(null=True)),
+                ("transaction_description", models.TextField(null=True)),
+                (
+                    "award_amount",
+                    models.DecimalField(
+                        blank=True, decimal_places=2, max_digits=23, null=True
+                    ),
+                ),
+                (
+                    "generated_pragmatic_obligation",
+                    models.DecimalField(
+                        blank=True, decimal_places=2, max_digits=23, null=True
+                    ),
+                ),
+                (
+                    "federal_action_obligation",
+                    models.DecimalField(
+                        blank=True, decimal_places=2, max_digits=23, null=True
+                    ),
+                ),
+                (
+                    "original_loan_subsidy_cost",
+                    models.DecimalField(
+                        blank=True, decimal_places=2, max_digits=23, null=True
+                    ),
+                ),
+                (
+                    "face_value_loan_guarantee",
+                    models.DecimalField(
+                        blank=True, decimal_places=2, max_digits=23, null=True
+                    ),
+                ),
+                (
+                    "business_categories",
+                    django.contrib.postgres.fields.ArrayField(
+                        base_field=models.TextField(), null=True, size=None
+                    ),
+                ),
+                ("naics_code", models.TextField(null=True)),
+                ("naics_description", models.TextField(null=True)),
+                ("product_or_service_code", models.TextField(null=True)),
+                ("product_or_service_description", models.TextField(null=True)),
+                ("type_of_contract_pricing", models.TextField(null=True)),
+                ("type_set_aside", models.TextField(null=True)),
+                ("extent_competed", models.TextField(null=True)),
+                ("ordering_period_end_date", models.TextField(null=True)),
+                ("cfda_number", models.TextField(null=True)),
+                ("cfda_title", models.TextField(null=True)),
+                ("cfda_id", models.IntegerField(null=True)),
+                ("pop_country_name", models.TextField(null=True)),
+                ("pop_country_code", models.TextField(null=True)),
+                ("pop_state_name", models.TextField(null=True)),
+                ("pop_state_code", models.TextField(null=True)),
+                ("pop_county_code", models.TextField(null=True)),
+                ("pop_county_name", models.TextField(null=True)),
+                ("pop_zip5", models.TextField(null=True)),
+                ("pop_congressional_code", models.TextField(null=True)),
+                ("pop_congressional_population", models.IntegerField(null=True)),
+                ("pop_county_population", models.IntegerField(null=True)),
+                ("pop_state_fips", models.TextField(null=True)),
+                ("pop_state_population", models.IntegerField(null=True)),
+                ("pop_city_name", models.TextField(null=True)),
+                ("recipient_location_country_code", models.TextField(null=True)),
+                ("recipient_location_country_name", models.TextField(null=True)),
+                ("recipient_location_state_name", models.TextField(null=True)),
+                ("recipient_location_state_code", models.TextField(null=True)),
+                ("recipient_location_state_fips", models.TextField(null=True)),
+                ("recipient_location_state_population", models.IntegerField(null=True)),
+                ("recipient_location_county_code", models.TextField(null=True)),
+                ("recipient_location_county_name", models.TextField(null=True)),
+                (
+                    "recipient_location_county_population",
+                    models.IntegerField(null=True),
+                ),
+                ("recipient_location_congressional_code", models.TextField(null=True)),
+                (
+                    "recipient_location_congressional_population",
+                    models.IntegerField(null=True),
+                ),
+                ("recipient_location_zip5", models.TextField(null=True)),
+                ("recipient_location_city_name", models.TextField(null=True)),
+                ("recipient_hash", models.UUIDField(null=True)),
+                (
+                    "recipient_levels",
+                    django.contrib.postgres.fields.ArrayField(
+                        base_field=models.TextField(), null=True, size=None
+                    ),
+                ),
+                ("recipient_name", models.TextField(null=True)),
+                ("recipient_unique_id", models.TextField(null=True)),
+                ("parent_recipient_hash", models.UUIDField(null=True)),
+                ("parent_recipient_name", models.TextField(null=True)),
+                ("parent_recipient_unique_id", models.TextField(null=True)),
+                ("awarding_toptier_agency_id", models.IntegerField(null=True)),
+                ("funding_toptier_agency_id", models.IntegerField(null=True)),
+                ("awarding_agency_id", models.IntegerField(null=True)),
+                ("funding_agency_id", models.IntegerField(null=True)),
+                ("awarding_toptier_agency_name", models.TextField(null=True)),
+                ("funding_toptier_agency_name", models.TextField(null=True)),
+                ("awarding_subtier_agency_name", models.TextField(null=True)),
+                ("funding_subtier_agency_name", models.TextField(null=True)),
+                ("awarding_toptier_agency_abbreviation", models.TextField(null=True)),
+                ("funding_toptier_agency_abbreviation", models.TextField(null=True)),
+                ("awarding_subtier_agency_abbreviation", models.TextField(null=True)),
+                ("funding_subtier_agency_abbreviation", models.TextField(null=True)),
+                (
+                    "treasury_account_identifiers",
+                    django.contrib.postgres.fields.ArrayField(
+                        base_field=models.IntegerField(), null=True, size=None
+                    ),
+                ),
+                (
+                    "tas_paths",
+                    django.contrib.postgres.fields.ArrayField(
+                        base_field=models.TextField(), null=True, size=None
+                    ),
+                ),
+                (
+                    "tas_components",
+                    django.contrib.postgres.fields.ArrayField(
+                        base_field=models.TextField(), null=True, size=None
+                    ),
+                ),
+                ("federal_accounts", models.JSONField(null=True)),
+                (
+                    "disaster_emergency_fund_codes",
+                    django.contrib.postgres.fields.ArrayField(
+                        base_field=models.TextField(), null=True, size=None
+                    ),
+                ),
             ],
             options={
-                'db_table': 'transaction_search',
+                "db_table": "transaction_search",
             },
         ),
         # Trick Django into believing this is a one-to-one field for purposes of using the ORM,
@@ -120,16 +186,16 @@ class Migration(migrations.Migration):
             reverse_sql="",
             state_operations=[
                 migrations.AlterField(
-                    model_name='transactionsearch',
-                    name='transaction',
+                    model_name="transactionsearch",
+                    name="transaction",
                     field=models.OneToOneField(
                         on_delete=django.db.models.deletion.DO_NOTHING,
                         primary_key=True,
                         serialize=False,
-                        to='awards.TransactionNormalized',
+                        to="awards.TransactionNormalized",
                     ),
                 )
-            ]
+            ],
         ),
         # Trick Django into believing this is a foreign key for purposes of using the ORM,
         # but avoid the headache that comes with foreign keys
@@ -138,69 +204,127 @@ class Migration(migrations.Migration):
             reverse_sql="",
             state_operations=[
                 migrations.AlterField(
-                    model_name='transactionsearch',
-                    name='award',
+                    model_name="transactionsearch",
+                    name="award",
                     field=models.ForeignKey(
                         null=True,
                         on_delete=django.db.models.deletion.DO_NOTHING,
-                        to='awards.Award',
-                    )
+                        to="awards.Award",
+                    ),
                 )
-            ]
+            ],
         ),
         migrations.DeleteModel(
-            name='UniversalTransactionView',
+            name="UniversalTransactionView",
         ),
         migrations.AddIndex(
-            model_name='transactionsearch',
-            index=models.Index(fields=['transaction'], name='ts_idx_transaction_id'),
+            model_name="transactionsearch",
+            index=models.Index(fields=["transaction"], name="ts_idx_transaction_id"),
         ),
         migrations.AddIndex(
-            model_name='transactionsearch',
-            index=models.Index(condition=models.Q(action_date__gte='2007-10-01'), fields=['-action_date'], name='ts_idx_action_date'),
+            model_name="transactionsearch",
+            index=models.Index(
+                condition=models.Q(action_date__gte="2007-10-01"),
+                fields=["-action_date"],
+                name="ts_idx_action_date",
+            ),
         ),
         migrations.AddIndex(
-            model_name='transactionsearch',
-            index=models.Index(fields=['-last_modified_date'], name='ts_idx_last_modified_date'),
+            model_name="transactionsearch",
+            index=models.Index(
+                fields=["-last_modified_date"], name="ts_idx_last_modified_date"
+            ),
         ),
         migrations.AddIndex(
-            model_name='transactionsearch',
-            index=models.Index(condition=models.Q(action_date__gte='2007-10-01'), fields=['-fiscal_year'], name='ts_idx_fiscal_year'),
+            model_name="transactionsearch",
+            index=models.Index(
+                condition=models.Q(action_date__gte="2007-10-01"),
+                fields=["-fiscal_year"],
+                name="ts_idx_fiscal_year",
+            ),
         ),
         migrations.AddIndex(
-            model_name='transactionsearch',
-            index=models.Index(condition=models.Q(('type__isnull', False), ('action_date__gte', '2007-10-01')), fields=['type'], name='ts_idx_type'),
+            model_name="transactionsearch",
+            index=models.Index(
+                condition=models.Q(
+                    ("type__isnull", False), ("action_date__gte", "2007-10-01")
+                ),
+                fields=["type"],
+                name="ts_idx_type",
+            ),
         ),
         migrations.AddIndex(
-            model_name='transactionsearch',
-            index=models.Index(condition=models.Q(action_date__gte='2007-10-01'), fields=['award'], name='ts_idx_award_id'),
+            model_name="transactionsearch",
+            index=models.Index(
+                condition=models.Q(action_date__gte="2007-10-01"),
+                fields=["award"],
+                name="ts_idx_award_id",
+            ),
         ),
         migrations.AddIndex(
-            model_name='transactionsearch',
-            index=models.Index(condition=models.Q(('pop_zip5__isnull', False), ('action_date__gte', '2007-10-01')), fields=['pop_zip5'], name='ts_idx_pop_zip5'),
+            model_name="transactionsearch",
+            index=models.Index(
+                condition=models.Q(
+                    ("pop_zip5__isnull", False), ("action_date__gte", "2007-10-01")
+                ),
+                fields=["pop_zip5"],
+                name="ts_idx_pop_zip5",
+            ),
         ),
         migrations.AddIndex(
-            model_name='transactionsearch',
-            index=models.Index(condition=models.Q(('recipient_unique_id__isnull', False), ('action_date__gte', '2007-10-01')), fields=['recipient_unique_id'], name='ts_idx_recipient_unique_id'),
+            model_name="transactionsearch",
+            index=models.Index(
+                condition=models.Q(
+                    ("recipient_unique_id__isnull", False),
+                    ("action_date__gte", "2007-10-01"),
+                ),
+                fields=["recipient_unique_id"],
+                name="ts_idx_recipient_unique_id",
+            ),
         ),
         migrations.AddIndex(
-            model_name='transactionsearch',
-            index=models.Index(condition=models.Q(('parent_recipient_unique_id__isnull', False), ('action_date__gte', '2007-10-01')), fields=['parent_recipient_unique_id'], name='ts_idx_parent_recipient_unique'),
+            model_name="transactionsearch",
+            index=models.Index(
+                condition=models.Q(
+                    ("parent_recipient_unique_id__isnull", False),
+                    ("action_date__gte", "2007-10-01"),
+                ),
+                fields=["parent_recipient_unique_id"],
+                name="ts_idx_parent_recipient_unique",
+            ),
         ),
         migrations.AddIndex(
-            model_name='transactionsearch',
-            index=models.Index(condition=models.Q(('pop_country_code', 'USA'), ('pop_state_code__isnull', False), ('action_date__gte', '2007-10-01')), fields=['pop_state_code', 'action_date'], name='ts_idx_simple_pop_geolocation'),
+            model_name="transactionsearch",
+            index=models.Index(
+                condition=models.Q(
+                    ("pop_country_code", "USA"),
+                    ("pop_state_code__isnull", False),
+                    ("action_date__gte", "2007-10-01"),
+                ),
+                fields=["pop_state_code", "action_date"],
+                name="ts_idx_simple_pop_geolocation",
+            ),
         ),
         migrations.AddIndex(
-            model_name='transactionsearch',
-            index=models.Index(condition=models.Q(action_date__gte='2007-10-01'), fields=['recipient_hash'], name='ts_idx_recipient_hash'),
+            model_name="transactionsearch",
+            index=models.Index(
+                condition=models.Q(action_date__gte="2007-10-01"),
+                fields=["recipient_hash"],
+                name="ts_idx_recipient_hash",
+            ),
         ),
         migrations.AddIndex(
-            model_name='transactionsearch',
-            index=models.Index(condition=models.Q(action_date__lt='2007-10-01'), fields=['action_date'], name='ts_idx_action_date_pre2008'),
+            model_name="transactionsearch",
+            index=models.Index(
+                condition=models.Q(action_date__lt="2007-10-01"),
+                fields=["action_date"],
+                name="ts_idx_action_date_pre2008",
+            ),
         ),
         migrations.AddIndex(
-            model_name='transactionsearch',
-            index=models.Index(fields=['etl_update_date'], name='ts_idx_etl_update_date'),
+            model_name="transactionsearch",
+            index=models.Index(
+                fields=["etl_update_date"], name="ts_idx_etl_update_date"
+            ),
         ),
     ]

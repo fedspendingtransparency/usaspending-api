@@ -2,13 +2,17 @@ from django.db.models import Sum, Q, F, Max
 from rest_framework.request import Request
 from rest_framework.response import Response
 from typing import Any, List
-from usaspending_api.accounts.models.appropriation_account_balances import AppropriationAccountBalances
+from usaspending_api.accounts.models.appropriation_account_balances import (
+    AppropriationAccountBalances,
+)
 from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.calculations.file_b import FileBCalculations
 from usaspending_api.common.helpers.date_helper import now
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
-from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.financial_activities.models import (
+    FinancialAccountsByProgramActivityObjectClass,
+)
 from usaspending_api.references.models import BureauTitleLookup
 from usaspending_api.submissions.models import SubmissionAttributes
 
@@ -32,7 +36,13 @@ class BureauFederalAccountList(PaginationMixin, AgencyBase):
 
     @cache_response()
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        self.sortable_columns = ["name", "id", "total_obligations", "total_outlays", "total_budgetary_resources"]
+        self.sortable_columns = [
+            "name",
+            "id",
+            "total_obligations",
+            "total_outlays",
+            "total_budgetary_resources",
+        ]
         self.default_sort_column = "total_obligations"
         results = sorted(
             self.get_federal_account_list(),
@@ -144,7 +154,8 @@ class BureauFederalAccountList(PaginationMixin, AgencyBase):
     def get_common_query_objects(self, federal_accounts, treasury_account_keyword):
         latest = (
             SubmissionAttributes.objects.filter(
-                submission_window__submission_reveal_date__lte=now(), reporting_fiscal_year=self.fiscal_year
+                submission_window__submission_reveal_date__lte=now(),
+                reporting_fiscal_year=self.fiscal_year,
             )
             .values("reporting_fiscal_year")
             .annotate(max_fiscal_period=Max(F("reporting_fiscal_period")))

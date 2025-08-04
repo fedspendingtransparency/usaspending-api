@@ -11,13 +11,19 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from usaspending_api.awards.v2.lookups.lookups import loan_type_mapping
-from usaspending_api.broker.helpers.get_business_categories import get_business_categories
+from usaspending_api.broker.helpers.get_business_categories import (
+    get_business_categories,
+)
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.recipient.models import RecipientProfile, RecipientLookup, DUNS
-from usaspending_api.recipient.v2.helpers import validate_year, reshape_filters, get_duns_business_types_mapping
+from usaspending_api.recipient.v2.helpers import (
+    validate_year,
+    reshape_filters,
+    get_duns_business_types_mapping,
+)
 from usaspending_api.recipient.v2.lookups import RECIPIENT_LEVELS, SPECIAL_CASES
 from usaspending_api.references.models import RefCountryCode
 from usaspending_api.search.models import TransactionSearch as TransactionSearchModel
@@ -76,7 +82,11 @@ def extract_duns_uei_name_from_hash(recipient_hash):
     if not duns_uei_name_qs:
         return None, None, None
     else:
-        return duns_uei_name_qs["duns"], duns_uei_name_qs["uei"], duns_uei_name_qs["legal_business_name"]
+        return (
+            duns_uei_name_qs["duns"],
+            duns_uei_name_qs["uei"],
+            duns_uei_name_qs["legal_business_name"],
+        )
 
 
 def extract_parents_from_hash(recipient_hash):
@@ -113,7 +123,14 @@ def extract_parents_from_hash(recipient_hash):
             uei = parent["uei"]
             parent_id = "{}-P".format(parent["recipient_hash"])
 
-        parents.append({"parent_duns": duns, "parent_name": name, "parent_id": parent_id, "parent_uei": uei})
+        parents.append(
+            {
+                "parent_duns": duns,
+                "parent_name": name,
+                "parent_id": parent_id,
+                "parent_uei": uei,
+            }
+        )
     return parents
 
 

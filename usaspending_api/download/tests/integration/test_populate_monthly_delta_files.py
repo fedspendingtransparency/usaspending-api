@@ -22,11 +22,19 @@ TODAY = datetime.datetime.strftime(datetime.datetime.utcnow(), "%Y%m%d")
 @pytest.mark.django_db(transaction=True)
 def monthly_download_delta_data(db, monkeypatch):
     baker.make(
-        "references.ToptierAgency", toptier_agency_id=1, toptier_code="001", name="Test_Agency", _fill_optional=True
+        "references.ToptierAgency",
+        toptier_agency_id=1,
+        toptier_code="001",
+        name="Test_Agency",
+        _fill_optional=True,
     )
     baker.make("references.Agency", pk=1, toptier_agency_id=1, _fill_optional=True)
     baker.make(
-        "references.ToptierAgency", toptier_agency_id=2, toptier_code="002", name="Test_Agency 2", _fill_optional=True
+        "references.ToptierAgency",
+        toptier_agency_id=2,
+        toptier_code="002",
+        name="Test_Agency 2",
+        _fill_optional=True,
     )
     baker.make("references.Agency", pk=2, toptier_agency_id=2, _fill_optional=True)
     i = 1
@@ -92,7 +100,11 @@ def monthly_download_delta_data(db, monkeypatch):
 
 @pytest.mark.django_db(transaction=True)
 def test_all_agencies(monthly_download_delta_data, monkeypatch):
-    call_command("populate_monthly_delta_files", "--debugging_skip_deleted", "--last_date=2020-12-31")
+    call_command(
+        "populate_monthly_delta_files",
+        "--debugging_skip_deleted",
+        "--last_date=2020-12-31",
+    )
     file_list = listdir("csv_downloads")
     assert f"FY(All)_All_Contracts_Delta_{TODAY}.zip" in file_list
     os.remove(os.path.normpath(f"csv_downloads/FY(All)_All_Contracts_Delta_{TODAY}.zip"))
@@ -397,17 +409,25 @@ def test_specific_agency(monthly_download_delta_data, monkeypatch):
         "",
         "",
         "",
-        f"{HOST}/award/CONT_AWD_1_0_0/" if "localhost" in HOST else f"https://{HOST}/award/CONT_AWD_1_0_0/",
+        (f"{HOST}/award/CONT_AWD_1_0_0/" if "localhost" in HOST else f"https://{HOST}/award/CONT_AWD_1_0_0/"),
         "",
         "2020-05-07",
     ]
-    call_command("populate_monthly_delta_files", "--agencies=1", "--debugging_skip_deleted", "--last_date=2020-12-31")
+    call_command(
+        "populate_monthly_delta_files",
+        "--agencies=1",
+        "--debugging_skip_deleted",
+        "--last_date=2020-12-31",
+    )
     file_list = listdir("csv_downloads")
     assert f"FY(All)_001_Contracts_Delta_{TODAY}.zip" in file_list
     with zipfile.ZipFile(os.path.normpath(f"csv_downloads/FY(All)_001_Contracts_Delta_{TODAY}.zip"), "r") as zip_ref:
         zip_ref.extractall("csv_downloads")
         assert f"FY(All)_001_Contracts_Delta_{TODAY}_1.csv" in listdir("csv_downloads")
-    with open(os.path.normpath(f"csv_downloads/FY(All)_001_Contracts_Delta_{TODAY}_1.csv"), "r") as contract_file:
+    with open(
+        os.path.normpath(f"csv_downloads/FY(All)_001_Contracts_Delta_{TODAY}_1.csv"),
+        "r",
+    ) as contract_file:
         csv_reader = reader(contract_file)
         row_count = 0
         for row in csv_reader:

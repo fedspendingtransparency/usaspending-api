@@ -58,5 +58,18 @@ def test_obtain_agency_name_from_cgac(load_agency_data):
 
 @pytest.mark.django_db
 def test_missing_agency(load_agency_data):
-    for code in ["410", "", None, "0", "000", "0100", "90", "09", "4101", "40", "409", "X"]:
+    for code in [
+        "410",
+        "",
+        None,
+        "0",
+        "000",
+        "0100",
+        "90",
+        "09",
+        "4101",
+        "40",
+        "409",
+        "X",
+    ]:
         assert helpers.retrive_agency_name_from_code(code) is None

@@ -2,7 +2,11 @@ import logging
 
 from django.core.management.base import BaseCommand
 from datetime import datetime
-from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, TransactionFPDS
+from usaspending_api.awards.models import (
+    TransactionNormalized,
+    TransactionFABS,
+    TransactionFPDS,
+)
 from usaspending_api.common.helpers.timing_helpers import timer
 from usaspending_api.references.models import Agency
 from usaspending_api.search.models import AwardSearch
@@ -184,9 +188,21 @@ class Command(BaseCommand):
             help="Runs the historical loader only for Award Procurement (Contract) data",
         )
 
-        parser.add_argument("--page", dest="page", nargs="+", type=int, help="Page for batching and parallelization")
+        parser.add_argument(
+            "--page",
+            dest="page",
+            nargs="+",
+            type=int,
+            help="Page for batching and parallelization",
+        )
 
-        parser.add_argument("--limit", dest="limit", nargs="+", type=int, help="Limit for batching and parallelization")
+        parser.add_argument(
+            "--limit",
+            dest="limit",
+            nargs="+",
+            type=int,
+            help="Limit for batching and parallelization",
+        )
 
     def handle(self, *args, **options):
         logger.info("Starting updating awarding agencies...")

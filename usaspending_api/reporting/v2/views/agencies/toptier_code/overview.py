@@ -5,7 +5,11 @@ from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMi
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.references.models import GTASSF133Balances, ToptierAgency
-from usaspending_api.reporting.models import ReportingAgencyMissingTas, ReportingAgencyOverview, ReportingAgencyTas
+from usaspending_api.reporting.models import (
+    ReportingAgencyMissingTas,
+    ReportingAgencyOverview,
+    ReportingAgencyTas,
+)
 from usaspending_api.submissions.helpers import is_valid_monthly_period
 from usaspending_api.submissions.models import SubmissionAttributes
 
@@ -36,7 +40,11 @@ class AgencyOverview(PaginationMixin, AgencyBase):
         page_metadata = get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
         results = results[self.pagination.lower_limit : self.pagination.upper_limit]
         return Response(
-            {"page_metadata": page_metadata, "results": results, "messages": self.standard_response_messages}
+            {
+                "page_metadata": page_metadata,
+                "results": results,
+                "messages": self.standard_response_messages,
+            }
         )
 
     def get_agency_overview(self):
@@ -94,7 +102,8 @@ class AgencyOverview(PaginationMixin, AgencyBase):
                 ),
                 gtas_total_budgetary_resources=Subquery(
                     GTASSF133Balances.objects.filter(
-                        fiscal_year=OuterRef("fiscal_year"), fiscal_period=OuterRef("fiscal_period")
+                        fiscal_year=OuterRef("fiscal_year"),
+                        fiscal_period=OuterRef("fiscal_period"),
                     )
                     .annotate(the_sum=Func(F("total_budgetary_resources_cpe"), function="SUM"))
                     .values("the_sum"),
@@ -188,7 +197,10 @@ class AgencyOverview(PaginationMixin, AgencyBase):
 
         if result["recent_publication_date"]:
             percent_of_total_budgetary_resources = (
-                round(result["total_budgetary_resources"] * 100 / result["gtas_total_budgetary_resources"], 2)
+                round(
+                    result["total_budgetary_resources"] * 100 / result["gtas_total_budgetary_resources"],
+                    2,
+                )
                 if result["gtas_total_budgetary_resources"] and result["total_budgetary_resources"]
                 else None
             )

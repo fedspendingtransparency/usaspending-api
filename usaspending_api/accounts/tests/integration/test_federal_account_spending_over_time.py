@@ -130,7 +130,10 @@ specific_payload = {
         "object_class": [
             {
                 "major_object_class": 10,  # Personnel compensation and benefits
-                "object_class": [111, 113],  # Full-time permanent, Other than full-time permanent, ...
+                "object_class": [
+                    111,
+                    113,
+                ],  # Full-time permanent, Other than full-time permanent, ...
             },
             {"major_object_class": 90},  # Other
         ],

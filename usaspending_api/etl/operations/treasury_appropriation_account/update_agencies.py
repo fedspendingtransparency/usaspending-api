@@ -1,6 +1,11 @@
 from usaspending_api.common.helpers.sql_helpers import execute_dml_sql
-from usaspending_api.etl.operations.federal_account.update_agency import DOD_AID, DOD_SUBSUMED_AIDS
-from usaspending_api.etl.operations.federal_account.update_agency import FEDERAL_ACCOUNT_PARENT_AGENCY_MAPPING
+from usaspending_api.etl.operations.federal_account.update_agency import (
+    DOD_AID,
+    DOD_SUBSUMED_AIDS,
+)
+from usaspending_api.etl.operations.federal_account.update_agency import (
+    FEDERAL_ACCOUNT_PARENT_AGENCY_MAPPING,
+)
 
 
 def update_treasury_appropriation_account_agencies():

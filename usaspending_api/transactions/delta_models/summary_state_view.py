@@ -5,10 +5,22 @@ SUMMARY_STATE_VIEW_COLUMNS = {
     "distinct_awards": {"delta": "STRING", "postgres": "TEXT"},
     "pop_country_code": {"delta": "STRING", "postgres": "TEXT"},
     "pop_state_code": {"delta": "STRING", "postgres": "TEXT"},
-    "generated_pragmatic_obligation": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
-    "federal_action_obligation": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
-    "original_loan_subsidy_cost": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
-    "face_value_loan_guarantee": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
+    "generated_pragmatic_obligation": {
+        "delta": "NUMERIC(23,2)",
+        "postgres": "NUMERIC(23,2)",
+    },
+    "federal_action_obligation": {
+        "delta": "NUMERIC(23,2)",
+        "postgres": "NUMERIC(23,2)",
+    },
+    "original_loan_subsidy_cost": {
+        "delta": "NUMERIC(23,2)",
+        "postgres": "NUMERIC(23,2)",
+    },
+    "face_value_loan_guarantee": {
+        "delta": "NUMERIC(23,2)",
+        "postgres": "NUMERIC(23,2)",
+    },
     "counts": {"delta": "LONG", "postgres": "BIGINT"},
     "total_outlays": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
 }

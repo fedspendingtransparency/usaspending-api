@@ -1,7 +1,9 @@
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.accounts.serializers import TasSerializer
-from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.financial_activities.models import (
+    FinancialAccountsByProgramActivityObjectClass,
+)
 from usaspending_api.common.mixins import FilterQuerysetMixin
 from usaspending_api.common.mixins import AggregateQuerysetMixin
 from usaspending_api.common.views import CachedDetailViewSet

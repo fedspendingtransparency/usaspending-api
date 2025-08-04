@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('awards', '0074_financialaccountsbyawards_distinct_award_key'),
+        ("awards", "0074_financialaccountsbyawards_distinct_award_key"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='financialaccountsbyawards',
-            name='distinct_award_key',
+            model_name="financialaccountsbyawards",
+            name="distinct_award_key",
             field=models.TextField(db_index=True),
         ),
     ]

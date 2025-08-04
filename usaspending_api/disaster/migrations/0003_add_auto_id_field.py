@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('disaster', '0002_add_indexes'),
+        ("disaster", "0002_add_indexes"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='covidfabaspending',
-            name='id',
+            model_name="covidfabaspending",
+            name="id",
             field=models.AutoField(primary_key=True, serialize=False),
         ),
     ]

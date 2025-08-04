@@ -1,7 +1,9 @@
 from django.db import connection
 from django.db.models import CharField, Expression
 from psycopg2.sql import Identifier, Literal, SQL
-from usaspending_api.common.helpers.sql_helpers import convert_composable_query_to_string
+from usaspending_api.common.helpers.sql_helpers import (
+    convert_composable_query_to_string,
+)
 from usaspending_api.recipient.models import RecipientLookup, RecipientProfile
 from usaspending_api.recipient.v2.lookups import SPECIAL_CASES
 

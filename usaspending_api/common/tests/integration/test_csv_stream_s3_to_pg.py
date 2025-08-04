@@ -14,7 +14,12 @@ TEST_BUCKET = "mybucket"
 TEST_KEY = "mykey"
 TEST_TABLE_NAME = "employee"
 TEST_TABLE_COLUMNS = OrderedDict(
-    {"id": "INT PRIMARY KEY", "name": "VARCHAR(255)", "age": "INT", "email": "VARCHAR(255) UNIQUE"}
+    {
+        "id": "INT PRIMARY KEY",
+        "name": "VARCHAR(255)",
+        "age": "INT",
+        "email": "VARCHAR(255) UNIQUE",
+    }
 )
 TEST_TABLE_CSV_FILE = "usaspending_api/common/tests/data/test_csv_stream_s3_to_pg_data.csv"
 NUMBER_OF_ROWS_IN_FILE = 4

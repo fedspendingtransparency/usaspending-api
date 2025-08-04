@@ -2,7 +2,11 @@ import logging
 
 from django.core.management.base import BaseCommand
 from usaspending_api.common.threaded_data_loader import ThreadedDataLoader
-from usaspending_api.references.models import RefCountryCode, ObjectClass, RefProgramActivity
+from usaspending_api.references.models import (
+    RefCountryCode,
+    ObjectClass,
+    RefProgramActivity,
+)
 
 
 logger = logging.getLogger("script")

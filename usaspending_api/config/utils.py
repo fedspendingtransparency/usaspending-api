@@ -17,7 +17,11 @@ USER_SPECIFIC_OVERRIDE = "__USER_SPECIFIC_OVERRIDE__"
 # is provided by a factory function (likely one provided within a function annotated with @pydantic.validator)
 FACTORY_PROVIDED_VALUE = "__FACTORY_PROVIDED_VALUE__"
 
-CONFIG_VAR_PLACEHOLDERS = [ENV_SPECIFIC_OVERRIDE, USER_SPECIFIC_OVERRIDE, FACTORY_PROVIDED_VALUE]
+CONFIG_VAR_PLACEHOLDERS = [
+    ENV_SPECIFIC_OVERRIDE,
+    USER_SPECIFIC_OVERRIDE,
+    FACTORY_PROVIDED_VALUE,
+]
 
 TBaseSettings = TypeVar("TBaseSettings", bound=BaseSettings)
 
@@ -146,7 +150,11 @@ def eval_default_factory_from_root_validator(
     assigned_or_sourced_value = configured_vars[config_var_name] if config_var_name in configured_vars else None
     config_var = config_class.__fields__[config_var_name]
     produced_value = eval_default_factory(
-        config_class, assigned_or_sourced_value, configured_vars, config_var, factory_func
+        config_class,
+        assigned_or_sourced_value,
+        configured_vars,
+        config_var,
+        factory_func,
     )
     configured_vars[config_var_name] = produced_value
     return configured_vars
@@ -190,12 +198,12 @@ def backfill_url_parts_config(cls, url_conf_name, resource_conf_prefix, values):
     backfill_configs = {
         f"{resource_conf_prefix}_SCHEME": lambda: url_parts.scheme,
         f"{resource_conf_prefix}_HOST": lambda: url_parts.hostname,
-        f"{resource_conf_prefix}_PORT": lambda: str(url_parts.port) if url_parts.port else None,
+        f"{resource_conf_prefix}_PORT": lambda: (str(url_parts.port) if url_parts.port else None),
         f"{resource_conf_prefix}_NAME": lambda: (
             url_parts.path.lstrip("/") if url_parts.path and url_parts.path != "/" else None
         ),
         f"{resource_conf_prefix}_USER": lambda: username,
-        f"{resource_conf_prefix}_PASSWORD": lambda: SecretStr(password) if password else None,
+        f"{resource_conf_prefix}_PASSWORD": lambda: (SecretStr(password) if password else None),
     }
     # Backfill only URL CONFIG vars that are missing their value
     for config_name, transformation in backfill_configs.items():
@@ -257,7 +265,10 @@ def validate_url_and_parts(url_conf_name, resource_conf_prefix, values):
         or url_parts.port is None
         and values[f"{resource_conf_prefix}_PORT"] is not None
     ):
-        url_config_errors[f"{resource_conf_prefix}_PORT"] = (values[f"{resource_conf_prefix}_PORT"], url_parts.port)
+        url_config_errors[f"{resource_conf_prefix}_PORT"] = (
+            values[f"{resource_conf_prefix}_PORT"],
+            url_parts.port,
+        )
     # Validate resource name (path)
     if (
         (
@@ -270,11 +281,14 @@ def validate_url_and_parts(url_conf_name, resource_conf_prefix, values):
     ):
         url_config_errors[f"{resource_conf_prefix}_NAME"] = (
             values[f"{resource_conf_prefix}_NAME"],
-            url_parts.path.lstrip("/") if url_parts.path and url_parts.path != "/" else None,
+            (url_parts.path.lstrip("/") if url_parts.path and url_parts.path != "/" else None),
         )
     # Validate username
     if url_username != values[f"{resource_conf_prefix}_USER"]:
-        url_config_errors[f"{resource_conf_prefix}_USER"] = (values[f"{resource_conf_prefix}_USER"], url_username)
+        url_config_errors[f"{resource_conf_prefix}_USER"] = (
+            values[f"{resource_conf_prefix}_USER"],
+            url_username,
+        )
     # Validate password
     if url_password != unveil(values[f"{resource_conf_prefix}_PASSWORD"]):
         # NOTE: Keeping password text obfuscated in the error output

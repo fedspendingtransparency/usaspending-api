@@ -6,38 +6,38 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('references', '0042_cgac_is_shared'),
+        ("references", "0042_cgac_is_shared"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='PopCongressionalDistrict',
+            name="PopCongressionalDistrict",
             fields=[
-                ('id', models.AutoField(primary_key=True, serialize=False)),
-                ('state_code', models.CharField(max_length=2)),
-                ('state_name', models.TextField()),
-                ('state_abbreviation', models.CharField(max_length=2)),
-                ('congressional_district', models.TextField()),
-                ('latest_population', models.IntegerField()),
+                ("id", models.AutoField(primary_key=True, serialize=False)),
+                ("state_code", models.CharField(max_length=2)),
+                ("state_name", models.TextField()),
+                ("state_abbreviation", models.CharField(max_length=2)),
+                ("congressional_district", models.TextField()),
+                ("latest_population", models.IntegerField()),
             ],
             options={
-                'db_table': 'ref_population_cong_district',
-                'managed': True,
+                "db_table": "ref_population_cong_district",
+                "managed": True,
             },
         ),
         migrations.CreateModel(
-            name='PopCounty',
+            name="PopCounty",
             fields=[
-                ('id', models.AutoField(primary_key=True, serialize=False)),
-                ('state_code', models.CharField(max_length=2)),
-                ('state_name', models.TextField()),
-                ('county_number', models.CharField(max_length=3)),
-                ('county_name', models.TextField()),
-                ('latest_population', models.IntegerField()),
+                ("id", models.AutoField(primary_key=True, serialize=False)),
+                ("state_code", models.CharField(max_length=2)),
+                ("state_name", models.TextField()),
+                ("county_number", models.CharField(max_length=3)),
+                ("county_name", models.TextField()),
+                ("latest_population", models.IntegerField()),
             ],
             options={
-                'db_table': 'ref_population_county',
-                'managed': True,
+                "db_table": "ref_population_county",
+                "managed": True,
             },
         ),
     ]

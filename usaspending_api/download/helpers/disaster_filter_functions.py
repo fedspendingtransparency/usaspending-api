@@ -16,13 +16,19 @@ from usaspending_api.search.models import AwardSearch
 def _disaster_recipient_aggregations() -> dict:
     return {
         "award_obligations": Coalesce(
-            Sum("total_obligation_by_award"), 0, output_field=DecimalField(max_digits=23, decimal_places=2)
+            Sum("total_obligation_by_award"),
+            0,
+            output_field=DecimalField(max_digits=23, decimal_places=2),
         ),
         "award_outlays": Coalesce(
-            Sum("total_outlay_by_award"), 0, output_field=DecimalField(max_digits=23, decimal_places=2)
+            Sum("total_outlay_by_award"),
+            0,
+            output_field=DecimalField(max_digits=23, decimal_places=2),
         ),
         "face_value_of_loans": Coalesce(
-            Sum("total_loan_value"), 0, output_field=DecimalField(max_digits=23, decimal_places=2)
+            Sum("total_loan_value"),
+            0,
+            output_field=DecimalField(max_digits=23, decimal_places=2),
         ),
         "number_of_awards": Count("award_id", distinct=True),
     }
@@ -45,11 +51,16 @@ def disaster_filter_function(filters: dict, download_type: str, values: List[str
     if award_type_codes:
         award_filters.append(Q(type__in=award_type_codes))
 
-    faba_filters = [filter_by_defc_closed_periods(), Q(disaster_emergency_fund__code__in=def_codes)]
+    faba_filters = [
+        filter_by_defc_closed_periods(),
+        Q(disaster_emergency_fund__code__in=def_codes),
+    ]
 
     dollar_annotations = {
         "inner_obligation": Coalesce(
-            Sum("transaction_obligated_amount"), 0, output_field=DecimalField(max_digits=23, decimal_places=2)
+            Sum("transaction_obligated_amount"),
+            0,
+            output_field=DecimalField(max_digits=23, decimal_places=2),
         ),
         "inner_outlay": Coalesce(
             Sum(
@@ -91,7 +102,10 @@ def disaster_filter_function(filters: dict, download_type: str, values: List[str
     return (
         cte.join(AwardSearch, award_id=cte.col.award_id)
         .with_cte(cte)
-        .annotate(total_obligation_by_award=cte.col.inner_obligation, total_outlay_by_award=cte.col.inner_outlay)
+        .annotate(
+            total_obligation_by_award=cte.col.inner_obligation,
+            total_outlay_by_award=cte.col.inner_outlay,
+        )
         .filter(*award_filters)
         .values(*values)
         .annotate(**aggregation_mapping[download_type]())

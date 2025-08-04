@@ -21,7 +21,10 @@ from usaspending_api.common.helpers.spark_helpers import (
 from usaspending_api.common.spark.configs import LOCAL_BASIC_EXTRA_CONF
 from usaspending_api.config import CONFIG
 from usaspending_api.etl.award_helpers import update_awards
-from usaspending_api.etl.management.commands.create_delta_table import LOAD_QUERY_TABLE_SPEC, LOAD_TABLE_TABLE_SPEC
+from usaspending_api.etl.management.commands.create_delta_table import (
+    LOAD_QUERY_TABLE_SPEC,
+    LOAD_TABLE_TABLE_SPEC,
+)
 
 if TYPE_CHECKING:
     from pyspark.sql import SparkSession
@@ -244,7 +247,11 @@ def populate_broker_data(broker_server_dblink_setup):
             values = [str(tuple(r.values())).replace("None", "null") for r in rows]
             sql_string = cursor.mogrify(
                 insert_statement,
-                {"table_name": AsIs(table_name), "columns": AsIs(",".join(columns)), "values": AsIs(",".join(values))},
+                {
+                    "table_name": AsIs(table_name),
+                    "columns": AsIs(",".join(columns)),
+                    "values": AsIs(",".join(values)),
+                },
             )
             cursor.execute(sql_string)
     yield
@@ -330,10 +337,16 @@ def _build_usas_data_for_spark():
 
     # Create agency data
     funding_toptier_agency = baker.make(
-        "references.ToptierAgency", name="TEST AGENCY 1", abbreviation="TA1", _fill_optional=True
+        "references.ToptierAgency",
+        name="TEST AGENCY 1",
+        abbreviation="TA1",
+        _fill_optional=True,
     )
     funding_subtier_agency = baker.make(
-        "references.SubtierAgency", name="TEST SUBTIER 1", abbreviation="SA1", _fill_optional=True
+        "references.SubtierAgency",
+        name="TEST SUBTIER 1",
+        abbreviation="SA1",
+        _fill_optional=True,
     )
     funding_agency = baker.make(
         "references.Agency",
@@ -343,8 +356,18 @@ def _build_usas_data_for_spark():
         _fill_optional=True,
     )
 
-    toptier = baker.make("references.ToptierAgency", name="toptier", abbreviation="tt", _fill_optional=True)
-    subtier = baker.make("references.SubtierAgency", name="subtier", abbreviation="st", _fill_optional=True)
+    toptier = baker.make(
+        "references.ToptierAgency",
+        name="toptier",
+        abbreviation="tt",
+        _fill_optional=True,
+    )
+    subtier = baker.make(
+        "references.SubtierAgency",
+        name="subtier",
+        abbreviation="st",
+        _fill_optional=True,
+    )
     agency = baker.make(
         "references.Agency",
         toptier_agency=toptier,
@@ -355,10 +378,17 @@ def _build_usas_data_for_spark():
     )
 
     awarding_toptier_agency = baker.make(
-        "references.ToptierAgency", name="TEST AGENCY 2", abbreviation="TA2", _fill_optional=True
+        "references.ToptierAgency",
+        name="TEST AGENCY 2",
+        abbreviation="TA2",
+        _fill_optional=True,
     )
     awarding_subtier_agency = baker.make(
-        "references.SubtierAgency", name="TEST SUBTIER 2", abbreviation="SA2", subtier_code="789", _fill_optional=True
+        "references.SubtierAgency",
+        name="TEST SUBTIER 2",
+        abbreviation="SA2",
+        subtier_code="789",
+        _fill_optional=True,
     )
     awarding_agency = baker.make(
         "references.Agency",
@@ -379,14 +409,57 @@ def _build_usas_data_for_spark():
         county_name="County Name",
         _fill_optional=True,
     )
-    baker.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES", _fill_optional=True)
-    baker.make("recipient.StateData", code="VA", name="Virginia", fips="51", _fill_optional=True)
-    baker.make("references.PopCounty", state_code="51", county_number="000", latest_population=1, _fill_optional=True)
-    baker.make("references.PopCounty", state_code="51", county_number="001", latest_population=1, _fill_optional=True)
-    baker.make("references.PopCongressionalDistrict", state_code="51", latest_population=1, congressional_district="01")
-    defc_l = baker.make("references.DisasterEmergencyFundCode", code="L", group_name="covid_19", _fill_optional=True)
-    defc_m = baker.make("references.DisasterEmergencyFundCode", code="M", group_name="covid_19", _fill_optional=True)
-    defc_q = baker.make("references.DisasterEmergencyFundCode", code="Q", group_name=None, _fill_optional=True)
+    baker.make(
+        "references.RefCountryCode",
+        country_code="USA",
+        country_name="UNITED STATES",
+        _fill_optional=True,
+    )
+    baker.make(
+        "recipient.StateData",
+        code="VA",
+        name="Virginia",
+        fips="51",
+        _fill_optional=True,
+    )
+    baker.make(
+        "references.PopCounty",
+        state_code="51",
+        county_number="000",
+        latest_population=1,
+        _fill_optional=True,
+    )
+    baker.make(
+        "references.PopCounty",
+        state_code="51",
+        county_number="001",
+        latest_population=1,
+        _fill_optional=True,
+    )
+    baker.make(
+        "references.PopCongressionalDistrict",
+        state_code="51",
+        latest_population=1,
+        congressional_district="01",
+    )
+    defc_l = baker.make(
+        "references.DisasterEmergencyFundCode",
+        code="L",
+        group_name="covid_19",
+        _fill_optional=True,
+    )
+    defc_m = baker.make(
+        "references.DisasterEmergencyFundCode",
+        code="M",
+        group_name="covid_19",
+        _fill_optional=True,
+    )
+    defc_q = baker.make(
+        "references.DisasterEmergencyFundCode",
+        code="Q",
+        group_name=None,
+        _fill_optional=True,
+    )
     rpa_1 = baker.make(
         "references.RefProgramActivity",
         id=1,
@@ -408,7 +481,9 @@ def _build_usas_data_for_spark():
 
     # Create account data
     federal_account = baker.make(
-        "accounts.FederalAccount", parent_toptier_agency=funding_toptier_agency, _fill_optional=True
+        "accounts.FederalAccount",
+        parent_toptier_agency=funding_toptier_agency,
+        _fill_optional=True,
     )
     tas = baker.make(
         "accounts.TreasuryAppropriationAccount",
@@ -1491,7 +1566,8 @@ def populate_usas_data_and_recipients_from_broker(db, populate_usas_data, popula
     call_command("update_recipient_lookup")
     with connections[settings.DEFAULT_DB_ALIAS].cursor() as cursor:
         restock_recipient_profile_sql = open(
-            "usaspending_api/recipient/management/sql/restock_recipient_profile.sql", "r"
+            "usaspending_api/recipient/management/sql/restock_recipient_profile.sql",
+            "r",
         ).read()
         cursor.execute(restock_recipient_profile_sql)
     yield
@@ -1515,7 +1591,11 @@ def create_all_delta_tables(spark: "SparkSession", s3_bucket: str, tables_to_loa
                 f"--spark-s3-bucket={s3_bucket}",
             )
         else:
-            call_command("create_delta_table", f"--destination-table={dest_table}", f"--spark-s3-bucket={s3_bucket}")
+            call_command(
+                "create_delta_table",
+                f"--destination-table={dest_table}",
+                f"--spark-s3-bucket={s3_bucket}",
+            )
 
 
 def create_and_load_all_delta_tables(spark: "SparkSession", s3_bucket: str, tables_to_load: list):

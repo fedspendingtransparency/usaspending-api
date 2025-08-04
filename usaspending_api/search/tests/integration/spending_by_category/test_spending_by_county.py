@@ -3,7 +3,9 @@ import json
 from rest_framework import status
 
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
-from usaspending_api.search.tests.data.search_filters_test_data import non_legacy_filters
+from usaspending_api.search.tests.data.search_filters_test_data import (
+    non_legacy_filters,
+)
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
@@ -43,11 +45,35 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
     expected_response = {
         "category": "county",
         "limit": 10,
-        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "page_metadata": {
+            "page": 1,
+            "next": None,
+            "previous": None,
+            "hasNext": False,
+            "hasPrevious": False,
+        },
         "results": [
-            {"amount": 550005.0, "code": "001", "id": None, "name": "CHARLESTON", "total_outlays": None},
-            {"amount": 5500.0, "code": "005", "id": None, "name": "TEST NAME", "total_outlays": None},
-            {"amount": 50.0, "code": "005", "id": None, "name": "TEST NAME", "total_outlays": None},
+            {
+                "amount": 550005.0,
+                "code": "001",
+                "id": None,
+                "name": "CHARLESTON",
+                "total_outlays": None,
+            },
+            {
+                "amount": 5500.0,
+                "code": "005",
+                "id": None,
+                "name": "TEST NAME",
+                "total_outlays": None,
+            },
+            {
+                "amount": 50.0,
+                "code": "005",
+                "id": None,
+                "name": "TEST NAME",
+                "total_outlays": None,
+            },
         ],
         "messages": _expected_messages(),
         "spending_level": "transactions",
@@ -68,7 +94,13 @@ def test_correct_response_of_empty_list(client, monkeypatch, elasticsearch_trans
     expected_response = {
         "category": "county",
         "limit": 10,
-        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "page_metadata": {
+            "page": 1,
+            "next": None,
+            "previous": None,
+            "hasNext": False,
+            "hasPrevious": False,
+        },
         "results": [],
         "messages": _expected_messages(),
         "spending_level": "transactions",

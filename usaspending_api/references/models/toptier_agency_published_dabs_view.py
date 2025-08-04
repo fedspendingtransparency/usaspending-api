@@ -6,10 +6,16 @@ class ToptierAgencyPublishedDABSView(models.Model):
     name = models.TextField()
     abbreviation = models.TextField()
     toptier_agency = models.OneToOneField(
-        "references.ToptierAgency", on_delete=models.DO_NOTHING, primary_key=True, related_name="%(class)s"
+        "references.ToptierAgency",
+        on_delete=models.DO_NOTHING,
+        primary_key=True,
+        related_name="%(class)s",
     )
     agency = models.OneToOneField(
-        "references.Agency", on_delete=models.DO_NOTHING, primary_key=False, related_name="%(class)s"
+        "references.Agency",
+        on_delete=models.DO_NOTHING,
+        primary_key=False,
+        related_name="%(class)s",
     )
     user_selectable = models.BooleanField()
 

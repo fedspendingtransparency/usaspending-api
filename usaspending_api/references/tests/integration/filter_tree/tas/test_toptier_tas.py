@@ -10,7 +10,15 @@ common_query = base_query + "?depth=0"
 def test_one_agency(client, basic_agency):
     resp = _call_and_expect_200(client, common_query)
     assert resp.json() == {
-        "results": [{"id": "001", "ancestors": [], "description": "Agency 001 (001)", "count": 1, "children": None}]
+        "results": [
+            {
+                "id": "001",
+                "ancestors": [],
+                "description": "Agency 001 (001)",
+                "count": 1,
+                "children": None,
+            }
+        ]
     }
 
 

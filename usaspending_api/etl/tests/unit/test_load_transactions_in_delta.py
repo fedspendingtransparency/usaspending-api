@@ -18,7 +18,10 @@ def _setup_spark_mock():
     return spark_mock
 
 
-@patch("usaspending_api.etl.management.commands.load_transactions_in_delta.get_earliest_load_date", return_value=None)
+@patch(
+    "usaspending_api.etl.management.commands.load_transactions_in_delta.get_earliest_load_date",
+    return_value=None,
+)
 @patch(
     "usaspending_api.etl.management.commands.load_transactions_in_delta.Command.prepare_spark",
     new_callable=_setup_spark_mock,

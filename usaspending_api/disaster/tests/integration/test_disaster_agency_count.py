@@ -42,7 +42,11 @@ def test_agency_count_with_award_types(
 
 @pytest.mark.django_db
 def test_agency_ignores_agencies_with_zero_sum_toa(
-    client, monkeypatch, faba_with_toptier_agencies_that_cancel_out_in_toa, helpers, elasticsearch_award_index
+    client,
+    monkeypatch,
+    faba_with_toptier_agencies_that_cancel_out_in_toa,
+    helpers,
+    elasticsearch_award_index,
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
@@ -53,7 +57,11 @@ def test_agency_ignores_agencies_with_zero_sum_toa(
 
 @pytest.mark.django_db
 def test_agency_ignores_agencies_with_zero_sum_outlay(
-    client, monkeypatch, faba_with_toptier_agencies_that_cancel_out_in_outlay, helpers, elasticsearch_award_index
+    client,
+    monkeypatch,
+    faba_with_toptier_agencies_that_cancel_out_in_outlay,
+    helpers,
+    elasticsearch_award_index,
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)

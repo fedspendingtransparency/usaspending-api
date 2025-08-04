@@ -261,14 +261,20 @@ def test_defc_and_date_filters(client, monkeypatch, elasticsearch_subaward_index
 
     # No subawards should be returned, because even though Subaward 4 falls into this `time_period`
     #   it's `sub_action_date` is prior to when DEF code `Z` went into effect and therefore filtered out
-    filters = {"def_codes": ["Z"], "time_period": [{"start_date": "2019-01-01", "end_date": "2021-12-01"}]}
+    filters = {
+        "def_codes": ["Z"],
+        "time_period": [{"start_date": "2019-01-01", "end_date": "2021-12-01"}],
+    }
     query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
     filter_query = query_with_filters.generate_elasticsearch_query(filters)
     search = SubawardSearch().filter(filter_query)
     results = search.handle_execute()
     assert len(results) == 0
 
-    filters = {"def_codes": ["A", "L", "Z"], "time_period": [{"start_date": "2018-01-01", "end_date": "2023-01-01"}]}
+    filters = {
+        "def_codes": ["A", "L", "Z"],
+        "time_period": [{"start_date": "2018-01-01", "end_date": "2023-01-01"}],
+    }
     query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
     filter_query = query_with_filters.generate_elasticsearch_query(filters)
     search = SubawardSearch().filter(filter_query)
@@ -328,7 +334,12 @@ def test_recipient_locations_text_filters(
     results = search.handle_execute()
     assert len(results) == 1
 
-    filters = {"recipient_locations": [{"country": "USA", "zip": "00501"}, {"country": "USA", "zip": "10000"}]}
+    filters = {
+        "recipient_locations": [
+            {"country": "USA", "zip": "00501"},
+            {"country": "USA", "zip": "10000"},
+        ]
+    }
     query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
     filter_query = query_with_filters.generate_elasticsearch_query(filters)
     search = SubawardSearch().filter(filter_query)

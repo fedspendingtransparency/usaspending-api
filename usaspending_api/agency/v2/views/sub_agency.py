@@ -5,7 +5,9 @@ from typing import Any
 from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
 from fiscalyear import FiscalYear
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.elasticsearch.aggregation_helpers import create_count_aggregation
+from usaspending_api.common.elasticsearch.aggregation_helpers import (
+    create_count_aggregation,
+)
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.query_with_filters import QueryWithFilters
@@ -24,12 +26,20 @@ class SubAgencyList(PaginationMixin, AgencyBase):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.subtier_code_field = {"awarding": "awarding_sub_tier_agency_c", "funding": "funding_sub_tier_agency_co"}
+        self.subtier_code_field = {
+            "awarding": "awarding_sub_tier_agency_c",
+            "funding": "funding_sub_tier_agency_co",
+        }
         self.params_to_validate = ["fiscal_year", "agency_type", "award_type_codes"]
 
     @cache_response()
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        self.sortable_columns = ["name", "total_obligations", "transaction_count", "new_award_count"]
+        self.sortable_columns = [
+            "name",
+            "total_obligations",
+            "transaction_count",
+            "new_award_count",
+        ]
         self.default_sort_column = "total_obligations"
         self.filter_query = self.build_elasticsearch_filter_query()
         results = sorted(
@@ -116,8 +126,19 @@ class SubAgencyList(PaginationMixin, AgencyBase):
         query_with_filters = QueryWithFilters(QueryType.TRANSACTIONS)
         filter_query = query_with_filters.generate_elasticsearch_query(
             {
-                "agencies": [{"type": self.agency_type, "tier": "toptier", "name": self.toptier_agency.name}],
-                "time_period": [{"start_date": fiscal_year.start.date(), "end_date": fiscal_year.end.date()}],
+                "agencies": [
+                    {
+                        "type": self.agency_type,
+                        "tier": "toptier",
+                        "name": self.toptier_agency.name,
+                    }
+                ],
+                "time_period": [
+                    {
+                        "start_date": fiscal_year.start.date(),
+                        "end_date": fiscal_year.end.date(),
+                    }
+                ],
                 "award_type_codes": self._query_params.get("award_type_codes", []),
             }
         )
@@ -142,11 +163,21 @@ class SubAgencyList(PaginationMixin, AgencyBase):
             field=f"{self.subtier_code_field[self.agency_type]}.keyword",
             size=term_agg_sizes["subtier_agency_size"],
         )
-        office_agg = A("terms", field=f"{self.agency_type}_office_code.keyword", size=term_agg_sizes["office_size"])
+        office_agg = A(
+            "terms",
+            field=f"{self.agency_type}_office_code.keyword",
+            size=term_agg_sizes["office_size"],
+        )
         agency_obligation_agg = A("sum", field="generated_pragmatic_obligation")
         office_obligation_agg = A("sum", field="generated_pragmatic_obligation")
         new_award_filter = A(
-            "filter", range={"award_date_signed": {"gte": fiscal_year.start.date(), "lte": fiscal_year.end.date()}}
+            "filter",
+            range={
+                "award_date_signed": {
+                    "gte": fiscal_year.start.date(),
+                    "lte": fiscal_year.end.date(),
+                }
+            },
         )
         agency_new_award_agg = create_count_aggregation("award_id")
         office_new_award_agg = create_count_aggregation("award_id")
@@ -165,7 +196,15 @@ class SubAgencyList(PaginationMixin, AgencyBase):
 
         search.aggs["subtier_agencies"].bucket(
             "agency_award_count",
-            A("filter", range={"award_date_signed": {"gte": fiscal_year.start.date(), "lte": fiscal_year.end.date()}}),
+            A(
+                "filter",
+                range={
+                    "award_date_signed": {
+                        "gte": fiscal_year.start.date(),
+                        "lte": fiscal_year.end.date(),
+                    }
+                },
+            ),
         ).metric("agency_award_value", agency_new_award_agg)
         search.update_from_dict({"size": 0})
         response = search.handle_execute()
@@ -178,7 +217,9 @@ class SubAgencyList(PaginationMixin, AgencyBase):
         ).count()
 
         unique_subtier_agg = A(
-            "terms", field=f"{self.subtier_code_field[self.agency_type]}.keyword", size=max_subtier_agencies
+            "terms",
+            field=f"{self.subtier_code_field[self.agency_type]}.keyword",
+            size=max_subtier_agencies,
         )
         unique_office_count_agg = A("cardinality", field=f"{self.agency_type}_office_code.keyword")
         max_office_count_agg = A("max_bucket", buckets_path="unique_subtier_agg>unique_office_count_agg")
@@ -193,4 +234,7 @@ class SubAgencyList(PaginationMixin, AgencyBase):
         max_office_count = resp_as_dict.get("max_office_count_agg", {}).get("value")
 
         # Default to Terms aggregation default of 10 to avoid parse error with size of 0
-        return {"office_size": max_office_count or 10, "subtier_agency_size": max_subtier_agencies or 10}
+        return {
+            "office_size": max_office_count or 10,
+            "subtier_agency_size": max_subtier_agencies or 10,
+        }

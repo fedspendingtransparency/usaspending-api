@@ -15,7 +15,11 @@ from usaspending_api.search.tests.integration.hierarchical_filters.tas_search_te
 
 @pytest.mark.django_db
 def test_agency_level_require_match(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_tas
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    subaward_with_tas,
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -26,7 +30,11 @@ def test_agency_level_require_match(
 
 @pytest.mark.django_db
 def test_fa_level_require_match(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_tas
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    subaward_with_tas,
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -37,7 +45,11 @@ def test_fa_level_require_match(
 
 @pytest.mark.django_db
 def test_tas_level_require_match(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_tas
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    subaward_with_tas,
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -48,7 +60,11 @@ def test_tas_level_require_match(
 
 @pytest.mark.django_db
 def test_agency_level_exclude_match(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_tas
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    subaward_with_tas,
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -59,7 +75,11 @@ def test_agency_level_exclude_match(
 
 @pytest.mark.django_db
 def test_fa_level_exclude_match(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_tas
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    subaward_with_tas,
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -70,7 +90,11 @@ def test_fa_level_exclude_match(
 
 @pytest.mark.django_db
 def test_tas_level_exclude_match(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_tas
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    subaward_with_tas,
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -81,7 +105,11 @@ def test_tas_level_exclude_match(
 
 @pytest.mark.django_db
 def test_agency_level_require_non_match(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_tas
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    subaward_with_tas,
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -92,7 +120,11 @@ def test_agency_level_require_non_match(
 
 @pytest.mark.django_db
 def test_fa_level_require_non_match(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_tas
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    subaward_with_tas,
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -103,7 +135,11 @@ def test_fa_level_require_non_match(
 
 @pytest.mark.django_db
 def test_tas_level_require_non_match(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_tas
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    subaward_with_tas,
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -114,7 +150,11 @@ def test_tas_level_require_non_match(
 
 @pytest.mark.django_db
 def test_agency_level_exclude_non_match(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_tas
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    subaward_with_tas,
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -125,7 +165,11 @@ def test_agency_level_exclude_non_match(
 
 @pytest.mark.django_db
 def test_fa_level_exclude_non_match(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_tas
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    subaward_with_tas,
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -136,7 +180,11 @@ def test_fa_level_exclude_non_match(
 
 @pytest.mark.django_db
 def test_tas_level_exclude_non_match(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_tas
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    subaward_with_tas,
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -147,7 +195,11 @@ def test_tas_level_exclude_non_match(
 
 @pytest.mark.django_db
 def test_double_require(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_tas
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    subaward_with_tas,
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -158,7 +210,11 @@ def test_double_require(
 
 @pytest.mark.django_db
 def test_double_exclude(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_tas
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    subaward_with_tas,
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -169,7 +225,11 @@ def test_double_exclude(
 
 @pytest.mark.django_db
 def test_exclude_overrides_require(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_tas
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    subaward_with_tas,
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -180,7 +240,11 @@ def test_exclude_overrides_require(
 
 @pytest.mark.django_db
 def test_exclude_eclipsing_require(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_tas
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    subaward_with_tas,
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -191,7 +255,11 @@ def test_exclude_eclipsing_require(
 
 @pytest.mark.django_db
 def test_require_eclipsing_exclude(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_tas
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    subaward_with_tas,
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -202,12 +270,20 @@ def test_require_eclipsing_exclude(
 
 @pytest.mark.django_db
 def test_double_eclipsing_filters(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_tas
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    subaward_with_tas,
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
     resp = query_by_tas_subaward(
-        client, {"require": [_agency_path(BASIC_TAS), _tas_path(BASIC_TAS)], "exclude": [_fa_path(BASIC_TAS)]}
+        client,
+        {
+            "require": [_agency_path(BASIC_TAS), _tas_path(BASIC_TAS)],
+            "exclude": [_fa_path(BASIC_TAS)],
+        },
     )
 
     assert resp.json()["results"] == [_subaward1()]
@@ -215,12 +291,20 @@ def test_double_eclipsing_filters(
 
 @pytest.mark.django_db
 def test_double_eclipsing_filters2(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_tas
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    subaward_with_tas,
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
     resp = query_by_tas_subaward(
-        client, {"require": [_fa_path(BASIC_TAS)], "exclude": [_agency_path(BASIC_TAS), _tas_path(BASIC_TAS)]}
+        client,
+        {
+            "require": [_fa_path(BASIC_TAS)],
+            "exclude": [_agency_path(BASIC_TAS), _tas_path(BASIC_TAS)],
+        },
     )
 
     assert resp.json()["results"] == []
@@ -228,7 +312,11 @@ def test_double_eclipsing_filters2(
 
 @pytest.mark.django_db
 def test_sibling_eclipsing_filters(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, multiple_subawards_with_tas
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    multiple_subawards_with_tas,
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -245,7 +333,11 @@ def test_sibling_eclipsing_filters(
 
 @pytest.mark.django_db
 def test_sibling_filters_one_match(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, multiple_subawards_with_sibling_tas
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    multiple_subawards_with_sibling_tas,
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -256,15 +348,20 @@ def test_sibling_filters_one_match(
 
 @pytest.mark.django_db
 def test_sibling_filters_two_matchs(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, multiple_subawards_with_sibling_tas
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    multiple_subawards_with_sibling_tas,
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
     resp = query_by_tas_subaward(client, {"require": [_tas_path(SISTER_TAS[1]), _tas_path(SISTER_TAS[0])]})
 
-    assert resp.json()["results"].sort(key=lambda elem: elem["internal_id"]) == [_subaward1(), _subaward2()].sort(
-        key=lambda elem: elem["internal_id"]
-    )
+    assert resp.json()["results"].sort(key=lambda elem: elem["internal_id"]) == [
+        _subaward1(),
+        _subaward2(),
+    ].sort(key=lambda elem: elem["internal_id"])
 
 
 def _subaward1():

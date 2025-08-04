@@ -12,7 +12,9 @@ from usaspending_api.common.helpers.sql_helpers import execute_dml_sql
 from usaspending_api.common.helpers.timing_helpers import ScriptTimer as Timer
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.common.zip import extract_single_file_zip
-from usaspending_api.etl.operations.subaward.update_city_county import update_subaward_city_county
+from usaspending_api.etl.operations.subaward.update_city_county import (
+    update_subaward_city_county,
+)
 from usaspending_api.references.models import CityCountyStateCode
 
 
@@ -141,7 +143,12 @@ class Command(BaseCommand):
         self._create_staging_table()
         self._import_input_file()
 
-        natural_key_columns = ["feature_id", "state_alpha", "county_sequence", "county_numeric"]
+        natural_key_columns = [
+            "feature_id",
+            "state_alpha",
+            "county_sequence",
+            "county_numeric",
+        ]
         destination_table = ETLTable(self.destination_table_name, key_overrides=natural_key_columns)
         source_table = ETLTemporaryTable(self.staging_table_name)
 

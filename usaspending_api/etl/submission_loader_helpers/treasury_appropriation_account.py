@@ -55,12 +55,21 @@ def bulk_treasury_appropriation_account_tas_lookup(rows, db_cursor):
     }
 
     TREASURY_ACCOUNT_LOOKUP.update(
-        {tid: (taa_objects.get(tas_rendering_labels.get(tid)), tas_rendering_labels.get(tid)) for tid in tas_lookup_ids}
+        {
+            tid: (
+                taa_objects.get(tas_rendering_labels.get(tid)),
+                tas_rendering_labels.get(tid),
+            )
+            for tid in tas_lookup_ids
+        }
     )
 
 
 def get_treasury_appropriation_account_tas_lookup(account_num):
     tas = TREASURY_ACCOUNT_LOOKUP.get(account_num)
     if not tas or not tas[1]:
-        return None, f"TAS Account Number (tas_lookup.account_num) '{account_num}' not found in Broker"
+        return (
+            None,
+            f"TAS Account Number (tas_lookup.account_num) '{account_num}' not found in Broker",
+        )
     return tas

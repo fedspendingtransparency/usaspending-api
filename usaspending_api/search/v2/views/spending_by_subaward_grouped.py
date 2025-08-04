@@ -10,7 +10,10 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from usaspending_api.common.api_versioning import API_TRANSFORM_FUNCTIONS, api_transformations
+from usaspending_api.common.api_versioning import (
+    API_TRANSFORM_FUNCTIONS,
+    api_transformations,
+)
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import SubawardSearch
 from usaspending_api.common.helpers.generic_helper import (
@@ -21,7 +24,9 @@ from usaspending_api.common.validator.award_filter import AWARD_FILTER_NO_RECIPI
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.search.filters.elasticsearch.filter import QueryType
-from usaspending_api.search.filters.time_period.query_types import SubawardSearchTimePeriod
+from usaspending_api.search.filters.time_period.query_types import (
+    SubawardSearchTimePeriod,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +54,13 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
         self.pagination: dict[str, Any] = {}
         self.models = [
             {"name": "limits", "key": "limit", "type": "integer", "default": 10},
-            {"name": "ordered", "key": "order", "type": "text", "text_type": "search", "default": "desc"},
+            {
+                "name": "ordered",
+                "key": "order",
+                "type": "text",
+                "text_type": "search",
+                "default": "desc",
+            },
             {
                 "name": "object_class",
                 "key": "filters|object class",
@@ -62,7 +73,12 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
                 "name": "sorted",
                 "key": "sort",
                 "type": "enum",
-                "enum_values": ["award_id", "subaward_count", "award_generated_internal_id", "subaward_obligation"],
+                "enum_values": [
+                    "award_id",
+                    "subaward_count",
+                    "award_generated_internal_id",
+                    "subaward_obligation",
+                ],
                 "text_type": "search",
                 "default": "award_id",
             },
@@ -88,7 +104,8 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
         }
 
         time_period_obj = SubawardSearchTimePeriod(
-            default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
+            default_end_date=settings.API_MAX_DATE,
+            default_start_date=settings.API_SEARCH_MIN_DATE,
         )
 
         query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
@@ -138,7 +155,10 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
             award_generated_internal_id = result["unique_award_key"]["buckets"][0]["key"]
             subaward_obligation = Decimal(result["subaward_obligation"]["value"]).quantize(Decimal(".01"))
             item = SubawardGroupedModel(
-                result["key"], result["doc_count"], award_generated_internal_id, subaward_obligation
+                result["key"],
+                result["doc_count"],
+                award_generated_internal_id,
+                subaward_obligation,
             )
             results.append(item)
         results = self.sort_by_attribute(results)
@@ -147,4 +167,8 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
     # default sorting is to sort by the award_id, default order is desc
     def sort_by_attribute(self, results: list[SubawardGroupedModel]) -> list[SubawardGroupedModel]:
         reverse = True if self.pagination["sort_order"] == "asc" else False
-        return sorted(results, key=lambda result: getattr(result, self.pagination["sort_key"]), reverse=reverse)
+        return sorted(
+            results,
+            key=lambda result: getattr(result, self.pagination["sort_key"]),
+            reverse=reverse,
+        )

@@ -160,7 +160,8 @@ class _FakeStatelessLoggingSQSDeadLetterQueue:
     """A Fake implementation of portions of a boto3 SQS resource ``Queue`` object for uses as a Dead Letter Queue
     instance. This implementation is stateless, meaning it holds no enqueued messages, and actions on this queue do
     nothing but log that the action occurred.
-    See: https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/sqs.html#queue"""
+    See: https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/sqs.html#queue
+    """
 
     _FAKE_DEAD_LETTER_QUEUE_URL = (
         f"https://fake-us-region.queue.amazonaws.com/{uuid.uuid4().hex}/{UNITTEST_FAKE_DEAD_LETTER_QUEUE_NAME}"
@@ -186,7 +187,11 @@ class _FakeStatelessLoggingSQSDeadLetterQueue:
         _FakeStatelessLoggingSQSDeadLetterQueue.logger.debug(
             "executing SQSMockDeadLetterQueue.receive_messages("
             "{}, {}, {}, {}, {})".format(
-                WaitTimeSeconds, AttributeNames, MessageAttributeNames, VisibilityTimeout, MaxNumberOfMessages
+                WaitTimeSeconds,
+                AttributeNames,
+                MessageAttributeNames,
+                VisibilityTimeout,
+                MaxNumberOfMessages,
             )
         )
         return []
@@ -194,7 +199,8 @@ class _FakeStatelessLoggingSQSDeadLetterQueue:
 
 class FakeSQSMessage:
     """Fakes portions of a boto3 SQS resource ``Message`` object.
-    See: https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/sqs.html#message"""
+    See: https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/sqs.html#message
+    """
 
     def __init__(self, queue_url):
         self.queue_url = queue_url
@@ -236,7 +242,10 @@ class FakeSQSMessage:
         return {"ApproximateReceiveCount": "1"}  # NOTE: Not an accurate count of try attempts. Just returning a number
 
 
-def get_sqs_queue(region_name=settings.USASPENDING_AWS_REGION, queue_name=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME):
+def get_sqs_queue(
+    region_name=settings.USASPENDING_AWS_REGION,
+    queue_name=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME,
+):
     if settings.IS_LOCAL:
         # Ensure the "singleton" instances of the queue is returned, so that multiple consumers, possibly on
         # different processes or threads, are accessing the same queue data
@@ -245,6 +254,10 @@ def get_sqs_queue(region_name=settings.USASPENDING_AWS_REGION, queue_name=settin
         return _FakeFileBackedSQSQueue.instance()
     else:
         # stuff that's in get_queue
-        sqs = boto3.resource("sqs", endpoint_url=f"https://sqs.{region_name}.amazonaws.com", region_name=region_name)
+        sqs = boto3.resource(
+            "sqs",
+            endpoint_url=f"https://sqs.{region_name}.amazonaws.com",
+            region_name=region_name,
+        )
         queue = sqs.get_queue_by_name(QueueName=queue_name)
         return queue

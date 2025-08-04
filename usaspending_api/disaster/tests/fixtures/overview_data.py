@@ -111,10 +111,26 @@ OTHER_BUDGET_AUTHORITY_GTAS_CALCULATIONS = calculate_values(OTHER_BUDGET_AUTHORI
 def defc_codes():
     return [
         baker.make("references.DisasterEmergencyFundCode", code="A", group_name=NOT_COVID_NAME),
-        baker.make("references.DisasterEmergencyFundCode", code="M", group_name=COVID_19_GROUP_NAME),
-        baker.make("references.DisasterEmergencyFundCode", code="N", group_name=COVID_19_GROUP_NAME),
-        baker.make("references.DisasterEmergencyFundCode", code="O", group_name=COVID_19_GROUP_NAME),
-        baker.make("references.DisasterEmergencyFundCode", code="V", group_name=COVID_19_GROUP_NAME),
+        baker.make(
+            "references.DisasterEmergencyFundCode",
+            code="M",
+            group_name=COVID_19_GROUP_NAME,
+        ),
+        baker.make(
+            "references.DisasterEmergencyFundCode",
+            code="N",
+            group_name=COVID_19_GROUP_NAME,
+        ),
+        baker.make(
+            "references.DisasterEmergencyFundCode",
+            code="O",
+            group_name=COVID_19_GROUP_NAME,
+        ),
+        baker.make(
+            "references.DisasterEmergencyFundCode",
+            code="V",
+            group_name=COVID_19_GROUP_NAME,
+        ),
     ]
 
 
@@ -213,7 +229,9 @@ def _year_2_gtas(code):
 @pytest.fixture
 def basic_faba(defc_codes):
     submission = baker.make(
-        "submissions.SubmissionAttributes", reporting_fiscal_year=EARLY_YEAR, reporting_fiscal_period=EARLY_MONTH
+        "submissions.SubmissionAttributes",
+        reporting_fiscal_year=EARLY_YEAR,
+        reporting_fiscal_period=EARLY_MONTH,
     )
 
     baker.make(

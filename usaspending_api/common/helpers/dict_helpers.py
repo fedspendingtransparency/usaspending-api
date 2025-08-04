@@ -72,7 +72,12 @@ def order_nested_object(nested_object):
                     key,
                     (
                         order_nested_filter_tree_object(nested_object[key])
-                        if key in (NaicsCodes.underscore_name, PSCCodesMixin.underscore_name, TasCodes.underscore_name)
+                        if key
+                        in (
+                            NaicsCodes.underscore_name,
+                            PSCCodesMixin.underscore_name,
+                            TasCodes.underscore_name,
+                        )
                         and isinstance(nested_object[key], dict)
                         else order_nested_object(nested_object[key])
                     ),

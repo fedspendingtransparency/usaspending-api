@@ -4,7 +4,9 @@ from django.conf import settings
 from typing import Optional
 
 from usaspending_api.common.helpers.sql_helpers import get_connection
-from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
+from usaspending_api.common.helpers.date_helper import (
+    datetime_command_line_argument_type,
+)
 
 logger = logging.getLogger("script")
 
@@ -27,7 +29,9 @@ class AgnosticDeletes:
         )
 
         parser.add_argument(
-            "--dry-run", action="store_true", help="Obtain the list of removed transactions, but skip the delete step."
+            "--dry-run",
+            action="store_true",
+            help="Obtain the list of removed transactions, but skip the delete step.",
         )
         parser.add_argument(
             "--skip-upload",
@@ -87,7 +91,11 @@ class AgnosticDeletes:
                 if len(ids) == 0:
                     logger.warning(f"No records to delete for '{date}'")
                 else:
-                    sql = delete_template.format(table=self.destination_table_name, key=self.shared_pk, ids=tuple(ids))
+                    sql = delete_template.format(
+                        table=self.destination_table_name,
+                        key=self.shared_pk,
+                        ids=tuple(ids),
+                    )
                     cursor.execute(sql)
                     logger.info(f"Removed {cursor.rowcount} rows previous to '{date}'")
 

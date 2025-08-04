@@ -4,7 +4,9 @@ from model_bakery import baker
 
 from usaspending_api.awards.models import TransactionNormalized, TransactionFABS, Award
 from usaspending_api.broker.helpers.delete_stale_fabs import delete_stale_fabs
-from usaspending_api.broker.helpers.upsert_fabs_transactions import upsert_fabs_transactions
+from usaspending_api.broker.helpers.upsert_fabs_transactions import (
+    upsert_fabs_transactions,
+)
 from usaspending_api.etl.award_helpers import update_awards
 from usaspending_api.search.models import TransactionSearch, AwardSearch
 from usaspending_api.transactions.models import SourceAssistanceTransaction

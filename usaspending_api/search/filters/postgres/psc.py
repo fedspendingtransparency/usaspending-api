@@ -1,6 +1,9 @@
 from django.db.models import Q
 from usaspending_api.search.filters.mixins.psc import PSCCodesMixin
-from usaspending_api.search.filters.postgres.HierarchicalFilter import HierarchicalFilter, Node
+from usaspending_api.search.filters.postgres.HierarchicalFilter import (
+    HierarchicalFilter,
+    Node,
+)
 
 
 class PSCCodes(PSCCodesMixin, HierarchicalFilter):

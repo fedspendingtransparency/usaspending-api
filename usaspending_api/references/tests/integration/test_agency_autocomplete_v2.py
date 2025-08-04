@@ -146,7 +146,11 @@ def test_awarding_agency_autocomplete_success(client, agency_data):
 def test_awarding_agency_autocomplete_failure(client):
     """Verify error on bad autocomplete request for awarding agency."""
 
-    resp = client.post("/api/v2/autocomplete/awarding_agency/", content_type="application/json", data={})
+    resp = client.post(
+        "/api/v2/autocomplete/awarding_agency/",
+        content_type="application/json",
+        data={},
+    )
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 
@@ -173,7 +177,10 @@ def test_funding_agency_autocomplete_success(client, agency_data):
 
     # test toptier match at top
     assert sorted(
-        [resp.data["results"][0]["subtier_agency"]["name"], resp.data["results"][1]["subtier_agency"]["name"]]
+        [
+            resp.data["results"][0]["subtier_agency"]["name"],
+            resp.data["results"][1]["subtier_agency"]["name"],
+        ]
     ) == ["Department of Transportation", "Department of the Army"]
 
 
@@ -190,7 +197,9 @@ def test_awarding_agency_autocomplete_by_abbrev(client, agency_data):
 
     # test for exact match
     resp = client.post(
-        "/api/v2/autocomplete/awarding_agency/", content_type="application/json", data={"search_text": "USA"}
+        "/api/v2/autocomplete/awarding_agency/",
+        content_type="application/json",
+        data={"search_text": "USA"},
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 1
@@ -198,7 +207,9 @@ def test_awarding_agency_autocomplete_by_abbrev(client, agency_data):
 
     # test for failure
     resp = client.post(
-        "/api/v2/autocomplete/awarding_agency/", content_type="application/json", data={"search_text": "ABC"}
+        "/api/v2/autocomplete/awarding_agency/",
+        content_type="application/json",
+        data={"search_text": "ABC"},
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 0
@@ -209,7 +220,9 @@ def test_for_bogus_agencies(client, agency_data):
     """Ensure our bogus agencies do not show up in results."""
 
     resp = client.post(
-        "/api/v2/autocomplete/awarding_agency/", content_type="application/json", data={"search_text": "Results"}
+        "/api/v2/autocomplete/awarding_agency/",
+        content_type="application/json",
+        data={"search_text": "Results"},
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 0

@@ -1,4 +1,7 @@
-from usaspending_api.common.helpers.data_constants import state_code_from_name, state_name_from_code
+from usaspending_api.common.helpers.data_constants import (
+    state_code_from_name,
+    state_name_from_code,
+)
 
 
 def test_name_to_code():

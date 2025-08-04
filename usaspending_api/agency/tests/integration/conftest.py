@@ -28,11 +28,31 @@ def helpers():
 @pytest.fixture
 def bureau_data():
 
-    ta1 = baker.make("references.ToptierAgency", name="Agency 1", toptier_code="001", _fill_optional=True)
-    sa1 = baker.make("references.SubtierAgency", name="Agency 1", subtier_code="0001", _fill_optional=True)
+    ta1 = baker.make(
+        "references.ToptierAgency",
+        name="Agency 1",
+        toptier_code="001",
+        _fill_optional=True,
+    )
+    sa1 = baker.make(
+        "references.SubtierAgency",
+        name="Agency 1",
+        subtier_code="0001",
+        _fill_optional=True,
+    )
 
-    ta2 = baker.make("references.ToptierAgency", name="Agency 2", toptier_code="002", _fill_optional=True)
-    sa2 = baker.make("references.SubtierAgency", name="Agency 2", subtier_code="0002", _fill_optional=True)
+    ta2 = baker.make(
+        "references.ToptierAgency",
+        name="Agency 2",
+        toptier_code="002",
+        _fill_optional=True,
+    )
+    sa2 = baker.make(
+        "references.SubtierAgency",
+        name="Agency 2",
+        subtier_code="0002",
+        _fill_optional=True,
+    )
 
     dabs1 = baker.make(
         "submissions.DABSSubmissionWindowSchedule",
@@ -80,7 +100,12 @@ def bureau_data():
     )
 
     baker.make(
-        "references.Agency", id=1, toptier_flag=True, toptier_agency=ta1, subtier_agency=sa1, _fill_optional=True
+        "references.Agency",
+        id=1,
+        toptier_flag=True,
+        toptier_agency=ta1,
+        subtier_agency=sa1,
+        _fill_optional=True,
     )
     baker.make(
         "references.BureauTitleLookup",
@@ -89,12 +114,20 @@ def bureau_data():
         bureau_slug="test-bureau-1",
     )
     fa1 = baker.make(
-        "accounts.FederalAccount", account_title="FA 1", federal_account_code="001-0000", parent_toptier_agency=ta1
+        "accounts.FederalAccount",
+        account_title="FA 1",
+        federal_account_code="001-0000",
+        parent_toptier_agency=ta1,
     )
     taa1 = baker.make("accounts.TreasuryAppropriationAccount", federal_account=fa1)
 
     baker.make(
-        "references.Agency", id=2, toptier_flag=True, toptier_agency=ta2, subtier_agency=sa2, _fill_optional=True
+        "references.Agency",
+        id=2,
+        toptier_flag=True,
+        toptier_agency=ta2,
+        subtier_agency=sa2,
+        _fill_optional=True,
     )
     baker.make(
         "references.BureauTitleLookup",
@@ -103,7 +136,10 @@ def bureau_data():
         bureau_slug="test-bureau-2",
     )
     fa2 = baker.make(
-        "accounts.FederalAccount", account_title="FA 2", federal_account_code="002-0000", parent_toptier_agency=ta2
+        "accounts.FederalAccount",
+        account_title="FA 2",
+        federal_account_code="002-0000",
+        parent_toptier_agency=ta2,
     )
     taa2 = baker.make("accounts.TreasuryAppropriationAccount", federal_account=fa2)
 
@@ -220,11 +256,41 @@ def agency_account_data():
     ta4 = baker.make("references.ToptierAgency", toptier_code="010", _fill_optional=True)
     ta5 = baker.make("references.ToptierAgency", toptier_code="011", _fill_optional=True)
 
-    baker.make("references.Agency", id=1, toptier_flag=True, toptier_agency=ta1, _fill_optional=True)
-    baker.make("references.Agency", id=2, toptier_flag=True, toptier_agency=ta2, _fill_optional=True)
-    baker.make("references.Agency", id=3, toptier_flag=True, toptier_agency=ta3, _fill_optional=True)
-    baker.make("references.Agency", id=4, toptier_flag=True, toptier_agency=ta4, _fill_optional=True)
-    baker.make("references.Agency", id=5, toptier_flag=True, toptier_agency=ta5, _fill_optional=True)
+    baker.make(
+        "references.Agency",
+        id=1,
+        toptier_flag=True,
+        toptier_agency=ta1,
+        _fill_optional=True,
+    )
+    baker.make(
+        "references.Agency",
+        id=2,
+        toptier_flag=True,
+        toptier_agency=ta2,
+        _fill_optional=True,
+    )
+    baker.make(
+        "references.Agency",
+        id=3,
+        toptier_flag=True,
+        toptier_agency=ta3,
+        _fill_optional=True,
+    )
+    baker.make(
+        "references.Agency",
+        id=4,
+        toptier_flag=True,
+        toptier_agency=ta4,
+        _fill_optional=True,
+    )
+    baker.make(
+        "references.Agency",
+        id=5,
+        toptier_flag=True,
+        toptier_agency=ta5,
+        _fill_optional=True,
+    )
 
     sub1 = baker.make(
         "submissions.SubmissionAttributes",
@@ -373,32 +439,88 @@ def agency_account_data():
         tas_rendering_label="005-X-0000-000",
     )
 
-    baker.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas1, submission=sub1)
-    baker.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas2, submission=sub2)
-    baker.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas3, submission=sub3)
-    baker.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas4, submission=sub4)
+    baker.make(
+        "accounts.AppropriationAccountBalances",
+        treasury_account_identifier=tas1,
+        submission=sub1,
+    )
+    baker.make(
+        "accounts.AppropriationAccountBalances",
+        treasury_account_identifier=tas2,
+        submission=sub2,
+    )
+    baker.make(
+        "accounts.AppropriationAccountBalances",
+        treasury_account_identifier=tas3,
+        submission=sub3,
+    )
+    baker.make(
+        "accounts.AppropriationAccountBalances",
+        treasury_account_identifier=tas4,
+        submission=sub4,
+    )
 
-    pa1 = baker.make("references.RefProgramActivity", program_activity_code="000", program_activity_name="NAME 1")
-    pa2 = baker.make("references.RefProgramActivity", program_activity_code="1000", program_activity_name="NAME 2")
-    pa3 = baker.make("references.RefProgramActivity", program_activity_code="4567", program_activity_name="NAME 3")
-    pa4 = baker.make("references.RefProgramActivity", program_activity_code="111", program_activity_name="NAME 4")
-    pa5 = baker.make("references.RefProgramActivity", program_activity_code="1234", program_activity_name="NAME 5")
+    pa1 = baker.make(
+        "references.RefProgramActivity",
+        program_activity_code="000",
+        program_activity_name="NAME 1",
+    )
+    pa2 = baker.make(
+        "references.RefProgramActivity",
+        program_activity_code="1000",
+        program_activity_name="NAME 2",
+    )
+    pa3 = baker.make(
+        "references.RefProgramActivity",
+        program_activity_code="4567",
+        program_activity_name="NAME 3",
+    )
+    pa4 = baker.make(
+        "references.RefProgramActivity",
+        program_activity_code="111",
+        program_activity_name="NAME 4",
+    )
+    pa5 = baker.make(
+        "references.RefProgramActivity",
+        program_activity_code="1234",
+        program_activity_name="NAME 5",
+    )
 
     oc = "references.ObjectClass"
     oc1 = baker.make(
-        oc, major_object_class=10, major_object_class_name="Other", object_class=100, object_class_name="equipment"
+        oc,
+        major_object_class=10,
+        major_object_class_name="Other",
+        object_class=100,
+        object_class_name="equipment",
     )
     oc2 = baker.make(
-        oc, major_object_class=10, major_object_class_name="Other", object_class=110, object_class_name="hvac"
+        oc,
+        major_object_class=10,
+        major_object_class_name="Other",
+        object_class=110,
+        object_class_name="hvac",
     )
     oc3 = baker.make(
-        oc, major_object_class=10, major_object_class_name="Other", object_class=120, object_class_name="supplies"
+        oc,
+        major_object_class=10,
+        major_object_class_name="Other",
+        object_class=120,
+        object_class_name="supplies",
     )
     oc4 = baker.make(
-        oc, major_object_class=10, major_object_class_name="Other", object_class=130, object_class_name="interest"
+        oc,
+        major_object_class=10,
+        major_object_class_name="Other",
+        object_class=130,
+        object_class_name="interest",
     )
     oc5 = baker.make(
-        oc, major_object_class=10, major_object_class_name="Other", object_class=140, object_class_name="interest"
+        oc,
+        major_object_class=10,
+        major_object_class_name="Other",
+        object_class=140,
+        object_class_name="interest",
     )
 
     fabpaoc = "financial_activities.FinancialAccountsByProgramActivityObjectClass"
@@ -781,12 +903,24 @@ def tas_mulitple_pas_per_oc():
     ta1 = baker.make("references.ToptierAgency", toptier_code="007", _fill_optional=True)
     fa1 = baker.make("accounts.FederalAccount", federal_account_code="001-0000", account_title="FA 1")
 
-    pa1 = baker.make("references.RefProgramActivity", program_activity_code="000", program_activity_name="NAME 1")
-    pa2 = baker.make("references.RefProgramActivity", program_activity_code="1000", program_activity_name="NAME 2")
+    pa1 = baker.make(
+        "references.RefProgramActivity",
+        program_activity_code="000",
+        program_activity_name="NAME 1",
+    )
+    pa2 = baker.make(
+        "references.RefProgramActivity",
+        program_activity_code="1000",
+        program_activity_name="NAME 2",
+    )
 
     oc = "references.ObjectClass"
     oc1 = baker.make(
-        oc, major_object_class=10, major_object_class_name="Other", object_class=100, object_class_name="equipment"
+        oc,
+        major_object_class=10,
+        major_object_class_name="Other",
+        object_class=100,
+        object_class_name="equipment",
     )
 
     sub1 = baker.make(
@@ -882,7 +1016,13 @@ def tas_with_no_object_class():
 
     ta1 = baker.make("references.ToptierAgency", toptier_code="007", _fill_optional=True)
 
-    baker.make("references.Agency", id=1, toptier_flag=True, toptier_agency=ta1, _fill_optional=True)
+    baker.make(
+        "references.Agency",
+        id=1,
+        toptier_flag=True,
+        toptier_agency=ta1,
+        _fill_optional=True,
+    )
 
     sub1 = baker.make(
         "submissions.SubmissionAttributes",
@@ -906,7 +1046,11 @@ def tas_with_no_object_class():
         tas_rendering_label="001-X-0000-000",
     )
 
-    baker.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas1, submission=sub1)
+    baker.make(
+        "accounts.AppropriationAccountBalances",
+        treasury_account_identifier=tas1,
+        submission=sub1,
+    )
 
 
 __all__ = [

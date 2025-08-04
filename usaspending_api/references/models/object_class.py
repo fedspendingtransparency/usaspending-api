@@ -12,13 +12,27 @@ class DirectReimbursableConstants:
     DIRECT_NAME = "Direct"
     REIMBURSABLE_NAME = "Reimbursable"
 
-    CHOICES = ((UNKNOWN, UNKNOWN_NAME), (DIRECT, DIRECT_NAME), (REIMBURSABLE, REIMBURSABLE_NAME))
+    CHOICES = (
+        (UNKNOWN, UNKNOWN_NAME),
+        (DIRECT, DIRECT_NAME),
+        (REIMBURSABLE, REIMBURSABLE_NAME),
+    )
 
-    NAME_CHOICES = ((UNKNOWN_NAME, UNKNOWN), (DIRECT_NAME, DIRECT), (REIMBURSABLE_NAME, REIMBURSABLE))
+    NAME_CHOICES = (
+        (UNKNOWN_NAME, UNKNOWN),
+        (DIRECT_NAME, DIRECT),
+        (REIMBURSABLE_NAME, REIMBURSABLE),
+    )
 
     LOOKUP = dict(CHOICES)
 
-    BY_DIRECT_REIMBURSABLE_FUN_MAPPING = {None: None, "D": "D", "d": "D", "R": "R", "r": "R"}
+    BY_DIRECT_REIMBURSABLE_FUN_MAPPING = {
+        None: None,
+        "D": "D",
+        "d": "D",
+        "R": "R",
+        "r": "R",
+    }
 
 
 class MajorObjectClassConstants:

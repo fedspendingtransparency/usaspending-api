@@ -6,7 +6,9 @@ from django.db.models import Q
 
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.accounts.models import AppropriationAccountBalances
-from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.financial_activities.models import (
+    FinancialAccountsByProgramActivityObjectClass,
+)
 
 SUBMISSION_MODELS = [
     AppropriationAccountBalances,
@@ -34,19 +36,38 @@ def submission_data():
             award__parent_award__piid="DEF455",
             pop_city_name="city1",
         )
-        baker.make("search.TransactionSearch", transaction_id=i + 11, is_fpds=True, pop_city_name="city2")
+        baker.make(
+            "search.TransactionSearch",
+            transaction_id=i + 11,
+            is_fpds=True,
+            pop_city_name="city2",
+        )
     baker.make(
-        "financial_activities.FinancialAccountsByProgramActivityObjectClass", submission=submission_123, _quantity=10
+        "financial_activities.FinancialAccountsByProgramActivityObjectClass",
+        submission=submission_123,
+        _quantity=10,
     )
     baker.make("accounts.AppropriationAccountBalances", submission=submission_456, _quantity=10)
     baker.make("awards.FinancialAccountsByAwards", submission=submission_456, _quantity=10)
 
     # Making child transaction items creates the parent by default
     for i in range(10):
-        baker.make("search.TransactionSearch", transaction_id=i + 21, is_fpds=True, pop_city_name="city2")
-        baker.make("search.TransactionSearch", transaction_id=i + 31, is_fpds=False, pop_city_name="city3")
+        baker.make(
+            "search.TransactionSearch",
+            transaction_id=i + 21,
+            is_fpds=True,
+            pop_city_name="city2",
+        )
+        baker.make(
+            "search.TransactionSearch",
+            transaction_id=i + 31,
+            is_fpds=False,
+            pop_city_name="city3",
+        )
     baker.make(
-        "financial_activities.FinancialAccountsByProgramActivityObjectClass", submission=submission_456, _quantity=10
+        "financial_activities.FinancialAccountsByProgramActivityObjectClass",
+        submission=submission_456,
+        _quantity=10,
     )
 
 

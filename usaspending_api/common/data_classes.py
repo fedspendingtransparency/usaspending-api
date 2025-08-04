@@ -25,7 +25,10 @@ class Pagination:
 
     @property
     def robust_order_by_fields(self):
-        return (self.order_by, f"{self._sort_order_field_prefix}{self.secondary_sort_key}")
+        return (
+            self.order_by,
+            f"{self._sort_order_field_prefix}{self.secondary_sort_key}",
+        )
 
 
 @dataclass
@@ -34,7 +37,12 @@ class TransactionColumn:
     source: Optional[str]
     delta_type: str
     handling: Literal[
-        "cast", "leave_null", "literal", "normal", "parse_string_datetime_to_date", "string_datetime_remove_timestamp"
+        "cast",
+        "leave_null",
+        "literal",
+        "normal",
+        "parse_string_datetime_to_date",
+        "string_datetime_remove_timestamp",
     ] = "normal"
     # Columns can optionally have a transformation defined on the source column.
     #   This transformation must be a scalar function or operation and PSQL compatible.

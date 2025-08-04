@@ -212,7 +212,13 @@ class PSCFilterTree(FilterTree):
         retval = []
         if not filter_string and not tier1_nodes:
             return [
-                {"id": key, "ancestors": [], "description": "", "count": self.get_count([], key), "children": None}
+                {
+                    "id": key,
+                    "ancestors": [],
+                    "description": "",
+                    "count": self.get_count([], key),
+                    "children": None,
+                }
                 for key in PSC_GROUPS.keys()
             ]
         if tier1_nodes:

@@ -1,4 +1,6 @@
-from usaspending_api.etl.elasticsearch_loader_helpers.controller import PostgresElasticsearchIndexerController
+from usaspending_api.etl.elasticsearch_loader_helpers.controller import (
+    PostgresElasticsearchIndexerController,
+)
 from math import ceil
 
 

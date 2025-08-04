@@ -9,8 +9,14 @@ from django.core.management import call_command
 from model_bakery import baker
 from pytest import mark
 
-from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
-from usaspending_api.etl.tests.integration.test_load_to_from_delta import load_delta_table_from_postgres, equal_datasets
+from usaspending_api.broker.helpers.last_load_date import (
+    get_last_load_date,
+    update_last_load_date,
+)
+from usaspending_api.etl.tests.integration.test_load_to_from_delta import (
+    load_delta_table_from_postgres,
+    equal_datasets,
+)
 from usaspending_api.etl.tests.integration.test_load_transactions_in_delta_lookups import (
     _BEGINNING_OF_TIME,
     _INITIAL_SOURCE_TABLE_LOAD_DATETIME,
@@ -138,12 +144,19 @@ class _TransactionFabsFpdsCore:
         assert equal_datasets(expected_transaction_fabs_fpds, delta_data, "")
 
     def unexpected_paths_test_core(
-        self, load_other_raw_tables, expected_initial_transaction_id_lookup, expected_initial_award_id_lookup
+        self,
+        load_other_raw_tables,
+        expected_initial_transaction_id_lookup,
+        expected_initial_award_id_lookup,
     ):
         # 1. Call load_transactions_in_delta with etl-level of initial_run first, making sure to load
         # raw.transaction_normalized along with the source tables, but don't copy the raw tables to int.
         # Then immediately call load_transactions_in_delta with etl-level of transaction_f[ab|pd]s.
-        InitialRun.initial_run(self.s3_data_bucket, load_other_raw_tables=load_other_raw_tables, initial_copy=False)
+        InitialRun.initial_run(
+            self.s3_data_bucket,
+            load_other_raw_tables=load_other_raw_tables,
+            initial_copy=False,
+        )
         call_command("load_transactions_in_delta", "--etl-level", self.etl_level)
 
         # Even without the call to load_transactions_in_delta with etl-level of transaction_id_lookup, the appropriate
@@ -496,28 +509,46 @@ class TestTransactionFabs:
 
     @mark.django_db(transaction=True)
     def test_unexpected_paths_source_tables_only(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
+        self,
+        spark,
+        s3_unittest_data_bucket,
+        hive_unittest_metastore_db,
+        _populate_initial_source_tables_pg,
     ):
         transaction_fabs_fpds_core = self._generate_transaction_fabs_fpds_core(
-            spark, s3_unittest_data_bucket, _InitialRunWithPostgresLoader.expected_initial_transaction_fabs
+            spark,
+            s3_unittest_data_bucket,
+            _InitialRunWithPostgresLoader.expected_initial_transaction_fabs,
         )
         transaction_fabs_fpds_core.unexpected_paths_source_tables_only_test_core()
 
     @mark.django_db(transaction=True)
     def test_unexpected_paths_no_pg_loader(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
+        self,
+        spark,
+        s3_unittest_data_bucket,
+        hive_unittest_metastore_db,
+        _populate_initial_source_tables_pg,
     ):
         transaction_fabs_fpds_core = self._generate_transaction_fabs_fpds_core(
-            spark, s3_unittest_data_bucket, InitialRunNoPostgresLoader.initial_transaction_fabs
+            spark,
+            s3_unittest_data_bucket,
+            InitialRunNoPostgresLoader.initial_transaction_fabs,
         )
         transaction_fabs_fpds_core.unexpected_paths_no_pg_loader_test_core()
 
     @mark.django_db(transaction=True)
     def test_happy_paths_no_pg_loader(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
+        self,
+        spark,
+        s3_unittest_data_bucket,
+        hive_unittest_metastore_db,
+        _populate_initial_source_tables_pg,
     ):
         transaction_fabs_fpds_core = self._generate_transaction_fabs_fpds_core(
-            spark, s3_unittest_data_bucket, InitialRunNoPostgresLoader.initial_transaction_fabs
+            spark,
+            s3_unittest_data_bucket,
+            InitialRunNoPostgresLoader.initial_transaction_fabs,
         )
         transaction_fabs_fpds_core.happy_paths_no_pg_loader_test_core(
             InitialRunNoPostgresLoader.initial_transaction_fabs,
@@ -569,28 +600,46 @@ class TestTransactionFpds:
 
     @mark.django_db(transaction=True)
     def test_unexpected_paths_source_tables_only(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
+        self,
+        spark,
+        s3_unittest_data_bucket,
+        hive_unittest_metastore_db,
+        _populate_initial_source_tables_pg,
     ):
         transaction_fabs_fpds_core = self._generate_transaction_fabs_fpds_core(
-            spark, s3_unittest_data_bucket, _InitialRunWithPostgresLoader.expected_initial_transaction_fpds
+            spark,
+            s3_unittest_data_bucket,
+            _InitialRunWithPostgresLoader.expected_initial_transaction_fpds,
         )
         transaction_fabs_fpds_core.unexpected_paths_source_tables_only_test_core()
 
     @mark.django_db(transaction=True)
     def test_unexpected_paths_no_pg_loader(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
+        self,
+        spark,
+        s3_unittest_data_bucket,
+        hive_unittest_metastore_db,
+        _populate_initial_source_tables_pg,
     ):
         transaction_fabs_fpds_core = self._generate_transaction_fabs_fpds_core(
-            spark, s3_unittest_data_bucket, InitialRunNoPostgresLoader.initial_transaction_fpds
+            spark,
+            s3_unittest_data_bucket,
+            InitialRunNoPostgresLoader.initial_transaction_fpds,
         )
         transaction_fabs_fpds_core.unexpected_paths_no_pg_loader_test_core()
 
     @mark.django_db(transaction=True)
     def test_happy_paths_no_pg_loader(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
+        self,
+        spark,
+        s3_unittest_data_bucket,
+        hive_unittest_metastore_db,
+        _populate_initial_source_tables_pg,
     ):
         transaction_fabs_fpds_core = self._generate_transaction_fabs_fpds_core(
-            spark, s3_unittest_data_bucket, InitialRunNoPostgresLoader.initial_transaction_fpds
+            spark,
+            s3_unittest_data_bucket,
+            InitialRunNoPostgresLoader.initial_transaction_fpds,
         )
         transaction_fabs_fpds_core.happy_paths_no_pg_loader_test_core(
             InitialRunNoPostgresLoader.initial_transaction_fpds,

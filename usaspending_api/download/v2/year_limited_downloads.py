@@ -12,5 +12,8 @@ class YearLimitedDownloadViewSet(BaseDownloadViewSet):
     def post(self, request):
         request.data["constraint_type"] = "year"
         return BaseDownloadViewSet.post(
-            self, request, origination="bulk_download", validator_type=AwardDownloadValidator
+            self,
+            request,
+            origination="bulk_download",
+            validator_type=AwardDownloadValidator,
         )

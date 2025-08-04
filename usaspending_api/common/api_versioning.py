@@ -1,5 +1,8 @@
 from django.utils.decorators import method_decorator
-from usaspending_api.common.exceptions import InvalidParameterException, EndpointRemovedException
+from usaspending_api.common.exceptions import (
+    InvalidParameterException,
+    EndpointRemovedException,
+)
 from usaspending_api.awards.v2.filters.filter_helpers import transform_keyword
 import logging
 

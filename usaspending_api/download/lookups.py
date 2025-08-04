@@ -15,7 +15,9 @@ from usaspending_api.download.helpers.elasticsearch_download_functions import (
     SubawardsElasticsearchDownload,
     TransactionsElasticsearchDownload,
 )
-from usaspending_api.download.helpers.disaster_filter_functions import disaster_filter_function
+from usaspending_api.download.helpers.disaster_filter_functions import (
+    disaster_filter_function,
+)
 from usaspending_api.download.models import (
     AppropriationAccountBalancesDownloadView,
     FinancialAccountsByAwardsDownloadView,
@@ -284,8 +286,20 @@ CFO_CGACS = list(CFO_CGACS_MAPPING.keys())
 
 FILE_FORMATS = {
     "csv": {"delimiter": ",", "extension": "csv", "options": "WITH CSV HEADER"},
-    "tsv": {"delimiter": "\t", "extension": "tsv", "options": r"WITH CSV DELIMITER E'\t' HEADER"},
-    "pstxt": {"delimiter": "|", "extension": "txt", "options": "WITH CSV DELIMITER '|' HEADER"},
+    "tsv": {
+        "delimiter": "\t",
+        "extension": "tsv",
+        "options": r"WITH CSV DELIMITER E'\t' HEADER",
+    },
+    "pstxt": {
+        "delimiter": "|",
+        "extension": "txt",
+        "options": "WITH CSV DELIMITER '|' HEADER",
+    },
 }
 
-VALID_ACCOUNT_SUBMISSION_TYPES = ("account_balances", "object_class_program_activity", "award_financial")
+VALID_ACCOUNT_SUBMISSION_TYPES = (
+    "account_balances",
+    "object_class_program_activity",
+    "award_financial",
+)

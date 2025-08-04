@@ -206,17 +206,31 @@ def test_new_awards_month(client, monkeypatch, add_award_recipients, elasticsear
         elif i == 10:
             new_award_count = 1
         expected_results.append(
-            {"time_period": {"fiscal_year": "2009", "month": str(i)}, "new_award_count_in_period": new_award_count}
+            {
+                "time_period": {"fiscal_year": "2009", "month": str(i)},
+                "new_award_count_in_period": new_award_count,
+            }
         )
     # 2010
     for i in range(1, 13):
         new_award_count = 0
         expected_results.append(
-            {"time_period": {"fiscal_year": "2010", "month": str(i)}, "new_award_count_in_period": new_award_count}
+            {
+                "time_period": {"fiscal_year": "2010", "month": str(i)},
+                "new_award_count_in_period": new_award_count,
+            }
         )
-    expected_response = {"group": "month", "results": expected_results, "messages": [get_time_period_message()]}
+    expected_response = {
+        "group": "month",
+        "results": expected_results,
+        "messages": [get_time_period_message()],
+    }
 
-    resp = client.post(get_new_awards_over_time_url(), content_type="application/json", data=json.dumps(test_payload))
+    resp = client.post(
+        get_new_awards_over_time_url(),
+        content_type="application/json",
+        data=json.dumps(test_payload),
+    )
     assert resp.status_code == 200
     assert resp.data["group"] == "month"
     assert expected_response == resp.data
@@ -229,7 +243,10 @@ def test_new_awards_month(client, monkeypatch, add_award_recipients, elasticsear
         if i == 4:
             new_award_count = 2
         expected_results.append(
-            {"time_period": {"fiscal_year": "2008", "month": str(i)}, "new_award_count_in_period": new_award_count}
+            {
+                "time_period": {"fiscal_year": "2008", "month": str(i)},
+                "new_award_count_in_period": new_award_count,
+            }
         )
     # 2009
     for i in range(1, 13):
@@ -239,16 +256,30 @@ def test_new_awards_month(client, monkeypatch, add_award_recipients, elasticsear
         elif i == 10:
             new_award_count = 1
         expected_results.append(
-            {"time_period": {"fiscal_year": "2009", "month": str(i)}, "new_award_count_in_period": new_award_count}
+            {
+                "time_period": {"fiscal_year": "2009", "month": str(i)},
+                "new_award_count_in_period": new_award_count,
+            }
         )
     # 2010
     for i in range(1, 13):
         new_award_count = 0
         expected_results.append(
-            {"time_period": {"fiscal_year": "2010", "month": str(i)}, "new_award_count_in_period": new_award_count}
+            {
+                "time_period": {"fiscal_year": "2010", "month": str(i)},
+                "new_award_count_in_period": new_award_count,
+            }
         )
-    expected_response = {"group": "month", "results": expected_results, "messages": [get_time_period_message()]}
-    resp = client.post(get_new_awards_over_time_url(), content_type="application/json", data=json.dumps(test_payload))
+    expected_response = {
+        "group": "month",
+        "results": expected_results,
+        "messages": [get_time_period_message()],
+    }
+    resp = client.post(
+        get_new_awards_over_time_url(),
+        content_type="application/json",
+        data=json.dumps(test_payload),
+    )
     assert resp.status_code == 200
     assert resp.data["group"] == "month"
     assert expected_response == resp.data
@@ -264,7 +295,11 @@ def test_new_awards_quarter(client, monkeypatch, add_award_recipients, elasticse
             "recipient_id": "63248e89-7fb7-2d51-4085-8163798379d9-R",
         },
     }
-    resp = client.post(get_new_awards_over_time_url(), content_type="application/json", data=json.dumps(test_payload))
+    resp = client.post(
+        get_new_awards_over_time_url(),
+        content_type="application/json",
+        data=json.dumps(test_payload),
+    )
     assert resp.status_code == 200
 
     expected_results = []
@@ -276,15 +311,25 @@ def test_new_awards_quarter(client, monkeypatch, add_award_recipients, elasticse
         elif i == 4:
             new_award_count = 1
         expected_results.append(
-            {"time_period": {"fiscal_year": "2009", "quarter": str(i)}, "new_award_count_in_period": new_award_count}
+            {
+                "time_period": {"fiscal_year": "2009", "quarter": str(i)},
+                "new_award_count_in_period": new_award_count,
+            }
         )
     # 2010
     for i in range(1, 5):
         new_award_count = 0
         expected_results.append(
-            {"time_period": {"fiscal_year": "2010", "quarter": str(i)}, "new_award_count_in_period": new_award_count}
+            {
+                "time_period": {"fiscal_year": "2010", "quarter": str(i)},
+                "new_award_count_in_period": new_award_count,
+            }
         )
-    expected_response = {"group": "quarter", "results": expected_results, "messages": [get_time_period_message()]}
+    expected_response = {
+        "group": "quarter",
+        "results": expected_results,
+        "messages": [get_time_period_message()],
+    }
     assert resp.data["group"] == "quarter"
     assert expected_response == resp.data
 
@@ -295,7 +340,10 @@ def test_new_awards_quarter(client, monkeypatch, add_award_recipients, elasticse
         if i == 2:
             new_award_count = 2
         expected_results.append(
-            {"time_period": {"fiscal_year": "2008", "quarter": str(i)}, "new_award_count_in_period": new_award_count}
+            {
+                "time_period": {"fiscal_year": "2008", "quarter": str(i)},
+                "new_award_count_in_period": new_award_count,
+            }
         )
     # 2009
     for i in range(1, 5):
@@ -305,19 +353,33 @@ def test_new_awards_quarter(client, monkeypatch, add_award_recipients, elasticse
         elif i == 4:
             new_award_count = 1
         expected_results.append(
-            {"time_period": {"fiscal_year": "2009", "quarter": str(i)}, "new_award_count_in_period": new_award_count}
+            {
+                "time_period": {"fiscal_year": "2009", "quarter": str(i)},
+                "new_award_count_in_period": new_award_count,
+            }
         )
     # 2010
     for i in range(1, 5):
         new_award_count = 0
         expected_results.append(
-            {"time_period": {"fiscal_year": "2010", "quarter": str(i)}, "new_award_count_in_period": new_award_count}
+            {
+                "time_period": {"fiscal_year": "2010", "quarter": str(i)},
+                "new_award_count_in_period": new_award_count,
+            }
         )
 
-    expected_response = {"group": "quarter", "results": expected_results, "messages": [get_time_period_message()]}
+    expected_response = {
+        "group": "quarter",
+        "results": expected_results,
+        "messages": [get_time_period_message()],
+    }
 
     test_payload["filters"]["time_period"] = [{"start_date": "2007-10-01", "end_date": "2010-09-30"}]
-    resp = client.post(get_new_awards_over_time_url(), content_type="application/json", data=json.dumps(test_payload))
+    resp = client.post(
+        get_new_awards_over_time_url(),
+        content_type="application/json",
+        data=json.dumps(test_payload),
+    )
     assert resp.status_code == 200
     assert expected_response == resp.data
 
@@ -341,7 +403,11 @@ def test_new_awards_fiscal_year(client, monkeypatch, add_award_recipients, elast
         "messages": [get_time_period_message()],
     }
 
-    resp = client.post(get_new_awards_over_time_url(), content_type="application/json", data=json.dumps(test_payload))
+    resp = client.post(
+        get_new_awards_over_time_url(),
+        content_type="application/json",
+        data=json.dumps(test_payload),
+    )
     assert resp.status_code == 200
     assert resp.data["group"] == "fiscal_year"
     assert expected_response == resp.data
@@ -357,7 +423,11 @@ def test_new_awards_fiscal_year(client, monkeypatch, add_award_recipients, elast
         ],
         "messages": [get_time_period_message()],
     }
-    resp = client.post(get_new_awards_over_time_url(), content_type="application/json", data=json.dumps(test_payload))
+    resp = client.post(
+        get_new_awards_over_time_url(),
+        content_type="application/json",
+        data=json.dumps(test_payload),
+    )
     assert resp.status_code == 200
     assert resp.data["group"] == "fiscal_year"
     assert expected_response == resp.data
@@ -373,9 +443,17 @@ def test_new_awards_failures(client, monkeypatch, add_award_recipients, elastics
             "recipient_id": "63248e89-7fb7-2d51-4085-8163798379d9-P",
         },
     }
-    resp = client.post(get_new_awards_over_time_url(), content_type="application/json", data=json.dumps(test_payload))
+    resp = client.post(
+        get_new_awards_over_time_url(),
+        content_type="application/json",
+        data=json.dumps(test_payload),
+    )
     assert resp.status_code == 400  # No parent records found, return 400
 
     test_payload["filters"]["recipient_hash"] = "enriwerniewrn"
-    resp = client.post(get_new_awards_over_time_url(), content_type="application/json", data=json.dumps(test_payload))
+    resp = client.post(
+        get_new_awards_over_time_url(),
+        content_type="application/json",
+        data=json.dumps(test_payload),
+    )
     assert resp.status_code == 400  # might reject text as non UUID in future?

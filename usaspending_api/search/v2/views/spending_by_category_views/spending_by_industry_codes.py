@@ -6,7 +6,12 @@ from typing import List
 
 from django.db.models import F
 
-from usaspending_api.references.models import NAICS, PSC, Cfda, DisasterEmergencyFundCode
+from usaspending_api.references.models import (
+    NAICS,
+    PSC,
+    Cfda,
+    DisasterEmergencyFundCode,
+)
 from usaspending_api.search.v2.views.enums import SpendingLevel
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_category import (
     AbstractSpendingByCategoryViewSet,

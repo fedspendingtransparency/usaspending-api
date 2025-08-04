@@ -319,7 +319,10 @@ def delete_awards(
         "es_deletes", format_func=(lambda log_msg: format_log(log_msg, action="Delete"))
     )
     deleted_tx_keys = _gather_deleted_transaction_keys(
-        config, delete_window_start, fabs_external_data_load_date_key, fpds_external_data_load_date_key
+        config,
+        delete_window_start,
+        fabs_external_data_load_date_key,
+        fpds_external_data_load_date_key,
     )
     awards_to_delete = []
 
@@ -393,7 +396,10 @@ def delete_transactions(
     )
 
     deleted_tx_keys = _gather_deleted_transaction_keys(
-        config, delete_window_start, fabs_external_data_load_date_key, fpds_external_data_load_date_key
+        config,
+        delete_window_start,
+        fabs_external_data_load_date_key,
+        fpds_external_data_load_date_key,
     )
     tx_keys_to_delete.extend(deleted_tx_keys)
 
@@ -466,7 +472,12 @@ def _gather_deleted_transaction_keys(
         )
     ]
 
-    logger.info(format_log(f"Found {len(filtered_csv_list)} CSV files in the date range", action="Delete"))
+    logger.info(
+        format_log(
+            f"Found {len(filtered_csv_list)} CSV files in the date range",
+            action="Delete",
+        )
+    )
 
     deleted_keys = {}
 
@@ -504,7 +515,12 @@ def _gather_deleted_transaction_keys(
             timestamp = deleted_keys[uid]["timestamp"]
             if obj_key not in obj_keys:
                 obj_keys.add(obj_key)
-                logger.info(format_log(f"- Object: {obj_key} | Last Modified: {timestamp}", action="Delete"))
+                logger.info(
+                    format_log(
+                        f"- Object: {obj_key} | Last Modified: {timestamp}",
+                        action="Delete",
+                    )
+                )
             logger.info(format_log(f"   - ID: '{uid}'", action="Delete"))
 
     logger.info(

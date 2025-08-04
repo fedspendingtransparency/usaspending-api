@@ -6,11 +6,11 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('financial_activities', '0001_initial'),
+        ("financial_activities", "0001_initial"),
     ]
 
     operations = [
         migrations.DeleteModel(
-            name='TasProgramActivityObjectClassQuarterly',
+            name="TasProgramActivityObjectClassQuarterly",
         ),
     ]

@@ -420,11 +420,19 @@ def monthly_download_data(db, monkeypatch):
         baker.make("download.JobStatus", job_status_id=js.id, name=js.name, description=js.desc)
 
     baker.make(
-        "references.ToptierAgency", toptier_agency_id=1, toptier_code="001", name="Test_Agency", _fill_optional=True
+        "references.ToptierAgency",
+        toptier_agency_id=1,
+        toptier_code="001",
+        name="Test_Agency",
+        _fill_optional=True,
     )
     baker.make("references.Agency", pk=1, toptier_agency_id=1, _fill_optional=True)
     baker.make(
-        "references.ToptierAgency", toptier_agency_id=2, toptier_code="002", name="Test_Agency 2", _fill_optional=True
+        "references.ToptierAgency",
+        toptier_agency_id=2,
+        toptier_code="002",
+        name="Test_Agency 2",
+        _fill_optional=True,
     )
     baker.make("references.Agency", pk=2, toptier_agency_id=2, _fill_optional=True)
     i = 1
@@ -544,7 +552,13 @@ def test_specific_agency(client, fake_csv_local_path, monthly_download_data, mon
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string(settings.DOWNLOAD_DB_ALIAS))
     contract_data = generate_contract_data(2020, 1)
     assistance_data = generate_assistance_data(2020, 1)
-    call_command("populate_monthly_files", "--agencies=1", "--fiscal_year=2020", "--local", "--clobber")
+    call_command(
+        "populate_monthly_files",
+        "--agencies=1",
+        "--fiscal_year=2020",
+        "--local",
+        "--clobber",
+    )
     file_list = os.listdir(fake_csv_local_path)
 
     assistance_csv_1 = f"FY2020_001_Assistance_Full_{TODAY}_1.csv"
@@ -589,13 +603,22 @@ def test_specific_agency(client, fake_csv_local_path, monthly_download_data, mon
 @pytest.mark.django_db(databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
 def test_agency_no_data(client, fake_csv_local_path, monthly_download_data, monkeypatch):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string(settings.DOWNLOAD_DB_ALIAS))
-    call_command("populate_monthly_files", "--agencies=2", "--fiscal_year=2022", "--local", "--clobber")
+    call_command(
+        "populate_monthly_files",
+        "--agencies=2",
+        "--fiscal_year=2022",
+        "--local",
+        "--clobber",
+    )
     contracts_zip = f"FY2022_002_Contracts_Full_{TODAY}.zip"
     contracts_csv_1 = f"FY2022_002_Contracts_Full_{TODAY}_1.csv"
     assistance_zip = f"FY2022_002_Assistance_Full_{TODAY}.zip"
     assistance_csv_1 = f"FY2022_002_Assistance_Full_{TODAY}_1.csv"
 
-    for zip_file, csv_file in [(contracts_zip, contracts_csv_1), (assistance_zip, assistance_csv_1)]:
+    for zip_file, csv_file in [
+        (contracts_zip, contracts_csv_1),
+        (assistance_zip, assistance_csv_1),
+    ]:
 
         with zipfile.ZipFile(os.path.normpath(f"{fake_csv_local_path}/{zip_file}"), "r") as zip_ref:
             zip_ref.extractall(fake_csv_local_path)
@@ -614,8 +637,20 @@ def test_fiscal_years(client, fake_csv_local_path, monthly_download_data, monkey
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string(settings.DOWNLOAD_DB_ALIAS))
     # contract_data = generate_contract_data(2020, 1)
     # assistance_data = generate_assistance_data(2020, 1)
-    call_command("populate_monthly_files", "--agencies=1", "--fiscal_year=2020", "--local", "--clobber")
-    call_command("populate_monthly_files", "--agencies=1", "--fiscal_year=2004", "--local", "--clobber")
+    call_command(
+        "populate_monthly_files",
+        "--agencies=1",
+        "--fiscal_year=2020",
+        "--local",
+        "--clobber",
+    )
+    call_command(
+        "populate_monthly_files",
+        "--agencies=1",
+        "--fiscal_year=2004",
+        "--local",
+        "--clobber",
+    )
     file_list = os.listdir(fake_csv_local_path)
     expected_files = (
         f"FY2004_001_Contracts_Full_{TODAY}.zip",

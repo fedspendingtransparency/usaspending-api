@@ -153,7 +153,11 @@ def test_require_eclipsing_exclude(client, monkeypatch, elasticsearch_award_inde
 def test_double_eclipsing_filters(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     resp = query_by_tas(
-        client, {"require": [_agency_path(BASIC_TAS), _tas_path(BASIC_TAS)], "exclude": [_fa_path(BASIC_TAS)]}
+        client,
+        {
+            "require": [_agency_path(BASIC_TAS), _tas_path(BASIC_TAS)],
+            "exclude": [_fa_path(BASIC_TAS)],
+        },
     )
 
     assert resp.json()["results"] == [_award1()]
@@ -163,7 +167,11 @@ def test_double_eclipsing_filters(client, monkeypatch, elasticsearch_award_index
 def test_double_eclipsing_filters2(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     resp = query_by_tas(
-        client, {"require": [_fa_path(BASIC_TAS)], "exclude": [_agency_path(BASIC_TAS), _tas_path(BASIC_TAS)]}
+        client,
+        {
+            "require": [_fa_path(BASIC_TAS)],
+            "exclude": [_agency_path(BASIC_TAS), _tas_path(BASIC_TAS)],
+        },
     )
 
     assert resp.json()["results"] == []
@@ -200,9 +208,10 @@ def test_sibling_filters_on_both_siblings(
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     resp = query_by_tas(client, {"require": [_tas_path(SISTER_TAS[0]), _tas_path(SISTER_TAS[1])]})
 
-    assert resp.json()["results"].sort(key=lambda elem: elem["internal_id"]) == [_award1(), _award2()].sort(
-        key=lambda elem: elem["internal_id"]
-    )
+    assert resp.json()["results"].sort(key=lambda elem: elem["internal_id"]) == [
+        _award1(),
+        _award2(),
+    ].sort(key=lambda elem: elem["internal_id"])
 
 
 @pytest.mark.django_db
@@ -211,7 +220,11 @@ def test_sibling_filters_excluding_one_sibling(
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     resp = query_by_tas(
-        client, {"require": [_tas_path(SISTER_TAS[0]), _tas_path(SISTER_TAS[2])], "exclude": [_tas_path(SISTER_TAS[2])]}
+        client,
+        {
+            "require": [_tas_path(SISTER_TAS[0]), _tas_path(SISTER_TAS[2])],
+            "exclude": [_tas_path(SISTER_TAS[2])],
+        },
     )
 
     assert resp.json()["results"] == [_award1()]
@@ -241,14 +254,19 @@ def test_sibling_filters_with_fa_excluding_one_sibling(
     resp = query_by_tas(
         client,
         {
-            "require": [_fa_path(SISTER_TAS[0]), _tas_path(SISTER_TAS[0]), _tas_path(SISTER_TAS[2])],
+            "require": [
+                _fa_path(SISTER_TAS[0]),
+                _tas_path(SISTER_TAS[0]),
+                _tas_path(SISTER_TAS[2]),
+            ],
             "exclude": [_tas_path(SISTER_TAS[2])],
         },
     )
 
-    assert resp.json()["results"].sort(key=lambda elem: elem["internal_id"]) == [_award1(), _award2()].sort(
-        key=lambda elem: elem["internal_id"]
-    )
+    assert resp.json()["results"].sort(key=lambda elem: elem["internal_id"]) == [
+        _award1(),
+        _award2(),
+    ].sort(key=lambda elem: elem["internal_id"])
 
 
 @pytest.mark.django_db
@@ -259,7 +277,11 @@ def test_sibling_filters_with_fa_excluding_two_siblings(
     resp = query_by_tas(
         client,
         {
-            "require": [_fa_path(SISTER_TAS[0]), _tas_path(SISTER_TAS[0]), _tas_path(SISTER_TAS[1])],
+            "require": [
+                _fa_path(SISTER_TAS[0]),
+                _tas_path(SISTER_TAS[0]),
+                _tas_path(SISTER_TAS[1]),
+            ],
             "exclude": [_tas_path(SISTER_TAS[0]), _tas_path(SISTER_TAS[2])],
         },
     )

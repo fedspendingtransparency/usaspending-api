@@ -4,7 +4,9 @@ import pytest
 from django.utils.text import slugify
 from rest_framework import status
 from usaspending_api.idvs.tests.data.idv_test_data import PARENTS, RECIPIENT_HASH_PREFIX
-from usaspending_api.submissions.models.submission_attributes import SubmissionAttributes
+from usaspending_api.submissions.models.submission_attributes import (
+    SubmissionAttributes,
+)
 
 
 ENDPOINT = "/api/v2/idvs/activity/"
@@ -36,7 +38,7 @@ def _generate_expected_response(total, limit, page, no_submissions, *award_ids):
                 "period_of_performance_potential_end_date": "2018-08-%02d" % award_id,
                 "parent_award_id": parent_award_id,
                 "parent_generated_unique_award_id": "CONT_IDV_%s" % string_parent_award_id,
-                "parent_award_piid": ("piid_%s" % string_parent_award_id) if parent_award_id else None,
+                "parent_award_piid": (("piid_%s" % string_parent_award_id) if parent_award_id else None),
                 "obligated_amount": 100000.0 + award_id,
                 "awarded_amount": 500000.0 + award_id,
                 "period_of_performance_start_date": "2018-02-%02d" % award_id,
@@ -60,7 +62,12 @@ def _generate_expected_response(total, limit, page, no_submissions, *award_ids):
     return {"results": results, "page_metadata": page_metadata}
 
 
-def _test_post(client, request, expected_response_parameters_tuple=None, expected_status_code=status.HTTP_200_OK):
+def _test_post(
+    client,
+    request,
+    expected_response_parameters_tuple=None,
+    expected_status_code=status.HTTP_200_OK,
+):
     """
     Perform the actual request and interrogates the results.
 
@@ -85,7 +92,11 @@ def test_defaults(client, create_idv_test_data):
 
     _test_post(client, {"award_id": 2}, (400002, 10, 1, False, 14, 13, 12, 11, 10, 9))
 
-    _test_post(client, {"award_id": "CONT_IDV_002"}, (400002, 10, 1, False, 14, 13, 12, 11, 10, 9))
+    _test_post(
+        client,
+        {"award_id": "CONT_IDV_002"},
+        (400002, 10, 1, False, 14, 13, 12, 11, 10, 9),
+    )
 
 
 @pytest.mark.django_db
@@ -109,11 +120,23 @@ def test_limit_values(client, create_idv_test_data):
 
     _test_post(client, {"award_id": 2, "limit": 5}, (400002, 5, 1, False, 14, 13, 12, 11, 10))
 
-    _test_post(client, {"award_id": 2, "limit": 0}, expected_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
+    _test_post(
+        client,
+        {"award_id": 2, "limit": 0},
+        expected_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+    )
 
-    _test_post(client, {"award_id": 2, "limit": 2000000000}, expected_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
+    _test_post(
+        client,
+        {"award_id": 2, "limit": 2000000000},
+        expected_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+    )
 
-    _test_post(client, {"award_id": 2, "limit": {"BOGUS": "LIMIT"}}, expected_status_code=status.HTTP_400_BAD_REQUEST)
+    _test_post(
+        client,
+        {"award_id": 2, "limit": {"BOGUS": "LIMIT"}},
+        expected_status_code=status.HTTP_400_BAD_REQUEST,
+    )
 
 
 @pytest.mark.django_db
@@ -126,22 +149,40 @@ def test_page_values(client, create_idv_test_data):
     _test_post(client, {"award_id": 2, "limit": 1, "page": 10}, (400002, 1, 10, False))
 
     _test_post(
-        client, {"award_id": 2, "limit": 1, "page": 0}, expected_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY
+        client,
+        {"award_id": 2, "limit": 1, "page": 0},
+        expected_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
     )
 
     _test_post(
-        client, {"award_id": 2, "limit": 1, "page": "BOGUS PAGE"}, expected_status_code=status.HTTP_400_BAD_REQUEST
+        client,
+        {"award_id": 2, "limit": 1, "page": "BOGUS PAGE"},
+        expected_status_code=status.HTTP_400_BAD_REQUEST,
     )
 
 
 @pytest.mark.django_db
 def test_hide_edges(client, create_idv_test_data):
-    _test_post(client, {"award_id": 2, "limit": 1, "hide_edge_cases": True}, (6, 1, 1, False, 14))
-    _test_post(client, {"award_id": 2, "limit": 1, "hide_edge_cases": False}, (400002, 1, 1, False, 14))
-    _test_post(client, {"award_id": "CONT_IDV_002", "hide_edge_cases": True}, (6, 10, 1, False, 14, 13, 12, 11, 10, 9))
+    _test_post(
+        client,
+        {"award_id": 2, "limit": 1, "hide_edge_cases": True},
+        (6, 1, 1, False, 14),
+    )
+    _test_post(
+        client,
+        {"award_id": 2, "limit": 1, "hide_edge_cases": False},
+        (400002, 1, 1, False, 14),
+    )
+    _test_post(
+        client,
+        {"award_id": "CONT_IDV_002", "hide_edge_cases": True},
+        (6, 10, 1, False, 14, 13, 12, 11, 10, 9),
+    )
 
     _test_post(
-        client, {"award_id": "CONT_IDV_002", "hide_edge_cases": False}, (400002, 10, 1, False, 14, 13, 12, 11, 10, 9)
+        client,
+        {"award_id": "CONT_IDV_002", "hide_edge_cases": False},
+        (400002, 10, 1, False, 14, 13, 12, 11, 10, 9),
     )
 
 

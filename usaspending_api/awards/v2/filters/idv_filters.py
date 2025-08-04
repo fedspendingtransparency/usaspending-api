@@ -5,7 +5,9 @@ other types of filters so they get their own file.
 
 import logging
 
-from usaspending_api.accounts.v2.filters.account_download import generate_treasury_account_query
+from usaspending_api.accounts.v2.filters.account_download import (
+    generate_treasury_account_query,
+)
 from usaspending_api.awards.v2.filters.filter_helpers import (
     get_all_award_ids_in_idv_hierarchy,
     get_descendant_award_ids,

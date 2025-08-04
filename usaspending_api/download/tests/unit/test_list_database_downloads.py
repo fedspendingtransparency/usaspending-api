@@ -1,7 +1,9 @@
 import pytest
 from django.conf import settings
 
-from usaspending_api.download.v2.list_database_downloads import ListDatabaseDownloadsViewSet
+from usaspending_api.download.v2.list_database_downloads import (
+    ListDatabaseDownloadsViewSet,
+)
 
 
 @pytest.fixture

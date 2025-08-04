@@ -19,7 +19,10 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "-p", "--path", help="the path to the Excel spreadsheets to load", default=self.default_path
+            "-p",
+            "--path",
+            help="the path to the Excel spreadsheets to load",
+            default=self.default_path,
         )
         parser.add_argument("-a", "--append", help="Append to existing guide", action="store_true")
 

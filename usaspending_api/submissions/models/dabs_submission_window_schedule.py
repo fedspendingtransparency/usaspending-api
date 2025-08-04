@@ -25,7 +25,10 @@ class DABSSubmissionWindowSchedule(models.Model):
 
     def _parse_date_field(self, date_field, timezone):
         if isinstance(self.__getattribute__(date_field), str):
-            self.__setattr__(date_field, datetime.strptime(self.__getattribute__(date_field), "%Y-%m-%d %H:%M:%SZ"))
+            self.__setattr__(
+                date_field,
+                datetime.strptime(self.__getattribute__(date_field), "%Y-%m-%d %H:%M:%SZ"),
+            )
 
         self.__setattr__(date_field, self.__getattribute__(date_field).replace(tzinfo=timezone))
 

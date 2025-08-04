@@ -6,13 +6,16 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('references', '0059_rename_adjustments_to_unobligated_balance_brought_forward_cpe_gtassf133balances_adjustments_to_unobl'),
+        (
+            "references",
+            "0059_rename_adjustments_to_unobligated_balance_brought_forward_cpe_gtassf133balances_adjustments_to_unobl",
+        ),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='gtassf133balances',
-            name='adjustments_to_unobligated_balance_brought_forward_cpe',
+            model_name="gtassf133balances",
+            name="adjustments_to_unobligated_balance_brought_forward_cpe",
             field=models.DecimalField(decimal_places=2, default=0.0, max_digits=23),
         ),
     ]

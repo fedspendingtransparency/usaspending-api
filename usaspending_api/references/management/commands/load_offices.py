@@ -10,7 +10,10 @@ from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.references.models.office import Office
 
 logger = logging.getLogger("script")
-Reporter = OpsReporter(iso_start_datetime=datetime.now(timezone.utc).isoformat(), job_name="load_offices.py")
+Reporter = OpsReporter(
+    iso_start_datetime=datetime.now(timezone.utc).isoformat(),
+    job_name="load_offices.py",
+)
 
 
 class Command(BaseCommand):

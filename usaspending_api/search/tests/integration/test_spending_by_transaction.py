@@ -201,7 +201,10 @@ def test_spending_by_transaction_kws_success(client, elasticsearch_transaction_i
         content_type="application/json",
         data=json.dumps(
             {
-                "filters": {"keyword": "test", "award_type_codes": ["A", "B", "C", "D"]},
+                "filters": {
+                    "keyword": "test",
+                    "award_type_codes": ["A", "B", "C", "D"],
+                },
                 "fields": ["Award ID", "Recipient Name", "Mod"],
                 "page": 1,
                 "limit": 5,
@@ -226,7 +229,10 @@ def test_spending_by_transaction_kws_failure(client):
 @pytest.mark.django_db
 def test_no_intersection(client):
     request = {
-        "filters": {"keyword": "test", "award_type_codes": ["A", "B", "C", "D", "no intersection"]},
+        "filters": {
+            "keyword": "test",
+            "award_type_codes": ["A", "B", "C", "D", "no intersection"],
+        },
         "fields": ["Award ID", "Recipient Name", "Mod"],
         "page": 1,
         "limit": 5,
@@ -432,7 +438,10 @@ def test_parent_uei(client, monkeypatch, transaction_data, elasticsearch_transac
     fields = ["Award ID"]
 
     request = {
-        "filters": {"keyword": "test_parent_uei", "award_type_codes": ["A", "B", "C", "D"]},
+        "filters": {
+            "keyword": "test_parent_uei",
+            "award_type_codes": ["A", "B", "C", "D"],
+        },
         "fields": fields,
         "page": 1,
         "limit": 5,
@@ -517,11 +526,18 @@ def test_spending_by_transaction_award_unique_id_filter(
     test_payload = {
         "fields": ["Award ID"],
         "sort": "Award ID",
-        "filters": {"award_type_codes": ["A", "B", "C", "D"], "award_unique_id": "ASST_NON_WY99M000020-18Z_8630"},
+        "filters": {
+            "award_type_codes": ["A", "B", "C", "D"],
+            "award_unique_id": "ASST_NON_WY99M000020-18Z_8630",
+        },
     }
 
     expected_response = [
-        {"Award ID": "IND12PB00001", "generated_internal_id": "ASST_NON_WY99M000020-18Z_8630", "internal_id": 3}
+        {
+            "Award ID": "IND12PB00001",
+            "generated_internal_id": "ASST_NON_WY99M000020-18Z_8630",
+            "internal_id": 3,
+        }
     ]
 
     resp = client.post(ENDPOINT, content_type="application/json", data=json.dumps(test_payload))
@@ -597,7 +613,10 @@ def test_additional_fields(client, monkeypatch, elasticsearch_transaction_index,
         "zip5": "popzip5",
     }
 
-    assert result["NAICS"] == {"code": "naics code 1", "description": "naics description 1"}
+    assert result["NAICS"] == {
+        "code": "naics code 1",
+        "description": "naics description 1",
+    }
 
     assert result["PSC"] == {"code": "psc code 1", "description": "psc description 1"}
 
@@ -621,7 +640,10 @@ def test_assistance_listing(client, monkeypatch, elasticsearch_transaction_index
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
     result = resp.json().get("results")[0]
-    assert result["Assistance Listing"] == {"cfda_number": "1234", "cfda_title": "cfda title 2"}
+    assert result["Assistance Listing"] == {
+        "cfda_number": "1234",
+        "cfda_title": "cfda title 2",
+    }
 
 
 def test_sorting_on_additional_fields(client, monkeypatch, elasticsearch_transaction_index, transaction_data):

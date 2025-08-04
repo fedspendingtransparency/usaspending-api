@@ -40,7 +40,10 @@ class ObjectClassLoansViewSet(LoansMixin, FabaOutlayMixin, LoansPaginationMixin,
             ],
             award_types=self.filters["award_type_codes"],
             search_query=self.query,
-            search_query_fields=["funding_major_object_class_name", "funding_object_class_name"],
+            search_query_fields=[
+                "funding_major_object_class_name",
+                "funding_object_class_name",
+            ],
         )
         json_result = self._build_json_result(object_class_spending)
         sorted_json_result = self.sort_json_result(
@@ -62,7 +65,15 @@ class ObjectClassLoansViewSet(LoansMixin, FabaOutlayMixin, LoansPaginationMixin,
             Formatted JSON response.
         """
 
-        response = {"totals": {"award_count": 0, "face_value_of_loan": 0, "obligation": 0, "outlay": 0}, "results": []}
+        response = {
+            "totals": {
+                "award_count": 0,
+                "face_value_of_loan": 0,
+                "obligation": 0,
+                "outlay": 0,
+            },
+            "results": [],
+        }
 
         parent_lookup = {}
         child_lookup = {}
@@ -131,7 +142,11 @@ class ObjectClassLoansViewSet(LoansMixin, FabaOutlayMixin, LoansPaginationMixin,
     @property
     def queryset(self):
         query = self.construct_loan_queryset(
-            ConcatAll("object_class__major_object_class", Value(":"), "object_class__object_class"),
+            ConcatAll(
+                "object_class__major_object_class",
+                Value(":"),
+                "object_class__object_class",
+            ),
             ObjectClass.objects.annotate(join_key=ConcatAll("major_object_class", Value(":"), "object_class")),
             "join_key",
         )

@@ -4,7 +4,9 @@ import pytest
 from rest_framework import status
 
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
-from usaspending_api.search.tests.data.search_filters_test_data import non_legacy_filters
+from usaspending_api.search.tests.data.search_filters_test_data import (
+    non_legacy_filters,
+)
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 spending_level_deprecation_message = (
@@ -128,7 +130,11 @@ def _get_shape_code_for_sort(result_dict):
 
 
 def test_success_with_all_filters(
-    client, monkeypatch, elasticsearch_subaward_index, elasticsearch_transaction_index, awards_and_transactions
+    client,
+    monkeypatch,
+    elasticsearch_subaward_index,
+    elasticsearch_transaction_index,
+    awards_and_transactions,
 ):
     """
     General test to make sure that all groups respond with a Status Code of 200 regardless of the filters.
@@ -154,7 +160,13 @@ def _test_success_with_all_filters_place_of_performance_county(client):
     resp = client.post(
         "/api/v2/search/spending_by_geography",
         content_type="application/json",
-        data=json.dumps({"scope": "place_of_performance", "geo_layer": "county", "filters": non_legacy_filters()}),
+        data=json.dumps(
+            {
+                "scope": "place_of_performance",
+                "geo_layer": "county",
+                "filters": non_legacy_filters(),
+            }
+        ),
     )
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
 
@@ -163,7 +175,13 @@ def _test_success_with_all_filters_place_of_performance_district(client):
     resp = client.post(
         "/api/v2/search/spending_by_geography",
         content_type="application/json",
-        data=json.dumps({"scope": "place_of_performance", "geo_layer": "district", "filters": non_legacy_filters()}),
+        data=json.dumps(
+            {
+                "scope": "place_of_performance",
+                "geo_layer": "district",
+                "filters": non_legacy_filters(),
+            }
+        ),
     )
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
 
@@ -172,7 +190,13 @@ def _test_success_with_all_filters_place_of_performance_state(client):
     resp = client.post(
         "/api/v2/search/spending_by_geography",
         content_type="application/json",
-        data=json.dumps({"scope": "place_of_performance", "geo_layer": "state", "filters": non_legacy_filters()}),
+        data=json.dumps(
+            {
+                "scope": "place_of_performance",
+                "geo_layer": "state",
+                "filters": non_legacy_filters(),
+            }
+        ),
     )
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
 
@@ -181,7 +205,13 @@ def _test_success_with_all_filters_recipient_location_county(client):
     resp = client.post(
         "/api/v2/search/spending_by_geography",
         content_type="application/json",
-        data=json.dumps({"scope": "recipient_location", "geo_layer": "county", "filters": non_legacy_filters()}),
+        data=json.dumps(
+            {
+                "scope": "recipient_location",
+                "geo_layer": "county",
+                "filters": non_legacy_filters(),
+            }
+        ),
     )
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
 
@@ -190,7 +220,13 @@ def _test_success_with_all_filters_recipient_location_district(client):
     resp = client.post(
         "/api/v2/search/spending_by_geography",
         content_type="application/json",
-        data=json.dumps({"scope": "recipient_location", "geo_layer": "district", "filters": non_legacy_filters()}),
+        data=json.dumps(
+            {
+                "scope": "recipient_location",
+                "geo_layer": "district",
+                "filters": non_legacy_filters(),
+            }
+        ),
     )
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
 
@@ -199,13 +235,23 @@ def _test_success_with_all_filters_recipient_location_state(client):
     resp = client.post(
         "/api/v2/search/spending_by_geography",
         content_type="application/json",
-        data=json.dumps({"scope": "recipient_location", "geo_layer": "state", "filters": non_legacy_filters()}),
+        data=json.dumps(
+            {
+                "scope": "recipient_location",
+                "geo_layer": "state",
+                "filters": non_legacy_filters(),
+            }
+        ),
     )
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
 
 
 def test_correct_response_with_geo_filters(
-    client, monkeypatch, elasticsearch_subaward_index, elasticsearch_transaction_index, awards_and_transactions
+    client,
+    monkeypatch,
+    elasticsearch_subaward_index,
+    elasticsearch_transaction_index,
+    awards_and_transactions,
 ):
 
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
@@ -970,7 +1016,11 @@ def _test_correct_response_for_recipient_location_country_with_geo_filters(clien
 
 
 def test_correct_response_without_geo_filters(
-    client, monkeypatch, elasticsearch_subaward_index, elasticsearch_transaction_index, awards_and_transactions
+    client,
+    monkeypatch,
+    elasticsearch_subaward_index,
+    elasticsearch_transaction_index,
+    awards_and_transactions,
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
@@ -1039,7 +1089,9 @@ def _test_correct_response_for_place_of_performance_county_without_geo_filters(c
     assert resp_json == expected_response
 
 
-def _test_correct_response_for_place_of_performance_district_without_geo_filters(client):
+def _test_correct_response_for_place_of_performance_district_without_geo_filters(
+    client,
+):
     resp = client.post(
         "/api/v2/search/spending_by_geography",
         content_type="application/json",
@@ -2003,7 +2055,13 @@ def test_correct_response_with_date_type(client, monkeypatch, elasticsearch_tran
                 "scope": "place_of_performance",
                 "geo_layer": "county",
                 "filters": {
-                    "time_period": [{"date_type": "date_signed", "start_date": "2019-12-30", "end_date": "2020-01-02"}]
+                    "time_period": [
+                        {
+                            "date_type": "date_signed",
+                            "start_date": "2019-12-30",
+                            "end_date": "2020-01-02",
+                        }
+                    ]
                 },
             }
         ),
@@ -2026,7 +2084,13 @@ def test_correct_response_with_date_type(client, monkeypatch, elasticsearch_tran
                 "scope": "place_of_performance",
                 "geo_layer": "county",
                 "filters": {
-                    "time_period": [{"date_type": "date_signed", "start_date": "2019-12-30", "end_date": "2020-01-15"}]
+                    "time_period": [
+                        {
+                            "date_type": "date_signed",
+                            "start_date": "2019-12-30",
+                            "end_date": "2020-01-15",
+                        }
+                    ]
                 },
             }
         ),
@@ -2069,7 +2133,11 @@ def test_correct_response_new_awards_only(
                 "geo_layer": "county",
                 "filters": {
                     "time_period": [
-                        {"date_type": "new_awards_only", "start_date": "2020-01-02", "end_date": "2020-01-15"}
+                        {
+                            "date_type": "new_awards_only",
+                            "start_date": "2020-01-02",
+                            "end_date": "2020-01-15",
+                        }
                     ]
                 },
             }
@@ -2098,7 +2166,11 @@ def test_correct_response_new_awards_only(
                 "geo_layer": "county",
                 "filters": {
                     "time_period": [
-                        {"date_type": "new_awards_only", "start_date": "2019-12-30", "end_date": "2020-01-15"}
+                        {
+                            "date_type": "new_awards_only",
+                            "start_date": "2019-12-30",
+                            "end_date": "2020-01-15",
+                        }
                     ]
                 },
             }
@@ -2128,7 +2200,11 @@ def test_correct_response_new_awards_only(
 
 @pytest.mark.django_db
 def test_spending_by_geo_program_activity_subawards(
-    client, monkeypatch, elasticsearch_subaward_index, elasticsearch_award_index, awards_and_transactions
+    client,
+    monkeypatch,
+    elasticsearch_subaward_index,
+    elasticsearch_award_index,
+    awards_and_transactions,
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
@@ -2151,7 +2227,9 @@ def test_spending_by_geo_program_activity_subawards(
         },
     ]
     resp = client.post(
-        "/api/v2/search/spending_by_geography", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_geography",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -2167,7 +2245,9 @@ def test_spending_by_geo_program_activity_subawards(
     expected_response = []
 
     resp = client.post(
-        "/api/v2/search/spending_by_geography", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_geography",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -2192,7 +2272,9 @@ def test_spending_by_geo_program_activity_subawards(
         },
     ]
     resp = client.post(
-        "/api/v2/search/spending_by_geography", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_geography",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -2210,7 +2292,9 @@ def test_spending_by_geo_program_activity_subawards(
     expected_response = []
 
     resp = client.post(
-        "/api/v2/search/spending_by_geography", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_geography",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -2242,7 +2326,9 @@ def test_spending_by_geo_program_activity_name_case(
         },
     ]
     resp = client.post(
-        "/api/v2/search/spending_by_geography", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_geography",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -2274,7 +2360,9 @@ def test_spending_by_geo_program_activity(
         },
     ]
     resp = client.post(
-        "/api/v2/search/spending_by_geography", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_geography",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -2290,7 +2378,9 @@ def test_spending_by_geo_program_activity(
     expected_response = []
 
     resp = client.post(
-        "/api/v2/search/spending_by_geography", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_geography",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -2315,7 +2405,9 @@ def test_spending_by_geo_program_activity(
         },
     ]
     resp = client.post(
-        "/api/v2/search/spending_by_geography", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_geography",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -2333,7 +2425,9 @@ def test_spending_by_geo_program_activity(
     expected_response = []
 
     resp = client.post(
-        "/api/v2/search/spending_by_geography", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_geography",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -2359,7 +2453,9 @@ def test_spending_by_geo_program_activity(
         },
     ]
     resp = client.post(
-        "/api/v2/search/spending_by_geography", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_geography",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -2384,7 +2480,9 @@ def test_spending_by_geo_program_activity(
         },
     ]
     resp = client.post(
-        "/api/v2/search/spending_by_geography", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_geography",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK

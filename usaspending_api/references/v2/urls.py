@@ -24,17 +24,32 @@ urlpatterns = [
     re_path(r"^filter/$", filter_hash.FilterEndpoint.as_view()),
     re_path(r"^filter_tree/psc/$", psc.PSCViewSet.as_view()),
     re_path(r"^filter_tree/psc/(?P<tier1>(\w| )*)/$", psc.PSCViewSet.as_view()),
-    re_path(r"^filter_tree/psc/(?P<tier1>(\w| )*)/(?P<tier2>\w*)/$", psc.PSCViewSet.as_view()),
-    re_path(r"^filter_tree/psc/(?P<tier1>(\w| )*)/(?P<tier2>\w*)/(?P<tier3>\w*)/$", psc.PSCViewSet.as_view()),
+    re_path(
+        r"^filter_tree/psc/(?P<tier1>(\w| )*)/(?P<tier2>\w*)/$",
+        psc.PSCViewSet.as_view(),
+    ),
+    re_path(
+        r"^filter_tree/psc/(?P<tier1>(\w| )*)/(?P<tier2>\w*)/(?P<tier3>\w*)/$",
+        psc.PSCViewSet.as_view(),
+    ),
     re_path(r"^filter_tree/tas/$", tas.TASViewSet.as_view()),
     re_path(r"^filter_tree/tas/(?P<tier1>\w*)/$", tas.TASViewSet.as_view()),
-    re_path(r"^filter_tree/tas/(?P<tier1>\w*)/(?P<tier2>(\w|-)*)/$", tas.TASViewSet.as_view()),
-    re_path(r"^filter_tree/tas/(?P<tier1>\w*)/(?P<tier2>(\w|-)*)/(?P<tier3>.*)/$", tas.TASViewSet.as_view()),
+    re_path(
+        r"^filter_tree/tas/(?P<tier1>\w*)/(?P<tier2>(\w|-)*)/$",
+        tas.TASViewSet.as_view(),
+    ),
+    re_path(
+        r"^filter_tree/tas/(?P<tier1>\w*)/(?P<tier2>(\w|-)*)/(?P<tier3>.*)/$",
+        tas.TASViewSet.as_view(),
+    ),
     re_path(r"^glossary/$", glossary.GlossaryViewSet.as_view()),
     re_path(r"^hash/$", filter_hash.HashEndpoint.as_view()),
     re_path(r"^naics/$", naics.NAICSViewSet.as_view()),
     re_path(r"^naics/(?P<requested_naics>[0-9]+)/$", naics.NAICSViewSet.as_view()),
     re_path(r"^submission_periods/", submission_periods.SubmissionPeriodsViewSet.as_view()),
     re_path(r"^toptier_agencies/$", toptier_agencies.ToptierAgenciesViewSet.as_view()),
-    re_path(r"^total_budgetary_resources/$", total_budgetary_resources.TotalBudgetaryResources.as_view()),
+    re_path(
+        r"^total_budgetary_resources/$",
+        total_budgetary_resources.TotalBudgetaryResources.as_view(),
+    ),
 ]

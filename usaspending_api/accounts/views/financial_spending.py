@@ -6,7 +6,9 @@ from usaspending_api.accounts.serializers import (
 from usaspending_api.common.calculations.file_b import FileBCalculations
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.views import CachedDetailViewSet
-from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.financial_activities.models import (
+    FinancialAccountsByProgramActivityObjectClass,
+)
 from usaspending_api.references.models import Agency
 from usaspending_api.submissions.models import SubmissionAttributes
 
@@ -41,9 +43,15 @@ class ObjectClassFinancialSpendingViewSet(CachedDetailViewSet):
 
         submission_queryset = SubmissionAttributes.objects.all()
         submission_queryset = (
-            submission_queryset.filter(toptier_code=toptier_agency.toptier_code, reporting_fiscal_year=fiscal_year)
+            submission_queryset.filter(
+                toptier_code=toptier_agency.toptier_code,
+                reporting_fiscal_year=fiscal_year,
+            )
             .order_by("-reporting_fiscal_year", "-reporting_fiscal_quarter")
-            .annotate(fiscal_year=F("reporting_fiscal_year"), fiscal_quarter=F("reporting_fiscal_quarter"))
+            .annotate(
+                fiscal_year=F("reporting_fiscal_year"),
+                fiscal_quarter=F("reporting_fiscal_quarter"),
+            )
         )
         submission = submission_queryset.first()
 
@@ -65,7 +73,10 @@ class ObjectClassFinancialSpendingViewSet(CachedDetailViewSet):
             )
             .annotate(
                 major_object_class_name=Case(
-                    When(object_class__major_object_class="00", then=Value("Unknown Object Type")),
+                    When(
+                        object_class__major_object_class="00",
+                        then=Value("Unknown Object Type"),
+                    ),
                     default="object_class__major_object_class_name",
                     output_field=TextField(),
                 ),
@@ -110,9 +121,15 @@ class MinorObjectClassFinancialSpendingViewSet(CachedDetailViewSet):
 
         submission_queryset = SubmissionAttributes.objects.all()
         submission_queryset = (
-            submission_queryset.filter(toptier_code=toptier_agency.toptier_code, reporting_fiscal_year=fiscal_year)
+            submission_queryset.filter(
+                toptier_code=toptier_agency.toptier_code,
+                reporting_fiscal_year=fiscal_year,
+            )
             .order_by("-reporting_fiscal_year", "-reporting_fiscal_quarter")
-            .annotate(fiscal_year=F("reporting_fiscal_year"), fiscal_quarter=F("reporting_fiscal_quarter"))
+            .annotate(
+                fiscal_year=F("reporting_fiscal_year"),
+                fiscal_quarter=F("reporting_fiscal_quarter"),
+            )
         )
         submission = submission_queryset.first()
 
@@ -137,7 +154,8 @@ class MinorObjectClassFinancialSpendingViewSet(CachedDetailViewSet):
             object_class__major_object_class=major_object_class_code,
         )
         queryset = queryset.annotate(
-            object_class_name=F("object_class__object_class_name"), object_class_code=F("object_class__object_class")
+            object_class_name=F("object_class__object_class_name"),
+            object_class_code=F("object_class__object_class"),
         )
         # sum obligated_mount by object class
         queryset = queryset.values("object_class_name", "object_class_code").annotate(

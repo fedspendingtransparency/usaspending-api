@@ -75,7 +75,10 @@ def make_temp_table_create(table_name, table_temp_name):
 
 def make_read_indexes(table_name):
     if "." in table_name:
-        schema_name, table_name = table_name[: table_name.index(".")], table_name[table_name.index(".") + 1 :]
+        schema_name, table_name = (
+            table_name[: table_name.index(".")],
+            table_name[table_name.index(".") + 1 :],
+        )
     else:
         schema_name = "public"
 
@@ -228,19 +231,33 @@ def main(source_file):
 
 if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser(
-        prog="matview_sql_generator.py", description="Generates all of the necessary SQL files for jenkins scripts"
+        prog="matview_sql_generator.py",
+        description="Generates all of the necessary SQL files for jenkins scripts",
     )
     arg_parser.add_argument(
-        "--dest", type=str, default="../chunked_matviews/", help="Destination folder for all generated sql files"
+        "--dest",
+        type=str,
+        default="../chunked_matviews/",
+        help="Destination folder for all generated sql files",
     )
     arg_parser.add_argument(
-        "--file", type=str, default=None, help="filepath to the json file containing the sql description"
+        "--file",
+        type=str,
+        default=None,
+        help="filepath to the json file containing the sql description",
     )
     arg_parser.add_argument(
-        "-q", "--quiet", action="store_true", help="Flag to suppress stdout when there are no errors"
+        "-q",
+        "--quiet",
+        action="store_true",
+        help="Flag to suppress stdout when there are no errors",
     )
     arg_parser.add_argument(
-        "-c", "--chunk-count", type=int, default=1, help="When value >=2, split matview into multiple SQL files"
+        "-c",
+        "--chunk-count",
+        type=int,
+        default=1,
+        help="When value >=2, split matview into multiple SQL files",
     )
     GLOBAL_ARGS = arg_parser.parse_args()
 

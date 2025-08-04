@@ -1,4 +1,6 @@
-from usaspending_api.etl.elasticsearch_loader_helpers.utilities import is_snapshot_running
+from usaspending_api.etl.elasticsearch_loader_helpers.utilities import (
+    is_snapshot_running,
+)
 
 
 def test_is_snapshot_running(monkeypatch):
@@ -6,7 +8,13 @@ def test_is_snapshot_running(monkeypatch):
         def status(self):
             return {
                 "snapshots": [
-                    {"snapshot": "test_snapshot", "indices": {"2021-02-12-covid19-faba": {}, "2021-02-12-awards": {}}}
+                    {
+                        "snapshot": "test_snapshot",
+                        "indices": {
+                            "2021-02-12-covid19-faba": {},
+                            "2021-02-12-awards": {},
+                        },
+                    }
                 ]
             }
 
