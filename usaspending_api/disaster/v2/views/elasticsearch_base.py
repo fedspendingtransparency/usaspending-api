@@ -14,10 +14,7 @@ from usaspending_api.common.exceptions import ForbiddenException
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.search.filters.elasticsearch.filter import QueryType
-from usaspending_api.disaster.v2.views.disaster_base import (
-    DisasterBase,
-    _BasePaginationMixin,
-)
+from usaspending_api.disaster.v2.views.disaster_base import DisasterBase, _BasePaginationMixin
 from usaspending_api.search.v2.elasticsearch_helper import (
     get_number_of_unique_terms_for_awards,
     get_summed_value_as_float,
@@ -25,10 +22,7 @@ from usaspending_api.search.v2.elasticsearch_helper import (
 
 
 class ElasticsearchSpendingPaginationMixin(_BasePaginationMixin):
-    sum_column_mapping = {
-        "obligation": "total_covid_obligation",
-        "outlay": "total_covid_outlay",
-    }
+    sum_column_mapping = {"obligation": "total_covid_obligation", "outlay": "total_covid_outlay"}
     sort_column_mapping = {
         "award_count": "_count",
         "description": "_key",  # _key will ultimately sort on description value
@@ -287,7 +281,7 @@ class ElasticsearchDisasterBase(DisasterBase):
         totals = {key: 0 for key in self.sum_column_mapping.keys()}
         for key in totals.keys():
             totals[key] += get_summed_value_as_float(
-                (response if key != "face_value_of_loan" else response.get("reverse_nested", {})),
+                response if key != "face_value_of_loan" else response.get("reverse_nested", {}),
                 self.sum_column_mapping[key],
             )
 

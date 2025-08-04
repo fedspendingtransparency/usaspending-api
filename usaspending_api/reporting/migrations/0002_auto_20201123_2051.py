@@ -6,42 +6,27 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("reporting", "0001_initial"),
+        ('reporting', '0001_initial'),
     ]
 
     operations = [
         migrations.CreateModel(
-            name="ReportingAgencyOverview",
+            name='ReportingAgencyOverview',
             fields=[
-                (
-                    "reporting_agency_overview_id",
-                    models.AutoField(primary_key=True, serialize=False),
-                ),
-                ("toptier_code", models.TextField()),
-                ("fiscal_year", models.IntegerField()),
-                ("fiscal_period", models.IntegerField()),
-                (
-                    "total_dollars_obligated_gtas",
-                    models.DecimalField(decimal_places=2, max_digits=23),
-                ),
-                (
-                    "total_budgetary_resources",
-                    models.DecimalField(decimal_places=2, max_digits=23),
-                ),
-                (
-                    "total_diff_approp_ocpa_obligated_amounts",
-                    models.DecimalField(decimal_places=2, max_digits=23),
-                ),
+                ('reporting_agency_overview_id', models.AutoField(primary_key=True, serialize=False)),
+                ('toptier_code', models.TextField()),
+                ('fiscal_year', models.IntegerField()),
+                ('fiscal_period', models.IntegerField()),
+                ('total_dollars_obligated_gtas', models.DecimalField(decimal_places=2, max_digits=23)),
+                ('total_budgetary_resources', models.DecimalField(decimal_places=2, max_digits=23)),
+                ('total_diff_approp_ocpa_obligated_amounts', models.DecimalField(decimal_places=2, max_digits=23)),
             ],
             options={
-                "db_table": "reporting_agency_overview",
+                'db_table': 'reporting_agency_overview',
             },
         ),
         migrations.AddIndex(
-            model_name="reportingagencyoverview",
-            index=models.Index(
-                fields=["fiscal_year", "fiscal_period", "toptier_code"],
-                name="reporting_agency_ovr_group_idx",
-            ),
+            model_name='reportingagencyoverview',
+            index=models.Index(fields=['fiscal_year', 'fiscal_period', 'toptier_code'], name='reporting_agency_ovr_group_idx'),
         ),
     ]

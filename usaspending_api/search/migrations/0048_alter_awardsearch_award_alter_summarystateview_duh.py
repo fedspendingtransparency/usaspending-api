@@ -26,8 +26,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="summarystateview",
             name="duh",
-            field=models.UUIDField(
-                help_text="Deterministic Unique Hash", primary_key=True, serialize=False
-            ),
+            field=models.UUIDField(help_text="Deterministic Unique Hash", primary_key=True, serialize=False),
         ),
     ]

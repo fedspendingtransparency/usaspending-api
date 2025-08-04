@@ -8,13 +8,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("broker", "0001_initial"),
+        ('broker', '0001_initial'),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name="externaldataloaddate",
-            name="last_load_date",
+            model_name='externaldataloaddate',
+            name='last_load_date',
             field=models.DateTimeField(),
         ),
     ]

@@ -7,22 +7,18 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        (
-            "financial_activities",
-            "0003_financialaccountsbyprogramactivityobjectclass_disaster_emergency_fund",
-        ),
+        ('financial_activities', '0003_financialaccountsbyprogramactivityobjectclass_disaster_emergency_fund'),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name="financialaccountsbyprogramactivityobjectclass",
-            name="final_of_fy",
+            model_name='financialaccountsbyprogramactivityobjectclass',
+            name='final_of_fy',
         ),
+
         # The "DROP COLUMN 'final_of_fy' CASCADE" will remove this download view;
         # need to put it back in place
         migrations.RunSQL(
-            sql=[
-                f"{Path('usaspending_api/download/sql/vw_financial_accounts_by_program_activity_object_class_download.sql').read_text()}"
-            ],
+            sql=[f"{Path('usaspending_api/download/sql/vw_financial_accounts_by_program_activity_object_class_download.sql').read_text()}"],
         ),
     ]

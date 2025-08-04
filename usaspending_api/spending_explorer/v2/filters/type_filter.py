@@ -5,9 +5,7 @@ from django.db.models import Sum
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.calculations.file_b import FileBCalculations
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.financial_activities.models import (
-    FinancialAccountsByProgramActivityObjectClass,
-)
+from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import GTASSF133Balances
 from usaspending_api.spending_explorer.v2.filters.explorer import Explorer
 from usaspending_api.spending_explorer.v2.filters.spending_filter import spending_filter
@@ -60,13 +58,7 @@ def get_unreported_data_obj(
     )
     expected_total = gtas[0]["obligations_incurred_total_cpe__sum"] if gtas else None
     if spending_type in VALID_UNREPORTED_DATA_TYPES and set(filters.keys()).issubset(set(VALID_UNREPORTED_FILTERS)):
-        unreported_obj = {
-            "id": None,
-            "code": None,
-            "type": spending_type,
-            "name": UNREPORTED_DATA_NAME,
-            "amount": None,
-        }
+        unreported_obj = {"id": None, "code": None, "type": spending_type, "name": UNREPORTED_DATA_NAME, "amount": None}
         # if both values are actually available, then calculate the amount, otherwise leave it as the default of None
         if not (actual_total is None or expected_total is None):
             unreported_obj["amount"] = expected_total - actual_total
@@ -125,16 +117,7 @@ def type_filter(_type, filters, limit=None):
     except ValueError:
         raise InvalidParameterException('Incorrect or Missing Fiscal Year Parameter, "fy": "YYYY"')
 
-    if time_unit == "quarter" and filters["quarter"] not in (
-        "1",
-        "2",
-        "3",
-        "4",
-        1,
-        2,
-        3,
-        4,
-    ):
+    if time_unit == "quarter" and filters["quarter"] not in ("1", "2", "3", "4", 1, 2, 3, 4):
         raise InvalidParameterException("Incorrect value provided for quarter parameter. Must be between 1 and 4")
 
     if time_unit == "period" and int(filters["period"]) not in range(1, 13):
@@ -163,15 +146,13 @@ def type_filter(_type, filters, limit=None):
 
     # transaction_obligated_amount is summed across all periods in the year up to and including the requested quarter.
     alt_set = FinancialAccountsByAwards.objects.filter(
-        submission__reporting_fiscal_year=fiscal_year,
-        submission__reporting_fiscal_period__lte=fiscal_period,
+        submission__reporting_fiscal_year=fiscal_year, submission__reporting_fiscal_period__lte=fiscal_period
     ).annotate(amount=Sum("transaction_obligated_amount"))
 
     # obligations_incurred_by_program_object_class_cpe is picked from the final period of the quarter.
     file_b_calculations = FileBCalculations()
     queryset = FinancialAccountsByProgramActivityObjectClass.objects.filter(
-        submission__reporting_fiscal_year=fiscal_year,
-        submission__reporting_fiscal_period=fiscal_period,
+        submission__reporting_fiscal_year=fiscal_year, submission__reporting_fiscal_period=fiscal_period
     ).annotate(amount=Sum(file_b_calculations.get_obligations()))
 
     # Apply filters to queryset results
@@ -219,11 +200,7 @@ def type_filter(_type, filters, limit=None):
 
         result_set = result_set[:limit] if _type == "award" else result_set
 
-        results = {
-            "total": actual_total,
-            "end_date": fiscal_date,
-            "results": result_set,
-        }
+        results = {"total": actual_total, "end_date": fiscal_date, "results": result_set}
 
     else:
         # Annotate and get explorer _type filtered results
@@ -253,10 +230,6 @@ def type_filter(_type, filters, limit=None):
             fiscal_period=fiscal_period,
         )
 
-        results = {
-            "total": expected_total,
-            "end_date": fiscal_date,
-            "results": result_set,
-        }
+        results = {"total": expected_total, "end_date": fiscal_date, "results": result_set}
 
     return results

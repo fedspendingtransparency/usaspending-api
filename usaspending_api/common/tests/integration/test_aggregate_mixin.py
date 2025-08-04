@@ -55,39 +55,19 @@ def aggregate_models():
 @pytest.fixture
 def aggregate_models_with_nulls():
     baker.make(
-        "search.TransactionSearch",
-        transaction_id=1,
-        is_fpds=True,
-        federal_action_obligation=10,
-        naics_code="ABCD",
+        "search.TransactionSearch", transaction_id=1, is_fpds=True, federal_action_obligation=10, naics_code="ABCD"
     )
     baker.make(
-        "search.TransactionSearch",
-        transaction_id=2,
-        is_fpds=True,
-        federal_action_obligation=10,
-        naics_code="ABCD",
+        "search.TransactionSearch", transaction_id=2, is_fpds=True, federal_action_obligation=10, naics_code="ABCD"
     )
     baker.make(
-        "search.TransactionSearch",
-        transaction_id=3,
-        is_fpds=True,
-        federal_action_obligation=10,
-        naics_code="ABCD",
+        "search.TransactionSearch", transaction_id=3, is_fpds=True, federal_action_obligation=10, naics_code="ABCD"
     )
     baker.make(
-        "search.TransactionSearch",
-        transaction_id=4,
-        is_fpds=True,
-        federal_action_obligation=None,
-        naics_code="WXYZ",
+        "search.TransactionSearch", transaction_id=4, is_fpds=True, federal_action_obligation=None, naics_code="WXYZ"
     )
     baker.make(
-        "search.TransactionSearch",
-        transaction_id=5,
-        is_fpds=False,
-        federal_action_obligation=10,
-        cfda_number="10.001",
+        "search.TransactionSearch", transaction_id=5, is_fpds=False, federal_action_obligation=10, cfda_number="10.001"
     )
 
 
@@ -117,11 +97,7 @@ def test_agg_fields(monkeypatch, aggregate_models):
     [
         (
             Award,
-            {
-                "field": "total_obligation",
-                "group": "period_of_performance_start_date",
-                "show_nulls": True,
-            },
+            {"field": "total_obligation", "group": "period_of_performance_start_date", "show_nulls": True},
             [
                 {
                     "item": datetime.date(2017, 1, 1),
@@ -181,10 +157,7 @@ def test_agg_fields(monkeypatch, aggregate_models):
                 "date_part": "day",
                 "show_nulls": True,
             },
-            [
-                {"item": 1, "aggregate": Decimal("6000.02")},
-                {"item": 13, "aggregate": Decimal("1000.01")},
-            ],
+            [{"item": 1, "aggregate": Decimal("6000.02")}, {"item": 13, "aggregate": Decimal("1000.01")}],
         ),
     ],
 )
@@ -206,37 +179,16 @@ def test_aggregate(monkeypatch, aggregate_models, model, request_data, result):
 
 
 _expected_fy_aggregated = [
-    {
-        "item": 2016,
-        "period_of_performance_start_date__fy": 2016,
-        "aggregate": Decimal("1000.01"),
-    },
-    {
-        "item": 2017,
-        "period_of_performance_start_date__fy": 2017,
-        "aggregate": Decimal("2000.00"),
-    },
-    {
-        "item": 2018,
-        "period_of_performance_start_date__fy": 2018,
-        "aggregate": Decimal("4000.02"),
-    },
+    {"item": 2016, "period_of_performance_start_date__fy": 2016, "aggregate": Decimal("1000.01")},
+    {"item": 2017, "period_of_performance_start_date__fy": 2017, "aggregate": Decimal("2000.00")},
+    {"item": 2018, "period_of_performance_start_date__fy": 2018, "aggregate": Decimal("4000.02")},
 ]
 
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
     "model, request_data, expected",
-    [
-        (
-            Award,
-            {
-                "field": "total_obligation",
-                "group": "period_of_performance_start_date__fy",
-            },
-            _expected_fy_aggregated,
-        )
-    ],
+    [(Award, {"field": "total_obligation", "group": "period_of_performance_start_date__fy"}, _expected_fy_aggregated)],
 )
 def test_aggregate_fy(monkeypatch, aggregate_models, model, request_data, expected):
     request = Mock()
@@ -256,30 +208,10 @@ def test_aggregate_fy(monkeypatch, aggregate_models, model, request_data, expect
 
 
 _expected_fy_type_aggregated = [
-    {
-        "item": 2016,
-        "period_of_performance_start_date__fy": 2016,
-        "type": "U",
-        "aggregate": Decimal("1000.01"),
-    },
-    {
-        "aggregate": None,
-        "period_of_performance_start_date__fy": 2018,
-        "type": "05",
-        "item": 2018,
-    },
-    {
-        "item": 2017,
-        "period_of_performance_start_date__fy": 2017,
-        "type": "B",
-        "aggregate": Decimal("2000.00"),
-    },
-    {
-        "item": 2018,
-        "period_of_performance_start_date__fy": 2018,
-        "type": "B",
-        "aggregate": Decimal("4000.02"),
-    },
+    {"item": 2016, "period_of_performance_start_date__fy": 2016, "type": "U", "aggregate": Decimal("1000.01")},
+    {"aggregate": None, "period_of_performance_start_date__fy": 2018, "type": "05", "item": 2018},
+    {"item": 2017, "period_of_performance_start_date__fy": 2017, "type": "B", "aggregate": Decimal("2000.00")},
+    {"item": 2018, "period_of_performance_start_date__fy": 2018, "type": "B", "aggregate": Decimal("4000.02")},
 ]
 
 _expected_type_pop_day_aggregated = [
@@ -327,26 +259,10 @@ def test_aggregate_fy_and_type(monkeypatch, aggregate_models, model, request_dat
 
 
 _expected_parent_fy_aggregated = [
-    {
-        "item": None,
-        "parent_award__period_of_performance_start_date__fy": None,
-        "aggregate": Decimal("1000.01"),
-    },
-    {
-        "item": 2016,
-        "parent_award__period_of_performance_start_date__fy": 2016,
-        "aggregate": Decimal("2000.00"),
-    },
-    {
-        "item": 2017,
-        "parent_award__period_of_performance_start_date__fy": 2017,
-        "aggregate": Decimal("4000.02"),
-    },
-    {
-        "item": 2018,
-        "parent_award__period_of_performance_start_date__fy": 2018,
-        "aggregate": None,
-    },
+    {"item": None, "parent_award__period_of_performance_start_date__fy": None, "aggregate": Decimal("1000.01")},
+    {"item": 2016, "parent_award__period_of_performance_start_date__fy": 2016, "aggregate": Decimal("2000.00")},
+    {"item": 2017, "parent_award__period_of_performance_start_date__fy": 2017, "aggregate": Decimal("4000.02")},
+    {"item": 2018, "parent_award__period_of_performance_start_date__fy": 2018, "aggregate": None},
 ]
 
 
@@ -362,10 +278,7 @@ def test_aggregate_nulls(monkeypatch, aggregate_models_with_nulls):
     # Ensure defaults don't return values where all group fields are null
     request = Mock()
     request.query_params = {}
-    request.data = {
-        "field": "federal_action_obligation",
-        "group": "assistance_data__cfda_number",
-    }
+    request.data = {"field": "federal_action_obligation", "group": "assistance_data__cfda_number"}
     a = AggregateQuerysetMixin()
     agg = a.aggregate(request=request, queryset=TransactionNormalized.objects.all())
     agg_list = [a for a in agg]
@@ -431,11 +344,7 @@ def test_aggregate_nulls(monkeypatch, aggregate_models_with_nulls):
     assert agg_list[2]["aggregate"] == 30.0
 
     # Allow null aggregate fields and groups (using show_nulls to trigger both)
-    request.data = {
-        "field": "federal_action_obligation",
-        "group": "contract_data__naics",
-        "show_nulls": True,
-    }
+    request.data = {"field": "federal_action_obligation", "group": "contract_data__naics", "show_nulls": True}
     agg = a.aggregate(request=request, queryset=TransactionNormalized.objects.all())
     agg_list = [a for a in agg]
     agg_list.sort(key=itemsorter)

@@ -11,11 +11,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from usaspending_api.accounts.models import (
-    AppropriationAccountBalances,
-    FederalAccount,
-    TreasuryAppropriationAccount,
-)
+from usaspending_api.accounts.models import AppropriationAccountBalances, FederalAccount, TreasuryAppropriationAccount
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.calculations.file_b import FileBCalculations
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -23,9 +19,7 @@ from usaspending_api.common.helpers.date_helper import now
 from usaspending_api.common.helpers.fiscal_year_helpers import current_fiscal_year
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
 from usaspending_api.common.validator.tinyshield import TinyShield
-from usaspending_api.financial_activities.models import (
-    FinancialAccountsByProgramActivityObjectClass,
-)
+from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models.bureau_title_lookup import BureauTitleLookup
 from usaspending_api.submissions.models import SubmissionAttributes
 
@@ -67,10 +61,7 @@ class ObjectClassFederalAccountsViewSet(APIView):
 
         # Retrieve only unique major class ids and names
         major_classes = {
-            (
-                obj.object_class.major_object_class,
-                obj.object_class.major_object_class_name,
-            )
+            (obj.object_class.major_object_class, obj.object_class.major_object_class_name)
             for obj in financial_account_queryset
         }
         result = [
@@ -80,10 +71,7 @@ class ObjectClassFederalAccountsViewSet(APIView):
                 "minor_object_class": [
                     {"id": obj[0], "name": obj[1]}
                     for obj in {
-                        (
-                            oc.object_class.object_class,
-                            oc.object_class.object_class_name,
-                        )
+                        (oc.object_class.object_class, oc.object_class.object_class_name)
                         for oc in financial_account_queryset
                         if oc.object_class.major_object_class == maj[0]
                     }
@@ -108,8 +96,7 @@ class FiscalYearSnapshotFederalAccountsViewSet(APIView):
     def get(self, request, pk, fy=0, format=None):
         fy = int(fy) or SubmissionAttributes.latest_available_fy()
         queryset = AppropriationAccountBalances.objects.filter(
-            submission__is_final_balances_for_fy=True,
-            treasury_account_identifier__federal_account_id=int(pk),
+            submission__is_final_balances_for_fy=True, treasury_account_identifier__federal_account_id=int(pk)
         ).filter(submission__reporting_fiscal_year=fy)
         queryset = queryset.aggregate(
             outlay=Sum("gross_outlay_amount_by_tas_cpe"),
@@ -152,8 +139,7 @@ class SpendingOverTimeFederalAccountsViewSet(APIView):
         group_results = OrderedDict()  # list of time_period objects ie {"fy": "2017", "quarter": "3"} : 1000
 
         financial_account_queryset = AppropriationAccountBalances.objects.filter(
-            submission__is_final_balances_for_fy=True,
-            treasury_account_identifier__federal_account_id=int(pk),
+            submission__is_final_balances_for_fy=True, treasury_account_identifier__federal_account_id=int(pk)
         )
         if group == "fy" or group == "fiscal_year":
 
@@ -226,7 +212,7 @@ class SpendingOverTimeFederalAccountsViewSet(APIView):
                         "obligations_incurred_other": (
                             trans["obligations_incurred_other"] if trans["obligations_incurred_other"] else 0
                         ),
-                        "unobliged_balance": (trans["unobliged_balance"] if trans["unobliged_balance"] else 0),
+                        "unobliged_balance": trans["unobliged_balance"] if trans["unobliged_balance"] else 0,
                     }
                 else:
                     group_results[key] = {
@@ -314,7 +300,7 @@ class SpendingOverTimeFederalAccountsViewSet(APIView):
                         "obligations_incurred_other": (
                             trans["obligations_incurred_other"] if trans["obligations_incurred_other"] else 0
                         ),
-                        "unobliged_balance": (trans["unobliged_balance"] if trans["unobliged_balance"] else 0),
+                        "unobliged_balance": trans["unobliged_balance"] if trans["unobliged_balance"] else 0,
                     }
                 else:
                     group_results[key] = {
@@ -343,10 +329,7 @@ class SpendingOverTimeFederalAccountsViewSet(APIView):
         sorted_group_results = sorted(
             group_results.items(),
             key=lambda k: (
-                (
-                    ast.literal_eval(k[0])["fiscal_year"],
-                    int(ast.literal_eval(k[0])[nested_order]),
-                )
+                (ast.literal_eval(k[0])["fiscal_year"], int(ast.literal_eval(k[0])[nested_order]))
                 if nested_order
                 else (ast.literal_eval(k[0])["fiscal_year"])
             ),
@@ -441,9 +424,7 @@ class SpendingByCategoryFederalAccountsViewSet(APIView):
             )
         elif request.data.get("category") == "object_class":
             queryset = queryset.annotate(
-                id=F("object_class_id"),
-                code=F("object_class__object_class"),
-                name=F("object_class__object_class_name"),
+                id=F("object_class_id"), code=F("object_class__object_class"), name=F("object_class__object_class_name")
             )
         elif request.data.get("category") == "treasury_account":
             queryset = queryset.annotate(
@@ -635,41 +616,16 @@ class FederalAccountsViewSet(APIView):
                 "object_keys": {
                     "field": {
                         "type": "enum",
-                        "enum_values": [
-                            "budgetary_resources",
-                            "managing_agency",
-                            "account_name",
-                            "account_number",
-                        ],
+                        "enum_values": ["budgetary_resources", "managing_agency", "account_name", "account_number"],
                         "optional": True,
                         "default": "budgetary_resources",
                     },
-                    "direction": {
-                        "type": "enum",
-                        "enum_values": ["asc", "desc"],
-                        "optional": True,
-                        "default": "asc",
-                    },
+                    "direction": {"type": "enum", "enum_values": ["asc", "desc"], "optional": True, "default": "asc"},
                 },
                 "default": {"field": "budgetary_resources", "direction": "asc"},
             },
-            {
-                "key": "page",
-                "name": "page",
-                "type": "integer",
-                "default": 1,
-                "min": 1,
-                "optional": True,
-            },
-            {
-                "key": "limit",
-                "name": "limit",
-                "type": "integer",
-                "default": 10,
-                "min": 1,
-                "max": 100,
-                "optional": True,
-            },
+            {"key": "page", "name": "page", "type": "integer", "default": 1, "min": 1, "optional": True},
+            {"key": "limit", "name": "limit", "type": "integer", "default": 10, "min": 1, "max": 100, "optional": True},
             {
                 "key": "filters",
                 "name": "filters",
@@ -682,22 +638,11 @@ class FederalAccountsViewSet(APIView):
                         "text_type": "search",
                         "optional": True,
                     },
-                    "fy": {
-                        "type": "enum",
-                        "enum_values": fy_range,
-                        "optional": True,
-                        "default": last_fy,
-                    },
+                    "fy": {"type": "enum", "enum_values": fy_range, "optional": True, "default": last_fy},
                 },
                 "default": {"fy": last_fy},
             },
-            {
-                "key": "keyword",
-                "name": "keyword",
-                "type": "text",
-                "text_type": "search",
-                "optional": True,
-            },
+            {"key": "keyword", "name": "keyword", "type": "text", "text_type": "search", "optional": True},
         ]
 
         validated_request_data = TinyShield(request_settings).block(request_dict)
@@ -768,13 +713,7 @@ class FederalAccountsViewSet(APIView):
         else:
             queryset = queryset.order_by(F(sort_field).asc(), "federal_account_code")
 
-        result = {
-            "count": queryset.count(),
-            "limit": limit,
-            "page": page,
-            "fy": fy,
-            "keyword": keyword,
-        }
+        result = {"count": queryset.count(), "limit": limit, "page": page, "fy": fy, "keyword": keyword}
         resultset = queryset.values(
             "account_id",
             "account_number",

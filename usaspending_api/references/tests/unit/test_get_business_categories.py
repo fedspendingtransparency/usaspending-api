@@ -1,6 +1,4 @@
-from usaspending_api.broker.helpers.get_business_categories import (
-    get_business_categories,
-)
+from usaspending_api.broker.helpers.get_business_categories import get_business_categories
 
 
 def test_update_business_type_categories():

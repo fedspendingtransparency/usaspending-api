@@ -34,12 +34,7 @@ def test__merge_date_ranges():
 
 
 def merge_date_ranges_test_one_range():
-    expected = [
-        (
-            _str_to_datetime(DATE_RANGE_1["start_date"]),
-            _str_to_datetime(DATE_RANGE_1["end_date"]),
-        )
-    ]
+    expected = [(_str_to_datetime(DATE_RANGE_1["start_date"]), _str_to_datetime(DATE_RANGE_1["end_date"]))]
     input_dates = _convert_ranges_to_dt_list(DATE_RANGE_1)
     results = list(merge_date_ranges(input_dates))
     assert results == expected
@@ -51,12 +46,7 @@ def merge_date_ranges_test_one_range():
 
 
 def merge_date_ranges_test_one_range_contained_in_another():
-    expected = [
-        (
-            _str_to_datetime(DATE_RANGE_3["start_date"]),
-            _str_to_datetime(DATE_RANGE_3["end_date"]),
-        )
-    ]
+    expected = [(_str_to_datetime(DATE_RANGE_3["start_date"]), _str_to_datetime(DATE_RANGE_3["end_date"]))]
     results = list(merge_date_ranges(_convert_ranges_to_dt_list(DATE_RANGE_2, DATE_RANGE_3)))
     assert results == expected
 
@@ -79,14 +69,8 @@ def merge_date_ranges_test_three_sequential_fiscal_year_ranges():
 
 def merge_date_ranges_test_two_apart_fiscal_year_ranges():
     expected = [
-        (
-            _str_to_datetime(FY_2010["start_date"]),
-            _str_to_datetime(FY_2010["end_date"]),
-        ),
-        (
-            _str_to_datetime(FY_2012["start_date"]),
-            _str_to_datetime(FY_2012["end_date"]),
-        ),
+        (_str_to_datetime(FY_2010["start_date"]), _str_to_datetime(FY_2010["end_date"])),
+        (_str_to_datetime(FY_2012["start_date"]), _str_to_datetime(FY_2012["end_date"])),
     ]
     results = list(merge_date_ranges(_convert_ranges_to_dt_list(FY_2010, FY_2012)))
     assert results == expected
@@ -94,14 +78,8 @@ def merge_date_ranges_test_two_apart_fiscal_year_ranges():
 
 def keep_ranges_two_days_apart_separate():
     expected = [
-        (
-            _str_to_datetime(DATE_RANGE_3["start_date"]),
-            _str_to_datetime(DATE_RANGE_3["end_date"]),
-        ),
-        (
-            _str_to_datetime(DATE_RANGE_4["start_date"]),
-            _str_to_datetime(DATE_RANGE_4["end_date"]),
-        ),
+        (_str_to_datetime(DATE_RANGE_3["start_date"]), _str_to_datetime(DATE_RANGE_3["end_date"])),
+        (_str_to_datetime(DATE_RANGE_4["start_date"]), _str_to_datetime(DATE_RANGE_4["end_date"])),
     ]
     results = list(merge_date_ranges(_convert_ranges_to_dt_list(DATE_RANGE_3, DATE_RANGE_4)))
     assert results == expected

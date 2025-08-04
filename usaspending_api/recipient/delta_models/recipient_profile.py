@@ -5,14 +5,8 @@ RECIPIENT_PROFILE_COLUMNS_WITHOUT_ID = {
     "recipient_name": {"delta": "STRING", "postgres": "TEXT"},
     "recipient_affiliations": {"delta": "ARRAY<STRING> NOT NULL", "postgres": "TEXT[]"},
     "last_12_months": {"delta": "numeric(23,2) NOT NULL", "postgres": "numeric(23,2"},
-    "last_12_contracts": {
-        "delta": "numeric(23,2) NOT NULL",
-        "postgres": "numeric(23,2",
-    },
-    "last_12_direct_payments": {
-        "delta": "numeric(23,2) NOT NULL",
-        "postgres": "numeric(23,2",
-    },
+    "last_12_contracts": {"delta": "numeric(23,2) NOT NULL", "postgres": "numeric(23,2"},
+    "last_12_direct_payments": {"delta": "numeric(23,2) NOT NULL", "postgres": "numeric(23,2"},
     "last_12_grants": {"delta": "numeric(23,2) NOT NULL", "postgres": "numeric(23,2"},
     "last_12_loans": {"delta": "numeric(23,2) NOT NULL", "postgres": "numeric(23,2"},
     "last_12_months_count": {"delta": "INTEGER NOT NULL", "postgres": "numeric(23,2"},

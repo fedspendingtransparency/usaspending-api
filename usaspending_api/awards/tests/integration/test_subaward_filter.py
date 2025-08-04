@@ -148,17 +148,11 @@ def test_defc_and_date_filters(subaward_data):
 
     # No subawards should be returned, because even though Subaward 4 falls into this `time_period`
     #   it's `sub_action_date` is prior to when DEF code `Z` went into effect and therefore filtered out
-    filters = {
-        "def_codes": ["Z"],
-        "time_period": [{"start_date": "2019-01-01", "end_date": "2021-12-01"}],
-    }
+    filters = {"def_codes": ["Z"], "time_period": [{"start_date": "2019-01-01", "end_date": "2021-12-01"}]}
     results = subaward_filter(filters).all()
     assert len(results) == 0
 
-    filters = {
-        "def_codes": ["A", "L", "Z"],
-        "time_period": [{"start_date": "2018-01-01", "end_date": "2023-01-01"}],
-    }
+    filters = {"def_codes": ["A", "L", "Z"], "time_period": [{"start_date": "2018-01-01", "end_date": "2023-01-01"}]}
     results = subaward_filter(filters).all()
     assert len(results) == 3
 

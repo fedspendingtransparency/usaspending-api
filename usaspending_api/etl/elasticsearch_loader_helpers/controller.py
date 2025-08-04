@@ -7,14 +7,9 @@ from typing import Dict, Tuple
 
 from django.core.management import call_command
 
-from usaspending_api.broker.helpers.last_load_date import (
-    get_earliest_load_date,
-    update_last_load_date,
-)
+from usaspending_api.broker.helpers.last_load_date import get_earliest_load_date, update_last_load_date
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
-from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import (
-    ensure_view_exists,
-)
+from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensure_view_exists
 from usaspending_api.common.helpers.sql_helpers import close_all_django_db_conns
 from usaspending_api.etl.elasticsearch_loader_helpers import (
     TaskSpec,
@@ -83,11 +78,7 @@ class AbstractElasticsearchIndexerController(ABC):
 
         if self.config["create_new_index"]:
             # ensure template for index is present and the latest version
-            call_command(
-                "es_configure",
-                "--template-only",
-                f"--load-type={self.config['data_type']}",
-            )
+            call_command("es_configure", "--template-only", f"--load-type={self.config['data_type']}")
             create_index(self.config["index_name"], instantiate_elasticsearch_client())
 
     @abstractmethod
@@ -191,10 +182,7 @@ class AbstractElasticsearchIndexerController(ABC):
             logger.info(
                 format_log(f"Storing datetime {self.config['processing_start_datetime']} for next incremental load")
             )
-            update_last_load_date(
-                f"{self.config['stored_date_key']}",
-                self.config["processing_start_datetime"],
-            )
+            update_last_load_date(f"{self.config['stored_date_key']}", self.config["processing_start_datetime"])
 
     @abstractmethod
     def cleanup(self) -> None:
@@ -233,10 +221,7 @@ class PostgresElasticsearchIndexerController(AbstractElasticsearchIndexerControl
 
     def configure_task(self, partition_number: int, task_name: str, is_null_partition: bool = False) -> TaskSpec:
         lower_bound, upper_bound = self.get_id_range_for_partition(partition_number)
-        sql_config = {
-            **self.config,
-            **{"lower_bound": lower_bound, "upper_bound": upper_bound},
-        }
+        sql_config = {**self.config, **{"lower_bound": lower_bound, "upper_bound": upper_bound}}
         sql_str = obtain_extract_partition_sql(sql_config, is_null_partition)
 
         return self._construct_task_spec(partition_number, task_name, sql_str)
@@ -244,12 +229,7 @@ class PostgresElasticsearchIndexerController(AbstractElasticsearchIndexerControl
     def dispatch_tasks(self) -> None:
         _abort = Event()  # Event which when set signals an error occurred in a subprocess
         parallel_procs = self.config["processes"]
-        with Pool(
-            parallel_procs,
-            maxtasksperchild=1,
-            initializer=init_shared_abort,
-            initargs=(_abort,),
-        ) as pool:
+        with Pool(parallel_procs, maxtasksperchild=1, initializer=init_shared_abort, initargs=(_abort,)) as pool:
             pool.map(extract_transform_load, self.tasks.values())
 
         msg = f"Total documents indexed: {total_doc_success.value}, total document fails: {total_doc_fail.value}"
@@ -278,8 +258,7 @@ class PostgresElasticsearchIndexerController(AbstractElasticsearchIndexerControl
         # Use the lesser of the fabs/fpds load dates as the es_deletes load date. This
         # ensures all records deleted since either job was run are taken into account
         last_db_delete_time = get_earliest_load_date(
-            ["transaction_fabs", "transaction_fpds"],
-            format_func=(lambda log_msg: format_log(log_msg, action="Delete")),
+            ["transaction_fabs", "transaction_fpds"], format_func=(lambda log_msg: format_log(log_msg, action="Delete"))
         )
         update_last_load_date("es_deletes", last_db_delete_time)
         logger.info(format_log(f"Updating `es_deletes`: {last_db_delete_time}", action="Delete"))
@@ -290,12 +269,7 @@ class PostgresElasticsearchIndexerController(AbstractElasticsearchIndexerControl
 
 def extract_transform_load(task: TaskSpec) -> None:
     if abort.is_set():
-        logger.warning(
-            format_log(
-                f"Skipping partition #{task.partition_number} due to previous error",
-                name=task.name,
-            )
-        )
+        logger.warning(format_log(f"Skipping partition #{task.partition_number} due to previous error", name=task.name))
         return
 
     start = perf_counter()

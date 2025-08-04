@@ -34,9 +34,7 @@ from usaspending_api.disaster.v2.views.elasticsearch_base import (
     ElasticsearchDisasterBase,
     ElasticsearchSpendingPaginationMixin,
 )
-from usaspending_api.financial_activities.models import (
-    FinancialAccountsByProgramActivityObjectClass,
-)
+from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import Agency, ToptierAgency
 from usaspending_api.search.v2.elasticsearch_helper import get_summed_value_as_float
 from usaspending_api.submissions.models import SubmissionAttributes
@@ -201,17 +199,12 @@ class SpendingByAgencyViewSet(FabaOutlayMixin, PaginationMixin, DisasterBase, Sp
                     .annotate(
                         amount=Func("total_budgetary_resources_cpe", function="Sum"),
                         unobligated_balance=Func(
-                            "budget_authority_unobligated_balance_brought_forward_cpe",
-                            function="Sum",
+                            "budget_authority_unobligated_balance_brought_forward_cpe", function="Sum"
                         ),
-                        deobligation=Func(
-                            "deobligations_or_recoveries_or_refunds_from_prior_year_cpe",
-                            function="Sum",
-                        ),
+                        deobligation=Func("deobligations_or_recoveries_or_refunds_from_prior_year_cpe", function="Sum"),
                         prior_year=Func("prior_year_paid_obligation_recoveries", function="Sum"),
                         unobligated_adjustments=Func(
-                            "adjustments_to_unobligated_balance_brought_forward_fyb",
-                            function="Sum",
+                            "adjustments_to_unobligated_balance_brought_forward_fyb", function="Sum"
                         ),
                     )
                     .annotate(
@@ -255,16 +248,8 @@ class SpendingBySubtierAgencyViewSet(ElasticsearchSpendingPaginationMixin, Elast
     ]
     agg_key = "funding_toptier_agency_agg_key"  # primary (tier-1) aggregation key
     sub_agg_key = "funding_subtier_agency_agg_key"  # secondary (tier-2) sub-aggregation key
-    top_hits_fields = [
-        "funding_toptier_agency_name",
-        "funding_toptier_agency_code",
-        "funding_agency_id",
-    ]
-    sub_top_hits_fields = [
-        "funding_subtier_agency_name",
-        "funding_subtier_agency_code",
-        "funding_agency_id",
-    ]
+    top_hits_fields = ["funding_toptier_agency_name", "funding_toptier_agency_code", "funding_agency_id"]
+    sub_top_hits_fields = ["funding_subtier_agency_name", "funding_subtier_agency_code", "funding_agency_id"]
 
     def build_elasticsearch_result(self, info_buckets: List[dict]) -> List[dict]:
         results = []
@@ -279,9 +264,7 @@ class SpendingBySubtierAgencyViewSet(ElasticsearchSpendingPaginationMixin, Elast
 
         if self.pagination.sort_key == "description":
             results = sorted(
-                results,
-                key=lambda val: val.get("description").lower(),
-                reverse=self.pagination.sort_order == "desc",
+                results, key=lambda val: val.get("description").lower(), reverse=self.pagination.sort_order == "desc"
             )
 
         return results
@@ -305,8 +288,7 @@ class SpendingBySubtierAgencyViewSet(ElasticsearchSpendingPaginationMixin, Elast
             "award_count": int(bucket.get("doc_count", 0)),
             **{
                 column: get_summed_value_as_float(
-                    bucket.get("nested", {}).get("filtered_aggs", {}),
-                    self.sum_column_mapping[column],
+                    bucket.get("nested", {}).get("filtered_aggs", {}), self.sum_column_mapping[column]
                 )
                 for column in self.sum_column_mapping
             },

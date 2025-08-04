@@ -96,30 +96,15 @@ SUBAWARD_SEARCH_COLUMNS = {
     "sub_place_of_perform_street": {"delta": "STRING", "postgres": "TEXT"},
     "subaward_description": {"delta": "STRING", "postgres": "TEXT"},
     "sub_high_comp_officer1_full_na": {"delta": "STRING", "postgres": "TEXT"},
-    "sub_high_comp_officer1_amount": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
+    "sub_high_comp_officer1_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
     "sub_high_comp_officer2_full_na": {"delta": "STRING", "postgres": "TEXT"},
-    "sub_high_comp_officer2_amount": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
+    "sub_high_comp_officer2_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
     "sub_high_comp_officer3_full_na": {"delta": "STRING", "postgres": "TEXT"},
-    "sub_high_comp_officer3_amount": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
+    "sub_high_comp_officer3_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
     "sub_high_comp_officer4_full_na": {"delta": "STRING", "postgres": "TEXT"},
-    "sub_high_comp_officer4_amount": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
+    "sub_high_comp_officer4_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
     "sub_high_comp_officer5_full_na": {"delta": "STRING", "postgres": "TEXT"},
-    "sub_high_comp_officer5_amount": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
+    "sub_high_comp_officer5_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
     # Additional Prime Award Fields (from Broker)
     "prime_id": {"delta": "INTEGER", "postgres": "INTEGER"},
     "internal_id": {"delta": "STRING", "postgres": "TEXT"},
@@ -139,30 +124,15 @@ SUBAWARD_SEARCH_COLUMNS = {
     "compensation_q1": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
     "compensation_q2": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
     "high_comp_officer1_full_na": {"delta": "STRING", "postgres": "TEXT"},
-    "high_comp_officer1_amount": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
+    "high_comp_officer1_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
     "high_comp_officer2_full_na": {"delta": "STRING", "postgres": "TEXT"},
-    "high_comp_officer2_amount": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
+    "high_comp_officer2_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
     "high_comp_officer3_full_na": {"delta": "STRING", "postgres": "TEXT"},
-    "high_comp_officer3_amount": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
+    "high_comp_officer3_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
     "high_comp_officer4_full_na": {"delta": "STRING", "postgres": "TEXT"},
-    "high_comp_officer4_amount": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
+    "high_comp_officer4_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
     "high_comp_officer5_full_na": {"delta": "STRING", "postgres": "TEXT"},
-    "high_comp_officer5_amount": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
+    "high_comp_officer5_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
     # Additional Subaward Fields (from Broker)
     "sub_id": {"delta": "INTEGER", "postgres": "INTEGER"},
     "sub_parent_id": {"delta": "INTEGER", "postgres": "INTEGER"},
@@ -208,10 +178,7 @@ SUBAWARD_SEARCH_COLUMNS = {
     "sub_ultimate_parent_legal_enti": {"delta": "STRING", "postgres": "TEXT"},
     "business_type_code": {"delta": "STRING", "postgres": "TEXT"},
     "business_categories": {"delta": "ARRAY<STRING>", "postgres": "TEXT[]"},
-    "treasury_account_identifiers": {
-        "delta": "ARRAY<INTEGER>",
-        "postgres": "INTEGER[]",
-    },
+    "treasury_account_identifiers": {"delta": "ARRAY<INTEGER>", "postgres": "INTEGER[]"},
     "pulled_from": {"delta": "STRING", "postgres": "TEXT"},
     "type_of_contract_pricing": {"delta": "STRING", "postgres": "TEXT"},
     "type_set_aside": {"delta": "STRING", "postgres": "TEXT"},
@@ -225,20 +192,14 @@ SUBAWARD_SEARCH_COLUMNS = {
     "sub_legal_entity_city_code": {"delta": "STRING", "postgres": "TEXT"},
     "sub_legal_entity_congressional": {"delta": "STRING", "postgres": "TEXT"},
     "sub_legal_entity_congressional_current": {"delta": "STRING", "postgres": "TEXT"},
-    "place_of_performance_congressional_current": {
-        "delta": "STRING",
-        "postgres": "TEXT",
-    },
+    "place_of_performance_congressional_current": {"delta": "STRING", "postgres": "TEXT"},
     "place_of_perform_scope": {"delta": "STRING", "postgres": "TEXT"},
     "sub_place_of_perform_country_co": {"delta": "STRING", "postgres": "TEXT"},
     "sub_place_of_perform_country_name": {"delta": "STRING", "postgres": "TEXT"},
     "sub_place_of_perform_zip5": {"delta": "STRING", "postgres": "TEXT"},
     "sub_place_of_perform_city_code": {"delta": "STRING", "postgres": "TEXT"},
     "sub_place_of_perform_congressio": {"delta": "STRING", "postgres": "TEXT"},
-    "sub_place_of_performance_congressional_current": {
-        "delta": "STRING",
-        "postgres": "TEXT",
-    },
+    "sub_place_of_performance_congressional_current": {"delta": "STRING", "postgres": "TEXT"},
     "legal_entity_state_fips": {"delta": "STRING", "postgres": "TEXT"},
     "place_of_perform_state_fips": {"delta": "STRING", "postgres": "TEXT"},
     "legal_entity_county_fips": {"delta": "STRING", "postgres": "TEXT"},
@@ -252,11 +213,7 @@ SUBAWARD_SEARCH_COLUMNS = {
     "funding_toptier_agency_code": {"delta": "STRING", "postgres": "TEXT"},
 }
 SUBAWARD_SEARCH_POSTGRES_VECTORS = {
-    "keyword_ts_vector": [
-        "sub_awardee_or_recipient_legal",
-        "product_or_service_description",
-        "subaward_description",
-    ],
+    "keyword_ts_vector": ["sub_awardee_or_recipient_legal", "product_or_service_description", "subaward_description"],
     "award_ts_vector": ["award_piid_fain", "subaward_number"],
     "recipient_name_ts_vector": ["sub_awardee_or_recipient_legal"],
 }

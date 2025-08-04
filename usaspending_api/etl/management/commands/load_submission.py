@@ -9,12 +9,8 @@ from usaspending_api.etl.management import load_base
 from usaspending_api.etl.submission_loader_helpers.file_a import get_file_a, load_file_a
 from usaspending_api.etl.submission_loader_helpers.file_b import get_file_b, load_file_b
 from usaspending_api.etl.submission_loader_helpers.file_c import get_file_c, load_file_c
-from usaspending_api.etl.submission_loader_helpers.final_of_fy import (
-    populate_final_of_fy,
-)
-from usaspending_api.etl.submission_loader_helpers.program_activities import (
-    update_program_activities,
-)
+from usaspending_api.etl.submission_loader_helpers.final_of_fy import populate_final_of_fy
+from usaspending_api.etl.submission_loader_helpers.program_activities import update_program_activities
 from usaspending_api.etl.submission_loader_helpers.submission_attributes import (
     attempt_submission_update_only,
     get_submission_attributes,
@@ -153,12 +149,7 @@ class Command(load_base.Command):
         )
         logger.info("Loading File C data")
         start_time = datetime.now()
-        load_file_c(
-            submission_attributes,
-            self.db_cursor,
-            published_award_financial,
-            self.skip_c_to_d_linkage,
-        )
+        load_file_c(submission_attributes, self.db_cursor, published_award_financial, self.skip_c_to_d_linkage)
         logger.info(f"Finished loading File C data, took {datetime.now() - start_time}")
 
         if self.skip_final_of_fy_calculation:

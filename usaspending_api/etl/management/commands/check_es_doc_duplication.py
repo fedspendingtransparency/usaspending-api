@@ -46,10 +46,7 @@ class Command(BaseCommand):
                     "field": "_id",
                     "min_doc_count": 2,
                     "size": None,  # to be updated
-                    "include": {
-                        "partition": None,
-                        "num_partitions": None,
-                    },  # to be updated  # to be updated
+                    "include": {"partition": None, "num_partitions": None},  # to be updated  # to be updated
                 }
             }
         },
@@ -125,10 +122,7 @@ class Command(BaseCommand):
             raise RuntimeError("Invalid argument provided for required option --query-type.")
 
     def handle_with_scrolling(self, **options):
-        self._es_client_config = {
-            "hosts": options["es_hostname"],
-            "timeout": options["es_timeout"],
-        }
+        self._es_client_config = {"hosts": options["es_hostname"], "timeout": options["es_timeout"]}
         self._partition_size = options["partition_size"]
         es = Elasticsearch(**self._es_client_config)
         self._index = options["index"]
@@ -144,15 +138,7 @@ class Command(BaseCommand):
         # Use this query in the scan helper, which performs the scrolling
         # preserve_order=True seems to provide better performance on our indices rather than sort=_doc (see docs)
         q = {"query": {"match_all": {}}, "_source": False}
-        for idx, hit in enumerate(
-            scan(
-                es,
-                index=self._index,
-                query=q,
-                size=self._partition_size,
-                preserve_order=True,
-            )
-        ):
+        for idx, hit in enumerate(scan(es, index=self._index, query=q, size=self._partition_size, preserve_order=True)):
             all_ids[idx] = hit["_id"]
             doc_num = idx + 1
             if doc_num % self._partition_size == 0:
@@ -190,10 +176,7 @@ class Command(BaseCommand):
             _log.info("No duplicate documents with the same _id field found.")
 
     def handle_with_partitioning(self, **options):
-        self._es_client_config = {
-            "hosts": options["es_hostname"],
-            "timeout": options["es_timeout"],
-        }
+        self._es_client_config = {"hosts": options["es_hostname"], "timeout": options["es_timeout"]}
         self._partition_size = options["partition_size"]
         es = Elasticsearch(**self._es_client_config)
         self._index = options["index"]

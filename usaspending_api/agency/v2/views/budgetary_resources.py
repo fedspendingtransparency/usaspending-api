@@ -6,9 +6,7 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.calculations.file_b import FileBCalculations
 from usaspending_api.common.helpers.date_helper import now
 from usaspending_api.common.helpers.fiscal_year_helpers import current_fiscal_year
-from usaspending_api.financial_activities.models import (
-    FinancialAccountsByProgramActivityObjectClass,
-)
+from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import GTASSF133Balances
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
@@ -36,10 +34,7 @@ class BudgetaryResources(AgencyBase):
         submission_windows = (
             DABSSubmissionWindowSchedule.objects.filter(submission_reveal_date__lte=now())
             .values("submission_fiscal_year")
-            .annotate(
-                fiscal_year=F("submission_fiscal_year"),
-                fiscal_period=Max("submission_fiscal_month"),
-            )
+            .annotate(fiscal_year=F("submission_fiscal_year"), fiscal_period=Max("submission_fiscal_month"))
         )
         q = Q()
         for sub in submission_windows:
@@ -59,10 +54,7 @@ class BudgetaryResources(AgencyBase):
                 treasury_account__funding_toptier_agency=self.toptier_agency,
                 submission__submission_window__submission_reveal_date__lte=now(),
             )
-            .values(
-                "submission__reporting_fiscal_year",
-                "submission__reporting_fiscal_period",
-            )
+            .values("submission__reporting_fiscal_year", "submission__reporting_fiscal_period")
             .annotate(
                 fiscal_year=F("submission__reporting_fiscal_year"),
                 fiscal_period=F("submission__reporting_fiscal_period"),

@@ -5,15 +5,11 @@ other types of filters so they get their own file.
 
 import logging
 
-from usaspending_api.accounts.v2.filters.account_download import (
-    generate_treasury_account_query,
-)
+from usaspending_api.accounts.v2.filters.account_download import generate_treasury_account_query
 from usaspending_api.search.models import TransactionSearch, SubawardSearch
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.validator.tinyshield import TinyShield
-from usaspending_api.common.validator.award import (
-    get_internal_or_generated_award_id_model,
-)
+from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model
 
 
 logger = logging.getLogger("console")

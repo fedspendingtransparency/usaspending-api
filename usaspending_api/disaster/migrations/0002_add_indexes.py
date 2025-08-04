@@ -6,25 +6,20 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("disaster", "0001_create_covid_faba_spending_model"),
+        ('disaster', '0001_create_covid_faba_spending_model'),
     ]
 
     operations = [
         migrations.AddIndex(
-            model_name="covidfabaspending",
-            index=models.Index(fields=["spending_level"], name="spending_level_idx"),
+            model_name='covidfabaspending',
+            index=models.Index(fields=['spending_level'], name='spending_level_idx'),
         ),
         migrations.AddIndex(
-            model_name="covidfabaspending",
-            index=models.Index(
-                fields=["spending_level", "defc"], name="spending_level_defc_idx"
-            ),
+            model_name='covidfabaspending',
+            index=models.Index(fields=['spending_level', 'defc'], name='spending_level_defc_idx'),
         ),
         migrations.AddIndex(
-            model_name="covidfabaspending",
-            index=models.Index(
-                fields=["spending_level", "defc", "award_type"],
-                name="spending_defc_award_type_idx",
-            ),
+            model_name='covidfabaspending',
+            index=models.Index(fields=['spending_level', 'defc', 'award_type'], name='spending_defc_award_type_idx'),
         ),
     ]

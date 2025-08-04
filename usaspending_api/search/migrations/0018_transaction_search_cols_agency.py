@@ -6,28 +6,28 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("search", "0017_auto_20221110_1355"),
+        ('search', '0017_auto_20221110_1355'),
     ]
 
     operations = [
         migrations.AddField(
-            model_name="transactionsearch",
-            name="awarding_subtier_agency_name_raw",
+            model_name='transactionsearch',
+            name='awarding_subtier_agency_name_raw',
             field=models.TextField(null=True),
         ),
         migrations.AddField(
-            model_name="transactionsearch",
-            name="awarding_toptier_agency_name_raw",
+            model_name='transactionsearch',
+            name='awarding_toptier_agency_name_raw',
             field=models.TextField(null=True),
         ),
         migrations.AddField(
-            model_name="transactionsearch",
-            name="funding_subtier_agency_name_raw",
+            model_name='transactionsearch',
+            name='funding_subtier_agency_name_raw',
             field=models.TextField(null=True),
         ),
         migrations.AddField(
-            model_name="transactionsearch",
-            name="funding_toptier_agency_name_raw",
+            model_name='transactionsearch',
+            name='funding_toptier_agency_name_raw',
             field=models.TextField(null=True),
         ),
     ]

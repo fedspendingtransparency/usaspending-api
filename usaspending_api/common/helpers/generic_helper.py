@@ -127,10 +127,7 @@ def get_temp_matview_sql_files_dict(matview_dir: Path) -> List[dict]:
     return temp_sql_files
 
 
-def generate_matviews(
-    materialized_views_as_traditional_views: bool = False,
-    parallel_worker_id: str = None,
-) -> None:
+def generate_matviews(materialized_views_as_traditional_views: bool = False, parallel_worker_id: str = None) -> None:
     """Build out matview definitions as SQL files, then create matviews in the database and materialize them.
 
     Args:
@@ -343,11 +340,7 @@ def sort_with_null_last(to_sort, sort_key, sort_order, tie_breaker=None):
         tie_breaker = sort_key
     return sorted(
         to_sort,
-        key=lambda x: (
-            (x[sort_key] is None) == (sort_order == "asc"),
-            x[sort_key],
-            x[tie_breaker],
-        ),
+        key=lambda x: ((x[sort_key] is None) == (sort_order == "asc"), x[sort_key], x[tie_breaker]),
         reverse=(sort_order == "desc"),
     )
 

@@ -3,12 +3,11 @@ from dataclasses import dataclass
 from functools import reduce
 from typing import Any
 
+import pandas as pd
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as sf, Column
 
-from usaspending_api.download.management.commands.delta_downloads.filters import (
-    AccountDownloadFilter,
-)
+from usaspending_api.download.management.commands.delta_downloads.filters import AccountDownloadFilter
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 from usaspending_api.submissions.helpers import get_submission_ids_for_periods
 
@@ -42,11 +41,7 @@ class AbstractAccountDownloadDataFrameBuilder(ABC):
             apply: bool
 
         conditions = [
-            Condition(
-                name="year",
-                condition=sf.col("reporting_fiscal_year") == self.reporting_fiscal_year,
-                apply=True,
-            ),
+            Condition(name="year", condition=sf.col("reporting_fiscal_year") == self.reporting_fiscal_year, apply=True),
             Condition(
                 name="quarter or month",
                 condition=(
@@ -59,9 +54,7 @@ class AbstractAccountDownloadDataFrameBuilder(ABC):
                 apply=True,
             ),
             Condition(
-                name="agency",
-                condition=sf.col("funding_toptier_agency_id") == self.agency,
-                apply=bool(self.agency),
+                name="agency", condition=sf.col("funding_toptier_agency_id") == self.agency, apply=bool(self.agency)
             ),
             Condition(
                 name="federal account",
@@ -158,9 +151,7 @@ class FederalAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBui
             sf.when(
                 sf.col("submission_id").isin(
                     get_submission_ids_for_periods(
-                        self.reporting_fiscal_year,
-                        self.reporting_fiscal_quarter,
-                        self.reporting_fiscal_period,
+                        self.reporting_fiscal_year, self.reporting_fiscal_quarter, self.reporting_fiscal_period
                     )
                 ),
                 sf.col(col_name),

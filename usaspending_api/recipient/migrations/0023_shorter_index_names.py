@@ -20,13 +20,9 @@ class Migration(migrations.Migration):
             state_operations=[
                 migrations.AddIndex(
                     model_name="recipientlookup",
-                    index=models.Index(
-                        name="rl_duns_a43c07_partial",
-                        fields=["duns"],
-                        condition=models.Q(duns__isnull=False),
-                    ),
+                    index=models.Index(name="rl_duns_a43c07_partial", fields=["duns"], condition=models.Q(duns__isnull=False))
                 ),
-            ],
+            ]
         ),
         migrations.RunSQL(
             sql="ALTER INDEX recipient_l_parent__efd6d5_partial RENAME TO rl_parent__efd6d5_partial",
@@ -34,13 +30,9 @@ class Migration(migrations.Migration):
             state_operations=[
                 migrations.AddIndex(
                     model_name="recipientlookup",
-                    index=models.Index(
-                        name="rl_parent__efd6d5_partial",
-                        fields=["parent_duns"],
-                        condition=models.Q(parent_duns__isnull=False),
-                    ),
+                    index=models.Index(name="rl_parent__efd6d5_partial", fields=["parent_duns"], condition=models.Q(parent_duns__isnull=False))
                 ),
-            ],
+            ]
         ),
         migrations.RunSQL(
             sql="ALTER INDEX recipient_l_parent__271f5c_partial RENAME TO rl_parent__271f5c_partial",
@@ -48,12 +40,9 @@ class Migration(migrations.Migration):
             state_operations=[
                 migrations.AddIndex(
                     model_name="recipientlookup",
-                    index=models.Index(
-                        name="rl_parent__271f5c_partial",
-                        fields=["parent_uei"],
-                        condition=models.Q(parent_uei__isnull=False),
-                    ),
+                    index=models.Index(name="rl_parent__271f5c_partial", fields=["parent_uei"], condition=models.Q(parent_uei__isnull=False))
                 ),
-            ],
+            ]
         ),
+
     ]

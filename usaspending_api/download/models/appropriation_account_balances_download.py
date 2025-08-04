@@ -1,8 +1,6 @@
 from django.db import models
 
-from usaspending_api.accounts.models.appropriation_account_balances import (
-    AbstractAppropriationAccountBalances,
-)
+from usaspending_api.accounts.models.appropriation_account_balances import AbstractAppropriationAccountBalances
 
 
 class AppropriationAccountBalancesDownloadView(AbstractAppropriationAccountBalances):

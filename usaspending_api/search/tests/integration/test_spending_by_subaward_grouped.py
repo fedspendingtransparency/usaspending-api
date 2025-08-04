@@ -3,10 +3,7 @@ import json
 import pytest
 from model_bakery import baker
 from rest_framework import status
-from usaspending_api.search.tests.data.search_filters_test_data import (
-    legacy_filters,
-    non_legacy_filters,
-)
+from usaspending_api.search.tests.data.search_filters_test_data import legacy_filters, non_legacy_filters
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
@@ -152,14 +149,7 @@ def test_spending_by_subaward_grouped_award_type_filter(
     resp = client.post(
         "/api/v2/search/spending_by_subaward_grouped",
         content_type="application/json",
-        data=json.dumps(
-            {
-                "page": 1,
-                "limit": 2,
-                "sort": "award_id",
-                "filters": {"award_type_codes": ["A"]},
-            }
-        ),
+        data=json.dumps({"page": 1, "limit": 2, "sort": "award_id", "filters": {"award_type_codes": ["A"]}}),
     )
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["page_metadata"]["page"] == 1

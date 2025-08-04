@@ -32,11 +32,7 @@ def _post(client, def_codes=None, query=None, award_type_codes=None, file_format
     if file_format:
         request_body["file_format"] = file_format
 
-    resp = client.post(
-        "/api/v2/download/disaster/",
-        content_type="application/json",
-        data=json.dumps(request_body),
-    )
+    resp = client.post("/api/v2/download/disaster/", content_type="application/json", data=json.dumps(request_body))
     return resp
 
 
@@ -112,48 +108,13 @@ def awards_and_transactions():
     )
 
     # Subawards
-    baker.make(
-        "search.SubawardSearch",
-        broker_subaward_id=1,
-        award=award1,
-        sub_action_date="2023-01-01",
-    )
-    baker.make(
-        "search.SubawardSearch",
-        broker_subaward_id=2,
-        award=award2,
-        sub_action_date="2023-01-01",
-    )
-    baker.make(
-        "search.SubawardSearch",
-        broker_subaward_id=3,
-        award=award3,
-        sub_action_date="2023-01-01",
-    )
-    baker.make(
-        "search.SubawardSearch",
-        broker_subaward_id=4,
-        award=award4,
-        sub_action_date="2023-01-01",
-    )
-    baker.make(
-        "search.SubawardSearch",
-        broker_subaward_id=5,
-        award=award5,
-        sub_action_date="2023-01-01",
-    )
-    baker.make(
-        "search.SubawardSearch",
-        broker_subaward_id=6,
-        award=award6,
-        sub_action_date="2023-01-01",
-    )
-    baker.make(
-        "search.SubawardSearch",
-        broker_subaward_id=7,
-        award=award7,
-        sub_action_date="2023-01-01",
-    )
+    baker.make("search.SubawardSearch", broker_subaward_id=1, award=award1, sub_action_date="2023-01-01")
+    baker.make("search.SubawardSearch", broker_subaward_id=2, award=award2, sub_action_date="2023-01-01")
+    baker.make("search.SubawardSearch", broker_subaward_id=3, award=award3, sub_action_date="2023-01-01")
+    baker.make("search.SubawardSearch", broker_subaward_id=4, award=award4, sub_action_date="2023-01-01")
+    baker.make("search.SubawardSearch", broker_subaward_id=5, award=award5, sub_action_date="2023-01-01")
+    baker.make("search.SubawardSearch", broker_subaward_id=6, award=award6, sub_action_date="2023-01-01")
+    baker.make("search.SubawardSearch", broker_subaward_id=7, award=award7, sub_action_date="2023-01-01")
 
     # Disaster Emergency Fund Code
     defc1 = baker.make(
@@ -475,11 +436,7 @@ def awards_and_transactions():
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_csv_download_success(
-    client,
-    monkeypatch,
-    awards_and_transactions,
-    elasticsearch_award_index,
-    elasticsearch_subaward_index,
+    client, monkeypatch, awards_and_transactions, elasticsearch_award_index, elasticsearch_subaward_index
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
@@ -505,11 +462,7 @@ def test_csv_download_success(
 
 @pytest.mark.django_db(transaction=True)
 def test_tsv_download_success(
-    client,
-    monkeypatch,
-    awards_and_transactions,
-    elasticsearch_award_index,
-    elasticsearch_subaward_index,
+    client, monkeypatch, awards_and_transactions, elasticsearch_award_index, elasticsearch_subaward_index
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
@@ -524,11 +477,7 @@ def test_tsv_download_success(
 
 @pytest.mark.django_db(transaction=True)
 def test_pstxt_download_success(
-    client,
-    monkeypatch,
-    awards_and_transactions,
-    elasticsearch_award_index,
-    elasticsearch_subaward_index,
+    client, monkeypatch, awards_and_transactions, elasticsearch_award_index, elasticsearch_subaward_index
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())

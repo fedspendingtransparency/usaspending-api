@@ -69,11 +69,7 @@ from datetime import date
 from django.conf import settings
 from django.core.management import BaseCommand, call_command
 from django.db import connections, transaction
-from usaspending_api.common.helpers.sql_helpers import (
-    execute_sql,
-    execute_dml_sql,
-    execute_sql_return_single_value,
-)
+from usaspending_api.common.helpers.sql_helpers import execute_sql, execute_dml_sql, execute_sql_return_single_value
 from usaspending_api.common.helpers.timing_helpers import ScriptTimer as Timer
 from usaspending_api.etl.transaction_loaders.fpds_loader import load_fpds_transactions
 
@@ -471,12 +467,8 @@ class Command(BaseCommand):
 
     @staticmethod
     def delete_and_add_fabs_transaction_records():
-        from usaspending_api.broker.helpers.delete_fabs_transactions import (
-            delete_fabs_transactions,
-        )
-        from usaspending_api.broker.helpers.upsert_fabs_transactions import (
-            upsert_fabs_transactions,
-        )
+        from usaspending_api.broker.helpers.delete_fabs_transactions import delete_fabs_transactions
+        from usaspending_api.broker.helpers.upsert_fabs_transactions import upsert_fabs_transactions
 
         with Timer("Insert/delete FABS transactions"):
             delete_ids = get_ids(TEMP_TRANSACTION_FABS_DELETE_IDS_TABLE)
@@ -490,12 +482,8 @@ class Command(BaseCommand):
 
     @staticmethod
     def delete_and_add_fpds_transaction_records():
-        from usaspending_api.broker.management.commands.load_fpds_transactions import (
-            Command as FPDSCommand,
-        )
-        from usaspending_api.etl.transaction_loaders.fpds_loader import (
-            delete_stale_fpds,
-        )
+        from usaspending_api.broker.management.commands.load_fpds_transactions import Command as FPDSCommand
+        from usaspending_api.etl.transaction_loaders.fpds_loader import delete_stale_fpds
 
         with Timer("Insert/delete FPDS transactions"):
             delete_ids = get_ids(TEMP_TRANSACTION_FPDS_DELETE_IDS_TABLE)

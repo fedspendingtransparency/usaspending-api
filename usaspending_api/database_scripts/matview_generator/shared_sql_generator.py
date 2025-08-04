@@ -86,13 +86,7 @@ def create_index_string(matview_name, index_name, idx):
             index_def.append(col["opclass"])
         idx_cols.append(" ".join(index_def))
     idx_str = TEMPLATE["create_index"].format(
-        idx_unique,
-        index_name,
-        matview_name,
-        idx_method,
-        ", ".join(idx_cols),
-        idx_with,
-        idx_where,
+        idx_unique, index_name, matview_name, idx_method, ", ".join(idx_cols), idx_with, idx_where
     )
     return idx_str
 
@@ -100,10 +94,7 @@ def create_index_string(matview_name, index_name, idx):
 def make_table_drops(table_name):
     table_old_name = table_name + "_old"
     table_temp_name = table_name + "_temp"
-    return [
-        TEMPLATE["drop_table"].format(table_old_name),
-        TEMPLATE["drop_table"].format(table_temp_name),
-    ]
+    return [TEMPLATE["drop_table"].format(table_old_name), TEMPLATE["drop_table"].format(table_temp_name)]
 
 
 def make_matview_refresh(matview_name, concurrently="CONCURRENTLY "):

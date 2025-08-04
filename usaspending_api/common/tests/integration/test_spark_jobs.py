@@ -11,10 +11,7 @@ def test_local_spark_jobs_strategy(spark, s3_unittest_data_bucket, hive_unittest
     spark_jobs.start(
         job_name="create_delta_table-award_search",
         command_name="create_delta_table",
-        command_options=[
-            f"--destination-table={expected_table_name}",
-            f"--spark-s3-bucket={s3_unittest_data_bucket}",
-        ],
+        command_options=[f"--destination-table={expected_table_name}", f"--spark-s3-bucket={s3_unittest_data_bucket}"],
     )
 
     schemas = spark.sql("show schemas").collect()

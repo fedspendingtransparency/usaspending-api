@@ -8,12 +8,12 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("awards", "0070_auto_20200116_1354"),
-        ("references", "0037_auto_20191227_1603"),
+        ('awards', '0070_auto_20200116_1354'),
+        ('references', '0037_auto_20191227_1603'),
     ]
 
     operations = [
         migrations.DeleteModel(
-            name="Location",
+            name='Location',
         ),
     ]

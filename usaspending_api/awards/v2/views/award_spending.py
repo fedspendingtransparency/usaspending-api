@@ -1,9 +1,7 @@
 from django.db.models import Case, CharField, F, Q, Sum, TextField, Value, When
 from django.db.models.functions import Coalesce
 from usaspending_api.awards.models import TransactionNormalized
-from usaspending_api.awards.serializers_v2.serializers import (
-    RecipientAwardSpendingSerializer,
-)
+from usaspending_api.awards.serializers_v2.serializers import RecipientAwardSpendingSerializer
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.generic_helper import check_valid_toptier_agency
 from usaspending_api.common.views import CachedDetailViewSet
@@ -37,9 +35,7 @@ class RecipientAwardSpendingViewSet(CachedDetailViewSet):
             raise InvalidParameterException("Awarding Agency ID provided must correspond to a toptier agency")
 
         queryset = TransactionNormalized.objects.filter(
-            federal_action_obligation__isnull=False,
-            fiscal_year=fiscal_year,
-            awarding_agency_id=awarding_agency_id,
+            federal_action_obligation__isnull=False, fiscal_year=fiscal_year, awarding_agency_id=awarding_agency_id
         ).annotate(
             award_category=F("award__category"),
             recipient_name=Coalesce(
@@ -55,10 +51,7 @@ class RecipientAwardSpendingViewSet(CachedDetailViewSet):
                 queryset = queryset.filter(award_category=award_category)
             else:
                 queryset = queryset.filter(Q(award_category="insurance") | Q(award_category="other")).annotate(
-                    award_category=Case(
-                        When(award_category="insurance", then=Value("other")),
-                        output_field=CharField(),
-                    )
+                    award_category=Case(When(award_category="insurance", then=Value("other")), output_field=CharField())
                 )
 
         # Sum Obligations for each Recipient

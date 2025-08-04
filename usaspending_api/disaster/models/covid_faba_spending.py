@@ -43,8 +43,5 @@ class CovidFABASpending(models.Model):
             # These are the two columns that are required for filtering
             models.Index(name="spending_level_defc_idx", fields=["spending_level", "defc"]),
             # award_type is an optional filter value so if it's provided then this index is the best for performance
-            models.Index(
-                name="spending_defc_award_type_idx",
-                fields=["spending_level", "defc", "award_type"],
-            ),
+            models.Index(name="spending_defc_award_type_idx", fields=["spending_level", "defc", "award_type"]),
         ]

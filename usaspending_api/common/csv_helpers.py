@@ -80,10 +80,7 @@ def partition_large_delimited_file(
 
                 current_partition_writer.writerow(row)
         finally:
-            write_to_log(
-                message=f"Number of lines partitioned: {line_number}",
-                download_job=download_job,
-            )
+            write_to_log(message=f"Number of lines partitioned: {line_number}", download_job=download_job)
             if dest_csv and not dest_csv.closed:
                 dest_csv.close()
 

@@ -73,10 +73,7 @@ def test_elasticsearch_download_cached(common_test_data):
         **JSON_REQUEST,
         "download_types": ["elasticsearch_transactions", "elasticsearch_sub_awards"],
     }
-    es_award_request = {
-        **JSON_REQUEST,
-        "download_types": ["elasticsearch_awards", "elasticsearch_sub_awards"],
-    }
+    es_award_request = {**JSON_REQUEST, "download_types": ["elasticsearch_awards", "elasticsearch_sub_awards"]}
 
     download_jobs = [
         {
@@ -116,10 +113,7 @@ def test_elasticsearch_download_cached(common_test_data):
     result = BaseDownloadViewSet._get_cached_download(
         json.dumps(es_transaction_request), es_transaction_request["download_types"]
     )
-    assert result == {
-        "download_job_id": 11,
-        "file_name": "es_transaction_job_right.zip",
-    }
+    assert result == {"download_job_id": 11, "file_name": "es_transaction_job_right.zip"}
 
     result = BaseDownloadViewSet._get_cached_download(json.dumps(es_award_request), es_award_request["download_types"])
     assert result == {"download_job_id": 21, "file_name": "es_award_job_right.zip"}
@@ -149,8 +143,7 @@ def test_elasticsearch_cached_download_not_found(common_test_data):
         baker.make("broker.ExternalDataLoadDate", **load_date)
 
     result = BaseDownloadViewSet._get_cached_download(
-        json.dumps(JSON_REQUEST),
-        ["elasticsearch_transactions", "elasticsearch_sub_awards"],
+        json.dumps(JSON_REQUEST), ["elasticsearch_transactions", "elasticsearch_sub_awards"]
     )
     assert result is None
 

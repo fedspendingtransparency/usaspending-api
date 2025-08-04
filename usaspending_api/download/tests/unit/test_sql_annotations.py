@@ -18,10 +18,7 @@ def test_top_level_split_nesting_logic():
     nested_string_3 = "(SP) blah SP (pojf SP) SP"
     assert _top_level_split(nested_string_3, "SP") == ["(SP) blah ", " (pojf SP) SP"]
     nested_string_4 = "((SP)) blah ()SP (pojf SP) SP"
-    assert _top_level_split(nested_string_4, "SP") == [
-        "((SP)) blah ()",
-        " (pojf SP) SP",
-    ]
+    assert _top_level_split(nested_string_4, "SP") == ["((SP)) blah ()", " (pojf SP) SP"]
 
 
 def test_top_level_split_quote_logic():
@@ -43,18 +40,12 @@ def test_select_columns_nesting_logic():
     nested_sql = (
         "SELECT (SELECT things FROM a place), stuff , (things FROM stuff) FROM otherstuff SELECT FROM FROM SELECT"
     )
-    assert _select_columns(nested_sql) == (
-        None,
-        ["(SELECT things FROM a place)", "stuff", "(things FROM stuff)"],
-    )
+    assert _select_columns(nested_sql) == (None, ["(SELECT things FROM a place)", "stuff", "(things FROM stuff)"])
     cte_sql = (
         "WITH cte AS (SELECT inner_things FROM a inner_place) SELECT things FROM a_place "
         "INNER JOIN cte ON cte.inner_things = a_place.things"
     )
-    assert _select_columns(cte_sql) == (
-        "WITH cte AS (SELECT inner_things FROM a inner_place)",
-        ["things"],
-    )
+    assert _select_columns(cte_sql) == ("WITH cte AS (SELECT inner_things FROM a inner_place)", ["things"])
 
 
 def test_apply_annotations_to_sql():

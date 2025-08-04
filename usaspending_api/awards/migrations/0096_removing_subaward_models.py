@@ -6,14 +6,14 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("awards", "0095_auto_20220617_1620"),
+        ('awards', '0095_auto_20220617_1620'),
     ]
 
     operations = [
         migrations.DeleteModel(
-            name="BrokerSubaward",
+            name='BrokerSubaward',
         ),
         migrations.DeleteModel(
-            name="Subaward",
+            name='Subaward',
         ),
     ]

@@ -332,10 +332,7 @@ def fabs_award_with_old_submission(defc_codes, award_count_sub_schedule):
         group_name="covid_19",
     )
     fa1 = baker.make(
-        "accounts.FederalAccount",
-        federal_account_code="001-0000",
-        account_title="FA 1",
-        parent_toptier_agency=ta1,
+        "accounts.FederalAccount", federal_account_code="001-0000", account_title="FA 1", parent_toptier_agency=ta1
     )
     tas1 = baker.make(
         "accounts.TreasuryAppropriationAccount",
@@ -399,10 +396,7 @@ def _normal_faba(award):
         group_name="covid_19",
     )
     fa1 = baker.make(
-        "accounts.FederalAccount",
-        federal_account_code="001-0000",
-        account_title="FA 1",
-        parent_toptier_agency=ta1,
+        "accounts.FederalAccount", federal_account_code="001-0000", account_title="FA 1", parent_toptier_agency=ta1
     )
     tas1 = baker.make(
         "accounts.TreasuryAppropriationAccount",

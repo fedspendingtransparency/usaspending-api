@@ -9,12 +9,7 @@ from usaspending_api.awards.models import Award
 def awards_and_transactions(db):
     baker.make("search.AwardSearch", award_id=1, total_obligation=2000)
     baker.make(
-        "search.AwardSearch",
-        award_id=2,
-        type="U",
-        total_obligation=None,
-        date_signed=None,
-        latest_transaction=None,
+        "search.AwardSearch", award_id=2, type="U", total_obligation=None, date_signed=None, latest_transaction=None
     )
     baker.make("search.AwardSearch", award_id=3, total_obligation=2000)
 

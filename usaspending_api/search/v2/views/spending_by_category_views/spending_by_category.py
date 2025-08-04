@@ -10,25 +10,12 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from usaspending_api.common.api_versioning import (
-    API_TRANSFORM_FUNCTIONS,
-    api_transformations,
-)
+from usaspending_api.common.api_versioning import API_TRANSFORM_FUNCTIONS, api_transformations
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.data_classes import Pagination
-from usaspending_api.common.elasticsearch.search_wrappers import (
-    AwardSearch,
-    SubawardSearch,
-    TransactionSearch,
-)
-from usaspending_api.common.exceptions import (
-    ElasticsearchConnectionException,
-    NotImplementedException,
-)
-from usaspending_api.common.helpers.generic_helper import (
-    get_generic_filters_message,
-    get_simple_pagination_metadata,
-)
+from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, SubawardSearch, TransactionSearch
+from usaspending_api.common.exceptions import ElasticsearchConnectionException, NotImplementedException
+from usaspending_api.common.helpers.generic_helper import get_generic_filters_message, get_simple_pagination_metadata
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.pagination import PAGINATION
@@ -92,13 +79,7 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
 
     def validate_payload(self, request: Request) -> dict:
         models = [
-            {
-                "name": "subawards",
-                "key": "subawards",
-                "type": "boolean",
-                "default": False,
-                "optional": True,
-            },
+            {"name": "subawards", "key": "subawards", "type": "boolean", "default": False, "optional": True},
             {
                 "name": "spending_level",
                 "key": "spending_level",
@@ -221,13 +202,7 @@ class AbstractSpendingByCategoryViewSet(APIView, metaclass=ABCMeta):
             group_by_agg_key_values = {}
 
         # Define all aggregations needed to build the response
-        group_by_agg_key_values.update(
-            {
-                "field": self.category.agg_key,
-                "size": result_size,
-                "shard_size": shard_size,
-            }
-        )
+        group_by_agg_key_values.update({"field": self.category.agg_key, "size": result_size, "shard_size": shard_size})
         group_by_agg_key = A("terms", **group_by_agg_key_values)
 
         sum_field = obligation_sum_agg["sum_field"]

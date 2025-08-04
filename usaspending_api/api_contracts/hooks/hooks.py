@@ -4,12 +4,7 @@ import requests
 
 
 def _post_request_response(protocol, host, port, path, body):
-    url_components = {
-        "protocol": protocol,
-        "host": host,
-        "port": ":" + port if port else "",
-        "path": path,
-    }
+    url_components = {"protocol": protocol, "host": host, "port": ":" + port if port else "", "path": path}
     request_url = "{protocol}//{host}{port}{path}".format(**url_components)
     request_headers = {"Content-type": "application/json"}
     request_body = json.dumps(body)

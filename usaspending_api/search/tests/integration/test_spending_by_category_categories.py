@@ -5,11 +5,7 @@ from model_bakery import baker
 from rest_framework import status
 
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
-from usaspending_api.references.abbreviations import (
-    code_to_state,
-    fips_to_code,
-    state_to_code,
-)
+from usaspending_api.references.abbreviations import code_to_state, fips_to_code, state_to_code
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
@@ -118,12 +114,7 @@ def cfda_test_data(db):
         cfda_number="CFDA1234",
     )
 
-    baker.make(
-        "references.Cfda",
-        id=1,
-        program_number="CFDA1234",
-        program_title="CFDA TITLE 1234",
-    )
+    baker.make("references.Cfda", id=1, program_number="CFDA1234", program_title="CFDA TITLE 1234")
 
 
 @pytest.fixture
@@ -178,18 +169,8 @@ def naics_test_data(db):
         naics_code="NAICS 9876",
     )
 
-    baker.make(
-        "references.NAICS",
-        code="NAICS 1234",
-        description="SOURCE NAICS DESC 1234",
-        year=1955,
-    )
-    baker.make(
-        "references.NAICS",
-        code="NAICS 9876",
-        description="SOURCE NAICS DESC 9876",
-        year=1985,
-    )
+    baker.make("references.NAICS", code="NAICS 1234", description="SOURCE NAICS DESC 1234", year=1955)
+    baker.make("references.NAICS", code="NAICS 9876", description="SOURCE NAICS DESC 9876", year=1985)
 
 
 @pytest.fixture
@@ -684,33 +665,11 @@ def geo_test_data(db):
 
     baker.make("recipient.StateData", name="Test State", code="XY", fips="99")
     baker.make("references.RefCountryCode", country_name="UNITED STATES", country_code="US")
-    baker.make(
-        "references.PopCounty",
-        state_code="99",
-        county_name="SOMEWHEREVILLE",
-        county_number="001",
-    )
-    baker.make(
-        "references.PopCounty",
-        state_code="99",
-        county_name="COUNTYSVILLE",
-        county_number="004",
-    )
-    baker.make(
-        "references.PopCongressionalDistrict",
-        state_code="99",
-        congressional_district="06",
-    )
-    baker.make(
-        "references.PopCongressionalDistrict",
-        state_code="99",
-        congressional_district="05",
-    )
-    baker.make(
-        "references.PopCongressionalDistrict",
-        state_code="99",
-        congressional_district="90",
-    )
+    baker.make("references.PopCounty", state_code="99", county_name="SOMEWHEREVILLE", county_number="001")
+    baker.make("references.PopCounty", state_code="99", county_name="COUNTYSVILLE", county_number="004")
+    baker.make("references.PopCongressionalDistrict", state_code="99", congressional_district="06")
+    baker.make("references.PopCongressionalDistrict", state_code="99", congressional_district="05")
+    baker.make("references.PopCongressionalDistrict", state_code="99", congressional_district="90")
 
     code_to_state["XY"] = {"name": "Test State", "fips": "99"}
     state_to_code["Test State"] = "XY"
@@ -733,13 +692,7 @@ def federal_accounts_test_data(db):
         is_fpds=True,
         recipient_hash="ab4d44f6-7a16-4ca7-405a-dcb913effbaf",
         recipient_levels=["R"],
-        federal_accounts=[
-            {
-                "id": 10,
-                "account_title": "Test Federal Account",
-                "federal_account_code": "020-0001",
-            }
-        ],
+        federal_accounts=[{"id": 10, "account_title": "Test Federal Account", "federal_account_code": "020-0001"}],
     )
     baker.make(
         "search.TransactionSearch",
@@ -752,13 +705,7 @@ def federal_accounts_test_data(db):
         is_fpds=True,
         recipient_hash="ab4d44f6-7a16-4ca7-405a-dcb913effbaf",
         recipient_levels=["R"],
-        federal_accounts=[
-            {
-                "id": 10,
-                "account_title": "Test Federal Account",
-                "federal_account_code": "020-0001",
-            }
-        ],
+        federal_accounts=[{"id": 10, "account_title": "Test Federal Account", "federal_account_code": "020-0001"}],
     )
 
     baker.make(
@@ -776,24 +723,10 @@ def federal_accounts_test_data(db):
         recipient_name="Sample Recipient",
     )
 
-    baker.make(
-        "awards.FinancialAccountsByAwards",
-        financial_accounts_by_awards_id=1,
-        award_id=1,
-        treasury_account_id=1,
-    )
-    baker.make(
-        "awards.FinancialAccountsByAwards",
-        financial_accounts_by_awards_id=2,
-        award_id=2,
-        treasury_account_id=1,
-    )
+    baker.make("awards.FinancialAccountsByAwards", financial_accounts_by_awards_id=1, award_id=1, treasury_account_id=1)
+    baker.make("awards.FinancialAccountsByAwards", financial_accounts_by_awards_id=2, award_id=2, treasury_account_id=1)
 
-    baker.make(
-        "accounts.TreasuryAppropriationAccount",
-        treasury_account_identifier=1,
-        federal_account_id=10,
-    )
+    baker.make("accounts.TreasuryAppropriationAccount", treasury_account_identifier=1, federal_account_id=10)
 
     baker.make(
         "accounts.FederalAccount",
@@ -818,28 +751,15 @@ def _expected_messages():
 def test_category_awarding_agency_transactions(client, agency_test_data, monkeypatch, elasticsearch_transaction_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
-    test_payload = {
-        "category": "awarding_agency",
-        "spending_level": "transactions",
-        "page": 1,
-        "limit": 50,
-    }
+    test_payload = {"category": "awarding_agency", "spending_level": "transactions", "page": 1, "limit": 50}
     response = client.post(
-        "/api/v2/search/spending_by_category",
-        content_type="application/json",
-        data=json.dumps(test_payload),
+        "/api/v2/search/spending_by_category", content_type="application/json", data=json.dumps(test_payload)
     )
 
     expected_response = {
         "category": "awarding_agency",
         "limit": 50,
-        "page_metadata": {
-            "page": 1,
-            "next": None,
-            "previous": None,
-            "hasNext": False,
-            "hasPrevious": False,
-        },
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
             {
                 "amount": 15,
@@ -861,28 +781,15 @@ def test_category_awarding_agency_transactions(client, agency_test_data, monkeyp
 def test_category_awarding_agency_subawards(client, agency_test_data, monkeypatch, elasticsearch_subaward_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
 
-    test_payload = {
-        "category": "awarding_agency",
-        "spending_level": "subawards",
-        "page": 1,
-        "limit": 50,
-    }
+    test_payload = {"category": "awarding_agency", "spending_level": "subawards", "page": 1, "limit": 50}
     response = client.post(
-        "/api/v2/search/spending_by_category",
-        content_type="application/json",
-        data=json.dumps(test_payload),
+        "/api/v2/search/spending_by_category", content_type="application/json", data=json.dumps(test_payload)
     )
 
     expected_response = {
         "category": "awarding_agency",
         "limit": 50,
-        "page_metadata": {
-            "page": 1,
-            "next": None,
-            "previous": None,
-            "hasNext": False,
-            "hasPrevious": False,
-        },
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
             {
                 "amount": 150,
@@ -906,28 +813,15 @@ def test_category_awarding_subagency_transactions(
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
-    test_payload = {
-        "category": "awarding_subagency",
-        "spending_level": "transactions",
-        "page": 1,
-        "limit": 50,
-    }
+    test_payload = {"category": "awarding_subagency", "spending_level": "transactions", "page": 1, "limit": 50}
     response = client.post(
-        "/api/v2/search/spending_by_category",
-        content_type="application/json",
-        data=json.dumps(test_payload),
+        "/api/v2/search/spending_by_category", content_type="application/json", data=json.dumps(test_payload)
     )
 
     expected_response = {
         "category": "awarding_subagency",
         "limit": 50,
-        "page_metadata": {
-            "page": 1,
-            "next": None,
-            "previous": None,
-            "hasNext": False,
-            "hasPrevious": False,
-        },
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
             {
                 "amount": 15.0,
@@ -953,28 +847,15 @@ def test_category_awarding_subagency_transactions(
 def test_category_awarding_subagency_subawards(client, agency_test_data, monkeypatch, elasticsearch_subaward_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
 
-    test_payload = {
-        "category": "awarding_subagency",
-        "spending_level": "subawards",
-        "page": 1,
-        "limit": 50,
-    }
+    test_payload = {"category": "awarding_subagency", "spending_level": "subawards", "page": 1, "limit": 50}
     response = client.post(
-        "/api/v2/search/spending_by_category",
-        content_type="application/json",
-        data=json.dumps(test_payload),
+        "/api/v2/search/spending_by_category", content_type="application/json", data=json.dumps(test_payload)
     )
 
     expected_response = {
         "category": "awarding_subagency",
         "limit": 50,
-        "page_metadata": {
-            "page": 1,
-            "next": None,
-            "previous": None,
-            "hasNext": False,
-            "hasPrevious": False,
-        },
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
             {
                 "amount": 150.0,
@@ -1000,28 +881,15 @@ def test_category_awarding_subagency_subawards(client, agency_test_data, monkeyp
 def test_category_funding_agency_transactions(client, agency_test_data, monkeypatch, elasticsearch_transaction_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
-    test_payload = {
-        "category": "funding_agency",
-        "spending_level": "transactions",
-        "page": 1,
-        "limit": 50,
-    }
+    test_payload = {"category": "funding_agency", "spending_level": "transactions", "page": 1, "limit": 50}
     response = client.post(
-        "/api/v2/search/spending_by_category",
-        content_type="application/json",
-        data=json.dumps(test_payload),
+        "/api/v2/search/spending_by_category", content_type="application/json", data=json.dumps(test_payload)
     )
 
     expected_response = {
         "category": "funding_agency",
         "limit": 50,
-        "page_metadata": {
-            "page": 1,
-            "next": None,
-            "previous": None,
-            "hasNext": False,
-            "hasPrevious": False,
-        },
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
             {
                 "amount": 15,
@@ -1043,27 +911,14 @@ def test_category_funding_agency_transactions(client, agency_test_data, monkeypa
 def test_category_funding_agency_subawards(client, agency_test_data, monkeypatch, elasticsearch_subaward_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
 
-    test_payload = {
-        "category": "funding_agency",
-        "spending_level": "subawards",
-        "page": 1,
-        "limit": 50,
-    }
+    test_payload = {"category": "funding_agency", "spending_level": "subawards", "page": 1, "limit": 50}
     response = client.post(
-        "/api/v2/search/spending_by_category",
-        content_type="application/json",
-        data=json.dumps(test_payload),
+        "/api/v2/search/spending_by_category", content_type="application/json", data=json.dumps(test_payload)
     )
     expected_response = {
         "category": "funding_agency",
         "limit": 50,
-        "page_metadata": {
-            "page": 1,
-            "next": None,
-            "previous": None,
-            "hasNext": False,
-            "hasPrevious": False,
-        },
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
             {
                 "amount": 150,
@@ -1087,28 +942,15 @@ def test_category_funding_subagency_transactions(
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
-    test_payload = {
-        "category": "funding_subagency",
-        "spending_level": "transactions",
-        "page": 1,
-        "limit": 50,
-    }
+    test_payload = {"category": "funding_subagency", "spending_level": "transactions", "page": 1, "limit": 50}
     response = client.post(
-        "/api/v2/search/spending_by_category",
-        content_type="application/json",
-        data=json.dumps(test_payload),
+        "/api/v2/search/spending_by_category", content_type="application/json", data=json.dumps(test_payload)
     )
 
     expected_response = {
         "category": "funding_subagency",
         "limit": 50,
-        "page_metadata": {
-            "page": 1,
-            "next": None,
-            "previous": None,
-            "hasNext": False,
-            "hasPrevious": False,
-        },
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
             {
                 "amount": 15,
@@ -1134,27 +976,14 @@ def test_category_funding_subagency_transactions(
 def test_category_funding_subagency_subawards(client, agency_test_data, monkeypatch, elasticsearch_subaward_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
 
-    test_payload = {
-        "category": "funding_subagency",
-        "spending_level": "subawards",
-        "page": 1,
-        "limit": 50,
-    }
+    test_payload = {"category": "funding_subagency", "spending_level": "subawards", "page": 1, "limit": 50}
     response = client.post(
-        "/api/v2/search/spending_by_category",
-        content_type="application/json",
-        data=json.dumps(test_payload),
+        "/api/v2/search/spending_by_category", content_type="application/json", data=json.dumps(test_payload)
     )
     expected_response = {
         "category": "funding_subagency",
         "limit": 50,
-        "page_metadata": {
-            "page": 1,
-            "next": None,
-            "previous": None,
-            "hasNext": False,
-            "hasPrevious": False,
-        },
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
             {
                 "amount": 150,
@@ -1180,27 +1009,14 @@ def test_category_funding_subagency_subawards(client, agency_test_data, monkeypa
 def test_category_recipient_transactions(client, recipient_test_data, monkeypatch, elasticsearch_transaction_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
-    test_payload = {
-        "category": "recipient",
-        "spending_level": "transactions",
-        "page": 1,
-        "limit": 50,
-    }
+    test_payload = {"category": "recipient", "spending_level": "transactions", "page": 1, "limit": 50}
     response = client.post(
-        "/api/v2/search/spending_by_category",
-        content_type="application/json",
-        data=json.dumps(test_payload),
+        "/api/v2/search/spending_by_category", content_type="application/json", data=json.dumps(test_payload)
     )
     expected_response = {
         "category": "recipient",
         "limit": 50,
-        "page_metadata": {
-            "page": 1,
-            "next": None,
-            "previous": None,
-            "hasNext": False,
-            "hasPrevious": False,
-        },
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
             {
                 "amount": 15,
@@ -1237,28 +1053,15 @@ def test_category_recipient_transactions(client, recipient_test_data, monkeypatc
 @pytest.mark.django_db
 def test_category_recipient_subawards(client, recipient_test_data, monkeypatch, elasticsearch_subaward_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
-    test_payload = {
-        "category": "recipient",
-        "spending_level": "subawards",
-        "page": 1,
-        "limit": 50,
-    }
+    test_payload = {"category": "recipient", "spending_level": "subawards", "page": 1, "limit": 50}
     response = client.post(
-        "/api/v2/search/spending_by_category",
-        content_type="application/json",
-        data=json.dumps(test_payload),
+        "/api/v2/search/spending_by_category", content_type="application/json", data=json.dumps(test_payload)
     )
 
     expected_response = {
         "category": "recipient",
         "limit": 50,
-        "page_metadata": {
-            "page": 1,
-            "next": None,
-            "previous": None,
-            "hasNext": False,
-            "hasPrevious": False,
-        },
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
             {
                 "amount": 10000,
@@ -1298,27 +1101,14 @@ def test_category_recipient_duns_subawards_deprecated(
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
 
-    test_payload = {
-        "category": "recipient_duns",
-        "spending_level": "subawards",
-        "page": 1,
-        "limit": 50,
-    }
+    test_payload = {"category": "recipient_duns", "spending_level": "subawards", "page": 1, "limit": 50}
     response = client.post(
-        "/api/v2/search/spending_by_category",
-        content_type="application/json",
-        data=json.dumps(test_payload),
+        "/api/v2/search/spending_by_category", content_type="application/json", data=json.dumps(test_payload)
     )
     expected_response = {
         "category": "recipient_duns",
         "limit": 50,
-        "page_metadata": {
-            "page": 1,
-            "next": None,
-            "previous": None,
-            "hasNext": False,
-            "hasPrevious": False,
-        },
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
             {
                 "amount": 10000,
@@ -1356,37 +1146,16 @@ def test_category_recipient_duns_subawards_deprecated(
 def test_category_cfda_transactions(client, cfda_test_data, monkeypatch, elasticsearch_transaction_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
-    test_payload = {
-        "category": "cfda",
-        "spending_level": "transactions",
-        "page": 1,
-        "limit": 50,
-    }
+    test_payload = {"category": "cfda", "spending_level": "transactions", "page": 1, "limit": 50}
     response = client.post(
-        "/api/v2/search/spending_by_category",
-        content_type="application/json",
-        data=json.dumps(test_payload),
+        "/api/v2/search/spending_by_category", content_type="application/json", data=json.dumps(test_payload)
     )
 
     expected_response = {
         "category": "cfda",
         "limit": 50,
-        "page_metadata": {
-            "page": 1,
-            "next": None,
-            "previous": None,
-            "hasNext": False,
-            "hasPrevious": False,
-        },
-        "results": [
-            {
-                "amount": 2,
-                "code": "CFDA1234",
-                "name": "CFDA TITLE 1234",
-                "id": 1,
-                "total_outlays": None,
-            }
-        ],
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "results": [{"amount": 2, "code": "CFDA1234", "name": "CFDA TITLE 1234", "id": 1, "total_outlays": None}],
         "messages": _expected_messages(),
         "spending_level": "transactions",
     }
@@ -1398,37 +1167,16 @@ def test_category_cfda_transactions(client, cfda_test_data, monkeypatch, elastic
 def test_category_cfda_subawards(client, cfda_test_data, monkeypatch, elasticsearch_subaward_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
 
-    test_payload = {
-        "category": "cfda",
-        "spending_level": "subawards",
-        "page": 1,
-        "limit": 50,
-    }
+    test_payload = {"category": "cfda", "spending_level": "subawards", "page": 1, "limit": 50}
     response = client.post(
-        "/api/v2/search/spending_by_category",
-        content_type="application/json",
-        data=json.dumps(test_payload),
+        "/api/v2/search/spending_by_category", content_type="application/json", data=json.dumps(test_payload)
     )
 
     expected_response = {
         "category": "cfda",
         "limit": 50,
-        "page_metadata": {
-            "page": 1,
-            "next": None,
-            "previous": None,
-            "hasNext": False,
-            "hasPrevious": False,
-        },
-        "results": [
-            {
-                "amount": 2,
-                "code": "CFDA1234",
-                "name": "CFDA TITLE 1234",
-                "id": 1,
-                "total_outlays": None,
-            }
-        ],
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "results": [{"amount": 2, "code": "CFDA1234", "name": "CFDA TITLE 1234", "id": 1, "total_outlays": None}],
         "messages": _expected_messages(),
         "spending_level": "subawards",
     }
@@ -1456,14 +1204,7 @@ def test_category_defc_awards(client, monkeypatch, elasticsearch_transaction_ind
     resp = client.post(
         "/api/v2/search/spending_by_category",
         content_type="application/json",
-        data=json.dumps(
-            {
-                "category": "defc",
-                "spending_level": "transactions",
-                "page": 1,
-                "limit": 10,
-            }
-        ),
+        data=json.dumps({"category": "defc", "spending_level": "transactions", "page": 1, "limit": 10}),
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 0
@@ -1473,43 +1214,18 @@ def test_category_defc_awards(client, monkeypatch, elasticsearch_transaction_ind
 def test_category_psc_transactions(client, psc_test_data, monkeypatch, elasticsearch_transaction_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
-    test_payload = {
-        "category": "psc",
-        "spending_level": "transactions",
-        "page": 1,
-        "limit": 50,
-    }
+    test_payload = {"category": "psc", "spending_level": "transactions", "page": 1, "limit": 50}
     response = client.post(
-        "/api/v2/search/spending_by_category",
-        content_type="application/json",
-        data=json.dumps(test_payload),
+        "/api/v2/search/spending_by_category", content_type="application/json", data=json.dumps(test_payload)
     )
 
     expected_response = {
         "category": "psc",
         "limit": 50,
-        "page_metadata": {
-            "page": 1,
-            "next": None,
-            "previous": None,
-            "hasNext": False,
-            "hasPrevious": False,
-        },
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {
-                "amount": 4,
-                "code": "9876",
-                "id": None,
-                "name": "PSC DESCRIPTION DOWN",
-                "total_outlays": None,
-            },
-            {
-                "amount": 2,
-                "code": "1234",
-                "id": None,
-                "name": "PSC DESCRIPTION UP",
-                "total_outlays": None,
-            },
+            {"amount": 4, "code": "9876", "id": None, "name": "PSC DESCRIPTION DOWN", "total_outlays": None},
+            {"amount": 2, "code": "1234", "id": None, "name": "PSC DESCRIPTION UP", "total_outlays": None},
         ],
         "messages": _expected_messages(),
         "spending_level": "transactions",
@@ -1522,43 +1238,18 @@ def test_category_psc_transactions(client, psc_test_data, monkeypatch, elasticse
 def test_category_naics_transactions(client, naics_test_data, monkeypatch, elasticsearch_transaction_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
-    test_payload = {
-        "category": "naics",
-        "spending_level": "transactions",
-        "page": 1,
-        "limit": 50,
-    }
+    test_payload = {"category": "naics", "spending_level": "transactions", "page": 1, "limit": 50}
     response = client.post(
-        "/api/v2/search/spending_by_category",
-        content_type="application/json",
-        data=json.dumps(test_payload),
+        "/api/v2/search/spending_by_category", content_type="application/json", data=json.dumps(test_payload)
     )
 
     expected_response = {
         "category": "naics",
         "limit": 50,
-        "page_metadata": {
-            "page": 1,
-            "next": None,
-            "previous": None,
-            "hasNext": False,
-            "hasPrevious": False,
-        },
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {
-                "amount": 4,
-                "code": "NAICS 9876",
-                "name": "SOURCE NAICS DESC 9876",
-                "id": None,
-                "total_outlays": None,
-            },
-            {
-                "amount": 2,
-                "code": "NAICS 1234",
-                "name": "SOURCE NAICS DESC 1234",
-                "id": None,
-                "total_outlays": None,
-            },
+            {"amount": 4, "code": "NAICS 9876", "name": "SOURCE NAICS DESC 9876", "id": None, "total_outlays": None},
+            {"amount": 2, "code": "NAICS 1234", "name": "SOURCE NAICS DESC 1234", "id": None, "total_outlays": None},
         ],
         "messages": _expected_messages(),
         "spending_level": "transactions",
@@ -1571,43 +1262,18 @@ def test_category_naics_transactions(client, naics_test_data, monkeypatch, elast
 def test_category_county_transactions(client, geo_test_data, monkeypatch, elasticsearch_transaction_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
-    test_payload = {
-        "category": "county",
-        "spending_level": "transactions",
-        "page": 1,
-        "limit": 50,
-    }
+    test_payload = {"category": "county", "spending_level": "transactions", "page": 1, "limit": 50}
     response = client.post(
-        "/api/v2/search/spending_by_category",
-        content_type="application/json",
-        data=json.dumps(test_payload),
+        "/api/v2/search/spending_by_category", content_type="application/json", data=json.dumps(test_payload)
     )
 
     expected_response = {
         "category": "county",
         "limit": 50,
-        "page_metadata": {
-            "page": 1,
-            "next": None,
-            "previous": None,
-            "hasNext": False,
-            "hasPrevious": False,
-        },
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {
-                "amount": 7,
-                "code": "001",
-                "name": "SOMEWHEREVILLE",
-                "id": None,
-                "total_outlays": None,
-            },
-            {
-                "amount": 3,
-                "code": "004",
-                "name": "COUNTYSVILLE",
-                "id": None,
-                "total_outlays": None,
-            },
+            {"amount": 7, "code": "001", "name": "SOMEWHEREVILLE", "id": None, "total_outlays": None},
+            {"amount": 3, "code": "004", "name": "COUNTYSVILLE", "id": None, "total_outlays": None},
         ],
         "messages": _expected_messages(),
         "spending_level": "transactions",
@@ -1619,43 +1285,18 @@ def test_category_county_transactions(client, geo_test_data, monkeypatch, elasti
 @pytest.mark.django_db
 def test_category_county_subawards(client, geo_test_data, monkeypatch, elasticsearch_subaward_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
-    test_payload = {
-        "category": "county",
-        "spending_level": "subawards",
-        "page": 1,
-        "limit": 50,
-    }
+    test_payload = {"category": "county", "spending_level": "subawards", "page": 1, "limit": 50}
     response = client.post(
-        "/api/v2/search/spending_by_category",
-        content_type="application/json",
-        data=json.dumps(test_payload),
+        "/api/v2/search/spending_by_category", content_type="application/json", data=json.dumps(test_payload)
     )
 
     expected_response = {
         "category": "county",
         "limit": 50,
-        "page_metadata": {
-            "page": 1,
-            "next": None,
-            "previous": None,
-            "hasNext": False,
-            "hasPrevious": False,
-        },
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {
-                "amount": 1100,
-                "code": "001",
-                "id": None,
-                "name": "SOMEWHEREVILLE",
-                "total_outlays": None,
-            },
-            {
-                "amount": 11,
-                "code": "004",
-                "id": None,
-                "name": "COUNTYSVILLE",
-                "total_outlays": None,
-            },
+            {"amount": 1100, "code": "001", "id": None, "name": "SOMEWHEREVILLE", "total_outlays": None},
+            {"amount": 11, "code": "004", "id": None, "name": "COUNTYSVILLE", "total_outlays": None},
         ],
         "messages": _expected_messages(),
         "spending_level": "subawards",
@@ -1668,43 +1309,18 @@ def test_category_county_subawards(client, geo_test_data, monkeypatch, elasticse
 def test_category_district_transactions(client, geo_test_data, monkeypatch, elasticsearch_transaction_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
-    test_payload = {
-        "category": "district",
-        "spending_level": "transactions",
-        "page": 1,
-        "limit": 50,
-    }
+    test_payload = {"category": "district", "spending_level": "transactions", "page": 1, "limit": 50}
     response = client.post(
-        "/api/v2/search/spending_by_category",
-        content_type="application/json",
-        data=json.dumps(test_payload),
+        "/api/v2/search/spending_by_category", content_type="application/json", data=json.dumps(test_payload)
     )
 
     expected_response = {
         "category": "district",
         "limit": 50,
-        "page_metadata": {
-            "page": 1,
-            "next": None,
-            "previous": None,
-            "hasNext": False,
-            "hasPrevious": False,
-        },
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {
-                "amount": 7,
-                "code": "05",
-                "name": "XY-05",
-                "id": None,
-                "total_outlays": None,
-            },
-            {
-                "amount": 3,
-                "code": "90",
-                "name": "XY-MULTIPLE DISTRICTS",
-                "id": None,
-                "total_outlays": None,
-            },
+            {"amount": 7, "code": "05", "name": "XY-05", "id": None, "total_outlays": None},
+            {"amount": 3, "code": "90", "name": "XY-MULTIPLE DISTRICTS", "id": None, "total_outlays": None},
         ],
         "messages": _expected_messages(),
         "spending_level": "transactions",
@@ -1716,43 +1332,18 @@ def test_category_district_transactions(client, geo_test_data, monkeypatch, elas
 @pytest.mark.django_db
 def test_category_district_subawards(client, geo_test_data, monkeypatch, elasticsearch_subaward_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
-    test_payload = {
-        "category": "district",
-        "spending_level": "subawards",
-        "page": 1,
-        "limit": 50,
-    }
+    test_payload = {"category": "district", "spending_level": "subawards", "page": 1, "limit": 50}
     response = client.post(
-        "/api/v2/search/spending_by_category",
-        content_type="application/json",
-        data=json.dumps(test_payload),
+        "/api/v2/search/spending_by_category", content_type="application/json", data=json.dumps(test_payload)
     )
 
     expected_response = {
         "category": "district",
         "limit": 50,
-        "page_metadata": {
-            "page": 1,
-            "next": None,
-            "previous": None,
-            "hasNext": False,
-            "hasPrevious": False,
-        },
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {
-                "amount": 1100,
-                "code": "05",
-                "id": None,
-                "name": "XY-05",
-                "total_outlays": None,
-            },
-            {
-                "amount": 11,
-                "code": "90",
-                "id": None,
-                "name": "XY-MULTIPLE DISTRICTS",
-                "total_outlays": None,
-            },
+            {"amount": 1100, "code": "05", "id": None, "name": "XY-05", "total_outlays": None},
+            {"amount": 11, "code": "90", "id": None, "name": "XY-MULTIPLE DISTRICTS", "total_outlays": None},
         ],
         "messages": _expected_messages(),
         "spending_level": "subawards",
@@ -1765,37 +1356,16 @@ def test_category_district_subawards(client, geo_test_data, monkeypatch, elastic
 def test_category_state_territory(client, geo_test_data, monkeypatch, elasticsearch_transaction_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
-    test_payload = {
-        "category": "state_territory",
-        "spending_level": "transactions",
-        "page": 1,
-        "limit": 50,
-    }
+    test_payload = {"category": "state_territory", "spending_level": "transactions", "page": 1, "limit": 50}
     response = client.post(
-        "/api/v2/search/spending_by_category",
-        content_type="application/json",
-        data=json.dumps(test_payload),
+        "/api/v2/search/spending_by_category", content_type="application/json", data=json.dumps(test_payload)
     )
 
     expected_response = {
         "category": "state_territory",
         "limit": 50,
-        "page_metadata": {
-            "page": 1,
-            "next": None,
-            "previous": None,
-            "hasNext": False,
-            "hasPrevious": False,
-        },
-        "results": [
-            {
-                "amount": 10,
-                "code": "XY",
-                "name": "Test State",
-                "id": None,
-                "total_outlays": None,
-            }
-        ],
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "results": [{"amount": 10, "code": "XY", "name": "Test State", "id": None, "total_outlays": None}],
         "messages": _expected_messages(),
         "spending_level": "transactions",
     }
@@ -1806,37 +1376,16 @@ def test_category_state_territory(client, geo_test_data, monkeypatch, elasticsea
 @pytest.mark.django_db
 def test_category_state_territory_subawards(client, geo_test_data, monkeypatch, elasticsearch_subaward_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
-    test_payload = {
-        "category": "state_territory",
-        "spending_level": "subawards",
-        "page": 1,
-        "limit": 50,
-    }
+    test_payload = {"category": "state_territory", "spending_level": "subawards", "page": 1, "limit": 50}
     response = client.post(
-        "/api/v2/search/spending_by_category",
-        content_type="application/json",
-        data=json.dumps(test_payload),
+        "/api/v2/search/spending_by_category", content_type="application/json", data=json.dumps(test_payload)
     )
 
     expected_response = {
         "category": "state_territory",
         "limit": 50,
-        "page_metadata": {
-            "page": 1,
-            "next": None,
-            "previous": None,
-            "hasNext": False,
-            "hasPrevious": False,
-        },
-        "results": [
-            {
-                "amount": 1111,
-                "code": "XY",
-                "id": None,
-                "name": "Test State",
-                "total_outlays": None,
-            }
-        ],
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "results": [{"amount": 1111, "code": "XY", "id": None, "name": "Test State", "total_outlays": None}],
         "messages": _expected_messages(),
         "spending_level": "subawards",
     }
@@ -1848,37 +1397,16 @@ def test_category_state_territory_subawards(client, geo_test_data, monkeypatch, 
 def test_category_country(client, geo_test_data, monkeypatch, elasticsearch_transaction_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
-    test_payload = {
-        "category": "country",
-        "spending_level": "transactions",
-        "page": 1,
-        "limit": 50,
-    }
+    test_payload = {"category": "country", "spending_level": "transactions", "page": 1, "limit": 50}
     response = client.post(
-        "/api/v2/search/spending_by_category",
-        content_type="application/json",
-        data=json.dumps(test_payload),
+        "/api/v2/search/spending_by_category", content_type="application/json", data=json.dumps(test_payload)
     )
 
     expected_response = {
         "category": "country",
         "limit": 50,
-        "page_metadata": {
-            "page": 1,
-            "next": None,
-            "previous": None,
-            "hasNext": False,
-            "hasPrevious": False,
-        },
-        "results": [
-            {
-                "amount": 10,
-                "code": "US",
-                "name": "UNITED STATES",
-                "id": None,
-                "total_outlays": None,
-            }
-        ],
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "results": [{"amount": 10, "code": "US", "name": "UNITED STATES", "id": None, "total_outlays": None}],
         "messages": _expected_messages(),
         "spending_level": "transactions",
     }
@@ -1889,37 +1417,16 @@ def test_category_country(client, geo_test_data, monkeypatch, elasticsearch_tran
 @pytest.mark.django_db
 def test_category_country_subawards(client, geo_test_data, monkeypatch, elasticsearch_subaward_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
-    test_payload = {
-        "category": "country",
-        "spending_level": "subawards",
-        "page": 1,
-        "limit": 50,
-    }
+    test_payload = {"category": "country", "spending_level": "subawards", "page": 1, "limit": 50}
     response = client.post(
-        "/api/v2/search/spending_by_category",
-        content_type="application/json",
-        data=json.dumps(test_payload),
+        "/api/v2/search/spending_by_category", content_type="application/json", data=json.dumps(test_payload)
     )
 
     expected_response = {
         "category": "country",
         "limit": 50,
-        "page_metadata": {
-            "page": 1,
-            "next": None,
-            "previous": None,
-            "hasNext": False,
-            "hasPrevious": False,
-        },
-        "results": [
-            {
-                "amount": 1111,
-                "code": "US",
-                "id": None,
-                "name": "UNITED STATES",
-                "total_outlays": None,
-            }
-        ],
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "results": [{"amount": 1111, "code": "US", "id": None, "name": "UNITED STATES", "total_outlays": None}],
         "messages": _expected_messages(),
         "spending_level": "subawards",
     }
@@ -1939,30 +1446,14 @@ def test_category_federal_accounts(client, federal_accounts_test_data, monkeypat
         "limit": 50,
     }
     response = client.post(
-        "/api/v2/search/spending_by_category",
-        content_type="application/json",
-        data=json.dumps(test_payload),
+        "/api/v2/search/spending_by_category", content_type="application/json", data=json.dumps(test_payload)
     )
 
     expected_response = {
         "category": "federal_account",
         "limit": 50,
-        "page_metadata": {
-            "page": 1,
-            "next": None,
-            "previous": None,
-            "hasNext": False,
-            "hasPrevious": False,
-        },
-        "results": [
-            {
-                "amount": 3,
-                "code": "020-0001",
-                "name": "Test Federal Account",
-                "id": 10,
-                "total_outlays": None,
-            }
-        ],
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "results": [{"amount": 3, "code": "020-0001", "name": "Test Federal Account", "id": 10, "total_outlays": None}],
         "messages": _expected_messages(),
         "spending_level": "transactions",
     }

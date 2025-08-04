@@ -28,9 +28,7 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     transform_subaward_data,
     transform_transaction_data,
 )
-from usaspending_api.etl.elasticsearch_loader_helpers.index_config import (
-    create_load_alias,
-)
+from usaspending_api.etl.elasticsearch_loader_helpers.index_config import create_load_alias
 
 
 def is_pytest_xdist_parallel_sessions() -> bool:

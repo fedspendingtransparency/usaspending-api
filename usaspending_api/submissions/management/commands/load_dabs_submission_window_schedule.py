@@ -95,8 +95,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--file",
-            help="The file containing schdules. If not provided, schedules are generated based on broker.",
+            "--file", help="The file containing schdules. If not provided, schedules are generated based on broker."
         )
 
     @transaction.atomic()

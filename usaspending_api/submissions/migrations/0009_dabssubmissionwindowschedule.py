@@ -6,37 +6,30 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("submissions", "0008_auto_20200610_1950"),
+        ('submissions', '0008_auto_20200610_1950'),
     ]
 
     operations = [
         migrations.CreateModel(
-            name="DABSSubmissionWindowSchedule",
+            name='DABSSubmissionWindowSchedule',
             fields=[
-                # This field was originally an Auto Incremented ID
-                ("id", models.IntegerField(primary_key=True)),
-                ("period_start_date", models.DateTimeField()),
-                ("period_end_date", models.DateTimeField()),
-                ("submission_start_date", models.DateTimeField()),
-                ("submission_due_date", models.DateTimeField()),
-                ("certification_due_date", models.DateTimeField()),
-                ("submission_reveal_date", models.DateTimeField()),
-                ("submission_fiscal_year", models.IntegerField()),
-                ("submission_fiscal_quarter", models.IntegerField()),
-                ("submission_fiscal_month", models.IntegerField()),
-                ("is_quarter", models.BooleanField()),
+                # This field was originally an Auto Incremented ID 
+                ('id', models.IntegerField(primary_key=True)),
+                ('period_start_date', models.DateTimeField()),
+                ('period_end_date', models.DateTimeField()),
+                ('submission_start_date', models.DateTimeField()),
+                ('submission_due_date', models.DateTimeField()),
+                ('certification_due_date', models.DateTimeField()),
+                ('submission_reveal_date', models.DateTimeField()),
+                ('submission_fiscal_year', models.IntegerField()),
+                ('submission_fiscal_quarter', models.IntegerField()),
+                ('submission_fiscal_month', models.IntegerField()),
+                ('is_quarter', models.BooleanField()),
             ],
             options={
-                "db_table": "dabs_submission_window_schedule",
-                "managed": True,
-                "unique_together": {
-                    (
-                        "submission_fiscal_year",
-                        "submission_fiscal_quarter",
-                        "submission_fiscal_month",
-                        "is_quarter",
-                    )
-                },
+                'db_table': 'dabs_submission_window_schedule',
+                'managed': True,
+                'unique_together': {('submission_fiscal_year', 'submission_fiscal_quarter', 'submission_fiscal_month', 'is_quarter')},
             },
         ),
     ]

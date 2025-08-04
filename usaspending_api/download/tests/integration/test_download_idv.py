@@ -42,20 +42,8 @@ def download_test_data(db):
     baker.make("references.SubtierAgency", name="Bureau of Things", _fill_optional=True)
 
     # Create Awarding Agencies
-    aa1 = baker.make(
-        "references.Agency",
-        id=1,
-        toptier_agency=ata1,
-        toptier_flag=False,
-        _fill_optional=True,
-    )
-    aa2 = baker.make(
-        "references.Agency",
-        id=2,
-        toptier_agency=ata2,
-        toptier_flag=False,
-        _fill_optional=True,
-    )
+    aa1 = baker.make("references.Agency", id=1, toptier_agency=ata1, toptier_flag=False, _fill_optional=True)
+    aa2 = baker.make("references.Agency", id=2, toptier_agency=ata2, toptier_flag=False, _fill_optional=True)
 
     # Create Funding Top Agency
     ata3 = baker.make(
@@ -71,13 +59,7 @@ def download_test_data(db):
     baker.make("references.SubtierAgency", name="Bureau of Things", _fill_optional=True)
 
     # Create Funding Agency
-    baker.make(
-        "references.Agency",
-        id=3,
-        toptier_agency=ata3,
-        toptier_flag=False,
-        _fill_optional=True,
-    )
+    baker.make("references.Agency", id=3, toptier_agency=ata3, toptier_flag=False, _fill_optional=True)
 
     # Create Awards
     award1 = baker.make(
@@ -152,11 +134,7 @@ def download_test_data(db):
 @pytest.mark.django_db
 def test_download_idv_without_columns(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
-    resp = client.post(
-        "/api/v2/download/idv/",
-        content_type="application/json",
-        data=json.dumps({"award_id": 123}),
-    )
+    resp = client.post("/api/v2/download/idv/", content_type="application/json", data=json.dumps({"award_id": 123}))
 
     assert resp.status_code == status.HTTP_200_OK
     assert ".zip" in resp.json()["file_url"]
@@ -171,11 +149,7 @@ def test_download_idv_with_columns(client, download_test_data):
         data=json.dumps(
             {
                 "award_id": 123,
-                "columns": [
-                    "current_total_value_of_award",
-                    "contract_award_unique_key",
-                    "program_activity_name",
-                ],
+                "columns": ["current_total_value_of_award", "contract_award_unique_key", "program_activity_name"],
             }
         ),
     )
@@ -188,10 +162,6 @@ def test_download_idv_with_columns(client, download_test_data):
 def test_download_idv_bad_award_id_raises(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     payload = {"award_id": -1}
-    resp = client.post(
-        "/api/v2/download/assistance/",
-        content_type="application/json",
-        data=json.dumps(payload),
-    )
+    resp = client.post("/api/v2/download/assistance/", content_type="application/json", data=json.dumps(payload))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
     assert resp.json()["detail"] == "Unable to find award matching the provided award id"

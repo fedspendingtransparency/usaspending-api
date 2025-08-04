@@ -28,11 +28,7 @@ def differences_data():
     )
     ta1 = baker.make("references.ToptierAgency", toptier_code="001", _fill_optional=True)
     baker.make(
-        "references.Agency",
-        id=1,
-        toptier_agency_id=ta1.toptier_agency_id,
-        toptier_flag=True,
-        _fill_optional=True,
+        "references.Agency", id=1, toptier_agency_id=ta1.toptier_agency_id, toptier_flag=True, _fill_optional=True
     )
     tas1 = baker.make("accounts.TreasuryAppropriationAccount")
     baker.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas1)
@@ -100,10 +96,7 @@ def test_happy_path(client, differences_data):
 @pytest.mark.django_db
 def test_sort_by_file_a_obligation_ascending(client, differences_data):
     resp = client.get(
-        URL.format(
-            code="001",
-            filter="?fiscal_year=2020&fiscal_period=3&sort=file_a_obligation&order=asc",
-        )
+        URL.format(code="001", filter="?fiscal_year=2020&fiscal_period=3&sort=file_a_obligation&order=asc")
     )
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["page_metadata"] == {
@@ -219,10 +212,5 @@ def test_invalid_period(client, differences_data):
 
 @pytest.mark.django_db
 def test_invalid_year(client, differences_data):
-    resp = client.get(
-        URL.format(
-            code="001",
-            filter=f"?fiscal_year={current_fiscal_year() + 1}&fiscal_period=3",
-        )
-    )
+    resp = client.get(URL.format(code="001", filter=f"?fiscal_year={current_fiscal_year() + 1}&fiscal_period=3"))
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY

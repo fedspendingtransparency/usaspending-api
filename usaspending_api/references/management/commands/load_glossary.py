@@ -21,13 +21,7 @@ class Command(BaseCommand):
             help="the path to the Excel spreadsheet to load",
             default=f"{settings.FILES_SERVER_BASE_URL}/docs/USAspendingGlossary.xlsx",
         )
-        parser.add_argument(
-            "-a",
-            "--append",
-            help="Append to existing guide",
-            action="store_true",
-            default=False,
-        )
+        parser.add_argument("-a", "--append", help="Append to existing guide", action="store_true", default=False)
 
     def handle(self, *args, **options):
 

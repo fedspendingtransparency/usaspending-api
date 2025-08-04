@@ -10,9 +10,7 @@ from model_bakery import baker
 
 from usaspending_api.awards.models import Award, TransactionNormalized
 from usaspending_api.broker.lookups import EXTERNAL_DATA_TYPE_DICT
-from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import (
-    ensure_view_exists,
-)
+from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensure_view_exists
 from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
 from usaspending_api.conftest_helpers import TestElasticSearchIndex
 from usaspending_api.etl.elasticsearch_loader_helpers import (
@@ -20,17 +18,13 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     delete_transactions,
     set_final_index_config,
 )
-from usaspending_api.etl.elasticsearch_loader_helpers.controller import (
-    PostgresElasticsearchIndexerController,
-)
+from usaspending_api.etl.elasticsearch_loader_helpers.controller import PostgresElasticsearchIndexerController
 from usaspending_api.etl.elasticsearch_loader_helpers.delete_data import (
     _check_awards_for_deletes,
     _lookup_deleted_award_keys,
     delete_docs_by_unique_key,
 )
-from usaspending_api.etl.elasticsearch_loader_helpers.index_config import (
-    ES_AWARDS_UNIQUE_KEY_FIELD,
-)
+from usaspending_api.etl.elasticsearch_loader_helpers.index_config import ES_AWARDS_UNIQUE_KEY_FIELD
 from usaspending_api.etl.management.commands.elasticsearch_indexer import (
     Command as ElasticsearchIndexerCommand,
 )
@@ -108,24 +102,12 @@ def award_data_fixture(db):
     )
 
     baker.make(
-        "references.ToptierAgency",
-        toptier_agency_id=1,
-        name="Department of Transportation",
-        _fill_optional=True,
+        "references.ToptierAgency", toptier_agency_id=1, name="Department of Transportation", _fill_optional=True
     )
     baker.make(
-        "references.SubtierAgency",
-        subtier_agency_id=1,
-        name="Department of Transportation",
-        _fill_optional=True,
+        "references.SubtierAgency", subtier_agency_id=1, name="Department of Transportation", _fill_optional=True
     )
-    baker.make(
-        "references.Agency",
-        id=1,
-        toptier_agency_id=1,
-        subtier_agency_id=1,
-        _fill_optional=True,
-    )
+    baker.make("references.Agency", id=1, toptier_agency_id=1, subtier_agency_id=1, _fill_optional=True)
     baker.make(
         "search.AwardSearch",
         award_id=1,
@@ -195,12 +177,7 @@ def award_data_fixture(db):
         federal_account_id=1,
     )
 
-    baker.make(
-        "awards.FinancialAccountsByAwards",
-        financial_accounts_by_awards_id=1,
-        award_id=1,
-        treasury_account_id=1,
-    )
+    baker.make("awards.FinancialAccountsByAwards", financial_accounts_by_awards_id=1, award_id=1, treasury_account_id=1)
 
 
 @pytest.fixture
@@ -293,33 +270,9 @@ def location_data_fixture(db):
         recipient_location_congressional_code_current="30",
         recipient_location_congressional_code="30",
     )
-    baker.make(
-        "recipient.StateData",
-        id=1,
-        fips="06",
-        code="CA",
-        name="California",
-        type="state",
-        year=2024,
-    )
-    baker.make(
-        "recipient.StateData",
-        id=2,
-        fips="32",
-        code="NV",
-        name="Nevada",
-        type="state",
-        year=2024,
-    )
-    baker.make(
-        "recipient.StateData",
-        id=3,
-        fips="48",
-        code="TX",
-        name="Texas",
-        type="state",
-        year=2024,
-    )
+    baker.make("recipient.StateData", id=1, fips="06", code="CA", name="California", type="state", year=2024)
+    baker.make("recipient.StateData", id=2, fips="32", code="NV", name="Nevada", type="state", year=2024)
+    baker.make("recipient.StateData", id=3, fips="48", code="TX", name="Texas", type="state", year=2024)
 
 
 def mock_execute_sql(sql, results, verbosity=None):
@@ -334,10 +287,7 @@ def test_create_and_load_new_award_index(award_data_fixture, elasticsearch_award
     with data from the DB
     """
     client = elasticsearch_award_index.client  # type: Elasticsearch
-    monkeypatch.setattr(
-        "usaspending_api.etl.elasticsearch_loader_helpers.index_config.logger",
-        logging.getLogger(),
-    )
+    monkeypatch.setattr("usaspending_api.etl.elasticsearch_loader_helpers.index_config.logger", logging.getLogger())
 
     # Ensure index is not yet created
     assert not client.indices.exists(elasticsearch_award_index.index_name)
@@ -363,8 +313,7 @@ def test_create_and_load_new_award_index(award_data_fixture, elasticsearch_award
     # Must use mock sql function to share test DB conn+transaction in ETL code
     # Patching on the module into which it is imported, not the module where it is defined
     monkeypatch.setattr(
-        "usaspending_api.etl.elasticsearch_loader_helpers.extract_data.execute_sql_statement",
-        mock_execute_sql,
+        "usaspending_api.etl.elasticsearch_loader_helpers.extract_data.execute_sql_statement", mock_execute_sql
     )
     # Also override SQL function listed in config object with the mock one
     es_etl_config["execute_sql_func"] = mock_execute_sql
@@ -460,8 +409,7 @@ def test_incremental_load_into_award_index(award_data_fixture, elasticsearch_awa
     # Must use mock sql function to share test DB conn+transaction in ETL code
     # Patching on the module into which it is imported, not the module where it is defined
     monkeypatch.setattr(
-        "usaspending_api.etl.elasticsearch_loader_helpers.extract_data.execute_sql_statement",
-        mock_execute_sql,
+        "usaspending_api.etl.elasticsearch_loader_helpers.extract_data.execute_sql_statement", mock_execute_sql
     )
     # Also override SQL function listed in config object with the mock one
     es_etl_config["execute_sql_func"] = mock_execute_sql
@@ -505,8 +453,7 @@ def test_incremental_load_into_transaction_index(award_data_fixture, elasticsear
     # Must use mock sql function to share test DB conn+transaction in ETL code
     # Patching on the module into which it is imported, not the module where it is defined
     monkeypatch.setattr(
-        "usaspending_api.etl.elasticsearch_loader_helpers.extract_data.execute_sql_statement",
-        mock_execute_sql,
+        "usaspending_api.etl.elasticsearch_loader_helpers.extract_data.execute_sql_statement", mock_execute_sql
     )
     # Also override SQL function listed in config object with the mock one
     es_etl_config["execute_sql_func"] = mock_execute_sql
@@ -559,11 +506,7 @@ def test__lookup_deleted_award_keys_by_int(award_data_fixture, elasticsearch_awa
     elasticsearch_award_index.update_index()
     client = elasticsearch_award_index.client
     ids = _lookup_deleted_award_keys(
-        client,
-        "award_id",
-        [1],
-        elasticsearch_award_index.etl_config,
-        index=elasticsearch_award_index.index_name,
+        client, "award_id", [1], elasticsearch_award_index.etl_config, index=elasticsearch_award_index.index_name
     )
     assert ids == ["CONT_AWD_IND12PB00323"]
 
@@ -605,16 +548,11 @@ def test_delete_docs_by_unique_key_exceed_max_results_window(award_data_fixture,
 
 @pytest.mark.django_db(transaction=True)
 def test__check_awards_for_deletes(
-    award_data_fixture,
-    monkeypatch,
-    spark,
-    s3_unittest_data_bucket,
-    hive_unittest_metastore_db,
+    award_data_fixture, monkeypatch, spark, s3_unittest_data_bucket, hive_unittest_metastore_db
 ):
     test_config = {"verbose": False}
     monkeypatch.setattr(
-        "usaspending_api.etl.elasticsearch_loader_helpers.delete_data.execute_sql_statement",
-        mock_execute_sql,
+        "usaspending_api.etl.elasticsearch_loader_helpers.delete_data.execute_sql_statement", mock_execute_sql
     )
     id_list = ["CONT_AWD_IND12PB00323"]
     awards = _check_awards_for_deletes(test_config, id_list)
@@ -625,11 +563,7 @@ def test__check_awards_for_deletes(
     assert awards == ["CONT_AWD_WHATEVER"]
 
     # Check to ensure sql properly escapes characters
-    id_list = [
-        "CONT_AWD_SOMETHING_BEFORE",
-        "'CONT_AWD_IND12PB00323",
-        "CONT_AWD_SOMETHING_AFTER",
-    ]
+    id_list = ["CONT_AWD_SOMETHING_BEFORE", "'CONT_AWD_IND12PB00323", "CONT_AWD_SOMETHING_AFTER"]
     awards = _check_awards_for_deletes(test_config, id_list)
     assert sorted(awards) == [
         "CONT_AWD_SOMETHING_AFTER",
@@ -638,11 +572,7 @@ def test__check_awards_for_deletes(
 
     tables_to_load = ["awards"]
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
-    id_list = [
-        "CONT_AWD_SOMETHING_BEFORE",
-        "'CONT_AWD_IND12PB00323",
-        "CONT_AWD_SOMETHING_AFTER",
-    ]
+    id_list = ["CONT_AWD_SOMETHING_BEFORE", "'CONT_AWD_IND12PB00323", "CONT_AWD_SOMETHING_AFTER"]
     awards = _check_awards_for_deletes(test_config, id_list, spark)
     assert sorted(awards) == [
         "CONT_AWD_SOMETHING_AFTER",
@@ -650,13 +580,7 @@ def test__check_awards_for_deletes(
     ]
 
 
-def test_delete_awards(
-    award_data_fixture,
-    elasticsearch_transaction_index,
-    elasticsearch_award_index,
-    monkeypatch,
-    db,
-):
+def test_delete_awards(award_data_fixture, elasticsearch_transaction_index, elasticsearch_award_index, monkeypatch, db):
     """Transactions that are logged for delete, that are in the transaction ES index, and their parent awards are NOT
     in the DB ... are deleted from the ES awards index
 
@@ -697,8 +621,7 @@ def test_delete_awards(
     es_etl_config = _process_es_etl_test_config(client, elasticsearch_award_index)
     # Must use mock sql function to share test DB conn+transaction in ETL code
     monkeypatch.setattr(
-        "usaspending_api.etl.elasticsearch_loader_helpers.delete_data.execute_sql_statement",
-        mock_execute_sql,
+        "usaspending_api.etl.elasticsearch_loader_helpers.delete_data.execute_sql_statement", mock_execute_sql
     )
     delete_awards(client, es_etl_config)
     es_award_docs = client.count(index=elasticsearch_award_index.index_name)["count"]
@@ -706,11 +629,7 @@ def test_delete_awards(
 
 
 def test_delete_awards_zero_for_unmatched_transactions(
-    award_data_fixture,
-    elasticsearch_transaction_index,
-    elasticsearch_award_index,
-    monkeypatch,
-    db,
+    award_data_fixture, elasticsearch_transaction_index, elasticsearch_award_index, monkeypatch, db
 ):
     """No awards deleted from the index if their transactions are not found in the transaction index
 
@@ -745,11 +664,7 @@ def test_delete_awards_zero_for_unmatched_transactions(
 
 
 def test_delete_one_assistance_award(
-    award_data_fixture,
-    elasticsearch_transaction_index,
-    elasticsearch_award_index,
-    monkeypatch,
-    db,
+    award_data_fixture, elasticsearch_transaction_index, elasticsearch_award_index, monkeypatch, db
 ):
     """Ensure that transactions not logged for delete don't cause their parent awards to get deleted
 
@@ -783,8 +698,7 @@ def test_delete_one_assistance_award(
     es_etl_config = _process_es_etl_test_config(client, elasticsearch_award_index)
     # Must use mock sql function to share test DB conn+transaction in ETL code
     monkeypatch.setattr(
-        "usaspending_api.etl.elasticsearch_loader_helpers.delete_data.execute_sql_statement",
-        mock_execute_sql,
+        "usaspending_api.etl.elasticsearch_loader_helpers.delete_data.execute_sql_statement", mock_execute_sql
     )
     delete_count = delete_awards(client, es_etl_config)
     assert delete_count == 1
@@ -821,8 +735,7 @@ def test_delete_one_assistance_transaction(award_data_fixture, elasticsearch_tra
     es_etl_config = _process_es_etl_test_config(client, elasticsearch_transaction_index)
     # Must use mock sql function to share test DB conn+transaction in ETL code
     monkeypatch.setattr(
-        "usaspending_api.etl.elasticsearch_loader_helpers.delete_data.execute_sql_statement",
-        mock_execute_sql,
+        "usaspending_api.etl.elasticsearch_loader_helpers.delete_data.execute_sql_statement", mock_execute_sql
     )
     delete_count = delete_transactions(client, es_etl_config)
     assert delete_count == 1
@@ -831,9 +744,7 @@ def test_delete_one_assistance_transaction(award_data_fixture, elasticsearch_tra
 
 
 def _process_es_etl_test_config(
-    client: Elasticsearch,
-    test_es_index: TestElasticSearchIndex,
-    options: dict | None = None,
+    client: Elasticsearch, test_es_index: TestElasticSearchIndex, options: dict | None = None
 ):
     """Use the Django mgmt cmd to extract args with default values, then update those with test ETL config values"""
     cmd = ElasticsearchIndexerCommand()
@@ -843,10 +754,7 @@ def _process_es_etl_test_config(
     list_of_arg_kvs = [["--" + k.replace("_", "-"), str(v)] for k, v in test_es_index.etl_config.items()]
     test_args = [arg_item for kvpair in list_of_arg_kvs for arg_item in kvpair]
     cli_args, _ = parser.parse_known_args(args=test_args)  # parse the known args programmatically
-    cli_opts = {
-        **vars(cli_args),
-        **test_es_index.etl_config,
-    }  # update defaults with test config
+    cli_opts = {**vars(cli_args), **test_es_index.etl_config}  # update defaults with test config
     if options:
         cli_opts.update(options)
     es_etl_config = parse_cli_args(cli_opts, client)  # use command's config parser for final config for testing ETL

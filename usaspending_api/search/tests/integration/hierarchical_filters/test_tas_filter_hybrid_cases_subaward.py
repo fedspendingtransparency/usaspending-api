@@ -13,11 +13,7 @@ from usaspending_api.search.tests.integration.hierarchical_filters.tas_search_te
 
 @pytest.mark.django_db
 def test_match_from_code_filter_only(
-    client,
-    monkeypatch,
-    elasticsearch_award_index,
-    elasticsearch_subaward_index,
-    subaward_with_tas,
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_tas
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -28,11 +24,7 @@ def test_match_from_code_filter_only(
 
 @pytest.mark.django_db
 def test_match_from_component_filter_only(
-    client,
-    monkeypatch,
-    elasticsearch_award_index,
-    elasticsearch_subaward_index,
-    subaward_with_tas,
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_tas
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -43,18 +35,12 @@ def test_match_from_component_filter_only(
 
 @pytest.mark.django_db
 def test_match_from_component_both_filters(
-    client,
-    monkeypatch,
-    elasticsearch_award_index,
-    elasticsearch_subaward_index,
-    subaward_with_tas,
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_tas
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
     resp = query_by_treasury_account_components_subaward(
-        client,
-        {"require": [_agency_path(BASIC_TAS)]},
-        [component_dictionary(BASIC_TAS)],
+        client, {"require": [_agency_path(BASIC_TAS)]}, [component_dictionary(BASIC_TAS)]
     )
 
     assert resp.json()["results"] == [_subaward1()]
@@ -62,11 +48,7 @@ def test_match_from_component_both_filters(
 
 @pytest.mark.django_db
 def test_non_match_from_component_both_filters(
-    client,
-    monkeypatch,
-    elasticsearch_award_index,
-    elasticsearch_subaward_index,
-    subaward_with_tas,
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_tas
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -79,11 +61,7 @@ def test_non_match_from_component_both_filters(
 
 @pytest.mark.django_db
 def test_different_matches_with_each_filter(
-    client,
-    monkeypatch,
-    elasticsearch_award_index,
-    elasticsearch_subaward_index,
-    multiple_subawards_with_tas,
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, multiple_subawards_with_tas
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -91,19 +69,14 @@ def test_different_matches_with_each_filter(
         client, {"require": [_agency_path(BASIC_TAS)]}, [component_dictionary(ATA_TAS)]
     )
 
-    assert resp.json()["results"].sort(key=lambda elem: elem["internal_id"]) == [
-        _subaward1(),
-        _subaward2(),
-    ].sort(key=lambda elem: elem["internal_id"])
+    assert resp.json()["results"].sort(key=lambda elem: elem["internal_id"]) == [_subaward1(), _subaward2()].sort(
+        key=lambda elem: elem["internal_id"]
+    )
 
 
 @pytest.mark.django_db
 def test_match_from_component_filter_despite_exclusion(
-    client,
-    monkeypatch,
-    elasticsearch_award_index,
-    elasticsearch_subaward_index,
-    multiple_subawards_with_tas,
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, multiple_subawards_with_tas
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)

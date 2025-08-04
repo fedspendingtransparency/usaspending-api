@@ -2,9 +2,7 @@ import pytest
 
 from collections import OrderedDict, namedtuple
 
-from django.contrib.auth.models import (
-    User,
-)  # A table that should always exist.  Doesn't really matter what it is.
+from django.contrib.auth.models import User  # A table that should always exist.  Doesn't really matter what it is.
 from django.test import TestCase
 
 from model_bakery import baker
@@ -58,12 +56,7 @@ class CursorExecuteTestCase(TestCase):
         Set up some awards and transactions that we can query.
         """
         for _id in range(1, AWARD_COUNT + 1):
-            baker.make(
-                "search.TransactionSearch",
-                is_fpds=True,
-                transaction_id=_id,
-                award_id=_id,
-            )
+            baker.make("search.TransactionSearch", is_fpds=True, transaction_id=_id, award_id=_id)
             baker.make("search.AwardSearch", award_id=_id, latest_transaction_id=_id)
 
     @staticmethod

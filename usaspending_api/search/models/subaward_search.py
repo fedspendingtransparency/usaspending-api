@@ -162,12 +162,7 @@ class SubawardSearch(models.Model):
     sub_compensation_q2 = models.BooleanField(null=True, blank=True)
 
     # USAS Links (and associated derivations)
-    award = models.ForeignKey(
-        "search.AwardSearch",
-        models.DO_NOTHING,
-        related_name="subawardsearch",
-        null=True,
-    )
+    award = models.ForeignKey("search.AwardSearch", models.DO_NOTHING, related_name="subawardsearch", null=True)
     prime_award_group = models.TextField(null=True, blank=True)
     prime_award_type = models.TextField(null=True, blank=True)
     piid = models.TextField(null=True, blank=True)
@@ -183,10 +178,7 @@ class SubawardSearch(models.Model):
     last_modified_date = models.DateField(null=True, blank=True)
 
     awarding_agency = models.ForeignKey(
-        "references.Agency",
-        models.DO_NOTHING,
-        related_name="awarding_subawardsearch",
-        null=True,
+        "references.Agency", models.DO_NOTHING, related_name="awarding_subawardsearch", null=True
     )
     awarding_toptier_agency_name = models.TextField(null=True, blank=True)
     awarding_toptier_agency_abbreviation = models.TextField(null=True, blank=True)
@@ -194,22 +186,14 @@ class SubawardSearch(models.Model):
     awarding_subtier_agency_abbreviation = models.TextField(null=True, blank=True)
 
     funding_agency = models.ForeignKey(
-        "references.Agency",
-        models.DO_NOTHING,
-        related_name="funding_subawardsearch",
-        null=True,
+        "references.Agency", models.DO_NOTHING, related_name="funding_subawardsearch", null=True
     )
     funding_toptier_agency_name = models.TextField(null=True, blank=True)
     funding_toptier_agency_abbreviation = models.TextField(null=True, blank=True)
     funding_subtier_agency_name = models.TextField(null=True, blank=True)
     funding_subtier_agency_abbreviation = models.TextField(null=True, blank=True)
 
-    cfda = models.ForeignKey(
-        "references.Cfda",
-        models.DO_NOTHING,
-        related_name="related_subawardsearch",
-        null=True,
-    )
+    cfda = models.ForeignKey("references.Cfda", models.DO_NOTHING, related_name="related_subawardsearch", null=True)
     cfda_number = models.TextField(null=True, blank=True)
     cfda_title = models.TextField(null=True, blank=True)
 
@@ -300,9 +284,7 @@ class SubawardSearch(models.Model):
             ),
             models.Index(fields=["sub_total_obl_bin"], name="ss_idx_sub_total_obl_bin"),
             GinIndex(
-                fields=["sub_awardee_or_recipient_legal"],
-                name="ss_idx_gin_sub_recp_name",
-                opclasses=["gin_trgm_ops"],
+                fields=["sub_awardee_or_recipient_legal"], name="ss_idx_gin_sub_recp_name", opclasses=["gin_trgm_ops"]
             ),
             models.Index(
                 fields=["sub_awardee_or_recipient_legal"],
@@ -490,12 +472,6 @@ class SubawardSearch(models.Model):
                 name="ss_idx_gin_treasury_account_id",
                 opclasses=["gin__int_ops"],
             ),
-            models.Index(
-                fields=["product_or_service_code", "sub_action_date"],
-                name="ss_idx_comp_psc_sub_action_dat",
-            ),
-            models.Index(
-                fields=["cfda_number", "sub_action_date"],
-                name="ss_idx_comp_cfda_sub_action_da",
-            ),
+            models.Index(fields=["product_or_service_code", "sub_action_date"], name="ss_idx_comp_psc_sub_action_dat"),
+            models.Index(fields=["cfda_number", "sub_action_date"], name="ss_idx_comp_cfda_sub_action_da"),
         ]

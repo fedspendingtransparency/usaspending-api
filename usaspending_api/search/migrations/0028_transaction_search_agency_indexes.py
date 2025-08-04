@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("search", "0027_transaction_search_guaid_idx"),
+        ('search', '0027_transaction_search_guaid_idx'),
     ]
 
     operations = [
@@ -29,17 +29,13 @@ class Migration(migrations.Migration):
             """,
             state_operations=[
                 migrations.AddIndex(
-                    model_name="transactionsearch",
-                    index=models.Index(
-                        fields=["awarding_agency_id"], name="ts_idx_awarding_agency_id"
-                    ),
+                    model_name='transactionsearch',
+                    index=models.Index(fields=['awarding_agency_id'], name='ts_idx_awarding_agency_id'),
                 ),
                 migrations.AddIndex(
-                    model_name="transactionsearch",
-                    index=models.Index(
-                        fields=["funding_agency_id"], name="ts_idx_funding_agency_id"
-                    ),
+                    model_name='transactionsearch',
+                    index=models.Index(fields=['funding_agency_id'], name='ts_idx_funding_agency_id'),
                 ),
-            ],
+            ]
         )
     ]

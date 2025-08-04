@@ -15,16 +15,8 @@ def awards_federal_account_data(db):
         total_obligation=1000,
     )
 
-    baker.make(
-        "awards.FinancialAccountsByAwards",
-        financial_accounts_by_awards_id=1,
-        award_id=1,
-    )
-    baker.make(
-        "awards.FinancialAccountsByAwards",
-        financial_accounts_by_awards_id=2,
-        award_id=1,
-    )
+    baker.make("awards.FinancialAccountsByAwards", financial_accounts_by_awards_id=1, award_id=1)
+    baker.make("awards.FinancialAccountsByAwards", financial_accounts_by_awards_id=2, award_id=1)
 
     baker.make(
         "search.AwardSearch",
@@ -36,11 +28,7 @@ def awards_federal_account_data(db):
         total_obligation=1000,
     )
 
-    baker.make(
-        "awards.FinancialAccountsByAwards",
-        financial_accounts_by_awards_id=3,
-        award_id=2,
-    )
+    baker.make("awards.FinancialAccountsByAwards", financial_accounts_by_awards_id=3, award_id=2)
 
     baker.make(
         "search.AwardSearch",

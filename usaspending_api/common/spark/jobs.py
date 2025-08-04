@@ -6,10 +6,7 @@ from typing import TYPE_CHECKING, Generator
 from databricks.sdk import WorkspaceClient
 from django.core.management import call_command
 
-from usaspending_api.common.helpers.spark_helpers import (
-    configure_spark_session,
-    get_active_spark_session,
-)
+from usaspending_api.common.helpers.spark_helpers import configure_spark_session, get_active_spark_session
 from usaspending_api.common.spark.configs import LOCAL_EXTENDED_EXTRA_CONF
 
 if TYPE_CHECKING:

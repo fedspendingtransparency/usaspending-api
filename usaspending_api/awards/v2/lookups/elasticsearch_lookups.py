@@ -32,14 +32,8 @@ class TransactionField(str, Enum):
     AWARD_TYPE = ("Award Type", "type_description.keyword")
     AWARDING_AGENCY = ("Awarding Agency", "awarding_toptier_agency_name.keyword")
     AWARDING_AGENCY_ID = ("awarding_agency_id", "awarding_agency_id")
-    AWARDING_AGENCY_SLUG = (
-        "awarding_agency_slug",
-        "awarding_toptier_agency_name.keyword",
-    )
-    AWARDING_SUB_AGENCY = (
-        "Awarding Sub Agency",
-        "awarding_subtier_agency_name.keyword",
-    )
+    AWARDING_AGENCY_SLUG = ("awarding_agency_slug", "awarding_toptier_agency_name.keyword")
+    AWARDING_SUB_AGENCY = ("Awarding Sub Agency", "awarding_subtier_agency_name.keyword")
     CFDA_NUMBER = ("cfda_number", "cfda_number.keyword")
     CFDA_TITLE = ("cfda_title", "cfda_title.keyword")
     DEF_CODES = ("def_codes", "disaster_emergency_fund_codes")
@@ -58,43 +52,19 @@ class TransactionField(str, Enum):
     POP_COUNTRY_NAME = ("pop_country_name", "pop_country_name.keyword")
     POP_STATE_CODE = ("pop_state_code", "pop_state_code")
     PSC_CODE = ("product_or_service_code", "product_or_service_code.keyword")
-    PSC_DESCRIPTION = (
-        "product_or_service_description",
-        "product_or_service_description.keyword",
-    )
+    PSC_DESCRIPTION = ("product_or_service_description", "product_or_service_description.keyword")
     RECIPIENT_ID = ("recipient_id", "recipient_agg_key")
-    RECIPIENT_LOCATION_ADDRESS_LINE_1 = (
-        "recipient_location_address_line1",
-        "recipient_location_address_line1.keyword",
-    )
-    RECIPIENT_LOCATION_ADDRESS_LINE_2 = (
-        "recipient_location_address_line2",
-        "recipient_location_address_line2.keyword",
-    )
-    RECIPIENT_LOCATION_ADDRESS_LINE_3 = (
-        "recipient_location_address_line3",
-        "recipient_location_address_line3.keyword",
-    )
-    RECIPIENT_LOCATION_CITY_NAME = (
-        "recipient_location_city_name",
-        "recipient_location_city_name.keyword",
-    )
-    RECIPIENT_LOCATION_COUNTRY_NAME = (
-        "recipient_location_country_name",
-        "recipient_location_country_name.keyword",
-    )
-    RECIPIENT_LOCATION_STATE_CODE = (
-        "recipient_location_state_code",
-        "recipient_location_state_code",
-    )
+    RECIPIENT_LOCATION_ADDRESS_LINE_1 = ("recipient_location_address_line1", "recipient_location_address_line1.keyword")
+    RECIPIENT_LOCATION_ADDRESS_LINE_2 = ("recipient_location_address_line2", "recipient_location_address_line2.keyword")
+    RECIPIENT_LOCATION_ADDRESS_LINE_3 = ("recipient_location_address_line3", "recipient_location_address_line3.keyword")
+    RECIPIENT_LOCATION_CITY_NAME = ("recipient_location_city_name", "recipient_location_city_name.keyword")
+    RECIPIENT_LOCATION_COUNTRY_NAME = ("recipient_location_country_name", "recipient_location_country_name.keyword")
+    RECIPIENT_LOCATION_STATE_CODE = ("recipient_location_state_code", "recipient_location_state_code")
     RECIPIENT_NAME = ("Recipient Name", "recipient_name.keyword")
     RECIPIENT_UEI = ("Recipient UEI", "recipient_uei.keyword")
     SUBSIDY_COST = ("Subsidy Cost", "original_loan_subsidy_cost")
     TRANSACTION_AMOUNT = ("Transaction Amount", "federal_action_obligation")
-    TRANSACTION_DESCRIPTION = (
-        "Transaction Description",
-        "transaction_description.keyword",
-    )
+    TRANSACTION_DESCRIPTION = ("Transaction Description", "transaction_description.keyword")
 
     def __new__(cls, field_name: str, full_path: str) -> "str":
         obj = str.__new__(cls, field_name)

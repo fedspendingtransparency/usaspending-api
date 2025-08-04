@@ -24,13 +24,7 @@ def test_transaction_spending_success(client):
             {
                 "filters": {
                     "keywords": ["test", "testing"],
-                    "agencies": [
-                        {
-                            "type": "awarding",
-                            "tier": "toptier",
-                            "name": "Social Security Administration",
-                        }
-                    ],
+                    "agencies": [{"type": "awarding", "tier": "toptier", "name": "Social Security Administration"}],
                     "award_amounts": [{"lower_bound": 1500000.00, "upper_bound": 1600000.00}],
                 }
             }

@@ -37,7 +37,7 @@ class CfdaSpendingViewSet(ElasticsearchSpendingPaginationMixin, ElasticsearchDis
                     "code": cfda.get("program_number"),
                     "description": cfda.get("program_title"),
                     "award_count": int(bucket.get("doc_count", 0)),
-                    "resource_link": (cfda.get("url") if cfda.get("url") != "None;" else None),
+                    "resource_link": cfda.get("url") if cfda.get("url") != "None;" else None,
                     "cfda_federal_agency": cfda.get("federal_agency"),
                     "cfda_objectives": cfda.get("objectives"),
                     "cfda_website": cfda.get("website_address"),
@@ -45,8 +45,7 @@ class CfdaSpendingViewSet(ElasticsearchSpendingPaginationMixin, ElasticsearchDis
                     "beneficiary_eligibility": cfda.get("beneficiary_eligibility"),
                     **{
                         column: get_summed_value_as_float(
-                            bucket.get("nested", {}).get("filtered_aggs", {}),
-                            self.sum_column_mapping[column],
+                            bucket.get("nested", {}).get("filtered_aggs", {}), self.sum_column_mapping[column]
                         )
                         for column in self.sum_column_mapping
                     },

@@ -279,19 +279,12 @@ def awards_and_transactions():
 
     # Toptier Agency
     ta1 = baker.make(
-        "references.ToptierAgency",
-        toptier_agency_id=7,
-        toptier_code="007",
-        name="Agency 007",
-        _fill_optional=True,
+        "references.ToptierAgency", toptier_agency_id=7, toptier_code="007", name="Agency 007", _fill_optional=True
     )
 
     # Federal Account
     fa1 = baker.make(
-        "accounts.FederalAccount",
-        federal_account_code="001-0000",
-        account_title="FA 1",
-        parent_toptier_agency=ta1,
+        "accounts.FederalAccount", federal_account_code="001-0000", account_title="FA 1", parent_toptier_agency=ta1
     )
 
     # Treasury Approriation Account
@@ -670,24 +663,9 @@ def awards_and_transactions():
         congressional_district="02",
         latest_population=100,
     )
-    baker.make(
-        "references.CityCountyStateCode",
-        county_numeric="005",
-        state_numeric="53",
-        county_name="Test Name",
-    )
-    baker.make(
-        "references.CityCountyStateCode",
-        county_numeric="005",
-        state_numeric="45",
-        county_name="Test Name",
-    )
-    baker.make(
-        "references.CityCountyStateCode",
-        county_numeric="001",
-        state_numeric="45",
-        county_name="Charleston",
-    )
+    baker.make("references.CityCountyStateCode", county_numeric="005", state_numeric="53", county_name="Test Name")
+    baker.make("references.CityCountyStateCode", county_numeric="005", state_numeric="45", county_name="Test Name")
+    baker.make("references.CityCountyStateCode", county_numeric="001", state_numeric="45", county_name="Charleston")
 
     # Recipient Profile
     baker.make(

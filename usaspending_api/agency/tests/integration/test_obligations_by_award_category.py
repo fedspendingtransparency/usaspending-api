@@ -37,16 +37,10 @@ def transaction_search_1(db):
     )
 
     awarding_agency_1 = baker.make(
-        "references.Agency",
-        toptier_agency=toptier_agency_1,
-        toptier_flag=True,
-        _fill_optional=True,
+        "references.Agency", toptier_agency=toptier_agency_1, toptier_flag=True, _fill_optional=True
     )
     awarding_agency_2 = baker.make(
-        "references.Agency",
-        toptier_agency=toptier_agency_2,
-        toptier_flag=True,
-        _fill_optional=True,
+        "references.Agency", toptier_agency=toptier_agency_2, toptier_flag=True, _fill_optional=True
     )
 
     # Awards

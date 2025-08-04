@@ -4,9 +4,7 @@ from typing import Any
 
 from usaspending_api.agency.v2.views.agency_base import AgencyBase
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.elasticsearch.filter_helpers import (
-    create_fiscal_year_filter,
-)
+from usaspending_api.common.elasticsearch.filter_helpers import create_fiscal_year_filter
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.search.filters.elasticsearch.filter import QueryType
@@ -85,10 +83,7 @@ class ObligationsByAwardCategory(AgencyBase):
             else:
                 formatted_categories.append(self.format_category(category_mapping, 0.0))
 
-        formatted_results = {
-            "total_aggregated_amount": round(total, 2),
-            "results": formatted_categories,
-        }
+        formatted_results = {"total_aggregated_amount": round(total, 2), "results": formatted_categories}
 
         return formatted_results
 

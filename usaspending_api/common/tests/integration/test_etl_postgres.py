@@ -41,14 +41,8 @@ def test_primitives():
 
     data_types = OrderedDict(
         [
-            (
-                "test",
-                primatives.ColumnDefinition(name="test", data_type="int", not_nullable=True),
-            ),
-            (
-                "tube",
-                primatives.ColumnDefinition(name="tube", data_type="text", not_nullable=False),
-            ),
+            ("test", primatives.ColumnDefinition(name="test", data_type="int", not_nullable=True)),
+            ("tube", primatives.ColumnDefinition(name="tube", data_type="text", not_nullable=False)),
         ]
     )
     single_key_column = [data_types["test"]]
@@ -255,11 +249,7 @@ def operations_fixture():
 
 @pytest.mark.django_db
 def test_delete_obsolete_rows(operations_fixture):
-    assert execute_sql("select id1, id2 from t2 order by id1") == [
-        (1, 2),
-        (4, 5),
-        (9, 9),
-    ]
+    assert execute_sql("select id1, id2 from t2 order by id1") == [(1, 2), (4, 5), (9, 9)]
     operations.delete_obsolete_rows(ETLTable("t1"), ETLTable("t2"))
     assert execute_sql("select id1, id2 from t2 order by id1") == [(1, 2), (4, 5)]
 
@@ -272,29 +262,16 @@ def test_identify_new_or_updated(operations_fixture):
 
 @pytest.mark.django_db
 def test_insert_missing_rows(operations_fixture):
-    assert execute_sql("select id1, id2 from t2 order by id1") == [
-        (1, 2),
-        (4, 5),
-        (9, 9),
-    ]
+    assert execute_sql("select id1, id2 from t2 order by id1") == [(1, 2), (4, 5), (9, 9)]
     operations.insert_missing_rows(ETLTable("t1"), ETLTable("t2"))
-    assert execute_sql("select id1, id2 from t2 order by id1") == [
-        (1, 2),
-        (4, 5),
-        (8, 8),
-        (9, 9),
-    ]
+    assert execute_sql("select id1, id2 from t2 order by id1") == [(1, 2), (4, 5), (8, 8), (9, 9)]
 
 
 @pytest.mark.django_db
 def test_stage_table(operations_fixture):
     # Just copies the table.
     operations.stage_table(ETLTable("t1"), ETLTable("t2"), ETLTemporaryTable("t3"))
-    assert execute_sql("select id1, id2 from t3 order by id1") == [
-        (1, 2),
-        (4, 5),
-        (8, 8),
-    ]
+    assert execute_sql("select id1, id2 from t3 order by id1") == [(1, 2), (4, 5), (8, 8)]
 
 
 @pytest.mark.django_db

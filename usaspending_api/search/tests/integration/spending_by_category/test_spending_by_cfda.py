@@ -3,9 +3,7 @@ import json
 from rest_framework import status
 
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
-from usaspending_api.search.tests.data.search_filters_test_data import (
-    non_legacy_filters,
-)
+from usaspending_api.search.tests.data.search_filters_test_data import non_legacy_filters
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
@@ -45,28 +43,10 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
     expected_response = {
         "category": "cfda",
         "limit": 10,
-        "page_metadata": {
-            "page": 1,
-            "next": None,
-            "previous": None,
-            "hasNext": False,
-            "hasPrevious": False,
-        },
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {
-                "amount": 550.0,
-                "code": "20.200",
-                "id": 200,
-                "name": "CFDA 2",
-                "total_outlays": None,
-            },
-            {
-                "amount": 5.0,
-                "code": "10.100",
-                "id": 100,
-                "name": "CFDA 1",
-                "total_outlays": None,
-            },
+            {"amount": 550.0, "code": "20.200", "id": 200, "name": "CFDA 2", "total_outlays": None},
+            {"amount": 5.0, "code": "10.100", "id": 100, "name": "CFDA 1", "total_outlays": None},
         ],
         "messages": _expected_messages(),
         "spending_level": "transactions",
@@ -87,13 +67,7 @@ def test_correct_response_of_empty_list(client, monkeypatch, elasticsearch_trans
     expected_response = {
         "category": "cfda",
         "limit": 10,
-        "page_metadata": {
-            "page": 1,
-            "next": None,
-            "previous": None,
-            "hasNext": False,
-            "hasPrevious": False,
-        },
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [],
         "messages": _expected_messages(),
         "spending_level": "transactions",
@@ -112,13 +86,7 @@ def test_correct_response_with_date_type(client, monkeypatch, elasticsearch_tran
         data=json.dumps(
             {
                 "filters": {
-                    "time_period": [
-                        {
-                            "date_type": "date_signed",
-                            "start_date": "2019-12-30",
-                            "end_date": "2020-01-02",
-                        }
-                    ]
+                    "time_period": [{"date_type": "date_signed", "start_date": "2019-12-30", "end_date": "2020-01-02"}]
                 }
             }
         ),
@@ -126,13 +94,7 @@ def test_correct_response_with_date_type(client, monkeypatch, elasticsearch_tran
     expected_response = {
         "category": "cfda",
         "limit": 10,
-        "page_metadata": {
-            "page": 1,
-            "next": None,
-            "previous": None,
-            "hasNext": False,
-            "hasPrevious": False,
-        },
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [],
         "messages": _expected_messages(),
         "spending_level": "transactions",
@@ -147,13 +109,7 @@ def test_correct_response_with_date_type(client, monkeypatch, elasticsearch_tran
         data=json.dumps(
             {
                 "filters": {
-                    "time_period": [
-                        {
-                            "date_type": "date_signed",
-                            "start_date": "2019-12-30",
-                            "end_date": "2020-01-16",
-                        }
-                    ]
+                    "time_period": [{"date_type": "date_signed", "start_date": "2019-12-30", "end_date": "2020-01-16"}]
                 }
             }
         ),
@@ -161,21 +117,9 @@ def test_correct_response_with_date_type(client, monkeypatch, elasticsearch_tran
     expected_response = {
         "category": "cfda",
         "limit": 10,
-        "page_metadata": {
-            "page": 1,
-            "next": None,
-            "previous": None,
-            "hasNext": False,
-            "hasPrevious": False,
-        },
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {
-                "amount": 5.0,
-                "code": "10.100",
-                "id": 100,
-                "name": "CFDA 1",
-                "total_outlays": None,
-            },
+            {"amount": 5.0, "code": "10.100", "id": 100, "name": "CFDA 1", "total_outlays": None},
         ],
         "messages": _expected_messages(),
         "spending_level": "transactions",
@@ -197,11 +141,7 @@ def test_correct_response_with_new_awards_only(
             {
                 "filters": {
                     "time_period": [
-                        {
-                            "date_type": "new_awards_only",
-                            "start_date": "2020-01-27",
-                            "end_date": "2020-01-29",
-                        }
+                        {"date_type": "new_awards_only", "start_date": "2020-01-27", "end_date": "2020-01-29"}
                     ]
                 }
             }
@@ -210,13 +150,7 @@ def test_correct_response_with_new_awards_only(
     expected_response = {
         "category": "cfda",
         "limit": 10,
-        "page_metadata": {
-            "page": 1,
-            "next": None,
-            "previous": None,
-            "hasNext": False,
-            "hasPrevious": False,
-        },
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [],
         "messages": _expected_messages(),
         "spending_level": "transactions",
@@ -232,11 +166,7 @@ def test_correct_response_with_new_awards_only(
             {
                 "filters": {
                     "time_period": [
-                        {
-                            "date_type": "new_awards_only",
-                            "start_date": "2019-12-30",
-                            "end_date": "2020-01-16",
-                        }
+                        {"date_type": "new_awards_only", "start_date": "2019-12-30", "end_date": "2020-01-16"}
                     ]
                 }
             }
@@ -245,21 +175,9 @@ def test_correct_response_with_new_awards_only(
     expected_response = {
         "category": "cfda",
         "limit": 10,
-        "page_metadata": {
-            "page": 1,
-            "next": None,
-            "previous": None,
-            "hasNext": False,
-            "hasPrevious": False,
-        },
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [
-            {
-                "amount": 5.0,
-                "code": "10.100",
-                "id": 100,
-                "name": "CFDA 1",
-                "total_outlays": None,
-            },
+            {"amount": 5.0, "code": "10.100", "id": 100, "name": "CFDA 1", "total_outlays": None},
         ],
         "messages": _expected_messages(),
         "spending_level": "transactions",
@@ -275,11 +193,7 @@ def test_correct_response_with_new_awards_only(
             {
                 "filters": {
                     "time_period": [
-                        {
-                            "date_type": "new_awards_only",
-                            "start_date": "2020-01-04",
-                            "end_date": "2020-01-16",
-                        }
+                        {"date_type": "new_awards_only", "start_date": "2020-01-04", "end_date": "2020-01-16"}
                     ]
                 }
             }
@@ -288,13 +202,7 @@ def test_correct_response_with_new_awards_only(
     expected_response = {
         "category": "cfda",
         "limit": 10,
-        "page_metadata": {
-            "page": 1,
-            "next": None,
-            "previous": None,
-            "hasNext": False,
-            "hasPrevious": False,
-        },
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
         "results": [],
         "messages": _expected_messages(),
         "spending_level": "transactions",

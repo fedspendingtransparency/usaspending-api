@@ -17,11 +17,7 @@ def test_basic_success(client, disaster_account_data, monkeypatch, helpers):
     bad_date_window.save()
 
     resp = helpers.post_for_spending_endpoint(
-        client,
-        url,
-        def_codes=["L", "M", "N", "O", "P"],
-        spending_type="total",
-        sort="description",
+        client, url, def_codes=["L", "M", "N", "O", "P"], spending_type="total", sort="description"
     )
     expected_results = [
         {
@@ -58,11 +54,7 @@ def test_basic_success(client, disaster_account_data, monkeypatch, helpers):
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
 
-    expected_totals = {
-        "obligation": 11001000.0,
-        "outlay": 10011.0,
-        "total_budgetary_resources": 32912152120.9,
-    }
+    expected_totals = {"obligation": 11001000.0, "outlay": 10011.0, "total_budgetary_resources": 32912152120.9}
     assert resp.json()["totals"] == expected_totals
 
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M", "L"], spending_type="total")
@@ -117,11 +109,7 @@ def test_basic_success(client, disaster_account_data, monkeypatch, helpers):
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
 
-    expected_totals = {
-        "award_count": 156,
-        "obligation": 22203330.99,
-        "outlay": 200021132.88,
-    }
+    expected_totals = {"award_count": 156, "obligation": 22203330.99, "outlay": 200021132.88}
     assert resp.json()["totals"] == expected_totals
 
 
@@ -130,11 +118,7 @@ def test_spending_by_agency_sorting(client, disaster_account_data, monkeypatch, 
     # Test sorting by description in descending order
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     resp = helpers.post_for_spending_endpoint(
-        client,
-        url,
-        def_codes=["L", "M", "N", "O", "P"],
-        spending_type="award",
-        sort="description",
+        client, url, def_codes=["L", "M", "N", "O", "P"], spending_type="award", sort="description"
     )
 
     expected_results = [
@@ -174,12 +158,7 @@ def test_spending_by_agency_sorting(client, disaster_account_data, monkeypatch, 
 
     # Test sorting by description in ascending order
     resp = helpers.post_for_spending_endpoint(
-        client,
-        url,
-        def_codes=["L", "M", "N", "O", "P"],
-        spending_type="award",
-        sort="description",
-        order="asc",
+        client, url, def_codes=["L", "M", "N", "O", "P"], spending_type="award", sort="description", order="asc"
     )
     expected_results = [
         {
@@ -388,11 +367,7 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 30)
 
     resp = helpers.post_for_spending_endpoint(
-        client,
-        url,
-        award_type_codes=["A", "07", "02"],
-        def_codes=["O"],
-        spending_type="award",
+        client, url, award_type_codes=["A", "07", "02"], def_codes=["O"], spending_type="award"
     )
     expected_results = [
         {
@@ -542,11 +517,7 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
     assert resp.json()["results"] == expected_results
 
     resp = helpers.post_for_spending_endpoint(
-        client,
-        url,
-        award_type_codes=["IDV_A"],
-        def_codes=["L", "M", "N", "O", "P"],
-        spending_type="award",
+        client, url, award_type_codes=["IDV_A"], def_codes=["L", "M", "N", "O", "P"], spending_type="award"
     )
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == []
@@ -643,11 +614,7 @@ def test_query_search(client, disaster_account_data, monkeypatch, helpers):
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
 
     resp = helpers.post_for_spending_endpoint(
-        client,
-        url,
-        query="Agency 008",
-        def_codes=["L", "M", "N", "O", "P"],
-        spending_type="award",
+        client, url, query="Agency 008", def_codes=["L", "M", "N", "O", "P"], spending_type="award"
     )
     expected_results = [
         {
@@ -671,12 +638,7 @@ def test_outlay_calculation(client, disaster_account_data, monkeypatch, helpers)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
 
     resp = helpers.post_for_spending_endpoint(
-        client,
-        url,
-        query="Agency 008",
-        def_codes=["L"],
-        spending_type="award",
-        sort="outlay",
+        client, url, query="Agency 008", def_codes=["L"], spending_type="award", sort="outlay"
     )
     expected_results = [
         {

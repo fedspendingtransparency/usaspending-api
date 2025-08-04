@@ -31,10 +31,7 @@ _NEW_PROCURE = {
 }
 
 
-@pytest.mark.django_db(
-    databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS],
-    transaction=True,
-)
+@pytest.mark.django_db(databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_load_table_to_from_delta_for_subawards(
     spark,
     s3_unittest_data_bucket,
@@ -47,33 +44,21 @@ def test_load_table_to_from_delta_for_subawards(
         external_data_type_id=11,
         update_date="2017-01-01",
     )
-    baker.make(
-        "broker.ExternalDataLoadDate",
-        last_load_date="2017-01-01",
-        external_data_type=edt,
-    )
+    baker.make("broker.ExternalDataLoadDate", last_load_date="2017-01-01", external_data_type=edt)
     edt = baker.make(
         "broker.ExternalDataType",
         name="source_procurement_transaction",
         external_data_type_id=10,
         update_date="2017-01-01",
     )
-    baker.make(
-        "broker.ExternalDataLoadDate",
-        last_load_date="2017-01-01",
-        external_data_type=edt,
-    )
+    baker.make("broker.ExternalDataLoadDate", last_load_date="2017-01-01", external_data_type=edt)
     # Since changes to the source tables will go to the Postgres table first, use model baker to add new rows to
     # Postgres table, and then push the updated table to Delta.
     last_load_datetime = datetime.now(timezone.utc)
     insert_datetime = last_load_datetime + timedelta(minutes=-15)
     assist = deepcopy(_NEW_ASSIST)
     assist.update(
-        {
-            "action_date": insert_datetime.isoformat(),
-            "created_at": insert_datetime,
-            "updated_at": insert_datetime,
-        }
+        {"action_date": insert_datetime.isoformat(), "created_at": insert_datetime, "updated_at": insert_datetime}
     )
     baker.make("transactions.SourceAssistanceTransaction", **assist)
     update_last_load_date("source_assistance_transaction", last_load_datetime)
@@ -81,11 +66,7 @@ def test_load_table_to_from_delta_for_subawards(
 
     procure = deepcopy(_NEW_PROCURE)
     procure.update(
-        {
-            "action_date": insert_datetime.isoformat(),
-            "created_at": insert_datetime,
-            "updated_at": insert_datetime,
-        }
+        {"action_date": insert_datetime.isoformat(), "created_at": insert_datetime, "updated_at": insert_datetime}
     )
     baker.make("transactions.SourceProcurementTransaction", **procure)
     update_last_load_date("source_procurement_transaction", last_load_datetime)
@@ -896,10 +877,7 @@ def test_load_table_to_from_delta_for_subawards(
     # so they can't really be compared here
     ignore_fields = ["keyword_ts_vector", "award_ts_vector", "recipient_name_ts_vector"]
     verify_delta_table_loaded_from_delta(
-        spark,
-        "subaward_search",
-        spark_s3_bucket=s3_unittest_data_bucket,
-        ignore_fields=ignore_fields,
+        spark, "subaward_search", spark_s3_bucket=s3_unittest_data_bucket, ignore_fields=ignore_fields
     )
     verify_delta_table_loaded_from_delta(spark, "subaward_search", jdbc_inserts=True, ignore_fields=ignore_fields)
 

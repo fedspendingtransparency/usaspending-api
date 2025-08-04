@@ -11,13 +11,7 @@ def model_instances():
     baker.make("accounts.BudgetAuthority", year=2002, amount=2002000, agency_identifier="000")
     baker.make("accounts.BudgetAuthority", year=2003, amount=1003000, agency_identifier="000")
     baker.make("accounts.BudgetAuthority", year=2000, amount=1000, agency_identifier="002")
-    baker.make(
-        "accounts.BudgetAuthority",
-        year=2000,
-        amount=2000,
-        fr_entity_code="0202",
-        agency_identifier="002",
-    )
+    baker.make("accounts.BudgetAuthority", year=2000, amount=2000, fr_entity_code="0202", agency_identifier="002")
 
 
 @pytest.mark.skip

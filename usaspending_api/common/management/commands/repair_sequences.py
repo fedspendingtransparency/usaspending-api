@@ -13,14 +13,7 @@ class Command(BaseCommand):
     logger = logging.getLogger("script")
 
     def handle(self, *args, **options):
-        fixable_apps = [
-            "accounts",
-            "awards",
-            "common",
-            "financial_activities",
-            "references",
-            "submissions",
-        ]
+        fixable_apps = ["accounts", "awards", "common", "financial_activities", "references", "submissions"]
 
         for app in fixable_apps:
             call_command("sqlsequencereset", app)

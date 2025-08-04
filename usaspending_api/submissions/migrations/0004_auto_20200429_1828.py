@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("submissions", "0003_submissionattributes_reporting_agency_name"),
+        ('submissions', '0003_submissionattributes_reporting_agency_name'),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name="submissionattributes",
-            name="toptier_code",
+            model_name='submissionattributes',
+            name='toptier_code',
             field=models.TextField(blank=True, db_index=True, null=True),
         ),
     ]

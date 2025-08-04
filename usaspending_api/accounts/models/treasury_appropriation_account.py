@@ -164,11 +164,7 @@ class TreasuryAppropriationAccount(DataSourceTrackedModel):
             outlays[fiscal_year] += ab.gross_outlay_amount_by_tas_cpe
             obligations[fiscal_year] += ab.obligations_incurred_total_by_tas_cpe
         results = {
-            "outgoing": {
-                "outlays": outlays,
-                "obligations": obligations,
-                "budget_authority": budget_authority,
-            },
+            "outgoing": {"outlays": outlays, "obligations": obligations, "budget_authority": budget_authority},
             "incoming": {},
         }
         return results

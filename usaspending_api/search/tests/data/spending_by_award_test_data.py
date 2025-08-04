@@ -723,20 +723,12 @@ def spending_by_award_test_data():
 
     # Toptier Agency
     ta1 = baker.make(
-        "references.ToptierAgency",
-        abbreviation="TA1",
-        name="TOPTIER AGENCY 1",
-        toptier_code="ABC",
-        _fill_optional=True,
+        "references.ToptierAgency", abbreviation="TA1", name="TOPTIER AGENCY 1", toptier_code="ABC", _fill_optional=True
     )
 
     # Federal Account
     baker.make(
-        "accounts.FederalAccount",
-        id=1,
-        parent_toptier_agency=ta1,
-        agency_identifier="1",
-        main_account_code="0001",
+        "accounts.FederalAccount", id=1, parent_toptier_agency=ta1, agency_identifier="1", main_account_code="0001"
     )
 
     # TAS
@@ -756,10 +748,7 @@ def spending_by_award_test_data():
         earliest_public_law_enactment_date="2020-03-06",
     )
     defc_q = baker.make(
-        "references.DisasterEmergencyFundCode",
-        code="Q",
-        group_name=None,
-        earliest_public_law_enactment_date=None,
+        "references.DisasterEmergencyFundCode", code="Q", group_name=None, earliest_public_law_enactment_date=None
     )
 
     # Submissions
@@ -841,38 +830,16 @@ def spending_by_award_test_data():
     )
 
     # Subtier Agency
-    subtier_agency_1 = {
-        "pk": 1,
-        "abbreviation": "SA1",
-        "name": "SUBTIER AGENCY 1",
-        "subtier_code": "DEF",
-    }
-    subtier_agency_2 = {
-        "pk": 2,
-        "abbreviation": "SA2",
-        "name": "SUBTIER AGENCY 2",
-        "subtier_code": "1000",
-    }
+    subtier_agency_1 = {"pk": 1, "abbreviation": "SA1", "name": "SUBTIER AGENCY 1", "subtier_code": "DEF"}
+    subtier_agency_2 = {"pk": 2, "abbreviation": "SA2", "name": "SUBTIER AGENCY 2", "subtier_code": "1000"}
 
     baker.make("references.SubtierAgency", **subtier_agency_1, _fill_optional=True)
     baker.make("references.SubtierAgency", **subtier_agency_2, _fill_optional=True)
 
     # Agency
-    baker.make(
-        "references.Agency",
-        pk=1,
-        toptier_agency=ta1,
-        subtier_agency_id=1,
-        _fill_optional=True,
-    )
+    baker.make("references.Agency", pk=1, toptier_agency=ta1, subtier_agency_id=1, _fill_optional=True)
 
-    baker.make(
-        "search.TransactionSearch",
-        transaction_id=1,
-        award=award_1,
-        action_date="2020-04-01",
-        is_fpds=True,
-    )
+    baker.make("search.TransactionSearch", transaction_id=1, award=award_1, action_date="2020-04-01", is_fpds=True)
     baker.make(
         "search.TransactionSearch",
         transaction_id=2,
@@ -910,20 +877,8 @@ def spending_by_award_test_data():
         recipient_location_county_code="012",
         naics_code="112244",
     )
-    baker.make(
-        "search.TransactionSearch",
-        transaction_id=4,
-        award=award_3,
-        action_date="2017-01-01",
-        is_fpds=True,
-    )
-    baker.make(
-        "search.TransactionSearch",
-        transaction_id=5,
-        award=award_3,
-        action_date="2018-01-01",
-        is_fpds=True,
-    )
+    baker.make("search.TransactionSearch", transaction_id=4, award=award_3, action_date="2017-01-01", is_fpds=True)
+    baker.make("search.TransactionSearch", transaction_id=5, award=award_3, action_date="2018-01-01", is_fpds=True)
     baker.make(
         "search.TransactionSearch",
         transaction_id=6,
@@ -941,13 +896,7 @@ def spending_by_award_test_data():
         cfda_number="10.331",
         recipient_unique_id="duns_1001",
     )
-    baker.make(
-        "search.TransactionSearch",
-        transaction_id=8,
-        award=award_5,
-        action_date="2019-10-1",
-        is_fpds=True,
-    )
+    baker.make("search.TransactionSearch", transaction_id=8, award=award_5, action_date="2019-10-1", is_fpds=True)
 
     baker.make(
         "search.SubawardSearch",

@@ -30,9 +30,7 @@ import psycopg2
 exec(Path("usaspending_api/common/helpers/timing_helpers.py").read_text())
 
 logging.basicConfig(
-    level=logging.INFO,
-    format="[%(asctime)s] [%(levelname)s] - %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S %Z",
+    level=logging.INFO, format="[%(asctime)s] [%(levelname)s] - %(message)s", datefmt="%Y-%m-%d %H:%M:%S %Z"
 )
 
 
@@ -70,11 +68,7 @@ def get_min_max_ids(conn: psycopg2.extensions.connection, table_name: str, prima
 
 
 def run_update(
-    conn: psycopg2.extensions.connection,
-    table_name: str,
-    primary_key: str,
-    min_id: int,
-    max_id: int,
+    conn: psycopg2.extensions.connection, table_name: str, primary_key: str, min_id: int, max_id: int
 ) -> None:
     total_row_count = 0
     estimated_id_count = max_id - min_id + 1
@@ -103,10 +97,7 @@ def run_update(
 
 if __name__ == "__main__":
 
-    tables_to_update = [
-        "financial_accounts_by_program_activity_object_class",
-        "financial_accounts_by_awards",
-    ]
+    tables_to_update = ["financial_accounts_by_program_activity_object_class", "financial_accounts_by_awards"]
 
     # In psycopg2 v2.9 it was changed such that connections created as a context manager will utilize
     # a transaction regardless of the "autocommit" setting. To avoid transactions we instead instantiate
@@ -118,12 +109,6 @@ if __name__ == "__main__":
         for temp_table_name in tables_to_update:
             temp_primary_key = f"{temp_table_name}_id"
             overall_min_id, overall_max_id = get_min_max_ids(connection, temp_table_name, temp_primary_key)
-            run_update(
-                connection,
-                temp_table_name,
-                temp_primary_key,
-                overall_min_id,
-                overall_max_id,
-            )
+            run_update(connection, temp_table_name, temp_primary_key, overall_min_id, overall_max_id)
     finally:
         connection.close()

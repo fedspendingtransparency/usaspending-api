@@ -46,9 +46,7 @@ from usaspending_api.conftest_helpers import (
 
 # Compose ALL fixtures from conftest_spark
 from usaspending_api.tests.conftest_spark import *  # noqa
-from usaspending_api.tests.integration.test_setup_of_test_dbs import (
-    TEST_DB_SETUP_TEST_NAME,
-)
+from usaspending_api.tests.integration.test_setup_of_test_dbs import TEST_DB_SETUP_TEST_NAME
 
 logger = logging.getLogger("console")
 
@@ -74,13 +72,7 @@ def pytest_collection_modifyitems(session: pytest.Session, config: pytest.Config
         if (
             # For fixtures that setup or interact with a DB
             any(
-                fx
-                in [
-                    "db",
-                    "broker_db_setup",
-                    "transactional_db",
-                    "django_db_reset_sequences",
-                ]
+                fx in ["db", "broker_db_setup", "transactional_db", "django_db_reset_sequences"]
                 for fx in getattr(item, "fixturenames", ())
             )
             # For tests marked with this annotation
@@ -108,10 +100,7 @@ def pytest_sessionfinish(session, exitstatus):
     worker_id = get_xdist_worker_id(session)
     if is_safe_for_xdist_setup_or_teardown(session, worker_id):
         if is_pytest_xdist_master_process(session):
-            print(
-                "\nRunning pytest_sessionfinish while exiting the xdist 'master' process",
-                file=sys.__stderr__,
-            )
+            print("\nRunning pytest_sessionfinish while exiting the xdist 'master' process", file=sys.__stderr__)
         else:
             print(
                 "\nRunning pytest_sessionfinish in single process execution (no xdist parallel test sessions)",
@@ -236,11 +225,7 @@ def django_db_setup(
         setup_databases_args["parallel"] = parallel_workers
 
     with django_db_blocker.unblock():
-        db_cfg = setup_databases(
-            verbosity=request.config.option.verbose,
-            interactive=False,
-            **setup_databases_args,
-        )
+        db_cfg = setup_databases(verbosity=request.config.option.verbose, interactive=False, **setup_databases_args)
         # If migrations are skipped, assume matviews and views are not to be (re)created either
         # Only inspecting whether the migration option was turned off, since --reuse-db might still cause a DB to be
         # created if there's nothing there to reuse.
@@ -277,10 +262,7 @@ def django_db_setup(
                 )
             CONFIG.USASPENDING_DB_NAME = test_usas_db_name
             CONFIG.DATABASE_URL = build_dsn_string(
-                {
-                    **settings.DATABASES[settings.DEFAULT_DB_ALIAS],
-                    **{"NAME": test_usas_db_name},
-                }
+                {**settings.DATABASES[settings.DEFAULT_DB_ALIAS], **{"NAME": test_usas_db_name}}
             )
 
             old_broker_db_url = CONFIG.DATA_BROKER_DATABASE_URL
@@ -298,10 +280,7 @@ def django_db_setup(
                     )
                 CONFIG.BROKER_DB_NAME = test_broker_db
                 CONFIG.DATA_BROKER_DATABASE_URL = build_dsn_string(
-                    {
-                        **settings.DATABASES[settings.DATA_BROKER_DB_ALIAS],
-                        **{"NAME": test_broker_db},
-                    }
+                    {**settings.DATABASES[settings.DATA_BROKER_DB_ALIAS], **{"NAME": test_broker_db}}
                 )
 
     # This will be added to the finalizer which will be run when the newly made test database is being torn down

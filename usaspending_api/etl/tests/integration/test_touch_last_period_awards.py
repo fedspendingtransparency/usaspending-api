@@ -23,29 +23,16 @@ def award_data(db):
     awards = [
         baker.make("search.AwardSearch", award_id=award_id, action_date="2020-01-01"),
         *baker.make(
-            "search.AwardSearch",
-            award_id=cycle([1, 2, 3, 4, 5, 6, 7, 8, 9]),
-            _quantity=9,
-            action_date="2020-01-01",
+            "search.AwardSearch", award_id=cycle([1, 2, 3, 4, 5, 6, 7, 8, 9]), _quantity=9, action_date="2020-01-01"
         ),
     ]
 
     for index, award in enumerate(awards):
         # Create faba records associated with the latest closed monthly and quarterly submissions
         if index % 2 == 0:
-            baker.make(
-                "awards.FinancialAccountsByAwards",
-                submission_id=11,
-                award=award,
-                disaster_emergency_fund=defc,
-            )
+            baker.make("awards.FinancialAccountsByAwards", submission_id=11, award=award, disaster_emergency_fund=defc)
         else:
-            baker.make(
-                "awards.FinancialAccountsByAwards",
-                submission_id=21,
-                award=award,
-                disaster_emergency_fund=defc,
-            )
+            baker.make("awards.FinancialAccountsByAwards", submission_id=21, award=award, disaster_emergency_fund=defc)
         AwardSearch.objects.filter(award_id=award.award_id).update(
             update_date=OLD_DATE
         )  # convoluted line to sidestep auto_now()
@@ -64,28 +51,15 @@ def award_data_old_and_new(db):
         baker.make("search.AwardSearch", award_id=award_id_too_old, action_date="2020-01-01"),
         baker.make("search.AwardSearch", award_id=award_id_too_new, action_date="2020-01-01"),
         *baker.make(
-            "search.AwardSearch",
-            award_id=cycle([1, 2, 3, 4, 5, 6, 7, 8, 9]),
-            _quantity=9,
-            action_date="2020-01-01",
+            "search.AwardSearch", award_id=cycle([1, 2, 3, 4, 5, 6, 7, 8, 9]), _quantity=9, action_date="2020-01-01"
         ),
     ]
 
     for index, award in enumerate(awards):
         if index % 2 == 0:
-            baker.make(
-                "awards.FinancialAccountsByAwards",
-                submission_id=10,
-                award=award,
-                disaster_emergency_fund=defc,
-            )
+            baker.make("awards.FinancialAccountsByAwards", submission_id=10, award=award, disaster_emergency_fund=defc)
         else:
-            baker.make(
-                "awards.FinancialAccountsByAwards",
-                submission_id=12,
-                award=award,
-                disaster_emergency_fund=defc,
-            )
+            baker.make("awards.FinancialAccountsByAwards", submission_id=12, award=award, disaster_emergency_fund=defc)
         AwardSearch.objects.filter(award_id=award.award_id).update(
             update_date=OLD_DATE
         )  # convoluted line to sidestep auto_now()
@@ -101,11 +75,7 @@ def load_date(db):
         external_data_type_id=120,
         update_date="2017-01-01",
     )
-    baker.make(
-        "broker.ExternalDataLoadDate",
-        external_data_type=edt,
-        last_load_date=datetime(2000, 1, 31),
-    )
+    baker.make("broker.ExternalDataLoadDate", external_data_type=edt, last_load_date=datetime(2000, 1, 31))
 
 
 @pytest.mark.django_db

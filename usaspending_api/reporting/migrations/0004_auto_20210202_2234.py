@@ -6,38 +6,38 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("reporting", "0003_auto_20201204_1531"),
+        ('reporting', '0003_auto_20201204_1531'),
     ]
 
     operations = [
         migrations.AddField(
-            model_name="reportingagencyoverview",
-            name="unlinked_procurement_c_awards",
+            model_name='reportingagencyoverview',
+            name='unlinked_procurement_c_awards',
             field=models.IntegerField(default=0),
         ),
         migrations.AddField(
-            model_name="reportingagencyoverview",
-            name="unlinked_assistance_c_awards",
+            model_name='reportingagencyoverview',
+            name='unlinked_assistance_c_awards',
             field=models.IntegerField(default=0),
         ),
         migrations.AddField(
-            model_name="reportingagencyoverview",
-            name="unlinked_procurement_d_awards",
+            model_name='reportingagencyoverview',
+            name='unlinked_procurement_d_awards',
             field=models.IntegerField(default=0),
         ),
         migrations.AddField(
-            model_name="reportingagencyoverview",
-            name="unlinked_assistance_d_awards",
+            model_name='reportingagencyoverview',
+            name='unlinked_assistance_d_awards',
             field=models.IntegerField(default=0),
         ),
         migrations.AddField(
-            model_name="reportingagencyoverview",
-            name="linked_procurement_awards",
+            model_name='reportingagencyoverview',
+            name='linked_procurement_awards',
             field=models.IntegerField(default=0),
         ),
         migrations.AddField(
-            model_name="reportingagencyoverview",
-            name="linked_assistance_awards",
+            model_name='reportingagencyoverview',
+            name='linked_assistance_awards',
             field=models.IntegerField(default=0),
         ),
     ]

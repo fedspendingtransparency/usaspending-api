@@ -16,13 +16,9 @@ from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator.award_filter import AWARD_FILTER
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.search.filters.elasticsearch.filter import QueryType
-from usaspending_api.search.filters.time_period.query_types import (
-    TransactionSearchTimePeriod,
-)
+from usaspending_api.search.filters.time_period.query_types import TransactionSearchTimePeriod
 from usaspending_api.search.filters.time_period.query_types import AwardSearchTimePeriod
-from usaspending_api.search.filters.time_period.decorators import (
-    NewAwardsOnlyTimePeriod,
-)
+from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
 
 logger = logging.getLogger(__name__)
 
@@ -50,12 +46,7 @@ class DownloadTransactionCountViewSet(APIView):
     def post(self, request):
         """Returns boolean of whether a download request is greater than the max limit."""
         models = [
-            {
-                "name": "subawards",
-                "key": "subawards",
-                "type": "boolean",
-                "default": False,
-            },
+            {"name": "subawards", "key": "subawards", "type": "boolean", "default": False},
             {
                 "name": "spending_level",
                 "key": "spending_level",
@@ -79,8 +70,7 @@ class DownloadTransactionCountViewSet(APIView):
         elif json_request["spending_level"] == "transactions":
             options = {}
             time_period_obj = TransactionSearchTimePeriod(
-                default_end_date=settings.API_MAX_DATE,
-                default_start_date=settings.API_SEARCH_MIN_DATE,
+                default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
             )
             new_awards_only_decorator = NewAwardsOnlyTimePeriod(
                 time_period_obj=time_period_obj, query_type=QueryType.TRANSACTIONS
@@ -93,8 +83,7 @@ class DownloadTransactionCountViewSet(APIView):
         else:
             options = {}
             time_period_obj = AwardSearchTimePeriod(
-                default_end_date=settings.API_MAX_DATE,
-                default_start_date=settings.API_SEARCH_MIN_DATE,
+                default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
             )
             new_awards_only_decorator = NewAwardsOnlyTimePeriod(
                 time_period_obj=time_period_obj, query_type=QueryType.AWARDS

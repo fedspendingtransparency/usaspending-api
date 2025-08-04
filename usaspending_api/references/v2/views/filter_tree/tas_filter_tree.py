@@ -1,7 +1,4 @@
-from usaspending_api.common.helpers.business_logic_helpers import (
-    cfo_presentation_order,
-    faba_with_file_D_data,
-)
+from usaspending_api.common.helpers.business_logic_helpers import cfo_presentation_order, faba_with_file_D_data
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.references.v2.views.filter_tree.filter_tree import FilterTree
 from django.db.models import Exists, OuterRef, Q, F, Count
@@ -97,11 +94,7 @@ class TASFilterTree(FilterTree):
             )
             .annotate(agency=F("federal_account__parent_toptier_agency__toptier_code"))
             .filter(*filters)
-            .values(
-                "federal_account__federal_account_code",
-                "federal_account__account_title",
-                "agency",
-            )
+            .values("federal_account__federal_account_code", "federal_account__account_title", "agency")
             .annotate(count=Count("treasury_account_identifier"))
         )
 

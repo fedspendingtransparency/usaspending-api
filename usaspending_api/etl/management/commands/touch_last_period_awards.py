@@ -4,13 +4,8 @@ from datetime import datetime, timezone
 from django.db import connection
 from django.core.management.base import BaseCommand
 
-from usaspending_api.broker.helpers.last_load_date import (
-    get_last_load_date,
-    update_last_load_date,
-)
-from usaspending_api.etl.management.helpers.recent_periods import (
-    retrieve_recent_periods,
-)
+from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
+from usaspending_api.etl.management.helpers.recent_periods import retrieve_recent_periods
 
 logger = logging.getLogger("script")
 

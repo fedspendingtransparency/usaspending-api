@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("search", "0038_add_type_raw_type_description_raw_fields"),
+        ('search', '0038_add_type_raw_type_description_raw_fields'),
     ]
 
     operations = [
         migrations.AddField(
-            model_name="transactionsearch",
-            name="initial_report_date",
+            model_name='transactionsearch',
+            name='initial_report_date',
             field=models.DateField(null=True),
         ),
     ]

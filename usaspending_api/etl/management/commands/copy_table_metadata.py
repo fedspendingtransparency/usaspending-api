@@ -21,10 +21,7 @@ TEMPLATE = {
 
 def make_read_indexes(table_name):
     if "." in table_name:
-        schema_name, table_name = (
-            table_name[: table_name.index(".")],
-            table_name[table_name.index(".") + 1 :],
-        )
+        schema_name, table_name = table_name[: table_name.index(".")], table_name[table_name.index(".") + 1 :]
     else:
         schema_name = "public"
 
@@ -91,12 +88,7 @@ def make_copy_constraints(
 
 
 def make_copy_indexes(
-    cursor,
-    source_table,
-    dest_table,
-    source_suffix="",
-    dest_suffix="temp",
-    only_parent_partitioned_table=False,
+    cursor, source_table, dest_table, source_suffix="", dest_suffix="temp", only_parent_partitioned_table=False
 ):
     # read the existing indexes of source table
     cursor.execute(make_read_indexes(source_table)[0])

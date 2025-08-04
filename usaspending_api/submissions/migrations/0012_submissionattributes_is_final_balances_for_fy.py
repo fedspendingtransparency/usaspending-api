@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("submissions", "0011_dabsloaderqueue"),
+        ('submissions', '0011_dabsloaderqueue'),
     ]
 
     operations = [
         migrations.AddField(
-            model_name="submissionattributes",
-            name="is_final_balances_for_fy",
+            model_name='submissionattributes',
+            name='is_final_balances_for_fy',
             field=models.BooleanField(default=False),
         ),
     ]

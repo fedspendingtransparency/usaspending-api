@@ -10,15 +10,8 @@ from usaspending_api.awards.delta_models import (
     BROKER_SUBAWARDS_COLUMNS,
     broker_subawards_sql_string,
 )
-from usaspending_api.broker.delta_models.broker_zips import (
-    ZIPS_COLUMNS,
-    zips_sql_string,
-)
-from usaspending_api.common.etl.spark import (
-    extract_db_data_frame,
-    get_partition_bounds_sql,
-    load_delta_table,
-)
+from usaspending_api.broker.delta_models.broker_zips import ZIPS_COLUMNS, zips_sql_string
+from usaspending_api.common.etl.spark import extract_db_data_frame, get_partition_bounds_sql, load_delta_table
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
@@ -52,10 +45,7 @@ from usaspending_api.transactions.delta_models import (
 )
 from usaspending_api.transactions.models import SourceAssistanceTransaction
 from usaspending_api.transactions.models import SourceProcurementTransaction
-from usaspending_api.search.delta_models.award_search import (
-    award_search_create_sql_string,
-    AWARD_SEARCH_COLUMNS,
-)
+from usaspending_api.search.delta_models.award_search import award_search_create_sql_string, AWARD_SEARCH_COLUMNS
 
 from usaspending_api.recipient.models import DUNS, RecipientLookup, RecipientProfile
 from usaspending_api.awards.models import (

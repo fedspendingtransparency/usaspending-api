@@ -11,9 +11,7 @@ from rest_framework.views import APIView
 from usaspending_api.awards.models import ParentAward
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
-from usaspending_api.common.validator.award import (
-    get_internal_or_generated_award_id_model,
-)
+from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.awards.v2.data_layer.sql import defc_sql
 from usaspending_api.references.models import DisasterEmergencyFundCode
@@ -81,10 +79,7 @@ def fetch_account_details_idv(award_id, award_id_column) -> dict:
             child_total_obligations += row["obligated_amount"]
         child_outlay_by_code.append({"code": row["disaster_emergency_fund_code"], "amount": row["total_outlay"]})
         child_obligation_by_code.append(
-            {
-                "code": row["disaster_emergency_fund_code"],
-                "amount": row["obligated_amount"],
-            }
+            {"code": row["disaster_emergency_fund_code"], "amount": row["obligated_amount"]}
         )
     grandchild_outlay_by_code = []
     grandchild_obligation_by_code = []
@@ -96,10 +91,7 @@ def fetch_account_details_idv(award_id, award_id_column) -> dict:
             grandchild_total_obligations += row["obligated_amount"]
         grandchild_outlay_by_code.append({"code": row["disaster_emergency_fund_code"], "amount": row["total_outlay"]})
         grandchild_obligation_by_code.append(
-            {
-                "code": row["disaster_emergency_fund_code"],
-                "amount": row["obligated_amount"],
-            }
+            {"code": row["disaster_emergency_fund_code"], "amount": row["obligated_amount"]}
         )
 
     results = {
@@ -160,10 +152,7 @@ def fetch_idv_child_outlays(award_id: int, award_id_column) -> dict:
     else:
         grandchild_results = grandchild_results[0]["total_outlay"]
 
-    return {
-        "child_award_total_outlay": child_results,
-        "grandchild_award_total_outlay": grandchild_results,
-    }
+    return {"child_award_total_outlay": child_results, "grandchild_award_total_outlay": grandchild_results}
 
 
 class IDVAmountsViewSet(APIView):
@@ -192,53 +181,23 @@ class IDVAmountsViewSet(APIView):
             return OrderedDict(
                 (
                     ("award_id", parent_award.award_id),
-                    (
-                        "generated_unique_award_id",
-                        parent_award.generated_unique_award_id,
-                    ),
+                    ("generated_unique_award_id", parent_award.generated_unique_award_id),
                     ("child_idv_count", parent_award.direct_idv_count),
                     ("child_award_count", parent_award.direct_contract_count),
-                    (
-                        "child_award_total_obligation",
-                        parent_award.direct_total_obligation,
-                    ),
+                    ("child_award_total_obligation", parent_award.direct_total_obligation),
                     ("child_award_total_outlay", outlays["child_award_total_outlay"]),
-                    (
-                        "child_award_base_and_all_options_value",
-                        parent_award.direct_base_and_all_options_value,
-                    ),
-                    (
-                        "child_award_base_exercised_options_val",
-                        parent_award.direct_base_exercised_options_val,
-                    ),
-                    (
-                        "child_total_account_outlay",
-                        account_data["child_total_account_outlay"],
-                    ),
-                    (
-                        "child_total_account_obligation",
-                        account_data["child_total_account_obligation"],
-                    ),
-                    (
-                        "child_account_outlays_by_defc",
-                        account_data["child_account_outlays_by_defc"],
-                    ),
-                    (
-                        "child_account_obligations_by_defc",
-                        account_data["child_account_obligations_by_defc"],
-                    ),
-                    (
-                        "grandchild_award_count",
-                        parent_award.rollup_contract_count - parent_award.direct_contract_count,
-                    ),
+                    ("child_award_base_and_all_options_value", parent_award.direct_base_and_all_options_value),
+                    ("child_award_base_exercised_options_val", parent_award.direct_base_exercised_options_val),
+                    ("child_total_account_outlay", account_data["child_total_account_outlay"]),
+                    ("child_total_account_obligation", account_data["child_total_account_obligation"]),
+                    ("child_account_outlays_by_defc", account_data["child_account_outlays_by_defc"]),
+                    ("child_account_obligations_by_defc", account_data["child_account_obligations_by_defc"]),
+                    ("grandchild_award_count", parent_award.rollup_contract_count - parent_award.direct_contract_count),
                     (
                         "grandchild_award_total_obligation",
                         parent_award.rollup_total_obligation - parent_award.direct_total_obligation,
                     ),
-                    (
-                        "grandchild_award_total_outlay",
-                        outlays["grandchild_award_total_outlay"],
-                    ),
+                    ("grandchild_award_total_outlay", outlays["grandchild_award_total_outlay"]),
                     (
                         "grandchild_award_base_and_all_options_value",
                         parent_award.rollup_base_and_all_options_value - parent_award.direct_base_and_all_options_value,
@@ -247,22 +206,10 @@ class IDVAmountsViewSet(APIView):
                         "grandchild_award_base_exercised_options_val",
                         parent_award.rollup_base_exercised_options_val - parent_award.direct_base_exercised_options_val,
                     ),
-                    (
-                        "grandchild_total_account_outlay",
-                        account_data["grandchild_total_account_outlay"],
-                    ),
-                    (
-                        "grandchild_total_account_obligation",
-                        account_data["grandchild_total_account_obligation"],
-                    ),
-                    (
-                        "grandchild_account_outlays_by_defc",
-                        account_data["grandchild_account_outlays_by_defc"],
-                    ),
-                    (
-                        "grandchild_account_obligations_by_defc",
-                        account_data["grandchild_account_obligations_by_defc"],
-                    ),
+                    ("grandchild_total_account_outlay", account_data["grandchild_total_account_outlay"]),
+                    ("grandchild_total_account_obligation", account_data["grandchild_total_account_obligation"]),
+                    ("grandchild_account_outlays_by_defc", account_data["grandchild_account_outlays_by_defc"]),
+                    ("grandchild_account_obligations_by_defc", account_data["grandchild_account_obligations_by_defc"]),
                 )
             )
         except ParentAward.DoesNotExist:

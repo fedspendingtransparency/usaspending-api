@@ -169,11 +169,7 @@ def award_data_fixture(db):
         type="A",
         uri=None,
     )
-    baker.make(
-        "awards.FinancialAccountsByAwards",
-        financial_accounts_by_awards_id=1,
-        award_id=award1.award_id,
-    )
+    baker.make("awards.FinancialAccountsByAwards", financial_accounts_by_awards_id=1, award_id=award1.award_id)
 
     baker.make(
         "search.SubawardSearch",
@@ -241,22 +237,13 @@ def test_spending_by_award_count(client, monkeypatch, elasticsearch_award_index,
     }
 
     expected_response = {
-        "results": {
-            "contracts": 2,
-            "idvs": 4,
-            "loans": 1,
-            "direct_payments": 0,
-            "grants": 0,
-            "other": 1,
-        },
+        "results": {"contracts": 2, "idvs": 4, "loans": 1, "direct_payments": 0, "grants": 0, "other": 1},
         "spending_level": "awards",
         "messages": [get_time_period_message()],
     }
 
     resp = client.post(
-        get_spending_by_award_count_url(),
-        content_type="application/json",
-        data=json.dumps(test_payload),
+        get_spending_by_award_count_url(), content_type="application/json", data=json.dumps(test_payload)
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -276,22 +263,13 @@ def test_spending_by_award_count_idvs(client, monkeypatch, elasticsearch_award_i
     }
 
     expected_response = {
-        "results": {
-            "contracts": 0,
-            "idvs": 3,
-            "loans": 0,
-            "direct_payments": 0,
-            "grants": 0,
-            "other": 0,
-        },
+        "results": {"contracts": 0, "idvs": 3, "loans": 0, "direct_payments": 0, "grants": 0, "other": 0},
         "spending_level": "awards",
         "messages": [get_time_period_message()],
     }
 
     resp = client.post(
-        get_spending_by_award_count_url(),
-        content_type="application/json",
-        data=json.dumps(test_payload),
+        get_spending_by_award_count_url(), content_type="application/json", data=json.dumps(test_payload)
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -307,32 +285,19 @@ def test_spending_by_award_count_new_awards_only(client, monkeypatch, elasticsea
         "subawards": False,
         "filters": {
             "time_period": [
-                {
-                    "date_type": "new_awards_only",
-                    "start_date": "2012-09-09",
-                    "end_date": "2012-09-11",
-                },
+                {"date_type": "new_awards_only", "start_date": "2012-09-09", "end_date": "2012-09-11"},
             ]
         },
     }
 
     expected_response = {
-        "results": {
-            "contracts": 0,
-            "direct_payments": 0,
-            "grants": 0,
-            "idvs": 0,
-            "loans": 1,
-            "other": 0,
-        },
+        "results": {"contracts": 0, "direct_payments": 0, "grants": 0, "idvs": 0, "loans": 1, "other": 0},
         "spending_level": "awards",
         "messages": [get_time_period_message()],
     }
 
     resp = client.post(
-        get_spending_by_award_count_url(),
-        content_type="application/json",
-        data=json.dumps(test_payload),
+        get_spending_by_award_count_url(), content_type="application/json", data=json.dumps(test_payload)
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -343,32 +308,19 @@ def test_spending_by_award_count_new_awards_only(client, monkeypatch, elasticsea
         "subawards": False,
         "filters": {
             "time_period": [
-                {
-                    "date_type": "new_awards_only",
-                    "start_date": "2012-09-09",
-                    "end_date": "2012-09-09",
-                },
+                {"date_type": "new_awards_only", "start_date": "2012-09-09", "end_date": "2012-09-09"},
             ]
         },
     }
 
     expected_response = {
-        "results": {
-            "contracts": 0,
-            "direct_payments": 0,
-            "grants": 0,
-            "idvs": 0,
-            "loans": 0,
-            "other": 0,
-        },
+        "results": {"contracts": 0, "direct_payments": 0, "grants": 0, "idvs": 0, "loans": 0, "other": 0},
         "spending_level": "awards",
         "messages": [get_time_period_message()],
     }
 
     resp = client.post(
-        get_spending_by_award_count_url(),
-        content_type="application/json",
-        data=json.dumps(test_payload),
+        get_spending_by_award_count_url(), content_type="application/json", data=json.dumps(test_payload)
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -377,11 +329,7 @@ def test_spending_by_award_count_new_awards_only(client, monkeypatch, elasticsea
 
 @pytest.mark.django_db
 def test_spending_by_award_count_program_activity_subawards(
-    client,
-    monkeypatch,
-    elasticsearch_award_index,
-    elasticsearch_subaward_index,
-    award_data_fixture,
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, award_data_fixture
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
@@ -401,9 +349,7 @@ def test_spending_by_award_count_program_activity_subawards(
     }
 
     resp = client.post(
-        get_spending_by_award_count_url(),
-        content_type="application/json",
-        data=json.dumps(test_payload),
+        get_spending_by_award_count_url(), content_type="application/json", data=json.dumps(test_payload)
     )
     assert resp.status_code == status.HTTP_200_OK
     assert expected_response == resp.data, "Unexpected or missing content!"
@@ -422,9 +368,7 @@ def test_spending_by_award_count_program_activity_subawards(
     }
 
     resp = client.post(
-        get_spending_by_award_count_url(),
-        content_type="application/json",
-        data=json.dumps(test_payload),
+        get_spending_by_award_count_url(), content_type="application/json", data=json.dumps(test_payload)
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -444,9 +388,7 @@ def test_spending_by_award_count_program_activity_subawards(
     }
 
     resp = client.post(
-        get_spending_by_award_count_url(),
-        content_type="application/json",
-        data=json.dumps(test_payload),
+        get_spending_by_award_count_url(), content_type="application/json", data=json.dumps(test_payload)
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -466,22 +408,13 @@ def test_spending_by_award_count_program_activity(client, monkeypatch, elasticse
     }
 
     expected_response = {
-        "results": {
-            "contracts": 0,
-            "direct_payments": 0,
-            "grants": 0,
-            "idvs": 0,
-            "loans": 1,
-            "other": 0,
-        },
+        "results": {"contracts": 0, "direct_payments": 0, "grants": 0, "idvs": 0, "loans": 1, "other": 0},
         "spending_level": "awards",
         "messages": [get_time_period_message()],
     }
 
     resp = client.post(
-        get_spending_by_award_count_url(),
-        content_type="application/json",
-        data=json.dumps(test_payload),
+        get_spending_by_award_count_url(), content_type="application/json", data=json.dumps(test_payload)
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -495,22 +428,13 @@ def test_spending_by_award_count_program_activity(client, monkeypatch, elasticse
     }
 
     expected_response = {
-        "results": {
-            "contracts": 0,
-            "direct_payments": 0,
-            "grants": 0,
-            "idvs": 0,
-            "loans": 0,
-            "other": 0,
-        },
+        "results": {"contracts": 0, "direct_payments": 0, "grants": 0, "idvs": 0, "loans": 0, "other": 0},
         "spending_level": "awards",
         "messages": [get_time_period_message()],
     }
 
     resp = client.post(
-        get_spending_by_award_count_url(),
-        content_type="application/json",
-        data=json.dumps(test_payload),
+        get_spending_by_award_count_url(), content_type="application/json", data=json.dumps(test_payload)
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -524,22 +448,13 @@ def test_spending_by_award_count_program_activity(client, monkeypatch, elasticse
     }
 
     expected_response = {
-        "results": {
-            "contracts": 0,
-            "direct_payments": 0,
-            "grants": 0,
-            "idvs": 0,
-            "loans": 1,
-            "other": 0,
-        },
+        "results": {"contracts": 0, "direct_payments": 0, "grants": 0, "idvs": 0, "loans": 1, "other": 0},
         "spending_level": "awards",
         "messages": [get_time_period_message()],
     }
 
     resp = client.post(
-        get_spending_by_award_count_url(),
-        content_type="application/json",
-        data=json.dumps(test_payload),
+        get_spending_by_award_count_url(), content_type="application/json", data=json.dumps(test_payload)
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -553,22 +468,13 @@ def test_spending_by_award_count_program_activity(client, monkeypatch, elasticse
     }
 
     expected_response = {
-        "results": {
-            "contracts": 0,
-            "direct_payments": 0,
-            "grants": 0,
-            "idvs": 0,
-            "loans": 1,
-            "other": 0,
-        },
+        "results": {"contracts": 0, "direct_payments": 0, "grants": 0, "idvs": 0, "loans": 1, "other": 0},
         "spending_level": "awards",
         "messages": [get_time_period_message()],
     }
 
     resp = client.post(
-        get_spending_by_award_count_url(),
-        content_type="application/json",
-        data=json.dumps(test_payload),
+        get_spending_by_award_count_url(), content_type="application/json", data=json.dumps(test_payload)
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -589,20 +495,11 @@ def test_spending_level_filter(client, monkeypatch, elasticsearch_award_index, e
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award_count",
-        content_type="application/json",
-        data=json.dumps(request),
+        "/api/v2/search/spending_by_award_count", content_type="application/json", data=json.dumps(request)
     )
 
     expected_response = {
-        "results": {
-            "contracts": 0,
-            "direct_payments": 0,
-            "grants": 0,
-            "idvs": 0,
-            "loans": 0,
-            "other": 0,
-        },
+        "results": {"contracts": 0, "direct_payments": 0, "grants": 0, "idvs": 0, "loans": 0, "other": 0},
         "spending_level": "awards",
         "messages": [get_time_period_message()],
     }
@@ -618,9 +515,7 @@ def test_spending_level_filter(client, monkeypatch, elasticsearch_award_index, e
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award_count",
-        content_type="application/json",
-        data=json.dumps(request),
+        "/api/v2/search/spending_by_award_count", content_type="application/json", data=json.dumps(request)
     )
 
     expected_response = {
@@ -642,9 +537,7 @@ def test_spending_level_filter(client, monkeypatch, elasticsearch_award_index, e
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award_count",
-        content_type="application/json",
-        data=json.dumps(request),
+        "/api/v2/search/spending_by_award_count", content_type="application/json", data=json.dumps(request)
     )
 
     expected_response = {

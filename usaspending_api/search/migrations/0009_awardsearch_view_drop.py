@@ -9,32 +9,32 @@ import django.db.models.expressions
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("search", "0008_awardsearch_table"),
+        ('search', '0008_awardsearch_table'),
     ]
 
     operations = [
         migrations.DeleteModel(
-            name="AwardSearchView",
+            name='AwardSearchView',
         ),
         migrations.DeleteModel(
-            name="ContractAwardSearchMatview",
+            name='ContractAwardSearchMatview',
         ),
         migrations.DeleteModel(
-            name="DirectPaymentAwardSearchMatview",
+            name='DirectPaymentAwardSearchMatview',
         ),
         migrations.DeleteModel(
-            name="GrantAwardSearchMatview",
+            name='GrantAwardSearchMatview',
         ),
         migrations.DeleteModel(
-            name="IDVAwardSearchMatview",
+            name='IDVAwardSearchMatview',
         ),
         migrations.DeleteModel(
-            name="LoanAwardSearchMatview",
+            name='LoanAwardSearchMatview',
         ),
         migrations.DeleteModel(
-            name="OtherAwardSearchMatview",
+            name='OtherAwardSearchMatview',
         ),
         migrations.DeleteModel(
-            name="Pre2008AwardSearchMatview",
+            name='Pre2008AwardSearchMatview',
         ),
     ]

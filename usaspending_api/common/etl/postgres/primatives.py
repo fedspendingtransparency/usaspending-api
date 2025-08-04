@@ -6,9 +6,7 @@ of this module.
 from collections import namedtuple
 from psycopg2.sql import Composable, Composed, Identifier, Literal, SQL
 from typing import List, MutableMapping, Optional, Union
-from usaspending_api.common.helpers.sql_helpers import (
-    convert_composable_query_to_string,
-)
+from usaspending_api.common.helpers.sql_helpers import convert_composable_query_to_string
 
 
 ColumnOverrides = MutableMapping[str, Composable]  # e.g. {"updated_at": SQL("now()")}
@@ -34,11 +32,7 @@ def make_cast_column_list(columns: List[str], data_types: DataTypes, alias: Opti
     composed_alias = SQL("") if alias is None else SQL("{}.").format(Identifier(alias))
     template = "cast({alias}{column} as {data_type}) as {column}"
     composed_columns = [
-        SQL(template).format(
-            alias=composed_alias,
-            column=Identifier(c),
-            data_type=SQL(data_types[c].data_type),
-        )
+        SQL(template).format(alias=composed_alias, column=Identifier(c), data_type=SQL(data_types[c].data_type))
         for c in columns
     ]
     return SQL(", ").join(composed_columns)
@@ -53,19 +47,14 @@ def make_change_detector_conditional(columns: List[str], left_alias: str, right_
         s.description is distinct from d.description
 
     """
-    composed_aliases = {
-        "left_alias": Identifier(left_alias),
-        "right_alias": Identifier(right_alias),
-    }
+    composed_aliases = {"left_alias": Identifier(left_alias), "right_alias": Identifier(right_alias)}
     template = "{left_alias}.{column} is distinct from {right_alias}.{column}"
     composed_conditionals = [SQL(template).format(column=Identifier(c), **composed_aliases) for c in columns]
     return SQL(" or ").join(composed_conditionals)
 
 
 def make_column_list(
-    columns: List[str],
-    alias: Optional[str] = None,
-    overrides: Optional[ColumnOverrides] = None,
+    columns: List[str], alias: Optional[str] = None, overrides: Optional[ColumnOverrides] = None
 ) -> Composed:
     """
     Turn a list of columns into a SQL safe string containing the comma separated list of
@@ -146,10 +135,7 @@ def make_join_conditional(key_columns: KeyColumns, left_alias: str, right_alias:
         s.id1 is not distinct from d.id1 and s.id2 is not distinct from d.id2
 
     """
-    composed_aliases = {
-        "left_alias": Identifier(left_alias),
-        "right_alias": Identifier(right_alias),
-    }
+    composed_aliases = {"left_alias": Identifier(left_alias), "right_alias": Identifier(right_alias)}
     template = "{left_alias}.{column} {equality} {right_alias}.{column}"
     composed_conditionals = [
         SQL(template).format(
@@ -182,10 +168,7 @@ def make_join_to_table_conditional(key_columns: KeyColumns, alias: str, object_r
         d.id1 is not distinct from public.table1.id1 and d.id2 is not distinct from public.table1.id2
 
     """
-    composed_aliases = {
-        "left_alias": Identifier(alias),
-        "right_alias": object_representation,
-    }
+    composed_aliases = {"left_alias": Identifier(alias), "right_alias": object_representation}
     template = "{left_alias}.{column} {equality} {right_alias}.{column}"
     composed_conditionals = [
         SQL(template).format(
@@ -212,11 +195,7 @@ def make_typed_column_list(columns: List[str], data_types: DataTypes) -> Compose
 
 
 def wrap_dblink_query(
-    dblink_name: str,
-    sql: Union[str, Composed],
-    alias: str,
-    columns: List[str],
-    data_types: DataTypes,
+    dblink_name: str, sql: Union[str, Composed], alias: str, columns: List[str], data_types: DataTypes
 ) -> Composed:
     """Wraps a query in a dblink compatible query so that it can be run on a remote server."""
     inner_sql = convert_composable_query_to_string(sql)

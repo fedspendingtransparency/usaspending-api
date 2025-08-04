@@ -54,11 +54,7 @@ def setup_test_data(db):
 
     toptier_agencies = [
         baker.make(
-            "references.ToptierAgency",
-            toptier_code="123",
-            abbreviation="ABC",
-            name="Test Agency",
-            _fill_optional=True,
+            "references.ToptierAgency", toptier_code="123", abbreviation="ABC", name="Test Agency", _fill_optional=True
         ),
         baker.make(
             "references.ToptierAgency",
@@ -70,18 +66,8 @@ def setup_test_data(db):
     ]
 
     agencies = [
-        baker.make(
-            "references.Agency",
-            toptier_agency=toptier_agencies[0],
-            toptier_flag=True,
-            _fill_optional=True,
-        ),
-        baker.make(
-            "references.Agency",
-            toptier_agency=toptier_agencies[1],
-            toptier_flag=True,
-            _fill_optional=True,
-        ),
+        baker.make("references.Agency", toptier_agency=toptier_agencies[0], toptier_flag=True, _fill_optional=True),
+        baker.make("references.Agency", toptier_agency=toptier_agencies[1], toptier_flag=True, _fill_optional=True),
     ]
 
     treas_accounts = [
@@ -105,11 +91,7 @@ def setup_test_data(db):
         {"sub": subs[0], "treasury_account": treas_accounts[0], "total_resources": 50},
         {"sub": subs[0], "treasury_account": treas_accounts[1], "total_resources": 12},
         {"sub": subs[0], "treasury_account": treas_accounts[1], "total_resources": 29},
-        {
-            "sub": subs[0],
-            "treasury_account": treas_accounts[2],
-            "total_resources": 15.5,
-        },
+        {"sub": subs[0], "treasury_account": treas_accounts[2], "total_resources": 15.5},
     ]
     for approp in approps:
         baker.make(

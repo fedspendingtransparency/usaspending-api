@@ -4,17 +4,9 @@ import logging
 from django.db.models import Exists, OuterRef, Q
 
 from usaspending_api.awards.models import TransactionNormalized
-from usaspending_api.awards.models.financial_accounts_by_awards import (
-    FinancialAccountsByAwards,
-)
-from usaspending_api.awards.v2.filters.filter_helpers import (
-    combine_date_range_queryset,
-    total_obligation_queryset,
-)
-from usaspending_api.awards.v2.filters.location_filter_geocode import (
-    ALL_FOREIGN_COUNTRIES,
-    create_nested_object,
-)
+from usaspending_api.awards.models.financial_accounts_by_awards import FinancialAccountsByAwards
+from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset, total_obligation_queryset
+from usaspending_api.awards.v2.filters.location_filter_geocode import ALL_FOREIGN_COUNTRIES, create_nested_object
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import PSC
 from usaspending_api.search.filters.postgres.defc import DefCodes
@@ -45,27 +37,12 @@ def geocode_filter_subaward_locations(scope: str, values: list) -> Q:
     # Yes, these are mostly the same, but congressional_code is different
     # and I'd rather have them all laid out here versus burying a extra couple lines for congressional_code
     location_mappings = {
-        "country_code": {
-            "sub_legal_entity": "country_code",
-            "sub_place_of_perform": "country_co",
-        },
+        "country_code": {"sub_legal_entity": "country_code", "sub_place_of_perform": "country_co"},
         "zip5": {"sub_legal_entity": "zip5", "sub_place_of_perform": "zip5"},
-        "city_name": {
-            "sub_legal_entity": "city_name",
-            "sub_place_of_perform": "city_name",
-        },
-        "state_code": {
-            "sub_legal_entity": "state_code",
-            "sub_place_of_perform": "state_code",
-        },
-        "county_code": {
-            "sub_legal_entity": "county_code",
-            "sub_place_of_perform": "county_code",
-        },
-        "congressional_code": {
-            "sub_legal_entity": "congressional",
-            "sub_place_of_perform": "congressio",
-        },
+        "city_name": {"sub_legal_entity": "city_name", "sub_place_of_perform": "city_name"},
+        "state_code": {"sub_legal_entity": "state_code", "sub_place_of_perform": "state_code"},
+        "county_code": {"sub_legal_entity": "county_code", "sub_place_of_perform": "county_code"},
+        "congressional_code": {"sub_legal_entity": "congressional", "sub_place_of_perform": "congressio"},
         "current_congressional_code": {
             "sub_legal_entity": "sub_legal_entity_congressional_current",
             # Due to the rigidness of how we map values to columns
@@ -367,10 +344,7 @@ def subaward_filter(filters, for_downloads=False):
 
         elif key in ("set_aside_type_codes", "extent_competed_type_codes"):
             or_queryset = Q()
-            filter_to_col = {
-                "set_aside_type_codes": "type_set_aside",
-                "extent_competed_type_codes": "extent_competed",
-            }
+            filter_to_col = {"set_aside_type_codes": "type_set_aside", "extent_competed_type_codes": "extent_competed"}
             in_query = [v for v in value]
             for v in value:
                 or_queryset |= Q(**{"{}__exact".format(filter_to_col[key]): in_query})

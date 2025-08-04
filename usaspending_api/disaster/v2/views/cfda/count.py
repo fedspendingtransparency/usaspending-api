@@ -5,12 +5,8 @@ from rest_framework.response import Response
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.disaster.v2.views.disaster_base import DisasterBase
-from usaspending_api.disaster.v2.views.elasticsearch_base import (
-    ElasticsearchLoansPaginationMixin,
-)
-from usaspending_api.search.v2.elasticsearch_helper import (
-    get_number_of_unique_terms_for_awards,
-)
+from usaspending_api.disaster.v2.views.elasticsearch_base import ElasticsearchLoansPaginationMixin
+from usaspending_api.search.v2.elasticsearch_helper import get_number_of_unique_terms_for_awards
 from usaspending_api.search.filters.elasticsearch.filter import QueryType
 
 

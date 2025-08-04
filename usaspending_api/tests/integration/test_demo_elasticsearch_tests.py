@@ -37,10 +37,7 @@ def test_positive_sample_query(award_data_fixture, elasticsearch_transaction_ind
     """
     # This is the important part.  This ensures data is loaded into your Elasticsearch.
     elasticsearch_transaction_index.update_index()
-    query = {
-        "query": {"bool": {"must": [{"match": {"recipient_location_zip5": "abcde"}}]}},
-        "_source": ["award_id"],
-    }
+    query = {"query": {"bool": {"must": [{"match": {"recipient_location_zip5": "abcde"}}]}}, "_source": ["award_id"]}
 
     client = elasticsearch_transaction_index.client
     response = client.search(index=elasticsearch_transaction_index.index_name, body=query)
@@ -54,10 +51,7 @@ def test_negative_sample_query(award_data_fixture, elasticsearch_transaction_ind
     """
     # This is the important part.  This ensures data is loaded into your Elasticsearch.
     elasticsearch_transaction_index.update_index()
-    query = {
-        "query": {"bool": {"must": [{"match": {"recipient_location_zip5": "edcba"}}]}},
-        "_source": ["award_id"],
-    }
+    query = {"query": {"bool": {"must": [{"match": {"recipient_location_zip5": "edcba"}}]}}, "_source": ["award_id"]}
 
     client = elasticsearch_transaction_index.client
     response = client.search(index=elasticsearch_transaction_index.index_name, body=query)
@@ -72,10 +66,7 @@ def test_a_search_endpoint(client, monkeypatch, award_data_fixture, elasticsearc
     # This is the important part.  This ensures data is loaded into your Elasticsearch.
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
     query = {
-        "filters": {
-            "keyword": "IND12PB00323",
-            "award_type_codes": ["A", "B", "C", "D"],
-        },
+        "filters": {"keyword": "IND12PB00323", "award_type_codes": ["A", "B", "C", "D"]},
         "fields": [
             "Award ID",
             "Mod",
@@ -92,9 +83,7 @@ def test_a_search_endpoint(client, monkeypatch, award_data_fixture, elasticsearc
         "order": "desc",
     }
     response = client.post(
-        "/api/v2/search/spending_by_transaction",
-        content_type="application/json",
-        data=json.dumps(query),
+        "/api/v2/search/spending_by_transaction", content_type="application/json", data=json.dumps(query)
     )
     assert response.status_code == status.HTTP_200_OK
     assert len(response.data["results"]) == 1

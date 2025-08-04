@@ -5,10 +5,7 @@ import pytest
 from model_bakery import baker
 from rest_framework import status
 
-from usaspending_api.common.helpers.fiscal_year_helpers import (
-    generate_fiscal_year,
-    generate_date_range,
-)
+from usaspending_api.common.helpers.fiscal_year_helpers import generate_fiscal_year, generate_date_range
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 

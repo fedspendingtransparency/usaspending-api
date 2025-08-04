@@ -106,7 +106,7 @@ def get_program_activity(row, submission_attributes):
         return None
     key = (
         row["program_activity_code"],
-        (row["program_activity_name"].upper() if row["program_activity_name"] else row["program_activity_name"]),
+        row["program_activity_name"].upper() if row["program_activity_name"] else row["program_activity_name"],
         str(submission_attributes.reporting_fiscal_year),
         row["agency_identifier"],
         row["allocation_transfer_agency"],

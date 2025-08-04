@@ -151,11 +151,7 @@ class DefaultConfig(BaseSettings):
         """
         # noinspection PyArgumentList
         cls._validate_database_url(
-            cls=cls,
-            values=values,
-            url_conf_name="DATABASE_URL",
-            resource_conf_prefix="USASPENDING_DB",
-            required=True,
+            cls=cls, values=values, url_conf_name="DATABASE_URL", resource_conf_prefix="USASPENDING_DB", required=True
         )
         return values
 
@@ -205,11 +201,7 @@ class DefaultConfig(BaseSettings):
         """
         # noinspection PyArgumentList
         cls._validate_http_url(
-            cls=cls,
-            values=values,
-            url_conf_name="ES_HOSTNAME",
-            resource_conf_prefix="ES",
-            required=False,
+            cls=cls, values=values, url_conf_name="ES_HOSTNAME", resource_conf_prefix="ES", required=False
         )
         return values
 

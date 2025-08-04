@@ -10,9 +10,6 @@ subaward_total = RemovedEndpointView.as_view({"get": "retrieve", "post": "retrie
 urlpatterns = [
     re_path(r"^$", subaward_list, name="subaward-list"),
     re_path(r"(?P<pk>[0-9]+)/$", subaward_detail, name="subaward-detail"),
-    re_path(
-        r"^autocomplete/",
-        RemovedEndpointView.as_view({"get": "retrieve", "post": "retrieve"}),
-    ),
+    re_path(r"^autocomplete/", RemovedEndpointView.as_view({"get": "retrieve", "post": "retrieve"})),
     re_path(r"^total/", subaward_total, name="subaward-total"),
 ]

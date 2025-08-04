@@ -5,10 +5,7 @@ from django.utils.decorators import method_decorator
 
 from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.common.validator.helpers import INVALID_TYPE_MSG, MAX_ITEMS
-from usaspending_api.common.validator.helpers import (
-    SUPPORTED_TEXT_TYPES,
-    TINY_SHIELD_SEPARATOR,
-)
+from usaspending_api.common.validator.helpers import SUPPORTED_TEXT_TYPES, TINY_SHIELD_SEPARATOR
 from usaspending_api.common.validator.helpers import validate_array
 from usaspending_api.common.validator.helpers import validate_boolean
 from usaspending_api.common.validator.helpers import validate_datetime
@@ -26,22 +23,14 @@ VALIDATORS = {
         "required_fields": ["models"],
         "defaults": {},
     },
-    "array": {
-        "func": validate_array,
-        "required_fields": ["array_type"],
-        "defaults": {},
-    },
+    "array": {"func": validate_array, "required_fields": ["array_type"], "defaults": {}},
     "boolean": {"func": validate_boolean, "required_fields": [], "defaults": {}},
     "date": {"func": validate_datetime, "required_fields": [], "defaults": {}},
     "datetime": {"func": validate_datetime, "required_fields": [], "defaults": {}},
     "enum": {"func": validate_enum, "required_fields": ["enum_values"], "defaults": {}},
     "float": {"func": validate_float, "required_fields": [], "defaults": {}},
     "integer": {"func": validate_integer, "required_fields": [], "defaults": {}},
-    "object": {
-        "func": validate_object,
-        "required_fields": ["object_keys"],
-        "defaults": {},
-    },
+    "object": {"func": validate_object, "required_fields": ["object_keys"], "defaults": {}},
     "passthrough": {
         "func": lambda k: k["value"],  # Allow any value provided. Not recommended for production code
         "required_fields": [],
@@ -337,9 +326,7 @@ class TinyShield:
             # No rules succeeded.
             raise UnprocessableEntityException(
                 INVALID_TYPE_MSG.format(
-                    key=rule["key"],
-                    value=rule["value"],
-                    type=", ".join(sorted([m["type"] for m in rule["models"]])),
+                    key=rule["key"], value=rule["value"], type=", ".join(sorted([m["type"] for m in rule["models"]]))
                 )
             )
         return _return

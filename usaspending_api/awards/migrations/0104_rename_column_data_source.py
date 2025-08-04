@@ -3,20 +3,22 @@
 from django.db import migrations
 from django.db import models
 
-
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("awards", "0103_transaction_fabs_view_add_current_cd_cols"),
+        ('awards', '0103_transaction_fabs_view_add_current_cd_cols'),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name="award",
-            name="data_source",
+            model_name='award',
+            name='data_source',
             field=models.TextField(
-                choices=[("USA", "USAspending"), ("DBR", "Data Broker")],
-                help_text="The source of this entry, either Data Broker (DBR) or USASpending (USA)",
+                choices=[
+                    ('USA', 'USAspending'),
+                    ('DBR', 'Data Broker')
+                ],
+                help_text='The source of this entry, either Data Broker (DBR) or USASpending (USA)',
                 null=True,
             ),
         ),

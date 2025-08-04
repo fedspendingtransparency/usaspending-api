@@ -9,15 +9,9 @@ from rest_framework.views import APIView
 from elasticsearch_dsl import Q
 
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
-from usaspending_api.common.api_versioning import (
-    api_transformations,
-    API_TRANSFORM_FUNCTIONS,
-)
+from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.elasticsearch.search_wrappers import (
-    AwardSearch,
-    SubawardSearch,
-)
+from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, SubawardSearch
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.generic_helper import (
     get_generic_filters_message,
@@ -62,10 +56,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
                 "name": "spending_level",
                 "key": "spending_level",
                 "type": "enum",
-                "enum_values": [
-                    SpendingLevel.AWARD.value,
-                    SpendingLevel.SUBAWARD.value,
-                ],
+                "enum_values": [SpendingLevel.AWARD.value, SpendingLevel.SUBAWARD.value],
                 "optional": True,
                 "default": SpendingLevel.AWARD.value,
             },
@@ -96,7 +87,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
         subawards = (
             json_request["subawards"]
             if "subawards" in json_request
-            else (True if json_request["spending_level"] == SpendingLevel.SUBAWARD.value else False)
+            else True if json_request["spending_level"] == SpendingLevel.SUBAWARD.value else False
         )
         filters = json_request.get("filters", None)
         if filters is None:
@@ -104,14 +95,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
 
         if "award_type_codes" in filters and "no intersection" in filters["award_type_codes"]:
             # "Special case": there will never be results when the website provides this value
-            empty_results = {
-                "contracts": 0,
-                "idvs": 0,
-                "grants": 0,
-                "direct_payments": 0,
-                "loans": 0,
-                "other": 0,
-            }
+            empty_results = {"contracts": 0, "idvs": 0, "grants": 0, "direct_payments": 0, "loans": 0, "other": 0}
             if subawards:
                 empty_results = {"subcontracts": 0, "subgrants": 0}
             results = empty_results
@@ -122,7 +106,7 @@ class SpendingByAwardCountVisualizationViewSet(APIView):
 
         raw_response = {
             "results": results,
-            "spending_level": ("subawards" if subawards else json_request["spending_level"]),
+            "spending_level": "subawards" if subawards else json_request["spending_level"],
             "messages": get_generic_filters_message(self.original_filters.keys(), [elem["name"] for elem in models]),
         }
 

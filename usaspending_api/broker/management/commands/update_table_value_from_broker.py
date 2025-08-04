@@ -36,8 +36,7 @@ class Command(BaseCommand):
         )
 
         usaspending_group = parser.add_argument_group(
-            title="usaspending",
-            description="Fields that reference components of the USAspending DB",
+            title="usaspending", description="Fields that reference components of the USAspending DB"
         )
         usaspending_group.add_argument(
             "--table-name",
@@ -46,10 +45,7 @@ class Command(BaseCommand):
             help="Table name in the USAspending DB to update",
         )
         usaspending_group.add_argument(
-            "--load-field",
-            type=str,
-            required=True,
-            help="Field that will be updated on the USAspending DB",
+            "--load-field", type=str, required=True, help="Field that will be updated on the USAspending DB"
         )
         usaspending_group.add_argument(
             "--match-field",
@@ -114,9 +110,7 @@ class Command(BaseCommand):
         total_row_count = 0
         estimated_id_count = max_id - min_id + 1
         with Timer(
-            "Performing update from Broker --> USAspending",
-            success_logger=logger.info,
-            failure_logger=logger.error,
+            "Performing update from Broker --> USAspending", success_logger=logger.info, failure_logger=logger.error
         ) as timer:
             for chunk_min_id, chunk_max_id in self.id_ranges(min_id, max_id):
                 with connections[DEFAULT_DB_ALIAS].cursor() as cursor:

@@ -81,10 +81,7 @@ def psc_agg_key(record: dict) -> Optional[str]:
     if record["product_or_service_code"] is None:
         return None
     return json.dumps(
-        {
-            "code": record["product_or_service_code"],
-            "description": record["product_or_service_description"],
-        }
+        {"code": record["product_or_service_code"], "description": record["product_or_service_description"]}
     )
 
 

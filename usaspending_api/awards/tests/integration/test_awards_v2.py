@@ -14,29 +14,15 @@ def awards_and_transactions(db):
     baker.make("recipient.DUNS", **duns)
 
     # Recipient Lookup
-    parent_recipient_lookup = {
-        "duns": "123",
-        "uei": "ABC",
-        "recipient_hash": "cfd3f3f5-2162-7679-9f6b-429cecaa3e1e",
-    }
-    recipient_lookup = {
-        "duns": "456",
-        "uei": "DEF",
-        "recipient_hash": "66545a8d-bf37-3eda-cce5-29c6170c9aab",
-    }
+    parent_recipient_lookup = {"duns": "123", "uei": "ABC", "recipient_hash": "cfd3f3f5-2162-7679-9f6b-429cecaa3e1e"}
+    recipient_lookup = {"duns": "456", "uei": "DEF", "recipient_hash": "66545a8d-bf37-3eda-cce5-29c6170c9aab"}
 
     baker.make("recipient.RecipientLookup", **parent_recipient_lookup)
     baker.make("recipient.RecipientLookup", **recipient_lookup)
 
     # Recipient Profile
-    parent_recipient_profile = {
-        "recipient_hash": "cfd3f3f5-2162-7679-9f6b-429cecaa3e1e",
-        "recipient_level": "P",
-    }
-    recipient_profile = {
-        "recipient_hash": "66545a8d-bf37-3eda-cce5-29c6170c9aab",
-        "recipient_level": "C",
-    }
+    parent_recipient_profile = {"recipient_hash": "cfd3f3f5-2162-7679-9f6b-429cecaa3e1e", "recipient_level": "P"}
+    recipient_profile = {"recipient_hash": "66545a8d-bf37-3eda-cce5-29c6170c9aab", "recipient_level": "C"}
 
     baker.make("recipient.RecipientProfile", **parent_recipient_profile)
     baker.make("recipient.RecipientProfile", **recipient_profile)
@@ -73,11 +59,7 @@ def awards_and_transactions(db):
     baker.make("references.PSC", code="1005", description="More specific whatever")
     baker.make("references.PSC", code="A", description="R&D")
     baker.make("references.PSC", code="A1", description="R&D - Steak Sauce")
-    baker.make(
-        "references.PSC",
-        code="A13",
-        description="R&D - Brand specific steak condiments",
-    )
+    baker.make("references.PSC", code="A13", description="R&D - Brand specific steak condiments")
     baker.make("references.PSC", code="A136", description="R&D - Very specific steak research")
     baker.make("references.PSC", code="M", description="Something")
     baker.make("references.PSC", code="M1", description="Something More Specific")
@@ -89,35 +71,15 @@ def awards_and_transactions(db):
     baker.make("references.NAICS", code="111120", description="Soybean Harvesting")
 
     # Toptier Agency
-    toptier_agency_1 = {
-        "pk": 1,
-        "abbreviation": "TA1",
-        "name": "TOPTIER AGENCY 1",
-        "toptier_code": "ABC",
-    }
-    toptier_agency_2 = {
-        "pk": 2,
-        "abbreviation": "TA2",
-        "name": "TOPTIER AGENCY 2",
-        "toptier_code": "002",
-    }
+    toptier_agency_1 = {"pk": 1, "abbreviation": "TA1", "name": "TOPTIER AGENCY 1", "toptier_code": "ABC"}
+    toptier_agency_2 = {"pk": 2, "abbreviation": "TA2", "name": "TOPTIER AGENCY 2", "toptier_code": "002"}
 
     ta1 = baker.make("references.ToptierAgency", **toptier_agency_1, _fill_optional=True)
     ta2 = baker.make("references.ToptierAgency", **toptier_agency_2, _fill_optional=True)
 
     # Subtier Agency
-    subtier_agency_1 = {
-        "pk": 1,
-        "abbreviation": "SA1",
-        "name": "SUBTIER AGENCY 1",
-        "subtier_code": "DEF",
-    }
-    subtier_agency_2 = {
-        "pk": 2,
-        "abbreviation": "SA2",
-        "name": "SUBTIER AGENCY 2",
-        "subtier_code": "1000",
-    }
+    subtier_agency_1 = {"pk": 1, "abbreviation": "SA1", "name": "SUBTIER AGENCY 1", "subtier_code": "DEF"}
+    subtier_agency_2 = {"pk": 2, "abbreviation": "SA2", "name": "SUBTIER AGENCY 2", "subtier_code": "1000"}
 
     sa1 = baker.make("references.SubtierAgency", **subtier_agency_1, _fill_optional=True)
     sa2 = baker.make("references.SubtierAgency", **subtier_agency_2, _fill_optional=True)
@@ -1009,16 +971,8 @@ def awards_and_transactions(db):
         "rollup_total_obligation": 4500,
         "parent_award_id": None,
     }
-    parent_award_2 = {
-        "award_id": 8,
-        "generated_unique_award_id": "CONT_IDV_AWARD8_1000",
-        "parent_award_id": 9,
-    }
-    parent_award_3 = {
-        "award_id": 9,
-        "generated_unique_award_id": "CONT_IDV_AWARD9_1000",
-        "parent_award_id": None,
-    }
+    parent_award_2 = {"award_id": 8, "generated_unique_award_id": "CONT_IDV_AWARD8_1000", "parent_award_id": 9}
+    parent_award_3 = {"award_id": 9, "generated_unique_award_id": "CONT_IDV_AWARD9_1000", "parent_award_id": None}
 
     baker.make("awards.ParentAward", **parent_award_1)
     baker.make("awards.ParentAward", **parent_award_2)
@@ -1156,14 +1110,8 @@ def test_award_psc_hierarchy_types(client, awards_and_transactions):
     assert json.loads(resp.content.decode("utf-8"))["psc_hierarchy"] == {
         "toptier_code": {"description": "R&D", "code": "A"},
         "midtier_code": {"description": "R&D - Steak Sauce", "code": "A1"},
-        "subtier_code": {
-            "description": "R&D - Brand specific steak condiments",
-            "code": "A13",
-        },
-        "base_code": {
-            "description": "R&D - Very specific steak research",
-            "code": "A136",
-        },
+        "subtier_code": {"description": "R&D - Brand specific steak condiments", "code": "A13"},
+        "base_code": {"description": "R&D - Very specific steak research", "code": "A136"},
     }
 
     resp = client.get("/api/v2/awards/6/")
@@ -1487,11 +1435,7 @@ expected_response_asst = {
             "code": "ABC",
             "slug": "toptier-agency-1",
         },
-        "subtier_agency": {
-            "name": "SUBTIER AGENCY 1",
-            "abbreviation": "SA1",
-            "code": "DEF",
-        },
+        "subtier_agency": {"name": "SUBTIER AGENCY 1", "abbreviation": "SA1", "code": "DEF"},
         "office_agency_name": "awarding_office",
     },
     "funding_agency": {
@@ -1503,11 +1447,7 @@ expected_response_asst = {
             "code": "ABC",
             "slug": "toptier-agency-1",
         },
-        "subtier_agency": {
-            "name": "SUBTIER AGENCY 1",
-            "abbreviation": "SA1",
-            "code": "DEF",
-        },
+        "subtier_agency": {"name": "SUBTIER AGENCY 1", "abbreviation": "SA1", "code": "DEF"},
         "office_agency_name": "funding_office",
     },
     "recipient": {
@@ -1549,11 +1489,7 @@ expected_response_asst = {
             {"name": None, "amount": None},
         ]
     },
-    "period_of_performance": {
-        "start_date": "2004-02-04",
-        "end_date": "2005-02-04",
-        "last_modified_date": "2000-01-02",
-    },
+    "period_of_performance": {"start_date": "2004-02-04", "end_date": "2005-02-04", "last_modified_date": "2000-01-02"},
     "place_of_performance": {
         "address_line1": None,
         "address_line2": None,
@@ -1601,11 +1537,7 @@ expected_response_cont = {
             "code": "ABC",
             "slug": "toptier-agency-1",
         },
-        "subtier_agency": {
-            "name": "SUBTIER AGENCY 1",
-            "abbreviation": "SA1",
-            "code": "DEF",
-        },
+        "subtier_agency": {"name": "SUBTIER AGENCY 1", "abbreviation": "SA1", "code": "DEF"},
         "office_agency_name": "awarding_office",
     },
     "funding_agency": {
@@ -1617,11 +1549,7 @@ expected_response_cont = {
             "code": "ABC",
             "slug": "toptier-agency-1",
         },
-        "subtier_agency": {
-            "name": "SUBTIER AGENCY 1",
-            "abbreviation": "SA1",
-            "code": "DEF",
-        },
+        "subtier_agency": {"name": "SUBTIER AGENCY 1", "abbreviation": "SA1", "code": "DEF"},
         "office_agency_name": "funding_office",
     },
     "recipient": {
@@ -1763,10 +1691,7 @@ expected_response_cont = {
     "date_signed": "2004-03-02",
     "naics_hierarchy": {
         "toptier_code": {"description": "Agriculture", "code": "11"},
-        "midtier_code": {
-            "description": "Soybean & Oilseed Agriculture",
-            "code": "1111",
-        },
+        "midtier_code": {"description": "Soybean & Oilseed Agriculture", "code": "1111"},
         "base_code": {"description": "Soybean Harvesting", "code": "111120"},
     },
     "psc_hierarchy": {

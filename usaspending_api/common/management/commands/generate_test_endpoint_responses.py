@@ -18,10 +18,7 @@ class Command(BaseCommand):
         # It is not performed in this management command for you because
         # we don't want to accidentally delete important data
         json_data = open(
-            os.path.join(
-                os.path.dirname(__file__),
-                "../../../data/testing_data/endpoint_testing_data.json",
-            )
+            os.path.join(os.path.dirname(__file__), "../../../data/testing_data/endpoint_testing_data.json")
         )
         endpoints = json.load(json_data)
         json_data.close()
@@ -39,12 +36,7 @@ class Command(BaseCommand):
 
             response = None
             if method == "POST":
-                response = c.post(
-                    url,
-                    content_type="application/json",
-                    data=json.dumps(request_object),
-                    format="json",
-                )
+                response = c.post(url, content_type="application/json", data=json.dumps(request_object), format="json")
             elif method == "GET":
                 response = c.get(url, format="json")
 

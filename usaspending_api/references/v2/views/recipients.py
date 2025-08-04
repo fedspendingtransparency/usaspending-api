@@ -12,21 +12,8 @@ from usaspending_api.common.validator.tinyshield import validate_post_request
 from usaspending_api.search.v2.es_sanitization import es_sanitize
 
 models = [
-    {
-        "name": "search_text",
-        "key": "search_text",
-        "type": "text",
-        "text_type": "search",
-        "optional": False,
-    },
-    {
-        "name": "limit",
-        "key": "limit",
-        "type": "integer",
-        "max": 500,
-        "optional": True,
-        "default": 10,
-    },
+    {"name": "search_text", "key": "search_text", "type": "text", "text_type": "search", "optional": False},
+    {"name": "limit", "key": "limit", "type": "integer", "max": 500, "optional": True, "default": 10},
     {
         "name": "recipient_levels",
         "key": "recipient_levels",
@@ -104,24 +91,9 @@ class RecipientAutocompleteViewSet(APIView):
             query
             for search_field in es_recipient_search_fields
             for query in [
-                ES_Q(
-                    "match_phrase_prefix",
-                    **{f"{search_field}": {"query": search_text, "boost": 5}},
-                ),
-                ES_Q(
-                    "match_phrase_prefix",
-                    **{f"{search_field}.contains": {"query": search_text, "boost": 3}},
-                ),
-                ES_Q(
-                    "match",
-                    **{
-                        f"{search_field}": {
-                            "query": search_text,
-                            "operator": "and",
-                            "boost": 1,
-                        }
-                    },
-                ),
+                ES_Q("match_phrase_prefix", **{f"{search_field}": {"query": search_text, "boost": 5}}),
+                ES_Q("match_phrase_prefix", **{f"{search_field}.contains": {"query": search_text, "boost": 3}}),
+                ES_Q("match", **{f"{search_field}": {"query": search_text, "operator": "and", "boost": 1}}),
             ]
         ]
 
@@ -136,13 +108,7 @@ class RecipientAutocompleteViewSet(APIView):
                 )
             ]
             # if there are recipient levels, then any of the options from the recipient levels as well as the search text should match  # noqa: E501
-            query = ES_Q(
-                "bool",
-                must=[
-                    ES_Q("bool", should=recipient_should_clause),
-                    ES_Q("bool", should=query),
-                ],
-            )
+            query = ES_Q("bool", must=[ES_Q("bool", should=recipient_should_clause), ES_Q("bool", should=query)])
 
         query = RecipientSearch().query(query)[:limit]
         return query

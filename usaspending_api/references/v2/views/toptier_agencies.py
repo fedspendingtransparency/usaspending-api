@@ -59,8 +59,7 @@ class ToptierAgenciesViewSet(APIView):
             .annotate(
                 total_budgetary_resources=Subquery(
                     GTASSF133Balances.objects.filter(
-                        fiscal_year=OuterRef("fiscal_year"),
-                        fiscal_period=OuterRef("fiscal_period"),
+                        fiscal_year=OuterRef("fiscal_year"), fiscal_period=OuterRef("fiscal_period")
                     )
                     .values("fiscal_year")
                     .annotate(total_budgetary_resources=Sum("total_budgetary_resources_cpe"))
@@ -88,19 +87,9 @@ class ToptierAgenciesViewSet(APIView):
                 Q(submission_window=most_recent_quarter_window["id"])
                 | Q(submission_window=most_recent_period_window["id"])
             )
-            .order_by(
-                "toptier_code",
-                "-reporting_fiscal_year",
-                "-reporting_fiscal_quarter",
-                "-reporting_fiscal_period",
-            )
+            .order_by("toptier_code", "-reporting_fiscal_year", "-reporting_fiscal_quarter", "-reporting_fiscal_period")
             .distinct("toptier_code")
-            .values(
-                "toptier_code",
-                "reporting_fiscal_year",
-                "reporting_fiscal_quarter",
-                "reporting_fiscal_period",
-            )
+            .values("toptier_code", "reporting_fiscal_year", "reporting_fiscal_quarter", "reporting_fiscal_period")
         )
         latest_submission_by_toptier = {
             val["toptier_code"]: {
@@ -143,9 +132,7 @@ class ToptierAgenciesViewSet(APIView):
                     output_field=DecimalField(max_digits=23, decimal_places=2),
                 ),
                 outlay_amount=Coalesce(
-                    Sum("gross_outlay_amount_by_tas_cpe"),
-                    0,
-                    output_field=DecimalField(max_digits=23, decimal_places=2),
+                    Sum("gross_outlay_amount_by_tas_cpe"), 0, output_field=DecimalField(max_digits=23, decimal_places=2)
                 ),
             )
         )
@@ -186,18 +173,9 @@ class ToptierAgenciesViewSet(APIView):
             active_fiscal_quarter = submission["fiscal_quarter"]
             active_fiscal_period = submission["fiscal_period"]
 
-            default_aab_sums = {
-                "outlay_amount": 0,
-                "obligated_amount": 0,
-                "budget_authority_amount": 0,
-            }
+            default_aab_sums = {"outlay_amount": 0, "obligated_amount": 0, "budget_authority_amount": 0}
             aab_sums = aab_sums_by_toptier.get(
-                (
-                    agency["toptier_agency_id"],
-                    active_fiscal_year,
-                    active_fiscal_quarter,
-                ),
-                default_aab_sums,
+                (agency["toptier_agency_id"], active_fiscal_year, active_fiscal_quarter), default_aab_sums
             )
 
             abbreviation = agency.get("toptier_abbreviation", "")
@@ -228,10 +206,7 @@ class ToptierAgenciesViewSet(APIView):
             )
 
         response["results"] = sort_with_null_last(
-            to_sort=response["results"],
-            sort_key=sort,
-            sort_order=order,
-            tie_breaker="agency_name",
+            to_sort=response["results"], sort_key=sort, sort_order=order, tie_breaker="agency_name"
         )
 
         return Response(response)

@@ -23,19 +23,10 @@ from opentelemetry import trace
 from opentelemetry.trace import SpanKind
 
 from usaspending_api.download.models.download_job_lookup import DownloadJobLookup
-from usaspending_api.search.filters.time_period.decorators import (
-    NEW_AWARDS_ONLY_KEYWORD,
-)
+from usaspending_api.search.filters.time_period.decorators import NEW_AWARDS_ONLY_KEYWORD
 from usaspending_api.settings import MAX_DOWNLOAD_LIMIT
-from usaspending_api.awards.v2.lookups.lookups import (
-    contract_type_mapping,
-    assistance_type_mapping,
-    idv_type_mapping,
-)
-from usaspending_api.common.csv_helpers import (
-    count_rows_in_delimited_file,
-    partition_large_delimited_file,
-)
+from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, assistance_type_mapping, idv_type_mapping
+from usaspending_api.common.csv_helpers import count_rows_in_delimited_file, partition_large_delimited_file
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
 from usaspending_api.common.helpers.s3_helpers import multipart_upload
@@ -44,20 +35,10 @@ from usaspending_api.common.tracing import SubprocessTrace
 from usaspending_api.download.download_utils import construct_data_date_range
 from usaspending_api.download.filestreaming import NAMING_CONFLICT_DISCRIMINATOR
 from usaspending_api.download.filestreaming.download_source import DownloadSource
-from usaspending_api.download.filestreaming.file_description import (
-    build_file_description,
-    save_file_description,
-)
+from usaspending_api.download.filestreaming.file_description import build_file_description, save_file_description
 from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_file
-from usaspending_api.download.helpers import (
-    verify_requested_columns_available,
-    write_to_download_log as write_to_log,
-)
-from usaspending_api.download.lookups import (
-    JOB_STATUS_DICT,
-    VALUE_MAPPINGS,
-    FILE_FORMATS,
-)
+from usaspending_api.download.helpers import verify_requested_columns_available, write_to_download_log as write_to_log
+from usaspending_api.download.lookups import JOB_STATUS_DICT, VALUE_MAPPINGS, FILE_FORMATS
 from usaspending_api.download.models.download_job import DownloadJob
 from usaspending_api.common.helpers.s3_helpers import download_s3_object
 
@@ -103,14 +84,14 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
                 "download_job_id": str(download_job.download_job_id),
                 "download_job_status": str(download_job.job_status.name),
                 "download_file_name": str(download_job.file_name),
-                "download_file_size": (download_job.file_size if download_job.file_size is not None else 0),
-                "number_of_rows": (download_job.number_of_rows if download_job.number_of_rows is not None else 0),
+                "download_file_size": download_job.file_size if download_job.file_size is not None else 0,
+                "number_of_rows": download_job.number_of_rows if download_job.number_of_rows is not None else 0,
                 "number_of_columns": (
                     download_job.number_of_columns if download_job.number_of_columns is not None else 0
                 ),
-                "error_message": (download_job.error_message if download_job.error_message else ""),
+                "error_message": download_job.error_message if download_job.error_message else "",
                 "monthly_download": str(download_job.monthly_download),
-                "json_request": (str(download_job.json_request) if download_job.json_request else ""),
+                "json_request": str(download_job.json_request) if download_job.json_request else "",
                 "file_name": str(file_name),
             }
         )
@@ -153,26 +134,12 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
             source_column_count = len(source.columns(columns))
             if source_column_count == 0:
                 create_empty_data_file(
-                    source,
-                    download_job,
-                    working_dir,
-                    piid,
-                    assistance_id,
-                    zip_file_path,
-                    file_format,
+                    source, download_job, working_dir, piid, assistance_id, zip_file_path, file_format
                 )
             else:
                 download_job.number_of_columns += source_column_count
                 parse_source(
-                    source,
-                    columns,
-                    download_job,
-                    working_dir,
-                    piid,
-                    assistance_id,
-                    zip_file_path,
-                    limit,
-                    file_format,
+                    source, columns, download_job, working_dir, piid, assistance_id, zip_file_path, limit, file_format
                 )
         include_data_dictionary = json_request.get("include_data_dictionary")
         if include_data_dictionary:
@@ -255,10 +222,7 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
                     "service": "aws.s3",
                     "span_type": "WEB",
                     "resource": ".".join(
-                        [
-                            multipart_upload.__module__,
-                            (multipart_upload.__qualname__ or multipart_upload.__name__),
-                        ]
+                        [multipart_upload.__module__, (multipart_upload.__qualname__ or multipart_upload.__name__)]
                     ),
                 }
             )
@@ -272,8 +236,7 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
                 start_uploading = time.perf_counter()
                 multipart_upload(bucket, region, zip_file_path, os.path.basename(zip_file_path))
                 write_to_log(
-                    message=f"Uploading took {time.perf_counter() - start_uploading:.2f}s",
-                    download_job=download_job,
+                    message=f"Uploading took {time.perf_counter() - start_uploading:.2f}s", download_job=download_job
                 )
             except Exception as e:
                 exc_msg = "An exception was raised while attempting to upload the file"
@@ -306,9 +269,7 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
 
 
 def get_download_sources(
-    json_request: dict,
-    download_job: DownloadJob = None,
-    origination: Optional[str] = None,
+    json_request: dict, download_job: DownloadJob = None, origination: Optional[str] = None
 ) -> List[DownloadSource]:
     download_sources = []
     for download_type in json_request["download_types"]:
@@ -357,11 +318,7 @@ def get_download_sources(
             ):
                 # only generate d1 files if the user is asking for contract data
                 d1_source = DownloadSource(
-                    VALUE_MAPPINGS[download_type]["table_name"],
-                    "d1",
-                    download_type,
-                    agency_id,
-                    filters,
+                    VALUE_MAPPINGS[download_type]["table_name"], "d1", download_type, agency_id, filters
                 )
                 d1_filters = {f"{VALUE_MAPPINGS[download_type].get('is_fpds_join', '')}is_fpds": True}
                 d1_source.queryset = queryset & download_type_table.objects.filter(**d1_filters)
@@ -370,11 +327,7 @@ def get_download_sources(
             if award_type_codes & set(assistance_type_mapping.keys()) or ("grant" in award_type_codes):
                 # only generate d2 files if the user is asking for assistance data
                 d2_source = DownloadSource(
-                    VALUE_MAPPINGS[download_type]["table_name"],
-                    "d2",
-                    download_type,
-                    agency_id,
-                    filters,
+                    VALUE_MAPPINGS[download_type]["table_name"], "d2", download_type, agency_id, filters
                 )
                 d2_filters = {f"{VALUE_MAPPINGS[download_type].get('is_fpds_join', '')}is_fpds": False}
                 d2_source.queryset = queryset & download_type_table.objects.filter(**d2_filters)
@@ -382,10 +335,7 @@ def get_download_sources(
 
         elif VALUE_MAPPINGS[download_type]["source_type"] == "account":
             # Account downloads
-            filters = {
-                **json_request["filters"],
-                **json_request.get("account_filters", {}),
-            }
+            filters = {**json_request["filters"], **json_request.get("account_filters", {})}
 
             if "is_fpds_join" in VALUE_MAPPINGS[download_type]:
                 # Contracts
@@ -396,10 +346,7 @@ def get_download_sources(
                     agency_id,
                     extra_file_type="Contracts_",
                 )
-                d1_filters = {
-                    **filters,
-                    f"{VALUE_MAPPINGS[download_type].get('is_fpds_join', '')}is_fpds": True,
-                }
+                d1_filters = {**filters, f"{VALUE_MAPPINGS[download_type].get('is_fpds_join', '')}is_fpds": True}
                 d1_account_source.queryset = filter_function(
                     download_type,
                     VALUE_MAPPINGS[download_type]["table"],
@@ -416,10 +363,7 @@ def get_download_sources(
                     agency_id,
                     extra_file_type="Assistance_",
                 )
-                d2_filters = {
-                    **filters,
-                    f"{VALUE_MAPPINGS[download_type].get('is_fpds_join', '')}is_fpds": False,
-                }
+                d2_filters = {**filters, f"{VALUE_MAPPINGS[download_type].get('is_fpds_join', '')}is_fpds": False}
                 d2_account_source.queryset = filter_function(
                     download_type,
                     VALUE_MAPPINGS[download_type]["table"],
@@ -447,10 +391,7 @@ def get_download_sources(
 
             else:
                 account_source = DownloadSource(
-                    VALUE_MAPPINGS[download_type]["table_name"],
-                    json_request["account_level"],
-                    download_type,
-                    agency_id,
+                    VALUE_MAPPINGS[download_type]["table_name"], json_request["account_level"], download_type, agency_id
                 )
                 account_source.queryset = filter_function(
                     download_type,
@@ -470,9 +411,7 @@ def get_download_sources(
             )
             disaster_source.award_category = json_request["award_category"]
             disaster_source.queryset = filter_function(
-                json_request["filters"],
-                download_type,
-                VALUE_MAPPINGS[download_type]["base_fields"],
+                json_request["filters"], download_type, VALUE_MAPPINGS[download_type]["base_fields"]
             )
             download_sources.append(disaster_source)
 
@@ -495,17 +434,9 @@ def build_data_file_name(source, download_job, piid, assistance_id):
     elif source.is_for_assistance:
         file_name_values = {"assistance_id": slugify_text_for_file_names(assistance_id, "UNKNOWN", 50)}
     elif source.source_type == "disaster_recipient":
-        file_name_values = {
-            "award_category": source.award_category,
-            "timestamp": timestamp,
-        }
+        file_name_values = {"award_category": source.award_category, "timestamp": timestamp}
     else:
-        d_map = {
-            "d1": "Contracts",
-            "d2": "Assistance",
-            "treasury_account": "TAS",
-            "federal_account": "FA",
-        }
+        d_map = {"d1": "Contracts", "d2": "Assistance", "treasury_account": "TAS", "federal_account": "FA"}
 
         if source.agency_code == "all":
             agency = "All"
@@ -562,10 +493,7 @@ def parse_source(
     source.file_name = f"{data_file_name}.{extension}"
     source_path = os.path.join(working_dir, source.file_name)
 
-    write_to_log(
-        message=f"Preparing to download data as {source.file_name}",
-        download_job=download_job,
-    )
+    write_to_log(message=f"Preparing to download data as {source.file_name}", download_job=download_job)
 
     # Generate the query file; values, limits, dates fixed
     export_query = generate_export_query(source_query, limit, source, columns, file_format)
@@ -587,28 +515,17 @@ def parse_source(
         try:
             number_of_rows = count_rows_in_delimited_file(filename=source_path, has_header=True, delimiter=delim)
             download_job.number_of_rows += number_of_rows
-            write_to_log(
-                message=f"Number of rows in text file: {number_of_rows}",
-                download_job=download_job,
-            )
+            write_to_log(message=f"Number of rows in text file: {number_of_rows}", download_job=download_job)
         except Exception:
             write_to_log(
-                message="Unable to obtain delimited text file line count",
-                is_error=True,
-                download_job=download_job,
+                message="Unable to obtain delimited text file line count", is_error=True, download_job=download_job
             )
         download_job.save()
 
         # Create a separate process to split the large data files into smaller file and write to zip; wait
         zip_process = multiprocessing.Process(
             target=split_and_zip_data_files,
-            args=(
-                zip_file_path,
-                source_path,
-                data_file_name,
-                file_format,
-                download_job,
-            ),
+            args=(zip_file_path, source_path, data_file_name, file_format, download_job),
         )
         zip_process.start()
         wait_for_process(zip_process, start_time, download_job)
@@ -646,10 +563,7 @@ def split_and_zip_data_files(zip_file_path, source_path, data_file_name, file_fo
         extension = FILE_FORMATS[file_format]["extension"]
 
         output_template = f"{data_file_name}_%s.{extension}"
-        write_to_log(
-            message="Beginning the delimited text file partition",
-            download_job=download_job,
-        )
+        write_to_log(message="Beginning the delimited text file partition", download_job=download_job)
         list_of_files = partition_large_delimited_file(
             download_job=download_job,
             file_path=source_path,
@@ -668,8 +582,7 @@ def split_and_zip_data_files(zip_file_path, source_path, data_file_name, file_fo
         append_files_to_zip_file(list_of_files, zip_file_path)
 
         write_to_log(
-            message=f"Writing to zipfile took {time.perf_counter() - log_time:.4f}s",
-            download_job=download_job,
+            message=f"Writing to zipfile took {time.perf_counter() - log_time:.4f}s", download_job=download_job
         )
 
     except Exception as e:
@@ -689,10 +602,7 @@ def start_download(download_job):
     download_job.file_size = 0
     download_job.save()
 
-    write_to_log(
-        message=f"Starting to process DownloadJob {download_job.download_job_id}",
-        download_job=download_job,
-    )
+    write_to_log(message=f"Starting to process DownloadJob {download_job.download_job_id}", download_job=download_job)
 
     return download_job.file_name
 
@@ -701,10 +611,7 @@ def finish_download(download_job):
     download_job.job_status_id = JOB_STATUS_DICT["finished"]
     download_job.save()
 
-    write_to_log(
-        message=f"Finished processing DownloadJob {download_job.download_job_id}",
-        download_job=download_job,
-    )
+    write_to_log(message=f"Finished processing DownloadJob {download_job.download_job_id}", download_job=download_job)
 
     return download_job.file_name
 
@@ -734,9 +641,7 @@ def wait_for_process(process, start_time, download_job):
         if process.is_alive():
             # Process is running for longer than MAX_VISIBILITY_TIMEOUT, kill it
             write_to_log(
-                message=f"Attempting to terminate process (pid {process.pid})",
-                download_job=download_job,
-                is_error=True,
+                message=f"Attempting to terminate process (pid {process.pid})", download_job=download_job, is_error=True
             )
             process.terminate()
             e = TimeoutError(
@@ -752,11 +657,7 @@ def wait_for_process(process, start_time, download_job):
 
 
 def generate_export_query(
-    source_query: QuerySet,
-    limit: int,
-    source: DownloadSource,
-    column_subset: Optional[List[str]],
-    file_format: str,
+    source_query: QuerySet, limit: int, source: DownloadSource, column_subset: Optional[List[str]], file_format: str
 ) -> str:
     if limit:
         source_query = source_query[:limit]
@@ -777,20 +678,14 @@ def generate_export_query(
                 annotated_group_by_columns.append(annotation_select_reverse[val])
 
     query_annotated = apply_annotations_to_sql(
-        generate_raw_quoted_query(source_query),
-        selected_columns,
-        annotated_group_by_columns,
+        generate_raw_quoted_query(source_query), selected_columns, annotated_group_by_columns
     )
     options = FILE_FORMATS[file_format]["options"]
     return rf"\COPY ({query_annotated}) TO STDOUT {options}"
 
 
 def generate_export_query_temp_file(export_query, download_job, temp_dir=None):
-    write_to_log(
-        message=f"Saving PSQL Query: {export_query}",
-        download_job=download_job,
-        is_debug=True,
-    )
+    write_to_log(message=f"Saving PSQL Query: {export_query}", download_job=download_job, is_debug=True)
     dir_name = "/tmp"
     if temp_dir:
         dir_name = temp_dir
@@ -804,9 +699,7 @@ def generate_export_query_temp_file(export_query, download_job, temp_dir=None):
 
 
 def apply_annotations_to_sql(
-    raw_query: str,
-    aliases: List[str],
-    annotated_group_by_columns: Optional[List[str]] = None,
+    raw_query: str, aliases: List[str], annotated_group_by_columns: Optional[List[str]] = None
 ):
     """
     Django's ORM understandably doesn't allow aliases to be the same names as other fields available. However, if we
@@ -966,14 +859,14 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
                 "download_job_id": str(download_job.download_job_id),
                 "download_job_status": str(download_job.job_status.name),
                 "download_file_name": str(download_job.file_name),
-                "download_file_size": (download_job.file_size if download_job.file_size is not None else 0),
-                "number_of_rows": (download_job.number_of_rows if download_job.number_of_rows is not None else 0),
+                "download_file_size": download_job.file_size if download_job.file_size is not None else 0,
+                "number_of_rows": download_job.number_of_rows if download_job.number_of_rows is not None else 0,
                 "number_of_columns": (
                     download_job.number_of_columns if download_job.number_of_columns is not None else 0
                 ),
-                "error_message": (download_job.error_message if download_job.error_message else ""),
+                "error_message": download_job.error_message if download_job.error_message else "",
                 "monthly_download": str(download_job.monthly_download),
-                "json_request": (str(download_job.json_request) if download_job.json_request else ""),
+                "json_request": str(download_job.json_request) if download_job.json_request else "",
             }
         )
 
@@ -989,15 +882,7 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
 
             cat_command = subprocess.Popen(["cat", temp_sql_file_path], stdout=subprocess.PIPE)
             subprocess.check_output(
-                [
-                    "psql",
-                    "-q",
-                    "-o",
-                    source_path,
-                    retrieve_db_string(),
-                    "-v",
-                    "ON_ERROR_STOP=1",
-                ],
+                ["psql", "-q", "-o", source_path, retrieve_db_string(), "-v", "ON_ERROR_STOP=1"],
                 stdin=cat_command.stdout,
                 stderr=subprocess.STDOUT,
                 env=temp_env,
@@ -1009,11 +894,7 @@ def execute_psql(temp_sql_file_path, source_path, download_job):
                 download_job=download_job,
             )
         except subprocess.CalledProcessError as e:
-            write_to_log(
-                message=f"PSQL Error: {e.output.decode()}",
-                is_error=True,
-                download_job=download_job,
-            )
+            write_to_log(message=f"PSQL Error: {e.output.decode()}", is_error=True, download_job=download_job)
             raise e
         except Exception as e:
             if not settings.IS_LOCAL:
@@ -1091,8 +972,7 @@ def create_empty_data_file(
     source.file_name = f"{data_file_name}.{extension}"
     source_path = os.path.join(working_dir, source.file_name)
     write_to_log(
-        message=f"Skipping download of {source.file_name} due to no valid columns provided",
-        download_job=download_job,
+        message=f"Skipping download of {source.file_name} due to no valid columns provided", download_job=download_job
     )
     Path(source_path).touch()
     append_files_to_zip_file([source_path], zip_file_path)

@@ -40,11 +40,7 @@ class Command(BaseCommand):
 
             # run the queries
             self._run_updaters(
-                curs=curs,
-                table="awards",
-                updaters=self.AWARD_UPDATERS,
-                options=options,
-                start_time=start,
+                curs=curs, table="awards", updaters=self.AWARD_UPDATERS, options=options, start_time=start
             )
             self._run_updaters(
                 curs=curs,

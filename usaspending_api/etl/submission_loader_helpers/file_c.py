@@ -15,18 +15,10 @@ from usaspending_api.common.helpers.dict_helpers import upper_case_dict_values
 from usaspending_api.common.helpers.etl_helpers import update_c_to_d_linkages
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.management.load_base import load_data_into_model
-from usaspending_api.etl.submission_loader_helpers.bulk_create_manager import (
-    BulkCreateManager,
-)
-from usaspending_api.etl.submission_loader_helpers.disaster_emergency_fund_codes import (
-    get_disaster_emergency_fund,
-)
-from usaspending_api.etl.submission_loader_helpers.object_class import (
-    get_object_class_row,
-)
-from usaspending_api.etl.submission_loader_helpers.program_activities import (
-    get_program_activity,
-)
+from usaspending_api.etl.submission_loader_helpers.bulk_create_manager import BulkCreateManager
+from usaspending_api.etl.submission_loader_helpers.disaster_emergency_fund_codes import get_disaster_emergency_fund
+from usaspending_api.etl.submission_loader_helpers.object_class import get_object_class_row
+from usaspending_api.etl.submission_loader_helpers.program_activities import get_program_activity
 from usaspending_api.etl.submission_loader_helpers.treasury_appropriation_account import (
     bulk_treasury_appropriation_account_tas_lookup,
     get_treasury_appropriation_account_tas_lookup,
@@ -59,9 +51,7 @@ class PublishedAwardFinancialIterator:
         if award_financial_frame.size > 0:
             award_financial_frame["object_class"] = award_financial_frame.apply(get_object_class_row, axis=1)
             award_financial_frame["program_activity"] = award_financial_frame.apply(
-                get_program_activity,
-                axis=1,
-                submission_attributes=self.submission_attributes,
+                get_program_activity, axis=1, submission_attributes=self.submission_attributes
             )
             award_financial_frame = award_financial_frame.replace({np.nan: None})
 
@@ -146,14 +136,7 @@ def load_file_c(submission_attributes, db_cursor, published_award_financial, ski
 
     bulk_treasury_appropriation_account_tas_lookup(published_award_financial.account_nums, db_cursor)
 
-    _save_file_c_rows(
-        published_award_financial,
-        total_rows,
-        start_time,
-        skipped_tas,
-        submission_attributes,
-        reverse,
-    )
+    _save_file_c_rows(published_award_financial, total_rows, start_time, skipped_tas, submission_attributes, reverse)
 
     if skip_c_to_d_linkage:
         logger.info("Skipping c_to_d_linkage process as requested.")
@@ -172,14 +155,7 @@ def load_file_c(submission_attributes, db_cursor, published_award_financial, ski
         logger.info("All File C records in Broker loaded into USAspending")
 
 
-def _save_file_c_rows(
-    published_award_financial,
-    total_rows,
-    start_time,
-    skipped_tas,
-    submission_attributes,
-    reverse,
-):
+def _save_file_c_rows(published_award_financial, total_rows, start_time, skipped_tas, submission_attributes, reverse):
     save_manager = BulkCreateManager(FinancialAccountsByAwards)
     for index, row in enumerate(published_award_financial, 1):
         if not (index % 1000):
@@ -207,13 +183,7 @@ def _save_file_c_rows(
         }
 
         save_manager.append(
-            load_data_into_model(
-                award_financial_data,
-                row,
-                value_map=value_map_faba,
-                save=False,
-                reverse=reverse,
-            )
+            load_data_into_model(award_financial_data, row, value_map=value_map_faba, save=False, reverse=reverse)
         )
 
     save_manager.save_stragglers()

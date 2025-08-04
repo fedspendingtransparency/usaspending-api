@@ -6,36 +6,28 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("references", "0052_toptieragencypublisheddabsview"),
+        ('references', '0052_toptieragencypublisheddabsview'),
     ]
 
     operations = [
         migrations.CreateModel(
-            name="Office",
+            name='Office',
             fields=[
-                (
-                    "id",
-                    models.AutoField(
-                        auto_created=True,
-                        primary_key=True,
-                        serialize=False,
-                        verbose_name="ID",
-                    ),
-                ),
-                ("created_at", models.DateTimeField(auto_now_add=True, null=True)),
-                ("updated_at", models.DateTimeField(auto_now=True, null=True)),
-                ("office_code", models.TextField()),
-                ("office_name", models.TextField(null=True)),
-                ("sub_tier_code", models.TextField()),
-                ("agency_code", models.TextField()),
-                ("contract_awards_office", models.BooleanField()),
-                ("contract_funding_office", models.BooleanField()),
-                ("financial_assistance_awards_office", models.BooleanField()),
-                ("financial_assistance_funding_office", models.BooleanField()),
+                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('created_at', models.DateTimeField(auto_now_add=True, null=True)),
+                ('updated_at', models.DateTimeField(auto_now=True, null=True)),
+                ('office_code', models.TextField()),
+                ('office_name', models.TextField(null=True)),
+                ('sub_tier_code', models.TextField()),
+                ('agency_code', models.TextField()),
+                ('contract_awards_office', models.BooleanField()),
+                ('contract_funding_office', models.BooleanField()),
+                ('financial_assistance_awards_office', models.BooleanField()),
+                ('financial_assistance_funding_office', models.BooleanField()),
             ],
             options={
-                "db_table": "office",
-                "managed": True,
+                'db_table': 'office',
+                'managed': True,
             },
         ),
     ]

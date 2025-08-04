@@ -17,14 +17,8 @@ INSIDE_OF_LATEST = TODAY - datetime.timedelta(365 - 2)
 FISCAL_INSIDE_OF_LATEST = INSIDE_OF_LATEST + datetime.timedelta(days=30 * 3)
 
 TEST_REF_COUNTRY_CODE = {
-    "PARENT COUNTRY CODE": {
-        "country_code": "PARENT COUNTRY CODE",
-        "country_name": "PARENT COUNTRY NAME",
-    },
-    "CHILD COUNTRY CODE": {
-        "country_code": "CHILD COUNTRY CODE",
-        "country_name": "CHILD COUNTRY NAME",
-    },
+    "PARENT COUNTRY CODE": {"country_code": "PARENT COUNTRY CODE", "country_name": "PARENT COUNTRY NAME"},
+    "CHILD COUNTRY CODE": {"country_code": "CHILD COUNTRY CODE", "country_name": "CHILD COUNTRY NAME"},
 }
 MAP_DUNS_TO_CONTRACT = {
     "address_line_1": "address_line1",
@@ -410,12 +404,7 @@ def test_extract_location_success():
     country_code = TEST_RECIPIENT_LOCATIONS[recipient_hash]["country_code"]
     baker.make("references.RefCountryCode", **TEST_REF_COUNTRY_CODE[country_code])
 
-    additional_blank_fields = [
-        "address_line3",
-        "foreign_province",
-        "county_name",
-        "foreign_postal_code",
-    ]
+    additional_blank_fields = ["address_line3", "foreign_province", "county_name", "foreign_postal_code"]
     expected_location = TEST_RECIPIENT_LOCATIONS[recipient_hash].copy()
     expected_location["country_name"] = TEST_REF_COUNTRY_CODE[country_code]["country_name"]
     for additional_blank_field in additional_blank_fields:
@@ -438,10 +427,7 @@ def test_cleanup_location():
     # Test Country_Code
     baker.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")
     test_location = {"country_code": "USA"}
-    assert {
-        "country_code": "USA",
-        "country_name": "UNITED STATES",
-    } == recipients.cleanup_location(test_location)
+    assert {"country_code": "USA", "country_name": "UNITED STATES"} == recipients.cleanup_location(test_location)
 
     # Test Congressional Codes
     test_location = {"congressional_code": "CA13"}

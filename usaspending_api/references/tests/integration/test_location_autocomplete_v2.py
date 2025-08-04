@@ -22,61 +22,16 @@ def location_data_fixture(db):
     baker.make("recipient.StateData", id="5", code="OK", name="Oklahoma")
 
     baker.make("references.CityCountyStateCode", id=1, feature_name="Denver", state_alpha="CO")
-    baker.make(
-        "references.CityCountyStateCode",
-        id=2,
-        feature_name="Texas A City",
-        state_alpha="TX",
-    )
-    baker.make(
-        "references.CityCountyStateCode",
-        id=3,
-        feature_name="Texas B City",
-        state_alpha="TX",
-    )
-    baker.make(
-        "references.CityCountyStateCode",
-        id=4,
-        feature_name="Texas C City",
-        state_alpha="IL",
-    )
-    baker.make(
-        "references.CityCountyStateCode",
-        id=5,
-        feature_name="Texas D City",
-        state_alpha="OK",
-    )
-    baker.make(
-        "references.CityCountyStateCode",
-        id=6,
-        feature_name="Texas E City",
-        state_alpha="TX",
-    )
-    baker.make(
-        "references.CityCountyStateCode",
-        id=7,
-        feature_name="Texas F City",
-        state_alpha="TX",
-    )
-    baker.make(
-        "references.CityCountyStateCode",
-        id=8,
-        county_name="Los Angeles",
-        state_alpha="CA",
-    )
+    baker.make("references.CityCountyStateCode", id=2, feature_name="Texas A City", state_alpha="TX")
+    baker.make("references.CityCountyStateCode", id=3, feature_name="Texas B City", state_alpha="TX")
+    baker.make("references.CityCountyStateCode", id=4, feature_name="Texas C City", state_alpha="IL")
+    baker.make("references.CityCountyStateCode", id=5, feature_name="Texas D City", state_alpha="OK")
+    baker.make("references.CityCountyStateCode", id=6, feature_name="Texas E City", state_alpha="TX")
+    baker.make("references.CityCountyStateCode", id=7, feature_name="Texas F City", state_alpha="TX")
+    baker.make("references.CityCountyStateCode", id=8, county_name="Los Angeles", state_alpha="CA")
 
-    baker.make(
-        "references.ZipsGrouped",
-        zips_grouped_id=1,
-        zip5="90210",
-        state_abbreviation="CA",
-    )
-    baker.make(
-        "references.ZipsGrouped",
-        zips_grouped_id=2,
-        zip5="90211",
-        state_abbreviation="CA",
-    )
+    baker.make("references.ZipsGrouped", zips_grouped_id=1, zip5="90210", state_abbreviation="CA")
+    baker.make("references.ZipsGrouped", zips_grouped_id=2, zip5="90211", state_abbreviation="CA")
 
     baker.make(
         "search.TransactionSearch",
@@ -118,9 +73,7 @@ def test_exact_match(client, monkeypatch, location_data_fixture, elasticsearch_l
     elasticsearch_location_index.update_index()
 
     response = client.post(
-        "/api/v2/autocomplete/location",
-        content_type="application/json",
-        data=json.dumps({"search_text": "denmark"}),
+        "/api/v2/autocomplete/location", content_type="application/json", data=json.dumps({"search_text": "denmark"})
     )
 
     assert response.status_code == status.HTTP_200_OK
@@ -140,9 +93,7 @@ def test_multiple_types_of_matches(client, monkeypatch, location_data_fixture, e
     elasticsearch_location_index.update_index()
 
     response = client.post(
-        "/api/v2/autocomplete/location",
-        content_type="application/json",
-        data=json.dumps({"search_text": "den"}),
+        "/api/v2/autocomplete/location", content_type="application/json", data=json.dumps({"search_text": "den"})
     )
 
     assert response.status_code == status.HTTP_200_OK
@@ -151,13 +102,7 @@ def test_multiple_types_of_matches(client, monkeypatch, location_data_fixture, e
     assert response.data["messages"] == [""]
     assert response.data["results"] == {
         "countries": [{"country_name": "DENMARK"}],
-        "cities": [
-            {
-                "city_name": "DENVER",
-                "state_name": "COLORADO",
-                "country_name": "UNITED STATES",
-            }
-        ],
+        "cities": [{"city_name": "DENVER", "state_name": "COLORADO", "country_name": "UNITED STATES"}],
     }
 
 
@@ -179,20 +124,8 @@ def test_congressional_district_results(client, monkeypatch, location_data_fixtu
     assert response.data["count"] == 2
     assert response.data["messages"] == [""]
     assert response.data["results"] == {
-        "districts_current": [
-            {
-                "current_cd": "CA-34",
-                "state_name": "CALIFORNIA",
-                "country_name": "UNITED STATES",
-            }
-        ],
-        "districts_original": [
-            {
-                "original_cd": "CA-34",
-                "state_name": "CALIFORNIA",
-                "country_name": "UNITED STATES",
-            }
-        ],
+        "districts_current": [{"current_cd": "CA-34", "state_name": "CALIFORNIA", "country_name": "UNITED STATES"}],
+        "districts_original": [{"original_cd": "CA-34", "state_name": "CALIFORNIA", "country_name": "UNITED STATES"}],
     }
 
 
@@ -215,11 +148,7 @@ def test_zipcode_results(client, monkeypatch, location_data_fixture, elasticsear
     assert response.data["messages"] == [""]
     assert response.data["results"] == {
         "zip_codes": [
-            {
-                "zip_code": "90210",
-                "state_name": "CALIFORNIA",
-                "country_name": "UNITED STATES",
-            },
+            {"zip_code": "90210", "state_name": "CALIFORNIA", "country_name": "UNITED STATES"},
         ]
     }
 
@@ -243,11 +172,7 @@ def test_county_results(client, monkeypatch, location_data_fixture, elasticsearc
     assert response.data["messages"] == [""]
     assert response.data["results"] == {
         "counties": [
-            {
-                "county_name": "LOS ANGELES",
-                "state_name": "CALIFORNIA",
-                "country_name": "UNITED STATES",
-            },
+            {"county_name": "LOS ANGELES", "state_name": "CALIFORNIA", "country_name": "UNITED STATES"},
         ],
     }
 
@@ -305,9 +230,7 @@ def test_limits_by_location_type(client, monkeypatch, location_data_fixture, ela
     elasticsearch_location_index.update_index()
 
     response = client.post(
-        "/api/v2/autocomplete/location",
-        content_type="application/json",
-        data=json.dumps({"search_text": "texas"}),
+        "/api/v2/autocomplete/location", content_type="application/json", data=json.dumps({"search_text": "texas"})
     )
 
     assert response.status_code == status.HTTP_200_OK

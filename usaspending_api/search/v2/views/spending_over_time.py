@@ -13,16 +13,9 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from usaspending_api.common.api_versioning import (
-    API_TRANSFORM_FUNCTIONS,
-    api_transformations,
-)
+from usaspending_api.common.api_versioning import API_TRANSFORM_FUNCTIONS, api_transformations
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.elasticsearch.search_wrappers import (
-    AwardSearch,
-    SubawardSearch,
-    TransactionSearch,
-)
+from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, SubawardSearch, TransactionSearch
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.fiscal_year_helpers import (
     generate_date_range,
@@ -74,12 +67,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
     @staticmethod
     def validate_request_data(json_data: dict) -> Tuple[dict, dict]:
         subawards_rule = [
-            {
-                "name": "subawards",
-                "key": "subawards",
-                "type": "boolean",
-                "default": False,
-            },
+            {"name": "subawards", "key": "subawards", "type": "boolean", "default": False},
         ]
 
         subaward_ts = TinyShield(subawards_rule)
@@ -102,12 +90,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             }
         ]
         models = [
-            {
-                "name": "subawards",
-                "key": "subawards",
-                "type": "boolean",
-                "default": False,
-            },
+            {"name": "subawards", "key": "subawards", "type": "boolean", "default": False},
             {
                 "name": "group",
                 "key": "group",
@@ -305,7 +288,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             "aggregated_amount": sum(obligation_dictionary.values()),
             "time_period": time_period,
             **obligation_dictionary,
-            "total_outlays": (sum(outlay_dictionary.values()) if self.spending_level == SpendingLevel.AWARD else None),
+            "total_outlays": sum(outlay_dictionary.values()) if self.spending_level == SpendingLevel.AWARD else None,
             **outlay_dictionary,
         }
 
@@ -434,10 +417,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
             days_in_month = monthrange(current_fy, current_fiscal_month)[1]
             end_date = f"{current_fy}-{current_fiscal_month}-{days_in_month}"
 
-        default_time_period = {
-            "start_date": settings.API_SEARCH_MIN_DATE,
-            "end_date": end_date,
-        }
+        default_time_period = {"start_date": settings.API_SEARCH_MIN_DATE, "end_date": end_date}
 
         # if time periods have been passed in use those, otherwise use the one calculated above
         time_periods = [
@@ -468,10 +448,7 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 (
                     "messages",
                     [
-                        *get_generic_filters_message(
-                            self.original_filters.keys(),
-                            [elem["name"] for elem in models],
-                        ),
+                        *get_generic_filters_message(self.original_filters.keys(), [elem["name"] for elem in models]),
                         (
                             "The 'subawards' field will be deprecated in the future. "
                             "Set 'spending_level' to 'subawards' instead. See documentation for more information."

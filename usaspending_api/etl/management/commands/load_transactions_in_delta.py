@@ -12,9 +12,7 @@ from pyspark.sql.types import ArrayType, StringType
 from pyspark.sql.utils import AnalysisException
 
 from usaspending_api.awards.delta_models.awards import AWARDS_COLUMNS
-from usaspending_api.broker.helpers.build_business_categories_boolean_dict import (
-    fpds_boolean_columns,
-)
+from usaspending_api.broker.helpers.build_business_categories_boolean_dict import fpds_boolean_columns
 from usaspending_api.broker.helpers.get_business_categories import (
     get_business_categories_fabs,
     get_business_categories_fpds,
@@ -41,9 +39,7 @@ from usaspending_api.transactions.delta_models.transaction_fpds import (
     TRANSACTION_FPDS_COLUMNS,
     DAP_TO_NORMALIZED_COLUMN_INFO,
 )
-from usaspending_api.transactions.delta_models.transaction_normalized import (
-    TRANSACTION_NORMALIZED_COLUMNS,
-)
+from usaspending_api.transactions.delta_models.transaction_normalized import TRANSACTION_NORMALIZED_COLUMNS
 
 logger = logging.getLogger(__name__)
 
@@ -131,8 +127,7 @@ class Command(BaseCommand):
 
             # Capture earliest last load date of the source tables to update the "last_load_date" after completion
             next_last_load = get_earliest_load_date(
-                ("source_procurement_transaction", "source_assistance_transaction"),
-                datetime.utcfromtimestamp(0),
+                ("source_procurement_transaction", "source_assistance_transaction"), datetime.utcfromtimestamp(0)
             )
 
             if self.etl_level == "initial_run":
@@ -203,14 +198,10 @@ class Command(BaseCommand):
 
         # Create UDFs for Business Categories
         self.spark.udf.register(
-            name="get_business_categories_fabs",
-            f=get_business_categories_fabs,
-            returnType=ArrayType(StringType()),
+            name="get_business_categories_fabs", f=get_business_categories_fabs, returnType=ArrayType(StringType())
         )
         self.spark.udf.register(
-            name="get_business_categories_fpds",
-            f=get_business_categories_fpds,
-            returnType=ArrayType(StringType()),
+            name="get_business_categories_fpds", f=get_business_categories_fpds, returnType=ArrayType(StringType())
         )
 
         yield  # Going to wait for the Django command to complete then stop the spark session if needed
@@ -282,11 +273,7 @@ class Command(BaseCommand):
         elif self.etl_level == "award_id_lookup":
             id_col = "transaction_unique_id"
             subquery = self.award_id_lookup_delete_subquery
-        elif self.etl_level in (
-            "transaction_fabs",
-            "transaction_fpds",
-            "transaction_normalized",
-        ):
+        elif self.etl_level in ("transaction_fabs", "transaction_fpds", "transaction_normalized"):
             id_col = "id" if self.etl_level == "transaction_normalized" else "transaction_id"
             subquery = f"""
                 SELECT {self.etl_level}.{id_col} AS id_to_remove
@@ -340,11 +327,7 @@ class Command(BaseCommand):
     def update_awards(self):
         load_datetime = datetime.now(timezone.utc)
 
-        set_insert_special_columns = [
-            "total_subaward_amount",
-            "create_date",
-            "update_date",
-        ]
+        set_insert_special_columns = ["total_subaward_amount", "create_date", "update_date"]
         subquery_ignored_columns = set_insert_special_columns + ["id", "subaward_count"]
 
         # Use a UNION in award_ids_to_update, not UNION ALL because there could be duplicates among the award ids
@@ -645,7 +628,7 @@ class Command(BaseCommand):
             action_date_col = next(
                 filter(
                     lambda c: c.dest_name == "action_date" and c.source == "action_date",
-                    (FABS_TO_NORMALIZED_COLUMN_INFO if transaction_type == "fabs" else DAP_TO_NORMALIZED_COLUMN_INFO),
+                    FABS_TO_NORMALIZED_COLUMN_INFO if transaction_type == "fabs" else DAP_TO_NORMALIZED_COLUMN_INFO,
                 )
             )
             parse_action_date_sql_snippet = handle_column(action_date_col, bronze_table_name, is_result_aliased=False)
@@ -1243,34 +1226,13 @@ class Command(BaseCommand):
                     if fabs_join and fpds_join:
                         # If both raw.transaction_fabs and raw.transaction_fpds exist, don't need *_is_fpds_where
                         # in WHERE clause
-                        where_str = "".join(
-                            (
-                                "WHERE ",
-                                fabs_transaction_id_where,
-                                " AND ",
-                                fpds_transaction_id_where,
-                            )
-                        )
+                        where_str = "".join(("WHERE ", fabs_transaction_id_where, " AND ", fpds_transaction_id_where))
                     elif fabs_join:
                         # raw.transaction_fabs exists, but not raw.transaction_fpds
-                        where_str = "".join(
-                            (
-                                "WHERE ",
-                                fabs_transaction_id_where,
-                                " AND ",
-                                fabs_is_fpds_where,
-                            )
-                        )
+                        where_str = "".join(("WHERE ", fabs_transaction_id_where, " AND ", fabs_is_fpds_where))
                     else:
                         # raw.transaction_fpds exists, but not raw.transaction_fabs
-                        where_str = "".join(
-                            (
-                                "WHERE ",
-                                fpds_transaction_id_where,
-                                " AND ",
-                                fpds_is_fpds_where,
-                            )
-                        )
+                        where_str = "".join(("WHERE ", fpds_transaction_id_where, " AND ", fpds_is_fpds_where))
 
                     logger.info(
                         "Finding additional orphaned transactions in raw.transaction_normalized (those with missing "
@@ -1522,12 +1484,7 @@ class Command(BaseCommand):
 
             # Create other tables in 'int' database
             for destination_table, col_names, orphaned_record_key in zip(
-                (
-                    "transaction_fabs",
-                    "transaction_fpds",
-                    "transaction_normalized",
-                    "awards",
-                ),
+                ("transaction_fabs", "transaction_fpds", "transaction_normalized", "awards"),
                 (
                     TRANSACTION_FABS_COLUMNS,
                     TRANSACTION_FPDS_COLUMNS,

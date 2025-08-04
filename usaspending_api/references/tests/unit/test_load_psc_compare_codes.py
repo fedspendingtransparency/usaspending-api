@@ -27,10 +27,7 @@ def test_load_psc_compare_codes(old_pscs, new_pscs):
     expected = {
         "added": {"4": PSC(code="4", description="add me")},
         "updated": {
-            "3": {
-                "old": PSC(code="3", description="update me"),
-                "new": PSC(code="3", description="I'm updated"),
-            }
+            "3": {"old": PSC(code="3", description="update me"), "new": PSC(code="3", description="I'm updated")}
         },
         "unchanged": {"2": PSC(code="2", description="unchanged")},
         "deleted": {"1": PSC(code="1", description="delete me")},

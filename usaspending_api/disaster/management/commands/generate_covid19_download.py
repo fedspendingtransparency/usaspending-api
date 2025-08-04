@@ -9,10 +9,7 @@ from pathlib import Path
 from usaspending_api.common.etl.spark import create_ref_temp_views
 
 from usaspending_api.common.helpers.s3_helpers import upload_download_file_to_s3
-from usaspending_api.common.helpers.spark_helpers import (
-    configure_spark_session,
-    get_active_spark_session,
-)
+from usaspending_api.common.helpers.spark_helpers import configure_spark_session, get_active_spark_session
 from usaspending_api.common.helpers.sql_helpers import read_sql_file_to_text
 from usaspending_api.common.helpers.download_csv_strategies import (
     PostgresToCSVStrategy,
@@ -21,28 +18,13 @@ from usaspending_api.common.helpers.download_csv_strategies import (
 from usaspending_api.download.filestreaming.download_generation import (
     add_data_dictionary_to_zip,
 )
-from usaspending_api.disaster.management.sql.spark.disaster_covid19_file_a import (
-    file_a_sql_string,
-)
-from usaspending_api.disaster.management.sql.spark.disaster_covid19_file_b import (
-    file_b_sql_string,
-)
-from usaspending_api.disaster.management.sql.spark.disaster_covid19_file_d1_awards import (
-    d1_awards_sql_string,
-)
-from usaspending_api.disaster.management.sql.spark.disaster_covid19_file_d2_awards import (
-    d2_awards_sql_string,
-)
-from usaspending_api.disaster.management.sql.spark.disaster_covid19_file_f_contracts import (
-    f_contracts_sql_string,
-)
-from usaspending_api.disaster.management.sql.spark.disaster_covid19_file_f_grants import (
-    f_grants_sql_string,
-)
-from usaspending_api.download.filestreaming.file_description import (
-    build_file_description,
-    save_file_description,
-)
+from usaspending_api.disaster.management.sql.spark.disaster_covid19_file_a import file_a_sql_string
+from usaspending_api.disaster.management.sql.spark.disaster_covid19_file_b import file_b_sql_string
+from usaspending_api.disaster.management.sql.spark.disaster_covid19_file_d1_awards import d1_awards_sql_string
+from usaspending_api.disaster.management.sql.spark.disaster_covid19_file_d2_awards import d2_awards_sql_string
+from usaspending_api.disaster.management.sql.spark.disaster_covid19_file_f_contracts import f_contracts_sql_string
+from usaspending_api.disaster.management.sql.spark.disaster_covid19_file_f_grants import f_grants_sql_string
+from usaspending_api.download.filestreaming.file_description import build_file_description, save_file_description
 from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_file
 from usaspending_api.download.models.download_job import DownloadJob
 from usaspending_api.download.lookups import JOB_STATUS_DICT
@@ -248,19 +230,9 @@ class Command(BaseCommand):
         if not self.zip_file_path.parent.exists():
             self.zip_file_path.parent.mkdir()
 
-    def download_to_csv(
-        self,
-        source_sql,
-        destination_path,
-        destination_file_name,
-        intermediate_data_filename,
-    ):
+    def download_to_csv(self, source_sql, destination_path, destination_file_name, intermediate_data_filename):
         return self.download_csv_strategy.download_to_csv(
-            source_sql,
-            destination_path,
-            destination_file_name,
-            self.working_dir_path,
-            self.zip_file_path,
+            source_sql, destination_path, destination_file_name, self.working_dir_path, self.zip_file_path
         )
 
     def store_record_in_database(self):

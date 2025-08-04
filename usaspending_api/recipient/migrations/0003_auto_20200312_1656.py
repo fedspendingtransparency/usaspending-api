@@ -7,25 +7,23 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("recipient", "0002_remove_obsolete_indexes"),
+        ('recipient', '0002_remove_obsolete_indexes'),
     ]
 
     operations = [
         migrations.AddField(
-            model_name="recipientlookup",
-            name="alternate_names",
-            field=django.contrib.postgres.fields.ArrayField(
-                base_field=models.TextField(), default=list, null=True, size=None
-            ),
+            model_name='recipientlookup',
+            name='alternate_names',
+            field=django.contrib.postgres.fields.ArrayField(base_field=models.TextField(), default=list, null=True, size=None),
         ),
         migrations.AddField(
-            model_name="recipientlookup",
-            name="source",
-            field=models.TextField(default="missing value"),
+            model_name='recipientlookup',
+            name='source',
+            field=models.TextField(default='missing value'),
         ),
         migrations.AddField(
-            model_name="recipientlookup",
-            name="update_date",
+            model_name='recipientlookup',
+            name='update_date',
             field=models.DateTimeField(auto_now=True),
         ),
     ]

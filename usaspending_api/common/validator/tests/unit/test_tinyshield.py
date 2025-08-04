@@ -25,13 +25,7 @@ ARRAY_RULE = {
     "array_max": 3,
     "value": [1, 2, 3],
 }
-BOOLEAN_RULE = {
-    "name": "test",
-    "type": "boolean",
-    "key": "filters|test",
-    "optional": True,
-    "value": True,
-}
+BOOLEAN_RULE = {"name": "test", "type": "boolean", "key": "filters|test", "optional": True, "value": True}
 DATETIME_RULE = {
     "name": "test",
     "type": "datetime",
@@ -77,10 +71,7 @@ OBJECT_RULE = {
     "name": "test",
     "type": "object",
     "key": "filters|test",
-    "object_keys": {
-        "foo": {"type": "string", "optional": False},
-        "hello": {"type": "integer", "optional": False},
-    },
+    "object_keys": {"foo": {"type": "string", "optional": False}, "hello": {"type": "integer", "optional": False}},
     "value": {"foo": "bar", "hello": 1},
 }
 
@@ -89,13 +80,7 @@ FILTER_OBJ = {
         "keywords": ["grumpy", "bungle"],
         "description": "Test Description",
         "award_type_codes": ["A", "B", "C", "D"],
-        "time_period": [
-            {
-                "date_type": "action_date",
-                "start_date": "2008-01-01",
-                "end_date": "2011-01-31",
-            }
-        ],
+        "time_period": [{"date_type": "action_date", "start_date": "2008-01-01", "end_date": "2011-01-31"}],
         "place_of_performance_scope": "domestic",
         "place_of_performance_locations": [{"country": "USA", "state": "VA", "county": "059"}],
         "agencies": [
@@ -105,10 +90,7 @@ FILTER_OBJ = {
         "recipient_search_text": ["D12345678"],
         "recipient_scope": "domestic",
         "recipient_locations": [{"country": "USA", "state": "VA", "county": "059"}],
-        "recipient_type_names": [
-            "Small Business",
-            "Alaskan Native Corporation Owned Firm",
-        ],
+        "recipient_type_names": ["Small Business", "Alaskan Native Corporation Owned Firm"],
         "award_ids": ["1605SS17F00018"],
         "award_amounts": [
             {"lower_bound": 1000000.00, "upper_bound": 25000000.00},

@@ -38,18 +38,9 @@ class Awards(AgencyBase):
     def generate_query(self):
         return {
             "agencies": [
-                {
-                    "type": self._query_params.get("agency_type"),
-                    "tier": "toptier",
-                    "name": self.toptier_agency.name,
-                }
+                {"type": self._query_params.get("agency_type"), "tier": "toptier", "name": self.toptier_agency.name}
             ],
-            "time_period": [
-                {
-                    "start_date": f"{self.fiscal_year - 1}-10-01",
-                    "end_date": f"{self.fiscal_year}-09-30",
-                }
-            ],
+            "time_period": [{"start_date": f"{self.fiscal_year - 1}-10-01", "end_date": f"{self.fiscal_year}-09-30"}],
             "award_type_codes": self._query_params.get("award_type_codes", []),
         }
 

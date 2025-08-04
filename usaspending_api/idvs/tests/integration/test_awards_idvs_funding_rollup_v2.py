@@ -36,12 +36,7 @@ def _generate_expected_response(award_id):
     return results
 
 
-def _test_post(
-    client,
-    request,
-    expected_response_parameters_tuple=None,
-    expected_status_code=status.HTTP_200_OK,
-):
+def _test_post(client, request, expected_response_parameters_tuple=None, expected_status_code=status.HTTP_200_OK):
     """
     Perform the actual request and interrogates the results.
 

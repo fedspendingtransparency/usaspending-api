@@ -24,9 +24,7 @@ from usaspending_api.download.management.commands.delta_downloads.builders impor
     FederalAccountDownloadDataFrameBuilder,
     TreasuryAccountDownloadDataFrameBuilder,
 )
-from usaspending_api.download.management.commands.delta_downloads.filters import (
-    AccountDownloadFilter,
-)
+from usaspending_api.download.management.commands.delta_downloads.filters import AccountDownloadFilter
 from usaspending_api.download.models import DownloadJob
 
 logger = logging.getLogger(__name__)
@@ -51,13 +49,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("--download-job-id", type=int, required=True)
-        parser.add_argument(
-            "--file-format",
-            type=str,
-            required=False,
-            choices=list(FILE_FORMATS),
-            default="csv",
-        )
+        parser.add_argument("--file-format", type=str, required=False, choices=list(FILE_FORMATS), default="csv")
         parser.add_argument("--file-prefix", type=str, required=False, default="")
         parser.add_argument("--skip-local-cleanup", action="store_true")
 

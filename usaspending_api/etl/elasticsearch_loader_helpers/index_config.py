@@ -4,17 +4,9 @@ import time
 
 from django.conf import settings
 
-from usaspending_api.awards.v2.lookups.elasticsearch_lookups import (
-    INDEX_ALIASES_TO_AWARD_TYPES,
-)
-from usaspending_api.broker.helpers.last_load_date import (
-    get_earliest_load_date,
-    get_last_load_date,
-)
-from usaspending_api.etl.elasticsearch_loader_helpers.utilities import (
-    format_log,
-    is_snapshot_running,
-)
+from usaspending_api.awards.v2.lookups.elasticsearch_lookups import INDEX_ALIASES_TO_AWARD_TYPES
+from usaspending_api.broker.helpers.last_load_date import get_earliest_load_date, get_last_load_date
+from usaspending_api.etl.elasticsearch_loader_helpers.utilities import format_log, is_snapshot_running
 
 logger = logging.getLogger("script")
 
@@ -60,12 +52,7 @@ def create_read_alias(client, config):
 def create_load_alias(client, config):
     # ensure the new index is added to the alias used for incremental loads.
     # If the alias is on multiple indexes, the loads will fail!
-    logger.info(
-        format_log(
-            f"Putting alias '{config['write_alias']}' on {config['index_name']}",
-            action="ES Alias",
-        )
-    )
+    logger.info(format_log(f"Putting alias '{config['write_alias']}' on {config['index_name']}", action="ES Alias"))
     put_alias(client, config["index_name"], config["write_alias"], {})
 
 
@@ -86,12 +73,7 @@ def set_final_index_config(client, index):
 
 def swap_aliases(client, config):
     if client.indices.get_alias(config["index_name"], "*"):
-        logger.info(
-            format_log(
-                f"Removing old aliases for index '{config['index_name']}'",
-                action="ES Alias",
-            )
-        )
+        logger.info(format_log(f"Removing old aliases for index '{config['index_name']}'", action="ES Alias"))
         client.indices.delete_alias(config["index_name"], "_all")
 
     alias_patterns = config["query_alias_prefix"] + "*"
@@ -132,8 +114,7 @@ def swap_aliases(client, config):
                 config["raise_status_code_3"] = True
                 logger.error(
                     format_log(
-                        f"Unable to delete index(es) '{old_indexes}' due to in-progress snapshot",
-                        action="ES Alias",
+                        f"Unable to delete index(es) '{old_indexes}' due to in-progress snapshot", action="ES Alias"
                     )
                 )
             else:

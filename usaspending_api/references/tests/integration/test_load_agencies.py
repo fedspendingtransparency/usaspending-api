@@ -6,10 +6,7 @@ from django.db import transaction
 from model_bakery import baker
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.awards.models import Award, TransactionFPDS, TransactionNormalized
-from usaspending_api.references.management.commands.load_agencies import (
-    Command,
-    Agency as AgencyTuple,
-)
+from usaspending_api.references.management.commands.load_agencies import Command, Agency as AgencyTuple
 from usaspending_api.references.models import Agency, SubtierAgency, ToptierAgency
 from usaspending_api.references.models import CGAC, FREC
 from usaspending_api.search.models import SubawardSearch, TransactionSearch
@@ -27,8 +24,7 @@ def disable_vacuuming(monkeypatch):
     function that performs the vacuuming.
     """
     monkeypatch.setattr(
-        "usaspending_api.references.management.commands.load_agencies.Command._vacuum_tables",
-        lambda a: None,
+        "usaspending_api.references.management.commands.load_agencies.Command._vacuum_tables", lambda a: None
     )
 
 
@@ -113,8 +109,7 @@ def test_create_agency(disable_vacuuming, monkeypatch):
         )
 
     monkeypatch.setattr(
-        "usaspending_api.references.management.commands.load_agencies.Command._read_raw_agencies_csv",
-        add_agency,
+        "usaspending_api.references.management.commands.load_agencies.Command._read_raw_agencies_csv", add_agency
     )
 
     # Reload all the things.

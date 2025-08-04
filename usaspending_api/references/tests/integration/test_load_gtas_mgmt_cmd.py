@@ -26,10 +26,7 @@ def test_program_activity_fresh_load(monkeypatch):
         settings.DATA_BROKER_DB_ALIAS: data_broker_mock,
     }
 
-    monkeypatch.setattr(
-        "usaspending_api.references.management.commands.load_gtas.connections",
-        mock_connections,
-    )
+    monkeypatch.setattr("usaspending_api.references.management.commands.load_gtas.connections", mock_connections)
 
     call_command("load_gtas")
 

@@ -5,27 +5,17 @@ from model_bakery import baker
 from rest_framework import status
 
 from usaspending_api.accounts.models import FederalAccount
-from usaspending_api.financial_activities.models import (
-    FinancialAccountsByProgramActivityObjectClass,
-)
+from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models.bureau_title_lookup import BureauTitleLookup
 
 
 @pytest.fixture
 def fixture_data(db):
     ta0 = baker.make(
-        "references.ToptierAgency",
-        toptier_code="001",
-        abbreviation="ABCD",
-        name="Dept. of Depts",
-        _fill_optional=True,
+        "references.ToptierAgency", toptier_code="001", abbreviation="ABCD", name="Dept. of Depts", _fill_optional=True
     )
     ta1 = baker.make(
-        "references.ToptierAgency",
-        toptier_code="002",
-        abbreviation="EFGH",
-        name="The Bureau",
-        _fill_optional=True,
+        "references.ToptierAgency", toptier_code="002", abbreviation="EFGH", name="The Bureau", _fill_optional=True
     )
     ta2 = baker.make(
         "references.ToptierAgency",
@@ -89,36 +79,14 @@ def fixture_data(db):
         parent_toptier_agency=ta4,
     )
 
-    ta0 = baker.make(
-        "accounts.TreasuryAppropriationAccount",
-        federal_account=fa0,
-        tas_rendering_label="tas-label-0",
-    )
-    ta1 = baker.make(
-        "accounts.TreasuryAppropriationAccount",
-        federal_account=fa1,
-        tas_rendering_label="tas-label-1",
-    )
-    ta2 = baker.make(
-        "accounts.TreasuryAppropriationAccount",
-        federal_account=fa2,
-        tas_rendering_label="tas-label-2",
-    )
-    ta3 = baker.make(
-        "accounts.TreasuryAppropriationAccount",
-        federal_account=fa3,
-        tas_rendering_label="tas-label-3",
-    )
-    ta4 = baker.make(
-        "accounts.TreasuryAppropriationAccount",
-        federal_account=fa4,
-        tas_rendering_label="tas-label-4",
-    )
+    ta0 = baker.make("accounts.TreasuryAppropriationAccount", federal_account=fa0, tas_rendering_label="tas-label-0")
+    ta1 = baker.make("accounts.TreasuryAppropriationAccount", federal_account=fa1, tas_rendering_label="tas-label-1")
+    ta2 = baker.make("accounts.TreasuryAppropriationAccount", federal_account=fa2, tas_rendering_label="tas-label-2")
+    ta3 = baker.make("accounts.TreasuryAppropriationAccount", federal_account=fa3, tas_rendering_label="tas-label-3")
+    ta4 = baker.make("accounts.TreasuryAppropriationAccount", federal_account=fa4, tas_rendering_label="tas-label-4")
 
     dabs100 = baker.make(
-        "submissions.DABSSubmissionWindowSchedule",
-        submission_reveal_date="2017-11-01",
-        submission_fiscal_year=2017,
+        "submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2017-11-01", submission_fiscal_year=2017
     )
     sub101 = baker.make(
         "submissions.SubmissionAttributes",
@@ -208,11 +176,7 @@ def fixture_data(db):
     )
 
     ta99 = baker.make(
-        "references.ToptierAgency",
-        toptier_code="999",
-        name="Dept. of Depts",
-        abbreviation=None,
-        _fill_optional=True,
+        "references.ToptierAgency", toptier_code="999", name="Dept. of Depts", abbreviation=None, _fill_optional=True
     )
 
     fa99 = baker.make(
@@ -240,9 +204,7 @@ def fixture_data(db):
     )
 
     dabs99 = baker.make(
-        "submissions.DABSSubmissionWindowSchedule",
-        submission_reveal_date="2022-09-01",
-        submission_fiscal_year=2022,
+        "submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2022-09-01", submission_fiscal_year=2022
     )
 
     sub99 = baker.make(
@@ -331,9 +293,7 @@ def fixture_data(db):
 def test_federal_accounts_endpoint_exists(client, fixture_data):
     """Verify the federal accounts endpoint returns a status of 200"""
     resp = client.post(
-        "/api/v2/federal_accounts/",
-        content_type="application/json",
-        data=json.dumps({"filters": {"fy": "2017"}}),
+        "/api/v2/federal_accounts/", content_type="application/json", data=json.dumps({"filters": {"fy": "2017"}})
     )
     assert resp.status_code == status.HTTP_200_OK
 
@@ -342,9 +302,7 @@ def test_federal_accounts_endpoint_exists(client, fixture_data):
 def test_federal_accounts_endpoint_correct_form(client, fixture_data):
     """Verify the correct keys exist within the response"""
     resp = client.post(
-        "/api/v2/federal_accounts/",
-        content_type="application/json",
-        data=json.dumps({"filters": {"fy": "2017"}}),
+        "/api/v2/federal_accounts/", content_type="application/json", data=json.dumps({"filters": {"fy": "2017"}})
     )
     response_data = resp.json()
     assert response_data["page"] == 1
@@ -361,12 +319,7 @@ def test_federal_accounts_endpoint_correct_data(client, fixture_data):
     resp = client.post(
         "/api/v2/federal_accounts/",
         content_type="application/json",
-        data=json.dumps(
-            {
-                "sort": {"field": "managing_agency", "direction": "asc"},
-                "filters": {"fy": "2017"},
-            }
-        ),
+        data=json.dumps({"sort": {"field": "managing_agency", "direction": "asc"}, "filters": {"fy": "2017"}}),
     )
     response_data = resp.json()
 
@@ -399,12 +352,7 @@ def test_federal_accounts_endpoint_sorting_managing_agency(client, fixture_data)
     resp = client.post(
         "/api/v2/federal_accounts/",
         content_type="application/json",
-        data=json.dumps(
-            {
-                "sort": {"field": "managing_agency", "direction": "asc"},
-                "filters": {"fy": "2017"},
-            }
-        ),
+        data=json.dumps({"sort": {"field": "managing_agency", "direction": "asc"}, "filters": {"fy": "2017"}}),
     )
     response_data = resp.json()
     assert response_data["results"][0]["managing_agency"] < response_data["results"][1]["managing_agency"]
@@ -413,12 +361,7 @@ def test_federal_accounts_endpoint_sorting_managing_agency(client, fixture_data)
     resp = client.post(
         "/api/v2/federal_accounts/",
         content_type="application/json",
-        data=json.dumps(
-            {
-                "sort": {"field": "managing_agency", "direction": "desc"},
-                "filters": {"fy": "2017"},
-            }
-        ),
+        data=json.dumps({"sort": {"field": "managing_agency", "direction": "desc"}, "filters": {"fy": "2017"}}),
     )
     response_data = resp.json()
     assert response_data["results"][0]["managing_agency"] > response_data["results"][1]["managing_agency"]
@@ -432,12 +375,7 @@ def test_federal_accounts_endpoint_sorting_account_number(client, fixture_data):
     resp = client.post(
         "/api/v2/federal_accounts/",
         content_type="application/json",
-        data=json.dumps(
-            {
-                "sort": {"field": "account_number", "direction": "asc"},
-                "filters": {"fy": "2017"},
-            }
-        ),
+        data=json.dumps({"sort": {"field": "account_number", "direction": "asc"}, "filters": {"fy": "2017"}}),
     )
     response_data = resp.json()
     assert response_data["results"][0]["account_number"] < response_data["results"][1]["account_number"]
@@ -446,12 +384,7 @@ def test_federal_accounts_endpoint_sorting_account_number(client, fixture_data):
     resp = client.post(
         "/api/v2/federal_accounts/",
         content_type="application/json",
-        data=json.dumps(
-            {
-                "sort": {"field": "account_number", "direction": "desc"},
-                "filters": {"fy": "2017"},
-            }
-        ),
+        data=json.dumps({"sort": {"field": "account_number", "direction": "desc"}, "filters": {"fy": "2017"}}),
     )
     response_data = resp.json()
     assert response_data["results"][0]["account_number"] > response_data["results"][1]["account_number"]
@@ -465,12 +398,7 @@ def test_federal_accounts_endpoint_sorting_budgetary_resources(client, fixture_d
     resp = client.post(
         "/api/v2/federal_accounts/",
         content_type="application/json",
-        data=json.dumps(
-            {
-                "sort": {"field": "budgetary_resources", "direction": "asc"},
-                "filters": {"fy": "2017"},
-            }
-        ),
+        data=json.dumps({"sort": {"field": "budgetary_resources", "direction": "asc"}, "filters": {"fy": "2017"}}),
     )
     response_data = resp.json()
     assert response_data["results"][0]["budgetary_resources"] < response_data["results"][1]["budgetary_resources"]
@@ -479,12 +407,7 @@ def test_federal_accounts_endpoint_sorting_budgetary_resources(client, fixture_d
     resp = client.post(
         "/api/v2/federal_accounts/",
         content_type="application/json",
-        data=json.dumps(
-            {
-                "sort": {"field": "budgetary_resources", "direction": "desc"},
-                "filters": {"fy": "2017"},
-            }
-        ),
+        data=json.dumps({"sort": {"field": "budgetary_resources", "direction": "desc"}, "filters": {"fy": "2017"}}),
     )
     response_data = resp.json()
     assert response_data["results"][0]["budgetary_resources"] > response_data["results"][1]["budgetary_resources"]
@@ -556,12 +479,7 @@ def test_federal_accounts_uses_corrected_cgac(client, fixture_data):
     resp = client.post(
         "/api/v2/federal_accounts/",
         content_type="application/json",
-        data=json.dumps(
-            {
-                "sort": {"field": "managing_agency", "direction": "asc"},
-                "filters": {"fy": "2015"},
-            }
-        ),
+        data=json.dumps({"sort": {"field": "managing_agency", "direction": "asc"}, "filters": {"fy": "2015"}}),
     )
     response_data = resp.json()
     assert response_data["results"][0]["managing_agency_acronym"] == "DOD"

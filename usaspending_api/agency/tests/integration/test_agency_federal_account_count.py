@@ -2,9 +2,7 @@ import pytest
 
 from rest_framework import status
 from usaspending_api.common.helpers.fiscal_year_helpers import current_fiscal_year
-from usaspending_api.common.helpers.generic_helper import (
-    get_account_data_time_period_message,
-)
+from usaspending_api.common.helpers.generic_helper import get_account_data_time_period_message
 
 
 url = "/api/v2/agency/{code}/federal_account/count/{filter}"

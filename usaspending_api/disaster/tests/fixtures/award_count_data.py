@@ -3,9 +3,7 @@ from model_bakery import baker
 
 from usaspending_api.references.models import DisasterEmergencyFundCode
 from usaspending_api.submissions.models import SubmissionAttributes
-from usaspending_api.submissions.models.dabs_submission_window_schedule import (
-    DABSSubmissionWindowSchedule,
-)
+from usaspending_api.submissions.models.dabs_submission_window_schedule import DABSSubmissionWindowSchedule
 
 
 @pytest.fixture

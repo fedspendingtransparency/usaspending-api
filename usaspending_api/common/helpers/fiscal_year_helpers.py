@@ -7,10 +7,7 @@ from django.db.models import Max, Q
 from fiscalyear import FiscalDate, FiscalDateTime, FiscalYear
 
 from usaspending_api.common.helpers.date_helper import now
-from usaspending_api.common.helpers.generic_helper import (
-    min_and_max_from_date_ranges,
-    validate_date,
-)
+from usaspending_api.common.helpers.generic_helper import min_and_max_from_date_ranges, validate_date
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
 logger = logging.getLogger(__name__)

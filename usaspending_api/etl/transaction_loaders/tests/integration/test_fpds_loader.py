@@ -127,61 +127,24 @@ def test_delete_fpds_success(monkeypatch):
     # Award/Transaction deleted based on 1-1 transaction
     baker.make(AwardSearch, award_id=1, generated_unique_award_id="TEST_AWARD_1")
     baker.make(TransactionNormalized, id=1, award_id=1, unique_award_key="TEST_AWARD_1")
-    baker.make(
-        TransactionFPDS,
-        transaction_id=1,
-        detached_award_procurement_id=301,
-        unique_award_key="TEST_AWARD_1",
-    )
+    baker.make(TransactionFPDS, transaction_id=1, detached_award_procurement_id=301, unique_award_key="TEST_AWARD_1")
 
     # Award kept despite having one of their associated transactions removed
     baker.make(AwardSearch, award_id=2, generated_unique_award_id="TEST_AWARD_2")
-    baker.make(
-        TransactionNormalized,
-        id=2,
-        award_id=2,
-        action_date="2019-01-01",
-        unique_award_key="TEST_AWARD_2",
-    )
-    baker.make(
-        TransactionNormalized,
-        id=3,
-        award_id=2,
-        action_date="2019-01-02",
-        unique_award_key="TEST_AWARD_2",
-    )
-    baker.make(
-        TransactionFPDS,
-        transaction_id=2,
-        detached_award_procurement_id=302,
-        unique_award_key="TEST_AWARD_2",
-    )
-    baker.make(
-        TransactionFPDS,
-        transaction_id=3,
-        detached_award_procurement_id=303,
-        unique_award_key="TEST_AWARD_2",
-    )
+    baker.make(TransactionNormalized, id=2, award_id=2, action_date="2019-01-01", unique_award_key="TEST_AWARD_2")
+    baker.make(TransactionNormalized, id=3, award_id=2, action_date="2019-01-02", unique_award_key="TEST_AWARD_2")
+    baker.make(TransactionFPDS, transaction_id=2, detached_award_procurement_id=302, unique_award_key="TEST_AWARD_2")
+    baker.make(TransactionFPDS, transaction_id=3, detached_award_procurement_id=303, unique_award_key="TEST_AWARD_2")
 
     # Award/Transaction untouched at all as control
     baker.make(AwardSearch, award_id=3, generated_unique_award_id="TEST_AWARD_3")
     baker.make(TransactionNormalized, id=4, award_id=3, unique_award_key="TEST_AWARD_3")
-    baker.make(
-        TransactionFPDS,
-        transaction_id=4,
-        detached_award_procurement_id=304,
-        unique_award_key="TEST_AWARD_3",
-    )
+    baker.make(TransactionFPDS, transaction_id=4, detached_award_procurement_id=304, unique_award_key="TEST_AWARD_3")
 
     # Award is not deleted; old transaction deleted; new transaction uses old award
     baker.make(AwardSearch, award_id=4, generated_unique_award_id="TEST_AWARD_4")
     baker.make(TransactionNormalized, id=5, award_id=4, unique_award_key="TEST_AWARD_4")
-    baker.make(
-        TransactionFPDS,
-        transaction_id=5,
-        detached_award_procurement_id=305,
-        unique_award_key="TEST_AWARD_4",
-    )
+    baker.make(TransactionFPDS, transaction_id=5, detached_award_procurement_id=305, unique_award_key="TEST_AWARD_4")
     baker.make(
         SourceProcurementTransaction,
         detached_award_procurement_id=306,
@@ -192,11 +155,7 @@ def test_delete_fpds_success(monkeypatch):
         action_date="2022-02-18 18:27:50",
     )
     baker.make(ExternalDataType, external_data_type_id=1, name="fpds")
-    baker.make(
-        ExternalDataLoadDate,
-        external_data_type_id=1,
-        last_load_date="2022-02-01 18:27:50",
-    )
+    baker.make(ExternalDataLoadDate, external_data_type_id=1, last_load_date="2022-02-01 18:27:50")
 
     # Make sure current Awards and Transactions are linked
     update_awards()

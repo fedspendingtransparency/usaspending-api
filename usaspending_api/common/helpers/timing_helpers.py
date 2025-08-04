@@ -64,10 +64,7 @@ class Timer:
     _formats = "{:,} d", "{} h", "{} m", "{} s", "{} ms"
 
     def __init__(
-        self,
-        message: Optional[str] = None,
-        success_logger: Callable = print,
-        failure_logger: Callable = print,
+        self, message: Optional[str] = None, success_logger: Callable = print, failure_logger: Callable = print
     ):
         """
         For automatic logging, include a message.  By default, non-error messages

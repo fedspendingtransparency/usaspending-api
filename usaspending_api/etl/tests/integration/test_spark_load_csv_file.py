@@ -39,11 +39,7 @@ def test_load_csv_file(
         spark, df, parts_dir=bucket_path, num_partitions=1, logger=test_logger
     )  # write Delta to CSV in S3 using Spark
     hadoop_copy_merge(
-        spark,
-        parts_dir=bucket_path,
-        part_merge_group_size=1,
-        header=header,
-        logger=test_logger,
+        spark, parts_dir=bucket_path, part_merge_group_size=1, header=header, logger=test_logger
     )  # merge CSV parts into 1 file
 
     file_ext = "csv"

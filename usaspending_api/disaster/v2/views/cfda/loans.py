@@ -37,7 +37,7 @@ class CfdaLoansViewSet(ElasticsearchLoansPaginationMixin, ElasticsearchDisasterB
                     "code": cfda.get("program_number"),
                     "description": cfda.get("program_title"),
                     "award_count": int(bucket.get("doc_count", 0)),
-                    "resource_link": (cfda.get("url") if cfda.get("url") != "None;" else None),
+                    "resource_link": cfda.get("url") if cfda.get("url") != "None;" else None,
                     "cfda_federal_agency": cfda.get("federal_agency"),
                     "cfda_objectives": cfda.get("objectives"),
                     "cfda_website": cfda.get("website_address"),

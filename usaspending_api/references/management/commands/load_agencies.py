@@ -11,9 +11,7 @@ from usaspending_api.common.csv_helpers import read_csv_file_as_list_of_dictiona
 from usaspending_api.common.etl.postgres import ETLQueryFile, ETLTable
 from usaspending_api.common.etl.postgres import mixins
 from usaspending_api.common.helpers.sql_helpers import get_connection, execute_sql
-from usaspending_api.common.helpers.text_helpers import (
-    standardize_nullable_whitespace as prep,
-)
+from usaspending_api.common.helpers.text_helpers import standardize_nullable_whitespace as prep
 from usaspending_api.common.helpers.timing_helpers import ScriptTimer as Timer
 from usaspending_api.etl.operations.federal_account.update_agency import (
     DOD_SUBSUMED_AIDS,
@@ -163,18 +161,11 @@ class Command(mixins.ETLMixin, BaseCommand):
     def _perform_load(self):
 
         overrides = {
-            "insert_overrides": {
-                "create_date": SQL("now()"),
-                "update_date": SQL("now()"),
-            },
+            "insert_overrides": {"create_date": SQL("now()"), "update_date": SQL("now()")},
             "update_overrides": {"update_date": SQL("now()")},
         }
 
-        agency_table = ETLTable(
-            "agency",
-            key_overrides=["toptier_agency_id", "subtier_agency_id"],
-            **overrides,
-        )
+        agency_table = ETLTable("agency", key_overrides=["toptier_agency_id", "subtier_agency_id"], **overrides)
         cgac_table = ETLTable("cgac", key_overrides=["cgac_code"])
         frec_table = ETLTable("frec", key_overrides=["frec_code"])
         subtier_agency_table = ETLTable("subtier_agency", key_overrides=["subtier_code"], **overrides)
@@ -184,8 +175,7 @@ class Command(mixins.ETLMixin, BaseCommand):
         cgac_query = ETLQueryFile(self.etl_dml_sql_directory / "cgac_query.sql", temp_table=TEMP_TABLE_NAME)
         frec_query = ETLQueryFile(self.etl_dml_sql_directory / "frec_query.sql", temp_table=TEMP_TABLE_NAME)
         subtier_agency_query = ETLQueryFile(
-            self.etl_dml_sql_directory / "subtier_agency_query.sql",
-            temp_table=TEMP_TABLE_NAME,
+            self.etl_dml_sql_directory / "subtier_agency_query.sql", temp_table=TEMP_TABLE_NAME
         )
         toptier_agency_query = ETLQueryFile(
             self.etl_dml_sql_directory / "toptier_agency_query.sql",
@@ -217,8 +207,7 @@ class Command(mixins.ETLMixin, BaseCommand):
 
         elif rows_affected > 0 or self.force:
             self._execute_function_and_log(
-                update_treasury_appropriation_account_agencies,
-                "Update treasury appropriation accounts",
+                update_treasury_appropriation_account_agencies, "Update treasury appropriation accounts"
             )
             self._execute_function_and_log(update_federal_account_agency, "Update federal accounts")
             self._execute_etl_dml_sql_directory_file("transaction_normalized_update", "Update transactions")

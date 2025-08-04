@@ -37,8 +37,7 @@ class Agency(models.Model):
         """
         return (
             Agency.objects.filter(
-                toptier_agency__toptier_code=toptier_code,
-                subtier_agency__name=F("toptier_agency__name"),
+                toptier_agency__toptier_code=toptier_code, subtier_agency__name=F("toptier_agency__name")
             )
             .order_by("-update_date")
             .first()
@@ -74,10 +73,7 @@ class Agency(models.Model):
 
         """
         return (
-            Agency.objects.filter(
-                toptier_agency__toptier_code=toptier_code,
-                subtier_agency__subtier_code=subtier_code,
-            )
+            Agency.objects.filter(toptier_agency__toptier_code=toptier_code, subtier_agency__subtier_code=subtier_code)
             .order_by("-update_date")
             .first()
         )

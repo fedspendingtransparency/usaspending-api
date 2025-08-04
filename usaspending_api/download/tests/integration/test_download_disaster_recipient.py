@@ -31,9 +31,7 @@ def _post(client, def_codes=None, query=None, award_type_codes=None, file_format
         request_body["file_format"] = file_format
 
     resp = client.post(
-        "/api/v2/download/disaster/recipients/",
-        content_type="application/json",
-        data=json.dumps(request_body),
+        "/api/v2/download/disaster/recipients/", content_type="application/json", data=json.dumps(request_body)
     )
     return resp
 
@@ -435,11 +433,7 @@ def test_download_success(client, monkeypatch, awards_and_transactions, elastics
 
 
 def test_tsv_download_success(
-    client,
-    monkeypatch,
-    awards_and_transactions,
-    elasticsearch_award_index,
-    elasticsearch_subaward_index,
+    client, monkeypatch, awards_and_transactions, elasticsearch_award_index, elasticsearch_subaward_index
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
@@ -459,11 +453,7 @@ def test_tsv_download_success(
 
 
 def test_pstxt_download_success(
-    client,
-    monkeypatch,
-    awards_and_transactions,
-    elasticsearch_award_index,
-    elasticsearch_subaward_index,
+    client, monkeypatch, awards_and_transactions, elasticsearch_award_index, elasticsearch_subaward_index
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())

@@ -50,13 +50,7 @@ def test_federal_account_list_success(client, monkeypatch, bureau_data, helpers)
 
 @pytest.mark.django_db
 def test_alternate_year(client, bureau_data):
-    resp = client.get(
-        url.format(
-            toptier_code="001",
-            bureau_slug="test-bureau-1",
-            query_params="?fiscal_year=2018",
-        )
-    )
+    resp = client.get(url.format(toptier_code="001", bureau_slug="test-bureau-1", query_params="?fiscal_year=2018"))
     assert resp.status_code == status.HTTP_200_OK
 
     expected_results = [
@@ -74,13 +68,7 @@ def test_alternate_year(client, bureau_data):
 
 @pytest.mark.django_db
 def test_alternate_agency(client, bureau_data):
-    resp = client.get(
-        url.format(
-            toptier_code="002",
-            bureau_slug="test-bureau-2",
-            query_params="?fiscal_year=2018",
-        )
-    )
+    resp = client.get(url.format(toptier_code="002", bureau_slug="test-bureau-2", query_params="?fiscal_year=2018"))
     assert resp.status_code == status.HTTP_200_OK
 
     expected_results = [
@@ -98,20 +86,8 @@ def test_alternate_agency(client, bureau_data):
 
 @pytest.mark.django_db
 def test_invalid_agency(client, bureau_data):
-    resp = client.get(
-        url.format(
-            toptier_code="XXX",
-            bureau_slug="test-bureau",
-            query_params="?fiscal_year=2021",
-        )
-    )
+    resp = client.get(url.format(toptier_code="XXX", bureau_slug="test-bureau", query_params="?fiscal_year=2021"))
     assert resp.status_code == status.HTTP_404_NOT_FOUND
 
-    resp = client.get(
-        url.format(
-            toptier_code="999",
-            bureau_slug="1234@#$@#",
-            query_params="?fiscal_year=2021",
-        )
-    )
+    resp = client.get(url.format(toptier_code="999", bureau_slug="1234@#$@#", query_params="?fiscal_year=2021"))
     assert resp.status_code == status.HTTP_404_NOT_FOUND

@@ -6,17 +6,9 @@ from django.db.models import Q
 from usaspending_api.accounts.views.federal_accounts_v2 import filter_on
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.search.filters.postgres.psc import PSCCodes
-from usaspending_api.awards.v2.filters.filter_helpers import (
-    combine_date_range_queryset,
-    total_obligation_queryset,
-)
-from usaspending_api.awards.v2.filters.location_filter_geocode import (
-    geocode_filter_locations,
-)
-from usaspending_api.common.exceptions import (
-    InvalidParameterException,
-    NotImplementedException,
-)
+from usaspending_api.awards.v2.filters.filter_helpers import combine_date_range_queryset, total_obligation_queryset
+from usaspending_api.awards.v2.filters.location_filter_geocode import geocode_filter_locations
+from usaspending_api.common.exceptions import InvalidParameterException, NotImplementedException
 from usaspending_api.recipient.models import RecipientProfile
 from usaspending_api.references.models import PSC
 from usaspending_api.search.helpers.matview_filter_helpers import build_award_ids_filter
@@ -216,16 +208,10 @@ def matview_search_filter(filters, model, for_downloads=False):
                     # shouldn't occur
                     raise InvalidParameterException("Non-unique parent record found in RecipientProfile")
             elif value.endswith("C"):
-                filter_obj = Q(
-                    recipient_hash=recipient_hash,
-                    parent_recipient_unique_id__isnull=False,
-                )
+                filter_obj = Q(recipient_hash=recipient_hash, parent_recipient_unique_id__isnull=False)
             else:
                 # "R" recipient level
-                filter_obj = Q(
-                    recipient_hash=recipient_hash,
-                    parent_recipient_unique_id__isnull=True,
-                )
+                filter_obj = Q(recipient_hash=recipient_hash, parent_recipient_unique_id__isnull=True)
             queryset = queryset.filter(filter_obj)
 
         elif key == "recipient_scope":
@@ -331,11 +317,7 @@ def matview_search_filter(filters, model, for_downloads=False):
             result = Q()
             for oc in value:
                 subresult = Q()
-                subresult &= filter_on(
-                    "award__awardsearch__financial_set__object_class",
-                    "object_class",
-                    oc,
-                )
+                subresult &= filter_on("award__awardsearch__financial_set__object_class", "object_class", oc)
                 result |= subresult
             queryset = queryset.filter(result)
 

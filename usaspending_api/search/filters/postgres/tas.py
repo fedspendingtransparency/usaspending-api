@@ -2,10 +2,7 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.accounts.models import TreasuryAppropriationAccount, FederalAccount
 from django.db.models import Q
-from usaspending_api.search.filters.postgres.HierarchicalFilter import (
-    HierarchicalFilter,
-    Node,
-)
+from usaspending_api.search.filters.postgres.HierarchicalFilter import HierarchicalFilter, Node
 from usaspending_api.accounts.helpers import TAS_COMPONENT_TO_FIELD_MAPPING
 import re
 

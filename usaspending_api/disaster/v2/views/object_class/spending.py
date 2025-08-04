@@ -20,9 +20,7 @@ from usaspending_api.disaster.v2.views.object_class.object_class_result import (
     ObjectClass,
     ObjectClassResults,
 )
-from usaspending_api.financial_activities.models import (
-    FinancialAccountsByProgramActivityObjectClass,
-)
+from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 
 
 def construct_response(results: list, pagination: Pagination, strip_total_budgetary_resources=True):
@@ -30,10 +28,7 @@ def construct_response(results: list, pagination: Pagination, strip_total_budget
     for row in results:
         major_code = row.pop("major_code")
         major_class = MajorClass(
-            id=major_code,
-            code=major_code,
-            award_count=0,
-            description=row.pop("major_description"),
+            id=major_code, code=major_code, award_count=0, description=row.pop("major_description")
         )
         object_classes[major_class].include(ObjectClass(**row))
 
@@ -65,10 +60,7 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
                 ],
                 award_types=self.filters.get("award_type_codes"),
                 search_query=self.query,
-                search_query_fields=[
-                    "funding_major_object_class_name",
-                    "funding_object_class_name",
-                ],
+                search_query_fields=["funding_major_object_class_name", "funding_object_class_name"],
             )
             json_result = self._build_json_result(object_class_spending)
             response = self.sort_json_result(
@@ -115,10 +107,7 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
         #  run a count query and fetch only a page's worth of results
         return (
             FinancialAccountsByProgramActivityObjectClass.objects.filter(*filters)
-            .values(
-                "object_class__major_object_class",
-                "object_class__major_object_class_name",
-            )
+            .values("object_class__major_object_class", "object_class__major_object_class_name")
             .annotate(**annotations)
             .values(*annotations.keys())
         )
@@ -133,10 +122,7 @@ class ObjectClassSpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin
             Formatted JSON response.
         """
 
-        response = {
-            "totals": {"award_count": 0, "obligation": 0, "outlay": 0},
-            "results": [],
-        }
+        response = {"totals": {"award_count": 0, "obligation": 0, "outlay": 0}, "results": []}
 
         parent_lookup = {}
         child_lookup = {}

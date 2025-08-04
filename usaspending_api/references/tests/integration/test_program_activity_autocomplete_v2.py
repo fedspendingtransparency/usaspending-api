@@ -9,38 +9,14 @@ from usaspending_api.references.models import RefProgramActivity
 
 @pytest.fixture
 def program_activity_data(db):
-    baker.make(
-        RefProgramActivity,
-        program_activity_code="0001",
-        program_activity_name="ELECTRONICS",
-    )
+    baker.make(RefProgramActivity, program_activity_code="0001", program_activity_name="ELECTRONICS")
     baker.make(RefProgramActivity, program_activity_code="0003", program_activity_name="MEAT")
     baker.make(RefProgramActivity, program_activity_code="0007", program_activity_name="BEANS")
 
-    baker.make(
-        RefProgramActivity,
-        program_activity_code="9999",
-        program_activity_name="COLOR BLUE",
-        budget_year=2024,
-    )
-    baker.make(
-        RefProgramActivity,
-        program_activity_code="9999",
-        program_activity_name="COLOR BLUE",
-        budget_year=2023,
-    )
-    baker.make(
-        RefProgramActivity,
-        program_activity_code="8888",
-        program_activity_name="COLOR RED",
-        budget_year=2024,
-    )
-    baker.make(
-        RefProgramActivity,
-        program_activity_code="7777",
-        program_activity_name="COLOR BLUE",
-        budget_year=2024,
-    )
+    baker.make(RefProgramActivity, program_activity_code="9999", program_activity_name="COLOR BLUE", budget_year=2024)
+    baker.make(RefProgramActivity, program_activity_code="9999", program_activity_name="COLOR BLUE", budget_year=2023)
+    baker.make(RefProgramActivity, program_activity_code="8888", program_activity_name="COLOR RED", budget_year=2024)
+    baker.make(RefProgramActivity, program_activity_code="7777", program_activity_name="COLOR BLUE", budget_year=2024)
 
 
 @pytest.mark.django_db

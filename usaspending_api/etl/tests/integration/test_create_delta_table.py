@@ -10,11 +10,7 @@ from usaspending_api.etl.management.commands.create_delta_table import TABLE_SPE
 
 
 def _verify_delta_table_creation(
-    spark: SparkSession,
-    delta_table_name: str,
-    s3_bucket: str,
-    alt_db: str = None,
-    alt_name: str = None,
+    spark: SparkSession, delta_table_name: str, s3_bucket: str, alt_db: str = None, alt_name: str = None
 ):
     """Generic function that uses the create_delta_table command to create the given table and assert it was created
     as expected
@@ -24,10 +20,7 @@ def _verify_delta_table_creation(
     """
     delta_table_spec = TABLE_SPEC[delta_table_name]
 
-    cmd_args = [
-        f"--destination-table={delta_table_name}",
-        f"--spark-s3-bucket={s3_bucket}",
-    ]
+    cmd_args = [f"--destination-table={delta_table_name}", f"--spark-s3-bucket={s3_bucket}"]
     expected_db_name = delta_table_spec["destination_database"]
     if alt_db:
         cmd_args += [f"--alt-db={alt_db}"]
@@ -110,11 +103,7 @@ def test_create_delta_table_for_recipient_lookup_with_alt_db_and_name(
     spark, s3_unittest_data_bucket, hive_unittest_metastore_db
 ):
     _verify_delta_table_creation(
-        spark,
-        "recipient_lookup",
-        s3_unittest_data_bucket,
-        alt_db="my_alt_db",
-        alt_name="recipient_lookup_alt_name",
+        spark, "recipient_lookup", s3_unittest_data_bucket, alt_db="my_alt_db", alt_name="recipient_lookup_alt_name"
     )
 
 

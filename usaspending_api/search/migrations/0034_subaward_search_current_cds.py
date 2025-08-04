@@ -6,28 +6,28 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("search", "0033_add_total_outlays_column"),
+        ('search', '0033_add_total_outlays_column'),
     ]
 
     operations = [
         migrations.AddField(
-            model_name="subawardsearch",
-            name="legal_entity_congressional_current",
+            model_name='subawardsearch',
+            name='legal_entity_congressional_current',
             field=models.TextField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name="subawardsearch",
-            name="place_of_performance_congressional_current",
+            model_name='subawardsearch',
+            name='place_of_performance_congressional_current',
             field=models.TextField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name="subawardsearch",
-            name="sub_legal_entity_congressional_current",
+            model_name='subawardsearch',
+            name='sub_legal_entity_congressional_current',
             field=models.TextField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name="subawardsearch",
-            name="sub_place_of_performance_congressional_current",
+            model_name='subawardsearch',
+            name='sub_place_of_performance_congressional_current',
             field=models.TextField(blank=True, null=True),
         ),
     ]

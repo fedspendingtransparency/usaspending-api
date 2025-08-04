@@ -1,9 +1,6 @@
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.search.filters.elasticsearch.filter import _Filter, QueryType
-from usaspending_api.search.filters.elasticsearch.HierarchicalFilter import (
-    HierarchicalFilter,
-    Node,
-)
+from usaspending_api.search.filters.elasticsearch.HierarchicalFilter import HierarchicalFilter, Node
 from elasticsearch_dsl import Q as ES_Q
 
 
@@ -30,11 +27,7 @@ class NaicsCodes(_Filter, HierarchicalFilter):
         require = [code for code in require]
         exclude = [code for code in exclude]
 
-        return ES_Q(
-            "query_string",
-            query=cls._query_string(require, exclude),
-            default_field="naics_code.keyword",
-        )
+        return ES_Q("query_string", query=cls._query_string(require, exclude), default_field="naics_code.keyword")
 
     @staticmethod
     def code_is_parent_of(code, other):

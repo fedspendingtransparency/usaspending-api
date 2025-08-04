@@ -47,9 +47,7 @@ def test_award_id_search(client, monkeypatch, elasticsearch_award_index, award_i
 
     # Control test.  This should return only the one award.
     resp = client.post(
-        "/api/v2/search/spending_by_award",
-        content_type="application/json",
-        data=build_request_data(["abc111"], False),
+        "/api/v2/search/spending_by_award", content_type="application/json", data=build_request_data(["abc111"], False)
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 1
@@ -63,10 +61,7 @@ def test_award_id_search(client, monkeypatch, elasticsearch_award_index, award_i
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 2
-    assert {
-        resp.data["results"][0]["Award ID"],
-        resp.data["results"][1]["Award ID"],
-    } == {"abc 111", "abc       111"}
+    assert {resp.data["results"][0]["Award ID"], resp.data["results"][1]["Award ID"]} == {"abc 111", "abc       111"}
 
     # The new DEV-3843 behavior.  Should return only the exact match.
     resp = client.post(
@@ -86,10 +81,7 @@ def test_award_id_search(client, monkeypatch, elasticsearch_award_index, award_i
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 2
-    assert {
-        resp.data["results"][0]["Award ID"],
-        resp.data["results"][1]["Award ID"],
-    } == {"abc111", "abc       111"}
+    assert {resp.data["results"][0]["Award ID"], resp.data["results"][1]["Award ID"]} == {"abc111", "abc       111"}
 
     # And finally, everything by exact match.
     resp = client.post(

@@ -3,11 +3,7 @@ import pytest
 
 from rest_framework import status
 
-from usaspending_api.awards.v2.lookups.lookups import (
-    grant_type_mapping,
-    contract_type_mapping,
-    loan_type_mapping,
-)
+from usaspending_api.awards.v2.lookups.lookups import grant_type_mapping, contract_type_mapping, loan_type_mapping
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
@@ -51,12 +47,7 @@ def test_spending_by_geography_failure_with_missing_fields(
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     # Test required "def_codes" in filter object
-    resp = post(
-        client,
-        geo_layer="state",
-        geo_layer_filters=["SC-01"],
-        spending_type="obligation",
-    )
+    resp = post(client, geo_layer="state", geo_layer_filters=["SC-01"], spending_type="obligation")
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     assert resp.data["detail"] == "Missing value: 'filter|def_codes' is a required field"
 
@@ -78,24 +69,12 @@ def test_spending_by_geography_failure_with_invalid_fields(
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     # Test invalid "geo_layer" string
-    resp = post(
-        client,
-        def_codes=["L"],
-        geo_layer="NOT VALID",
-        geo_layer_filters=["SC-01"],
-        spending_type="obligation",
-    )
+    resp = post(client, def_codes=["L"], geo_layer="NOT VALID", geo_layer_filters=["SC-01"], spending_type="obligation")
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
     assert resp.data["detail"] == "Field 'geo_layer' is outside valid values ['county', 'district', 'state']"
 
     # Test invalid "spending_type" string
-    resp = post(
-        client,
-        def_codes=["L"],
-        geo_layer="state",
-        geo_layer_filters=["SC-01"],
-        spending_type="NOT VALID",
-    )
+    resp = post(client, def_codes=["L"], geo_layer="state", geo_layer_filters=["SC-01"], spending_type="NOT VALID")
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
     assert (
         resp.data["detail"]
@@ -115,13 +94,7 @@ def test_spending_by_geography_failure_with_invalid_fields(
     assert "Field 'filter|award_type_codes' is outside valid values " in resp.data["detail"]
 
     # Test invalid "scope" string
-    resp = post(
-        client,
-        def_codes=["L"],
-        geo_layer="state",
-        spending_type="obligation",
-        scope="NOT VALID",
-    )
+    resp = post(client, def_codes=["L"], geo_layer="state", spending_type="obligation", scope="NOT VALID")
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
     assert resp.data["detail"] == "Field 'scope' is outside valid values ['place_of_performance', 'recipient_location']"
 
@@ -397,11 +370,7 @@ def test_correct_response_with_different_spending_types(
 
 def _test_correct_response_for_obligation(client):
     resp = post(
-        client,
-        def_codes=["L", "M"],
-        geo_layer="state",
-        geo_layer_filters=["SC", "WA"],
-        spending_type="obligation",
+        client, def_codes=["L", "M"], geo_layer="state", geo_layer_filters=["SC", "WA"], spending_type="obligation"
     )
     expected_response = {
         "geo_layer": "state",
@@ -434,13 +403,7 @@ def _test_correct_response_for_obligation(client):
 
 
 def _test_correct_response_for_outlay(client):
-    resp = post(
-        client,
-        def_codes=["L", "M"],
-        geo_layer="state",
-        geo_layer_filters=["SC", "WA"],
-        spending_type="outlay",
-    )
+    resp = post(client, def_codes=["L", "M"], geo_layer="state", geo_layer_filters=["SC", "WA"], spending_type="outlay")
     expected_response = {
         "geo_layer": "state",
         "scope": "recipient_location",
@@ -639,11 +602,7 @@ def test_correct_response_of_empty_list(client, monkeypatch, elasticsearch_award
 
 def _test_correct_response_of_empty_list_for_county(client):
     resp = post(
-        client,
-        def_codes=["N"],
-        geo_layer="county",
-        geo_layer_filters=["45001", "45005"],
-        spending_type="obligation",
+        client, def_codes=["N"], geo_layer="county", geo_layer_filters=["45001", "45005"], spending_type="obligation"
     )
     expected_response = {
         "geo_layer": "county",
@@ -674,13 +633,7 @@ def _test_correct_response_of_empty_list_for_district(client):
 
 
 def _test_correct_response_of_empty_list_for_state(client):
-    resp = post(
-        client,
-        def_codes=["N"],
-        geo_layer="state",
-        geo_layer_filters=["WA"],
-        spending_type="obligation",
-    )
+    resp = post(client, def_codes=["N"], geo_layer="state", geo_layer_filters=["WA"], spending_type="obligation")
     expected_response = {
         "geo_layer": "state",
         "scope": "recipient_location",
@@ -711,11 +664,7 @@ def test_correct_response_without_geo_filters(client, monkeypatch, elasticsearch
 
 def _test_correct_response_for_pop_county_without_geo_filters(client):
     resp = post(
-        client,
-        def_codes=["L", "M"],
-        geo_layer="county",
-        spending_type="obligation",
-        scope="place_of_performance",
+        client, def_codes=["L", "M"], geo_layer="county", spending_type="obligation", scope="place_of_performance"
     )
     expected_response = {
         "geo_layer": "county",
@@ -765,11 +714,7 @@ def _test_correct_response_for_pop_county_without_geo_filters(client):
 
 def _test_correct_response_for_pop_district_without_geo_filters(client):
     resp = post(
-        client,
-        def_codes=["L", "M"],
-        geo_layer="district",
-        spending_type="obligation",
-        scope="place_of_performance",
+        client, def_codes=["L", "M"], geo_layer="district", spending_type="obligation", scope="place_of_performance"
     )
     expected_response = {
         "geo_layer": "district",
@@ -827,11 +772,7 @@ def _test_correct_response_for_pop_district_without_geo_filters(client):
 
 def _test_correct_response_for_pop_state_without_geo_filters(client):
     resp = post(
-        client,
-        def_codes=["L", "M"],
-        geo_layer="state",
-        spending_type="obligation",
-        scope="place_of_performance",
+        client, def_codes=["L", "M"], geo_layer="state", spending_type="obligation", scope="place_of_performance"
     )
     expected_response = {
         "geo_layer": "state",

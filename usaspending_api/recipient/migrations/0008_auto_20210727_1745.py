@@ -6,18 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("recipient", "0007_recipientagency"),
+        ('recipient', '0007_recipientagency'),
     ]
 
     operations = [
         migrations.AddField(
-            model_name="duns",
-            name="uei",
+            model_name='duns',
+            name='uei',
             field=models.TextField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name="duns",
-            name="ultimate_parent_uei",
+            model_name='duns',
+            name='ultimate_parent_uei',
             field=models.TextField(blank=True, null=True),
         ),
     ]
