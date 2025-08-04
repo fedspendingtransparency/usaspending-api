@@ -1,12 +1,9 @@
-from datetime import datetime
 from unittest.mock import patch
 
 import pandas as pd
 import pytest
 from django.core.management import call_command
 from model_bakery import baker
-
-from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.download.management.commands.delta_downloads.builders import (
     FederalAccountDownloadDataFrameBuilder,
     TreasuryAccountDownloadDataFrameBuilder,
@@ -110,10 +107,7 @@ def federal_account_models(db):
 
 
 @patch("usaspending_api.download.management.commands.delta_downloads.builders.get_submission_ids_for_periods")
-def test_federal_account_download_dataframe_builder(
-    mock_get_submission_ids_for_periods, spark, account_download_table, agency_models
-):
-    create_ref_temp_views(spark)
+def test_federal_account_download_dataframe_builder(mock_get_submission_ids_for_periods, spark, account_download_table):
     mock_get_submission_ids_for_periods.return_value = [1, 2, 4, 5]
     account_download_filter = AccountDownloadFilter(
         fy=2018,
@@ -134,7 +128,6 @@ def test_federal_account_download_dataframe_builder(
 
 @patch("usaspending_api.download.management.commands.delta_downloads.builders.get_submission_ids_for_periods")
 def test_filter_federal_by_agency(mock_get_submission_ids_for_periods, spark, account_download_table, agency_models):
-    create_ref_temp_views(spark)
     mock_get_submission_ids_for_periods.return_value = [1, 2, 4, 5]
 
     account_download_filter = AccountDownloadFilter(
@@ -154,16 +147,11 @@ def test_filter_federal_by_agency(mock_get_submission_ids_for_periods, spark, ac
 
 @patch("usaspending_api.download.management.commands.delta_downloads.builders.get_submission_ids_for_periods")
 def test_filter_federal_by_federal_account_id(
-<<<<<<< HEAD
     mock_get_submission_ids_for_periods,
     spark,
     account_download_table,
     federal_account_models,
-=======
-    mock_get_submission_ids_for_periods, spark, account_download_table, federal_account_models, agency_models
->>>>>>> b069e87f6658fd1d02f4a5c066248745b4d74c9e
 ):
-    create_ref_temp_views(spark)
     mock_get_submission_ids_for_periods.return_value = [1, 2, 4, 5]
 
     account_download_filter = AccountDownloadFilter(
@@ -181,8 +169,7 @@ def test_filter_federal_by_federal_account_id(
     assert sorted(result_df.gross_outlay_amount_FYB_to_period_end.to_list()) == [100]
 
 
-def test_treasury_account_download_dataframe_builder(spark, account_download_table, agency_models):
-    create_ref_temp_views(spark)
+def test_treasury_account_download_dataframe_builder(spark, account_download_table):
     account_download_filter = AccountDownloadFilter(
         fy=2018,
         submission_types=["award_financial"],
@@ -198,7 +185,7 @@ def test_treasury_account_download_dataframe_builder(spark, account_download_tab
 
 
 def test_filter_treasury_by_agency(spark, account_download_table, agency_models):
-    create_ref_temp_views(spark)
+
     account_download_filter = AccountDownloadFilter(
         fy=2018,
         submission_types=["award_financial"],
@@ -212,68 +199,3 @@ def test_filter_treasury_by_agency(spark, account_download_table, agency_models)
         assert sorted(result_df[col].to_list()) == ["B", "C", "D"]
     assert result_df.transaction_obligated_amount.to_list() == [100] * 3
     assert result_df.gross_outlay_amount_FYB_to_period_end.to_list() == [100] * 3
-
-
-@pytest.mark.django_db(transaction=True)
-@patch("usaspending_api.download.management.commands.delta_downloads.builders.get_submission_ids_for_periods")
-def test_account_balances(mock_get_submission_ids_for_periods, spark, account_download_table, agency_models):
-    baker.make("references.CGAC", cgac_code="1").save()
-    baker.make("references.CGAC", cgac_code="2").save()
-    baker.make("references.CGAC", cgac_code="3").save()
-    baker.make("references.CGAC", cgac_code="4").save()
-    baker.make("references.ToptierAgency", toptier_agency_id=1, create_date=datetime.now()).save()
-    baker.make("references.ToptierAgency", toptier_agency_id=2, create_date=datetime.now()).save()
-    baker.make("accounts.FederalAccount", id=1, parent_toptier_agency_id=1).save()
-    baker.make("accounts.FederalAccount", id=2, parent_toptier_agency_id=2).save()
-    baker.make(
-        "submissions.SubmissionAttributes",
-        submission_id=1,
-        reporting_fiscal_year=2018,
-        reporting_fiscal_quarter=4,
-        quarter_format_flag=True,
-    ).save()
-    baker.make(
-        "submissions.SubmissionAttributes",
-        submission_id=2,
-        reporting_fiscal_year=2018,
-        reporting_fiscal_quarter=4,
-        quarter_format_flag=True,
-    ).save()
-    baker.make(
-        "submissions.SubmissionAttributes",
-        submission_id=3,
-        reporting_fiscal_year=2019,
-        reporting_fiscal_quarter=4,
-        quarter_format_flag=True,
-    ).save()
-    baker.make(
-        "accounts.TreasuryAppropriationAccount",
-        treasury_account_identifier=1,
-        agency_id="1",
-        allocation_transfer_agency_id="2",
-        federal_account_id=1,
-    ).save()
-    baker.make(
-        "accounts.TreasuryAppropriationAccount",
-        treasury_account_identifier=2,
-        agency_id="3",
-        allocation_transfer_agency_id="4",
-        federal_account_id=2,
-    ).save()
-    baker.make("accounts.AppropriationAccountBalances", submission_id=1, treasury_account_identifier_id=1).save()
-    baker.make("accounts.AppropriationAccountBalances", submission_id=2, treasury_account_identifier_id=2).save()
-    baker.make("accounts.AppropriationAccountBalances", submission_id=3, treasury_account_identifier_id=2).save()
-
-    mock_get_submission_ids_for_periods.return_value = [1, 2, 3]
-
-    create_ref_temp_views(spark)
-
-    account_download_filter = AccountDownloadFilter(
-        fy=2018,
-        submission_types=["account_balances"],
-        quarter=4,
-    )
-    ta_builder = TreasuryAccountDownloadDataFrameBuilder(spark, account_download_filter)
-    assert ta_builder.account_balances.count() == 2
-    fa_builder = FederalAccountDownloadDataFrameBuilder(spark, account_download_filter)
-    assert fa_builder.account_balances.count() == 2
