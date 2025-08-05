@@ -4,10 +4,16 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING, Generator
 
 from databricks.sdk import WorkspaceClient
+from django.conf import settings
 from django.core.management import call_command
 
-from usaspending_api.common.helpers.spark_helpers import configure_spark_session, get_active_spark_session
 from usaspending_api.common.spark.configs import LOCAL_EXTENDED_EXTRA_CONF
+
+if settings.IS_LOCAL:
+    # Importing this only for local development. For local strategy it is expected that a Spark session is available,
+    # however, for Databricks and EMR strategies a Spark session is not available on the API itself. In these cases the
+    # job is submitted to Databricks or EMR where the Spark session exists.
+    from usaspending_api.common.helpers.spark_helpers import configure_spark_session, get_active_spark_session
 
 if TYPE_CHECKING:
     from pyspark.sql import SparkSession
