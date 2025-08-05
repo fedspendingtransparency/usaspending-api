@@ -1,11 +1,13 @@
 import copy
 import logging
-from sys import maxsize
-from typing import Any
 from dataclasses import dataclass
 from decimal import Decimal
+from sys import maxsize
+from typing import Any
+
 from django.conf import settings
-from elasticsearch_dsl import A, Q as ES_Q
+from elasticsearch_dsl import A
+from elasticsearch_dsl import Q as ES_Q
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -93,12 +95,15 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
 
         query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
         filter_query = query_with_filters.generate_elasticsearch_query(filters=filters, options=time_period_obj)
-        results = self.build_elasticsearch_search_with_aggregation(filter_query)
+        results = sorted(
+            self.build_elasticsearch_search_with_aggregation(filter_query),
+            key=lambda x: x[self.pagination["sort_key"]],
+            reverse=True if self.pagination["sort_order"] == "desc" else False,
+        )
 
         return Response(self.construct_es_response(results))
 
     def validate_request_data(self, request_data: dict[str, Any]) -> dict[str, Any]:
-
         tiny_shield = TinyShield(self.models)
         return tiny_shield.block(request_data)
 
@@ -116,35 +121,54 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
         }
 
     def build_elasticsearch_search_with_aggregation(self, filter_query: ES_Q) -> dict[str, Any]:
-        # Aggregate the ES query to group the subaward values by their prime award
-        terms_aggregation = A("terms", field="award_piid_fain")
+        es_field_mapper = {
+            "award_id": "_key",
+            "award_generated_internal_id": "_key",
+            "subaward_count": "_count",
+            "subaward_obligation": "subaward_obligation",
+        }
 
-        # Get the unique_award_key for each prime award
-        terms_aggregation.metric("unique_award_key", "terms", field="unique_award_key")
+        # We're creating a custom key that concatenates the award_piid_fain (award_id) and unique_award_key
+        #   to allow for sorting without creating nested buckets which we can't use for sorting.
+        # The order of concatenation changes based on what field we're sorting on.
+        match self.pagination["sort_key"]:
+            case "award_generated_internal_id":
+                agg_script = "doc['unique_award_key'].value + '|' + doc['award_piid_fain'].value"
+            case _:
+                agg_script = "doc['award_piid_fain'].value + '|' + doc['unique_award_key'].value"
 
-        # Sum the subaward amount within each prime award
-        terms_aggregation.metric("subaward_obligation", "sum", field="subaward_amount")
+        terms_aggregation = A(
+            "terms",
+            size=self.pagination["limit"],
+            script={"source": agg_script, "lang": "painless"},
+        )
+        terms_aggregation.metric("subaward_obligation", "sum", field="subaward_amount").bucket(
+            "sorted_subawards",
+            "bucket_sort",
+            sort={
+                es_field_mapper[self.pagination["sort_key"]]: {"order": self.pagination["sort_order"]},
+            },
+            **{"from": (self.pagination["page"] - 1) * self.pagination["limit"], "size": self.pagination["limit"] + 1},
+        )
 
-        search_sum = SubawardSearch().filter(filter_query)
-        search_sum.aggs.bucket("award_id", terms_aggregation)
+        search_sum = SubawardSearch().filter(filter_query).extra(size=0)
+        search_sum.aggs.bucket("subawards", terms_aggregation)
+
         response = search_sum.handle_execute()
 
         if response is None:
             raise Exception("Breaking generator, unable to reach cluster")
 
         results = []
-        for result in response["aggregations"]["award_id"]["buckets"]:
-            # there is one unique_award_key for each prime award so there will only be one bucket
-            award_generated_internal_id = result["unique_award_key"]["buckets"][0]["key"]
-            subaward_obligation = Decimal(result["subaward_obligation"]["value"]).quantize(Decimal(".01"))
-            item = SubawardGroupedModel(
-                result["key"], result["doc_count"], award_generated_internal_id, subaward_obligation
-            )
-            results.append(item)
-        results = self.sort_by_attribute(results)
-        return [result.__dict__ for result in results]
+        for result in response["aggregations"]["subawards"]["buckets"]:
+            match self.pagination["sort_key"]:
+                case "award_generated_internal_id":
+                    award_generated_internal_id, award_id = result["key"].split("|")
+                case _:
+                    award_id, award_generated_internal_id = result["key"].split("|")
 
-    # default sorting is to sort by the award_id, default order is desc
-    def sort_by_attribute(self, results: list[SubawardGroupedModel]) -> list[SubawardGroupedModel]:
-        reverse = True if self.pagination["sort_order"] == "asc" else False
-        return sorted(results, key=lambda result: getattr(result, self.pagination["sort_key"]), reverse=reverse)
+            subaward_obligation = Decimal(result["subaward_obligation"]["value"]).quantize(Decimal(".01"))
+
+            item = SubawardGroupedModel(award_id, result["doc_count"], award_generated_internal_id, subaward_obligation)
+            results.append(item)
+        return [result.__dict__ for result in results]
