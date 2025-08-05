@@ -34,7 +34,10 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
 
         # Get the current agency info
         current_agency_info = {}
-        if self.agency_type in (AgencyType.AWARDING_TOPTIER, AgencyType.FUNDING_TOPTIER):
+        if self.agency_type in (
+            AgencyType.AWARDING_TOPTIER,
+            AgencyType.FUNDING_TOPTIER,
+        ):
             agency_info_query = (
                 ToptierAgency.objects.filter(toptier_code__in=code_list, agency__toptier_flag=True)
                 .annotate(
@@ -49,7 +52,7 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
                 name_for_slug = res.pop("name_for_slug")
                 current_agency_info[toptier_code] = {
                     **res,
-                    "agency_slug": None if name_for_slug is None else slugify(name_for_slug),
+                    "agency_slug": (None if name_for_slug is None else slugify(name_for_slug)),
                 }
         else:
             agency_info_query = (
@@ -61,7 +64,15 @@ class AbstractAgencyViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMeta
                     agency_abbreviation=F("agency__toptier_agency__abbreviation"),
                     agency_name=F("agency__toptier_agency__name"),
                 )
-                .values("subtier_code", "id", "code", "name", "agency_id", "agency_abbreviation", "agency_name")
+                .values(
+                    "subtier_code",
+                    "id",
+                    "code",
+                    "name",
+                    "agency_id",
+                    "agency_abbreviation",
+                    "agency_name",
+                )
             )
             for res in agency_info_query:
                 subtier_code = res.pop("subtier_code")

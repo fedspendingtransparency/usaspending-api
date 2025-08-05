@@ -6,13 +6,13 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('references', '0058_bureautitlelookup'),
+        ("references", "0058_bureautitlelookup"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='gtassf133balances',
-            old_name='adjustments_to_unobligated_balance_brought_forward_cpe',
-            new_name='adjustments_to_unobligated_balance_cpe',
+            model_name="gtassf133balances",
+            old_name="adjustments_to_unobligated_balance_brought_forward_cpe",
+            new_name="adjustments_to_unobligated_balance_cpe",
         ),
     ]

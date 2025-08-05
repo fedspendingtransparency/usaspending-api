@@ -59,7 +59,12 @@ class Differences(PaginationMixin, AgencyBase):
 
     @cache_response()
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        self.sortable_columns = ["difference", "file_a_obligation", "file_b_obligation", "tas"]
+        self.sortable_columns = [
+            "difference",
+            "file_a_obligation",
+            "file_b_obligation",
+            "tas",
+        ]
         self.default_sort_column = "tas"
 
         results = self.get_differences_queryset()

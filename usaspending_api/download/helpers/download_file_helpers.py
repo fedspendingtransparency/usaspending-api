@@ -26,7 +26,9 @@ def get_last_modified_download_file(download_prefix: str, bucket_name: str) -> O
             aws_secret_access_key=CONFIG.AWS_SECRET_KEY.get_secret_value(),
         )
         s3_resource = boto3_session.resource(
-            service_name="s3", region_name=CONFIG.AWS_REGION, endpoint_url=f"http://{CONFIG.AWS_S3_ENDPOINT}"
+            service_name="s3",
+            region_name=CONFIG.AWS_REGION,
+            endpoint_url=f"http://{CONFIG.AWS_S3_ENDPOINT}",
         )
         s3_bucket = s3_resource.Bucket(bucket_name)
 

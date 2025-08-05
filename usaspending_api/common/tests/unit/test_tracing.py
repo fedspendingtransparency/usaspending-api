@@ -88,7 +88,11 @@ def test_logging_trace_spans_basic(caplog: LogCaptureFixture):
     test = f"{inspect.stack()[0][3]}"
 
     with tracer.start_as_current_span(name=f"{test}_operation", kind=SpanKind.INTERNAL) as span:
-        span_attributes = {"service.name": f"{test}_service", "resource.name": f"{test}_resource", "span.type": "TEST"}
+        span_attributes = {
+            "service.name": f"{test}_service",
+            "resource.name": f"{test}_resource",
+            "span.type": "TEST",
+        }
         for k, v in span_attributes.items():
             span.set_attribute(k, v)
 
@@ -107,7 +111,11 @@ def test_logging_trace_spans(caplog: LogCaptureFixture):
     test = f"{inspect.stack()[0][3]}"
 
     with tracer.start_as_current_span(name=f"{test}_operation", kind=SpanKind.INTERNAL) as span:
-        span_attributes = {"service.name": f"{test}_service", "resource.name": f"{test}_resource", "span.type": "TEST"}
+        span_attributes = {
+            "service.name": f"{test}_service",
+            "resource.name": f"{test}_resource",
+            "span.type": "TEST",
+        }
         for k, v in span_attributes.items():
             span.set_attribute(k, v)
 
@@ -133,7 +141,11 @@ def test_subprocess_basic(caplog: LogCaptureFixture):
         name=f"{test}_operation", kind=SpanKind.INTERNAL, service=f"{test}_service"
     ) as subprocess_trace:
         subprocess_trace.set_attributes(
-            {"resource": f"{test}_resource", "span_type": "Internal", "message": "A test message"}
+            {
+                "resource": f"{test}_resource",
+                "span_type": "Internal",
+                "message": "A test message",
+            }
         )
         trace_id = subprocess_trace.get_span_context().trace_id
         span_id = subprocess_trace.get_span_context().span_id
@@ -164,7 +176,11 @@ def test_subprocess_tracing(caplog: LogCaptureFixture, capsys):
     log_queue = mp.Queue()
 
     with tracer.start_as_current_span(name=f"{test}_operation", kind=SpanKind.INTERNAL) as span:
-        span_attributes = {"service.name": f"{test}_service", "resource.name": f"{test}_resource", "span.type": "TEST"}
+        span_attributes = {
+            "service.name": f"{test}_service",
+            "resource.name": f"{test}_resource",
+            "span.type": "TEST",
+        }
         for k, v in span_attributes.items():
             span.set_attribute(k, v)
 
@@ -181,7 +197,11 @@ def test_subprocess_tracing(caplog: LogCaptureFixture, capsys):
         worker = ctx.Process(
             name=f"{test}_subproc",
             target=_do_things_in_subproc,
-            args=(caplog, log_queue, trace_id),  # Pass the main trace ID to the subprocess
+            args=(
+                caplog,
+                log_queue,
+                trace_id,
+            ),  # Pass the main trace ID to the subprocess
         )
         worker.start()
         worker.join(timeout=100)

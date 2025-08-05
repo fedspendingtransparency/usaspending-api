@@ -8,7 +8,9 @@ from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
 )
-from usaspending_api.etl.management.helpers.recent_periods import retrieve_recent_periods
+from usaspending_api.etl.management.helpers.recent_periods import (
+    retrieve_recent_periods,
+)
 
 logger = logging.getLogger(__name__)
 

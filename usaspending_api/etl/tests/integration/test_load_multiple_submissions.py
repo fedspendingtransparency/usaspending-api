@@ -11,8 +11,12 @@ from model_bakery import baker
 from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetcher
-from usaspending_api.etl.submission_loader_helpers.object_class import reset_object_class_cache
-from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.etl.submission_loader_helpers.object_class import (
+    reset_object_class_cache,
+)
+from usaspending_api.financial_activities.models import (
+    FinancialAccountsByProgramActivityObjectClass,
+)
 from usaspending_api.submissions.models import SubmissionAttributes
 
 
@@ -55,8 +59,18 @@ class TestWithMultipleDatabases(TransactionTestCase):
             tas_rendering_label="222-X-2222-222",
         )
 
-        baker.make("references.ObjectClass", major_object_class="10", object_class="10.1", direct_reimbursable="D")
-        baker.make("references.ObjectClass", major_object_class="01", object_class="01.0", direct_reimbursable="D")
+        baker.make(
+            "references.ObjectClass",
+            major_object_class="10",
+            object_class="10.1",
+            direct_reimbursable="D",
+        )
+        baker.make(
+            "references.ObjectClass",
+            major_object_class="01",
+            object_class="01.0",
+            direct_reimbursable="D",
+        )
 
         baker.make("references.DisasterEmergencyFundCode", code="B", title="BB")
         baker.make("references.DisasterEmergencyFundCode", code="L", title="LL")
@@ -339,7 +353,11 @@ class TestWithMultipleDatabases(TransactionTestCase):
         with self.assertRaises(CommandError):
             call_command("load_multiple_submissions")
         with self.assertRaises(CommandError):
-            call_command("load_multiple_submissions", "--report-queue-status-only", "--submission_ids")
+            call_command(
+                "load_multiple_submissions",
+                "--report-queue-status-only",
+                "--submission_ids",
+            )
         with self.assertRaises(CommandError):
             call_command("load_multiple_submissions", "--submission_ids", "--incremental")
 
@@ -396,8 +414,14 @@ class TestWithMultipleDatabases(TransactionTestCase):
                 "published_date": datetime(2000, 1, 1, 0, 0, tzinfo=timezone.utc),
                 "submission_window_id": 2000041,
                 "history": [
-                    {"certified_date": None, "published_date": "1999-01-01T00:00:00+00:00"},
-                    {"certified_date": "2000-02-01T00:00:00+00:00", "published_date": "2000-01-01T00:00:00+00:00"},
+                    {
+                        "certified_date": None,
+                        "published_date": "1999-01-01T00:00:00+00:00",
+                    },
+                    {
+                        "certified_date": "2000-02-01T00:00:00+00:00",
+                        "published_date": "2000-01-01T00:00:00+00:00",
+                    },
                 ],
             }
 
@@ -417,7 +441,11 @@ class TestWithMultipleDatabases(TransactionTestCase):
                     from    financial_accounts_by_program_activity_object_class
                 """
             )
-            assert cursor.fetchone() == (Decimal("-52116.00"), "B,B,L,L", "B,B,P,P,X,X,X,X,X")
+            assert cursor.fetchone() == (
+                Decimal("-52116.00"),
+                "B,B,L,L",
+                "B,B,P,P,X,X,X,X,X",
+            )
 
             cursor.execute(
                 """

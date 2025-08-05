@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('recipient', '0003_auto_20200312_1656'),
+        ("recipient", "0003_auto_20200312_1656"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='recipientlookup',
-            name='id',
+            model_name="recipientlookup",
+            name="id",
             field=models.BigAutoField(primary_key=True, serialize=False),
         ),
     ]

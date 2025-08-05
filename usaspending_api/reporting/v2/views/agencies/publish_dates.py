@@ -15,7 +15,10 @@ from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.common.helpers.fiscal_year_helpers import get_quarter_from_period
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.helpers.orm_helpers import ConcatAll
-from usaspending_api.common.validator import customize_pagination_with_sort_columns, TinyShield
+from usaspending_api.common.validator import (
+    customize_pagination_with_sort_columns,
+    TinyShield,
+)
 from usaspending_api.references.models import ToptierAgencyPublishedDABSView
 from usaspending_api.reporting.models import ReportingAgencyOverview
 from usaspending_api.submissions.helpers import is_valid_monthly_period
@@ -95,7 +98,13 @@ class PublishDates(PaginationMixin, AgencyBase):
                     output_field=TextField(),
                 ),
             )
-            .values("name", "toptier_code", "abbreviation", "current_total_budget_authority_amount", "periods")
+            .values(
+                "name",
+                "toptier_code",
+                "abbreviation",
+                "current_total_budget_authority_amount",
+                "periods",
+            )
         )
         return self.format_results(results)
 
@@ -112,7 +121,10 @@ class PublishDates(PaginationMixin, AgencyBase):
                     {
                         "period": x,
                         "quarter": get_quarter_from_period(x),
-                        "submission_dates": {"publication_date": "", "certification_date": ""},
+                        "submission_dates": {
+                            "publication_date": "",
+                            "certification_date": "",
+                        },
                         "quarterly": False,
                     }
                 )
@@ -130,7 +142,10 @@ class PublishDates(PaginationMixin, AgencyBase):
 
     def get(self, request):
         self.displayed_periods = list(
-            filter(lambda period: is_valid_monthly_period(self.fiscal_year, period), list(range(2, 13)))
+            filter(
+                lambda period: is_valid_monthly_period(self.fiscal_year, period),
+                list(range(2, 13)),
+            )
         )
         if "publication_date" in self.pagination.sort_key:
             self.validate_publication_sort(self.pagination.sort_key)
@@ -164,7 +179,11 @@ class PublishDates(PaginationMixin, AgencyBase):
         page_metadata = get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
         results = results[self.pagination.lower_limit : self.pagination.upper_limit]
         return Response(
-            {"page_metadata": page_metadata, "results": results, "messages": self.standard_response_messages}
+            {
+                "page_metadata": page_metadata,
+                "results": results,
+                "messages": self.standard_response_messages,
+            }
         )
 
     @cached_property
@@ -178,7 +197,16 @@ class PublishDates(PaginationMixin, AgencyBase):
         ]
         default_sort_column = "current_total_budget_authority_amount"
         models = customize_pagination_with_sort_columns(sortable_columns, default_sort_column)
-        models.extend([{"key": "fiscal_year", "name": "fiscal_year", "type": "integer", "optional": False}])
+        models.extend(
+            [
+                {
+                    "key": "fiscal_year",
+                    "name": "fiscal_year",
+                    "type": "integer",
+                    "optional": False,
+                }
+            ]
+        )
         if self.request.query_params.get("sort") and "publication_date" in self.request.query_params.get("sort"):
             modified_query_params = deepcopy(self.request.query_params)
             modified_query_params.pop("sort")

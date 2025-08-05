@@ -11,7 +11,10 @@ from psycopg2.sql import SQL
 
 from usaspending_api.common.csv_helpers import read_csv_file_as_list_of_dictionaries
 from usaspending_api.common.etl.postgres import ETLTable, ETLTemporaryTable, mixins
-from usaspending_api.common.etl.postgres.operations import insert_missing_rows, update_changed_rows
+from usaspending_api.common.etl.postgres.operations import (
+    insert_missing_rows,
+    update_changed_rows,
+)
 from usaspending_api.common.helpers.sql_helpers import get_connection
 from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
 
@@ -35,7 +38,15 @@ logger = logging.getLogger("script")
 
 DisasterEmergencyFundCode = namedtuple(
     "DisasterEmergencyFundCode",
-    ["row_number", "code", "public_law", "title", "group_name", "urls", "earliest_public_law_enactment_date"],
+    [
+        "row_number",
+        "code",
+        "public_law",
+        "title",
+        "group_name",
+        "urls",
+        "earliest_public_law_enactment_date",
+    ],
 )
 
 
@@ -171,7 +182,10 @@ class Command(mixins.ETLMixin, BaseCommand):
 
     def _perform_load(self):
         overrides = {
-            "insert_overrides": {"create_date": SQL("now()"), "update_date": SQL("now()")},
+            "insert_overrides": {
+                "create_date": SQL("now()"),
+                "update_date": SQL("now()"),
+            },
             "update_overrides": {"update_date": SQL("now()")},
         }
 
@@ -184,13 +198,20 @@ class Command(mixins.ETLMixin, BaseCommand):
         self._execute_function_and_log(self._import_def_codes, "Import DEF Codes")
 
         self._execute_function_and_log(
-            update_changed_rows, "Update changed DEF Codes", temp_def_code_table, def_code_table
+            update_changed_rows,
+            "Update changed DEF Codes",
+            temp_def_code_table,
+            def_code_table,
         )
         self._execute_function_and_log(
-            insert_missing_rows, "Insert missing DEF Codes", temp_def_code_table, def_code_table
+            insert_missing_rows,
+            "Insert missing DEF Codes",
+            temp_def_code_table,
+            def_code_table,
         )
 
     def _vacuum_tables(self):
         self._execute_dml_sql(
-            "vacuum (full, analyze) disaster_emergency_fund_code", "Vacuum disaster_emergency_fund_code table"
+            "vacuum (full, analyze) disaster_emergency_fund_code",
+            "Vacuum disaster_emergency_fund_code table",
         )

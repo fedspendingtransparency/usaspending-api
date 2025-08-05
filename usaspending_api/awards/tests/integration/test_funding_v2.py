@@ -52,4 +52,8 @@ def test_sort_columns(client, create_award_test_data):
 
         _test_post(client, {"award_id": 2, "order": "asc", "sort": sortable_column})
 
-    _test_post(client, {"award_id": 2, "sort": "BOGUS FIELD"}, expected_status_code=status.HTTP_400_BAD_REQUEST)
+    _test_post(
+        client,
+        {"award_id": 2, "sort": "BOGUS FIELD"},
+        expected_status_code=status.HTTP_400_BAD_REQUEST,
+    )

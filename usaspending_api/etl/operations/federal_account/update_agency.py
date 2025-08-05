@@ -2,7 +2,11 @@ from usaspending_api.common.helpers.sql_helpers import execute_dml_sql
 
 
 DOD_AID = "097"  # DOD's agency identifier.
-DOD_SUBSUMED_AIDS = ("017", "021", "057")  # Air Force, Army, and Navy are to be reported under DOD.
+DOD_SUBSUMED_AIDS = (
+    "017",
+    "021",
+    "057",
+)  # Air Force, Army, and Navy are to be reported under DOD.
 
 
 # 1. If agency_id is for a DOD subsumed agency (Army, Navy, Air Force), remap it to 097 (DOD).

@@ -16,9 +16,30 @@ EXAMPLE_JSON_REQUEST = {
     "download_types": ["awards", "sub_awards"],
     "file_format": "csv",
     "filters": {
-        "award_type_codes": ["02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "A", "B", "C", "D"],
+        "award_type_codes": [
+            "02",
+            "03",
+            "04",
+            "05",
+            "06",
+            "07",
+            "08",
+            "09",
+            "10",
+            "11",
+            "A",
+            "B",
+            "C",
+            "D",
+        ],
         "recipient_search_text": ["806536462"],
-        "time_period": [{"date_type": "action_date", "end_date": "2019-09-30", "start_date": "2007-10-01"}],
+        "time_period": [
+            {
+                "date_type": "action_date",
+                "end_date": "2019-09-30",
+                "start_date": "2007-10-01",
+            }
+        ],
     },
     "limit": 500000,
     "request_type": "award",
@@ -27,9 +48,17 @@ EXAMPLE_JSON_REQUEST = {
 
 @pytest.mark.django_db
 def test_simple_download_admin_pass():
-    job_status_row = {"job_status_id": 77, "name": "placeholder", "description": "Example Job Status"}
+    job_status_row = {
+        "job_status_id": 77,
+        "name": "placeholder",
+        "description": "Example Job Status",
+    }
     baker.make("download.JobStatus", **job_status_row)
-    download_job_row = {"download_job_id": 90, "file_name": "download_example_file.hdf5", "job_status_id": 77}
+    download_job_row = {
+        "download_job_id": 90,
+        "file_name": "download_example_file.hdf5",
+        "job_status_id": 77,
+    }
     baker.make("download.DownloadJob", **download_job_row)
 
     d = DownloadAdministrator()
@@ -48,12 +77,36 @@ def test_simple_download_admin_pass():
 @pytest.mark.django_db
 def test_download_admin_restart_pass():
     job_status_rows = [
-        {"job_status_id": 1, "name": "placeholder_1", "description": "Example Job Status 1"},
-        {"job_status_id": 2, "name": "placeholder_2", "description": "Example Job Status 2"},
-        {"job_status_id": 3, "name": "placeholder_3", "description": "Example Job Status 3"},
-        {"job_status_id": 4, "name": "placeholder_4", "description": "Example Job Status 4"},
-        {"job_status_id": 5, "name": "placeholder_5", "description": "Example Job Status 5"},
-        {"job_status_id": 8, "name": "placeholder_8", "description": "Example Job Status 8"},
+        {
+            "job_status_id": 1,
+            "name": "placeholder_1",
+            "description": "Example Job Status 1",
+        },
+        {
+            "job_status_id": 2,
+            "name": "placeholder_2",
+            "description": "Example Job Status 2",
+        },
+        {
+            "job_status_id": 3,
+            "name": "placeholder_3",
+            "description": "Example Job Status 3",
+        },
+        {
+            "job_status_id": 4,
+            "name": "placeholder_4",
+            "description": "Example Job Status 4",
+        },
+        {
+            "job_status_id": 5,
+            "name": "placeholder_5",
+            "description": "Example Job Status 5",
+        },
+        {
+            "job_status_id": 8,
+            "name": "placeholder_8",
+            "description": "Example Job Status 8",
+        },
     ]
     for j in job_status_rows:
         baker.make("download.JobStatus", **j)

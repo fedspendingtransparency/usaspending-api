@@ -4,7 +4,10 @@ from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from pyspark.sql import SparkSession
 
-from usaspending_api.awards.delta_models import c_to_d_linkage_view_sql_strings, c_to_d_linkage_drop_view_sql_strings
+from usaspending_api.awards.delta_models import (
+    c_to_d_linkage_view_sql_strings,
+    c_to_d_linkage_drop_view_sql_strings,
+)
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,

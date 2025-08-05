@@ -69,7 +69,13 @@ GET_MIN_MAX_SQL = "SELECT MIN(id), MAX(id) FROM vw_awards"
 MAX_ID, MIN_ID, CLOSING_TIME, ITERATION_ESTIMATED_SECONDS = None, None, None, None
 TOTAL_UPDATES, CHUNK_SIZE = 0, 20000
 TYPES = ("fpds", "fabs")
-EXIT_SIGNALS = [signal.SIGHUP, signal.SIGABRT, signal.SIGINT, signal.SIGQUIT, signal.SIGTERM]
+EXIT_SIGNALS = [
+    signal.SIGHUP,
+    signal.SIGABRT,
+    signal.SIGINT,
+    signal.SIGQUIT,
+    signal.SIGTERM,
+]
 
 
 def _handle_exit_signal(signum, frame):
@@ -210,7 +216,10 @@ def main():
                         logging.info("===== Start next job at ID {} =====".format(batch_min))
                         return
 
-            with Timer("[Awards {:,} - {:,}]".format(batch_min, batch_max), pipe_output=logging.info) as t:
+            with Timer(
+                "[Awards {:,} - {:,}]".format(batch_min, batch_max),
+                pipe_output=logging.info,
+            ) as t:
                 with connection.cursor() as cursor:
                     if "fabs" in TYPES:
                         cursor.execute(GET_FABS_AWARDS.format(minid=batch_min, maxid=batch_max))

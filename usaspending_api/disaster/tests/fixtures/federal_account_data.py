@@ -1,7 +1,9 @@
 import pytest
 from model_bakery import baker
 
-from usaspending_api.references.models.disaster_emergency_fund_code import DisasterEmergencyFundCode
+from usaspending_api.references.models.disaster_emergency_fund_code import (
+    DisasterEmergencyFundCode,
+)
 
 
 @pytest.fixture
@@ -154,7 +156,12 @@ def generic_account_data():
     award2 = baker.make("search.AwardSearch", award_id=222, total_loan_value=2222, type="A")
     award3 = baker.make("search.AwardSearch", award_id=333, total_loan_value=3333, type="07")
     award4 = baker.make("search.AwardSearch", award_id=444, total_loan_value=4444, type="08")
-    fed_acct1 = baker.make("accounts.FederalAccount", account_title="gifts", federal_account_code="000-0000", id=21)
+    fed_acct1 = baker.make(
+        "accounts.FederalAccount",
+        account_title="gifts",
+        federal_account_code="000-0000",
+        id=21,
+    )
     tre_acct1 = baker.make(
         "accounts.TreasuryAppropriationAccount",
         federal_account=fed_acct1,
@@ -469,7 +476,12 @@ def generic_account_data():
 
 @pytest.fixture
 def unlinked_faba_account_data():
-    fed_acct = baker.make("accounts.FederalAccount", account_title="soap", federal_account_code="999-0000", id=99)
+    fed_acct = baker.make(
+        "accounts.FederalAccount",
+        account_title="soap",
+        federal_account_code="999-0000",
+        id=99,
+    )
     tre_acct = baker.make(
         "accounts.TreasuryAppropriationAccount",
         federal_account=fed_acct,

@@ -187,7 +187,19 @@ class RecipientLookup(models.Model):
                 # Django does not directly support a Unique Index so this is handled in the migration via RunSQL
                 # unique=True
             ),
-            Index(name="rl_duns_a43c07_partial", fields=["duns"], condition=Q(duns__isnull=False)),
-            Index(name="rl_parent__efd6d5_partial", fields=["parent_duns"], condition=Q(parent_duns__isnull=False)),
-            Index(name="rl_parent__271f5c_partial", fields=["parent_uei"], condition=Q(parent_uei__isnull=False)),
+            Index(
+                name="rl_duns_a43c07_partial",
+                fields=["duns"],
+                condition=Q(duns__isnull=False),
+            ),
+            Index(
+                name="rl_parent__efd6d5_partial",
+                fields=["parent_duns"],
+                condition=Q(parent_duns__isnull=False),
+            ),
+            Index(
+                name="rl_parent__271f5c_partial",
+                fields=["parent_uei"],
+                condition=Q(parent_uei__isnull=False),
+            ),
         ]

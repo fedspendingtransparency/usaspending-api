@@ -9,7 +9,10 @@ from django.conf import settings
 from typing import Optional, List
 
 from usaspending_api.common.helpers.date_helper import datetime_is_ge, datetime_is_lt
-from usaspending_api.common.helpers.s3_helpers import access_s3_object, retrieve_s3_bucket_object_list
+from usaspending_api.common.helpers.s3_helpers import (
+    access_s3_object,
+    retrieve_s3_bucket_object_list,
+)
 from usaspending_api.common.helpers.timing_helpers import ScriptTimer as Timer
 
 

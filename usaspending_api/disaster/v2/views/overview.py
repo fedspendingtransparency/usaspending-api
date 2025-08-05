@@ -4,7 +4,9 @@ from typing import Optional
 from django.db.models import Sum, F
 from rest_framework.response import Response
 
-from usaspending_api.awards.models.financial_accounts_by_awards import FinancialAccountsByAwards
+from usaspending_api.awards.models.financial_accounts_by_awards import (
+    FinancialAccountsByAwards,
+)
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.disaster.v2.views.disaster_base import (
@@ -13,7 +15,10 @@ from usaspending_api.disaster.v2.views.disaster_base import (
     latest_faba_of_each_year_queryset,
     latest_gtas_of_each_year_queryset,
 )
-from usaspending_api.references.models import DisasterEmergencyFundCode, GTASSF133Balances
+from usaspending_api.references.models import (
+    DisasterEmergencyFundCode,
+    GTASSF133Balances,
+)
 
 
 class OverviewViewSet(DisasterBase):
@@ -79,7 +84,11 @@ class OverviewViewSet(DisasterBase):
         return funding, total_budget_authority
 
     def spending(self):
-        return {"award_obligations": self.award_obligations(), "award_outlays": self.award_outlays(), **self.totals()}
+        return {
+            "award_obligations": self.award_obligations(),
+            "award_outlays": self.award_outlays(),
+            **self.totals(),
+        }
 
     def award_obligations(self):
         return (
@@ -109,7 +118,10 @@ class OverviewViewSet(DisasterBase):
             "obligations_incurred_total_cpe",
             "deobligations_or_recoveries_or_refunds_from_prior_year_cpe",
         ]
-        outlay_values = ["gross_outlay_amount_by_tas_cpe", "anticipated_prior_year_obligation_recoveries"]
+        outlay_values = [
+            "gross_outlay_amount_by_tas_cpe",
+            "anticipated_prior_year_obligation_recoveries",
+        ]
 
         results = (
             latest_gtas_of_each_year_queryset()
@@ -150,10 +162,17 @@ class OverviewViewSet(DisasterBase):
             "deobligations_or_recoveries_or_refunds_from_prior_year_cpe",
             "adjustments_to_unobligated_balance_brought_forward_fyb",
         ]
-        outlay_values = ["gross_outlay_amount_by_tas_cpe", "anticipated_prior_year_obligation_recoveries"]
+        outlay_values = [
+            "gross_outlay_amount_by_tas_cpe",
+            "anticipated_prior_year_obligation_recoveries",
+        ]
 
         filters = {
-            "tas_rendering_label__in": ["016-X-0168-000", "016-X-1801-000", "016-X-8042-000"],
+            "tas_rendering_label__in": [
+                "016-X-0168-000",
+                "016-X-1801-000",
+                "016-X-8042-000",
+            ],
             "disaster_emergency_fund": "O",
             "treasury_account_identifier__funding_toptier_agency__abbreviation": "DOL",
         }

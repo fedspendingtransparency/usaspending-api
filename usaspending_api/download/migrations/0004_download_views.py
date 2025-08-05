@@ -12,7 +12,10 @@ class Migration(migrations.Migration):
         ("accounts", "0002_auto_20200320_1307"),
         ("awards", "0074_financialaccountsbyawards_distinct_award_key"),
         ("download", "0003_auto_20180306_1726"),
-        ("financial_activities", "0003_financialaccountsbyprogramactivityobjectclass_disaster_emergency_fund"),
+        (
+            "financial_activities",
+            "0003_financialaccountsbyprogramactivityobjectclass_disaster_emergency_fund",
+        ),
     ]
 
     operations = [
@@ -21,35 +24,47 @@ class Migration(migrations.Migration):
             fields=[],
             options={
                 "db_table": "vw_appropriation_account_balances_download",
-                "managed": False
-            }
+                "managed": False,
+            },
         ),
         migrations.RunSQL(
-            sql=[f"{Path('usaspending_api/download/sql/vw_appropriation_account_balances_download.sql').read_text()}"],
-            reverse_sql=["DROP VIEW IF EXISTS vw_appropriation_account_balances_download;"],
+            sql=[
+                f"{Path('usaspending_api/download/sql/vw_appropriation_account_balances_download.sql').read_text()}"
+            ],
+            reverse_sql=[
+                "DROP VIEW IF EXISTS vw_appropriation_account_balances_download;"
+            ],
         ),
         migrations.CreateModel(
             name="FinancialAccountsByAwardsDownloadView",
             fields=[],
             options={
                 "db_table": "vw_financial_accounts_by_awards_download",
-                "managed": False
-            }
+                "managed": False,
+            },
         ),
         migrations.RunSQL(
-            sql=[f"{Path('usaspending_api/download/sql/vw_financial_accounts_by_awards_download.sql').read_text()}"],
-            reverse_sql=["DROP VIEW IF EXISTS vw_financial_accounts_by_awards_download;"],
+            sql=[
+                f"{Path('usaspending_api/download/sql/vw_financial_accounts_by_awards_download.sql').read_text()}"
+            ],
+            reverse_sql=[
+                "DROP VIEW IF EXISTS vw_financial_accounts_by_awards_download;"
+            ],
         ),
         migrations.CreateModel(
             name="FinancialAccountsByProgramActivityObjectClassDownloadView",
             fields=[],
             options={
                 "db_table": "vw_financial_accounts_by_program_activity_object_class_download",
-                "managed": False
-            }
+                "managed": False,
+            },
         ),
         migrations.RunSQL(
-            sql=[f"{Path('usaspending_api/download/sql/vw_financial_accounts_by_program_activity_object_class_download.sql').read_text()}"],
-            reverse_sql=["DROP VIEW IF EXISTS vw_financial_accounts_by_program_activity_object_class_download;"],
+            sql=[
+                f"{Path('usaspending_api/download/sql/vw_financial_accounts_by_program_activity_object_class_download.sql').read_text()}"
+            ],
+            reverse_sql=[
+                "DROP VIEW IF EXISTS vw_financial_accounts_by_program_activity_object_class_download;"
+            ],
         ),
     ]

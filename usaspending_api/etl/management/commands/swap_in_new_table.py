@@ -230,17 +230,25 @@ class Command(BaseCommand):
             new_name = f"{old_name}{self.old_suffix}"
             rename_sql.append(
                 sql_template.format(
-                    table_name=self.curr_table_name, old_constraint_name=old_name, new_constraint_name=new_name
+                    table_name=self.curr_table_name,
+                    old_constraint_name=old_name,
+                    new_constraint_name=new_name,
                 )
             )
         for val in temp_constraints:
             old_name = val["constraint_name"]
             new_name = re.sub(
-                rf"^(.*){self.source_suffix}$", rf"\g<1>{self.dest_suffix}", old_name, count=1, flags=re.I
+                rf"^(.*){self.source_suffix}$",
+                rf"\g<1>{self.dest_suffix}",
+                old_name,
+                count=1,
+                flags=re.I,
             )
             rename_sql.append(
                 sql_template.format(
-                    table_name=self.temp_table_name, old_constraint_name=old_name, new_constraint_name=new_name
+                    table_name=self.temp_table_name,
+                    old_constraint_name=old_name,
+                    new_constraint_name=new_name,
                 )
             )
 
@@ -276,7 +284,11 @@ class Command(BaseCommand):
         for val in temp_indexes:
             old_name = val["indexname"]
             new_name = re.sub(
-                rf"^(.*){self.source_suffix}$", rf"\g<1>{self.dest_suffix}", old_name, count=1, flags=re.I
+                rf"^(.*){self.source_suffix}$",
+                rf"\g<1>{self.dest_suffix}",
+                old_name,
+                count=1,
+                flags=re.I,
             )
             rename_sql.append(sql_template.format(old_index_name=old_name, new_index_name=new_name))
 
@@ -321,9 +333,13 @@ class Command(BaseCommand):
         table_rename_sql = [
             f"ALTER TABLE {self.temp_table_name} SET SCHEMA {self.curr_schema_name};",
             sql_table_template.format(
-                old_table_name=self.curr_table_name, new_table_name=f"{self.curr_table_name}{self.old_suffix}"
+                old_table_name=self.curr_table_name,
+                new_table_name=f"{self.curr_table_name}{self.old_suffix}",
             ),
-            sql_table_template.format(old_table_name=self.temp_table_name, new_table_name=f"{self.curr_table_name}"),
+            sql_table_template.format(
+                old_table_name=self.temp_table_name,
+                new_table_name=f"{self.curr_table_name}",
+            ),
         ]
         logger.info(f"Running table swap SQL in an atomic transaction:\n{pformat(table_rename_sql)}")
         cursor.execute("\n".join(table_rename_sql))
@@ -453,7 +469,11 @@ class Command(BaseCommand):
         curr_index_specs = {}
         for val in curr_indexes:
             cindexname = val["indexname"]
-            cindexdef = re.sub(rf"{self.curr_schema_name}\.", f"{self.temp_schema_name}.", val["indexdef"])
+            cindexdef = re.sub(
+                rf"{self.curr_schema_name}\.",
+                f"{self.temp_schema_name}.",
+                val["indexdef"],
+            )
             if self.is_curr_table_partitioned:
                 cindexdef = re.sub("ON ONLY", "ON", cindexdef, flags=re.I)
             curr_index_specs[cindexname] = cindexdef
@@ -462,7 +482,12 @@ class Command(BaseCommand):
         for idx, idx_def in temp_index_specs.items():
             if idx not in curr_index_specs:
                 differences.append(
-                    {"temp_index_name": idx, "curr_index_name": None, "temp_index_def": idx_def, "curr_index_def": None}
+                    {
+                        "temp_index_name": idx,
+                        "curr_index_name": None,
+                        "temp_index_def": idx_def,
+                        "curr_index_def": None,
+                    }
                 )
                 continue
             if idx_def not in curr_index_specs.values():
@@ -478,7 +503,12 @@ class Command(BaseCommand):
         for idx, idx_def in curr_index_specs.items():
             if idx not in temp_index_specs:
                 differences.append(
-                    {"temp_index_name": None, "curr_index_name": idx, "temp_index_def": None, "curr_index_def": idx_def}
+                    {
+                        "temp_index_name": None,
+                        "curr_index_name": idx,
+                        "temp_index_def": None,
+                        "curr_index_def": idx_def,
+                    }
                 )
                 continue
             if idx_def not in temp_index_specs.values():
@@ -623,7 +653,12 @@ class Command(BaseCommand):
         )
         temp_constr_specs = {
             (
-                re.sub(rf"{self.source_suffix}$", self.dest_suffix, val["constraint_name"], count=1)
+                re.sub(
+                    rf"{self.source_suffix}$",
+                    self.dest_suffix,
+                    val["constraint_name"],
+                    count=1,
+                )
                 if val["is_nullable"]
                 else val["check_clause"]
             ): {

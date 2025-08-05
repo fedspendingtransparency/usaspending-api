@@ -7,7 +7,15 @@ from usaspending_api.references.models import ToptierAgency
 
 
 class DownloadSource:
-    def __init__(self, model_type, file_type, source_type, agency_id, filters=None, extra_file_type=None):
+    def __init__(
+        self,
+        model_type,
+        file_type,
+        source_type,
+        agency_id,
+        filters=None,
+        extra_file_type=None,
+    ):
         self.model_type = model_type
         self.file_type = file_type
         self.source_type = source_type

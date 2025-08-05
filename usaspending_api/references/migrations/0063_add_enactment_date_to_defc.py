@@ -5,7 +5,10 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("references", "0062_gtassf133balances_rename_adjustments_to_unobligated_balance_fields"),
+        (
+            "references",
+            "0062_gtassf133balances_rename_adjustments_to_unobligated_balance_fields",
+        ),
     ]
 
     operations = [

@@ -53,7 +53,11 @@ def setup_test_data(db):
 
     agencies = [
         baker.make(
-            "references.ToptierAgency", toptier_code="123", abbreviation="ABC", name="Test Agency", _fill_optional=True
+            "references.ToptierAgency",
+            toptier_code="123",
+            abbreviation="ABC",
+            name="Test Agency",
+            _fill_optional=True,
         ),
         baker.make(
             "references.ToptierAgency",
@@ -85,11 +89,31 @@ def setup_test_data(db):
         ),
     ]
     approps = [
-        {"sub_id": sub[0].submission_id, "treasury_account": treas_accounts[0], "ob_incur": 50},
-        {"sub_id": sub[0].submission_id, "treasury_account": treas_accounts[1], "ob_incur": 12},
-        {"sub_id": sub[0].submission_id, "treasury_account": treas_accounts[1], "ob_incur": 29},
-        {"sub_id": sub[0].submission_id, "treasury_account": treas_accounts[2], "ob_incur": 15},
-        {"sub_id": sub[1].submission_id, "treasury_account": treas_accounts[2], "ob_incur": 1000},
+        {
+            "sub_id": sub[0].submission_id,
+            "treasury_account": treas_accounts[0],
+            "ob_incur": 50,
+        },
+        {
+            "sub_id": sub[0].submission_id,
+            "treasury_account": treas_accounts[1],
+            "ob_incur": 12,
+        },
+        {
+            "sub_id": sub[0].submission_id,
+            "treasury_account": treas_accounts[1],
+            "ob_incur": 29,
+        },
+        {
+            "sub_id": sub[0].submission_id,
+            "treasury_account": treas_accounts[2],
+            "ob_incur": 15,
+        },
+        {
+            "sub_id": sub[1].submission_id,
+            "treasury_account": treas_accounts[2],
+            "ob_incur": 1000,
+        },
     ]
     for approp in approps:
         baker.make(

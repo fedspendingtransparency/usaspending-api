@@ -1,7 +1,13 @@
 from psycopg2.sql import Composed, Identifier, SQL
 from typing import List, Optional
-from usaspending_api.common.etl.postgres.etl_writable_object_base import ETLWritableObjectBase
-from usaspending_api.common.etl.postgres.introspection import get_columns, get_data_types, get_primary_key_columns
+from usaspending_api.common.etl.postgres.etl_writable_object_base import (
+    ETLWritableObjectBase,
+)
+from usaspending_api.common.etl.postgres.introspection import (
+    get_columns,
+    get_data_types,
+    get_primary_key_columns,
+)
 from usaspending_api.common.etl.postgres.primatives import ColumnOverrides, DataTypes
 
 

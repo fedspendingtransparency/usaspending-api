@@ -15,7 +15,11 @@ from usaspending_api.common.validator import TinyShield
 from usaspending_api.disaster.v2.views.disaster_base import DisasterBase
 from usaspending_api.recipient.models import StateData
 from usaspending_api.references.abbreviations import code_to_state
-from usaspending_api.references.models import PopCounty, CityCountyStateCode, PopCongressionalDistrict
+from usaspending_api.references.models import (
+    PopCounty,
+    CityCountyStateCode,
+    PopCongressionalDistrict,
+)
 from usaspending_api.search.v2.elasticsearch_helper import (
     get_number_of_unique_terms_for_awards,
 )
@@ -87,8 +91,15 @@ class SpendingByGeographyViewSet(DisasterBase):
             "district": "congressional_cur_agg_key",
             "state": "state_agg_key",
         }
-        scope_dict = {"place_of_performance": "pop", "recipient_location": "recipient_location"}
-        location_dict = {"county": "county_code", "district": "congressional_code_current", "state": "state_code"}
+        scope_dict = {
+            "place_of_performance": "pop",
+            "recipient_location": "recipient_location",
+        }
+        location_dict = {
+            "county": "county_code",
+            "district": "congressional_code_current",
+            "state": "state_code",
+        }
 
         self.geo_layer = GeoLayer(json_request["geo_layer"])
 
@@ -112,7 +123,8 @@ class SpendingByGeographyViewSet(DisasterBase):
         elif self.spending_type == "face_value_of_loan":
             self.metric_field = "total_loan_value"
             self.metric_agg = A("reverse_nested", **{}).metric(
-                self.spending_type, A("sum", field="total_loan_value", script="_value * 100")
+                self.spending_type,
+                A("sum", field="total_loan_value", script="_value * 100"),
             )
         else:
             raise UnprocessableEntityException(
@@ -160,10 +172,20 @@ class SpendingByGeographyViewSet(DisasterBase):
 
         # Add 100 to make sure that we consider enough records in each shard for accurate results
         # We have to group by state no matter what since congressional districts and counties aren't unique between states
-        group_by_agg_key = A("terms", field=self.agg_key, size=bucket_count, shard_size=bucket_count + 100)
+        group_by_agg_key = A(
+            "terms",
+            field=self.agg_key,
+            size=bucket_count,
+            shard_size=bucket_count + 100,
+        )
         filter_agg_query = ES_Q("terms", **{"spending_by_defc.defc": self.covid_def_codes})
         if self.sub_agg_key:
-            group_by_sub_agg_key = A("terms", field=self.sub_agg_key, size=bucket_count, shard_size=bucket_count + 100)
+            group_by_sub_agg_key = A(
+                "terms",
+                field=self.sub_agg_key,
+                size=bucket_count,
+                shard_size=bucket_count + 100,
+            )
             search.aggs.bucket("group_by_agg_key", group_by_agg_key).bucket(
                 "group_by_sub_agg_key", group_by_sub_agg_key
             ).bucket("nested", A("nested", path="spending_by_defc")).bucket(

@@ -7,19 +7,25 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('awards', '0088_drop_old_defc_field'),
-        ('references', '0057_drop_old_defc_field'),
+        ("awards", "0088_drop_old_defc_field"),
+        ("references", "0057_drop_old_defc_field"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='financialaccountsbyawards',
-            old_name='disaster_emergency_fund_temp',
-            new_name='disaster_emergency_fund'
+            model_name="financialaccountsbyawards",
+            old_name="disaster_emergency_fund_temp",
+            new_name="disaster_emergency_fund",
         ),
         migrations.AlterField(
-            model_name='financialaccountsbyawards',
-            name='disaster_emergency_fund',
-            field=models.ForeignKey(blank=True, db_column='disaster_emergency_fund_code', null=True, on_delete=django.db.models.deletion.DO_NOTHING, to='references.DisasterEmergencyFundCode'),
+            model_name="financialaccountsbyawards",
+            name="disaster_emergency_fund",
+            field=models.ForeignKey(
+                blank=True,
+                db_column="disaster_emergency_fund_code",
+                null=True,
+                on_delete=django.db.models.deletion.DO_NOTHING,
+                to="references.DisasterEmergencyFundCode",
+            ),
         ),
     ]

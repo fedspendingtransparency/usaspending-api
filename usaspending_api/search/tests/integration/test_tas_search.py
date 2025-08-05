@@ -35,8 +35,20 @@ def mock_tas_data(db):
         abbreviation="DOSP",
         subtier_code="DOSP",
     )
-    baker.make("references.Agency", id=1, toptier_agency=a1, subtier_agency=a2, _fill_optional=True)
-    baker.make(FederalAccount, id=1, parent_toptier_agency_id=99, agency_identifier="99", main_account_code="0001")
+    baker.make(
+        "references.Agency",
+        id=1,
+        toptier_agency=a1,
+        subtier_agency=a2,
+        _fill_optional=True,
+    )
+    baker.make(
+        FederalAccount,
+        id=1,
+        parent_toptier_agency_id=99,
+        agency_identifier="99",
+        main_account_code="0001",
+    )
     baker.make(
         TreasuryAppropriationAccount,
         treasury_account_identifier=1,
@@ -184,7 +196,10 @@ def test_spending_by_award_tas_success(client, monkeypatch, elasticsearch_award_
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     data = {
-        "filters": {"tas_codes": [{"aid": "028", "main": "8006"}], "award_type_codes": ["A", "B", "C", "D"]},
+        "filters": {
+            "tas_codes": [{"aid": "028", "main": "8006"}],
+            "award_type_codes": ["A", "B", "C", "D"],
+        },
         "fields": ["Award ID"],
         "page": 1,
         "limit": 60,
@@ -192,16 +207,27 @@ def test_spending_by_award_tas_success(client, monkeypatch, elasticsearch_award_
         "order": "desc",
         "subawards": False,
     }
-    resp = client.post("/api/v2/search/spending_by_award", content_type="application/json", data=json.dumps(data))
+    resp = client.post(
+        "/api/v2/search/spending_by_award",
+        content_type="application/json",
+        data=json.dumps(data),
+    )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 2
 
     data = {
-        "filters": {"tas_codes": [{"aid": "011", "main": "8007"}], "award_type_codes": ["A", "B", "C", "D"]},
+        "filters": {
+            "tas_codes": [{"aid": "011", "main": "8007"}],
+            "award_type_codes": ["A", "B", "C", "D"],
+        },
         "fields": ["Award ID"],
         "subawards": False,
     }
-    resp = client.post("/api/v2/search/spending_by_award", content_type="application/json", data=json.dumps(data))
+    resp = client.post(
+        "/api/v2/search/spending_by_award",
+        content_type="application/json",
+        data=json.dumps(data),
+    )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 1
 
@@ -218,7 +244,11 @@ def test_spending_by_award_tas_dates(client, monkeypatch, elasticsearch_award_in
         "fields": ["Award ID"],
         "subawards": False,
     }
-    resp = client.post("/api/v2/search/spending_by_award", content_type="application/json", data=json.dumps(data))
+    resp = client.post(
+        "/api/v2/search/spending_by_award",
+        content_type="application/json",
+        data=json.dumps(data),
+    )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 1
 
@@ -230,7 +260,11 @@ def test_spending_by_award_tas_dates(client, monkeypatch, elasticsearch_award_in
         "fields": ["Award ID"],
         "subawards": False,
     }
-    resp = client.post("/api/v2/search/spending_by_award", content_type="application/json", data=json.dumps(data))
+    resp = client.post(
+        "/api/v2/search/spending_by_award",
+        content_type="application/json",
+        data=json.dumps(data),
+    )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 2
 
@@ -247,7 +281,11 @@ def test_spending_by_award_tas_sub_account(client, monkeypatch, elasticsearch_aw
         "fields": ["Award ID"],
         "subawards": False,
     }
-    resp = client.post("/api/v2/search/spending_by_award", content_type="application/json", data=json.dumps(data))
+    resp = client.post(
+        "/api/v2/search/spending_by_award",
+        content_type="application/json",
+        data=json.dumps(data),
+    )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 1
 
@@ -259,7 +297,11 @@ def test_spending_by_award_tas_sub_account(client, monkeypatch, elasticsearch_aw
         "fields": ["Award ID"],
         "subawards": False,
     }
-    resp = client.post("/api/v2/search/spending_by_award", content_type="application/json", data=json.dumps(data))
+    resp = client.post(
+        "/api/v2/search/spending_by_award",
+        content_type="application/json",
+        data=json.dumps(data),
+    )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 1
 
@@ -276,7 +318,11 @@ def test_spending_by_award_tas_ata(client, monkeypatch, elasticsearch_award_inde
         "fields": ["Award ID"],
         "subawards": False,
     }
-    resp = client.post("/api/v2/search/spending_by_award", content_type="application/json", data=json.dumps(data))
+    resp = client.post(
+        "/api/v2/search/spending_by_award",
+        content_type="application/json",
+        data=json.dumps(data),
+    )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 1
 
@@ -286,11 +332,18 @@ def test_spending_by_award_subaward_success(client, mock_tas_data, monkeypatch, 
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
 
     data = {
-        "filters": {"tas_codes": [{"aid": "028", "main": "8006"}], "award_type_codes": ["A", "B", "C", "D"]},
+        "filters": {
+            "tas_codes": [{"aid": "028", "main": "8006"}],
+            "award_type_codes": ["A", "B", "C", "D"],
+        },
         "fields": ["Sub-Award ID"],
         "subawards": True,
     }
-    resp = client.post("/api/v2/search/spending_by_award", content_type="application/json", data=json.dumps(data))
+    resp = client.post(
+        "/api/v2/search/spending_by_award",
+        content_type="application/json",
+        data=json.dumps(data),
+    )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 2
 
@@ -302,7 +355,11 @@ def test_spending_by_award_subaward_success(client, mock_tas_data, monkeypatch, 
         "fields": ["Sub-Award ID"],
         "subawards": True,
     }
-    resp = client.post("/api/v2/search/spending_by_award", content_type="application/json", data=json.dumps(data))
+    resp = client.post(
+        "/api/v2/search/spending_by_award",
+        content_type="application/json",
+        data=json.dumps(data),
+    )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 1
 
@@ -310,11 +367,18 @@ def test_spending_by_award_subaward_success(client, mock_tas_data, monkeypatch, 
 @pytest.mark.django_db
 def test_spending_by_award_subaward_failure(client, mock_tas_data):
     data = {
-        "filters": {"tas_codes": [{"aid": "000", "main": "0000"}], "award_type_codes": ["A", "B", "C", "D"]},
+        "filters": {
+            "tas_codes": [{"aid": "000", "main": "0000"}],
+            "award_type_codes": ["A", "B", "C", "D"],
+        },
         "fields": ["Sub-Award ID"],
         "subawards": True,
     }
-    resp = client.post("/api/v2/search/spending_by_award", content_type="application/json", data=json.dumps(data))
+    resp = client.post(
+        "/api/v2/search/spending_by_award",
+        content_type="application/json",
+        data=json.dumps(data),
+    )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 0
 
@@ -323,8 +387,16 @@ def test_spending_by_award_subaward_failure(client, mock_tas_data):
 def test_spending_over_time(client, monkeypatch, elasticsearch_transaction_index, mock_tas_data):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
-    data = {"group": "fiscal_year", "filters": {"tas_codes": [{"aid": "028", "main": "8006"}]}, "subawards": False}
-    resp = client.post("/api/v2/search/spending_over_time", content_type="application/json", data=json.dumps(data))
+    data = {
+        "group": "fiscal_year",
+        "filters": {"tas_codes": [{"aid": "028", "main": "8006"}]},
+        "subawards": False,
+    }
+    resp = client.post(
+        "/api/v2/search/spending_over_time",
+        content_type="application/json",
+        data=json.dumps(data),
+    )
     assert resp.status_code == status.HTTP_200_OK
     earliest_fiscal_year_we_care_about = datetime.strptime(settings.API_SEARCH_MIN_DATE, "%Y-%m-%d").year
     assert len(resp.data["results"]) == FiscalDate.today().fiscal_year - earliest_fiscal_year_we_care_about
@@ -340,7 +412,11 @@ def test_spending_by_geography(client, monkeypatch, elasticsearch_transaction_in
         "filters": {"tas_codes": [{"aid": "028", "main": "8006"}]},
         "subawards": False,
     }
-    resp = client.post("/api/v2/search/spending_by_geography", content_type="application/json", data=json.dumps(data))
+    resp = client.post(
+        "/api/v2/search/spending_by_geography",
+        content_type="application/json",
+        data=json.dumps(data),
+    )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 1
 
@@ -354,7 +430,9 @@ def test_spending_by_category(client, monkeypatch, elasticsearch_transaction_ind
         "subawards": False,
     }
     resp = client.post(
-        "/api/v2/search/spending_by_category/awarding_agency", content_type="application/json", data=json.dumps(data)
+        "/api/v2/search/spending_by_category/awarding_agency",
+        content_type="application/json",
+        data=json.dumps(data),
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 1

@@ -79,7 +79,12 @@ def run_update_query():
         progress = (_max - min_id + 1 + totes * n) / (totes * len(SQLS))
         print(
             "[{:.2%}] {:,} => {:,}: {:,} updated in {} with an estimated remaining run time of {}".format(
-                progress, _min, _max, row_count, t.elapsed_as_string, chunk_timer.estimated_remaining_runtime(progress)
+                progress,
+                _min,
+                _max,
+                row_count,
+                t.elapsed_as_string,
+                chunk_timer.estimated_remaining_runtime(progress),
             ),
             flush=True,
         )

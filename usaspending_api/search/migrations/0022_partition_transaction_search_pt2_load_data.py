@@ -18,11 +18,13 @@ def check_data_load_limit(apps, _):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('search', '0021_partition_transaction_search_pt1_index_prep_and_tables'),
+        ("search", "0021_partition_transaction_search_pt1_index_prep_and_tables"),
     ]
 
     operations = [
-        migrations.RunPython(code=check_data_load_limit, reverse_code=migrations.RunPython.noop),
+        migrations.RunPython(
+            code=check_data_load_limit, reverse_code=migrations.RunPython.noop
+        ),
         migrations.RunSQL(
             sql="""
                 INSERT INTO temp.transaction_search_fabs_temp
@@ -39,7 +41,7 @@ class Migration(migrations.Migration):
                 END
                 $$
                 ;
-            """
+            """,
         ),
         migrations.RunSQL(
             sql="""
@@ -57,6 +59,6 @@ class Migration(migrations.Migration):
                 END
                 $$
                 ;
-            """
+            """,
         ),
     ]

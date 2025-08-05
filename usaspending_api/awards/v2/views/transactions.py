@@ -48,7 +48,13 @@ class TransactionViewSet(APIView):
         models.extend(
             [
                 get_internal_or_generated_award_id_model(),
-                {"key": "idv", "name": "idv", "type": "boolean", "default": True, "optional": True},
+                {
+                    "key": "idv",
+                    "name": "idv",
+                    "type": "boolean",
+                    "default": True,
+                    "optional": True,
+                },
             ]
         )
 
@@ -103,6 +109,9 @@ class TransactionViewSet(APIView):
         results = self._business_logic(request_data)
         page_metadata = get_simple_pagination_metadata(len(results), request_data["limit"], request_data["page"])
 
-        response = {"page_metadata": page_metadata, "results": results[: request_data["limit"]]}
+        response = {
+            "page_metadata": page_metadata,
+            "results": results[: request_data["limit"]],
+        }
 
         return Response(response)

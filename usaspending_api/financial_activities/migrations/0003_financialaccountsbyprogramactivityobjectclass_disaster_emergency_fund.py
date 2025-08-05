@@ -7,14 +7,20 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('references', '0044_disasteremergencyfundcode'),
-        ('financial_activities', '0002_delete_tasprogramactivityobjectclassquarterly'),
+        ("references", "0044_disasteremergencyfundcode"),
+        ("financial_activities", "0002_delete_tasprogramactivityobjectclassquarterly"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='financialaccountsbyprogramactivityobjectclass',
-            name='disaster_emergency_fund',
-            field=models.ForeignKey(blank=True, db_column='disaster_emergency_fund_code', null=True, on_delete=django.db.models.deletion.DO_NOTHING, to='references.DisasterEmergencyFundCode'),
+            model_name="financialaccountsbyprogramactivityobjectclass",
+            name="disaster_emergency_fund",
+            field=models.ForeignKey(
+                blank=True,
+                db_column="disaster_emergency_fund_code",
+                null=True,
+                on_delete=django.db.models.deletion.DO_NOTHING,
+                to="references.DisasterEmergencyFundCode",
+            ),
         ),
     ]

@@ -24,7 +24,14 @@ def transaction_data(db):
         recipient_uei="testuei",
         parent_uei="test_parent_uei",
     )
-    baker.make("search.AwardSearch", award_id=1, latest_transaction_id=1, is_fpds=True, type="A", piid="IND12PB00323")
+    baker.make(
+        "search.AwardSearch",
+        award_id=1,
+        latest_transaction_id=1,
+        is_fpds=True,
+        type="A",
+        piid="IND12PB00323",
+    )
 
 
 @pytest.mark.django_db

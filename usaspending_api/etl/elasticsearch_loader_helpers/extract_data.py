@@ -3,7 +3,11 @@ import logging
 from time import perf_counter
 from typing import List, Tuple, Dict
 
-from usaspending_api.etl.elasticsearch_loader_helpers.utilities import TaskSpec, format_log, execute_sql_statement
+from usaspending_api.etl.elasticsearch_loader_helpers.utilities import (
+    TaskSpec,
+    format_log,
+    execute_sql_statement,
+)
 
 logger = logging.getLogger("script")
 

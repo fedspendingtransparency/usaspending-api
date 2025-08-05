@@ -15,13 +15,43 @@ TIME_PERIOD_MIN_MESSAGE = (
 )
 
 TAS_COMPONENTS_FILTER = {
-    "ata": {"type": "text", "text_type": "search", "optional": True, "allow_nulls": True},
-    "aid": {"type": "text", "text_type": "search", "optional": True, "allow_nulls": False},
-    "bpoa": {"type": "text", "text_type": "search", "optional": True, "allow_nulls": True},
-    "epoa": {"type": "text", "text_type": "search", "optional": True, "allow_nulls": True},
+    "ata": {
+        "type": "text",
+        "text_type": "search",
+        "optional": True,
+        "allow_nulls": True,
+    },
+    "aid": {
+        "type": "text",
+        "text_type": "search",
+        "optional": True,
+        "allow_nulls": False,
+    },
+    "bpoa": {
+        "type": "text",
+        "text_type": "search",
+        "optional": True,
+        "allow_nulls": True,
+    },
+    "epoa": {
+        "type": "text",
+        "text_type": "search",
+        "optional": True,
+        "allow_nulls": True,
+    },
     "a": {"type": "text", "text_type": "search", "optional": True, "allow_nulls": True},
-    "main": {"type": "text", "text_type": "search", "optional": True, "allow_nulls": False},
-    "sub": {"type": "text", "text_type": "search", "optional": True, "allow_nulls": True},
+    "main": {
+        "type": "text",
+        "text_type": "search",
+        "optional": True,
+        "allow_nulls": False,
+    },
+    "sub": {
+        "type": "text",
+        "text_type": "search",
+        "optional": True,
+        "allow_nulls": True,
+    },
 }
 
 STANDARD_FILTER_TREE_MODEL = {
@@ -51,10 +81,31 @@ AWARD_FILTER = [
         "array_type": "enum",
         "enum_values": list(award_type_mapping.keys()) + ["no intersection"],
     },
-    {"name": "contract_pricing_type_codes", "type": "array", "array_type": "text", "text_type": "search"},
-    {"name": "extent_competed_type_codes", "type": "array", "array_type": "text", "text_type": "search"},
-    {"name": "keywords", "type": "array", "array_type": "text", "text_type": "search", "text_min": 3},
-    {"name": "legal_entities", "type": "array", "array_type": "integer", "array_max": maxsize},
+    {
+        "name": "contract_pricing_type_codes",
+        "type": "array",
+        "array_type": "text",
+        "text_type": "search",
+    },
+    {
+        "name": "extent_competed_type_codes",
+        "type": "array",
+        "array_type": "text",
+        "text_type": "search",
+    },
+    {
+        "name": "keywords",
+        "type": "array",
+        "array_type": "text",
+        "text_type": "search",
+        "text_min": 3,
+    },
+    {
+        "name": "legal_entities",
+        "type": "array",
+        "array_type": "integer",
+        "array_max": maxsize,
+    },
     {
         "name": "naics_codes",
         "type": "any",
@@ -64,15 +115,34 @@ AWARD_FILTER = [
                 "type": "object",
                 "min": 0,
                 "object_keys": {
-                    "require": {"type": "array", "array_type": "integer", "text_type": "search", "min": 0},
-                    "exclude": {"type": "array", "array_type": "integer", "text_type": "search", "min": 0},
+                    "require": {
+                        "type": "array",
+                        "array_type": "integer",
+                        "text_type": "search",
+                        "min": 0,
+                    },
+                    "exclude": {
+                        "type": "array",
+                        "array_type": "integer",
+                        "text_type": "search",
+                        "min": 0,
+                    },
                 },
             },
             {"type": "array", "array_type": "integer", "text_type": "search"},
         ],
     },
-    {"name": "place_of_performance_scope", "type": "enum", "enum_values": ["domestic", "foreign"]},
-    {"name": "program_numbers", "type": "array", "array_type": "text", "text_type": "search"},
+    {
+        "name": "place_of_performance_scope",
+        "type": "enum",
+        "enum_values": ["domestic", "foreign"],
+    },
+    {
+        "name": "program_numbers",
+        "type": "array",
+        "array_type": "text",
+        "text_type": "search",
+    },
     {
         "name": PSCCodes.underscore_name,
         "type": "any",
@@ -83,9 +153,24 @@ AWARD_FILTER = [
     },
     {"name": "recipient_id", "type": "text", "text_type": "search"},
     {"name": "recipient_scope", "type": "enum", "enum_values": ("domestic", "foreign")},
-    {"name": "recipient_search_text", "type": "array", "array_type": "text", "text_type": "search"},
-    {"name": "recipient_type_names", "type": "array", "array_type": "text", "text_type": "search"},
-    {"name": "set_aside_type_codes", "type": "array", "array_type": "text", "text_type": "search"},
+    {
+        "name": "recipient_search_text",
+        "type": "array",
+        "array_type": "text",
+        "text_type": "search",
+    },
+    {
+        "name": "recipient_type_names",
+        "type": "array",
+        "array_type": "text",
+        "text_type": "search",
+    },
+    {
+        "name": "set_aside_type_codes",
+        "type": "array",
+        "array_type": "text",
+        "text_type": "search",
+    },
     {
         "name": "time_period",
         "type": "array",
@@ -105,7 +190,12 @@ AWARD_FILTER = [
             },
             "date_type": {
                 "type": "enum",
-                "enum_values": ["action_date", "last_modified_date", "date_signed", "new_awards_only"],
+                "enum_values": [
+                    "action_date",
+                    "last_modified_date",
+                    "date_signed",
+                    "new_awards_only",
+                ],
                 "optional": True,
             },
         },
@@ -124,8 +214,16 @@ AWARD_FILTER = [
         "type": "array",
         "array_type": "object",
         "object_keys": {
-            "type": {"type": "enum", "enum_values": ["funding", "awarding"], "optional": False},
-            "tier": {"type": "enum", "enum_values": ["toptier", "subtier"], "optional": False},
+            "type": {
+                "type": "enum",
+                "enum_values": ["funding", "awarding"],
+                "optional": False,
+            },
+            "tier": {
+                "type": "enum",
+                "enum_values": ["toptier", "subtier"],
+                "optional": False,
+            },
             "toptier_name": {"type": "text", "text_type": "search", "optional": True},
             "name": {"type": "text", "text_type": "search", "optional": False},
         },
@@ -192,7 +290,11 @@ AWARD_FILTER = [
         "name": TasCodes.underscore_name,
         "type": "any",
         "models": [
-            {"type": "array", "array_type": "object", "object_keys": TAS_COMPONENTS_FILTER},
+            {
+                "type": "array",
+                "array_type": "object",
+                "object_keys": TAS_COMPONENTS_FILTER,
+            },
             STANDARD_FILTER_TREE_MODEL,
         ],
     },

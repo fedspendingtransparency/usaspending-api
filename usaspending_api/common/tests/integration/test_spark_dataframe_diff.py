@@ -13,13 +13,48 @@ from usaspending_api.common.etl.spark import diff
 def test_diff_no_changes(spark: SparkSession):
     """Diff the same data in two different DataFrames to each other, and ensure no differences found"""
     data_left = [
-        {"first_col": "row 1", "id": str(uuid.uuid4()), "color": "blue", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 2", "id": str(uuid.uuid4()), "color": "green", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 3", "id": str(uuid.uuid4()), "color": "pink", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 4", "id": str(uuid.uuid4()), "color": "yellow", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 5", "id": str(uuid.uuid4()), "color": "red", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 6", "id": str(uuid.uuid4()), "color": "orange", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 7", "id": str(uuid.uuid4()), "color": "magenta", "numeric_val": random.randint(-100, 100)},
+        {
+            "first_col": "row 1",
+            "id": str(uuid.uuid4()),
+            "color": "blue",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 2",
+            "id": str(uuid.uuid4()),
+            "color": "green",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 3",
+            "id": str(uuid.uuid4()),
+            "color": "pink",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 4",
+            "id": str(uuid.uuid4()),
+            "color": "yellow",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 5",
+            "id": str(uuid.uuid4()),
+            "color": "red",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 6",
+            "id": str(uuid.uuid4()),
+            "color": "orange",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 7",
+            "id": str(uuid.uuid4()),
+            "color": "magenta",
+            "numeric_val": random.randint(-100, 100),
+        },
     ]
 
     data_right = deepcopy(data_left)
@@ -36,13 +71,48 @@ def test_diff_no_changes_include_unchanged(spark: SparkSession):
     """Diff the same data in two different DataFrames to each other, and ask that all results be shown. Ensure all
     are shown, but all are 'N' = no change"""
     data_left = [
-        {"first_col": "row 1", "id": str(uuid.uuid4()), "color": "blue", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 2", "id": str(uuid.uuid4()), "color": "green", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 3", "id": str(uuid.uuid4()), "color": "pink", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 4", "id": str(uuid.uuid4()), "color": "yellow", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 5", "id": str(uuid.uuid4()), "color": "red", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 6", "id": str(uuid.uuid4()), "color": "orange", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 7", "id": str(uuid.uuid4()), "color": "magenta", "numeric_val": random.randint(-100, 100)},
+        {
+            "first_col": "row 1",
+            "id": str(uuid.uuid4()),
+            "color": "blue",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 2",
+            "id": str(uuid.uuid4()),
+            "color": "green",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 3",
+            "id": str(uuid.uuid4()),
+            "color": "pink",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 4",
+            "id": str(uuid.uuid4()),
+            "color": "yellow",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 5",
+            "id": str(uuid.uuid4()),
+            "color": "red",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 6",
+            "id": str(uuid.uuid4()),
+            "color": "orange",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 7",
+            "id": str(uuid.uuid4()),
+            "color": "magenta",
+            "numeric_val": random.randint(-100, 100),
+        },
     ]
 
     data_right = deepcopy(data_left)
@@ -60,13 +130,48 @@ def test_diff_no_changes_include_unchanged(spark: SparkSession):
 def test_diff_one_change(spark: SparkSession):
     """Diff two DataFrames that differ by one row and ensure 'C' is found"""
     data_left = [
-        {"first_col": "row 1", "id": str(uuid.uuid4()), "color": "blue", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 2", "id": str(uuid.uuid4()), "color": "green", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 3", "id": str(uuid.uuid4()), "color": "pink", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 4", "id": str(uuid.uuid4()), "color": "yellow", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 5", "id": str(uuid.uuid4()), "color": "red", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 6", "id": str(uuid.uuid4()), "color": "orange", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 7", "id": str(uuid.uuid4()), "color": "magenta", "numeric_val": random.randint(-100, 100)},
+        {
+            "first_col": "row 1",
+            "id": str(uuid.uuid4()),
+            "color": "blue",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 2",
+            "id": str(uuid.uuid4()),
+            "color": "green",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 3",
+            "id": str(uuid.uuid4()),
+            "color": "pink",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 4",
+            "id": str(uuid.uuid4()),
+            "color": "yellow",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 5",
+            "id": str(uuid.uuid4()),
+            "color": "red",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 6",
+            "id": str(uuid.uuid4()),
+            "color": "orange",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 7",
+            "id": str(uuid.uuid4()),
+            "color": "magenta",
+            "numeric_val": random.randint(-100, 100),
+        },
     ]
 
     data_right = deepcopy(data_left)
@@ -105,17 +210,57 @@ def test_diff_one_change(spark: SparkSession):
 def test_diff_one_insert(spark: SparkSession):
     """Diff two DataFrames where the right has one more record than left"""
     data_left = [
-        {"first_col": "row 1", "id": str(uuid.uuid4()), "color": "blue", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 2", "id": str(uuid.uuid4()), "color": "green", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 3", "id": str(uuid.uuid4()), "color": "pink", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 4", "id": str(uuid.uuid4()), "color": "yellow", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 5", "id": str(uuid.uuid4()), "color": "red", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 6", "id": str(uuid.uuid4()), "color": "orange", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 7", "id": str(uuid.uuid4()), "color": "magenta", "numeric_val": random.randint(-100, 100)},
+        {
+            "first_col": "row 1",
+            "id": str(uuid.uuid4()),
+            "color": "blue",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 2",
+            "id": str(uuid.uuid4()),
+            "color": "green",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 3",
+            "id": str(uuid.uuid4()),
+            "color": "pink",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 4",
+            "id": str(uuid.uuid4()),
+            "color": "yellow",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 5",
+            "id": str(uuid.uuid4()),
+            "color": "red",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 6",
+            "id": str(uuid.uuid4()),
+            "color": "orange",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 7",
+            "id": str(uuid.uuid4()),
+            "color": "magenta",
+            "numeric_val": random.randint(-100, 100),
+        },
     ]
 
     data_right = deepcopy(data_left)
-    d = {"first_col": "row 8", "id": str(uuid.uuid4()), "color": "chartreuse", "numeric_val": random.randint(-100, 100)}
+    d = {
+        "first_col": "row 8",
+        "id": str(uuid.uuid4()),
+        "color": "chartreuse",
+        "numeric_val": random.randint(-100, 100),
+    }
     data_right += [d]
     changed_row_id = data_right[-1]["id"]
 
@@ -153,13 +298,48 @@ def test_diff_one_insert(spark: SparkSession):
 def test_diff_one_delete(spark: SparkSession):
     """Diff two DataFrames where the right has one less record than left"""
     data_left = [
-        {"first_col": "row 1", "id": str(uuid.uuid4()), "color": "blue", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 2", "id": str(uuid.uuid4()), "color": "green", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 3", "id": str(uuid.uuid4()), "color": "pink", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 4", "id": str(uuid.uuid4()), "color": "yellow", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 5", "id": str(uuid.uuid4()), "color": "red", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 6", "id": str(uuid.uuid4()), "color": "orange", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 7", "id": str(uuid.uuid4()), "color": "magenta", "numeric_val": random.randint(-100, 100)},
+        {
+            "first_col": "row 1",
+            "id": str(uuid.uuid4()),
+            "color": "blue",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 2",
+            "id": str(uuid.uuid4()),
+            "color": "green",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 3",
+            "id": str(uuid.uuid4()),
+            "color": "pink",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 4",
+            "id": str(uuid.uuid4()),
+            "color": "yellow",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 5",
+            "id": str(uuid.uuid4()),
+            "color": "red",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 6",
+            "id": str(uuid.uuid4()),
+            "color": "orange",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 7",
+            "id": str(uuid.uuid4()),
+            "color": "magenta",
+            "numeric_val": random.randint(-100, 100),
+        },
     ]
 
     data_right = deepcopy(data_left)
@@ -200,23 +380,86 @@ def test_diff_one_delete(spark: SparkSession):
 def test_diff_schema_mismatch(spark: SparkSession):
     """Diff DataFrames that have mismatched columns, and ensure ValueError is thrown"""
     data_left = [
-        {"first_col": "row 1", "id": str(uuid.uuid4()), "color": "blue", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 2", "id": str(uuid.uuid4()), "color": "green", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 3", "id": str(uuid.uuid4()), "color": "pink", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 4", "id": str(uuid.uuid4()), "color": "yellow", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 5", "id": str(uuid.uuid4()), "color": "red", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 6", "id": str(uuid.uuid4()), "color": "orange", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 7", "id": str(uuid.uuid4()), "color": "magenta", "numeric_val": random.randint(-100, 100)},
+        {
+            "first_col": "row 1",
+            "id": str(uuid.uuid4()),
+            "color": "blue",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 2",
+            "id": str(uuid.uuid4()),
+            "color": "green",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 3",
+            "id": str(uuid.uuid4()),
+            "color": "pink",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 4",
+            "id": str(uuid.uuid4()),
+            "color": "yellow",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 5",
+            "id": str(uuid.uuid4()),
+            "color": "red",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 6",
+            "id": str(uuid.uuid4()),
+            "color": "orange",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 7",
+            "id": str(uuid.uuid4()),
+            "color": "magenta",
+            "numeric_val": random.randint(-100, 100),
+        },
     ]
 
     data_right = [
-        {"first_col": "row 1", "id": str(uuid.uuid4()), "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 2", "id": str(uuid.uuid4()), "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 3", "id": str(uuid.uuid4()), "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 4", "id": str(uuid.uuid4()), "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 5", "id": str(uuid.uuid4()), "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 6", "id": str(uuid.uuid4()), "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 7", "id": str(uuid.uuid4()), "numeric_val": random.randint(-100, 100)},
+        {
+            "first_col": "row 1",
+            "id": str(uuid.uuid4()),
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 2",
+            "id": str(uuid.uuid4()),
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 3",
+            "id": str(uuid.uuid4()),
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 4",
+            "id": str(uuid.uuid4()),
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 5",
+            "id": str(uuid.uuid4()),
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 6",
+            "id": str(uuid.uuid4()),
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 7",
+            "id": str(uuid.uuid4()),
+            "numeric_val": random.randint(-100, 100),
+        },
     ]
 
     left_df = spark.createDataFrame([Row(**data_row) for data_row in data_left])
@@ -231,13 +474,48 @@ def test_diff_one_change_single_col_compared(spark: SparkSession):
     """Diff two different DataFrames that have different values, specify only the changed column to compare,
     and ensure it finds the change"""
     data_left = [
-        {"first_col": "row 1", "id": str(uuid.uuid4()), "color": "blue", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 2", "id": str(uuid.uuid4()), "color": "green", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 3", "id": str(uuid.uuid4()), "color": "pink", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 4", "id": str(uuid.uuid4()), "color": "yellow", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 5", "id": str(uuid.uuid4()), "color": "red", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 6", "id": str(uuid.uuid4()), "color": "orange", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 7", "id": str(uuid.uuid4()), "color": "magenta", "numeric_val": random.randint(-100, 100)},
+        {
+            "first_col": "row 1",
+            "id": str(uuid.uuid4()),
+            "color": "blue",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 2",
+            "id": str(uuid.uuid4()),
+            "color": "green",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 3",
+            "id": str(uuid.uuid4()),
+            "color": "pink",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 4",
+            "id": str(uuid.uuid4()),
+            "color": "yellow",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 5",
+            "id": str(uuid.uuid4()),
+            "color": "red",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 6",
+            "id": str(uuid.uuid4()),
+            "color": "orange",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 7",
+            "id": str(uuid.uuid4()),
+            "color": "magenta",
+            "numeric_val": random.randint(-100, 100),
+        },
     ]
 
     data_right = deepcopy(data_left)
@@ -271,13 +549,48 @@ def test_diff_one_change_changed_column_not_compared(spark: SparkSession):
     """Diff two different DataFrames that have different values, specify only the unchanged columns to compare,
     and ensure it finds no changes"""
     data_left = [
-        {"first_col": "row 1", "id": str(uuid.uuid4()), "color": "blue", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 2", "id": str(uuid.uuid4()), "color": "green", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 3", "id": str(uuid.uuid4()), "color": "pink", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 4", "id": str(uuid.uuid4()), "color": "yellow", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 5", "id": str(uuid.uuid4()), "color": "red", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 6", "id": str(uuid.uuid4()), "color": "orange", "numeric_val": random.randint(-100, 100)},
-        {"first_col": "row 7", "id": str(uuid.uuid4()), "color": "magenta", "numeric_val": random.randint(-100, 100)},
+        {
+            "first_col": "row 1",
+            "id": str(uuid.uuid4()),
+            "color": "blue",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 2",
+            "id": str(uuid.uuid4()),
+            "color": "green",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 3",
+            "id": str(uuid.uuid4()),
+            "color": "pink",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 4",
+            "id": str(uuid.uuid4()),
+            "color": "yellow",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 5",
+            "id": str(uuid.uuid4()),
+            "color": "red",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 6",
+            "id": str(uuid.uuid4()),
+            "color": "orange",
+            "numeric_val": random.randint(-100, 100),
+        },
+        {
+            "first_col": "row 7",
+            "id": str(uuid.uuid4()),
+            "color": "magenta",
+            "numeric_val": random.randint(-100, 100),
+        },
     ]
 
     data_right = deepcopy(data_left)

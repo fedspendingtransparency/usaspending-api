@@ -1,4 +1,7 @@
-from usaspending_api.etl.transaction_loaders.data_load_helpers import capitalize_if_string, false_if_null
+from usaspending_api.etl.transaction_loaders.data_load_helpers import (
+    capitalize_if_string,
+    false_if_null,
+)
 
 
 def test_capitalize_if_string():

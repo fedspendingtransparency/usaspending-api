@@ -15,10 +15,18 @@ from usaspending_api.broker.helpers.last_load_date import (
 def load_dates():
     # `name` and `external_data_type_id` must match those in `usaspending.broker.lookups`
     edt = baker.make("broker.ExternalDataType", name="fpds", external_data_type_id=1)
-    baker.make("broker.ExternalDataLoadDate", last_load_date="2020-03-01", external_data_type=edt)
+    baker.make(
+        "broker.ExternalDataLoadDate",
+        last_load_date="2020-03-01",
+        external_data_type=edt,
+    )
 
     edt2 = baker.make("broker.ExternalDataType", name="fabs", external_data_type_id=2)
-    baker.make("broker.ExternalDataLoadDate", last_load_date="2020-08-01", external_data_type=edt2)
+    baker.make(
+        "broker.ExternalDataLoadDate",
+        last_load_date="2020-08-01",
+        external_data_type=edt2,
+    )
 
 
 @pytest.mark.django_db

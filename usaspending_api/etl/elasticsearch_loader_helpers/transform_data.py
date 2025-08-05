@@ -4,7 +4,9 @@ from typing import Callable, Dict, List, Optional
 
 from django.conf import settings
 
-from usaspending_api.etl.elasticsearch_loader_helpers import aggregate_key_functions as funcs
+from usaspending_api.etl.elasticsearch_loader_helpers import (
+    aggregate_key_functions as funcs,
+)
 from usaspending_api.etl.elasticsearch_loader_helpers.utilities import (
     TaskSpec,
     convert_json_array_to_list_of_str,
@@ -60,7 +62,14 @@ def transform_award_data(worker: TaskSpec, records: List[dict]) -> List[dict]:
         "pop_county_population",
         "pop_congressional_population",
     ]
-    return transform_data(worker, records, replace_fields, insert_fields, drop_fields, settings.ES_ROUTING_FIELD)
+    return transform_data(
+        worker,
+        records,
+        replace_fields,
+        insert_fields,
+        drop_fields,
+        settings.ES_ROUTING_FIELD,
+    )
 
 
 def transform_transaction_data(worker: TaskSpec, records: List[dict]) -> List[dict]:
@@ -104,7 +113,14 @@ def transform_transaction_data(worker: TaskSpec, records: List[dict]) -> List[di
         "recipient_levels",
         "funding_toptier_agency_id",
     ]
-    return transform_data(worker, records, replace_fields, insert_fields, drop_fields, settings.ES_ROUTING_FIELD)
+    return transform_data(
+        worker,
+        records,
+        replace_fields,
+        insert_fields,
+        drop_fields,
+        settings.ES_ROUTING_FIELD,
+    )
 
 
 def transform_subaward_data(worker: TaskSpec, records: List[dict]) -> List[dict]:
@@ -185,5 +201,11 @@ def transform_data(
             del record[key]
 
     duration = perf_counter() - start
-    logger.info(format_log(f"Transformation operation took {duration:.2f}s", name=worker.name, action="Transform"))
+    logger.info(
+        format_log(
+            f"Transformation operation took {duration:.2f}s",
+            name=worker.name,
+            action="Transform",
+        )
+    )
     return records

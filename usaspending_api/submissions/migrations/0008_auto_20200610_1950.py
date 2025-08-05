@@ -6,20 +6,22 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('submissions', '0007_auto_20200608_1402'),
+        ("submissions", "0007_auto_20200608_1402"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='submissionattributes',
-            name='submission_id',
+            model_name="submissionattributes",
+            name="submission_id",
             field=models.IntegerField(primary_key=True, serialize=False),
         ),
         # There's a bug probably in Django whereby when we change a field from AutoField
         # to IntegerField, its sequence isn't dropped in the database.  This rectifies this
         # for submission_attributes.
-        migrations.RunSQL(sql=[
-            "alter table submission_attributes alter column submission_id drop default",
-            "drop sequence if exists submission_attributes_submission_id_seq"
-        ]),
+        migrations.RunSQL(
+            sql=[
+                "alter table submission_attributes alter column submission_id drop default",
+                "drop sequence if exists submission_attributes_submission_id_seq",
+            ]
+        ),
     ]

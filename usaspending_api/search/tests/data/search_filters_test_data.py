@@ -20,17 +20,35 @@ def non_legacy_filters():
         "place_of_performance_scope": "domestic",
         "program_numbers": ["10.553"],
         "psc_codes": ["1510"],
-        "recipient_locations": [{"country": "XYZ"}, {"country": "USA"}, {"country": "ABC"}],
+        "recipient_locations": [
+            {"country": "XYZ"},
+            {"country": "USA"},
+            {"country": "ABC"},
+        ],
         "recipient_scope": "domestic",
-        "recipient_type_names": ["Small Business", "Alaskan Native Corporation Owned Firm"],
+        "recipient_type_names": [
+            "Small Business",
+            "Alaskan Native Corporation Owned Firm",
+        ],
         "set_aside_type_codes": ["SAMPLECODE123"],
         "time_period": [{"start_date": "2016-10-01", "end_date": "2017-09-30"}],
         "tas_codes": [
-            {"ata": "012", "aid": "016", "bpoa": "2013", "epoa": "2016", "main": "0181", "sub": "000"},
+            {
+                "ata": "012",
+                "aid": "016",
+                "bpoa": "2013",
+                "epoa": "2016",
+                "main": "0181",
+                "sub": "000",
+            },
             {"ata": "012", "aid": "069", "a": "X", "main": "0500", "sub": "011"},
         ],
     }
 
 
 def legacy_filters():
-    return {"award_type_codes": ["A", "B"], "object_class": ["111"], "program_activity": [222]}
+    return {
+        "award_type_codes": ["A", "B"],
+        "object_class": ["111"],
+        "program_activity": [222],
+    }

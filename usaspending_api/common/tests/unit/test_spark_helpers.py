@@ -1,4 +1,6 @@
-from usaspending_api.common.helpers.spark_helpers import clean_postgres_sql_for_spark_sql
+from usaspending_api.common.helpers.spark_helpers import (
+    clean_postgres_sql_for_spark_sql,
+)
 
 
 def test_clean_postgres():

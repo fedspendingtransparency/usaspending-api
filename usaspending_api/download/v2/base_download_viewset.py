@@ -12,12 +12,22 @@ from rest_framework.views import APIView
 
 from usaspending_api.broker.lookups import EXTERNAL_DATA_TYPE_DICT
 from usaspending_api.broker.models import ExternalDataLoadDate
-from usaspending_api.common.api_versioning import API_TRANSFORM_FUNCTIONS, api_transformations
+from usaspending_api.common.api_versioning import (
+    API_TRANSFORM_FUNCTIONS,
+    api_transformations,
+)
 from usaspending_api.common.experimental_api_flags import is_experimental_download_api
 from usaspending_api.common.helpers.dict_helpers import order_nested_object
-from usaspending_api.common.spark.jobs import DatabricksStrategy, LocalStrategy, SparkJobs
+from usaspending_api.common.spark.jobs import (
+    DatabricksStrategy,
+    LocalStrategy,
+    SparkJobs,
+)
 from usaspending_api.common.sqs.sqs_handler import get_sqs_queue
-from usaspending_api.download.download_utils import create_unique_filename, log_new_download_job
+from usaspending_api.download.download_utils import (
+    create_unique_filename,
+    log_new_download_job,
+)
 from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.download.filestreaming.s3_handler import S3Handler
 from usaspending_api.download.helpers import write_to_download_log as write_to_log
@@ -66,7 +76,9 @@ class BaseDownloadViewSet(APIView):
 
         final_output_zip_name = create_unique_filename(json_request, origination=origination)
         download_job = DownloadJob.objects.create(
-            job_status_id=JOB_STATUS_DICT["ready"], file_name=final_output_zip_name, json_request=ordered_json_request
+            job_status_id=JOB_STATUS_DICT["ready"],
+            file_name=final_output_zip_name,
+            json_request=ordered_json_request,
         )
 
         log_new_download_job(request, download_job)
@@ -89,7 +101,8 @@ class BaseDownloadViewSet(APIView):
             # Send a SQS message that will be processed by another server which will eventually run
             # download_generation.generate_download(download_source) (see download_sqs_worker.py)
             write_to_log(
-                message=f"Passing download_job {download_job.download_job_id} to SQS", download_job=download_job
+                message=f"Passing download_job {download_job.download_job_id} to SQS",
+                download_job=download_job,
             )
             queue = get_sqs_queue(queue_name=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
             queue.send_message(MessageBody=str(download_job.download_job_id))
@@ -103,7 +116,10 @@ class BaseDownloadViewSet(APIView):
             spark_jobs.start(
                 job_name="api_download-accounts",
                 command_name="generate_spark_download",
-                command_options=[f"--download-job-id={download_job.download_job_id}", f"--skip-local-cleanup"],
+                command_options=[
+                    f"--download-job-id={download_job.download_job_id}",
+                    f"--skip-local-cleanup",
+                ],
             )
         else:
             spark_jobs = SparkJobs(DatabricksStrategy())
@@ -157,7 +173,12 @@ class BaseDownloadViewSet(APIView):
         elif download_types and "elasticsearch_transactions" in download_types:
             external_data_type_name_list = ["es_transactions"]
         else:
-            external_data_type_name_list = ["fpds", "fabs", "es_transactions", "es_awards"]
+            external_data_type_name_list = [
+                "fpds",
+                "fabs",
+                "es_transactions",
+                "es_awards",
+            ]
 
         external_data_type_id_list = [
             id for name, id in EXTERNAL_DATA_TYPE_DICT.items() if name in external_data_type_name_list
@@ -192,7 +213,8 @@ def get_file_path(file_name: str) -> str:
         file_path = settings.CSV_LOCAL_PATH + file_name
     else:
         s3_handler = S3Handler(
-            bucket_name=settings.BULK_DOWNLOAD_S3_BUCKET_NAME, redirect_dir=settings.BULK_DOWNLOAD_S3_REDIRECT_DIR
+            bucket_name=settings.BULK_DOWNLOAD_S3_BUCKET_NAME,
+            redirect_dir=settings.BULK_DOWNLOAD_S3_REDIRECT_DIR,
         )
         file_path = s3_handler.get_simple_url(file_name=file_name)
 

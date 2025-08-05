@@ -6,7 +6,9 @@ from django.conf import settings
 from django.db.models import QuerySet
 from rest_framework_extensions.cache.decorators import CacheResponse
 from typing import Any
-from usaspending_api.common.experimental_api_flags import is_experimental_elasticsearch_api
+from usaspending_api.common.experimental_api_flags import (
+    is_experimental_elasticsearch_api,
+)
 
 logger = logging.getLogger("console")
 
@@ -15,7 +17,10 @@ def contains_queryset(data: Any) -> bool:
     """Traverse a complex object and return True if a Queryset exists anywhere"""
     type_checks = (
         (dict, lambda x: any([contains_queryset(datum) for datum in x.values()])),
-        (str, lambda x: False),  # short-circuit since str is an iterable. Leave before Iterable
+        (
+            str,
+            lambda x: False,
+        ),  # short-circuit since str is an iterable. Leave before Iterable
         (Iterable, lambda x: any([contains_queryset(datum) for datum in x])),
         (QuerySet, lambda x: True),
     )
@@ -35,7 +40,11 @@ class CustomCacheResponse(CacheResponse):
             response["Cache-Trace"] = "no-cache"
             return response
         key = self.calculate_key(
-            view_instance=view_instance, view_method=view_method, request=request, args=args, kwargs=kwargs
+            view_instance=view_instance,
+            view_method=view_method,
+            request=request,
+            args=args,
+            kwargs=kwargs,
         )
         response = None
         try:

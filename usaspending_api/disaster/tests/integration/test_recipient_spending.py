@@ -28,7 +28,10 @@ def test_correct_response_single_defc(client, monkeypatch, helpers, elasticsearc
             "code": "987654321",
             "award_count": 2,
             "description": "RECIPIENT, 3",
-            "id": ["bf05f751-6841-efd6-8f1b-0144163eceae-C", "bf05f751-6841-efd6-8f1b-0144163eceae-R"],
+            "id": [
+                "bf05f751-6841-efd6-8f1b-0144163eceae-C",
+                "bf05f751-6841-efd6-8f1b-0144163eceae-R",
+            ],
             "obligation": 2200.0,
             "outlay": 1100.0,
         },
@@ -73,7 +76,10 @@ def test_correct_response_multiple_defc(
             "code": "987654321",
             "award_count": 3,
             "description": "RECIPIENT, 3",
-            "id": ["bf05f751-6841-efd6-8f1b-0144163eceae-C", "bf05f751-6841-efd6-8f1b-0144163eceae-R"],
+            "id": [
+                "bf05f751-6841-efd6-8f1b-0144163eceae-C",
+                "bf05f751-6841-efd6-8f1b-0144163eceae-R",
+            ],
             "obligation": 202200.0,
             "outlay": 101100.0,
         },
@@ -121,7 +127,10 @@ def test_correct_response_with_query(client, monkeypatch, helpers, elasticsearch
             "code": "987654321",
             "award_count": 3,
             "description": "RECIPIENT, 3",
-            "id": ["bf05f751-6841-efd6-8f1b-0144163eceae-C", "bf05f751-6841-efd6-8f1b-0144163eceae-R"],
+            "id": [
+                "bf05f751-6841-efd6-8f1b-0144163eceae-C",
+                "bf05f751-6841-efd6-8f1b-0144163eceae-R",
+            ],
             "obligation": 202200.0,
             "outlay": 101100.0,
         }
@@ -135,7 +144,10 @@ def test_correct_response_with_query(client, monkeypatch, helpers, elasticsearch
             "code": "987654321",
             "award_count": 3,
             "description": "RECIPIENT, 3",
-            "id": ["bf05f751-6841-efd6-8f1b-0144163eceae-C", "bf05f751-6841-efd6-8f1b-0144163eceae-R"],
+            "id": [
+                "bf05f751-6841-efd6-8f1b-0144163eceae-C",
+                "bf05f751-6841-efd6-8f1b-0144163eceae-R",
+            ],
             "obligation": 202200.0,
             "outlay": 101100.0,
         }
@@ -149,7 +161,10 @@ def test_correct_response_with_query(client, monkeypatch, helpers, elasticsearch
             "code": "987654321",
             "award_count": 3,
             "description": "RECIPIENT, 3",
-            "id": ["bf05f751-6841-efd6-8f1b-0144163eceae-C", "bf05f751-6841-efd6-8f1b-0144163eceae-R"],
+            "id": [
+                "bf05f751-6841-efd6-8f1b-0144163eceae-C",
+                "bf05f751-6841-efd6-8f1b-0144163eceae-R",
+            ],
             "obligation": 202200.0,
             "outlay": 101100.0,
         }
@@ -170,7 +185,11 @@ def test_correct_response_with_award_type_codes(
     assert resp.json()["results"] == expected_results
 
     resp = helpers.post_for_spending_endpoint(
-        client, url, def_codes=["L", "M"], award_type_codes=["07", "A", "B"], sort="obligation"
+        client,
+        url,
+        def_codes=["L", "M"],
+        award_type_codes=["07", "A", "B"],
+        sort="obligation",
     )
     expected_results = [
         {
@@ -185,7 +204,10 @@ def test_correct_response_with_award_type_codes(
             "code": "987654321",
             "award_count": 1,
             "description": "RECIPIENT, 3",
-            "id": ["bf05f751-6841-efd6-8f1b-0144163eceae-C", "bf05f751-6841-efd6-8f1b-0144163eceae-R"],
+            "id": [
+                "bf05f751-6841-efd6-8f1b-0144163eceae-C",
+                "bf05f751-6841-efd6-8f1b-0144163eceae-R",
+            ],
             "obligation": 2000.0,
             "outlay": 1000.0,
         },

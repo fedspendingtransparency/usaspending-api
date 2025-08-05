@@ -1,9 +1,16 @@
 import logging
 
 
-from usaspending_api.common.helpers.spark_helpers import get_active_spark_session, configure_spark_session
-from usaspending_api.etl.management.commands.elasticsearch_indexer import AbstractElasticsearchIndexer
-from usaspending_api.etl.elasticsearch_loader_helpers.controller import AbstractElasticsearchIndexerController
+from usaspending_api.common.helpers.spark_helpers import (
+    get_active_spark_session,
+    configure_spark_session,
+)
+from usaspending_api.etl.management.commands.elasticsearch_indexer import (
+    AbstractElasticsearchIndexer,
+)
+from usaspending_api.etl.elasticsearch_loader_helpers.controller import (
+    AbstractElasticsearchIndexerController,
+)
 from usaspending_api.etl.elasticsearch_loader_helpers.controller_for_spark import (
     DeltaLakeElasticsearchIndexerController,
 )

@@ -8,13 +8,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('download', '0002_auto_20180216_2047'),
+        ("download", "0002_auto_20180216_2047"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='downloadjob',
-            name='file_size',
+            model_name="downloadjob",
+            name="file_size",
             field=models.BigIntegerField(blank=True, null=True),
         ),
     ]

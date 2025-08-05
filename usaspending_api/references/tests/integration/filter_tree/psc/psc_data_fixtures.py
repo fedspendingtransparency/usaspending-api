@@ -51,8 +51,20 @@ def rnd_special(db):
 
 def toptiers():
     return [
-        {"id": "Research and Development", "description": "", "ancestors": [], "count": 1, "children": None},
-        {"id": "Research and Development", "description": "", "ancestors": [], "count": 1, "children": None},
+        {
+            "id": "Research and Development",
+            "description": "",
+            "ancestors": [],
+            "count": 1,
+            "children": None,
+        },
+        {
+            "id": "Research and Development",
+            "description": "",
+            "ancestors": [],
+            "count": 1,
+            "children": None,
+        },
     ]
 
 
@@ -117,11 +129,23 @@ def rnd_tier_four_special():
 
 
 def product_tier_two():
-    return {"id": "10", "description": "tier two Product", "ancestors": ["Product"], "count": 1, "children": None}
+    return {
+        "id": "10",
+        "description": "tier two Product",
+        "ancestors": ["Product"],
+        "count": 1,
+        "children": None,
+    }
 
 
 def product_other_tier_two():
-    return {"id": "11", "description": "tier two Product 2", "ancestors": ["Product"], "count": 1, "children": None}
+    return {
+        "id": "11",
+        "description": "tier two Product 2",
+        "ancestors": ["Product"],
+        "count": 1,
+        "children": None,
+    }
 
 
 def product_tier_three():
@@ -145,7 +169,13 @@ def product_other_tier_three(parent):
 
 
 def service_tier_two():
-    return {"id": "B", "description": "tier two Service", "ancestors": ["Service"], "count": 1, "children": None}
+    return {
+        "id": "B",
+        "description": "tier two Service",
+        "ancestors": ["Service"],
+        "count": 1,
+        "children": None,
+    }
 
 
 def service_tier_three():
@@ -170,5 +200,8 @@ def service_tier_four():
 
 def _psc(db, dictionary):
     baker.make(
-        "references.PSC", code=dictionary["id"], length=len(dictionary["id"]), description=dictionary["description"]
+        "references.PSC",
+        code=dictionary["id"],
+        length=len(dictionary["id"]),
+        description=dictionary["description"],
     )

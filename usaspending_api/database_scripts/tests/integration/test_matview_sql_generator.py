@@ -2,7 +2,10 @@ import pytest
 
 from django.db import connection
 from usaspending_api.common.helpers.generic_helper import generate_matviews
-from usaspending_api.common.matview_manager import MATERIALIZED_VIEWS, CHUNKED_MATERIALIZED_VIEWS
+from usaspending_api.common.matview_manager import (
+    MATERIALIZED_VIEWS,
+    CHUNKED_MATERIALIZED_VIEWS,
+)
 
 ALL_MATVIEWS = {**MATERIALIZED_VIEWS, **CHUNKED_MATERIALIZED_VIEWS}
 

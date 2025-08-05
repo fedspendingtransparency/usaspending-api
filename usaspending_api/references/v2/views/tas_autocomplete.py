@@ -10,13 +10,55 @@ from usaspending_api.references.models import CGAC
 
 
 TINY_SHIELD_MODELS = [
-    {"name": "filters|ata", "key": "filters|ata", "type": "text", "text_type": "search", "allow_nulls": True},
-    {"name": "filters|aid", "key": "filters|aid", "type": "text", "text_type": "search", "allow_nulls": True},
-    {"name": "filters|bpoa", "key": "filters|bpoa", "type": "text", "text_type": "search", "allow_nulls": True},
-    {"name": "filters|epoa", "key": "filters|epoa", "type": "text", "text_type": "search", "allow_nulls": True},
-    {"name": "filters|a", "key": "filters|a", "type": "text", "text_type": "search", "allow_nulls": True},
-    {"name": "filters|main", "key": "filters|main", "type": "text", "text_type": "search", "allow_nulls": True},
-    {"name": "filters|sub", "key": "filters|sub", "type": "text", "text_type": "search", "allow_nulls": True},
+    {
+        "name": "filters|ata",
+        "key": "filters|ata",
+        "type": "text",
+        "text_type": "search",
+        "allow_nulls": True,
+    },
+    {
+        "name": "filters|aid",
+        "key": "filters|aid",
+        "type": "text",
+        "text_type": "search",
+        "allow_nulls": True,
+    },
+    {
+        "name": "filters|bpoa",
+        "key": "filters|bpoa",
+        "type": "text",
+        "text_type": "search",
+        "allow_nulls": True,
+    },
+    {
+        "name": "filters|epoa",
+        "key": "filters|epoa",
+        "type": "text",
+        "text_type": "search",
+        "allow_nulls": True,
+    },
+    {
+        "name": "filters|a",
+        "key": "filters|a",
+        "type": "text",
+        "text_type": "search",
+        "allow_nulls": True,
+    },
+    {
+        "name": "filters|main",
+        "key": "filters|main",
+        "type": "text",
+        "text_type": "search",
+        "allow_nulls": True,
+    },
+    {
+        "name": "filters|sub",
+        "key": "filters|sub",
+        "type": "text",
+        "text_type": "search",
+        "allow_nulls": True,
+    },
     {"name": "limit", "key": "limit", "type": "integer", "max": 500, "default": 10},
 ]
 

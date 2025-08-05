@@ -90,7 +90,10 @@ class Command(BaseCommand):
             self.run_curl_cmd(payload=cluster, url=CURL_COMMANDS["cluster"], host=settings.ES_HOSTNAME)
 
         self.run_curl_cmd(
-            payload=template, url=CURL_COMMANDS["template"], host=settings.ES_HOSTNAME, name=self.template_name
+            payload=template,
+            url=CURL_COMMANDS["template"],
+            host=settings.ES_HOSTNAME,
+            name=self.template_name,
         )
 
         logger.info(f"ES Configure took {perf_counter() - start:.2f}s")

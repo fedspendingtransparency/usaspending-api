@@ -9,7 +9,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.elasticsearch.aggregation_helpers import create_count_aggregation
+from usaspending_api.common.elasticsearch.aggregation_helpers import (
+    create_count_aggregation,
+)
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.fiscal_year_helpers import generate_fiscal_year
@@ -84,7 +86,8 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
         # This has to be hard coded in since QueryWithFilters automatically uses "action_date" for awards
         for i in range(len(self.filters["time_period"])):
             filter_query.must[1].should[i].should[0] = Q(
-                "range", **{"date_signed": {"gte": filters["time_period"][i]["start_date"]}}
+                "range",
+                **{"date_signed": {"gte": filters["time_period"][i]["start_date"]}},
             )
         search = AwardSearch().filter(filter_query)
         if self.group == "month":
@@ -119,7 +122,13 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
                 time_range = range(1, 13)
             elif self.group == "quarter":
                 time_range = range(1, 5)
-            years_pairs = [(int(x["time_period"][self.group]), int(x["time_period"]["fiscal_year"])) for x in results]
+            years_pairs = [
+                (
+                    int(x["time_period"][self.group]),
+                    int(x["time_period"]["fiscal_year"]),
+                )
+                for x in results
+            ]
             required_year_pairs = []
             for x in required_years:
                 for y in time_range:
@@ -135,7 +144,11 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
                     }
                 )
         results = sorted(
-            results, key=lambda x: (int(x["time_period"]["fiscal_year"]), int(x["time_period"][self.group]))
+            results,
+            key=lambda x: (
+                int(x["time_period"]["fiscal_year"]),
+                int(x["time_period"][self.group]),
+            ),
         )
         return results
 
@@ -146,9 +159,15 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
             date = datetime.datetime.strptime(x.get("key_as_string"), "%Y-%m-%d")
             date = date + time_change
             if self.group == "month":
-                time_period = {"fiscal_year": f"{date.year}", self.group: f"{date.month}"}
+                time_period = {
+                    "fiscal_year": f"{date.year}",
+                    self.group: f"{date.month}",
+                }
             elif self.group == "quarter":
-                time_period = {"fiscal_year": f"{date.year}", self.group: f"{int(date.month / 3) + (date.month % 3 > 0)}"}
+                time_period = {
+                    "fiscal_year": f"{date.year}",
+                    self.group: f"{int(date.month / 3) + (date.month % 3 > 0)}",
+                }
             else:
                 time_period = {"fiscal_year": f"{date.year}"}
             results.append(

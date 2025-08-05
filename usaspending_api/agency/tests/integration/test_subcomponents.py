@@ -10,7 +10,12 @@ url = "/api/v2/agency/{toptier_code}/sub_components/{filter}"
 
 @pytest.mark.django_db
 def test_success(client, bureau_data, helpers):
-    resp = client.get(url.format(toptier_code="001", filter=f"?fiscal_year={helpers.get_mocked_current_fiscal_year()}"))
+    resp = client.get(
+        url.format(
+            toptier_code="001",
+            filter=f"?fiscal_year={helpers.get_mocked_current_fiscal_year()}",
+        )
+    )
 
     expected_results = [
         {
@@ -70,14 +75,32 @@ def test_invalid_agency(client, bureau_data):
 @pytest.mark.django_db
 def test_exclusion_bureau_codes(client):
     # Setup all Data (no bureau)
-    ta1 = baker.make("references.ToptierAgency", name="Agency 1", toptier_code="001", _fill_optional=True)
-    sa1 = baker.make("references.SubtierAgency", name="Agency 1", subtier_code="0001", _fill_optional=True)
+    ta1 = baker.make(
+        "references.ToptierAgency",
+        name="Agency 1",
+        toptier_code="001",
+        _fill_optional=True,
+    )
+    sa1 = baker.make(
+        "references.SubtierAgency",
+        name="Agency 1",
+        subtier_code="0001",
+        _fill_optional=True,
+    )
     baker.make(
-        "references.Agency", id=1, toptier_flag=True, toptier_agency=ta1, subtier_agency=sa1, _fill_optional=True
+        "references.Agency",
+        id=1,
+        toptier_flag=True,
+        toptier_agency=ta1,
+        subtier_agency=sa1,
+        _fill_optional=True,
     )
 
     fa1 = baker.make(
-        "accounts.FederalAccount", account_title="FA 1", federal_account_code="001-0000", parent_toptier_agency=ta1
+        "accounts.FederalAccount",
+        account_title="FA 1",
+        federal_account_code="001-0000",
+        parent_toptier_agency=ta1,
     )
     taa1 = baker.make("accounts.TreasuryAppropriationAccount", federal_account=fa1)
 

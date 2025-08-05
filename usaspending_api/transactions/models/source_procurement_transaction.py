@@ -1,7 +1,10 @@
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
 
-from usaspending_api.common.custom_django_fields import NumericField, NaiveTimestampField
+from usaspending_api.common.custom_django_fields import (
+    NumericField,
+    NaiveTimestampField,
+)
 
 
 class SourceProcurementTransaction(models.Model):
@@ -90,7 +93,10 @@ class SourceProcurementTransaction(models.Model):
     country_of_product_or_serv = models.TextField(blank=True, null=True)
     county_local_government = models.BooleanField(null=True, blank=True)
     created_at = NaiveTimestampField(
-        help_text="record creation datetime in Broker", blank=True, null=True, db_index=True
+        help_text="record creation datetime in Broker",
+        blank=True,
+        null=True,
+        db_index=True,
     )
     current_total_value_award = models.TextField(blank=True, null=True)
     division_name = models.TextField(blank=True, null=True)
@@ -307,7 +313,10 @@ class SourceProcurementTransaction(models.Model):
     undefinitized_action_desc = models.TextField(blank=True, null=True)
     unique_award_key = models.TextField(blank=True, null=True)
     updated_at = NaiveTimestampField(
-        help_text="record last update datetime in Broker", blank=True, null=True, db_index=True
+        help_text="record last update datetime in Broker",
+        blank=True,
+        null=True,
+        db_index=True,
     )
     us_federal_government = models.BooleanField(null=True, blank=True)
     us_government_entity = models.BooleanField(null=True, blank=True)

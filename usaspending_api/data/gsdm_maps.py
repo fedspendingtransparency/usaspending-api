@@ -168,7 +168,11 @@ gsdm_maps = {
         "NDOCiv": "	Non-Competitive Delivery Order",
     },
     "fed_biz_opps_map": {"Y": "Yes", "N": "No", "X": "Not Applicable"},
-    "foreign_funding_map": {"A": "Foreign Funds", "B": "Foreign Funds non-FMS", "X": "Not Applicable"},
+    "foreign_funding_map": {
+        "A": "Foreign Funds",
+        "B": "Foreign Funds non-FMS",
+        "X": "Not Applicable",
+    },
     "idv_type_map": {
         "A": "Governmentwide Acquisition Contract (GWAC)",
         "B": "Indefinite Delivery Contract (IDC)",
@@ -219,7 +223,11 @@ gsdm_maps = {
         "O14E": "Operation United Assistance (OUA) - Ebola Outbreak West Africa",
         "O15F": "Operation Freedom's Sentinel (OFS) 2015",
     },
-    "performance_based_service_acquisition_map": {"Y": "Yes", "N": "No", "X": "Not Applicable"},
+    "performance_based_service_acquisition_map": {
+        "Y": "Yes",
+        "N": "No",
+        "X": "Not Applicable",
+    },
     "place_of_manufacture_map": {
         "A": "Performed or Manufactured in US, but services performed by a foreign concern or more than 50% foreign "
         "content ",
@@ -257,7 +265,10 @@ gsdm_maps = {
         "SP2": "SAP Non-Competition (FAR 13)",
         "BND": "Brand Name Description (FAR 6.302-1(c))",
     },
-    "record_type_map": {"1": "Action amount has been aggregated", "2": "Not aggregated Action by Action amounts"},
+    "record_type_map": {
+        "1": "Action amount has been aggregated",
+        "2": "Not aggregated Action by Action amounts",
+    },
     "recovered_materials_sustainability_map": {
         "A": "FAR 52.223-4 Included - The solicitation included the provision at FAR 52.223-4, Recovered Material "
         "Certification.",
@@ -275,7 +286,12 @@ gsdm_maps = {
         "K": "FAR 52.223-4 & bio-based & environmentally preferable",
         "L": "FAR 52.223-4 & bio-based & energy efficient & environmentally preferable",
     },
-    "sea_transportation_map": {"Y": "Yes", "N": "No", "U": "Unknown", "_BLANK": "Not Applicable"},
+    "sea_transportation_map": {
+        "Y": "Yes",
+        "N": "No",
+        "U": "Unknown",
+        "_BLANK": "Not Applicable",
+    },
     "labor_standards_map": {"Y": "Yes", "N": "No", "X": "Not Applicable"},
     "research_map": {
         "SR1": "SBIR Program Phase I Action",

@@ -28,10 +28,20 @@ def agency_data(helpers):
     sa1 = baker.make("references.SubtierAgency", subtier_code="ST1", _fill_optional=True)
     sa2 = baker.make("references.SubtierAgency", subtier_code="ST2", _fill_optional=True)
     a1 = baker.make(
-        "references.Agency", id=1, toptier_flag=True, toptier_agency=ta1, subtier_agency=sa1, _fill_optional=True
+        "references.Agency",
+        id=1,
+        toptier_flag=True,
+        toptier_agency=ta1,
+        subtier_agency=sa1,
+        _fill_optional=True,
     )
     baker.make(
-        "references.Agency", id=2, toptier_flag=True, toptier_agency=ta2, subtier_agency=sa2, _fill_optional=True
+        "references.Agency",
+        id=2,
+        toptier_flag=True,
+        toptier_agency=ta2,
+        subtier_agency=sa2,
+        _fill_optional=True,
     )
     dabs = baker.make(
         "submissions.DABSSubmissionWindowSchedule",
@@ -49,11 +59,23 @@ def agency_data(helpers):
         submission_window_id=dabs.id,
         reporting_fiscal_year=helpers.get_mocked_current_fiscal_year(),
     )
-    baker.make("submissions.SubmissionAttributes", toptier_code=ta2.toptier_code, submission_window_id=dabs.id)
+    baker.make(
+        "submissions.SubmissionAttributes",
+        toptier_code=ta2.toptier_code,
+        submission_window_id=dabs.id,
+    )
     tas1 = baker.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=ta1)
     tas2 = baker.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=ta2)
-    baker.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas1, submission=sub1)
-    baker.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas2, submission=sub1)
+    baker.make(
+        "accounts.AppropriationAccountBalances",
+        treasury_account_identifier=tas1,
+        submission=sub1,
+    )
+    baker.make(
+        "accounts.AppropriationAccountBalances",
+        treasury_account_identifier=tas2,
+        submission=sub1,
+    )
     baker.make(
         "search.TransactionSearch",
         transaction_id=1,
@@ -62,7 +84,11 @@ def agency_data(helpers):
     )
 
     defc = baker.make(
-        "references.DisasterEmergencyFundCode", code="L", group_name="covid_19", public_law="LAW", title="title"
+        "references.DisasterEmergencyFundCode",
+        code="L",
+        group_name="covid_19",
+        public_law="LAW",
+        title="title",
     )
 
     baker.make(
@@ -90,17 +116,33 @@ def test_happy_path(client, monkeypatch, agency_data, helpers):
     assert resp.data["icon_filename"] == "HAI.jpg"
     assert resp.data["subtier_agency_count"] == 1
     assert resp.data["def_codes"] == [
-        {"code": "L", "public_law": "LAW", "title": "title", "urls": None, "disaster": "covid_19"}
+        {
+            "code": "L",
+            "public_law": "LAW",
+            "title": "title",
+            "urls": None,
+            "disaster": "covid_19",
+        }
     ]
     assert resp.data["messages"] == []
 
-    resp = client.get(URL.format(code="001", filter=f"?fiscal_year={helpers.get_mocked_current_fiscal_year()}"))
+    resp = client.get(
+        URL.format(
+            code="001",
+            filter=f"?fiscal_year={helpers.get_mocked_current_fiscal_year()}",
+        )
+    )
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["fiscal_year"] == helpers.get_mocked_current_fiscal_year()
     assert resp.data["toptier_code"] == "001"
     assert resp.data["subtier_agency_count"] == 1
 
-    resp = client.get(URL.format(code="001", filter=f"?fiscal_year={helpers.get_mocked_current_fiscal_year() - 1}"))
+    resp = client.get(
+        URL.format(
+            code="001",
+            filter=f"?fiscal_year={helpers.get_mocked_current_fiscal_year() - 1}",
+        )
+    )
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["fiscal_year"] == helpers.get_mocked_current_fiscal_year() - 1
     assert resp.data["toptier_code"] == "001"

@@ -10,8 +10,16 @@ def app_acc_bal_models():
     sub_16_2 = baker.make("submissions.SubmissionAttributes", reporting_fiscal_year=2016)
     sub_17_1 = baker.make("submissions.SubmissionAttributes", reporting_fiscal_year=2017)
     sub_17_2 = baker.make("submissions.SubmissionAttributes", reporting_fiscal_year=2017)
-    tas_1 = baker.make("accounts.TreasuryAppropriationAccount", tas_rendering_label="ABC", _fill_optional=True)
-    tas_2 = baker.make("accounts.TreasuryAppropriationAccount", tas_rendering_label="XYZ", _fill_optional=True)
+    tas_1 = baker.make(
+        "accounts.TreasuryAppropriationAccount",
+        tas_rendering_label="ABC",
+        _fill_optional=True,
+    )
+    tas_2 = baker.make(
+        "accounts.TreasuryAppropriationAccount",
+        tas_rendering_label="XYZ",
+        _fill_optional=True,
+    )
     baker.make(
         "accounts.AppropriationAccountBalances",
         treasury_account_identifier=tas_1,

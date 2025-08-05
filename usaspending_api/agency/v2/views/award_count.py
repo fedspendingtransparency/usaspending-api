@@ -10,7 +10,9 @@ from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.search.filters.elasticsearch.filter import QueryType
-from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
+from usaspending_api.search.filters.time_period.decorators import (
+    NewAwardsOnlyTimePeriod,
+)
 from usaspending_api.search.filters.time_period.query_types import AwardSearchTimePeriod
 from django.conf import settings
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
@@ -100,7 +102,8 @@ class AwardCount(PaginationMixin, AgencyBase):
     def query_elasticsearch_for_prime_awards(self, filters) -> List:
         filter_options = {}
         time_period_obj = AwardSearchTimePeriod(
-            default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
+            default_end_date=settings.API_MAX_DATE,
+            default_start_date=settings.API_SEARCH_MIN_DATE,
         )
         new_awards_only_decorator = NewAwardsOnlyTimePeriod(
             time_period_obj=time_period_obj, query_type=QueryType.AWARDS
@@ -111,7 +114,11 @@ class AwardCount(PaginationMixin, AgencyBase):
             filters.update(
                 {
                     "agencies": [
-                        {"type": "awarding", "tier": "toptier", "name": awarding_toptier_agency_name}
+                        {
+                            "type": "awarding",
+                            "tier": "toptier",
+                            "name": awarding_toptier_agency_name,
+                        }
                         for awarding_toptier_agency_name in self._toptier_cfo_agency_names
                     ]
                 }
@@ -135,7 +142,12 @@ class AwardCount(PaginationMixin, AgencyBase):
         sorts = [{self.default_sort_column: self.pagination.sort_order}]
         s = AwardSearch().filter(filter_query).sort(*sorts)[record_num : record_num + self.pagination.limit]
 
-        s.aggs.bucket("agencies", "terms", field="awarding_toptier_agency_name.keyword", size=999999)
+        s.aggs.bucket(
+            "agencies",
+            "terms",
+            field="awarding_toptier_agency_name.keyword",
+            size=999999,
+        )
         s.aggs["agencies"].bucket("codes", "terms", field="awarding_toptier_agency_code.keyword", size=999999)
         s.aggs["agencies"].bucket(
             "types",

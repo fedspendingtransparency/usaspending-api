@@ -7,7 +7,10 @@ from rest_framework import status
 
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
 from usaspending_api.common.helpers.generic_helper import get_generic_filters_message
-from usaspending_api.search.tests.data.search_filters_test_data import legacy_filters, non_legacy_filters
+from usaspending_api.search.tests.data.search_filters_test_data import (
+    legacy_filters,
+    non_legacy_filters,
+)
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
@@ -35,9 +38,19 @@ def award_data_fixture(db):
         program_activity_name="PROGRAM_ACTIVITY_2",
     )
 
-    baker.make("references.DisasterEmergencyFundCode", code="L", group_name="covid_19", public_law="LAW", title="title")
     baker.make(
-        "references.DisasterEmergencyFundCode", code="Z", group_name="infrastructure", public_law="LAW", title="title"
+        "references.DisasterEmergencyFundCode",
+        code="L",
+        group_name="covid_19",
+        public_law="LAW",
+        title="title",
+    )
+    baker.make(
+        "references.DisasterEmergencyFundCode",
+        code="Z",
+        group_name="infrastructure",
+        public_law="LAW",
+        title="title",
     )
 
     award1 = baker.make(
@@ -286,7 +299,10 @@ def test_spending_by_award_subaward_success(
     assert resp.status_code == status.HTTP_200_OK
 
     # Testing contents of what is returned
-    spending_level_filter_list = [{"spending_level": "subawards"}, {"spending_level": "subawards"}]
+    spending_level_filter_list = [
+        {"spending_level": "subawards"},
+        {"spending_level": "subawards"},
+    ]
 
     for spending_level_filter in spending_level_filter_list:
         resp = client.post(
@@ -360,7 +376,12 @@ def test_spending_by_award_legacy_filters(client, monkeypatch, elasticsearch_awa
         "/api/v2/search/spending_by_award",
         content_type="application/json",
         data=json.dumps(
-            {"spending_level": "awards", "fields": ["Award ID"], "sort": "Award ID", "filters": legacy_filters()}
+            {
+                "spending_level": "awards",
+                "fields": ["Award ID"],
+                "sort": "Award ID",
+                "filters": legacy_filters(),
+            }
         ),
     )
     assert resp.status_code == status.HTTP_200_OK
@@ -369,8 +390,20 @@ def test_spending_by_award_legacy_filters(client, monkeypatch, elasticsearch_awa
 @pytest.mark.django_db
 def test_no_intersection(client, monkeypatch, elasticsearch_award_index):
 
-    baker.make("search.AwardSearch", award_id=1, type="A", latest_transaction_id=1, action_date="2020-10-10")
-    baker.make("search.TransactionSearch", transaction_id=1, action_date="2010-10-01", award_id=1, is_fpds=True)
+    baker.make(
+        "search.AwardSearch",
+        award_id=1,
+        type="A",
+        latest_transaction_id=1,
+        action_date="2020-10-10",
+    )
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=1,
+        action_date="2010-10-01",
+        award_id=1,
+        is_fpds=True,
+    )
 
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
@@ -381,19 +414,34 @@ def test_no_intersection(client, monkeypatch, elasticsearch_award_index):
         "filters": {"award_type_codes": ["A", "B", "C", "D"]},
     }
 
-    resp = client.post("/api/v2/search/spending_by_award", content_type="application/json", data=json.dumps(request))
+    resp = client.post(
+        "/api/v2/search/spending_by_award",
+        content_type="application/json",
+        data=json.dumps(request),
+    )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 1
 
     request["filters"]["award_type_codes"].append("no intersection")
-    resp = client.post("/api/v2/search/spending_by_award", content_type="application/json", data=json.dumps(request))
+    resp = client.post(
+        "/api/v2/search/spending_by_award",
+        content_type="application/json",
+        data=json.dumps(request),
+    )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 0, "Results returned, there should be 0"
 
 
 @pytest.fixture
 def awards_over_different_date_ranges():
-    award_category_list = ["contracts", "direct_payments", "grants", "idvs", "loans", "other_financial_assistance"]
+    award_category_list = [
+        "contracts",
+        "direct_payments",
+        "grants",
+        "idvs",
+        "loans",
+        "other_financial_assistance",
+    ]
 
     # The date ranges for the different awards are setup to cover possible intersection points by the
     # different date ranges being searched. The comments on each line specify where the date ranges are
@@ -402,23 +450,68 @@ def awards_over_different_date_ranges():
     #    - {"start_date": "2017-02-01", "end_date": "2017-11-30"}
     date_range_list = [
         # Intersect only one of the date ranges searched for
-        {"date_signed": datetime(2014, 1, 1), "action_date": datetime(2014, 5, 1)},  # Before both
-        {"date_signed": datetime(2014, 3, 1), "action_date": datetime(2015, 4, 15)},  # Beginning of first
-        {"date_signed": datetime(2015, 2, 1), "action_date": datetime(2015, 7, 1)},  # Middle of first
+        {
+            "date_signed": datetime(2014, 1, 1),
+            "action_date": datetime(2014, 5, 1),
+        },  # Before both
+        {
+            "date_signed": datetime(2014, 3, 1),
+            "action_date": datetime(2015, 4, 15),
+        },  # Beginning of first
+        {
+            "date_signed": datetime(2015, 2, 1),
+            "action_date": datetime(2015, 7, 1),
+        },  # Middle of first
         {"date_signed": datetime(2015, 2, 1), "action_date": datetime(2015, 4, 17)},
-        {"date_signed": datetime(2014, 12, 1), "action_date": datetime(2016, 1, 1)},  # All of first
-        {"date_signed": datetime(2015, 11, 1), "action_date": datetime(2016, 3, 1)},  # End of first
-        {"date_signed": datetime(2016, 2, 23), "action_date": datetime(2016, 7, 19)},  # Between both
-        {"date_signed": datetime(2016, 11, 26), "action_date": datetime(2017, 3, 1)},  # Beginning of second
-        {"date_signed": datetime(2017, 5, 1), "action_date": datetime(2017, 7, 1)},  # Middle of second
-        {"date_signed": datetime(2017, 1, 1), "action_date": datetime(2017, 12, 1)},  # All of second
-        {"date_signed": datetime(2017, 9, 1), "action_date": datetime(2017, 12, 17)},  # End of second
-        {"date_signed": datetime(2018, 2, 1), "action_date": datetime(2018, 7, 1)},  # After both
+        {
+            "date_signed": datetime(2014, 12, 1),
+            "action_date": datetime(2016, 1, 1),
+        },  # All of first
+        {
+            "date_signed": datetime(2015, 11, 1),
+            "action_date": datetime(2016, 3, 1),
+        },  # End of first
+        {
+            "date_signed": datetime(2016, 2, 23),
+            "action_date": datetime(2016, 7, 19),
+        },  # Between both
+        {
+            "date_signed": datetime(2016, 11, 26),
+            "action_date": datetime(2017, 3, 1),
+        },  # Beginning of second
+        {
+            "date_signed": datetime(2017, 5, 1),
+            "action_date": datetime(2017, 7, 1),
+        },  # Middle of second
+        {
+            "date_signed": datetime(2017, 1, 1),
+            "action_date": datetime(2017, 12, 1),
+        },  # All of second
+        {
+            "date_signed": datetime(2017, 9, 1),
+            "action_date": datetime(2017, 12, 17),
+        },  # End of second
+        {
+            "date_signed": datetime(2018, 2, 1),
+            "action_date": datetime(2018, 7, 1),
+        },  # After both
         # Intersect both date ranges searched for
-        {"date_signed": datetime(2014, 12, 1), "action_date": datetime(2017, 12, 5)},  # Completely both
-        {"date_signed": datetime(2015, 7, 1), "action_date": datetime(2017, 5, 1)},  # Partially both
-        {"date_signed": datetime(2014, 10, 3), "action_date": datetime(2017, 4, 8)},  # All first; partial second
-        {"date_signed": datetime(2015, 8, 1), "action_date": datetime(2018, 1, 2)},  # Partial first; all second
+        {
+            "date_signed": datetime(2014, 12, 1),
+            "action_date": datetime(2017, 12, 5),
+        },  # Completely both
+        {
+            "date_signed": datetime(2015, 7, 1),
+            "action_date": datetime(2017, 5, 1),
+        },  # Partially both
+        {
+            "date_signed": datetime(2014, 10, 3),
+            "action_date": datetime(2017, 4, 8),
+        },  # All first; partial second
+        {
+            "date_signed": datetime(2015, 8, 1),
+            "action_date": datetime(2018, 1, 2),
+        },  # Partial first; all second
     ]
 
     award_id = 0
@@ -478,7 +571,9 @@ def test_date_range_search_with_one_range(
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(request_with_contracts)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(request_with_contracts),
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 9
@@ -497,7 +592,9 @@ def test_date_range_search_with_one_range(
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(request_with_grants)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(request_with_grants),
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 8
@@ -516,7 +613,9 @@ def test_date_range_search_with_one_range(
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(request_for_one_award)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(request_for_one_award),
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 1
@@ -536,7 +635,9 @@ def test_date_range_search_with_one_range(
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(request_for_no_awards)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(request_for_no_awards),
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 0
@@ -568,7 +669,9 @@ def test_date_range_search_with_two_ranges(
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(request_with_contracts)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(request_with_contracts),
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 13
@@ -590,7 +693,9 @@ def test_date_range_search_with_two_ranges(
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(request_with_grants)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(request_with_grants),
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 13
@@ -612,7 +717,9 @@ def test_date_range_search_with_two_ranges(
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(request_for_two_awards)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(request_for_two_awards),
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 2
@@ -638,7 +745,9 @@ def test_date_range_search_with_two_ranges(
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(request_for_no_awards)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(request_for_no_awards),
     )
     assert resp.status_code == status.HTTP_200_OK
 
@@ -657,14 +766,20 @@ def test_date_range_with_date_signed(client, monkeypatch, elasticsearch_award_in
         "page": 1,
         "filters": {
             "time_period": [
-                {"start_date": "2015-01-01", "end_date": "2015-12-31", "date_type": "date_signed"},
+                {
+                    "start_date": "2015-01-01",
+                    "end_date": "2015-12-31",
+                    "date_type": "date_signed",
+                },
             ],
             "award_type_codes": contract_type_list,
         },
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(request_for_2015)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(request_for_2015),
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 5
@@ -677,14 +792,20 @@ def test_date_range_with_date_signed(client, monkeypatch, elasticsearch_award_in
         "page": 1,
         "filters": {
             "time_period": [
-                {"start_date": "2016-01-01", "end_date": "2016-12-31", "date_type": "date_signed"},
+                {
+                    "start_date": "2016-01-01",
+                    "end_date": "2016-12-31",
+                    "date_type": "date_signed",
+                },
             ],
             "award_type_codes": contract_type_list,
         },
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(request_for_2016)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(request_for_2016),
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 2
@@ -704,7 +825,11 @@ def test_messages_not_nested(client, monkeypatch, elasticsearch_award_index, awa
         "page": 1,
         "filters": {
             "time_period": [
-                {"start_date": "2015-01-01", "end_date": "2015-12-31", "date_type": "date_signed"},
+                {
+                    "start_date": "2015-01-01",
+                    "end_date": "2015-12-31",
+                    "date_type": "date_signed",
+                },
             ],
             "award_type_codes": contract_type_list,
             "not_a_real_filter": "abc",
@@ -712,7 +837,9 @@ def test_messages_not_nested(client, monkeypatch, elasticsearch_award_index, awa
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(request_for_2015)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(request_for_2015),
     )
     resp_json = resp.json()
 
@@ -848,7 +975,10 @@ def test_mixed_naics_codes(client, monkeypatch, spending_by_award_test_data, ela
             {
                 "filters": {
                     "award_type_codes": ["A", "B", "C", "D"],
-                    "naics_codes": {"require": ["112233", "222233"], "exclude": ["112233"]},
+                    "naics_codes": {
+                        "require": ["112233", "222233"],
+                        "exclude": ["112233"],
+                    },
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
@@ -860,7 +990,13 @@ def test_mixed_naics_codes(client, monkeypatch, spending_by_award_test_data, ela
             }
         ),
     )
-    expected_result = [{"internal_id": 5, "Award ID": None, "generated_internal_id": "ASST_NON_TESTING_5"}]
+    expected_result = [
+        {
+            "internal_id": 5,
+            "Award ID": None,
+            "generated_internal_id": "ASST_NON_TESTING_5",
+        }
+    ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
     assert resp.json().get("results") == expected_result, "Keyword filter does not match expected result"
@@ -868,7 +1004,11 @@ def test_mixed_naics_codes(client, monkeypatch, spending_by_award_test_data, ela
 
 @pytest.mark.django_db
 def test_correct_response_for_each_filter(
-    client, monkeypatch, spending_by_award_test_data, elasticsearch_award_index, elasticsearch_subaward_index
+    client,
+    monkeypatch,
+    spending_by_award_test_data,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
 ):
     """
     Verify the content of the response when using different filters. This function creates the ES Index
@@ -923,8 +1063,16 @@ def _test_correct_response_for_keywords(client):
         ),
     )
     expected_result = [
-        {"internal_id": 2, "Award ID": "abc222", "generated_internal_id": "CONT_AWD_TESTING_2"},
-        {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"},
+        {
+            "internal_id": 2,
+            "Award ID": "abc222",
+            "generated_internal_id": "CONT_AWD_TESTING_2",
+        },
+        {
+            "internal_id": 1,
+            "Award ID": "abc111",
+            "generated_internal_id": "CONT_AWD_TESTING_1",
+        },
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 2
@@ -950,7 +1098,13 @@ def _test_correct_response_for_time_period(client):
             }
         ),
     )
-    expected_result = [{"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"}]
+    expected_result = [
+        {
+            "internal_id": 1,
+            "Award ID": "abc111",
+            "generated_internal_id": "CONT_AWD_TESTING_1",
+        }
+    ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
     assert resp.json().get("results") == expected_result, "Time Period filter does not match expected result"
@@ -976,13 +1130,41 @@ def _test_correct_response_for_award_type_codes(client):
         ),
     )
     expected_result = [
-        {"internal_id": 999, "Award ID": "award999", "generated_internal_id": "ASST_NON_TESTING_999"},
-        {"internal_id": 998, "Award ID": "award998", "generated_internal_id": "ASST_NON_TESTING_998"},
-        {"internal_id": 997, "Award ID": "award997", "generated_internal_id": "ASST_NON_TESTING_997"},
-        {"internal_id": 5, "Award ID": "abcdef123", "generated_internal_id": "CONT_AWD_TESTING_5"},
-        {"internal_id": 3, "Award ID": "abc333", "generated_internal_id": "CONT_AWD_TESTING_3"},
-        {"internal_id": 2, "Award ID": "abc222", "generated_internal_id": "CONT_AWD_TESTING_2"},
-        {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"},
+        {
+            "internal_id": 999,
+            "Award ID": "award999",
+            "generated_internal_id": "ASST_NON_TESTING_999",
+        },
+        {
+            "internal_id": 998,
+            "Award ID": "award998",
+            "generated_internal_id": "ASST_NON_TESTING_998",
+        },
+        {
+            "internal_id": 997,
+            "Award ID": "award997",
+            "generated_internal_id": "ASST_NON_TESTING_997",
+        },
+        {
+            "internal_id": 5,
+            "Award ID": "abcdef123",
+            "generated_internal_id": "CONT_AWD_TESTING_5",
+        },
+        {
+            "internal_id": 3,
+            "Award ID": "abc333",
+            "generated_internal_id": "CONT_AWD_TESTING_3",
+        },
+        {
+            "internal_id": 2,
+            "Award ID": "abc222",
+            "generated_internal_id": "CONT_AWD_TESTING_2",
+        },
+        {
+            "internal_id": 1,
+            "Award ID": "abc111",
+            "generated_internal_id": "CONT_AWD_TESTING_1",
+        },
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 7
@@ -998,8 +1180,16 @@ def _test_correct_response_for_agencies(client):
                 "filters": {
                     "award_type_codes": ["A", "B", "C", "D"],
                     "agencies": [
-                        {"type": "awarding", "tier": "toptier", "name": "TOPTIER AGENCY 1"},
-                        {"type": "awarding", "tier": "subtier", "name": "SUBTIER AGENCY 1"},
+                        {
+                            "type": "awarding",
+                            "tier": "toptier",
+                            "name": "TOPTIER AGENCY 1",
+                        },
+                        {
+                            "type": "awarding",
+                            "tier": "subtier",
+                            "name": "SUBTIER AGENCY 1",
+                        },
                     ],
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
@@ -1012,7 +1202,13 @@ def _test_correct_response_for_agencies(client):
             }
         ),
     )
-    expected_result = [{"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"}]
+    expected_result = [
+        {
+            "internal_id": 1,
+            "Award ID": "abc111",
+            "generated_internal_id": "CONT_AWD_TESTING_1",
+        }
+    ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
     assert resp.json().get("results") == expected_result, "Agency filter does not match expected result"
@@ -1039,8 +1235,16 @@ def _test_correct_response_for_tas_components(client):
         ),
     )
     expected_result = [
-        {"internal_id": 5, "Award ID": "abcdef123", "generated_internal_id": "CONT_AWD_TESTING_5"},
-        {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"},
+        {
+            "internal_id": 5,
+            "Award ID": "abcdef123",
+            "generated_internal_id": "CONT_AWD_TESTING_5",
+        },
+        {
+            "internal_id": 1,
+            "Award ID": "abc111",
+            "generated_internal_id": "CONT_AWD_TESTING_1",
+        },
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 2
@@ -1067,7 +1271,13 @@ def _test_correct_response_for_pop_location(client):
             }
         ),
     )
-    expected_result = [{"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"}]
+    expected_result = [
+        {
+            "internal_id": 1,
+            "Award ID": "abc111",
+            "generated_internal_id": "CONT_AWD_TESTING_1",
+        }
+    ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
     assert resp.json().get("results") == expected_result, "Place of Performance filter does not match expected result"
@@ -1097,8 +1307,16 @@ def _test_correct_response_for_recipient_location(client):
         ),
     )
     expected_result = [
-        {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"},
-        {"internal_id": 2, "Award ID": "abc222", "generated_internal_id": "CONT_AWD_TESTING_2"},
+        {
+            "internal_id": 1,
+            "Award ID": "abc111",
+            "generated_internal_id": "CONT_AWD_TESTING_1",
+        },
+        {
+            "internal_id": 2,
+            "Award ID": "abc222",
+            "generated_internal_id": "CONT_AWD_TESTING_2",
+        },
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 2
@@ -1125,7 +1343,13 @@ def _test_correct_response_for_recipient_search_text(client):
             }
         ),
     )
-    expected_result = [{"internal_id": 4, "Award ID": "abc444", "generated_internal_id": "ASST_NON_TESTING_4"}]
+    expected_result = [
+        {
+            "internal_id": 4,
+            "Award ID": "abc444",
+            "generated_internal_id": "ASST_NON_TESTING_4",
+        }
+    ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
     assert resp.json().get("results") == expected_result, "Recipient Search Text filter does not match expected result"
@@ -1224,7 +1448,10 @@ def _test_correct_response_for_recipient_type_names(client):
             {
                 "filters": {
                     "award_type_codes": ["A", "B", "C", "D"],
-                    "recipient_type_names": ["business_category_1_3", "business_category_2_8"],
+                    "recipient_type_names": [
+                        "business_category_1_3",
+                        "business_category_2_8",
+                    ],
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
@@ -1237,8 +1464,16 @@ def _test_correct_response_for_recipient_type_names(client):
         ),
     )
     expected_result = [
-        {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"},
-        {"internal_id": 3, "Award ID": "abc333", "generated_internal_id": "CONT_AWD_TESTING_3"},
+        {
+            "internal_id": 1,
+            "Award ID": "abc111",
+            "generated_internal_id": "CONT_AWD_TESTING_1",
+        },
+        {
+            "internal_id": 3,
+            "Award ID": "abc333",
+            "generated_internal_id": "CONT_AWD_TESTING_3",
+        },
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 2
@@ -1253,7 +1488,10 @@ def _test_correct_response_for_award_amounts(client):
             {
                 "filters": {
                     "award_type_codes": ["A", "B", "C", "D"],
-                    "award_amounts": [{"upper_bound": 1000000}, {"lower_bound": 9013, "upper_bound": 9017}],
+                    "award_amounts": [
+                        {"upper_bound": 1000000},
+                        {"lower_bound": 9013, "upper_bound": 9017},
+                    ],
                     "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
                 },
                 "fields": ["Award ID"],
@@ -1266,9 +1504,21 @@ def _test_correct_response_for_award_amounts(client):
         ),
     )
     expected_result = [
-        {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"},
-        {"internal_id": 2, "Award ID": "abc222", "generated_internal_id": "CONT_AWD_TESTING_2"},
-        {"internal_id": 5, "Award ID": "abcdef123", "generated_internal_id": "CONT_AWD_TESTING_5"},
+        {
+            "internal_id": 1,
+            "Award ID": "abc111",
+            "generated_internal_id": "CONT_AWD_TESTING_1",
+        },
+        {
+            "internal_id": 2,
+            "Award ID": "abc222",
+            "generated_internal_id": "CONT_AWD_TESTING_2",
+        },
+        {
+            "internal_id": 5,
+            "Award ID": "abcdef123",
+            "generated_internal_id": "CONT_AWD_TESTING_5",
+        },
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 3
@@ -1295,7 +1545,13 @@ def _test_correct_response_for_cfda_program(client):
             }
         ),
     )
-    expected_result = [{"internal_id": 4, "Award ID": "abc444", "generated_internal_id": "ASST_NON_TESTING_4"}]
+    expected_result = [
+        {
+            "internal_id": 4,
+            "Award ID": "abc444",
+            "generated_internal_id": "ASST_NON_TESTING_4",
+        }
+    ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
     assert resp.json().get("results") == expected_result, "CFDA Program filter does not match expected result"
@@ -1354,7 +1610,13 @@ def _test_correct_response_for_naics_codes(client):
             }
         ),
     )
-    expected_result = [{"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"}]
+    expected_result = [
+        {
+            "internal_id": 1,
+            "Award ID": "abc111",
+            "generated_internal_id": "CONT_AWD_TESTING_1",
+        }
+    ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
     assert resp.json().get("results") == expected_result, "NAICS Code filter does not match expected result"
@@ -1380,7 +1642,13 @@ def _test_correct_response_for_psc_code_list(client):
             }
         ),
     )
-    expected_result = [{"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"}]
+    expected_result = [
+        {
+            "internal_id": 1,
+            "Award ID": "abc111",
+            "generated_internal_id": "CONT_AWD_TESTING_1",
+        }
+    ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
     assert resp.json().get("results") == expected_result, "PSC Code filter does not match expected result"
@@ -1409,7 +1677,13 @@ def _test_correct_response_for_psc_code_object(client):
             }
         ),
     )
-    expected_result = [{"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"}]
+    expected_result = [
+        {
+            "internal_id": 1,
+            "Award ID": "abc111",
+            "generated_internal_id": "CONT_AWD_TESTING_1",
+        }
+    ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
     assert resp.json().get("results") == expected_result, "PSC Code filter does not match expected result"
@@ -1560,7 +1834,13 @@ def _test_correct_response_for_contract_pricing_type_codes(client):
             }
         ),
     )
-    expected_result = [{"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"}]
+    expected_result = [
+        {
+            "internal_id": 1,
+            "Award ID": "abc111",
+            "generated_internal_id": "CONT_AWD_TESTING_1",
+        }
+    ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
     assert (
@@ -1588,7 +1868,13 @@ def _test_correct_response_for_set_aside_type_codes(client):
             }
         ),
     )
-    expected_result = [{"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"}]
+    expected_result = [
+        {
+            "internal_id": 1,
+            "Award ID": "abc111",
+            "generated_internal_id": "CONT_AWD_TESTING_1",
+        }
+    ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
     assert resp.json().get("results") == expected_result, "Set Aside Type Codes filter does not match expected result"
@@ -1614,7 +1900,13 @@ def _test_correct_response_for_set_extent_competed_type_codes(client):
             }
         ),
     )
-    expected_result = [{"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"}]
+    expected_result = [
+        {
+            "internal_id": 1,
+            "Award ID": "abc111",
+            "generated_internal_id": "CONT_AWD_TESTING_1",
+        }
+    ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
     assert (
@@ -1642,7 +1934,11 @@ def _test_correct_response_for_recipient_id(client):
             }
         ),
     )
-    expected_result = {"internal_id": 4, "Award ID": "abc444", "generated_internal_id": "ASST_NON_TESTING_4"}
+    expected_result = {
+        "internal_id": 4,
+        "Award ID": "abc444",
+        "generated_internal_id": "ASST_NON_TESTING_4",
+    }
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 7
     assert resp.json().get("results")[-1] == expected_result, "Recipient ID filter does not match expected result"
@@ -1669,8 +1965,16 @@ def _test_correct_response_for_def_codes(client):
         ),
     )
     expected_result = [
-        {"internal_id": 5, "Award ID": "abcdef123", "generated_internal_id": "CONT_AWD_TESTING_5"},
-        {"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"},
+        {
+            "internal_id": 5,
+            "Award ID": "abcdef123",
+            "generated_internal_id": "CONT_AWD_TESTING_5",
+        },
+        {
+            "internal_id": 1,
+            "Award ID": "abc111",
+            "generated_internal_id": "CONT_AWD_TESTING_1",
+        },
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 2
@@ -1769,7 +2073,11 @@ def test_failure_with_invalid_filters(client, monkeypatch, elasticsearch_award_i
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     # Fails with no request data
-    resp = client.post("/api/v2/search/spending_by_award", content_type="application/json", data=json.dumps({}))
+    resp = client.post(
+        "/api/v2/search/spending_by_award",
+        content_type="application/json",
+        data=json.dumps({}),
+    )
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     assert resp.json().get("detail") == "Missing value: 'fields' is a required field"
 
@@ -1777,7 +2085,15 @@ def test_failure_with_invalid_filters(client, monkeypatch, elasticsearch_award_i
     resp = client.post(
         "/api/v2/search/spending_by_award",
         content_type="application/json",
-        data=json.dumps({"fields": [], "filters": {}, "page": 1, "limit": 60, "spending_level": "awards"}),
+        data=json.dumps(
+            {
+                "fields": [],
+                "filters": {},
+                "page": 1,
+                "limit": 60,
+                "spending_level": "awards",
+            }
+        ),
     )
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     assert resp.json().get("detail") == "Missing value: 'filters|award_type_codes' is a required field"
@@ -1825,12 +2141,36 @@ def test_search_after(client, monkeypatch, spending_by_award_test_data, elastics
         ),
     )
     expected_result = [
-        {"internal_id": 2, "Award ID": "abc222", "generated_internal_id": "CONT_AWD_TESTING_2"},
-        {"internal_id": 3, "Award ID": "abc333", "generated_internal_id": "CONT_AWD_TESTING_3"},
-        {"internal_id": 5, "Award ID": "abcdef123", "generated_internal_id": "CONT_AWD_TESTING_5"},
-        {"internal_id": 997, "Award ID": "award997", "generated_internal_id": "ASST_NON_TESTING_997"},
-        {"internal_id": 998, "Award ID": "award998", "generated_internal_id": "ASST_NON_TESTING_998"},
-        {"internal_id": 999, "Award ID": "award999", "generated_internal_id": "ASST_NON_TESTING_999"},
+        {
+            "internal_id": 2,
+            "Award ID": "abc222",
+            "generated_internal_id": "CONT_AWD_TESTING_2",
+        },
+        {
+            "internal_id": 3,
+            "Award ID": "abc333",
+            "generated_internal_id": "CONT_AWD_TESTING_3",
+        },
+        {
+            "internal_id": 5,
+            "Award ID": "abcdef123",
+            "generated_internal_id": "CONT_AWD_TESTING_5",
+        },
+        {
+            "internal_id": 997,
+            "Award ID": "award997",
+            "generated_internal_id": "ASST_NON_TESTING_997",
+        },
+        {
+            "internal_id": 998,
+            "Award ID": "award998",
+            "generated_internal_id": "ASST_NON_TESTING_998",
+        },
+        {
+            "internal_id": 999,
+            "Award ID": "award999",
+            "generated_internal_id": "ASST_NON_TESTING_999",
+        },
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == len(expected_result)
@@ -1860,7 +2200,13 @@ def test_no_0_covid_amounts(client, monkeypatch, spending_by_award_test_data, el
             }
         ),
     )
-    expected_result = [{"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"}]
+    expected_result = [
+        {
+            "internal_id": 1,
+            "Award ID": "abc111",
+            "generated_internal_id": "CONT_AWD_TESTING_1",
+        }
+    ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
     assert resp.json().get("results") == expected_result, "DEFC filter does not match expected result"
@@ -1889,7 +2235,13 @@ def test_uei_keyword_filter(client, monkeypatch, spending_by_award_test_data, el
             }
         ),
     )
-    expected_result = [{"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"}]
+    expected_result = [
+        {
+            "internal_id": 1,
+            "Award ID": "abc111",
+            "generated_internal_id": "CONT_AWD_TESTING_1",
+        }
+    ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
     assert resp.json().get("results") == expected_result, "UEI filter does not match expected result"
@@ -1918,7 +2270,13 @@ def test_parent_uei_keyword_filter(client, monkeypatch, spending_by_award_test_d
             }
         ),
     )
-    expected_result = [{"internal_id": 1, "Award ID": "abc111", "generated_internal_id": "CONT_AWD_TESTING_1"}]
+    expected_result = [
+        {
+            "internal_id": 1,
+            "Award ID": "abc111",
+            "generated_internal_id": "CONT_AWD_TESTING_1",
+        }
+    ]
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.json().get("results")) == 1
     assert resp.json().get("results") == expected_result, "UEI filter does not match expected result"
@@ -1926,7 +2284,11 @@ def test_parent_uei_keyword_filter(client, monkeypatch, spending_by_award_test_d
 
 @pytest.mark.django_db
 def test_uei_recipient_filter_subaward(
-    client, monkeypatch, spending_by_award_test_data, elasticsearch_award_index, elasticsearch_subaward_index
+    client,
+    monkeypatch,
+    spending_by_award_test_data,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
@@ -1978,7 +2340,11 @@ def test_uei_recipient_filter_subaward(
 
 @pytest.mark.django_db
 def test_date_range_with_new_awards_only(
-    client, monkeypatch, elasticsearch_award_index, awards_over_different_date_ranges, elasticsearch_subaward_index
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    awards_over_different_date_ranges,
+    elasticsearch_subaward_index,
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
@@ -1993,14 +2359,20 @@ def test_date_range_with_new_awards_only(
         "page": 1,
         "filters": {
             "time_period": [
-                {"start_date": "2015-01-01", "end_date": "2015-12-31", "date_type": "new_awards_only"},
+                {
+                    "start_date": "2015-01-01",
+                    "end_date": "2015-12-31",
+                    "date_type": "new_awards_only",
+                },
             ],
             "award_type_codes": contract_type_list,
         },
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(request_for_2015)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(request_for_2015),
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 5
@@ -2013,14 +2385,20 @@ def test_date_range_with_new_awards_only(
         "page": 1,
         "filters": {
             "time_period": [
-                {"start_date": "2015-01-01", "end_date": "2015-12-31", "date_type": "new_awards_only"},
+                {
+                    "start_date": "2015-01-01",
+                    "end_date": "2015-12-31",
+                    "date_type": "new_awards_only",
+                },
             ],
             "award_type_codes": contract_type_list,
         },
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(request_for_2015)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(request_for_2015),
     )
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
     assert (
@@ -2031,7 +2409,11 @@ def test_date_range_with_new_awards_only(
 
 @pytest.mark.django_db
 def test_spending_by_award_program_activity_subawards(
-    client, monkeypatch, elasticsearch_award_index, spending_by_award_test_data, elasticsearch_subaward_index
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    spending_by_award_test_data,
+    elasticsearch_subaward_index,
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
@@ -2056,7 +2438,9 @@ def test_spending_by_award_program_activity_subawards(
         }
     ]
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -2081,7 +2465,9 @@ def test_spending_by_award_program_activity_subawards(
         }
     ]
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -2099,7 +2485,9 @@ def test_spending_by_award_program_activity_subawards(
     }
     expected_response = []
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -2129,7 +2517,9 @@ def test_spending_by_award_program_activity(client, monkeypatch, elasticsearch_a
         }
     ]
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -2147,7 +2537,9 @@ def test_spending_by_award_program_activity(client, monkeypatch, elasticsearch_a
     }
     expected_response = []
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -2171,7 +2563,9 @@ def test_spending_by_award_program_activity(client, monkeypatch, elasticsearch_a
         }
     ]
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -2195,7 +2589,9 @@ def test_spending_by_award_program_activity(client, monkeypatch, elasticsearch_a
         }
     ]
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -2225,7 +2621,11 @@ def test_spending_by_award_subawards_award_id_filter(
             "prime_award_generated_internal_id": "ASST_NON_DECF0000058_8900",
         }
     ]
-    resp = client.post("/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(payload))
+    resp = client.post(
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(payload),
+    )
 
     assert resp.status_code == status.HTTP_200_OK
     assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
@@ -2247,7 +2647,11 @@ def test_spending_by_award_subawards_award_id_filter(
             "prime_award_generated_internal_id": "ASST_NON_DECF0000058_8900",
         }
     ]
-    resp = client.post("/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(payload))
+    resp = client.post(
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(payload),
+    )
 
     assert resp.status_code == status.HTTP_200_OK
     assert expected_response == resp.json().get("results"), "Unexpected or missing content!"
@@ -2255,7 +2659,11 @@ def test_spending_by_award_subawards_award_id_filter(
 
 @pytest.mark.django_db
 def test_spending_by_award_unique_id_award(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    spending_by_award_test_data,
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
@@ -2277,7 +2685,9 @@ def test_spending_by_award_unique_id_award(
         },
     ]
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -2294,7 +2704,9 @@ def test_spending_by_award_unique_id_award(
     }
     expected_response = []
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -2303,7 +2715,11 @@ def test_spending_by_award_unique_id_award(
 
 @pytest.mark.django_db
 def test_spending_by_award_unique_id_subaward(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    spending_by_award_test_data,
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
@@ -2332,7 +2748,9 @@ def test_spending_by_award_unique_id_subaward(
         },
     ]
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -2356,7 +2774,9 @@ def test_spending_by_award_unique_id_subaward(
         },
     ]
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -2373,7 +2793,9 @@ def test_spending_by_award_unique_id_subaward(
     }
     expected_response = []
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -2381,7 +2803,11 @@ def test_spending_by_award_unique_id_subaward(
 
 
 def test_spending_by_award_description_specificity(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    spending_by_award_test_data,
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
@@ -2390,7 +2816,10 @@ def test_spending_by_award_description_specificity(
     test_payload = {
         "spending_level": "awards",
         "fields": ["Award ID"],
-        "filters": {"award_type_codes": ["A", "B", "C", "D"], "description": "the test"},
+        "filters": {
+            "award_type_codes": ["A", "B", "C", "D"],
+            "description": "the test",
+        },
     }
     expected_response = [
         {
@@ -2400,7 +2829,9 @@ def test_spending_by_award_description_specificity(
         },
     ]
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -2410,7 +2841,10 @@ def test_spending_by_award_description_specificity(
     test_payload = {
         "spending_level": "subawards",
         "fields": ["Sub-Award ID"],
-        "filters": {"award_type_codes": ["A", "B", "C", "D"], "description": "the test"},
+        "filters": {
+            "award_type_codes": ["A", "B", "C", "D"],
+            "description": "the test",
+        },
     }
     expected_response = [
         {
@@ -2421,7 +2855,9 @@ def test_spending_by_award_description_specificity(
         },
     ]
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -2431,11 +2867,16 @@ def test_spending_by_award_description_specificity(
     test_payload = {
         "spending_level": "subawards",
         "fields": ["Sub-Award ID"],
-        "filters": {"award_type_codes": ["A", "B", "C", "D"], "description": "test the"},
+        "filters": {
+            "award_type_codes": ["A", "B", "C", "D"],
+            "description": "test the",
+        },
     }
     expected_response = []
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -2443,7 +2884,11 @@ def test_spending_by_award_description_specificity(
 
 
 def test_spending_by_award_keyword_specificity(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    spending_by_award_test_data,
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
@@ -2462,7 +2907,9 @@ def test_spending_by_award_keyword_specificity(
         },
     ]
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -2484,7 +2931,9 @@ def test_spending_by_award_keyword_specificity(
         },
     ]
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -2498,7 +2947,9 @@ def test_spending_by_award_keyword_specificity(
     }
     expected_response = []
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -2506,7 +2957,11 @@ def test_spending_by_award_keyword_specificity(
 
 
 def test_spending_by_award_new_subcontract_fields(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    spending_by_award_test_data,
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
@@ -2568,7 +3023,9 @@ def test_spending_by_award_new_subcontract_fields(
         },
     ]
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -2576,7 +3033,11 @@ def test_spending_by_award_new_subcontract_fields(
 
 
 def test_spending_by_award_new_subgrant_fields(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    spending_by_award_test_data,
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
@@ -2631,12 +3092,17 @@ def test_spending_by_award_new_subgrant_fields(
                 "zip5": "55455",
             },
             "Prime Award Recipient UEI": "uei 1",
-            "Assistance Listing": {"cfda_number": "1.234", "cfda_program_title": "test cfda"},
+            "Assistance Listing": {
+                "cfda_number": "1.234",
+                "cfda_program_title": "test cfda",
+            },
             "sub_award_recipient_id": "EXAM-PLE-ID-P",
         },
     ]
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -2644,14 +3110,25 @@ def test_spending_by_award_new_subgrant_fields(
 
 
 def test_spending_by_award_new_contract_fields(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    spending_by_award_test_data,
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     # get award with naics_description "the test test test" and not "the description for test"
     test_payload = {
         "spending_level": "awards",
-        "fields": ["Award ID", "Recipient UEI", "Recipient Location", "Primary Place of Performance", "NAICS", "PSC"],
+        "fields": [
+            "Award ID",
+            "Recipient UEI",
+            "Recipient Location",
+            "Primary Place of Performance",
+            "NAICS",
+            "PSC",
+        ],
         "filters": {"award_type_codes": ["A", "B", "C", "D"], "keyword": "the test"},
     }
     expected_response = [
@@ -2694,7 +3171,9 @@ def test_spending_by_award_new_contract_fields(
         },
     ]
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -2702,7 +3181,11 @@ def test_spending_by_award_new_contract_fields(
 
 
 def test_spending_by_award_new_assistance_fields(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    spending_by_award_test_data,
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
@@ -2755,7 +3238,10 @@ def test_spending_by_award_new_assistance_fields(
                 "zip5": "55455",
             },
             "Assistance Listings": [
-                {"cfda_number": "64.114", "cfda_program_title": "VETERANS HOUSING GUARANTEED AND INSURED LOANS"}
+                {
+                    "cfda_number": "64.114",
+                    "cfda_program_title": "VETERANS HOUSING GUARANTEED AND INSURED LOANS",
+                }
             ],
             "primary_assistance_listing": {
                 "cfda_number": "64.114",
@@ -2764,7 +3250,9 @@ def test_spending_by_award_new_assistance_fields(
         },
     ]
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -2772,7 +3260,11 @@ def test_spending_by_award_new_assistance_fields(
 
 
 def test_spending_by_award_sort_recipient_location(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    spending_by_award_test_data,
 ):
 
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
@@ -2915,7 +3407,9 @@ def test_spending_by_award_sort_recipient_location(
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -2941,7 +3435,9 @@ def test_spending_by_award_sort_recipient_location(
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -2957,7 +3453,11 @@ def test_spending_by_award_sort_recipient_location(
 
 
 def test_spending_by_primary_place_of_performance(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    spending_by_award_test_data,
 ):
 
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
@@ -3052,7 +3552,9 @@ def test_spending_by_primary_place_of_performance(
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -3067,7 +3569,11 @@ def test_spending_by_primary_place_of_performance(
 
 
 def test_spending_by_award_sort_naics(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    spending_by_award_test_data,
 ):
 
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
@@ -3084,7 +3590,9 @@ def test_spending_by_award_sort_naics(
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     naics_1 = {"code": "123456", "description": "1"}
@@ -3112,7 +3620,9 @@ def test_spending_by_award_sort_naics(
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -3124,7 +3634,11 @@ def test_spending_by_award_sort_naics(
 
 
 def test_spending_by_award_sort_psc(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    spending_by_award_test_data,
 ):
 
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
@@ -3141,7 +3655,9 @@ def test_spending_by_award_sort_psc(
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     psc1 = {"code": "PSC1", "description": "PSC description 1"}
@@ -3169,7 +3685,9 @@ def test_spending_by_award_sort_psc(
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -3181,7 +3699,11 @@ def test_spending_by_award_sort_psc(
 
 
 def test_spending_by_award_assistance_listings(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    spending_by_award_test_data,
 ):
 
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
@@ -3198,7 +3720,9 @@ def test_spending_by_award_assistance_listings(
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assisance_listing1 = [{"cfda_number": "12", "cfda_program_title": "program1"}]
@@ -3226,7 +3750,9 @@ def test_spending_by_award_assistance_listings(
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -3238,7 +3764,11 @@ def test_spending_by_award_assistance_listings(
 
 
 def test_spending_by_award_sort_sub_recipient_locations(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    spending_by_award_test_data,
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
@@ -3254,7 +3784,9 @@ def test_spending_by_award_sort_sub_recipient_locations(
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -3286,7 +3818,9 @@ def test_spending_by_award_sort_sub_recipient_locations(
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -3304,7 +3838,11 @@ def test_spending_by_award_sort_sub_recipient_locations(
 
 
 def test_spending_by_award_sort_sub_pop_location(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    spending_by_award_test_data,
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
@@ -3321,7 +3859,9 @@ def test_spending_by_award_sort_sub_pop_location(
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -3351,7 +3891,9 @@ def test_spending_by_award_sort_sub_pop_location(
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -3367,7 +3909,11 @@ def test_spending_by_award_sort_sub_pop_location(
 
 
 def test_spending_by_award_sort_sub_assistance_listing(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    spending_by_award_test_data,
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
@@ -3384,7 +3930,9 @@ def test_spending_by_award_sort_sub_assistance_listing(
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -3411,7 +3959,9 @@ def test_spending_by_award_sort_sub_assistance_listing(
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -3426,7 +3976,11 @@ def test_spending_by_award_sort_sub_assistance_listing(
 
 
 def test_spending_by_award_sort_sub_naics(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    spending_by_award_test_data,
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
@@ -3443,7 +3997,9 @@ def test_spending_by_award_sort_sub_naics(
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -3468,7 +4024,9 @@ def test_spending_by_award_sort_sub_naics(
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -3483,7 +4041,11 @@ def test_spending_by_award_sort_sub_naics(
 
 
 def test_spending_by_award_sort_sub_psc(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    spending_by_award_test_data,
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
@@ -3500,7 +4062,9 @@ def test_spending_by_award_sort_sub_psc(
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -3525,7 +4089,9 @@ def test_spending_by_award_sort_sub_psc(
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -3540,7 +4106,11 @@ def test_spending_by_award_sort_sub_psc(
 
 
 def test_spending_by_subaward_new_sort_fields(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    spending_by_award_test_data,
 ):
 
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
@@ -3558,7 +4128,9 @@ def test_spending_by_subaward_new_sort_fields(
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -3579,7 +4151,9 @@ def test_spending_by_subaward_new_sort_fields(
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -3600,7 +4174,9 @@ def test_spending_by_subaward_new_sort_fields(
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -3621,7 +4197,9 @@ def test_spending_by_subaward_new_sort_fields(
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -3642,7 +4220,9 @@ def test_spending_by_subaward_new_sort_fields(
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -3663,7 +4243,9 @@ def test_spending_by_subaward_new_sort_fields(
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -3684,7 +4266,9 @@ def test_spending_by_subaward_new_sort_fields(
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -3717,7 +4301,9 @@ def test_covid_and_iija_values(client, monkeypatch, elasticsearch_award_index, a
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(request_body)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(request_body),
     )
     expected_result = [
         {
@@ -3753,7 +4339,9 @@ def test_covid_and_iija_values(client, monkeypatch, elasticsearch_award_index, a
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(request_body)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(request_body),
     )
     expected_result = [
         {
@@ -3787,7 +4375,9 @@ def test_spending_by_subaward_place_of_perf_zip_filter(
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -3804,13 +4394,18 @@ def test_spending_by_subaward_recipient_location_zip_filter(
     test_payload = {
         "spending_level": "subawards",
         "fields": ["Sub-Award ID"],
-        "filters": {"award_type_codes": ["07", "08"], "recipient_locations": [{"country": "USA", "zip": "12345"}]},
+        "filters": {
+            "award_type_codes": ["07", "08"],
+            "recipient_locations": [{"country": "USA", "zip": "12345"}],
+        },
         "sort": "Sub-Award ID",
         "order": "desc",
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps(test_payload),
     )
 
     assert resp.status_code == status.HTTP_200_OK

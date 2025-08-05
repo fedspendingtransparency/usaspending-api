@@ -66,10 +66,14 @@ class FileBCalculations:
             ],
             "P": [
                 Coalesce(
-                    "ussgl480110_rein_undel_ord_cpe", 0, output_field=DecimalField(max_digits=23, decimal_places=2)
+                    "ussgl480110_rein_undel_ord_cpe",
+                    0,
+                    output_field=DecimalField(max_digits=23, decimal_places=2),
                 ),
                 Coalesce(
-                    "ussgl490110_rein_deliv_ord_cpe", 0, output_field=DecimalField(max_digits=23, decimal_places=2)
+                    "ussgl490110_rein_deliv_ord_cpe",
+                    0,
+                    output_field=DecimalField(max_digits=23, decimal_places=2),
                 ),
             ],
             "X": ["deobligations_recoveries_refund_pri_program_object_class_cpe"],

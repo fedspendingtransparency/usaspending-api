@@ -167,7 +167,12 @@ class Command(BaseCommand):
 
         logger.info("Running bulk create across agencies...")
         BudgetAuthority.objects.bulk_create(
-            BudgetAuthority(agency_identifier=agency_identifier, fr_entity_code=frec, year=year, amount=amount)
+            BudgetAuthority(
+                agency_identifier=agency_identifier,
+                fr_entity_code=frec,
+                year=year,
+                amount=amount,
+            )
             for ((agency_identifier, frec, year), amount) in results.items()
         )
 

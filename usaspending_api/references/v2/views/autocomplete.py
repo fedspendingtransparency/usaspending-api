@@ -5,10 +5,21 @@ from rest_framework.views import APIView
 
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers.generic_helper import deprecated_api_endpoint_message
-from usaspending_api.references.models import NAICS, PSC, Cfda, Definition, RefProgramActivity
+from usaspending_api.common.helpers.generic_helper import (
+    deprecated_api_endpoint_message,
+)
+from usaspending_api.references.models import (
+    NAICS,
+    PSC,
+    Cfda,
+    Definition,
+    RefProgramActivity,
+)
 from usaspending_api.references.v2.views.glossary import DefinitionSerializer
-from usaspending_api.search.models import AgencyAutocompleteMatview, AgencyOfficeAutocompleteMatview
+from usaspending_api.search.models import (
+    AgencyAutocompleteMatview,
+    AgencyOfficeAutocompleteMatview,
+)
 
 
 class BaseAutocompleteViewSet(APIView):
@@ -58,7 +69,12 @@ class BaseAutocompleteViewSet(APIView):
                     output_field=IntegerField(),
                 )
             )
-            .order_by("fema_sort", "-toptier_flag", Upper("toptier_name"), Upper("subtier_name"))
+            .order_by(
+                "fema_sort",
+                "-toptier_flag",
+                Upper("toptier_name"),
+                Upper("subtier_name"),
+            )
         ).values(
             "agency_autocomplete_id",
             "toptier_flag",
@@ -78,7 +94,10 @@ class BaseAutocompleteViewSet(APIView):
                     "abbreviation": agency["toptier_abbreviation"],
                     "name": agency["toptier_name"],
                 },
-                "subtier_agency": {"abbreviation": agency["subtier_abbreviation"], "name": agency["subtier_name"]},
+                "subtier_agency": {
+                    "abbreviation": agency["subtier_abbreviation"],
+                    "name": agency["subtier_name"],
+                },
             }
             for agency in agencies[:limit]
         ]

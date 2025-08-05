@@ -11,6 +11,8 @@ class Migration(migrations.Migration):
                 """ALTER TABLE office DROP CONSTRAINT IF EXISTS unique_agency_sub_tier_office;
                 ALTER TABLE office ADD CONSTRAINT unique_office_code UNIQUE (office_code);"""
             ],
-            reverse_sql=["ALTER TABLE office DROP CONSTRAINT IF EXISTS unique_agency_sub_tier_office;"],
+            reverse_sql=[
+                "ALTER TABLE office DROP CONSTRAINT IF EXISTS unique_agency_sub_tier_office;"
+            ],
         ),
     ]

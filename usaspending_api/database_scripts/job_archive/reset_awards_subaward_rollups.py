@@ -243,7 +243,12 @@ if __name__ == "__main__":
                 remaining = uat.estimated_remaining_runtime((max_chunk_id - min_id + 1) / id_diff)
                 print(
                     "[{:.2%}] {:,} => {:,}: {:,} updated in {} with an estimated remaining run time of {}".format(
-                        ratio, min_chunk_id, max_chunk_id, affected, t.as_string(t.elapsed), t.as_string(remaining)
+                        ratio,
+                        min_chunk_id,
+                        max_chunk_id,
+                        affected,
+                        t.as_string(t.elapsed),
+                        t.as_string(remaining),
                     )
                 )
 

@@ -32,7 +32,9 @@ class AgencyDiscrepancies(PaginationMixin, AgencyBase):
     def get_agency_discrepancies(self, fiscal_year, fiscal_period):
         result_list = (
             ReportingAgencyMissingTas.objects.filter(
-                toptier_code=self.toptier_code, fiscal_year=fiscal_year, fiscal_period=fiscal_period
+                toptier_code=self.toptier_code,
+                fiscal_year=fiscal_year,
+                fiscal_period=fiscal_period,
             )
             .exclude(obligated_amount=0)
             .annotate(tas=F("tas_rendering_label"), amount=F("obligated_amount"))
@@ -40,6 +42,6 @@ class AgencyDiscrepancies(PaginationMixin, AgencyBase):
         )
         return sorted(
             result_list,
-            key=lambda x: (x["amount"], x["tas"]) if self.pagination.sort_key == "amount" else x["tas"],
+            key=lambda x: ((x["amount"], x["tas"]) if self.pagination.sort_key == "amount" else x["tas"]),
             reverse=self.pagination.sort_order == "desc",
         )

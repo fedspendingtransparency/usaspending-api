@@ -4,7 +4,9 @@ from model_bakery import baker
 from rest_framework import status
 
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
-from usaspending_api.search.tests.data.search_filters_test_data import non_legacy_filters
+from usaspending_api.search.tests.data.search_filters_test_data import (
+    non_legacy_filters,
+)
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
@@ -46,7 +48,13 @@ def test_correct_response_with_more_awards(
     expected_response = {
         "category": "awarding_agency",
         "limit": 10,
-        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "page_metadata": {
+            "page": 1,
+            "next": None,
+            "previous": None,
+            "hasNext": False,
+            "hasPrevious": False,
+        },
         "results": [
             {
                 "amount": 10.0,
@@ -84,7 +92,13 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
     expected_response = {
         "category": "awarding_agency",
         "limit": 10,
-        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "page_metadata": {
+            "page": 1,
+            "next": None,
+            "previous": None,
+            "hasNext": False,
+            "hasPrevious": False,
+        },
         "results": [
             {
                 "amount": 5.0,
@@ -112,7 +126,13 @@ def test_correct_response_with_date_type(client, monkeypatch, elasticsearch_tran
         data=json.dumps(
             {
                 "filters": {
-                    "time_period": [{"date_type": "date_signed", "start_date": "2020-01-01", "end_date": "2020-01-01"}]
+                    "time_period": [
+                        {
+                            "date_type": "date_signed",
+                            "start_date": "2020-01-01",
+                            "end_date": "2020-01-01",
+                        }
+                    ]
                 }
             }
         ),
@@ -140,7 +160,13 @@ def test_correct_response_with_date_type(client, monkeypatch, elasticsearch_tran
         data=json.dumps(
             {
                 "filters": {
-                    "time_period": [{"date_type": "date_signed", "start_date": "2020-01-01", "end_date": "2020-01-16"}]
+                    "time_period": [
+                        {
+                            "date_type": "date_signed",
+                            "start_date": "2020-01-01",
+                            "end_date": "2020-01-16",
+                        }
+                    ]
                 }
             }
         ),
@@ -148,7 +174,13 @@ def test_correct_response_with_date_type(client, monkeypatch, elasticsearch_tran
     expected_response = {
         "category": "awarding_agency",
         "limit": 10,
-        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "page_metadata": {
+            "page": 1,
+            "next": None,
+            "previous": None,
+            "hasNext": False,
+            "hasPrevious": False,
+        },
         "results": [
             {
                 "amount": 10.0,
@@ -177,7 +209,11 @@ def test_correct_response_with_new_awards_only(client, monkeypatch, elasticsearc
             {
                 "filters": {
                     "time_period": [
-                        {"date_type": "new_awards_only", "start_date": "2020-01-01", "end_date": "2020-01-01"}
+                        {
+                            "date_type": "new_awards_only",
+                            "start_date": "2020-01-01",
+                            "end_date": "2020-01-01",
+                        }
                     ]
                 }
             }
@@ -186,7 +222,13 @@ def test_correct_response_with_new_awards_only(client, monkeypatch, elasticsearc
     expected_response = {
         "category": "awarding_agency",
         "limit": 10,
-        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "page_metadata": {
+            "page": 1,
+            "next": None,
+            "previous": None,
+            "hasNext": False,
+            "hasPrevious": False,
+        },
         "results": [],
         "messages": _expected_messages(),
         "spending_level": "transactions",
@@ -201,7 +243,11 @@ def test_correct_response_with_new_awards_only(client, monkeypatch, elasticsearc
             {
                 "filters": {
                     "time_period": [
-                        {"date_type": "new_awards_only", "start_date": "2020-01-01", "end_date": "2020-01-16"}
+                        {
+                            "date_type": "new_awards_only",
+                            "start_date": "2020-01-01",
+                            "end_date": "2020-01-16",
+                        }
                     ]
                 }
             }
@@ -210,7 +256,13 @@ def test_correct_response_with_new_awards_only(client, monkeypatch, elasticsearc
     expected_response = {
         "category": "awarding_agency",
         "limit": 10,
-        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "page_metadata": {
+            "page": 1,
+            "next": None,
+            "previous": None,
+            "hasNext": False,
+            "hasPrevious": False,
+        },
         "results": [
             {
                 "amount": 10.0,
@@ -235,7 +287,11 @@ def test_correct_response_with_new_awards_only(client, monkeypatch, elasticsearc
             {
                 "filters": {
                     "time_period": [
-                        {"date_type": "new_awards_only", "start_date": "2020-01-03", "end_date": "2020-01-16"}
+                        {
+                            "date_type": "new_awards_only",
+                            "start_date": "2020-01-03",
+                            "end_date": "2020-01-16",
+                        }
                     ]
                 }
             }

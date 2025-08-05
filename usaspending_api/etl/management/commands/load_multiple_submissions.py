@@ -6,9 +6,16 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.db.models import Max
 from django.utils.crypto import get_random_string
-from usaspending_api.common.helpers.date_helper import now, datetime_command_line_argument_type
-from usaspending_api.etl.submission_loader_helpers.final_of_fy import populate_final_of_fy
-from usaspending_api.etl.submission_loader_helpers.submission_ids import get_new_or_updated_submission_ids
+from usaspending_api.common.helpers.date_helper import (
+    now,
+    datetime_command_line_argument_type,
+)
+from usaspending_api.etl.submission_loader_helpers.final_of_fy import (
+    populate_final_of_fy,
+)
+from usaspending_api.etl.submission_loader_helpers.submission_ids import (
+    get_new_or_updated_submission_ids,
+)
 from usaspending_api.submissions import dabs_loader_queue_helpers as dlqh
 from usaspending_api.submissions.models import SubmissionAttributes
 
@@ -247,7 +254,11 @@ class Command(BaseCommand):
         Accepts a locked/claimed submission id, spins up a heartbeat thread, loads the submission,
         returns True if successful or False if not.
         """
-        args = ["--file-c-chunk-size", self.file_c_chunk_size, "--skip-final-of-fy-calculation"]
+        args = [
+            "--file-c-chunk-size",
+            self.file_c_chunk_size,
+            "--skip-final-of-fy-calculation",
+        ]
         if force_reload:
             args.append("--force-reload")
         if self.skip_c_to_d_linkage:

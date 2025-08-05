@@ -8,7 +8,9 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 from usaspending_api.search.v2.es_sanitization import es_sanitize
 from usaspending_api.common.validator.tinyshield import validate_post_request
-from usaspending_api.awards.v2.filters.location_filter_geocode import ALL_FOREIGN_COUNTRIES
+from usaspending_api.awards.v2.filters.location_filter_geocode import (
+    ALL_FOREIGN_COUNTRIES,
+)
 
 
 models = [
@@ -35,8 +37,21 @@ models = [
         "enum_values": ("recipient_location", "primary_place_of_performance"),
         "optional": False,
     },
-    {"key": "search_text", "name": "search_text", "type": "text", "text_type": "search", "optional": False},
-    {"key": "limit", "name": "limit", "type": "integer", "max": 500, "optional": True, "default": 10},
+    {
+        "key": "search_text",
+        "name": "search_text",
+        "type": "text",
+        "text_type": "search",
+        "optional": False,
+    },
+    {
+        "key": "limit",
+        "name": "limit",
+        "type": "integer",
+        "max": 500,
+        "optional": True,
+        "default": 10,
+    },
 ]
 
 
@@ -53,7 +68,11 @@ class CityAutocompleteViewSet(APIView):
         search_text, country, state = prepare_search_terms(request.data)
         scope = "recipient_location" if request.data["filter"]["scope"] == "recipient_location" else "pop"
         limit = request.data["limit"]
-        return_fields = ["{}_city_name".format(scope), "{}_state_code".format(scope), "{}_country_code".format(scope)]
+        return_fields = [
+            "{}_city_name".format(scope),
+            "{}_state_code".format(scope),
+            "{}_country_code".format(scope),
+        ]
 
         query = create_elasticsearch_query(return_fields, scope, search_text, country, state, limit)
         sorted_results = query_elasticsearch(query)
@@ -63,7 +82,11 @@ class CityAutocompleteViewSet(APIView):
 
 
 def prepare_search_terms(request_data):
-    fields = [request_data["search_text"], request_data["filter"]["country_code"], request_data["filter"]["state_code"]]
+    fields = [
+        request_data["search_text"],
+        request_data["filter"]["country_code"],
+        request_data["filter"]["state_code"],
+    ]
 
     return [es_sanitize(field).upper() if isinstance(field, str) else field for field in fields]
 
@@ -115,7 +138,10 @@ def create_es_search(scope, search_text, country=None, state=None):
         query["minimum_should_match"] = 1
     else:
         # USA is selected as country
-        query["should"] = [build_country_match(scope, "USA"), build_country_match(scope, "UNITED STATES")]
+        query["should"] = [
+            build_country_match(scope, "USA"),
+            build_country_match(scope, "UNITED STATES"),
+        ]
         query["should"].append({"bool": {"must_not": {"exists": {"field": "{}_country_code".format(scope)}}}})
         query["minimum_should_match"] = 1
         # null country codes are being considered as USA country codes
@@ -158,5 +184,13 @@ def parse_elasticsearch_response(hits):
                 )
         else:
             # for cities without states, useful for foreign country results
-            results.append(OrderedDict([("city_name", city["key"]), ("state_code", None), ("hits", city["doc_count"])]))
+            results.append(
+                OrderedDict(
+                    [
+                        ("city_name", city["key"]),
+                        ("state_code", None),
+                        ("hits", city["doc_count"]),
+                    ]
+                )
+            )
     return results

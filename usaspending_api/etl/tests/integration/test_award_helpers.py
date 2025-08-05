@@ -4,7 +4,11 @@ import pytest
 from model_bakery import baker
 
 from usaspending_api.awards.models import TransactionNormalized
-from usaspending_api.etl.award_helpers import update_awards, update_procurement_awards, update_assistance_awards
+from usaspending_api.etl.award_helpers import (
+    update_awards,
+    update_procurement_awards,
+    update_assistance_awards,
+)
 
 
 @pytest.mark.django_db
@@ -135,7 +139,10 @@ def test_award_update_obligated_amt():
     """Test that the award obligated amt updates as child transactions change."""
 
     award = baker.make(
-        "search.AwardSearch", award_id=1, total_obligation=1000, generated_unique_award_id="BIG_AGENCY_AWD_1"
+        "search.AwardSearch",
+        award_id=1,
+        total_obligation=1000,
+        generated_unique_award_id="BIG_AGENCY_AWD_1",
     )
     for i in range(5):
         baker.make(
@@ -156,7 +163,12 @@ def test_award_update_obligated_amt():
 def test_award_update_with_list():
     """Test optional parameter to update specific awards with txn data."""
     awards = [
-        baker.make("search.AwardSearch", award_id=i, total_obligation=0, generated_unique_award_id=f"AWARD_{i}")
+        baker.make(
+            "search.AwardSearch",
+            award_id=i,
+            total_obligation=0,
+            generated_unique_award_id=f"AWARD_{i}",
+        )
         for i in range(10)
     ]
     test_award = awards[3]
@@ -245,7 +257,12 @@ def test_award_update_from_contract_transaction():
 def test_award_update_contract_txn_with_list():
     """Test optional parameter to update specific awards from txn contract."""
     awards = [
-        baker.make("search.AwardSearch", award_id=i, total_obligation=0, generated_unique_award_id=f"AWARD_{i}")
+        baker.make(
+            "search.AwardSearch",
+            award_id=i,
+            total_obligation=0,
+            generated_unique_award_id=f"AWARD_{i}",
+        )
         for i in range(5)
     ]
     baker.make(
@@ -428,7 +445,11 @@ def test_award_update_assistance_executive_comp():
 def test_award_update_transaction_fk():
     """Test executive comp is loaded correctly awards from txn contract."""
 
-    award = baker.make("search.AwardSearch", award_id=1, generated_unique_award_id="FAKE_award_YELLOW_12")
+    award = baker.make(
+        "search.AwardSearch",
+        award_id=1,
+        generated_unique_award_id="FAKE_award_YELLOW_12",
+    )
     baker.make(
         "search.TransactionSearch",
         transaction_id=18,

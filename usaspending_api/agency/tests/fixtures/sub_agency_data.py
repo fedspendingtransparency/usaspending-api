@@ -24,9 +24,24 @@ def sub_agency_data_1():
     baker.make("submissions.SubmissionAttributes", toptier_code="003", submission_window=dsws)
 
     # Toptier and Awarding Agency
-    toptier_agency_1 = baker.make("references.ToptierAgency", toptier_code="001", name="Agency 1", _fill_optional=True)
-    toptier_agency_2 = baker.make("references.ToptierAgency", toptier_code="002", name="Agency 2", _fill_optional=True)
-    toptier_agency_3 = baker.make("references.ToptierAgency", toptier_code="003", name="Agency 3", _fill_optional=True)
+    toptier_agency_1 = baker.make(
+        "references.ToptierAgency",
+        toptier_code="001",
+        name="Agency 1",
+        _fill_optional=True,
+    )
+    toptier_agency_2 = baker.make(
+        "references.ToptierAgency",
+        toptier_code="002",
+        name="Agency 2",
+        _fill_optional=True,
+    )
+    toptier_agency_3 = baker.make(
+        "references.ToptierAgency",
+        toptier_code="003",
+        name="Agency 3",
+        _fill_optional=True,
+    )
     subtier_agency_1 = baker.make(
         "references.SubtierAgency",
         subtier_code="0001",
@@ -34,19 +49,34 @@ def sub_agency_data_1():
         abbreviation="A1",
     )
     subtier_agency_2 = baker.make(
-        "references.SubtierAgency", subtier_code="0002", name="Sub-Agency 2", abbreviation="A2"
+        "references.SubtierAgency",
+        subtier_code="0002",
+        name="Sub-Agency 2",
+        abbreviation="A2",
     )
     subtier_agency_3 = baker.make(
-        "references.SubtierAgency", subtier_code="0003", name="Sub-Agency 3", abbreviation="A3"
+        "references.SubtierAgency",
+        subtier_code="0003",
+        name="Sub-Agency 3",
+        abbreviation="A3",
     )
     awarding_agency_1 = baker.make(
-        "references.Agency", toptier_agency=toptier_agency_1, subtier_agency=subtier_agency_1, toptier_flag=True
+        "references.Agency",
+        toptier_agency=toptier_agency_1,
+        subtier_agency=subtier_agency_1,
+        toptier_flag=True,
     )
     awarding_agency_2 = baker.make(
-        "references.Agency", toptier_agency=toptier_agency_2, subtier_agency=subtier_agency_2, toptier_flag=True
+        "references.Agency",
+        toptier_agency=toptier_agency_2,
+        subtier_agency=subtier_agency_2,
+        toptier_flag=True,
     )
     awarding_agency_3 = baker.make(
-        "references.Agency", toptier_agency=toptier_agency_3, subtier_agency=subtier_agency_3, toptier_flag=True
+        "references.Agency",
+        toptier_agency=toptier_agency_3,
+        subtier_agency=subtier_agency_3,
+        toptier_flag=True,
     )
     baker.make("references.Office", office_code="0001", office_name="Office 1")
     baker.make("references.Office", office_code="0002", office_name="Office 2")

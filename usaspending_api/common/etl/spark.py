@@ -13,10 +13,24 @@ from typing import List
 
 from py4j.protocol import Py4JError
 from pyspark.sql import DataFrame, SparkSession
-from pyspark.sql.functions import col, concat, concat_ws, expr, lit, regexp_replace, to_date, transform, when
+from pyspark.sql.functions import (
+    col,
+    concat,
+    concat_ws,
+    expr,
+    lit,
+    regexp_replace,
+    to_date,
+    transform,
+    when,
+)
 from pyspark.sql.types import ArrayType, DecimalType, StringType, StructType
 
-from usaspending_api.accounts.models import AppropriationAccountBalances, FederalAccount, TreasuryAppropriationAccount
+from usaspending_api.accounts.models import (
+    AppropriationAccountBalances,
+    FederalAccount,
+    TreasuryAppropriationAccount,
+)
 from usaspending_api.common.helpers.spark_helpers import (
     get_broker_jdbc_url,
     get_jdbc_connection_properties,
@@ -24,7 +38,9 @@ from usaspending_api.common.helpers.spark_helpers import (
 )
 from usaspending_api.config import CONFIG
 from usaspending_api.download.filestreaming.download_generation import EXCEL_ROW_LIMIT
-from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.financial_activities.models import (
+    FinancialAccountsByProgramActivityObjectClass,
+)
 from usaspending_api.recipient.models import StateData
 from usaspending_api.references.models import (
     CGAC,
@@ -45,8 +61,14 @@ from usaspending_api.references.models import (
     ToptierAgency,
     ZipsGrouped,
 )
-from usaspending_api.reporting.models import ReportingAgencyMissingTas, ReportingAgencyOverview
-from usaspending_api.submissions.models import DABSSubmissionWindowSchedule, SubmissionAttributes
+from usaspending_api.reporting.models import (
+    ReportingAgencyMissingTas,
+    ReportingAgencyOverview,
+)
+from usaspending_api.submissions.models import (
+    DABSSubmissionWindowSchedule,
+    SubmissionAttributes,
+)
 
 MAX_PARTITIONS = CONFIG.SPARK_MAX_PARTITIONS
 _USAS_RDS_REF_TABLES = [
@@ -78,7 +100,12 @@ _USAS_RDS_REF_TABLES = [
     ZipsGrouped,
 ]
 
-_BROKER_REF_TABLES = ["cd_state_grouped", "cd_zips_grouped", "cd_county_grouped", "cd_city_grouped"]
+_BROKER_REF_TABLES = [
+    "cd_state_grouped",
+    "cd_zips_grouped",
+    "cd_county_grouped",
+    "cd_city_grouped",
+]
 
 logger = logging.getLogger(__name__)
 
@@ -306,7 +333,12 @@ def load_delta_table(
 
 
 def load_es_index(
-    spark: SparkSession, source_df: DataFrame, base_config: dict, index_name: str, routing: str, doc_id: str
+    spark: SparkSession,
+    source_df: DataFrame,
+    base_config: dict,
+    index_name: str,
+    routing: str,
+    doc_id: str,
 ) -> None:  # pragma: no cover -- will be used and tested eventually
     index_config = base_config.copy()
     index_config["es.resource.write"] = index_name
@@ -337,7 +369,11 @@ def merge_delta_table(spark: SparkSession, source_df: DataFrame, delta_table_nam
 
 
 def diff(
-    left: DataFrame, right: DataFrame, unique_key_col="id", compare_cols=None, include_unchanged_rows=False
+    left: DataFrame,
+    right: DataFrame,
+    unique_key_col="id",
+    compare_cols=None,
+    include_unchanged_rows=False,
 ) -> DataFrame:
     """Compares two Spark DataFrames that share a schema and returns row-level differences in a DataFrame
 
@@ -418,7 +454,11 @@ def diff(
     differences = (
         left.withColumn("exists", lit(1))
         .alias("l")
-        .join(right.withColumn("exists", lit(1)).alias("r"), left[unique_key_col] == right[unique_key_col], "fullouter")
+        .join(
+            right.withColumn("exists", lit(1)).alias("r"),
+            left[unique_key_col] == right[unique_key_col],
+            "fullouter",
+        )
         .withColumn("diff", expr(compare_expr))
     )
     # Put "diff" col first, then follow by the l and r value for each column, for all columns compared
@@ -512,7 +552,11 @@ def convert_array_cols_to_string(
                                     # Then replace any quote " character with \" (escaped quote, inside a quoted array elem)
                                     # NOTE: these regexp_replace get sent down to a Java replaceAll, which will require
                                     #       FOUR backslashes to represent ONE
-                                    regexp_replace(regexp_replace(c, "\\\\", "\\\\\\\\"), '"', '\\\\"'),
+                                    regexp_replace(
+                                        regexp_replace(c, "\\\\", "\\\\\\\\"),
+                                        '"',
+                                        '\\\\"',
+                                    ),
                                     lit('"'),
                                 ),
                             )
@@ -723,7 +767,14 @@ def hadoop_copy_merge(
                 fs.delete(partial_merged_file_path, True)
             out_stream = fs.create(partial_merged_file_path)
             out_stream.writeBytes(header + "\n")
-            _merge_file_parts(fs, out_stream, conf, hadoop, partial_merged_file_path, parts_file_group.file_list)
+            _merge_file_parts(
+                fs,
+                out_stream,
+                conf,
+                hadoop,
+                partial_merged_file_path,
+                parts_file_group.file_list,
+            )
         finally:
             if out_stream is not None:
                 out_stream.close()

@@ -1,8 +1,12 @@
 import pytest
 
 from django.db import connection
-from usaspending_api.broker.helpers.get_business_categories import get_business_categories
-from usaspending_api.common.helpers.business_categories_helper import get_business_category_display_names
+from usaspending_api.broker.helpers.get_business_categories import (
+    get_business_categories,
+)
+from usaspending_api.common.helpers.business_categories_helper import (
+    get_business_category_display_names,
+)
 
 
 @pytest.mark.django_db

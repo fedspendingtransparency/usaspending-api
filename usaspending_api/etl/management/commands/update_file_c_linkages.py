@@ -4,7 +4,10 @@ from datetime import datetime
 from django.core.management.base import BaseCommand
 from django.db import transaction, connection
 
-from usaspending_api.common.helpers.etl_helpers import update_c_to_d_linkages, read_sql_file
+from usaspending_api.common.helpers.etl_helpers import (
+    update_c_to_d_linkages,
+    read_sql_file,
+)
 
 
 class Command(BaseCommand):

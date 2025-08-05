@@ -4,10 +4,15 @@ from django.conf import settings
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
+from usaspending_api.common.api_versioning import (
+    api_transformations,
+    API_TRANSFORM_FUNCTIONS,
+)
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.validator.tinyshield import TinyShield
-from usaspending_api.search.v2.elasticsearch_helper import spending_by_transaction_sum_and_count
+from usaspending_api.search.v2.elasticsearch_helper import (
+    spending_by_transaction_sum_and_count,
+)
 
 logger = logging.getLogger(__name__)
 

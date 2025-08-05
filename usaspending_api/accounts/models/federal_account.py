@@ -28,4 +28,7 @@ class FederalAccount(models.Model):
 
     @staticmethod
     def fa_rendering_label_to_component_dictionary(fa_rendering_label) -> dict:
-        return {"faaid": fa_rendering_label.split("-")[0], "famain": fa_rendering_label.split("-")[1]}
+        return {
+            "faaid": fa_rendering_label.split("-")[0],
+            "famain": fa_rendering_label.split("-")[1],
+        }

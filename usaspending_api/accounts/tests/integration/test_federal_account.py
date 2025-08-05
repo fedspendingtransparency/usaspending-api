@@ -11,7 +11,9 @@ from rest_framework import status
 
 # Imports from your apps
 from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount
-from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.financial_activities.models import (
+    FinancialAccountsByProgramActivityObjectClass,
+)
 from usaspending_api.references.models import RefProgramActivity
 from usaspending_api.submissions.models import SubmissionAttributes
 
@@ -25,7 +27,11 @@ def test_federal_account_spending_by_category_unique_program_activity_names(clie
 
     models_to_mock = [
         {"model": FederalAccount, "id": -1},
-        {"model": TreasuryAppropriationAccount, "treasury_account_identifier": -2, "federal_account_id": -1},
+        {
+            "model": TreasuryAppropriationAccount,
+            "treasury_account_identifier": -2,
+            "federal_account_id": -1,
+        },
         {
             "model": RefProgramActivity,
             "id": -3,
@@ -46,7 +52,11 @@ def test_federal_account_spending_by_category_unique_program_activity_names(clie
             "main_account_code": "8888",
             "budget_year": "2222",
         },
-        {"model": SubmissionAttributes, "submission_id": 1, "is_final_balances_for_fy": True},
+        {
+            "model": SubmissionAttributes,
+            "submission_id": 1,
+            "is_final_balances_for_fy": True,
+        },
         {
             "model": FinancialAccountsByProgramActivityObjectClass,
             "financial_accounts_by_program_activity_object_class_id": -5,
@@ -73,13 +83,23 @@ def test_federal_account_spending_by_category_unique_program_activity_names(clie
         "field": "obligations_incurred_by_program_object_class_cpe",
         "aggregate": "sum",
         "order": ["-aggregate"],
-        "filters": [{"field": "treasury_account__federal_account", "operation": "equals", "value": -1}],
+        "filters": [
+            {
+                "field": "treasury_account__federal_account",
+                "operation": "equals",
+                "value": -1,
+            }
+        ],
         "page": 1,
         "limit": 5,
         "auditTrail": "Rank vis - programActivity",
     }
 
-    resp = client.post("/api/v1/tas/categories/total/", content_type="application/json", data=json.dumps(request))
+    resp = client.post(
+        "/api/v1/tas/categories/total/",
+        content_type="application/json",
+        data=json.dumps(request),
+    )
 
     assert resp.status_code == status.HTTP_200_OK
     assert "results" in resp.json()

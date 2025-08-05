@@ -38,12 +38,24 @@ def award_data_fixture(db):
         cfda_number="84.063",
     )
     baker.make(
-        "references.ToptierAgency", toptier_agency_id=1, name="Department of Transportation", _fill_optional=True
+        "references.ToptierAgency",
+        toptier_agency_id=1,
+        name="Department of Transportation",
+        _fill_optional=True,
     )
     baker.make(
-        "references.SubtierAgency", subtier_agency_id=1, name="Department of Transportation", _fill_optional=True
+        "references.SubtierAgency",
+        subtier_agency_id=1,
+        name="Department of Transportation",
+        _fill_optional=True,
     )
-    baker.make("references.Agency", id=1, toptier_agency_id=1, subtier_agency_id=1, _fill_optional=True)
+    baker.make(
+        "references.Agency",
+        id=1,
+        toptier_agency_id=1,
+        subtier_agency_id=1,
+        _fill_optional=True,
+    )
     baker.make(
         "search.AwardSearch",
         award_id=1,
@@ -94,7 +106,11 @@ def award_data_fixture(db):
         action_date="2016-10-1",
     )
     baker.make(
-        "accounts.FederalAccount", id=1, parent_toptier_agency_id=1, agency_identifier="1", main_account_code="0001"
+        "accounts.FederalAccount",
+        id=1,
+        parent_toptier_agency_id=1,
+        agency_identifier="1",
+        main_account_code="0001",
     )
     baker.make(
         "accounts.TreasuryAppropriationAccount",
@@ -424,7 +440,12 @@ def test_award_keyword(award_data_fixture, elasticsearch_award_index):
                 "filter": {
                     "dis_max": {
                         "queries": [
-                            {"query_string": {"query": "jonathan simms", "fields": ["description", "recipient_name"]}}
+                            {
+                                "query_string": {
+                                    "query": "jonathan simms",
+                                    "fields": ["description", "recipient_name"],
+                                }
+                            }
                         ]
                     }
                 }
@@ -443,7 +464,10 @@ def test_covid_data(award_data_fixture, elasticsearch_award_index):
         "query": {
             "bool": {
                 "filter": {
-                    "bool": {"should": {"match": {"disaster_emergency_fund_codes": "L"}}, "minimum_should_match": 1}
+                    "bool": {
+                        "should": {"match": {"disaster_emergency_fund_codes": "L"}},
+                        "minimum_should_match": 1,
+                    }
                 }
             }
         }

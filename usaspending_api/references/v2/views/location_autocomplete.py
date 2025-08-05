@@ -98,7 +98,10 @@ class LocationAutocompleteViewSet(APIView):
         )
         # Group by location_type then get the top `limit` results for each bucket
         search.aggs.bucket("location_types", "terms", field="location_type").metric(
-            "most_relevant", "top_hits", size=limit, _source=["location_json", "location_type"]
+            "most_relevant",
+            "top_hits",
+            size=limit,
+            _source=["location_json", "location_type"],
         )
         results: ES_Response = search.execute()
 

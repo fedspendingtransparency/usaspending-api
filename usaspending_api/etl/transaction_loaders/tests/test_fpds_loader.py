@@ -11,7 +11,9 @@ from usaspending_api.etl.transaction_loaders.field_mappings_fpds import (
     transaction_normalized_nonboolean_columns,
     transaction_fpds_boolean_columns,
 )
-from usaspending_api.etl.transaction_loaders.data_load_helpers import format_insert_or_update_column_sql
+from usaspending_api.etl.transaction_loaders.data_load_helpers import (
+    format_insert_or_update_column_sql,
+)
 
 from unittest.mock import MagicMock, patch
 
@@ -89,10 +91,14 @@ def test_load_ids_empty():
 
 # These are patched in opposite order from when they're listed in the function params, because that's how the fixture works
 @patch("usaspending_api.etl.transaction_loaders.fpds_loader.connection")
-@patch("usaspending_api.etl.transaction_loaders.derived_field_functions_fpds._fetch_subtier_agency_id", return_value=1)
+@patch(
+    "usaspending_api.etl.transaction_loaders.derived_field_functions_fpds._fetch_subtier_agency_id",
+    return_value=1,
+)
 @patch("usaspending_api.etl.transaction_loaders.fpds_loader._extract_broker_objects")
 @patch(
-    "usaspending_api.etl.transaction_loaders.derived_field_functions_fpds.fy", return_value=random.randint(2001, 2019)
+    "usaspending_api.etl.transaction_loaders.derived_field_functions_fpds.fy",
+    return_value=random.randint(2001, 2019),
 )
 @patch("usaspending_api.etl.transaction_loaders.fpds_loader._matching_award")
 @patch("usaspending_api.etl.transaction_loaders.fpds_loader.insert_award")
@@ -170,7 +176,10 @@ def test_load_ids_dummy_id(
 
 
 def test_setup_load_lists(monkeypatch):
-    test_object = {"table": {"val1": 4, "string_val": "bob"}, "wrong_table": {"val": "wrong"}}
+    test_object = {
+        "table": {"val1": 4, "string_val": "bob"},
+        "wrong_table": {"val": "wrong"},
+    }
 
     columns, values, pairs = format_insert_or_update_column_sql(
         mock_cursor(monkeypatch, "mogrified"), test_object, "table"
@@ -185,8 +194,15 @@ def test_setup_load_lists(monkeypatch):
 # NOT that the map is accurate
 def test_create_load_object(monkeypatch):
     columns = {"input_field_1": "output_field_1", "input_field_2": "output_field_2"}
-    bools = {"input_field_3": "output_field_3", "input_field_4": "output_field_4", "input_field_5": "output_field_5"}
-    functions = {"output_field_6": lambda t: t["input_field_6"] * 2, "output_field_7": lambda t: "replacement"}
+    bools = {
+        "input_field_3": "output_field_3",
+        "input_field_4": "output_field_4",
+        "input_field_5": "output_field_5",
+    }
+    functions = {
+        "output_field_6": lambda t: t["input_field_6"] * 2,
+        "output_field_7": lambda t: "replacement",
+    }
 
     data = {
         "input_field_1": "this is field 1",
@@ -214,7 +230,10 @@ def test_create_load_object(monkeypatch):
 
 
 @patch("usaspending_api.etl.transaction_loaders.fpds_loader.connection")
-@patch("usaspending_api.etl.transaction_loaders.derived_field_functions_fpds._fetch_subtier_agency_id", return_value=1)
+@patch(
+    "usaspending_api.etl.transaction_loaders.derived_field_functions_fpds._fetch_subtier_agency_id",
+    return_value=1,
+)
 def test_load_transactions(mock__fetch_subtier_agency_id, mock_connection):
     """Mostly testing that everything gets the primary keys it was looking for"""
 
@@ -234,7 +253,12 @@ def test_load_transactions(mock__fetch_subtier_agency_id, mock_connection):
     for key in mega_key_list.keys():
         mega_key_list[key] = "value{}".format(unique_val)
 
-    for key in ["ordering_period_end_date", "action_date", "initial_report_date", "solicitation_date"]:
+    for key in [
+        "ordering_period_end_date",
+        "action_date",
+        "initial_report_date",
+        "solicitation_date",
+    ]:
         mega_key_list[key] = "2010-01-01 00:00:00"
 
     for key in ["created_at", "updated_at"]:

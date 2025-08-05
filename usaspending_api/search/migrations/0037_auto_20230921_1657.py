@@ -6,28 +6,28 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('search', '0036_add_state_county_fips_to_subaward_search'),
+        ("search", "0036_add_state_county_fips_to_subaward_search"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='subawardsearch',
-            name='legal_entity_county_code',
+            model_name="subawardsearch",
+            name="legal_entity_county_code",
             field=models.TextField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='subawardsearch',
-            name='legal_entity_county_name',
+            model_name="subawardsearch",
+            name="legal_entity_county_name",
             field=models.TextField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='subawardsearch',
-            name='place_of_perform_county_code',
+            model_name="subawardsearch",
+            name="place_of_perform_county_code",
             field=models.TextField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='subawardsearch',
-            name='place_of_perform_county_name',
+            model_name="subawardsearch",
+            name="place_of_perform_county_name",
             field=models.TextField(blank=True, null=True),
         ),
     ]

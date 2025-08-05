@@ -60,7 +60,12 @@ def _generate_expected_response(previous, next, page, has_previous, has_next, *a
     return {"results": results, "page_metadata": page_metadata}
 
 
-def _test_post(client, request, expected_response_parameters_tuple=None, expected_status_code=status.HTTP_200_OK):
+def _test_post(
+    client,
+    request,
+    expected_response_parameters_tuple=None,
+    expected_status_code=status.HTTP_200_OK,
+):
     """
     Perform the actual request and interrogates the results.
 
@@ -84,8 +89,16 @@ def _test_post(client, request, expected_response_parameters_tuple=None, expecte
 def test_defaults(client, create_idv_test_data):
 
     _test_post(client, {"award_id": 1}, (None, None, 1, False, False, 6, 5, 4, 3, 1))
-    _test_post(client, {"award_id": "CONT_IDV_001"}, (None, None, 1, False, False, 6, 5, 4, 3, 1))
-    _test_post(client, {"award_id": 2}, (None, None, 1, False, False, 14, 13, 12, 11, 10, 9, 8, 7, 2))
+    _test_post(
+        client,
+        {"award_id": "CONT_IDV_001"},
+        (None, None, 1, False, False, 6, 5, 4, 3, 1),
+    )
+    _test_post(
+        client,
+        {"award_id": 2},
+        (None, None, 1, False, False, 14, 13, 12, 11, 10, 9, 8, 7, 2),
+    )
 
 
 @pytest.mark.django_db
@@ -105,7 +118,11 @@ def test_with_bogus_id(client):
 def test_piid_filter(client, create_idv_test_data):
 
     _test_post(client, {"award_id": 2, "piid": "piid_013"}, (None, None, 1, False, False, 13))
-    _test_post(client, {"award_id": 1, "piid": "nonexistent_piid"}, (None, None, 1, False, False))
+    _test_post(
+        client,
+        {"award_id": 1, "piid": "nonexistent_piid"},
+        (None, None, 1, False, False),
+    )
     _test_post(client, {"award_id": 1, "piid": 12345}, (None, None, 1, False, False))
 
 
@@ -113,10 +130,26 @@ def test_piid_filter(client, create_idv_test_data):
 def test_limit_values(client, create_idv_test_data):
 
     _test_post(client, {"award_id": 2, "limit": 1}, (None, 2, 1, False, True, 14))
-    _test_post(client, {"award_id": 2, "limit": 10}, (None, None, 1, False, False, 14, 13, 12, 11, 10, 9, 8, 7, 2))
-    _test_post(client, {"award_id": 2, "limit": 0}, expected_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
-    _test_post(client, {"award_id": 2, "limit": 2000000000}, expected_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
-    _test_post(client, {"award_id": 2, "limit": {"BOGUS": "LIMIT"}}, expected_status_code=status.HTTP_400_BAD_REQUEST)
+    _test_post(
+        client,
+        {"award_id": 2, "limit": 10},
+        (None, None, 1, False, False, 14, 13, 12, 11, 10, 9, 8, 7, 2),
+    )
+    _test_post(
+        client,
+        {"award_id": 2, "limit": 0},
+        expected_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+    )
+    _test_post(
+        client,
+        {"award_id": 2, "limit": 2000000000},
+        expected_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+    )
+    _test_post(
+        client,
+        {"award_id": 2, "limit": {"BOGUS": "LIMIT"}},
+        expected_status_code=status.HTTP_400_BAD_REQUEST,
+    )
 
 
 @pytest.mark.django_db
@@ -129,10 +162,14 @@ def test_page_values(client, create_idv_test_data):
     _test_post(client, {"award_id": 2, "limit": 1, "page": 99}, (98, None, 99, True, False))
 
     _test_post(
-        client, {"award_id": 2, "limit": 1, "page": 0}, expected_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY
+        client,
+        {"award_id": 2, "limit": 1, "page": 0},
+        expected_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
     )
     _test_post(
-        client, {"award_id": 2, "limit": 1, "page": "BOGUS PAGE"}, expected_status_code=status.HTTP_400_BAD_REQUEST
+        client,
+        {"award_id": 2, "limit": 1, "page": "BOGUS PAGE"},
+        expected_status_code=status.HTTP_400_BAD_REQUEST,
     )
 
 
@@ -153,15 +190,31 @@ def test_sort_columns(client, create_idv_test_data):
             (None, None, 1, False, False, 2, 7, 8, 9, 10, 11, 12, 13, 14),
         )
 
-    _test_post(client, {"award_id": 2, "sort": "BOGUS FIELD"}, expected_status_code=status.HTTP_400_BAD_REQUEST)
+    _test_post(
+        client,
+        {"award_id": 2, "sort": "BOGUS FIELD"},
+        expected_status_code=status.HTTP_400_BAD_REQUEST,
+    )
 
 
 @pytest.mark.django_db
 def test_sort_order_values(client, create_idv_test_data):
 
-    _test_post(client, {"award_id": 2, "order": "desc"}, (None, None, 1, False, False, 14, 13, 12, 11, 10, 9, 8, 7, 2))
-    _test_post(client, {"award_id": 2, "order": "asc"}, (None, None, 1, False, False, 2, 7, 8, 9, 10, 11, 12, 13, 14))
-    _test_post(client, {"award_id": 2, "order": "BOGUS ORDER"}, expected_status_code=status.HTTP_400_BAD_REQUEST)
+    _test_post(
+        client,
+        {"award_id": 2, "order": "desc"},
+        (None, None, 1, False, False, 14, 13, 12, 11, 10, 9, 8, 7, 2),
+    )
+    _test_post(
+        client,
+        {"award_id": 2, "order": "asc"},
+        (None, None, 1, False, False, 2, 7, 8, 9, 10, 11, 12, 13, 14),
+    )
+    _test_post(
+        client,
+        {"award_id": 2, "order": "BOGUS ORDER"},
+        expected_status_code=status.HTTP_400_BAD_REQUEST,
+    )
 
 
 @pytest.mark.django_db
@@ -169,6 +222,13 @@ def test_complete_queries(client, create_idv_test_data):
 
     _test_post(
         client,
-        {"award_id": 2, "piid": "piid_013", "limit": 3, "page": 1, "sort": "piid", "order": "asc"},
+        {
+            "award_id": 2,
+            "piid": "piid_013",
+            "limit": 3,
+            "page": 1,
+            "sort": "piid",
+            "order": "asc",
+        },
         (None, None, 1, False, False, 13),
     )

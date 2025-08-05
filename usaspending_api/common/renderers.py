@@ -6,7 +6,9 @@ from django.utils.safestring import mark_safe
 from rest_framework.renderers import BrowsableAPIRenderer
 from rest_framework.request import override_method
 from urllib.parse import quote, urljoin
-from usaspending_api.common.helpers.endpoint_documentation import case_sensitive_file_exists
+from usaspending_api.common.helpers.endpoint_documentation import (
+    case_sensitive_file_exists,
+)
 from usaspending_api.settings import REPO_DIR
 
 
@@ -62,7 +64,9 @@ class BrowsableAPIRendererWithoutForms(BrowsableAPIRenderer):
                     widget=forms.Select(attrs={"data-override": "content-type"}),
                 )
                 _content = forms.CharField(
-                    label="Content", widget=forms.Textarea(attrs={"data-override": "content"}), initial=content
+                    label="Content",
+                    widget=forms.Textarea(attrs={"data-override": "content"}),
+                    initial=content,
                 )
 
             return GenericContentForm()

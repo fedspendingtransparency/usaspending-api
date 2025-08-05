@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('references', '0001_initial'),
+        ("references", "0001_initial"),
     ]
 
     # For some reason, this index was still created and not dropped if I put this command at the
@@ -18,7 +18,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RunSQL(
             sql=[
-                'drop index if exists toptier_agency_toptier_code_8b0eb9cb_like',
+                "drop index if exists toptier_agency_toptier_code_8b0eb9cb_like",
             ],
         ),
     ]

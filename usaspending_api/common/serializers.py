@@ -83,7 +83,10 @@ class LimitableSerializer(serializers.ModelSerializer):
 
                 child_args = {
                     **kwargs,
-                    "context": {**self.context, "verbose": False},  # Do not verbos-ify child objects
+                    "context": {
+                        **self.context,
+                        "verbose": False,
+                    },  # Do not verbos-ify child objects
                     "fields": child_include_fields,
                     "exclude": child_exclude_fields,
                 }

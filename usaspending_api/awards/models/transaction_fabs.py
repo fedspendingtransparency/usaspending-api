@@ -14,7 +14,10 @@ class TransactionFABS(models.Model):
     models when possible to prevent more future rework."""
 
     transaction = models.OneToOneField(
-        "awards.TransactionNormalized", on_delete=models.CASCADE, primary_key=True, related_name="assistance_data"
+        "awards.TransactionNormalized",
+        on_delete=models.CASCADE,
+        primary_key=True,
+        related_name="assistance_data",
     )
     published_fabs_id = models.IntegerField(blank=True, null=True, db_index=True)
     afa_generated_unique = models.TextField(unique=True, null=False, db_index=True)
@@ -122,7 +125,15 @@ class TransactionFABS(models.Model):
     class Meta:
         managed = False
         db_table = "vw_transaction_fabs"
-        unique_together = (("awarding_sub_tier_agency_c", "award_modification_amendme", "fain", "uri", "cfda_number"),)
+        unique_together = (
+            (
+                "awarding_sub_tier_agency_c",
+                "award_modification_amendme",
+                "fain",
+                "uri",
+                "cfda_number",
+            ),
+        )
 
 
 FABS_ALT_COL_NAMES_IN_TRANSACTION_SEARCH = {

@@ -18,7 +18,9 @@ class ToptierAgencyManager(CTEManager):
             .annotate(
                 user_selectable=Exists(
                     Agency.objects.filter(
-                        user_selectable=True, subtier_agency_id__isnull=False, toptier_agency_id=OuterRef("pk")
+                        user_selectable=True,
+                        subtier_agency_id__isnull=False,
+                        toptier_agency_id=OuterRef("pk"),
                     ).values("pk")
                 )
             )

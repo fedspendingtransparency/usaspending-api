@@ -9,7 +9,10 @@ from typing import List, Optional
 from django.conf import settings
 from pyspark.sql import DataFrame
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
-from usaspending_api.common.helpers.s3_helpers import delete_s3_objects, download_s3_object
+from usaspending_api.common.helpers.s3_helpers import (
+    delete_s3_objects,
+    download_s3_object,
+)
 from usaspending_api.download.filestreaming.download_generation import (
     EXCEL_ROW_LIMIT,
     split_and_zip_data_files,
@@ -72,7 +75,13 @@ class PostgresToCSVStrategy(AbstractToCSVStrategy):
         self._logger = logger
 
     def download_to_csv(
-        self, source_sql, destination_path, destination_file_name, working_dir_path, download_zip_path, source_df=None
+        self,
+        source_sql,
+        destination_path,
+        destination_file_name,
+        working_dir_path,
+        download_zip_path,
+        source_df=None,
     ):
         start_time = time.perf_counter()
         self._logger.info(f"Downloading data to {destination_path}")
@@ -124,7 +133,13 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
         self._logger = logger
 
     def download_to_csv(
-        self, source_sql, destination_path, destination_file_name, working_dir_path, download_zip_path, source_df=None
+        self,
+        source_sql,
+        destination_path,
+        destination_file_name,
+        working_dir_path,
+        download_zip_path,
+        source_df=None,
     ):
         # These imports are here for a reason.
         #   some strategies do not require spark
@@ -132,7 +147,10 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
         #   other strategies run to have pyspark installed when the strategy
         #   doesn't require it.
         from usaspending_api.common.etl.spark import hadoop_copy_merge, write_csv_file
-        from usaspending_api.common.helpers.spark_helpers import configure_spark_session, get_active_spark_session
+        from usaspending_api.common.helpers.spark_helpers import (
+            configure_spark_session,
+            get_active_spark_session,
+        )
 
         self.spark = None
         destination_path_dir = str(destination_path).replace(f"/{destination_file_name}", "")
@@ -181,13 +199,20 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
                 part_merge_group_size=1,
             )
             final_csv_data_file_locations = self._move_data_csv_s3_to_local(
-                s3_bucket_name, merged_file_paths, s3_bucket_path, s3_bucket_sub_path, destination_path_dir
+                s3_bucket_name,
+                merged_file_paths,
+                s3_bucket_path,
+                s3_bucket_sub_path,
+                destination_path_dir,
             )
         except Exception:
             self._logger.exception("Exception encountered. See logs")
             raise
         finally:
-            delete_s3_objects(s3_bucket_name, key_prefix=f"{s3_bucket_sub_path}/{destination_file_name}")
+            delete_s3_objects(
+                s3_bucket_name,
+                key_prefix=f"{s3_bucket_sub_path}/{destination_file_name}",
+            )
             if self.spark_created_by_command:
                 self.spark.stop()
         append_files_to_zip_file(final_csv_data_file_locations, download_zip_path)
@@ -195,7 +220,12 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
         return CSVDownloadMetadata(final_csv_data_file_locations, record_count, column_count)
 
     def _move_data_csv_s3_to_local(
-        self, bucket_name, s3_file_paths, s3_bucket_path, s3_bucket_sub_path, destination_path_dir
+        self,
+        bucket_name,
+        s3_file_paths,
+        s3_bucket_path,
+        s3_bucket_sub_path,
+        destination_path_dir,
     ) -> List[str]:
         """Moves files from s3 data csv location to a location on the local machine.
 

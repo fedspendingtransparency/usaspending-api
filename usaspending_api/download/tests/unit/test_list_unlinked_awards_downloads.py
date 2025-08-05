@@ -1,7 +1,9 @@
 import datetime
 from unittest.mock import MagicMock
 
-from usaspending_api.download.helpers.download_file_helpers import get_last_modified_file
+from usaspending_api.download.helpers.download_file_helpers import (
+    get_last_modified_file,
+)
 
 
 def test_get_last_modified_file():

@@ -27,11 +27,16 @@ from pyspark.serializers import read_int, UTF8Deserializer
 from pyspark.sql import SparkSession
 
 from usaspending_api.awards.delta_models.awards import AWARDS_COLUMNS
-from usaspending_api.awards.delta_models.financial_accounts_by_awards import FINANCIAL_ACCOUNTS_BY_AWARDS_COLUMNS
+from usaspending_api.awards.delta_models.financial_accounts_by_awards import (
+    FINANCIAL_ACCOUNTS_BY_AWARDS_COLUMNS,
+)
 from usaspending_api.common.helpers.aws_helpers import is_aws, get_aws_credentials
 from usaspending_api.config import CONFIG
 from usaspending_api.config.utils import parse_pg_uri, parse_http_url
-from usaspending_api.transactions.delta_models import DETACHED_AWARD_PROCUREMENT_DELTA_COLUMNS, PUBLISHED_FABS_COLUMNS
+from usaspending_api.transactions.delta_models import (
+    DETACHED_AWARD_PROCUREMENT_DELTA_COLUMNS,
+    PUBLISHED_FABS_COLUMNS,
+)
 from usaspending_api.transactions.delta_models.transaction_fabs import (
     TRANSACTION_FABS_COLUMN_INFO,
     TRANSACTION_FABS_COLUMNS,
@@ -40,7 +45,9 @@ from usaspending_api.transactions.delta_models.transaction_fpds import (
     TRANSACTION_FPDS_COLUMN_INFO,
     TRANSACTION_FPDS_COLUMNS,
 )
-from usaspending_api.transactions.delta_models.transaction_normalized import TRANSACTION_NORMALIZED_COLUMNS
+from usaspending_api.transactions.delta_models.transaction_normalized import (
+    TRANSACTION_NORMALIZED_COLUMNS,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -301,7 +308,9 @@ def configure_spark_session(
     return spark
 
 
-def read_java_gateway_connection_info(gateway_conn_info_path):  # pragma: no cover -- useful development util
+def read_java_gateway_connection_info(
+    gateway_conn_info_path,
+):  # pragma: no cover -- useful development util
     """Read the port and auth token from a file holding connection info to a running spark-submit process
 
     Args:
@@ -366,7 +375,10 @@ def attach_java_gateway(
 
 
 def get_jdbc_connection_properties(fix_strings=True) -> dict:
-    jdbc_props = {"driver": "org.postgresql.Driver", "fetchsize": str(CONFIG.SPARK_PARTITION_ROWS)}
+    jdbc_props = {
+        "driver": "org.postgresql.Driver",
+        "fetchsize": str(CONFIG.SPARK_PARTITION_ROWS),
+    }
     if fix_strings:
         # This setting basically tells the JDBC driver how to process the strings, which could be a special type casted
         # as a string (ex. UUID, JSONB). By default, it assumes they are actually strings. Setting this to "unspecified"
@@ -524,7 +536,8 @@ def configure_s3_credentials(
     conf.set("spark.hadoop.fs.s3a.secret.key", aws_creds.secret_key)
     if temporary_creds:
         conf.set(
-            "spark.hadoop.fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.TemporaryAWSCredentialsProvider"
+            "spark.hadoop.fs.s3a.aws.credentials.provider",
+            "org.apache.hadoop.fs.s3a.TemporaryAWSCredentialsProvider",
         )
         conf.set("spark.hadoop.fs.s3a.session.token", aws_creds.token)
         conf.set("spark.hadoop.fs.s3a.assumed.role.sts.endpoint", CONFIG.AWS_STS_ENDPOINT)
@@ -577,7 +590,8 @@ def load_dict_to_delta_table(spark, s3_data_bucket, table_schema, table_name, da
 
     table_to_col_info_dict = {}
     for tbl_name, col_info in zip(
-        ("transaction_fabs", "transaction_fpds"), (TRANSACTION_FABS_COLUMN_INFO, TRANSACTION_FPDS_COLUMN_INFO)
+        ("transaction_fabs", "transaction_fpds"),
+        (TRANSACTION_FABS_COLUMN_INFO, TRANSACTION_FPDS_COLUMN_INFO),
     ):
         table_to_col_info_dict[tbl_name] = {}
         for col in col_info:
@@ -634,7 +648,9 @@ def load_dict_to_delta_table(spark, s3_data_bucket, table_schema, table_name, da
 
 
 def clean_postgres_sql_for_spark_sql(
-    postgres_sql_str: str, global_temp_view_proxies: List[str] = None, identifier_replacements: Dict[str, str] = None
+    postgres_sql_str: str,
+    global_temp_view_proxies: List[str] = None,
+    identifier_replacements: Dict[str, str] = None,
 ):
     """Convert some of the known-to-be-problematic PostgreSQL syntax, which is not compliant with Spark SQL,
     to an acceptable and compliant Spark SQL alternative.
@@ -653,7 +669,12 @@ def clean_postgres_sql_for_spark_sql(
     """
     # Spark SQL does not like double-quoted identifiers
     spark_sql = postgres_sql_str.replace('"', "")
-    spark_sql = re.sub(rf"CREATE VIEW", rf"CREATE OR REPLACE TEMP VIEW", spark_sql, flags=re.IGNORECASE | re.MULTILINE)
+    spark_sql = re.sub(
+        rf"CREATE VIEW",
+        rf"CREATE OR REPLACE TEMP VIEW",
+        spark_sql,
+        flags=re.IGNORECASE | re.MULTILINE,
+    )
 
     # Treat these type casts as string in Spark SQL
     # NOTE: If replacing a ::JSON cast, be sure that the string data coming from delta is treated as needed (e.g. as
@@ -663,15 +684,25 @@ def clean_postgres_sql_for_spark_sql(
     if global_temp_view_proxies:
         for vw in global_temp_view_proxies:
             spark_sql = re.sub(
-                rf"FROM\s+{vw}", rf"FROM global_temp.{vw}", spark_sql, flags=re.IGNORECASE | re.MULTILINE
+                rf"FROM\s+{vw}",
+                rf"FROM global_temp.{vw}",
+                spark_sql,
+                flags=re.IGNORECASE | re.MULTILINE,
             )
             spark_sql = re.sub(
-                rf"JOIN\s+{vw}", rf"JOIN global_temp.{vw}", spark_sql, flags=re.IGNORECASE | re.MULTILINE
+                rf"JOIN\s+{vw}",
+                rf"JOIN global_temp.{vw}",
+                spark_sql,
+                flags=re.IGNORECASE | re.MULTILINE,
             )
 
     if identifier_replacements:
         for old, new in identifier_replacements.items():
-            matches = re.finditer(rf"(\s+|^|\(){old}(\s+|$|\()", spark_sql, flags=re.IGNORECASE | re.MULTILINE)
+            matches = re.finditer(
+                rf"(\s+|^|\(){old}(\s+|$|\()",
+                spark_sql,
+                flags=re.IGNORECASE | re.MULTILINE,
+            )
             for match in matches:
                 spark_sql = re.sub(
                     re.escape(rf"{match[0]}"),

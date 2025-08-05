@@ -6,16 +6,16 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('transactions', '0003_auto_20210512_1823'),
+        ("transactions", "0003_auto_20210512_1823"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='sourceprocurementtransaction',
-            name='awardee_or_recipient_uei_n',
+            model_name="sourceprocurementtransaction",
+            name="awardee_or_recipient_uei_n",
         ),
         migrations.RemoveField(
-            model_name='sourceprocurementtransaction',
-            name='ultimate_parent_uei_name',
+            model_name="sourceprocurementtransaction",
+            name="ultimate_parent_uei_name",
         ),
     ]

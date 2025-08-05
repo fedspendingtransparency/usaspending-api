@@ -6,13 +6,15 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('search', '0032_as_ts_cur_congressional_codes'),
+        ("search", "0032_as_ts_cur_congressional_codes"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='awardsearch',
-            name='total_outlays',
-            field=models.DecimalField(blank=True, db_index=True, decimal_places=2, max_digits=23, null=True),
+            model_name="awardsearch",
+            name="total_outlays",
+            field=models.DecimalField(
+                blank=True, db_index=True, decimal_places=2, max_digits=23, null=True
+            ),
         ),
     ]

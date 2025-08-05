@@ -17,7 +17,10 @@ def test_load_psc():
     baker.make("references.PSC", code="1005", description="whatever")
     baker.make("references.PSC", code="10", description="whatever", start_date="1978-12-31")
 
-    call_command("load_psc", path=f"{Path(__file__).parent / '..' / 'data' / 'psc_test_data.xlsx'}")
+    call_command(
+        "load_psc",
+        path=f"{Path(__file__).parent / '..' / 'data' / 'psc_test_data.xlsx'}",
+    )
 
     assert PSC.objects.all().count() == 8
 

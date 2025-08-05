@@ -25,7 +25,14 @@ def award_data_fixture(db):
         pop_state_code="TX",
         pop_country_code="USA",
     )
-    baker.make("search.AwardSearch", award_id=1, is_fpds=True, latest_transaction_id=1, piid="piiiiid", type="A")
+    baker.make(
+        "search.AwardSearch",
+        award_id=1,
+        is_fpds=True,
+        latest_transaction_id=1,
+        piid="piiiiid",
+        type="A",
+    )
     baker.make(
         "search.SubawardSearch",
         broker_subaward_id=1,
@@ -38,13 +45,22 @@ def award_data_fixture(db):
         sub_legal_entity_country_code="USA",
         sub_legal_entity_state_code="CA",
     )
-    baker.make("references.PopCounty", state_name="California", county_number="000", latest_population=2403)
+    baker.make(
+        "references.PopCounty",
+        state_name="California",
+        county_number="000",
+        latest_population=2403,
+    )
     baker.make("recipient.StateData", id="06-2020", fips="06", code="CA", name="California")
     baker.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")
 
 
 def test_geocode_filter_by_city(
-    client, monkeypatch, elasticsearch_subaward_index, elasticsearch_transaction_index, award_data_fixture
+    client,
+    monkeypatch,
+    elasticsearch_subaward_index,
+    elasticsearch_transaction_index,
+    award_data_fixture,
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)

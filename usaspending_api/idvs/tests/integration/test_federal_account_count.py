@@ -87,7 +87,11 @@ def test_with_piid(client, create_idv_test_data):
 
 
 def test_special_characters(client, create_idv_test_data):
-    baker.make("search.AwardSearch", award_id=100, generated_unique_award_id="CONT_IDV_:~$@*\"()#/,^&+=`!'%/_. -_9700")
+    baker.make(
+        "search.AwardSearch",
+        award_id=100,
+        generated_unique_award_id="CONT_IDV_:~$@*\"()#/,^&+=`!'%/_. -_9700",
+    )
     response = client.get("/api/v2/idvs/count/federal_account/CONT_IDV_:~$@*\"()%23/,^&+=`!'%/_. -_9700/")
     assert response.status_code == status.HTTP_200_OK
 

@@ -18,8 +18,12 @@ from usaspending_api.disaster.tests.fixtures.award_count_data import (
     non_matching_defc_award,
     obligations_incurred_award,
 )
-from usaspending_api.disaster.tests.fixtures.cfda_data import cfda_awards_and_transactions
-from usaspending_api.disaster.tests.fixtures.disaster_account_data import disaster_account_data
+from usaspending_api.disaster.tests.fixtures.cfda_data import (
+    cfda_awards_and_transactions,
+)
+from usaspending_api.disaster.tests.fixtures.disaster_account_data import (
+    disaster_account_data,
+)
 from usaspending_api.disaster.tests.fixtures.federal_account_data import (
     covid_faba_spending_data,
     generic_account_data,
@@ -33,7 +37,9 @@ from usaspending_api.disaster.tests.fixtures.object_class_data import (
     basic_fa_by_object_class_with_object_class_but_no_obligations,
     basic_faba_with_object_class,
 )
-from usaspending_api.disaster.tests.fixtures.object_class_loan_data import basic_object_class_faba_with_loan_value
+from usaspending_api.disaster.tests.fixtures.object_class_loan_data import (
+    basic_object_class_faba_with_loan_value,
+)
 from usaspending_api.disaster.tests.fixtures.overview_data import (
     basic_faba,
     basic_ref_data,
@@ -64,7 +70,9 @@ from usaspending_api.disaster.tests.fixtures.recipient_count_data import (
     fabs_award_with_quarterly_submission,
     fabs_award_with_unclosed_submission,
 )
-from usaspending_api.disaster.tests.fixtures.recipient_location_data import awards_and_transactions
+from usaspending_api.disaster.tests.fixtures.recipient_location_data import (
+    awards_and_transactions,
+)
 
 __all__ = [
     "awards_and_transactions",

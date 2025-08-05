@@ -3,7 +3,9 @@ from django.db.models import Sum
 from model_bakery import baker
 
 from usaspending_api.common.calculations.file_b import FileBCalculations
-from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.financial_activities.models import (
+    FinancialAccountsByProgramActivityObjectClass,
+)
 
 
 @pytest.fixture

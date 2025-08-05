@@ -69,7 +69,13 @@ def obtain_state_totals(fips, year=None, award_type_codes=None, subawards=False)
                 total_face_value_loan_amount=Sum("face_value_loan_guarantee"),
                 outlay_total=Sum("total_outlays"),
             )
-            .values("distinct_awards", "pop_state_code", "total", "total_face_value_loan_amount", "outlay_total")
+            .values(
+                "distinct_awards",
+                "pop_state_code",
+                "total",
+                "total_face_value_loan_amount",
+                "outlay_total",
+            )
         )
         # if award_type_codes is not None and type(award_type_codes) == list:
         #     queryset = queryset.filter(type__in = award_type_codes)
@@ -88,12 +94,22 @@ def obtain_state_totals(fips, year=None, award_type_codes=None, subawards=False)
         # would prefer to catch an index error gracefully if the SQL query produces 0 rows
         logger.warning("No results found for FIPS {} with filters: {}".format(fips, filters))
 
-    return {"count": 0, "pop_state_code": None, "total": 0, "total_face_value_loan_amount": 0, "total_outlays": 0}
+    return {
+        "count": 0,
+        "pop_state_code": None,
+        "total": 0,
+        "total_face_value_loan_amount": 0,
+        "total_outlays": 0,
+    }
 
 
 def get_all_states(year=None, award_type_codes=None, subawards=False):
     fiscal_year = year if year != "latest" else generate_fiscal_year(datetime.now())
-    filters = {"fiscal_year": fiscal_year, "pop_country_code": "USA", "pop_state_code__isnull": False}
+    filters = {
+        "fiscal_year": fiscal_year,
+        "pop_country_code": "USA",
+        "pop_state_code__isnull": False,
+    }
 
     if award_type_codes:
         filters["type__in"] = award_type_codes

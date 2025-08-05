@@ -24,8 +24,18 @@ def create_agency_data(db):
     tas = baker.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=ttagency1)
 
     # Create GTAS
-    baker.make("references.GTASSF133Balances", fiscal_year=2017, fiscal_period=4, total_budgetary_resources_cpe=1000)
-    baker.make("references.GTASSF133Balances", fiscal_year=2017, fiscal_period=6, total_budgetary_resources_cpe=2000)
+    baker.make(
+        "references.GTASSF133Balances",
+        fiscal_year=2017,
+        fiscal_period=4,
+        total_budgetary_resources_cpe=1000,
+    )
+    baker.make(
+        "references.GTASSF133Balances",
+        fiscal_year=2017,
+        fiscal_period=6,
+        total_budgetary_resources_cpe=2000,
+    )
 
     # Create Submissions
     dsws1 = baker.make(
@@ -77,7 +87,11 @@ def create_agency_data(db):
     )
 
     # Create OverallTotals
-    baker.make("references.OverallTotals", fiscal_year=2017, total_budget_authority=3860000000.00)
+    baker.make(
+        "references.OverallTotals",
+        fiscal_year=2017,
+        total_budget_authority=3860000000.00,
+    )
 
 
 @pytest.mark.django_db

@@ -15,10 +15,16 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "start_date", nargs="?", default=str(datetime.date.today()), help="The start date, in YYYY-MM-DD"
+            "start_date",
+            nargs="?",
+            default=str(datetime.date.today()),
+            help="The start date, in YYYY-MM-DD",
         )
         parser.add_argument(
-            "end_date", nargs="?", default=str(datetime.date.today()), help="The end date, in YYYY-MM-DD"
+            "end_date",
+            nargs="?",
+            default=str(datetime.date.today()),
+            help="The end date, in YYYY-MM-DD",
         )
 
     def handle(self, *args, **options):

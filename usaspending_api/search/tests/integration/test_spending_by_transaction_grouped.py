@@ -103,7 +103,11 @@ def test_spending_by_transaction_grouped_success(
         content_type="application/json",
         data=json.dumps(
             {
-                "filters": {"keywords": ["award 1"], "award_type_codes": ["A"], "award_ids": ["IND12PB00323"]},
+                "filters": {
+                    "keywords": ["award 1"],
+                    "award_type_codes": ["A"],
+                    "award_ids": ["IND12PB00323"],
+                },
                 "sort": "transaction_obligation",
             }
         ),
@@ -138,7 +142,11 @@ def test_spending_by_transaction_grouped_success(
         content_type="application/json",
         data=json.dumps(
             {
-                "filters": {"keyword": "award 1", "award_type_codes": ["A"], "award_ids": ["IND12PB00323"]},
+                "filters": {
+                    "keyword": "award 1",
+                    "award_type_codes": ["A"],
+                    "award_ids": ["IND12PB00323"],
+                },
                 "sort": "transaction_obligation",
             }
         ),
@@ -158,7 +166,10 @@ def test_spending_by_transaction_grouped_success(
         content_type="application/json",
         data=json.dumps(
             {
-                "filters": {"keywords": ["award 1", "award 2"], "award_type_codes": ["A"]},
+                "filters": {
+                    "keywords": ["award 1", "award 2"],
+                    "award_type_codes": ["A"],
+                },
                 "sort": "transaction_obligation",
             }
         ),
@@ -189,7 +200,10 @@ def test_spending_by_transaction_grouped_sorting(
         content_type="application/json",
         data=json.dumps(
             {
-                "filters": {"keywords": ["award 1", "award 2"], "award_type_codes": ["A"]},
+                "filters": {
+                    "keywords": ["award 1", "award 2"],
+                    "award_type_codes": ["A"],
+                },
                 "sort": "award_id",
                 "order": "asc",
             }
@@ -213,7 +227,10 @@ def test_spending_by_transaction_grouped_sorting(
         content_type="application/json",
         data=json.dumps(
             {
-                "filters": {"keywords": ["award 1", "award 2"], "award_type_codes": ["A"]},
+                "filters": {
+                    "keywords": ["award 1", "award 2"],
+                    "award_type_codes": ["A"],
+                },
                 "sort": "transaction_obligation",
             }
         ),
@@ -236,7 +253,10 @@ def test_spending_by_transaction_grouped_sorting(
         content_type="application/json",
         data=json.dumps(
             {
-                "filters": {"keywords": ["award 1", "award 2"], "award_type_codes": ["A"]},
+                "filters": {
+                    "keywords": ["award 1", "award 2"],
+                    "award_type_codes": ["A"],
+                },
                 "sort": "award_generated_internal_id",
                 "order": "asc",
             }

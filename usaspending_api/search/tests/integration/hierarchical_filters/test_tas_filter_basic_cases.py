@@ -156,9 +156,10 @@ def test_match_on_multiple_awards(client, monkeypatch, elasticsearch_award_index
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     resp = query_by_tas(client, {"require": [_tas_path(BASIC_TAS), _tas_path(1)]})
 
-    assert resp.json()["results"].sort(key=lambda elem: elem["internal_id"]) == [_award1(), _award2()].sort(
-        key=lambda elem: elem["internal_id"]
-    )
+    assert resp.json()["results"].sort(key=lambda elem: elem["internal_id"]) == [
+        _award1(),
+        _award2(),
+    ].sort(key=lambda elem: elem["internal_id"])
 
 
 def _award1():

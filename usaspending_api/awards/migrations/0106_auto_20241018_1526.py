@@ -6,28 +6,32 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('awards', '0105_alter_financialaccountsbyawards_data_source'),
+        ("awards", "0105_alter_financialaccountsbyawards_data_source"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='financialaccountsbyawards',
-            name='pa_reporting_key',
+            model_name="financialaccountsbyawards",
+            name="pa_reporting_key",
             field=models.TextField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='financialaccountsbyawards',
-            name='prior_year_adjustment',
+            model_name="financialaccountsbyawards",
+            name="prior_year_adjustment",
             field=models.TextField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='financialaccountsbyawards',
-            name='ussgl480110_reinstated_del_cpe',
-            field=models.DecimalField(blank=True, decimal_places=2, max_digits=23, null=True),
+            model_name="financialaccountsbyawards",
+            name="ussgl480110_reinstated_del_cpe",
+            field=models.DecimalField(
+                blank=True, decimal_places=2, max_digits=23, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='financialaccountsbyawards',
-            name='ussgl490110_reinstated_del_cpe',
-            field=models.DecimalField(blank=True, decimal_places=2, max_digits=23, null=True),
+            model_name="financialaccountsbyawards",
+            name="ussgl490110_reinstated_del_cpe",
+            field=models.DecimalField(
+                blank=True, decimal_places=2, max_digits=23, null=True
+            ),
         ),
     ]

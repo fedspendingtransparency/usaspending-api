@@ -72,7 +72,10 @@ class GenericPopulationLoader(Loader):
         with connection.cursor() as cursor:
             cursor.execute(f"DROP TABLE IF EXISTS {self.TEMP_TABLE_NAME}")
             cursor.execute(
-                self.TEMP_TABLE_SQL.format(table=self.TEMP_TABLE_NAME, columns=",".join([f"{c} TEXT" for c in columns]))
+                self.TEMP_TABLE_SQL.format(
+                    table=self.TEMP_TABLE_NAME,
+                    columns=",".join([f"{c} TEXT" for c in columns]),
+                )
             )
 
     def load_data(self, data, model=None):

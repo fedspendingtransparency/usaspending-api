@@ -94,8 +94,16 @@ def publish_dates_data(db):
         certified_date="2020-10-02 07:46:21.419796+00",
         submission_window=dabs3,
     )
-    baker.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas1, submission=sub1)
-    baker.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas2, submission=sub2)
+    baker.make(
+        "accounts.AppropriationAccountBalances",
+        treasury_account_identifier=tas1,
+        submission=sub1,
+    )
+    baker.make(
+        "accounts.AppropriationAccountBalances",
+        treasury_account_identifier=tas2,
+        submission=sub2,
+    )
     baker.make(
         "reporting.ReportingAgencyOverview",
         toptier_code="001",
@@ -126,17 +134,33 @@ def publish_dates_data(db):
     )
 
     ta1 = baker.make(
-        "references.ToptierAgency", toptier_code="001", name="Test Agency", abbreviation="TA", _fill_optional=True
+        "references.ToptierAgency",
+        toptier_code="001",
+        name="Test Agency",
+        abbreviation="TA",
+        _fill_optional=True,
     )
     ta2 = baker.make(
-        "references.ToptierAgency", toptier_code="002", name="Test Agency 2", abbreviation="TA2", _fill_optional=True
+        "references.ToptierAgency",
+        toptier_code="002",
+        name="Test Agency 2",
+        abbreviation="TA2",
+        _fill_optional=True,
     )
 
     baker.make(
-        "references.Agency", id=1, toptier_agency_id=ta1.toptier_agency_id, toptier_flag=True, _fill_optional=True
+        "references.Agency",
+        id=1,
+        toptier_agency_id=ta1.toptier_agency_id,
+        toptier_flag=True,
+        _fill_optional=True,
     )
     baker.make(
-        "references.Agency", id=2, toptier_agency_id=ta2.toptier_agency_id, toptier_flag=True, _fill_optional=True
+        "references.Agency",
+        id=2,
+        toptier_agency_id=ta2.toptier_agency_id,
+        toptier_flag=True,
+        _fill_optional=True,
     )
 
 
@@ -155,7 +179,10 @@ def test_basic_success(client, publish_dates_data):
                 {
                     "period": 3,
                     "quarter": 1,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
+                    "submission_dates": {
+                        "publication_date": "",
+                        "certification_date": "",
+                    },
                     "quarterly": False,
                 },
                 {
@@ -179,31 +206,46 @@ def test_basic_success(client, publish_dates_data):
                 {
                     "period": 8,
                     "quarter": 3,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
+                    "submission_dates": {
+                        "publication_date": "",
+                        "certification_date": "",
+                    },
                     "quarterly": False,
                 },
                 {
                     "period": 9,
                     "quarter": 3,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
+                    "submission_dates": {
+                        "publication_date": "",
+                        "certification_date": "",
+                    },
                     "quarterly": False,
                 },
                 {
                     "period": 10,
                     "quarter": 4,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
+                    "submission_dates": {
+                        "publication_date": "",
+                        "certification_date": "",
+                    },
                     "quarterly": False,
                 },
                 {
                     "period": 11,
                     "quarter": 4,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
+                    "submission_dates": {
+                        "publication_date": "",
+                        "certification_date": "",
+                    },
                     "quarterly": False,
                 },
                 {
                     "period": 12,
                     "quarter": 4,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
+                    "submission_dates": {
+                        "publication_date": "",
+                        "certification_date": "",
+                    },
                     "quarterly": False,
                 },
             ],
@@ -217,49 +259,73 @@ def test_basic_success(client, publish_dates_data):
                 {
                     "period": 3,
                     "quarter": 1,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
+                    "submission_dates": {
+                        "publication_date": "",
+                        "certification_date": "",
+                    },
                     "quarterly": False,
                 },
                 {
                     "period": 6,
                     "quarter": 2,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
+                    "submission_dates": {
+                        "publication_date": "",
+                        "certification_date": "",
+                    },
                     "quarterly": False,
                 },
                 {
                     "period": 7,
                     "quarter": 3,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
+                    "submission_dates": {
+                        "publication_date": "",
+                        "certification_date": "",
+                    },
                     "quarterly": False,
                 },
                 {
                     "period": 8,
                     "quarter": 3,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
+                    "submission_dates": {
+                        "publication_date": "",
+                        "certification_date": "",
+                    },
                     "quarterly": False,
                 },
                 {
                     "period": 9,
                     "quarter": 3,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
+                    "submission_dates": {
+                        "publication_date": "",
+                        "certification_date": "",
+                    },
                     "quarterly": False,
                 },
                 {
                     "period": 10,
                     "quarter": 4,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
+                    "submission_dates": {
+                        "publication_date": "",
+                        "certification_date": "",
+                    },
                     "quarterly": False,
                 },
                 {
                     "period": 11,
                     "quarter": 4,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
+                    "submission_dates": {
+                        "publication_date": "",
+                        "certification_date": "",
+                    },
                     "quarterly": False,
                 },
                 {
                     "period": 12,
                     "quarter": 4,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
+                    "submission_dates": {
+                        "publication_date": "",
+                        "certification_date": "",
+                    },
                     "quarterly": False,
                 },
             ],
@@ -283,19 +349,28 @@ def test_different_agencies(client, publish_dates_data):
                 {
                     "period": 3,
                     "quarter": 1,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
+                    "submission_dates": {
+                        "publication_date": "",
+                        "certification_date": "",
+                    },
                     "quarterly": False,
                 },
                 {
                     "period": 6,
                     "quarter": 2,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
+                    "submission_dates": {
+                        "publication_date": "",
+                        "certification_date": "",
+                    },
                     "quarterly": False,
                 },
                 {
                     "period": 9,
                     "quarter": 3,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
+                    "submission_dates": {
+                        "publication_date": "",
+                        "certification_date": "",
+                    },
                     "quarterly": False,
                 },
                 {
@@ -318,19 +393,28 @@ def test_different_agencies(client, publish_dates_data):
                 {
                     "period": 3,
                     "quarter": 1,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
+                    "submission_dates": {
+                        "publication_date": "",
+                        "certification_date": "",
+                    },
                     "quarterly": False,
                 },
                 {
                     "period": 6,
                     "quarter": 2,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
+                    "submission_dates": {
+                        "publication_date": "",
+                        "certification_date": "",
+                    },
                     "quarterly": False,
                 },
                 {
                     "period": 9,
                     "quarter": 3,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
+                    "submission_dates": {
+                        "publication_date": "",
+                        "certification_date": "",
+                    },
                     "quarterly": False,
                 },
                 {
@@ -359,19 +443,28 @@ def test_filter(client, publish_dates_data):
                 {
                     "period": 3,
                     "quarter": 1,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
+                    "submission_dates": {
+                        "publication_date": "",
+                        "certification_date": "",
+                    },
                     "quarterly": False,
                 },
                 {
                     "period": 6,
                     "quarter": 2,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
+                    "submission_dates": {
+                        "publication_date": "",
+                        "certification_date": "",
+                    },
                     "quarterly": False,
                 },
                 {
                     "period": 9,
                     "quarter": 3,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
+                    "submission_dates": {
+                        "publication_date": "",
+                        "certification_date": "",
+                    },
                     "quarterly": False,
                 },
                 {
@@ -493,13 +586,19 @@ def test_publication_date_sort(client, publish_dates_data):
                 {
                     "period": 6,
                     "quarter": 2,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
+                    "submission_dates": {
+                        "publication_date": "",
+                        "certification_date": "",
+                    },
                     "quarterly": False,
                 },
                 {
                     "period": 9,
                     "quarter": 3,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
+                    "submission_dates": {
+                        "publication_date": "",
+                        "certification_date": "",
+                    },
                     "quarterly": False,
                 },
                 {
@@ -531,13 +630,19 @@ def test_publication_date_sort(client, publish_dates_data):
                 {
                     "period": 6,
                     "quarter": 2,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
+                    "submission_dates": {
+                        "publication_date": "",
+                        "certification_date": "",
+                    },
                     "quarterly": False,
                 },
                 {
                     "period": 9,
                     "quarter": 3,
-                    "submission_dates": {"publication_date": "", "certification_date": ""},
+                    "submission_dates": {
+                        "publication_date": "",
+                        "certification_date": "",
+                    },
                     "quarterly": False,
                 },
                 {

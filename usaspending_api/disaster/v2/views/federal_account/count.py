@@ -6,7 +6,9 @@ from usaspending_api.accounts.models import FederalAccount
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.calculations.file_b import FileBCalculations
 from usaspending_api.disaster.v2.views.disaster_base import DisasterBase
-from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.financial_activities.models import (
+    FinancialAccountsByProgramActivityObjectClass,
+)
 
 
 class FederalAccountCountViewSet(DisasterBase):

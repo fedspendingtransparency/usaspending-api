@@ -10,31 +10,42 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='SubmissionAttributes',
+            name="SubmissionAttributes",
             fields=[
-                ('submission_id', models.AutoField(primary_key=True, serialize=False)),
-                ('broker_submission_id', models.IntegerField(null=True)),
-                ('certified_date', models.DateField(blank=True, null=True)),
-                ('usaspending_update', models.DateField(blank=True, null=True)),
-                ('cgac_code', models.TextField(blank=True, null=True)),
-                ('reporting_period_start', models.DateField(blank=True, null=True)),
-                ('reporting_period_end', models.DateField(blank=True, null=True)),
-                ('reporting_fiscal_year', models.IntegerField(blank=True, null=True)),
-                ('reporting_fiscal_quarter', models.IntegerField(blank=True, null=True)),
-                ('reporting_fiscal_period', models.IntegerField(blank=True, null=True)),
-                ('quarter_format_flag', models.BooleanField(default=True)),
-                ('create_date', models.DateTimeField(auto_now_add=True, null=True)),
-                ('update_date', models.DateTimeField(auto_now=True, null=True)),
-                ('previous_submission', models.OneToOneField(blank=True, help_text='A reference to the most recent submission for this CGAC within the same fiscal year', null=True, on_delete=django.db.models.deletion.DO_NOTHING, to='submissions.SubmissionAttributes')),
+                ("submission_id", models.AutoField(primary_key=True, serialize=False)),
+                ("broker_submission_id", models.IntegerField(null=True)),
+                ("certified_date", models.DateField(blank=True, null=True)),
+                ("usaspending_update", models.DateField(blank=True, null=True)),
+                ("cgac_code", models.TextField(blank=True, null=True)),
+                ("reporting_period_start", models.DateField(blank=True, null=True)),
+                ("reporting_period_end", models.DateField(blank=True, null=True)),
+                ("reporting_fiscal_year", models.IntegerField(blank=True, null=True)),
+                (
+                    "reporting_fiscal_quarter",
+                    models.IntegerField(blank=True, null=True),
+                ),
+                ("reporting_fiscal_period", models.IntegerField(blank=True, null=True)),
+                ("quarter_format_flag", models.BooleanField(default=True)),
+                ("create_date", models.DateTimeField(auto_now_add=True, null=True)),
+                ("update_date", models.DateTimeField(auto_now=True, null=True)),
+                (
+                    "previous_submission",
+                    models.OneToOneField(
+                        blank=True,
+                        help_text="A reference to the most recent submission for this CGAC within the same fiscal year",
+                        null=True,
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        to="submissions.SubmissionAttributes",
+                    ),
+                ),
             ],
             options={
-                'db_table': 'submission_attributes',
-                'managed': True,
+                "db_table": "submission_attributes",
+                "managed": True,
             },
         ),
     ]

@@ -12,7 +12,9 @@ from usaspending_api.references.v2.views.autocomplete import (
     ProgramActivityAutocompleteViewSet,
 )
 from usaspending_api.references.v2.views.city import CityAutocompleteViewSet
-from usaspending_api.references.v2.views.location_autocomplete import LocationAutocompleteViewSet
+from usaspending_api.references.v2.views.location_autocomplete import (
+    LocationAutocompleteViewSet,
+)
 from usaspending_api.references.v2.views.recipients import RecipientAutocompleteViewSet
 from usaspending_api.references.v2.views.tas_autocomplete import (
     TASAutocompleteA,

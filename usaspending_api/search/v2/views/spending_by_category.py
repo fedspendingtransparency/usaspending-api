@@ -5,7 +5,10 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
+from usaspending_api.common.api_versioning import (
+    api_transformations,
+    API_TRANSFORM_FUNCTIONS,
+)
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import NotImplementedException
 from usaspending_api.common.validator.tinyshield import TinyShield
@@ -21,7 +24,9 @@ from usaspending_api.search.v2.views.spending_by_category_views.spending_by_indu
     NAICSViewSet,
     DEFCViewSet,
 )
-from usaspending_api.search.v2.views.spending_by_category_views.spending_by_federal_account import FederalAccountViewSet
+from usaspending_api.search.v2.views.spending_by_category_views.spending_by_federal_account import (
+    FederalAccountViewSet,
+)
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_locations import (
     CountyViewSet,
     CountryViewSet,
@@ -68,7 +73,15 @@ class SpendingByCategoryVisualizationViewSet(APIView):
             "federal_account",
             "defc",
         ]
-        models = [{"name": "category", "key": "category", "type": "enum", "enum_values": categories, "optional": False}]
+        models = [
+            {
+                "name": "category",
+                "key": "category",
+                "type": "enum",
+                "enum_values": categories,
+                "optional": False,
+            }
+        ]
 
         # Apply/enforce POST body schema and data validation in request
         validated_payload = TinyShield(models).block(request.data)

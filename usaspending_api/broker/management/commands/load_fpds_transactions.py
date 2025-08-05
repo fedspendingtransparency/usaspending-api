@@ -6,14 +6,29 @@ from datetime import datetime, timezone
 from django.core.management.base import BaseCommand
 from typing import IO, List, AnyStr, Optional
 
-from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
-from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
+from usaspending_api.broker.helpers.last_load_date import (
+    get_last_load_date,
+    update_last_load_date,
+)
+from usaspending_api.common.helpers.date_helper import (
+    datetime_command_line_argument_type,
+)
 from usaspending_api.common.helpers.etl_helpers import update_c_to_d_linkages
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
-from usaspending_api.etl.award_helpers import update_awards, update_procurement_awards, prune_empty_awards
-from usaspending_api.etl.transaction_loaders.fpds_loader import load_fpds_transactions, failed_ids, delete_stale_fpds
-from usaspending_api.transactions.transaction_delete_journal_helpers import retrieve_deleted_fpds_transactions
+from usaspending_api.etl.award_helpers import (
+    update_awards,
+    update_procurement_awards,
+    prune_empty_awards,
+)
+from usaspending_api.etl.transaction_loaders.fpds_loader import (
+    load_fpds_transactions,
+    failed_ids,
+    delete_stale_fpds,
+)
+from usaspending_api.transactions.transaction_delete_journal_helpers import (
+    retrieve_deleted_fpds_transactions,
+)
 
 logger = logging.getLogger("script")
 

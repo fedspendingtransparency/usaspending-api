@@ -8,7 +8,9 @@ from typing import Optional
 
 from usaspending_api.broker.helpers.store_deleted_fabs import store_deleted_fabs
 from usaspending_api.transactions.agnostic_transaction_deletes import AgnosticDeletes
-from usaspending_api.transactions.models.source_assistance_transaction import SourceAssistanceTransaction
+from usaspending_api.transactions.models.source_assistance_transaction import (
+    SourceAssistanceTransaction,
+)
 
 logger = logging.getLogger("script")
 

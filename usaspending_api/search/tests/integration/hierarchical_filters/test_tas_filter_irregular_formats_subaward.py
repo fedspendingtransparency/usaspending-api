@@ -6,12 +6,18 @@ from usaspending_api.search.tests.integration.hierarchical_filters.tas_search_te
     query_by_tas_subaward,
     query_by_treasury_account_components,
 )
-from usaspending_api.search.tests.integration.hierarchical_filters.tas_fixtures import TAS_DICTIONARIES
+from usaspending_api.search.tests.integration.hierarchical_filters.tas_fixtures import (
+    TAS_DICTIONARIES,
+)
 
 
 @pytest.mark.django_db
 def test_tas_filter_not_object_or_list(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_tas
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    subaward_with_tas,
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -22,7 +28,11 @@ def test_tas_filter_not_object_or_list(
 
 @pytest.mark.django_db
 def test_tas_unparsable_too_long(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_tas
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    subaward_with_tas,
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -33,7 +43,11 @@ def test_tas_unparsable_too_long(
 
 @pytest.mark.django_db
 def test_tas_unparsable_too_short(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_tas
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    subaward_with_tas,
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -44,7 +58,11 @@ def test_tas_unparsable_too_short(
 
 @pytest.mark.django_db
 def test_tas_unparsable_no_ata(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_tas
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    subaward_with_tas,
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -55,7 +73,11 @@ def test_tas_unparsable_no_ata(
 
 @pytest.mark.django_db
 def test_tas_unparsable_no_sub(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_tas
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    subaward_with_tas,
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -66,7 +88,11 @@ def test_tas_unparsable_no_sub(
 
 @pytest.mark.django_db
 def test_tas_unparsable_no_main(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_tas
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    subaward_with_tas,
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -77,18 +103,29 @@ def test_tas_unparsable_no_main(
 
 @pytest.mark.django_db
 def test_tas_filter_is_legacy(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_tas
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    subaward_with_tas,
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
-    resp = query_by_tas_subaward(client, [{"main": TAS_DICTIONARIES[0]["main"], "aid": TAS_DICTIONARIES[0]["aid"]}])
+    resp = query_by_tas_subaward(
+        client,
+        [{"main": TAS_DICTIONARIES[0]["main"], "aid": TAS_DICTIONARIES[0]["aid"]}],
+    )
 
     assert len(resp.json()["results"]) == 1
 
 
 @pytest.mark.django_db
 def test_treasury_account_component_filter_appropriate_characters(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_tas
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    subaward_with_tas,
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -100,7 +137,11 @@ def test_treasury_account_component_filter_appropriate_characters(
 
 @pytest.mark.django_db
 def test_treasury_account_component_filter_inappropriate_characters(
-    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_tas
+    client,
+    monkeypatch,
+    elasticsearch_award_index,
+    elasticsearch_subaward_index,
+    subaward_with_tas,
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)

@@ -3,7 +3,9 @@ import logging
 from django.core.management.base import BaseCommand
 from django.db import connection
 
-from usaspending_api.awards.models.transaction_normalized import vw_transaction_normalized_sql
+from usaspending_api.awards.models.transaction_normalized import (
+    vw_transaction_normalized_sql,
+)
 from usaspending_api.awards.models.transaction_fabs import vw_transaction_fabs_sql
 from usaspending_api.awards.models.transaction_fpds import vw_transaction_fpds_sql
 from usaspending_api.awards.models.award import vw_awards_sql

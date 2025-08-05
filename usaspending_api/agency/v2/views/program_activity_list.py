@@ -6,8 +6,12 @@ from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMi
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.calculations.file_b import FileBCalculations
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
-from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
-from usaspending_api.submissions.helpers import get_latest_submission_ids_for_fiscal_year
+from usaspending_api.financial_activities.models import (
+    FinancialAccountsByProgramActivityObjectClass,
+)
+from usaspending_api.submissions.helpers import (
+    get_latest_submission_ids_for_fiscal_year,
+)
 
 
 class ProgramActivityList(PaginationMixin, AgencyBase):

@@ -12,7 +12,9 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db.models import Case, CharField, F, Q, Value, When
 
-from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings as all_ats_mappings
+from usaspending_api.awards.v2.lookups.lookups import (
+    all_award_types_mappings as all_ats_mappings,
+)
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
 from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
 from usaspending_api.common.helpers.s3_helpers import multipart_upload
@@ -48,7 +50,12 @@ AWARD_MAPPINGS = {
     },
     "Assistance": {
         "agency_field": "awarding_sub_agency_code",
-        "award_types": ["grants", "direct_payments", "loans", "other_financial_assistance"],
+        "award_types": [
+            "grants",
+            "direct_payments",
+            "loans",
+            "other_financial_assistance",
+        ],
         "column_headers": {
             0: "awarding_sub_agency_code",
             1: "award_id_fain",
@@ -164,7 +171,14 @@ class Command(BaseCommand):
         cat_command = subprocess.Popen(["cat", temp_sql_file_path], stdout=subprocess.PIPE)
         try:
             subprocess.check_output(
-                ["psql", "-o", source_path, os.environ["DOWNLOAD_DATABASE_URL"], "-v", "ON_ERROR_STOP=1"],
+                [
+                    "psql",
+                    "-o",
+                    source_path,
+                    os.environ["DOWNLOAD_DATABASE_URL"],
+                    "-v",
+                    "ON_ERROR_STOP=1",
+                ],
                 stdin=cat_command.stdout,
                 stderr=subprocess.STDOUT,
             )
@@ -174,7 +188,14 @@ class Command(BaseCommand):
 
         # Append deleted rows to the end of the file
         if not self.debugging_skip_deleted:
-            self.add_deletion_records(source_path, working_dir, award_type, agency_code, source, generate_since)
+            self.add_deletion_records(
+                source_path,
+                working_dir,
+                award_type,
+                agency_code,
+                source,
+                generate_since,
+            )
         if count_rows_in_delimited_file(source_path, has_header=True, safe=True) > 0:
             # Split the CSV into multiple files and zip it up
             zipfile_path = "{}{}.zip".format(settings.CSV_LOCAL_PATH, source_name)
@@ -263,7 +284,10 @@ class Command(BaseCommand):
             ordered_columns = ["correction_delete_ind"] + ordered_columns
 
         # Loop through columns and populate rows for each
-        unique_values_map = {"correction_delete_ind": "D", "last_modified_date": match_date}
+        unique_values_map = {
+            "correction_delete_ind": "D",
+            "last_modified_date": match_date,
+        }
         for header in ordered_columns:
             if header in unique_values_map:
                 dataframe[header] = [unique_values_map[header]] * len(dataframe.index)
@@ -278,7 +302,10 @@ class Command(BaseCommand):
         """Append the deletion records to the end of the CSV file"""
         logger.info("Removing duplicates from deletion records")
         df = df.sort_values(["last_modified_date"] + list(AWARD_MAPPINGS[award_type]["column_headers"].values()))
-        deduped_df = df.drop_duplicates(subset=list(AWARD_MAPPINGS[award_type]["column_headers"].values()), keep="last")
+        deduped_df = df.drop_duplicates(
+            subset=list(AWARD_MAPPINGS[award_type]["column_headers"].values()),
+            keep="last",
+        )
         logger.info("Removed {} duplicated deletion records".format(len(df.index) - len(deduped_df.index)))
 
         logger.info("Appending {} records to the end of the file".format(len(deduped_df.index)))

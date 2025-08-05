@@ -70,7 +70,6 @@ class Migration(migrations.Migration):
                 "--is-potential-partition",
             ),
         ),
-
         # STEP 2: Create empty/placeholder partitions for the to-be partitioned rpt.transaction_search in the rpt schema
         migrations.RunSQL(
             sql=f"""
@@ -82,7 +81,6 @@ class Migration(migrations.Migration):
                 DROP TABLE IF EXISTS rpt.transaction_search_fpds;
             """,
         ),
-
         # STEP 3: Copy the metadata from the temp partitions to these new placeholder partitions, so that their
         # metadata matches (except for _temp suffix on the source names), which will allow a swap to take place
         migrations.RunPython(

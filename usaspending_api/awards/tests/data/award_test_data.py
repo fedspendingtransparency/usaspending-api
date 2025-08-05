@@ -8,7 +8,9 @@ the test_awards files found within /awards/tests/.
 from model_bakery import baker
 import pytest
 
-from usaspending_api.submissions.models.dabs_submission_window_schedule import DABSSubmissionWindowSchedule
+from usaspending_api.submissions.models.dabs_submission_window_schedule import (
+    DABSSubmissionWindowSchedule,
+)
 
 AWARD_COUNT = 4
 RECIPIENT_HASH_PREFIX = "d0de516c-54af-4999-abda-428ce877"
@@ -19,7 +21,13 @@ AGENCY_COUNT_BY_AWARD_ID = {
     3: {"awarding": 0, "funding": 0},
     4: {"awarding": 1, "funding": 1},
 }
-OBLIGATED_AMOUNT_BY_AWARD_ID = {0: 0.0, 1: 110011.0, 2: 430043.0, 3: 960096.0, 4: 1700170.0}
+OBLIGATED_AMOUNT_BY_AWARD_ID = {
+    0: 0.0,
+    1: 110011.0,
+    2: 430043.0,
+    3: 960096.0,
+    4: 1700170.0,
+}
 
 DATE_IN_THE_PAST = "1776-07-04"
 DATE_IN_THE_FUTURE = "2553-04-01"

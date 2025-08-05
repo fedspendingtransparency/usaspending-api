@@ -136,12 +136,20 @@ def cfda_awards_and_transactions(db):
 
     # Toptier Agency
     ta1 = baker.make(
-        "references.ToptierAgency", abbreviation="TA1", name="TOPTIER AGENCY 1", toptier_code="ABC", _fill_optional=True
+        "references.ToptierAgency",
+        abbreviation="TA1",
+        name="TOPTIER AGENCY 1",
+        toptier_code="ABC",
+        _fill_optional=True,
     )
 
     # Federal Account
     fed_acct1 = baker.make(
-        "accounts.FederalAccount", id=1, parent_toptier_agency=ta1, agency_identifier="1", main_account_code="0001"
+        "accounts.FederalAccount",
+        id=1,
+        parent_toptier_agency=ta1,
+        agency_identifier="1",
+        main_account_code="0001",
     )
 
     # TAS

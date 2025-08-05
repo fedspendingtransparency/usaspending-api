@@ -7,7 +7,9 @@ from rest_framework import status
 
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 from usaspending_api.common.helpers.generic_helper import get_time_period_message
-from usaspending_api.search.tests.data.search_filters_test_data import non_legacy_filters
+from usaspending_api.search.tests.data.search_filters_test_data import (
+    non_legacy_filters,
+)
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
@@ -21,7 +23,14 @@ def _expected_messages():
 
 
 def _make_fpds_transaction(
-    id, award_id, obligation, action_date, recipient_duns, recipient_name, recipient_hash, piid=None
+    id,
+    award_id,
+    obligation,
+    action_date,
+    recipient_duns,
+    recipient_name,
+    recipient_hash,
+    piid=None,
 ):
     # Transaction Search
     baker.make(
@@ -75,8 +84,20 @@ def test_top_1_fails_with_es_transactions_routed_dangerously(client, monkeypatch
     recipient2 = "0aa0ab7e-efa0-e3f4-6f55-6b0ecaf636e6"
 
     # Recipient Lookup
-    baker.make("recipient.RecipientLookup", id=1, recipient_hash=recipient1, legal_business_name="Biz 1", duns="111")
-    baker.make("recipient.RecipientLookup", id=2, recipient_hash=recipient2, legal_business_name="Biz 2", duns="222")
+    baker.make(
+        "recipient.RecipientLookup",
+        id=1,
+        recipient_hash=recipient1,
+        legal_business_name="Biz 1",
+        duns="111",
+    )
+    baker.make(
+        "recipient.RecipientLookup",
+        id=2,
+        recipient_hash=recipient2,
+        legal_business_name="Biz 2",
+        duns="222",
+    )
 
     # Awards
     # Jam a routing key value into the piid field, and use the derived piid value for routing documents to shards later
@@ -168,8 +189,20 @@ def test_top_1_with_es_transactions_routed_by_recipient(client, monkeypatch, ela
     recipient2 = "0aa0ab7e-efa0-e3f4-6f55-6b0ecaf636e6"
 
     # Recipient Lookup
-    baker.make("recipient.RecipientLookup", id=1, recipient_hash=recipient1, legal_business_name="Biz 1", duns="111")
-    baker.make("recipient.RecipientLookup", id=2, recipient_hash=recipient2, legal_business_name="Biz 2", duns="222")
+    baker.make(
+        "recipient.RecipientLookup",
+        id=1,
+        recipient_hash=recipient1,
+        legal_business_name="Biz 1",
+        duns="111",
+    )
+    baker.make(
+        "recipient.RecipientLookup",
+        id=2,
+        recipient_hash=recipient2,
+        legal_business_name="Biz 2",
+        duns="222",
+    )
 
     # Transaction FPDS
     _make_fpds_transaction(1, 1, 2.00, "2020-01-01", "111", "Biz 1", recipient1)
@@ -240,7 +273,13 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
     expected_response = {
         "category": "recipient_duns",
         "limit": 10,
-        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "page_metadata": {
+            "page": 1,
+            "next": None,
+            "previous": None,
+            "hasNext": False,
+            "hasPrevious": False,
+        },
         "results": [
             {
                 "amount": 5000000.0,
@@ -290,7 +329,14 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
                 "uei": "UEIAAABBBCCC",
                 "total_outlays": None,
             },
-            {"amount": 30.0, "code": None, "name": None, "recipient_id": None, "uei": None, "total_outlays": None},
+            {
+                "amount": 30.0,
+                "code": None,
+                "name": None,
+                "recipient_id": None,
+                "uei": None,
+                "total_outlays": None,
+            },
             {
                 "amount": 5.0,
                 "code": None,
@@ -319,7 +365,13 @@ def test_correct_response_of_empty_list(client, monkeypatch, elasticsearch_trans
     expected_response = {
         "category": "recipient_duns",
         "limit": 10,
-        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "page_metadata": {
+            "page": 1,
+            "next": None,
+            "previous": None,
+            "hasNext": False,
+            "hasPrevious": False,
+        },
         "results": [],
         "messages": _expected_messages(),
         "spending_level": "transactions",
@@ -340,7 +392,13 @@ def test_recipient_search_text_uei(client, monkeypatch, elasticsearch_transactio
     expected_response = {
         "category": "recipient_duns",
         "limit": 10,
-        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "page_metadata": {
+            "page": 1,
+            "next": None,
+            "previous": None,
+            "hasNext": False,
+            "hasPrevious": False,
+        },
         "results": [
             {
                 "amount": 50.0,
@@ -370,7 +428,13 @@ def test_recipient_search_text_duns(client, monkeypatch, elasticsearch_transacti
     expected_response = {
         "category": "recipient_duns",
         "limit": 10,
-        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "page_metadata": {
+            "page": 1,
+            "next": None,
+            "previous": None,
+            "hasNext": False,
+            "hasPrevious": False,
+        },
         "results": [
             {
                 "amount": 500.0,

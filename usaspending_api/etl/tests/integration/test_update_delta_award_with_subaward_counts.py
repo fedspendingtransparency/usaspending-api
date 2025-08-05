@@ -7,7 +7,10 @@ from django.core.management import call_command
 from django.db import connections
 from model_bakery import baker
 
-from usaspending_api.tests.conftest_spark import create_and_load_all_delta_tables, create_all_delta_tables
+from usaspending_api.tests.conftest_spark import (
+    create_and_load_all_delta_tables,
+    create_all_delta_tables,
+)
 
 
 @pytest.fixture
@@ -134,14 +137,29 @@ def delete_all_subawards(initial_award_and_subaward_data):
     return initial_award_and_subaward_data
 
 
-@pytest.mark.django_db(transaction=True, databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
+@pytest.mark.django_db(
+    transaction=True,
+    databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS],
+)
 @pytest.mark.parametrize(
     "fixture_name,expected_manipulated_value",
     [
-        ("initial_award_and_subaward_data", {"id": 3, "subaward_count": 2, "total_subaward_amount": Decimal(140)}),
-        ("create_new_subaward", {"id": 3, "subaward_count": 3, "total_subaward_amount": Decimal(440)}),
-        ("delete_one_subaward", {"id": 3, "subaward_count": 1, "total_subaward_amount": Decimal(100)}),
-        ("delete_all_subawards", {"id": 3, "subaward_count": 0, "total_subaward_amount": None}),
+        (
+            "initial_award_and_subaward_data",
+            {"id": 3, "subaward_count": 2, "total_subaward_amount": Decimal(140)},
+        ),
+        (
+            "create_new_subaward",
+            {"id": 3, "subaward_count": 3, "total_subaward_amount": Decimal(440)},
+        ),
+        (
+            "delete_one_subaward",
+            {"id": 3, "subaward_count": 1, "total_subaward_amount": Decimal(100)},
+        ),
+        (
+            "delete_all_subawards",
+            {"id": 3, "subaward_count": 0, "total_subaward_amount": None},
+        ),
     ],
 )
 def test_update_award_with_subaward(
@@ -181,9 +199,12 @@ def test_update_award_with_subaward(
         {
             "id": award.award_id,
             "subaward_count": award.subaward_count,
-            "total_subaward_amount": Decimal(award.total_subaward_amount) if award.total_subaward_amount else None,
+            "total_subaward_amount": (Decimal(award.total_subaward_amount) if award.total_subaward_amount else None),
         }
-        for award in [fixture_value["static_award_no_subawards"], fixture_value["static_award_with_subawards"]]
+        for award in [
+            fixture_value["static_award_no_subawards"],
+            fixture_value["static_award_with_subawards"],
+        ]
     ]
     actual_static_values = [
         award_row.asDict()

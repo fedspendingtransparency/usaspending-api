@@ -7,10 +7,20 @@ from model_bakery import baker
 from rest_framework import status
 
 from usaspending_api.awards.models import FinancialAccountsByAwards
-from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.financial_activities.models import (
+    FinancialAccountsByProgramActivityObjectClass,
+)
 from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount
-from usaspending_api.references.models import Agency, GTASSF133Balances, ToptierAgency, ObjectClass
-from usaspending_api.submissions.models import DABSSubmissionWindowSchedule, SubmissionAttributes
+from usaspending_api.references.models import (
+    Agency,
+    GTASSF133Balances,
+    ToptierAgency,
+    ObjectClass,
+)
+from usaspending_api.submissions.models import (
+    DABSSubmissionWindowSchedule,
+    SubmissionAttributes,
+)
 from usaspending_api.search.models import TransactionSearch, AwardSearch
 
 ENDPOINT_URL = "/api/v2/spending/"
@@ -27,7 +37,12 @@ GLOBAL_MOCK_DICT = [
         "is_quarter": True,
     },
     {"model": ObjectClass, "id": 1},
-    {"model": GTASSF133Balances, "fiscal_year": 1600, "fiscal_period": 3, "obligations_incurred_total_cpe": -10},
+    {
+        "model": GTASSF133Balances,
+        "fiscal_year": 1600,
+        "fiscal_period": 3,
+        "obligations_incurred_total_cpe": -10,
+    },
     {
         "model": SubmissionAttributes,
         "submission_id": -1,
@@ -202,7 +217,11 @@ def test_unreported_data_actual_value_file_b(client):
 
     expected_results = {
         "total": -10,
-        "agencies": ["Unreported Data", "random_funding_name_2", "random_funding_name_1"],
+        "agencies": [
+            "Unreported Data",
+            "random_funding_name_2",
+            "random_funding_name_1",
+        ],
         "amounts": [6, -1, -15],
     }
 
@@ -228,7 +247,12 @@ def test_unreported_data_actual_value_file_c(client):
             "submission_reveal_date": datetime(1600, 1, 28, tzinfo=timezone.utc),
             "is_quarter": True,
         },
-        {"model": GTASSF133Balances, "fiscal_year": 1600, "fiscal_period": 3, "obligations_incurred_total_cpe": -10},
+        {
+            "model": GTASSF133Balances,
+            "fiscal_year": 1600,
+            "fiscal_period": 3,
+            "obligations_incurred_total_cpe": -10,
+        },
         {
             "model": SubmissionAttributes,
             "submission_id": -1,
@@ -250,8 +274,16 @@ def test_unreported_data_actual_value_file_c(client):
         },
         {"model": Agency, "id": -1, "toptier_agency_id": -1, "toptier_flag": True},
         {"model": Agency, "id": -2, "toptier_agency_id": -2, "toptier_flag": True},
-        {"model": TreasuryAppropriationAccount, "treasury_account_identifier": -1, "funding_toptier_agency_id": -1},
-        {"model": TreasuryAppropriationAccount, "treasury_account_identifier": -2, "funding_toptier_agency_id": -2},
+        {
+            "model": TreasuryAppropriationAccount,
+            "treasury_account_identifier": -1,
+            "funding_toptier_agency_id": -1,
+        },
+        {
+            "model": TreasuryAppropriationAccount,
+            "treasury_account_identifier": -2,
+            "funding_toptier_agency_id": -2,
+        },
         {
             "model": TransactionSearch,
             "transaction_id": 1,
@@ -362,7 +394,10 @@ def test_unreported_data_actual_value_file_c(client):
     for entry in models_to_mock:
         baker.make(entry.pop("model"), **entry)
 
-    json_request = {"type": "recipient", "filters": {"agency": "-1", "fy": "1600", "quarter": "1"}}
+    json_request = {
+        "type": "recipient",
+        "filters": {"agency": "-1", "fy": "1600", "quarter": "1"},
+    }
 
     response = client.post(path=ENDPOINT_URL, content_type=CONTENT_TYPE, data=json.dumps(json_request))
 
@@ -400,7 +435,10 @@ def test_federal_account_linkage(client):
     models = copy.deepcopy(GLOBAL_MOCK_DICT)
     for entry in models:
         baker.make(entry.pop("model"), **entry)
-    json_request = {"type": "federal_account", "filters": {"fy": "1600", "quarter": "1"}}
+    json_request = {
+        "type": "federal_account",
+        "filters": {"fy": "1600", "quarter": "1"},
+    }
     response = client.post(path=ENDPOINT_URL, content_type=CONTENT_TYPE, data=json.dumps(json_request))
     json_response = response.json()
     assert json_response["results"][0]["account_number"] == "867-5309"
@@ -421,7 +459,12 @@ def test_budget_function_filter_success(setup_only_dabs_window, client):
     resp = client.post(
         "/api/v2/spending/",
         content_type="application/json",
-        data=json.dumps({"type": "federal_account", "filters": {"fy": "2017", "quarter": 1, "budget_function": "050"}}),
+        data=json.dumps(
+            {
+                "type": "federal_account",
+                "filters": {"fy": "2017", "quarter": 1, "budget_function": "050"},
+            }
+        ),
     )
     assert resp.status_code == status.HTTP_200_OK
 
@@ -432,7 +475,12 @@ def test_budget_function_filter_success(setup_only_dabs_window, client):
         data=json.dumps(
             {
                 "type": "federal_account",
-                "filters": {"fy": "2017", "quarter": 1, "budget_function": "050", "budget_subfunction": "053"},
+                "filters": {
+                    "fy": "2017",
+                    "quarter": 1,
+                    "budget_function": "050",
+                    "budget_subfunction": "053",
+                },
             }
         ),
     )
@@ -525,7 +573,11 @@ def test_budget_function_filter_success(setup_only_dabs_window, client):
 def test_budget_function_failure(client):
     """Verify error on bad autocomplete request for budget function."""
 
-    resp = client.post("/api/v2/search/spending_over_time/", content_type="application/json", data=json.dumps({}))
+    resp = client.post(
+        "/api/v2/search/spending_over_time/",
+        content_type="application/json",
+        data=json.dumps({}),
+    )
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
@@ -552,7 +604,12 @@ def test_object_class_filter_success(setup_only_dabs_window, client):
     resp = client.post(
         "/api/v2/spending/",
         content_type="application/json",
-        data=json.dumps({"type": "agency", "filters": {"fy": "2017", "quarter": 1, "object_class": "20"}}),
+        data=json.dumps(
+            {
+                "type": "agency",
+                "filters": {"fy": "2017", "quarter": 1, "object_class": "20"},
+            }
+        ),
     )
     assert resp.status_code == status.HTTP_200_OK
 
@@ -560,7 +617,12 @@ def test_object_class_filter_success(setup_only_dabs_window, client):
     resp = client.post(
         "/api/v2/spending/",
         content_type="application/json",
-        data=json.dumps({"type": "federal_account", "filters": {"fy": "2017", "quarter": 1, "object_class": "20"}}),
+        data=json.dumps(
+            {
+                "type": "federal_account",
+                "filters": {"fy": "2017", "quarter": 1, "object_class": "20"},
+            }
+        ),
     )
     assert resp.status_code == status.HTTP_200_OK
 
@@ -571,7 +633,12 @@ def test_object_class_filter_success(setup_only_dabs_window, client):
         data=json.dumps(
             {
                 "type": "program_activity",
-                "filters": {"fy": "2017", "quarter": 1, "object_class": "20", "federal_account": 2358},
+                "filters": {
+                    "fy": "2017",
+                    "quarter": 1,
+                    "object_class": "20",
+                    "federal_account": 2358,
+                },
             }
         ),
     )
@@ -621,7 +688,11 @@ def test_object_class_filter_success(setup_only_dabs_window, client):
 def test_object_class_failure(client):
     """Verify error on bad autocomplete request for budget function."""
 
-    resp = client.post("/api/v2/search/spending_over_time/", content_type="application/json", data=json.dumps({}))
+    resp = client.post(
+        "/api/v2/search/spending_over_time/",
+        content_type="application/json",
+        data=json.dumps({}),
+    )
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
@@ -672,7 +743,12 @@ def test_agency_filter_success(setup_only_dabs_window, client):
     resp = client.post(
         "/api/v2/spending/",
         content_type="application/json",
-        data=json.dumps({"type": "program_activity", "filters": {"fy": "2017", "quarter": 1, "federal_account": 1500}}),
+        data=json.dumps(
+            {
+                "type": "program_activity",
+                "filters": {"fy": "2017", "quarter": 1, "federal_account": 1500},
+            }
+        ),
     )
     assert resp.status_code == status.HTTP_200_OK
 
@@ -683,7 +759,12 @@ def test_agency_filter_success(setup_only_dabs_window, client):
         data=json.dumps(
             {
                 "type": "object_class",
-                "filters": {"fy": "2017", "quarter": 1, "federal_account": 1500, "program_activity": 12697},
+                "filters": {
+                    "fy": "2017",
+                    "quarter": 1,
+                    "federal_account": 1500,
+                    "program_activity": 12697,
+                },
             }
         ),
     )
@@ -733,7 +814,11 @@ def test_agency_filter_success(setup_only_dabs_window, client):
 def test_agency_failure(client):
     """Verify error on bad autocomplete request for budget function."""
 
-    resp = client.post("/api/v2/search/spending_over_time/", content_type="application/json", data=json.dumps({}))
+    resp = client.post(
+        "/api/v2/search/spending_over_time/",
+        content_type="application/json",
+        data=json.dumps({}),
+    )
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
     # Test for Object Class Results
@@ -762,7 +847,10 @@ def test_object_budget_match(client):
         },
     )
 
-    json_request = {"type": "budget_function", "filters": {"fy": "1600", "quarter": "1"}}
+    json_request = {
+        "type": "budget_function",
+        "filters": {"fy": "1600", "quarter": "1"},
+    }
 
     response = client.post(path=ENDPOINT_URL, content_type=CONTENT_TYPE, data=json.dumps(json_request))
 
@@ -832,14 +920,24 @@ def test_period(setup_only_dabs_window, client):
     resp = client.post(
         "/api/v2/spending/",
         content_type="application/json",
-        data=json.dumps({"type": "program_activity", "filters": {"fy": "2017", "quarter": 1, "federal_account": 1500}}),
+        data=json.dumps(
+            {
+                "type": "program_activity",
+                "filters": {"fy": "2017", "quarter": 1, "federal_account": 1500},
+            }
+        ),
     )
     assert resp.status_code == status.HTTP_200_OK
 
     resp2 = client.post(
         "/api/v2/spending/",
         content_type="application/json",
-        data=json.dumps({"type": "program_activity", "filters": {"fy": "2017", "period": 3, "federal_account": 1500}}),
+        data=json.dumps(
+            {
+                "type": "program_activity",
+                "filters": {"fy": "2017", "period": 3, "federal_account": 1500},
+            }
+        ),
     )
     assert resp2.status_code == status.HTTP_200_OK
     assert resp.json() == resp2.json()
@@ -851,7 +949,12 @@ def test_period(setup_only_dabs_window, client):
         data=json.dumps(
             {
                 "type": "object_class",
-                "filters": {"fy": "2017", "quarter": 1, "federal_account": 1500, "program_activity": 12697},
+                "filters": {
+                    "fy": "2017",
+                    "quarter": 1,
+                    "federal_account": 1500,
+                    "program_activity": 12697,
+                },
             }
         ),
     )
@@ -863,7 +966,12 @@ def test_period(setup_only_dabs_window, client):
         data=json.dumps(
             {
                 "type": "object_class",
-                "filters": {"fy": "2017", "period": 3, "federal_account": 1500, "program_activity": 12697},
+                "filters": {
+                    "fy": "2017",
+                    "period": 3,
+                    "federal_account": 1500,
+                    "program_activity": 12697,
+                },
             }
         ),
     )
@@ -962,7 +1070,12 @@ def test_unreported_file_c(client):
             "submission_reveal_date": datetime(1600, 1, 28, tzinfo=timezone.utc),
             "is_quarter": True,
         },
-        {"model": GTASSF133Balances, "fiscal_year": 1600, "fiscal_period": 3, "obligations_incurred_total_cpe": -10},
+        {
+            "model": GTASSF133Balances,
+            "fiscal_year": 1600,
+            "fiscal_period": 3,
+            "obligations_incurred_total_cpe": -10,
+        },
         {
             "model": SubmissionAttributes,
             "submission_id": -1,
@@ -984,8 +1097,16 @@ def test_unreported_file_c(client):
         },
         {"model": Agency, "id": -1, "toptier_agency_id": -1, "toptier_flag": True},
         {"model": Agency, "id": -2, "toptier_agency_id": -2, "toptier_flag": True},
-        {"model": TreasuryAppropriationAccount, "treasury_account_identifier": -1, "funding_toptier_agency_id": -1},
-        {"model": TreasuryAppropriationAccount, "treasury_account_identifier": -2, "funding_toptier_agency_id": -2},
+        {
+            "model": TreasuryAppropriationAccount,
+            "treasury_account_identifier": -1,
+            "funding_toptier_agency_id": -1,
+        },
+        {
+            "model": TreasuryAppropriationAccount,
+            "treasury_account_identifier": -2,
+            "funding_toptier_agency_id": -2,
+        },
         {
             "model": FinancialAccountsByProgramActivityObjectClass,
             "financial_accounts_by_program_activity_object_class_id": -1,
@@ -1168,9 +1289,15 @@ def test_unreported_file_c(client):
     for entry in models_to_mock:
         baker.make(entry.pop("model"), **entry)
 
-    json_request = {"type": "recipient", "filters": {"agency": "-1", "fy": "1600", "quarter": "1"}}
+    json_request = {
+        "type": "recipient",
+        "filters": {"agency": "-1", "fy": "1600", "quarter": "1"},
+    }
     resp = client.post("/api/v2/spending/", content_type="application/json", data=json_request)
-    json_request2 = {"type": "object_class", "filters": {"agency": "-1", "fy": "1600", "quarter": "1"}}
+    json_request2 = {
+        "type": "object_class",
+        "filters": {"agency": "-1", "fy": "1600", "quarter": "1"},
+    }
     resp2 = client.post("/api/v2/spending/", content_type="application/json", data=json_request2)
     assert resp.status_code == status.HTTP_200_OK
     assert resp2.status_code == status.HTTP_200_OK

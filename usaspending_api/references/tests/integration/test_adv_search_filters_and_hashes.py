@@ -18,7 +18,9 @@ def stored_hashes(db):
 @pytest.mark.django_db
 def test_missing_hash(client):
     resp = client.post(
-        HASH_ENDPOINT, content_type="application/json", data={"hash": "1c89eccf09b7dc74a75b651af79602e7"}
+        HASH_ENDPOINT,
+        content_type="application/json",
+        data={"hash": "1c89eccf09b7dc74a75b651af79602e7"},
     )
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
@@ -26,7 +28,9 @@ def test_missing_hash(client):
 @pytest.mark.django_db
 def test_generate_hash_success(client):
     resp = client.post(
-        FILTER_ENDPOINT, content_type="application/json", data={"filters": "Department of Transportation"}
+        FILTER_ENDPOINT,
+        content_type="application/json",
+        data={"filters": "Department of Transportation"},
     )
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["hash"] == "1c89eccf09b7dc74a75b651af79602e7"
@@ -38,7 +42,9 @@ def test_new_hash(client):
     resp = client.post(FILTER_ENDPOINT, content_type="application/json", data=filter_payload)
 
     resp = client.post(
-        HASH_ENDPOINT, content_type="application/json", data={"hash": "1c89eccf09b7dc74a75b651af79602e7"}
+        HASH_ENDPOINT,
+        content_type="application/json",
+        data={"hash": "1c89eccf09b7dc74a75b651af79602e7"},
     )
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["filter"] == filter_payload

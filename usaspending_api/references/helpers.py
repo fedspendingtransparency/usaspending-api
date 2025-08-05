@@ -5,7 +5,10 @@ from django.utils.text import slugify
 
 from usaspending_api.references.models.cgac import CGAC
 from usaspending_api.references.models.frec import FREC
-from usaspending_api.references.models import ToptierAgencyPublishedDABSView, DisasterEmergencyFundCode
+from usaspending_api.references.models import (
+    ToptierAgencyPublishedDABSView,
+    DisasterEmergencyFundCode,
+)
 
 
 def retrive_agency_name_from_code(code: str) -> Optional[str]:

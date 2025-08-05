@@ -7,23 +7,25 @@ import usaspending_api.common.custom_django_fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('awards', '0084_auto_20210805_1722'),
+        ("awards", "0084_auto_20210805_1722"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='transactionfabs',
-            name='funding_opportunity_goals',
+            model_name="transactionfabs",
+            name="funding_opportunity_goals",
             field=models.TextField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='transactionfabs',
-            name='funding_opportunity_number',
+            model_name="transactionfabs",
+            name="funding_opportunity_number",
             field=models.TextField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='transactionfabs',
-            name='indirect_federal_sharing',
-            field=usaspending_api.common.custom_django_fields.NumericField(blank=True, null=True),
+            model_name="transactionfabs",
+            name="indirect_federal_sharing",
+            field=usaspending_api.common.custom_django_fields.NumericField(
+                blank=True, null=True
+            ),
         ),
     ]

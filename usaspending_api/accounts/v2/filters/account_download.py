@@ -56,7 +56,9 @@ from usaspending_api.common.helpers.orm_helpers import (
     StringAggWithDefault,
 )
 from usaspending_api.download.filestreaming import NAMING_CONFLICT_DISCRIMINATOR
-from usaspending_api.download.helpers.download_annotation_functions import congressional_district_display_name
+from usaspending_api.download.helpers.download_annotation_functions import (
+    congressional_district_display_name,
+)
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 from usaspending_api.references.models import ToptierAgency, CGAC
 from usaspending_api.settings import HOST
@@ -152,7 +154,10 @@ def get_gtas_submission_filter():
         )
         .values("submission_fiscal_year", "is_quarter")
         .annotate(max_submission_fiscal_month=Max("submission_fiscal_month"))
-        .filter(submission_fiscal_year=OuterRef("fiscal_year"), max_submission_fiscal_month=OuterRef("fiscal_period"))
+        .filter(
+            submission_fiscal_year=OuterRef("fiscal_year"),
+            max_submission_fiscal_month=OuterRef("fiscal_period"),
+        )
     )
 
 
@@ -473,7 +478,9 @@ def award_financial_derivations(derived_fields):
             **{
                 "award__generated_unique_award_id__isnull": False,
                 "then": ConcatAll(
-                    Value(AWARD_URL), Func(F("award__generated_unique_award_id"), function="urlencode"), Value("/")
+                    Value(AWARD_URL),
+                    Func(F("award__generated_unique_award_id"), function="urlencode"),
+                    Value("/"),
                 ),
             }
         ),
@@ -522,7 +529,13 @@ def gtas_balances_derivations(derived_fields):
         F("treasury_account_identifier__allocation_transfer_agency_id"),
         Case(
             When(
-                tas_component_count=5, then=Func(F("tas_rendering_label"), Value("-"), Value(1), function="SPLIT_PART")
+                tas_component_count=5,
+                then=Func(
+                    F("tas_rendering_label"),
+                    Value("-"),
+                    Value(1),
+                    function="SPLIT_PART",
+                ),
             ),
             default=None,
             output_field=TextField(),
@@ -534,7 +547,11 @@ def gtas_balances_derivations(derived_fields):
             When(
                 tas_component_count=5,
                 then=Func(
-                    F("tas_rendering_label"), Value("-"), Value(2), function="SPLIT_PART", output_field=TextField()
+                    F("tas_rendering_label"),
+                    Value("-"),
+                    Value(2),
+                    function="SPLIT_PART",
+                    output_field=TextField(),
                 ),
             ),
             default=Func(F("tas_rendering_label"), Value("-"), Value(1), function="SPLIT_PART"),
@@ -550,7 +567,11 @@ def gtas_balances_derivations(derived_fields):
                 then=Func(
                     Func(
                         Func(
-                            Func(F("tas_rendering_label"), function="REVERSE", output_field=TextField()),
+                            Func(
+                                F("tas_rendering_label"),
+                                function="REVERSE",
+                                output_field=TextField(),
+                            ),
                             Value("-"),
                             Value(3),
                             function="SPLIT_PART",
@@ -578,7 +599,11 @@ def gtas_balances_derivations(derived_fields):
                 then=Func(
                     Func(
                         Func(
-                            Func(F("tas_rendering_label"), function="REVERSE", output_field=TextField()),
+                            Func(
+                                F("tas_rendering_label"),
+                                function="REVERSE",
+                                output_field=TextField(),
+                            ),
                             Value("-"),
                             Value(3),
                             function="SPLIT_PART",

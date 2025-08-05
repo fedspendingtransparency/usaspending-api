@@ -1,7 +1,21 @@
-from django.db.models import Avg, Count, F, Q, Max, Min, Sum, Func, IntegerField, ExpressionWrapper
+from django.db.models import (
+    Avg,
+    Count,
+    F,
+    Q,
+    Max,
+    Min,
+    Sum,
+    Func,
+    IntegerField,
+    ExpressionWrapper,
+)
 from django.db.models.functions import ExtractDay, ExtractMonth, ExtractYear
 
-from usaspending_api.common.api_request_utils import FilterGenerator, AutoCompleteHandler
+from usaspending_api.common.api_request_utils import (
+    FilterGenerator,
+    AutoCompleteHandler,
+)
 from usaspending_api.common.exceptions import InvalidParameterException
 
 
@@ -45,7 +59,11 @@ class AggregateQuerysetMixin(object):
 
         if group_fields and date_part:
             # group queryset by a date field and aggregate
-            group_func_map = {"year": ExtractYear, "month": ExtractMonth, "day": ExtractDay}
+            group_func_map = {
+                "year": ExtractYear,
+                "month": ExtractMonth,
+                "day": ExtractDay,
+            }
             group_func = group_func_map.get(date_part)
             aggregate = (
                 queryset.annotate(item=group_func(group_fields[0]))

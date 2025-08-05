@@ -1,7 +1,11 @@
 from django.core.management.base import BaseCommand
 
-from usaspending_api.transactions.agnostic_transaction_loader import AgnosticTransactionLoader
-from usaspending_api.transactions.models.source_procurement_transaction import SourceProcurementTransaction
+from usaspending_api.transactions.agnostic_transaction_loader import (
+    AgnosticTransactionLoader,
+)
+from usaspending_api.transactions.models.source_procurement_transaction import (
+    SourceProcurementTransaction,
+)
 
 
 class Command(AgnosticTransactionLoader, BaseCommand):

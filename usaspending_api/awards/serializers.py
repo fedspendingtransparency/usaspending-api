@@ -3,7 +3,10 @@ from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.awards.models import TransactionFPDS, TransactionFABS
 from usaspending_api.common.serializers import LimitableSerializer
 from usaspending_api.references.v1.serializers import CfdaSerializer
-from usaspending_api.references.v1.serializers import ProgramActivitySerializer, ObjectClassSerializer
+from usaspending_api.references.v1.serializers import (
+    ProgramActivitySerializer,
+    ObjectClassSerializer,
+)
 from usaspending_api.submissions.serializers import SubmissionAttributesSerializer
 
 
@@ -44,9 +47,18 @@ class FinancialAccountsByAwardsSerializer(LimitableSerializer):
                     ],
                 },
             },
-            "program_activity": {"class": ProgramActivitySerializer, "kwargs": {"read_only": True}},
-            "object_class": {"class": ObjectClassSerializer, "kwargs": {"read_only": True}},
-            "submission": {"class": SubmissionAttributesSerializer, "kwargs": {"read_only": True}},
+            "program_activity": {
+                "class": ProgramActivitySerializer,
+                "kwargs": {"read_only": True},
+            },
+            "object_class": {
+                "class": ObjectClassSerializer,
+                "kwargs": {"read_only": True},
+            },
+            "submission": {
+                "class": SubmissionAttributesSerializer,
+                "kwargs": {"read_only": True},
+            },
         }
 
 

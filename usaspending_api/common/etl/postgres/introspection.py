@@ -33,7 +33,11 @@ def _get_whatever(table_name: str, schema_name: str, dblink_name: str, sql: str,
     return sql_helpers.execute_sql_to_ordered_dictionary(sql, read_only=False)
 
 
-def get_columns(table_name: str, schema_name: Optional[str] = None, dblink_name: Optional[str] = None) -> List[str]:
+def get_columns(
+    table_name: str,
+    schema_name: Optional[str] = None,
+    dblink_name: Optional[str] = None,
+) -> List[str]:
     """Grab column names from the table."""
     sql = """
         select    attname as column_name
@@ -45,7 +49,11 @@ def get_columns(table_name: str, schema_name: Optional[str] = None, dblink_name:
     return [r["column_name"] for r in rows]
 
 
-def get_data_types(table_name: str, schema_name: Optional[str] = None, dblink_name: Optional[str] = None) -> DataTypes:
+def get_data_types(
+    table_name: str,
+    schema_name: Optional[str] = None,
+    dblink_name: Optional[str] = None,
+) -> DataTypes:
     """Grab column names and database data types."""
     sql = """
         select    attname as column_name,
@@ -60,7 +68,11 @@ def get_data_types(table_name: str, schema_name: Optional[str] = None, dblink_na
         tuple(
             (
                 r["column_name"],
-                ColumnDefinition(name=r["column_name"], data_type=r["data_type"], not_nullable=r["not_nullable"]),
+                ColumnDefinition(
+                    name=r["column_name"],
+                    data_type=r["data_type"],
+                    not_nullable=r["not_nullable"],
+                ),
             )
             for r in rows
         )
@@ -68,7 +80,9 @@ def get_data_types(table_name: str, schema_name: Optional[str] = None, dblink_na
 
 
 def get_primary_key_columns(
-    table_name: str, schema_name: Optional[str] = None, dblink_name: Optional[str] = None
+    table_name: str,
+    schema_name: Optional[str] = None,
+    dblink_name: Optional[str] = None,
 ) -> List[str]:
     """Grab column names comprising the primary key."""
     sql = """
@@ -92,4 +106,9 @@ def get_query_columns(sql: str) -> List[str]:
     return [col[0] for col in cursor.description]
 
 
-__all__ = ["get_columns", "get_data_types", "get_primary_key_columns", "get_query_columns"]
+__all__ = [
+    "get_columns",
+    "get_data_types",
+    "get_primary_key_columns",
+    "get_query_columns",
+]

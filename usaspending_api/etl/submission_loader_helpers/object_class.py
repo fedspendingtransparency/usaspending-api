@@ -75,5 +75,8 @@ def get_object_class(row_object_class, row_direct_reimbursable):
         row_object_class: object class from the broker
         row_direct_reimbursable: direct/reimbursable flag from the broker
     """
-    row = Bunch(object_class=row_object_class, by_direct_reimbursable_fun=row_direct_reimbursable)
+    row = Bunch(
+        object_class=row_object_class,
+        by_direct_reimbursable_fun=row_direct_reimbursable,
+    )
     return get_object_class_row(row)

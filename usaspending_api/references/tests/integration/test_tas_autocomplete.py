@@ -9,8 +9,18 @@ BASE_ENDPOINT = "/api/v2/autocomplete/accounts/"
 
 @pytest.fixture
 def test_data(db):
-    baker.make("references.CGAC", cgac_code="000", agency_name="Agency 000", agency_abbreviation="A000")
-    baker.make("references.CGAC", cgac_code="002", agency_name="Agency 002", agency_abbreviation="A002")
+    baker.make(
+        "references.CGAC",
+        cgac_code="000",
+        agency_name="Agency 000",
+        agency_abbreviation="A000",
+    )
+    baker.make(
+        "references.CGAC",
+        cgac_code="002",
+        agency_name="Agency 002",
+        agency_abbreviation="A002",
+    )
 
     award = baker.make("search.AwardSearch", award_id=1)
 
@@ -84,7 +94,11 @@ def test_autocomplete_filters(client, test_data):
         {},
         {
             "results": [
-                {"ata": "000", "agency_name": "Agency 000", "agency_abbreviation": "A000"},
+                {
+                    "ata": "000",
+                    "agency_name": "Agency 000",
+                    "agency_abbreviation": "A000",
+                },
                 {"ata": "001", "agency_name": None, "agency_abbreviation": None},
                 {"ata": None, "agency_name": None, "agency_abbreviation": None},
             ]
@@ -96,7 +110,15 @@ def test_autocomplete_filters(client, test_data):
         client,
         endpoint,
         {"limit": 1},
-        {"results": [{"ata": "000", "agency_name": "Agency 000", "agency_abbreviation": "A000"}]},
+        {
+            "results": [
+                {
+                    "ata": "000",
+                    "agency_name": "Agency 000",
+                    "agency_abbreviation": "A000",
+                }
+            ]
+        },
     )
 
     # Test with filter on component of interest.
@@ -106,7 +128,11 @@ def test_autocomplete_filters(client, test_data):
         {"filters": {"ata": "0"}},
         {
             "results": [
-                {"ata": "000", "agency_name": "Agency 000", "agency_abbreviation": "A000"},
+                {
+                    "ata": "000",
+                    "agency_name": "Agency 000",
+                    "agency_abbreviation": "A000",
+                },
                 {"ata": "001", "agency_name": None, "agency_abbreviation": None},
             ]
         },
@@ -146,7 +172,15 @@ def test_autocomplete_aid(client, test_data):
         client,
         BASE_ENDPOINT + "aid",
         {"filters": {"aid": "002"}},
-        {"results": [{"aid": "002", "agency_name": "Agency 002", "agency_abbreviation": "A002"}]},
+        {
+            "results": [
+                {
+                    "aid": "002",
+                    "agency_name": "Agency 002",
+                    "agency_abbreviation": "A002",
+                }
+            ]
+        },
     )
     _post(client, BASE_ENDPOINT + "aid", {"filters": {"aid": "2"}}, {"results": []})
 
@@ -154,14 +188,24 @@ def test_autocomplete_aid(client, test_data):
 @pytest.mark.django_db
 def test_autocomplete_bpoa(client, test_data):
 
-    _post(client, BASE_ENDPOINT + "bpoa", {"filters": {"bpoa": "9"}}, {"results": ["923456"]})
+    _post(
+        client,
+        BASE_ENDPOINT + "bpoa",
+        {"filters": {"bpoa": "9"}},
+        {"results": ["923456"]},
+    )
     _post(client, BASE_ENDPOINT + "bpoa", {"filters": {"bpoa": "6"}}, {"results": []})
 
 
 @pytest.mark.django_db
 def test_autocomplete_epoa(client, test_data):
 
-    _post(client, BASE_ENDPOINT + "epoa", {"filters": {"epoa": "9"}}, {"results": ["934567"]})
+    _post(
+        client,
+        BASE_ENDPOINT + "epoa",
+        {"filters": {"epoa": "9"}},
+        {"results": ["934567"]},
+    )
     _post(client, BASE_ENDPOINT + "epoa", {"filters": {"epoa": "7"}}, {"results": []})
 
 
@@ -175,7 +219,12 @@ def test_autocomplete_a(client, test_data):
 @pytest.mark.django_db
 def test_autocomplete_main(client, test_data):
 
-    _post(client, BASE_ENDPOINT + "main", {"filters": {"main": "9"}}, {"results": ["9234"]})
+    _post(
+        client,
+        BASE_ENDPOINT + "main",
+        {"filters": {"main": "9"}},
+        {"results": ["9234"]},
+    )
     _post(client, BASE_ENDPOINT + "main", {"filters": {"main": "4"}}, {"results": []})
 
 

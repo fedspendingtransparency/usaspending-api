@@ -15,7 +15,9 @@ from django.db import connection
 from openpyxl import load_workbook
 from time import perf_counter
 
-from usaspending_api.common.helpers.fiscal_year_helpers import generate_fiscal_year_and_quarter
+from usaspending_api.common.helpers.fiscal_year_helpers import (
+    generate_fiscal_year_and_quarter,
+)
 from usaspending_api.common.helpers.generic_helper import read_text_file
 
 TAS_XLSX_FILE = "usaspending_api/data/DEFC ABC Pd 6 FY18.xlsx"
@@ -67,9 +69,25 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         default_dir = os.path.dirname(os.path.abspath(__file__))
-        parser.add_argument("-d", "--destination", default=default_dir, type=str, help="Location of output file")
-        parser.add_argument("-k", "--keep-files", action="store_true", help="If provided, don't delete the temp files")
-        parser.add_argument("-p", "--print-zip-path", action="store_true", help="Return the zip path and exit")
+        parser.add_argument(
+            "-d",
+            "--destination",
+            default=default_dir,
+            type=str,
+            help="Location of output file",
+        )
+        parser.add_argument(
+            "-k",
+            "--keep-files",
+            action="store_true",
+            help="If provided, don't delete the temp files",
+        )
+        parser.add_argument(
+            "-p",
+            "--print-zip-path",
+            action="store_true",
+            help="Return the zip path and exit",
+        )
 
     def handle(self, *args, **options):
         script_start = perf_counter()
@@ -105,7 +123,15 @@ class Command(BaseCommand):
         ws = wb["DEFC"]
         ws.calculate_dimension()
         tas_code_header = ws["A8":"G8"]
-        expected_headers = ["ATA", "AID", "BPOA", "EPOA", "AvailType Code", "Main", "Sub"]
+        expected_headers = [
+            "ATA",
+            "AID",
+            "BPOA",
+            "EPOA",
+            "AvailType Code",
+            "Main",
+            "Sub",
+        ]
         headers = []
         for header in tas_code_header:
             for cell in header:

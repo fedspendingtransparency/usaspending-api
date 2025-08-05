@@ -26,9 +26,27 @@ def test_validate_location_keys():
     with pytest.raises(InvalidParameterException, match=INCOMPATIBLE_DISTRICT_LOCATION_PARAMETERS):
         validate_location_keys([{"country": "USA", "district_original": "01"}])
     with pytest.raises(InvalidParameterException, match=INCOMPATIBLE_DISTRICT_LOCATION_PARAMETERS):
-        validate_location_keys([{"country": "USA", "district_original": "01", "state": "WA", "county": "WHATCOM"}])
+        validate_location_keys(
+            [
+                {
+                    "country": "USA",
+                    "district_original": "01",
+                    "state": "WA",
+                    "county": "WHATCOM",
+                }
+            ]
+        )
     with pytest.raises(InvalidParameterException, match=DUPLICATE_DISTRICT_LOCATION_PARAMETERS):
-        validate_location_keys([{"country": "USA", "district_original": "01", "state": "WA", "district_current": "99"}])
+        validate_location_keys(
+            [
+                {
+                    "country": "USA",
+                    "district_original": "01",
+                    "state": "WA",
+                    "district_current": "99",
+                }
+            ]
+        )
     assert validate_location_keys([{"country": "", "state": ""}]) is None
     assert validate_location_keys([{"country": "", "state": "", "feet": ""}]) is None
     assert (
@@ -42,7 +60,13 @@ def test_validate_location_keys():
                     "district_original": "Also Yes",
                 },
                 {"country": "USA", "zip": "12345", "city": "Chicago"},
-                {"country": "USA", "state": "MO", "zip": "12345", "city": "Chicago", "county": "Clay"},
+                {
+                    "country": "USA",
+                    "state": "MO",
+                    "zip": "12345",
+                    "city": "Chicago",
+                    "county": "Clay",
+                },
             ]
         )
         is None

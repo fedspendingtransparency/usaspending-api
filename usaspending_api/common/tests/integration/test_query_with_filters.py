@@ -1,7 +1,11 @@
 import pytest
 from model_bakery import baker
 
-from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, SubawardSearch, TransactionSearch
+from usaspending_api.common.elasticsearch.search_wrappers import (
+    AwardSearch,
+    SubawardSearch,
+    TransactionSearch,
+)
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 from usaspending_api.search.filters.elasticsearch.filter import QueryType

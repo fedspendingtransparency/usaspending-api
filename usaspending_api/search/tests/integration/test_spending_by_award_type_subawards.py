@@ -17,7 +17,16 @@ def test_spending_by_award_subawards_success(client):
             {
                 "fields": ["Sub-Award ID"],
                 "filters": {
-                    "award_type_codes": ["IDV_A", "IDV_B", "IDV_B_A", "IDV_B_B", "IDV_B_C", "IDV_C", "IDV_D", "IDV_E"]
+                    "award_type_codes": [
+                        "IDV_A",
+                        "IDV_B",
+                        "IDV_B_A",
+                        "IDV_B_B",
+                        "IDV_B_C",
+                        "IDV_C",
+                        "IDV_D",
+                        "IDV_E",
+                    ]
                 },
                 "subawards": True,
             }
@@ -32,7 +41,13 @@ def test_spending_by_award_subawards_fail(client):
     resp = client.post(
         "/api/v2/search/spending_by_award",
         content_type="application/json",
-        data=json.dumps({"fields": ["Sub-Award ID"], "filters": {"award_type_codes": ["X"]}, "subawards": True}),
+        data=json.dumps(
+            {
+                "fields": ["Sub-Award ID"],
+                "filters": {"award_type_codes": ["X"]},
+                "subawards": True,
+            }
+        ),
     )
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
@@ -104,14 +119,46 @@ def test_spending_by_award_subawards(client, monkeypatch, elasticsearch_subaward
         action_date="2020-07-03",
     )
 
-    baker.make("recipient.RecipientLookup", duns="DUNS A", recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a941")
-    baker.make("recipient.RecipientLookup", duns="DUNS B", recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a942")
-    baker.make("recipient.RecipientLookup", duns="DUNS C", recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a943")
-    baker.make("recipient.RecipientLookup", duns="DUNS D", recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a944")
-    baker.make("recipient.RecipientLookup", duns="DUNS E", recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a945")
-    baker.make("recipient.RecipientLookup", duns="DUNS B_A", recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a946")
-    baker.make("recipient.RecipientLookup", duns="DUNS B_B", recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a947")
-    baker.make("recipient.RecipientLookup", duns="DUNS B_C", recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a948")
+    baker.make(
+        "recipient.RecipientLookup",
+        duns="DUNS A",
+        recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a941",
+    )
+    baker.make(
+        "recipient.RecipientLookup",
+        duns="DUNS B",
+        recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a942",
+    )
+    baker.make(
+        "recipient.RecipientLookup",
+        duns="DUNS C",
+        recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a943",
+    )
+    baker.make(
+        "recipient.RecipientLookup",
+        duns="DUNS D",
+        recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a944",
+    )
+    baker.make(
+        "recipient.RecipientLookup",
+        duns="DUNS E",
+        recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a945",
+    )
+    baker.make(
+        "recipient.RecipientLookup",
+        duns="DUNS B_A",
+        recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a946",
+    )
+    baker.make(
+        "recipient.RecipientLookup",
+        duns="DUNS B_B",
+        recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a947",
+    )
+    baker.make(
+        "recipient.RecipientLookup",
+        duns="DUNS B_C",
+        recipient_hash="f9006d7e-fa6c-fa1c-6bc5-964fe524a948",
+    )
 
     baker.make(
         "recipient.RecipientProfile",
@@ -170,7 +217,16 @@ def test_spending_by_award_subawards(client, monkeypatch, elasticsearch_subaward
         data=json.dumps(
             {
                 "filters": {
-                    "award_type_codes": ["IDV_A", "IDV_B", "IDV_B_A", "IDV_B_B", "IDV_B_C", "IDV_C", "IDV_D", "IDV_E"]
+                    "award_type_codes": [
+                        "IDV_A",
+                        "IDV_B",
+                        "IDV_B_A",
+                        "IDV_B_B",
+                        "IDV_B_C",
+                        "IDV_C",
+                        "IDV_D",
+                        "IDV_E",
+                    ]
                 },
                 "fields": [
                     "Sub-Award ID",
@@ -192,7 +248,13 @@ def test_spending_by_award_subawards(client, monkeypatch, elasticsearch_subaward
     resp = client.post(
         "/api/v2/search/spending_by_award",
         content_type="application/json",
-        data=json.dumps({"filters": {"award_type_codes": ["IDV_A"]}, "fields": ["Sub-Award ID"], "subawards": True}),
+        data=json.dumps(
+            {
+                "filters": {"award_type_codes": ["IDV_A"]},
+                "fields": ["Sub-Award ID"],
+                "subawards": True,
+            }
+        ),
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 1
@@ -200,7 +262,13 @@ def test_spending_by_award_subawards(client, monkeypatch, elasticsearch_subaward
     resp = client.post(
         "/api/v2/search/spending_by_award",
         content_type="application/json",
-        data=json.dumps({"filters": {"award_type_codes": ["IDV_B"]}, "fields": ["Sub-Award ID"], "subawards": True}),
+        data=json.dumps(
+            {
+                "filters": {"award_type_codes": ["IDV_B"]},
+                "fields": ["Sub-Award ID"],
+                "subawards": True,
+            }
+        ),
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 1
@@ -208,7 +276,13 @@ def test_spending_by_award_subawards(client, monkeypatch, elasticsearch_subaward
     resp = client.post(
         "/api/v2/search/spending_by_award",
         content_type="application/json",
-        data=json.dumps({"filters": {"award_type_codes": ["IDV_C"]}, "fields": ["Sub-Award ID"], "subawards": True}),
+        data=json.dumps(
+            {
+                "filters": {"award_type_codes": ["IDV_C"]},
+                "fields": ["Sub-Award ID"],
+                "subawards": True,
+            }
+        ),
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 1
@@ -216,7 +290,13 @@ def test_spending_by_award_subawards(client, monkeypatch, elasticsearch_subaward
     resp = client.post(
         "/api/v2/search/spending_by_award",
         content_type="application/json",
-        data=json.dumps({"filters": {"award_type_codes": ["IDV_D"]}, "fields": ["Sub-Award ID"], "subawards": True}),
+        data=json.dumps(
+            {
+                "filters": {"award_type_codes": ["IDV_D"]},
+                "fields": ["Sub-Award ID"],
+                "subawards": True,
+            }
+        ),
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 1
@@ -224,7 +304,13 @@ def test_spending_by_award_subawards(client, monkeypatch, elasticsearch_subaward
     resp = client.post(
         "/api/v2/search/spending_by_award",
         content_type="application/json",
-        data=json.dumps({"filters": {"award_type_codes": ["IDV_E"]}, "fields": ["Sub-Award ID"], "subawards": True}),
+        data=json.dumps(
+            {
+                "filters": {"award_type_codes": ["IDV_E"]},
+                "fields": ["Sub-Award ID"],
+                "subawards": True,
+            }
+        ),
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 1
@@ -232,7 +318,13 @@ def test_spending_by_award_subawards(client, monkeypatch, elasticsearch_subaward
     resp = client.post(
         "/api/v2/search/spending_by_award",
         content_type="application/json",
-        data=json.dumps({"filters": {"award_type_codes": ["IDV_B_A"]}, "fields": ["Sub-Award ID"], "subawards": True}),
+        data=json.dumps(
+            {
+                "filters": {"award_type_codes": ["IDV_B_A"]},
+                "fields": ["Sub-Award ID"],
+                "subawards": True,
+            }
+        ),
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 1
@@ -240,7 +332,13 @@ def test_spending_by_award_subawards(client, monkeypatch, elasticsearch_subaward
     resp = client.post(
         "/api/v2/search/spending_by_award",
         content_type="application/json",
-        data=json.dumps({"filters": {"award_type_codes": ["IDV_B_B"]}, "fields": ["Sub-Award ID"], "subawards": True}),
+        data=json.dumps(
+            {
+                "filters": {"award_type_codes": ["IDV_B_B"]},
+                "fields": ["Sub-Award ID"],
+                "subawards": True,
+            }
+        ),
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 1
@@ -248,7 +346,13 @@ def test_spending_by_award_subawards(client, monkeypatch, elasticsearch_subaward
     resp = client.post(
         "/api/v2/search/spending_by_award",
         content_type="application/json",
-        data=json.dumps({"filters": {"award_type_codes": ["IDV_B_C"]}, "fields": ["Sub-Award ID"], "subawards": True}),
+        data=json.dumps(
+            {
+                "filters": {"award_type_codes": ["IDV_B_C"]},
+                "fields": ["Sub-Award ID"],
+                "subawards": True,
+            }
+        ),
     )
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 1

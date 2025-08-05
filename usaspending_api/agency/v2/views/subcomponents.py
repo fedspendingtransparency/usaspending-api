@@ -1,15 +1,33 @@
-from django.db.models import Case, F, Max, OuterRef, Q, Subquery, Sum, TextField, Value, When
+from django.db.models import (
+    Case,
+    F,
+    Max,
+    OuterRef,
+    Q,
+    Subquery,
+    Sum,
+    TextField,
+    Value,
+    When,
+)
 from rest_framework.request import Request
 from rest_framework.response import Response
 from typing import Any
-from usaspending_api.accounts.models.appropriation_account_balances import AppropriationAccountBalances
+from usaspending_api.accounts.models.appropriation_account_balances import (
+    AppropriationAccountBalances,
+)
 from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.calculations.file_b import FileBCalculations
 from usaspending_api.common.helpers.date_helper import now
-from usaspending_api.common.helpers.generic_helper import get_pagination_metadata, sort_with_null_last
+from usaspending_api.common.helpers.generic_helper import (
+    get_pagination_metadata,
+    sort_with_null_last,
+)
 from usaspending_api.common.helpers.orm_helpers import ConcatAll
-from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.financial_activities.models import (
+    FinancialAccountsByProgramActivityObjectClass,
+)
 from usaspending_api.references.models import BureauTitleLookup
 from usaspending_api.submissions.models import SubmissionAttributes
 
@@ -28,7 +46,12 @@ class SubcomponentList(PaginationMixin, AgencyBase):
 
     @cache_response()
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        self.sortable_columns = ["name", "total_obligations", "total_outlays", "total_budgetary_resources"]
+        self.sortable_columns = [
+            "name",
+            "total_obligations",
+            "total_outlays",
+            "total_budgetary_resources",
+        ]
         self.default_sort_column = "total_budgetary_resources"
         results = self.format_results(self.get_file_a_queryset(), self.get_file_b_queryset())
         page_metadata = get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
@@ -62,9 +85,9 @@ class SubcomponentList(PaginationMixin, AgencyBase):
         results = sort_with_null_last(
             to_sort=[
                 {
-                    "name": x["bureau_info"].split(";")[0] if x.get("bureau_info") is not None else None,
-                    "id": x["bureau_info"].split(";")[1] if x.get("bureau_info") is not None else None,
-                    "total_obligations": x["total_obligations"] if x["total_obligations"] else None,
+                    "name": (x["bureau_info"].split(";")[0] if x.get("bureau_info") is not None else None),
+                    "id": (x["bureau_info"].split(";")[1] if x.get("bureau_info") is not None else None),
+                    "total_obligations": (x["total_obligations"] if x["total_obligations"] else None),
                     "total_outlays": x["total_outlays"] if x["total_outlays"] else None,
                     "total_budgetary_resources": (
                         x["total_budgetary_resources"] if x["total_budgetary_resources"] else None
@@ -117,7 +140,8 @@ class SubcomponentList(PaginationMixin, AgencyBase):
     def get_common_query_objects(self, treasury_account_keyword):
         latest = (
             SubmissionAttributes.objects.filter(
-                submission_window__submission_reveal_date__lte=now(), reporting_fiscal_year=self.fiscal_year
+                submission_window__submission_reveal_date__lte=now(),
+                reporting_fiscal_year=self.fiscal_year,
             )
             .values("reporting_fiscal_year")
             .annotate(max_fiscal_period=Max(F("reporting_fiscal_period")))
@@ -145,7 +169,11 @@ class SubcomponentList(PaginationMixin, AgencyBase):
                     ),
                     When(
                         federal_account_code__startswith="017",
-                        then=ConcatAll(Value("Navy, Marine Corps"), Value(";"), Value("navy-marine-corps")),
+                        then=ConcatAll(
+                            Value("Navy, Marine Corps"),
+                            Value(";"),
+                            Value("navy-marine-corps"),
+                        ),
                     ),
                     When(
                         federal_account_code__startswith="097",

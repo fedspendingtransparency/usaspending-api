@@ -9,7 +9,13 @@ def test_one_fa(client, basic_agency):
     resp = _call_and_expect_200(client, common_query)
     assert resp.json() == {
         "results": [
-            {"id": "0001", "ancestors": ["001"], "description": "Fed Account 0001", "count": 1, "children": None}
+            {
+                "id": "0001",
+                "ancestors": ["001"],
+                "description": "Fed Account 0001",
+                "count": 1,
+                "children": None,
+            }
         ]
     }
 

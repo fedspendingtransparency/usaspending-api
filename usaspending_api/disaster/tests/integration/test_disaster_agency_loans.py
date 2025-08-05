@@ -25,7 +25,12 @@ def test_basic_success(client, disaster_account_data, monkeypatch, helpers):
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
 
-    expected_totals = {"award_count": 1, "face_value_of_loan": 333.0, "obligation": 2000.0, "outlay": 20000.0}
+    expected_totals = {
+        "award_count": 1,
+        "face_value_of_loan": 333.0,
+        "obligation": 2000.0,
+        "outlay": 20000.0,
+    }
     assert resp.json()["totals"] == expected_totals
 
     resp = helpers.post_for_spending_endpoint(client, url, def_codes=["M"])
@@ -40,7 +45,11 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
 
     resp = helpers.post_for_spending_endpoint(
-        client, url, award_type_codes=["07", "08"], def_codes=["L", "M", "N", "O", "P"], spending_type="award"
+        client,
+        url,
+        award_type_codes=["07", "08"],
+        def_codes=["L", "M", "N", "O", "P"],
+        spending_type="award",
     )
     expected_results = [
         {
@@ -68,7 +77,11 @@ def test_award_type_codes(client, disaster_account_data, elasticsearch_award_ind
     assert resp.json()["results"] == expected_results
 
     resp = helpers.post_for_spending_endpoint(
-        client, url, award_type_codes=["08"], def_codes=["L", "M", "N", "O", "P"], spending_type="award"
+        client,
+        url,
+        award_type_codes=["08"],
+        def_codes=["L", "M", "N", "O", "P"],
+        spending_type="award",
     )
 
     assert resp.status_code == status.HTTP_200_OK

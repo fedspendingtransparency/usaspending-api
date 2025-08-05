@@ -7,7 +7,10 @@ from django.conf import settings
 from model_bakery import baker
 from rest_framework import status
 
-from usaspending_api.awards.v2.lookups.lookups import all_subaward_types, award_type_mapping
+from usaspending_api.awards.v2.lookups.lookups import (
+    all_subaward_types,
+    award_type_mapping,
+)
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.download.lookups import JOB_STATUS
@@ -48,10 +51,18 @@ def _award_download_data(db):
 
     # Create Awarding Agencies
     aa1 = baker.make(
-        "references.Agency", toptier_agency=ata1, subtier_agency=asa1, toptier_flag=False, user_selectable=True
+        "references.Agency",
+        toptier_agency=ata1,
+        subtier_agency=asa1,
+        toptier_flag=False,
+        user_selectable=True,
     )
     aa2 = baker.make(
-        "references.Agency", toptier_agency=ata2, subtier_agency=asa2, toptier_flag=False, user_selectable=True
+        "references.Agency",
+        toptier_agency=ata2,
+        subtier_agency=asa2,
+        toptier_flag=False,
+        user_selectable=True,
     )
 
     # Create Funding Top Agency
@@ -69,21 +80,77 @@ def _award_download_data(db):
     fsa1 = baker.make("references.SubtierAgency", name="Bureau of Things", _fill_optional=True)
 
     # Create Funding Agency
-    baker.make("references.Agency", toptier_agency=fta, subtier_agency=fsa1, toptier_flag=False, _fill_optional=True)
+    baker.make(
+        "references.Agency",
+        toptier_agency=fta,
+        subtier_agency=fsa1,
+        toptier_flag=False,
+        _fill_optional=True,
+    )
 
     # Create Federal Account
-    baker.make("accounts.FederalAccount", account_title="Compensation to Accounts", agency_identifier="102", id=1)
+    baker.make(
+        "accounts.FederalAccount",
+        account_title="Compensation to Accounts",
+        agency_identifier="102",
+        id=1,
+    )
 
     # Create Awards
-    baker.make("search.AwardSearch", award_id=1, category="contracts", generated_unique_award_id="TEST_AWARD_1")
-    baker.make("search.AwardSearch", award_id=2, category="contracts", generated_unique_award_id="TEST_AWARD_2")
-    baker.make("search.AwardSearch", award_id=3, category="assistance", generated_unique_award_id="TEST_AWARD_3")
-    baker.make("search.AwardSearch", award_id=4, category="contracts", generated_unique_award_id="TEST_AWARD_4")
-    baker.make("search.AwardSearch", award_id=5, category="assistance", generated_unique_award_id="TEST_AWARD_5")
-    baker.make("search.AwardSearch", award_id=6, category="assistance", generated_unique_award_id="TEST_AWARD_6")
-    baker.make("search.AwardSearch", award_id=7, category="contracts", generated_unique_award_id="TEST_AWARD_7")
-    baker.make("search.AwardSearch", award_id=8, category="assistance", generated_unique_award_id="TEST_AWARD_8")
-    baker.make("search.AwardSearch", award_id=9, category="assistance", generated_unique_award_id="TEST_AWARD_9")
+    baker.make(
+        "search.AwardSearch",
+        award_id=1,
+        category="contracts",
+        generated_unique_award_id="TEST_AWARD_1",
+    )
+    baker.make(
+        "search.AwardSearch",
+        award_id=2,
+        category="contracts",
+        generated_unique_award_id="TEST_AWARD_2",
+    )
+    baker.make(
+        "search.AwardSearch",
+        award_id=3,
+        category="assistance",
+        generated_unique_award_id="TEST_AWARD_3",
+    )
+    baker.make(
+        "search.AwardSearch",
+        award_id=4,
+        category="contracts",
+        generated_unique_award_id="TEST_AWARD_4",
+    )
+    baker.make(
+        "search.AwardSearch",
+        award_id=5,
+        category="assistance",
+        generated_unique_award_id="TEST_AWARD_5",
+    )
+    baker.make(
+        "search.AwardSearch",
+        award_id=6,
+        category="assistance",
+        generated_unique_award_id="TEST_AWARD_6",
+    )
+    baker.make(
+        "search.AwardSearch",
+        award_id=7,
+        category="contracts",
+        generated_unique_award_id="TEST_AWARD_7",
+    )
+    baker.make(
+        "search.AwardSearch",
+        award_id=8,
+        category="assistance",
+        generated_unique_award_id="TEST_AWARD_8",
+    )
+    baker.make(
+        "search.AwardSearch",
+        award_id=9,
+        category="assistance",
+        generated_unique_award_id="TEST_AWARD_9",
+    )
 
     # Create Transactions
     baker.make(
@@ -565,8 +632,16 @@ def test_list_agencies(client, _award_download_data):
         "agencies": {
             "cfo_agencies": [],
             "other_agencies": [
-                {"name": "Bureau of Stuff", "toptier_agency_id": 2, "toptier_code": "101"},
-                {"name": "Bureau of Things", "toptier_agency_id": 1, "toptier_code": "100"},
+                {
+                    "name": "Bureau of Stuff",
+                    "toptier_agency_id": 2,
+                    "toptier_code": "101",
+                },
+                {
+                    "name": "Bureau of Things",
+                    "toptier_agency_id": 1,
+                    "toptier_code": "100",
+                },
             ],
         },
         "sub_agencies": [],
@@ -579,7 +654,10 @@ def test_list_agencies(client, _award_download_data):
     )
 
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.data == {"agencies": [], "sub_agencies": [{"subtier_agency_name": "SubBureau of Stuff"}]}
+    assert resp.data == {
+        "agencies": [],
+        "sub_agencies": [{"subtier_agency_name": "SubBureau of Stuff"}],
+    }
 
 
 @pytest.mark.django_db
@@ -593,7 +671,9 @@ def test_empty_array_filter_fail(client, _award_download_data):
         "recipient_scope": "foreign",
     }
     resp = client.post(
-        "/api/v2/bulk_download/awards", content_type="application/json", data=json.dumps({"filters": filters})
+        "/api/v2/bulk_download/awards",
+        content_type="application/json",
+        data=json.dumps({"filters": filters}),
     )
 
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY

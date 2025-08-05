@@ -11,7 +11,9 @@ from usaspending_api.download.management.commands.delta_downloads.builders impor
     FederalAccountDownloadDataFrameBuilder,
     TreasuryAccountDownloadDataFrameBuilder,
 )
-from usaspending_api.download.management.commands.delta_downloads.filters import AccountDownloadFilter
+from usaspending_api.download.management.commands.delta_downloads.filters import (
+    AccountDownloadFilter,
+)
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 
 
@@ -87,9 +89,24 @@ def agency_models(db):
 
 @pytest.fixture
 def federal_account_models(db):
-    baker.make("accounts.FederalAccount", pk=1, agency_identifier="123", main_account_code="0111")
-    baker.make("accounts.FederalAccount", pk=2, agency_identifier="234", main_account_code="0222")
-    baker.make("accounts.FederalAccount", pk=3, agency_identifier="345", main_account_code="0333")
+    baker.make(
+        "accounts.FederalAccount",
+        pk=1,
+        agency_identifier="123",
+        main_account_code="0111",
+    )
+    baker.make(
+        "accounts.FederalAccount",
+        pk=2,
+        agency_identifier="234",
+        main_account_code="0222",
+    )
+    baker.make(
+        "accounts.FederalAccount",
+        pk=3,
+        agency_identifier="345",
+        main_account_code="0333",
+    )
 
 
 @patch("usaspending_api.download.management.commands.delta_downloads.builders.get_submission_ids_for_periods")
@@ -109,7 +126,10 @@ def test_federal_account_download_dataframe_builder(
     for col in ["reporting_agency_name", "budget_function", "budget_subfunction"]:
         assert sorted(result_df[col].to_list()) == ["A", "B; C; D"]
     assert sorted(result_df.transaction_obligated_amount.to_list()) == [100, 300]
-    assert sorted(result_df.gross_outlay_amount_FYB_to_period_end.to_list()) == [100, 200]
+    assert sorted(result_df.gross_outlay_amount_FYB_to_period_end.to_list()) == [
+        100,
+        200,
+    ]
 
 
 @patch("usaspending_api.download.management.commands.delta_downloads.builders.get_submission_ids_for_periods")
@@ -134,7 +154,11 @@ def test_filter_federal_by_agency(mock_get_submission_ids_for_periods, spark, ac
 
 @patch("usaspending_api.download.management.commands.delta_downloads.builders.get_submission_ids_for_periods")
 def test_filter_federal_by_federal_account_id(
-    mock_get_submission_ids_for_periods, spark, account_download_table, federal_account_models, agency_models
+    mock_get_submission_ids_for_periods,
+    spark,
+    account_download_table,
+    federal_account_models,
+    agency_models,
 ):
     create_ref_temp_views(spark)
     mock_get_submission_ids_for_periods.return_value = [1, 2, 4, 5]
@@ -233,9 +257,21 @@ def test_account_balances(mock_get_submission_ids_for_periods, spark, account_do
         allocation_transfer_agency_id="4",
         federal_account_id=2,
     ).save()
-    baker.make("accounts.AppropriationAccountBalances", submission_id=1, treasury_account_identifier_id=1).save()
-    baker.make("accounts.AppropriationAccountBalances", submission_id=2, treasury_account_identifier_id=2).save()
-    baker.make("accounts.AppropriationAccountBalances", submission_id=3, treasury_account_identifier_id=2).save()
+    baker.make(
+        "accounts.AppropriationAccountBalances",
+        submission_id=1,
+        treasury_account_identifier_id=1,
+    ).save()
+    baker.make(
+        "accounts.AppropriationAccountBalances",
+        submission_id=2,
+        treasury_account_identifier_id=2,
+    ).save()
+    baker.make(
+        "accounts.AppropriationAccountBalances",
+        submission_id=3,
+        treasury_account_identifier_id=2,
+    ).save()
 
     mock_get_submission_ids_for_periods.return_value = [1, 2, 3]
 

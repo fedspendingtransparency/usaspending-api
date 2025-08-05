@@ -8,7 +8,13 @@ def test_one_tas(client, basic_agency):
     resp = _call_and_expect_200(client, common_query)
     assert resp.json() == {
         "results": [
-            {"id": "00001", "ancestors": ["001", "0001"], "description": "TAS 00001", "count": 0, "children": None}
+            {
+                "id": "00001",
+                "ancestors": ["001", "0001"],
+                "description": "TAS 00001",
+                "count": 0,
+                "children": None,
+            }
         ]
     }
 

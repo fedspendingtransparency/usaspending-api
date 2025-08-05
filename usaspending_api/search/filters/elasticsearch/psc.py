@@ -1,7 +1,10 @@
 from elasticsearch_dsl import Q as ES_Q
 from usaspending_api.search.filters.mixins.psc import PSCCodesMixin
 from usaspending_api.search.filters.elasticsearch.filter import _Filter, QueryType
-from usaspending_api.search.filters.elasticsearch.HierarchicalFilter import HierarchicalFilter, Node
+from usaspending_api.search.filters.elasticsearch.HierarchicalFilter import (
+    HierarchicalFilter,
+    Node,
+)
 
 
 class PSCCodes(PSCCodesMixin, _Filter, HierarchicalFilter):
@@ -12,7 +15,9 @@ class PSCCodes(PSCCodesMixin, _Filter, HierarchicalFilter):
         require = cls.handle_tier1_names(require)
         exclude = cls.handle_tier1_names(exclude)
         return ES_Q(
-            "query_string", query=cls._query_string(require, exclude), default_field="product_or_service_code.keyword"
+            "query_string",
+            query=cls._query_string(require, exclude),
+            default_field="product_or_service_code.keyword",
         )
 
     @staticmethod

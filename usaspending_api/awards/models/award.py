@@ -54,7 +54,10 @@ class Award(DataSourceTrackedModel):
         help_text="The plain text description of the type of the award",
     )
     category = models.TextField(
-        db_index=True, verbose_name="Category", null=True, help_text="A field that generalizes the award's type."
+        db_index=True,
+        verbose_name="Category",
+        null=True,
+        help_text="A field that generalizes the award's type.",
     )
     piid = models.TextField(
         db_index=True,
@@ -112,11 +115,21 @@ class Award(DataSourceTrackedModel):
     awarding_agency_id = models.IntegerField(null=True, db_index=True)
     funding_agency_id = models.IntegerField(null=True, db_index=True)
     date_signed = models.DateField(
-        null=True, db_index=False, verbose_name="Award Date", help_text="The date the award was signed"
+        null=True,
+        db_index=False,
+        verbose_name="Award Date",
+        help_text="The date the award was signed",
     )
-    description = models.TextField(null=True, verbose_name="Award Description", help_text="A description of the award")
+    description = models.TextField(
+        null=True,
+        verbose_name="Award Description",
+        help_text="A description of the award",
+    )
     period_of_performance_start_date = models.DateField(
-        null=True, db_index=True, verbose_name="Start Date", help_text="The start date for the period of performance"
+        null=True,
+        db_index=True,
+        verbose_name="Start Date",
+        help_text="The start date for the period of performance",
     )
     period_of_performance_current_end_date = models.DateField(
         null=True,
@@ -144,15 +157,23 @@ class Award(DataSourceTrackedModel):
     last_modified_date = models.DateField(blank=True, null=True, help_text="The date this award was last modified")
     certified_date = models.DateField(blank=True, null=True, help_text="The date this record was certified")
     create_date = models.DateTimeField(
-        auto_now_add=True, blank=True, null=True, help_text="The date this record was created in the API"
+        auto_now_add=True,
+        blank=True,
+        null=True,
+        help_text="The date this record was created in the API",
     )
     update_date = models.DateTimeField(
-        auto_now=True, null=True, help_text="The last time this record was updated in the API"
+        auto_now=True,
+        null=True,
+        help_text="The last time this record was updated in the API",
     )
     latest_transaction_id = models.IntegerField(null=True, db_index=True)
     earliest_transaction_id = models.IntegerField(null=True, db_index=True)
     parent_award_piid = models.TextField(
-        db_index=True, null=True, verbose_name="Parent Award Piid", help_text="The piid of the Award's parent Award"
+        db_index=True,
+        null=True,
+        verbose_name="Parent Award Piid",
+        help_text="The piid of the Award's parent Award",
     )
     # As part of DEV-2504, generated_unique_award_id now contains the
     # unique_award_key value from Broker rather than being generated during
@@ -160,7 +181,10 @@ class Award(DataSourceTrackedModel):
     # the column would have been significantly more disruptive and has been
     # saved for a future improvement.
     generated_unique_award_id = models.TextField(
-        blank=False, null=False, default="NONE", verbose_name="Generated Unique Award ID"
+        blank=False,
+        null=False,
+        default="NONE",
+        verbose_name="Generated Unique Award ID",
     )
     is_fpds = models.BooleanField(blank=False, null=False, default=False, verbose_name="Is FPDS")
     transaction_unique_id = models.TextField(
@@ -188,23 +212,43 @@ class Award(DataSourceTrackedModel):
 
     officer_1_name = models.TextField(null=True, blank=True, help_text="Executive Compensation Officer 1 Name")
     officer_1_amount = models.DecimalField(
-        max_digits=23, decimal_places=2, blank=True, null=True, help_text="Executive Compensation Officer 1 Amount"
+        max_digits=23,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        help_text="Executive Compensation Officer 1 Amount",
     )
     officer_2_name = models.TextField(null=True, blank=True, help_text="Executive Compensation Officer 2 Name")
     officer_2_amount = models.DecimalField(
-        max_digits=23, decimal_places=2, blank=True, null=True, help_text="Executive Compensation Officer 2 Amount"
+        max_digits=23,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        help_text="Executive Compensation Officer 2 Amount",
     )
     officer_3_name = models.TextField(null=True, blank=True, help_text="Executive Compensation Officer 3 Name")
     officer_3_amount = models.DecimalField(
-        max_digits=23, decimal_places=2, blank=True, null=True, help_text="Executive Compensation Officer 3 Amount"
+        max_digits=23,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        help_text="Executive Compensation Officer 3 Amount",
     )
     officer_4_name = models.TextField(null=True, blank=True, help_text="Executive Compensation Officer 4 Name")
     officer_4_amount = models.DecimalField(
-        max_digits=23, decimal_places=2, blank=True, null=True, help_text="Executive Compensation Officer 4 Amount"
+        max_digits=23,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        help_text="Executive Compensation Officer 4 Amount",
     )
     officer_5_name = models.TextField(null=True, blank=True, help_text="Executive Compensation Officer 5 Name")
     officer_5_amount = models.DecimalField(
-        max_digits=23, decimal_places=2, blank=True, null=True, help_text="Executive Compensation Officer 5 Amount"
+        max_digits=23,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        help_text="Executive Compensation Officer 5 Amount",
     )
 
     objects = models.Manager()

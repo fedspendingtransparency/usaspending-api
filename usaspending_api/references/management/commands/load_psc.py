@@ -19,7 +19,10 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "-p", "--path", help="The path to the spreadsheets to load. Can be a url.", default=self.default_filepath
+            "-p",
+            "--path",
+            help="The path to the spreadsheets to load. Can be a url.",
+            default=self.default_filepath,
         )
         parser.add_argument(
             "-s",
@@ -28,7 +31,10 @@ class Command(BaseCommand):
             default=self.default_sheet_name,
         )
         parser.add_argument(
-            "-u", "--update", help="Updates the lengths of any codes that were not in the file.", action="store_true"
+            "-u",
+            "--update",
+            help="Updates the lengths of any codes that were not in the file.",
+            action="store_true",
         )
 
     def handle(self, *args, **options):
@@ -39,7 +45,10 @@ class Command(BaseCommand):
         )
 
         def _serialize_pscs(models: Iterable[PSC]) -> str:
-            return json.dumps([{k: str(v) for k, v in model.__dict__.items()} for model in models], indent=2)
+            return json.dumps(
+                [{k: str(v) for k, v in model.__dict__.items()} for model in models],
+                indent=2,
+            )
 
         self.logger.info(f"Added: {_serialize_pscs(result['added'].values())}")
         self.logger.info(f"Updated: {_serialize_pscs([v.get('new') for v in result['updated'].values()])}")
@@ -139,7 +148,10 @@ def load_psc(fullpath: str, sheet_name: str, update: bool) -> Dict[str, Any]:
             )
         ]
         # Convert start date and end date to dates
-        .assign(start_date=lambda df: df["start_date"].dt.date, end_date=lambda df: df["end_date"].dt.date)
+        .assign(
+            start_date=lambda df: df["start_date"].dt.date,
+            end_date=lambda df: df["end_date"].dt.date,
+        )
         # Add length column
         .assign(length=lambda df: df["code"].astype(str).str.len())
         # Replace missing values with None

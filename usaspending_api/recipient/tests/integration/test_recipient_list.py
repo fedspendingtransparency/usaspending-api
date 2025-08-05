@@ -35,7 +35,13 @@ def test_one_recipient():
         last_12_months=-29470313.00,
     )
 
-    filters = {"limit": 10, "page": 1, "order": "desc", "sort": "amount", "award_type": "all"}
+    filters = {
+        "limit": 10,
+        "page": 1,
+        "order": "desc",
+        "sort": "amount",
+        "award_type": "all",
+    }
     results, meta = get_recipients(filters=filters)
     assert meta["total"] == 1
 
@@ -52,7 +58,13 @@ def test_ignore_special_case():
         last_12_months=-29470313.00,
     )
 
-    filters = {"limit": 10, "page": 1, "order": "desc", "sort": "amount", "award_type": "all"}
+    filters = {
+        "limit": 10,
+        "page": 1,
+        "order": "desc",
+        "sort": "amount",
+        "award_type": "all",
+    }
     results, meta = get_recipients(filters=filters)
     assert meta["total"] == 0
 
@@ -77,7 +89,13 @@ def test_filters_with_two_recipients():
         last_12_months=99705.97,
     ),
 
-    filters = {"limit": 1, "page": 1, "order": "desc", "sort": "amount", "award_type": "all"}
+    filters = {
+        "limit": 1,
+        "page": 1,
+        "order": "desc",
+        "sort": "amount",
+        "award_type": "all",
+    }
     results, meta = get_recipients(filters=filters)
     # Ensure pagination metadata meets API Contract
     assert meta["total"] == 2
@@ -88,11 +106,24 @@ def test_filters_with_two_recipients():
     assert float(results[0]["amount"]) == float(99705.97)
     assert results[0]["id"] == "c8f79139-38b2-3063-b039-d48172abc710-B"
 
-    filters = {"limit": 1, "page": 1, "order": "asc", "sort": "amount", "award_type": "all"}
+    filters = {
+        "limit": 1,
+        "page": 1,
+        "order": "asc",
+        "sort": "amount",
+        "award_type": "all",
+    }
     results, meta = get_recipients(filters=filters)
     assert results[0]["recipient_level"] == "A"
 
-    filters = {"limit": 10, "page": 1, "order": "asc", "sort": "amount", "keyword": "JOR", "award_type": "all"}
+    filters = {
+        "limit": 10,
+        "page": 1,
+        "order": "asc",
+        "sort": "amount",
+        "keyword": "JOR",
+        "award_type": "all",
+    }
     results, meta = get_recipients(filters=filters)
     assert len(results) == 1
     assert results[0]["recipient_level"] == "B"
@@ -153,7 +184,13 @@ def test_award_type_filter():
         award_types=["loans"],
     )
 
-    filters = {"limit": 10, "page": 1, "order": "desc", "sort": "amount", "award_type": "all"}
+    filters = {
+        "limit": 10,
+        "page": 1,
+        "order": "desc",
+        "sort": "amount",
+        "award_type": "all",
+    }
     results, meta = get_recipients(filters=filters)
 
     # "all"

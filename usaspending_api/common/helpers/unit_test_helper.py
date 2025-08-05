@@ -1,5 +1,7 @@
 from django.core.exceptions import FieldError
-from usaspending_api.download.v2 import download_column_historical_lookups as lookup_mapping
+from usaspending_api.download.v2 import (
+    download_column_historical_lookups as lookup_mapping,
+)
 from usaspending_api.download.lookups import VALUE_MAPPINGS
 
 

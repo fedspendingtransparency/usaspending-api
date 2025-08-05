@@ -6,12 +6,18 @@ from datetime import datetime, timezone
 from django.db import connection, transaction
 
 from usaspending_api.awards.models import Award
-from usaspending_api.broker.helpers.get_business_categories import get_business_categories
+from usaspending_api.broker.helpers.get_business_categories import (
+    get_business_categories,
+)
 from usaspending_api.common.helpers.dict_helpers import upper_case_dict_values
 from usaspending_api.common.helpers.etl_helpers import update_c_to_d_linkages
 from usaspending_api.common.helpers.date_helper import fy
 from usaspending_api.common.helpers.timing_helpers import timer
-from usaspending_api.etl.award_helpers import prune_empty_awards, update_awards, update_assistance_awards
+from usaspending_api.etl.award_helpers import (
+    prune_empty_awards,
+    update_awards,
+    update_assistance_awards,
+)
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.management.load_base import load_data_into_model, format_date
 from usaspending_api.references.models import Agency
@@ -98,7 +104,7 @@ def insert_new_fabs(to_insert):
             "period_of_performance_start_date": format_date(row["period_of_performance_star"]),
             "period_of_performance_current_end_date": format_date(row["period_of_performance_curr"]),
             "action_date": format_date(row["action_date"]),
-            "last_modified_date": row["modified_at"].date() if row["modified_at"] is not None else None,
+            "last_modified_date": (row["modified_at"].date() if row["modified_at"] is not None else None),
             "type_description": row["assistance_type_desc"],
             "transaction_unique_id": row["afa_generated_unique"],
             "business_categories": get_business_categories(row=row, data_type="fabs"),
@@ -144,7 +150,10 @@ def upsert_fabs_transactions(ids_to_upsert, update_and_delete_award_ids):
 
         if update_award_ids:
             update_award_ids = tuple(set(update_award_ids))  # Convert to tuple and remove duplicates.
-            with timer("updating awards to reflect their latest associated transaction info", logger.info):
+            with timer(
+                "updating awards to reflect their latest associated transaction info",
+                logger.info,
+            ):
                 award_record_count = update_awards(update_award_ids)
                 logger.info(f"{award_record_count} awards updated from their transactional data")
             with timer("deleting awards that no longer have a transaction", logger.info):

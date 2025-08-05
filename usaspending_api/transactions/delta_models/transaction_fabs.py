@@ -179,10 +179,16 @@ FABS_TO_NORMALIZED_COLUMN_INFO = [
     TransactionColumn("original_loan_subsidy_cost", "original_loan_subsidy_cost", "NUMERIC(23,2)"),
     # period_of_performance_* fields seen as: mm/dd/YYYY as well as YYYYmmdd, so need special parsing
     TransactionColumn(
-        "period_of_performance_current_end_date", "period_of_performance_curr", "DATE", "parse_string_datetime_to_date"
+        "period_of_performance_current_end_date",
+        "period_of_performance_curr",
+        "DATE",
+        "parse_string_datetime_to_date",
     ),
     TransactionColumn(
-        "period_of_performance_start_date", "period_of_performance_star", "DATE", "parse_string_datetime_to_date"
+        "period_of_performance_start_date",
+        "period_of_performance_star",
+        "DATE",
+        "parse_string_datetime_to_date",
     ),
     TransactionColumn("transaction_unique_id", "afa_generated_unique", "STRING"),
     TransactionColumn("type", "assistance_type", "STRING"),

@@ -10,42 +10,50 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='ExternalDataLoadDate',
+            name="ExternalDataLoadDate",
             fields=[
-                ('external_data_load_date_id', models.AutoField(primary_key=True, serialize=False)),
-                ('last_load_date', models.DateField()),
+                (
+                    "external_data_load_date_id",
+                    models.AutoField(primary_key=True, serialize=False),
+                ),
+                ("last_load_date", models.DateField()),
             ],
             options={
-                'db_table': 'external_data_load_date',
-                'managed': True,
+                "db_table": "external_data_load_date",
+                "managed": True,
             },
         ),
         migrations.CreateModel(
-            name='ExternalDataType',
+            name="ExternalDataType",
             fields=[
-                ('external_data_type_id', models.AutoField(primary_key=True, serialize=False)),
-                ('name', models.TextField()),
-                ('description', models.TextField(blank=True, null=True)),
-                ('create_date', models.DateTimeField(auto_now_add=True, null=True)),
-                ('update_date', models.DateTimeField(auto_now=True, null=True)),
+                (
+                    "external_data_type_id",
+                    models.AutoField(primary_key=True, serialize=False),
+                ),
+                ("name", models.TextField()),
+                ("description", models.TextField(blank=True, null=True)),
+                ("create_date", models.DateTimeField(auto_now_add=True, null=True)),
+                ("update_date", models.DateTimeField(auto_now=True, null=True)),
             ],
             options={
-                'db_table': 'external_data_type',
-                'managed': True,
+                "db_table": "external_data_type",
+                "managed": True,
             },
         ),
         migrations.AddField(
-            model_name='externaldataloaddate',
-            name='external_data_type',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.DO_NOTHING, to='broker.ExternalDataType'),
+            model_name="externaldataloaddate",
+            name="external_data_type",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.DO_NOTHING,
+                to="broker.ExternalDataType",
+            ),
         ),
         migrations.AlterUniqueTogether(
-            name='externaldataloaddate',
-            unique_together=set([('last_load_date', 'external_data_type')]),
+            name="externaldataloaddate",
+            unique_together=set([("last_load_date", "external_data_type")]),
         ),
     ]

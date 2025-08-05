@@ -5,7 +5,6 @@ from django.contrib.postgres.constraints import OpClass
 from django.db import migrations, models
 
 
-
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -45,6 +44,6 @@ class Migration(migrations.Migration):
                         unique=True,
                     ),
                 )
-            ]
-        )
+            ],
+        ),
     ]

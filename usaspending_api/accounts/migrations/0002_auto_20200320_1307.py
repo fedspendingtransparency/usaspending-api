@@ -7,19 +7,29 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('references', '0041_frec_associated_cgac_code'),
-        ('accounts', '0001_initial'),
+        ("references", "0041_frec_associated_cgac_code"),
+        ("accounts", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='federalaccount',
-            name='parent_toptier_agency',
-            field=models.ForeignKey(help_text='The toptier agency under which this federal account should appear in lists and dropdowns.  Not as simple as just mapping the AID to an agency, although AID does factor into the decision.', null=True, on_delete=django.db.models.deletion.DO_NOTHING, to='references.ToptierAgency'),
+            model_name="federalaccount",
+            name="parent_toptier_agency",
+            field=models.ForeignKey(
+                help_text="The toptier agency under which this federal account should appear in lists and dropdowns.  Not as simple as just mapping the AID to an agency, although AID does factor into the decision.",
+                null=True,
+                on_delete=django.db.models.deletion.DO_NOTHING,
+                to="references.ToptierAgency",
+            ),
         ),
         migrations.AlterField(
-            model_name='treasuryappropriationaccount',
-            name='funding_toptier_agency',
-            field=models.ForeignKey(help_text="The toptier agency under which this treasury account should appear in lists and dropdowns.  Not as simple as just mapping the AID to an agency, although AID does factor into the decision.  It was recently recommended we rename this to parent toptier agency, however that is a much more involved change so we're keeping current naming for now.", null=True, on_delete=django.db.models.deletion.DO_NOTHING, to='references.ToptierAgency'),
+            model_name="treasuryappropriationaccount",
+            name="funding_toptier_agency",
+            field=models.ForeignKey(
+                help_text="The toptier agency under which this treasury account should appear in lists and dropdowns.  Not as simple as just mapping the AID to an agency, although AID does factor into the decision.  It was recently recommended we rename this to parent toptier agency, however that is a much more involved change so we're keeping current naming for now.",
+                null=True,
+                on_delete=django.db.models.deletion.DO_NOTHING,
+                to="references.ToptierAgency",
+            ),
         ),
     ]

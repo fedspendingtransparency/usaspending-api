@@ -8,7 +8,12 @@ import signal
 import time
 import multiprocessing as mp
 
-from botocore.exceptions import ClientError, EndpointConnectionError, NoCredentialsError, NoRegionError
+from botocore.exceptions import (
+    ClientError,
+    EndpointConnectionError,
+    NoCredentialsError,
+    NoRegionError,
+)
 
 from usaspending_api.common.sqs.queue_exceptions import (
     QueueWorkDispatcherError,
@@ -53,7 +58,13 @@ class SQSWorkDispatcher:
 
     """
 
-    EXIT_SIGNALS = [signal.SIGHUP, signal.SIGABRT, signal.SIGINT, signal.SIGQUIT, signal.SIGTERM]
+    EXIT_SIGNALS = [
+        signal.SIGHUP,
+        signal.SIGABRT,
+        signal.SIGINT,
+        signal.SIGQUIT,
+        signal.SIGTERM,
+    ]
     # NOTE: We are not handling signal.SIGSTOP or signal.SIGTSTP because those are suspensions.
     # There may be valid cases to suspend and then later resume the process.
     # It is even done here via multiprocessing.Process.suspend() to suspend during cleanup.
@@ -126,7 +137,9 @@ class SQSWorkDispatcher:
                 "Otherwise job duplication can occur"
             )
             raise QueueWorkDispatcherError(
-                msg, worker_process_name=self.worker_process_name, queue_message=self._current_sqs_message
+                msg,
+                worker_process_name=self.worker_process_name,
+                queue_message=self._current_sqs_message,
             )
 
         # Map handler functions for each of the exit signals we want to handle on the parent dispatcher process
@@ -323,7 +336,11 @@ class SQSWorkDispatcher:
         return self._dispatch(job, worker_process_name, exit_handler, *job_args, **job_kwargs)
 
     def dispatch_by_message_attribute(
-        self, message_transformer, *additional_job_args, worker_process_name=None, **additional_job_kwargs
+        self,
+        message_transformer,
+        *additional_job_args,
+        worker_process_name=None,
+        **additional_job_kwargs,
     ):
         """Use a provided function to derive the callable job and its arguments from attributes within the queue
         message
@@ -440,9 +457,16 @@ class SQSWorkDispatcher:
                 VisibilityTimeout=self._default_visibility_timeout,
                 MaxNumberOfMessages=1,
             )
-        except (EndpointConnectionError, ClientError, NoCredentialsError, NoRegionError) as conn_exc:
+        except (
+            EndpointConnectionError,
+            ClientError,
+            NoCredentialsError,
+            NoRegionError,
+        ) as conn_exc:
             log_dispatcher_message(
-                self, message="SQS connection issue. See Traceback and investigate settings", is_exception=True
+                self,
+                message="SQS connection issue. See Traceback and investigate settings",
+                is_exception=True,
             )
             raise SystemExit(1) from conn_exc
         except Exception as exc:
@@ -455,7 +479,10 @@ class SQSWorkDispatcher:
 
         if received_messages:
             self._current_sqs_message = received_messages[0]
-            log_dispatcher_message(self, message="Message received: {}".format(self._current_sqs_message.body))
+            log_dispatcher_message(
+                self,
+                message="Message received: {}".format(self._current_sqs_message.body),
+            )
 
     def delete_message_from_queue(self):
         """Deletes the message from SQS. This is usually treated as a *successful* culmination of message handling,
@@ -482,7 +509,9 @@ class SQSWorkDispatcher:
             )
             log_dispatcher_message(self, message=message, is_exception=True)
             raise QueueWorkDispatcherError(
-                message, worker_process_name=self.worker_process_name, queue_message=self._current_sqs_message
+                message,
+                worker_process_name=self.worker_process_name,
+                queue_message=self._current_sqs_message,
             ) from exc
 
     def surrender_message_to_other_consumers(self, delay=0):
@@ -549,7 +578,9 @@ class SQSWorkDispatcher:
                 )
                 log_dispatcher_message(self, message=error, is_error=True)
                 raise QueueWorkDispatcherError(
-                    error, worker_process_name=self.worker_process_name, queue_message=self._current_sqs_message
+                    error,
+                    worker_process_name=self.worker_process_name,
+                    queue_message=self._current_sqs_message,
                 )
 
             redrive_json = json.loads(redrive_policy)
@@ -562,7 +593,9 @@ class SQSWorkDispatcher:
                 )
                 log_dispatcher_message(self, message=error, is_error=True)
                 raise QueueWorkDispatcherError(
-                    error, worker_process_name=self.worker_process_name, queue_message=self._current_sqs_message
+                    error,
+                    worker_process_name=self.worker_process_name,
+                    queue_message=self._current_sqs_message,
                 )
             dlq_name = dlq_arn.split(":")[-1]
 
@@ -573,7 +606,10 @@ class SQSWorkDispatcher:
                 if self._current_sqs_message.message_attributes
                 else {}
             )
-            dlq_response = dlq.send_message(MessageBody=self._current_sqs_message.body, MessageAttributes=message_attr)
+            dlq_response = dlq.send_message(
+                MessageBody=self._current_sqs_message.body,
+                MessageAttributes=message_attr,
+            )
         except Exception as exc:
             error = (
                 "Error occurred when parent dispatcher with PID [{}] tried to move the message "
@@ -582,7 +618,9 @@ class SQSWorkDispatcher:
             )
             log_dispatcher_message(self, message=error, is_exception=True)
             raise QueueWorkDispatcherError(
-                error, worker_process_name=self.worker_process_name, queue_message=self._current_sqs_message
+                error,
+                worker_process_name=self.worker_process_name,
+                queue_message=self._current_sqs_message,
             ) from exc
 
         log_dispatcher_message(
@@ -655,7 +693,9 @@ class SQSWorkDispatcher:
                 )
                 log_dispatcher_message(self, message=message, is_error=True)
                 raise QueueWorkerProcessError(
-                    message, worker_process_name=self.worker_process_name, queue_message=self._current_sqs_message
+                    message,
+                    worker_process_name=self.worker_process_name,
+                    queue_message=self._current_sqs_message,
                 )
             elif self._worker_process.exitcode < 0:
                 # If process exits with a negative code, process was terminated by a signal since
@@ -729,7 +769,9 @@ class SQSWorkDispatcher:
                 message="Job worker process with PID [{}] exited due to signal with exit code: [{}], "
                 "after receiving exit signal [{}]. "
                 "Gracefully handling exit of job".format(
-                    self._worker_process.pid, self._worker_process.exitcode, signal_or_human
+                    self._worker_process.pid,
+                    self._worker_process.exitcode,
+                    signal_or_human,
                 ),
                 is_error=True,
             )
@@ -811,11 +853,16 @@ class SQSWorkDispatcher:
                                 self,
                                 message="Invoking job exit_handler [{}] with args={}, kwargs={}, "
                                 "and queue_message={}".format(
-                                    self._exit_handler, self._job_args, self._job_kwargs, self._current_sqs_message
+                                    self._exit_handler,
+                                    self._job_args,
+                                    self._job_kwargs,
+                                    self._current_sqs_message,
                                 ),
                             )
                             self._exit_handler(
-                                *self._job_args, **self._job_kwargs, queue_message=self._current_sqs_message
+                                *self._job_args,
+                                **self._job_kwargs,
+                                queue_message=self._current_sqs_message,
                             )
                         else:
                             log_dispatcher_message(
@@ -853,7 +900,9 @@ class SQSWorkDispatcher:
                     message = "Execution of exit_handler failed for unknown reason. See Traceback."
                     log_dispatcher_message(self, message=message, is_exception=True)
                     raise QueueWorkDispatcherError(
-                        message, worker_process_name=self.worker_process_name, queue_message=self._current_sqs_message
+                        message,
+                        worker_process_name=self.worker_process_name,
+                        queue_message=self._current_sqs_message,
                     ) from exc
 
             if self.allow_retries:
@@ -956,7 +1005,9 @@ class SQSWorkDispatcher:
             )
             log_dispatcher_message(self, message=message, is_exception=True)
             raise QueueWorkDispatcherError(
-                message, worker_process_name=self.worker_process_name, queue_message=self._current_sqs_message
+                message,
+                worker_process_name=self.worker_process_name,
+                queue_message=self._current_sqs_message,
             ) from exc
 
     def _kill_worker(self, with_signal=None, just_kill_descendants=False):

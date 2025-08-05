@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('awards', '0089_auto_20211019_1755'),
+        ("awards", "0089_auto_20211019_1755"),
     ]
 
     operations = [
@@ -22,9 +22,19 @@ class Migration(migrations.Migration):
             reverse_sql="DROP INDEX IF EXISTS faba_subid_awardkey_sums_idx;",
             state_operations=[
                 migrations.AddIndex(
-                    model_name='financialaccountsbyawards',
+                    model_name="financialaccountsbyawards",
                     index=models.Index(
-                        condition=models.Q(disaster_emergency_fund__in=["L", "M", "N", "O", "P", "U", "V"]),
+                        condition=models.Q(
+                            disaster_emergency_fund__in=[
+                                "L",
+                                "M",
+                                "N",
+                                "O",
+                                "P",
+                                "U",
+                                "V",
+                            ]
+                        ),
                         fields=[
                             "submission",
                             "distinct_award_key",
@@ -32,11 +42,11 @@ class Migration(migrations.Migration):
                             "transaction_obligated_amount",
                             "gross_outlay_amount_by_award_cpe",
                             "ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe",
-                            "ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe"
+                            "ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe",
                         ],
-                        name="faba_subid_awardkey_sums_idx"
+                        name="faba_subid_awardkey_sums_idx",
                     ),
                 ),
-            ]
+            ],
         ),
     ]

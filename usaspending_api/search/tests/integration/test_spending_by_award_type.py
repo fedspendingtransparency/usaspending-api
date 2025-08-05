@@ -3,7 +3,9 @@ import pytest
 
 from model_bakery import baker
 from rest_framework import status
-from usaspending_api.search.tests.data.search_filters_test_data import non_legacy_filters
+from usaspending_api.search.tests.data.search_filters_test_data import (
+    non_legacy_filters,
+)
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
@@ -135,7 +137,12 @@ def test_spending_by_award_type_success(client, monkeypatch, elasticsearch_award
     resp = client.post(
         "/api/v2/search/spending_by_award/",
         content_type="application/json",
-        data=json.dumps({"fields": ["Award ID", "Recipient Name"], "filters": {"award_type_codes": ["A", "B", "C"]}}),
+        data=json.dumps(
+            {
+                "fields": ["Award ID", "Recipient Name"],
+                "filters": {"award_type_codes": ["A", "B", "C"]},
+            }
+        ),
     )
     assert resp.status_code == status.HTTP_200_OK
 
@@ -147,7 +154,16 @@ def test_spending_by_award_type_success(client, monkeypatch, elasticsearch_award
             {
                 "fields": ["Award ID", "Recipient Name"],
                 "filters": {
-                    "award_type_codes": ["IDV_A", "IDV_B", "IDV_B_A", "IDV_B_B", "IDV_B_C", "IDV_C", "IDV_D", "IDV_E"]
+                    "award_type_codes": [
+                        "IDV_A",
+                        "IDV_B",
+                        "IDV_B_A",
+                        "IDV_B_B",
+                        "IDV_B_C",
+                        "IDV_C",
+                        "IDV_D",
+                        "IDV_E",
+                    ]
                 },
             }
         ),
@@ -166,7 +182,13 @@ def test_spending_by_award_type_success(client, monkeypatch, elasticsearch_award
     resp = client.post(
         "/api/v2/search/spending_by_award",
         content_type="application/json",
-        data=json.dumps({"fields": ["Sub-Award ID"], "filters": non_legacy_filters(), "subawards": True}),
+        data=json.dumps(
+            {
+                "fields": ["Sub-Award ID"],
+                "filters": non_legacy_filters(),
+                "subawards": True,
+            }
+        ),
     )
     assert resp.status_code == status.HTTP_200_OK
 
@@ -182,7 +204,15 @@ def test_spending_by_award_type_failure(client, monkeypatch, elasticsearch_award
         data=json.dumps(
             {
                 "fields": ["Award ID", "Recipient Name"],
-                "filters": {"award_type_codes": ["IDV_A", "IDV_B_A", "IDV_C", "IDV_D", "IDV_A_A"]},
+                "filters": {
+                    "award_type_codes": [
+                        "IDV_A",
+                        "IDV_B_A",
+                        "IDV_C",
+                        "IDV_D",
+                        "IDV_A_A",
+                    ]
+                },
             }
         ),
     )
@@ -190,7 +220,9 @@ def test_spending_by_award_type_failure(client, monkeypatch, elasticsearch_award
 
     # test bad autocomplete request for budget function
     resp = client.post(
-        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps({"filters": {}})
+        "/api/v2/search/spending_by_award/",
+        content_type="application/json",
+        data=json.dumps({"filters": {}}),
     )
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
@@ -263,8 +295,16 @@ def test_spending_by_award_pop_zip_filter(client, monkeypatch, elasticsearch_awa
         ),
     )
     possible_results = (
-        {"internal_id": 1, "Place of Performance Zip5": "00001", "generated_internal_id": "CONT_AWD_1"},
-        {"internal_id": 2, "Place of Performance Zip5": "00002", "generated_internal_id": "CONT_AWD_2"},
+        {
+            "internal_id": 1,
+            "Place of Performance Zip5": "00001",
+            "generated_internal_id": "CONT_AWD_1",
+        },
+        {
+            "internal_id": 2,
+            "Place of Performance Zip5": "00002",
+            "generated_internal_id": "CONT_AWD_2",
+        },
     )
     assert len(resp.data["results"]) == 2
     assert resp.data["results"][0] in possible_results
@@ -308,7 +348,10 @@ def test_spending_by_award_recipient_zip_filter(client, monkeypatch, elasticsear
                 "fields": ["Place of Performance Zip5"],
                 "filters": {
                     "award_type_codes": ["A", "B", "C", "D"],
-                    "recipient_locations": [{"country": "USA", "zip": "00501"}, {"country": "USA", "zip": "10000"}],
+                    "recipient_locations": [
+                        {"country": "USA", "zip": "00501"},
+                        {"country": "USA", "zip": "10000"},
+                    ],
                 },
             }
         ),
@@ -329,14 +372,25 @@ def test_spending_by_award_recipient_zip_filter(client, monkeypatch, elasticsear
                 "fields": ["Place of Performance Zip5"],
                 "filters": {
                     "award_type_codes": ["A", "B", "C", "D"],
-                    "recipient_locations": [{"country": "USA", "zip": "00501"}, {"country": "USA", "zip": "00502"}],
+                    "recipient_locations": [
+                        {"country": "USA", "zip": "00501"},
+                        {"country": "USA", "zip": "00502"},
+                    ],
                 },
             }
         ),
     )
     possible_results = (
-        {"internal_id": 1, "Place of Performance Zip5": "00001", "generated_internal_id": "CONT_AWD_1"},
-        {"internal_id": 2, "Place of Performance Zip5": "00002", "generated_internal_id": "CONT_AWD_2"},
+        {
+            "internal_id": 1,
+            "Place of Performance Zip5": "00001",
+            "generated_internal_id": "CONT_AWD_1",
+        },
+        {
+            "internal_id": 2,
+            "Place of Performance Zip5": "00002",
+            "generated_internal_id": "CONT_AWD_2",
+        },
     )
     assert len(resp.data["results"]) == 2
     assert resp.data["results"][0] in possible_results
@@ -398,7 +452,10 @@ def test_spending_by_award_both_zip_filter(client, monkeypatch, elasticsearch_aw
                 "fields": ["Place of Performance Zip5"],
                 "filters": {
                     "award_type_codes": ["A", "B", "C", "D"],
-                    "recipient_locations": [{"country": "USA", "zip": "00501"}, {"country": "USA", "zip": "00502"}],
+                    "recipient_locations": [
+                        {"country": "USA", "zip": "00501"},
+                        {"country": "USA", "zip": "00502"},
+                    ],
                     "place_of_performance_locations": [
                         {"country": "USA", "zip": "00001"},
                         {"country": "USA", "zip": "00003"},
@@ -443,7 +500,10 @@ def test_spending_by_award_foreign_filter(client, monkeypatch, elasticsearch_awa
         content_type="application/json",
         data=json.dumps(
             {
-                "filters": {"award_type_codes": ["A", "B", "C", "D"], "recipient_scope": "foreign"},
+                "filters": {
+                    "award_type_codes": ["A", "B", "C", "D"],
+                    "recipient_scope": "foreign",
+                },
                 "fields": ["Award ID"],
             }
         ),

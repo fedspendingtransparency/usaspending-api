@@ -12,7 +12,6 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RunSQL(
             sql="ALTER TABLE IF EXISTS raw.duns SET SCHEMA int;",
-            reverse_sql="ALTER TABLE IF EXISTS int.duns SET SCHEMA raw;"
+            reverse_sql="ALTER TABLE IF EXISTS int.duns SET SCHEMA raw;",
         ),
-
     ]

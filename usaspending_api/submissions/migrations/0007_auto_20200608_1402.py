@@ -6,26 +6,26 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('submissions', '0006_remove_submissionattributes_broker_submission_id'),
+        ("submissions", "0006_remove_submissionattributes_broker_submission_id"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='submissionattributes',
+            name="submissionattributes",
             options={},
         ),
         migrations.RemoveField(
-            model_name='submissionattributes',
-            name='usaspending_update',
+            model_name="submissionattributes",
+            name="usaspending_update",
         ),
         migrations.AddField(
-            model_name='submissionattributes',
-            name='published_date',
+            model_name="submissionattributes",
+            name="published_date",
             field=models.DateTimeField(blank=True, db_index=True, null=True),
         ),
         migrations.AlterField(
-            model_name='submissionattributes',
-            name='certified_date',
+            model_name="submissionattributes",
+            name="certified_date",
             field=models.DateTimeField(blank=True, null=True),
         ),
     ]

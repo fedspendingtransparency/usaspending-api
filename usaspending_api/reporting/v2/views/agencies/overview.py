@@ -1,10 +1,23 @@
-from django.db.models import DecimalField, F, Func, IntegerField, OuterRef, Q, Subquery, Value
+from django.db.models import (
+    DecimalField,
+    F,
+    Func,
+    IntegerField,
+    OuterRef,
+    Q,
+    Subquery,
+    Value,
+)
 from rest_framework.response import Response
 
 from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.references.models import Agency, ToptierAgencyPublishedDABSView
-from usaspending_api.reporting.models import ReportingAgencyMissingTas, ReportingAgencyOverview, ReportingAgencyTas
+from usaspending_api.reporting.models import (
+    ReportingAgencyMissingTas,
+    ReportingAgencyOverview,
+    ReportingAgencyTas,
+)
 from usaspending_api.submissions.models import SubmissionAttributes
 
 
@@ -36,7 +49,11 @@ class AgenciesOverview(PaginationMixin, AgencyBase):
         page_metadata = get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
         results = results[self.pagination.lower_limit : self.pagination.upper_limit]
         return Response(
-            {"page_metadata": page_metadata, "results": results, "messages": self.standard_response_messages}
+            {
+                "page_metadata": page_metadata,
+                "results": results,
+                "messages": self.standard_response_messages,
+            }
         )
 
     def get_agency_overview(self):

@@ -1,12 +1,18 @@
 ACCOUNT_DOWNLOAD_COLUMNS = {
-    "financial_accounts_by_awards_id": {"delta": "INTEGER NOT NULL", "postgres": "INTEGER NOT NULL"},
+    "financial_accounts_by_awards_id": {
+        "delta": "INTEGER NOT NULL",
+        "postgres": "INTEGER NOT NULL",
+    },
     "submission_id": {"delta": "INTEGER NOT NULL", "postgres": "INTEGER NOT NULL"},
     "federal_owning_agency_name": {"delta": "STRING", "postgres": "TEXT"},
     "treasury_owning_agency_name": {"delta": "STRING", "postgres": "TEXT"},
     "federal_account_symbol": {"delta": "STRING", "postgres": "TEXT"},
     "federal_account_name": {"delta": "STRING", "postgres": "TEXT"},
     "agency_identifier_name": {"delta": "STRING", "postgres": "TEXT"},
-    "allocation_transfer_agency_identifier_name": {"delta": "STRING", "postgres": "TEXT"},
+    "allocation_transfer_agency_identifier_name": {
+        "delta": "STRING",
+        "postgres": "TEXT",
+    },
     "program_activity_code": {"delta": "STRING", "postgres": "TEXT"},
     "program_activity_name": {"delta": "STRING", "postgres": "TEXT"},
     "object_class_code": {"delta": "STRING", "postgres": "TEXT"},
@@ -65,7 +71,10 @@ ACCOUNT_DOWNLOAD_COLUMNS = {
     "national_interest_action": {"delta": "STRING", "postgres": "TEXT"},
     "reporting_agency_name": {"delta": "STRING", "postgres": "TEXT"},
     "submission_period": {"delta": "STRING", "postgres": "TEXT"},
-    "allocation_transfer_agency_identifier_code": {"delta": "STRING", "postgres": "TEXT"},
+    "allocation_transfer_agency_identifier_code": {
+        "delta": "STRING",
+        "postgres": "TEXT",
+    },
     "agency_identifier_code": {"delta": "STRING", "postgres": "TEXT"},
     "beginning_period_of_availability": {"delta": "DATE", "postgres": "DATE"},
     "ending_period_of_availability": {"delta": "DATE", "postgres": "DATE"},
@@ -80,8 +89,14 @@ ACCOUNT_DOWNLOAD_COLUMNS = {
     "budget_function_code": {"delta": "STRING", "postgres": "TEXT"},
     "budget_subfunction": {"delta": "STRING", "postgres": "TEXT"},
     "budget_subfunction_code": {"delta": "STRING", "postgres": "TEXT"},
-    "transaction_obligated_amount": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
-    "gross_outlay_amount_fyb_to_period_end": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)"},
+    "transaction_obligated_amount": {
+        "delta": "NUMERIC(23,2)",
+        "postgres": "NUMERIC(23,2)",
+    },
+    "gross_outlay_amount_fyb_to_period_end": {
+        "delta": "NUMERIC(23,2)",
+        "postgres": "NUMERIC(23,2)",
+    },
     "ussgl487200_downward_adj_prior_year_prepaid_undeliv_order_oblig": {
         "delta": "NUMERIC(23,2)",
         "postgres": "NUMERIC(23,2)",
@@ -94,11 +109,20 @@ ACCOUNT_DOWNLOAD_COLUMNS = {
     "award_latest_action_date_fiscal_year": {"delta": "INTEGER", "postgres": "INTEGER"},
     "award_type_code": {"delta": "STRING", "postgres": "TEXT"},
     "award_type": {"delta": "STRING", "postgres": "TEXT"},
-    "prime_award_summary_recipient_cd_original": {"delta": "STRING", "postgres": "TEXT"},
+    "prime_award_summary_recipient_cd_original": {
+        "delta": "STRING",
+        "postgres": "TEXT",
+    },
     "prime_award_summary_recipient_cd_current": {"delta": "STRING", "postgres": "TEXT"},
     "recipient_zip_code": {"delta": "STRING", "postgres": "TEXT"},
-    "prime_award_summary_place_of_performance_cd_original": {"delta": "STRING", "postgres": "TEXT"},
-    "prime_award_summary_place_of_performance_cd_current": {"delta": "STRING", "postgres": "TEXT"},
+    "prime_award_summary_place_of_performance_cd_original": {
+        "delta": "STRING",
+        "postgres": "TEXT",
+    },
+    "prime_award_summary_place_of_performance_cd_current": {
+        "delta": "STRING",
+        "postgres": "TEXT",
+    },
     "usaspending_permalink": {"delta": "STRING", "postgres": "TEXT"},
     "last_modified_date": {"delta": "DATE", "postgres": "DATE"},
     "reporting_fiscal_period": {"delta": "INTEGER", "postgres": "INTEGER"},
