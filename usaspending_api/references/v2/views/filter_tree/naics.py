@@ -22,13 +22,7 @@ class NAICSViewSet(APIView):
     def _parse_and_validate_request(self, requested_naics: str, request_data) -> dict:
         data = {"code": requested_naics, "filter": request_data.get("filter")}
         models = [
-            {
-                "key": "code",
-                "name": "code",
-                "type": "integer",
-                "allow_nulls": True,
-                "optional": True,
-            },
+            {"key": "code", "name": "code", "type": "integer", "allow_nulls": True, "optional": True},
             {
                 "key": "filter",
                 "name": "filter",
@@ -47,7 +41,7 @@ class NAICSViewSet(APIView):
             {
                 "naics": naics.code,
                 "naics_description": naics.description,
-                "count": (self.get_six_digit_naics_count(naics.code) if len(naics.code) < 6 else DEFAULT_CHILDREN),
+                "count": self.get_six_digit_naics_count(naics.code) if len(naics.code) < 6 else DEFAULT_CHILDREN,
             }
             for naics in self.naics_queryset.filter(code__startswith=naics_code, text_len=length)
         ]

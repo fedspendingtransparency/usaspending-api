@@ -25,11 +25,7 @@ class Migration(migrations.Migration):
         ),
         # Need to recreate view after columns were dropped
         migrations.RunSQL(
-            sql=[
-                f"{Path('usaspending_api/download/sql/vw_financial_accounts_by_program_activity_object_class_download.sql').read_text()}"
-            ],
-            reverse_sql=[
-                "DROP VIEW IF EXISTS vw_financial_accounts_by_program_activity_object_class_download;"
-            ],
+            sql=[f"{Path('usaspending_api/download/sql/vw_financial_accounts_by_program_activity_object_class_download.sql').read_text()}"],
+            reverse_sql=["DROP VIEW IF EXISTS vw_financial_accounts_by_program_activity_object_class_download;"],
         ),
     ]

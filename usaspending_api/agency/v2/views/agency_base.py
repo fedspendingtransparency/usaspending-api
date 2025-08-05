@@ -16,17 +16,10 @@ from usaspending_api.common.helpers.fiscal_year_helpers import (
     get_final_period_of_quarter,
     current_fiscal_year,
 )
-from usaspending_api.common.helpers.generic_helper import (
-    get_account_data_time_period_message,
-)
-from usaspending_api.common.validator import (
-    TinyShield,
-    customize_pagination_with_sort_columns,
-)
+from usaspending_api.common.helpers.generic_helper import get_account_data_time_period_message
+from usaspending_api.common.validator import TinyShield, customize_pagination_with_sort_columns
 from usaspending_api.references.models import ToptierAgency, Agency
-from usaspending_api.submissions.helpers import (
-    validate_request_within_revealed_submissions,
-)
+from usaspending_api.submissions.helpers import validate_request_within_revealed_submissions
 
 logger = logging.getLogger(__name__)
 
@@ -85,8 +78,7 @@ class AgencyBase(APIView):
 
         if param_values.get("fiscal_year"):
             validate_request_within_revealed_submissions(
-                fiscal_year=param_values["fiscal_year"],
-                fiscal_period=param_values.get("fiscal_period"),
+                fiscal_year=param_values["fiscal_year"], fiscal_period=param_values.get("fiscal_period")
             )
         return param_values
 

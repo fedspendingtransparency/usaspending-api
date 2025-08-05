@@ -8,12 +8,7 @@ from rest_framework import status
 def financial_spending_data(db):
     # Create 2 objects that should be returned and one that should not.
     # Create AGENCY AND TopTier AGENCY For FinancialAccountsByProgramActivityObjectClass objects
-    ttagency1 = baker.make(
-        "references.ToptierAgency",
-        name="tta_name",
-        toptier_code="abc",
-        _fill_optional=True,
-    )
+    ttagency1 = baker.make("references.ToptierAgency", name="tta_name", toptier_code="abc", _fill_optional=True)
     baker.make("references.Agency", id=1, toptier_agency=ttagency1, _fill_optional=True)
 
     # Object 1

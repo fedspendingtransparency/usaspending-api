@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("search", "0041_add_parent_recipient_name"),
+        ('search', '0041_add_parent_recipient_name'),
     ]
 
     operations = [
@@ -52,6 +52,6 @@ class Migration(migrations.Migration):
                     WITH (fillfactor='97') 
                     WHERE ("type" IS NOT NULL);
             """,
-            reverse_sql=f"DROP TABLE IF EXISTS rpt.summary_state_view;",
+            reverse_sql=f"DROP TABLE IF EXISTS rpt.summary_state_view;"
         ),
     ]

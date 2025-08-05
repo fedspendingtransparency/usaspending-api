@@ -7,21 +7,14 @@ from django.core.management import call_command
 from pathlib import Path
 from typing import Tuple
 
-from usaspending_api.broker.helpers.last_load_date import (
-    get_last_load_date,
-    update_last_load_date,
-)
+from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
 from usaspending_api.common.etl.postgres import ETLDBLinkTable, ETLTable
 from usaspending_api.common.etl.postgres import operations
-from usaspending_api.common.helpers.date_helper import (
-    datetime_command_line_argument_type,
-)
+from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
 from usaspending_api.common.helpers.sql_helpers import get_broker_dsn_string
 from usaspending_api.common.helpers.timing_helpers import ScriptTimer as Timer
 from usaspending_api.common.retrieve_file_from_uri import SCHEMA_HELP_TEXT
-from usaspending_api.transactions.loader_functions import (
-    filepath_command_line_argument_type,
-)
+from usaspending_api.transactions.loader_functions import filepath_command_line_argument_type
 from usaspending_api.transactions.loader_functions import read_file_for_database_ids
 from usaspending_api.transactions.loader_functions import store_ids_in_file
 
@@ -39,9 +32,7 @@ class AgnosticTransactionLoader:
         mutually_exclusive_group = parser.add_mutually_exclusive_group(required=True)
 
         mutually_exclusive_group.add_argument(
-            "--ids",
-            nargs="+",
-            help=f"Load/Reload transactions using this {self.shared_pk} list (space-separated)",
+            "--ids", nargs="+", help=f"Load/Reload transactions using this {self.shared_pk} list (space-separated)"
         )
         mutually_exclusive_group.add_argument(
             "--date",
@@ -125,11 +116,7 @@ class AgnosticTransactionLoader:
 
         logger.info(f"{self.total_ids_to_process:,} IDs stored")
         with Timer(message="Transferring Data"):
-            self.copy_broker_table_data(
-                self.broker_source_table_name,
-                self.destination_table_name,
-                self.shared_pk,
-            )
+            self.copy_broker_table_data(self.broker_source_table_name, self.destination_table_name, self.shared_pk)
 
     def cleanup(self) -> None:
         """Finalize the execution and cleanup for the next script run"""
@@ -192,11 +179,7 @@ class AgnosticTransactionLoader:
             else:
                 optional_predicate = f"where {predicate}"
 
-        return sql.format(
-            id=self.shared_pk,
-            table=self.broker_source_table_name,
-            optional_predicate=optional_predicate,
-        )
+        return sql.format(id=self.shared_pk, table=self.broker_source_table_name, optional_predicate=optional_predicate)
 
     def copy_broker_table_data(self, source_tablename, dest_tablename, primary_key):
         """Loop through the batches of IDs and load using the ETL tables"""
@@ -209,11 +192,7 @@ class AgnosticTransactionLoader:
                 if len(id_list) != 0:
                     predicate = self.extra_predicate + [{"field": primary_key, "op": "IN", "values": tuple(id_list)}]
                     record_count = operations.upsert_records_with_predicate(
-                        source,
-                        destination,
-                        predicate,
-                        primary_key,
-                        self.is_case_insensitive_pk_match,
+                        source, destination, predicate, primary_key, self.is_case_insensitive_pk_match
                     )
                 else:
                     logger.warning("No records to load. Please check parameters and settings to confirm accuracy")

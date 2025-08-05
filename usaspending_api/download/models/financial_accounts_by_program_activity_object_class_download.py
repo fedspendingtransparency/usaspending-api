@@ -1,8 +1,6 @@
 from django.db import models
 
-from usaspending_api.financial_activities.models import (
-    AbstractFinancialAccountsByProgramActivityObjectClass,
-)
+from usaspending_api.financial_activities.models import AbstractFinancialAccountsByProgramActivityObjectClass
 
 
 class FinancialAccountsByProgramActivityObjectClassDownloadView(AbstractFinancialAccountsByProgramActivityObjectClass):

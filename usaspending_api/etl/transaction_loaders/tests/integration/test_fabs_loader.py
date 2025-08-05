@@ -167,18 +167,10 @@ def test_delete_fabs_success(monkeypatch):
     # Award kept despite having one of their associated transactions removed
     baker.make(AwardSearch, award_id=2, generated_unique_award_id="TEST_AWARD_2")
     baker.make(
-        TransactionSearch,
-        transaction_id=2,
-        award_id=2,
-        generated_unique_award_id="2019-01-01",
-        published_fabs_id=302,
+        TransactionSearch, transaction_id=2, award_id=2, generated_unique_award_id="2019-01-01", published_fabs_id=302
     )
     baker.make(
-        TransactionSearch,
-        transaction_id=3,
-        award_id=2,
-        generated_unique_award_id="2019-01-02",
-        published_fabs_id=303,
+        TransactionSearch, transaction_id=3, award_id=2, generated_unique_award_id="2019-01-02", published_fabs_id=303
     )
 
     # Award/Transaction untouched at all as control
@@ -212,11 +204,7 @@ def test_delete_fabs_success(monkeypatch):
         is_active=True,
     )
     baker.make(ExternalDataType, external_data_type_id=2, name="fabs")
-    baker.make(
-        ExternalDataLoadDate,
-        external_data_type_id=2,
-        last_load_date="2022-02-01 18:27:50",
-    )
+    baker.make(ExternalDataLoadDate, external_data_type_id=2, last_load_date="2022-02-01 18:27:50")
 
     # Make sure current Awards and Transactions are linked
     update_awards()
@@ -225,11 +213,7 @@ def test_delete_fabs_success(monkeypatch):
     monkeypatch.setattr(
         "usaspending_api.broker.management.commands.fabs_nightly_loader.retrieve_deleted_fabs_transactions",
         lambda start_datetime, end_datetime=None: {
-            "2022-02-18": [
-                "TEST_TRANSACTION_1",
-                "TEST_TRANSACTION_2",
-                "TEST_TRANSACTION_5",
-            ]
+            "2022-02-18": ["TEST_TRANSACTION_1", "TEST_TRANSACTION_2", "TEST_TRANSACTION_5"]
         },
     )
     monkeypatch.setattr(

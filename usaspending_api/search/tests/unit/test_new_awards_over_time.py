@@ -1,8 +1,6 @@
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.exceptions import UnprocessableEntityException
-from usaspending_api.search.v2.views.new_awards_over_time import (
-    NewAwardsOverTimeVisualizationViewSet,
-)
+from usaspending_api.search.v2.views.new_awards_over_time import NewAwardsOverTimeVisualizationViewSet
 
 
 def catch_filter_errors(viewset, filters, expected_exception):
@@ -33,8 +31,5 @@ def test_new_awards_filter_errors():
     catch_filter_errors(new_awards_viewset, filters, "InvalidParameterException")
     filters = {"group": "month", "filters": {"recipient_id": "", "time_period": []}}
     catch_filter_errors(new_awards_viewset, filters, "UnprocessableEntityException")
-    filters = {
-        "group": "month",
-        "filters": {"recipient_id": "", "time_period": [{"start_date": ""}]},
-    }
+    filters = {"group": "month", "filters": {"recipient_id": "", "time_period": [{"start_date": ""}]}}
     catch_filter_errors(new_awards_viewset, filters, "UnprocessableEntityException")

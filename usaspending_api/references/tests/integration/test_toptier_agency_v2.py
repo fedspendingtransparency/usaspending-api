@@ -16,26 +16,11 @@ def create_agency_data():
         justification="test.com/cj",
     )
     ttagency2 = baker.make(
-        "references.ToptierAgency",
-        name="TTA Name 2",
-        toptier_code="200",
-        abbreviation="tta_abrev_2",
+        "references.ToptierAgency", name="TTA Name 2", toptier_code="200", abbreviation="tta_abrev_2"
     )
 
-    baker.make(
-        "references.Agency",
-        id=1,
-        toptier_agency=ttagency1,
-        toptier_flag=True,
-        _fill_optional=True,
-    )
-    baker.make(
-        "references.Agency",
-        id=2,
-        toptier_agency=ttagency2,
-        toptier_flag=True,
-        _fill_optional=True,
-    )
+    baker.make("references.Agency", id=1, toptier_agency=ttagency1, toptier_flag=True, _fill_optional=True)
+    baker.make("references.Agency", id=2, toptier_agency=ttagency2, toptier_flag=True, _fill_optional=True)
 
     # create TAS
     tas = baker.make("accounts.TreasuryAppropriationAccount", funding_toptier_agency=ttagency1)

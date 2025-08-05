@@ -84,10 +84,7 @@ class AwardDownloadValidator(DownloadValidatorBase):
         self.set_filter_defaults({"award_type_codes": list(award_type_mapping.keys())})
 
         constraint_type = self.request_data.get("constraint_type")
-        if constraint_type == "year" and sorted(self._json_request["filters"]) == [
-            "award_type_codes",
-            "keywords",
-        ]:
+        if constraint_type == "year" and sorted(self._json_request["filters"]) == ["award_type_codes", "keywords"]:
             self._handle_keyword_search_download()
         elif constraint_type == "year":
             self._handle_custom_award_download()
@@ -136,26 +133,10 @@ class AwardDownloadValidator(DownloadValidatorBase):
                     "type": "array",
                     "array_type": "object",
                     "object_keys": {
-                        "type": {
-                            "type": "enum",
-                            "enum_values": ["funding", "awarding"],
-                            "optional": False,
-                        },
-                        "tier": {
-                            "type": "enum",
-                            "enum_values": ["toptier", "subtier"],
-                            "optional": False,
-                        },
-                        "toptier_name": {
-                            "type": "text",
-                            "text_type": "search",
-                            "optional": True,
-                        },
-                        "name": {
-                            "type": "text",
-                            "text_type": "search",
-                            "optional": False,
-                        },
+                        "type": {"type": "enum", "enum_values": ["funding", "awarding"], "optional": False},
+                        "tier": {"type": "enum", "enum_values": ["toptier", "subtier"], "optional": False},
+                        "toptier_name": {"type": "text", "text_type": "search", "optional": True},
+                        "name": {"type": "text", "text_type": "search", "optional": False},
                     },
                 },
                 {"name": "agency", "key": "filters|agency", "type": "integer"},
@@ -166,10 +147,7 @@ class AwardDownloadValidator(DownloadValidatorBase):
                     "optional": False,
                     "object_keys": {
                         "start_date": {"type": "date", "default": "1000-01-01"},
-                        "end_date": {
-                            "type": "date",
-                            "default": datetime.strftime(datetime.utcnow(), "%Y-%m-%d"),
-                        },
+                        "end_date": {"type": "date", "default": datetime.strftime(datetime.utcnow(), "%Y-%m-%d")},
                     },
                 },
                 {
@@ -185,21 +163,9 @@ class AwardDownloadValidator(DownloadValidatorBase):
                     "type": "array",
                     "array_type": "object",
                     "object_keys": {
-                        "country": {
-                            "type": "text",
-                            "text_type": "search",
-                            "optional": False,
-                        },
-                        "state": {
-                            "type": "text",
-                            "text_type": "search",
-                            "optional": True,
-                        },
-                        "zip": {
-                            "type": "text",
-                            "text_type": "search",
-                            "optional": True,
-                        },
+                        "country": {"type": "text", "text_type": "search", "optional": False},
+                        "state": {"type": "text", "text_type": "search", "optional": True},
+                        "zip": {"type": "text", "text_type": "search", "optional": True},
                         "district_original": {
                             "type": "text",
                             "text_type": "search",
@@ -214,16 +180,8 @@ class AwardDownloadValidator(DownloadValidatorBase):
                             "text_min": 2,
                             "text_max": 2,
                         },
-                        "county": {
-                            "type": "text",
-                            "text_type": "search",
-                            "optional": True,
-                        },
-                        "city": {
-                            "type": "text",
-                            "text_type": "search",
-                            "optional": True,
-                        },
+                        "county": {"type": "text", "text_type": "search", "optional": True},
+                        "city": {"type": "text", "text_type": "search", "optional": True},
                     },
                 },
                 {
@@ -246,21 +204,9 @@ class AwardDownloadValidator(DownloadValidatorBase):
                     "type": "array",
                     "array_type": "object",
                     "object_keys": {
-                        "country": {
-                            "type": "text",
-                            "text_type": "search",
-                            "optional": False,
-                        },
-                        "state": {
-                            "type": "text",
-                            "text_type": "search",
-                            "optional": True,
-                        },
-                        "zip": {
-                            "type": "text",
-                            "text_type": "search",
-                            "optional": True,
-                        },
+                        "country": {"type": "text", "text_type": "search", "optional": False},
+                        "state": {"type": "text", "text_type": "search", "optional": True},
+                        "zip": {"type": "text", "text_type": "search", "optional": True},
                         "district_original": {
                             "type": "text",
                             "text_type": "search",
@@ -275,16 +221,8 @@ class AwardDownloadValidator(DownloadValidatorBase):
                             "text_min": 2,
                             "text_max": 2,
                         },
-                        "county": {
-                            "type": "text",
-                            "text_type": "search",
-                            "optional": True,
-                        },
-                        "city": {
-                            "type": "text",
-                            "text_type": "search",
-                            "optional": True,
-                        },
+                        "county": {"type": "text", "text_type": "search", "optional": True},
+                        "city": {"type": "text", "text_type": "search", "optional": True},
                     },
                 },
                 {
@@ -293,12 +231,7 @@ class AwardDownloadValidator(DownloadValidatorBase):
                     "type": "enum",
                     "enum_values": ("domestic", "foreign"),
                 },
-                {
-                    "name": "sub_agency",
-                    "key": "filters|sub_agency",
-                    "type": "text",
-                    "text_type": "search",
-                },
+                {"name": "sub_agency", "key": "filters|sub_agency", "type": "text", "text_type": "search"},
                 {
                     "name": "sub_award_types",
                     "key": "filters|sub_award_types",
@@ -333,10 +266,7 @@ class AwardDownloadValidator(DownloadValidatorBase):
             raise InvalidParameterException("Invalid Parameter: date_range total days must be within a year")
 
         final_award_filters["time_period"] = [
-            {
-                **custom_award_filters["date_range"],
-                "date_type": custom_award_filters["date_type"],
-            }
+            {**custom_award_filters["date_range"], "date_type": custom_award_filters["date_type"]}
         ]
 
         if (
@@ -436,10 +366,7 @@ class IdvDownloadValidator(DownloadValidatorBase):
                     "key": "award_id",
                     "name": "award_id",
                     "type": "any",
-                    "models": [
-                        {"type": "integer"},
-                        {"type": "text", "text_type": "raw"},
-                    ],
+                    "models": [{"type": "integer"}, {"type": "text", "text_type": "raw"}],
                     "optional": False,
                     "allow_nulls": False,
                 },
@@ -463,11 +390,7 @@ class IdvDownloadValidator(DownloadValidatorBase):
         self._json_request.update(
             {
                 "account_level": "treasury_account",
-                "download_types": [
-                    "idv_orders",
-                    "idv_transaction_history",
-                    "idv_federal_account_funding",
-                ],
+                "download_types": ["idv_orders", "idv_transaction_history", "idv_federal_account_funding"],
                 "include_file_description": {
                     "source": settings.IDV_DOWNLOAD_README_FILE_PATH,
                     "destination": "readme.txt",
@@ -491,10 +414,7 @@ class ContractDownloadValidator(DownloadValidatorBase):
                     "key": "award_id",
                     "name": "award_id",
                     "type": "any",
-                    "models": [
-                        {"type": "integer"},
-                        {"type": "text", "text_type": "raw"},
-                    ],
+                    "models": [{"type": "integer"}, {"type": "text", "text_type": "raw"}],
                     "optional": False,
                     "allow_nulls": False,
                 },
@@ -518,11 +438,7 @@ class ContractDownloadValidator(DownloadValidatorBase):
         self._json_request.update(
             {
                 "account_level": "treasury_account",
-                "download_types": [
-                    "sub_contracts",
-                    "contract_transactions",
-                    "contract_federal_account_funding",
-                ],
+                "download_types": ["sub_contracts", "contract_transactions", "contract_federal_account_funding"],
                 "include_file_description": {
                     "source": settings.CONTRACT_DOWNLOAD_README_FILE_PATH,
                     "destination": "ContractAwardSummary_download_readme.txt",
@@ -549,10 +465,7 @@ class AssistanceDownloadValidator(DownloadValidatorBase):
                     "key": "award_id",
                     "name": "award_id",
                     "type": "any",
-                    "models": [
-                        {"type": "integer"},
-                        {"type": "text", "text_type": "raw"},
-                    ],
+                    "models": [{"type": "integer"}, {"type": "text", "text_type": "raw"}],
                     "optional": False,
                     "allow_nulls": False,
                 },
@@ -580,11 +493,7 @@ class AssistanceDownloadValidator(DownloadValidatorBase):
         self._json_request.update(
             {
                 "account_level": "treasury_account",
-                "download_types": [
-                    "assistance_transactions",
-                    "sub_grants",
-                    "assistance_federal_account_funding",
-                ],
+                "download_types": ["assistance_transactions", "sub_grants", "assistance_federal_account_funding"],
                 "include_file_description": {
                     "source": settings.ASSISTANCE_DOWNLOAD_README_FILE_PATH,
                     "destination": "AssistanceAwardSummary_download_readme.txt",
@@ -643,12 +552,7 @@ class DisasterRecipientDownloadValidator(DownloadValidatorBase):
         # Also add "face_value_of_loans" column if only loan types
         award_category = "All-Awards"
         award_type_codes = set(self._json_request["filters"].get("award_type_codes", award_type_mapping.keys()))
-        columns = [
-            "recipient",
-            "award_obligations",
-            "award_outlays",
-            "number_of_awards",
-        ]
+        columns = ["recipient", "award_obligations", "award_outlays", "number_of_awards"]
 
         if award_type_codes <= set(contract_type_mapping.keys()):
             award_category = "Contracts"
@@ -670,10 +574,7 @@ class DisasterRecipientDownloadValidator(DownloadValidatorBase):
         # Need to specify the field to use "query" filter on if present
         query_text = self._json_request["filters"].pop("query", None)
         if query_text:
-            self._json_request["filters"]["query"] = {
-                "text": query_text,
-                "fields": ["recipient_name"],
-            }
+            self._json_request["filters"]["query"] = {"text": query_text, "fields": ["recipient_name"]}
 
 
 class AccountDownloadValidator(DownloadValidatorBase):
@@ -698,20 +599,8 @@ class AccountDownloadValidator(DownloadValidatorBase):
                     "max": MAXYEAR,
                     "optional": False,
                 },
-                {
-                    "name": "quarter",
-                    "key": "filters|quarter",
-                    "type": "integer",
-                    "min": 1,
-                    "max": 4,
-                },
-                {
-                    "name": "period",
-                    "key": "filters|period",
-                    "type": "integer",
-                    "min": 2,
-                    "max": 12,
-                },
+                {"name": "quarter", "key": "filters|quarter", "type": "integer", "min": 1, "max": 4},
+                {"name": "period", "key": "filters|period", "type": "integer", "min": 2, "max": 12},
                 {
                     "name": "submission_type",
                     "key": "filters|submission_type",
@@ -725,13 +614,7 @@ class AccountDownloadValidator(DownloadValidatorBase):
                     "array_type": "enum",
                     "enum_values": VALID_ACCOUNT_SUBMISSION_TYPES,
                 },
-                {
-                    "name": "agency",
-                    "key": "filters|agency",
-                    "type": "text",
-                    "text_type": "search",
-                    "default": "all",
-                },
+                {"name": "agency", "key": "filters|agency", "type": "text", "text_type": "search", "default": "all"},
                 {
                     "name": "def_codes",
                     "key": "filters|def_codes",

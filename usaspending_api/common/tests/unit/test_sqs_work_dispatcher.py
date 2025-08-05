@@ -12,12 +12,7 @@ from random import randint
 
 import pytest
 from botocore.config import Config
-from botocore.exceptions import (
-    EndpointConnectionError,
-    ClientError,
-    NoCredentialsError,
-    NoRegionError,
-)
+from botocore.exceptions import EndpointConnectionError, ClientError, NoCredentialsError, NoRegionError
 from psutil import TimeoutExpired
 
 from usaspending_api.common.sqs.sqs_handler import (
@@ -76,10 +71,7 @@ def test_dispatch_with_default_numeric_message_body_succeeds(fake_sqs_queue):
     queue.send_message(MessageBody=1234)
 
     dispatcher = SQSWorkDispatcher(
-        queue,
-        worker_process_name="Test Worker Process",
-        long_poll_seconds=1,
-        monitor_sleep_time=1,
+        queue, worker_process_name="Test Worker Process", long_poll_seconds=1, monitor_sleep_time=1
     )
 
     def do_some_work(task_id):
@@ -116,10 +108,7 @@ def test_dispatch_with_single_dict_item_message_transformer_succeeds(fake_sqs_qu
     queue.send_message(MessageBody=1234)
 
     dispatcher = SQSWorkDispatcher(
-        queue,
-        worker_process_name="Test Worker Process",
-        long_poll_seconds=1,
-        monitor_sleep_time=1,
+        queue, worker_process_name="Test Worker Process", long_poll_seconds=1, monitor_sleep_time=1
     )
 
     def do_some_work(task_id):
@@ -153,10 +142,7 @@ def test_dispatch_with_multi_arg_message_transformer_succeeds(fake_sqs_queue):
     queue.send_message(MessageBody=1234)
 
     dispatcher = SQSWorkDispatcher(
-        queue,
-        worker_process_name="Test Worker Process",
-        long_poll_seconds=1,
-        monitor_sleep_time=1,
+        queue, worker_process_name="Test Worker Process", long_poll_seconds=1, monitor_sleep_time=1
     )
 
     def do_some_work(task_id, task_id_times_two):
@@ -191,10 +177,7 @@ def test_dispatch_with_multi_kwarg_message_transformer_succeeds(fake_sqs_queue):
     queue.send_message(MessageBody=1234)
 
     dispatcher = SQSWorkDispatcher(
-        queue,
-        worker_process_name="Test Worker Process",
-        long_poll_seconds=1,
-        monitor_sleep_time=1,
+        queue, worker_process_name="Test Worker Process", long_poll_seconds=1, monitor_sleep_time=1
     )
 
     def do_some_work(task_id, task_id_times_two):
@@ -206,11 +189,7 @@ def test_dispatch_with_multi_kwarg_message_transformer_succeeds(fake_sqs_queue):
         queue_in_use.send_message(MessageBody=9999)
 
     dispatcher.dispatch(
-        do_some_work,
-        message_transformer=lambda x: {
-            "task_id": x.body,
-            "task_id_times_two": x.body * 2,
-        },
+        do_some_work, message_transformer=lambda x: {"task_id": x.body, "task_id_times_two": x.body * 2}
     )
     dispatcher._worker_process.join(5)  # wait at most 5 sec for the work to complete
 
@@ -234,10 +213,7 @@ def test_additional_job_args_can_be_passed(fake_sqs_queue):
     queue.send_message(MessageBody=1234)
 
     dispatcher = SQSWorkDispatcher(
-        queue,
-        worker_process_name="Test Worker Process",
-        long_poll_seconds=1,
-        monitor_sleep_time=1,
+        queue, worker_process_name="Test Worker Process", long_poll_seconds=1, monitor_sleep_time=1
     )
 
     def do_some_work(task_id, category):
@@ -272,10 +248,7 @@ def test_additional_job_kwargs_can_be_passed(fake_sqs_queue):
     queue.send_message(MessageBody=1234)
 
     dispatcher = SQSWorkDispatcher(
-        queue,
-        worker_process_name="Test Worker Process",
-        long_poll_seconds=1,
-        monitor_sleep_time=1,
+        queue, worker_process_name="Test Worker Process", long_poll_seconds=1, monitor_sleep_time=1
     )
 
     def do_some_work(task_id, category):
@@ -300,9 +273,7 @@ def test_additional_job_kwargs_can_be_passed(fake_sqs_queue):
 
 
 @pytest.mark.signal_handling  # see mark doc in pyproject.toml
-def test_additional_job_kwargs_can_be_passed_alongside_dict_args_from_message_transformer(
-    fake_sqs_queue,
-):
+def test_additional_job_kwargs_can_be_passed_alongside_dict_args_from_message_transformer(fake_sqs_queue):
     """Additional args can be passed to the job to execute.
 
     This should combine the dictionary-based args from the message transformer with the additional
@@ -312,10 +283,7 @@ def test_additional_job_kwargs_can_be_passed_alongside_dict_args_from_message_tr
     queue.send_message(MessageBody=1234)
 
     dispatcher = SQSWorkDispatcher(
-        queue,
-        worker_process_name="Test Worker Process",
-        long_poll_seconds=1,
-        monitor_sleep_time=1,
+        queue, worker_process_name="Test Worker Process", long_poll_seconds=1, monitor_sleep_time=1
     )
 
     def do_some_work(task_id, category):
@@ -326,11 +294,7 @@ def test_additional_job_kwargs_can_be_passed_alongside_dict_args_from_message_tr
         queue_in_use = fake_sqs_queue
         queue_in_use.send_message(MessageBody=9999)
 
-    dispatcher.dispatch(
-        do_some_work,
-        message_transformer=lambda x: {"task_id": x.body},
-        category="easy work",
-    )
+    dispatcher.dispatch(do_some_work, message_transformer=lambda x: {"task_id": x.body}, category="easy work")
 
     dispatcher._worker_process.join(5)  # wait at most 5 sec for the work to complete
 
@@ -357,10 +321,7 @@ def test_dispatching_by_message_attribute_succeeds_with_job_args(fake_sqs_queue)
     queue.send_message(MessageBody=1234, MessageAttributes=message_attr)
 
     dispatcher = SQSWorkDispatcher(
-        queue,
-        worker_process_name="Test Worker Process",
-        long_poll_seconds=1,
-        monitor_sleep_time=1,
+        queue, worker_process_name="Test Worker Process", long_poll_seconds=1, monitor_sleep_time=1
     )
 
     def one_work(task_id):
@@ -412,10 +373,7 @@ def test_dispatching_by_message_attribute_succeeds_with_job_kwargs(fake_sqs_queu
     queue.send_message(MessageBody=1234, MessageAttributes=message_attr)
 
     dispatcher = SQSWorkDispatcher(
-        queue,
-        worker_process_name="Test Worker Process",
-        long_poll_seconds=1,
-        monitor_sleep_time=1,
+        queue, worker_process_name="Test Worker Process", long_poll_seconds=1, monitor_sleep_time=1
     )
 
     def one_work(task_id):
@@ -452,9 +410,7 @@ def test_dispatching_by_message_attribute_succeeds_with_job_kwargs(fake_sqs_queu
 
 
 @pytest.mark.signal_handling  # see mark doc in pyproject.toml
-def test_dispatching_by_message_attribute_succeeds_with_job_args_and_job_kwargs(
-    fake_sqs_queue,
-):
+def test_dispatching_by_message_attribute_succeeds_with_job_args_and_job_kwargs(fake_sqs_queue):
     """SQSWorkDispatcher can read a message attribute to determine which function to call
 
     - Given a message with a user-defined message attribute
@@ -469,10 +425,7 @@ def test_dispatching_by_message_attribute_succeeds_with_job_args_and_job_kwargs(
     queue.send_message(MessageBody=1234, MessageAttributes=message_attr)
 
     dispatcher = SQSWorkDispatcher(
-        queue,
-        worker_process_name="Test Worker Process",
-        long_poll_seconds=1,
-        monitor_sleep_time=1,
+        queue, worker_process_name="Test Worker Process", long_poll_seconds=1, monitor_sleep_time=1
     )
 
     def one_work(task_id, category):
@@ -494,17 +447,9 @@ def test_dispatching_by_message_attribute_succeeds_with_job_args_and_job_kwargs(
     def work_one_or_two(message):
         msg_attr = message.message_attributes
         if msg_attr and msg_attr.get("work_type", {}).get("StringValue") == "a":
-            return {
-                "_job": one_work,
-                "_job_args": (message.body,),
-                "category": "one work",
-            }
+            return {"_job": one_work, "_job_args": (message.body,), "category": "one work"}
         else:
-            return {
-                "_job": one_work,
-                "_job_args": (message.body,),
-                "category": "two work",
-            }
+            return {"_job": one_work, "_job_args": (message.body,), "category": "two work"}
 
     dispatcher.dispatch_by_message_attribute(work_one_or_two)
     dispatcher._worker_process.join(5)  # wait at most 5 sec for the work to complete
@@ -519,9 +464,7 @@ def test_dispatching_by_message_attribute_succeeds_with_job_args_and_job_kwargs(
 
 
 @pytest.mark.signal_handling  # see mark doc in pyproject.toml
-def test_dispatching_by_message_attribute_succeeds_with_job_args_and_job_kwargs_and_additional(
-    fake_sqs_queue,
-):
+def test_dispatching_by_message_attribute_succeeds_with_job_args_and_job_kwargs_and_additional(fake_sqs_queue):
     """SQSWorkDispatcher can read a message attribute to determine which function to call
 
     - Given a message with a user-defined message attribute
@@ -537,22 +480,10 @@ def test_dispatching_by_message_attribute_succeeds_with_job_args_and_job_kwargs_
     queue.send_message(MessageBody=1234, MessageAttributes=message_attr)
 
     dispatcher = SQSWorkDispatcher(
-        queue,
-        worker_process_name="Test Worker Process",
-        long_poll_seconds=1,
-        monitor_sleep_time=1,
+        queue, worker_process_name="Test Worker Process", long_poll_seconds=1, monitor_sleep_time=1
     )
 
-    def one_work(
-        task_id,
-        category,
-        extra1,
-        extra2,
-        kwarg1,
-        xkwarg1,
-        xkwarg2=None,
-        xkwarg3="override_me",
-    ):
+    def one_work(task_id, category, extra1, extra2, kwarg1, xkwarg1, xkwarg2=None, xkwarg3="override_me"):
         assert task_id == 1234  # assert the message body is passed in as arg by default
         assert category == "one work"
         assert kwarg1 == "my_kwarg_1"
@@ -566,16 +497,7 @@ def test_dispatching_by_message_attribute_succeeds_with_job_args_and_job_kwargs_
         queue_in_use = fake_sqs_queue
         queue_in_use.send_message(MessageBody=1)
 
-    def two_work(
-        task_id,
-        category,
-        extra1,
-        extra2,
-        kwarg1,
-        xkwarg1,
-        xkwarg2=None,
-        xkwarg3="override_me",
-    ):
+    def two_work(task_id, category, extra1, extra2, kwarg1, xkwarg1, xkwarg2=None, xkwarg3="override_me"):
         assert task_id == 1234  # assert the message body is passed in as arg by default
         assert category == "two work"
         assert kwarg1 == "my_kwarg_1"
@@ -592,17 +514,9 @@ def test_dispatching_by_message_attribute_succeeds_with_job_args_and_job_kwargs_
     def work_one_or_two(message):
         msg_attr = message.message_attributes
         if msg_attr and msg_attr.get("work_type", {}).get("StringValue") == "a":
-            return {
-                "_job": one_work,
-                "_job_args": (message.body, "one work"),
-                "kwarg1": "my_kwarg_1",
-            }
+            return {"_job": one_work, "_job_args": (message.body, "one work"), "kwarg1": "my_kwarg_1"}
         else:
-            return {
-                "_job": one_work,
-                "_job_args": (message.body, "two work"),
-                "kwarg1": "my_kwarg_1",
-            }
+            return {"_job": one_work, "_job_args": (message.body, "two work"), "kwarg1": "my_kwarg_1"}
 
     dispatcher.dispatch_by_message_attribute(
         work_one_or_two,
@@ -630,17 +544,10 @@ def test_faulty_queue_connection_raises_correct_exception(fake_sqs_queue):
         region_name = "us-gov-west-1"
         # note: connection max retries config not in botocore v1.5.x
         client_config = Config(region_name=region_name, connect_timeout=1, read_timeout=1)
-        sqs = boto3.resource(
-            "sqs",
-            config=client_config,
-            endpoint_url=f"https://sqs.{region_name}.amazonaws.com",
-        )
+        sqs = boto3.resource("sqs", config=client_config, endpoint_url=f"https://sqs.{region_name}.amazonaws.com")
         queue = sqs.Queue("75f4f422-3866-4e4f-9dc9-5364e3de3eaf")
         dispatcher = SQSWorkDispatcher(
-            queue,
-            worker_process_name="Test Worker Process",
-            long_poll_seconds=1,
-            monitor_sleep_time=1,
+            queue, worker_process_name="Test Worker Process", long_poll_seconds=1, monitor_sleep_time=1
         )
         dispatcher.dispatch(lambda x: x * 2)
     except (SystemExit, Exception) as e:
@@ -669,10 +576,7 @@ def test_failed_job_detected(fake_sqs_queue):
         queue.send_message(MessageBody=1234)
 
         dispatcher = SQSWorkDispatcher(
-            queue,
-            worker_process_name="Test Worker Process",
-            long_poll_seconds=1,
-            monitor_sleep_time=1,
+            queue, worker_process_name="Test Worker Process", long_poll_seconds=1, monitor_sleep_time=1
         )
 
         def fail_at_work(task_id):
@@ -742,22 +646,14 @@ def test_terminated_job_triggers_exit_signal_handling_with_retry(fake_sqs_queue)
     queue.send_message(MessageBody=msg_body)
 
     dispatcher = SQSWorkDispatcher(
-        queue,
-        worker_process_name="Test Worker Process",
-        long_poll_seconds=0,
-        monitor_sleep_time=0.05,
+        queue, worker_process_name="Test Worker Process", long_poll_seconds=0, monitor_sleep_time=0.05
     )
     dispatcher.sqs_queue_instance.max_receive_count = 2  # allow retries
 
     wq = mp.Queue()  # work tracking queue
     tq = mp.Queue()  # termination queue
 
-    terminator = mp.Process(
-        name="worker_terminator",
-        target=_worker_terminator,
-        args=(tq, 0.05, logger),
-        daemon=True,
-    )
+    terminator = mp.Process(name="worker_terminator", target=_worker_terminator, args=(tq, 0.05, logger), daemon=True)
     terminator.start()  # start terminator
     # Start dispatcher with work, and with the inter-process Queue so it can pass along its PID
     # Passing its PID on this Queue will let the terminator know the worker to terminate
@@ -796,21 +692,13 @@ def test_terminated_job_triggers_exit_signal_handling_to_dlq(fake_sqs_queue):
     queue.send_message(MessageBody=msg_body)
 
     dispatcher = SQSWorkDispatcher(
-        queue,
-        worker_process_name="Test Worker Process",
-        long_poll_seconds=0,
-        monitor_sleep_time=0.05,
+        queue, worker_process_name="Test Worker Process", long_poll_seconds=0, monitor_sleep_time=0.05
     )
 
     wq = mp.Queue()  # work tracking queue
     tq = mp.Queue()  # termination queue
 
-    terminator = mp.Process(
-        name="worker_terminator",
-        target=_worker_terminator,
-        args=(tq, 0.05, logger),
-        daemon=True,
-    )
+    terminator = mp.Process(name="worker_terminator", target=_worker_terminator, args=(tq, 0.05, logger), daemon=True)
     terminator.start()  # start terminator
 
     with pytest.raises(QueueWorkerProcessError) as err_ctx:
@@ -855,21 +743,14 @@ def test_terminated_parent_dispatcher_exits_with_negative_signal_code(fake_sqs_q
     queue.send_message(MessageBody=msg_body)
 
     dispatcher = SQSWorkDispatcher(
-        queue,
-        worker_process_name="Test Worker Process",
-        long_poll_seconds=0,
-        monitor_sleep_time=0.05,
+        queue, worker_process_name="Test Worker Process", long_poll_seconds=0, monitor_sleep_time=0.05
     )
     dispatcher.sqs_queue_instance.max_receive_count = 2  # allow retries
 
     wq = mp.Queue()  # work tracking queue
     tq = mp.Queue()  # termination queue
 
-    dispatch_kwargs = {
-        "job": _work_to_be_terminated,
-        "termination_queue": tq,
-        "work_tracking_queue": wq,
-    }
+    dispatch_kwargs = {"job": _work_to_be_terminated, "termination_queue": tq, "work_tracking_queue": wq}
     parent_dispatcher = mp.Process(target=dispatcher.dispatch, kwargs=dispatch_kwargs)
     parent_dispatcher.start()
 
@@ -895,10 +776,7 @@ def test_terminated_parent_dispatcher_exits_with_negative_signal_code(fake_sqs_q
             )
             worker_proc.wait(timeout=wait_while)
     except TimeoutExpired as tex:
-        pytest.fail(
-            f"TimeoutExpired waiting for worker with pid {worker_proc.pid} to terminate (complete work).",
-            tex,
-        )
+        pytest.fail(f"TimeoutExpired waiting for worker with pid {worker_proc.pid} to terminate (complete work).", tex)
     try:
         # Check the same process that was started is still running. Must also check equality in case pid recycled
         while (
@@ -915,8 +793,7 @@ def test_terminated_parent_dispatcher_exits_with_negative_signal_code(fake_sqs_q
             parent_dispatcher.join(timeout=wait_while)
     except TimeoutExpired as tex:
         pytest.fail(
-            f"TimeoutExpired waiting for parent dispatcher with pid {parent_pid} to terminate (complete work).",
-            tex,
+            f"TimeoutExpired waiting for parent dispatcher with pid {parent_pid} to terminate (complete work).", tex
         )
 
     try:
@@ -956,18 +833,12 @@ def test_exit_handler_can_receive_queue_message_as_arg(fake_sqs_queue):
     queue.send_message(MessageBody=msg_body)
 
     dispatcher = SQSWorkDispatcher(
-        queue,
-        worker_process_name="Test Worker Process",
-        long_poll_seconds=0,
-        monitor_sleep_time=0.05,
+        queue, worker_process_name="Test Worker Process", long_poll_seconds=0, monitor_sleep_time=0.05
     )
     dispatcher.sqs_queue_instance.max_receive_count = 2  # allow retries
 
     def exit_handler_with_msg(
-        task_id,
-        termination_queue: mp.Queue,
-        work_tracking_queue: mp.Queue,
-        queue_message=None,  # noqa
+        task_id, termination_queue: mp.Queue, work_tracking_queue: mp.Queue, queue_message=None  # noqa
     ):  # noqa
         logger.debug(
             "CLEANUP: performing cleanup with "
@@ -1041,12 +912,7 @@ def test_default_to_queue_long_poll_works(fake_sqs_queue):
     wq = mp.Queue()  # work tracking queue
     tq = mp.Queue()  # termination queue
 
-    terminator = mp.Process(
-        name="worker_terminator",
-        target=_worker_terminator,
-        args=(tq, 0.05, logger),
-        daemon=True,
-    )
+    terminator = mp.Process(name="worker_terminator", target=_worker_terminator, args=(tq, 0.05, logger), daemon=True)
     terminator.start()  # start terminator
     # Start dispatcher with work, and with the inter-process Queue so it can pass along its PID
     # Passing its PID on this Queue will let the terminator know the worker to terminate
@@ -1072,9 +938,7 @@ def test_default_to_queue_long_poll_works(fake_sqs_queue):
 
 
 @pytest.mark.signal_handling  # see mark doc in pyproject.toml
-def test_hanging_cleanup_of_signaled_child_fails_dispatcher_and_sends_to_dlq(
-    fake_sqs_queue,
-):
+def test_hanging_cleanup_of_signaled_child_fails_dispatcher_and_sends_to_dlq(fake_sqs_queue):
     """When detecting the child worker process received an exit signal, and the parent dispatcher
     process is handling cleanup and termination of the child worker process, if the cleanup hangs for longer
     than the allowed exit_handling_timeout, it will short-circuit, and retry a 2nd time. If that also hangs
@@ -1089,12 +953,7 @@ def test_hanging_cleanup_of_signaled_child_fails_dispatcher_and_sends_to_dlq(
     queue.send_message(MessageBody=msg_body)
     worker_sleep_interval = 0.05  # how long to "work"
 
-    def hanging_cleanup(
-        task_id,
-        termination_queue: mp.Queue,
-        work_tracking_queue: mp.Queue,
-        queue_message,
-    ):
+    def hanging_cleanup(task_id, termination_queue: mp.Queue, work_tracking_queue: mp.Queue, queue_message):
         work_tracking_queue.put("cleanup_start_{}".format(queue_message.body), block=True, timeout=0.5)
         sleep(2.5)  # sleep for longer than the allowed time for exit handling
         # Should never get to this point, since it should be short-circuited by exit_handling_timeout
@@ -1124,10 +983,7 @@ def test_hanging_cleanup_of_signaled_child_fails_dispatcher_and_sends_to_dlq(
         # Start dispatcher with work, and with the inter-process Queue so it can pass along its PID
         # Passing its PID on this Queue will let the terminator know the worker to terminate
         dispatcher.dispatch(
-            _work_to_be_terminated,
-            termination_queue=tq,
-            work_tracking_queue=wq,
-            exit_handler=hanging_cleanup,
+            _work_to_be_terminated, termination_queue=tq, work_tracking_queue=wq, exit_handler=hanging_cleanup
         )
 
     # Ensure to wait on the processes to end with join
@@ -1169,9 +1025,7 @@ def test_hanging_cleanup_of_signaled_child_fails_dispatcher_and_sends_to_dlq(
 
 
 @pytest.mark.signal_handling  # see mark doc in pyproject.toml
-def test_hanging_cleanup_of_signaled_parent_fails_dispatcher_and_sends_to_dlq(
-    fake_sqs_queue,
-):
+def test_hanging_cleanup_of_signaled_parent_fails_dispatcher_and_sends_to_dlq(fake_sqs_queue):
     """When detecting the parent dispatcher process received an exit signal, and the parent dispatcher
     process is handling cleanup and termination of the child worker process, if the cleanup hangs for longer
     than the allowed exit_handling_timeout, it will short-circuit, and retry a 2nd time. If that also hangs
@@ -1188,12 +1042,7 @@ def test_hanging_cleanup_of_signaled_parent_fails_dispatcher_and_sends_to_dlq(
     queue.send_message(MessageBody=msg_body)
     worker_sleep_interval = 0.05  # how long to "work"
 
-    def hanging_cleanup(
-        task_id,
-        termination_queue: mp.Queue,
-        work_tracking_queue: mp.Queue,
-        queue_message,
-    ):
+    def hanging_cleanup(task_id, termination_queue: mp.Queue, work_tracking_queue: mp.Queue, queue_message):
         work_tracking_queue.put("cleanup_start_{}".format(queue_message.body), block=True, timeout=0.5)
         sleep(2.5)  # sleep for longer than the allowed time for exit handling
         # Should never get to this point, since it should be short-circuited by exit_handling_timeout
@@ -1251,10 +1100,7 @@ def test_hanging_cleanup_of_signaled_parent_fails_dispatcher_and_sends_to_dlq(
             )
             worker_proc.wait(timeout=wait_while)
     except TimeoutExpired as tex:
-        pytest.fail(
-            f"TimeoutExpired waiting for worker with pid {worker_proc.pid} to terminate (complete work).",
-            tex,
-        )
+        pytest.fail(f"TimeoutExpired waiting for worker with pid {worker_proc.pid} to terminate (complete work).", tex)
     try:
         # Check the same process that was started is still running. Must also check equality in case pid recycled
         while (
@@ -1271,8 +1117,7 @@ def test_hanging_cleanup_of_signaled_parent_fails_dispatcher_and_sends_to_dlq(
             parent_dispatcher.join(timeout=wait_while)
     except TimeoutExpired as tex:
         pytest.fail(
-            f"TimeoutExpired waiting for parent dispatcher with pid {parent_pid} to terminate (complete work).",
-            tex,
+            f"TimeoutExpired waiting for parent dispatcher with pid {parent_pid} to terminate (complete work).", tex
         )
 
     assert not eq.empty(), "Should have been errors detected in parent dispatcher"
@@ -1332,11 +1177,7 @@ def _error_handling_dispatcher(work_dispatcher: SQSWorkDispatcher, error_queue: 
 
 
 def _hanging_cleanup_if_worker_alive(
-    task_id,
-    termination_queue: mp.Queue,
-    work_tracking_queue: mp.Queue,
-    queue_message,
-    cleanup_timeout: float,
+    task_id, termination_queue: mp.Queue, work_tracking_queue: mp.Queue, queue_message, cleanup_timeout: float
 ):
     """An implementation of an exit handler, that will purposefully hang during the exit handling function (aka
     'cleanup') for longer than the exit handling timeout, in order to short-circuit cleanup, and try again with a
@@ -1466,10 +1307,7 @@ def test_cleanup_second_try_succeeds_after_killing_worker_with_dlq(fake_sqs_queu
             )
             worker_proc.wait(timeout=wait_while)
     except TimeoutExpired as tex:
-        pytest.fail(
-            f"TimeoutExpired waiting for worker with pid {worker_proc.pid} to terminate (complete work).",
-            tex,
-        )
+        pytest.fail(f"TimeoutExpired waiting for worker with pid {worker_proc.pid} to terminate (complete work).", tex)
     try:
         # Check the same process that was started is still running. Must also check equality in case pid recycled
         while (
@@ -1486,8 +1324,7 @@ def test_cleanup_second_try_succeeds_after_killing_worker_with_dlq(fake_sqs_queu
             parent_dispatcher.join(timeout=wait_while)
     except TimeoutExpired as tex:
         pytest.fail(
-            f"TimeoutExpired waiting for parent dispatcher with pid {parent_pid} to terminate (complete work).",
-            tex,
+            f"TimeoutExpired waiting for parent dispatcher with pid {parent_pid} to terminate (complete work).", tex
         )
 
     assert eq.empty(), (
@@ -1603,10 +1440,7 @@ def test_cleanup_second_try_succeeds_after_killing_worker_with_retry(fake_sqs_qu
             )
             worker_proc.wait(timeout=wait_while)
     except TimeoutExpired as tex:
-        pytest.fail(
-            f"TimeoutExpired waiting for worker with pid {worker_proc.pid} to terminate (complete work).",
-            tex,
-        )
+        pytest.fail(f"TimeoutExpired waiting for worker with pid {worker_proc.pid} to terminate (complete work).", tex)
     try:
         # Check the same process that was started is still running. Must also check equality in case pid recycled
         while (
@@ -1623,8 +1457,7 @@ def test_cleanup_second_try_succeeds_after_killing_worker_with_retry(fake_sqs_qu
             parent_dispatcher.join(timeout=wait_while)
     except TimeoutExpired as tex:
         pytest.fail(
-            f"TimeoutExpired waiting for parent dispatcher with pid {parent_pid} to terminate (complete work).",
-            tex,
+            f"TimeoutExpired waiting for parent dispatcher with pid {parent_pid} to terminate (complete work).", tex
         )
 
     try:
@@ -1745,9 +1578,7 @@ def test_worker_process_error_exception_data(fake_sqs_queue):
     def raise_exc_with_qmsg_and_worker_process_name_and_message():
         fake_queue_message.body = 1166
         raise QueueWorkerProcessError(
-            "Custom Message about THIS",
-            worker_process_name="MyJob",
-            queue_message=fake_queue_message,
+            "Custom Message about THIS", worker_process_name="MyJob", queue_message=fake_queue_message
         )
 
     with pytest.raises(QueueWorkerProcessError) as err_ctx6:
@@ -1804,10 +1635,7 @@ def _work_to_be_terminated(task_id, termination_queue: mp.Queue, work_tracking_q
 
 
 def _fail_runaway_processes(
-    logger,
-    worker: mp.Process = None,
-    terminator: mp.Process = None,
-    dispatcher: mp.Process = None,
+    logger, worker: mp.Process = None, terminator: mp.Process = None, dispatcher: mp.Process = None
 ):
     fail_with_runaway_proc = False
     if worker and worker.is_alive() and ps.pid_exists(worker.pid):

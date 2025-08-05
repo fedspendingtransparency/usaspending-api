@@ -32,12 +32,7 @@ def test_basic_object_class_award_success(client, basic_object_class_faba_with_l
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["results"] == expected_results
 
-    expected_totals = {
-        "award_count": 1,
-        "face_value_of_loan": 5.0,
-        "obligation": 1.0,
-        "outlay": 0,
-    }
+    expected_totals = {"award_count": 1, "face_value_of_loan": 5.0, "obligation": 1.0, "outlay": 0}
     assert resp.json()["totals"] == expected_totals
 
 

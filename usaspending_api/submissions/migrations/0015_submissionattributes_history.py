@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("submissions", "0014_auto_20200901_1710"),
+        ('submissions', '0014_auto_20200901_1710'),
     ]
 
     operations = [
         migrations.AddField(
-            model_name="submissionattributes",
-            name="history",
+            model_name='submissionattributes',
+            name='history',
             field=models.JSONField(null=True),
         ),
     ]

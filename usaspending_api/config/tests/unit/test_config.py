@@ -390,8 +390,7 @@ _UNITTEST_ENVS_DICTS = [
 def test_config_values():
     """Test that config values are picked up. Also convenient for eyeballing the parsed config vals when
     pytest is configurd with flags to output printed statements. Note: unlike DATABASE_URL, DATA_BROKER_DATABASE_URL
-    is not required, and so it is not included in this test as it can vary depending on the local settings.
-    """
+    is not required, and so it is not included in this test as it can vary depending on the local settings."""
     config_values: dict = CONFIG.dict()
     assert len(config_values) > 0
     pprint(config_values)
@@ -960,8 +959,7 @@ def test_data_act_database_url_and_parts_error_if_inconsistent_placeholder_parts
 
 def test_postgres_dsn_constructed_with_only_url_leaves_none_parts():
     """Validate assumptions about parts of the PostgresDsn object getting populated when constructed with only a URL.
-    Assumption is that the DSN can be used as string, but the "parts" will all be ``None``
-    """
+    Assumption is that the DSN can be used as string, but the "parts" will all be ``None``"""
     pg_dsn = PostgresDsn(str(CONFIG.DATABASE_URL), scheme="postgres")
 
     assert pg_dsn.host is None
@@ -1094,8 +1092,7 @@ def test_override_with_dotenv_file(tmpdir):
 )
 def test_override_with_dotenv_file_for_subclass_overridden_var(tmpdir):
     """Ensure that when .env files are used, they overwrite default values in the instantiated config class,
-    rather than the other way around... EVEN when that value was overrided in a subclass
-    """
+    rather than the other way around... EVEN when that value was overrided in a subclass"""
     with mock.patch.dict(
         os.environ,
         {
@@ -1133,8 +1130,7 @@ def test_override_with_dotenv_file_for_subclass_overridden_var(tmpdir):
 )
 def test_override_with_dotenv_file_for_subclass_only_var(tmpdir):
     """Ensure that when .env files are used, they overwrite default values in the instantiated config class,
-    rather than the other way around... EVEN when that value only exists in a subclass
-    """
+    rather than the other way around... EVEN when that value only exists in a subclass"""
     with mock.patch.dict(
         os.environ,
         {
@@ -1170,8 +1166,7 @@ def test_override_with_dotenv_file_for_subclass_only_var(tmpdir):
 )
 def test_override_with_dotenv_file_for_validated_var(tmpdir):
     """Ensure that when .env files are used, they overwrite default values in the instantiated config class,
-    rather than the other way around... EVEN when that value is provided by a validator factory function
-    """
+    rather than the other way around... EVEN when that value is provided by a validator factory function"""
     with mock.patch.dict(
         os.environ,
         {
@@ -1209,8 +1204,7 @@ def test_override_with_dotenv_file_for_validated_var(tmpdir):
 )
 def test_override_with_dotenv_file_for_root_validated_var(tmpdir):
     """Ensure that when .env files are used, they overwrite default values in the instantiated config class,
-    rather than the other way around... EVEN when that value is provided by a root_validator factory function
-    """
+    rather than the other way around... EVEN when that value is provided by a root_validator factory function"""
     with mock.patch.dict(
         os.environ,
         {
@@ -1364,11 +1358,7 @@ def test_override_with_constructor_kwargs():
 
 def test_override_with_command_line_args():
     assert CONFIG.COMPONENT_NAME == "USAspending API"
-    test_args = [
-        "dummy_program",
-        "--config",
-        "COMPONENT_NAME=test_override_with_command_line_args",
-    ]
+    test_args = ["dummy_program", "--config", "COMPONENT_NAME=test_override_with_command_line_args"]
     with patch.object(sys, "argv", test_args):
         _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
         app_cfg_copy = _load_config()

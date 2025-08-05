@@ -7,12 +7,8 @@ from django.core.management.base import BaseCommand
 from typing import Optional
 
 from usaspending_api.transactions.agnostic_transaction_deletes import AgnosticDeletes
-from usaspending_api.transactions.models.source_procurement_transaction import (
-    SourceProcurementTransaction,
-)
-from usaspending_api.transactions.transaction_delete_journal_helpers import (
-    retrieve_deleted_fpds_transactions,
-)
+from usaspending_api.transactions.models.source_procurement_transaction import SourceProcurementTransaction
+from usaspending_api.transactions.transaction_delete_journal_helpers import retrieve_deleted_fpds_transactions
 
 logger = logging.getLogger("script")
 

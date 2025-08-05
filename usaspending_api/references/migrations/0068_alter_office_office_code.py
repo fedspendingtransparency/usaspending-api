@@ -6,19 +6,17 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("references", "0067_rename_column_data_source"),
+        ('references', '0067_rename_column_data_source'),
     ]
 
     operations = [
         migrations.RunSQL(
             sql=["ALTER TABLE office DROP CONSTRAINT IF EXISTS unique_office_code;"],
-            reverse_sql=[
-                "ALTER TABLE office ADD CONSTRAINT unique_office_code UNIQUE (office_code);"
-            ],
+            reverse_sql=["ALTER TABLE office ADD CONSTRAINT unique_office_code UNIQUE (office_code);"],
         ),
         migrations.AlterField(
-            model_name="office",
-            name="office_code",
+            model_name='office',
+            name='office_code',
             field=models.TextField(unique=True),
         ),
     ]

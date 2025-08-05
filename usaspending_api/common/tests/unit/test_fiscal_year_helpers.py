@@ -18,12 +18,7 @@ def test_current_fiscal_year():
 
 
 def test_create_fiscal_year_list():
-    assert fyh.create_fiscal_year_list(start_year=2004, end_year=2008) == [
-        2004,
-        2005,
-        2006,
-        2007,
-    ]
+    assert fyh.create_fiscal_year_list(start_year=2004, end_year=2008) == [2004, 2005, 2006, 2007]
     years = [x for x in range(2000, FiscalDate.today().next_fiscal_year.fiscal_year)]
     assert fyh.create_fiscal_year_list() == years
 

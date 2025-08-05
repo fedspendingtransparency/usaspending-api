@@ -164,16 +164,9 @@ def test_basic_idv_aggregation_3_level(set_up_related_award_objects):
 
 
 @pytest.mark.django_db(transaction=True)  # Must use tx, since restock_parent_award commits in SQL
-def test_idv_aggregation_3_level_ignore_idv_internal_values(
-    set_up_related_award_objects,
-):
+def test_idv_aggregation_3_level_ignore_idv_internal_values(set_up_related_award_objects):
     p1_with_internal_value = modify_award_dict(
-        p1,
-        {
-            "total_obligation": 1000,
-            "base_and_all_options_value": 1000,
-            "base_exercised_options_val": 1000,
-        },
+        p1, {"total_obligation": 1000, "base_and_all_options_value": 1000, "base_exercised_options_val": 1000}
     )
     _set_up_db(c1, c2, c3, p1_with_internal_value, c4, p2, tp1)
     parent_1 = ParentAward.objects.get(generated_unique_award_id="p1")
@@ -213,15 +206,9 @@ def test_idv_aggregation_3_level_self_parented_award(set_up_related_award_object
 
 
 @pytest.mark.django_db(transaction=True)  # Must use tx, since restock_parent_award commits in SQL
-def test_idv_aggregation_3_level_circular_referencing_idvs(
-    set_up_related_award_objects,
-):
+def test_idv_aggregation_3_level_circular_referencing_idvs(set_up_related_award_objects):
     child_referencing_parent = modify_award_dict(
-        tp1,
-        {
-            "parent_award_piid": p1["piid"],
-            "fpds_parent_agency_id": p1["fpds_agency_id"],
-        },
+        tp1, {"parent_award_piid": p1["piid"], "fpds_parent_agency_id": p1["fpds_agency_id"]}
     )
     _set_up_db(p1, child_referencing_parent)
     parent_1 = ParentAward.objects.get(generated_unique_award_id="tp1")
@@ -253,24 +240,13 @@ def test_idv_aggregation_3_level_circular_referencing_idvs(
 
 
 @pytest.mark.django_db(transaction=True)  # Must use tx, since restock_parent_award commits in SQL
-def test_idv_aggregation_3_level_circular_referencing_idv_and_child(
-    set_up_related_award_objects,
-):
+def test_idv_aggregation_3_level_circular_referencing_idv_and_child(set_up_related_award_objects):
     child_referencing_parent = modify_award_dict(
-        tp2,
-        {
-            "parent_award_piid": p3["piid"],
-            "fpds_parent_agency_id": p3["fpds_agency_id"],
-        },
+        tp2, {"parent_award_piid": p3["piid"], "fpds_parent_agency_id": p3["fpds_agency_id"]}
     )
     true_child = modify_award_dict(
         p3,
-        {
-            "type": "A",
-            "total_obligation": 1000,
-            "base_and_all_options_value": 2000,
-            "base_exercised_options_val": 3000,
-        },
+        {"type": "A", "total_obligation": 1000, "base_and_all_options_value": 2000, "base_exercised_options_val": 3000},
     )
     _set_up_db(true_child, child_referencing_parent)
     parent_1 = ParentAward.objects.get(generated_unique_award_id="tp2")

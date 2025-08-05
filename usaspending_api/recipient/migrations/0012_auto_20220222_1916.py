@@ -6,16 +6,16 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("recipient", "0011_auto_20220214_1321"),
+        ('recipient', '0011_auto_20220214_1321'),
     ]
 
     operations = [
         migrations.RemoveIndex(
-            model_name="recipientprofile",
-            name="recipient_p_recipie_7039a5_idx",
+            model_name='recipientprofile',
+            name='recipient_p_recipie_7039a5_idx',
         ),
         migrations.RemoveIndex(
-            model_name="recipientprofile",
-            name="recipient_p_uei_25c7ff_idx",
+            model_name='recipientprofile',
+            name='recipient_p_uei_25c7ff_idx',
         ),
     ]

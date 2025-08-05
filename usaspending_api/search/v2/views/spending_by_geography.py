@@ -13,16 +13,9 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from usaspending_api.common.api_versioning import (
-    API_TRANSFORM_FUNCTIONS,
-    api_transformations,
-)
+from usaspending_api.common.api_versioning import API_TRANSFORM_FUNCTIONS, api_transformations
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.elasticsearch.search_wrappers import (
-    AwardSearch,
-    SubawardSearch,
-    TransactionSearch,
-)
+from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, SubawardSearch, TransactionSearch
 from usaspending_api.common.helpers.generic_helper import (
     get_generic_filters_message,
 )
@@ -30,15 +23,9 @@ from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator.award_filter import AWARD_FILTER_W_FILTERS
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.references.abbreviations import code_to_state, fips_to_code
-from usaspending_api.references.models import (
-    PopCongressionalDistrict,
-    PopCounty,
-    RefCountryCode,
-)
+from usaspending_api.references.models import PopCongressionalDistrict, PopCounty, RefCountryCode
 from usaspending_api.search.filters.elasticsearch.filter import QueryType
-from usaspending_api.search.filters.time_period.decorators import (
-    NewAwardsOnlyTimePeriod,
-)
+from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
 from usaspending_api.search.filters.time_period.query_types import (
     AwardSearchTimePeriod,
     SubawardSearchTimePeriod,
@@ -82,12 +69,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
         # First determine if we are using Subaward or Prime Awards / Transactions as this
         # will impact some of the downstream filters in the JSON request
         spending_type_models = [
-            {
-                "name": "subawards",
-                "key": "subawards",
-                "type": "boolean",
-                "default": False,
-            },
+            {"name": "subawards", "key": "subawards", "type": "boolean", "default": False},
             {
                 "name": "spending_level",
                 "key": "spending_level",
@@ -222,8 +204,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
             self.search_type = SubawardSearch
             self.obligation_column = "subaward_amount"
             time_period_obj = SubawardSearchTimePeriod(
-                default_end_date=settings.API_MAX_DATE,
-                default_start_date=settings.API_SEARCH_MIN_DATE,
+                default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
             )
             query_type = QueryType.SUBAWARDS
         else:
@@ -237,8 +218,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                 time_period_type = TransactionSearchTimePeriod
                 query_type = QueryType.TRANSACTIONS
             base_time_period_obj = time_period_type(
-                default_end_date=settings.API_MAX_DATE,
-                default_start_date=settings.API_SEARCH_MIN_DATE,
+                default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
             )
             time_period_obj = NewAwardsOnlyTimePeriod(time_period_obj=base_time_period_obj, query_type=query_type)
 
@@ -275,12 +255,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
 
         # Define the aggregation
         # Add 100 to make sure that we consider enough records in each shard for accurate results
-        group_by_agg_key = A(
-            "terms",
-            field=self.agg_key,
-            size=bucket_count,
-            shard_size=bucket_count + 100,
-        )
+        group_by_agg_key = A("terms", field=self.agg_key, size=bucket_count, shard_size=bucket_count + 100)
 
         # Create the initial search using filters
         search = self.search_type().filter(filter_query)
@@ -358,10 +333,7 @@ class SpendingByGeographyVisualizationViewSet(APIView):
                 .annotate(
                     geo_code=F("congressional_district"),
                     display_name=Concat(
-                        "state_abbreviation",
-                        Value("-"),
-                        "congressional_district",
-                        output_field=TextField(),
+                        "state_abbreviation", Value("-"), "congressional_district", output_field=TextField()
                     ),
                     population=F("latest_population"),
                 )

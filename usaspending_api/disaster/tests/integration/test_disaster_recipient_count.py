@@ -41,12 +41,7 @@ def test_no_award_type(client, monkeypatch, basic_fabs_award, helpers, elasticse
 
 @pytest.mark.django_db
 def test_two_transactions_two_awards(
-    client,
-    monkeypatch,
-    basic_fabs_award,
-    basic_fpds_award,
-    helpers,
-    elasticsearch_award_index,
+    client, monkeypatch, basic_fabs_award, basic_fpds_award, helpers, elasticsearch_award_index
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
@@ -56,11 +51,7 @@ def test_two_transactions_two_awards(
 
 @pytest.mark.django_db
 def test_two_distinct_recipients(
-    client,
-    monkeypatch,
-    double_fpds_awards_with_distinct_recipients,
-    helpers,
-    elasticsearch_award_index,
+    client, monkeypatch, double_fpds_awards_with_distinct_recipients, helpers, elasticsearch_award_index
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
@@ -70,11 +61,7 @@ def test_two_distinct_recipients(
 
 @pytest.mark.django_db
 def test_two_same_recipients(
-    client,
-    monkeypatch,
-    double_fpds_awards_with_same_recipients,
-    helpers,
-    elasticsearch_award_index,
+    client, monkeypatch, double_fpds_awards_with_same_recipients, helpers, elasticsearch_award_index
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
@@ -91,13 +78,7 @@ def test_zero_transactions_one_award(client, monkeypatch, award_with_no_outlays,
 
 
 @pytest.mark.django_db
-def test_fabs_quarterly(
-    client,
-    monkeypatch,
-    fabs_award_with_quarterly_submission,
-    helpers,
-    elasticsearch_award_index,
-):
+def test_fabs_quarterly(client, monkeypatch, fabs_award_with_quarterly_submission, helpers, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     resp = helpers.post_for_count_endpoint(client, url, ["M"], ["07"])
@@ -105,13 +86,7 @@ def test_fabs_quarterly(
 
 
 @pytest.mark.django_db
-def test_fabs_old_submission(
-    client,
-    monkeypatch,
-    fabs_award_with_old_submission,
-    helpers,
-    elasticsearch_award_index,
-):
+def test_fabs_old_submission(client, monkeypatch, fabs_award_with_old_submission, helpers, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
     resp = helpers.post_for_count_endpoint(client, url, ["M"], ["07"])
@@ -120,11 +95,7 @@ def test_fabs_old_submission(
 
 @pytest.mark.django_db
 def test_fabs_unclosed_submission(
-    client,
-    monkeypatch,
-    fabs_award_with_unclosed_submission,
-    helpers,
-    elasticsearch_award_index,
+    client, monkeypatch, fabs_award_with_unclosed_submission, helpers, elasticsearch_award_index
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
@@ -160,11 +131,7 @@ def test_award_count_missing_defc(client, monkeypatch, basic_award, helpers, ela
 
 @pytest.mark.django_db
 def test_two_same_special_case_recipients(
-    client,
-    monkeypatch,
-    double_fpds_awards_with_same_special_case_recipients,
-    helpers,
-    elasticsearch_award_index,
+    client, monkeypatch, double_fpds_awards_with_same_special_case_recipients, helpers, elasticsearch_award_index
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)

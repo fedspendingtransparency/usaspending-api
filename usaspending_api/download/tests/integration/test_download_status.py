@@ -46,20 +46,8 @@ def download_test_data(transactional_db):
     baker.make("references.SubtierAgency", name="Bureau of Things", _fill_optional=True)
 
     # Create Awarding Agencies
-    aa1 = baker.make(
-        "references.Agency",
-        id=1,
-        toptier_agency=ata1,
-        toptier_flag=False,
-        _fill_optional=True,
-    )
-    aa2 = baker.make(
-        "references.Agency",
-        id=2,
-        toptier_agency=ata2,
-        toptier_flag=False,
-        _fill_optional=True,
-    )
+    aa1 = baker.make("references.Agency", id=1, toptier_agency=ata1, toptier_flag=False, _fill_optional=True)
+    aa2 = baker.make("references.Agency", id=2, toptier_agency=ata2, toptier_flag=False, _fill_optional=True)
 
     # Create Funding Top Agency
     ata3 = baker.make(
@@ -75,13 +63,7 @@ def download_test_data(transactional_db):
     baker.make("references.SubtierAgency", name="Bureau of Things", _fill_optional=True)
 
     # Create Funding Agency
-    baker.make(
-        "references.Agency",
-        id=3,
-        toptier_agency=ata3,
-        toptier_flag=False,
-        _fill_optional=True,
-    )
+    baker.make("references.Agency", id=3, toptier_agency=ata3, toptier_flag=False, _fill_optional=True)
 
     # Create Awards
     award1 = baker.make(
@@ -173,9 +155,7 @@ def test_download_assistance_status(client, download_test_data):
     resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
 
     expected_number_of_columns = get_number_of_columns_for_query_paths(
-        ("award_financial", "treasury_account"),
-        ("assistance_transaction_history", "d2"),
-        ("subaward_search", "d2"),
+        ("award_financial", "treasury_account"), ("assistance_transaction_history", "d2"), ("subaward_search", "d2")
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -207,11 +187,7 @@ def test_download_assistance_status(client, download_test_data):
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_awards_status(
-    client,
-    download_test_data,
-    monkeypatch,
-    elasticsearch_award_index,
-    elasticsearch_subaward_index,
+    client, download_test_data, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
@@ -221,20 +197,12 @@ def test_download_awards_status(
     dl_resp = client.post(
         "/api/v2/download/awards/",
         content_type="application/json",
-        data=json.dumps(
-            {
-                "filters": {"award_type_codes": list(award_type_mapping.keys())},
-                "columns": [],
-            }
-        ),
+        data=json.dumps({"filters": {"award_type_codes": list(award_type_mapping.keys())}, "columns": []}),
     )
     resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
 
     expected_number_of_columns = get_number_of_columns_for_query_paths(
-        ("award", "d1"),
-        ("award", "d2"),
-        ("subaward_search", "d1"),
-        ("subaward_search", "d2"),
+        ("award", "d1"), ("award", "d2"), ("subaward_search", "d1"), ("subaward_search", "d2")
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -271,16 +239,12 @@ def test_download_contract_status(client, download_test_data):
 
     # Test without columns specified
     dl_resp = client.post(
-        "/api/v2/download/contract/",
-        content_type="application/json",
-        data=json.dumps({"award_id": 456}),
+        "/api/v2/download/contract/", content_type="application/json", data=json.dumps({"award_id": 456})
     )
     resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
 
     expected_number_of_columns = get_number_of_columns_for_query_paths(
-        ("award_financial", "treasury_account"),
-        ("idv_transaction_history", "d1"),
-        ("subaward_search", "d1"),
+        ("award_financial", "treasury_account"), ("idv_transaction_history", "d1"), ("subaward_search", "d1")
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -316,17 +280,11 @@ def test_download_idv_status(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
 
     # Test without columns specified
-    dl_resp = client.post(
-        "/api/v2/download/idv/",
-        content_type="application/json",
-        data=json.dumps({"award_id": 123}),
-    )
+    dl_resp = client.post("/api/v2/download/idv/", content_type="application/json", data=json.dumps({"award_id": 123}))
     resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
 
     expected_number_of_columns = get_number_of_columns_for_query_paths(
-        ("award_financial", "treasury_account"),
-        ("idv_orders", "d1"),
-        ("idv_transaction_history", "d1"),
+        ("award_financial", "treasury_account"), ("idv_orders", "d1"), ("idv_transaction_history", "d1")
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -340,11 +298,7 @@ def test_download_idv_status(client, download_test_data):
         data=json.dumps(
             {
                 "award_id": 123,
-                "columns": [
-                    "current_total_value_of_award",
-                    "contract_award_unique_key",
-                    "program_activity_name",
-                ],
+                "columns": ["current_total_value_of_award", "contract_award_unique_key", "program_activity_name"],
             }
         ),
     )
@@ -357,11 +311,7 @@ def test_download_idv_status(client, download_test_data):
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_transactions_status(
-    client,
-    download_test_data,
-    monkeypatch,
-    elasticsearch_transaction_index,
-    elasticsearch_subaward_index,
+    client, download_test_data, monkeypatch, elasticsearch_transaction_index, elasticsearch_subaward_index
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
@@ -373,15 +323,7 @@ def test_download_transactions_status(
         content_type="application/json",
         data=json.dumps(
             {
-                "filters": {
-                    "agencies": [
-                        {
-                            "type": "awarding",
-                            "tier": "toptier",
-                            "name": "Bureau of Stuff",
-                        }
-                    ]
-                },
+                "filters": {"agencies": [{"type": "awarding", "tier": "toptier", "name": "Bureau of Stuff"}]},
                 "columns": [],
             }
         ),
@@ -390,10 +332,7 @@ def test_download_transactions_status(
     resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
 
     expected_number_of_columns = get_number_of_columns_for_query_paths(
-        ("transaction_search", "d1"),
-        ("transaction_search", "d2"),
-        ("subaward_search", "d1"),
-        ("subaward_search", "d2"),
+        ("transaction_search", "d1"), ("transaction_search", "d2"), ("subaward_search", "d1"), ("subaward_search", "d2")
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -408,16 +347,8 @@ def test_download_transactions_status(
             {
                 "filters": {
                     "agencies": [
-                        {
-                            "type": "awarding",
-                            "tier": "toptier",
-                            "name": "Bureau of Stuff",
-                        },
-                        {
-                            "type": "awarding",
-                            "tier": "toptier",
-                            "name": "Bureau of Things",
-                        },
+                        {"type": "awarding", "tier": "toptier", "name": "Bureau of Stuff"},
+                        {"type": "awarding", "tier": "toptier", "name": "Bureau of Things"},
                     ]
                 },
                 "columns": ["award_id_piid", "modification_number"],
@@ -433,11 +364,7 @@ def test_download_transactions_status(
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_transactions_limit(
-    client,
-    download_test_data,
-    monkeypatch,
-    elasticsearch_transaction_index,
-    elasticsearch_subaward_index,
+    client, download_test_data, monkeypatch, elasticsearch_transaction_index, elasticsearch_subaward_index
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
@@ -446,21 +373,12 @@ def test_download_transactions_limit(
     dl_resp = client.post(
         "/api/v2/download/transactions/",
         content_type="application/json",
-        data=json.dumps(
-            {
-                "limit": 1,
-                "filters": {"award_type_codes": list(award_type_mapping.keys())},
-                "columns": [],
-            }
-        ),
+        data=json.dumps({"limit": 1, "filters": {"award_type_codes": list(award_type_mapping.keys())}, "columns": []}),
     )
     resp = client.get("/api/v2/download/status/?file_name={}".format(dl_resp.json()["file_name"]))
 
     expected_number_of_columns = get_number_of_columns_for_query_paths(
-        ("transaction_search", "d1"),
-        ("transaction_search", "d2"),
-        ("subaward_search", "d1"),
-        ("subaward_search", "d2"),
+        ("transaction_search", "d1"), ("transaction_search", "d2"), ("subaward_search", "d1"), ("subaward_search", "d2")
     )
 
     assert resp.status_code == status.HTTP_200_OK

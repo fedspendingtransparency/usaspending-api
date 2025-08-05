@@ -7,8 +7,7 @@ from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 def get_dabs_schedule(is_quarter):
     return list(
         DABSSubmissionWindowSchedule.objects.filter(
-            is_quarter=is_quarter,
-            submission_reveal_date__lte=datetime.now(timezone.utc),
+            is_quarter=is_quarter, submission_reveal_date__lte=datetime.now(timezone.utc)
         )
         .annotate(month=F("submission_fiscal_month"), year=F("submission_fiscal_year"))
         .order_by("-submission_fiscal_year", "-submission_fiscal_month")

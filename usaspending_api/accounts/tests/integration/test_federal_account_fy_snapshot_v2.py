@@ -8,19 +8,13 @@ from usaspending_api.accounts.models import FederalAccount
 @pytest.fixture
 def financial_spending_data(db):
     latest_subm = baker.make(
-        "submissions.SubmissionAttributes",
-        reporting_fiscal_year=2017,
-        is_final_balances_for_fy=True,
+        "submissions.SubmissionAttributes", reporting_fiscal_year=2017, is_final_balances_for_fy=True
     )
     not_latest_subm = baker.make(
-        "submissions.SubmissionAttributes",
-        reporting_fiscal_year=2017,
-        is_final_balances_for_fy=False,
+        "submissions.SubmissionAttributes", reporting_fiscal_year=2017, is_final_balances_for_fy=False
     )
     last_year_subm = baker.make(
-        "submissions.SubmissionAttributes",
-        reporting_fiscal_year=2016,
-        is_final_balances_for_fy=True,
+        "submissions.SubmissionAttributes", reporting_fiscal_year=2016, is_final_balances_for_fy=True
     )
     federal_account = baker.make(FederalAccount, id=1)
 

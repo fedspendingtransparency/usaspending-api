@@ -6,33 +6,33 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("search", "0035_add_county_fips_code_to_awardsearch_transactionsearch"),
+        ('search', '0035_add_county_fips_code_to_awardsearch_transactionsearch'),
     ]
 
     operations = [
         migrations.AddField(
-            model_name="subawardsearch",
-            name="legal_entity_county_fips",
+            model_name='subawardsearch',
+            name='legal_entity_county_fips',
             field=models.TextField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name="subawardsearch",
-            name="legal_entity_state_fips",
+            model_name='subawardsearch',
+            name='legal_entity_state_fips',
             field=models.TextField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name="subawardsearch",
-            name="place_of_perform_county_fips",
+            model_name='subawardsearch',
+            name='place_of_perform_county_fips',
             field=models.TextField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name="subawardsearch",
-            name="place_of_perform_state_fips",
+            model_name='subawardsearch',
+            name='place_of_perform_state_fips',
             field=models.TextField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name="subawardsearch",
-            name="pop_county_name",
+            model_name='subawardsearch',
+            name='pop_county_name',
             field=models.TextField(blank=True, null=True),
         ),
     ]

@@ -43,10 +43,7 @@ def test_validate_filter_values():
     PSCCodesMixin.validate_filter_values({})
     PSCCodesMixin.validate_filter_values({"require": [], "exclude": [], "whatever": []})
     PSCCodesMixin.validate_filter_values(
-        {
-            "require": [["Product"], ["Service", "B", "B5"]],
-            "exclude": [["Service", "B", "B5"], ["Product"]],
-        }
+        {"require": [["Product"], ["Service", "B", "B5"]], "exclude": [["Service", "B", "B5"], ["Product"]]}
     )
 
     # These should all raise exceptions.
@@ -78,16 +75,10 @@ def test_split_filter_values():
     assert PSCCodesMixin.split_filter_values([]) == ([], [])
     assert PSCCodesMixin.split_filter_values(["A", "B"]) == ([["A"], ["B"]], [])
     assert PSCCodesMixin.split_filter_values({}) == ([], [])
-    assert PSCCodesMixin.split_filter_values({"require": None, "exclude": None}) == (
-        [],
-        [],
-    )
+    assert PSCCodesMixin.split_filter_values({"require": None, "exclude": None}) == ([], [])
     assert PSCCodesMixin.split_filter_values({"require": [], "exclude": [], "whatever": []}) == ([], [])
     assert PSCCodesMixin.split_filter_values(
-        {
-            "require": [["Product"], ["Service", "B", "B5"]],
-            "exclude": [["Service", "B", "B5"], ["Product"]],
-        }
+        {"require": [["Product"], ["Service", "B", "B5"]], "exclude": [["Service", "B", "B5"], ["Product"]]}
     ) == ([["Product"], ["Service", "B", "B5"]], [["Service", "B", "B5"], ["Product"]])
 
 

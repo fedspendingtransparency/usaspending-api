@@ -3,9 +3,7 @@ import pytest
 from model_bakery import baker
 from django.core.management import call_command
 
-from usaspending_api.submissions.models.submission_attributes import (
-    SubmissionAttributes,
-)
+from usaspending_api.submissions.models.submission_attributes import SubmissionAttributes
 
 # No fixtures are used because each test requires a unique set of schedules and submissions.
 # NOTE: Some schedules are not accurate to real life in order to include a broader set of

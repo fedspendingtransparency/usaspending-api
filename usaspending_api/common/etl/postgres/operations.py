@@ -2,11 +2,7 @@
 
 from psycopg2.sql import SQL, Identifier
 from typing import List
-from usaspending_api.common.etl.postgres import (
-    ETLObjectBase,
-    ETLWritableObjectBase,
-    ETLTemporaryTable,
-)
+from usaspending_api.common.etl.postgres import ETLObjectBase, ETLWritableObjectBase, ETLTemporaryTable
 from usaspending_api.common.etl.postgres import primatives
 from usaspending_api.common.helpers import sql_helpers
 
@@ -64,9 +60,7 @@ def delete_obsolete_rows(source: ETLObjectBase, destination: ETLWritableObjectBa
 
 
 def identify_new_or_updated(
-    source: ETLObjectBase,
-    destination: ETLWritableObjectBase,
-    staging: ETLTemporaryTable,
+    source: ETLObjectBase, destination: ETLWritableObjectBase, staging: ETLTemporaryTable
 ) -> int:
     """
     Create a temporary staging table containing keys of rows in source that are new or
@@ -123,11 +117,7 @@ def insert_missing_rows(source: ETLObjectBase, destination: ETLWritableObjectBas
     return sql_helpers.execute_dml_sql(sql)
 
 
-def stage_table(
-    source: ETLObjectBase,
-    destination: ETLWritableObjectBase,
-    staging: ETLTemporaryTable,
-) -> int:
+def stage_table(source: ETLObjectBase, destination: ETLWritableObjectBase, staging: ETLTemporaryTable) -> int:
     """Copy source table contents to staging table and return the number of rows copied."""
 
     shared_columns = _get_shared_columns(source.columns, destination.columns)

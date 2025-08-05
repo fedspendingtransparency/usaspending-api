@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("search", "0003_auto_20210629_1550"),
+        ('search', '0003_auto_20210629_1550'),
     ]
 
     operations = [
         migrations.AddField(
-            model_name="transactionsearch",
-            name="award_date_signed",
+            model_name='transactionsearch',
+            name='award_date_signed',
             field=models.DateTimeField(null=True),
         ),
     ]

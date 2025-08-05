@@ -17,11 +17,7 @@ from usaspending_api.search.tests.integration.hierarchical_filters.tas_search_te
 
 @pytest.mark.django_db
 def test_match_from_agency(
-    client,
-    monkeypatch,
-    elasticsearch_award_index,
-    elasticsearch_subaward_index,
-    subaward_with_tas,
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_tas
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -31,13 +27,7 @@ def test_match_from_agency(
 
 
 @pytest.mark.django_db
-def test_match_from_fa(
-    client,
-    monkeypatch,
-    elasticsearch_award_index,
-    elasticsearch_subaward_index,
-    subaward_with_tas,
-):
+def test_match_from_fa(client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
     resp = query_by_tas_subaward(client, {"require": [_fa_path(BASIC_TAS)]})
@@ -47,11 +37,7 @@ def test_match_from_fa(
 
 @pytest.mark.django_db
 def test_match_from_tas(
-    client,
-    monkeypatch,
-    elasticsearch_award_index,
-    elasticsearch_subaward_index,
-    subaward_with_tas,
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_tas
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -62,11 +48,7 @@ def test_match_from_tas(
 
 @pytest.mark.django_db
 def test_non_match_from_agency(
-    client,
-    monkeypatch,
-    elasticsearch_award_index,
-    elasticsearch_subaward_index,
-    subaward_with_tas,
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_tas
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -76,11 +58,7 @@ def test_non_match_from_agency(
 
 @pytest.mark.django_db
 def test_non_match_from_fa(
-    client,
-    monkeypatch,
-    elasticsearch_award_index,
-    elasticsearch_subaward_index,
-    subaward_with_tas,
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_tas
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -91,11 +69,7 @@ def test_non_match_from_fa(
 
 @pytest.mark.django_db
 def test_non_match_from_tas(
-    client,
-    monkeypatch,
-    elasticsearch_award_index,
-    elasticsearch_subaward_index,
-    subaward_with_tas,
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_tas
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -106,11 +80,7 @@ def test_non_match_from_tas(
 
 @pytest.mark.django_db
 def test_match_from_ata_tas(
-    client,
-    monkeypatch,
-    elasticsearch_award_index,
-    elasticsearch_subaward_index,
-    subaward_with_ata_tas,
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_ata_tas
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -121,11 +91,7 @@ def test_match_from_ata_tas(
 
 @pytest.mark.django_db
 def test_match_from_bpoa_tas(
-    client,
-    monkeypatch,
-    elasticsearch_award_index,
-    elasticsearch_subaward_index,
-    subaward_with_bpoa_tas,
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_bpoa_tas
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -136,11 +102,7 @@ def test_match_from_bpoa_tas(
 
 @pytest.mark.django_db
 def test_match_from_unintuitive_tas(
-    client,
-    monkeypatch,
-    elasticsearch_award_index,
-    elasticsearch_subaward_index,
-    subaward_with_unintuitive_agency,
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_unintuitive_agency
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -151,11 +113,7 @@ def test_match_from_unintuitive_tas(
 
 @pytest.mark.django_db
 def test_non_match_from_unintuitive_tas_from_agency(
-    client,
-    monkeypatch,
-    elasticsearch_award_index,
-    elasticsearch_subaward_index,
-    subaward_with_unintuitive_agency,
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_unintuitive_agency
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -168,11 +126,7 @@ def test_non_match_from_unintuitive_tas_from_agency(
 
 @pytest.mark.django_db
 def test_non_match_from_unintuitive_tas_from_tas(
-    client,
-    monkeypatch,
-    elasticsearch_award_index,
-    elasticsearch_subaward_index,
-    subaward_with_unintuitive_agency,
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_unintuitive_agency
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -185,11 +139,7 @@ def test_non_match_from_unintuitive_tas_from_tas(
 
 @pytest.mark.django_db
 def test_match_search_on_multiple_tas(
-    client,
-    monkeypatch,
-    elasticsearch_award_index,
-    elasticsearch_subaward_index,
-    subaward_with_multiple_tas,
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_multiple_tas
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -200,11 +150,7 @@ def test_match_search_on_multiple_tas(
 
 @pytest.mark.django_db
 def test_non_match_search_on_multiple_tas(
-    client,
-    monkeypatch,
-    elasticsearch_award_index,
-    elasticsearch_subaward_index,
-    subaward_with_multiple_tas,
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_multiple_tas
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -215,11 +161,7 @@ def test_non_match_search_on_multiple_tas(
 
 @pytest.mark.django_db
 def test_match_search_multi_tas_award(
-    client,
-    monkeypatch,
-    elasticsearch_award_index,
-    elasticsearch_subaward_index,
-    subaward_with_multiple_tas,
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_multiple_tas
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -230,11 +172,7 @@ def test_match_search_multi_tas_award(
 
 @pytest.mark.django_db
 def test_double_match_search_multi_tas_award(
-    client,
-    monkeypatch,
-    elasticsearch_award_index,
-    elasticsearch_subaward_index,
-    subaward_with_multiple_tas,
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_multiple_tas
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -245,11 +183,7 @@ def test_double_match_search_multi_tas_award(
 
 @pytest.mark.django_db
 def test_match_only_awards_with_tas(
-    client,
-    monkeypatch,
-    elasticsearch_award_index,
-    elasticsearch_subaward_index,
-    subaward_with_no_tas,
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_no_tas
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)
@@ -260,11 +194,7 @@ def test_match_only_awards_with_tas(
 
 @pytest.mark.django_db
 def test_match_on_multiple_awards(
-    client,
-    monkeypatch,
-    elasticsearch_award_index,
-    elasticsearch_subaward_index,
-    subaward_with_no_tas,
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, subaward_with_no_tas
 ):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
     _setup_es(client, monkeypatch, elasticsearch_subaward_index)

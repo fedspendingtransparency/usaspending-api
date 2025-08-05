@@ -32,15 +32,9 @@ logger = logging.getLogger(__name__)
 # Note: the `delta` type is not actually in Spark SQL. It's how we're temporarily storing the data before converting it
 #       to the proper postgres type, since pySpark doesn't automatically support this conversion.
 SPECIAL_TYPES_MAPPING = {
-    db.models.UUIDField: {
-        "postgres": "UUID USING {column_name}::UUID",
-        "delta": "TEXT",
-    },
+    db.models.UUIDField: {"postgres": "UUID USING {column_name}::UUID", "delta": "TEXT"},
     "UUID": {"postgres": "UUID USING {column_name}::UUID", "delta": "TEXT"},
-    db.models.JSONField: {
-        "postgres": "JSONB using {column_name}::JSON",
-        "delta": "TEXT",
-    },
+    db.models.JSONField: {"postgres": "JSONB using {column_name}::JSON", "delta": "TEXT"},
     "JSONB": {"postgres": "JSONB using {column_name}::JSON", "delta": "TEXT"},
 }
 
@@ -470,15 +464,11 @@ class Command(BaseCommand):
                 aws_secret_access_key=CONFIG.AWS_SECRET_KEY.get_secret_value(),
             )
             s3_resource = boto3_session.resource(
-                service_name="s3",
-                region_name=CONFIG.AWS_REGION,
-                endpoint_url=f"http://{CONFIG.AWS_S3_ENDPOINT}",
+                service_name="s3", region_name=CONFIG.AWS_REGION, endpoint_url=f"http://{CONFIG.AWS_S3_ENDPOINT}"
             )
         else:
             s3_resource = boto3.resource(
-                service_name="s3",
-                region_name=CONFIG.AWS_REGION,
-                endpoint_url=f"https://{CONFIG.AWS_S3_ENDPOINT}",
+                service_name="s3", region_name=CONFIG.AWS_REGION, endpoint_url=f"https://{CONFIG.AWS_S3_ENDPOINT}"
             )
         s3_bucket_name = spark_s3_bucket_name
         s3_bucket = s3_resource.Bucket(s3_bucket_name)

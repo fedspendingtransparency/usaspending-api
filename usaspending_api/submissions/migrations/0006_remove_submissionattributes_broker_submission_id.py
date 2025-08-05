@@ -6,12 +6,12 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("submissions", "0005_remove_submissionattributes_previous_submission"),
+        ('submissions', '0005_remove_submissionattributes_previous_submission'),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name="submissionattributes",
-            name="broker_submission_id",
+            model_name='submissionattributes',
+            name='broker_submission_id',
         ),
     ]

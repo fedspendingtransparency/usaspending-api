@@ -1,9 +1,7 @@
 from django.db.models import F
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from usaspending_api.references.models.disaster_emergency_fund_code import (
-    DisasterEmergencyFundCode,
-)
+from usaspending_api.references.models.disaster_emergency_fund_code import DisasterEmergencyFundCode
 
 
 class DEFCodesViewSet(APIView):

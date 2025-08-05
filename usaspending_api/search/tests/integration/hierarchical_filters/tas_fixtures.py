@@ -97,11 +97,7 @@ def _award_with_tas(indexes, award_id=1, toptier_code=None):
             ),
             federal_account_id=fa.id,
         )
-        baker.make(
-            "awards.FinancialAccountsByAwards",
-            award_id=award_id,
-            treasury_account_id=index,
-        )
+        baker.make("awards.FinancialAccountsByAwards", award_id=award_id, treasury_account_id=index)
         tas_components.append(f"aid={aid}main={main}ata={ata or ''}sub={sub}bpoa={bpoa or ''}epoa{epoa or ''}=a={a}")
         tas_paths.append(
             f"agency={ta.toptier_code}faaid={aid}famain={fa.main_account_code}aid={aid}main={main}ata={ata or ''}sub={sub}bpoa={bpoa or ''}epoa={epoa or ''}a={a}"
@@ -179,21 +175,11 @@ def award(db, id):
         uri="abcxyx",
         action_date=datetime(2017, 12, 1),
     )
-    baker.make(
-        "search.TransactionSearch",
-        transaction_id=1000 + id,
-        award=award,
-        action_date=datetime(2017, 12, 1),
-    )
+    baker.make("search.TransactionSearch", transaction_id=1000 + id, award=award, action_date=datetime(2017, 12, 1))
 
 
 def agency(db, agency_id, toptier_code):
-    baker.make(
-        "references.ToptierAgency",
-        toptier_agency_id=agency_id,
-        toptier_code=toptier_code,
-        _fill_optional=True,
-    )
+    baker.make("references.ToptierAgency", toptier_agency_id=agency_id, toptier_code=toptier_code, _fill_optional=True)
 
 
 def tas(db, award_id, fa_id, index):

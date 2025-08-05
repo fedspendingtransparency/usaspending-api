@@ -44,10 +44,7 @@ class FederalAccountByObligationViewSet(CachedDetailViewSet):
                 account_number=F("treasury_account_identifier__federal_account__federal_account_code"),
                 obligated_amount=Sum("obligations_incurred_total_by_tas_cpe"),
             )
-            .order_by(
-                "-obligated_amount",
-                "treasury_account_identifier__federal_account__federal_account_code",
-            )
+            .order_by("-obligated_amount", "treasury_account_identifier__federal_account__federal_account_code")
         )
 
         return queryset

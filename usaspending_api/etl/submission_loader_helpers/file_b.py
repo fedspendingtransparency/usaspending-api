@@ -6,23 +6,15 @@ from collections import defaultdict
 from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.management.load_base import load_data_into_model
-from usaspending_api.etl.submission_loader_helpers.bulk_create_manager import (
-    BulkCreateManager,
-)
-from usaspending_api.etl.submission_loader_helpers.disaster_emergency_fund_codes import (
-    get_disaster_emergency_fund,
-)
+from usaspending_api.etl.submission_loader_helpers.bulk_create_manager import BulkCreateManager
+from usaspending_api.etl.submission_loader_helpers.disaster_emergency_fund_codes import get_disaster_emergency_fund
 from usaspending_api.etl.submission_loader_helpers.object_class import get_object_class
-from usaspending_api.etl.submission_loader_helpers.program_activities import (
-    get_program_activity,
-)
+from usaspending_api.etl.submission_loader_helpers.program_activities import get_program_activity
 from usaspending_api.etl.submission_loader_helpers.treasury_appropriation_account import (
     bulk_treasury_appropriation_account_tas_lookup,
     get_treasury_appropriation_account_tas_lookup,
 )
-from usaspending_api.financial_activities.models import (
-    FinancialAccountsByProgramActivityObjectClass,
-)
+from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 
 
 logger = logging.getLogger("script")
@@ -81,11 +73,7 @@ def get_file_b(submission_attributes, db_cursor):
             "account_num",
         ],
         "left": ["object_class"],
-        "upper": [
-            "prior_year_adjustment",
-            "program_activity_reporting_key",
-            "disaster_emergency_fund_code",
-        ],
+        "upper": ["prior_year_adjustment", "program_activity_reporting_key", "disaster_emergency_fund_code"],
         "numeric": [
             "deobligations_recov_by_pro_cpe",
             "gross_outlay_amount_by_pro_cpe",
@@ -194,8 +182,7 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
 
         # get the corresponding account balances row (aka "File A" record)
         account_balances = AppropriationAccountBalances.objects.get(
-            treasury_account_identifier=treasury_account,
-            submission_id=submission_attributes.submission_id,
+            treasury_account_identifier=treasury_account, submission_id=submission_attributes.submission_id
         )
 
         financial_by_prg_act_obj_cls = FinancialAccountsByProgramActivityObjectClass()
@@ -212,13 +199,7 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
         }
 
         save_manager.append(
-            load_data_into_model(
-                financial_by_prg_act_obj_cls,
-                row,
-                value_map=value_map,
-                save=False,
-                reverse=reverse,
-            )
+            load_data_into_model(financial_by_prg_act_obj_cls, row, value_map=value_map, save=False, reverse=reverse)
         )
 
     save_manager.save_stragglers()

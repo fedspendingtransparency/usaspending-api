@@ -7,13 +7,13 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("awards", "0096_removing_subaward_models"),
-        ("references", "0058_bureautitlelookup"),
-        ("search", "0011_alter_summarystateview_options"),
+        ('awards', '0096_removing_subaward_models'),
+        ('references', '0058_bureautitlelookup'),
+        ('search', '0011_alter_summarystateview_options'),
     ]
 
     operations = [
         migrations.DeleteModel(
-            name="SubawardView",
+            name='SubawardView',
         ),
     ]

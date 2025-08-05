@@ -23,13 +23,7 @@ def tas_submissions_across_multiple_years():
 
     ta1 = baker.make("references.ToptierAgency", toptier_code="007", _fill_optional=True)
 
-    baker.make(
-        "references.Agency",
-        id=1,
-        toptier_flag=True,
-        toptier_agency=ta1,
-        _fill_optional=True,
-    )
+    baker.make("references.Agency", id=1, toptier_flag=True, toptier_agency=ta1, _fill_optional=True)
 
     sub1 = baker.make(
         "submissions.SubmissionAttributes",
@@ -61,54 +55,22 @@ def tas_submissions_across_multiple_years():
         tas_rendering_label="001-X-0000-000",
     )
 
-    baker.make(
-        "accounts.AppropriationAccountBalances",
-        treasury_account_identifier=tas1,
-        submission=sub1,
-    )
-    baker.make(
-        "accounts.AppropriationAccountBalances",
-        treasury_account_identifier=tas1,
-        submission=sub2,
-    )
+    baker.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas1, submission=sub1)
+    baker.make("accounts.AppropriationAccountBalances", treasury_account_identifier=tas1, submission=sub2)
 
-    pa1 = baker.make(
-        "references.RefProgramActivity",
-        program_activity_code="000",
-        program_activity_name="NAME 1",
-    )
-    pa2 = baker.make(
-        "references.RefProgramActivity",
-        program_activity_code="1000",
-        program_activity_name="NAME 2",
-    )
-    pa3 = baker.make(
-        "references.RefProgramActivity",
-        program_activity_code="4567",
-        program_activity_name="NAME 3",
-    )
+    pa1 = baker.make("references.RefProgramActivity", program_activity_code="000", program_activity_name="NAME 1")
+    pa2 = baker.make("references.RefProgramActivity", program_activity_code="1000", program_activity_name="NAME 2")
+    pa3 = baker.make("references.RefProgramActivity", program_activity_code="4567", program_activity_name="NAME 3")
 
     oc = "references.ObjectClass"
     oc1 = baker.make(
-        oc,
-        major_object_class=10,
-        major_object_class_name="Other",
-        object_class=100,
-        object_class_name="equipment",
+        oc, major_object_class=10, major_object_class_name="Other", object_class=100, object_class_name="equipment"
     )
     oc2 = baker.make(
-        oc,
-        major_object_class=10,
-        major_object_class_name="Other",
-        object_class=110,
-        object_class_name="hvac",
+        oc, major_object_class=10, major_object_class_name="Other", object_class=110, object_class_name="hvac"
     )
     oc3 = baker.make(
-        oc,
-        major_object_class=10,
-        major_object_class_name="Other",
-        object_class=120,
-        object_class_name="supplies",
+        oc, major_object_class=10, major_object_class_name="Other", object_class=120, object_class_name="supplies"
     )
 
     fabpaoc = "financial_activities.FinancialAccountsByProgramActivityObjectClass"
@@ -168,21 +130,9 @@ def test_tas_object_class_success(client, monkeypatch, agency_account_data, help
                 "name": "Other",
                 "obligated_amount": 111.0,
                 "children": [
-                    {
-                        "gross_outlay_amount": 100000.0,
-                        "name": "NAME 3",
-                        "obligated_amount": 100.0,
-                    },
-                    {
-                        "gross_outlay_amount": 1000000.0,
-                        "name": "NAME 2",
-                        "obligated_amount": 10.0,
-                    },
-                    {
-                        "gross_outlay_amount": 10000000.0,
-                        "name": "NAME 1",
-                        "obligated_amount": 1.0,
-                    },
+                    {"gross_outlay_amount": 100000.0, "name": "NAME 3", "obligated_amount": 100.0},
+                    {"gross_outlay_amount": 1000000.0, "name": "NAME 2", "obligated_amount": 10.0},
+                    {"gross_outlay_amount": 10000000.0, "name": "NAME 1", "obligated_amount": 1.0},
                 ],
             }
         ],
@@ -237,11 +187,7 @@ def test_tas_object_class_success(client, monkeypatch, agency_account_data, help
                 "name": "Other",
                 "obligated_amount": 10.0,
                 "children": [
-                    {
-                        "gross_outlay_amount": 1000000.0,
-                        "name": "NAME 5",
-                        "obligated_amount": 10.0,
-                    },
+                    {"gross_outlay_amount": 1000000.0, "name": "NAME 5", "obligated_amount": 10.0},
                 ],
             }
         ],
@@ -275,16 +221,8 @@ def test_tas_object_class_multiple_pa_per_oc(client, monkeypatch, tas_mulitple_p
                 "name": "Other",
                 "obligated_amount": 11.0,
                 "children": [
-                    {
-                        "gross_outlay_amount": 1000000.0,
-                        "name": "NAME 2",
-                        "obligated_amount": 10.0,
-                    },
-                    {
-                        "gross_outlay_amount": 10000000.0,
-                        "name": "NAME 1",
-                        "obligated_amount": 1.0,
-                    },
+                    {"gross_outlay_amount": 1000000.0, "name": "NAME 2", "obligated_amount": 10.0},
+                    {"gross_outlay_amount": 10000000.0, "name": "NAME 1", "obligated_amount": 1.0},
                 ],
             },
         ],
@@ -318,13 +256,7 @@ def test_tas_object_class_multiple_submission_years(client, agency_account_data)
                 "gross_outlay_amount": 10000.0,
                 "name": "Other",
                 "obligated_amount": 1000.0,
-                "children": [
-                    {
-                        "gross_outlay_amount": 10000.0,
-                        "name": "NAME 4",
-                        "obligated_amount": 1000.0,
-                    }
-                ],
+                "children": [{"gross_outlay_amount": 10000.0, "name": "NAME 4", "obligated_amount": 1000.0}],
             }
         ],
     }

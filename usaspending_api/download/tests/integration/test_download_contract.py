@@ -42,20 +42,8 @@ def download_test_data(db):
     baker.make("references.SubtierAgency", name="Bureau of Things", _fill_optional=True)
 
     # Create Awarding Agencies
-    aa1 = baker.make(
-        "references.Agency",
-        id=1,
-        toptier_agency=ata1,
-        toptier_flag=False,
-        _fill_optional=True,
-    )
-    aa2 = baker.make(
-        "references.Agency",
-        id=2,
-        toptier_agency=ata2,
-        toptier_flag=False,
-        _fill_optional=True,
-    )
+    aa1 = baker.make("references.Agency", id=1, toptier_agency=ata1, toptier_flag=False, _fill_optional=True)
+    aa2 = baker.make("references.Agency", id=2, toptier_agency=ata2, toptier_flag=False, _fill_optional=True)
 
     # Create Funding Top Agency
     ata3 = baker.make(
@@ -71,28 +59,12 @@ def download_test_data(db):
     baker.make("references.SubtierAgency", name="Bureau of Things", _fill_optional=True)
 
     # Create Funding Agency
-    baker.make(
-        "references.Agency",
-        id=3,
-        toptier_agency=ata3,
-        toptier_flag=False,
-        _fill_optional=True,
-    )
+    baker.make("references.Agency", id=3, toptier_agency=ata3, toptier_flag=False, _fill_optional=True)
 
     # Create Awards
     award1 = baker.make("search.AwardSearch", award_id=123, category="idv", action_date="2020-01-01")
-    award2 = baker.make(
-        "search.AwardSearch",
-        award_id=456,
-        category="contracts",
-        action_date="2020-01-01",
-    )
-    award3 = baker.make(
-        "search.AwardSearch",
-        award_id=789,
-        category="assistance",
-        action_date="2020-01-01",
-    )
+    award2 = baker.make("search.AwardSearch", award_id=456, category="contracts", action_date="2020-01-01")
+    award3 = baker.make("search.AwardSearch", award_id=789, category="assistance", action_date="2020-01-01")
 
     # Create Transactions
     baker.make(
@@ -137,9 +109,7 @@ def download_test_data(db):
 def test_download_contract_without_columns(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
-        "/api/v2/download/contract/",
-        content_type="application/json",
-        data=json.dumps({"award_id": 456}),
+        "/api/v2/download/contract/", content_type="application/json", data=json.dumps({"award_id": 456})
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -174,10 +144,6 @@ def test_download_contract_with_columns(client, download_test_data):
 def test_download_contract_bad_award_id_raises(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     payload = {"award_id": -1}
-    resp = client.post(
-        "/api/v2/download/assistance/",
-        content_type="application/json",
-        data=json.dumps(payload),
-    )
+    resp = client.post("/api/v2/download/assistance/", content_type="application/json", data=json.dumps(payload))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
     assert resp.json()["detail"] == "Unable to find award matching the provided award id"

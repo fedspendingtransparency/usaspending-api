@@ -114,11 +114,7 @@ def copy_csv_from_s3_to_pg(
     WARNING: See note above in module docstring about this function being pickle-able, and maintaining a lean set of
     outward dependencies on other modules/code that require setup/config.
     """
-    ensure_logging(
-        logging_config_dict=LOGGING,
-        formatter_class=AbbrevNamespaceUTCFormatter,
-        logger_to_use=logger,
-    )
+    ensure_logging(logging_config_dict=LOGGING, formatter_class=AbbrevNamespaceUTCFormatter, logger_to_use=logger)
     try:
         with psycopg2.connect(dsn=db_dsn) as connection:
             connection.autocommit = True
@@ -156,11 +152,7 @@ def copy_csvs_from_s3_to_pg(
     """An optimized form of ``copy_csv_from_s3_to_pg`` that can save on runtime by instantiating the psycopg2 DB
     connection and s3_client only once per partition, where a partition could represent processing several files
     """
-    ensure_logging(
-        logging_config_dict=LOGGING,
-        formatter_class=AbbrevNamespaceUTCFormatter,
-        logger_to_use=logger,
-    )
+    ensure_logging(logging_config_dict=LOGGING, formatter_class=AbbrevNamespaceUTCFormatter, logger_to_use=logger)
     s3_obj_keys = list(s3_obj_keys)  # convert from Iterator (generator) to a concrete List
     batch_size = len(s3_obj_keys)
     batch_start = time.time()

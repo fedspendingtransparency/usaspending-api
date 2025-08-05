@@ -37,10 +37,7 @@ class SubawardsViewSet(APIView):
                 "key": "award_id",
                 "name": "award_id",
                 "type": "any",
-                "models": [
-                    {"type": "integer"},
-                    {"type": "text", "text_type": "search"},
-                ],
+                "models": [{"type": "integer"}, {"type": "text", "text_type": "search"}],
                 "optional": True,
                 "default": None,
                 "allow_nulls": True,
@@ -72,13 +69,11 @@ class SubawardsViewSet(APIView):
         # always secondary-sort by PK in case a repeating value (e.g. subaward_number) crosses pages, so suborder isn't abitrary
         if request_data["order"] == "desc":
             queryset = queryset.order_by(
-                F(self.subaward_lookup[request_data["sort"]]).desc(nulls_last=True),
-                F("broker_subaward_id").desc(),
+                F(self.subaward_lookup[request_data["sort"]]).desc(nulls_last=True), F("broker_subaward_id").desc()
             )
         else:
             queryset = queryset.order_by(
-                F(self.subaward_lookup[request_data["sort"]]).asc(nulls_first=True),
-                F("broker_subaward_id").asc(),
+                F(self.subaward_lookup[request_data["sort"]]).asc(nulls_first=True), F("broker_subaward_id").asc()
             )
 
         rows = list(queryset[lower_limit : upper_limit + 1])
@@ -89,8 +84,5 @@ class SubawardsViewSet(APIView):
         request_data = self._parse_and_validate_request(request.data)
         results = self._business_logic(request_data)
         page_metadata = get_simple_pagination_metadata(len(results), request_data["limit"], request_data["page"])
-        response = {
-            "page_metadata": page_metadata,
-            "results": results[: request_data["limit"]],
-        }
+        response = {"page_metadata": page_metadata, "results": results[: request_data["limit"]]}
         return Response(response)

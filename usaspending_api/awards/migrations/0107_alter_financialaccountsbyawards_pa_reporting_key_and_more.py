@@ -14,11 +14,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="financialaccountsbyawards",
             name="pa_reporting_key",
-            field=models.TextField(
-                blank=True,
-                help_text="A unique identifier for a Program Activity",
-                null=True,
-            ),
+            field=models.TextField(blank=True, help_text="A unique identifier for a Program Activity", null=True),
         ),
         migrations.AlterField(
             model_name="transactiondelta",

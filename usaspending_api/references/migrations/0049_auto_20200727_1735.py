@@ -6,18 +6,17 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("references", "0049_gtassf133balances_total_budgetary_resources_cpe"),
+        ('references', '0049_gtassf133balances_total_budgetary_resources_cpe'),
     ]
 
     operations = [
         migrations.AlterUniqueTogether(
-            name="refprogramactivity",
+            name='refprogramactivity',
             unique_together=set(),
         ),
         # Special index used to guarantee uniquity on the natural key columns.
         migrations.RunSQL(
-            sql=[
-                """
+            sql=["""
                 create unique index if not exists idx_ref_program_activity_natural_key on ref_program_activity (
                     program_activity_code,
                     coalesce(program_activity_name, ''),
@@ -26,8 +25,7 @@ class Migration(migrations.Migration):
                     coalesce(main_account_code, ''),
                     coalesce(budget_year, '')
                 );
-            """
-            ],
-            reverse_sql=["drop index idx_ref_program_activity_natural_key"],
+            """],
+            reverse_sql=["drop index idx_ref_program_activity_natural_key"]
         ),
     ]

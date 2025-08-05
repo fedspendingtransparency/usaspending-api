@@ -71,10 +71,7 @@ def test_object_class_spending_filters_on_defc(
 
 @pytest.mark.django_db
 def test_object_class_spending_filters_on_non_zero_obligations(
-    client,
-    basic_fa_by_object_class_with_object_class_but_no_obligations,
-    monkeypatch,
-    helpers,
+    client, basic_fa_by_object_class_with_object_class_but_no_obligations, monkeypatch, helpers
 ):
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
 
@@ -97,10 +94,7 @@ def test_object_class_spending_adds_over_multiple_object_classes(
 
 @pytest.mark.django_db
 def test_object_class_spending_adds_over_multiple_object_classes_of_same_code(
-    client,
-    basic_fa_by_object_class_with_multpile_object_class_of_same_code,
-    monkeypatch,
-    helpers,
+    client, basic_fa_by_object_class_with_multpile_object_class_of_same_code, monkeypatch, helpers
 ):
     helpers.patch_datetime_now(monkeypatch, 2022, 12, 31)
 

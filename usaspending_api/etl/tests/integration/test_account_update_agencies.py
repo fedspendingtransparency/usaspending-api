@@ -2,9 +2,7 @@ import pytest
 
 from model_bakery import baker
 from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount
-from usaspending_api.etl.operations.federal_account.update_agency import (
-    update_federal_account_agency,
-)
+from usaspending_api.etl.operations.federal_account.update_agency import update_federal_account_agency
 from usaspending_api.etl.operations.treasury_appropriation_account.update_agencies import (
     update_treasury_appropriation_account_agencies,
 )
@@ -69,30 +67,10 @@ def data_fixture(db):
     )
 
     # Stuff required to support the above.
-    baker.make(
-        "accounts.FederalAccount",
-        pk=1,
-        agency_identifier="123",
-        main_account_code="0111",
-    )
-    baker.make(
-        "accounts.FederalAccount",
-        pk=2,
-        agency_identifier="234",
-        main_account_code="0222",
-    )
-    baker.make(
-        "accounts.FederalAccount",
-        pk=3,
-        agency_identifier="345",
-        main_account_code="0333",
-    )
-    baker.make(
-        "accounts.FederalAccount",
-        pk=4,
-        agency_identifier="345",
-        main_account_code="0444",
-    )
+    baker.make("accounts.FederalAccount", pk=1, agency_identifier="123", main_account_code="0111")
+    baker.make("accounts.FederalAccount", pk=2, agency_identifier="234", main_account_code="0222")
+    baker.make("accounts.FederalAccount", pk=3, agency_identifier="345", main_account_code="0333")
+    baker.make("accounts.FederalAccount", pk=4, agency_identifier="345", main_account_code="0444")
 
     baker.make("references.FREC", frec_code="2345", associated_cgac_code="123")
     baker.make("references.FREC", frec_code="3456", associated_cgac_code="234")

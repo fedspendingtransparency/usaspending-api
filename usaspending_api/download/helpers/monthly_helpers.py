@@ -6,12 +6,7 @@ logger = logging.getLogger(__name__)
 
 
 def write_to_download_log(
-    message,
-    job_type="USAspendingDownloader",
-    download_job=None,
-    is_debug=False,
-    is_error=False,
-    other_params=None,
+    message, job_type="USAspendingDownloader", download_job=None, is_debug=False, is_error=False, other_params=None
 ):
     """Handles logging for the downloader instance"""
     if not other_params:

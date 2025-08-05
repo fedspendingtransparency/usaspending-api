@@ -2,9 +2,7 @@ import pytest
 from model_bakery import baker
 
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.download.management.commands.delta_downloads.filters import (
-    AccountDownloadFilter,
-)
+from usaspending_api.download.management.commands.delta_downloads.filters import AccountDownloadFilter
 
 
 @pytest.fixture
@@ -16,24 +14,9 @@ def agency_models(db):
 
 @pytest.fixture
 def federal_account_models(db):
-    baker.make(
-        "accounts.FederalAccount",
-        pk=1,
-        agency_identifier="123",
-        main_account_code="0111",
-    )
-    baker.make(
-        "accounts.FederalAccount",
-        pk=2,
-        agency_identifier="234",
-        main_account_code="0222",
-    )
-    baker.make(
-        "accounts.FederalAccount",
-        pk=3,
-        agency_identifier="345",
-        main_account_code="0333",
-    )
+    baker.make("accounts.FederalAccount", pk=1, agency_identifier="123", main_account_code="0111")
+    baker.make("accounts.FederalAccount", pk=2, agency_identifier="234", main_account_code="0222")
+    baker.make("accounts.FederalAccount", pk=3, agency_identifier="345", main_account_code="0333")
 
 
 def test_account_download_filter_cast_to_int(agency_models, federal_account_models):
@@ -71,12 +54,7 @@ def test_account_download_handle_all(agency_models, federal_account_models):
 
 
 def test_account_download_both_period_quarter(agency_models, federal_account_models):
-    test_data = {
-        "fy": "2018",
-        "submission_types": ["award_financial"],
-        "period": "12",
-        "quarter": "4",
-    }
+    test_data = {"fy": "2018", "submission_types": ["award_financial"], "period": "12", "quarter": "4"}
     with pytest.warns() as warnings:
         result = AccountDownloadFilter(**test_data)
     assert result.fy == 2018
@@ -93,12 +71,7 @@ def test_account_download_none_period_quarter(agency_models, federal_account_mod
 
 
 def test_account_download_no_agency(agency_models, federal_account_models):
-    test_data = {
-        "fy": "2018",
-        "submission_types": ["award_financial"],
-        "period": 2,
-        "agency": 3,
-    }
+    test_data = {"fy": "2018", "submission_types": ["award_financial"], "period": 2, "agency": 3}
     result = AccountDownloadFilter(**test_data)
     assert result.agency == 3
     test_data = {"fy": "2018", "period": 2, "agency": 4}
@@ -107,19 +80,9 @@ def test_account_download_no_agency(agency_models, federal_account_models):
 
 
 def test_account_download_no_federal_account(agency_models, federal_account_models):
-    test_data = {
-        "fy": "2018",
-        "submission_types": ["award_financial"],
-        "period": 2,
-        "federal_account": 3,
-    }
+    test_data = {"fy": "2018", "submission_types": ["award_financial"], "period": 2, "federal_account": 3}
     result = AccountDownloadFilter(**test_data)
     assert result.federal_account == 3
-    test_data = {
-        "fy": "2018",
-        "submission_types": ["award_financial"],
-        "period": 2,
-        "federal_account": 4,
-    }
+    test_data = {"fy": "2018", "submission_types": ["award_financial"], "period": 2, "federal_account": 4}
     with pytest.raises(InvalidParameterException, match="Federal Account with that ID does not exist"):
         result = AccountDownloadFilter(**test_data)

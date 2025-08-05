@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ("awards", "0069_auto_20191226_1602"),
+        ('awards', '0069_auto_20191226_1602'),
     ]
 
     # You may notice that the unmanaged models here have no fields.  This is an intentional
@@ -18,137 +18,121 @@ class Migration(migrations.Migration):
     # fields unless they are referenced by another model so this should cause no harm.
     operations = [
         migrations.CreateModel(
-            name="AgencyAutocompleteMatview",
+            name='AgencyAutocompleteMatview',
             fields=[],
             options={
-                "db_table": "mv_agency_autocomplete",
-                "managed": False,
+                'db_table': 'mv_agency_autocomplete',
+                'managed': False,
             },
         ),
         migrations.CreateModel(
-            name="AwardSearchView",
+            name='AwardSearchView',
             fields=[],
             options={
-                "db_table": "vw_award_search",
-                "managed": False,
+                'db_table': 'vw_award_search',
+                'managed': False,
             },
         ),
         migrations.CreateModel(
-            name="ContractAwardSearchMatview",
+            name='ContractAwardSearchMatview',
             fields=[],
             options={
-                "db_table": "mv_contract_award_search",
-                "managed": False,
+                'db_table': 'mv_contract_award_search',
+                'managed': False,
             },
         ),
         migrations.CreateModel(
-            name="DirectPaymentAwardSearchMatview",
+            name='DirectPaymentAwardSearchMatview',
             fields=[],
             options={
-                "db_table": "mv_directpayment_award_search",
-                "managed": False,
+                'db_table': 'mv_directpayment_award_search',
+                'managed': False,
             },
         ),
         migrations.CreateModel(
-            name="GrantAwardSearchMatview",
+            name='GrantAwardSearchMatview',
             fields=[],
             options={
-                "db_table": "mv_grant_award_search",
-                "managed": False,
+                'db_table': 'mv_grant_award_search',
+                'managed': False,
             },
         ),
         migrations.CreateModel(
-            name="IDVAwardSearchMatview",
+            name='IDVAwardSearchMatview',
             fields=[],
             options={
-                "db_table": "mv_idv_award_search",
-                "managed": False,
+                'db_table': 'mv_idv_award_search',
+                'managed': False,
             },
         ),
         migrations.CreateModel(
-            name="LoanAwardSearchMatview",
+            name='LoanAwardSearchMatview',
             fields=[],
             options={
-                "db_table": "mv_loan_award_search",
-                "managed": False,
+                'db_table': 'mv_loan_award_search',
+                'managed': False,
             },
         ),
         migrations.CreateModel(
-            name="OtherAwardSearchMatview",
+            name='OtherAwardSearchMatview',
             fields=[],
             options={
-                "db_table": "mv_other_award_search",
-                "managed": False,
+                'db_table': 'mv_other_award_search',
+                'managed': False,
             },
         ),
         migrations.CreateModel(
-            name="Pre2008AwardSearchMatview",
+            name='Pre2008AwardSearchMatview',
             fields=[],
             options={
-                "db_table": "mv_pre2008_award_search",
-                "managed": False,
+                'db_table': 'mv_pre2008_award_search',
+                'managed': False,
             },
         ),
         migrations.CreateModel(
-            name="SubawardView",
+            name='SubawardView',
             fields=[],
             options={
-                "db_table": "subaward_view",
-                "managed": False,
+                'db_table': 'subaward_view',
+                'managed': False,
             },
         ),
         migrations.CreateModel(
-            name="SummaryStateView",
+            name='SummaryStateView',
             fields=[
-                (
-                    "duh",
-                    models.UUIDField(
-                        primary_key=True, help_text="Deterministic Unique Hash"
-                    ),
-                ),
-                ("action_date", models.DateField()),
-                ("fiscal_year", models.IntegerField()),
-                ("type", models.TextField()),
-                ("distinct_awards", models.TextField()),
-                ("pop_country_code", models.TextField()),
-                ("pop_state_code", models.TextField()),
-                (
-                    "generated_pragmatic_obligation",
-                    models.DecimalField(max_digits=23, decimal_places=2),
-                ),
-                (
-                    "federal_action_obligation",
-                    models.DecimalField(max_digits=23, decimal_places=2),
-                ),
-                (
-                    "original_loan_subsidy_cost",
-                    models.DecimalField(max_digits=23, decimal_places=2),
-                ),
-                (
-                    "face_value_loan_guarantee",
-                    models.DecimalField(max_digits=23, decimal_places=2),
-                ),
-                ("counts", models.BigIntegerField()),
+                ('duh', models.UUIDField(primary_key=True, help_text="Deterministic Unique Hash")),
+                ('action_date', models.DateField()),
+                ('fiscal_year', models.IntegerField()),
+                ('type', models.TextField()),
+                ('distinct_awards', models.TextField()),
+                ('pop_country_code', models.TextField()),
+                ('pop_state_code', models.TextField()),
+                ('generated_pragmatic_obligation', models.DecimalField(max_digits=23, decimal_places=2)),
+                ('federal_action_obligation', models.DecimalField(max_digits=23, decimal_places=2)),
+                ('original_loan_subsidy_cost', models.DecimalField(max_digits=23, decimal_places=2)),
+                ('face_value_loan_guarantee', models.DecimalField(max_digits=23, decimal_places=2)),
+                ('counts', models.BigIntegerField())
+
             ],
             options={
-                "db_table": "summary_state_view",
-                "managed": False,
+                'db_table': 'summary_state_view',
+                'managed': False,
             },
         ),
         migrations.CreateModel(
-            name="TASAutocompleteMatview",
+            name='TASAutocompleteMatview',
             fields=[],
             options={
-                "db_table": "tas_autocomplete_matview",
-                "managed": False,
+                'db_table': 'tas_autocomplete_matview',
+                'managed': False,
             },
         ),
         migrations.CreateModel(
-            name="UniversalTransactionView",
+            name='UniversalTransactionView',
             fields=[],
             options={
-                "db_table": "universal_transaction_matview",
-                "managed": False,
+                'db_table': 'universal_transaction_matview',
+                'managed': False,
             },
         ),
     ]

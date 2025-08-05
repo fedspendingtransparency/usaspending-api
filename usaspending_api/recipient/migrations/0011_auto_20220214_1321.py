@@ -6,12 +6,12 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("recipient", "0010_recipientlookup_uei"),
+        ('recipient', '0010_recipientlookup_uei'),
     ]
 
     operations = [
         migrations.AddIndex(
-            model_name="recipientprofile",
-            index=models.Index(fields=["uei"], name="recipient_p_uei_25c7ff_idx"),
+            model_name='recipientprofile',
+            index=models.Index(fields=['uei'], name='recipient_p_uei_25c7ff_idx'),
         ),
     ]

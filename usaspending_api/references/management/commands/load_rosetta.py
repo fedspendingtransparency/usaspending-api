@@ -42,12 +42,7 @@ class Command(BaseCommand):
     s3_public_url = settings.DATA_DICTIONARY_DOWNLOAD_URL
 
     def add_arguments(self, parser):
-        parser.add_argument(
-            "-p",
-            "--path",
-            help="filepath to an Excel spreadsheet to load",
-            default=self.s3_public_url,
-        )
+        parser.add_argument("-p", "--path", help="filepath to an Excel spreadsheet to load", default=self.s3_public_url)
 
     def handle(self, *args, **options):
         script_start_time = perf_counter()

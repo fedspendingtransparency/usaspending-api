@@ -6,12 +6,8 @@ from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.agency.v2.views.agency_base import AgencyBase
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.calculations.file_b import FileBCalculations
-from usaspending_api.financial_activities.models import (
-    FinancialAccountsByProgramActivityObjectClass,
-)
-from usaspending_api.submissions.helpers import (
-    get_latest_submission_ids_for_fiscal_year,
-)
+from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.submissions.helpers import get_latest_submission_ids_for_fiscal_year
 
 
 class BudgetFunctionCount(AgencyBase):

@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("recipient", "0016_auto_20220307_1946"),
+        ('recipient', '0016_auto_20220307_1946'),
     ]
 
     operations = [
         migrations.AddField(
-            model_name="recipientprofile",
-            name="parent_uei",
+            model_name='recipientprofile',
+            name='parent_uei',
             field=models.TextField(null=True),
         ),
     ]

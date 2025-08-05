@@ -6,59 +6,46 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("recipient", "0005_auto_20210216_2120"),
+        ('recipient', '0005_auto_20210216_2120'),
     ]
 
     operations = [
         migrations.AddIndex(
-            model_name="recipientprofile",
-            index=models.Index(
-                fields=["last_12_months"], name="recipient_p_last_12_535d0c_idx"
-            ),
+            model_name='recipientprofile',
+            index=models.Index(fields=['last_12_months'], name='recipient_p_last_12_535d0c_idx'),
         ),
         migrations.AddIndex(
-            model_name="recipientprofile",
-            index=models.Index(
-                fields=["last_12_contracts"], name="recipient_p_last_12_1b3d9f_idx"
-            ),
+            model_name='recipientprofile',
+            index=models.Index(fields=['last_12_contracts'], name='recipient_p_last_12_1b3d9f_idx'),
         ),
         migrations.AddIndex(
-            model_name="recipientprofile",
-            index=models.Index(
-                fields=["last_12_grants"], name="recipient_p_last_12_3776b8_idx"
-            ),
+            model_name='recipientprofile',
+            index=models.Index(fields=['last_12_grants'], name='recipient_p_last_12_3776b8_idx'),
         ),
         migrations.AddIndex(
-            model_name="recipientprofile",
-            index=models.Index(
-                fields=["last_12_direct_payments"],
-                name="recipient_p_last_12_eef9af_idx",
-            ),
+            model_name='recipientprofile',
+            index=models.Index(fields=['last_12_direct_payments'], name='recipient_p_last_12_eef9af_idx'),
         ),
         migrations.AddIndex(
-            model_name="recipientprofile",
-            index=models.Index(
-                fields=["last_12_loans"], name="recipient_p_last_12_11e0b3_idx"
-            ),
+            model_name='recipientprofile',
+            index=models.Index(fields=['last_12_loans'], name='recipient_p_last_12_11e0b3_idx'),
         ),
         migrations.AddIndex(
-            model_name="recipientprofile",
-            index=models.Index(
-                fields=["last_12_other"], name="recipient_p_last_12_7a7440_idx"
-            ),
+            model_name='recipientprofile',
+            index=models.Index(fields=['last_12_other'], name='recipient_p_last_12_7a7440_idx'),
         ),
         # Performed with RAW SQL because Django migrations don't support 'NULLS LAST'
         migrations.RunSQL(
             "CREATE INDEX recipient_profile_recipient_name_d ON public.recipient_profile USING btree (recipient_name DESC NULLS LAST)",
-            reverse_sql="DROP INDEX recipient_profile_recipient_name_d",
+            reverse_sql="DROP INDEX recipient_profile_recipient_name_d"
         ),
         migrations.RunSQL(
             "CREATE INDEX recipient_profile_recipient_unique_id_d ON public.recipient_profile USING btree (recipient_unique_id DESC NULLS LAST)",
-            reverse_sql="DROP INDEX recipient_profile_recipient_unique_id_d",
+            reverse_sql="DROP INDEX recipient_profile_recipient_unique_id_d"
         ),
         # Performed with RAW SQL because Django migrations don't support GinIndexes with a specific Postgres operator class:
         migrations.RunSQL(
             "CREATE INDEX idx_recipient_unique_id_gin ON public.recipient_profile USING gin (recipient_unique_id gin_trgm_ops)",
-            reverse_sql="DROP INDEX idx_recipient_unique_id_gin",
-        ),
+            reverse_sql="DROP INDEX idx_recipient_unique_id_gin"
+        )
     ]

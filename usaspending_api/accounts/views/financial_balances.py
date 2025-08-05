@@ -36,15 +36,9 @@ class AgenciesFinancialBalancesViewSet(CachedDetailViewSet):
 
         submission_queryset = SubmissionAttributes.objects.all()
         submission_queryset = (
-            submission_queryset.filter(
-                toptier_code=toptier_agency.toptier_code,
-                reporting_fiscal_year=fiscal_year,
-            )
+            submission_queryset.filter(toptier_code=toptier_agency.toptier_code, reporting_fiscal_year=fiscal_year)
             .order_by("-reporting_fiscal_year", "-reporting_fiscal_quarter")
-            .annotate(
-                fiscal_year=F("reporting_fiscal_year"),
-                fiscal_quarter=F("reporting_fiscal_quarter"),
-            )
+            .annotate(fiscal_year=F("reporting_fiscal_year"), fiscal_quarter=F("reporting_fiscal_quarter"))
         )
         submission = submission_queryset.first()
 

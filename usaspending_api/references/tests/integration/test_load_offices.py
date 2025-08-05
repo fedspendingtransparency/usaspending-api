@@ -22,37 +22,16 @@ def test_load_offices(monkeypatch):
         settings.DATA_BROKER_DB_ALIAS: data_broker_mock,
     }
 
-    monkeypatch.setattr(
-        "usaspending_api.references.management.commands.load_offices.connections",
-        mock_connections,
-    )
+    monkeypatch.setattr("usaspending_api.references.management.commands.load_offices.connections", mock_connections)
 
     call_command("load_offices")
 
     expected_results = {
         "count": 3,
         "row_tuples": [
-            (
-                "033103",
-                "LIBRARY OF CONGRESS FEDLINK",
-                "0300",
-                "003",
-                True,
-                False,
-                False,
-                True,
-            ),
+            ("033103", "LIBRARY OF CONGRESS FEDLINK", "0300", "003", True, False, False, True),
             ("040897", "Customer Services", "0400", "004", False, False, False, False),
-            (
-                "040ADV",
-                "Acquisition Services",
-                "0400",
-                "004",
-                False,
-                False,
-                False,
-                False,
-            ),
+            ("040ADV", "Acquisition Services", "0400", "004", False, False, False, False),
         ],
     }
 

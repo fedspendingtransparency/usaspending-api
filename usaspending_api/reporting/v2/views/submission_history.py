@@ -35,10 +35,7 @@ class SubmissionHistory(PaginationMixin, AgencyBase):
         #  B) add secondary sort key and handle nulls in `certification_date` for sorting
         results = sorted(
             [
-                {
-                    "publication_date": row["published_date"],
-                    "certification_date": row["certified_date"],
-                }
+                {"publication_date": row["published_date"], "certification_date": row["certified_date"]}
                 for row in record[0]
             ],
             key=lambda x: (
@@ -52,9 +49,5 @@ class SubmissionHistory(PaginationMixin, AgencyBase):
         page_metadata = get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
         results = results[self.pagination.lower_limit : self.pagination.upper_limit]
         return Response(
-            {
-                "page_metadata": page_metadata,
-                "results": results,
-                "messages": self.standard_response_messages,
-            }
+            {"page_metadata": page_metadata, "results": results, "messages": self.standard_response_messages}
         )

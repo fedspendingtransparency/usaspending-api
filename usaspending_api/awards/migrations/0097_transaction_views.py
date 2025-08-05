@@ -3,9 +3,7 @@
 from django.db import migrations, models
 from usaspending_api.awards.models.transaction_fabs import vw_transaction_fabs_sql
 from usaspending_api.awards.models.transaction_fpds import vw_transaction_fpds_sql
-from usaspending_api.awards.models.transaction_normalized import (
-    vw_transaction_normalized_sql,
-)
+from usaspending_api.awards.models.transaction_normalized import vw_transaction_normalized_sql
 
 
 class Migration(migrations.Migration):

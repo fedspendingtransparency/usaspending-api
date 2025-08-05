@@ -9,46 +9,38 @@ from usaspending_api.awards.models.award import vw_awards_sql
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("search", "0020_auto_20221215_2029"),
-        ("awards", "0097_transaction_views"),
+        ('search', '0020_auto_20221215_2029'),
+        ('awards', '0097_transaction_views'),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name="award",
-            options={"managed": False},
+            name='award',
+            options={'managed': False},
         ),
         migrations.RunSQL(
             sql="ALTER TABLE financial_accounts_by_awards DROP CONSTRAINT financial_accounts_by_awards_award_id_eb90a5fa_fk_awards_id",
             reverse_sql="",
             state_operations=[
                 migrations.AlterField(
-                    model_name="financialaccountsbyawards",
-                    name="award",
-                    field=models.ForeignKey(
-                        null=True,
-                        on_delete=django.db.models.deletion.SET_NULL,
-                        related_name="financial_set",
-                        to="search.awardsearch",
-                    ),
+                    model_name='financialaccountsbyawards',
+                    name='award',
+                    field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL,
+                                            related_name='financial_set', to='search.awardsearch'),
                 )
-            ],
+            ]
         ),
         migrations.RunSQL(
             sql="ALTER TABLE rpt.parent_award DROP CONSTRAINT parent_award_award_id_97f76a63_fk_awards_id",
             reverse_sql="",
             state_operations=[
                 migrations.AlterField(
-                    model_name="parentaward",
-                    name="award",
-                    field=models.OneToOneField(
-                        on_delete=django.db.models.deletion.CASCADE,
-                        primary_key=True,
-                        serialize=False,
-                        to="search.awardsearch",
-                    ),
+                    model_name='parentaward',
+                    name='award',
+                    field=models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, primary_key=True,
+                                               serialize=False, to='search.awardsearch'),
                 )
-            ],
+            ]
         ),
         migrations.RunSQL(
             sql=vw_awards_sql,
@@ -57,13 +49,13 @@ class Migration(migrations.Migration):
             # This says we've already done it.
             state_operations=[
                 migrations.AlterModelTable(
-                    name="award",
-                    table="vw_awards",
+                    name='award',
+                    table='vw_awards',
                 )
-            ],
+            ]
         ),
         migrations.AlterModelOptions(
-            name="award",
-            options={"managed": False},
+            name='award',
+            options={'managed': False},
         ),
     ]

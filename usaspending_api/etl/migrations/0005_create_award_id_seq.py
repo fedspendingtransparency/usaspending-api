@@ -15,6 +15,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RunSQL(
             sql="CREATE SEQUENCE IF NOT EXISTS award_id_seq AS BIGINT",
-            reverse_sql="DROP SEQUENCE IF EXISTS award_id_seq",
+            reverse_sql="DROP SEQUENCE IF EXISTS award_id_seq"
         ),
+
     ]

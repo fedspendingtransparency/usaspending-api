@@ -4,10 +4,7 @@ from django.core.management import call_command
 from usaspending_api.etl.helpers import get_fiscal_quarter
 from usaspending_api.etl.management.load_base import load_data_into_model
 from usaspending_api.references.helpers import retrive_agency_name_from_code
-from usaspending_api.submissions.models import (
-    SubmissionAttributes,
-    DABSSubmissionWindowSchedule,
-)
+from usaspending_api.submissions.models import SubmissionAttributes, DABSSubmissionWindowSchedule
 
 
 logger = logging.getLogger("script")
@@ -38,8 +35,7 @@ def attempt_submission_update_only(submission_data):
 
     if submission.certified_date != submission_data["certified_date"]:
         SubmissionAttributes.objects.filter(submission_id=submission_id).update(
-            certified_date=submission_data["certified_date"],
-            history=submission_data["history"],
+            certified_date=submission_data["certified_date"], history=submission_data["history"]
         )
 
     return True
@@ -87,11 +83,7 @@ def get_submission_attributes(submission_id, submission_data):
     value_map = {"reporting_fiscal_quarter": get_fiscal_quarter(submission_data["reporting_fiscal_period"])}
 
     new_submission = load_data_into_model(
-        submission_attributes,
-        submission_data,
-        field_map=field_map,
-        value_map=value_map,
-        save=True,
+        submission_attributes, submission_data, field_map=field_map, value_map=value_map, save=True
     )
 
     return new_submission

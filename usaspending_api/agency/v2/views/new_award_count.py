@@ -9,9 +9,7 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.search.filters.elasticsearch.filter import QueryType
-from usaspending_api.search.filters.time_period.decorators import (
-    NewAwardsOnlyTimePeriod,
-)
+from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
 from usaspending_api.search.filters.time_period.query_types import AwardSearchTimePeriod
 from django.conf import settings
 
@@ -43,13 +41,7 @@ class NewAwardCount(AgencyBase):
     def new_awards_count(self):
         fiscal_year = FiscalYear(self.fiscal_year)
         filters = {
-            "agencies": [
-                {
-                    "type": self.agency_type,
-                    "tier": "toptier",
-                    "toptier_code": self.toptier_code,
-                }
-            ],
+            "agencies": [{"type": self.agency_type, "tier": "toptier", "toptier_code": self.toptier_code}],
             "time_period": [
                 {
                     "start_date": fiscal_year.start.date(),
@@ -63,8 +55,7 @@ class NewAwardCount(AgencyBase):
 
         filter_options = {}
         time_period_obj = AwardSearchTimePeriod(
-            default_end_date=settings.API_MAX_DATE,
-            default_start_date=settings.API_SEARCH_MIN_DATE,
+            default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
         )
         new_awards_only_decorator = NewAwardsOnlyTimePeriod(
             time_period_obj=time_period_obj, query_type=QueryType.AWARDS

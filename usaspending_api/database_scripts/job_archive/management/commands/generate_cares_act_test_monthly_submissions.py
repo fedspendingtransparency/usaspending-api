@@ -36,9 +36,7 @@ Life expectancy:
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from usaspending_api.common.helpers.timing_helpers import ScriptTimer
-from usaspending_api.database_scripts.job_archive.management.commands import (
-    generate_cares_act_test_helpers as helper,
-)
+from usaspending_api.database_scripts.job_archive.management.commands import generate_cares_act_test_helpers as helper
 
 
 class Command(BaseCommand):
@@ -88,19 +86,7 @@ class Command(BaseCommand):
         self.vacuum = options["vacuum"]
 
         self.fiscal_period = helper.get_fiscal_quarter_final_period(self.fiscal_quarter)
-        self.period_ratios = {
-            2: 0.3,
-            3: 0.7,
-            4: 0.1,
-            5: 0.2,
-            6: 0.7,
-            7: 0.1,
-            8: 0.2,
-            9: 0.7,
-            10: 0.1,
-            11: 0.2,
-            12: 0.7,
-        }
+        self.period_ratios = {2: 0.3, 3: 0.7, 4: 0.1, 5: 0.2, 6: 0.7, 7: 0.1, 8: 0.2, 9: 0.7, 10: 0.1, 11: 0.2, 12: 0.7}
         self.period_start, self.period_end = helper.get_period_start_end_dates(self.fiscal_year, self.fiscal_period)
 
     def perform_validations(self):

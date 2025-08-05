@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
     atomic = False
 
     dependencies = [
-        ("search", "0020_auto_20221215_2029"),
+        ('search', '0020_auto_20221215_2029'),
     ]
 
     operations = [
@@ -25,7 +25,7 @@ class Migration(migrations.Migration):
                 DROP TABLE IF EXISTS temp.transaction_search_{_index_template_suffix};
                 CREATE TABLE temp.transaction_search_{_index_template_suffix} (LIKE rpt.transaction_search);
             """,
-            reverse_sql=f"DROP TABLE IF EXISTS temp.transaction_search_{_index_template_suffix};",
+            reverse_sql=f"DROP TABLE IF EXISTS temp.transaction_search_{_index_template_suffix};"
         ),
         # STEP 2: Copy all existing rpt.transaction_search indexes and constraints on to the placeholder table
         migrations.RunPython(
@@ -41,11 +41,13 @@ class Migration(migrations.Migration):
                 DROP TABLE IF EXISTS temp.transaction_search_{_index_template_suffix};
                 CREATE TABLE temp.transaction_search_{_index_template_suffix} (LIKE rpt.transaction_search);
                 """,
-                apps.get_model("search", "transactionsearch"),
-            ),
+                apps.get_model("search", "transactionsearch")
+            )
         ),
+
         # STEP 3: DROP, CREATE, or ALTER indexes on the placeholder table to establish the final set of index
         # templates going forward
+
         migrations.RunSQL(
             # DROP the pkey. Try dropping as CONSTRAINT first, then as UNIQUE INDEX. There is already a
             # When we make this a partition table, with partition key = is_fpds, UNIQUE indexes now need to include
@@ -89,26 +91,27 @@ class Migration(migrations.Migration):
             """,
             state_operations=[
                 migrations.RemoveIndex(
-                    model_name="transactionsearch",
-                    name="ts_idx_is_fpds_pre2008",
+                    model_name='transactionsearch',
+                    name='ts_idx_is_fpds_pre2008',
                 ),
                 migrations.AddIndex(
-                    model_name="transactionsearch",
-                    index=models.Index(fields=["is_fpds"], name="ts_idx_is_fpds"),
+                    model_name='transactionsearch',
+                    index=models.Index(fields=['is_fpds'], name='ts_idx_is_fpds'),
                 ),
                 # While the RunSQL brings the DB state in-line with the declared state of the model (mostly)
                 # In this case, the DB state operations are short of the declared model state
                 #   - we ARE creating a UNIQUE INDEX that would come with the UniqueConstraint,
                 #   - but NOT creating the actual UNIQUE CONSTRAINT itself
                 migrations.AddConstraint(
-                    model_name="transactionsearch",
+                    model_name='transactionsearch',
                     constraint=models.UniqueConstraint(
-                        fields=("is_fpds", "transaction"),
-                        name="ts_idx_is_fpds_transaction_id",
+                        fields=('is_fpds', 'transaction'),
+                        name='ts_idx_is_fpds_transaction_id'
                     ),
                 ),
-            ],
+            ]
         ),
+
         # STEP 4: Create the new (empty for now) partitioned tables in the temp schema. They are placeholders that
         # will get data loaded into them, indexes applied, and then swapped in for the real rpt. schema tables.
         migrations.RunSQL(
@@ -120,6 +123,7 @@ class Migration(migrations.Migration):
                 DROP TABLE IF EXISTS temp.transaction_search_temp;
             """,
         ),
+
         # STEP 5: Create and attach child partitions as tables with key values
         migrations.RunSQL(
             sql=f"""

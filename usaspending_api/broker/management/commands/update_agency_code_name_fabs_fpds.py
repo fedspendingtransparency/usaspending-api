@@ -177,11 +177,7 @@ class Command(BaseCommand):
         condition_str = " with sub_tiers {}".format(sub_tiers) if sub_tiers else ""
         logger.info(
             "Finished retrieving {}FY{} data from broker {}{} to update in website in {}s".format(
-                year_range or "",
-                fiscal_year,
-                table_type.upper(),
-                condition_str,
-                end - start,
+                year_range or "", fiscal_year, table_type.upper(), condition_str, end - start
             )
         )
 
@@ -226,10 +222,7 @@ class Command(BaseCommand):
             help="Fiscal year to pull from Broker. If not provided, pulls all years",
         )
         parser.add_argument(
-            "--type",
-            choices=["fabs", "fpds", "both"],
-            default="both",
-            help="Which table to make corrections for",
+            "--type", choices=["fabs", "fpds", "both"], default="both", help="Which table to make corrections for"
         )
         parser.add_argument(
             "--sub-tiers",

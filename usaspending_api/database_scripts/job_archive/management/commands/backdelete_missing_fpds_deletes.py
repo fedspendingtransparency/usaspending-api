@@ -29,14 +29,10 @@ import logging
 from django.core.management.base import BaseCommand
 from django.db import connections, transaction, DEFAULT_DB_ALIAS
 from pathlib import Path
-from usaspending_api.broker.management.commands.load_fpds_transactions import (
-    Command as FPDSCommand,
-)
+from usaspending_api.broker.management.commands.load_fpds_transactions import Command as FPDSCommand
 from usaspending_api.common.helpers.timing_helpers import ScriptTimer as Timer
 from usaspending_api.etl.transaction_loaders.fpds_loader import delete_stale_fpds
-from usaspending_api.transactions.management.commands.delete_procurement_records import (
-    Command as SourceCommand,
-)
+from usaspending_api.transactions.management.commands.delete_procurement_records import Command as SourceCommand
 
 
 logger = logging.getLogger("script")

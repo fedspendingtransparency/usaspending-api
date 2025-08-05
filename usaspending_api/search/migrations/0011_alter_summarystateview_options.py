@@ -6,12 +6,12 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("search", "0010_subaward_search"),
+        ('search', '0010_subaward_search'),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name="summarystateview",
-            options={"managed": True},
+            name='summarystateview',
+            options={'managed': True},
         ),
     ]

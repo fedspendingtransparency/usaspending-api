@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("recipient", "0019_auto_20220406_1311"),
+        ('recipient', '0019_auto_20220406_1311'),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name="duns",
-            name="awardee_or_recipient_uniqu",
+            model_name='duns',
+            name='awardee_or_recipient_uniqu',
             field=models.TextField(blank=True, null=True),
         ),
         migrations.RunSQL(
@@ -21,13 +21,9 @@ class Migration(migrations.Migration):
             state_operations=[
                 migrations.AddIndex(
                     model_name="duns",
-                    index=models.Index(
-                        name="duns_awardee_b30104_partial",
-                        fields=["awardee_or_recipient_uniqu"],
-                        condition=models.Q(awardee_or_recipient_uniqu__isnull=False),
-                    ),
+                    index=models.Index(name="duns_awardee_b30104_partial", fields=["awardee_or_recipient_uniqu"], condition=models.Q(awardee_or_recipient_uniqu__isnull=False)),
                 )
-            ],
+            ]
         ),
         migrations.RunSQL(
             sql="CREATE UNIQUE INDEX duns_uei_bee37a_partial ON duns (uei) WHERE uei IS NOT NULL",
@@ -35,12 +31,8 @@ class Migration(migrations.Migration):
             state_operations=[
                 migrations.AddIndex(
                     model_name="duns",
-                    index=models.Index(
-                        name="duns_uei_bee37a_partial",
-                        fields=["uei"],
-                        condition=models.Q(uei__isnull=False),
-                    ),
+                    index=models.Index(name="duns_uei_bee37a_partial", fields=["uei"], condition=models.Q(uei__isnull=False)),
                 )
-            ],
+            ]
         ),
     ]

@@ -7,84 +7,67 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("search", "0019_additional_transaction_search_fields"),
+        ('search', '0019_additional_transaction_search_fields'),
     ]
 
     operations = [
         migrations.AddField(
-            model_name="awardsearch",
-            name="data_source",
+            model_name='awardsearch',
+            name='data_source',
             field=models.TextField(null=True),
         ),
         migrations.AlterField(
-            model_name="awardsearch",
-            name="certified_date",
+            model_name='awardsearch',
+            name='certified_date',
             field=models.DateField(blank=True, null=True),
         ),
         migrations.AlterField(
-            model_name="awardsearch",
-            name="create_date",
+            model_name='awardsearch',
+            name='create_date',
             field=models.DateTimeField(auto_now_add=True, null=True),
         ),
         migrations.AlterField(
-            model_name="awardsearch",
-            name="last_modified_date",
+            model_name='awardsearch',
+            name='last_modified_date',
             field=models.DateField(blank=True, null=True),
         ),
         migrations.AlterField(
-            model_name="awardsearch",
-            name="update_date",
+            model_name='awardsearch',
+            name='update_date',
             field=models.DateTimeField(auto_now=True, null=True),
         ),
         migrations.AlterField(
-            model_name="subawardsearch",
-            name="award",
-            field=models.ForeignKey(
-                null=True,
-                on_delete=django.db.models.deletion.DO_NOTHING,
-                related_name="subawardsearch",
-                to="search.awardsearch",
-            ),
+            model_name='subawardsearch',
+            name='award',
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='subawardsearch', to='search.awardsearch'),
         ),
         migrations.AlterField(
-            model_name="transactionsearch",
-            name="award",
-            field=models.ForeignKey(
-                null=True,
-                on_delete=django.db.models.deletion.DO_NOTHING,
-                to="search.awardsearch",
-            ),
+            model_name='transactionsearch',
+            name='award',
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.DO_NOTHING, to='search.awardsearch'),
         ),
         migrations.RemoveField(
-            model_name="awardsearch",
-            name="earliest_transaction_id",
+            model_name='awardsearch',
+            name='earliest_transaction_id',
         ),
         migrations.RemoveField(
-            model_name="awardsearch",
-            name="latest_transaction_id",
+            model_name='awardsearch',
+            name='latest_transaction_id',
         ),
         migrations.AddField(
-            model_name="awardsearch",
-            name="earliest_transaction",
-            field=models.ForeignKey(
-                db_constraint=False,
-                help_text="The earliest transaction by action_date and mod associated with this award",
-                null=True,
-                on_delete=django.db.models.deletion.DO_NOTHING,
-                related_name="earliest_for_award",
-                to="awards.transactionnormalized",
-            ),
+            model_name='awardsearch',
+            name='earliest_transaction',
+            field=models.ForeignKey(db_constraint=False,
+                                    help_text='The earliest transaction by action_date and mod associated with this award',
+                                    null=True, on_delete=django.db.models.deletion.DO_NOTHING,
+                                    related_name='earliest_for_award', to='awards.transactionnormalized'),
         ),
         migrations.AddField(
-            model_name="awardsearch",
-            name="latest_transaction",
-            field=models.ForeignKey(
-                db_constraint=False,
-                help_text="The latest transaction by action_date and mod associated with this award",
-                null=True,
-                on_delete=django.db.models.deletion.DO_NOTHING,
-                related_name="latest_for_award",
-                to="awards.transactionnormalized",
-            ),
+            model_name='awardsearch',
+            name='latest_transaction',
+            field=models.ForeignKey(db_constraint=False,
+                                    help_text='The latest transaction by action_date and mod associated with this award',
+                                    null=True, on_delete=django.db.models.deletion.DO_NOTHING,
+                                    related_name='latest_for_award', to='awards.transactionnormalized'),
         ),
     ]

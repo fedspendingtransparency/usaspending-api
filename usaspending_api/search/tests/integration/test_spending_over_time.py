@@ -190,7 +190,7 @@ def spending_over_time_test_data():
                 funding_subtier_agency_abbreviation=f"subtier_funding_agency_agency_name_{transaction_id}",
                 recipient_name=f"recipient_name_{transaction_id}",
                 recipient_unique_id=f"{transaction_id:09d}",
-                recipient_hash=("c687823d-10af-701b-1bad-650c6e680190" if transaction_id == 21 else None),
+                recipient_hash="c687823d-10af-701b-1bad-650c6e680190" if transaction_id == 21 else None,
                 recipient_levels=["R"] if i == 21 else [],
                 extent_competed=f"extent_competed_{transaction_id}",
                 recipient_location_country_code="USA",
@@ -264,7 +264,7 @@ def spending_over_time_test_data():
                 funding_subtier_agency_abbreviation=f"subtier_funding_agency_agency_name_{transaction_id}",
                 recipient_name=f"recipient_name_{transaction_id}",
                 recipient_unique_id=f"{transaction_id:09d}",
-                recipient_hash=("c687823d-10af-701b-1bad-650c6e680190" if transaction_id == 21 else None),
+                recipient_hash="c687823d-10af-701b-1bad-650c6e680190" if transaction_id == 21 else None,
                 recipient_levels=["R"] if i == 21 else [],
                 cfda_number=f"cfda_number_{transaction_id}",
                 fain=f"fain_{transaction_id}",
@@ -4756,11 +4756,7 @@ def test_transactions_defc_date_filter(client, monkeypatch, elasticsearch_transa
 
 @pytest.mark.django_db
 def test_spending_over_time_program_activity_subawards(
-    client,
-    monkeypatch,
-    elasticsearch_award_index,
-    elasticsearch_subaward_index,
-    awards_and_transactions,
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, awards_and_transactions
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
@@ -4813,12 +4809,7 @@ def test_spending_over_time_program_activity_subawards(
 
 @pytest.mark.django_db
 def test_spending_over_time_program_activity(client, monkeypatch, elasticsearch_transaction_index):
-    award1 = baker.make(
-        "search.AwardSearch",
-        award_id=1,
-        latest_transaction_id=99,
-        action_date="2020-04-02",
-    )
+    award1 = baker.make("search.AwardSearch", award_id=1, latest_transaction_id=99, action_date="2020-04-02")
     ref_program_activity1 = baker.make(
         "references.RefProgramActivity",
         id=1,

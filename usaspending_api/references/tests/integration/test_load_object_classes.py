@@ -28,8 +28,7 @@ def disable_vacuuming(monkeypatch):
     function that performs the vacuuming.
     """
     monkeypatch.setattr(
-        "usaspending_api.references.management.commands.load_object_classes.Command._vacuum_tables",
-        lambda a: None,
+        "usaspending_api.references.management.commands.load_object_classes.Command._vacuum_tables", lambda a: None
     )
 
 

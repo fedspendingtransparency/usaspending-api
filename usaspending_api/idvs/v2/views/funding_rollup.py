@@ -7,9 +7,7 @@ from rest_framework.views import APIView
 
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
-from usaspending_api.common.validator.award import (
-    get_internal_or_generated_award_id_model,
-)
+from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model
 from usaspending_api.common.validator.tinyshield import validate_post_request
 
 

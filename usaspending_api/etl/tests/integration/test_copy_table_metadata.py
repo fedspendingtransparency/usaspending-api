@@ -101,11 +101,7 @@ def test_make_copy_table_metadata():
         # make a copy with foreign keys
         dup_table_x_foreign = "x_temp_foreign_keys"
         cursor.execute(f"CREATE TABLE {dup_table_x_foreign} (LIKE {table_x} INCLUDING DEFAULTS INCLUDING IDENTITY)")
-        _copy_table_metadata_cmd(
-            source_table=table_x,
-            dest_table=dup_table_x_foreign,
-            drop_foreign_keys=False,
-        )
+        _copy_table_metadata_cmd(source_table=table_x, dest_table=dup_table_x_foreign, drop_foreign_keys=False)
 
         # gather the metadata results and clean that temp table
         dup_foreign_metadata = _gather_table_metadata(dup_table_x_foreign, cursor)
@@ -118,22 +114,13 @@ def test_make_copy_table_metadata():
         # make a copy without foreign keys
         dup_table_x_not_foreign = "x_temp_drop_foreign_keys"
         cursor.execute(f"CREATE TABLE {dup_table_x_not_foreign} (LIKE {table_x} INCLUDING DEFAULTS INCLUDING IDENTITY)")
-        _copy_table_metadata_cmd(
-            source_table=table_x,
-            dest_table=dup_table_x_not_foreign,
-            drop_foreign_keys=True,
-        )
+        _copy_table_metadata_cmd(source_table=table_x, dest_table=dup_table_x_not_foreign, drop_foreign_keys=True)
 
         # gather the metadata results and clean that temp table
         dup_not_foreign_metadata = _gather_table_metadata(dup_table_x_not_foreign, cursor)
         cursor.execute(f"DROP TABLE {dup_table_x_not_foreign}")
         assert (
-            _gather_table_metadata(
-                table_x,
-                cursor,
-                dup_table_name=dup_table_x_not_foreign,
-                drop_foreign=True,
-            )
+            _gather_table_metadata(table_x, cursor, dup_table_name=dup_table_x_not_foreign, drop_foreign=True)
             == dup_not_foreign_metadata
         )
 

@@ -92,11 +92,7 @@ def test_federal_account_award_empty(client, monkeypatch, covid_faba_spending_da
 def test_federal_account_award_query(client, covid_faba_spending_data, helpers):
 
     resp = helpers.post_for_spending_endpoint(
-        client,
-        url,
-        query="flowers",
-        def_codes=["M", "L", "N", "O"],
-        spending_type="award",
+        client, url, query="flowers", def_codes=["M", "L", "N", "O"], spending_type="award"
     )
     expected_results = [
         {
@@ -127,12 +123,7 @@ def test_federal_account_award_query(client, covid_faba_spending_data, helpers):
 @pytest.mark.django_db
 def test_outlay_calculations(client, covid_faba_spending_data, helpers):
     resp = helpers.post_for_spending_endpoint(
-        client,
-        url,
-        query="evergreen",
-        def_codes=["L"],
-        spending_type="award",
-        sort="outlay",
+        client, url, query="evergreen", def_codes=["L"], spending_type="award", sort="outlay"
     )
     expected_results = [
         {

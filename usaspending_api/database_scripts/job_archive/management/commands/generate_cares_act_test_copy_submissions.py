@@ -36,9 +36,7 @@ Life expectancy:
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from usaspending_api.common.helpers.timing_helpers import ScriptTimer
-from usaspending_api.database_scripts.job_archive.management.commands import (
-    generate_cares_act_test_helpers as helper,
-)
+from usaspending_api.database_scripts.job_archive.management.commands import generate_cares_act_test_helpers as helper
 
 
 class Command(BaseCommand):
@@ -120,8 +118,7 @@ class Command(BaseCommand):
         helper.run_sqls(
             helper.split_sql(
                 sql.format(
-                    filter_fiscal_year=self.destination_fiscal_year,
-                    filter_fiscal_period=self.destination_fiscal_period,
+                    filter_fiscal_year=self.destination_fiscal_year, filter_fiscal_period=self.destination_fiscal_period
                 )
             )
         )

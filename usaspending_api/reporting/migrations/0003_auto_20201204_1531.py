@@ -6,35 +6,26 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("reporting", "0002_auto_20201123_2051"),
+        ('reporting', '0002_auto_20201123_2051'),
     ]
 
     operations = [
         migrations.CreateModel(
-            name="ReportingAgencyMissingTas",
+            name='ReportingAgencyMissingTas',
             fields=[
-                (
-                    "reporting_agency_missing_tas_id",
-                    models.AutoField(primary_key=True, serialize=False),
-                ),
-                ("toptier_code", models.TextField()),
-                ("fiscal_year", models.IntegerField()),
-                ("fiscal_period", models.IntegerField()),
-                ("tas_rendering_label", models.TextField()),
-                (
-                    "obligated_amount",
-                    models.DecimalField(decimal_places=2, max_digits=23),
-                ),
+                ('reporting_agency_missing_tas_id', models.AutoField(primary_key=True, serialize=False)),
+                ('toptier_code', models.TextField()),
+                ('fiscal_year', models.IntegerField()),
+                ('fiscal_period', models.IntegerField()),
+                ('tas_rendering_label', models.TextField()),
+                ('obligated_amount', models.DecimalField(decimal_places=2, max_digits=23)),
             ],
             options={
-                "db_table": "reporting_agency_missing_tas",
+                'db_table': 'reporting_agency_missing_tas',
             },
         ),
         migrations.AddIndex(
-            model_name="reportingagencymissingtas",
-            index=models.Index(
-                fields=["fiscal_year", "fiscal_period", "toptier_code"],
-                name="rpt_agency_missing_tas_grp_idx",
-            ),
+            model_name='reportingagencymissingtas',
+            index=models.Index(fields=['fiscal_year', 'fiscal_period', 'toptier_code'], name='rpt_agency_missing_tas_grp_idx'),
         ),
     ]

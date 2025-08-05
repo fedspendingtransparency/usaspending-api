@@ -106,74 +106,23 @@ def test_create_es_search():
                                 {
                                     "bool": {
                                         "should": [
+                                            {"match_phrase_prefix": {"recipient_name": {"query": "test", "boost": 5}}},
                                             {
                                                 "match_phrase_prefix": {
-                                                    "recipient_name": {
-                                                        "query": "test",
-                                                        "boost": 5,
-                                                    }
-                                                }
-                                            },
-                                            {
-                                                "match_phrase_prefix": {
-                                                    "recipient_name.contains": {
-                                                        "query": "test",
-                                                        "boost": 3,
-                                                    }
+                                                    "recipient_name.contains": {"query": "test", "boost": 3}
                                                 }
                                             },
                                             {
                                                 "match": {
-                                                    "recipient_name": {
-                                                        "query": "test",
-                                                        "operator": "and",
-                                                        "boost": 1,
-                                                    }
+                                                    "recipient_name": {"query": "test", "operator": "and", "boost": 1}
                                                 }
                                             },
                                             {"match_phrase_prefix": {"uei": {"query": "test", "boost": 5}}},
-                                            {
-                                                "match_phrase_prefix": {
-                                                    "uei.contains": {
-                                                        "query": "test",
-                                                        "boost": 3,
-                                                    }
-                                                }
-                                            },
-                                            {
-                                                "match": {
-                                                    "uei": {
-                                                        "query": "test",
-                                                        "operator": "and",
-                                                        "boost": 1,
-                                                    }
-                                                }
-                                            },
-                                            {
-                                                "match_phrase_prefix": {
-                                                    "duns": {
-                                                        "query": "test",
-                                                        "boost": 5,
-                                                    }
-                                                }
-                                            },
-                                            {
-                                                "match_phrase_prefix": {
-                                                    "duns.contains": {
-                                                        "query": "test",
-                                                        "boost": 3,
-                                                    }
-                                                }
-                                            },
-                                            {
-                                                "match": {
-                                                    "duns": {
-                                                        "query": "test",
-                                                        "operator": "and",
-                                                        "boost": 1,
-                                                    }
-                                                }
-                                            },
+                                            {"match_phrase_prefix": {"uei.contains": {"query": "test", "boost": 3}}},
+                                            {"match": {"uei": {"query": "test", "operator": "and", "boost": 1}}},
+                                            {"match_phrase_prefix": {"duns": {"query": "test", "boost": 5}}},
+                                            {"match_phrase_prefix": {"duns.contains": {"query": "test", "boost": 3}}},
+                                            {"match": {"duns": {"query": "test", "operator": "and", "boost": 1}}},
                                         ],
                                         "minimum_should_match": 1,
                                     }
@@ -198,15 +147,7 @@ def test_create_es_search():
                 "should": [
                     {"match_phrase_prefix": {"recipient_name": {"query": "test", "boost": 5}}},
                     {"match_phrase_prefix": {"recipient_name.contains": {"query": "test", "boost": 3}}},
-                    {
-                        "match": {
-                            "recipient_name": {
-                                "query": "test",
-                                "operator": "and",
-                                "boost": 1,
-                            }
-                        }
-                    },
+                    {"match": {"recipient_name": {"query": "test", "operator": "and", "boost": 1}}},
                     {"match_phrase_prefix": {"uei": {"query": "test", "boost": 5}}},
                     {"match_phrase_prefix": {"uei.contains": {"query": "test", "boost": 3}}},
                     {"match": {"uei": {"query": "test", "operator": "and", "boost": 1}}},
@@ -240,10 +181,7 @@ def test_query_elasticsearch(recipient_data_fixture, elasticsearch_recipient_ind
     elasticsearch_query = view_set_instance._create_es_search(search_text, recipient_levels, limit)
     expected_result = view_set_instance._query_elasticsearch(elasticsearch_query)
 
-    response_actual = client.search(
-        index=elasticsearch_recipient_index.index_name,
-        body=elasticsearch_query.to_dict(),
-    )
+    response_actual = client.search(index=elasticsearch_recipient_index.index_name, body=elasticsearch_query.to_dict())
     format_response_actual = view_set_instance._parse_elasticsearch_response(response_actual)
 
     assert format_response_actual == expected_result
@@ -253,26 +191,9 @@ def test_parse_elasticsearch_response():
     view_set_instance = RecipientAutocompleteViewSet()
 
     hits_with_data = {
-        "hits": {
-            "hits": [
-                {
-                    "_source": {
-                        "recipient_name": "Test",
-                        "uei": "UEI-01",
-                        "recipient_level": "C",
-                    }
-                }
-            ]
-        }
+        "hits": {"hits": [{"_source": {"recipient_name": "Test", "uei": "UEI-01", "recipient_level": "C"}}]}
     }
-    expected_results = [
-        {
-            "recipient_name": "Test",
-            "uei": "UEI-01",
-            "recipient_level": "C",
-            "duns": None,
-        }
-    ]
+    expected_results = [{"recipient_name": "Test", "uei": "UEI-01", "recipient_level": "C", "duns": None}]
     assert view_set_instance._parse_elasticsearch_response(hits_with_data) == expected_results
 
     hits_without_data = {"hits": {"hits": []}}
@@ -287,11 +208,7 @@ def test_recipient_search_matches_found(client, monkeypatch, recipient_data_fixt
     )
     elasticsearch_recipient_index.update_index()
     body = {"search_text": "superman", "recipient_levels": ["R"], "limit": 20}
-    response = client.post(
-        "/api/v2/autocomplete/recipient",
-        content_type="application/json",
-        data=json.dumps(body),
-    )
+    response = client.post("/api/v2/autocomplete/recipient", content_type="application/json", data=json.dumps(body))
     assert response.data["count"] == 1
     for entry in response.data["results"]:
         assert entry["recipient_name"].lower().find("superman") > -1
@@ -306,11 +223,7 @@ def test_recipient_partial_search_matches_found(
     )
     elasticsearch_recipient_index.update_index()
     body = {"search_text": "super", "recipient_levels": ["R"], "limit": 20}
-    response = client.post(
-        "/api/v2/autocomplete/recipient",
-        content_type="application/json",
-        data=json.dumps(body),
-    )
+    response = client.post("/api/v2/autocomplete/recipient", content_type="application/json", data=json.dumps(body))
     assert response.data["count"] == 1
     for entry in response.data["results"]:
         assert entry["recipient_name"].lower().find("superman") > -1
@@ -325,11 +238,7 @@ def test_recipient_search_multiple_recipient_levels(
     )
     elasticsearch_recipient_index.update_index()
     body = {"search_text": "batman", "recipient_levels": ["C", "P"], "limit": 20}
-    response = client.post(
-        "/api/v2/autocomplete/recipient",
-        content_type="application/json",
-        data=json.dumps(body),
-    )
+    response = client.post("/api/v2/autocomplete/recipient", content_type="application/json", data=json.dumps(body))
     assert response.data["count"] == 2
     for entry in response.data["results"]:
         assert entry["recipient_name"].lower().find("batman") > -1
@@ -341,16 +250,8 @@ def test_recipient_search_no_matches(client, monkeypatch, recipient_data_fixture
         settings.ES_RECIPIENTS_QUERY_ALIAS_PREFIX,
     )
     elasticsearch_recipient_index.update_index()
-    body = {
-        "search_text": "nonexistent",
-        "recipient_levels": ["R", "C", "D"],
-        "limit": 20,
-    }
-    response = client.post(
-        "/api/v2/autocomplete/recipient",
-        content_type="application/json",
-        data=json.dumps(body),
-    )
+    body = {"search_text": "nonexistent", "recipient_levels": ["R", "C", "D"], "limit": 20}
+    response = client.post("/api/v2/autocomplete/recipient", content_type="application/json", data=json.dumps(body))
     assert response.data["count"] == 0
     for entry in response.data["results"]:
         assert False  # this should never be reached
@@ -365,11 +266,7 @@ def test_recipient_search_special_characters(
     )
     elasticsearch_recipient_index.update_index()
     body = {"search_text": "batman+()[]{}?<>\\", "recipient_levels": ["C", "P", "R"]}
-    response = client.post(
-        "/api/v2/autocomplete/recipient",
-        content_type="application/json",
-        data=json.dumps(body),
-    )
+    response = client.post("/api/v2/autocomplete/recipient", content_type="application/json", data=json.dumps(body))
     assert response.data["count"] == 2
     for entry in response.data["results"]:
         assert entry["recipient_name"].lower().find("batman") > -1

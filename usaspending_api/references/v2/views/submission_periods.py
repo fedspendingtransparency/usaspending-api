@@ -33,14 +33,7 @@ class SubmissionPeriodsViewSet(APIView):
 
     def get(self, request):
 
-        models = [
-            {
-                "name": "use_cache",
-                "key": "use_cache",
-                "type": "boolean",
-                "default": False,
-            }
-        ]
+        models = [{"name": "use_cache", "key": "use_cache", "type": "boolean", "default": False}]
         validated_payload = TinyShield(models).block(request.GET)
 
         if validated_payload["use_cache"]:

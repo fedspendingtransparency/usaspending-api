@@ -3,20 +3,22 @@
 from django.db import migrations
 from django.db import models
 
-
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("financial_activities", "0008_auto_20211019_1755"),
+        ('financial_activities', '0008_auto_20211019_1755'),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name="financialaccountsbyprogramactivityobjectclass",
-            name="data_source",
+            model_name='financialaccountsbyprogramactivityobjectclass',
+            name='data_source',
             field=models.TextField(
-                choices=[("USA", "USAspending"), ("DBR", "Data Broker")],
-                help_text="The source of this entry, either Data Broker (DBR) or USASpending (USA)",
+                choices=[
+                    ('USA', 'USAspending'),
+                    ('DBR', 'Data Broker')
+                ],
+                help_text='The source of this entry, either Data Broker (DBR) or USASpending (USA)',
                 null=True,
             ),
         ),

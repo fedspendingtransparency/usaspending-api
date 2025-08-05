@@ -1,11 +1,6 @@
 from unittest.mock import MagicMock, patch
 
-from usaspending_api.common.spark.jobs import (
-    DatabricksStrategy,
-    EmrServerlessStrategy,
-    LocalStrategy,
-    SparkJobs,
-)
+from usaspending_api.common.spark.jobs import DatabricksStrategy, EmrServerlessStrategy, LocalStrategy, SparkJobs
 
 
 @patch("usaspending_api.common.spark.jobs.EmrServerlessStrategy.handle_start")
@@ -46,7 +41,4 @@ def test_databricks_strategy_handle_start(databricks_strategy_client):
     assert strategy.get_job_id("test_job_name") == 1
 
     spark_job = SparkJobs(DatabricksStrategy())
-    assert spark_job.start(job_name="", command_name="", command_options=[""]) == {
-        "job_id": 1,
-        "run_id": 10,
-    }
+    assert spark_job.start(job_name="", command_name="", command_options=[""]) == {"job_id": 1, "run_id": 10}

@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("search", "0040_initial_mv_agency_office_autocomplete"),
+        ('search', '0040_initial_mv_agency_office_autocomplete'),
     ]
 
     operations = [
         migrations.AddField(
-            model_name="awardsearch",
-            name="parent_recipient_name",
+            model_name='awardsearch',
+            name='parent_recipient_name',
             field=models.TextField(blank=True, null=True),
         ),
     ]

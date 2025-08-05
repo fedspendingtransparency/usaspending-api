@@ -30,9 +30,7 @@ def _populate_initial_source_tables_pg(db):
         update_date=_INITIAL_SOURCE_TABLE_LOAD_DATETIME,
     )
     baker.make(
-        "broker.ExternalDataLoadDate",
-        last_load_date=_INITIAL_SOURCE_TABLE_LOAD_DATETIME,
-        external_data_type=edt,
+        "broker.ExternalDataLoadDate", last_load_date=_INITIAL_SOURCE_TABLE_LOAD_DATETIME, external_data_type=edt
     )
 
     # Populate transactions.SourceProcurementTransaction and associated broker.ExternalDataType data in Postgres
@@ -47,25 +45,14 @@ def _populate_initial_source_tables_pg(db):
         update_date=_INITIAL_SOURCE_TABLE_LOAD_DATETIME,
     )
     baker.make(
-        "broker.ExternalDataLoadDate",
-        last_load_date=_INITIAL_SOURCE_TABLE_LOAD_DATETIME,
-        external_data_type=edt,
+        "broker.ExternalDataLoadDate", last_load_date=_INITIAL_SOURCE_TABLE_LOAD_DATETIME, external_data_type=edt
     )
 
     # Also need to populate values for es_deletes, int.transaction_[fabs|fpds|normalized], int.awards,
     #   and id lookup tables in broker.ExternalData[Type|LoadDate] tables
     # `name` and `external_data_type_id` must match those in `usaspending.broker.lookups`
-    edt = baker.make(
-        "broker.ExternalDataType",
-        name="es_deletes",
-        external_data_type_id=102,
-        update_date=None,
-    )
-    baker.make(
-        "broker.ExternalDataLoadDate",
-        last_load_date=_BEGINNING_OF_TIME,
-        external_data_type=edt,
-    )
+    edt = baker.make("broker.ExternalDataType", name="es_deletes", external_data_type_id=102, update_date=None)
+    baker.make("broker.ExternalDataLoadDate", last_load_date=_BEGINNING_OF_TIME, external_data_type=edt)
 
     for table_name, id in zip(
         (
@@ -78,14 +65,5 @@ def _populate_initial_source_tables_pg(db):
         ),
         range(201, 207),
     ):
-        edt = baker.make(
-            "broker.ExternalDataType",
-            name=table_name,
-            external_data_type_id=id,
-            update_date=None,
-        )
-        baker.make(
-            "broker.ExternalDataLoadDate",
-            last_load_date=_BEGINNING_OF_TIME,
-            external_data_type=edt,
-        )
+        edt = baker.make("broker.ExternalDataType", name=table_name, external_data_type_id=id, update_date=None)
+        baker.make("broker.ExternalDataLoadDate", last_load_date=_BEGINNING_OF_TIME, external_data_type=edt)

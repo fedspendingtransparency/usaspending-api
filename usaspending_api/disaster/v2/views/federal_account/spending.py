@@ -75,17 +75,11 @@ class SpendingViewSet(SpendingMixin, FabaOutlayMixin, PaginationMixin, DisasterB
                     "funding_treasury_account_name",
                 ],
                 search_query=self.query,
-                search_query_fields=[
-                    "funding_federal_account_name",
-                    "funding_treasury_account_name",
-                ],
+                search_query_fields=["funding_federal_account_name", "funding_treasury_account_name"],
             )
             json_result = self._build_json_result(account_db_results)
             sorted_json_result = self.sort_json_result(
-                json_result,
-                self.pagination.sort_key,
-                self.pagination.sort_order,
-                has_children=self.has_children,
+                json_result, self.pagination.sort_key, self.pagination.sort_order, has_children=self.has_children
             )
             return Response(sorted_json_result)
         else:

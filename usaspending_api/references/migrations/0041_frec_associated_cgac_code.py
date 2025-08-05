@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("references", "0040_auto_20200206_1253"),
+        ('references', '0040_auto_20200206_1253'),
     ]
 
     operations = [
         migrations.AddField(
-            model_name="frec",
-            name="associated_cgac_code",
+            model_name='frec',
+            name='associated_cgac_code',
             field=models.TextField(blank=True, null=True),
         ),
     ]

@@ -86,15 +86,7 @@ def test_awards_idvs_amounts_v2(client, _test_data):
 
 @pytest.mark.django_db
 def test_special_characters(client):
-    baker.make(
-        "search.AwardSearch",
-        award_id=100,
-        generated_unique_award_id="CONT_IDV_:~$@*\"()#/,^&+=`!'%/_. -_9700",
-    )
-    baker.make(
-        "awards.ParentAward",
-        award_id=100,
-        generated_unique_award_id="CONT_IDV_:~$@*\"()#/,^&+=`!'%/_. -_9700",
-    )
+    baker.make("search.AwardSearch", award_id=100, generated_unique_award_id="CONT_IDV_:~$@*\"()#/,^&+=`!'%/_. -_9700")
+    baker.make("awards.ParentAward", award_id=100, generated_unique_award_id="CONT_IDV_:~$@*\"()#/,^&+=`!'%/_. -_9700")
     response = client.get("/api/v2/idvs/amounts/CONT_IDV_:~$@*\"()%23/,^&+=`!'%/_. -_9700/")
     assert response.status_code == status.HTTP_200_OK

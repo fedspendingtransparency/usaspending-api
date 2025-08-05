@@ -18,24 +18,12 @@ from pytest import mark, raises
 from typing import Any, Dict, Optional, Sequence
 from unittest.mock import patch
 
-from usaspending_api.broker.helpers.last_load_date import (
-    get_last_load_date,
-    update_last_load_date,
-)
+from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
 from usaspending_api.common.helpers.spark_helpers import load_dict_to_delta_table
-from usaspending_api.etl.tests.integration.test_load_to_from_delta import (
-    load_delta_table_from_postgres,
-    equal_datasets,
-)
-from usaspending_api.transactions.delta_models.transaction_fabs import (
-    TRANSACTION_FABS_COLUMNS,
-)
-from usaspending_api.transactions.delta_models.transaction_fpds import (
-    TRANSACTION_FPDS_COLUMNS,
-)
-from usaspending_api.transactions.delta_models.transaction_normalized import (
-    TRANSACTION_NORMALIZED_COLUMNS,
-)
+from usaspending_api.etl.tests.integration.test_load_to_from_delta import load_delta_table_from_postgres, equal_datasets
+from usaspending_api.transactions.delta_models.transaction_fabs import TRANSACTION_FABS_COLUMNS
+from usaspending_api.transactions.delta_models.transaction_fpds import TRANSACTION_FPDS_COLUMNS
+from usaspending_api.transactions.delta_models.transaction_normalized import TRANSACTION_NORMALIZED_COLUMNS
 from usaspending_api.config import CONFIG
 from usaspending_api.etl.management.commands.load_table_to_delta import TABLE_SPEC
 
@@ -164,34 +152,16 @@ def _load_tables_to_delta(s3_data_bucket, load_source_tables=True, load_other_ra
     if load_other_raw_tables:
         for item in load_other_raw_tables:
             if isinstance(item, _TableLoadInfo):
-                load_dict_to_delta_table(
-                    item.spark,
-                    s3_data_bucket,
-                    "raw",
-                    item.table_name,
-                    item.data,
-                    item.overwrite,
-                )
+                load_dict_to_delta_table(item.spark, s3_data_bucket, "raw", item.table_name, item.data, item.overwrite)
             else:
                 load_delta_table_from_postgres(item, s3_data_bucket)
 
 
 class TestInitialRun:
     @staticmethod
-    def initial_run(
-        s3_data_bucket,
-        load_source_tables=True,
-        load_other_raw_tables=None,
-        initial_copy=True,
-    ):
+    def initial_run(s3_data_bucket, load_source_tables=True, load_other_raw_tables=None, initial_copy=True):
         _load_tables_to_delta(s3_data_bucket, load_source_tables, load_other_raw_tables)
-        call_params = [
-            "load_transactions_in_delta",
-            "--etl-level",
-            "initial_run",
-            "--spark-s3-bucket",
-            s3_data_bucket,
-        ]
+        call_params = ["load_transactions_in_delta", "--etl-level", "initial_run", "--spark-s3-bucket", s3_data_bucket]
         if not initial_copy:
             call_params.append("--no-initial-copy")
         call_command(*call_params)
@@ -251,9 +221,7 @@ class TestInitialRun:
         expected_load_load_award_id_lookup=None,
     ):
         TestInitialRun.verify_transaction_ids(
-            spark,
-            expected_transaction_id_lookup,
-            expected_last_load_transaction_id_lookup,
+            spark, expected_transaction_id_lookup, expected_last_load_transaction_id_lookup
         )
         TestInitialRun.verify_award_ids(spark, expected_award_id_lookup, expected_load_load_award_id_lookup)
 
@@ -313,11 +281,7 @@ class TestInitialRun:
                 expected_last_load_transaction_fabs,
                 expected_last_load_transaction_fpds,
             ),
-            (
-                list(TRANSACTION_NORMALIZED_COLUMNS),
-                TRANSACTION_FABS_COLUMNS,
-                TRANSACTION_FPDS_COLUMNS,
-            ),
+            (list(TRANSACTION_NORMALIZED_COLUMNS), TRANSACTION_FABS_COLUMNS, TRANSACTION_FPDS_COLUMNS),
         ):
             actual_count = spark.sql(f"SELECT COUNT(*) AS count from int.{table_name}").collect()[0]["count"]
             assert actual_count == expected_count
@@ -394,10 +358,7 @@ class _InitialRunWithPostgresLoader:
             "is_fpds": True,
             "transaction_unique_id": _INITIAL_PROCURES[id - 6]["detached_award_proc_unique"].upper(),
         }
-        for id in range(
-            len(_INITIAL_ASSISTS) + 1,
-            len(_INITIAL_ASSISTS) + len(_INITIAL_PROCURES) + 1,
-        )
+        for id in range(len(_INITIAL_ASSISTS) + 1, len(_INITIAL_ASSISTS) + len(_INITIAL_PROCURES) + 1)
     ]
 
     expected_initial_award_id_lookup = [
@@ -847,16 +808,9 @@ class TestInitialRunNoPostgresLoader:
             """
         )
 
-        with raises(
-            ValueError,
-            match="Found 1 NULL in 'unique_award_key' in table raw.transaction_normalized!",
-        ):
+        with raises(ValueError, match="Found 1 NULL in 'unique_award_key' in table raw.transaction_normalized!"):
             call_command(
-                "load_transactions_in_delta",
-                "--etl-level",
-                "initial_run",
-                "--spark-s3-bucket",
-                s3_unittest_data_bucket,
+                "load_transactions_in_delta", "--etl-level", "initial_run", "--spark-s3-bucket", s3_unittest_data_bucket
             )
 
         spark.sql(
@@ -895,25 +849,14 @@ class TestInitialRunNoPostgresLoader:
             """
         )
 
-        with raises(
-            ValueError,
-            match="Found 2 NULLs in 'unique_award_key' in table raw.transaction_normalized!",
-        ):
+        with raises(ValueError, match="Found 2 NULLs in 'unique_award_key' in table raw.transaction_normalized!"):
             call_command(
-                "load_transactions_in_delta",
-                "--etl-level",
-                "initial_run",
-                "--spark-s3-bucket",
-                s3_unittest_data_bucket,
+                "load_transactions_in_delta", "--etl-level", "initial_run", "--spark-s3-bucket", s3_unittest_data_bucket
             )
 
     @mark.django_db(transaction=True)
     def test_happy_path_scenarios(
-        self,
-        spark,
-        s3_unittest_data_bucket,
-        hive_unittest_metastore_db,
-        _populate_initial_source_tables_pg,
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
     ):
         # Since we're not using the Postgres transaction loader, load raw.transaction_normalized and raw.awards
         # from expected data when making initial run
@@ -972,10 +915,7 @@ class TestInitialRunNoPostgresLoader:
             "expected_last_load_transaction_fpds": _BEGINNING_OF_TIME,
         }
         TestInitialRun.verify(
-            spark,
-            self.expected_initial_transaction_id_lookup,
-            self.expected_initial_award_id_lookup,
-            **kwargs,
+            spark, self.expected_initial_transaction_id_lookup, self.expected_initial_award_id_lookup, **kwargs
         )
 
         # 2. Call initial_run with initial-copy, and have all raw tables populated
@@ -1005,11 +945,7 @@ class TestInitialRunNoPostgresLoader:
 class TestTransactionIdLookup:
     @mark.django_db(transaction=True)
     def test_unexpected_paths(
-        self,
-        spark,
-        s3_unittest_data_bucket,
-        hive_unittest_metastore_db,
-        _populate_initial_source_tables_pg,
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
     ):
         # Setup some source tables with data, without loading these Delta Tables from Postgres
         # for efficiency reasons.
@@ -1144,10 +1080,7 @@ class TestTransactionIdLookup:
         )
         # Trigger initial run of load transactions in delta. This step is required as it creates various data sources.
         TestInitialRun.initial_run(
-            s3_data_bucket,
-            load_source_tables=False,
-            load_other_raw_tables=load_other_raw_tables,
-            initial_copy=False,
+            s3_data_bucket, load_source_tables=False, load_other_raw_tables=load_other_raw_tables, initial_copy=False
         )
 
         # 1. Test deleting the transaction(s) with the last transaction ID(s) from the appropriate raw table,
@@ -1193,11 +1126,7 @@ class TestTransactionIdLookup:
         insert_datetime = last_assist_load_datetime + timedelta(minutes=-15)
         assist = deepcopy(_NEW_ASSIST)
         assist.update(
-            {
-                "action_date": insert_datetime.isoformat(),
-                "created_at": insert_datetime,
-                "updated_at": insert_datetime,
-            }
+            {"action_date": insert_datetime.isoformat(), "created_at": insert_datetime, "updated_at": insert_datetime}
         )
         baker.make("transactions.SourceAssistanceTransaction", **assist)
         update_last_load_date("source_assistance_transaction", last_assist_load_datetime)
@@ -1231,12 +1160,7 @@ class TestTransactionIdLookup:
             "expected_last_load_transaction_fabs": _BEGINNING_OF_TIME,
             "expected_last_load_transaction_fpds": _BEGINNING_OF_TIME,
         }
-        TestInitialRun.verify(
-            spark,
-            expected_transaction_id_lookup,
-            expected_initial_award_id_lookup,
-            **kwargs,
-        )
+        TestInitialRun.verify(spark, expected_transaction_id_lookup, expected_initial_award_id_lookup, **kwargs)
 
         # Also, make sure transaction_id_seq hasn't gone backwards
         with connection.cursor() as cursor:
@@ -1256,11 +1180,7 @@ class TestTransactionIdLookup:
         insert_datetime = last_procure_load_datetime + timedelta(minutes=-15)
         procure = deepcopy(_NEW_PROCURE)
         procure.update(
-            {
-                "action_date": insert_datetime.isoformat(),
-                "created_at": insert_datetime,
-                "updated_at": insert_datetime,
-            }
+            {"action_date": insert_datetime.isoformat(), "created_at": insert_datetime, "updated_at": insert_datetime}
         )
         baker.make("transactions.SourceProcurementTransaction", **procure)
         update_last_load_date("source_procurement_transaction", last_procure_load_datetime)
@@ -1300,19 +1220,13 @@ class TestTransactionIdLookup:
 
     @mark.django_db(transaction=True)
     def test_happy_path_scenarios_no_pg_loader(
-        self,
-        spark,
-        s3_unittest_data_bucket,
-        hive_unittest_metastore_db,
-        _populate_initial_source_tables_pg,
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
     ):
         # Since we're not using the Postgres transaction loader, load raw.transaction_normalized and raw.awards
         # from expected data when making initial run
         load_other_raw_tables = [
             _TableLoadInfo(
-                spark,
-                "transaction_normalized",
-                TestInitialRunNoPostgresLoader.initial_transaction_normalized,
+                spark, "transaction_normalized", TestInitialRunNoPostgresLoader.initial_transaction_normalized
             ),
             _TableLoadInfo(spark, "awards", TestInitialRunNoPostgresLoader.initial_awards),
         ]
@@ -1330,11 +1244,7 @@ class TestTransactionIdLookup:
 class TestAwardIdLookup:
     @mark.django_db(transaction=True)
     def test_unexpected_paths(
-        self,
-        spark,
-        s3_unittest_data_bucket,
-        hive_unittest_metastore_db,
-        _populate_initial_source_tables_pg,
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
     ):
         # First, setup some source tables with data, without loading these Delta Tables from Postgres
         # for efficiency reasons.
@@ -1469,10 +1379,7 @@ class TestAwardIdLookup:
         )
         # Trigger initial run of load transactions in delta. This step is required as it creates various data sources.
         TestInitialRun.initial_run(
-            s3_data_bucket,
-            load_source_tables=False,
-            load_other_raw_tables=load_other_raw_tables,
-            initial_copy=False,
+            s3_data_bucket, load_source_tables=False, load_other_raw_tables=load_other_raw_tables, initial_copy=False
         )
 
         # 1. Test deleting the transactions with the last award ID from the appropriate raw table,
@@ -1493,11 +1400,7 @@ class TestAwardIdLookup:
         insert_datetime = last_assist_load_datetime + timedelta(minutes=-15)
         assist = deepcopy(_NEW_ASSIST)
         assist.update(
-            {
-                "action_date": insert_datetime.isoformat(),
-                "created_at": insert_datetime,
-                "updated_at": insert_datetime,
-            }
+            {"action_date": insert_datetime.isoformat(), "created_at": insert_datetime, "updated_at": insert_datetime}
         )
         baker.make("transactions.SourceAssistanceTransaction", **assist)
         update_last_load_date("source_assistance_transaction", last_assist_load_datetime)
@@ -1532,12 +1435,7 @@ class TestAwardIdLookup:
             "expected_last_load_transaction_fabs": _BEGINNING_OF_TIME,
             "expected_last_load_transaction_fpds": _BEGINNING_OF_TIME,
         }
-        TestInitialRun.verify(
-            spark,
-            expected_initial_transaction_id_lookup,
-            expected_award_id_lookup,
-            **kwargs,
-        )
+        TestInitialRun.verify(spark, expected_initial_transaction_id_lookup, expected_award_id_lookup, **kwargs)
 
         # Make sure award_id_seq hasn't gone backwards
         with connection.cursor() as cursor:
@@ -1560,11 +1458,7 @@ class TestAwardIdLookup:
         insert_datetime = last_procure_load_datetime + timedelta(minutes=-15)
         procure = deepcopy(_NEW_PROCURE)
         procure.update(
-            {
-                "action_date": insert_datetime.isoformat(),
-                "created_at": insert_datetime,
-                "updated_at": insert_datetime,
-            }
+            {"action_date": insert_datetime.isoformat(), "created_at": insert_datetime, "updated_at": insert_datetime}
         )
         baker.make("transactions.SourceProcurementTransaction", **procure)
         update_last_load_date("source_procurement_transaction", last_procure_load_datetime)
@@ -1610,19 +1504,13 @@ class TestAwardIdLookup:
 
     @mark.django_db(transaction=True)
     def test_happy_path_scenarios_no_pg_loader(
-        self,
-        spark,
-        s3_unittest_data_bucket,
-        hive_unittest_metastore_db,
-        _populate_initial_source_tables_pg,
+        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
     ):
         # Since we're not using the Postgres transaction loader, load raw.transaction_normalized and raw.awards
         # from expected data when making initial run
         load_other_raw_tables = [
             _TableLoadInfo(
-                spark,
-                "transaction_normalized",
-                TestInitialRunNoPostgresLoader.initial_transaction_normalized,
+                spark, "transaction_normalized", TestInitialRunNoPostgresLoader.initial_transaction_normalized
             ),
             _TableLoadInfo(spark, "awards", TestInitialRunNoPostgresLoader.initial_awards),
         ]

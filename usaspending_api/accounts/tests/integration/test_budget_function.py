@@ -100,9 +100,7 @@ def test_list_budget_functions_unique(model_instances, client):
 def test_list_budget_subfunctions_unique(model_instances, client):
     """Ensure the list_budget_subfunctions endpoint returns unique values"""
     response = client.post(
-        "/api/v2/budget_functions/list_budget_subfunctions/",
-        content_type="application/json",
-        data=json.dumps({}),
+        "/api/v2/budget_functions/list_budget_subfunctions/", content_type="application/json", data=json.dumps({})
     )
 
     assert response.status_code == status.HTTP_200_OK

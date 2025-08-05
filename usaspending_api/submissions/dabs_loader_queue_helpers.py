@@ -7,10 +7,7 @@ from threading import Timer
 from traceback import format_exception
 from typing import List, Optional, Tuple
 from usaspending_api.common.helpers.date_helper import now
-from usaspending_api.common.helpers.sql_helpers import (
-    get_database_dsn_string,
-    execute_dml_sql,
-)
+from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string, execute_dml_sql
 from usaspending_api.submissions.models import DABSLoaderQueue
 
 
@@ -129,9 +126,7 @@ def complete_processing(submission_id: int, processor_id: str) -> int:
     problem.
     """
     return DABSLoaderQueue.objects.filter(
-        submission_id=submission_id,
-        processor_id=processor_id,
-        state=DABSLoaderQueue.IN_PROGRESS,
+        submission_id=submission_id, processor_id=processor_id, state=DABSLoaderQueue.IN_PROGRESS
     ).delete()
 
 
@@ -144,15 +139,8 @@ def fail_processing(submission_id: int, processor_id: str, exception: BaseExcept
     """
     exception_message = "".join(format_exception(type(exception), exception, exception.__traceback__))
     return DABSLoaderQueue.objects.filter(
-        submission_id=submission_id,
-        processor_id=processor_id,
-        state=DABSLoaderQueue.IN_PROGRESS,
-    ).update(
-        state=DABSLoaderQueue.FAILED,
-        processor_id=None,
-        processing_failed=now(),
-        exception=exception_message,
-    )
+        submission_id=submission_id, processor_id=processor_id, state=DABSLoaderQueue.IN_PROGRESS
+    ).update(state=DABSLoaderQueue.FAILED, processor_id=None, processing_failed=now(), exception=exception_message)
 
 
 def reset_abandoned_locks() -> int:
@@ -161,8 +149,7 @@ def reset_abandoned_locks() -> int:
     and must be reset so processing can be restarted on them.  Returns the count of reset locks.
     """
     return DABSLoaderQueue.objects.filter(
-        state=DABSLoaderQueue.IN_PROGRESS,
-        heartbeat__lt=get_abandoned_heartbeat_cutoff(),
+        state=DABSLoaderQueue.IN_PROGRESS, heartbeat__lt=get_abandoned_heartbeat_cutoff()
     ).update(
         state=DABSLoaderQueue.READY,
         processor_id=None,

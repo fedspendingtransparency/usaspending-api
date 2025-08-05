@@ -18,15 +18,11 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="awardsearch",
             name="total_iija_obligation",
-            field=models.DecimalField(
-                blank=True, decimal_places=2, max_digits=23, null=True
-            ),
+            field=models.DecimalField(blank=True, decimal_places=2, max_digits=23, null=True),
         ),
         migrations.AddField(
             model_name="awardsearch",
             name="total_iija_outlay",
-            field=models.DecimalField(
-                blank=True, decimal_places=2, max_digits=23, null=True
-            ),
+            field=models.DecimalField(blank=True, decimal_places=2, max_digits=23, null=True),
         ),
     ]

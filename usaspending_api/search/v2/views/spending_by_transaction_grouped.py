@@ -7,10 +7,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from usaspending_api.common.api_versioning import (
-    api_transformations,
-    API_TRANSFORM_FUNCTIONS,
-)
+from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 from usaspending_api.common.exceptions import UnprocessableEntityException
@@ -23,9 +20,7 @@ from usaspending_api.common.validator.award_filter import (
 )
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
-from usaspending_api.search.v2.elasticsearch_helper import (
-    get_number_of_unique_terms_for_transactions,
-)
+from usaspending_api.search.v2.elasticsearch_helper import get_number_of_unique_terms_for_transactions
 from usaspending_api.search.v2.es_sanitization import es_minimal_sanitize
 from elasticsearch_dsl import A
 
@@ -109,10 +104,7 @@ class SpendingByTransactionGroupedVisualizationViewSet(APIView):
         (
             search.aggs.bucket("group_by_prime_award", A("terms", field="display_award_id"))
             .metric("transaction_obligation", A("sum", field="federal_action_obligation"))
-            .metric(
-                "award_generated_internal_id",
-                A("terms", field="generated_unique_award_id"),
-            )
+            .metric("award_generated_internal_id", A("terms", field="generated_unique_award_id"))
         )
         bucket_count = get_number_of_unique_terms_for_transactions(filter_query, "display_award_id")
         agg_response = search.handle_execute()
@@ -146,8 +138,7 @@ class SpendingByTransactionGroupedVisualizationViewSet(APIView):
                 "results": results[: validated_payload["limit"]],
                 "page_metadata": metadata,
                 "messages": get_generic_filters_message(
-                    validated_payload["filters"].keys(),
-                    [elem["name"] for elem in AWARD_FILTER_NO_RECIPIENT_ID],
+                    validated_payload["filters"].keys(), [elem["name"] for elem in AWARD_FILTER_NO_RECIPIENT_ID]
                 ),
             }
         )

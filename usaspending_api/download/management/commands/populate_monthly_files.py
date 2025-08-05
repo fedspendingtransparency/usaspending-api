@@ -6,10 +6,7 @@ import re
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from usaspending_api.awards.v2.lookups.lookups import (
-    procurement_type_mapping,
-    assistance_type_mapping,
-)
+from usaspending_api.awards.v2.lookups.lookups import procurement_type_mapping, assistance_type_mapping
 from usaspending_api.common.helpers.dict_helpers import order_nested_object
 from usaspending_api.common.helpers.fiscal_year_helpers import generate_fiscal_year
 from usaspending_api.common.helpers.s3_helpers import multipart_upload
@@ -136,12 +133,7 @@ class Command(BaseCommand):
             help="Specific award types, must be 'contracts' and/or 'assistance'",
         )
         parser.add_argument(
-            "--fiscal_years",
-            dest="fiscal_years",
-            nargs="+",
-            default=None,
-            type=int,
-            help="Specific Fiscal Years",
+            "--fiscal_years", dest="fiscal_years", nargs="+", default=None, type=int, help="Specific Fiscal Years"
         )
         parser.add_argument(
             "--placeholders",
@@ -165,10 +157,7 @@ class Command(BaseCommand):
             help="Empty assistance file for uploading",
         )
         parser.add_argument(
-            "--empty-contracts-file",
-            dest="empty_contracts_file",
-            default="",
-            help="Empty contracts file for uploading",
+            "--empty-contracts-file", dest="empty_contracts_file", default="", help="Empty contracts file for uploading"
         )
 
     def handle(self, *args, **options):

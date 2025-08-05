@@ -6,9 +6,7 @@ from usaspending_api.search.tests.integration.hierarchical_filters.tas_search_te
     query_by_tas,
     query_by_treasury_account_components,
 )
-from usaspending_api.search.tests.integration.hierarchical_filters.tas_fixtures import (
-    TAS_DICTIONARIES,
-)
+from usaspending_api.search.tests.integration.hierarchical_filters.tas_fixtures import TAS_DICTIONARIES
 
 
 @pytest.mark.django_db
@@ -62,10 +60,7 @@ def test_tas_unparsable_no_main(client, monkeypatch, elasticsearch_award_index, 
 @pytest.mark.django_db
 def test_tas_filter_is_legacy(client, monkeypatch, elasticsearch_award_index, award_with_tas):
     _setup_es(client, monkeypatch, elasticsearch_award_index)
-    resp = query_by_tas(
-        client,
-        [{"main": TAS_DICTIONARIES[0]["main"], "aid": TAS_DICTIONARIES[0]["aid"]}],
-    )
+    resp = query_by_tas(client, [{"main": TAS_DICTIONARIES[0]["main"], "aid": TAS_DICTIONARIES[0]["aid"]}])
 
     assert len(resp.json()["results"]) == 1
 

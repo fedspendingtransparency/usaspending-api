@@ -8,18 +8,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("awards", "0001_initial"),
+        ('awards', '0001_initial'),
     ]
 
     operations = [
         migrations.AddField(
-            model_name="subaward",
-            name="place_of_perform_scope",
+            model_name='subaward',
+            name='place_of_perform_scope',
             field=models.TextField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name="transactionfabs",
-            name="place_of_performance_scope",
+            model_name='transactionfabs',
+            name='place_of_performance_scope',
             field=models.TextField(blank=True, null=True),
         ),
     ]

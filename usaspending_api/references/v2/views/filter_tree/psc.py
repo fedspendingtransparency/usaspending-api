@@ -4,9 +4,7 @@ from rest_framework.views import APIView
 
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.validator.tinyshield import TinyShield
-from usaspending_api.references.v2.views.filter_tree.psc_filter_tree import (
-    PSCFilterTree,
-)
+from usaspending_api.references.v2.views.filter_tree.psc_filter_tree import PSCFilterTree
 
 
 class PSCViewSet(APIView):
@@ -18,14 +16,7 @@ class PSCViewSet(APIView):
 
     def _parse_and_validate(self, request):
         models = [
-            {
-                "key": "depth",
-                "name": "depth",
-                "type": "integer",
-                "allow_nulls": True,
-                "default": 0,
-                "optional": True,
-            },
+            {"key": "depth", "name": "depth", "type": "integer", "allow_nulls": True, "default": 0, "optional": True},
             {
                 "key": "filter",
                 "name": "filter",
@@ -44,13 +35,5 @@ class PSCViewSet(APIView):
 
         filter_tree = PSCFilterTree()
         return Response(
-            {
-                "results": filter_tree.search(
-                    tier1,
-                    tier2,
-                    tier3,
-                    request_values["depth"],
-                    request_values["filter"],
-                )
-            }
+            {"results": filter_tree.search(tier1, tier2, tier3, request_values["depth"], request_values["filter"])}
         )

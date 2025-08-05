@@ -24,11 +24,7 @@ def load_broker_data(db, broker_server_dblink_setup):
         external_data_type_id=11,
         update_date="2017-01-01",
     )
-    baker.make(
-        "broker.ExternalDataLoadDate",
-        last_load_date="2017-01-01",
-        external_data_type=edt,
-    )
+    baker.make("broker.ExternalDataLoadDate", last_load_date="2017-01-01", external_data_type=edt)
     insert_test_data = f"""
 INSERT INTO "{BROKER_TABLE}"
     ("created_at","updated_at","published_fabs_id","action_date","action_type","assistance_type","award_description","awardee_or_recipient_legal","awardee_or_recipient_uniqu","awarding_agency_code","awarding_office_code","awarding_sub_tier_agency_c","award_modification_amendme","business_funds_indicator","business_types","assistance_listing_number","correction_delete_indicatr","face_value_loan_guarantee","fain","federal_action_obligation","fiscal_year_and_quarter_co","funding_agency_code","funding_office_code","funding_sub_tier_agency_co","legal_entity_address_line1","legal_entity_address_line2","legal_entity_address_line3","legal_entity_country_code","legal_entity_foreign_city","legal_entity_foreign_posta","legal_entity_foreign_provi","legal_entity_zip5","legal_entity_zip_last4","non_federal_funding_amount","original_loan_subsidy_cost","period_of_performance_curr","period_of_performance_star","place_of_performance_code","place_of_performance_congr","place_of_perform_country_c","place_of_performance_forei","place_of_performance_zip4a","record_type","sai_number","uri","legal_entity_congressional","total_funding_amount","assistance_listing_title","awarding_agency_name","awarding_sub_tier_agency_n","funding_agency_name","funding_sub_tier_agency_na","is_historical","place_of_perform_county_na","place_of_perform_state_nam","place_of_performance_city","legal_entity_city_name","legal_entity_county_code","legal_entity_county_name","legal_entity_state_code","legal_entity_state_name","modified_at","afa_generated_unique","is_active","awarding_office_name","funding_office_name","legal_entity_city_code","legal_entity_foreign_descr","legal_entity_country_name","place_of_perform_country_n","place_of_perform_county_co","submission_id","place_of_perfor_state_code","place_of_performance_zip5","place_of_perform_zip_last4","business_categories","action_type_description","assistance_type_desc","business_funds_ind_desc","business_types_desc","correction_delete_ind_desc","record_type_description","ultimate_parent_legal_enti","ultimate_parent_unique_ide","unique_award_key","high_comp_officer1_amount","high_comp_officer1_full_na","high_comp_officer2_amount","high_comp_officer2_full_na","high_comp_officer3_amount","high_comp_officer3_full_na","high_comp_officer4_amount","high_comp_officer4_full_na","high_comp_officer5_amount","high_comp_officer5_full_na","place_of_performance_scope","uei","ultimate_parent_uei","funding_opportunity_goals","funding_opportunity_number","indirect_federal_sharing")
@@ -148,10 +144,7 @@ VALUES
         assert cursor.fetchall()[0][0] == 0
 
 
-@pytest.mark.django_db(
-    databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS],
-    transaction=True,
-)
+@pytest.mark.django_db(databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_data_transfer_from_broker(load_broker_data):
     call_command("transfer_assistance_records", "--reload-all")
     table = SourceAssistanceTransaction().table_name
@@ -273,10 +266,7 @@ def test_data_transfer_from_broker(load_broker_data):
         )
 
 
-@pytest.mark.django_db(
-    databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS],
-    transaction=True,
-)
+@pytest.mark.django_db(databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_correction_overwrites_when_afa_casing_is_different(load_broker_data):
     """Verify that if a correction comes in for a FABS record that has the same case-INSENSITIVE afa_generated_unique
     key, but in fact has different letter-casing than the original, that it will STILL replace the record and put its
@@ -440,10 +430,7 @@ VALUES
 
 
 @override_settings(IS_LOCAL=False)
-@pytest.mark.django_db(
-    databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS],
-    transaction=True,
-)
+@pytest.mark.django_db(databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_delete(load_broker_data):
     # Load initial Broker data into USAspending
     call_command("transfer_assistance_records", "--reload-all")
@@ -465,8 +452,7 @@ def test_delete(load_broker_data):
     )
     with connections[settings.DEFAULT_DB_ALIAS].cursor() as cursor:
         cursor.execute(
-            f"SELECT COUNT(*) FROM {table} WHERE UPPER({transaction_unique_field}) IN %s",
-            (deleted_transactions,),
+            f"SELECT COUNT(*) FROM {table} WHERE UPPER({transaction_unique_field}) IN %s", (deleted_transactions,)
         )
         assert cursor.fetchall()[0][0] == len(deleted_transactions), "Transactions under test don't exist"
 
@@ -502,8 +488,7 @@ def test_delete(load_broker_data):
     with connections[settings.DEFAULT_DB_ALIAS].cursor() as cursor:
         # Validate that the deleted records have been removed
         cursor.execute(
-            f"SELECT COUNT(*) FROM {table} WHERE UPPER({transaction_unique_field}) IN %s",
-            (deleted_transactions,),
+            f"SELECT COUNT(*) FROM {table} WHERE UPPER({transaction_unique_field}) IN %s", (deleted_transactions,)
         )
         assert cursor.fetchall()[0][0] == 0, "Failed to delete transactions"
 

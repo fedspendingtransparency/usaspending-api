@@ -8,16 +8,16 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("awards", "0069_auto_20191226_1602"),
+        ('awards', '0069_auto_20191226_1602'),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name="award",
-            name="recipient",
+            model_name='award',
+            name='recipient',
         ),
         migrations.RemoveField(
-            model_name="transactionnormalized",
-            name="recipient",
+            model_name='transactionnormalized',
+            name='recipient',
         ),
     ]

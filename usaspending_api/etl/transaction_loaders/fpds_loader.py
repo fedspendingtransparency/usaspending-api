@@ -13,10 +13,7 @@ from usaspending_api.etl.transaction_loaders.field_mappings_fpds import (
     transaction_fpds_functions,
     all_broker_columns,
 )
-from usaspending_api.etl.transaction_loaders.data_load_helpers import (
-    capitalize_if_string,
-    false_if_null,
-)
+from usaspending_api.etl.transaction_loaders.data_load_helpers import capitalize_if_string, false_if_null
 from usaspending_api.etl.transaction_loaders.generic_loaders import (
     update_transaction_fpds,
     update_transaction_normalized,
@@ -142,10 +139,7 @@ def _transform_objects(broker_objects):
             # award. NOT used if a matching award is found later
             "award": _create_load_object(broker_object, award_nonboolean_columns, None, award_functions),
             "transaction_normalized": _create_load_object(
-                broker_object,
-                transaction_normalized_nonboolean_columns,
-                None,
-                transaction_normalized_functions,
+                broker_object, transaction_normalized_nonboolean_columns, None, transaction_normalized_functions
             ),
             "transaction_fpds": _create_load_object(
                 broker_object,

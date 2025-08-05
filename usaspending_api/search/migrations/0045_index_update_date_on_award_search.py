@@ -7,19 +7,12 @@ import django.db.models.expressions
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("search", "0044_remove_summarystateview_action_date"),
+        ('search', '0044_remove_summarystateview_action_date'),
     ]
 
     operations = [
         migrations.AddIndex(
-            model_name="awardsearch",
-            index=models.Index(
-                django.db.models.expressions.OrderBy(
-                    django.db.models.expressions.F("update_date"),
-                    descending=True,
-                    nulls_last=True,
-                ),
-                name="as_idx_update_date_desc",
-            ),
+            model_name='awardsearch',
+            index=models.Index(django.db.models.expressions.OrderBy(django.db.models.expressions.F('update_date'), descending=True, nulls_last=True), name='as_idx_update_date_desc'),
         ),
     ]

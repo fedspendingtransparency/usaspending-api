@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("search", "0042_create_summary_state_view"),
+        ('search', '0042_create_summary_state_view'),
     ]
 
     operations = [
         migrations.AddField(
-            model_name="SummaryStateView",
-            name="total_outlays",
+            model_name='SummaryStateView',
+            name='total_outlays',
             field=models.DecimalField(decimal_places=2, max_digits=23, null=True),
         ),
     ]

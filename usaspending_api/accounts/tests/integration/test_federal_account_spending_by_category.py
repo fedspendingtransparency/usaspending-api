@@ -9,11 +9,7 @@ from rest_framework import status
 @pytest.fixture
 def financial_spending_data(db):
 
-    ta1 = baker.make(
-        "TreasuryAppropriationAccount",
-        treasury_account_identifier=1,
-        federal_account__id=1,
-    )
+    ta1 = baker.make("TreasuryAppropriationAccount", treasury_account_identifier=1, federal_account__id=1)
 
     oc111 = baker.make("references.ObjectClass", major_object_class="10", object_class="111")
     oc113 = baker.make("references.ObjectClass", major_object_class="10", object_class="113")
@@ -21,9 +17,7 @@ def financial_spending_data(db):
     oc310 = baker.make("references.ObjectClass", major_object_class="30", object_class="310")
 
     pa0001 = baker.make(
-        "references.RefProgramActivity",
-        program_activity_code="0001",
-        program_activity_name="Office of the Secretary",
+        "references.RefProgramActivity", program_activity_code="0001", program_activity_name="Office of the Secretary"
     )
     pa0002 = baker.make(
         "references.RefProgramActivity",
@@ -114,10 +108,7 @@ base_payload = {
         "object_class": [
             {
                 "major_object_class": 10,  # Personnel compensation and benefits
-                "object_class": [
-                    111,
-                    113,
-                ],  # Full-time permanent, Other than full-time permanent, ...
+                "object_class": [111, 113],  # Full-time permanent, Other than full-time permanent, ...
             },
             {"major_object_class": 90},  # Other
         ],
@@ -159,9 +150,7 @@ def test_federal_account_spending_by_category_all_results(client, financial_spen
     payload = deepcopy(base_payload)
     payload["filters"].pop("object_class")
     resp = client.post(
-        "/api/v2/federal_accounts/1/spending_by_category",
-        content_type="application/json",
-        data=json.dumps(payload),
+        "/api/v2/federal_accounts/1/spending_by_category", content_type="application/json", data=json.dumps(payload)
     )
     results = resp.json()["results"]
     assert results["Office of the Secretary"] == 4000000
@@ -175,9 +164,7 @@ def test_federal_account_spending_by_category_major_obj_filter(client, financial
     payload = deepcopy(base_payload)
     payload["filters"]["object_class"].append({"major_object_class": 20})
     resp = client.post(
-        "/api/v2/federal_accounts/1/spending_by_category",
-        content_type="application/json",
-        data=json.dumps(payload),
+        "/api/v2/federal_accounts/1/spending_by_category", content_type="application/json", data=json.dumps(payload)
     )
     results = resp.json()["results"]
     assert results["Office of the Secretary"] == 3000000
@@ -191,9 +178,7 @@ def test_federal_account_spending_by_category_filter_program_activity(client, fi
     payload = deepcopy(base_payload)
     payload["filters"]["program_activity"].pop(1)
     resp = client.post(
-        "/api/v2/federal_accounts/1/spending_by_category",
-        content_type="application/json",
-        data=json.dumps(payload),
+        "/api/v2/federal_accounts/1/spending_by_category", content_type="application/json", data=json.dumps(payload)
     )
     results = resp.json()["results"]
     assert results["Office of the Secretary"] == 2000000
@@ -207,9 +192,7 @@ def test_federal_account_spending_by_category_filter_date(client, financial_spen
     payload = deepcopy(base_payload)
     payload["filters"]["time_period"][0]["end_date"] = "2016-12-31"
     resp = client.post(
-        "/api/v2/federal_accounts/1/spending_by_category",
-        content_type="application/json",
-        data=json.dumps(payload),
+        "/api/v2/federal_accounts/1/spending_by_category", content_type="application/json", data=json.dumps(payload)
     )
     results = resp.json()["results"]
     assert results["Office of the Secretary"] == 1000000

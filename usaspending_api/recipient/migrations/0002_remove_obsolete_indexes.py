@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ("recipient", "0001_initial"),
+        ('recipient', '0001_initial'),
     ]
 
     # For some reason, these indexes were still created and not dropped if I put this command at the
@@ -18,8 +18,8 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RunSQL(
             sql=[
-                "drop index if exists duns_awardee_or_recipient_uniqu_81b7969d_like",
-                "drop index if exists recipient_lookup_duns_ae948c75_like",
+                'drop index if exists duns_awardee_or_recipient_uniqu_81b7969d_like',
+                'drop index if exists recipient_lookup_duns_ae948c75_like',
             ],
         ),
     ]

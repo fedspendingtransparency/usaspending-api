@@ -99,10 +99,7 @@ def combine_date_range_queryset(date_dicts, table, min_start, max_end, dt_format
                 {
                     "start_date": r[0],
                     "end_date": r[1],
-                    "date_type_dict": {
-                        "gte": date_type_tuple[0],
-                        "lte": date_type_tuple[1],
-                    },
+                    "date_type_dict": {"gte": date_type_tuple[0], "lte": date_type_tuple[1]},
                 }
                 for r in list(merge_date_ranges(list_of_ranges))
             ]
@@ -137,10 +134,7 @@ def total_obligation_queryset(amount_obj, model, filters, is_subaward=False):
 
         for v in amount_obj:
             if v.get("lower_bound") is not None and v.get("upper_bound") is not None:
-                bound_dict = {
-                    f"{column}__gte": v["lower_bound"],
-                    f"{column}__lte": v["upper_bound"],
-                }
+                bound_dict = {f"{column}__gte": v["lower_bound"], f"{column}__lte": v["upper_bound"]}
             elif v.get("lower_bound") is not None:
                 bound_dict = {f"{column}__gte": v["lower_bound"]}
             elif v.get("upper_bound") is not None:

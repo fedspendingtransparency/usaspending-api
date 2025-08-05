@@ -2,10 +2,7 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.exceptions import UnprocessableEntityException
 from elasticsearch_dsl import Q as ES_Q
 from usaspending_api.search.filters.elasticsearch.filter import _Filter, QueryType
-from usaspending_api.search.filters.elasticsearch.HierarchicalFilter import (
-    HierarchicalFilter,
-    Node,
-)
+from usaspending_api.search.filters.elasticsearch.HierarchicalFilter import HierarchicalFilter, Node
 from usaspending_api.search.filters.postgres.tas import string_to_dictionary
 import re
 
@@ -24,11 +21,7 @@ class TasCodes(_Filter, HierarchicalFilter):
         else:
             raise InvalidParameterException(f"tas_codes must be an array or object")
 
-        return ES_Q(
-            "query_string",
-            query=cls._query_string(require, exclude),
-            default_field="tas_paths",
-        )
+        return ES_Q("query_string", query=cls._query_string(require, exclude), default_field="tas_paths")
 
     @staticmethod
     def node(code, positive, positive_naics, negative_naics):

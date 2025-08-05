@@ -22,20 +22,10 @@ class Command(BaseCommand):
     help = "Updates the TransactionFPDS with the correct data from the fpds csv"
 
     def add_arguments(self, parser):
-        parser.add_argument(
-            "--file",
-            dest="fpds_csv",
-            nargs="+",
-            type=str,
-            help="data broker submission id to load",
-        )
+        parser.add_argument("--file", dest="fpds_csv", nargs="+", type=str, help="data broker submission id to load")
 
         parser.add_argument(
-            "--fiscal_year",
-            dest="fiscal_year",
-            nargs="+",
-            type=int,
-            help="Year for which to run the historical load",
+            "--fiscal_year", dest="fiscal_year", nargs="+", type=int, help="Year for which to run the historical load"
         )
 
         # super(Command, self).add_arguments(parser)

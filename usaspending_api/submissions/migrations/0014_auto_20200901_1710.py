@@ -7,16 +7,13 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("submissions", "0013_submissionattributes_submission_window_id"),
+        ('submissions', '0013_submissionattributes_submission_window_id'),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name="submissionattributes",
-            name="submission_window",
-            field=models.ForeignKey(
-                on_delete=django.db.models.deletion.DO_NOTHING,
-                to="submissions.DABSSubmissionWindowSchedule",
-            ),
+            model_name='submissionattributes',
+            name='submission_window',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.DO_NOTHING, to='submissions.DABSSubmissionWindowSchedule'),
         ),
     ]

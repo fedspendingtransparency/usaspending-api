@@ -359,12 +359,7 @@ def _build_dabs_reporting_data(fy_reported):
         ussgl490110_rein_deliv_ord_cpe=0,
     )
     for fy in range(2017, current_fiscal_year() + 1):
-        baker.make(
-            "references.GTASSF133Balances",
-            fiscal_year=fy,
-            fiscal_period=12,
-            total_budgetary_resources_cpe=fy,
-        )
+        baker.make("references.GTASSF133Balances", fiscal_year=fy, fiscal_period=12, total_budgetary_resources_cpe=fy)
         baker.make(
             "submissions.DABSSubmissionWindowSchedule",
             submission_fiscal_year=fy,
@@ -378,8 +373,7 @@ def _build_dabs_reporting_data(fy_reported):
 @pytest.mark.django_db
 def test_budgetary_resources_before_2022(client, before_2022_data_fixture):
     """Test accumulation of agency DABS reporting data (budgetary resources); given it is using data ONLY BEFORE
-    FY 2022 (i.e. the date 2021-09-30 and before) it SHOULD NOT accumulate monthly period reporting data.
-    """
+    FY 2022 (i.e. the date 2021-09-30 and before) it SHOULD NOT accumulate monthly period reporting data."""
     resp = client.get(URL.format(code="001", filter=""))
     expected_results = [
         {
@@ -427,8 +421,7 @@ def test_budgetary_resources_before_2022(client, before_2022_data_fixture):
 @pytest.mark.django_db
 def test_budgetary_resources_after_2022(client, after_2022_data_fixture):
     """Test accumulation of agency DABS reporting data (budgetary resources); given it is using data AFTER FY 2022
-    (i.e. the date 2021-10-01 and after) it SHOULD ALSO accumulate monthly period reporting data.
-    """
+    (i.e. the date 2021-10-01 and after) it SHOULD ALSO accumulate monthly period reporting data."""
     resp = client.get(URL.format(code="001", filter=""))
     expected_results = [
         {

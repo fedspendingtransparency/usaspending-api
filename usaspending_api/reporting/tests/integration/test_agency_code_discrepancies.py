@@ -53,10 +53,7 @@ def test_basic_success(setup_test_data, client):
     assert resp.status_code == status.HTTP_200_OK
     response = resp.json()
     assert len(response["results"]) == 2
-    expected_results = [
-        {"tas": "TAS 1", "amount": 10.0},
-        {"tas": "TAS 2", "amount": 1.0},
-    ]
+    expected_results = [{"tas": "TAS 1", "amount": 10.0}, {"tas": "TAS 2", "amount": 1.0}]
     assert response["results"] == expected_results
 
 
@@ -81,10 +78,7 @@ def test_sort(setup_test_data, client):
     assert resp.status_code == status.HTTP_200_OK
     response = resp.json()
     assert len(response["results"]) == 2
-    expected_results = [
-        {"tas": "TAS 2", "amount": 1.0},
-        {"tas": "TAS 1", "amount": 10.0},
-    ]
+    expected_results = [{"tas": "TAS 2", "amount": 1.0}, {"tas": "TAS 1", "amount": 10.0}]
     assert response["results"] == expected_results
 
     resp = client.get(url + "?fiscal_year=2020&fiscal_period=2&order=asc&limit=1&page=2")

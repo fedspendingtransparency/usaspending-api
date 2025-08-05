@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("search", "0006_auto_20220113_1658"),
+        ('search', '0006_auto_20220113_1658'),
     ]
 
     operations = [
         migrations.AddField(
-            model_name="transactionsearch",
-            name="parent_uei",
+            model_name='transactionsearch',
+            name='parent_uei',
             field=models.TextField(null=True),
         ),
     ]

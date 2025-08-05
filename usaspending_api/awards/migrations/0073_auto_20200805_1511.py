@@ -6,26 +6,14 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("submissions", "0011_dabsloaderqueue"),
-        ("references", "0049_auto_20200727_1735"),
-        ("awards", "0072_auto_20200604_1725"),
+        ('submissions', '0011_dabsloaderqueue'),
+        ('references', '0049_auto_20200727_1735'),
+        ('awards', '0072_auto_20200604_1725'),
     ]
 
     operations = [
         migrations.AlterIndexTogether(
-            name="financialaccountsbyawards",
-            index_together={
-                (
-                    "disaster_emergency_fund",
-                    "submission",
-                    "award",
-                    "piid",
-                    "fain",
-                    "uri",
-                    "parent_award_id",
-                    "transaction_obligated_amount",
-                    "gross_outlay_amount_by_award_cpe",
-                )
-            },
+            name='financialaccountsbyawards',
+            index_together={('disaster_emergency_fund', 'submission', 'award', 'piid', 'fain', 'uri', 'parent_award_id', 'transaction_obligated_amount', 'gross_outlay_amount_by_award_cpe')},
         ),
     ]

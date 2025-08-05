@@ -32,11 +32,7 @@ def setup_test_data(db):
     )
 
     agency = baker.make(
-        "references.ToptierAgency",
-        toptier_code="123",
-        abbreviation="ABC",
-        name="Test Agency",
-        _fill_optional=True,
+        "references.ToptierAgency", toptier_code="123", abbreviation="ABC", name="Test Agency", _fill_optional=True
     )
 
     treas_accounts = [
@@ -66,26 +62,10 @@ def setup_test_data(db):
         ),
     ]
     approps = [
-        {
-            "sub_id": sub.submission_id,
-            "treasury_account": treas_accounts[0],
-            "total_resources": 50,
-        },
-        {
-            "sub_id": sub.submission_id,
-            "treasury_account": treas_accounts[1],
-            "total_resources": 12,
-        },
-        {
-            "sub_id": sub2.submission_id,
-            "treasury_account": treas_accounts[1],
-            "total_resources": 29,
-        },
-        {
-            "sub_id": sub2.submission_id,
-            "treasury_account": treas_accounts[2],
-            "total_resources": 15.5,
-        },
+        {"sub_id": sub.submission_id, "treasury_account": treas_accounts[0], "total_resources": 50},
+        {"sub_id": sub.submission_id, "treasury_account": treas_accounts[1], "total_resources": 12},
+        {"sub_id": sub2.submission_id, "treasury_account": treas_accounts[1], "total_resources": 29},
+        {"sub_id": sub2.submission_id, "treasury_account": treas_accounts[2], "total_resources": 15.5},
     ]
     for approp in approps:
         baker.make(
@@ -836,11 +816,7 @@ def test_agency_with_only_file_c_or_d_awards(client):
         published_date="2019-07-03",
     )
     agency = baker.make(
-        "references.ToptierAgency",
-        toptier_code="999",
-        abbreviation="ABC",
-        name="Test Agency",
-        _fill_optional=True,
+        "references.ToptierAgency", toptier_code="999", abbreviation="ABC", name="Test Agency", _fill_optional=True
     )
     ta = baker.make(
         "accounts.TreasuryAppropriationAccount",

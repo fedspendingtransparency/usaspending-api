@@ -10,12 +10,8 @@ from django.db.models import Q
 from django.test import TestCase
 from model_bakery import baker
 from usaspending_api.awards.models import FinancialAccountsByAwards
-from usaspending_api.etl.submission_loader_helpers.object_class import (
-    reset_object_class_cache,
-)
-from usaspending_api.etl.transaction_loaders.data_load_helpers import (
-    format_insert_or_update_column_sql,
-)
+from usaspending_api.etl.submission_loader_helpers.object_class import reset_object_class_cache
+from usaspending_api.etl.transaction_loaders.data_load_helpers import format_insert_or_update_column_sql
 
 earlier_time = datetime.now() - timedelta(days=1)
 current_time = datetime.now()
@@ -43,11 +39,7 @@ class TestWithMultipleDatabases(TestCase):
             tas_rendering_label="1004-1002-1003-1007-1008",
         )
         baker.make(
-            "references.ObjectClass",
-            id=0,
-            major_object_class="00",
-            object_class="00.0",
-            direct_reimbursable=None,
+            "references.ObjectClass", id=0, major_object_class="00", object_class="00.0", direct_reimbursable=None
         )
         baker.make(
             "submissions.DABSSubmissionWindowSchedule",
@@ -60,22 +52,10 @@ class TestWithMultipleDatabases(TestCase):
 
         # Setup default data in Broker Test DB
         broker_objects_to_insert = {
-            "tas_lookup": {
-                "broker_object": _assemble_broker_tas_lookup_records(),
-                "conflict_column": "tas_id",
-            },
-            "submission": {
-                "broker_object": _assemble_broker_submission_records(),
-                "conflict_column": "submission_id",
-            },
-            "publish_history": {
-                "broker_object": _assemble_publish_history(),
-                "conflict_column": "publish_history_id",
-            },
-            "certify_history": {
-                "broker_object": _assemble_certify_history(),
-                "conflict_column": "certify_history_id",
-            },
+            "tas_lookup": {"broker_object": _assemble_broker_tas_lookup_records(), "conflict_column": "tas_id"},
+            "submission": {"broker_object": _assemble_broker_submission_records(), "conflict_column": "submission_id"},
+            "publish_history": {"broker_object": _assemble_publish_history(), "conflict_column": "publish_history_id"},
+            "certify_history": {"broker_object": _assemble_certify_history(), "conflict_column": "certify_history_id"},
             "published_files_history": {
                 "broker_object": _assemble_published_files_history(),
                 "conflict_column": "published_files_history_id",
@@ -166,12 +146,7 @@ class TestWithMultipleDatabases(TestCase):
         """
         Test load submission management command for File C records with only a URI
         """
-        baker.make(
-            "search.AwardSearch",
-            award_id=-997,
-            uri="RANDOM_LOAD_SUB_URI",
-            latest_transaction_id=-997,
-        )
+        baker.make("search.AwardSearch", award_id=-997, uri="RANDOM_LOAD_SUB_URI", latest_transaction_id=-997)
         baker.make("search.TransactionSearch", transaction_id=-997)
 
         # Test loading submission with File C to D Linkage
@@ -203,12 +178,7 @@ class TestWithMultipleDatabases(TestCase):
         """
         Test load submission management command for File C records with only a FAIN
         """
-        baker.make(
-            "search.AwardSearch",
-            award_id=-997,
-            fain="RANDOM_LOAD_SUB_FAIN",
-            latest_transaction_id=-997,
-        )
+        baker.make("search.AwardSearch", award_id=-997, fain="RANDOM_LOAD_SUB_FAIN", latest_transaction_id=-997)
         baker.make("search.TransactionSearch", transaction_id=-997)
 
         # Test loading submission with File C to D Linkage

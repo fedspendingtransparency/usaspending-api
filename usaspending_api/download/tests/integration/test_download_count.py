@@ -46,20 +46,8 @@ def download_test_data():
     baker.make("references.SubtierAgency", name="Bureau of Things", _fill_optional=True)
 
     # Create Awarding Agencies
-    aa1 = baker.make(
-        "references.Agency",
-        id=1,
-        toptier_agency=ata1,
-        toptier_flag=False,
-        _fill_optional=True,
-    )
-    aa2 = baker.make(
-        "references.Agency",
-        id=2,
-        toptier_agency=ata2,
-        toptier_flag=False,
-        _fill_optional=True,
-    )
+    aa1 = baker.make("references.Agency", id=1, toptier_agency=ata1, toptier_flag=False, _fill_optional=True)
+    aa2 = baker.make("references.Agency", id=2, toptier_agency=ata2, toptier_flag=False, _fill_optional=True)
 
     # Create Funding Top Agency
     ata3 = baker.make(
@@ -75,35 +63,17 @@ def download_test_data():
     baker.make("references.SubtierAgency", name="Bureau of Things", _fill_optional=True)
 
     # Create Funding Agency
-    baker.make(
-        "references.Agency",
-        id=3,
-        toptier_agency=ata3,
-        toptier_flag=False,
-        _fill_optional=True,
-    )
+    baker.make("references.Agency", id=3, toptier_agency=ata3, toptier_flag=False, _fill_optional=True)
 
     # Create Awards
     award1 = baker.make(
-        "search.AwardSearch",
-        award_id=123,
-        display_award_id="123",
-        action_date="2018-01-01",
-        category="idv",
+        "search.AwardSearch", award_id=123, display_award_id="123", action_date="2018-01-01", category="idv"
     )
     award2 = baker.make(
-        "search.AwardSearch",
-        award_id=456,
-        display_award_id="456",
-        action_date="2018-01-02",
-        category="contracts",
+        "search.AwardSearch", award_id=456, display_award_id="456", action_date="2018-01-02", category="contracts"
     )
     award3 = baker.make(
-        "search.AwardSearch",
-        award_id=789,
-        display_award_id="789",
-        action_date="2018-01-03",
-        category="assistance",
+        "search.AwardSearch", award_id=789, display_award_id="789", action_date="2018-01-03", category="assistance"
     )
 
     # Create Transactions
@@ -161,17 +131,7 @@ def test_download_count(client, download_test_data, monkeypatch, elasticsearch_t
         "/api/v2/download/count/",
         content_type="application/json",
         data=json.dumps(
-            {
-                "filters": {
-                    "agencies": [
-                        {
-                            "type": "awarding",
-                            "tier": "toptier",
-                            "name": "Bureau of Things",
-                        }
-                    ]
-                }
-            }
+            {"filters": {"agencies": [{"type": "awarding", "tier": "toptier", "name": "Bureau of Things"}]}}
         ),
     )
     resp_json = resp.json()
@@ -215,10 +175,7 @@ def test_messages_not_nested(client, download_test_data, monkeypatch, elasticsea
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
 
     request_data = {
-        "filters": {
-            "time_period": [{"start_date": "2018-01-01", "end_date": "2018-01-03"}],
-            "not_a_real_filter": "abc",
-        }
+        "filters": {"time_period": [{"start_date": "2018-01-01", "end_date": "2018-01-03"}], "not_a_real_filter": "abc"}
     }
     resp = client.post(
         "/api/v2/download/count/",
@@ -252,13 +209,7 @@ def test_download_count_with_date_type_filter_date_signed(
         data=json.dumps(
             {
                 "filters": {
-                    "time_period": [
-                        {
-                            "date_type": "date_signed",
-                            "start_date": "2018-01-01",
-                            "end_date": "2018-01-03",
-                        }
-                    ],
+                    "time_period": [{"date_type": "date_signed", "start_date": "2018-01-01", "end_date": "2018-01-03"}],
                 }
             }
         ),
@@ -276,13 +227,7 @@ def test_download_count_with_date_type_filter_date_signed(
         data=json.dumps(
             {
                 "filters": {
-                    "time_period": [
-                        {
-                            "date_type": "date_signed",
-                            "start_date": "2020-01-01",
-                            "end_date": "2020-01-03",
-                        }
-                    ],
+                    "time_period": [{"date_type": "date_signed", "start_date": "2020-01-01", "end_date": "2020-01-03"}],
                 }
             }
         ),
@@ -300,10 +245,7 @@ def test_download_count_with_spending_level(client, download_test_data, monkeypa
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
 
-    request_data = {
-        "filters": {"award_ids": ["123", "456", "789"]},
-        "spending_level": "awards",
-    }
+    request_data = {"filters": {"award_ids": ["123", "456", "789"]}, "spending_level": "awards"}
     resp = client.post(
         "/api/v2/download/count/",
         content_type="application/json",

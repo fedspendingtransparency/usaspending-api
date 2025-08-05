@@ -5,9 +5,7 @@ from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMi
 from fiscalyear import FiscalYear
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
-from usaspending_api.common.elasticsearch.aggregation_helpers import (
-    create_count_aggregation,
-)
+from usaspending_api.common.elasticsearch.aggregation_helpers import create_count_aggregation
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.search.filters.elasticsearch.filter import QueryType
 
@@ -44,19 +42,8 @@ class SubAgencyCount(PaginationMixin, AgencyBase):
         query_with_filters = QueryWithFilters(QueryType.TRANSACTIONS)
         filter_query = query_with_filters.generate_elasticsearch_query(
             {
-                "agencies": [
-                    {
-                        "type": self.agency_type,
-                        "tier": "toptier",
-                        "name": self.toptier_agency.name,
-                    }
-                ],
-                "time_period": [
-                    {
-                        "start_date": fiscal_year.start.date(),
-                        "end_date": fiscal_year.end.date(),
-                    }
-                ],
+                "agencies": [{"type": self.agency_type, "tier": "toptier", "name": self.toptier_agency.name}],
+                "time_period": [{"start_date": fiscal_year.start.date(), "end_date": fiscal_year.end.date()}],
                 "award_type_codes": self._query_params.get("award_type_codes", []),
             }
         )

@@ -114,10 +114,7 @@ class UsaspendingPagination(BasePagination):
         return url
 
     def get_html_context(self):
-        return {
-            "previous_url": self.get_previous_link(),
-            "next_url": self.get_next_link(),
-        }
+        return {"previous_url": self.get_previous_link(), "next_url": self.get_next_link()}
 
     def to_html(self):
         template = loader.get_template(self.template)

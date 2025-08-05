@@ -6,22 +6,22 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("download", "0004_download_views"),
+        ('download', '0004_download_views'),
     ]
 
     operations = [
         migrations.CreateModel(
-            name="DownloadJobLookup",
+            name='DownloadJobLookup',
             fields=[
-                ("id", models.BigAutoField(primary_key=True, serialize=False)),
-                ("created_at", models.DateTimeField()),
-                ("download_job_id", models.IntegerField(db_index=True)),
-                ("lookup_id", models.BigIntegerField()),
-                ("lookup_id_type", models.TextField()),
+                ('id', models.BigAutoField(primary_key=True, serialize=False)),
+                ('created_at', models.DateTimeField()),
+                ('download_job_id', models.IntegerField(db_index=True)),
+                ('lookup_id', models.BigIntegerField()),
+                ('lookup_id_type', models.TextField()),
             ],
             options={
-                "db_table": "download_job_lookup",
-                "managed": True,
+                'db_table': 'download_job_lookup',
+                'managed': True,
             },
         ),
     ]

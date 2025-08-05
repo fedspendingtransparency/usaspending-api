@@ -6,48 +6,48 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("search", "0016_award_search_index_rename"),
+        ('search', '0016_award_search_index_rename'),
     ]
 
     operations = [
         migrations.AddField(
-            model_name="awardsearch",
-            name="awarding_subtier_agency_code_raw",
+            model_name='awardsearch',
+            name='awarding_subtier_agency_code_raw',
             field=models.TextField(null=True),
         ),
         migrations.AddField(
-            model_name="awardsearch",
-            name="awarding_subtier_agency_name_raw",
+            model_name='awardsearch',
+            name='awarding_subtier_agency_name_raw',
             field=models.TextField(null=True),
         ),
         migrations.AddField(
-            model_name="awardsearch",
-            name="awarding_toptier_agency_code_raw",
+            model_name='awardsearch',
+            name='awarding_toptier_agency_code_raw',
             field=models.TextField(null=True),
         ),
         migrations.AddField(
-            model_name="awardsearch",
-            name="awarding_toptier_agency_name_raw",
+            model_name='awardsearch',
+            name='awarding_toptier_agency_name_raw',
             field=models.TextField(null=True),
         ),
         migrations.AddField(
-            model_name="awardsearch",
-            name="funding_subtier_agency_code_raw",
+            model_name='awardsearch',
+            name='funding_subtier_agency_code_raw',
             field=models.TextField(null=True),
         ),
         migrations.AddField(
-            model_name="awardsearch",
-            name="funding_subtier_agency_name_raw",
+            model_name='awardsearch',
+            name='funding_subtier_agency_name_raw',
             field=models.TextField(null=True),
         ),
         migrations.AddField(
-            model_name="awardsearch",
-            name="funding_toptier_agency_code_raw",
+            model_name='awardsearch',
+            name='funding_toptier_agency_code_raw',
             field=models.TextField(null=True),
         ),
         migrations.AddField(
-            model_name="awardsearch",
-            name="funding_toptier_agency_name_raw",
+            model_name='awardsearch',
+            name='funding_toptier_agency_name_raw',
             field=models.TextField(null=True),
         ),
     ]

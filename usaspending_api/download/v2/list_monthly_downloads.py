@@ -18,8 +18,7 @@ class ListMonthlyDownloadsViewSet(APIView):
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/bulk_download/list_monthly_files.md"
 
     s3_handler = S3Handler(
-        bucket_name=settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME,
-        redirect_dir=settings.MONTHLY_DOWNLOAD_S3_REDIRECT_DIR,
+        bucket_name=settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME, redirect_dir=settings.MONTHLY_DOWNLOAD_S3_REDIRECT_DIR
     )
 
     # This is intentionally not cached so that the latest updates to these monthly generated files are always returned
@@ -30,11 +29,7 @@ class ListMonthlyDownloadsViewSet(APIView):
         type_param = request.data.get("type", None)
 
         # Check required params
-        required_params = {
-            "agency": agency_id,
-            "fiscal_year": fiscal_year,
-            "type": type_param,
-        }
+        required_params = {"agency": agency_id, "fiscal_year": fiscal_year, "type": type_param}
         for required, param_value in required_params.items():
             if param_value is None:
                 raise InvalidParameterException("Missing one or more required body parameters: {}".format(required))

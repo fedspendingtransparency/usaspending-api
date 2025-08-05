@@ -25,11 +25,7 @@ def fed_account_data(db):
 @pytest.mark.parametrize(
     "fields,value,expected",
     [
-        (
-            ["main_account_code", "account_title"],
-            "z",
-            {"main_account_code": ["XYZ"], "account_title": ["zzz"]},
-        ),
+        (["main_account_code", "account_title"], "z", {"main_account_code": ["XYZ"], "account_title": ["zzz"]}),
         (["main_account_code"], "ab", {"main_account_code": ["abc"]}),
         (["main_account_code"], "789", {"main_account_code": ["789"]}),
         (["account_title"], "###", {"account_title": "###"}),
@@ -50,9 +46,5 @@ def test_awards_autocomplete(client, fed_account_data, fields, value, expected):
 def test_bad_awards_autocomplete_request(client):
     """Verify error on bad autocomplete request for awards."""
 
-    resp = client.post(
-        "/api/v1/federal_accounts/autocomplete/",
-        content_type="application/json",
-        data=json.dumps({}),
-    )
+    resp = client.post("/api/v1/federal_accounts/autocomplete/", content_type="application/json", data=json.dumps({}))
     assert resp.status_code == status.HTTP_400_BAD_REQUEST

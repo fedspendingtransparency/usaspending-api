@@ -17,28 +17,12 @@ in the IDV world but has been added for testing purposes.  Hope this helps.
 import pytest
 from model_bakery import baker
 
-from usaspending_api.submissions.models.dabs_submission_window_schedule import (
-    DABSSubmissionWindowSchedule,
-)
+from usaspending_api.submissions.models.dabs_submission_window_schedule import DABSSubmissionWindowSchedule
 
 
 AWARD_COUNT = 15
 IDVS = (1, 2, 3, 4, 5, 7, 8)
-PARENTS = {
-    3: 1,
-    4: 1,
-    5: 1,
-    6: 1,
-    7: 2,
-    8: 2,
-    9: 2,
-    10: 2,
-    11: 7,
-    12: 7,
-    13: 8,
-    14: 8,
-    15: 9,
-}
+PARENTS = {3: 1, 4: 1, 5: 1, 6: 1, 7: 2, 8: 2, 9: 2, 10: 2, 11: 7, 12: 7, 13: 8, 14: 8, 15: 9}
 RECIPIENT_HASH_PREFIX = "d0de516c-54af-4999-abda-428ce877"
 
 DATE_IN_THE_PAST = "1776-07-04"
@@ -116,8 +100,8 @@ def basic_idvs(db):
             type_description="type_description_%s" % string_award_id,
             description="description_%s" % string_award_id,
             fpds_agency_id="fpds_agency_id_%s" % string_award_id,
-            parent_award_piid=(("piid_%s" % string_parent_award_id) if string_parent_award_id else None),
-            fpds_parent_agency_id=(("fpds_agency_id_%s" % string_parent_award_id) if string_parent_award_id else None),
+            parent_award_piid=("piid_%s" % string_parent_award_id) if string_parent_award_id else None,
+            fpds_parent_agency_id=("fpds_agency_id_%s" % string_parent_award_id) if string_parent_award_id else None,
             awarding_agency_id=awarding_agency.id,
             funding_agency_id=funding_agency.id,
             latest_transaction_id=7000 + award_id,
@@ -300,8 +284,8 @@ def idv_from_award_id(award_id, defc):
         type_description="type_description_%s" % string_award_id,
         description="description_%s" % string_award_id,
         fpds_agency_id="fpds_agency_id_%s" % string_award_id,
-        parent_award_piid=(("piid_%s" % string_parent_award_id) if string_parent_award_id else None),
-        fpds_parent_agency_id=(("fpds_agency_id_%s" % string_parent_award_id) if string_parent_award_id else None),
+        parent_award_piid=("piid_%s" % string_parent_award_id) if string_parent_award_id else None,
+        fpds_parent_agency_id=("fpds_agency_id_%s" % string_parent_award_id) if string_parent_award_id else None,
         awarding_agency_id=awarding_agency.id,
         funding_agency_id=funding_agency.id,
         latest_transaction_id=7000 + award_id,

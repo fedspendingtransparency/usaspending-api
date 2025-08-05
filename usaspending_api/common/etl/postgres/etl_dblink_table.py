@@ -9,13 +9,7 @@ from usaspending_api.common.etl.postgres.primatives import DataTypes
 class ETLDBLinkTable(ETLObjectBase):
     """Represents a remote permanent database table accessed via dblink."""
 
-    def __init__(
-        self,
-        table_name: str,
-        dblink_name: str,
-        data_types: DataTypes,
-        schema_name: str = "public",
-    ) -> None:
+    def __init__(self, table_name: str, dblink_name: str, data_types: DataTypes, schema_name: str = "public") -> None:
         self.table_name = table_name
         self.schema_name = schema_name
         self.dblink_name = dblink_name

@@ -1,10 +1,6 @@
 from unittest.mock import MagicMock
 
-from usaspending_api.awards.v2.lookups.lookups import (
-    award_type_mapping,
-    contract_type_mapping,
-    idv_type_mapping,
-)
+from usaspending_api.awards.v2.lookups.lookups import award_type_mapping, contract_type_mapping, idv_type_mapping
 from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.download.lookups import VALUE_MAPPINGS
 
@@ -13,10 +9,7 @@ def test_get_elasticsearch_awards_csv_sources(db):
     original = VALUE_MAPPINGS["elasticsearch_awards"]["filter_function"]
     VALUE_MAPPINGS["elasticsearch_awards"]["filter_function"] = MagicMock(returned_value="")
     csv_sources = download_generation.get_download_sources(
-        {
-            "download_types": ["elasticsearch_awards"],
-            "filters": {"award_type_codes": list(award_type_mapping.keys())},
-        }
+        {"download_types": ["elasticsearch_awards"], "filters": {"award_type_codes": list(award_type_mapping.keys())}}
     )
     assert len(csv_sources) == 2
     VALUE_MAPPINGS["elasticsearch_awards"]["filter_function"] = original
@@ -30,10 +23,7 @@ def test_get_transactions_csv_sources(db):
     original = VALUE_MAPPINGS["transactions"]["filter_function"]
     VALUE_MAPPINGS["transactions"]["filter_function"] = MagicMock(returned_value="")
     csv_sources = download_generation.get_download_sources(
-        {
-            "download_types": ["transactions"],
-            "filters": {"award_type_codes": list(award_type_mapping.keys())},
-        }
+        {"download_types": ["transactions"], "filters": {"award_type_codes": list(award_type_mapping.keys())}}
     )
     assert len(csv_sources) == 2
     VALUE_MAPPINGS["transactions"]["filter_function"] = original
@@ -83,10 +73,7 @@ def test_idv_orders_csv_sources(db):
     csv_sources = download_generation.get_download_sources(
         {
             "download_types": ["idv_orders"],
-            "filters": {
-                "award_id": 0,
-                "award_type_codes": tuple(set(contract_type_mapping) | set(idv_type_mapping)),
-            },
+            "filters": {"award_id": 0, "award_type_codes": tuple(set(contract_type_mapping) | set(idv_type_mapping))},
         }
     )
     assert len(csv_sources) == 1
@@ -101,10 +88,7 @@ def test_idv_transactions_csv_sources(db):
     csv_sources = download_generation.get_download_sources(
         {
             "download_types": ["idv_transaction_history"],
-            "filters": {
-                "award_id": 0,
-                "award_type_codes": tuple(set(contract_type_mapping) | set(idv_type_mapping)),
-            },
+            "filters": {"award_id": 0, "award_type_codes": tuple(set(contract_type_mapping) | set(idv_type_mapping))},
         }
     )
     assert len(csv_sources) == 1

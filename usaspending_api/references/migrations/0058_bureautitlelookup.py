@@ -6,23 +6,20 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("references", "0057_drop_old_defc_field"),
+        ('references', '0057_drop_old_defc_field'),
     ]
 
     operations = [
         migrations.CreateModel(
-            name="BureauTitleLookup",
+            name='BureauTitleLookup',
             fields=[
-                (
-                    "federal_account_code",
-                    models.TextField(primary_key=True, serialize=False),
-                ),
-                ("bureau_title", models.TextField()),
-                ("bureau_slug", models.TextField()),
+                ('federal_account_code', models.TextField(primary_key=True, serialize=False)),
+                ('bureau_title', models.TextField()),
+                ('bureau_slug', models.TextField()),
             ],
             options={
-                "db_table": "bureau_title_lookup",
-                "managed": True,
+                'db_table': 'bureau_title_lookup',
+                'managed': True,
             },
         ),
     ]

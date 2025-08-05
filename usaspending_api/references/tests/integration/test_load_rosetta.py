@@ -47,16 +47,10 @@ def test_rosetta_fresh_load():
         "headers": [
             {"raw": "A:element", "display": "Element"},
             {"raw": "B:definition", "display": "Definition"},
-            {
-                "raw": "C:fpds_data_dictionary_element",
-                "display": "FPDS Data Dictionary Element",
-            },
+            {"raw": "C:fpds_data_dictionary_element", "display": "FPDS Data Dictionary Element"},
             {"raw": "D:grouping", "display": "Grouping"},
             {"raw": "E:domain_values", "display": "Domain Values"},
-            {
-                "raw": "F:domain_values_code_description",
-                "display": "Domain Values Code Description",
-            },
+            {"raw": "F:domain_values_code_description", "display": "Domain Values Code Description"},
             {"raw": "G:award_file", "display": "Award File"},
             {"raw": "H:award_element", "display": "Award Element"},
             {"raw": "I:subaward_file", "display": "Subaward File"},

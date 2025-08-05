@@ -71,10 +71,7 @@ def make_matview_drops(final_matview_name):
     matview_temp_name = final_matview_name + "_temp"
     matview_archive_name = final_matview_name + "_old"
 
-    return [
-        TEMPLATE["drop_matview"].format(matview_temp_name),
-        TEMPLATE["drop_matview"].format(matview_archive_name),
-    ]
+    return [TEMPLATE["drop_matview"].format(matview_temp_name), TEMPLATE["drop_matview"].format(matview_archive_name)]
 
 
 def make_matview_create(final_matview_name, final_matview_schema_name, sql):
@@ -138,13 +135,7 @@ def create_all_sql_strings(sql_json):
     if GLOBAL_ARGS.no_data:
         final_sql_strings.extend([TEMPLATE["refresh_matview"].format("", matview_name), ""])
     final_sql_strings.extend(
-        make_rename_sql(
-            matview_name,
-            rename_old_indexes,
-            rename_old_stats,
-            rename_new_indexes,
-            rename_new_stats,
-        )
+        make_rename_sql(matview_name, rename_old_indexes, rename_old_stats, rename_new_indexes, rename_new_stats)
     )
     final_sql_strings.append("")
     final_sql_strings.extend(make_modification_sql(matview_name, GLOBAL_ARGS.quiet))
@@ -193,11 +184,7 @@ def create_componentized_files(sql_json):
     write_sql_file(sql_strings, filename_base + "__mods")
 
     sql_strings = make_rename_sql(
-        matview_name,
-        rename_old_indexes,
-        rename_old_stats,
-        rename_new_indexes,
-        rename_new_stats,
+        matview_name, rename_old_indexes, rename_old_stats, rename_new_indexes, rename_new_stats
     )
     write_sql_file(sql_strings, filename_base + "__renames")
 
@@ -241,26 +228,16 @@ def print_debug(msg):
 
 if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser(
-        prog="matview_sql_generator.py",
-        description="Generates all of the necessary SQL files for jenkins scripts",
+        prog="matview_sql_generator.py", description="Generates all of the necessary SQL files for jenkins scripts"
     )
     arg_parser.add_argument(
-        "--dest",
-        type=str,
-        default="../matviews/",
-        help="Destination folder for all generated sql files",
+        "--dest", type=str, default="../matviews/", help="Destination folder for all generated sql files"
     )
     arg_parser.add_argument(
-        "--file",
-        type=str,
-        default=None,
-        help="filepath to the json file containing the sql description",
+        "--file", type=str, default=None, help="filepath to the json file containing the sql description"
     )
     arg_parser.add_argument(
-        "-q",
-        "--quiet",
-        action="store_true",
-        help="Flag to suppress stdout when there are no errors",
+        "-q", "--quiet", action="store_true", help="Flag to suppress stdout when there are no errors"
     )
     arg_parser.add_argument(
         "-b",
@@ -271,10 +248,7 @@ if __name__ == "__main__":
         help="When value >=2, distribute the index SQL across that file count",
     )
     arg_parser.add_argument(
-        "-n",
-        "--no-data",
-        action="store_true",
-        help="Delay populating matview with data until indexes are created",
+        "-n", "--no-data", action="store_true", help="Delay populating matview with data until indexes are created"
     )
     GLOBAL_ARGS = arg_parser.parse_args()
 

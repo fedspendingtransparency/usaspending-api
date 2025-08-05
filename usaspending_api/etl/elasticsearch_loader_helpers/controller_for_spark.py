@@ -6,18 +6,10 @@ from typing import List, Tuple
 from django.conf import settings
 from pyspark.sql import SparkSession
 
-from usaspending_api.broker.helpers.last_load_date import (
-    get_earliest_load_date,
-    update_last_load_date,
-)
+from usaspending_api.broker.helpers.last_load_date import get_earliest_load_date, update_last_load_date
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
-from usaspending_api.common.etl.spark import (
-    build_ref_table_name_list,
-    create_ref_temp_views,
-)
-from usaspending_api.common.helpers.spark_helpers import (
-    clean_postgres_sql_for_spark_sql,
-)
+from usaspending_api.common.etl.spark import build_ref_table_name_list, create_ref_temp_views
+from usaspending_api.common.helpers.spark_helpers import clean_postgres_sql_for_spark_sql
 from usaspending_api.etl.elasticsearch_loader_helpers import (
     TaskSpec,
     count_of_records_to_process_in_delta,
@@ -27,9 +19,7 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     load_data,
     obtain_extract_all_partitions_sql,
 )
-from usaspending_api.etl.elasticsearch_loader_helpers.controller import (
-    AbstractElasticsearchIndexerController,
-)
+from usaspending_api.etl.elasticsearch_loader_helpers.controller import AbstractElasticsearchIndexerController
 
 logger = logging.getLogger("script")
 

@@ -11,10 +11,7 @@ from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetche
 
 @mark.django_db()
 def test_old_table_exists_validation(caplog, monkeypatch):
-    monkeypatch.setattr(
-        "usaspending_api.etl.management.commands.swap_in_new_table.logger",
-        logging.getLogger(),
-    )
+    monkeypatch.setattr("usaspending_api.etl.management.commands.swap_in_new_table.logger", logging.getLogger())
     try:
         call_command("swap_in_new_table", "--table=test_table")
     except SystemExit:
@@ -25,10 +22,7 @@ def test_old_table_exists_validation(caplog, monkeypatch):
 
 @mark.django_db()
 def test_new_table_exists_validation(caplog, monkeypatch):
-    monkeypatch.setattr(
-        "usaspending_api.etl.management.commands.swap_in_new_table.logger",
-        logging.getLogger(),
-    )
+    monkeypatch.setattr("usaspending_api.etl.management.commands.swap_in_new_table.logger", logging.getLogger())
     with connection.cursor() as cursor:
         cursor.execute("CREATE TABLE test_table (col1 TEXT)")
     try:
@@ -41,10 +35,7 @@ def test_new_table_exists_validation(caplog, monkeypatch):
 
 @mark.django_db()
 def test_duplicate_table_validation(caplog, monkeypatch):
-    monkeypatch.setattr(
-        "usaspending_api.etl.management.commands.swap_in_new_table.logger",
-        logging.getLogger(),
-    )
+    monkeypatch.setattr("usaspending_api.etl.management.commands.swap_in_new_table.logger", logging.getLogger())
     # Test the current table duplicate check
     with connection.cursor() as cursor:
         cursor.execute(
@@ -92,10 +83,7 @@ def test_duplicate_table_validation(caplog, monkeypatch):
 
 @mark.django_db()
 def test_index_validation(caplog, monkeypatch):
-    monkeypatch.setattr(
-        "usaspending_api.etl.management.commands.swap_in_new_table.logger",
-        logging.getLogger(),
-    )
+    monkeypatch.setattr("usaspending_api.etl.management.commands.swap_in_new_table.logger", logging.getLogger())
     with connection.cursor() as cursor:
         # Test that the same number of indexes exist on the old and new table
         cursor.execute(
@@ -145,10 +133,7 @@ def test_index_validation(caplog, monkeypatch):
 
 @mark.django_db()
 def test_constraint_validation(caplog, monkeypatch):
-    monkeypatch.setattr(
-        "usaspending_api.etl.management.commands.swap_in_new_table.logger",
-        logging.getLogger(),
-    )
+    monkeypatch.setattr("usaspending_api.etl.management.commands.swap_in_new_table.logger", logging.getLogger())
     with connection.cursor() as cursor:
         # Test that Foreign Keys are not allowed by default
         cursor.execute(
@@ -253,10 +238,7 @@ def test_constraint_validation(caplog, monkeypatch):
 
 @mark.django_db()
 def test_column_validation(caplog, monkeypatch):
-    monkeypatch.setattr(
-        "usaspending_api.etl.management.commands.swap_in_new_table.logger",
-        logging.getLogger(),
-    )
+    monkeypatch.setattr("usaspending_api.etl.management.commands.swap_in_new_table.logger", logging.getLogger())
     with connection.cursor() as cursor:
         # Test that two tables with different number of columns will fail
         cursor.execute(
@@ -314,17 +296,11 @@ def test_happy_path():
             call_command("swap_in_new_table", "--table=test_table")
             cursor.execute("SELECT * FROM test_table ORDER BY col2")
             result = ordered_dictionary_fetcher(cursor)
-            assert result == [
-                {"col1": "hello", "col2": 2},
-                {"col1": "world", "col2": 3},
-            ]
+            assert result == [{"col1": "hello", "col2": 2}, {"col1": "world", "col2": 3}]
 
             cursor.execute("SELECT * FROM vw_test_table ORDER BY col2")
             result = ordered_dictionary_fetcher(cursor)
-            assert result == [
-                {"col1": "hello", "col2": 2},
-                {"col1": "world", "col2": 3},
-            ]
+            assert result == [{"col1": "hello", "col2": 2}, {"col1": "world", "col2": 3}]
 
             cursor.execute(
                 "SELECT * FROM information_schema.tables"
@@ -370,12 +346,7 @@ def test_happy_path():
                 "ALTER TABLE test_table_temp ADD CONSTRAINT test_table_award_fk_temp FOREIGN KEY (col2) REFERENCES award_search (award_id);"
                 "CREATE OR REPLACE VIEW vw_test_table AS SELECT * FROM test_table;"
             )
-            call_command(
-                "swap_in_new_table",
-                "--table=test_table",
-                "--allow-foreign-key",
-                "--keep-old-data",
-            )
+            call_command("swap_in_new_table", "--table=test_table", "--allow-foreign-key", "--keep-old-data")
             cursor.execute("SELECT * FROM test_table ORDER BY col2")
             result = ordered_dictionary_fetcher(cursor)
             assert result == [{"col1": "the end", "col2": 6}]

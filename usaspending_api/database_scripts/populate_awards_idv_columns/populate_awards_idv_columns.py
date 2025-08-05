@@ -198,9 +198,7 @@ with Timer() as overall_timer:
             while _min <= max_id:
                 _max = min(_min + CHUNK_SIZE - 1, max_id)
                 pool.apply_async(
-                    execute_chunk,
-                    (max_id, _min, _max, chunk_timer),
-                    error_callback=failure_count.increment,
+                    execute_chunk, (max_id, _min, _max, chunk_timer), error_callback=failure_count.increment
                 )
                 _min = _max + 1
 

@@ -7,35 +7,33 @@ import usaspending_api.common.custom_django_fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("search", "0018_transaction_search_cols_agency"),
+        ('search', '0018_transaction_search_cols_agency'),
     ]
 
     operations = [
         migrations.AddField(
-            model_name="transactionsearch",
-            name="detached_award_procurement_id",
+            model_name='transactionsearch',
+            name='detached_award_procurement_id',
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name="transactionsearch",
-            name="indirect_federal_sharing",
-            field=usaspending_api.common.custom_django_fields.NumericField(
-                blank=True, null=True
-            ),
+            model_name='transactionsearch',
+            name='indirect_federal_sharing',
+            field=usaspending_api.common.custom_django_fields.NumericField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name="transactionsearch",
-            name="published_fabs_id",
+            model_name='transactionsearch',
+            name='published_fabs_id',
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name="transactionsearch",
-            name="funding_opportunity_goals",
+            model_name='transactionsearch',
+            name='funding_opportunity_goals',
             field=models.TextField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name="transactionsearch",
-            name="funding_opportunity_number",
+            model_name='transactionsearch',
+            name='funding_opportunity_number',
             field=models.TextField(blank=True, null=True),
         ),
     ]

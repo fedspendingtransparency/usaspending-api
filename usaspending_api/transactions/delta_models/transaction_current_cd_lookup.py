@@ -2,10 +2,7 @@
 # SELECT statement in "transaction_current_cd_lookup_load_sql_string"
 TRANSACTION_CURRENT_CD_LOOKUP_COLUMNS = {
     "transaction_id": {"delta": "LONG NOT NULL", "postgres": "BIGINT NOT NULL"},
-    "recipient_location_congressional_code_current": {
-        "delta": "STRING",
-        "postgres": "TEXT",
-    },
+    "recipient_location_congressional_code_current": {"delta": "STRING", "postgres": "TEXT"},
     "pop_congressional_code_current": {"delta": "STRING", "postgres": "TEXT"},
 }
 TRANSACTION_CURRENT_CD_LOOKUP_DELTA_COLUMNS = {k: v["delta"] for k, v in TRANSACTION_CURRENT_CD_LOOKUP_COLUMNS.items()}

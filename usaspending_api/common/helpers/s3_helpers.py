@@ -46,9 +46,7 @@ def get_s3_bucket(bucket_name: str, region_name: str = CONFIG.AWS_REGION) -> "bo
     return s3.Bucket(bucket_name)
 
 
-def retrieve_s3_bucket_object_list(
-    bucket_name: str,
-) -> list["boto3.resources.factory.s3.ObjectSummary"]:
+def retrieve_s3_bucket_object_list(bucket_name: str) -> list["boto3.resources.factory.s3.ObjectSummary"]:
     try:
         bucket = get_s3_bucket(bucket_name=bucket_name)
         bucket_objects = list(bucket.objects.all())
@@ -88,12 +86,7 @@ def multipart_upload(bucketname, regionname, source_path, keyname, sub_dir=None)
     file_name = Path(keyname).name
     if sub_dir is not None:
         file_name = f"{sub_dir}/{file_name}"
-    transfer.upload_file(
-        source_path,
-        bucketname,
-        file_name,
-        extra_args={"ACL": "bucket-owner-full-control"},
-    )
+    transfer.upload_file(source_path, bucketname, file_name, extra_args={"ACL": "bucket-owner-full-control"})
 
 
 def download_s3_object(

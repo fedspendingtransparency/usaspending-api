@@ -8,13 +8,13 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("submissions", "0001_initial"),
+        ('submissions', '0001_initial'),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name="submissionattributes",
-            old_name="cgac_code",
-            new_name="toptier_code",
+            model_name='submissionattributes',
+            old_name='cgac_code',
+            new_name='toptier_code',
         ),
     ]

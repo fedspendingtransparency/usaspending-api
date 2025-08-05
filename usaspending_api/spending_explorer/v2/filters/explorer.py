@@ -19,10 +19,7 @@ class Explorer(object):
             )
         )
         self.agency_ids = {
-            agency["toptier_agency__toptier_code"]: {
-                "id": agency["id"],
-                "link": agency["link"],
-            }
+            agency["toptier_agency__toptier_code"]: {"id": agency["id"], "link": agency["link"]}
             for agency in agency_queryet
         }
         self.alt_set = alt_set
@@ -168,15 +165,7 @@ class Explorer(object):
                 generated_unique_award_id=F("award__generated_unique_award_id"),
                 type=Value("award", output_field=TextField()),
             )
-            .values(
-                "id",
-                "generated_unique_award_id",
-                "type",
-                "piid",
-                "fain",
-                "uri",
-                "amount",
-            )
+            .values("id", "generated_unique_award_id", "type", "piid", "fain", "uri", "amount")
             .annotate(total=Sum("transaction_obligated_amount"))
             .order_by("-total")
         )

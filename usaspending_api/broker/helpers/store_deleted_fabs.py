@@ -27,8 +27,4 @@ def store_deleted_fabs(ids_to_delete):
             contents += bytes(f"{row}\n".encode())
 
         s3client = boto3.client("s3", region_name=settings.USASPENDING_AWS_REGION)
-        s3client.put_object(
-            Bucket=settings.DELETED_TRANSACTION_JOURNAL_FILES,
-            Key=file_name,
-            Body=contents,
-        )
+        s3client.put_object(Bucket=settings.DELETED_TRANSACTION_JOURNAL_FILES, Key=file_name, Body=contents)

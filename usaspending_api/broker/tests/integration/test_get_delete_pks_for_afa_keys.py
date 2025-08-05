@@ -4,9 +4,7 @@ from django.conf import settings
 from django.db import connections
 from django.test import TestCase
 
-from usaspending_api.broker.helpers.delete_fabs_transactions import (
-    get_delete_pks_for_afa_keys,
-)
+from usaspending_api.broker.helpers.delete_fabs_transactions import get_delete_pks_for_afa_keys
 
 
 @pytest.mark.usefixtures("broker_db_setup")

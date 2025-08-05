@@ -8,11 +8,7 @@ url = "/api/v2/disaster/cfda/count/"
 
 @pytest.mark.django_db
 def test_correct_response_defc_no_results(
-    client,
-    monkeypatch,
-    helpers,
-    elasticsearch_award_index,
-    cfda_awards_and_transactions,
+    client, monkeypatch, helpers, elasticsearch_award_index, cfda_awards_and_transactions
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
@@ -23,11 +19,7 @@ def test_correct_response_defc_no_results(
 
 @pytest.mark.django_db
 def test_correct_response_single_defc(
-    client,
-    monkeypatch,
-    helpers,
-    elasticsearch_award_index,
-    cfda_awards_and_transactions,
+    client, monkeypatch, helpers, elasticsearch_award_index, cfda_awards_and_transactions
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
@@ -38,11 +30,7 @@ def test_correct_response_single_defc(
 
 @pytest.mark.django_db
 def test_correct_response_multiple_defc(
-    client,
-    monkeypatch,
-    helpers,
-    elasticsearch_award_index,
-    cfda_awards_and_transactions,
+    client, monkeypatch, helpers, elasticsearch_award_index, cfda_awards_and_transactions
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
@@ -53,11 +41,7 @@ def test_correct_response_multiple_defc(
 
 @pytest.mark.django_db
 def test_correct_response_with_award_type_codes(
-    client,
-    monkeypatch,
-    helpers,
-    elasticsearch_award_index,
-    cfda_awards_and_transactions,
+    client, monkeypatch, helpers, elasticsearch_award_index, cfda_awards_and_transactions
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
@@ -71,13 +55,7 @@ def test_correct_response_with_award_type_codes(
 
 
 @pytest.mark.django_db
-def test_invalid_defc(
-    client,
-    monkeypatch,
-    helpers,
-    elasticsearch_award_index,
-    cfda_awards_and_transactions,
-):
+def test_invalid_defc(client, monkeypatch, helpers, elasticsearch_award_index, cfda_awards_and_transactions):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     resp = helpers.post_for_count_endpoint(client, url, def_codes=["ZZ"])
@@ -86,13 +64,7 @@ def test_invalid_defc(
 
 
 @pytest.mark.django_db
-def test_invalid_defc_type(
-    client,
-    monkeypatch,
-    helpers,
-    elasticsearch_award_index,
-    cfda_awards_and_transactions,
-):
+def test_invalid_defc_type(client, monkeypatch, helpers, elasticsearch_award_index, cfda_awards_and_transactions):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     resp = helpers.post_for_count_endpoint(client, url, def_codes="100")
@@ -101,13 +73,7 @@ def test_invalid_defc_type(
 
 
 @pytest.mark.django_db
-def test_missing_defc(
-    client,
-    monkeypatch,
-    helpers,
-    elasticsearch_award_index,
-    cfda_awards_and_transactions,
-):
+def test_missing_defc(client, monkeypatch, helpers, elasticsearch_award_index, cfda_awards_and_transactions):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
     resp = helpers.post_for_count_endpoint(client, url)
@@ -117,11 +83,7 @@ def test_missing_defc(
 
 @pytest.mark.django_db
 def test_invalid_award_type_codes(
-    client,
-    monkeypatch,
-    helpers,
-    elasticsearch_award_index,
-    cfda_awards_and_transactions,
+    client, monkeypatch, helpers, elasticsearch_award_index, cfda_awards_and_transactions
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 

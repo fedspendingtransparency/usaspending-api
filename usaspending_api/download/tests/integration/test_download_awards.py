@@ -45,20 +45,8 @@ def download_test_data():
     baker.make("references.SubtierAgency", name="Bureau of Things", _fill_optional=True)
 
     # Create Awarding Agencies
-    aa1 = baker.make(
-        "references.Agency",
-        id=1,
-        toptier_agency=ata1,
-        toptier_flag=True,
-        _fill_optional=True,
-    )
-    aa2 = baker.make(
-        "references.Agency",
-        id=2,
-        toptier_agency=ata2,
-        toptier_flag=True,
-        _fill_optional=True,
-    )
+    aa1 = baker.make("references.Agency", id=1, toptier_agency=ata1, toptier_flag=True, _fill_optional=True)
+    aa2 = baker.make("references.Agency", id=2, toptier_agency=ata2, toptier_flag=True, _fill_optional=True)
 
     # Create Funding Top Agency
     ata3 = baker.make(
@@ -75,13 +63,7 @@ def download_test_data():
     baker.make("references.SubtierAgency", name="Bureau of Things", _fill_optional=True)
 
     # Create Funding Agency
-    baker.make(
-        "references.Agency",
-        id=3,
-        toptier_agency=ata3,
-        toptier_flag=True,
-        _fill_optional=True,
-    )
+    baker.make("references.Agency", id=3, toptier_agency=ata3, toptier_flag=True, _fill_optional=True)
 
     # Create Awards
     award1 = baker.make("search.AwardSearch", award_id=123, category="idv")
@@ -138,11 +120,7 @@ def download_test_data():
 
 @pytest.mark.django_db(transaction=True)
 def test_download_awards_without_columns(
-    client,
-    monkeypatch,
-    download_test_data,
-    elasticsearch_award_index,
-    elasticsearch_subaward_index,
+    client, monkeypatch, download_test_data, elasticsearch_award_index, elasticsearch_subaward_index
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
@@ -160,11 +138,7 @@ def test_download_awards_without_columns(
 
 @pytest.mark.django_db(transaction=True)
 def test_tsv_download_awards_without_columns(
-    client,
-    monkeypatch,
-    download_test_data,
-    elasticsearch_award_index,
-    elasticsearch_subaward_index,
+    client, monkeypatch, download_test_data, elasticsearch_award_index, elasticsearch_subaward_index
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
@@ -173,13 +147,7 @@ def test_tsv_download_awards_without_columns(
     resp = client.post(
         "/api/v2/download/awards/",
         content_type="application/json",
-        data=json.dumps(
-            {
-                "filters": {"award_type_codes": ["A"]},
-                "columns": [],
-                "file_format": "tsv",
-            }
-        ),
+        data=json.dumps({"filters": {"award_type_codes": ["A"]}, "columns": [], "file_format": "tsv"}),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -188,11 +156,7 @@ def test_tsv_download_awards_without_columns(
 
 @pytest.mark.django_db(transaction=True)
 def test_pstxt_download_awards_without_columns(
-    client,
-    monkeypatch,
-    download_test_data,
-    elasticsearch_award_index,
-    elasticsearch_subaward_index,
+    client, monkeypatch, download_test_data, elasticsearch_award_index, elasticsearch_subaward_index
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
@@ -201,13 +165,7 @@ def test_pstxt_download_awards_without_columns(
     resp = client.post(
         "/api/v2/download/awards/",
         content_type="application/json",
-        data=json.dumps(
-            {
-                "filters": {"award_type_codes": ["A"]},
-                "columns": [],
-                "file_format": "pstxt",
-            }
-        ),
+        data=json.dumps({"filters": {"award_type_codes": ["A"]}, "columns": [], "file_format": "pstxt"}),
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -216,11 +174,7 @@ def test_pstxt_download_awards_without_columns(
 
 @pytest.mark.django_db(transaction=True)
 def test_download_awards_with_columns(
-    client,
-    monkeypatch,
-    download_test_data,
-    elasticsearch_award_index,
-    elasticsearch_subaward_index,
+    client, monkeypatch, download_test_data, elasticsearch_award_index, elasticsearch_subaward_index
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
@@ -253,11 +207,7 @@ def test_download_awards_bad_filter_type_raises(client, monkeypatch, download_te
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
 
     payload = {"filters": "01", "columns": []}
-    resp = client.post(
-        "/api/v2/download/awards/",
-        content_type="application/json",
-        data=json.dumps(payload),
-    )
+    resp = client.post("/api/v2/download/awards/", content_type="application/json", data=json.dumps(payload))
 
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
     assert resp.json()["detail"] == "Filters parameter not provided as a dict"

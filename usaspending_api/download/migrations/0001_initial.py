@@ -10,48 +10,44 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = []
+    dependencies = [
+    ]
 
     operations = [
         migrations.CreateModel(
-            name="DownloadJob",
+            name='DownloadJob',
             fields=[
-                (
-                    "download_job_id",
-                    models.AutoField(primary_key=True, serialize=False),
-                ),
-                ("file_name", models.TextField()),
-                ("file_size", models.IntegerField(blank=True, null=True)),
-                ("number_of_rows", models.IntegerField(blank=True, null=True)),
-                ("number_of_columns", models.IntegerField(blank=True, null=True)),
-                ("error_message", models.TextField(blank=True, null=True)),
-                ("create_date", models.DateTimeField(auto_now_add=True, null=True)),
-                ("update_date", models.DateTimeField(auto_now=True, null=True)),
+                ('download_job_id', models.AutoField(primary_key=True, serialize=False)),
+                ('file_name', models.TextField()),
+                ('file_size', models.IntegerField(blank=True, null=True)),
+                ('number_of_rows', models.IntegerField(blank=True, null=True)),
+                ('number_of_columns', models.IntegerField(blank=True, null=True)),
+                ('error_message', models.TextField(blank=True, null=True)),
+                ('create_date', models.DateTimeField(auto_now_add=True, null=True)),
+                ('update_date', models.DateTimeField(auto_now=True, null=True)),
             ],
             options={
-                "db_table": "download_job",
-                "managed": True,
+                'db_table': 'download_job',
+                'managed': True,
             },
         ),
         migrations.CreateModel(
-            name="JobStatus",
+            name='JobStatus',
             fields=[
-                ("job_status_id", models.AutoField(primary_key=True, serialize=False)),
-                ("name", models.TextField()),
-                ("description", models.TextField(blank=True, null=True)),
-                ("create_date", models.DateTimeField(auto_now_add=True, null=True)),
-                ("update_date", models.DateTimeField(auto_now=True, null=True)),
+                ('job_status_id', models.AutoField(primary_key=True, serialize=False)),
+                ('name', models.TextField()),
+                ('description', models.TextField(blank=True, null=True)),
+                ('create_date', models.DateTimeField(auto_now_add=True, null=True)),
+                ('update_date', models.DateTimeField(auto_now=True, null=True)),
             ],
             options={
-                "db_table": "job_status",
-                "managed": True,
+                'db_table': 'job_status',
+                'managed': True,
             },
         ),
         migrations.AddField(
-            model_name="downloadjob",
-            name="job_status",
-            field=models.ForeignKey(
-                on_delete=django.db.models.deletion.DO_NOTHING, to="download.JobStatus"
-            ),
+            model_name='downloadjob',
+            name='job_status',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.DO_NOTHING, to='download.JobStatus'),
         ),
     ]

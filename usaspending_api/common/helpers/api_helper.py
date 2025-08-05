@@ -18,14 +18,8 @@ from usaspending_api.awards.v2.lookups.lookups import (
     non_loan_assistance_type_mapping,
     subaward_mapping,
 )
-from usaspending_api.common.exceptions import (
-    UnprocessableEntityException,
-    InvalidParameterException,
-)
-from usaspending_api.common.helpers.orm_helpers import (
-    award_types_are_valid_groups,
-    subaward_types_are_valid_groups,
-)
+from usaspending_api.common.exceptions import UnprocessableEntityException, InvalidParameterException
+from usaspending_api.common.helpers.orm_helpers import award_types_are_valid_groups, subaward_types_are_valid_groups
 from usaspending_api.search.v2.views.enums import SpendingLevel
 
 INCOMPATIBLE_DISTRICT_LOCATION_PARAMETERS = 'Incompatible parameters: `state` must be provided, country must be "USA", and county cannot be provided when using `district_current` or `district_original`.'
@@ -61,9 +55,7 @@ def raise_if_award_types_not_valid_subset(
         if not subaward_types_are_valid_groups(award_type_codes):
             # Return a JSON response describing the award type groupings
             error_msg = ('{{{} {{ "procurement": {}, "assistance": {}}}}}').format(
-                msg_head,
-                json.dumps(procurement_type_mapping),
-                json.dumps(assistance_type_mapping),
+                msg_head, json.dumps(procurement_type_mapping), json.dumps(assistance_type_mapping)
             )
             raise UnprocessableEntityException(json.loads(error_msg))
 

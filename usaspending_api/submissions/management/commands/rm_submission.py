@@ -40,10 +40,7 @@ class Command(BaseCommand):
 
         models = {
             "accounts.AppropriationAccountBalances": {"name": "File A", "count": 0},
-            "financial_activities.FinancialAccountsByProgramActivityObjectClass": {
-                "name": "File B",
-                "count": 0,
-            },
+            "financial_activities.FinancialAccountsByProgramActivityObjectClass": {"name": "File B", "count": 0},
             "awards.FinancialAccountsByAwards": {"name": "File C", "count": 0},
             "submissions.SubmissionAttributes": {"name": "Submission", "count": 0},
             "Total Rows": {"name": "DABS", "count": 0},

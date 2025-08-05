@@ -10,26 +10,15 @@ from django.core.management.base import BaseCommand
 
 from usaspending_api.common.helpers.sql_helpers import get_parent_partitioned_table
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
-from usaspending_api.etl.management.commands.copy_table_metadata import (
-    make_read_indexes,
-    make_read_constraints,
-)
+from usaspending_api.etl.management.commands.copy_table_metadata import make_read_indexes, make_read_constraints
 
 logger = logging.getLogger("script")
 
 
-def drop_table_metadata(
-    target_table,
-    is_potential_partition=False,
-    keep_constraints=False,
-    keep_indexes=False,
-):
+def drop_table_metadata(target_table, is_potential_partition=False, keep_constraints=False, keep_indexes=False):
     table_name = target_table
     if "." in target_table:
-        schema_name, table_name = (
-            target_table[: target_table.index(".")],
-            target_table[target_table.index(".") + 1 :],
-        )
+        schema_name, table_name = target_table[: target_table.index(".")], target_table[target_table.index(".") + 1 :]
     else:
         schema_name = "public"
     with connection.cursor() as cursor:
@@ -91,10 +80,7 @@ def make_drop_constraints(cursor, target_table, drop_foreign_keys=False):
 
 def make_drop_indexes(cursor, target_table):
     if "." in target_table:
-        schema_name, _ = (
-            target_table[: target_table.index(".")],
-            target_table[target_table.index(".") + 1 :],
-        )
+        schema_name, _ = target_table[: target_table.index(".")], target_table[target_table.index(".") + 1 :]
     else:
         schema_name = "public"
 

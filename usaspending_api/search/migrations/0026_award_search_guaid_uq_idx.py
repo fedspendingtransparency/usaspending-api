@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("search", "0025_award_keys_upper_indexes"),
+        ('search', '0025_award_keys_upper_indexes'),
     ]
 
     operations = [
@@ -23,10 +23,10 @@ class Migration(migrations.Migration):
             """,
             state_operations=[
                 migrations.AlterField(
-                    model_name="awardsearch",
-                    name="generated_unique_award_id",
+                    model_name='awardsearch',
+                    name='generated_unique_award_id',
                     field=models.TextField(unique=True),
                 ),
-            ],
+            ]
         ),
     ]

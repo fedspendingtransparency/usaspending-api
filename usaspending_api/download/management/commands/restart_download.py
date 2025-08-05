@@ -56,10 +56,7 @@ class Command(BaseCommand):
         return {field: value for field, value in options.items() if field in ["download_job_id", "file_name"] and value}
 
     def validate_download_job(self):
-        if self.download.download_job.job_status_id in [
-            JOB_STATUS_DICT["finished"],
-            JOB_STATUS_DICT["failed"],
-        ]:
+        if self.download.download_job.job_status_id in [JOB_STATUS_DICT["finished"], JOB_STATUS_DICT["failed"]]:
             report_and_exit(
                 "DownloadJob invalid job_state_id: {}. Aborting".format(self.download.download_job.job_status_id)
             )

@@ -50,11 +50,7 @@ class AgencyViewSet(APIView):
             submission_queryset.filter(
                 Q(submission_window=most_recent_quarter_window_id) | Q(submission_window=most_recent_period_window_id)
             )
-            .order_by(
-                "-reporting_fiscal_year",
-                "-reporting_fiscal_quarter",
-                "-reporting_fiscal_period",
-            )
+            .order_by("-reporting_fiscal_year", "-reporting_fiscal_quarter", "-reporting_fiscal_period")
             .first()
         )
         if submission is None:
@@ -63,11 +59,7 @@ class AgencyViewSet(APIView):
             # Not terminating early as we do above since the Agency does have at least one historical submission.
             submission = (
                 SubmissionAttributes.objects.filter(submission_window__submission_reveal_date__lte=now())
-                .order_by(
-                    "-reporting_fiscal_year",
-                    "-reporting_fiscal_quarter",
-                    "-reporting_fiscal_period",
-                )
+                .order_by("-reporting_fiscal_year", "-reporting_fiscal_quarter", "-reporting_fiscal_period")
                 .first()
             )
 
@@ -95,9 +87,7 @@ class AgencyViewSet(APIView):
                 output_field=DecimalField(max_digits=23, decimal_places=2),
             ),
             outlay_amount=Coalesce(
-                Sum("gross_outlay_amount_by_tas_cpe"),
-                0,
-                output_field=DecimalField(max_digits=23, decimal_places=2),
+                Sum("gross_outlay_amount_by_tas_cpe"), 0, output_field=DecimalField(max_digits=23, decimal_places=2)
             ),
         )
 

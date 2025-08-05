@@ -7,32 +7,18 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("search", "0029_link_subaward_search_to_transaction_search"),
+        ('search', '0029_link_subaward_search_to_transaction_search'),
     ]
 
     operations = [
         migrations.AddField(
-            model_name="awardsearch",
-            name="earliest_transaction_search",
-            field=models.ForeignKey(
-                db_constraint=False,
-                help_text="The earliest transaction in transaction_search table by action_date and mod associated with this award",
-                null=True,
-                on_delete=django.db.models.deletion.DO_NOTHING,
-                related_name="earliest_for_award",
-                to="search.transactionsearch",
-            ),
+            model_name='awardsearch',
+            name='earliest_transaction_search',
+            field=models.ForeignKey(db_constraint=False, help_text='The earliest transaction in transaction_search table by action_date and mod associated with this award', null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='earliest_for_award', to='search.transactionsearch'),
         ),
         migrations.AddField(
-            model_name="awardsearch",
-            name="latest_transaction_search",
-            field=models.ForeignKey(
-                db_constraint=False,
-                help_text="The latest transaction in transaction_search table by action_date and mod associated with this award",
-                null=True,
-                on_delete=django.db.models.deletion.DO_NOTHING,
-                related_name="latest_for_award",
-                to="search.transactionsearch",
-            ),
+            model_name='awardsearch',
+            name='latest_transaction_search',
+            field=models.ForeignKey(db_constraint=False, help_text='The latest transaction in transaction_search table by action_date and mod associated with this award', null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='latest_for_award', to='search.transactionsearch'),
         ),
     ]

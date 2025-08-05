@@ -29,7 +29,7 @@ class DownloadAdministrator:
         self.update_download_job(
             error_message=None,
             file_size=0,
-            job_status_id=(JOB_STATUS_DICT["queued"] if process_is_local() else JOB_STATUS_DICT["ready"]),
+            job_status_id=JOB_STATUS_DICT["queued"] if process_is_local() else JOB_STATUS_DICT["ready"],
             number_of_columns=0,
             number_of_rows=0,
             update_date=datetime.now(timezone.utc),

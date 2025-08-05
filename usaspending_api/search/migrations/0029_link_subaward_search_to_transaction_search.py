@@ -26,8 +26,7 @@ class Migration(migrations.Migration):
                     name="latest_transaction",
                     field=models.ForeignKey(
                         db_constraint=False,
-                        help_text="The latest transaction for the prime award by action_date and "
-                        "mod",
+                        help_text="The latest transaction for the prime award by action_date and " "mod",
                         null=True,
                         on_delete=django.db.models.deletion.DO_NOTHING,
                         related_name="subawardsearch",

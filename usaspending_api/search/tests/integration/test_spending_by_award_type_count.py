@@ -6,9 +6,7 @@ from model_bakery import baker
 from rest_framework import status
 
 from usaspending_api.awards.v2.lookups.lookups import all_award_types_mappings
-from usaspending_api.search.tests.data.search_filters_test_data import (
-    non_legacy_filters,
-)
+from usaspending_api.search.tests.data.search_filters_test_data import non_legacy_filters
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
@@ -111,26 +109,17 @@ def test_spending_by_award_type_failure(client, monkeypatch, elasticsearch_award
 def test_spending_by_award_no_intersection(client, monkeypatch, elasticsearch_award_index, award_data_fixture):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
-    request = {
-        "subawards": False,
-        "fields": ["Award ID"],
-        "sort": "Award ID",
-        "filters": {"award_type_codes": ["07"]},
-    }
+    request = {"subawards": False, "fields": ["Award ID"], "sort": "Award ID", "filters": {"award_type_codes": ["07"]}}
 
     resp = client.post(
-        "/api/v2/search/spending_by_award_count",
-        content_type="application/json",
-        data=json.dumps(request),
+        "/api/v2/search/spending_by_award_count", content_type="application/json", data=json.dumps(request)
     )
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["results"]["loans"] == 1
 
     request["filters"]["award_type_codes"].append("no intersection")
     resp = client.post(
-        "/api/v2/search/spending_by_award_count",
-        content_type="application/json",
-        data=json.dumps(request),
+        "/api/v2/search/spending_by_award_count", content_type="application/json", data=json.dumps(request)
     )
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["results"] == {
@@ -171,24 +160,17 @@ def test_spending_by_award_subawards_no_intersection(
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award_count",
-        content_type="application/json",
-        data=json.dumps(request),
+        "/api/v2/search/spending_by_award_count", content_type="application/json", data=json.dumps(request)
     )
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["results"]["subgrants"] == 1
 
     request["filters"]["award_type_codes"].append("no intersection")
     resp = client.post(
-        "/api/v2/search/spending_by_award_count",
-        content_type="application/json",
-        data=json.dumps(request),
+        "/api/v2/search/spending_by_award_count", content_type="application/json", data=json.dumps(request)
     )
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.data["results"] == {
-        "subcontracts": 0,
-        "subgrants": 0,
-    }, "Results returned, there should all be 0"
+    assert resp.data["results"] == {"subcontracts": 0, "subgrants": 0}, "Results returned, there should all be 0"
 
 
 @pytest.fixture
@@ -209,68 +191,23 @@ def awards_over_different_date_ranges_with_different_counts():
     #    - {"start_date": "2017-02-01", "end_date": "2017-11-30"}
     date_range_list = [
         # Intersect only one of the date ranges searched for
-        {
-            "date_signed": datetime(2014, 1, 1),
-            "action_date": datetime(2014, 5, 1),
-        },  # Before both
-        {
-            "date_signed": datetime(2014, 3, 1),
-            "action_date": datetime(2015, 4, 15),
-        },  # Beginning of first
-        {
-            "date_signed": datetime(2015, 2, 1),
-            "action_date": datetime(2015, 7, 1),
-        },  # Middle of first
+        {"date_signed": datetime(2014, 1, 1), "action_date": datetime(2014, 5, 1)},  # Before both
+        {"date_signed": datetime(2014, 3, 1), "action_date": datetime(2015, 4, 15)},  # Beginning of first
+        {"date_signed": datetime(2015, 2, 1), "action_date": datetime(2015, 7, 1)},  # Middle of first
         {"date_signed": datetime(2015, 2, 1), "action_date": datetime(2015, 4, 17)},
-        {
-            "date_signed": datetime(2014, 12, 1),
-            "action_date": datetime(2016, 1, 1),
-        },  # All of first
-        {
-            "date_signed": datetime(2015, 11, 1),
-            "action_date": datetime(2016, 3, 1),
-        },  # End of first
-        {
-            "date_signed": datetime(2016, 2, 23),
-            "action_date": datetime(2016, 7, 19),
-        },  # Between both
-        {
-            "date_signed": datetime(2016, 11, 26),
-            "action_date": datetime(2017, 3, 1),
-        },  # Beginning of second
-        {
-            "date_signed": datetime(2017, 5, 1),
-            "action_date": datetime(2017, 7, 1),
-        },  # Middle of second
-        {
-            "date_signed": datetime(2017, 1, 1),
-            "action_date": datetime(2017, 12, 1),
-        },  # All of second
-        {
-            "date_signed": datetime(2017, 9, 1),
-            "action_date": datetime(2017, 12, 17),
-        },  # End of second
-        {
-            "date_signed": datetime(2018, 2, 1),
-            "action_date": datetime(2018, 7, 1),
-        },  # After both
+        {"date_signed": datetime(2014, 12, 1), "action_date": datetime(2016, 1, 1)},  # All of first
+        {"date_signed": datetime(2015, 11, 1), "action_date": datetime(2016, 3, 1)},  # End of first
+        {"date_signed": datetime(2016, 2, 23), "action_date": datetime(2016, 7, 19)},  # Between both
+        {"date_signed": datetime(2016, 11, 26), "action_date": datetime(2017, 3, 1)},  # Beginning of second
+        {"date_signed": datetime(2017, 5, 1), "action_date": datetime(2017, 7, 1)},  # Middle of second
+        {"date_signed": datetime(2017, 1, 1), "action_date": datetime(2017, 12, 1)},  # All of second
+        {"date_signed": datetime(2017, 9, 1), "action_date": datetime(2017, 12, 17)},  # End of second
+        {"date_signed": datetime(2018, 2, 1), "action_date": datetime(2018, 7, 1)},  # After both
         # Intersect both date ranges searched for
-        {
-            "date_signed": datetime(2014, 12, 1),
-            "action_date": datetime(2017, 12, 5),
-        },  # Completely both
-        {
-            "date_signed": datetime(2015, 7, 1),
-            "action_date": datetime(2017, 5, 1),
-        },  # Partially both
-        {
-            "date_signed": datetime(2014, 10, 3),
-            "action_date": datetime(2017, 4, 8),
-        },  # All first; partial second
-        {
-            "date_signed": datetime(2015, 8, 1),
-            "action_date": datetime(2018, 1, 2),
-        },  # Partial first; all second
+        {"date_signed": datetime(2014, 12, 1), "action_date": datetime(2017, 12, 5)},  # Completely both
+        {"date_signed": datetime(2015, 7, 1), "action_date": datetime(2017, 5, 1)},  # Partially both
+        {"date_signed": datetime(2014, 10, 3), "action_date": datetime(2017, 4, 8)},  # All first; partial second
+        {"date_signed": datetime(2015, 8, 1), "action_date": datetime(2018, 1, 2)},  # Partial first; all second
     ]
 
     award_id = 0
@@ -304,10 +241,7 @@ def awards_over_different_date_ranges_with_different_counts():
 
 @pytest.mark.django_db
 def test_date_range_search_counts_with_one_range(
-    client,
-    monkeypatch,
-    elasticsearch_award_index,
-    awards_over_different_date_ranges_with_different_counts,
+    client, monkeypatch, elasticsearch_award_index, awards_over_different_date_ranges_with_different_counts
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
@@ -318,9 +252,7 @@ def test_date_range_search_counts_with_one_range(
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award_count/",
-        content_type="application/json",
-        data=json.dumps(request),
+        "/api/v2/search/spending_by_award_count/", content_type="application/json", data=json.dumps(request)
     )
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["results"]["contracts"] == 4
@@ -373,10 +305,7 @@ def test_date_range_search_counts_with_one_range(
 
 @pytest.mark.django_db
 def test_date_range_search_counts_with_two_ranges(
-    client,
-    monkeypatch,
-    elasticsearch_award_index,
-    awards_over_different_date_ranges_with_different_counts,
+    client, monkeypatch, elasticsearch_award_index, awards_over_different_date_ranges_with_different_counts
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
 
@@ -392,9 +321,7 @@ def test_date_range_search_counts_with_two_ranges(
     }
 
     resp = client.post(
-        "/api/v2/search/spending_by_award_count/",
-        content_type="application/json",
-        data=json.dumps(request),
+        "/api/v2/search/spending_by_award_count/", content_type="application/json", data=json.dumps(request)
     )
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["results"]["contracts"] == 4

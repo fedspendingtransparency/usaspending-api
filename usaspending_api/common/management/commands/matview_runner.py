@@ -73,27 +73,17 @@ class Command(BaseCommand):
             default=DEFAULT_CHUNKED_MATIVEW_DIR,
         )
         parser.add_argument(
-            "--dependencies",
-            action="store_true",
-            help="Run the SQL dependencies before the materialized view SQL.",
+            "--dependencies", action="store_true", help="Run the SQL dependencies before the materialized view SQL."
         )
         parser.add_argument(
-            "--chunk-count",
-            default=10,
-            help="Number of chunks to split chunked matviews into",
-            type=int,
+            "--chunk-count", default=10, help="Number of chunks to split chunked matviews into", type=int
         )
         parser.add_argument(
             "--include-chunked-matviews",
             action="store_true",
             help="Chunked Transaction Search matviews will be refreshed and inserted into table",
         )
-        parser.add_argument(
-            "--index-concurrency",
-            default=20,
-            help="Number of indexes to be created at once",
-            type=int,
-        )
+        parser.add_argument("--index-concurrency", default=20, help="Number of indexes to be created at once", type=int)
 
     def handle(self, *args, **options):
         """Overloaded Command Entrypoint"""
@@ -157,10 +147,7 @@ class Command(BaseCommand):
                     logger.info(f"Creating Future for chunked matview {chunked_matview}")
                     sql = (self.matview_chunked_dir / f"{chunked_matview}.sql").read_text()
                     tasks.append(
-                        asyncio.ensure_future(
-                            async_run_creates(sql, wrapper=Timer(chunked_matview)),
-                            loop=loop,
-                        )
+                        asyncio.ensure_future(async_run_creates(sql, wrapper=Timer(chunked_matview)), loop=loop)
                     )
 
         if len(tasks) > 0:
