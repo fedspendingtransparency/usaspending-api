@@ -20,7 +20,6 @@ logger = logging.getLogger(__name__)
 
 EXPERIMENTAL_API_HEADER = "HTTP_X_EXPERIMENTAL_API"
 ELASTICSEARCH_HEADER_VALUE = "elasticsearch"
-
 DOWNLOAD_HEADER_VALUE = "download"
 
 
