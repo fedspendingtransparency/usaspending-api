@@ -148,7 +148,10 @@ class NewAwardsOverTimeVisualizationViewSet(APIView):
             if self.group == "month":
                 time_period = {"fiscal_year": f"{date.year}", self.group: f"{date.month}"}
             elif self.group == "quarter":
-                time_period = {"fiscal_year": f"{date.year}", self.group: f"{int(date.month / 3) + (date.month % 3 > 0)}"}
+                time_period = {
+                    "fiscal_year": f"{date.year}",
+                    self.group: f"{int(date.month / 3) + (date.month % 3 > 0)}",
+                }
             else:
                 time_period = {"fiscal_year": f"{date.year}"}
             results.append(

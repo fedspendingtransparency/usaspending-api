@@ -526,7 +526,7 @@ def test_file_c_spark_download(client, download_test_data, spark, s3_unittest_da
                 "file_format": "csv",
             }
         ),
-        headers={"X-Experimental-API": "download"}
+        headers={"X-Experimental-API": "download"},
     )
 
     assert resp.status_code == status.HTTP_200_OK
