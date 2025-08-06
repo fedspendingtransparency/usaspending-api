@@ -49,3 +49,10 @@ def test_load_park(setup_broker_data):
     expected_results.append(("61TX9TDQEK7", "AG IN THE CLASSROOM"))
     actual_park = list(ProgramActivityPark.objects.order_by("code").values_list("code", "name"))
     assert actual_park == expected_results
+
+    new_park_record = ProgramActivityPark(code="SOME NEW CODE", name="SOME NEW NAME")
+    new_park_record.save()
+    assert ProgramActivityPark.objects.count() == 5
+
+    call_command("load_park", "--full-reload")
+    assert ProgramActivityPark.objects.count() == 4

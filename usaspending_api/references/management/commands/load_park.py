@@ -1,9 +1,10 @@
 import logging
+from collections import namedtuple
 from contextlib import contextmanager
 from typing import Generator
 
 from django.core.management import BaseCommand, call_command
-from django.db import connection
+from django.db import connection, transaction
 
 from usaspending_api.common.helpers.timing_helpers import Timer
 from usaspending_api.references.models import ProgramActivityPark
@@ -22,7 +23,11 @@ class Command(BaseCommand):
             action="store_true",
             required=False,
             default=False,
-            help="Used to specify if the USAspending PARK table should be truncated",
+            help=(
+                "If provided the USAspending PARK table will be truncated and reloaded."
+                " This does require removing all Foreign Keys that reference this table prior to reload"
+                " and then replacing them after."
+            ),
         )
 
     def handle(self, *args, **options) -> None:
@@ -55,6 +60,44 @@ class Command(BaseCommand):
 
         cursor.execute(f"DROP TABLE IF EXISTS {self.temp_table_name};")
 
+    @contextmanager
+    def handle_foreign_keys(self, cursor: connection.cursor) -> Generator[None, None, None]:
+        foreign_key_list = []
+        if self.is_full_reload:
+            ForeignKey = namedtuple(
+                "ForeignKey", ["schema_name", "table_name", "constraint_name", "constraint_definition"]
+            )
+            cursor.execute(
+                f"""
+                SELECT
+                    connamespace::REGNAMESPACE,
+                    conrelid::REGCLASS,
+                    conname,
+                    PG_GET_CONSTRAINTDEF(oid)
+                FROM pg_constraint
+                WHERE REGCLASS(confrelid)::TEXT = '{ProgramActivityPark._meta.db_table}'
+            """
+            )
+            foreign_key_list.extend([ForeignKey(*row) for row in cursor.fetchall()])
+            for foreign_key in foreign_key_list:
+                cursor.execute(
+                    f"""
+                    ALTER TABLE {foreign_key.schema_name}.{foreign_key.table_name}
+                    DROP CONSTRAINT {foreign_key.constraint_name};
+                """
+                )
+
+        yield
+
+        if self.is_full_reload:
+            for foreign_key in foreign_key_list:
+                cursor.execute(
+                    f"""
+                    ALTER TABLE {foreign_key.schema_name}.{foreign_key.table_name}
+                    ADD CONSTRAINT {foreign_key.constraint_name} {foreign_key.constraint_definition}
+                """
+                )
+
     def populate_temporary_table(self, cursor: connection.cursor) -> None:
         with Timer("Loading PARK from Broker to USAspending", success_logger=logger.info, failure_logger=logger.error):
             # Populate temp table with Broker PARK table
@@ -70,8 +113,12 @@ class Command(BaseCommand):
                 f"INSERT INTO {self.temp_table_name} (park_code, park_name) VALUES ('0000', 'UNKNOWN/OTHER');"
             )
 
+    @transaction.atomic
     def upsert_park_values(self, cursor: connection.cursor) -> None:
-        with Timer("Upserting PARK values in USAspending", success_logger=logger.info, failure_logger=logger.error):
+        with (
+            Timer("Upserting PARK values in USAspending", success_logger=logger.info, failure_logger=logger.error),
+            self.handle_foreign_keys(cursor),
+        ):
             if self.is_full_reload:
                 cursor.execute(f"TRUNCATE {ProgramActivityPark._meta.db_table};")
             cursor.execute(
