@@ -467,7 +467,7 @@ def _gather_deleted_transaction_keys(
         )
         # matches the pattern YYYY-mm-DD_FABSdeletions_{TIME_IN_SECONDS}.csv
         or (
-            re.search(r"^\d{4}-(0[1-9]|1[0-2])-(0?[1-9]|[12][0-9]|3[01])_FABSdeletions_.*.csv", x.key)
+            re.fullmatch(r"^\d{4}-(0[1-9]|1[0-2])-(0?[1-9]|[12][0-9]|3[01])_FABSdeletions_.*\.csv", x.key)
             and not x.key.startswith("staging")
             and delete_window_start <= x.last_modified
         )
