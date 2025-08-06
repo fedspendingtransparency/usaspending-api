@@ -86,8 +86,7 @@ class Command(BaseCommand):
         FROM aidlu_fabs AS aidlu LEFT JOIN raw.published_fabs AS pfabs ON (
             aidlu.transaction_unique_id = ucase(pfabs.afa_generated_unique)
         )
-        WHERE pfabs.afa_generated_unique IS NULL AND NOT EXISTS (SELECT 1 FROM aidlu_fabs
-        WHERE aidlu.transaction_unique_id = ucase(pfabs.afa_generated_unique) AND pfabs.correction_delete_indicatr = null)
+        WHERE pfabs.afa_generated_unique IS NULL
     """
 
     def add_arguments(self, parser):

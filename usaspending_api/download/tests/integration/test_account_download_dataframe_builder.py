@@ -250,4 +250,3 @@ def test_account_balances(mock_get_submission_ids_for_periods, spark, account_do
     assert ta_builder.account_balances.count() == 2
     fa_builder = FederalAccountDownloadDataFrameBuilder(spark, account_download_filter)
     assert fa_builder.account_balances.count() == 2
-
