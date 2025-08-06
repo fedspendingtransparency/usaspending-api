@@ -81,7 +81,7 @@ class Command(BaseCommand):
                     FROM {self.temp_table_name}
                 )
                 INSERT INTO {ProgramActivityPark._meta.db_table} (code, name)
-                SELECT park_code, park_name
+                SELECT park_code, UPPER(park_name)
                 FROM grouped_park
                 ON CONFLICT (code) DO UPDATE
                 SET name = EXCLUDED.name
