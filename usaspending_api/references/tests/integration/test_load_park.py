@@ -8,7 +8,7 @@ from usaspending_api.settings import DATA_BROKER_DB_ALIAS
 
 
 @pytest.fixture
-def setup_broker_data():
+def setup_broker_data(broker_db_setup):
     with connections[DATA_BROKER_DB_ALIAS].cursor() as cursor:
         cursor.execute(
             """
