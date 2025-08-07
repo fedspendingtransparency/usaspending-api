@@ -385,7 +385,7 @@ class FederalAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBui
 
     @property
     def object_class_program_activity(self) -> DataFrame:
-        return self.df
+        raise NotImplementedError
 
     @property
     def award_financial(self) -> DataFrame:
@@ -510,6 +510,10 @@ class TreasuryAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBu
         )
 
     @property
+    def object_class_program_activity(self) -> DataFrame:
+        raise NotImplementedError
+
+    @property
     def award_financial(self) -> DataFrame:
         select_cols = (
             [sf.col("treasury_owning_agency_name").alias("owning_agency_name")]
@@ -521,7 +525,3 @@ class TreasuryAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBu
             + ["last_modified_date"]
         )
         return self._award_financial_df.filter(self.dynamic_filters & self.non_zero_filters).select(select_cols)
-
-    @property
-    def object_class_program_activity(self) -> DataFrame:
-        return self.df
