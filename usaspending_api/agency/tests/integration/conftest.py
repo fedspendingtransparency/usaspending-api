@@ -838,6 +838,7 @@ def tas_mulitple_pas_per_oc():
         ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=0,
         ussgl480110_rein_undel_ord_cpe=0,
         ussgl490110_rein_deliv_ord_cpe=0,
+        program_activity_reporting_key="PARK 1",
     )
 
     baker.make(
