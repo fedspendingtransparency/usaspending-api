@@ -110,7 +110,14 @@ class Command(BaseCommand):
             )
             # Append additional records not found in the Broker table
             cursor.execute(
-                f"INSERT INTO {self.temp_table_name} (park_code, park_name) VALUES ('0000', 'UNKNOWN/OTHER');"
+                f"""
+                INSERT INTO {self.temp_table_name} (park_code, park_name)
+                VALUES
+                    ('0', 'UNKNOWN/OTHER'),
+                    ('00', 'UNKNOWN/OTHER'),
+                    ('000', 'UNKNOWN/OTHER'),
+                    ('0000', 'UNKNOWN/OTHER');
+            """
             )
 
     @transaction.atomic

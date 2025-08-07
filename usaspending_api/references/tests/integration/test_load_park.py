@@ -31,6 +31,9 @@ def test_load_park(setup_broker_data):
     call_command("load_park")
 
     expected_results = [
+        ("0", "UNKNOWN/OTHER"),
+        ("00", "UNKNOWN/OTHER"),
+        ("000", "UNKNOWN/OTHER"),
         ("0000", "UNKNOWN/OTHER"),
         ("5ZC3H17Q8NJ", "ACQUISITION WORKFORCE DEVELOPMENT"),
         ("60HXXG853PV", "ADMINISTRATIVE EXPENSES"),
@@ -52,7 +55,7 @@ def test_load_park(setup_broker_data):
 
     new_park_record = ProgramActivityPark(code="SOME NEW CODE", name="SOME NEW NAME")
     new_park_record.save()
-    assert ProgramActivityPark.objects.count() == 5
+    assert ProgramActivityPark.objects.count() == 8
 
     call_command("load_park", "--full-reload")
-    assert ProgramActivityPark.objects.count() == 4
+    assert ProgramActivityPark.objects.count() == 7
