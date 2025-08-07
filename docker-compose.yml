@@ -193,6 +193,8 @@ services:
     # ELASTICSEARCH_HOSTS should match the port for "usaspending-es"; value will need to be updated if using Windows
     environment:
       - OPENSEARCH_HOSTS="http://usaspending-es:9200"
+      - DISABLE_SECURITY_DASHBOARDS_PLUGIN=true
+      - DISABLE_SECURITY_PLUGIN=true
     ports:
       - 5601:5601
 
