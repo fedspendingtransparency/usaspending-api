@@ -99,7 +99,10 @@ class TASProgramActivityList(PaginationMixin, AgencyBase):
         filters = [
             Q(object_class__major_object_class_name__isnull=False),
             Q(submission_id__in=self.submission_ids),
-            Q(program_activity__program_activity_name=program_activity_name),
+            (
+                Q(program_activity__program_activity_name=program_activity_name)
+                | Q(program_activity_reporting_key=program_activity_name)
+            ),
             Q(treasury_account__tas_rendering_label=self.tas_rendering_label),
             self.file_b_calculations.is_non_zero_total_spending(),
         ]
