@@ -73,15 +73,26 @@ class Command(BaseCommand):
                 AND tablename = '{usas_table_name}'
             );
         """
+        table_columns_query = f"""
+            SELECT STRING_AGG(column_name, ',' ORDER BY column_name)
+            FROM information_schema.columns
+            WHERE table_schema = '{usas_schema_name}' AND table_name = '{usas_table_name}'
+            GROUP BY table_schema, table_name;
+        """
         with usas_conn.cursor() as usas_cursor:
             usas_cursor.execute(table_exists_query)
             table_exists = all(usas_cursor.fetchone())
             if not table_exists:
                 raise ValueError(f"Table '{usas_schema_name}.{usas_table_name}' does not exist.")
+
             truncate_sql = f"TRUNCATE TABLE {usas_schema_name}.{usas_table_name}"
+
             usas_cursor.execute(truncate_sql)
+            usas_cursor.execute(table_columns_query)
+            usas_table_columns = usas_cursor.fetchone()[0]
+
             with broker_conn.cursor() as broker_cursor:
-                broker_cursor.execute(f"SELECT * FROM {broker_schema_name}.{broker_table_name}")
+                broker_cursor.execute(f"SELECT {usas_table_columns} FROM {broker_schema_name}.{broker_table_name}")
                 while True:
                     rows = broker_cursor.fetchmany(self.CHUNK_SIZE)
                     if not rows:
@@ -91,7 +102,7 @@ class Command(BaseCommand):
                     writer.writerows(rows)
                     f.seek(0)
                     usas_cursor.copy_expert(
-                        f"COPY {usas_schema_name}.{usas_table_name} FROM STDIN WITH (DELIMITER ',', FORMAT CSV)",
+                        f"COPY {usas_schema_name}.{usas_table_name} ({usas_table_columns}) FROM STDIN WITH (DELIMITER ',', FORMAT CSV)",
                         f,
                     )
                     usas_conn.commit()
