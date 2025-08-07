@@ -101,7 +101,6 @@ Returns a list of Program Activities for the specified Treasury Account Symbol (
 + `name` (required, string)
 + `obligated_amount` (required, number)
 + `gross_outlay_amount` (required, number)
-+ `type` (required, string)
 
 ## PageMetadata (object)
 + `limit` (required, number)
