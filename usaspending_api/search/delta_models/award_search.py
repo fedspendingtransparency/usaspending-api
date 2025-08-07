@@ -154,6 +154,7 @@ AWARD_SEARCH_COLUMNS = {
     "total_outlays": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": False},
     "generated_pragmatic_obligation": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)", "gold": False},
     "program_activities": {"delta": "STRING", "postgres": "JSONB", "gold": False},
+    "transaction_count": {"delta": "INTEGER", "postgres": "INTEGER", "gold": False},
 }
 AWARD_SEARCH_DELTA_COLUMNS = {k: v["delta"] for k, v in AWARD_SEARCH_COLUMNS.items()}
 AWARD_SEARCH_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in AWARD_SEARCH_COLUMNS.items() if not v["gold"]}
@@ -163,7 +164,7 @@ ALL_AWARD_TYPES = list(award_type_mapping.keys())
 
 award_search_create_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
-        {", ".join([f'{key} {val}' for key, val in AWARD_SEARCH_DELTA_COLUMNS.items()])}
+        {", ".join([f"{key} {val}" for key, val in AWARD_SEARCH_DELTA_COLUMNS.items()])}
     )
     USING DELTA
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
@@ -428,7 +429,8 @@ _base_load_sql_string = rf"""
         END,
         0
   ) AS NUMERIC(23, 2)) AS generated_pragmatic_obligation,
-  TREASURY_ACCT.program_activities
+  TREASURY_ACCT.program_activities,
+  COUNT(latest_transaction) AS transaction_count
 FROM
   int.awards
 INNER JOIN
@@ -645,6 +647,15 @@ LEFT OUTER JOIN (
   GROUP BY
     faba.award_id
 ) TREASURY_ACCT ON (TREASURY_ACCT.award_id = awards.id)
+LEFT JOIN (
+    SELECT
+        tn.generated_unique_award_id,
+        COUNT(tn.transaction_unique_id) AS transaction_count
+    FROM
+        int.transaction_normalized AS tn
+    GROUP BY
+        tn.generated_unique_award_id
+  ) transaction_normalized_count ON awards.generated_unique_award_id = transaction_normalized_count.unique_award_key
 """
 
 award_search_incremental_load_sql_string = [
