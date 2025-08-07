@@ -27,6 +27,7 @@ Returns a list of Program Activities for the specified Treasury Account Symbol (
             + `name`
             + `obligated_amount`
             + `gross_outlay_amount`
+            + `type`
     + `page` (optional, number)
         The page number that is currently returned.
         + Default: 1
@@ -93,12 +94,14 @@ Returns a list of Program Activities for the specified Treasury Account Symbol (
 + `name` (required, string)
 + `obligated_amount` (required, number)
 + `gross_outlay_amount` (required, number)
++ `type` (required, string)
 + `children` (required, array[ObjectClass], fixed-type)
 
 ## ObjectClass (object)
 + `name` (required, string)
 + `obligated_amount` (required, number)
 + `gross_outlay_amount` (required, number)
++ `type` (required, string)
 
 ## PageMetadata (object)
 + `limit` (required, number)

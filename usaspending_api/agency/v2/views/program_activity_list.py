@@ -1,4 +1,4 @@
-from django.db.models import Sum, F, Q
+from django.db.models import Sum, F, Q, Case, When, Value, CharField
 from rest_framework.request import Request
 from rest_framework.response import Response
 from typing import Any, List
@@ -44,7 +44,10 @@ class ProgramActivityList(PaginationMixin, AgencyBase):
         submission_ids = get_latest_submission_ids_for_fiscal_year(self.fiscal_year)
         file_b_calculations = FileBCalculations()
         filters = [
-            Q(program_activity__program_activity_name__isnull=False),
+            (
+                Q(program_activity__program_activity_name__isnull=False)
+                | Q(program_activity_reporting_key__isnull=False)
+            ),
             Q(submission_id__in=submission_ids),
             Q(treasury_account__funding_toptier_agency=self.toptier_agency),
             file_b_calculations.is_non_zero_total_spending(),
@@ -55,12 +58,19 @@ class ProgramActivityList(PaginationMixin, AgencyBase):
         queryset_results = (
             FinancialAccountsByProgramActivityObjectClass.objects.filter(*filters)
             .values("program_activity__program_activity_name")
+            .values("program_activity_reporting_key")
             .annotate(
                 name=F("program_activity__program_activity_name"),
                 obligated_amount=Sum(file_b_calculations.get_obligations()),
                 gross_outlay_amount=Sum(file_b_calculations.get_outlays()),
+                reporting_key=F("program_activity_reporting_key"),
+                type=Case(
+                    When(program_activity_reporting_key__isnull=False, then=Value("PARK")),
+                    default=Value("PAC/PAN"),
+                    output_field=CharField(),
+                ),
             )
             .order_by(f"{'-' if self.pagination.sort_order == 'desc' else ''}{self.pagination.sort_key}")
-            .values("name", "obligated_amount", "gross_outlay_amount")
+            .values("name", "obligated_amount", "gross_outlay_amount", "reporting_key", "type")
         )
         return queryset_results

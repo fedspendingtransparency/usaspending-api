@@ -26,10 +26,34 @@ def test_program_activity_list_success(client, monkeypatch, agency_account_data,
             "total": 4,
         },
         "results": [
-            {"gross_outlay_amount": 100000.0, "name": "NAME 3", "obligated_amount": 100.0},
-            {"gross_outlay_amount": 1000000.0, "name": "NAME 2", "obligated_amount": 10.0},
-            {"gross_outlay_amount": 1000000.0, "name": "NAME 5", "obligated_amount": 10.0},
-            {"gross_outlay_amount": 10000000.0, "name": "NAME 1", "obligated_amount": 1.0},
+            {
+                "gross_outlay_amount": 100000.0,
+                "name": "NAME 3",
+                "reporting_key": None,
+                "obligated_amount": 100.0,
+                "type": "PAC/PAN",
+            },
+            {
+                "gross_outlay_amount": 1000000.0,
+                "name": "NAME 2",
+                "reporting_key": None,
+                "obligated_amount": 10.0,
+                "type": "PAC/PAN",
+            },
+            {
+                "gross_outlay_amount": 1000000.0,
+                "name": "NAME 5",
+                "reporting_key": None,
+                "obligated_amount": 10.0,
+                "type": "PAC/PAN",
+            },
+            {
+                "gross_outlay_amount": 10000000.0,
+                "name": "NAME 1",
+                "reporting_key": "PARK 1",
+                "obligated_amount": 1.0,
+                "type": "PARK",
+            },
         ],
     }
 
@@ -126,7 +150,15 @@ def test_program_activity_list_specific(client, agency_account_data):
             "previous": None,
             "total": 1,
         },
-        "results": [{"gross_outlay_amount": 10000.0, "name": "NAME 4", "obligated_amount": 1000.0}],
+        "results": [
+            {
+                "gross_outlay_amount": 10000.0,
+                "name": "NAME 4",
+                "reporting_key": None,
+                "obligated_amount": 1000.0,
+                "type": "PAC/PAN",
+            }
+        ],
     }
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_result
@@ -146,7 +178,15 @@ def test_program_activity_list_specific(client, agency_account_data):
             "previous": None,
             "total": 1,
         },
-        "results": [{"gross_outlay_amount": 1000.0, "name": "NAME 4", "obligated_amount": 10000.0}],
+        "results": [
+            {
+                "gross_outlay_amount": 1000.0,
+                "name": "NAME 4",
+                "reporting_key": None,
+                "obligated_amount": 10000.0,
+                "type": "PAC/PAN",
+            }
+        ],
     }
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_result
@@ -169,7 +209,15 @@ def test_program_activity_list_ignore_duplicates(client, agency_account_data):
             "previous": None,
             "total": 1,
         },
-        "results": [{"gross_outlay_amount": 11.0, "name": "NAME 4", "obligated_amount": 11000000.0}],
+        "results": [
+            {
+                "gross_outlay_amount": 11.0,
+                "name": "NAME 4",
+                "reporting_key": None,
+                "obligated_amount": 11000000.0,
+                "type": "PAC/PAN",
+            }
+        ],
     }
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_result
@@ -193,10 +241,34 @@ def test_program_activity_list_sort_by_name(client, agency_account_data, helpers
             "total": 4,
         },
         "results": [
-            {"gross_outlay_amount": 10000000.0, "name": "NAME 1", "obligated_amount": 1.0},
-            {"gross_outlay_amount": 1000000.0, "name": "NAME 2", "obligated_amount": 10.0},
-            {"gross_outlay_amount": 100000.0, "name": "NAME 3", "obligated_amount": 100.0},
-            {"gross_outlay_amount": 1000000.0, "name": "NAME 5", "obligated_amount": 10.0},
+            {
+                "gross_outlay_amount": 10000000.0,
+                "name": "NAME 1",
+                "reporting_key": "PARK 1",
+                "obligated_amount": 1.0,
+                "type": "PARK",
+            },
+            {
+                "gross_outlay_amount": 1000000.0,
+                "name": "NAME 2",
+                "reporting_key": None,
+                "obligated_amount": 10.0,
+                "type": "PAC/PAN",
+            },
+            {
+                "gross_outlay_amount": 100000.0,
+                "name": "NAME 3",
+                "reporting_key": None,
+                "obligated_amount": 100.0,
+                "type": "PAC/PAN",
+            },
+            {
+                "gross_outlay_amount": 1000000.0,
+                "name": "NAME 5",
+                "reporting_key": None,
+                "obligated_amount": 10.0,
+                "type": "PAC/PAN",
+            },
         ],
     }
 
@@ -219,10 +291,34 @@ def test_program_activity_list_sort_by_name(client, agency_account_data, helpers
             "total": 4,
         },
         "results": [
-            {"gross_outlay_amount": 1000000.0, "name": "NAME 5", "obligated_amount": 10.0},
-            {"gross_outlay_amount": 100000.0, "name": "NAME 3", "obligated_amount": 100.0},
-            {"gross_outlay_amount": 1000000.0, "name": "NAME 2", "obligated_amount": 10.0},
-            {"gross_outlay_amount": 10000000.0, "name": "NAME 1", "obligated_amount": 1.0},
+            {
+                "gross_outlay_amount": 1000000.0,
+                "name": "NAME 5",
+                "reporting_key": None,
+                "obligated_amount": 10.0,
+                "type": "PAC/PAN",
+            },
+            {
+                "gross_outlay_amount": 100000.0,
+                "name": "NAME 3",
+                "reporting_key": None,
+                "obligated_amount": 100.0,
+                "type": "PAC/PAN",
+            },
+            {
+                "gross_outlay_amount": 1000000.0,
+                "name": "NAME 2",
+                "reporting_key": None,
+                "obligated_amount": 10.0,
+                "type": "PAC/PAN",
+            },
+            {
+                "gross_outlay_amount": 10000000.0,
+                "name": "NAME 1",
+                "reporting_key": "PARK 1",
+                "obligated_amount": 1.0,
+                "type": "PARK",
+            },
         ],
     }
 
@@ -248,10 +344,34 @@ def test_program_activity_list_sort_by_obligated_amount(client, agency_account_d
             "total": 4,
         },
         "results": [
-            {"gross_outlay_amount": 10000000.0, "name": "NAME 1", "obligated_amount": 1.0},
-            {"gross_outlay_amount": 1000000.0, "name": "NAME 2", "obligated_amount": 10.0},
-            {"gross_outlay_amount": 1000000.0, "name": "NAME 5", "obligated_amount": 10.0},
-            {"gross_outlay_amount": 100000.0, "name": "NAME 3", "obligated_amount": 100.0},
+            {
+                "gross_outlay_amount": 10000000.0,
+                "name": "NAME 1",
+                "reporting_key": "PARK 1",
+                "obligated_amount": 1.0,
+                "type": "PARK",
+            },
+            {
+                "gross_outlay_amount": 1000000.0,
+                "name": "NAME 2",
+                "reporting_key": None,
+                "obligated_amount": 10.0,
+                "type": "PAC/PAN",
+            },
+            {
+                "gross_outlay_amount": 1000000.0,
+                "name": "NAME 5",
+                "reporting_key": None,
+                "obligated_amount": 10.0,
+                "type": "PAC/PAN",
+            },
+            {
+                "gross_outlay_amount": 100000.0,
+                "name": "NAME 3",
+                "reporting_key": None,
+                "obligated_amount": 100.0,
+                "type": "PAC/PAN",
+            },
         ],
     }
 
@@ -274,10 +394,34 @@ def test_program_activity_list_sort_by_obligated_amount(client, agency_account_d
             "total": 4,
         },
         "results": [
-            {"gross_outlay_amount": 100000.0, "name": "NAME 3", "obligated_amount": 100.0},
-            {"gross_outlay_amount": 1000000.0, "name": "NAME 2", "obligated_amount": 10.0},
-            {"gross_outlay_amount": 1000000.0, "name": "NAME 5", "obligated_amount": 10.0},
-            {"gross_outlay_amount": 10000000.0, "name": "NAME 1", "obligated_amount": 1.0},
+            {
+                "gross_outlay_amount": 100000.0,
+                "name": "NAME 3",
+                "reporting_key": None,
+                "obligated_amount": 100.0,
+                "type": "PAC/PAN",
+            },
+            {
+                "gross_outlay_amount": 1000000.0,
+                "name": "NAME 2",
+                "reporting_key": None,
+                "obligated_amount": 10.0,
+                "type": "PAC/PAN",
+            },
+            {
+                "gross_outlay_amount": 1000000.0,
+                "name": "NAME 5",
+                "reporting_key": None,
+                "obligated_amount": 10.0,
+                "type": "PAC/PAN",
+            },
+            {
+                "gross_outlay_amount": 10000000.0,
+                "name": "NAME 1",
+                "reporting_key": "PARK 1",
+                "obligated_amount": 1.0,
+                "type": "PARK",
+            },
         ],
     }
 
@@ -303,10 +447,34 @@ def test_program_activity_list_sort_by_gross_outlay_amount(client, agency_accoun
             "total": 4,
         },
         "results": [
-            {"gross_outlay_amount": 100000.0, "name": "NAME 3", "obligated_amount": 100.0},
-            {"gross_outlay_amount": 1000000.0, "name": "NAME 2", "obligated_amount": 10.0},
-            {"gross_outlay_amount": 1000000.0, "name": "NAME 5", "obligated_amount": 10.0},
-            {"gross_outlay_amount": 10000000.0, "name": "NAME 1", "obligated_amount": 1.0},
+            {
+                "gross_outlay_amount": 100000.0,
+                "name": "NAME 3",
+                "reporting_key": None,
+                "obligated_amount": 100.0,
+                "type": "PAC/PAN",
+            },
+            {
+                "gross_outlay_amount": 1000000.0,
+                "name": "NAME 2",
+                "reporting_key": None,
+                "obligated_amount": 10.0,
+                "type": "PAC/PAN",
+            },
+            {
+                "gross_outlay_amount": 1000000.0,
+                "name": "NAME 5",
+                "reporting_key": None,
+                "obligated_amount": 10.0,
+                "type": "PAC/PAN",
+            },
+            {
+                "gross_outlay_amount": 10000000.0,
+                "name": "NAME 1",
+                "reporting_key": "PARK 1",
+                "obligated_amount": 1.0,
+                "type": "PARK",
+            },
         ],
     }
 
@@ -329,10 +497,34 @@ def test_program_activity_list_sort_by_gross_outlay_amount(client, agency_accoun
             "total": 4,
         },
         "results": [
-            {"gross_outlay_amount": 10000000.0, "name": "NAME 1", "obligated_amount": 1.0},
-            {"gross_outlay_amount": 1000000.0, "name": "NAME 2", "obligated_amount": 10.0},
-            {"gross_outlay_amount": 1000000.0, "name": "NAME 5", "obligated_amount": 10.0},
-            {"gross_outlay_amount": 100000.0, "name": "NAME 3", "obligated_amount": 100.0},
+            {
+                "gross_outlay_amount": 10000000.0,
+                "name": "NAME 1",
+                "reporting_key": "PARK 1",
+                "obligated_amount": 1.0,
+                "type": "PARK",
+            },
+            {
+                "gross_outlay_amount": 1000000.0,
+                "name": "NAME 2",
+                "reporting_key": None,
+                "obligated_amount": 10.0,
+                "type": "PAC/PAN",
+            },
+            {
+                "gross_outlay_amount": 1000000.0,
+                "name": "NAME 5",
+                "reporting_key": None,
+                "obligated_amount": 10.0,
+                "type": "PAC/PAN",
+            },
+            {
+                "gross_outlay_amount": 100000.0,
+                "name": "NAME 3",
+                "reporting_key": None,
+                "obligated_amount": 100.0,
+                "type": "PAC/PAN",
+            },
         ],
     }
 
@@ -357,7 +549,15 @@ def test_program_activity_list_search(client, agency_account_data, helpers):
             "previous": None,
             "total": 1,
         },
-        "results": [{"gross_outlay_amount": 100000.0, "name": "NAME 3", "obligated_amount": 100.0}],
+        "results": [
+            {
+                "gross_outlay_amount": 100000.0,
+                "name": "NAME 3",
+                "reporting_key": None,
+                "obligated_amount": 100.0,
+                "type": "PAC/PAN",
+            }
+        ],
     }
 
     assert resp.status_code == status.HTTP_200_OK
@@ -378,7 +578,15 @@ def test_program_activity_list_search(client, agency_account_data, helpers):
             "previous": None,
             "total": 1,
         },
-        "results": [{"gross_outlay_amount": 1000000.0, "name": "NAME 2", "obligated_amount": 10.0}],
+        "results": [
+            {
+                "gross_outlay_amount": 1000000.0,
+                "name": "NAME 2",
+                "reporting_key": None,
+                "obligated_amount": 10.0,
+                "type": "PAC/PAN",
+            }
+        ],
     }
 
     assert resp.status_code == status.HTTP_200_OK
@@ -403,8 +611,20 @@ def test_program_activity_list_pagination(client, agency_account_data, helpers):
             "total": 4,
         },
         "results": [
-            {"gross_outlay_amount": 100000.0, "name": "NAME 3", "obligated_amount": 100.0},
-            {"gross_outlay_amount": 1000000.0, "name": "NAME 2", "obligated_amount": 10.0},
+            {
+                "gross_outlay_amount": 100000.0,
+                "name": "NAME 3",
+                "reporting_key": None,
+                "obligated_amount": 100.0,
+                "type": "PAC/PAN",
+            },
+            {
+                "gross_outlay_amount": 1000000.0,
+                "name": "NAME 2",
+                "reporting_key": None,
+                "obligated_amount": 10.0,
+                "type": "PAC/PAN",
+            },
         ],
     }
 
@@ -427,8 +647,20 @@ def test_program_activity_list_pagination(client, agency_account_data, helpers):
             "total": 4,
         },
         "results": [
-            {"gross_outlay_amount": 1000000.0, "name": "NAME 5", "obligated_amount": 10.0},
-            {"gross_outlay_amount": 10000000.0, "name": "NAME 1", "obligated_amount": 1.0},
+            {
+                "gross_outlay_amount": 1000000.0,
+                "name": "NAME 5",
+                "reporting_key": None,
+                "obligated_amount": 10.0,
+                "type": "PAC/PAN",
+            },
+            {
+                "gross_outlay_amount": 10000000.0,
+                "name": "NAME 1",
+                "reporting_key": "PARK 1",
+                "obligated_amount": 1.0,
+                "type": "PARK",
+            },
         ],
     }
 
