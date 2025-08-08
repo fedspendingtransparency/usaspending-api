@@ -143,9 +143,11 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
                 {
                     "award_id": source["display_award_id"],
                     "subaward_count": source["subaward_count"],
-                    "subaward_obligation": Decimal(source["total_subaward_amount"]).quantize(Decimal(".01"))
-                    if source["total_subaward_amount"]
-                    else 0.0,
+                    "subaward_obligation": (
+                        Decimal(source["total_subaward_amount"]).quantize(Decimal(".01"))
+                        if source["total_subaward_amount"]
+                        else 0.0
+                    ),
                     "award_generated_internal_id": source["generated_unique_award_id"],
                 }
             )
