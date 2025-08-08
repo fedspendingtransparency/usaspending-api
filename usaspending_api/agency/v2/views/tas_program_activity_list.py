@@ -66,7 +66,7 @@ class TASProgramActivityList(PaginationMixin, AgencyBase):
     def get_program_activity_list(self) -> List[dict]:
         filters = [
             (
-                Q(program_activity_reporting_key__isnull=False)
+                Q(program_activity_reporting_key__name__isnull=False)
                 | Q(program_activity__program_activity_name__isnull=False)
             ),
             Q(submission_id__in=self.submission_ids),
@@ -79,13 +79,13 @@ class TASProgramActivityList(PaginationMixin, AgencyBase):
         queryset_results = (
             FinancialAccountsByProgramActivityObjectClass.objects.filter(*filters)
             .values("program_activity__program_activity_name")
-            .values("program_activity_reporting_key")
+            .values("program_activity_reporting_key__name")
             .annotate(
-                name=Coalesce("program_activity_reporting_key", "program_activity__program_activity_name"),
+                name=Coalesce("program_activity_reporting_key__name", "program_activity__program_activity_name"),
                 obligated_amount=Sum(self.file_b_calculations.get_obligations()),
                 gross_outlay_amount=Sum(self.file_b_calculations.get_outlays()),
                 type=Case(
-                    When(program_activity_reporting_key__isnull=False, then=Value("PARK")),
+                    When(program_activity_reporting_key__name__isnull=False, then=Value("PARK")),
                     default=Value("PAC/PAN"),
                     output_field=CharField(),
                 ),
@@ -101,7 +101,7 @@ class TASProgramActivityList(PaginationMixin, AgencyBase):
             Q(submission_id__in=self.submission_ids),
             (
                 Q(program_activity__program_activity_name=program_activity_name)
-                | Q(program_activity_reporting_key=program_activity_name)
+                | Q(program_activity_reporting_key__name=program_activity_name)
             ),
             Q(treasury_account__tas_rendering_label=self.tas_rendering_label),
             self.file_b_calculations.is_non_zero_total_spending(),

@@ -401,6 +401,12 @@ def agency_account_data():
         oc, major_object_class=10, major_object_class_name="Other", object_class=140, object_class_name="interest"
     )
 
+    pap1 = baker.make(
+        "references.ProgramActivityPark",
+        code="1",
+        name="PARK 1",
+    )
+
     fabpaoc = "financial_activities.FinancialAccountsByProgramActivityObjectClass"
     baker.make(
         fabpaoc,
@@ -427,7 +433,7 @@ def agency_account_data():
         ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=14,
         ussgl480110_rein_undel_ord_cpe=75,
         ussgl490110_rein_deliv_ord_cpe=63,
-        program_activity_reporting_key="PARK 1",
+        program_activity_reporting_key=pap1,
     )
     baker.make(
         fabpaoc,
@@ -813,6 +819,12 @@ def tas_mulitple_pas_per_oc():
 
     fabpaoc = "financial_activities.FinancialAccountsByProgramActivityObjectClass"
 
+    pap1 = baker.make(
+        "references.ProgramActivityPark",
+        code="1",
+        name="PARK 1",
+    )
+
     baker.make(
         fabpaoc,
         treasury_account=tas1,
@@ -838,7 +850,7 @@ def tas_mulitple_pas_per_oc():
         ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=0,
         ussgl480110_rein_undel_ord_cpe=0,
         ussgl490110_rein_deliv_ord_cpe=0,
-        program_activity_reporting_key="PARK 1",
+        program_activity_reporting_key=pap1,
     )
 
     baker.make(
