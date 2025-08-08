@@ -18,6 +18,21 @@ This route returns program activities that the specified federal account has all
     + Parameters
         + `federal_account_code`: 431-0500 (required, string)
             Federal account code consisting of the AID and main account code
+        + `limit`: 10 (optional, number)
+            The maximum number of results to return in the response
+        + `page`: 1 (optional, number)
+            The response page to return (the record offset is (`page` - 1) * `limit`).
+        + `sort` (optional, enum[string], fixed-type)
+            + Members
+                + `code`
+                + `name`
+                + `type`
+            + Default: `code`
+        + `order` (optional, enum[string], fixed-type)
+            + Members
+                + `asc`
+                + `desc`
+            + Default: `desc`
 
 + Response 200 (application/json)
     + Attributes (object)
@@ -60,7 +75,7 @@ This route returns program activities that the specified federal account has all
 ## ProgramActivities (object)
 + `code` (required, string)
 + `name` (required, string)
-+ `type` (required, enum[string])
++ `type` (required, enum[string], fixed-type)
     Whether the Program Activity values are from the older Program Activity Code / Name (PAC/PAN) or the Program Activity Reporting Key (PARK)
     + Members
         + `PAC/PAN`
