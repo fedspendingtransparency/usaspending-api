@@ -7,7 +7,7 @@ from usaspending_api.awards.models.award import vw_awards_sql
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("awards", "0110_financialaccountsbyawards_faba_treasury_submission_idx_and_more"),
+        ("awards", "0111_alter_financialaccountsbyawards_program_activity_reporting_key"),
         ("search", "0058_add_transaction_count_field"),
     ]
 
