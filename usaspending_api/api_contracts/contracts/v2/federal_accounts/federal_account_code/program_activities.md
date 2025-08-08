@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Program Activities [/api/v2/federal_accounts/{federal_account_code}/program_activities{?limit,page,order,sort}]
+# Program Activities [/api/v2/federal_accounts/{federal_account_code}/program_activities/{?limit,page,order,sort}]
 
 This route returns program activities that the specified federal account has allotted money toward.
 
@@ -14,13 +14,13 @@ This route returns program activities that the specified federal account has all
         The maximum number of results to return in the response
     + `page`: 1 (optional, number)
         The response page to return (the record offset is (`page` - 1) * `limit`).
-    + `sort` (optional, enum[string], fixed-type)
+    + `sort` (optional, enum[string])
         + Default: `code`
         + Members
             + `code`
             + `name`
             + `type`
-    + `order` (optional, enum[string], fixed-type)
+    + `order` (optional, enum[string])
         + Default: `desc`
         + Members
             + `asc`
