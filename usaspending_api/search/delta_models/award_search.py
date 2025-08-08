@@ -430,7 +430,7 @@ _base_load_sql_string = rf"""
         0
   ) AS NUMERIC(23, 2)) AS generated_pragmatic_obligation,
   TREASURY_ACCT.program_activities,
-  COUNT(latest_transaction) AS transaction_count
+  awards.transaction_count
 FROM
   int.awards
 INNER JOIN
@@ -647,15 +647,6 @@ LEFT OUTER JOIN (
   GROUP BY
     faba.award_id
 ) TREASURY_ACCT ON (TREASURY_ACCT.award_id = awards.id)
-LEFT JOIN (
-    SELECT
-        tn.generated_unique_award_id,
-        COUNT(tn.transaction_unique_id) AS transaction_count
-    FROM
-        int.transaction_normalized AS tn
-    GROUP BY
-        tn.generated_unique_award_id
-  ) transaction_normalized_count ON awards.generated_unique_award_id = transaction_normalized_count.unique_award_key
 """
 
 award_search_incremental_load_sql_string = [
