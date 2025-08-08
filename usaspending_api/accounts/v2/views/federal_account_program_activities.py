@@ -13,6 +13,10 @@ class FederalAccountProgramActivities(PaginationMixin, FederalAccountBase):
     Retrieve a list of all program activities for a federal account.
     """
 
+    endpoint_doc = (
+        "usaspending_api/api_contracts/contracts/v2/federal_accounts/federal_account_code/program_activities.md"
+    )
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.default_sort_column = "code"
