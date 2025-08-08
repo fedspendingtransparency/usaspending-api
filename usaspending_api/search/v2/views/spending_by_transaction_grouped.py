@@ -3,14 +3,13 @@ import logging
 from decimal import Decimal
 
 from django.conf import settings
-from elasticsearch_dsl import A
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from usaspending_api.common.api_versioning import API_TRANSFORM_FUNCTIONS, api_transformations
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
+from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
 from usaspending_api.common.exceptions import UnprocessableEntityException
 from usaspending_api.common.helpers.generic_helper import get_generic_filters_message
 from usaspending_api.common.query_with_filters import QueryWithFilters
@@ -21,7 +20,6 @@ from usaspending_api.common.validator.award_filter import (
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.search.filters.elasticsearch.filter import QueryType
-from usaspending_api.search.v2.elasticsearch_helper import get_number_of_unique_terms_for_transactions
 from usaspending_api.search.v2.es_sanitization import es_minimal_sanitize
 
 logger = logging.getLogger(__name__)
@@ -98,66 +96,53 @@ class SpendingByTransactionGroupedVisualizationViewSet(APIView):
             ]
             validated_payload["filters"].pop("keywords")
 
-        es_sort_field_mapper = {
-            "award_generated_internal_id": "_key",
-            "award_id": "_key",
-            "transaction_count": "_count",
-            "transaction_obligation": "transaction_obligation",
+        api_request_field_to_es_field_mapper = {
+            "award_generated_internal_id": "generated_unique_award_id",
+            "award_id": "display_award_id",
+            "transaction_count": "transaction_count",
+            "transaction_obligation": "generated_pragmatic_obligation",
         }
 
-        # We're creating a custom key that concatenates the award_piid_fain (award_id) and unique_award_key
-        #   to allow for sorting without creating nested buckets which we can't use for sorting.
-        # The order of concatenation changes based on what field we're sorting on.
-        match self.sort_by:
-            case "award_generated_internal_id":
-                agg_script = "doc['generated_unique_award_id'].value + '|' + doc['display_award_id'].value"
-            case _:
-                agg_script = "doc['display_award_id'].value + '|' + doc['generated_unique_award_id'].value"
-
-        query_with_filters = QueryWithFilters(QueryType.TRANSACTIONS)
+        query_with_filters = QueryWithFilters(QueryType.AWARDS)
         filter_query = query_with_filters.generate_elasticsearch_query(validated_payload["filters"])
-        search = TransactionSearch().filter(filter_query).extra(size=0)
-        (
-            search.aggs.bucket(
-                "group_by_prime_award",
-                A("terms", script={"source": agg_script, "lang": "painless"}, size=validated_payload["limit"]),
+        search = (
+            AwardSearch()
+            .filter(filter_query)
+            .source(fields=list(api_request_field_to_es_field_mapper.values()))
+            .sort(
+                {
+                    api_request_field_to_es_field_mapper[self.sort_by]: {
+                        "order": "asc" if validated_payload["order"] == "asc" else "desc"
+                    }
+                }
             )
-            .metric("transaction_obligation", A("sum", field="federal_action_obligation"))
-            .bucket(
-                "sorted_awards",
-                "bucket_sort",
-                sort={es_sort_field_mapper[self.sort_by]: {"order": validated_payload["order"]}},
-                **{"from": lower_limit},
-            )
+            .extra(from_=lower_limit, size=validated_payload["limit"])
         )
-        bucket_count = get_number_of_unique_terms_for_transactions(filter_query, "display_award_id")
-        agg_response = search.handle_execute()
+        es_response = search.handle_execute()
 
         results = []
 
-        for result in agg_response.aggregations.group_by_prime_award.buckets:
-            match self.sort_by:
-                case "award_generated_internal_id":
-                    award_generated_internal_id, award_id = result.key.split("|")
-                case _:
-                    award_id, award_generated_internal_id = result.key.split("|")
+        for hit in es_response.hits.hits:
+            source = hit["_source"]
 
             results.append(
                 {
-                    "award_id": award_id,
-                    "transaction_count": result.doc_count,
-                    "transaction_obligation": Decimal(result.transaction_obligation.value).quantize(Decimal(".01")),
-                    "award_generated_internal_id": award_generated_internal_id,
+                    "award_id": source["display_award_id"],
+                    "transaction_count": source["transaction_count"],
+                    "transaction_obligation": Decimal(source["generated_pragmatic_obligation"]).quantize(
+                        Decimal(".01") if source["generated_pragmatic_obligation"] else 0.0
+                    ),
+                    "award_generated_internal_id": source["generated_unique_award_id"],
                 }
             )
 
         sorted_results = sorted(
             results,
             key=lambda x: x[self.sort_by],
-            reverse=True if validated_payload["order"] == "desc" else False,
+            reverse=False if validated_payload["order"] == "asc" else True,
         )
 
-        has_next = bucket_count > validated_payload["limit"]
+        has_next = es_response.hits.total.value > (validated_payload["limit"] * validated_payload["page"])
         has_previous = validated_payload["page"] > 1
         metadata = {
             "page": validated_payload["page"],

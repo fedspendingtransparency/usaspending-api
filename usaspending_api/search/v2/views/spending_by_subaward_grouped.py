@@ -1,18 +1,18 @@
 import copy
 import logging
+from decimal import Decimal
 from sys import maxsize
 from typing import Any
-from dataclasses import dataclass
-from decimal import Decimal
+
 from django.conf import settings
-from elasticsearch_dsl import A, Q as ES_Q
+from elasticsearch_dsl import Q as ES_Q
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from usaspending_api.common.api_versioning import API_TRANSFORM_FUNCTIONS, api_transformations
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.elasticsearch.search_wrappers import SubawardSearch
+from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
 from usaspending_api.common.helpers.generic_helper import (
     get_generic_filters_message,
 )
@@ -24,14 +24,6 @@ from usaspending_api.search.filters.elasticsearch.filter import QueryType
 from usaspending_api.search.filters.time_period.query_types import SubawardSearchTimePeriod
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class SubawardGroupedModel:
-    award_id: int
-    subaward_count: int
-    award_generated_internal_id: str
-    subaward_obligation: int
 
 
 @api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
@@ -91,18 +83,17 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
             default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
         )
 
-        query_with_filters = QueryWithFilters(QueryType.SUBAWARDS)
+        query_with_filters = QueryWithFilters(QueryType.AWARDS)
         filter_query = query_with_filters.generate_elasticsearch_query(filters=filters, options=time_period_obj)
-        results = self.build_elasticsearch_search_with_aggregation(filter_query)
+        results = self.build_elasticsearch_search(filter_query)
 
         return Response(self.construct_es_response(results))
 
     def validate_request_data(self, request_data: dict[str, Any]) -> dict[str, Any]:
-
         tiny_shield = TinyShield(self.models)
         return tiny_shield.block(request_data)
 
-    def construct_es_response(self, results: list[SubawardGroupedModel]) -> dict[str, Any]:
+    def construct_es_response(self, results: list[dict]) -> dict[str, Any]:
         return {
             "limit": self.pagination["limit"],
             "results": results,
@@ -115,36 +106,54 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
             ),
         }
 
-    def build_elasticsearch_search_with_aggregation(self, filter_query: ES_Q) -> dict[str, Any]:
-        # Aggregate the ES query to group the subaward values by their prime award
-        terms_aggregation = A("terms", field="award_piid_fain")
+    def build_elasticsearch_search(self, filter_query: ES_Q) -> list[dict[str, Any]]:
+        lower_limit = (self.pagination["page"] - 1) * self.pagination["limit"]
 
-        # Get the unique_award_key for each prime award
-        terms_aggregation.metric("unique_award_key", "terms", field="unique_award_key")
+        api_request_field_to_es_field_mapper = {
+            "award_generated_internal_id": "generated_unique_award_id",
+            "award_id": "display_award_id",
+            "subaward_count": "subaward_count",
+            "subaward_obligation": "total_subaward_amount",
+        }
 
-        # Sum the subaward amount within each prime award
-        terms_aggregation.metric("subaward_obligation", "sum", field="subaward_amount")
+        search = (
+            AwardSearch()
+            .filter(filter_query)
+            .source(fields=list(api_request_field_to_es_field_mapper.values()))
+            .sort(
+                {
+                    api_request_field_to_es_field_mapper[self.pagination["sort_key"]]: {
+                        "order": "asc" if self.pagination["sort_order"] == "asc" else "desc"
+                    }
+                }
+            )
+            .extra(from_=lower_limit, size=self.pagination["limit"])
+        )
+        es_response = search.handle_execute()
 
-        search_sum = SubawardSearch().filter(filter_query)
-        search_sum.aggs.bucket("award_id", terms_aggregation)
-        response = search_sum.handle_execute()
-
-        if response is None:
+        if es_response is None:
             raise Exception("Breaking generator, unable to reach cluster")
 
         results = []
-        for result in response["aggregations"]["award_id"]["buckets"]:
-            # there is one unique_award_key for each prime award so there will only be one bucket
-            award_generated_internal_id = result["unique_award_key"]["buckets"][0]["key"]
-            subaward_obligation = Decimal(result["subaward_obligation"]["value"]).quantize(Decimal(".01"))
-            item = SubawardGroupedModel(
-                result["key"], result["doc_count"], award_generated_internal_id, subaward_obligation
-            )
-            results.append(item)
-        results = self.sort_by_attribute(results)
-        return [result.__dict__ for result in results]
 
-    # default sorting is to sort by the award_id, default order is desc
-    def sort_by_attribute(self, results: list[SubawardGroupedModel]) -> list[SubawardGroupedModel]:
-        reverse = True if self.pagination["sort_order"] == "asc" else False
-        return sorted(results, key=lambda result: getattr(result, self.pagination["sort_key"]), reverse=reverse)
+        for hit in es_response.hits.hits:
+            source = hit["_source"]
+
+            results.append(
+                {
+                    "award_id": source["display_award_id"],
+                    "subaward_count": source["subaward_count"],
+                    "subaward_obligation": Decimal(source["total_subaward_amount"]).quantize(Decimal(".01"))
+                    if source["total_subaward_amount"]
+                    else 0.0,
+                    "award_generated_internal_id": source["generated_unique_award_id"],
+                }
+            )
+
+        sorted_results = sorted(
+            results,
+            key=lambda x: x[self.pagination["sort_key"]],
+            reverse=False if self.pagination["sort_order"] == "asc" else True,
+        )
+
+        return sorted_results
