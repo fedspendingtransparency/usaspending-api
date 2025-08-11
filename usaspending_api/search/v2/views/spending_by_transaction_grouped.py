@@ -96,6 +96,7 @@ class SpendingByTransactionGroupedVisualizationViewSet(APIView):
             ]
             validated_payload["filters"].pop("keywords")
 
+        # <Field in API request> : <Field name in ElasticSearch document>
         api_request_field_to_es_field_mapper = {
             "award_generated_internal_id": "generated_unique_award_id",
             "award_id": "display_award_id",
@@ -120,27 +121,17 @@ class SpendingByTransactionGroupedVisualizationViewSet(APIView):
         )
         es_response = search.handle_execute()
 
-        results = []
-
-        for hit in es_response.hits.hits:
-            source = hit["_source"]
-
-            results.append(
-                {
-                    "award_id": source["display_award_id"],
-                    "transaction_count": source["transaction_count"],
-                    "transaction_obligation": Decimal(source["generated_pragmatic_obligation"]).quantize(
-                        Decimal(".01") if source["generated_pragmatic_obligation"] else 0.0
-                    ),
-                    "award_generated_internal_id": source["generated_unique_award_id"],
-                }
-            )
-
-        sorted_results = sorted(
-            results,
-            key=lambda x: x[self.sort_by],
-            reverse=False if validated_payload["order"] == "asc" else True,
-        )
+        results = [
+            {
+                "award_id": source["_source"]["display_award_id"],
+                "transaction_count": source["_source"]["transaction_count"],
+                "transaction_obligation": Decimal(source["_source"]["generated_pragmatic_obligation"]).quantize(
+                    Decimal(".01") if source["_source"]["generated_pragmatic_obligation"] else 0.0
+                ),
+                "award_generated_internal_id": source["_source"]["generated_unique_award_id"],
+            }
+            for source in es_response.hits.hits
+        ]
 
         has_next = es_response.hits.total.value > (validated_payload["limit"] * validated_payload["page"])
         has_previous = validated_payload["page"] > 1
@@ -154,7 +145,7 @@ class SpendingByTransactionGroupedVisualizationViewSet(APIView):
         return Response(
             {
                 "limit": validated_payload["limit"],
-                "results": sorted_results,
+                "results": results,
                 "page_metadata": metadata,
                 "messages": get_generic_filters_message(
                     validated_payload["filters"].keys(), [elem["name"] for elem in AWARD_FILTER_NO_RECIPIENT_ID]
