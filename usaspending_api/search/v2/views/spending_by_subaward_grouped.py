@@ -145,7 +145,8 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
                     else 0.0
                 ),
                 "award_generated_internal_id": source["_source"]["generated_unique_award_id"],
-            } for source in es_response["hits"]["hits"]
+            }
+            for source in es_response["hits"]["hits"]
         ]
 
         return results
