@@ -462,7 +462,7 @@ class Command(BaseCommand):
                     -- Transaction FPDS Fields
                     SUM(CAST(fpds.base_and_all_options_value AS NUMERIC(23, 2))) AS base_and_all_options_value,
                     SUM(CAST(fpds.base_exercised_options_val AS NUMERIC(23, 2))) AS base_exercised_options_val,
-                    COUNT(tn.award_id) AS transaction_count
+                    COUNT(tn.id) AS transaction_count
                 FROM int.transaction_normalized AS tn
                 LEFT JOIN int.transaction_fpds AS fpds ON tn.id = fpds.transaction_id
                 WHERE tn.award_id IN (SELECT * FROM award_ids_to_update)
@@ -1490,8 +1490,7 @@ class Command(BaseCommand):
                     list(TRANSACTION_NORMALIZED_COLUMNS),
                     list(AWARDS_COLUMNS),
                 ),
-                ("transaction_id", "transaction_id", "id", "id"),
-                strict=False,
+                ("transaction_id", "transaction_id", "id", "id")
             ):
                 call_command(
                     "create_delta_table",
