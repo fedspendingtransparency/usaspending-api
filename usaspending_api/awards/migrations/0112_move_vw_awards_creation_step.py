@@ -15,5 +15,13 @@ class Migration(migrations.Migration):
         migrations.RunSQL(
             sql=vw_awards_sql,
             reverse_sql="DROP VIEW IF EXISTS vw_awards",
-        ),
+            # Without this, Django will try to actually change the old table names in another migration
+            # This says we've already done it.
+            state_operations=[
+                migrations.AlterModelTable(
+                    name="award",
+                    table="vw_awards",
+                )
+            ],
+        )
     ]
