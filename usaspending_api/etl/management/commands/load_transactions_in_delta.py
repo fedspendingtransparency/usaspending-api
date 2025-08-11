@@ -1490,7 +1490,7 @@ class Command(BaseCommand):
                     list(TRANSACTION_NORMALIZED_COLUMNS),
                     list(AWARDS_COLUMNS),
                 ),
-                ("transaction_id", "transaction_id", "id", "id")
+                ("transaction_id", "transaction_id", "id", "id"),
             ):
                 call_command(
                     "create_delta_table",
