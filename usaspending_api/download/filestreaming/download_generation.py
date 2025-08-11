@@ -927,11 +927,6 @@ def add_data_dictionary_to_zip(working_dir, zip_file_path):
     write_to_log(message="Adding data dictionary to zip file")
     data_dictionary_file_name = "Data_Dictionary_Crosswalk.xlsx"
     data_dictionary_file_path = os.path.join(working_dir, data_dictionary_file_name)
-
-    logger.info(
-        f"Retrieving the data dictionary from S3. Bucket: {settings.DATA_DICTIONARY_S3_BUCKET_NAME} Key: {settings.DATA_DICTIONARY_S3_KEY}"
-    )
-    logger.info(f"Saving the data dictionary to: {data_dictionary_file_path}")
     download_s3_object(
         bucket_name=settings.DATA_DICTIONARY_S3_BUCKET_NAME,
         key=settings.DATA_DICTIONARY_S3_KEY,

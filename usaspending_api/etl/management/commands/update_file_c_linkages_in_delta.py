@@ -135,6 +135,8 @@ class Command(BaseCommand):
                 "INSERT OVERWRITE int.financial_accounts_by_awards SELECT * FROM raw.financial_accounts_by_awards;"
             )
         else:
+            if self.spark.catalog.tableExists("int.financial_accounts_by_awards"):
+                self.spark.sql("DELETE FROM int.financial_accounts_by_awards;")
             self.spark.sql(
                 f"""
                 CREATE OR REPLACE TABLE int.financial_accounts_by_awards
