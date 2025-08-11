@@ -97,7 +97,7 @@ Returns a list of Program Activities for the specified Treasury Account Symbol (
 + `type` enum[string]
    Indicates whether the values come from the Program Activity Reporting Key (PARK) or Program Activity Code/Name (PAC/PAN)
   + Default: `PARK`
-  + Members:
+  + Members
     + `PAC/PAN`
     + `PARK`
 + `children` (required, array[ObjectClass], fixed-type)
