@@ -63,7 +63,12 @@
         "null_value": "NULL"
       },
       "type_description": {
-        "type": "keyword"
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
       },
       "piid": {
         "type": "text",
