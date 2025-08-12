@@ -1072,10 +1072,19 @@ _base_load_sql_string = rf"""
             ) AS tas_components,
             COLLECT_SET(
                 TO_JSON(
-                    NAMED_STRUCT(
-                        'name', UPPER(rpa.program_activity_name),
-                        'code', LPAD(rpa.program_activity_code, 4, "0")
-                    )
+                CASE\
+                    WHEN pap.name IS NOT NULL THEN 
+                        NAMED_STRUCT(
+                            'name', UPPER(rpa.program_activity_name),
+                            'code', LPAD(rpa.program_activity_code, 4, "0"),
+                            'type', 'PARK'
+                        )
+                    ELSE
+                        NAMED_STRUCT(
+                            'name', UPPER(rpa.program_activity_name),
+                            'code', LPAD(rpa.program_activity_code, 4, "0"),
+                            'type', 'PAC/PAN
+                        )
                 )
             ) AS program_activities
         FROM int.financial_accounts_by_awards AS faba
@@ -1083,6 +1092,7 @@ _base_load_sql_string = rf"""
         INNER JOIN global_temp.federal_account AS fa ON fa.id = taa.federal_account_id
         INNER JOIN global_temp.toptier_agency agency ON (fa.parent_toptier_agency_id = agency.toptier_agency_id)
         LEFT JOIN global_temp.ref_program_activity rpa ON (faba.program_activity_id = rpa.id)
+        LEFT JOIN public.program_activity_park pap ON (faba.program_activity_reporting_key = pap.code)
         WHERE faba.award_id IS NOT NULL
         GROUP BY faba.award_id
     ) FED_AND_TRES_ACCT ON (FED_AND_TRES_ACCT.award_id = transaction_normalized.award_id)
