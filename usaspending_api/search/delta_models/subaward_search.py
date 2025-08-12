@@ -264,8 +264,8 @@ subaward_search_load_sql_string = rf"""
             SORT_ARRAY(COLLECT_SET(CAST(taa.treasury_account_identifier AS INTEGER))) AS treasury_account_identifiers,
             COLLECT_SET(
                 TO_JSON(
-                    CASE 
-                        WHEN pap.name IS NOT NULL THEN 
+                    CASE
+                        WHEN pap.name IS NOT NULL THEN
                             NAMED_STRUCT(
                                 'name', UPPER(pap.name),
                                 'code', pap.code,

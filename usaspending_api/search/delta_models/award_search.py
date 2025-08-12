@@ -628,8 +628,8 @@ LEFT OUTER JOIN (
     SORT_ARRAY(COLLECT_SET(taa.treasury_account_identifier)) AS treasury_account_identifiers,
     CAST(SORT_ARRAY(COLLECT_SET(
         TO_JSON(
-        CASE 
-            WHEN pap.name IS NOT NULL THEN 
+        CASE
+            WHEN pap.name IS NOT NULL THEN
                 NAMED_STRUCT(
                     'name', UPPER(pap.name),
                     'code', pap.code,

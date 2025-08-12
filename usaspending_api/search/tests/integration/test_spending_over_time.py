@@ -5049,6 +5049,7 @@ def test_spending_over_time_subawards_spending_level(client, monkeypatch, elasti
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json().get("results") == expected_result, "Time Period filter does not match expected result"
 
+
 def test_spending_over_time_subawards_program_activity_park(client, monkeypatch, elasticsearch_subaward_index):
     baker.make(
         "search.SubawardSearch",
@@ -5092,7 +5093,7 @@ def test_spending_over_time_subawards_program_activity_park(client, monkeypatch,
                     "time_period": [
                         {"start_date": "2020-01-01", "end_date": "2020-01-08"},
                     ],
-                    "program_activities": [{"type": "PARK"}]
+                    "program_activities": [{"type": "PARK"}],
                 },
                 "spending_level": "subawards",
             }
@@ -5113,6 +5114,7 @@ def test_spending_over_time_subawards_program_activity_park(client, monkeypatch,
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json().get("results") == expected_result, "results: {resp.json().get('results')}"
+
 
 def test_spending_over_time_awards_program_activity_park(client, monkeypatch, elasticsearch_award_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
@@ -5153,7 +5155,7 @@ def test_spending_over_time_awards_program_activity_park(client, monkeypatch, el
                     "time_period": [
                         {"start_date": "2013-01-01", "end_date": "2013-09-30"},
                     ],
-                    "program_activities": [{"type": "PARK"}]
+                    "program_activities": [{"type": "PARK"}],
                 },
                 "spending_level": "awards",
             }

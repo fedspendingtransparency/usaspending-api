@@ -88,13 +88,10 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                     },
                     "type": {
                         "type": "enum",
-                        "enum_values": [
-                            "PARK",
-                            "PAC/PAN"
-                        ],
+                        "enum_values": ["PARK", "PAC/PAN"],
                         "optional": True,
                         "default": "PAC/PAN",
-                    }
+                    },
                 },
             }
         ]
