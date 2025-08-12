@@ -264,10 +264,19 @@ subaward_search_load_sql_string = rf"""
             SORT_ARRAY(COLLECT_SET(CAST(taa.treasury_account_identifier AS INTEGER))) AS treasury_account_identifiers,
             COLLECT_SET(
                 TO_JSON(
-                    NAMED_STRUCT(
-                        'name', UPPER(rpa.program_activity_name),
-                        'code', LPAD(rpa.program_activity_code, 4, "0")
-                    )
+                    CASE 
+                        WHEN pap.name IS NOT NULL THEN 
+                            NAMED_STRUCT(
+                                'name', UPPER(pap.name),
+                                'code', pap.code,
+                                'type', 'PARK'
+                            )
+                        ELSE
+                            NAMED_STRUCT(
+                                'name', UPPER(rpa.program_activity_name),
+                                'code', LPAD(rpa.program_activity_code, 4, "0"),
+                                'type', 'PAC/PAN'
+                            )
                 )
             ) AS program_activities
         FROM
@@ -277,7 +286,10 @@ subaward_search_load_sql_string = rf"""
                 ON taa.treasury_account_identifier = faba.treasury_account_id
         LEFT JOIN
             global_temp.ref_program_activity AS rpa
-                ON faba.program_activity_id = rpa.id
+                ON faba.program_activity_id = rpa.id\
+        LEFT JOIN
+            public.program_activity_park AS pap
+                ON faba.program_activity_reporting_key = pap.code
         WHERE
             faba.award_id IS NOT NULL
         GROUP BY

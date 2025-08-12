@@ -583,5 +583,14 @@ Request parameter description:
 }
 ```
 
+## Program Activities
+
+**Description:** Filtering based on program activities containing a PARK value.
+```
+{
+    "program_activities": "PARK"
+}
+```
+
 Request parameter description:
 * `extent_competed_type_codes` (List) : Top level key name for filter. Contains list of Strings corresponding to Extent Competed type codes.

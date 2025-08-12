@@ -5048,3 +5048,137 @@ def test_spending_over_time_subawards_spending_level(client, monkeypatch, elasti
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json().get("results") == expected_result, "Time Period filter does not match expected result"
+
+def test_spending_over_time_subawards_program_activity_park(client, monkeypatch, elasticsearch_subaward_index):
+    baker.make(
+        "search.SubawardSearch",
+        broker_subaward_id=3,
+        award_id=1,
+        subaward_amount=0,
+        sub_place_of_perform_country_co="USA",
+        sub_legal_entity_country_code="USA",
+        sub_action_date="2020-01-07",
+        action_date="2020-01-07",
+        prime_award_group="grant",
+        sub_fiscal_year=2020,
+        subaward_type="sub-grant",
+        program_activities=[{"name": "PROGRAM_ACTIVITY_1", "code": "0001", "type": "PAC/PAN"}],
+    )
+
+    baker.make(
+        "search.SubawardSearch",
+        broker_subaward_id=3,
+        award_id=1,
+        subaward_amount=300,
+        sub_place_of_perform_country_co="USA",
+        sub_legal_entity_country_code="USA",
+        sub_action_date="2020-01-07",
+        action_date="2020-01-07",
+        prime_award_group="grant",
+        sub_fiscal_year=2021,
+        subaward_type="sub-grant",
+        program_activities=[{"name": "PROGRAM_ACTIVITY_123", "code": "0003", "type": "PARK"}],
+    )
+
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
+
+    resp = client.post(
+        "/api/v2/search/spending_over_time",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "group": "fiscal_year",
+                "filters": {
+                    "time_period": [
+                        {"start_date": "2020-01-01", "end_date": "2020-01-08"},
+                    ],
+                    "program_activities": [{"type": "PARK"}]
+                },
+                "spending_level": "subawards",
+            }
+        ),
+    )
+
+    expected_result = [
+        {
+            "aggregated_amount": 0,
+            "total_outlays": None,
+            "time_period": {"fiscal_year": "2020"},
+            "Contract_Obligations": 0,
+            "Contract_Outlays": None,
+            "Grant_Obligations": 0,
+            "Grant_Outlays": None,
+        }
+    ]
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json().get("results") == expected_result, "results: {resp.json().get('results')}"
+
+def test_spending_over_time_awards_program_activity_park(client, monkeypatch, elasticsearch_award_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    baker.make(
+        "search.AwardSearch",
+        award_id=500,
+        generated_unique_award_id="CONTRACT_AWARD_500",
+        generated_pragmatic_obligation=100,
+        total_outlays=100,
+        type="B",
+        category="contract",
+        action_date="2013-01-01",
+        date_signed="2013-01-01",
+        fiscal_year=2013,
+        program_activities=[{"name": "PROGRAM_ACTIVITY_123", "code": "0003", "type": "PAC/PAN"}],
+    )
+    baker.make(
+        "search.AwardSearch",
+        award_id=501,
+        generated_unique_award_id="GRANT_AWARD_501",
+        generated_pragmatic_obligation=0,
+        total_outlays=0,
+        type="02",
+        category="grant",
+        action_date="2013-01-01",
+        date_signed="2013-01-01",
+        fiscal_year=2013,
+        program_activities=[{"name": "PROGRAM_ACTIVITY_123", "code": "0003", "type": "PARK"}],
+    )
+
+    resp = client.post(
+        "/api/v2/search/spending_over_time",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "group": "fiscal_year",
+                "filters": {
+                    "time_period": [
+                        {"start_date": "2013-01-01", "end_date": "2013-09-30"},
+                    ],
+                    "program_activities": [{"type": "PARK"}]
+                },
+                "spending_level": "awards",
+            }
+        ),
+    )
+
+    expected_result = [
+        {
+            "aggregated_amount": 0.0,
+            "time_period": {"fiscal_year": "2013"},
+            "Contract_Obligations": 0.0,
+            "Direct_Obligations": 0,
+            "Grant_Obligations": 0.0,
+            "Idv_Obligations": 0,
+            "Loan_Obligations": 0,
+            "Other_Obligations": 0,
+            "total_outlays": 0.0,
+            "Contract_Outlays": 0.0,
+            "Direct_Outlays": 0,
+            "Grant_Outlays": 0.0,
+            "Idv_Outlays": 0,
+            "Loan_Outlays": 0,
+            "Other_Outlays": 0,
+        }
+    ]
+    print("results: ", resp.json().get("results"))
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json().get("results") == expected_result, "Time Period filter does not match expected result"
