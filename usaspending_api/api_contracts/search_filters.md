@@ -586,9 +586,11 @@ Request parameter description:
 ## Program Activities
 
 **Description:** Filtering based on program activities containing a PARK value.
+
+**Example Request:**
 ```
 {
-    "program_activities": "PARK"
+    "program_activities": [{"type": "PARK"}]
 }
 ```
 

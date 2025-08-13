@@ -5181,6 +5181,79 @@ def test_spending_over_time_awards_program_activity_park(client, monkeypatch, el
             "Other_Outlays": 0,
         }
     ]
-    print("results: ", resp.json().get("results"))
+
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json().get("results") == expected_result, "Time Period filter does not match expected result"
+
+
+def test_spending_over_time_transactions_program_activity_park(client, monkeypatch, elasticsearch_transaction_index):
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=99,
+        action_date="2020-04-02",
+        fiscal_action_date="2020-04-02",
+        fiscal_year=2020,
+        award_category="direct payment",
+        federal_action_obligation=10,
+        generated_pragmatic_obligation=10,
+        award_amount=20,
+        award_id=99,
+        is_fpds=True,
+        type="A",
+        piid="0001",
+        disaster_emergency_fund_codes=["L"],
+        program_activities=[{"name": "PROGRAM_ACTIVITY_123", "code": "0003", "type": "PARK"}],
+    )
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=100,
+        action_date="2020-01-01",
+        fiscal_action_date="2020-01-01",
+        federal_action_obligation=22,
+        generated_pragmatic_obligation=22,
+        award_amount=20,
+        award_id=99,
+        is_fpds=True,
+        type="A",
+        disaster_emergency_fund_codes=["L"],
+        program_activities=[{"name": "PROGRAM_ACTIVITY_123", "code": "0003", "type": "PAC/PAN"}],
+    )
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+    resp = client.post(
+        "/api/v2/search/spending_over_time",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "group": "fiscal_year",
+                "filters": {
+                    "time_period": [
+                        {"start_date": "2020-01-01", "end_date": "2020-09-30"},
+                    ],
+                    "program_activities": [{"type": "PARK"}],
+                },
+                "spending_level": "transactions",
+            }
+        ),
+    )
+
+    expected_result = [
+        {
+            "aggregated_amount": 10,
+            "time_period": {"fiscal_year": "2020"},
+            "Contract_Obligations": 0,
+            "Direct_Obligations": 10.0,
+            "Grant_Obligations": 0,
+            "Idv_Obligations": 0,
+            "Loan_Obligations": 0,
+            "Other_Obligations": 0,
+            "total_outlays": None,
+            "Contract_Outlays": None,
+            "Direct_Outlays": None,
+            "Grant_Outlays": None,
+            "Idv_Outlays": None,
+            "Loan_Outlays": None,
+            "Other_Outlays": None,
+        }
+    ]
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json().get("results") == expected_result
