@@ -630,20 +630,11 @@ LEFT OUTER JOIN (
     SORT_ARRAY(COLLECT_SET(taa.treasury_account_identifier)) AS treasury_account_identifiers,
     CAST(SORT_ARRAY(COLLECT_SET(
         TO_JSON(
-        CASE
-            WHEN (pap.name IS NOT NULL) THEN
-                NAMED_STRUCT(
-                    'name', UPPER(pap.name),
-                    'code', pap.code,
-                    'type', 'PARK'
-                )
-            ELSE
-                NAMED_STRUCT(
-                    'name', UPPER(rpa.program_activity_name),
-                    'code', LPAD(rpa.program_activity_code, 4, "0"),
-                    'type', 'PAC/PAN'
-                )
-        END
+            NAMED_STRUCT(
+                'name', COALESCE(pap.name, UPPER(rpa.program_activity_name)),
+                'code', COALESCE(pap.code, LPAD(rpa.program_activity_code, 4, "0"),
+                'type', CASE WHEN pap.code IS NOT NULL THEN 'PARK' ELSE 'PAC/PAN'
+            )
     )) AS STRING) AS program_activities
   FROM
     global_temp.treasury_appropriation_account taa
