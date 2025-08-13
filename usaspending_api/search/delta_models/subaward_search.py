@@ -267,7 +267,7 @@ subaward_search_load_sql_string = rf"""
                     NAMED_STRUCT(
                         'name', COALESCE(pap.name, UPPER(rpa.program_activity_name)),
                         'code', COALESCE(pap.code, LPAD(rpa.program_activity_code, 4, "0"),
-                        'type', CASE WHEN pap.code IS NOT NULL THEN 'PARK' ELSE 'PAC/PAN'
+                        'type', CASE WHEN pap.code IS NOT NULL THEN 'PARK' ELSE 'PAC/PAN' END
                     )
                 )
             ) AS program_activities
