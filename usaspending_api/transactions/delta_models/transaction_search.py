@@ -1073,7 +1073,7 @@ _base_load_sql_string = rf"""
             COLLECT_SET(
                 TO_JSON(
                 CASE
-                    WHEN pap.name IS NOT NULL THEN
+                    WHEN (pap.name IS NOT NULL) THEN
                         NAMED_STRUCT(
                             'name', UPPER(rpa.program_activity_name),
                             'code', LPAD(rpa.program_activity_code, 4, "0"),

@@ -224,6 +224,7 @@ def awards_and_transactions(db):
             {
                 "code": str(ref_program_activity1.program_activity_code).zfill(4),
                 "name": ref_program_activity1.program_activity_name,
+                "type": "PAC/PAN",
             }
         ],
     )
@@ -535,7 +536,7 @@ def awards_and_transactions(db):
         action_date="2019-01-07",
         sub_fiscal_year=2019,
         subaward_type="sub-contract",
-        program_activities=[{"name": "PROGRAM_1", "code": "0001"}],
+        program_activities=[{"name": "PROGRAM_1", "code": "0001", "type": "PAC/PAN"}],
     )
     baker.make(
         "search.SubawardSearch",
@@ -548,7 +549,7 @@ def awards_and_transactions(db):
         action_date="2020-01-07",
         sub_fiscal_year=2020,
         subaward_type="sub-contract",
-        program_activities=[{"name": "PROGRAM_2", "code": "0002"}],
+        program_activities=[{"name": "PROGRAM_2", "code": "0002", "type": "PARK"}],
     )
     baker.make(
         "search.SubawardSearch",
@@ -562,7 +563,7 @@ def awards_and_transactions(db):
         prime_award_group="grant",
         sub_fiscal_year=2020,
         subaward_type="sub-grant",
-        program_activities=[{"name": "PROGRAM_ACTIVITY_123", "code": "0003"}],
+        program_activities=[{"name": "PROGRAM_ACTIVITY_123", "code": "0003", "type": "PAC/PAN"}],
     )
 
     # References State Data

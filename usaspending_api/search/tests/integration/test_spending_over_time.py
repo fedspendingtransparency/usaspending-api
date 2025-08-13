@@ -4834,6 +4834,7 @@ def test_spending_over_time_program_activity(client, monkeypatch, elasticsearch_
             {
                 "code": str(ref_program_activity1.program_activity_code).zfill(4),
                 "name": ref_program_activity1.program_activity_name,
+                "type": "PAC/PAN",
             }
         ],
     )
@@ -5055,7 +5056,7 @@ def test_spending_over_time_subawards_program_activity_park(client, monkeypatch,
         "search.SubawardSearch",
         broker_subaward_id=3,
         award_id=1,
-        subaward_amount=0,
+        subaward_amount=200,
         sub_place_of_perform_country_co="USA",
         sub_legal_entity_country_code="USA",
         sub_action_date="2020-01-07",
@@ -5105,9 +5106,9 @@ def test_spending_over_time_subawards_program_activity_park(client, monkeypatch,
             "aggregated_amount": 0,
             "total_outlays": None,
             "time_period": {"fiscal_year": "2020"},
-            "Contract_Obligations": 0,
+            "Contract_Obligations": 300,
             "Contract_Outlays": None,
-            "Grant_Obligations": 0,
+            "Grant_Obligations": 300,
             "Grant_Outlays": None,
         }
     ]
