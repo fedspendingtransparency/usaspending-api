@@ -641,6 +641,7 @@ LEFT OUTER JOIN (
                     'code', LPAD(rpa.program_activity_code, 4, "0"),
                     'type', 'PAC/PAN'
                 )
+        END
     )) AS STRING) AS program_activities
   FROM
     global_temp.treasury_appropriation_account taa
