@@ -277,6 +277,7 @@ subaward_search_load_sql_string = rf"""
                                 'code', LPAD(rpa.program_activity_code, 4, "0"),
                                 'type', 'PAC/PAN'
                             )
+                    END
                 )
             ) AS program_activities
         FROM
@@ -286,7 +287,7 @@ subaward_search_load_sql_string = rf"""
                 ON taa.treasury_account_identifier = faba.treasury_account_id
         LEFT JOIN
             global_temp.ref_program_activity AS rpa
-                ON faba.program_activity_id = rpa.id\
+                ON faba.program_activity_id = rpa.id
         LEFT JOIN
             public.program_activity_park AS pap
                 ON faba.program_activity_reporting_key = pap.code
