@@ -265,7 +265,7 @@ subaward_search_load_sql_string = rf"""
             COLLECT_SET(
                 TO_JSON(
                     CASE
-                        WHEN pap.name IS NOT NULL THEN
+                        WHEN (pap.name IS NOT NULL) THEN
                             NAMED_STRUCT(
                                 'name', UPPER(pap.name),
                                 'code', pap.code,
