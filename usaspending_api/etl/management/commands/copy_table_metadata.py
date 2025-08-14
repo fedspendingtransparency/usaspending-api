@@ -1,9 +1,12 @@
+import asyncio
 import logging
 import re
-import asyncio
+import sys
 from pprint import pformat
-from django.db import connection
+
+from django.conf import settings
 from django.core.management.base import BaseCommand
+from django.db import connection
 
 from usaspending_api.common.data_connectors.async_sql_query import async_run_creates
 from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
@@ -114,7 +117,7 @@ def make_copy_indexes(
         # for example, a table 'x' in the public schema could be provided and the string will include `public.x'
         # Depending on whether the source table is a paritioned table or not, it may or may not already have the ONLY
         # clause in its index definition(s)
-        ix_regex = rf"CREATE\s+.*INDEX\s+\S+\s+ON\s+(ONLY\s+)?(\S+)\s+.*"
+        ix_regex = r"CREATE\s+.*INDEX\s+\S+\s+ON\s+(ONLY\s+)?(\S+)\s+.*"
         regex_groups = re.findall(ix_regex, create_ix_sql)[0]
         contains_only = regex_groups[0]
         src_table = regex_groups[1]
@@ -138,11 +141,11 @@ def attach_child_partition_metadata(parent_partitioned_table, child_partition_na
     # child partition name suffix
     dest_suffix_appendage = "" if not dest_suffix else f"_{dest_suffix}"
     dest_suffix_chop_len = len(dest_suffix_appendage)
-    parent_table_without_schema = re.sub(rf"^.*?\.(.*?)$", rf"\g<1>", parent_partitioned_table)
-    child_partition_without_schema = re.sub(rf"^.*?\.(.*?)$", rf"\g<1>", child_partition_name)
+    parent_table_without_schema = re.sub(r"^.*?\.(.*?)$", r"\g<1>", parent_partitioned_table)
+    child_partition_without_schema = re.sub(r"^.*?\.(.*?)$", r"\g<1>", child_partition_name)
     child_partition_suffix = re.sub(
         rf"^.*?{parent_table_without_schema[:-dest_suffix_chop_len]}(.*?)$",
-        rf"\g<1>",
+        r"\g<1>",
         child_partition_without_schema[:-dest_suffix_chop_len],
     )
 
@@ -179,7 +182,6 @@ def attach_child_partition_metadata(parent_partitioned_table, child_partition_na
 
 
 class Command(BaseCommand):
-
     help = """
     This command simply copies the constraints and indexes from one table to another in postgres
     """
@@ -270,6 +272,9 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        print(f"Is local: {settings.IS_LOCAL}")
+        sys.exit(1)
+
         # Resolve Parameters
         source_table = options["source_table"]
         source_suffix = options["source_suffix"]
