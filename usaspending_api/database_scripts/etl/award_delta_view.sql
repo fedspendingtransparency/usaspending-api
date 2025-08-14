@@ -114,8 +114,10 @@ SELECT
 
   "tas_paths",
   "tas_components",
+
   "disaster_emergency_fund_codes",
   "spending_by_defc"::JSON,
+
   "total_covid_outlay",
   "total_covid_obligation",
 
@@ -123,7 +125,10 @@ SELECT
   "total_iija_obligation",
 
   "generated_pragmatic_obligation",
-  "program_activities"::JSON
+  "program_activities"::JSON,
+  "subaward_count",
+  "total_subaward_amount",
+  "transaction_count"
 
 FROM "award_search"
 WHERE "action_date" >= '2007-10-01';

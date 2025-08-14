@@ -1,7 +1,6 @@
 import copy
 import logging
 import re
-
 from contextlib import contextmanager
 from datetime import datetime, timezone
 
@@ -25,19 +24,19 @@ from usaspending_api.broker.helpers.last_load_date import (
 from usaspending_api.common.data_classes import TransactionColumn
 from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.helpers.spark_helpers import (
-    get_active_spark_session,
     configure_spark_session,
+    get_active_spark_session,
 )
 from usaspending_api.config import CONFIG
 from usaspending_api.transactions.delta_models.transaction_fabs import (
+    FABS_TO_NORMALIZED_COLUMN_INFO,
     TRANSACTION_FABS_COLUMN_INFO,
     TRANSACTION_FABS_COLUMNS,
-    FABS_TO_NORMALIZED_COLUMN_INFO,
 )
 from usaspending_api.transactions.delta_models.transaction_fpds import (
+    DAP_TO_NORMALIZED_COLUMN_INFO,
     TRANSACTION_FPDS_COLUMN_INFO,
     TRANSACTION_FPDS_COLUMNS,
-    DAP_TO_NORMALIZED_COLUMN_INFO,
 )
 from usaspending_api.transactions.delta_models.transaction_normalized import TRANSACTION_NORMALIZED_COLUMNS
 
@@ -45,7 +44,6 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
-
     help = """
         This command reads transaction data from source / bronze tables in delta and creates the delta silver tables
         specified via the "etl_level" argument. Each "etl_level" uses an exclusive value for "last_load_date" from the
@@ -284,7 +282,7 @@ class Command(BaseCommand):
             """
         elif self.etl_level == "awards":
             id_col = "id"
-            subquery = f"""
+            subquery = """
                 SELECT awards.id AS id_to_remove
                 FROM int.awards LEFT JOIN int.award_id_lookup ON awards.id = award_id_lookup.award_id
                 WHERE awards.id IS NOT NULL AND award_id_lookup.award_id IS NULL
@@ -463,7 +461,8 @@ class Command(BaseCommand):
                     SUM(tn.indirect_federal_sharing)    AS total_indirect_federal_sharing,
                     -- Transaction FPDS Fields
                     SUM(CAST(fpds.base_and_all_options_value AS NUMERIC(23, 2))) AS base_and_all_options_value,
-                    SUM(CAST(fpds.base_exercised_options_val AS NUMERIC(23, 2))) AS base_exercised_options_val
+                    SUM(CAST(fpds.base_exercised_options_val AS NUMERIC(23, 2))) AS base_exercised_options_val,
+                    COUNT(tn.id) AS transaction_count
                 FROM int.transaction_normalized AS tn
                 LEFT JOIN int.transaction_fpds AS fpds ON tn.id = fpds.transaction_id
                 WHERE tn.award_id IN (SELECT * FROM award_ids_to_update)
@@ -733,7 +732,7 @@ class Command(BaseCommand):
                 unique_id = "detached_award_proc_unique"
             else:
                 raise ValueError(
-                    f"Invalid value for 'transaction_type': {transaction_type}; " "must select either: 'fabs' or 'fpds'"
+                    f"Invalid value for 'transaction_type': {transaction_type}; must select either: 'fabs' or 'fpds'"
                 )
 
             id_col_name = "id"
@@ -814,7 +813,7 @@ class Command(BaseCommand):
     def transaction_normalized_merge_into_sql(self, transaction_type):
         if transaction_type != "fabs" and transaction_type != "fpds":
             raise ValueError(
-                f"Invalid value for 'transaction_type': {transaction_type}. " "Must select either: 'fabs' or 'fpds'"
+                f"Invalid value for 'transaction_type': {transaction_type}. Must select either: 'fabs' or 'fpds'"
             )
 
         load_datetime = datetime.now(timezone.utc)
@@ -1063,7 +1062,7 @@ class Command(BaseCommand):
         def prepare_orphaned_transaction_temp_table():
             # Since the table to track the orphaned transactions is only needed for this function, just using a
             # managed table in the temp database.
-            self.spark.sql(f"CREATE DATABASE IF NOT EXISTS temp")
+            self.spark.sql("CREATE DATABASE IF NOT EXISTS temp")
             self.spark.sql(
                 """
                     CREATE OR REPLACE TABLE temp.orphaned_transaction_info (
@@ -1289,7 +1288,7 @@ class Command(BaseCommand):
                 # Make sure to get the maximum transaction id from the raw table in case there are records in
                 # raw.transaction_normalized that don't correspond to a record in either of the source tables.
                 # This way, new transaction_ids won't repeat the ids of any of those "orphaned" transaction records.
-                max_id = self.spark.sql(f"SELECT MAX(id) AS max_id FROM raw.transaction_normalized").collect()[0][
+                max_id = self.spark.sql("SELECT MAX(id) AS max_id FROM raw.transaction_normalized").collect()[0][
                     "max_id"
                 ]
 
@@ -1461,7 +1460,7 @@ class Command(BaseCommand):
                 # As for transaction_id_seq, make sure to get the maximum award id from the raw table in case there are
                 # records in raw.awards that don't correspond to any records in either of the source tables.
                 # This way, new award_ids won't repeat the ids of any of those "orphaned" award records.
-                max_id = self.spark.sql(f"SELECT MAX(award_id) AS max_id FROM raw.transaction_normalized").collect()[0][
+                max_id = self.spark.sql("SELECT MAX(award_id) AS max_id FROM raw.transaction_normalized").collect()[0][
                     "max_id"
                 ]
 
