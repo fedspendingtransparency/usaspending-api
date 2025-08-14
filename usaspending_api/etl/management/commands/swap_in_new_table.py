@@ -113,7 +113,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        print(f"Is local: {settings.IS_LOCAL}")
+        logger.info(f"Is local: {settings.IS_LOCAL}")
         sys.exit(1)
 
         is_undo = options["undo"]
