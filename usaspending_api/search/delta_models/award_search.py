@@ -630,7 +630,7 @@ LEFT OUTER JOIN (
         TO_JSON(
             NAMED_STRUCT(
                 'name', COALESCE(pap.name, UPPER(rpa.program_activity_name)),
-                'code', COALESCE(pap.code, LPAD(rpa.program_activity_code, 4, "0"),
+                'code', COALESCE(pap.code, LPAD(rpa.program_activity_code, 4, "0")),
                 'type', CASE WHEN pap.code IS NOT NULL THEN 'PARK' ELSE 'PAC/PAN' END
             )
     )) AS STRING) AS program_activities
