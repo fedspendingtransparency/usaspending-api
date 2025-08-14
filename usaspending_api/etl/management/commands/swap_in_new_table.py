@@ -1,17 +1,19 @@
 import json
 import logging
 import re
-
+import sys
 from datetime import datetime
 from pprint import pformat
-from typing import List, OrderedDict, Optional
+from typing import List, Optional, OrderedDict
+
+from django.conf import settings
 from django.core.management import BaseCommand
-from django.db import connection, ProgrammingError, transaction
+from django.db import ProgrammingError, connection, transaction
 
 from usaspending_api.common.helpers.sql_helpers import (
-    ordered_dictionary_fetcher,
-    is_table_partitioned,
     get_parent_partitioned_table,
+    is_table_partitioned,
+    ordered_dictionary_fetcher,
 )
 
 logger = logging.getLogger("script")
@@ -111,6 +113,9 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        print(f"Is local: {settings.IS_LOCAL}")
+        sys.exit(1)
+
         is_undo = options["undo"]
         if is_undo:
             old_table = self.get_most_recent_old_table(options["table"])
@@ -702,7 +707,7 @@ class Command(BaseCommand):
         ]
         cursor.execute(
             f"""
-            SELECT {','.join(columns_to_compare)}
+            SELECT {",".join(columns_to_compare)}
             FROM pg_attribute
             INNER JOIN pg_class ON pg_attribute.attrelid = pg_class.oid
             WHERE pg_class.relname = '{self.temp_table_name}' AND pg_attribute.attnum > 0
@@ -713,7 +718,7 @@ class Command(BaseCommand):
         temp_columns = ordered_dictionary_fetcher(cursor)
         cursor.execute(
             f"""
-            SELECT {','.join(columns_to_compare)}
+            SELECT {",".join(columns_to_compare)}
             FROM pg_attribute
             INNER JOIN pg_class ON pg_attribute.attrelid = pg_class.oid
             WHERE pg_class.relname = '{self.curr_table_name}' AND pg_attribute.attnum > 0
