@@ -6,6 +6,7 @@ from itertools import chain, combinations
 from unittest.mock import Mock
 
 from django.conf import settings
+from django.core.management import call_command
 from model_bakery import baker
 from rest_framework import status
 
@@ -497,3 +498,35 @@ def test_empty_array_filter_fail(client, download_test_data):
     assert (
         "Field 'filters|def_codes' value '[]' is below min '1' items" in resp.json()["detail"]
     ), "Incorrect error message"
+
+
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
+def test_file_c_spark_download(client, download_test_data, spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
+
+    call_command(
+        "create_delta_table",
+        f"--spark-s3-bucket={s3_unittest_data_bucket}",
+        f"--destination-table=account_download",
+    )
+
+    resp = client.post(
+        "/api/v2/download/accounts/",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "account_level": "federal_account",
+                "filters": {
+                    "budget_function": "all",
+                    "agency": "all",
+                    "submission_types": ["award_financial"],
+                    "fy": "2021",
+                    "period": 12,
+                },
+                "file_format": "csv",
+            }
+        ),
+        headers={"X-Experimental-API": "download"},
+    )
+
+    assert resp.status_code == status.HTTP_200_OK

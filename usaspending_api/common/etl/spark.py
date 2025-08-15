@@ -16,7 +16,7 @@ from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql.functions import col, concat, concat_ws, expr, lit, regexp_replace, to_date, transform, when
 from pyspark.sql.types import ArrayType, DecimalType, StringType, StructType
 
-from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount
+from usaspending_api.accounts.models import AppropriationAccountBalances, FederalAccount, TreasuryAppropriationAccount
 from usaspending_api.common.helpers.spark_helpers import (
     get_broker_jdbc_url,
     get_jdbc_connection_properties,
@@ -51,6 +51,7 @@ from usaspending_api.submissions.models import DABSSubmissionWindowSchedule, Sub
 MAX_PARTITIONS = CONFIG.SPARK_MAX_PARTITIONS
 _USAS_RDS_REF_TABLES = [
     Agency,
+    AppropriationAccountBalances,
     Cfda,
     CGAC,
     CityCountyStateCode,

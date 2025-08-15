@@ -4,20 +4,31 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('awards', '0094_delete_covidfinancialaccountmatview'),
+        ("awards", "0094_delete_covidfinancialaccountmatview"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='award',
-            name='total_indirect_federal_sharing',
-            field=models.DecimalField(blank=True, decimal_places=2, help_text='The total of the indirect_federal_sharing from associated transactions', max_digits=23, null=True),
+            model_name="award",
+            name="total_indirect_federal_sharing",
+            field=models.DecimalField(
+                blank=True,
+                decimal_places=2,
+                help_text="The total of the indirect_federal_sharing from associated transactions",
+                max_digits=23,
+                null=True,
+            ),
         ),
         migrations.AddField(
-            model_name='transactionnormalized',
-            name='indirect_federal_sharing',
-            field=models.DecimalField(blank=True, decimal_places=2, help_text='The indirect_federal_sharing for this transaction', max_digits=23, null=True),
+            model_name="transactionnormalized",
+            name="indirect_federal_sharing",
+            field=models.DecimalField(
+                blank=True,
+                decimal_places=2,
+                help_text="The indirect_federal_sharing for this transaction",
+                max_digits=23,
+                null=True,
+            ),
         ),
     ]
