@@ -3,8 +3,8 @@ from dataclasses import dataclass
 from functools import reduce
 from typing import Any
 
-from pyspark.sql import DataFrame, SparkSession
-from pyspark.sql import functions as sf, Column
+from pyspark.sql import Column, DataFrame, SparkSession
+from pyspark.sql import functions as sf
 
 from usaspending_api.download.management.commands.delta_downloads.filters import AccountDownloadFilter
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
@@ -12,12 +12,12 @@ from usaspending_api.submissions.helpers import get_submission_ids_for_periods
 
 
 class AbstractAccountDownloadDataFrameBuilder(ABC):
-
     def __init__(
         self,
         spark: SparkSession,
         account_download_filter: AccountDownloadFilter,
         award_financial_table: str = "rpt.account_download",
+        object_class_program_activity_download_table: str = "rpt.object_class_program_activity_download",
     ):
         # Resolve Filters
         self.reporting_fiscal_year = account_download_filter.fy
@@ -32,6 +32,7 @@ class AbstractAccountDownloadDataFrameBuilder(ABC):
 
         # Base Dataframes
         self._award_financial_df: DataFrame = spark.table(award_financial_table)
+        self._object_class_program_activity_df: DataFrame = spark.table(object_class_program_activity_download_table)
         self.aab = spark.table("global_temp.appropriation_account_balances")
         self.sa = spark.table("global_temp.submission_attributes")
         self.taa = spark.table("global_temp.treasury_appropriation_account")
@@ -42,7 +43,6 @@ class AbstractAccountDownloadDataFrameBuilder(ABC):
 
     @property
     def dynamic_filters(self) -> Column:
-
         @dataclass
         class Condition:
             name: str
@@ -166,7 +166,6 @@ class AbstractAccountDownloadDataFrameBuilder(ABC):
 
 
 class FederalAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBuilder):
-
     @property
     def award_financial_agg_cols(self) -> dict[str, Column]:
         return {
@@ -385,7 +384,7 @@ class FederalAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBui
 
     @property
     def object_class_program_activity(self) -> DataFrame:
-        raise NotImplementedError
+        return self._object_class_program_activity_df.filter(self.dynamic_filters)
 
     @property
     def award_financial(self) -> DataFrame:
@@ -401,7 +400,6 @@ class FederalAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBui
 
 
 class TreasuryAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBuilder):
-
     @property
     def account_balances_groupby_cols(self) -> list[Column]:
         return [
