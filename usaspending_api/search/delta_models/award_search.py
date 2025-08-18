@@ -635,6 +635,7 @@ LEFT OUTER JOIN (
                 'code', COALESCE(pap.code, LPAD(rpa.program_activity_code, 4, "0")),
                 'type', (CASE WHEN pap.code IS NOT NULL THEN 'PARK' ELSE 'PAC/PAN' END)
             )
+        )
     )), ',') AS program_activities
   FROM
     global_temp.treasury_appropriation_account taa
