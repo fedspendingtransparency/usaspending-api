@@ -1084,7 +1084,7 @@ _base_load_sql_string = rf"""
         INNER JOIN global_temp.federal_account AS fa ON fa.id = taa.federal_account_id
         INNER JOIN global_temp.toptier_agency agency ON (fa.parent_toptier_agency_id = agency.toptier_agency_id)
         LEFT JOIN global_temp.ref_program_activity rpa ON (faba.program_activity_id = rpa.id)
-        LEFT JOIN public.program_activity_park pap ON (faba.program_activity_reporting_key = pap.code)
+        LEFT JOIN global_temp.program_activity_park pap ON (faba.program_activity_reporting_key = pap.code)
         WHERE faba.award_id IS NOT NULL
         GROUP BY faba.award_id
     ) FED_AND_TRES_ACCT ON (FED_AND_TRES_ACCT.award_id = transaction_normalized.award_id)

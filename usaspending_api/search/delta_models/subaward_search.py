@@ -280,7 +280,7 @@ subaward_search_load_sql_string = rf"""
             global_temp.ref_program_activity AS rpa
                 ON faba.program_activity_id = rpa.id
         LEFT JOIN
-            public.program_activity_park AS pap
+            global_temp.program_activity_park AS pap
                 ON faba.program_activity_reporting_key = pap.code
         WHERE
             faba.award_id IS NOT NULL
