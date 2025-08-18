@@ -628,14 +628,14 @@ LEFT OUTER JOIN (
         ELSE NULL
     END AS disaster_emergency_fund_codes,
     SORT_ARRAY(COLLECT_SET(taa.treasury_account_identifier)) AS treasury_account_identifiers,
-    CAST(SORT_ARRAY(COLLECT_SET(
+    ARRAY_JOIN(SORT_ARRAY(COLLECT_SET(
         TO_JSON(
             NAMED_STRUCT(
                 'name', COALESCE(pap.name, UPPER(rpa.program_activity_name)),
                 'code', COALESCE(pap.code, LPAD(rpa.program_activity_code, 4, "0")),
                 'type', CASE WHEN pap.code IS NOT NULL THEN 'PARK' ELSE 'PAC/PAN' END
             )
-    )) AS STRING) AS program_activities
+    )) ',') AS program_activities
   FROM
     global_temp.treasury_appropriation_account taa
   INNER JOIN int.financial_accounts_by_awards faba ON (taa.treasury_account_identifier = faba.treasury_account_id)
