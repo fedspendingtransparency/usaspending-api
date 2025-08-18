@@ -5103,12 +5103,12 @@ def test_spending_over_time_subawards_program_activity_park(client, monkeypatch,
 
     expected_result = [
         {
-            "aggregated_amount": 0,
+            "aggregated_amount": 300.0,
             "total_outlays": None,
             "time_period": {"fiscal_year": "2020"},
-            "Contract_Obligations": 300,
+            "Contract_Obligations": 0,
             "Contract_Outlays": None,
-            "Grant_Obligations": 300,
+            "Grant_Obligations": 300.0,
             "Grant_Outlays": None,
         }
     ]
