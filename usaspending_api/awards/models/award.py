@@ -206,6 +206,7 @@ class Award(DataSourceTrackedModel):
     officer_5_amount = models.DecimalField(
         max_digits=23, decimal_places=2, blank=True, null=True, help_text="Executive Compensation Officer 5 Amount"
     )
+    transaction_count = models.IntegerField(null=True)
 
     objects = models.Manager()
     nonempty = AwardManager()
@@ -268,7 +269,8 @@ vw_awards_sql = """
             officer_5_amount,
             officer_5_name,
             earliest_transaction_id,
-            total_indirect_federal_sharing
+            total_indirect_federal_sharing,
+            transaction_count
         FROM
             rpt.award_search;
 """
