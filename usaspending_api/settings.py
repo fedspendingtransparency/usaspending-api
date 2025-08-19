@@ -58,7 +58,7 @@ HOST = "localhost:3000"
 ALLOWED_HOSTS = ["*"]
 
 # Define local flag to affect location of downloads
-IS_LOCAL = True
+IS_LOCAL = os.environ.get("IS_LOCAL", "").lower() in ["true", "1", "yes"]
 
 # Indicates which environment is sending traces to Grafana.
 # This will be overwritten by Ansible
