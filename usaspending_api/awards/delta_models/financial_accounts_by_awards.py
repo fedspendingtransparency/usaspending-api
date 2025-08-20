@@ -53,7 +53,7 @@ FINANCIAL_ACCOUNTS_BY_AWARDS_COLUMNS = {
     "treasury_account_id": "INTEGER",
     "distinct_award_key": "STRING NOT NULL",
     "disaster_emergency_fund_code": "STRING",
-    "program_activity_reporting_key": "STRING,"
+    "program_activity_reporting_key": "STRING",
 }
 
 financial_accounts_by_awards_sql_string = rf"""
