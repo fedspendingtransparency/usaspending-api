@@ -907,7 +907,7 @@ def _build_usas_data_for_spark():
         program_activities=[
             {"code": "1000", "name": "PAP name", "type": "PARK"},
             {"code": "0002", "name": "OPERATIONS AND MAINTENANCE", "type": "PAC/PAN"},
-        ]
+        ],
     )
     baker.make(
         "search.TransactionSearch",
@@ -1209,11 +1209,7 @@ def _build_usas_data_for_spark():
         program_activities=[{"code": "0003", "name": "TRAINING AND RECRUITING", "type": "PAC/PAN"}],
     )
 
-    pap1 = baker.make(
-        "references.ProgramActivityPark",
-        code="1000",
-        name="PAP name"
-    )
+    pap1 = baker.make("references.ProgramActivityPark", code="1000", name="PAP name")
 
     baker.make(
         "search.TransactionSearch",
@@ -1439,7 +1435,7 @@ def _build_usas_data_for_spark():
         submission=sa,
         program_activity=rpa_1,
         _fill_optional=False,
-        program_activity_reporting_key=pap1
+        program_activity_reporting_key=pap1,
     )
     baker.make(
         "awards.FinancialAccountsByAwards",
