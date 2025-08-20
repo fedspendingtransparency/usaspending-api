@@ -521,8 +521,8 @@ def _build_usas_data_for_spark():
         pop_county_fips="51001",
         generated_pragmatic_obligation=0.00,
         program_activities=[
-            {"name": "OFFICE OF THE SECRETARY", "code": "0001"},
-            {"name": "OPERATIONS AND MAINTENANCE", "code": "0002"},
+            {"code": "1000", "name": "PAP name", "type": "PARK"},
+            {"name": "OPERATIONS AND MAINTENANCE", "code": "0002", "type": "PAC/PAN"},
         ],
         federal_accounts=[
             {
@@ -719,7 +719,7 @@ def _build_usas_data_for_spark():
         recipient_location_county_fips=None,
         pop_county_fips=None,
         generated_pragmatic_obligation=0.00,
-        program_activities=[{"name": "TRAINING AND RECRUITING", "code": "0003"}],
+        program_activities=[{"name": "TRAINING AND RECRUITING", "code": "0003", "type": "PAC/PAN"}],
         federal_accounts=[
             {
                 "id": federal_account.id,
@@ -905,9 +905,9 @@ def _build_usas_data_for_spark():
         recipient_location_county_fips="51001",
         pop_county_fips="51001",
         program_activities=[
-            {"code": "0001", "name": "OFFICE OF THE SECRETARY"},
-            {"code": "0002", "name": "OPERATIONS AND MAINTENANCE"},
-        ],
+            {"code": "1000", "name": "PAP name", "type": "PARK"},
+            {"code": "0002", "name": "OPERATIONS AND MAINTENANCE", "type": "PAC/PAN"},
+        ]
     )
     baker.make(
         "search.TransactionSearch",
@@ -1014,8 +1014,8 @@ def _build_usas_data_for_spark():
         recipient_location_county_fips="51001",
         pop_county_fips="51001",
         program_activities=[
-            {"code": "0001", "name": "OFFICE OF THE SECRETARY"},
-            {"code": "0002", "name": "OPERATIONS AND MAINTENANCE"},
+            {"code": "1000", "name": "PAP name", "type": "PARK"},
+            {"code": "0002", "name": "OPERATIONS AND MAINTENANCE", "type": "PAC/PAN"},
         ],
     )
     baker.make(
@@ -1206,8 +1206,15 @@ def _build_usas_data_for_spark():
         disaster_emergency_fund_codes=["Q"],
         recipient_location_county_fips=None,
         pop_county_fips=None,
-        program_activities=[{"code": "0003", "name": "TRAINING AND RECRUITING"}],
+        program_activities=[{"code": "0003", "name": "TRAINING AND RECRUITING", "type": "PAC/PAN"}],
     )
+
+    pap1 = baker.make(
+        "references.ProgramActivityPark",
+        code="1000",
+        name="PAP name"
+    )
+
     baker.make(
         "search.TransactionSearch",
         transaction_id=4,
@@ -1301,7 +1308,7 @@ def _build_usas_data_for_spark():
         disaster_emergency_fund_codes=["Q"],
         recipient_location_county_fips=None,
         pop_county_fips=None,
-        program_activities=[{"code": "0003", "name": "TRAINING AND RECRUITING"}],
+        program_activities=[{"code": "0003", "name": "TRAINING AND RECRUITING", "type": "PAC/PAN"}],
     )
     baker.make(
         "search.TransactionSearch",
@@ -1431,7 +1438,8 @@ def _build_usas_data_for_spark():
         ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0,
         submission=sa,
         program_activity=rpa_1,
-        _fill_optional=True,
+        _fill_optional=False,
+        program_activity_reporting_key=pap1
     )
     baker.make(
         "awards.FinancialAccountsByAwards",
@@ -1444,7 +1452,7 @@ def _build_usas_data_for_spark():
         ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0,
         ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0,
         program_activity=rpa_2,
-        _fill_optional=True,
+        _fill_optional=False,
     )
     baker.make(
         "awards.FinancialAccountsByAwards",
@@ -1457,7 +1465,7 @@ def _build_usas_data_for_spark():
         ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0,
         submission=sa,
         program_activity=rpa_3,
-        _fill_optional=True,
+        _fill_optional=False,
     )
     baker.make(
         "awards.FinancialAccountsByAwards",
@@ -1470,7 +1478,7 @@ def _build_usas_data_for_spark():
         ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0,
         submission=sa,
         program_activity=rpa_3,
-        _fill_optional=True,
+        _fill_optional=False,
     )
 
 
