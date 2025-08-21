@@ -19,6 +19,7 @@ from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
 )
+from usaspending_api.common.logging import configure_logging
 from usaspending_api.common.spark.configs import DEFAULT_EXTRA_CONF
 from usaspending_api.common.tracing import SubprocessTrace
 from usaspending_api.download.lookups import JOB_STATUS_DICT, FILE_FORMATS
@@ -28,6 +29,7 @@ from usaspending_api.download.management.commands.delta_downloads.builders impor
 )
 from usaspending_api.download.management.commands.delta_downloads.filters import AccountDownloadFilter
 from usaspending_api.download.models import DownloadJob
+from usaspending_api.settings import TRACE_ENV
 
 JOB_TYPE = "USAspendingSparkDownloader"
 
@@ -59,6 +61,7 @@ class Command(BaseCommand):
         parser.add_argument("--skip-local-cleanup", action="store_true")
 
     def handle(self, *args, **options):
+        configure_logging(service_name="usaspending-downloader-" + TRACE_ENV)
         self.spark, spark_created_by_command = self.setup_spark_session()
         self.file_prefix = options["file_prefix"]
         self.should_cleanup = not options["skip_local_cleanup"]
@@ -163,9 +166,9 @@ class Command(BaseCommand):
             )
             if not settings.IS_LOCAL:
                 with SubprocessTrace(
-                        name=f"job.{JOB_TYPE}.download.s3",
-                        kind=SpanKind.INTERNAL,
-                        service="spark",
+                    name=f"job.{JOB_TYPE}.download.s3",
+                    kind=SpanKind.INTERNAL,
+                    service="spark",
                 ) as span:
                     span.set_attributes(
                         {
