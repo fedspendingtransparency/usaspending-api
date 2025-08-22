@@ -286,8 +286,6 @@ services:
       PYTHONPATH: /project
       DJANGO_SETTINGS_MODULE: "usaspending_api.settings"
       DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
-      TOGGLE_OTEL_CONSOLE_LOGGING: ${TOGGLE_OTEL_CONSOLE_LOGGING}
-      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}
     command: /bin/sh -c "$${SPARK_HOME}/bin/spark-class org.apache.spark.deploy.worker.Worker --webui-port $${SPARK_WORKER_WEBUI_PORT} spark://$${SPARK_MASTER_HOST}:$${SPARK_MASTER_PORT}"
     ports:
       - ${SPARK_WORKER_WEBUI_PORT:-4041}:4041
