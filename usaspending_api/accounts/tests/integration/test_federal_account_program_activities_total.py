@@ -5,6 +5,7 @@ from rest_framework import status
 
 url = "/api/v2/federal_accounts/{federal_account_code}/program_activities/total/{query_params}"
 
+
 @pytest.fixture
 def program_activities_total_test_data():
     federal_account_1 = baker.make("accounts.FederalAccount", federal_account_code="000-0001")
@@ -55,8 +56,8 @@ def program_activities_total_test_data():
         program_activity=pac_pan_2,
         submission=sa,
         obligations_incurred_by_program_object_class_cpe=130,
-        reporting_period_start = "2024-05-03",
-        reporting_period_end = "2024-05-04",
+        reporting_period_start="2024-05-03",
+        reporting_period_end="2024-05-04",
         object_class=oc3,
     )
     baker.make(
@@ -91,41 +92,48 @@ def program_activities_total_test_data():
         object_class=oc4,
     )
 
+
 @pytest.mark.django_db
 def test_success(client, program_activities_total_test_data):
     resp = client.post("/api/v2/federal_accounts/000-0001/program_activities/total", content_type="application/json")
 
     expected_results = {
-        'results': [
-            {'obligations': 45612.0, 'code': '00000000003', 'name': 'PARK 3', 'type': 'PARK'},
-            {'obligations': 6000.0, 'code': '00000000001', 'name': 'PARK 1', 'type': 'PARK'},
-            {'obligations': 130.0, 'code': '00000000002', 'name': 'PARK 2', 'type': 'PARK'},
-            {'obligations': 1.0, 'code': '0001', 'name': 'PAC/PAN 1', 'type': 'PAC/PAN'},
-            {'obligations': -1500.0, 'code': '00000000003', 'name': 'PARK 3', 'type': 'PARK'}
+        "results": [
+            {"obligations": 45612.0, "code": "00000000003", "name": "PARK 3", "type": "PARK"},
+            {"obligations": 6000.0, "code": "00000000001", "name": "PARK 1", "type": "PARK"},
+            {"obligations": 130.0, "code": "00000000002", "name": "PARK 2", "type": "PARK"},
+            {"obligations": 1.0, "code": "0001", "name": "PAC/PAN 1", "type": "PAC/PAN"},
+            {"obligations": -1500.0, "code": "00000000003", "name": "PARK 3", "type": "PARK"},
         ],
-        'page_metadata': {
-            'page': 1, 'total': 5, 'limit': 10, 'next': None, 'previous': None, 'hasNext': False, 'hasPrevious': False
-        }
+        "page_metadata": {
+            "page": 1,
+            "total": 5,
+            "limit": 10,
+            "next": None,
+            "previous": None,
+            "hasNext": False,
+            "hasPrevious": False,
+        },
     }
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_results
 
+
 @pytest.mark.django_db
 def test_success_with_filters(client, program_activities_total_test_data):
     request = {
-        "filter": {
-            "time_period": [{"start_date": "2020-01-01", "end_date": "2022-01-01"}],
-            "program_activity": ["PAC"]
-        }
+        "filter": {"time_period": [{"start_date": "2020-01-01", "end_date": "2022-01-01"}], "program_activity": ["PAC"]}
     }
-    resp = client.post("/api/v2/federal_accounts/000-0001/program_activities/total", content_type="application/json", data=json.dumps(request))
+    resp = client.post(
+        "/api/v2/federal_accounts/000-0001/program_activities/total",
+        content_type="application/json",
+        data=json.dumps(request),
+    )
 
     expected_results = {
-        'results': [
-            {'obligations': 1.0, 'code': '0001', 'name': 'PAC/PAN 1', 'type': 'PAC/PAN'}
-        ],
-        'page_metadata': {
+        "results": [{"obligations": 1.0, "code": "0001", "name": "PAC/PAN 1", "type": "PAC/PAN"}],
+        "page_metadata": {
             "page": 1,
             "total": 1,
             "limit": 10,
@@ -133,27 +141,28 @@ def test_success_with_filters(client, program_activities_total_test_data):
             "previous": None,
             "hasNext": False,
             "hasPrevious": False,
-        }
+        },
     }
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_results
 
+
 @pytest.mark.django_db
 def test_object_class_filter(client, program_activities_total_test_data):
-    request = {
-        "filter": {
-            "object_class": ["moc1", "oc3"]
-        }
-    }
-    resp = client.post("/api/v2/federal_accounts/000-0001/program_activities/total", content_type="application/json", data=json.dumps(request))
+    request = {"filter": {"object_class": ["moc1", "oc3"]}}
+    resp = client.post(
+        "/api/v2/federal_accounts/000-0001/program_activities/total",
+        content_type="application/json",
+        data=json.dumps(request),
+    )
 
     expected_results = {
-        'results': [
-            {'obligations': 6000.0, 'code': '00000000001', 'name': 'PARK 1', 'type': 'PARK'},
-            {'obligations': 130.0, 'code': '00000000002', 'name': 'PARK 2', 'type': 'PARK'},
-            {'obligations': 1.0, 'code': '0001', 'name': 'PAC/PAN 1', 'type': 'PAC/PAN'}
+        "results": [
+            {"obligations": 6000.0, "code": "00000000001", "name": "PARK 1", "type": "PARK"},
+            {"obligations": 130.0, "code": "00000000002", "name": "PARK 2", "type": "PARK"},
+            {"obligations": 1.0, "code": "0001", "name": "PAC/PAN 1", "type": "PAC/PAN"},
         ],
-        'page_metadata': {
+        "page_metadata": {
             "page": 1,
             "total": 3,
             "limit": 10,
@@ -161,7 +170,7 @@ def test_object_class_filter(client, program_activities_total_test_data):
             "previous": None,
             "hasNext": False,
             "hasPrevious": False,
-        }
+        },
     }
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_results
