@@ -11,6 +11,7 @@ from django.test import TestCase
 from model_bakery import baker
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.etl.submission_loader_helpers.object_class import reset_object_class_cache
+from usaspending_api.etl.submission_loader_helpers.program_activity_park import reset_program_activity_park_cache
 from usaspending_api.etl.transaction_loaders.data_load_helpers import format_insert_or_update_column_sql
 
 earlier_time = datetime.now() - timedelta(days=1)
@@ -25,6 +26,7 @@ class TestWithMultipleDatabases(TestCase):
     def setUpTestData(cls):
 
         reset_object_class_cache()
+        reset_program_activity_park_cache()
 
         baker.make(
             "accounts.TreasuryAppropriationAccount",

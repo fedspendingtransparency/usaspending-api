@@ -12,6 +12,7 @@ from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetcher
 from usaspending_api.etl.submission_loader_helpers.object_class import reset_object_class_cache
+from usaspending_api.etl.submission_loader_helpers.program_activity_park import reset_program_activity_park_cache
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.submissions.models import SubmissionAttributes
 
@@ -34,6 +35,7 @@ class TestWithMultipleDatabases(TransactionTestCase):
         """
 
         reset_object_class_cache()
+        reset_program_activity_park_cache()
 
         baker.make(
             "accounts.TreasuryAppropriationAccount",
