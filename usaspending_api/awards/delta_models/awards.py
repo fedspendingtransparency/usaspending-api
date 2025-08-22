@@ -46,11 +46,12 @@ AWARDS_COLUMNS = {
     "type_description": "STRING",
     "update_date": "TIMESTAMP",
     "uri": "STRING",
+    "transaction_count": "INTEGER",
 }
 
 awards_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
-        {", ".join([f'{key} {val}' for key, val in AWARDS_COLUMNS.items()])}
+        {", ".join([f"{key} {val}" for key, val in AWARDS_COLUMNS.items()])}
     )
     USING DELTA
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
