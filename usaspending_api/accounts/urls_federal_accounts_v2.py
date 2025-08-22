@@ -1,6 +1,7 @@
 from django.urls import re_path
 
 from usaspending_api.accounts.v2.views.federal_account_program_activities import FederalAccountProgramActivities
+from usaspending_api.accounts.v2.views.federal_account_program_activities_total import FederalAccountProgramActivitiesTotal
 from usaspending_api.accounts.views import federal_accounts_v2 as views
 
 # bind ViewSets to URLs
@@ -21,6 +22,9 @@ urlpatterns = [
     re_path(
         r"(?P<federal_account_code>[0-9]{3}[\-][0-9]{4})/program_activities/?$",
         FederalAccountProgramActivities.as_view(),
+    ),
+    re_path(r"(?P<federal_account_code>[0-9]{3}[\-][0-9]{4})/program_activities/total/?$",
+        FederalAccountProgramActivitiesTotal.as_view(),
     ),
     re_path(r"(?P<federal_account_code>[0-9]{3}[\-][0-9]{4})/?$", federal_account),
     re_path(r"$", federal_accounts),
