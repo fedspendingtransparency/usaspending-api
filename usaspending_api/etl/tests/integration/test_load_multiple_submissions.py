@@ -12,6 +12,7 @@ from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.common.helpers.sql_helpers import ordered_dictionary_fetcher
 from usaspending_api.etl.submission_loader_helpers.object_class import reset_object_class_cache
+from usaspending_api.etl.submission_loader_helpers.program_activity_park import reset_program_activity_park_cache
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.submissions.models import SubmissionAttributes
 
@@ -34,6 +35,7 @@ class TestWithMultipleDatabases(TransactionTestCase):
         """
 
         reset_object_class_cache()
+        reset_program_activity_park_cache()
 
         baker.make(
             "accounts.TreasuryAppropriationAccount",
@@ -104,7 +106,7 @@ class TestWithMultipleDatabases(TransactionTestCase):
             submission_fiscal_month=9,
             is_quarter=True,
         )
-
+        baker.make("references.ProgramActivityPark", code="ABCD0000", name="TEST PARK")
         connection = connections[settings.DATA_BROKER_DB_ALIAS]
         with connection.cursor() as cursor:
 
@@ -227,21 +229,22 @@ class TestWithMultipleDatabases(TransactionTestCase):
                     by_direct_reimbursable_fun,
                     gross_outlay_amount_by_pro_cpe,
                     disaster_emergency_fund_code,
-                    prior_year_adjustment
+                    prior_year_adjustment,
+                    program_activity_reporting_key
                 ) (values
-                    (1, 1, 1, '1010', 'D', 1111, null, 'x'),
-                    (2, 1, 1, '1010', 'D', 2222, 'b', 'b'),
-                    (3, 1, 1, '1010', 'D', 3333, 'L', 'p'),
-                    (4, 2, 1, '1010', 'D', 4444, null, 'X'),
-                    (5, 2, 1, '1010', 'D', 5555, null, 'B'),
-                    (6, 2, 1, '1010', 'D', 6666, null, 'P'),
-                    (7, 3, 2, '1010', 'D', 7777, 'L', 'X'),
-                    (8, 3, 2, '1010', 'D', 8888, 'l', 'X'),
-                    (9, 3, 2, '1010', 'D', 9999, 'L', 'X'),
-                    (10, 4, 2, '1010', 'D', 1010, null, 'X'),
-                    (11, 5, 2, '1010', 'D', 1111, 'B', 'X'),
-                    (12, 6, 2, '1010', 'D', 1212, 'L', 'X'),
-                    (13, 7, 2, '1010', 'D', 1313, 'n', 'X')
+                    (1, 1, 1, '1010', 'D', 1111, null, 'x', 'aBcD0000'),
+                    (2, 1, 1, '1010', 'D', 2222, 'b', 'b', 'aBcD0000'),
+                    (3, 1, 1, '1010', 'D', 3333, 'L', 'p', 'aBcD0000'),
+                    (4, 2, 1, '1010', 'D', 4444, null, 'X', 'aBcD0000'),
+                    (5, 2, 1, '1010', 'D', 5555, null, 'B', 'aBcD0000'),
+                    (6, 2, 1, '1010', 'D', 6666, null, 'P', 'aBcD0000'),
+                    (7, 3, 2, '1010', 'D', 7777, 'L', 'X', 'aBcD0000'),
+                    (8, 3, 2, '1010', 'D', 8888, 'l', 'X', 'aBcD0000'),
+                    (9, 3, 2, '1010', 'D', 9999, 'L', 'X', 'aBcD0000'),
+                    (10, 4, 2, '1010', 'D', 1010, null, 'X', 'aBcD0000'),
+                    (11, 5, 2, '1010', 'D', 1111, 'B', 'X', 'aBcD0000'),
+                    (12, 6, 2, '1010', 'D', 1212, 'L', 'X', 'aBcD0000'),
+                    (13, 7, 2, '1010', 'D', 1313, 'n', 'X', 'aBcD0000')
                 )
                 """
             )
@@ -259,26 +262,27 @@ class TestWithMultipleDatabases(TransactionTestCase):
                     ussgl487200_downward_adjus_cpe,
                     ussgl497200_downward_adjus_cpe,
                     disaster_emergency_fund_code,
-                    prior_year_adjustment
+                    prior_year_adjustment,
+                    program_activity_reporting_key
                 ) (values
-                    (1, 1, 1, '1010', 'D', 11111, 111110, -11, -111, null, 'x'),
-                    (2, 1, 1, '1010', 'D', 22222, 222220, -22, -222, 'B', 'b'),
-                    (3, 1, 1, '1010', 'D', 33333, 333330, -33, -333, 'l', 'p'),
-                    (4, 2, 1, '1010', 'D', 44444, 444440, -44, -444, null, 'X'),
-                    (5, 2, 1, '1010', 'D', 55555, 555550, -55, -555, null, 'B'),
-                    (6, 2, 1, '1010', 'D', 66666, 666660, -66, -666, null, 'P'),
-                    (7, 3, 2, '1010', 'D', 77777, 777770, -77, -777, 'L', 'X'),
-                    (8, 3, 2, '1010', 'D', 88888, 888880, -88, -888, 'L', 'X'),
-                    (9, 3, 2, '1010', 'D', 99999, 999990, -99, -999, 'L', 'X'),
-                    (10, 4, 2, '1010', 'D', 10101, 101010, -10, -101, null, 'X'),
-                    (11, 5, 2, '1010', 'D', 11111, 111110, 0, 0, 'B', 'X'),
-                    (12, 5, 2, '1010', 'D', null, null, 0, 0, 'M', 'X'), -- this should not load because of 0/null values
-                    (13, 5, 2, '1010', 'D', 0, 0, null, 0, 'M', 'X'), -- this should not load because of 0/null values
-                    (14, 5, 2, '1010', 'D', null, 0, null, 0, 'm', 'X'), -- this should not load because of 0/null values
-                    (15, 5, 2, '1010', 'D', 0, null, 0, null, 'M', 'X'), -- this should not load because of 0/null values
-                    (16, 6, 2, '1010', 'D', 12121, 121210, -12, -121, 'L', 'X'),
-                    (17, 7, 2, '1010', 'D', 13131, 131310, -13, -131, 'n', 'X'),
-                    (18, 5, 2, '1010', 'D', 0, 0, 0, -1010, 'N', 'X')
+                    (1, 1, 1, '1010', 'D', 11111, 111110, -11, -111, null, 'x', 'aBcD0000'),
+                    (2, 1, 1, '1010', 'D', 22222, 222220, -22, -222, 'B', 'b', 'aBcD0000'),
+                    (3, 1, 1, '1010', 'D', 33333, 333330, -33, -333, 'l', 'p', 'aBcD0000'),
+                    (4, 2, 1, '1010', 'D', 44444, 444440, -44, -444, null, 'X', 'aBcD0000'),
+                    (5, 2, 1, '1010', 'D', 55555, 555550, -55, -555, null, 'B', 'aBcD0000'),
+                    (6, 2, 1, '1010', 'D', 66666, 666660, -66, -666, null, 'P', 'aBcD0000'),
+                    (7, 3, 2, '1010', 'D', 77777, 777770, -77, -777, 'L', 'X', 'aBcD0000'),
+                    (8, 3, 2, '1010', 'D', 88888, 888880, -88, -888, 'L', 'X', 'aBcD0000'),
+                    (9, 3, 2, '1010', 'D', 99999, 999990, -99, -999, 'L', 'X', 'aBcD0000'),
+                    (10, 4, 2, '1010', 'D', 10101, 101010, -10, -101, null, 'X', 'aBcD0000'),
+                    (11, 5, 2, '1010', 'D', 11111, 111110, 0, 0, 'B', 'X', 'aBcD0000'),
+                    (12, 5, 2, '1010', 'D', null, null, 0, 0, 'M', 'X', 'aBcD0000'), -- this should not load because of 0/null values
+                    (13, 5, 2, '1010', 'D', 0, 0, null, 0, 'M', 'X', 'aBcD0000'), -- this should not load because of 0/null values
+                    (14, 5, 2, '1010', 'D', null, 0, null, 0, 'm', 'X', 'aBcD0000'), -- this should not load because of 0/null values
+                    (15, 5, 2, '1010', 'D', 0, null, 0, null, 'M', 'X', 'aBcD0000'), -- this should not load because of 0/null values
+                    (16, 6, 2, '1010', 'D', 12121, 121210, -12, -121, 'L', 'X', 'aBcD0000'),
+                    (17, 7, 2, '1010', 'D', 13131, 131310, -13, -131, 'n', 'X', 'aBcD0000'),
+                    (18, 5, 2, '1010', 'D', 0, 0, 0, -1010, 'N', 'X', 'aBcD0000')
                 )
                 """
             )
@@ -413,11 +417,17 @@ class TestWithMultipleDatabases(TransactionTestCase):
                 """
                     select  sum(gross_outlay_amount_by_program_object_class_cpe),
                             string_agg(disaster_emergency_fund_code, ',' order by disaster_emergency_fund_code),
-                            string_agg(prior_year_adjustment, ',' order by prior_year_adjustment)
+                            string_agg(prior_year_adjustment, ',' order by prior_year_adjustment),
+                            string_agg(program_activity_reporting_key, ',' order by program_activity_reporting_key)
                     from    financial_accounts_by_program_activity_object_class
                 """
             )
-            assert cursor.fetchone() == (Decimal("-52116.00"), "B,B,L,L", "B,B,P,P,X,X,X,X,X")
+            assert cursor.fetchone() == (
+                Decimal("-52116.00"),
+                "B,B,L,L",
+                "B,B,P,P,X,X,X,X,X",
+                ",".join(["ABCD0000"] * 9),
+            )
 
             cursor.execute(
                 """
@@ -426,7 +436,8 @@ class TestWithMultipleDatabases(TransactionTestCase):
                             sum(ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe),
                             sum(ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe),
                             string_agg(disaster_emergency_fund_code, ',' order by disaster_emergency_fund_code),
-                            string_agg(prior_year_adjustment, ',' order by prior_year_adjustment)
+                            string_agg(prior_year_adjustment, ',' order by prior_year_adjustment),
+                            string_agg(program_activity_reporting_key, ',' order by program_activity_reporting_key)
                     from    financial_accounts_by_awards
                 """
             )
@@ -437,6 +448,7 @@ class TestWithMultipleDatabases(TransactionTestCase):
                 Decimal("6106.00"),
                 "B,B,L,L,L,L,N",
                 "B,B,P,P,X,X,X,X,X,X,X,X",
+                ",".join(["ABCD0000"] * 12),
             )
 
         # Nuke a submission.
