@@ -1,4 +1,3 @@
-import json
 import logging
 import os
 import traceback
@@ -19,19 +18,16 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_active_spark_session,
 )
 from usaspending_api.common.spark.configs import DEFAULT_EXTRA_CONF
+from usaspending_api.download.delta_downloads.account_balances import AccountBalancesDownloadFactory
+from usaspending_api.download.delta_downloads.award_financial import AwardFinancialDownloadFactory
 from usaspending_api.download.lookups import JOB_STATUS_DICT, FILE_FORMATS
-from usaspending_api.download.management.commands.delta_downloads.builders import (
-    FederalAccountDownloadDataFrameBuilder,
-    TreasuryAccountDownloadDataFrameBuilder,
-)
-from usaspending_api.download.management.commands.delta_downloads.filters import AccountDownloadFilter
 from usaspending_api.download.models import DownloadJob
 
 logger = logging.getLogger(__name__)
 
-dataframe_builders = {
-    "federal_account": FederalAccountDownloadDataFrameBuilder,
-    "treasury_account": TreasuryAccountDownloadDataFrameBuilder,
+download_factories = {
+    "account_balances": AccountBalancesDownloadFactory,
+    "award_financial": AwardFinancialDownloadFactory,
 }
 
 
@@ -92,10 +88,13 @@ class Command(BaseCommand):
         try:
             spark_to_csv_strategy = SparkToCSVStrategy(logger)
             zip_file_path = self.working_dir_path / f"{self.download_name}.zip"
-            download_request = json.loads(self.download_job.json_request)
-            df_builder = dataframe_builders[download_request["account_level"]]
-            account_download_filter = AccountDownloadFilter(**download_request["filters"])
-            source_dfs = df_builder(spark=self.spark, account_download_filter=account_download_filter).source_dfs
+            # download_request = json.loads(self.download_job.json_request)
+            # account_download_filter = AccountDownloadFilters(**download_request["filters"])
+            # df_factories = [
+            #     download_factories[submission_type] for submission_type in account_download_filter.submission_types
+            # ]
+            source_dfs = ...
+            # source_dfs = df_builder(spark=self.spark, account_download_filter=account_download_filter).source_dfs
             csvs_metadata = [
                 spark_to_csv_strategy.download_to_csv(
                     source_sql=None,

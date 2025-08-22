@@ -9,7 +9,7 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import ToptierAgency
 
 
-class AccountDownloadFilter(BaseModel):
+class AccountDownloadFilters(BaseModel):
     fy: int
     submission_types: list[Literal["account_balances", "object_class_program_activity", "award_financial"]]
     period: int | None = None
@@ -20,8 +20,24 @@ class AccountDownloadFilter(BaseModel):
     budget_subfunction: str | None = None
     def_codes: list[str] | None = None
 
-    @validator("fy", "period", "quarter", "agency", "federal_account", pre=True)
+    @property
+    def federal_account_id(self) -> int | None:
+        return self.federal_account
+
+    @property
+    def reporting_fiscal_year(self) -> int:
+        return self.fy
+
+    @property
+    def reporting_fiscal_quarter(self) -> int:
+        return self.quarter or self.period // 3
+
+    @property
+    def reporting_fiscal_period(self) -> int:
+        return self.period or self.quarter * 3
+
     @classmethod
+    @validator("fy", "period", "quarter", "agency", "federal_account", pre=True)
     def ensure_int_or_none(cls, value: Any, field: ModelField) -> Any:
         if value == "all":
             result = None
@@ -36,30 +52,30 @@ class AccountDownloadFilter(BaseModel):
             result = value
         return result
 
-    @validator("budget_function", "budget_subfunction", pre=True)
     @classmethod
+    @validator("budget_function", "budget_subfunction", pre=True)
     def check_for_all(cls, value: Any) -> Any:
         if value == "all":
             return None
         else:
             return value
 
-    @validator("agency")
     @classmethod
+    @validator("agency")
     def check_agency_exists(cls, value: Any) -> Any:
         if value is not None and not ToptierAgency.objects.filter(toptier_agency_id=value).exists():
             raise InvalidParameterException("Agency with that ID does not exist")
         return value
 
-    @validator("federal_account")
     @classmethod
+    @validator("federal_account")
     def check_federal_account_exists(cls, value: Any) -> Any:
         if value is not None and not FederalAccount.objects.filter(id=value).exists():
             raise InvalidParameterException("Federal Account with that ID does not exist")
         return value
 
-    @root_validator
     @classmethod
+    @root_validator
     def check_period_quarter(cls, values: dict[str, Any]) -> dict[str, Any]:
         period, quarter = values.get("period"), values.get("quarter")
         if period is None and quarter is None:

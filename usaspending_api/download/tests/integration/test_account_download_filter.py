@@ -2,7 +2,7 @@ import pytest
 from model_bakery import baker
 
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.download.management.commands.delta_downloads.filters import AccountDownloadFilter
+from usaspending_api.download.delta_downloads import AccountDownloadFilter
 
 
 @pytest.fixture

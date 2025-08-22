@@ -1,4 +1,4 @@
-ACCOUNT_DOWNLOAD_COLUMNS = {
+AWARD_FINANCIAL_DOWNLOAD_COLUMNS = {
     "financial_accounts_by_awards_id": {"delta": "INTEGER NOT NULL", "postgres": "INTEGER NOT NULL"},
     "submission_id": {"delta": "INTEGER NOT NULL", "postgres": "INTEGER NOT NULL"},
     "federal_owning_agency_name": {"delta": "STRING", "postgres": "TEXT"},
@@ -107,20 +107,20 @@ ACCOUNT_DOWNLOAD_COLUMNS = {
     "quarter_format_flag": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
 }
 
-ACCOUNT_DOWNLOAD_DELTA_COLUMNS = {k: v["delta"] for k, v in ACCOUNT_DOWNLOAD_COLUMNS.items()}
-ACCOUNT_DOWNLOAD_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in ACCOUNT_DOWNLOAD_COLUMNS.items()}
+AWARD_FINANCIAL_DOWNLOAD_DELTA_COLUMNS = {k: v["delta"] for k, v in AWARD_FINANCIAL_DOWNLOAD_COLUMNS.items()}
+AWARD_FINANCIAL_DOWNLOAD_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in AWARD_FINANCIAL_DOWNLOAD_COLUMNS.items()}
 
-account_download_create_sql_string = rf"""
+award_financial_download_create_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
-        {", ".join([f'{key} {val}' for key, val in ACCOUNT_DOWNLOAD_DELTA_COLUMNS.items()])}
+        {", ".join([f'{key} {val}' for key, val in AWARD_FINANCIAL_DOWNLOAD_DELTA_COLUMNS.items()])}
     )
     USING DELTA
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
     """
 
-account_download_load_sql_string = rf"""
+award_financial_download_load_sql_string = rf"""
     INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} (
-        {",".join(list(ACCOUNT_DOWNLOAD_COLUMNS))}
+        {",".join(list(AWARD_FINANCIAL_DOWNLOAD_COLUMNS))}
     )
     SELECT
         financial_accounts_by_awards.financial_accounts_by_awards_id,

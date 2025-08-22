@@ -7,11 +7,11 @@ from django.core.management import call_command
 from model_bakery import baker
 
 from usaspending_api.common.etl.spark import create_ref_temp_views
-from usaspending_api.download.management.commands.delta_downloads.builders import (
+from usaspending_api.download.delta_downloads import (
     FederalAccountDownloadDataFrameBuilder,
     TreasuryAccountDownloadDataFrameBuilder,
 )
-from usaspending_api.download.management.commands.delta_downloads.filters import AccountDownloadFilter
+from usaspending_api.download.delta_downloads import AccountDownloadFilter
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 
 
