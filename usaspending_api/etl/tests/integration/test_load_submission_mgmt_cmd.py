@@ -49,6 +49,7 @@ class TestWithMultipleDatabases(TestCase):
             submission_fiscal_quarter=0,
             is_quarter=False,
         )
+        baker.make("references.ProgramActivityPark", code="0000", name="OTHER/UNKNOWN")
 
         # Setup default data in Broker Test DB
         broker_objects_to_insert = {
@@ -461,6 +462,7 @@ def _assemble_published_award_financial_records() -> list:
         "piid": None,
         "program_activity_code": None,
         "program_activity_name": None,
+        "program_activity_reporting_key": "0000",
         "sub_account_code": None,
         "transaction_obligated_amou": 100,
         "uri": None,
