@@ -590,7 +590,7 @@ Request parameter description:
 **Example Request:**
 ```
 {
-    "program_activities": [{"type": "PARK"}]
+    "program_activities": [{"name": "program_name", "code": "1234", type": "PARK"}]
 }
 ```
 
