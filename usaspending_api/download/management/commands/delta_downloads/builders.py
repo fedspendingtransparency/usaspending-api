@@ -1,3 +1,4 @@
+import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from functools import reduce
@@ -40,6 +41,8 @@ class AbstractAccountDownloadDataFrameBuilder(ABC):
         self.cgac_ata = spark.table("global_temp.cgac")
         self.fa = spark.table("global_temp.federal_account")
         self.ta = spark.table("global_temp.toptier_agency")
+
+        self.logger = logging.getLogger(__name__)
 
     @property
     def dynamic_filters(self) -> Column:
@@ -434,8 +437,8 @@ class FederalAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBui
             "USSGL497100_downward_adj_prior_year_unpaid_deliv_orders_oblig": lambda col: sf.sum(col).alias(col),
             "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig": self.filter_and_sum,
             "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig": self.filter_and_sum,
-            "USSGL483100_undelivered_orders_obligations_transferred_unpaid": lambda col: sf.sum(col).alias(col),
-            "USSGL493100_delivered_orders_obligations_transferred_unpaid": lambda col: sf.sum(col).alias(col),
+            # "USSGL483100_undelivered_orders_obligations_transferred_unpaid": lambda col: sf.sum(col).alias(col),
+            # "USSGL493100_delivered_orders_obligations_transferred_unpaid": lambda col: sf.sum(col).alias(col),
             "USSGL483200_undeliv_orders_oblig_transferred_prepaid_advanced": lambda col: sf.sum(col).alias(col),
             "last_modified_date": lambda col: sf.max(col).alias(col),
         }
@@ -450,7 +453,7 @@ class FederalAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBui
 
     @property
     def object_class_program_activity(self) -> DataFrame:
-        return (
+        df = (
             self._object_class_program_activity_df.filter(self.dynamic_filters)
             .filter(
                 sf.col("submission_id").isin(
@@ -461,8 +464,10 @@ class FederalAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBui
             )
             .groupBy(self.object_class_program_activity_groupby_cols)
             .agg(*[agg_func(col) for col, agg_func in self.object_class_program_activity_agg_cols.items()])
-            .select(self.object_class_program_activity_select_cols)
+            # .select(self.object_class_program_activity_select_cols)
         )
+        self.logger.info(df.columns)
+        return df.select(self.object_class_program_activity_select_cols)
 
     @property
     def award_financial(self) -> DataFrame:
@@ -586,10 +591,6 @@ class TreasuryAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBu
         )
 
     @property
-    def object_class_program_activity(self) -> DataFrame:
-        raise NotImplementedError
-
-    @property
     def award_financial(self) -> DataFrame:
         select_cols = (
             [sf.col("treasury_owning_agency_name").alias("owning_agency_name")]
@@ -601,3 +602,90 @@ class TreasuryAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBu
             + ["last_modified_date"]
         )
         return self._award_financial_df.filter(self.dynamic_filters & self.non_zero_filters).select(select_cols)
+
+    @property
+    def object_class_program_activity_groupby_cols(self) -> list[str]:
+        return [
+            "data_source",  # TODO: Missing from the delta model
+            "financial_accounts_by_program_activity_object_class_id",
+            "program_activity_id",  # TODO: Missing from the delta model
+            "object_class_id",  # TODO: Missing from the delta model
+            "prior_year_adjustment",  # TODO: Missing from the delta model
+            "disaster_emergency_fund_code",
+            "USSGL480100_undelivered_orders_obligations_unpaid_FYB",
+            "USSGL480100_undelivered_orders_obligations_unpaid",
+            "USSGL480110_rein_undel_ord_CPE",  # TODO: Missing from the delta model
+            "USSGL483100_undelivered_orders_obligations_transferred_unpaid"
+            "USSGL488100_upward_adj_prior_year_undeliv_orders_oblig_unpaid",
+            "USSGL490100_delivered_orders_obligations_unpaid_FYB",
+            "USSGL490100_delivered_orders_obligations_unpaid",
+            "USSGL490110_rein_deliv_ord_CPE",  # TODO: Missing from the delta model
+            "USSGL493100_delivered_orders_obligations_transferred_unpaid",
+            "USSGL498100_upward_adj_of_prior_year_deliv_orders_oblig_unpaid",
+            "USSGL480200_undelivered_orders_obligations_prepaid_advanced_FYB",
+            "USSGL480200_undelivered_orders_obligations_prepaid_advanced",
+            "USSGL483200_undeliv_orders_oblig_transferred_prepaid_advanced",
+            "USSGL488200_upward_adj_prior_year_undeliv_orders_oblig_prepaid",
+            "USSGL490200_delivered_orders_obligations_paid",
+            "USSGL490800_authority_outlayed_not_yet_disbursed_FYB",
+            "USSGL490800_authority_outlayed_not_yet_disbursed",
+            "USSGL498200_upward_adj_of_prior_year_deliv_orders_oblig_paid",
+            "obligations_undelivered_orders_unpaid_total_FYB",
+            "obligations_undelivered_orders_unpaid_total",
+            "obligations_delivered_orders_unpaid_total_FYB",
+            "obligations_delivered_orders_unpaid_total_CPE",
+            "gross_outlays_undelivered_orders_prepaid_total_FYB",
+            "gross_outlays_undelivered_orders_prepaid_total",
+            "gross_outlays_delivered_orders_paid_total_FYB",
+            "gross_outlays_delivered_orders_paid_total",
+            "gross_outlay_amount_FYB",
+            "gross_outlay_amount_FYB_to_period_end",
+            "obligations_incurred",
+            "USSGL487100_downward_adj_prior_year_unpaid_undeliv_orders_oblig",
+            "USSGL497100_downward_adj_prior_year_unpaid_deliv_orders_oblig",
+            "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig",
+            "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig",
+            "deobligations_or_recoveries_or_refunds_from_prior_year",
+            "drv_obligations_incurred_by_program_object_class",  # TODO: Missing from the delta model
+            "drv_obligations_undelivered_orders_unpaid",  # TODO: Missing from the delta model
+            "reporting_period_start",  # TODO: Missing from the delta model
+            "reporting_period_end",  # TODO: Missing from the delta model
+            "last_modified_date",
+            "certified_date",  # TODO: Missing from the delta model
+            "create_date",  # TODO: Missing from the delta model
+            "update_date",  # TODO: Missing from the delta model
+            "submission_id",
+            "treasury_account_id",  # TODO: Missing from the delta model
+            "agency_identifier_name",
+            "allocation_transfer_agency_identifier_name",  # TODO: Missing from the delta model
+        ]
+
+    @property
+    def object_class_program_activity_agg_cols(self) -> dict[str, Column]:
+        return {
+            "last_modified_date": lambda col: sf.max(col).alias(col),
+        }
+
+    @property
+    def object_class_program_activity_select_cols(self) -> list[Any]:
+        return [
+            col
+            for col in query_paths["object_class_program_activity"]["treasury_account"].keys()
+            if not col.startswith("last_modified_date")
+        ] + ["last_modified_date"]
+
+    @property
+    def object_class_program_activity(self) -> DataFrame:
+        return (
+            self._object_class_program_activity_df.filter(self.dynamic_filters)
+            .filter(
+                sf.col("submission_id").isin(
+                    get_submission_ids_for_periods(
+                        self.reporting_fiscal_year, self.reporting_fiscal_quarter, self.reporting_fiscal_period
+                    )
+                )
+            )
+            .groupBy(self.object_class_program_activity_groupby_cols)
+            .agg(*[agg_func(col) for col, agg_func in self.object_class_program_activity_agg_cols.items()])
+            .select(self.object_class_program_activity_select_cols)
+        )
