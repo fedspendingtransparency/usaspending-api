@@ -1,13 +1,14 @@
+import json
 import logging
 import os
 import traceback
+from dataclasses import dataclass
+from enum import Enum
 from pathlib import Path
-from typing import Optional, Union
-
+from typing import TYPE_CHECKING, Literal
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils.functional import cached_property
-from pyspark.sql import SparkSession
 
 from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -18,17 +19,31 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_active_spark_session,
 )
 from usaspending_api.common.spark.configs import DEFAULT_EXTRA_CONF
+from usaspending_api.download.delta_downloads.abstract_downloads.base_download import AbstractDownload
 from usaspending_api.download.delta_downloads.account_balances import AccountBalancesDownloadFactory
 from usaspending_api.download.delta_downloads.award_financial import AwardFinancialDownloadFactory
-from usaspending_api.download.lookups import JOB_STATUS_DICT, FILE_FORMATS
+from usaspending_api.download.delta_downloads.filters.account_filters import AccountDownloadFilters
+from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.models import DownloadJob
+
+if TYPE_CHECKING:
+    from typing import Optional, TypeVar, Union
+    from pyspark.sql import SparkSession
 
 logger = logging.getLogger(__name__)
 
-download_factories = {
-    "account_balances": AccountBalancesDownloadFactory,
-    "award_financial": AwardFinancialDownloadFactory,
-}
+Download = TypeVar("Download", bound=AbstractDownload)
+
+
+class DownloadType(str, Enum):
+    ACCOUNT = "account"
+
+
+@dataclass
+class DownloadRequest:
+    download_list: list[Download]
+    file_format: Literal["csv", "pstxt", "tsv"]
+    type: DownloadType
 
 
 class Command(BaseCommand):
@@ -45,13 +60,10 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("--download-job-id", type=int, required=True)
-        parser.add_argument("--file-format", type=str, required=False, choices=list(FILE_FORMATS), default="csv")
-        parser.add_argument("--file-prefix", type=str, required=False, default="")
         parser.add_argument("--skip-local-cleanup", action="store_true")
 
     def handle(self, *args, **options):
         self.spark, spark_created_by_command = self.setup_spark_session()
-        self.file_prefix = options["file_prefix"]
         self.should_cleanup = not options["skip_local_cleanup"]
         self.download_job = self.get_download_job(options["download_job_id"])
         self.working_dir_path = Path(settings.CSV_LOCAL_PATH)
@@ -88,23 +100,17 @@ class Command(BaseCommand):
         try:
             spark_to_csv_strategy = SparkToCSVStrategy(logger)
             zip_file_path = self.working_dir_path / f"{self.download_name}.zip"
-            # download_request = json.loads(self.download_job.json_request)
-            # account_download_filter = AccountDownloadFilters(**download_request["filters"])
-            # df_factories = [
-            #     download_factories[submission_type] for submission_type in account_download_filter.submission_types
-            # ]
-            source_dfs = ...
-            # source_dfs = df_builder(spark=self.spark, account_download_filter=account_download_filter).source_dfs
+            download_request = self.get_download_requests()
             csvs_metadata = [
                 spark_to_csv_strategy.download_to_csv(
                     source_sql=None,
                     destination_path=self.working_dir_path / self.download_name,
-                    destination_file_name=self.download_name,
+                    destination_file_name=download.file_name,
                     working_dir_path=self.working_dir_path,
                     download_zip_path=zip_file_path,
-                    source_df=source_df,
+                    source_df=download.dataframe,
                 )
-                for source_df in source_dfs
+                for download in download_request.download_list
             ]
             for csv_metadata in csvs_metadata:
                 files_to_cleanup.extend(csv_metadata.filepaths)
@@ -126,6 +132,34 @@ class Command(BaseCommand):
             if self.should_cleanup:
                 self.cleanup(files_to_cleanup)
         self.finish_download()
+
+    def get_download_requests(self) -> DownloadRequest:
+        download_factories = {
+            "account_balances": AccountBalancesDownloadFactory,
+            "award_financial": AwardFinancialDownloadFactory,
+        }
+        download_json = json.loads(self.download_job.json_request)
+        request_type = download_json.get("request_type")
+        file_format = download_json.get("file_format")
+        match request_type:
+            case DownloadType.ACCOUNT:
+                filters = AccountDownloadFilters(**download_json["filters"])
+                factories = [
+                    download_factories[submission_type](self.spark, filters)
+                    for submission_type in filters.submission_types
+                ]
+                download_request = DownloadRequest(
+                    download_list=[
+                        getattr(factory, f"create_{download_json['account_level']}_download")() for factory in factories
+                    ],
+                    file_format=file_format,
+                    type=DownloadType.ACCOUNT,
+                )
+            case _:
+                raise NotImplementedError(
+                    f"Download request type '{request_type}' is not implemented for Spark downloads"
+                )
+        return download_request
 
     def start_download(self) -> None:
         self.download_job.job_status_id = JOB_STATUS_DICT["running"]

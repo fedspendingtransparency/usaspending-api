@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from pyspark.sql import functions as sf
 
-from usaspending_api.download.delta_downloads.abstract_factories.account_download import AbstractAccountDownload
+from usaspending_api.download.delta_downloads.abstract_downloads.account_download import AbstractAccountDownload
 from usaspending_api.download.delta_downloads.filters.account_filters import AccountDownloadFilters
 
 

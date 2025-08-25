@@ -3,10 +3,10 @@ from typing import TYPE_CHECKING
 from pyspark.sql import functions as sf
 
 from usaspending_api.common.spark.utils import collect_concat
-from usaspending_api.download.delta_downloads.abstract_factories.account_download import (
+from usaspending_api.download.delta_downloads.abstract_downloads.account_download import (
     AbstractAccountDownload,
-    AccountDownloadLevel,
-    AccountDownloadType,
+    AccountLevel,
+    SubmissionType,
 )
 from usaspending_api.download.delta_downloads.abstract_factories.account_download_factory import (
     AbstractAccountDownloadFactory,
@@ -45,12 +45,12 @@ class AwardFinancialMixin:
 class FederalAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
 
     @property
-    def download_level(self) -> AccountDownloadLevel:
-        return AccountDownloadLevel.FEDERAL_ACCOUNT
+    def account_level(self) -> AccountLevel:
+        return AccountLevel.FEDERAL_ACCOUNT
 
     @property
-    def download_type(self) -> AccountDownloadType:
-        return AccountDownloadType.AWARD_FINANCIAL
+    def submission_type(self) -> SubmissionType:
+        return SubmissionType.AWARD_FINANCIAL
 
     @property
     def group_by_cols(self) -> list[str]:
@@ -186,12 +186,12 @@ class FederalAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
 class TreasuryAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
 
     @property
-    def download_level(self) -> AccountDownloadLevel:
-        return AccountDownloadLevel.TREASURY_ACCOUNT
+    def account_level(self) -> AccountLevel:
+        return AccountLevel.TREASURY_ACCOUNT
 
     @property
-    def download_type(self) -> AccountDownloadType:
-        return AccountDownloadType.AWARD_FINANCIAL
+    def submission_type(self) -> SubmissionType:
+        return SubmissionType.AWARD_FINANCIAL
 
     @property
     def dataframe(self) -> DataFrame:
