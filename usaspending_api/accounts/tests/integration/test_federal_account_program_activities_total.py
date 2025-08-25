@@ -99,15 +99,14 @@ def test_success(client, program_activities_total_test_data):
 
     expected_results = {
         "results": [
-            {"obligations": 45612.0, "code": "00000000003", "name": "PARK 3", "type": "PARK"},
+            {"obligations": 44112.0, "code": "00000000003", "name": "PARK 3", "type": "PARK"},
             {"obligations": 6000.0, "code": "00000000001", "name": "PARK 1", "type": "PARK"},
             {"obligations": 130.0, "code": "00000000002", "name": "PARK 2", "type": "PARK"},
             {"obligations": 1.0, "code": "0001", "name": "PAC/PAN 1", "type": "PAC/PAN"},
-            {"obligations": -1500.0, "code": "00000000003", "name": "PARK 3", "type": "PARK"},
         ],
         "page_metadata": {
             "page": 1,
-            "total": 5,
+            "total": 4,
             "limit": 10,
             "next": None,
             "previous": None,

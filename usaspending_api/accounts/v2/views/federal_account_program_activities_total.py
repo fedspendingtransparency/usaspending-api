@@ -32,6 +32,7 @@ class FederalAccountProgramActivitiesTotal(PaginationMixin, FederalAccountBase):
                 )
             )
             .filter(query)
+            .values("submission_id")
             .annotate(
                 obligations=Sum("obligations_incurred_by_program_object_class_cpe"),
                 code=Coalesce(
