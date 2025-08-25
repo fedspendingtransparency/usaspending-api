@@ -288,13 +288,15 @@ def configure_logging(service_name="usaspending-api"):
     exporter = None
     if IS_LOCAL and os.getenv("TOGGLE_OTEL_CONSOLE_LOGGING") == "True":
         logger.info(f"\nOTEL Console logging enabled: {os.getenv('TOGGLE_OTEL_CONSOLE_LOGGING')}\n")
-
         # #custom debug information
         logging_span_processor = LoggingSpanProcessor()
         trace.get_tracer_provider().add_span_processor(logging_span_processor)
-
         exporter = ConsoleSpanExporter()
-
+    elif IS_LOCAL and os.getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"):
+        logger.info(f"\nOTEL exporting logs to: {os.getenv('OTEL_EXPORTER_OTLP_TRACES_ENDPOINT')}\n")
+        exporter = OTLPSpanExporter(
+            endpoint=os.getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"),
+        )
     elif not IS_LOCAL:
         exporter = OTLPSpanExporter(
             endpoint=os.getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"),
