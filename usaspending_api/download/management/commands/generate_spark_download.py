@@ -5,10 +5,12 @@ import traceback
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal
+from typing import Literal, Optional, TypeVar, Union
+
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils.functional import cached_property
+from pyspark.sql import SparkSession
 
 from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -26,13 +28,10 @@ from usaspending_api.download.delta_downloads.filters.account_filters import Acc
 from usaspending_api.download.lookups import FILE_FORMATS, JOB_STATUS_DICT
 from usaspending_api.download.models import DownloadJob
 
-if TYPE_CHECKING:
-    from typing import Optional, TypeVar, Union
-    from pyspark.sql import SparkSession
 
 logger = logging.getLogger(__name__)
 
-Download = TypeVar("Download", bound=AbstractDownload, covariant=True)
+Download = TypeVar("Download", bound=AbstractDownload)
 
 
 class DownloadType(str, Enum):

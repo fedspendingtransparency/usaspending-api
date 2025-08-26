@@ -1,12 +1,11 @@
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, TypeVar
+from typing import TypeVar
 
-if TYPE_CHECKING:
-    from pydantic import BaseModel
-    from pyspark.sql import Column, DataFrame, SparkSession
+from pydantic import BaseModel
+from pyspark.sql import Column, DataFrame, SparkSession
 
-    DownloadFilters = TypeVar("DownloadFilters", bound=BaseModel)
+DownloadFilters = TypeVar("DownloadFilters", bound=BaseModel)
 
 
 class AbstractDownload(ABC):

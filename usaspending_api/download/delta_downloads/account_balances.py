@@ -1,6 +1,4 @@
-from typing import TYPE_CHECKING
-
-from pyspark.sql import functions as sf
+from pyspark.sql import functions as sf, Column, DataFrame, SparkSession
 
 from usaspending_api.common.spark.utils import collect_concat
 from usaspending_api.download.delta_downloads.abstract_downloads.account_download import (
@@ -12,12 +10,8 @@ from usaspending_api.download.delta_downloads.abstract_factories.account_downloa
     AbstractAccountDownloadFactory,
     AccountDownloadConditionName,
 )
+from usaspending_api.download.delta_downloads.filters.account_filters import AccountDownloadFilters
 from usaspending_api.submissions.helpers import get_submission_ids_for_periods
-
-
-if TYPE_CHECKING:
-    from usaspending_api.download.delta_downloads.filters.account_filters import AccountDownloadFilters
-    from pyspark.sql import Column, DataFrame, SparkSession
 
 
 class AccountBalancesMixin:

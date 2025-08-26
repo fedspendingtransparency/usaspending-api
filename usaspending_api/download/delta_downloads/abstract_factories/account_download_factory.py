@@ -2,19 +2,15 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
 from functools import reduce
-from typing import TYPE_CHECKING
+from typing import TypeVar
 
-from pyspark.sql import functions as sf
+from pyspark.sql import functions as sf, Column, SparkSession
 
 from usaspending_api.download.delta_downloads.abstract_downloads.account_download import AbstractAccountDownload
 from usaspending_api.download.delta_downloads.filters.account_filters import AccountDownloadFilters
 
 
-if TYPE_CHECKING:
-    from typing import TypeVar
-    from pyspark.sql import Column, SparkSession
-
-    AccountDownload = TypeVar("AccountDownload", bound=AbstractAccountDownload)
+AccountDownload = TypeVar("AccountDownload", bound=AbstractAccountDownload)
 
 
 class AccountDownloadConditionName(Enum):
