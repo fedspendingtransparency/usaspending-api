@@ -49,8 +49,8 @@ This endpoint returns an array of each program activity's obligation, code, name
 
 + Response 200 (application/json)
   + Attributes (object)
-    + `results` (required, array[ProgramActivitiesTotals], fixed-type)
-    + `page_metadata` (required, PageMetadata, fixed-type)
+    + results (required, array[ProgramActivitiesTotals], fixed-type)
+    + page_metadata (required, PageMetadata, fixed-type)
   + Body
     
             {
