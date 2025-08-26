@@ -48,28 +48,28 @@ This endpoint returns an array of each program activity's obligation, code, name
 
 
 + Response 200 (application/json)
-  + Attributes (object)
-    + results (required, array[ProgramActivitiesTotals], fixed-type)
-    + page_metadata (required, PageMetadata, fixed-type)
-  + Body
+    + Attributes (object)
+      + `results` (required, array[ProgramActivitiesTotals], fixed-type)
+      + `page_metadata` (required, PageMetadata, fixed-type)
+    + Body
     
-            {
-                "results": [
-                  {"obligations": 44112.0, "code": "00000000003", "name": "PARK 3", "type": "PARK"},
-                  {"obligations": 6000.0, "code": "00000000001", "name": "PARK 1", "type": "PARK"},
-                  {"obligations": 130.0, "code": "00000000002", "name": "PARK 2", "type": "PARK"},
-                  {"obligations": 1.0, "code": "0001", "name": "PAC/PAN 1", "type": "PAC/PAN"},
-                ],
-                "page_metadata": {
-                  "page": 1,
-                  "total": 4,
-                  "limit": 10,
-                  "next": None,
-                  "previous": None,
-                  "hasNext": False,
-                  "hasPrevious": False
-                },
-            }
+              {
+                  "results": [
+                    {"obligations": 44112.0, "code": "00000000003", "name": "PARK 3", "type": "PARK"},
+                    {"obligations": 6000.0, "code": "00000000001", "name": "PARK 1", "type": "PARK"},
+                    {"obligations": 130.0, "code": "00000000002", "name": "PARK 2", "type": "PARK"},
+                    {"obligations": 1.0, "code": "0001", "name": "PAC/PAN 1", "type": "PAC/PAN"},
+                  ],
+                  "page_metadata": {
+                    "page": 1,
+                    "total": 4,
+                    "limit": 10,
+                    "next": None,
+                    "previous": None,
+                    "hasNext": False,
+                    "hasPrevious": False
+                  },
+              }
 
 
 # Data Structure
