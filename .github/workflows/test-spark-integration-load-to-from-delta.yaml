@@ -16,6 +16,7 @@ env:
   USASPENDING_DB_USER: usaspending
   USASPENDING_DB_PASSWORD: usaspender
   USASPENDING_DB_NAME: data_store_api
+  IS_LOCAL: true
 
 on:
   workflow_call:
