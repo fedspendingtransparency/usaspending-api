@@ -90,7 +90,8 @@ class Command(BaseCommand):
     @staticmethod
     def get_download_job(download_job_id) -> DownloadJob:
         download_job = DownloadJob.objects.get(download_job_id=download_job_id)
-        if download_job.job_status_id != JOB_STATUS_DICT["ready"]:
+        if download_job.job_status_id not in (JOB_STATUS_DICT["ready"], JOB_STATUS_DICT["failed"]):
+            # Handles both new downloads and retries of failed downloads
             raise InvalidParameterException(f"Download Job {download_job_id} is not ready.")
         return download_job
 
