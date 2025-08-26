@@ -12,7 +12,7 @@ class AccountLevel(str, Enum):
 
     def __new__(cls, account_level: str, abbreviation: str):
         obj = str.__new__(cls, account_level)
-        obj._value = account_level
+        obj._value_ = account_level
         obj._abbreviation = abbreviation
         return obj
 
@@ -28,7 +28,7 @@ class SubmissionType(str, Enum):
 
     def __new__(cls, submission_type: str, title: str):
         obj = str.__new__(cls, submission_type)
-        obj._value = submission_type
+        obj._value_ = submission_type
         obj._title = title
         return obj
 
