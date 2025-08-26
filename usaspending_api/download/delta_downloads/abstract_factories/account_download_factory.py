@@ -14,8 +14,7 @@ if TYPE_CHECKING:
     from typing import TypeVar
     from pyspark.sql import Column, SparkSession
 
-
-AccountDownload = TypeVar("AccountDownload", bound=AbstractAccountDownload)
+    AccountDownload = TypeVar("AccountDownload", bound=AbstractAccountDownload)
 
 
 class AccountDownloadConditionName(Enum):

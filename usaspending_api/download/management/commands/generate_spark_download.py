@@ -23,7 +23,7 @@ from usaspending_api.download.delta_downloads.abstract_downloads.base_download i
 from usaspending_api.download.delta_downloads.account_balances import AccountBalancesDownloadFactory
 from usaspending_api.download.delta_downloads.award_financial import AwardFinancialDownloadFactory
 from usaspending_api.download.delta_downloads.filters.account_filters import AccountDownloadFilters
-from usaspending_api.download.lookups import JOB_STATUS_DICT
+from usaspending_api.download.lookups import FILE_FORMATS, JOB_STATUS_DICT
 from usaspending_api.download.models import DownloadJob
 
 if TYPE_CHECKING:
@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-Download = TypeVar("Download", bound=AbstractDownload)
+Download = TypeVar("Download", bound=AbstractDownload, covariant=True)
 
 
 class DownloadType(str, Enum):
@@ -42,7 +42,8 @@ class DownloadType(str, Enum):
 @dataclass
 class DownloadRequest:
     download_list: list[Download]
-    file_format: Literal["csv", "pstxt", "tsv"]
+    file_delimiter: str
+    file_extension: Literal["csv", "tsv", "txt"]
     type: DownloadType
 
 
@@ -101,7 +102,7 @@ class Command(BaseCommand):
         try:
             spark_to_csv_strategy = SparkToCSVStrategy(logger)
             zip_file_path = self.working_dir_path / f"{self.download_name}.zip"
-            download_request = self.get_download_requests()
+            download_request = self.get_download_request()
             csvs_metadata = [
                 spark_to_csv_strategy.download_to_csv(
                     source_sql=None,
@@ -110,6 +111,7 @@ class Command(BaseCommand):
                     working_dir_path=self.working_dir_path,
                     download_zip_path=zip_file_path,
                     source_df=download.dataframe,
+                    delimiter=download_request.file_delimiter,
                 )
                 for download in download_request.download_list
             ]
@@ -134,14 +136,13 @@ class Command(BaseCommand):
                 self.cleanup(files_to_cleanup)
         self.finish_download()
 
-    def get_download_requests(self) -> DownloadRequest:
+    def get_download_request(self) -> DownloadRequest:
         download_factories = {
             "account_balances": AccountBalancesDownloadFactory,
             "award_financial": AwardFinancialDownloadFactory,
         }
         download_json = json.loads(self.download_job.json_request)
         request_type = download_json.get("request_type")
-        file_format = download_json.get("file_format")
         match request_type:
             case DownloadType.ACCOUNT:
                 filters = AccountDownloadFilters(**download_json["filters"])
@@ -149,18 +150,21 @@ class Command(BaseCommand):
                     download_factories[submission_type](self.spark, filters)
                     for submission_type in filters.submission_types
                 ]
-                download_request = DownloadRequest(
-                    download_list=[
-                        getattr(factory, f"create_{download_json['account_level']}_download")() for factory in factories
-                    ],
-                    file_format=file_format,
-                    type=DownloadType.ACCOUNT,
-                )
+                download_list = [
+                    getattr(factory, f"create_{download_json['account_level']}_download")() for factory in factories
+                ]
+                download_type = DownloadType.ACCOUNT
             case _:
                 raise NotImplementedError(
                     f"Download request type '{request_type}' is not implemented for Spark downloads"
                 )
-        return download_request
+        file_format = FILE_FORMATS[download_json.get("file_format", "csv")]
+        return DownloadRequest(
+            download_list=download_list,
+            file_delimiter=file_format["delimiter"],
+            file_extension=file_format["extension"],
+            type=download_type,
+        )
 
     def start_download(self) -> None:
         self.download_job.job_status_id = JOB_STATUS_DICT["running"]
