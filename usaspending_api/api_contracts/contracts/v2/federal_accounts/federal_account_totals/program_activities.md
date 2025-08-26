@@ -79,8 +79,8 @@ Federal account code consisting of the AID and main account code
                             "start_date": "2019-10-01",
                             "end_date": "2020-09-30"
                         }]`(optional, array[TimePeriod], fixed-type)
-+ `object_class`: `["254"]` (optional, array[String])
-+ `program_activity`: `["PARK"]` (optional, array[String])
++ `object_class`: `["254"]` (optional, array[string])
++ `program_activity`: `["PARK"]` (optional, array[string])
   Each string should be either "PAC" or "PARK"
 
 ## ProgramActivitiesTotals (object)
