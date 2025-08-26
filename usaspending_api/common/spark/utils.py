@@ -1,9 +1,4 @@
-from typing import TYPE_CHECKING
-
-from pyspark.sql import functions as sf
-
-if TYPE_CHECKING:
-    from pyspark.sql import Column
+from pyspark.sql import functions as sf, Column
 
 
 def collect_concat(col_name: str | Column, concat_str: str = "; ", alias: str | None = None) -> Column:
