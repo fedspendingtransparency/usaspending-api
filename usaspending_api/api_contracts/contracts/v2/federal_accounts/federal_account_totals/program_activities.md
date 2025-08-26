@@ -1,11 +1,19 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Program Activities Total [/api/v2/federal_accounts/{FEDERAL_ACCOUNT_CODE}/program_activities/total]
+# Program Activities Total [/api/v2/federal_accounts/{federal_account_code}/program_activities/total{?limit,page}]
 
 This endpoint returns an array of each program activity's obligation, code, name, and type for the specified federal account 
 
 ## POST
+
++ Parameters
+    + `federal_account_code`: `431-0500` (required, string)
+        Federal account code consisting of the AID and main account code
+    + `limit`: 10 (optional, number)
+        The maximum number of results to return in the response
+    + `page`: 1 (optional, number)
+        The response page to return (the record offset is (`page` - 1) * `limit`).
 
 + Request (application/json)
     + Schema
@@ -29,25 +37,20 @@ This endpoint returns an array of each program activity's obligation, code, name
         
             {
                 "filters": {
-                    "time_period": "[
+                    "time_period": [
                         {
                             "start_date": "2019-10-01",
                             "end_date": "2020-09-30"
-                        }]",
+                        }],
                     "program_activity": ['PARK']
                 },
-                "sort": {
-                    "direction": "asc",
-                    "field": "account_name"
-                }
             }
 
 
 + Response 200 (application/json)
   + Attributes (object)
-    + `page_metadata` (required, PageMetadata, fixed-type)
-        Information used for pagination of results. 
     + `results` (required, array[ProgramActivitiesTotals], fixed-type)
+    + `page_metadata` (required, PageMetadata, fixed-type)
   + Body
     
             {
@@ -64,7 +67,7 @@ This endpoint returns an array of each program activity's obligation, code, name
                   "next": None,
                   "previous": None,
                   "hasNext": False,
-                  "hasPrevious": False,
+                  "hasPrevious": False
                 },
             }
 
