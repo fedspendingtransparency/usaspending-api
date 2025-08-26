@@ -668,6 +668,9 @@ class _ProgramActivities(_Filter):
             if "code" in filter_value:
                 temp_must.append(ES_Q("match", program_activities__code__keyword=str(filter_value["code"]).zfill(4)))
 
+            if "type" in filter_value:
+                temp_must.append(ES_Q("match", program_activities__type__keyword=filter_value["type"].upper()))
+
             if temp_must:
                 program_activity_match_queries.append(
                     ES_Q("nested", path="program_activities", query=ES_Q("bool", must=temp_must))
