@@ -10,6 +10,7 @@ from usaspending_api.etl.submission_loader_helpers.bulk_create_manager import Bu
 from usaspending_api.etl.submission_loader_helpers.disaster_emergency_fund_codes import get_disaster_emergency_fund
 from usaspending_api.etl.submission_loader_helpers.object_class import get_object_class
 from usaspending_api.etl.submission_loader_helpers.program_activities import get_program_activity
+from usaspending_api.etl.submission_loader_helpers.program_activity_park import get_program_activity_park
 from usaspending_api.etl.submission_loader_helpers.treasury_appropriation_account import (
     bulk_treasury_appropriation_account_tas_lookup,
     get_treasury_appropriation_account_tas_lookup,
@@ -196,6 +197,7 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
             "object_class": get_object_class(row["object_class"], row["by_direct_reimbursable_fun"]),
             "program_activity": get_program_activity(row, submission_attributes),
             "disaster_emergency_fund": get_disaster_emergency_fund(row),
+            "program_activity_reporting_key": get_program_activity_park(row),
         }
 
         save_manager.append(
