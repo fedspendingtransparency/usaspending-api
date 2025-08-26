@@ -13,7 +13,7 @@ class FederalAccountProgramActivitiesTotal(PaginationMixin, FederalAccountBase):
     Retrieve a list of program activity totals for a federal account.
     """
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/views/federal_account_totals/program_activities.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/federal_accounts/federal_account_totals/program_activities.md"
     filters: dict
 
     def __init__(self, **kwargs):
