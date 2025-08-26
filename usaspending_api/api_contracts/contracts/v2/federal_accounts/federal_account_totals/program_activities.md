@@ -27,7 +27,7 @@ This route returns an array of each program activity's obligation, code, name, a
 # Data Structure
 
 ## ProgramActivitiesTotals (object)
-+ `obligations` (required, float)
++ `obligations` (required, number)
 + `code` (required, string)
 + `name` (required, string)
 + `type` (required, enum[string], fixed-type)
