@@ -86,6 +86,12 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                     "code": {
                         "type": "integer",
                     },
+                    "type": {
+                        "type": "enum",
+                        "enum_values": ["PARK", "PAC/PAN"],
+                        "optional": True,
+                        "default": "PAC/PAN",
+                    },
                 },
             }
         ]
