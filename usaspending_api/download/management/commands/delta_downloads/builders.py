@@ -1,4 +1,3 @@
-import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from functools import reduce
@@ -41,8 +40,6 @@ class AbstractAccountDownloadDataFrameBuilder(ABC):
         self.cgac_ata = spark.table("global_temp.cgac")
         self.fa = spark.table("global_temp.federal_account")
         self.ta = spark.table("global_temp.toptier_agency")
-
-        self.logger = logging.getLogger(__name__)
 
     @property
     def dynamic_filters(self) -> Column:
@@ -453,7 +450,7 @@ class FederalAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBui
 
     @property
     def object_class_program_activity(self) -> DataFrame:
-        df = (
+        return (
             self._object_class_program_activity_df.filter(self.dynamic_filters)
             .filter(
                 sf.col("submission_id").isin(
@@ -464,10 +461,8 @@ class FederalAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBui
             )
             .groupBy(self.object_class_program_activity_groupby_cols)
             .agg(*[agg_func(col) for col, agg_func in self.object_class_program_activity_agg_cols.items()])
-            # .select(self.object_class_program_activity_select_cols)
+            .select(self.object_class_program_activity_select_cols)
         )
-        self.logger.info(df.columns)
-        return df.select(self.object_class_program_activity_select_cols)
 
     @property
     def award_financial(self) -> DataFrame:
@@ -615,7 +610,7 @@ class TreasuryAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBu
             "USSGL480100_undelivered_orders_obligations_unpaid_FYB",
             "USSGL480100_undelivered_orders_obligations_unpaid",
             "USSGL480110_rein_undel_ord_CPE",
-            "USSGL483100_undelivered_orders_obligations_transferred_unpaid"
+            "USSGL483100_undelivered_orders_obligations_transferred_unpaid",
             "USSGL488100_upward_adj_prior_year_undeliv_orders_oblig_unpaid",
             "USSGL490100_delivered_orders_obligations_unpaid_FYB",
             "USSGL490100_delivered_orders_obligations_unpaid",
@@ -632,8 +627,8 @@ class TreasuryAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBu
             "USSGL498200_upward_adj_of_prior_year_deliv_orders_oblig_paid",
             "obligations_undelivered_orders_unpaid_total_FYB",
             "obligations_undelivered_orders_unpaid_total",
+            "obligations_delivered_orders_unpaid_total",
             "obligations_delivered_orders_unpaid_total_FYB",
-            "obligations_delivered_orders_unpaid_total_CPE",
             "gross_outlays_undelivered_orders_prepaid_total_FYB",
             "gross_outlays_undelivered_orders_prepaid_total",
             "gross_outlays_delivered_orders_paid_total_FYB",
