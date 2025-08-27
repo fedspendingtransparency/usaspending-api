@@ -36,8 +36,8 @@ class AccountDownloadFilters(BaseModel):
     def reporting_fiscal_period(self) -> int:
         return self.period or self.quarter * 3
 
-    @classmethod
     @validator("fy", "period", "quarter", "agency", "federal_account", pre=True)
+    @classmethod
     def ensure_int_or_none(cls, value: Any, field: ModelField) -> Any:
         if value == "all":
             result = None
@@ -52,30 +52,30 @@ class AccountDownloadFilters(BaseModel):
             result = value
         return result
 
-    @classmethod
     @validator("budget_function", "budget_subfunction", pre=True)
+    @classmethod
     def check_for_all(cls, value: Any) -> Any:
         if value == "all":
             return None
         else:
             return value
 
-    @classmethod
     @validator("agency")
+    @classmethod
     def check_agency_exists(cls, value: Any) -> Any:
         if value is not None and not ToptierAgency.objects.filter(toptier_agency_id=value).exists():
             raise InvalidParameterException("Agency with that ID does not exist")
         return value
 
-    @classmethod
     @validator("federal_account")
+    @classmethod
     def check_federal_account_exists(cls, value: Any) -> Any:
         if value is not None and not FederalAccount.objects.filter(id=value).exists():
             raise InvalidParameterException("Federal Account with that ID does not exist")
         return value
 
-    @classmethod
     @root_validator
+    @classmethod
     def check_period_quarter(cls, values: dict[str, Any]) -> dict[str, Any]:
         period, quarter = values.get("period"), values.get("quarter")
         if period is None and quarter is None:
