@@ -111,6 +111,7 @@ class Command(BaseCommand):
                     download_zip_path=zip_file_path,
                     source_df=download.dataframe,
                     delimiter=download_request.file_delimiter,
+                    file_format=download_request.file_extension,
                 )
                 for download in download_request.download_list
             ]
