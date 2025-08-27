@@ -331,7 +331,7 @@ award_financial_download_load_sql_string = rf"""
         submission_attributes.reporting_fiscal_year,
         submission_attributes.quarter_format_flag
     FROM
-        raw.financial_accounts_by_awards
+        int.financial_accounts_by_awards
         INNER JOIN global_temp.submission_attributes
             ON (financial_accounts_by_awards.submission_id = submission_attributes.submission_id)
         LEFT OUTER JOIN global_temp.treasury_appropriation_account
