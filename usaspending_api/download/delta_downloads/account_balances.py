@@ -84,9 +84,6 @@ class AccountBalancesMixin:
             .withColumn("submission_period", self.fy_quarter_period)
         )
 
-    def get_dataframe(self) -> DataFrame:
-        return self.download_table.groupby(self.group_by_cols).agg(*self.agg_cols).select(*self.select_cols)
-
     @property
     def fy_quarter_period(self) -> Column:
         return sf.when(
@@ -100,6 +97,9 @@ class AccountBalancesMixin:
                 sf.lpad(sf.col("reporting_fiscal_period"), 2, "0"),
             )
         )
+
+    def _build_dataframe(self) -> DataFrame:
+        return self.download_table.groupby(self.group_by_cols).agg(*self.agg_cols).select(*self.select_cols)
 
 
 class FederalAccountDownload(AccountBalancesMixin, AbstractAccountDownload):

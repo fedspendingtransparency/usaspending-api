@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
+from functools import cached_property
 from typing import TypeVar
 
 from pydantic import BaseModel
@@ -31,8 +32,16 @@ class AbstractDownload(ABC):
     def spark(self) -> SparkSession:
         return self._spark
 
-    @abstractmethod
-    def get_file_name(self) -> str: ...
+    @cached_property
+    def file_name(self) -> str:
+        return self._build_file_name()
+
+    @cached_property
+    def dataframe(self) -> DataFrame:
+        return self._build_dataframe()
 
     @abstractmethod
-    def get_dataframe(self) -> DataFrame: ...
+    def _build_file_name(self) -> str: ...
+
+    @abstractmethod
+    def _build_dataframe(self) -> DataFrame: ...

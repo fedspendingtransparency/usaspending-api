@@ -84,7 +84,7 @@ class Command(BaseCommand):
         return spark, spark_created_by_command
 
     @cached_property
-    def download_name(self) -> str:
+    def download_zip_file_name(self) -> str:
         return self.download_job.file_name.replace(".zip", "")
 
     @staticmethod
@@ -100,16 +100,16 @@ class Command(BaseCommand):
         files_to_cleanup = []
         try:
             spark_to_csv_strategy = SparkToCSVStrategy(logger)
-            zip_file_path = self.working_dir_path / f"{self.download_name}.zip"
+            zip_file_path = self.working_dir_path / f"{self.download_zip_file_name}.zip"
             download_request = self.get_download_request()
             csvs_metadata = [
                 spark_to_csv_strategy.download_to_csv(
                     source_sql=None,
-                    destination_path=self.working_dir_path / self.download_name,
-                    destination_file_name=download.get_file_name(),
+                    destination_path=self.working_dir_path / self.download_zip_file_name / download.file_name,
+                    destination_file_name=download.file_name,
                     working_dir_path=self.working_dir_path,
                     download_zip_path=zip_file_path,
-                    source_df=download.get_dataframe(),
+                    source_df=download.dataframe,
                     delimiter=download_request.file_delimiter,
                 )
                 for download in download_request.download_list

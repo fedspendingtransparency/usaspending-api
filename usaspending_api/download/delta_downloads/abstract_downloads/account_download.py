@@ -47,7 +47,7 @@ class AbstractAccountDownload(AbstractDownload):
     @abstractmethod
     def submission_type(self) -> SubmissionType: ...
 
-    def get_file_name(self) -> str:
+    def _build_file_name(self) -> str:
         date_range = construct_data_date_range(self.filters.dict())
         agency = obtain_filename_prefix_from_agency_id(self.filters.agency)
         level = self.account_level.abbreviation
