@@ -106,10 +106,10 @@ class Command(BaseCommand):
                 spark_to_csv_strategy.download_to_csv(
                     source_sql=None,
                     destination_path=self.working_dir_path / self.download_name,
-                    destination_file_name=download.file_name,
+                    destination_file_name=download.get_file_name(),
                     working_dir_path=self.working_dir_path,
                     download_zip_path=zip_file_path,
-                    source_df=download.dataframe,
+                    source_df=download.get_dataframe(),
                     delimiter=download_request.file_delimiter,
                 )
                 for download in download_request.download_list
@@ -145,12 +145,10 @@ class Command(BaseCommand):
         match request_type:
             case DownloadType.ACCOUNT:
                 filters = AccountDownloadFilters(**download_json["filters"])
-                factories = [
-                    download_factories[submission_type](self.spark, filters)
+                account_level = download_json.get("account_level")
+                download_list: list[Download] = [
+                    download_factories[submission_type](self.spark, filters).get_download(account_level)
                     for submission_type in filters.submission_types
-                ]
-                download_list = [
-                    getattr(factory, f"create_{download_json['account_level']}_download")() for factory in factories
                 ]
                 download_type = DownloadType.ACCOUNT
             case _:

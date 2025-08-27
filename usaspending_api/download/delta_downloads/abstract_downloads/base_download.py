@@ -16,14 +16,6 @@ class AbstractDownload(ABC):
         self._start_time = datetime.now(timezone.utc)
 
     @property
-    @abstractmethod
-    def file_name(self) -> str: ...
-
-    @property
-    @abstractmethod
-    def dataframe(self) -> DataFrame: ...
-
-    @property
     def filters(self) -> DownloadFilters:
         return self._filters
 
@@ -38,3 +30,9 @@ class AbstractDownload(ABC):
     @property
     def spark(self) -> SparkSession:
         return self._spark
+
+    @abstractmethod
+    def get_file_name(self) -> str: ...
+
+    @abstractmethod
+    def get_dataframe(self) -> DataFrame: ...

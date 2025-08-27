@@ -84,8 +84,7 @@ class AccountBalancesMixin:
             .withColumn("submission_period", self.fy_quarter_period)
         )
 
-    @property
-    def dataframe(self) -> DataFrame:
+    def get_dataframe(self) -> DataFrame:
         return self.download_table.groupby(self.group_by_cols).agg(*self.agg_cols).select(*self.select_cols)
 
     @property

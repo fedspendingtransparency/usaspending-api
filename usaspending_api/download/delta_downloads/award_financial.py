@@ -148,8 +148,7 @@ class FederalAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
             + ["last_modified_date"]
         )
 
-    @property
-    def dataframe(self) -> DataFrame:
+    def get_dataframe(self) -> DataFrame:
         return (
             self.download_table.groupBy(self.group_by_cols)
             .agg(*[agg_func(col) for col, agg_func in self.agg_cols.items()])
@@ -187,8 +186,7 @@ class TreasuryAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
     def submission_type(self) -> SubmissionType:
         return SubmissionType.AWARD_FINANCIAL
 
-    @property
-    def dataframe(self) -> DataFrame:
+    def get_dataframe(self) -> DataFrame:
         select_cols = (
             [sf.col("treasury_owning_agency_name").alias("owning_agency_name")]
             + [

@@ -6,7 +6,11 @@ from typing import TypeVar
 
 from pyspark.sql import functions as sf, Column, SparkSession
 
-from usaspending_api.download.delta_downloads.abstract_downloads.account_download import AbstractAccountDownload
+from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.download.delta_downloads.abstract_downloads.account_download import (
+    AbstractAccountDownload,
+    AccountLevel,
+)
 from usaspending_api.download.delta_downloads.filters.account_filters import AccountDownloadFilters
 
 
@@ -107,3 +111,14 @@ class AbstractAccountDownloadFactory(ABC):
 
     @abstractmethod
     def create_treasury_account_download(self) -> AccountDownload: ...
+
+    def get_download(self, account_level: AccountLevel) -> AccountDownload:
+        match account_level:
+            case AccountLevel.FEDERAL_ACCOUNT:
+                download = self.create_federal_account_download()
+            case AccountLevel.TREASURY_ACCOUNT:
+                download = self.create_treasury_account_download()
+            case _:
+                raise InvalidParameterException(f"Unsupported account level: {account_level}")
+
+        return download
