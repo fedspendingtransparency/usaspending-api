@@ -437,8 +437,8 @@ class FederalAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBui
             "USSGL497100_downward_adj_prior_year_unpaid_deliv_orders_oblig": lambda col: sf.sum(col).alias(col),
             "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig": self.filter_and_sum,
             "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig": self.filter_and_sum,
-            # "USSGL483100_undelivered_orders_obligations_transferred_unpaid": lambda col: sf.sum(col).alias(col),
-            # "USSGL493100_delivered_orders_obligations_transferred_unpaid": lambda col: sf.sum(col).alias(col),
+            "USSGL483100_undelivered_orders_obligations_transferred_unpaid": lambda col: sf.sum(col).alias(col),
+            "USSGL493100_delivered_orders_obligations_transferred_unpaid": lambda col: sf.sum(col).alias(col),
             "USSGL483200_undeliv_orders_oblig_transferred_prepaid_advanced": lambda col: sf.sum(col).alias(col),
             "last_modified_date": lambda col: sf.max(col).alias(col),
         }
@@ -606,20 +606,20 @@ class TreasuryAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBu
     @property
     def object_class_program_activity_groupby_cols(self) -> list[str]:
         return [
-            "data_source",  # TODO: Missing from the delta model
+            "data_source",
             "financial_accounts_by_program_activity_object_class_id",
-            "program_activity_id",  # TODO: Missing from the delta model
-            "object_class_id",  # TODO: Missing from the delta model
-            "prior_year_adjustment",  # TODO: Missing from the delta model
+            "program_activity_id",
+            "object_class_id",
+            "prior_year_adjustment",
             "disaster_emergency_fund_code",
             "USSGL480100_undelivered_orders_obligations_unpaid_FYB",
             "USSGL480100_undelivered_orders_obligations_unpaid",
-            "USSGL480110_rein_undel_ord_CPE",  # TODO: Missing from the delta model
+            "USSGL480110_rein_undel_ord_CPE",
             "USSGL483100_undelivered_orders_obligations_transferred_unpaid"
             "USSGL488100_upward_adj_prior_year_undeliv_orders_oblig_unpaid",
             "USSGL490100_delivered_orders_obligations_unpaid_FYB",
             "USSGL490100_delivered_orders_obligations_unpaid",
-            "USSGL490110_rein_deliv_ord_CPE",  # TODO: Missing from the delta model
+            "USSGL490110_rein_deliv_ord_CPE",
             "USSGL493100_delivered_orders_obligations_transferred_unpaid",
             "USSGL498100_upward_adj_of_prior_year_deliv_orders_oblig_unpaid",
             "USSGL480200_undelivered_orders_obligations_prepaid_advanced_FYB",
@@ -646,18 +646,18 @@ class TreasuryAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBu
             "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig",
             "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig",
             "deobligations_or_recoveries_or_refunds_from_prior_year",
-            "drv_obligations_incurred_by_program_object_class",  # TODO: Missing from the delta model
-            "drv_obligations_undelivered_orders_unpaid",  # TODO: Missing from the delta model
-            "reporting_period_start",  # TODO: Missing from the delta model
-            "reporting_period_end",  # TODO: Missing from the delta model
+            "drv_obligations_incurred_by_program_object_class",
+            "drv_obligations_undelivered_orders_unpaid",
+            "reporting_period_start",
+            "reporting_period_end",
             "last_modified_date",
-            "certified_date",  # TODO: Missing from the delta model
-            "create_date",  # TODO: Missing from the delta model
-            "update_date",  # TODO: Missing from the delta model
+            "certified_date",
+            "create_date",
+            "update_date",
             "submission_id",
-            "treasury_account_id",  # TODO: Missing from the delta model
+            "treasury_account_id",
             "agency_identifier_name",
-            "allocation_transfer_agency_identifier_name",  # TODO: Missing from the delta model
+            "allocation_transfer_agency_identifier_name",
         ]
 
     @property
