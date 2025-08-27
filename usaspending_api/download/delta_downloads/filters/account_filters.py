@@ -88,3 +88,14 @@ class AccountDownloadFilters(BaseModel):
         if quarter is not None and quarter not in range(1, 5):
             raise InvalidParameterException("Quarter must be between 1 and 4")
         return values
+
+    @root_validator
+    @classmethod
+    def check_submission_type_defc(cls, values: dict[str, Any]) -> dict[str, Any]:
+        includes_account_balances = "account_balances" in values.get("submission_types", [])
+        has_defc = bool(values.get("def_codes"))
+        if includes_account_balances and has_defc:
+            warnings.warn(
+                "Account balances can not be filtered by def code; this filter will be ignored for account balances."
+            )
+        return values

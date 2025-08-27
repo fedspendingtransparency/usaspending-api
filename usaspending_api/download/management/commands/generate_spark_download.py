@@ -105,7 +105,7 @@ class Command(BaseCommand):
             csvs_metadata = [
                 spark_to_csv_strategy.download_to_csv(
                     source_sql=None,
-                    destination_path=self.working_dir_path / self.download_zip_file_name / download.file_name,
+                    destination_path=self.working_dir_path / download.file_name,
                     destination_file_name=download.file_name,
                     working_dir_path=self.working_dir_path,
                     download_zip_path=zip_file_path,
