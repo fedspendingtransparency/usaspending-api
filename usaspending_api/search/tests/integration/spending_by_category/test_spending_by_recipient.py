@@ -120,9 +120,9 @@ def test_top_1_fails_with_es_transactions_routed_dangerously(client, monkeypatch
         results.append({"key": bucket["key"], "sum": bucket["sum_agg"]["value"]})
 
     assert len(results) == 1
-    assert results[0]["key"] == str(
-        recipient1
-    ), "This botched 'Top 1' sum agg should have incorrectly chosen the lesser recipient"
+    assert results[0]["key"] == str(recipient1), (
+        "This botched 'Top 1' sum agg should have incorrectly chosen the lesser recipient"
+    )
     assert results[0]["sum"] == 20.0, "The botched 'Top 1' sum agg should have incorrectly summed up recipient totals"
 
 
@@ -207,9 +207,9 @@ def test_top_1_with_es_transactions_routed_by_recipient(client, monkeypatch, ela
     for bucket in response["aggregations"]["results"]["buckets"]:
         results.append({"key": bucket["key"], "sum": bucket["sum_agg"]["value"]})
     assert len(results) == 1
-    assert results[0]["key"] == str(
-        recipient2
-    ), "The 'Top 1' sum agg incorrectly chose the recipient with a lesser total sum"
+    assert results[0]["key"] == str(recipient2), (
+        "The 'Top 1' sum agg incorrectly chose the recipient with a lesser total sum"
+    )
     assert results[0]["sum"] == 31.0, "The 'Top 1' sum agg incorrectly summed up recipient totals"
 
 
@@ -229,7 +229,6 @@ def test_success_with_all_filters(client, monkeypatch, elasticsearch_transaction
 
 
 def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, awards_and_transactions):
-
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     resp = client.post(
@@ -308,7 +307,6 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
 
 
 def test_correct_response_of_empty_list(client, monkeypatch, elasticsearch_transaction_index, awards_and_transactions):
-
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     resp = client.post(
@@ -329,7 +327,6 @@ def test_correct_response_of_empty_list(client, monkeypatch, elasticsearch_trans
 
 
 def test_recipient_search_text_uei(client, monkeypatch, elasticsearch_transaction_index, awards_and_transactions):
-
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     resp = client.post(
@@ -359,7 +356,6 @@ def test_recipient_search_text_uei(client, monkeypatch, elasticsearch_transactio
 
 
 def test_recipient_search_text_duns(client, monkeypatch, elasticsearch_transaction_index, awards_and_transactions):
-
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     resp = client.post(
@@ -384,5 +380,58 @@ def test_recipient_search_text_duns(client, monkeypatch, elasticsearch_transacti
         "messages": _expected_messages(),
         "spending_level": "transactions",
     }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+    assert resp.json() == expected_response
+
+
+def test_single_level_in_recipient(client, monkeypatch, elasticsearch_award_index, awards_and_transactions):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    resp = client.post(
+        "/api/v2/search/spending_by_category/recipient",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "filters": {"time_period": [{"start_date": "2024-09-28", "end_date": "2025-09-28"}]},
+                "category": "recipient",
+                "spending_level": "awards",
+                "page": 1,
+            }
+        ),
+    )
+    expected_response = {
+        "category": "recipient",
+        "spending_level": "awards",
+        "limit": 10,
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "results": [
+            {
+                "amount": 0.0,
+                "recipient_id": "26b30496-92ab-426a-ac30-c75803307041-C",
+                "name": "C RECIPIENT",
+                "code": "DUNS009",
+                "uei": "UEI009",
+                "total_outlays": 0.0,
+            },
+            {
+                "amount": 0.0,
+                "recipient_id": "8301261f-8fd1-49d1-9720-8afa3ce6e26f-P",
+                "name": "P RECIPIENT",
+                "code": "DUNS010",
+                "uei": "UEI010",
+                "total_outlays": 0.0,
+            },
+            {
+                "amount": 0.0,
+                "recipient_id": "d85c52ee-e54c-47d4-977d-fcfd3eb4a67e-['X']",
+                "name": "BAD LEVEL RECIPIENT",
+                "code": "DUNS011",
+                "uei": "UEI011",
+                "total_outlays": 0.0,
+            },
+        ],
+        "messages": _expected_messages(),
+    }
+
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
     assert resp.json() == expected_response
