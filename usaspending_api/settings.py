@@ -324,10 +324,10 @@ if os.environ.get("DOWNLOAD_DATABASE_URL"):
     )
 
 # import a second database connection for ETL, connecting to data broker
-# using the environment variable, DATA_BROKER_URL - only if it is set
+# using the environment variable, DATA_BROKER_DB - only if it is set
 DATA_BROKER_DB_ALIAS = "data_broker"
-if os.environ.get("DATA_BROKER_URL"):
-    DATABASES[DATA_BROKER_DB_ALIAS] = _configure_database_connection("DATA_BROKER_URL")
+if os.environ.get("DATA_BROKER_DB"):
+    DATABASES[DATA_BROKER_DB_ALIAS] = _configure_database_connection("DATA_BROKER_DB")
 
 DATA_BROKER_DBLINK_NAME = "broker_server"
 
