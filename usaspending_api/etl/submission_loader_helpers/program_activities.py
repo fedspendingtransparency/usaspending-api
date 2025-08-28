@@ -26,7 +26,7 @@ def update_program_activities(submission_id):
                 create_date,
                 update_date
             )
-        SELECT
+        select
             program_activity_code,
             program_activity_name,
             reporting_fiscal_year,
