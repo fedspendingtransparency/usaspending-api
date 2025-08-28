@@ -16,7 +16,7 @@ class Command(load_base.Command):
     """
 
     help = "Derives all FABS office names from the office codes in the Office table in Data broker. The \
-                DATA_BROKER_DATABASE_URL environment variable must set so we can pull Office data from their db."
+                DATA_BROKER_URL environment variable must set so we can pull Office data from their db."
 
     def handle(self, *args, **options):
         # Grab data broker database connections
@@ -25,7 +25,7 @@ class Command(load_base.Command):
                 db_conn = connections[settings.DATA_BROKER_DB_ALIAS]
                 db_cursor = db_conn.cursor()
             except Exception as err:
-                logger.critical("Could not connect to database. Is DATA_BROKER_DATABASE_URL set?")
+                logger.critical("Could not connect to database. Is DATA_BROKER_URL set?")
                 logger.critical(print(err))
                 raise
         else:
