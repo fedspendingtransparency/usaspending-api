@@ -120,9 +120,9 @@ def test_top_1_fails_with_es_transactions_routed_dangerously(client, monkeypatch
         results.append({"key": bucket["key"], "sum": bucket["sum_agg"]["value"]})
 
     assert len(results) == 1
-    assert results[0]["key"] == str(recipient1), (
-        "This botched 'Top 1' sum agg should have incorrectly chosen the lesser recipient"
-    )
+    assert results[0]["key"] == str(
+        recipient1
+    ), "This botched 'Top 1' sum agg should have incorrectly chosen the lesser recipient"
     assert results[0]["sum"] == 20.0, "The botched 'Top 1' sum agg should have incorrectly summed up recipient totals"
 
 
@@ -207,9 +207,9 @@ def test_top_1_with_es_transactions_routed_by_recipient(client, monkeypatch, ela
     for bucket in response["aggregations"]["results"]["buckets"]:
         results.append({"key": bucket["key"], "sum": bucket["sum_agg"]["value"]})
     assert len(results) == 1
-    assert results[0]["key"] == str(recipient2), (
-        "The 'Top 1' sum agg incorrectly chose the recipient with a lesser total sum"
-    )
+    assert results[0]["key"] == str(
+        recipient2
+    ), "The 'Top 1' sum agg incorrectly chose the recipient with a lesser total sum"
     assert results[0]["sum"] == 31.0, "The 'Top 1' sum agg incorrectly summed up recipient totals"
 
 
