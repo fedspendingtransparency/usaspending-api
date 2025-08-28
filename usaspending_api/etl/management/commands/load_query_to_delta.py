@@ -2,7 +2,6 @@ import logging
 from argparse import ArgumentTypeError
 from typing import Callable
 
-from delta.tables import DeltaTable
 from django.core.management.base import BaseCommand
 from pyspark.sql import DataFrame, SparkSession
 
@@ -439,6 +438,7 @@ class Command(BaseCommand):
             "spark.sql.legacy.parquet.datetimeRebaseModeInWrite": "LEGACY",  # for dates at/before 1900
             "spark.sql.legacy.parquet.int96RebaseModeInWrite": "LEGACY",  # for timestamps at/before 1900
             "spark.sql.jsonGenerator.ignoreNullFields": "false",  # keep nulls in our json
+            "hive.metastore.disallow.incompatible.col.type.changes": "false",
         }
 
         self.spark = get_active_spark_session()
@@ -494,16 +494,12 @@ class Command(BaseCommand):
             )
         elif isinstance(query, Callable):
             delta_path = f"s3a://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.DELTA_LAKE_S3_PATH}/{self.destination_database}/{self.destination_table_name}"
-            target = DeltaTable.forPath(self.spark, delta_path).alias("target")
-            source = query(self.spark).alias("source")
             (
-                target.merge(
-                    source, "target.appropriation_account_balances_id = source.appropriation_account_balances_id"
-                )
-                .whenMatchedUpdateAll()
-                .whenNotMatchedInsertAll()
-                .whenNotMatchedBySourceDelete()
-                .execute()
+                query(self.spark)
+                .write.format("delta")
+                .mode("overwrite")
+                .option("path", delta_path)
+                .saveAsTable(f"{self.destination_database}.{self.destination_table_name}")
             )
         else:
             raise ArgumentTypeError(f"Invalid query. `{query}` must be a string or a Callable.")
