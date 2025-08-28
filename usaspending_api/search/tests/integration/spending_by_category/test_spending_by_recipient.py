@@ -423,7 +423,7 @@ def test_single_level_in_recipient(client, monkeypatch, elasticsearch_award_inde
             },
             {
                 "amount": 0.0,
-                "recipient_id": "d85c52ee-e54c-47d4-977d-fcfd3eb4a67e-['X']",
+                "recipient_id": None,
                 "name": "BAD LEVEL RECIPIENT",
                 "code": "DUNS011",
                 "uei": "UEI011",
