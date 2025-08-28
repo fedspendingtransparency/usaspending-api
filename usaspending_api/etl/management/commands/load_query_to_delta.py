@@ -438,7 +438,6 @@ class Command(BaseCommand):
             "spark.sql.legacy.parquet.datetimeRebaseModeInWrite": "LEGACY",  # for dates at/before 1900
             "spark.sql.legacy.parquet.int96RebaseModeInWrite": "LEGACY",  # for timestamps at/before 1900
             "spark.sql.jsonGenerator.ignoreNullFields": "false",  # keep nulls in our json
-            "hive.metastore.disallow.incompatible.col.type.changes": "false",
         }
 
         self.spark = get_active_spark_session()

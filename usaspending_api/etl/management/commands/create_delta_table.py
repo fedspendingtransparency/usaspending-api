@@ -81,10 +81,9 @@ class Command(BaseCommand):
 
         # Set the database that will be interacted with for all Delta Lake table Spark-based activity
         logger.info(f"Using Spark Database: {destination_database}")
+        spark.sql(f"create database if not exists {destination_database};")
+        spark.sql(f"use {destination_database};")
         if isinstance(table_spec["delta_table_create_sql"], str):
-            spark.sql(f"create database if not exists {destination_database};")
-            spark.sql(f"use {destination_database};")
-
             # Define Schema Using CREATE TABLE AS command
             spark.sql(
                 TABLE_SPEC[destination_table]["delta_table_create_sql"].format(
