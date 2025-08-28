@@ -2,6 +2,7 @@ import logging
 from argparse import ArgumentTypeError
 from typing import Callable
 
+from delta.tables import DeltaTable
 from django.core.management.base import BaseCommand
 from pyspark.sql import DataFrame, SparkSession
 
@@ -492,16 +493,17 @@ class Command(BaseCommand):
                 )
             )
         elif isinstance(query, Callable):
-            logger.info(query(self.spark).schema)
+            delta_path = f"s3a://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.DELTA_LAKE_S3_PATH}/{self.destination_database}/{self.destination_table_name}"
+            target = DeltaTable.forPath(self.spark, delta_path).alias("target")
+            source = query(self.spark).alias("source")
             (
-                query(self.spark)
-                .write.format("delta")
-                .mode("overwrite")
-                .option(
-                    "path",
-                    f"s3a://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.DELTA_LAKE_S3_PATH}/{self.destination_database}/{self.destination_table_name}",
+                target.merge(
+                    source, "target.appropriation_account_balances_id = source.appropriation_account_balances_id"
                 )
-                .saveAsTable(f"{self.destination_database}.{self.destination_table_name}")
+                .whenMatchedUpdateAll()
+                .whenNotMatchedInsertAll()
+                .whenNotMatchedBySourceDelete()
+                .execute()
             )
         else:
             raise ArgumentTypeError(f"Invalid query. `{query}` must be a string or a Callable.")
