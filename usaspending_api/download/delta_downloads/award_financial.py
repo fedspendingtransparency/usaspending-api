@@ -150,7 +150,8 @@ class FederalAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
 
     def _build_dataframe(self) -> DataFrame:
         return (
-            self.download_table.groupBy(self.group_by_cols)
+            self.download_table.filter(self.dynamic_filters)
+            .groupBy(self.group_by_cols)
             .agg(*[agg_func(col) for col, agg_func in self.agg_cols.items()])
             # drop original agg columns from the dataframe to avoid ambiguous column names
             .drop(*[sf.col(f"award_financial_download.{col}") for col in self.agg_cols])

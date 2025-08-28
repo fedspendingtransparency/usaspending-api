@@ -14,7 +14,7 @@ from usaspending_api.download.v2.download_column_historical_lookups import query
 
 
 @pytest.fixture(scope="function")
-def account_download_table(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+def award_financial_table(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
     call_command(
         "create_delta_table",
         f"--destination-table=award_financial_download",
@@ -91,17 +91,17 @@ def federal_account_models(db):
 
 
 @patch("usaspending_api.download.delta_downloads.award_financial.get_submission_ids_for_periods")
-def test_federal_account_download_factory(
-    mock_get_submission_ids_for_periods, spark, account_download_table, agency_models
+def test_federal_award_financial_factory(
+    mock_get_submission_ids_for_periods, spark, award_financial_table, agency_models
 ):
     create_ref_temp_views(spark)
     mock_get_submission_ids_for_periods.return_value = [1, 2, 4, 5]
-    account_download_filter = AccountDownloadFilters(
+    award_financial_filter = AccountDownloadFilters(
         fy=2018,
         submission_types=["award_financial"],
         quarter=4,
     )
-    factory = AwardFinancialDownloadFactory(spark, account_download_filter)
+    factory = AwardFinancialDownloadFactory(spark, award_financial_filter)
     result = factory.create_federal_account_download()
     result_df = result.dataframe.toPandas()
     for col in ["reporting_agency_name", "budget_function", "budget_subfunction"]:
@@ -111,17 +111,17 @@ def test_federal_account_download_factory(
 
 
 @patch("usaspending_api.download.delta_downloads.award_financial.get_submission_ids_for_periods")
-def test_filter_federal_by_agency(mock_get_submission_ids_for_periods, spark, account_download_table, agency_models):
+def test_filter_federal_by_agency(mock_get_submission_ids_for_periods, spark, award_financial_table, agency_models):
     create_ref_temp_views(spark)
     mock_get_submission_ids_for_periods.return_value = [1, 2, 4, 5]
 
-    account_download_filter = AccountDownloadFilters(
+    award_financial_filter = AccountDownloadFilters(
         fy=2018,
         submission_types=["award_financial"],
         quarter=4,
         agency=2,
     )
-    factory = AwardFinancialDownloadFactory(spark, account_download_filter)
+    factory = AwardFinancialDownloadFactory(spark, award_financial_filter)
     result = factory.create_federal_account_download()
     result_df = result.dataframe.toPandas()
     for col in ["reporting_agency_name", "budget_function", "budget_subfunction"]:
@@ -132,18 +132,18 @@ def test_filter_federal_by_agency(mock_get_submission_ids_for_periods, spark, ac
 
 @patch("usaspending_api.download.delta_downloads.award_financial.get_submission_ids_for_periods")
 def test_filter_federal_by_federal_account_id(
-    mock_get_submission_ids_for_periods, spark, account_download_table, federal_account_models, agency_models
+    mock_get_submission_ids_for_periods, spark, award_financial_table, federal_account_models, agency_models
 ):
     create_ref_temp_views(spark)
     mock_get_submission_ids_for_periods.return_value = [1, 2, 4, 5]
 
-    account_download_filter = AccountDownloadFilters(
+    award_financial_filter = AccountDownloadFilters(
         fy=2018,
         submission_types=["award_financial"],
         quarter=4,
         federal_account=1,
     )
-    factory = AwardFinancialDownloadFactory(spark, account_download_filter)
+    factory = AwardFinancialDownloadFactory(spark, award_financial_filter)
     result = factory.create_federal_account_download()
     result_df = result.dataframe.toPandas()
     for col in ["reporting_agency_name", "budget_function", "budget_subfunction"]:
@@ -152,14 +152,14 @@ def test_filter_federal_by_federal_account_id(
     assert sorted(result_df.gross_outlay_amount_FYB_to_period_end.to_list()) == [100]
 
 
-def test_treasury_account_download_factory(spark, account_download_table, agency_models):
+def test_treasury_award_financial_factory(spark, award_financial_table, agency_models):
     create_ref_temp_views(spark)
-    account_download_filter = AccountDownloadFilters(
+    award_financial_filter = AccountDownloadFilters(
         fy=2018,
         submission_types=["award_financial"],
         quarter=4,
     )
-    factory = AwardFinancialDownloadFactory(spark, account_download_filter)
+    factory = AwardFinancialDownloadFactory(spark, award_financial_filter)
     result = factory.create_treasury_account_download()
     result_df = result.dataframe.toPandas()
     for col in ["reporting_agency_name", "budget_function", "budget_subfunction"]:
@@ -168,15 +168,15 @@ def test_treasury_account_download_factory(spark, account_download_table, agency
         assert result_df.gross_outlay_amount_FYB_to_period_end.to_list() == [100] * 4
 
 
-def test_filter_treasury_by_agency(spark, account_download_table, agency_models):
+def test_filter_treasury_by_agency(spark, award_financial_table, agency_models):
     create_ref_temp_views(spark)
-    account_download_filter = AccountDownloadFilters(
+    award_financial_filter = AccountDownloadFilters(
         fy=2018,
         submission_types=["award_financial"],
         quarter=4,
         agency=2,
     )
-    factory = AwardFinancialDownloadFactory(spark, account_download_filter)
+    factory = AwardFinancialDownloadFactory(spark, award_financial_filter)
     result = factory.create_treasury_account_download()
     result_df = result.dataframe.toPandas()
     for col in ["reporting_agency_name", "budget_function", "budget_subfunction"]:
@@ -187,7 +187,7 @@ def test_filter_treasury_by_agency(spark, account_download_table, agency_models)
 
 @pytest.mark.django_db(transaction=True)
 @patch("usaspending_api.download.delta_downloads.account_balances.get_submission_ids_for_periods")
-def test_account_balances(mock_get_submission_ids_for_periods, spark, account_download_table, agency_models):
+def test_account_balances(mock_get_submission_ids_for_periods, spark, agency_models):
     baker.make("references.CGAC", cgac_code="1").save()
     baker.make("references.CGAC", cgac_code="2").save()
     baker.make("references.CGAC", cgac_code="3").save()
@@ -239,12 +239,12 @@ def test_account_balances(mock_get_submission_ids_for_periods, spark, account_do
 
     create_ref_temp_views(spark)
 
-    account_download_filter = AccountDownloadFilters(
+    account_balances_filter = AccountDownloadFilters(
         fy=2018,
         submission_types=["account_balances"],
         quarter=4,
     )
-    factory = AccountBalancesDownloadFactory(spark, account_download_filter)
+    factory = AccountBalancesDownloadFactory(spark, account_balances_filter)
     ta_dataframe = factory.create_treasury_account_download()
     assert ta_dataframe.dataframe.count() == 2
     fa_dataframe = factory.create_federal_account_download()
