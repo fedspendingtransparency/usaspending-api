@@ -154,6 +154,7 @@ AWARD_SEARCH_COLUMNS = {
     "total_outlays": {"delta": "NUMERIC(23, 2)", "postgres": "NUMERIC(23, 2)", "gold": False},
     "generated_pragmatic_obligation": {"delta": "NUMERIC(23,2)", "postgres": "NUMERIC(23,2)", "gold": False},
     "program_activities": {"delta": "STRING", "postgres": "JSONB", "gold": False},
+    "transaction_count": {"delta": "INTEGER", "postgres": "INTEGER", "gold": False},
 }
 AWARD_SEARCH_DELTA_COLUMNS = {k: v["delta"] for k, v in AWARD_SEARCH_COLUMNS.items()}
 AWARD_SEARCH_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in AWARD_SEARCH_COLUMNS.items() if not v["gold"]}
@@ -163,7 +164,7 @@ ALL_AWARD_TYPES = list(award_type_mapping.keys())
 
 award_search_create_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
-        {", ".join([f'{key} {val}' for key, val in AWARD_SEARCH_DELTA_COLUMNS.items()])}
+        {", ".join([f"{key} {val}" for key, val in AWARD_SEARCH_DELTA_COLUMNS.items()])}
     )
     USING DELTA
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
@@ -428,7 +429,8 @@ _base_load_sql_string = rf"""
         END,
         0
   ) AS NUMERIC(23, 2)) AS generated_pragmatic_obligation,
-  TREASURY_ACCT.program_activities
+  TREASURY_ACCT.program_activities,
+  awards.transaction_count
 FROM
   int.awards
 INNER JOIN
@@ -629,8 +631,9 @@ LEFT OUTER JOIN (
     CAST(SORT_ARRAY(COLLECT_SET(
         TO_JSON(
             NAMED_STRUCT(
-                'name', UPPER(rpa.program_activity_name),
-                'code', LPAD(rpa.program_activity_code, 4, "0")
+                'name', COALESCE(pap.name, UPPER(rpa.program_activity_name)),
+                'code', COALESCE(pap.code, LPAD(rpa.program_activity_code, 4, "0")),
+                'type', (CASE WHEN pap.code IS NOT NULL THEN 'PARK' ELSE 'PAC/PAN' END)
             )
         )
     )) AS STRING) AS program_activities
@@ -640,6 +643,7 @@ LEFT OUTER JOIN (
   INNER JOIN global_temp.federal_account fa ON (taa.federal_account_id = fa.id)
   INNER JOIN global_temp.toptier_agency agency ON (fa.parent_toptier_agency_id = agency.toptier_agency_id)
   LEFT JOIN global_temp.ref_program_activity rpa ON (faba.program_activity_id = rpa.id)
+  LEFT JOIN global_temp.program_activity_park pap ON (faba.program_activity_reporting_key = pap.code)
   WHERE
     faba.award_id IS NOT NULL
   GROUP BY
