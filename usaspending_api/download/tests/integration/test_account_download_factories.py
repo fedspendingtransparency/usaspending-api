@@ -71,7 +71,7 @@ def account_download_table(spark, s3_unittest_data_bucket, hive_unittest_metasto
         .write.format("delta")
         .mode("overwrite")
         .option("overwriteSchema", "true")
-        .saveAsTable("rpt.account_download")
+        .saveAsTable("rpt.award_financial_download")
     )
     yield
 
@@ -90,8 +90,8 @@ def federal_account_models(db):
     baker.make("accounts.FederalAccount", pk=3, agency_identifier="345", main_account_code="0333")
 
 
-@patch("usaspending_api.download.management.commands.delta_downloads.builders.get_submission_ids_for_periods")
-def test_federal_account_download_dataframe_builder(
+@patch("usaspending_api.download.delta_downloads.award_financial.get_submission_ids_for_periods")
+def test_federal_account_download_factory(
     mock_get_submission_ids_for_periods, spark, account_download_table, agency_models
 ):
     create_ref_temp_views(spark)
@@ -110,7 +110,7 @@ def test_federal_account_download_dataframe_builder(
     assert sorted(result_df.gross_outlay_amount_FYB_to_period_end.to_list()) == [100, 200]
 
 
-@patch("usaspending_api.download.management.commands.delta_downloads.builders.get_submission_ids_for_periods")
+@patch("usaspending_api.download.delta_downloads.award_financial.get_submission_ids_for_periods")
 def test_filter_federal_by_agency(mock_get_submission_ids_for_periods, spark, account_download_table, agency_models):
     create_ref_temp_views(spark)
     mock_get_submission_ids_for_periods.return_value = [1, 2, 4, 5]
@@ -130,7 +130,7 @@ def test_filter_federal_by_agency(mock_get_submission_ids_for_periods, spark, ac
     assert result_df.gross_outlay_amount_FYB_to_period_end.to_list() == [200]
 
 
-@patch("usaspending_api.download.management.commands.delta_downloads.builders.get_submission_ids_for_periods")
+@patch("usaspending_api.download.delta_downloads.award_financial.get_submission_ids_for_periods")
 def test_filter_federal_by_federal_account_id(
     mock_get_submission_ids_for_periods, spark, account_download_table, federal_account_models, agency_models
 ):
@@ -152,7 +152,7 @@ def test_filter_federal_by_federal_account_id(
     assert sorted(result_df.gross_outlay_amount_FYB_to_period_end.to_list()) == [100]
 
 
-def test_treasury_account_download_dataframe_builder(spark, account_download_table, agency_models):
+def test_treasury_account_download_factory(spark, account_download_table, agency_models):
     create_ref_temp_views(spark)
     account_download_filter = AccountDownloadFilters(
         fy=2018,
@@ -177,7 +177,7 @@ def test_filter_treasury_by_agency(spark, account_download_table, agency_models)
         agency=2,
     )
     factory = AwardFinancialDownloadFactory(spark, account_download_filter)
-    result = factory.create_federal_account_download()
+    result = factory.create_treasury_account_download()
     result_df = result.dataframe.toPandas()
     for col in ["reporting_agency_name", "budget_function", "budget_subfunction"]:
         assert sorted(result_df[col].to_list()) == ["B", "C", "D"]
@@ -186,7 +186,7 @@ def test_filter_treasury_by_agency(spark, account_download_table, agency_models)
 
 
 @pytest.mark.django_db(transaction=True)
-@patch("usaspending_api.download.management.commands.delta_downloads.builders.get_submission_ids_for_periods")
+@patch("usaspending_api.download.delta_downloads.account_balances.get_submission_ids_for_periods")
 def test_account_balances(mock_get_submission_ids_for_periods, spark, account_download_table, agency_models):
     baker.make("references.CGAC", cgac_code="1").save()
     baker.make("references.CGAC", cgac_code="2").save()
