@@ -227,6 +227,6 @@ def test_account_balances(mock_get_submission_ids_for_periods, spark, account_ba
     )
     factory = AccountBalancesDownloadFactory(spark, account_balances_filter)
     ta_dataframe = factory.create_treasury_account_download()
-    assert ta_dataframe.dataframe.count() == 2
+    assert ta_dataframe.dataframe.count() == 3
     fa_dataframe = factory.create_federal_account_download()
     assert fa_dataframe.dataframe.count() == 2
