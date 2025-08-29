@@ -93,14 +93,14 @@ class FederalAccountDownload(AccountBalancesMixin, AbstractAccountDownload):
                     (
                         (
                             sf.col("quarter_format_flag")
-                            & (sf.col("reporting_fiscal_quarter") == self.reporting_fiscal_quarter)
+                            & (sf.col("reporting_fiscal_quarter") == self.filters.reporting_fiscal_quarter)
                         )
                         | (
                             ~sf.col("quarter_format_flag")
-                            & (sf.col("reporting_fiscal_period") == self.reporting_fiscal_period)
+                            & (sf.col("reporting_fiscal_period") == self.filters.reporting_fiscal_period)
                         )
                     )
-                    & (sf.col("reporting_fiscal_year") == self.reporting_fiscal_year),
+                    & (sf.col("reporting_fiscal_year") == self.filters.reporting_fiscal_year),
                     sf.col("gross_outlay_amount"),
                 ).otherwise(0)
             ).alias("gross_outlay_amount"),
