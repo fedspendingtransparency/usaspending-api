@@ -1,4 +1,3 @@
-from datetime import datetime
 from unittest.mock import patch
 
 import pandas as pd
@@ -10,6 +9,7 @@ from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.download.delta_downloads.account_balances import AccountBalancesDownloadFactory
 from usaspending_api.download.delta_downloads.award_financial import AwardFinancialDownloadFactory
 from usaspending_api.download.delta_downloads.filters.account_filters import AccountDownloadFilters
+from usaspending_api.download.delta_models.account_balances_download import account_balances_schema
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 
 
@@ -72,6 +72,38 @@ def award_financial_table(spark, s3_unittest_data_bucket, hive_unittest_metastor
         .mode("overwrite")
         .option("overwriteSchema", "true")
         .saveAsTable("rpt.award_financial_download")
+    )
+    yield
+
+
+@pytest.fixture(scope="function")
+def account_balances_download_table(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+    call_command(
+        "create_delta_table",
+        f"--destination-table=account_balances_download",
+        f"--spark-s3-bucket={s3_unittest_data_bucket}",
+    )
+    test_data_df = pd.DataFrame(
+        data={
+            "reporting_fiscal_year": [2018, 2018, 2018, 2018, 2019],
+            "quarter_format_flag": [True, True, False, True, True],
+            "reporting_fiscal_quarter": [1, 2, None, 4, 2],
+            "reporting_fiscal_period": [None, None, 5, None, None],
+            "submission_id": [1, 2, 3, 4, 5],
+            "owning_agency_name": ["test1", "test2", "test2", "test2", "test3"],
+            "reporting_agency_name": ["A", "B", "C", "D", "E"],
+            "budget_function": ["A", "B", "C", "D", "E"],
+            "budget_subfunction": ["A", "B", "C", "D", "E"],
+            "gross_outlay_amount": [100, 100, 100, 100, 100],
+        },
+        columns=[field.name for field in account_balances_schema],
+    ).fillna("dummy_text")
+    (
+        spark.createDataFrame(test_data_df)
+        .write.format("delta")
+        .mode("overwrite")
+        .option("overwriteSchema", "true")
+        .saveAsTable("rpt.account_balances_download")
     )
     yield
 
@@ -185,60 +217,9 @@ def test_filter_treasury_by_agency(spark, award_financial_table, agency_models):
     assert result_df.gross_outlay_amount_FYB_to_period_end.to_list() == [100] * 3
 
 
-@pytest.mark.django_db(transaction=True)
-@patch("usaspending_api.download.delta_downloads.account_balances.get_submission_ids_for_periods")
-def test_account_balances(mock_get_submission_ids_for_periods, spark, agency_models):
-    baker.make("references.CGAC", cgac_code="1").save()
-    baker.make("references.CGAC", cgac_code="2").save()
-    baker.make("references.CGAC", cgac_code="3").save()
-    baker.make("references.CGAC", cgac_code="4").save()
-    baker.make("references.ToptierAgency", toptier_agency_id=1, create_date=datetime.now()).save()
-    baker.make("references.ToptierAgency", toptier_agency_id=2, create_date=datetime.now()).save()
-    baker.make("accounts.FederalAccount", id=1, parent_toptier_agency_id=1).save()
-    baker.make("accounts.FederalAccount", id=2, parent_toptier_agency_id=2).save()
-    baker.make(
-        "submissions.SubmissionAttributes",
-        submission_id=1,
-        reporting_fiscal_year=2018,
-        reporting_fiscal_quarter=4,
-        quarter_format_flag=True,
-    ).save()
-    baker.make(
-        "submissions.SubmissionAttributes",
-        submission_id=2,
-        reporting_fiscal_year=2018,
-        reporting_fiscal_quarter=4,
-        quarter_format_flag=True,
-    ).save()
-    baker.make(
-        "submissions.SubmissionAttributes",
-        submission_id=3,
-        reporting_fiscal_year=2019,
-        reporting_fiscal_quarter=4,
-        quarter_format_flag=True,
-    ).save()
-    baker.make(
-        "accounts.TreasuryAppropriationAccount",
-        treasury_account_identifier=1,
-        agency_id="1",
-        allocation_transfer_agency_id="2",
-        federal_account_id=1,
-    ).save()
-    baker.make(
-        "accounts.TreasuryAppropriationAccount",
-        treasury_account_identifier=2,
-        agency_id="3",
-        allocation_transfer_agency_id="4",
-        federal_account_id=2,
-    ).save()
-    baker.make("accounts.AppropriationAccountBalances", submission_id=1, treasury_account_identifier_id=1).save()
-    baker.make("accounts.AppropriationAccountBalances", submission_id=2, treasury_account_identifier_id=2).save()
-    baker.make("accounts.AppropriationAccountBalances", submission_id=3, treasury_account_identifier_id=2).save()
-
+@patch("usaspending_api.download.management.commands.delta_downloads.builders.get_submission_ids_for_periods")
+def test_account_balances(mock_get_submission_ids_for_periods, spark, account_balances_download_table, agency_models):
     mock_get_submission_ids_for_periods.return_value = [1, 2, 3]
-
-    create_ref_temp_views(spark)
-
     account_balances_filter = AccountDownloadFilters(
         fy=2018,
         submission_types=["account_balances"],
