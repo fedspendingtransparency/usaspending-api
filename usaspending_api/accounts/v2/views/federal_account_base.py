@@ -1,3 +1,5 @@
+from typing import List
+
 from django.utils.functional import cached_property
 from rest_framework.request import Request
 from rest_framework.views import APIView
@@ -8,9 +10,39 @@ from usaspending_api.common.validator import TinyShield, customize_pagination_wi
 
 class FederalAccountBase(APIView):
 
+    params_to_validate: List[str]
+
     @property
     def federal_account_code(self) -> str:
         return self.kwargs["federal_account_code"]
+
+    def _validate_params(self, param_values, params_to_validate=None):
+        all_models = [
+            {
+                "key": "time_period",
+                "name": "time_period",
+                "type": "array",
+                "optional": True
+            },
+            {
+                "key": "object_class",
+                "name": "object_class",
+                "type": "array",
+                "optional": True
+            },
+            {
+                "key": "program_activity",
+                "name": "program_activity",
+                "type": "array",
+                "optional": True
+            }
+        ]
+
+        return TinyShield(all_models)
+
+
+    def filter(self):
+        return self._validate_params(self)
 
 
 class PaginationMixin:

@@ -34,14 +34,16 @@ class FederalAccountProgramActivitiesTotal(PaginationMixin, FederalAccountBase):
                 )
             )
             .filter(query)
-            .values("submission_id")
             .annotate(
-                obligations=Sum("obligations_incurred_by_program_object_class_cpe"),
                 code=Coalesce(
                     "program_activity_reporting_key__code",
                     "program_activity__program_activity_code",
                     output_field=TextField(),
                 ),
+            )
+            .values("code")
+            .annotate(
+                obligations=Sum("obligations_incurred_by_program_object_class_cpe"),
                 name=Coalesce(
                     "program_activity_reporting_key__name",
                     "program_activity__program_activity_name",
@@ -55,7 +57,6 @@ class FederalAccountProgramActivitiesTotal(PaginationMixin, FederalAccountBase):
             )
             .order_by(*self.pagination.robust_order_by_fields)
             .values("obligations", "code", "name", "type")
-            .distinct()
         )
         page_metadata = get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
         return Response(
@@ -77,10 +78,7 @@ class FederalAccountProgramActivitiesTotal(PaginationMixin, FederalAccountBase):
                 | Q(object_class__major_object_class_name__in=self.filters["object_class"])
             )
         if "program_activity" in self.filters:
-            if "PARK" in self.filters["program_activity"]:
-                query &= Q(program_activity_reporting_key__isnull=False)
-            if "PAC" in self.filters["program_activity"]:
-                query &= Q(program_activity__isnull=False)
+                query &= Q(program_activity_reporting_key__code__in=self.filters["program_activity"]) | Q(program_activity__program_activity_code__in=self.filters["program_activity"])
         else:
             query &= Q(Q(program_activity_reporting_key__isnull=False) | Q(program_activity__isnull=False))
         return query
