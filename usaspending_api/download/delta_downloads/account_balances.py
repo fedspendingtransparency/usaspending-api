@@ -119,7 +119,7 @@ class FederalAccountDownload(AccountBalancesMixin, AbstractAccountDownload):
                 ).otherwise(0)
             ).alias("gross_outlay_amount"),
             sf.sum(sf.col("status_of_budgetary_resources_total")).alias("status_of_budgetary_resources_total"),
-            sf.max(sf.date_format("last_modified_date", "yyyy-dd-MM")).alias("last_modified_date"),
+            sf.max(sf.date_format("last_modified_date", "yyyy-MM-dd")).alias("last_modified_date"),
         ]
 
     @property
@@ -215,7 +215,7 @@ class TreasuryAccountDownload(AccountBalancesMixin, AbstractAccountDownload):
     @property
     def agg_cols(self) -> list[Column]:
         return [
-            sf.max(sf.date_format("last_modified_date", "yyyy-dd-MM")).alias("max_last_modified_date"),
+            sf.max(sf.date_format("last_modified_date", "yyyy-MM-dd")).alias("max_last_modified_date"),
         ]
 
     @property

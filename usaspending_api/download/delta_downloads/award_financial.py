@@ -132,7 +132,7 @@ class FederalAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
             "gross_outlay_amount_FYB_to_period_end": self.filter_submission_and_sum,
             "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig": self.filter_submission_and_sum,
             "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig": self.filter_submission_and_sum,
-            "last_modified_date": lambda col: sf.max(sf.date_format(col, "yyyy-dd-MM")).alias(col),
+            "last_modified_date": lambda col: sf.max(sf.date_format(col, "yyyy-MM-dd")).alias(col),
         }
 
     @property
@@ -195,7 +195,7 @@ class TreasuryAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
                 for col in query_paths["award_financial"]["treasury_account"].keys()
                 if col != "owning_agency_name" and not col.startswith("last_modified_date")
             ]
-            + [sf.date_format("last_modified_date", "yyyy-dd-MM").alias("last_modified_date")]
+            + [sf.date_format("last_modified_date", "yyyy-MM-dd").alias("last_modified_date")]
         )
         return self.download_table.filter(self.dynamic_filters & self.non_zero_filters).select(select_cols)
 
