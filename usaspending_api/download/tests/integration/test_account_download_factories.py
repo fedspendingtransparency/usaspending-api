@@ -217,7 +217,7 @@ def test_filter_treasury_by_agency(spark, award_financial_table, agency_models):
     assert result_df.gross_outlay_amount_FYB_to_period_end.to_list() == [100] * 3
 
 
-@patch("usaspending_api.download.management.commands.delta_downloads.builders.get_submission_ids_for_periods")
+@patch("usaspending_api.download.delta_downloads.account_balances.get_submission_ids_for_periods")
 def test_account_balances(mock_get_submission_ids_for_periods, spark, account_balances_download_table, agency_models):
     mock_get_submission_ids_for_periods.return_value = [1, 2, 3]
     account_balances_filter = AccountDownloadFilters(

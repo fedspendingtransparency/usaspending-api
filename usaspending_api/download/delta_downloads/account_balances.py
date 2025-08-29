@@ -30,20 +30,6 @@ class AccountBalancesMixin:
     def download_table(self) -> DataFrame:
         return self.spark.table("rpt.account_balances_download")
 
-    @property
-    def fy_quarter_period(self) -> Column:
-        return sf.when(
-            sf.col("quarter_format_flag"),
-            sf.concat(sf.lit("FY"), sf.col("reporting_fiscal_year"), sf.lit("Q"), sf.col("reporting_fiscal_quarter")),
-        ).otherwise(
-            sf.concat(
-                sf.lit("FY"),
-                sf.col("reporting_fiscal_year"),
-                sf.lit("P"),
-                sf.lpad(sf.col("reporting_fiscal_period"), 2, "0"),
-            )
-        )
-
     def _build_dataframe(self) -> DataFrame:
         return (
             self.download_table.filter(
