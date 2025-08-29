@@ -1,8 +1,9 @@
 import logging
 from argparse import ArgumentTypeError
+from typing import Callable
 
 from django.core.management.base import BaseCommand
-from pyspark.sql import SparkSession
+from pyspark.sql import DataFrame, SparkSession
 
 from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.helpers.spark_helpers import (
@@ -29,6 +30,7 @@ from usaspending_api.download.delta_models.object_class_program_activity_downloa
     object_class_program_activity_download_create_sql_string,
     object_class_program_activity_download_load_sql_string,
 )
+from usaspending_api.download.delta_models.account_balances_download import account_balances_df, account_balances_schema
 from usaspending_api.recipient.delta_models import (
     RECIPIENT_LOOKUP_POSTGRES_COLUMNS,
     RECIPIENT_PROFILE_POSTGRES_COLUMNS,
@@ -321,6 +323,27 @@ TABLE_SPEC = {
         "tsvectors": None,
         "postgres_partition_spec": None,
     },
+    "account_balances_download": {
+        "model": None,
+        "is_from_broker": False,
+        "source_query": account_balances_df,
+        "source_query_incremental": None,
+        "source_database": None,
+        "source_table": None,
+        "destination_database": "rpt",
+        "swap_table": None,
+        "swap_schema": None,
+        "partition_column": "appropriation_account_balances_id",
+        "partition_column_type": "numeric",
+        "is_partition_column_unique": False,
+        "delta_table_create_sql": account_balances_schema,
+        "source_schema": None,
+        "custom_schema": None,
+        "column_names": list(),
+        "postgres_seq_name": None,
+        "tsvectors": None,
+        "postgres_partition_spec": None,
+    },
     "account_download": {
         "model": None,
         "is_from_broker": False,
@@ -454,16 +477,28 @@ class Command(BaseCommand):
         if spark_created_by_command:
             self.spark.stop()
 
-    def run_spark_sql(self, query):
-        jdbc_conn_props = get_jdbc_connection_properties()
-        self.spark.sql(
-            query.format(
-                DESTINATION_DATABASE=self.destination_database,
-                DESTINATION_TABLE=self.destination_table_name,
-                DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
-                JDBC_DRIVER=jdbc_conn_props["driver"],
-                JDBC_FETCHSIZE=jdbc_conn_props["fetchsize"],
-                JDBC_URL=get_broker_jdbc_url(),
-                AWARD_URL=AWARD_URL,
+    def run_spark_sql(self, query: str | Callable[[SparkSession], DataFrame]):
+        if isinstance(query, str):
+            jdbc_conn_props = get_jdbc_connection_properties()
+            self.spark.sql(
+                query.format(
+                    DESTINATION_DATABASE=self.destination_database,
+                    DESTINATION_TABLE=self.destination_table_name,
+                    DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+                    JDBC_DRIVER=jdbc_conn_props["driver"],
+                    JDBC_FETCHSIZE=jdbc_conn_props["fetchsize"],
+                    JDBC_URL=get_broker_jdbc_url(),
+                    AWARD_URL=AWARD_URL,
+                )
             )
-        )
+        elif isinstance(query, Callable):
+            delta_path = f"s3a://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.DELTA_LAKE_S3_PATH}/{self.destination_database}/{self.destination_table_name}"
+            (
+                query(self.spark)
+                .write.format("delta")
+                .mode("overwrite")
+                .option("path", delta_path)
+                .saveAsTable(f"{self.destination_database}.{self.destination_table_name}")
+            )
+        else:
+            raise ArgumentTypeError(f"Invalid query. `{query}` must be a string or a Callable.")

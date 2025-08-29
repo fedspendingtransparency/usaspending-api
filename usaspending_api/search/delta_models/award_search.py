@@ -631,8 +631,9 @@ LEFT OUTER JOIN (
     CAST(SORT_ARRAY(COLLECT_SET(
         TO_JSON(
             NAMED_STRUCT(
-                'name', UPPER(rpa.program_activity_name),
-                'code', LPAD(rpa.program_activity_code, 4, "0")
+                'name', COALESCE(pap.name, UPPER(rpa.program_activity_name)),
+                'code', COALESCE(pap.code, LPAD(rpa.program_activity_code, 4, "0")),
+                'type', (CASE WHEN pap.code IS NOT NULL THEN 'PARK' ELSE 'PAC/PAN' END)
             )
         )
     )) AS STRING) AS program_activities
@@ -642,6 +643,7 @@ LEFT OUTER JOIN (
   INNER JOIN global_temp.federal_account fa ON (taa.federal_account_id = fa.id)
   INNER JOIN global_temp.toptier_agency agency ON (fa.parent_toptier_agency_id = agency.toptier_agency_id)
   LEFT JOIN global_temp.ref_program_activity rpa ON (faba.program_activity_id = rpa.id)
+  LEFT JOIN global_temp.program_activity_park pap ON (faba.program_activity_reporting_key = pap.code)
   WHERE
     faba.award_id IS NOT NULL
   GROUP BY

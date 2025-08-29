@@ -229,7 +229,6 @@ def test_success_with_all_filters(client, monkeypatch, elasticsearch_transaction
 
 
 def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, awards_and_transactions):
-
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     resp = client.post(
@@ -308,7 +307,6 @@ def test_correct_response(client, monkeypatch, elasticsearch_transaction_index, 
 
 
 def test_correct_response_of_empty_list(client, monkeypatch, elasticsearch_transaction_index, awards_and_transactions):
-
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     resp = client.post(
@@ -329,7 +327,6 @@ def test_correct_response_of_empty_list(client, monkeypatch, elasticsearch_trans
 
 
 def test_recipient_search_text_uei(client, monkeypatch, elasticsearch_transaction_index, awards_and_transactions):
-
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     resp = client.post(
@@ -359,7 +356,6 @@ def test_recipient_search_text_uei(client, monkeypatch, elasticsearch_transactio
 
 
 def test_recipient_search_text_duns(client, monkeypatch, elasticsearch_transaction_index, awards_and_transactions):
-
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
 
     resp = client.post(
@@ -384,5 +380,58 @@ def test_recipient_search_text_duns(client, monkeypatch, elasticsearch_transacti
         "messages": _expected_messages(),
         "spending_level": "transactions",
     }
+    assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
+    assert resp.json() == expected_response
+
+
+def test_single_level_in_recipient(client, monkeypatch, elasticsearch_award_index, awards_and_transactions):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    resp = client.post(
+        "/api/v2/search/spending_by_category/recipient",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "filters": {"time_period": [{"start_date": "2024-09-28", "end_date": "2025-09-28"}]},
+                "category": "recipient",
+                "spending_level": "awards",
+                "page": 1,
+            }
+        ),
+    )
+    expected_response = {
+        "category": "recipient",
+        "spending_level": "awards",
+        "limit": 10,
+        "page_metadata": {"page": 1, "next": None, "previous": None, "hasNext": False, "hasPrevious": False},
+        "results": [
+            {
+                "amount": 0.0,
+                "recipient_id": "26b30496-92ab-426a-ac30-c75803307041-C",
+                "name": "C RECIPIENT",
+                "code": "DUNS009",
+                "uei": "UEI009",
+                "total_outlays": 0.0,
+            },
+            {
+                "amount": 0.0,
+                "recipient_id": "8301261f-8fd1-49d1-9720-8afa3ce6e26f-P",
+                "name": "P RECIPIENT",
+                "code": "DUNS010",
+                "uei": "UEI010",
+                "total_outlays": 0.0,
+            },
+            {
+                "amount": 0.0,
+                "recipient_id": None,
+                "name": "BAD LEVEL RECIPIENT",
+                "code": "DUNS011",
+                "uei": "UEI011",
+                "total_outlays": 0.0,
+            },
+        ],
+        "messages": _expected_messages(),
+    }
+
     assert resp.status_code == status.HTTP_200_OK, "Failed to return 200 Response"
     assert resp.json() == expected_response
