@@ -7,14 +7,6 @@ This endpoint returns an array of each program activity's obligation, code, name
 
 ## POST
 
-+ Parameters
-    + `federal_account_code`: `431-0500` (required, string)
-        Federal account code consisting of the AID and main account code
-    + `limit`: 10 (optional, number)
-        The maximum number of results to return in the response
-    + `page`: 1 (optional, number)
-        The response page to return (the record offset is (`page` - 1) * `limit`).
-
 + Request (application/json)
     + Schema
 
@@ -25,7 +17,7 @@ This endpoint returns an array of each program activity's obligation, code, name
 
     + Attributes (object)
         + `filters` (optional, ProgramActivityTotalsFilterObject)
-            This can filter by time period, object class, and/or program activity being `PARK` or `PAC/PAN`
+            This can filter by time period, object class, and/or program activity
         + `limit` (optional, number)
             The number of results to include per page.
             + Default: 10
@@ -83,8 +75,8 @@ Federal account code consisting of the AID and main account code
                             "end_date": "2020-09-30"
                         }]`(optional, array[TimePeriod], fixed-type)
 + `object_class`: `["254"]` (optional, array[string])
-+ `program_activity`: `["PARK"]` (optional, array[string])
-  Each string should be either "PAC" or "PARK"
++ `program_activity`: `["123"]` (optional, array[string])
+  Each string should be either PAC or PARK code
 
 ## ProgramActivitiesTotals (object)
 + `obligations` (required, number)
