@@ -1,5 +1,5 @@
 from typing import List
-
+from django.db.models import Q
 from django.utils.functional import cached_property
 from rest_framework.request import Request
 from rest_framework.views import APIView
@@ -10,39 +10,69 @@ from usaspending_api.common.validator import TinyShield, customize_pagination_wi
 
 class FederalAccountBase(APIView):
 
-    params_to_validate: List[str]
-
     @property
     def federal_account_code(self) -> str:
         return self.kwargs["federal_account_code"]
 
-    def _validate_params(self, param_values, params_to_validate=None):
-        all_models = [
+    def validate_data(self, request_data):
+        model = [
             {
-                "key": "time_period",
+                "key": "filters|time_period",
                 "name": "time_period",
-                "type": "array",
+                "type": "object",
+                "object_keys": [
+                    {
+                        "key": "start_date",
+                        "name": "start_date",
+                        "type": "string",
+                        "required": True,
+                    },
+                    {
+                        "key": "end_date",
+                        "name": "end_date",
+                        "type": "string",
+                        "required": True,
+                    }
+                ],
                 "optional": True
             },
             {
-                "key": "object_class",
+                "key": "filters|object_class",
                 "name": "object_class",
                 "type": "array",
+                "array_type": "string",
                 "optional": True
             },
             {
-                "key": "program_activity",
+                "key": "filters|program_activity",
                 "name": "program_activity",
                 "type": "array",
+                "array_type": "string",
                 "optional": True
             }
+
         ]
 
-        return TinyShield(all_models)
+        return TinyShield(model).block(request_data)
 
-
-    def filter(self):
-        return self._validate_params(self)
+    def get_filter_query(self, validated_data) -> Q:
+        query = Q()
+        filters = validated_data.get("filters")
+        if "time_period" in filters:
+            start_date = filters["time_period"][0]["start_date"]
+            end_date = filters["time_period"][0]["end_date"]
+            query &= Q(reporting_period_start__gte=start_date, reporting_period_end__lte=end_date)
+        if "object_class" in filters:
+            query &= Q(
+                Q(object_class__object_class_name__in=filters["object_class"])
+                | Q(object_class__major_object_class_name__in=filters["object_class"])
+            )
+        if "program_activity" in filters:
+            query &= Q(program_activity_reporting_key__code__in=filters["program_activity"]) | Q(
+                program_activity__program_activity_code__in=filters["program_activity"])
+        else:
+            query &= Q(Q(program_activity_reporting_key__isnull=False) | Q(program_activity__isnull=False))
+        return query
 
 
 class PaginationMixin:
