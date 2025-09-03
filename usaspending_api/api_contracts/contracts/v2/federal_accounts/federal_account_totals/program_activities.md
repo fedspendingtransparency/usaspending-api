@@ -45,7 +45,7 @@ This endpoint returns an array of each program activity's obligation, code, name
 
 + Response 200 (application/json)
     + Attributes (object)
-      + `results` (required, array[ProgramActivitiesTotals], fixed-type)
+      + `results` (required, array[FederalAccountTotals], fixed-type)
       + `page_metadata` (required, PageMetadata, fixed-type)
     + Body
     
@@ -82,7 +82,7 @@ Federal account code consisting of the AID and main account code
 + `program_activity`: `["123"]` (optional, array[string])
   Each string should be either PAC or PARK code
 
-## ProgramActivitiesTotals (object)
+## FederalAccountTotals (object)
 + `obligations` (required, number)
 + `code` (required, string)
 + `name` (required, string)
