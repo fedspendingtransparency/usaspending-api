@@ -35,13 +35,6 @@ class AbstractAccountDownloadDataFrameBuilder(ABC):
         self._award_financial_df: DataFrame = spark.table(award_financial_table)
         self._object_class_program_activity_df: DataFrame = spark.table(object_class_program_activity_download_table)
         self._account_balances_df: DataFrame = spark.table(account_balances_table)
-        self.aab = spark.table("global_temp.appropriation_account_balances")
-        self.sa = spark.table("global_temp.submission_attributes")
-        self.taa = spark.table("global_temp.treasury_appropriation_account")
-        self.cgac_aid = spark.table("global_temp.cgac")
-        self.cgac_ata = spark.table("global_temp.cgac")
-        self.fa = spark.table("global_temp.federal_account")
-        self.ta = spark.table("global_temp.toptier_agency")
 
     @property
     def dynamic_filters(self) -> Column:
@@ -441,6 +434,12 @@ class FederalAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBui
             )
             .groupBy(self.object_class_program_activity_groupby_cols)
             .agg(*[agg_func(col) for col, agg_func in self.object_class_program_activity_agg_cols.items()])
+            .drop(
+                *[
+                    sf.col(f"object_class_program_activity_download.{col}")
+                    for col in self.object_class_program_activity_agg_cols
+                ]
+            )
             .select(self.object_class_program_activity_select_cols)
         )
 
@@ -583,6 +582,28 @@ class TreasuryAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBu
     @property
     def object_class_program_activity_groupby_cols(self) -> list[str]:
         return [
+            "owning_agency_name",
+            "sub_account_code",
+            "beginning_period_of_availability",
+            "reporting_agency_name",
+            "ending_period_of_availability",
+            "direct_or_reimbursable_funding_source",
+            "allocation_transfer_agency_identifier_code",
+            "availability_type_code",
+            "federal_account_name",
+            "treasury_account_symbol",
+            "agency_identifier_code",
+            "budget_subfunction_title",
+            "object_class_name",
+            "program_activity_code",
+            "disaster_emergency_fund_name",
+            "submission_period",
+            "treasury_account_name",
+            "main_account_code",
+            "federal_account_symbol",
+            "budget_function_title",
+            "object_class_code",
+            "program_activity_name",
             "data_source",
             "financial_accounts_by_program_activity_object_class_id",
             "program_activity_id",
@@ -648,8 +669,12 @@ class TreasuryAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBu
         return [
             col
             for col in query_paths["object_class_program_activity"]["treasury_account"].keys()
-            if not col.startswith("last_modified_date")
-        ] + ["last_modified_date"]
+            if not col.startswith("last_modified_date") and col not in ["budget_function", "budget_subfunction"]
+        ] + [
+            "last_modified_date",
+            sf.col("budget_function_title").alias("budget_function"),
+            sf.col("budget_subfunction_title").alias("budget_subfunction"),
+        ]
 
     @property
     def object_class_program_activity(self) -> DataFrame:
@@ -664,5 +689,11 @@ class TreasuryAccountDownloadDataFrameBuilder(AbstractAccountDownloadDataFrameBu
             )
             .groupBy(self.object_class_program_activity_groupby_cols)
             .agg(*[agg_func(col) for col, agg_func in self.object_class_program_activity_agg_cols.items()])
+            .drop(
+                *[
+                    sf.col(f"object_class_program_activity_download.{col}")
+                    for col in self.object_class_program_activity_agg_cols
+                ]
+            )
             .select(self.object_class_program_activity_select_cols)
         )

@@ -129,19 +129,46 @@ def object_class_by_program_activity_download_table(spark, s3_unittest_data_buck
                 for col in query_paths["object_class_program_activity"]["treasury_account"].keys()
                 if not col.startswith("last_modified_date")
             ]
-            + ["last_modified_date"]
+            + [
+                "last_modified_date",
+                "reporting_fiscal_year",
+                "reporting_fiscal_quarter",
+                "reporting_fiscal_period",
+                "quarter_format_flag",
+                "submission_id",
+                "federal_account_id",
+                "funding_toptier_agency_id",
+                "budget_function_code",
+                "budget_subfunction_code",
+                "data_source",
+                "financial_accounts_by_program_activity_object_class_id",
+                "update_date",
+                "object_class_id",
+                "drv_obligations_incurred_by_program_object_class",
+                "prior_year_adjustment",
+                "drv_obligations_undelivered_orders_unpaid",
+                "USSGL490110_rein_deliv_ord_CPE",
+                "program_activity_id",
+                "USSGL480110_rein_undel_ord_CPE",
+                "treasury_account_id",
+                "create_date",
+                "reporting_period_end",
+                "reporting_period_start",
+                "certified_date",
+                "budget_function_title",
+                "budget_subfunction_title",
+            ]
         )
     )
     test_data_df = pd.DataFrame(
         data={
             "financial_accounts_by_program_activity_object_class_id": [1, 2, 3, 4, 5],
             "submission_id": [1, 2, 3, 4, 5],
-            "federal_owning_agency_name": ["test1", "test2", "test2", "test2", "test3"],
+            "owning_agency_name": ["test1", "test2", "test2", "test2", "test3"],
             "reporting_fiscal_year": [2018, 2018, 2018, 2018, 2019],
             "quarter_format_flag": [True, True, False, True, True],
             "reporting_fiscal_quarter": [1, 2, None, 4, 2],
             "reporting_fiscal_period": [None, None, 5, None, None],
-            "transaction_obligated_amount": [100, 100, 100, 100, 100],
             "reporting_agency_name": ["A", "B", "C", "D", "E"],
             "budget_function_title": [
                 "BudgetFunction1",
@@ -170,7 +197,7 @@ def object_class_by_program_activity_download_table(spark, s3_unittest_data_buck
         .write.format("delta")
         .mode("overwrite")
         .option("overwriteSchema", "true")
-        .saveAsTable("rpt.account_download")
+        .saveAsTable("rpt.object_class_program_activity_download")
     )
     yield
 
@@ -216,7 +243,12 @@ def test_federal_account_download_dataframe_builder(
 
 @patch("usaspending_api.download.management.commands.delta_downloads.builders.get_submission_ids_for_periods")
 def test_filter_federal_by_agency(
-    mock_get_submission_ids_for_periods, spark, account_download_table, account_balances_download_table, agency_models
+    mock_get_submission_ids_for_periods,
+    spark,
+    account_download_table,
+    account_balances_download_table,
+    agency_models,
+    object_class_by_program_activity_download_table,
 ):
     create_ref_temp_views(spark)
     mock_get_submission_ids_for_periods.return_value = [1, 2, 4, 5]
@@ -244,6 +276,7 @@ def test_filter_federal_by_federal_account_id(
     account_balances_download_table,
     federal_account_models,
     agency_models,
+    object_class_by_program_activity_download_table,
 ):
     create_ref_temp_views(spark)
     mock_get_submission_ids_for_periods.return_value = [1, 2, 4, 5]
@@ -264,7 +297,11 @@ def test_filter_federal_by_federal_account_id(
 
 
 def test_treasury_account_download_dataframe_builder(
-    spark, account_download_table, account_balances_download_table, agency_models
+    spark,
+    account_download_table,
+    account_balances_download_table,
+    agency_models,
+    object_class_by_program_activity_download_table,
 ):
     create_ref_temp_views(spark)
     account_download_filter = AccountDownloadFilter(
@@ -281,7 +318,13 @@ def test_treasury_account_download_dataframe_builder(
         assert result_df.gross_outlay_amount_FYB_to_period_end.to_list() == [100] * 4
 
 
-def test_filter_treasury_by_agency(spark, account_download_table, account_balances_download_table, agency_models):
+def test_filter_treasury_by_agency(
+    spark,
+    account_download_table,
+    account_balances_download_table,
+    agency_models,
+    object_class_by_program_activity_download_table,
+):
     create_ref_temp_views(spark)
     account_download_filter = AccountDownloadFilter(
         fy=2018,
@@ -301,7 +344,12 @@ def test_filter_treasury_by_agency(spark, account_download_table, account_balanc
 @pytest.mark.django_db(transaction=True)
 @patch("usaspending_api.download.management.commands.delta_downloads.builders.get_submission_ids_for_periods")
 def test_account_balances(
-    mock_get_submission_ids_for_periods, spark, account_download_table, account_balances_download_table, agency_models
+    mock_get_submission_ids_for_periods,
+    spark,
+    account_download_table,
+    account_balances_download_table,
+    agency_models,
+    object_class_by_program_activity_download_table,
 ):
     mock_get_submission_ids_for_periods.return_value = [1, 2, 3]
     account_download_filter = AccountDownloadFilter(
@@ -313,3 +361,25 @@ def test_account_balances(
     assert ta_builder.account_balances.count() == 3
     fa_builder = FederalAccountDownloadDataFrameBuilder(spark, account_download_filter)
     assert fa_builder.account_balances.count() == 2
+
+
+@patch("usaspending_api.download.management.commands.delta_downloads.builders.get_submission_ids_for_periods")
+def test_object_class_by_program_activity_download(
+    mock_get_submission_ids_for_periods,
+    spark,
+    account_download_table,
+    account_balances_download_table,
+    agency_models,
+    object_class_by_program_activity_download_table,
+):
+    create_ref_temp_views(spark)
+    mock_get_submission_ids_for_periods.return_value = [1, 2, 3]
+    ocpa_filter = AccountDownloadFilter(
+        fy=2018,
+        submission_types=["object_class_program_activity"],
+        quarter=4,
+    )
+    ta_builder = TreasuryAccountDownloadDataFrameBuilder(spark, ocpa_filter)
+    assert ta_builder.object_class_program_activity.count() == 3
+    fa_builder = FederalAccountDownloadDataFrameBuilder(spark, ocpa_filter)
+    assert fa_builder.object_class_program_activity.count() == 2
