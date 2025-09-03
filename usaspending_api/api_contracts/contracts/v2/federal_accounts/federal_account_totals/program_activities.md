@@ -1,12 +1,16 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Program Activities Total [/api/v2/federal_accounts/{federal_account_code}/program_activities/total{?limit,page}]
+# Program Activities Total [/api/v2/federal_accounts/{federal_account_code}/program_activities/total]
 
 This endpoint returns an array of each program activity's obligation, code, name, and type for the specified federal account 
 
 ## POST
 
++ Parameters
+    + `federal_account_code`: `431-0500` (required, string)
+    Federal account code consisting of the AID and main account code
+  
 + Request (application/json)
     + Schema
 
