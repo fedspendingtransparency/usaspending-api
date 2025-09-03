@@ -1,9 +1,9 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Program Activities Total [/api/v2/federal_accounts/{federal_account_code}/program_activities/total]
+# Object Classes Total [/api/v2/federal_accounts/{federal_account_code}/object_classes/total]
 
-This endpoint returns an array of each program activity's obligation, code, name, and type for the specified federal account 
+This endpoint returns an array of object classes obligation, code, and name for the specified federal account 
 
 ## POST
 
@@ -38,23 +38,23 @@ This endpoint returns an array of each program activity's obligation, code, name
                             "start_date": "2019-10-01",
                             "end_date": "2020-09-30"
                         }],
-                    "program_activity": ['0001']
+                    "program_activity": ['001']
                 },
             }
 
 
 + Response 200 (application/json)
     + Attributes (object)
-      + `results` (required, array[ProgramActivitiesTotals], fixed-type)
+      + `results` (required, array[ObjectClassTotals], fixed-type)
       + `page_metadata` (required, PageMetadata, fixed-type)
     + Body
     
               {
                   "results": [
-                    {"obligations": 44112.0, "code": "00000000003", "name": "PARK 3", "type": "PARK"},
-                    {"obligations": 6000.0, "code": "00000000001", "name": "PARK 1", "type": "PARK"},
-                    {"obligations": 130.0, "code": "00000000002", "name": "PARK 2", "type": "PARK"},
-                    {"obligations": 1.0, "code": "0001", "name": "PAC/PAN 1", "type": "PAC/PAN"},
+                    {"obligations": 44112.0, "code": "00000000003", "name": "object class 3"},
+                    {"obligations": 6000.0, "code": "00000000001", "name": "object class 1"},
+                    {"obligations": 130.0, "code": "00000000002", "name": "object class 2"},
+                    {"obligations": 1.0, "code": "0001", "name": "object classN 1"},
                   ],
                   "page_metadata": {
                     "page": 1,
@@ -82,15 +82,11 @@ Federal account code consisting of the AID and main account code
 + `program_activity`: `["123"]` (optional, array[string])
   Each string should be either PAC or PARK code
 
-## ProgramActivitiesTotals (object)
+## ObjectClassTotals (object)
 + `obligations` (required, number)
 + `code` (required, string)
 + `name` (required, string)
-+ `type` (required, enum[string], fixed-type)
-  Whether the Program Activity values are from the older Program Activity Code / Name (PAC/PAN) or the Program Activity Reporting Key (PARK)
-  + Members
-    + `PAC/PAN`
-    + `PARK`
+
 
 ## PageMetadata (object)
 + `limit` (required, number)
