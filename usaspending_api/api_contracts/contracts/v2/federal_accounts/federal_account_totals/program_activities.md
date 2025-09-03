@@ -38,7 +38,7 @@ This endpoint returns an array of each program activity's obligation, code, name
                             "start_date": "2019-10-01",
                             "end_date": "2020-09-30"
                         }],
-                    "program_activity": ['0001']
+                    "program_activity": ["0001"]
                 },
             }
 
@@ -71,8 +71,6 @@ This endpoint returns an array of each program activity's obligation, code, name
 # Data Structure
 
 ## ProgramActivityTotalsFilterObject (object)
-+ `federal_account_code`: `431-0500` (required, string)
-Federal account code consisting of the AID and main account code
 + `time_period`: `[
                         {
                             "start_date": "2019-10-01",
@@ -100,3 +98,8 @@ Federal account code consisting of the AID and main account code
 + `hasNext` (required, boolean)
 + `hasPrevious` (required, boolean)
 + `total` (required, number)
+
+## TimePeriod (object)
++ `start_date` (required, string)
++ `end_date` (required, string)
++ `date_type` (optional, enum[string])
