@@ -509,6 +509,11 @@ def test_file_c_spark_download(client, download_test_data, spark, s3_unittest_da
         f"--spark-s3-bucket={s3_unittest_data_bucket}",
         f"--destination-table=account_download",
     )
+    call_command(
+        "create_delta_table",
+        f"--spark-s3-bucket={s3_unittest_data_bucket}",
+        f"--destination-table=account_balances_download",
+    )
 
     resp = client.post(
         "/api/v2/download/accounts/",
