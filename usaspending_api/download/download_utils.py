@@ -56,7 +56,7 @@ def obtain_zip_filename_format(download_types):
     return f"{VALUE_MAPPINGS[download_types[0]]['zipfile_template']}.zip"
 
 
-def obtain_filename_prefix_from_agency_id(request_agency):
+def obtain_filename_prefix_from_agency_id(request_agency: int | str) -> str:
     result = "All"
     if request_agency and request_agency != "all":
         toptier_agency_filter = ToptierAgency.objects.filter(toptier_agency_id=request_agency).first()
