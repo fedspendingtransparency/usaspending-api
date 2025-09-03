@@ -62,7 +62,8 @@ class FederalAccountBase(APIView):
                 )
             if "program_activity" in filters:
                 query &= Q(program_activity_reporting_key__code__in=filters["program_activity"]) | Q(
-                    program_activity__program_activity_code__in=filters["program_activity"])
+                    program_activity__program_activity_code__in=filters["program_activity"]
+                )
             else:
                 query &= Q(Q(program_activity_reporting_key__isnull=False) | Q(program_activity__isnull=False))
         return query

@@ -34,11 +34,13 @@ class FederalAccountProgramActivitiesTotal(PaginationMixin, FederalAccountBase):
                 )
                 & query
             )
-            .values(code=Coalesce(
+            .values(
+                code=Coalesce(
                     "program_activity_reporting_key__code",
                     "program_activity__program_activity_code",
                     output_field=TextField(),
-                ))
+                )
+            )
             .annotate(
                 obligations=Sum("obligations_incurred_by_program_object_class_cpe"),
                 name=Coalesce(
