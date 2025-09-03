@@ -1,4 +1,3 @@
-from typing import List
 from django.db.models import Q
 from django.utils.functional import cached_property
 from rest_framework.request import Request
