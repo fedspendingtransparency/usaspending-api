@@ -32,16 +32,13 @@ class FederalAccountProgramActivitiesTotal(PaginationMixin, FederalAccountBase):
                     treasury_account__federal_account__federal_account_code=self.federal_account_code,
                     submission__is_final_balances_for_fy=True,
                 )
+                & query
             )
-            .filter(query)
-            .annotate(
-                code=Coalesce(
+            .values(code=Coalesce(
                     "program_activity_reporting_key__code",
                     "program_activity__program_activity_code",
                     output_field=TextField(),
-                ),
-            )
-            .values("code")
+                ))
             .annotate(
                 obligations=Sum("obligations_incurred_by_program_object_class_cpe"),
                 name=Coalesce(

@@ -19,38 +19,30 @@ class FederalAccountBase(APIView):
             {
                 "key": "filters|time_period",
                 "name": "time_period",
-                "type": "object",
-                "object_keys": [
-                    {
-                        "key": "start_date",
-                        "name": "start_date",
-                        "type": "string",
-                        "required": True,
-                    },
-                    {
-                        "key": "end_date",
-                        "name": "end_date",
-                        "type": "string",
-                        "required": True,
-                    }
-                ],
-                "optional": True
+                "type": "array",
+                "array_type": "object",
+                "object_keys": {
+                    "start_date": {"type": "date"},
+                    "end_date": {"type": "date"},
+                },
+                "optional": True,
             },
             {
                 "key": "filters|object_class",
                 "name": "object_class",
                 "type": "array",
-                "array_type": "string",
-                "optional": True
+                "array_type": "text",
+                "text_type": "raw",
+                "optional": True,
             },
             {
                 "key": "filters|program_activity",
                 "name": "program_activity",
                 "type": "array",
-                "array_type": "string",
-                "optional": True
-            }
-
+                "array_type": "text",
+                "text_type": "raw",
+                "optional": True,
+            },
         ]
 
         return TinyShield(model).block(request_data)
@@ -58,20 +50,21 @@ class FederalAccountBase(APIView):
     def get_filter_query(self, validated_data) -> Q:
         query = Q()
         filters = validated_data.get("filters")
-        if "time_period" in filters:
-            start_date = filters["time_period"][0]["start_date"]
-            end_date = filters["time_period"][0]["end_date"]
-            query &= Q(reporting_period_start__gte=start_date, reporting_period_end__lte=end_date)
-        if "object_class" in filters:
-            query &= Q(
-                Q(object_class__object_class_name__in=filters["object_class"])
-                | Q(object_class__major_object_class_name__in=filters["object_class"])
-            )
-        if "program_activity" in filters:
-            query &= Q(program_activity_reporting_key__code__in=filters["program_activity"]) | Q(
-                program_activity__program_activity_code__in=filters["program_activity"])
-        else:
-            query &= Q(Q(program_activity_reporting_key__isnull=False) | Q(program_activity__isnull=False))
+        if filters is not None:
+            if "time_period" in filters:
+                start_date = filters["time_period"][0]["start_date"]
+                end_date = filters["time_period"][0]["end_date"]
+                query &= Q(reporting_period_start__gte=start_date, reporting_period_end__lte=end_date)
+            if "object_class" in filters:
+                query &= Q(
+                    Q(object_class__object_class_name__in=filters["object_class"])
+                    | Q(object_class__major_object_class_name__in=filters["object_class"])
+                )
+            if "program_activity" in filters:
+                query &= Q(program_activity_reporting_key__code__in=filters["program_activity"]) | Q(
+                    program_activity__program_activity_code__in=filters["program_activity"])
+            else:
+                query &= Q(Q(program_activity_reporting_key__isnull=False) | Q(program_activity__isnull=False))
         return query
 
 

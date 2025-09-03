@@ -122,7 +122,7 @@ def test_success(client, program_activities_total_test_data):
 @pytest.mark.django_db
 def test_success_with_filters(client, program_activities_total_test_data):
     request = {
-        "filter": {"time_period": [{"start_date": "2020-01-01", "end_date": "2022-01-01"}], "program_activity": ["PAC"]}
+        "filters": {"time_period": [{"start_date": "2020-01-01", "end_date": "2022-01-01"}], "program_activity": ["0001"]}
     }
     resp = client.post(
         "/api/v2/federal_accounts/000-0001/program_activities/total",
@@ -148,7 +148,7 @@ def test_success_with_filters(client, program_activities_total_test_data):
 
 @pytest.mark.django_db
 def test_object_class_filter(client, program_activities_total_test_data):
-    request = {"filter": {"object_class": ["moc1", "oc3"]}}
+    request = {"filters": {"object_class": ["moc1", "oc3"]}}
     resp = client.post(
         "/api/v2/federal_accounts/000-0001/program_activities/total",
         content_type="application/json",
