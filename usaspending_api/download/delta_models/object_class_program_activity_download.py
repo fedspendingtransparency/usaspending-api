@@ -311,7 +311,7 @@ object_class_program_activity_download_load_sql_string = rf"""
         taa.main_account_code,
         taa.sub_account_code,
         taa.tas_rendering_label AS treasury_account_symbol,
-        taa.account_title AS treasury_account_name        
+        taa.account_title AS treasury_account_name
     FROM
         global_temp.financial_accounts_by_program_activity_object_class AS fabpaoc
     INNER JOIN global_temp.submission_attributes AS sa ON
