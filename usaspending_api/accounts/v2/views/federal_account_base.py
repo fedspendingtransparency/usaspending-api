@@ -51,9 +51,10 @@ class FederalAccountBase(APIView):
         filters = validated_data.get("filters")
         if filters is not None:
             if "time_period" in filters:
-                start_date = filters["time_period"][0]["start_date"]
-                end_date = filters["time_period"][0]["end_date"]
-                query &= Q(reporting_period_start__gte=start_date, reporting_period_end__lte=end_date)
+                for period in filters["time_period"]:
+                    start_date = period["start_date"]
+                    end_date = period["end_date"]
+                    query &= Q(reporting_period_start__gte=start_date, reporting_period_end__lte=end_date)
             if "object_class" in filters:
                 query &= Q(
                     Q(object_class__object_class_name__in=filters["object_class"])
@@ -63,8 +64,14 @@ class FederalAccountBase(APIView):
                 query &= Q(program_activity_reporting_key__code__in=filters["program_activity"]) | Q(
                     program_activity__program_activity_code__in=filters["program_activity"]
                 )
-            else:
-                query &= Q(Q(program_activity_reporting_key__isnull=False) | Q(program_activity__isnull=False))
+        return query
+
+    def get_program_activity_query(self, validated_data) -> Q:
+        query = self.get_filter_query(validated_data)
+        filters = validated_data.get("filters")
+        if filters is not None and "program_activity" not in filters:
+            query &= Q(Q(program_activity_reporting_key__isnull=False) | Q(program_activity__isnull=False))
+
         return query
 
 

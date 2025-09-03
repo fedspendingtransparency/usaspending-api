@@ -3,6 +3,8 @@ import pytest
 
 
 from datetime import datetime, timezone
+
+from django.forms import model_to_dict
 from model_bakery import baker
 from unittest.mock import patch
 
@@ -113,10 +115,16 @@ def test_elasticsearch_download_cached(common_test_data):
     result = BaseDownloadViewSet._get_cached_download(
         json.dumps(es_transaction_request), es_transaction_request["download_types"]
     )
-    assert result == {"download_job_id": 11, "file_name": "es_transaction_job_right.zip"}
+    assert model_to_dict(result, fields=["download_job_id", "file_name"]) == {
+        "download_job_id": 11,
+        "file_name": "es_transaction_job_right.zip",
+    }
 
     result = BaseDownloadViewSet._get_cached_download(json.dumps(es_award_request), es_award_request["download_types"])
-    assert result == {"download_job_id": 21, "file_name": "es_award_job_right.zip"}
+    assert model_to_dict(result, fields=["download_job_id", "file_name"]) == {
+        "download_job_id": 21,
+        "file_name": "es_award_job_right.zip",
+    }
 
 
 def test_elasticsearch_cached_download_not_found(common_test_data):
@@ -212,7 +220,10 @@ def test_non_elasticsearch_download_cached(common_test_data):
 
     # Grab latest valid download
     result = BaseDownloadViewSet._get_cached_download(json.dumps(JSON_REQUEST))
-    assert result == {"download_job_id": 21, "file_name": "21_download_job.zip"}
+    assert model_to_dict(result, fields=["download_job_id", "file_name"]) == {
+        "download_job_id": 21,
+        "file_name": "21_download_job.zip",
+    }
 
     # FABS date updated; download no longer cached
     baker.make(
@@ -236,7 +247,10 @@ def test_non_elasticsearch_download_cached(common_test_data):
         baker.make("download.DownloadJob", **job)
 
     result = BaseDownloadViewSet._get_cached_download(json.dumps(JSON_REQUEST))
-    assert result == {"download_job_id": 30, "file_name": "30_download_job.zip"}
+    assert model_to_dict(result, fields=["download_job_id", "file_name"]) == {
+        "download_job_id": 30,
+        "file_name": "30_download_job.zip",
+    }
 
     # New submission_reveal_date is set in DABSSubmissionWindowSchedule; clears the cache
     baker.make(
@@ -260,7 +274,10 @@ def test_non_elasticsearch_download_cached(common_test_data):
         baker.make("download.DownloadJob", **job)
 
     result = BaseDownloadViewSet._get_cached_download(json.dumps(JSON_REQUEST))
-    assert result == {"download_job_id": 31, "file_name": "31_download_job.zip"}
+    assert model_to_dict(result, fields=["download_job_id", "file_name"]) == {
+        "download_job_id": 31,
+        "file_name": "31_download_job.zip",
+    }
 
 
 def test_non_elasticsearch_cached_download_not_found(common_test_data):

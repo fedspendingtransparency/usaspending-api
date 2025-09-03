@@ -25,7 +25,7 @@ class FederalAccountProgramActivitiesTotal(PaginationMixin, FederalAccountBase):
 
     def post(self, request: Request, *args, **kwargs):
         validated_data = self.validate_data(request.data)
-        query = self.get_filter_query(validated_data)
+        query = self.get_program_activity_query(validated_data)
         results = (
             FinancialAccountsByProgramActivityObjectClass.objects.filter(
                 Q(
