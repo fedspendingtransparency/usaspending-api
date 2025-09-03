@@ -1,4 +1,5 @@
-from pyspark.sql import functions as sf, Column, DataFrame, SparkSession
+from pyspark.sql import Column, DataFrame, SparkSession
+from pyspark.sql import functions as sf
 
 from usaspending_api.common.spark.utils import collect_concat, filter_submission_and_sum
 from usaspending_api.download.delta_downloads.abstract_downloads.account_download import (
@@ -50,7 +51,6 @@ class ObjectClassProgramActivityMixin:
 
 
 class FederalAccountDownload(ObjectClassProgramActivityMixin, AbstractAccountDownload):
-
     @property
     def account_level(self) -> AccountLevel:
         return AccountLevel.FEDERAL_ACCOUNT
@@ -80,8 +80,8 @@ class FederalAccountDownload(ObjectClassProgramActivityMixin, AbstractAccountDow
     def agg_cols(self) -> dict[str, callable]:
         return {
             "reporting_agency_name": collect_concat,
-            "budget_function_title": lambda col: collect_concat(col_name=col, alias="budget_function"),
-            "budget_subfunction_title": lambda col: collect_concat(col_name=col, alias="budget_subfunction"),
+            "budget_function": collect_concat,
+            "budget_subfunction": collect_concat,
             "obligations_incurred": lambda col: sf.sum(col).alias(col),
             "obligations_undelivered_orders_unpaid_total": lambda col: sf.sum(col).alias(col),
             "obligations_undelivered_orders_unpaid_total_FYB": lambda col: sf.sum(col).alias(col),
@@ -131,7 +131,6 @@ class FederalAccountDownload(ObjectClassProgramActivityMixin, AbstractAccountDow
 
 
 class TreasuryAccountDownload(ObjectClassProgramActivityMixin, AbstractAccountDownload):
-
     @property
     def account_level(self) -> AccountLevel:
         return AccountLevel.TREASURY_ACCOUNT
@@ -154,7 +153,7 @@ class TreasuryAccountDownload(ObjectClassProgramActivityMixin, AbstractAccountDo
             "federal_account_name",
             "treasury_account_symbol",
             "agency_identifier_code",
-            "budget_subfunction_title",
+            "budget_subfunction",
             "object_class_name",
             "program_activity_code",
             "disaster_emergency_fund_name",
@@ -162,7 +161,7 @@ class TreasuryAccountDownload(ObjectClassProgramActivityMixin, AbstractAccountDo
             "treasury_account_name",
             "main_account_code",
             "federal_account_symbol",
-            "budget_function_title",
+            "budget_function",
             "object_class_code",
             "program_activity_name",
             "data_source",
@@ -230,16 +229,11 @@ class TreasuryAccountDownload(ObjectClassProgramActivityMixin, AbstractAccountDo
         return [
             sf.col(col)
             for col in query_paths["object_class_program_activity"]["treasury_account"].keys()
-            if not col.startswith("last_modified_date") and col not in ["budget_function", "budget_subfunction"]
-        ] + [
-            sf.col("last_modified_date"),
-            sf.col("budget_function_title").alias("budget_function"),
-            sf.col("budget_subfunction_title").alias("budget_subfunction"),
-        ]
+            if not col.startswith("last_modified_date")
+        ] + [sf.col("last_modified_date")]
 
 
 class ObjectClassProgramActivityDownloadFactory(AbstractAccountDownloadFactory):
-
     def create_federal_account_download(self) -> FederalAccountDownload:
         return FederalAccountDownload(self.spark, self.filters, self.dynamic_filters)
 

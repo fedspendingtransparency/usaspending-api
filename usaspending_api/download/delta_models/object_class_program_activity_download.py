@@ -18,9 +18,9 @@ OBJECT_CLASS_PROGRAM_ACTIVITY_DOWNLOAD_COLUMNS = {
     "disaster_emergency_fund_name": {"delta": "STRING", "postgres": "TEXT"},
     "funding_toptier_agency_id": {"delta": "INTEGER", "postgres": "INTEGER"},
     "federal_account_id": {"delta": "INTEGER", "postgres": "INTEGER"},
-    "budget_function_title": {"delta": "STRING", "postgres": "TEXT"},
+    "budget_function": {"delta": "STRING", "postgres": "TEXT"},
     "budget_function_code": {"delta": "STRING", "postgres": "TEXT"},
-    "budget_subfunction_title": {"delta": "STRING", "postgres": "TEXT"},
+    "budget_subfunction": {"delta": "STRING", "postgres": "TEXT"},
     "budget_subfunction_code": {"delta": "STRING", "postgres": "TEXT"},
     "reporting_agency_name": {"delta": "STRING", "postgres": "TEXT"},
     "reporting_fiscal_period": {"delta": "INTEGER", "postgres": "INTEGER"},
@@ -183,6 +183,15 @@ OBJECT_CLASS_PROGRAM_ACTIVITY_DOWNLOAD_COLUMNS = {
     "create_date": {"delta": "DATE", "postgres": "DATE"},
     "update_date": {"delta": "DATE", "postgres": "DATE"},
     "treasury_account_id": {"delta": "INTEGER", "postgres": "INTEGER"},
+    "allocation_transfer_agency_identifier_code": {"delta": "STRING", "postgres": "TEXT"},
+    "agency_identifier_code": {"delta": "STRING", "postgres": "TEXT"},
+    "beginning_period_of_availability": {"delta": "STRING", "postgres": "TEXT"},
+    "ending_period_of_availability": {"delta": "STRING", "postgres": "TEXT"},
+    "availability_type_code": {"delta": "STRING", "postgres": "TEXT"},
+    "main_account_code": {"delta": "STRING", "postgres": "TEXT"},
+    "sub_account_code": {"delta": "STRING", "postgres": "TEXT"},
+    "treasury_account_symbol": {"delta": "STRING", "postgres": "TEXT"},
+    "treasury_account_name": {"delta": "STRING", "postgres": "TEXT"},
 }
 
 OBJECT_CLASS_PROGRAM_ACTIVITY_DOWNLOAD_DELTA_COLUMNS = {
@@ -221,9 +230,9 @@ object_class_program_activity_download_load_sql_string = rf"""
         defc.title AS disaster_emergency_fund_name,
         taa.funding_toptier_agency_id,
         taa.federal_account_id,
-        taa.budget_function_title,
+        taa.budget_function_title AS budget_function,
         taa.budget_function_code,
-        taa.budget_subfunction_title,
+        taa.budget_subfunction_title AS budget_subfunction,
         taa.budget_subfunction_code,
         sa.reporting_agency_name,
         sa.reporting_fiscal_period,
@@ -293,7 +302,16 @@ object_class_program_activity_download_load_sql_string = rf"""
         fabpaoc.certified_date,
         fabpaoc.create_date,
         fabpaoc.update_date,
-        fabpaoc.treasury_account_id
+        fabpaoc.treasury_account_id,
+        taa.allocation_transfer_agency_id AS allocation_transfer_agency_identifier_code,
+        taa.agency_id AS agency_identifier_code,
+        taa.beginning_period_of_availability,
+        taa.ending_period_of_availability,
+        taa.availability_type_code,
+        taa.main_account_code,
+        taa.sub_account_code,
+        taa.tas_rendering_label AS treasury_account_symbol,
+        taa.account_title AS treasury_account_name        
     FROM
         global_temp.financial_accounts_by_program_activity_object_class AS fabpaoc
     INNER JOIN global_temp.submission_attributes AS sa ON

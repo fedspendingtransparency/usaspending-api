@@ -8,10 +8,10 @@ from model_bakery import baker
 from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.download.delta_downloads.account_balances import AccountBalancesDownloadFactory
 from usaspending_api.download.delta_downloads.award_financial import AwardFinancialDownloadFactory
+from usaspending_api.download.delta_downloads.filters.account_filters import AccountDownloadFilters
 from usaspending_api.download.delta_downloads.object_class_program_activity import (
     ObjectClassProgramActivityDownloadFactory,
 )
-from usaspending_api.download.delta_downloads.filters.account_filters import AccountDownloadFilters
 from usaspending_api.download.delta_models.account_balances_download import account_balances_schema
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 
@@ -20,7 +20,7 @@ from usaspending_api.download.v2.download_column_historical_lookups import query
 def award_financial_table(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
     call_command(
         "create_delta_table",
-        f"--destination-table=award_financial_download",
+        "--destination-table=award_financial_download",
         f"--spark-s3-bucket={s3_unittest_data_bucket}",
     )
     columns = list(
@@ -156,8 +156,6 @@ def object_class_by_program_activity_download_table(spark, s3_unittest_data_buck
                 "reporting_period_end",
                 "reporting_period_start",
                 "certified_date",
-                "budget_function_title",
-                "budget_subfunction_title",
             ]
         )
     )
