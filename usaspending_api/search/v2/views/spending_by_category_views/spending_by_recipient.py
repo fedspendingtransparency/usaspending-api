@@ -39,7 +39,19 @@ class RecipientViewSet(AbstractSpendingByCategoryViewSet):
         results = []
         for bucket in recipient_info_buckets:
             result_hash, result_level = tuple(bucket.get("key").split("/")) if bucket.get("key") else (None, None)
-            result_hash_with_level = f"{result_hash}-{result_level}" if (result_hash and result_level) else None
+
+            if result_hash and result_level:
+                if "C" in result_level:
+                    result_hash_with_level = f"{result_hash}-C"
+                elif "P" in result_level:
+                    result_hash_with_level = f"{result_hash}-P"
+                elif "R" in result_level:
+                    result_hash_with_level = f"{result_hash}-R"
+                else:
+                    result_hash_with_level = None
+            else:
+                result_hash_with_level = None
+
             recipient_info = current_recipient_info.get(result_hash) or {}
 
             results.append(
