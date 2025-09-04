@@ -512,6 +512,11 @@ def test_file_c_spark_download(client, download_test_data, spark, s3_unittest_da
     call_command(
         "create_delta_table",
         f"--spark-s3-bucket={s3_unittest_data_bucket}",
+        f"--destination-table=object_class_program_activity_download",
+    )
+    call_command(
+        "create_delta_table",
+        f"--spark-s3-bucket={s3_unittest_data_bucket}",
         f"--destination-table=account_balances_download",
     )
 
@@ -524,14 +529,13 @@ def test_file_c_spark_download(client, download_test_data, spark, s3_unittest_da
                 "filters": {
                     "budget_function": "all",
                     "agency": "all",
-                    "submission_types": ["award_financial"],
+                    "submission_types": ["account_balances", "object_class_program_activity", "award_financial"],
                     "fy": "2021",
                     "period": 12,
                 },
                 "file_format": "csv",
             }
         ),
-        headers={"X-Experimental-API": "download"},
     )
 
     assert resp.status_code == status.HTTP_200_OK
