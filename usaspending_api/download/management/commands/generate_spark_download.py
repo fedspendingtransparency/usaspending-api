@@ -27,6 +27,9 @@ from usaspending_api.common.tracing import SubprocessTrace
 from usaspending_api.download.delta_downloads.abstract_downloads.base_download import AbstractDownload
 from usaspending_api.download.delta_downloads.account_balances import AccountBalancesDownloadFactory
 from usaspending_api.download.delta_downloads.award_financial import AwardFinancialDownloadFactory
+from usaspending_api.download.delta_downloads.object_class_program_activity import (
+    ObjectClassProgramActivityDownloadFactory,
+)
 from usaspending_api.download.delta_downloads.filters.account_filters import AccountDownloadFilters
 from usaspending_api.download.lookups import FILE_FORMATS, JOB_STATUS_DICT
 from usaspending_api.download.models import DownloadJob
@@ -203,6 +206,7 @@ class Command(BaseCommand):
         download_factories = {
             "account_balances": AccountBalancesDownloadFactory,
             "award_financial": AwardFinancialDownloadFactory,
+            "object_class_program_activity": ObjectClassProgramActivityDownloadFactory,
         }
         match self.request_type:
             case DownloadType.ACCOUNT:
