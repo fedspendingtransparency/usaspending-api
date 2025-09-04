@@ -1,6 +1,6 @@
 from pyspark.sql import functions as sf, Column, DataFrame, SparkSession
 
-from usaspending_api.common.spark.utils import collect_concat
+from usaspending_api.common.spark.utils import collect_concat, filter_submission_and_sum
 from usaspending_api.download.delta_downloads.abstract_downloads.account_download import (
     AbstractAccountDownload,
     AccountLevel,
@@ -11,7 +11,6 @@ from usaspending_api.download.delta_downloads.abstract_factories.account_downloa
 )
 from usaspending_api.download.delta_downloads.filters.account_filters import AccountDownloadFilters
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
-from usaspending_api.submissions.helpers import get_submission_ids_for_periods
 
 
 class AwardFinancialMixin:
@@ -129,9 +128,13 @@ class FederalAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
             "budget_function": collect_concat,
             "budget_subfunction": collect_concat,
             "transaction_obligated_amount": lambda col: sf.sum(col).alias(col),
-            "gross_outlay_amount_FYB_to_period_end": self.filter_submission_and_sum,
-            "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig": self.filter_submission_and_sum,
-            "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig": self.filter_submission_and_sum,
+            "gross_outlay_amount_FYB_to_period_end": lambda col: filter_submission_and_sum(col, self.filters),
+            "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig": lambda col: filter_submission_and_sum(
+                col, self.filters
+            ),
+            "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig": lambda col: filter_submission_and_sum(
+                col, self.filters
+            ),
             "last_modified_date": lambda col: sf.max(sf.date_format(col, "yyyy-MM-dd")).alias(col),
         }
 
@@ -158,23 +161,6 @@ class FederalAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
             .filter(self.non_zero_filters)
             .select(self.select_cols)
         )
-
-    def filter_submission_and_sum(self, col_name: str) -> Column:
-        filter_column = (
-            sf.when(
-                sf.col("submission_id").isin(
-                    get_submission_ids_for_periods(
-                        self.filters.reporting_fiscal_year,
-                        self.filters.reporting_fiscal_quarter,
-                        self.filters.reporting_fiscal_period,
-                    )
-                ),
-                sf.col(col_name),
-            )
-            .otherwise(None)
-            .alias(col_name)
-        )
-        return sf.sum(filter_column).alias(col_name)
 
 
 class TreasuryAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
