@@ -1,9 +1,9 @@
 import json
 import pytest
 from rest_framework import status
-from usaspending_api.accounts.tests.data.federal_account_total_data import federal_accounts_test_data
 
 url = "/api/v2/federal_accounts/{federal_account_code}/program_activities/total/"
+
 
 @pytest.mark.django_db
 def test_success(client, federal_accounts_test_data):
@@ -29,7 +29,6 @@ def test_success(client, federal_accounts_test_data):
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_results
-
 
 
 def test_success_with_filters(client, federal_accounts_test_data):

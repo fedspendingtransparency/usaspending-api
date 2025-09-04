@@ -19,10 +19,18 @@ def federal_accounts_test_data(db):
         "references.RefProgramActivity", program_activity_code="0002", program_activity_name="PAC/PAN 2"
     )
     sa = baker.make("submissions.SubmissionAttributes", is_final_balances_for_fy=True, submission_id=1)
-    oc1 = baker.make("references.ObjectClass", major_object_class_name="moc1", object_class_name="oc1")
-    oc2 = baker.make("references.ObjectClass", major_object_class_name="moc1", object_class_name="oc1")
-    oc3 = baker.make("references.ObjectClass", major_object_class_name="moc2", object_class_name="oc3")
-    oc4 = baker.make("references.ObjectClass", major_object_class_name="moc2", object_class_name="oc4")
+    oc1 = baker.make(
+        "references.ObjectClass", major_object_class_name="moc1", object_class_name="oc1", object_class="1"
+    )
+    oc2 = baker.make(
+        "references.ObjectClass", major_object_class_name="moc1", object_class_name="oc2", object_class="2"
+    )
+    oc3 = baker.make(
+        "references.ObjectClass", major_object_class_name="moc2", object_class_name="oc3", object_class="3"
+    )
+    oc4 = baker.make(
+        "references.ObjectClass", major_object_class_name="moc2", object_class_name="oc4", object_class="4"
+    )
     baker.make(
         "financial_activities.FinancialAccountsByProgramActivityObjectClass",
         treasury_account=treasury_account_1,
@@ -63,8 +71,8 @@ def federal_accounts_test_data(db):
         program_activity=None,
         submission=sa,
         obligations_incurred_by_program_object_class_cpe=-1500,
-        reporting_period_start="2020-05-03",
-        reporting_period_end="2020-05-04",
+        reporting_period_start="2023-05-03",
+        reporting_period_end="2023-05-04",
         object_class=oc4,
     )
     baker.make(

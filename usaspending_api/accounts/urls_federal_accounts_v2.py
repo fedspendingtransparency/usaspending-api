@@ -30,8 +30,9 @@ urlpatterns = [
         r"(?P<federal_account_code>[0-9]{3}[\-][0-9]{4})/program_activities/total/?$",
         FederalAccountProgramActivitiesTotal.as_view(),
     ),
-    re_path(r"(?P<federal_account_code>[0-9]{3}[\-][0-9]{4})/object_classes/total/?$",
-            FederalAccountObjectClassesTotal.as_view(),
+    re_path(
+        r"(?P<federal_account_code>[0-9]{3}[\-][0-9]{4})/object_classes/total/?$",
+        FederalAccountObjectClassesTotal.as_view(),
     ),
     re_path(r"(?P<federal_account_code>[0-9]{3}[\-][0-9]{4})/?$", federal_account),
     re_path(r"$", federal_accounts),

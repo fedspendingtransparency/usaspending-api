@@ -1,5 +1,4 @@
-from django.db.models import Case, Q, TextField, When, Value, Sum
-from django.db.models.functions import Coalesce
+from django.db.models import Q, Sum, F
 from rest_framework.response import Response
 from rest_framework.request import Request
 
@@ -16,12 +15,11 @@ class FederalAccountObjectClassesTotal(PaginationMixin, FederalAccountBase):
     endpoint_doc = (
         "usaspending_api/api_contracts/contracts/v2/federal_accounts/federal_account_totals/object_classes.md"
     )
-    filters: dict
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.default_sort_column = "obligations"
-        self.sortable_columns = ["obligations", "code", "name", "type"]
+        self.sortable_columns = ["obligations", "code", "name"]
 
     def post(self, request: Request, *args, **kwargs):
         validated_data = self.validate_data(request.data)
@@ -34,10 +32,11 @@ class FederalAccountObjectClassesTotal(PaginationMixin, FederalAccountBase):
                 )
                 & query
             )
-            .values(code="object_class__object_class")
+            .annotate(code=F("object_class__object_class"))
+            .values("code")
             .annotate(
                 obligations=Sum("obligations_incurred_by_program_object_class_cpe"),
-                name="object_class__object_class_name",
+                name=F("object_class__object_class_name"),
             )
             .order_by(*self.pagination.robust_order_by_fields)
             .values("obligations", "code", "name")
