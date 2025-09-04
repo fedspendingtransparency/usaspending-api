@@ -39,6 +39,7 @@ from usaspending_api.references.models import (
     Office,
     PopCongressionalDistrict,
     PopCounty,
+    ProgramActivityPark,
     RefCountryCode,
     RefProgramActivity,
     SubtierAgency,
@@ -65,6 +66,7 @@ _USAS_RDS_REF_TABLES = [
     Office,
     PopCongressionalDistrict,
     PopCounty,
+    ProgramActivityPark,
     PSC,
     RefCountryCode,
     RefProgramActivity,
@@ -590,6 +592,7 @@ def write_csv_file(
     max_records_per_file=EXCEL_ROW_LIMIT,
     overwrite=True,
     logger=None,
+    delimiter=",",
 ) -> int:
     """Write DataFrame data to CSV file parts.
     Args:
@@ -602,6 +605,7 @@ def write_csv_file(
             if it will end up writing multiple files.
         logger: The logger to use. If one note provided (e.g. to log to console or stdout) the underlying JVM-based
             Logger will be extracted from the ``spark`` ``SparkSession`` and used as the logger.
+        delimiter: Charactor used to separate columns in the CSV
     Returns:
         record count of the DataFrame that was used to populate the CSV file(s)
     """
@@ -625,6 +629,7 @@ def write_csv_file(
         ignoreTrailingWhiteSpace=False,  # must set for CSV write, as it defaults to true
         timestampFormat=CONFIG.SPARK_CSV_TIMEZONE_FORMAT,
         mode="overwrite" if overwrite else "errorifexists",
+        sep=delimiter,
     )
     logger.info(f"{parts_dir} contains {df_record_count:,} rows of data")
     logger.info(f"Wrote source data DataFrame to csv part files in {(time.time() - start):3f}s")

@@ -729,6 +729,14 @@
                 "type": "keyword"
               }
             }
+          },
+          "type": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
           }
         }
       },

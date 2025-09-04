@@ -84,7 +84,13 @@ class SpendingOverTimeVisualizationViewSet(APIView):
                 "object_keys": {
                     "name": {"type": "text", "text_type": "search"},
                     "code": {
-                        "type": "integer",
+                        "type": "string",
+                    },
+                    "type": {
+                        "type": "enum",
+                        "enum_values": ["PARK", "PAC/PAN"],
+                        "optional": True,
+                        "default": "PAC/PAN",
                     },
                 },
             }

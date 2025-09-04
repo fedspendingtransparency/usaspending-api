@@ -124,7 +124,15 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
         self._logger = logger
 
     def download_to_csv(
-        self, source_sql, destination_path, destination_file_name, working_dir_path, download_zip_path, source_df=None
+        self,
+        source_sql,
+        destination_path,
+        destination_file_name,
+        working_dir_path,
+        download_zip_path,
+        source_df=None,
+        delimiter=",",
+        file_format="csv",
     ):
         # These imports are here for a reason.
         #   some strategies do not require spark
@@ -167,6 +175,7 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
                 num_partitions=1,
                 max_records_per_file=EXCEL_ROW_LIMIT,
                 logger=self._logger,
+                delimiter=delimiter,
             )
             column_count = len(df.columns)
             # When combining these later, will prepend the extracted header to each resultant file.
@@ -179,6 +188,7 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
                 header=header,
                 logger=self._logger,
                 part_merge_group_size=1,
+                file_format=file_format,
             )
             final_csv_data_file_locations = self._move_data_csv_s3_to_local(
                 s3_bucket_name, merged_file_paths, s3_bucket_path, s3_bucket_sub_path, destination_path_dir

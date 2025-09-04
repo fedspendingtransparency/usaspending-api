@@ -1,8 +1,12 @@
+from django.db import connections
+from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.download.v2.base_download_viewset import get_download_job, get_file_path
+from usaspending_api.download.models import DownloadJob
+from usaspending_api.download.v2.base_download_viewset import get_file_path
+from usaspending_api.routers.replicas import ReadReplicaRouter
 
 
 class DownloadStatusViewSet(APIView):
@@ -29,7 +33,7 @@ class DownloadStatusViewSet(APIView):
         Generate download status response which encompasses various elements to provide accurate
         status for state of a download job
         """
-        download_job = get_download_job(file_name)
+        download_job = self.get_download_job(file_name)
 
         # Compile url to file
         file_path = get_file_path(file_name)
@@ -47,3 +51,19 @@ class DownloadStatusViewSet(APIView):
         }
 
         return Response(response)
+
+    def get_download_job(self, file_name: str) -> DownloadJob:
+        # If we have a read replicas connection defined, then use that connection for querying the download_job
+        #    table, otherwise use the default connection
+        read_replica = ReadReplicaRouter.read_replicas[0]
+
+        db_connections = connections.__dict__["_settings"]
+
+        if read_replica in db_connections.keys():
+            download_job = DownloadJob.objects.using(read_replica).filter(file_name=file_name).first()
+        else:
+            download_job = DownloadJob.objects.filter(file_name=file_name).first()
+
+        if not download_job:
+            raise NotFound(f"Download job with filename {file_name} does not exist.")
+        return download_job

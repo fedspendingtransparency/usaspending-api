@@ -3,9 +3,7 @@ from datetime import datetime, timezone
 from typing import List, Optional, Type
 
 from django.conf import settings
-from django.db import connections
-from django.db.models import Max, QuerySet
-from rest_framework.exceptions import NotFound
+from django.db.models import Max
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -24,7 +22,6 @@ from usaspending_api.download.helpers import write_to_download_log as write_to_l
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.models.download_job import DownloadJob
 from usaspending_api.download.v2.request_validations import DownloadValidatorBase
-from usaspending_api.routers.replicas import ReadReplicaRouter
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
 
@@ -42,17 +39,16 @@ class BaseDownloadViewSet(APIView):
         # Check if download is pre-generated
         pre_generated_download = json_request.pop("pre_generated_download", None)
         if pre_generated_download:
-            filename = (
+            download_job = (
                 DownloadJob.objects.filter(
                     file_name__startswith=pre_generated_download["name_match"],
                     json_request__contains=pre_generated_download["request_match"],
                     error_message__isnull=True,
                 )
                 .order_by("-update_date")
-                .values_list("file_name", flat=True)
                 .first()
             )
-            return self.get_download_response(file_name=filename)
+            return self.build_download_response(download_job)
 
         # Check if the same request has been called today
         ordered_json_request = json.dumps(json_request)
@@ -60,9 +56,8 @@ class BaseDownloadViewSet(APIView):
 
         if cached_download and not settings.IS_LOCAL:
             # By returning the cached files, there should be no duplicates on a daily basis
-            write_to_log(message=f"Generating file from cached download job ID: {cached_download['download_job_id']}")
-            cached_filename = cached_download["file_name"]
-            return self.get_download_response(file_name=cached_filename)
+            write_to_log(message=f"Generating file from cached download job ID: {cached_download.download_job_id}")
+            return self.build_download_response(cached_download)
 
         final_output_zip_name = create_unique_filename(json_request, origination=origination)
         download_job = DownloadJob.objects.create(
@@ -72,7 +67,7 @@ class BaseDownloadViewSet(APIView):
         log_new_download_job(request, download_job)
         self.process_request(download_job, request, json_request)
 
-        return self.get_download_response(file_name=final_output_zip_name)
+        return self.build_download_response(download_job)
 
     def process_request(self, download_job: DownloadJob, request: Request, json_request: dict):
         if (
@@ -113,22 +108,20 @@ class BaseDownloadViewSet(APIView):
                 command_options=[f"--download-job-id={download_job.download_job_id}"],
             )
 
-    def get_download_response(self, file_name: str):
+    def build_download_response(self, download_job: DownloadJob) -> Response:
         """
         Generate download response which encompasses various elements to provide accurate status for state of a
         download job
         """
-        download_job = get_download_job(file_name)
-
         # Compile url to file
-        file_path = get_file_path(file_name)
+        file_path = get_file_path(download_job.file_name)
 
         # Generate the status endpoint for the file
-        status_url = self._get_status_url(file_name)
+        status_url = self._get_status_url(download_job.file_name)
 
         response = {
             "status_url": status_url,
-            "file_name": file_name,
+            "file_name": download_job.file_name,
             "file_url": file_path,
             "download_request": json.loads(download_job.json_request),
         }
@@ -150,7 +143,7 @@ class BaseDownloadViewSet(APIView):
     @staticmethod
     def _get_cached_download(
         ordered_json_request: str, download_types: Optional[List[str]] = None
-    ) -> Optional[QuerySet]:
+    ) -> Optional[DownloadJob]:
         # External data types that directly affect download results
         if download_types and "elasticsearch_awards" in download_types:
             external_data_type_name_list = ["es_awards"]
@@ -181,7 +174,6 @@ class BaseDownloadViewSet(APIView):
                 )
                 .order_by("-update_date")
                 .exclude(job_status_id=JOB_STATUS_DICT["failed"])
-                .values("download_job_id", "file_name")
                 .first()
             )
         return cached_download
@@ -197,20 +189,3 @@ def get_file_path(file_name: str) -> str:
         file_path = s3_handler.get_simple_url(file_name=file_name)
 
     return file_path
-
-
-def get_download_job(file_name: str) -> DownloadJob:
-    # If we have a read replicas connection defined, then use that connection for querying the download_job
-    #    table, otherwise use the default connection
-    read_replica = ReadReplicaRouter.read_replicas[0]
-
-    db_connections = connections.__dict__["_settings"]
-
-    if read_replica in db_connections.keys():
-        download_job = DownloadJob.objects.using(read_replica).filter(file_name=file_name).first()
-    else:
-        download_job = DownloadJob.objects.filter(file_name=file_name).first()
-
-    if not download_job:
-        raise NotFound(f"Download job with filename {file_name} does not exist.")
-    return download_job
