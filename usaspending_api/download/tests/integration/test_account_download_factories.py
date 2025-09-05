@@ -62,10 +62,13 @@ def award_financial_table(spark, s3_unittest_data_bucket, hive_unittest_metastor
             "federal_owning_agency_name": ["test1", "test2", "test2", "test2", "test3"],
             "reporting_agency_name": ["A", "B", "C", "D", "E"],
             "budget_function": ["A", "B", "C", "D", "E"],
+            "budget_function_code": ["A100", "B100", "C100", "D100", "E100"],
             "budget_subfunction": ["A", "B", "C", "D", "E"],
+            "budget_subfunction_code": ["A200", "B200", "C200", "D200", "E200"],
             "gross_outlay_amount_FYB_to_period_end": [100, 100, 100, 100, 100],
             "funding_toptier_agency_id": [1, 2, 2, 2, 3],
             "federal_account_id": [1, 2, 2, 2, 3],
+            "disaster_emergency_fund_code": ["L", "M", "N", "O", "P"],
         },
         columns=columns,
     ).fillna("dummy_text")
@@ -96,8 +99,12 @@ def account_balances_download_table(spark, s3_unittest_data_bucket, hive_unittes
             "owning_agency_name": ["test1", "test2", "test2", "test2", "test3"],
             "reporting_agency_name": ["A", "B", "C", "D", "E"],
             "budget_function": ["A", "B", "C", "D", "E"],
+            "budget_function_code": ["A100", "B100", "C100", "D100", "E100"],
             "budget_subfunction": ["A", "B", "C", "D", "E"],
+            "budget_subfunction_code": ["A200", "B200", "C200", "D200", "E200"],
             "gross_outlay_amount": [100, 100, 100, 100, 100],
+            "federal_account_id": [1, 2, 3, 4, 5],
+            "funding_toptier_agency_id": [1, 2, 3, 4, 5],
         },
         columns=[field.name for field in account_balances_schema],
     ).fillna("dummy_text")
@@ -188,6 +195,7 @@ def object_class_by_program_activity_download_table(spark, s3_unittest_data_buck
             "gross_outlay_amount_FYB_to_period_end": [100, 100, 100, 100, 100],
             "funding_toptier_agency_id": [1, 2, 2, 2, 3],
             "federal_account_id": [1, 2, 2, 2, 3],
+            "disaster_emergency_fund_code": ["L", "M", "N", "O", "P"],
         },
         columns=columns,
     ).fillna("dummy_text")
@@ -221,6 +229,8 @@ def test_federal_award_financial_factory(
 ):
     create_ref_temp_views(spark)
     mock_get_submission_ids_for_periods.return_value = [1, 2, 4, 5]
+
+    # Test filters return multiple records
     award_financial_filter = AccountDownloadFilters(
         fy=2018,
         submission_types=["award_financial"],
@@ -233,6 +243,24 @@ def test_federal_award_financial_factory(
         assert sorted(result_df[col].to_list()) == ["A", "B; C; D"]
     assert sorted(result_df.transaction_obligated_amount.to_list()) == [100, 300]
     assert sorted(result_df.gross_outlay_amount_FYB_to_period_end.to_list()) == [100, 200]
+
+    # Test all the filters
+    award_financial_filter = AccountDownloadFilters(
+        fy="2018",
+        submission_types=["award_financial"],
+        quarter="4",
+        period="11",
+        agency="1",
+        federal_account="1",
+        budget_function="A100",
+        budget_subfunction="A200",
+        def_codes=["L"],
+    )
+    factory = AwardFinancialDownloadFactory(spark, award_financial_filter)
+    ta_dataframe = factory.create_treasury_account_download()
+    assert ta_dataframe.dataframe.count() == 1
+    fa_dataframe = factory.create_federal_account_download()
+    assert fa_dataframe.dataframe.count() == 1
 
 
 @patch("usaspending_api.common.spark.utils.get_submission_ids_for_periods")
@@ -314,6 +342,8 @@ def test_filter_treasury_by_agency(spark, award_financial_table, agency_models):
 def test_account_balances(mock_get_submission_ids_for_periods, spark, account_balances_download_table, agency_models):
     create_ref_temp_views(spark)
     mock_get_submission_ids_for_periods.return_value = [1, 2, 3]
+
+    # Test filters return multiple records
     account_balances_filter = AccountDownloadFilters(
         fy=2018,
         submission_types=["account_balances"],
@@ -325,6 +355,24 @@ def test_account_balances(mock_get_submission_ids_for_periods, spark, account_ba
     fa_dataframe = factory.create_federal_account_download()
     assert fa_dataframe.dataframe.count() == 2
 
+    # Test all the filters
+    account_balances_filter = AccountDownloadFilters(
+        fy="2018",
+        submission_types=["account_balances"],
+        quarter="4",
+        period="11",
+        agency="1",
+        federal_account="1",
+        budget_function="A100",
+        budget_subfunction="A200",
+        def_codes=["L"],
+    )
+    factory = AccountBalancesDownloadFactory(spark, account_balances_filter)
+    ta_dataframe = factory.create_treasury_account_download()
+    assert ta_dataframe.dataframe.count() == 1
+    fa_dataframe = factory.create_federal_account_download()
+    assert fa_dataframe.dataframe.count() == 1
+
 
 @patch("usaspending_api.download.delta_downloads.object_class_program_activity.get_submission_ids_for_periods")
 def test_object_class_by_program_activity(
@@ -335,6 +383,8 @@ def test_object_class_by_program_activity(
 ):
     create_ref_temp_views(spark)
     mock_get_submission_ids_for_periods.return_value = [1, 2, 3]
+
+    # Test filters return multiple records
     ocpa_filter = AccountDownloadFilters(
         fy=2018,
         submission_types=["object_class_program_activity"],
@@ -345,3 +395,21 @@ def test_object_class_by_program_activity(
     assert ta_dataframe.dataframe.count() == 3
     fa_dataframe = factory.create_federal_account_download()
     assert fa_dataframe.dataframe.count() == 2
+
+    # Test all the filters
+    ocpa_filter = AccountDownloadFilters(
+        fy="2018",
+        submission_types=["object_class_program_activity"],
+        quarter="4",
+        period="11",
+        agency="1",
+        federal_account="1",
+        budget_function="F01",
+        budget_subfunction="SF01",
+        def_codes=["L"],
+    )
+    factory = ObjectClassProgramActivityDownloadFactory(spark, ocpa_filter)
+    ta_dataframe = factory.create_treasury_account_download()
+    assert ta_dataframe.dataframe.count() == 1
+    fa_dataframe = factory.create_federal_account_download()
+    assert fa_dataframe.dataframe.count() == 1
