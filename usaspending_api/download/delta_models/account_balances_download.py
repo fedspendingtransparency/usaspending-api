@@ -12,6 +12,7 @@ from pyspark.sql.types import (
 
 account_balances_schema = StructType(
     [
+        StructField("funding_toptier_agency_id", IntegerType()),
         StructField("owning_agency_name", StringType()),
         StructField("reporting_agency_name", StringType()),
         StructField("submission_period", StringType()),
@@ -26,8 +27,11 @@ account_balances_schema = StructType(
         StructField("treasury_account_name", StringType()),
         StructField("agency_identifier_name", StringType()),
         StructField("allocation_transfer_agency_identifier_name", StringType()),
+        StructField("budget_function_code", StringType()),
         StructField("budget_function", StringType()),
+        StructField("budget_subfunction_code", StringType()),
         StructField("budget_subfunction", StringType()),
+        StructField("federal_account_id", IntegerType()),
         StructField("federal_account_symbol", StringType()),
         StructField("federal_account_name", StringType()),
         StructField("budget_authority_unobligated_balance_brought_forward", DecimalType(23, 2)),
@@ -107,6 +111,7 @@ def account_balances_df(spark: SparkSession) -> DataFrame:
         .join(ta, on=fa.parent_toptier_agency_id == ta.toptier_agency_id, how="leftouter")
         .withColumn("submission_period", fy_quarter_period())
         .select(
+            taa.funding_toptier_agency_id,
             ta.name.alias("owning_agency_name"),
             sa.reporting_agency_name,
             sf.col("submission_period"),
@@ -121,8 +126,11 @@ def account_balances_df(spark: SparkSession) -> DataFrame:
             taa.account_title.alias("treasury_account_name"),
             sf.col("agency_identifier_name"),
             sf.col("allocation_transfer_agency_identifier_name"),
+            taa.budget_function_code,
             taa.budget_function_title.alias("budget_function"),
+            taa.budget_subfunction_code,
             taa.budget_subfunction_title.alias("budget_subfunction"),
+            taa.federal_account_id,
             fa.federal_account_code.alias("federal_account_symbol"),
             fa.account_title.alias("federal_account_name"),
             aab.budget_authority_unobligated_balance_brought_forward_fyb.alias(
