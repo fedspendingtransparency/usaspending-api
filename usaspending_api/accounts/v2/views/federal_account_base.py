@@ -84,7 +84,6 @@ class PaginationMixin:
     @cached_property
     def pagination(self):
         model = customize_pagination_with_sort_columns(self.sortable_columns, self.default_sort_column)
-        method = self.request.method
         request_data = TinyShield(model).block(self.request.data) if self.request.method == 'POST' else TinyShield(model).block(self.request.query_params)
 
         # Use the default sort as a tie-breaker in the case of a different sort provided
