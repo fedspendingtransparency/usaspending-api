@@ -103,8 +103,8 @@ def account_balances_download_table(spark, s3_unittest_data_bucket, hive_unittes
             "budget_subfunction": ["A", "B", "C", "D", "E"],
             "budget_subfunction_code": ["A200", "B200", "C200", "D200", "E200"],
             "gross_outlay_amount": [100, 100, 100, 100, 100],
-            "federal_account_id": [1, 2, 3, 4, 5],
-            "funding_toptier_agency_id": [1, 2, 3, 4, 5],
+            "funding_toptier_agency_id": [1, 2, 2, 2, 3],
+            "federal_account_id": [1, 2, 2, 2, 3],
         },
         columns=[field.name for field in account_balances_schema],
     ).fillna("dummy_text")
@@ -225,7 +225,7 @@ def federal_account_models(db):
 
 @patch("usaspending_api.common.spark.utils.get_submission_ids_for_periods")
 def test_federal_award_financial_factory(
-    mock_get_submission_ids_for_periods, spark, award_financial_table, agency_models
+    mock_get_submission_ids_for_periods, spark, award_financial_table, agency_models, federal_account_models
 ):
     create_ref_temp_views(spark)
     mock_get_submission_ids_for_periods.return_value = [1, 2, 4, 5]
@@ -339,7 +339,9 @@ def test_filter_treasury_by_agency(spark, award_financial_table, agency_models):
 
 
 @patch("usaspending_api.download.delta_downloads.account_balances.get_submission_ids_for_periods")
-def test_account_balances(mock_get_submission_ids_for_periods, spark, account_balances_download_table, agency_models):
+def test_account_balances(
+    mock_get_submission_ids_for_periods, spark, account_balances_download_table, agency_models, federal_account_models
+):
     create_ref_temp_views(spark)
     mock_get_submission_ids_for_periods.return_value = [1, 2, 3]
 
@@ -380,6 +382,7 @@ def test_object_class_by_program_activity(
     spark,
     object_class_by_program_activity_download_table,
     agency_models,
+    federal_account_models,
 ):
     create_ref_temp_views(spark)
     mock_get_submission_ids_for_periods.return_value = [1, 2, 3]
