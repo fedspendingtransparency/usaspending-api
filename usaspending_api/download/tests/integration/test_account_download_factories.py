@@ -68,7 +68,7 @@ def award_financial_table(spark, s3_unittest_data_bucket, hive_unittest_metastor
             "gross_outlay_amount_FYB_to_period_end": [100, 100, 100, 100, 100],
             "funding_toptier_agency_id": [1, 2, 2, 2, 3],
             "federal_account_id": [1, 2, 2, 2, 3],
-            "disaster_emergency_fund_code": ["L", "M", "N", "O", "P"],
+            "disaster_emergency_fund_code": ["L", "L", "L", "L", "L"],
         },
         columns=columns,
     ).fillna("dummy_text")
@@ -195,7 +195,7 @@ def object_class_by_program_activity_download_table(spark, s3_unittest_data_buck
             "gross_outlay_amount_FYB_to_period_end": [100, 100, 100, 100, 100],
             "funding_toptier_agency_id": [1, 2, 2, 2, 3],
             "federal_account_id": [1, 2, 2, 2, 3],
-            "disaster_emergency_fund_code": ["L", "M", "N", "O", "P"],
+            "disaster_emergency_fund_code": ["L", "L", "L", "L", "L"],
         },
         columns=columns,
     ).fillna("dummy_text")
