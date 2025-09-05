@@ -14,7 +14,7 @@ from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.download.filestreaming import download_generation
-from usaspending_api.download.lookups import JOB_STATUS, VALID_ACCOUNT_SUBMISSION_TYPES
+from usaspending_api.download.lookups import JOB_STATUS
 from usaspending_api.etl.award_helpers import update_awards
 from usaspending_api.search.models import TransactionSearch
 
@@ -364,8 +364,8 @@ def test_duplicate_submission_types_success(client, download_test_data):
     download_types = resp.json()["download_request"]["download_types"]
 
     assert resp.status_code == status.HTTP_200_OK
-    assert len(download_types) == len(VALID_ACCOUNT_SUBMISSION_TYPES), "De-duplication failed"
-    assert set(download_types) == set(VALID_ACCOUNT_SUBMISSION_TYPES), "Wrong values in response"
+    assert len(download_types) == 2, "De-duplication failed"
+    assert sorted(download_types) == ["account_balances", "object_class_program_activity"], "Wrong values in response"
 
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
