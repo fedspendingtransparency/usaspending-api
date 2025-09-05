@@ -176,3 +176,32 @@ def test_object_class_filter(client, program_activities_total_test_data):
     }
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_results
+
+
+@pytest.mark.django_db
+def test_pagination(client, program_activities_total_test_data):
+    request = {"limit": 3, "page": 2}
+
+    resp = client.post(
+        "/api/v2/federal_accounts/000-0001/program_activities/total",
+        content_type="application/json",
+        data=json.dumps(request),
+    )
+
+    expected_results = {
+        "results": [
+            {"obligations": 1.0, "code": "0001", "name": "PAC/PAN 1", "type": "PAC/PAN"},
+        ],
+        "page_metadata": {
+            "page": 2,
+            "total": 4,
+            "limit": 3,
+            "next": None,
+            "previous": 1,
+            "hasNext": False,
+            "hasPrevious": True,
+        },
+    }
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json() == expected_results
