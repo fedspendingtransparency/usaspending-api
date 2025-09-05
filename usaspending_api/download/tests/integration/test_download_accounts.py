@@ -2,7 +2,6 @@ import json
 import pytest
 import random
 
-from itertools import chain, combinations
 from unittest.mock import Mock
 
 from django.conf import settings
@@ -163,25 +162,6 @@ def test_tas_b_defaults_success(client, download_test_data):
 
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
-def test_tas_c_defaults_success(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
-    resp = client.post(
-        "/api/v2/download/accounts/",
-        content_type="application/json",
-        data=json.dumps(
-            {
-                "account_level": "treasury_account",
-                "filters": {"submission_types": ["award_financial"], "fy": "2016", "quarter": "4"},
-                "file_format": "csv",
-            }
-        ),
-    )
-
-    assert resp.status_code == status.HTTP_200_OK
-    assert ".zip" in resp.json()["file_url"]
-
-
-@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
 def test_federal_account_a_defaults_success(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
@@ -210,25 +190,6 @@ def test_federal_account_b_defaults_success(client, download_test_data):
             {
                 "account_level": "federal_account",
                 "filters": {"submission_types": ["object_class_program_activity"], "fy": "2018", "quarter": "1"},
-                "file_format": "csv",
-            }
-        ),
-    )
-
-    assert resp.status_code == status.HTTP_200_OK
-    assert ".zip" in resp.json()["file_url"]
-
-
-@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
-def test_federal_account_c_defaults_success(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
-    resp = client.post(
-        "/api/v2/download/accounts/",
-        content_type="application/json",
-        data=json.dumps(
-            {
-                "account_level": "federal_account",
-                "filters": {"submission_types": ["award_financial"], "fy": "2016", "quarter": "4"},
                 "file_format": "csv",
             }
         ),
@@ -277,29 +238,6 @@ def test_agency_filter_failure(client, download_test_data):
     )
 
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
-
-
-@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
-def test_federal_account_filter_success(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
-    resp = client.post(
-        "/api/v2/download/accounts/",
-        content_type="application/json",
-        data=json.dumps(
-            {
-                "account_level": "treasury_account",
-                "filters": {
-                    "submission_types": ["award_financial"],
-                    "fy": "2017",
-                    "quarter": "4",
-                    "federal_account": "10",
-                },
-                "file_format": "csv",
-            }
-        ),
-    )
-
-    assert resp.status_code == status.HTTP_200_OK
 
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
@@ -407,35 +345,9 @@ def test_download_accounts_bad_filter_type_raises(client, download_test_data):
 
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
-def test_multiple_submission_types_success(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
-
-    def all_subsets(ss):
-        return chain(*map(lambda x: combinations(ss, x), range(1, len(ss) + 1)))
-
-    for submission_list in all_subsets(VALID_ACCOUNT_SUBMISSION_TYPES):
-        resp = client.post(
-            "/api/v2/download/accounts/",
-            content_type="application/json",
-            data=json.dumps(
-                {
-                    "account_level": "treasury_account",
-                    "filters": {"submission_types": submission_list, "fy": "2017", "quarter": "3"},
-                    "file_format": "csv",
-                }
-            ),
-        )
-
-        assert resp.status_code == status.HTTP_200_OK
-        assert ".zip" in resp.json()["file_url"]
-        if len(submission_list) > 1:
-            assert "AccountData" in resp.json()["file_url"]
-
-
-@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
 def test_duplicate_submission_types_success(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
-    duplicated_submission_list = VALID_ACCOUNT_SUBMISSION_TYPES * 11
+    duplicated_submission_list = ["account_balances", "object_class_program_activity"] * 11
 
     resp = client.post(
         "/api/v2/download/accounts/",
