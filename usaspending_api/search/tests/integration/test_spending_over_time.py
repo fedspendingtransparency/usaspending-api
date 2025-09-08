@@ -5094,7 +5094,7 @@ def test_spending_over_time_subawards_program_activity_park(client, monkeypatch,
                     "time_period": [
                         {"start_date": "2020-01-01", "end_date": "2020-01-08"},
                     ],
-                    "program_activities": [{"type": "PARK"}],
+                    "program_activities": [{"name": "PROGRAM_ACTIVITY_123", "code": "0003", "type": "PARK"}],
                 },
                 "spending_level": "subawards",
             }
