@@ -700,9 +700,10 @@ class _SetAsideTypeCodes(_Filter):
     @classmethod
     def generate_elasticsearch_query(cls, filter_values: List[str], query_type: QueryType, **options) -> ES_Q:
         set_aside_query = []
+        type_code = "type_set_aside__keyword"
 
         for filter_value in filter_values:
-            set_aside_query.append(ES_Q("match", type_set_aside__keyword=filter_value))
+            set_aside_query.append(ES_Q("match", **{type_code:filter_value}))
 
         return ES_Q("bool", should=set_aside_query, minimum_should_match=1)
 
