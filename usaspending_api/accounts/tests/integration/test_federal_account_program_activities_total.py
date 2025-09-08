@@ -90,7 +90,7 @@ def test_object_class_filter(client, federal_accounts_test_data):
 
 
 @pytest.mark.django_db
-def test_pagination(client, program_activities_total_test_data):
+def test_pagination(client, federal_accounts_test_data):
     request = {"limit": 3, "page": 2}
 
     resp = client.post(
