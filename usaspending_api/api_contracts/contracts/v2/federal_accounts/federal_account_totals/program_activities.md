@@ -39,7 +39,7 @@ This endpoint returns an array of each program activity's obligation, code, name
                             "end_date": "2020-09-30"
                         }],
                     "program_activity": ["0001"]
-                },
+                }
             }
 
 
