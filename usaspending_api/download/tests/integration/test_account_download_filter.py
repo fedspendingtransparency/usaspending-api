@@ -86,3 +86,13 @@ def test_account_download_no_federal_account(agency_models, federal_account_mode
     test_data = {"fy": "2018", "submission_types": ["award_financial"], "period": 2, "federal_account": 4}
     with pytest.raises(InvalidParameterException, match="Federal Account with that ID does not exist"):
         AccountDownloadFilters(**test_data)
+
+
+def test_account_download_duplicate_submission_types(agency_models, federal_account_models):
+    test_data = {
+        "fy": "2018",
+        "submission_types": ["award_financial", "award_financial", "account_balances"],
+        "period": 2,
+    }
+    result = AccountDownloadFilters(**test_data)
+    assert sorted(result.submission_types) == ["account_balances", "award_financial"]
