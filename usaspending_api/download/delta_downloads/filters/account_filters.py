@@ -60,6 +60,13 @@ class AccountDownloadFilters(BaseModel):
         else:
             return value
 
+    @validator("submission_types")
+    @classmethod
+    def remove_duplicate_submission_types(
+        cls, value: list[Literal["account_balances", "object_class_program_activity", "award_financial"]]
+    ):
+        return list(set(value))
+
     @validator("agency")
     @classmethod
     def check_agency_exists(cls, value: Any) -> Any:

@@ -103,6 +103,7 @@ class Command(BaseCommand):
                     "path",
                     f"s3a://{spark_s3_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/{destination_database}/{destination_table_name}",
                 )
+                .option("overwriteSchema", "true")
                 .saveAsTable(f"{destination_database}.{destination_table_name}")
             )
         else:
