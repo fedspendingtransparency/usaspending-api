@@ -1,3 +1,7 @@
+from usaspending_api.common.query_with_filters_strat.award import AwardStrategy
+from usaspending_api.common.query_with_filters_strat.keywords import KeywordStrategy
+from usaspending_api.common.query_with_filters_strat.program import ProgramStrategy
+from usaspending_api.common.query_with_filters_strat.type_codes import TypeCodesStrategy
 from usaspending_api.search.filters.elasticsearch.filter import QueryType, _Filter
 import copy
 import itertools
@@ -23,16 +27,20 @@ from usaspending_api.search.filters.time_period.query_types import (
     TransactionSearchTimePeriod,
 )
 from usaspending_api.common.query_with_filters_strat.recipient_pop import RecipientPOPStrategy
+from usaspending_api.common.query_with_filters_strat.jobs import QueryWithFiltersJobs, SubawardStrategy, AwardsStrategy, TransactionStrategy
+from usaspending_api.common.query_with_filters_strat.misc_strategies import MiscStrategy
 from usaspending_api.search.v2.es_sanitization import es_sanitize
 logger = logging.getLogger(__name__)
 class QueryWithFilters:
 
-    @property
-    def strategy_lookup(self) -> dict:
-        result = {
-            RecipientPOPStrategy.underscore_names: RecipientPOPStrategy
-        }
-        return result
+    strategy_map = {
+        "recipient": RecipientPOPStrategy,
+        "place_of_performance": RecipientPOPStrategy,
+        "type_codes": TypeCodesStrategy,
+        "keyword": KeywordStrategy,
+        "program": ProgramStrategy,
+        "award": AwardStrategy,
+    }
 
     nested_filter_lookup = {
 
@@ -82,27 +90,43 @@ class QueryWithFilters:
         must_queries = self._handle_tas_query(must_queries, filters_copy)
         for filter_type, filter_values in filters_copy.items():
             # Validate the filters
-            # if filter_type in self.unsupported_filters:
-            #     msg = "API request included '{}' key. No filtering will occur with provided value '{}'"
-            #     logger.warning(msg.format(filter_type, filter_values))
-            #     continue
+            if filter_type in self.unsupported_filters:
+                msg = "API request included '{}' key. No filtering will occur with provided value '{}'"
+                logger.warning(msg.format(filter_type, filter_values))
+                continue
             # elif filter_type not in self.strategy_lookup.keys() and filter_type not in self.nested_filter_lookup.keys():
             #     raise InvalidParameterException(f"Invalid filter: {filter_type} does not exist.")
-            #
-            # # Generate the query for a filter
-            # if "nested_" in filter_type:
-            #     # Add the "nested_path" option back in if using a nested filter;
-            #     # want to avoid having this option passed to all filters
-            #     nested_options = {**options, "nested_path": nested_path}
-            #     query = self.nested_filter_lookup[filter_type].generate_query(
-            #         filter_values, self.query_type, **nested_options
-            #     )
-            #     list_pointer = nested_must_queries
-            # else:
-                # ON MONDAY FINISH THIS AND WRITE A QUICK TEST WHERE THE FILTER IS FOR A RECIPIENT IT'S GOING TO LOOKUP WHAT STRAT TO USE THEN IN THE STRAT
-                # CLASS IT WILL CALL THE CORRECT GENERATE ELASTICSEARCH QUERY
-            query = self.strategy_lookup[filter_type]
-            list_pointer = must_queries
+
+            # Generate the query for a filter
+            if "nested_" in filter_type:
+                # Add the "nested_path" option back in if using a nested filter;
+                # want to avoid having this option passed to all filters
+                nested_options = {**options, "nested_path": nested_path}
+                query = self.nested_filter_lookup[filter_type].generate_query(
+                    filter_values, self.query_type, **nested_options
+                )
+                list_pointer = nested_must_queries
+            else:
+                # strategy = MiscStrategy
+                # for strategy_type in self.strategy_map:
+                #     if strategy_type in filter_type:
+                #         strategy = self.strategy_map[strategy_type]
+                #         break
+                #
+                # # method = getattr(strategy, "get_query")
+                # query = getattr(strategy, "get_query")(self, filter_type=filter_type, filter_values=filter_values, query_type=self.query_type)
+
+                query = QueryWithFiltersJobs(AwardsStrategy())
+                if self.query_type == QueryType.TRANSACTIONS:
+                    query.strategy = TransactionStrategy()
+                elif self.query_type == QueryType.SUBAWARDS:
+                    query.strategy = SubawardStrategy()
+                query.start(
+                    filter_name=filter_type,
+                    filter_values=filter_values,
+                    filter_options=[f"--"]
+
+                list_pointer = must_queries
 
             # Handle the possibility of multiple queries from one filter
             if isinstance(query, list):

@@ -7,23 +7,33 @@ from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.search.filters.elasticsearch.filter import QueryType
 from usaspending_api.search.v2.es_sanitization import es_sanitize
 from usaspending_api.common.helpers.api_helper import (
-    DUPLICATE_DISTRICT_LOCATION_PARAMETERS,
     INCOMPATIBLE_DISTRICT_LOCATION_PARAMETERS,
 )
 
 class RecipientPOPStrategy(ABC):
-    underscore_names = ["recipient_search_text", "recipient_id", "recipient_scope", "recipient_locations", "recipient_type_names", "place_of_performance_scope", "place_of_performance_locations"]
 
-    def __init__(self, filter: str):
-        self.filter = filter
+    def get_query(self, filter_type: str, filter_values, query_type: QueryType) -> ES_Q:
+        match filter_type:
+            case "recipient_search_text":
+                return _RecipientSearchText.generate_elasticsearch_query(filter_values=filter_values, query_type=query_type)
+            case "recipient_id":
+                return _RecipientId.generate_elasticsearch_query(filter_values=filter_values, query_type=query_type)
+            case "recipient_scope":
+                return _RecipientPOPScope.generate_elasticsearch_query(filter_values=filter_values, query_type=query_type, receiver="recipient")
+            case "place_of_performance_scope":
+                return _RecipientPOPScope.generate_elasticsearch_query(filter_values=filter_values, query_type=query_type, receiver="pop")
+            case "recipient_locations":
+                return _RecipientPOPLocations.generate_elasticsearch_query(filter_values=filter_values, query_type=query_type, receiver="recipient_location")
+            case "place_of_performance_locations":
+                return _RecipientPOPLocations.generate_elasticsearch_query(filter_values=filter_values, query_type=query_type, receiver="pop")
+            case _:
+                return InvalidParameterException(f"Invalid filter: {filter_type} does not exist.")
 
-    @abstractmethod
-    def generate_elasticsearch_query(cls, filter_values: List[dict], query_type: QueryType, **options):
-        pass
 
-class _RecipientSearchText(RecipientPOPStrategy):
-    underscore_name = ["recipient_search_text"]
-    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: QueryType, ** options) -> ES_Q:
+
+class _RecipientSearchText():
+    @staticmethod
+    def generate_elasticsearch_query(filter_values: List[str], query_type: QueryType, ** options) -> ES_Q:
         recipient_search_query = []
         words_to_escape = ["AND", "OR"]  # These need to be escaped to be included as text to be searched for
 
@@ -92,8 +102,8 @@ class _RecipientSearchText(RecipientPOPStrategy):
 class _RecipientId(RecipientPOPStrategy):
     underscore_name = "recipient_id"
 
-    @classmethod
-    def generate_elasticsearch_query(cls, filter_value: str, query_type: QueryType, **options) -> ES_Q:
+    @staticmethod
+    def generate_elasticsearch_query(filter_value: str, query_type: QueryType, **options) -> ES_Q:
         recipient_hash = filter_value[:-2]
         if query_type == QueryType.SUBAWARDS:
             # Subawards did not support "recipient_id" before migrating to elastic search
@@ -112,8 +122,8 @@ class _RecipientId(RecipientPOPStrategy):
 class _RecipientTypeNames(RecipientPOPStrategy):
     underscore_name = "recipient_type_names"
 
-    @classmethod
-    def generate_elasticsearch_query(cls, filter_values: List[str], query_type: QueryType, **options) -> ES_Q:
+    @staticmethod
+    def generate_elasticsearch_query(filter_values: List[str], query_type: QueryType, **options) -> ES_Q:
         recipient_type_query = []
 
         for filter_value in filter_values:
@@ -122,10 +132,8 @@ class _RecipientTypeNames(RecipientPOPStrategy):
         return ES_Q("bool", should=recipient_type_query, minimum_should_match=1)
 
 class _RecipientPOPLocations(RecipientPOPStrategy):
-    underscore_name = ["recipient_locations", "place_of_performance_locations"]
-
-    @classmethod
-    def generate_elasticsearch_query(cls, filter_values: List[dict], query_type: QueryType, **options) -> ES_Q:
+    @staticmethod
+    def generate_elasticsearch_query(filter_values, query_type: QueryType, receiver: str, **options) -> ES_Q:
         recipient_locations_query = []
         field_prefix = "sub_" if query_type == QueryType.SUBAWARDS else ""
         for filter_value in filter_values:
@@ -150,7 +158,7 @@ class _RecipientPOPLocations(RecipientPOPStrategy):
                 raise InvalidParameterException(INCOMPATIBLE_DISTRICT_LOCATION_PARAMETERS)
 
             location_query = [
-                ES_Q("match", **{f"{field_prefix}{self.type}{location_key}": location_value.upper()})
+                ES_Q("match", **{f"{field_prefix}{receiver}_{location_key}": location_value.upper()})
                 for location_key, location_value in location_lookup.items()
                 if location_value is not None
             ]
@@ -159,3 +167,19 @@ class _RecipientPOPLocations(RecipientPOPStrategy):
                 recipient_locations_query.append(ES_Q("bool", must=location_query))
 
         return ES_Q("bool", should=recipient_locations_query, minimum_should_match=1)
+
+class _RecipientPOPScope(RecipientPOPStrategy):
+
+    @classmethod
+    def generate_elasticsearch_query(cls, filter_value: str, query_type: QueryType, receiver: str, **options) -> ES_Q:
+        if query_type == QueryType.SUBAWARDS:
+            recipient_scope_query = ES_Q("match", **{f"sub_{receiver}_location_country_code": "USA"}) | ES_Q(
+                "match", **{f"sub_{receiver}_location_country_name": "UNITED STATES"}
+            )
+        else:
+            recipient_scope_query = ES_Q("match", **{f"{receiver}_location_country_code=": "USA"})
+
+        if filter_value == "domestic":
+            return recipient_scope_query
+        elif filter_value == "foreign":
+            return ~recipient_scope_query

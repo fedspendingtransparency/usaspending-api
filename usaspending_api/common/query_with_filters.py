@@ -700,10 +700,9 @@ class _SetAsideTypeCodes(_Filter):
     @classmethod
     def generate_elasticsearch_query(cls, filter_values: List[str], query_type: QueryType, **options) -> ES_Q:
         set_aside_query = []
-        type_code = "type_set_aside__keyword"
 
         for filter_value in filter_values:
-            set_aside_query.append(ES_Q("match", **{type_code:filter_value}))
+            set_aside_query.append(ES_Q("match", filter_value))
 
         return ES_Q("bool", should=set_aside_query, minimum_should_match=1)
 
@@ -1028,6 +1027,7 @@ class QueryWithFilters:
                 # Add the "nested_path" option back in if using a nested filter;
                 # want to avoid having this option passed to all filters
                 nested_options = {**options, "nested_path": nested_path}
+
                 query = self.nested_filter_lookup[filter_type].generate_query(
                     filter_values, self.query_type, **nested_options
                 )

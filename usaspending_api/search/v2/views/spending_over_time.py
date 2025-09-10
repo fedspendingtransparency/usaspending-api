@@ -26,7 +26,7 @@ from usaspending_api.common.helpers.generic_helper import (
     get_generic_filters_message,
     min_and_max_from_date_ranges,
 )
-from usaspending_api.common.query_with_filters import QueryWithFilters
+from usaspending_api.common.query_with_filters_strat.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator.award_filter import AWARD_FILTER_W_FILTERS
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
