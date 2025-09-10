@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 from usaspending_api.broker.lookups import EXTERNAL_DATA_TYPE_DICT
 from usaspending_api.broker.models import ExternalDataLoadDate
 from usaspending_api.common.api_versioning import API_TRANSFORM_FUNCTIONS, api_transformations
+from usaspending_api.common.experimental_api_flags import is_experimental_download_api
 from usaspending_api.common.helpers.dict_helpers import order_nested_object
 from usaspending_api.common.spark.jobs import DatabricksStrategy, LocalStrategy, SparkJobs
 from usaspending_api.common.sqs.sqs_handler import get_sqs_queue
@@ -69,7 +70,11 @@ class BaseDownloadViewSet(APIView):
         return self.build_download_response(download_job)
 
     def process_request(self, download_job: DownloadJob, request: Request, json_request: dict):
-        if json_request["request_type"] == "account" and "award_financial" in json_request["download_types"]:
+        if (
+            is_experimental_download_api(request)
+            and json_request["request_type"] == "account"
+            and "award_financial" in json_request["download_types"]
+        ):
             # goes to spark for File C account download
             self.process_account_download_in_spark(download_job=download_job)
         elif settings.IS_LOCAL and settings.RUN_LOCAL_DOWNLOAD_IN_PROCESS:
