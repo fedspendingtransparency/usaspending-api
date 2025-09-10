@@ -5101,6 +5101,23 @@ def test_spending_over_time_subawards_program_activity_park(client, monkeypatch,
         ),
     )
 
+    resp_without_type = client.post(
+        "/api/v2/search/spending_over_time",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "group": "fiscal_year",
+                "filters": {
+                    "time_period": [
+                        {"start_date": "2020-01-01", "end_date": "2020-01-08"},
+                    ],
+                    "program_activities": [{"code": "0003"}],
+                },
+                "spending_level": "subawards",
+            }
+        ),
+    )
+
     expected_result = [
         {
             "aggregated_amount": 300.0,
@@ -5115,6 +5132,9 @@ def test_spending_over_time_subawards_program_activity_park(client, monkeypatch,
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json().get("results") == expected_result, "results: {resp.json().get('results')}"
+
+    assert resp_without_type.status_code == status.HTTP_200_OK
+    assert resp_without_type.json().get("results") == expected_result, "results: {resp.json().get('results')}"
 
 
 def test_spending_over_time_awards_program_activity_park(client, monkeypatch, elasticsearch_award_index):
