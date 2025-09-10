@@ -1,6 +1,8 @@
 import logging
 
 from django.core.management.base import BaseCommand
+from pyspark.sql.types import StructType
+
 
 from usaspending_api.config import CONFIG
 from usaspending_api.common.helpers.spark_helpers import (
@@ -81,16 +83,31 @@ class Command(BaseCommand):
         logger.info(f"Using Spark Database: {destination_database}")
         spark.sql(f"create database if not exists {destination_database};")
         spark.sql(f"use {destination_database};")
-
-        # Define Schema Using CREATE TABLE AS command
-        spark.sql(
-            TABLE_SPEC[destination_table]["delta_table_create_sql"].format(
-                DESTINATION_TABLE=destination_table_name,
-                DESTINATION_DATABASE=destination_database,
-                SPARK_S3_BUCKET=spark_s3_bucket,
-                DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+        if isinstance(table_spec["delta_table_create_sql"], str):
+            # Define Schema Using CREATE TABLE AS command
+            spark.sql(
+                TABLE_SPEC[destination_table]["delta_table_create_sql"].format(
+                    DESTINATION_TABLE=destination_table_name,
+                    DESTINATION_DATABASE=destination_database,
+                    SPARK_S3_BUCKET=spark_s3_bucket,
+                    DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+                )
             )
-        )
+        elif isinstance(table_spec["delta_table_create_sql"], StructType):
+            schema = table_spec["delta_table_create_sql"]
+            df = spark.createDataFrame([], schema)
+            (
+                df.write.format("delta")
+                .mode("overwrite")
+                .option(
+                    "path",
+                    f"s3a://{spark_s3_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/{destination_database}/{destination_table_name}",
+                )
+                .option("overwriteSchema", "true")
+                .saveAsTable(f"{destination_database}.{destination_table_name}")
+            )
+        else:
+            raise ValueError("Invalid Table Spec value for Delta Table creation.")
 
         if spark_created_by_command:
             spark.stop()
