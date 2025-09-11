@@ -890,6 +890,7 @@ def test_correct_response_for_each_filter(
         _test_correct_response_for_award_amounts,
         _test_correct_response_for_cfda_program,
         _test_correct_response_for_naics_codes,
+        _test_correct_response_for_naics_codes_subawards,
         _test_correct_response_for_psc_code_list,
         _test_correct_response_for_psc_code_object,
         _test_correct_response_for_psc_code_list_subawards,
@@ -1360,6 +1361,45 @@ def _test_correct_response_for_naics_codes(client):
     assert resp.json().get("results") == expected_result, "NAICS Code filter does not match expected result"
 
 
+def _test_correct_response_for_naics_codes_subawards(client):
+    resp = client.post(
+        "/api/v2/search/spending_by_award",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "filters": {
+                    "award_type_codes": ["A", "B", "C", "D"],
+                    "naics_codes": {"require": ["112233", "112244"]},
+                    "time_period": [{"start_date": "2007-10-01", "end_date": "2020-09-30"}],
+                },
+                "fields": ["Sub-Award ID"],
+                "page": 1,
+                "limit": 60,
+                "sort": "Sub-Award ID",
+                "order": "desc",
+                "spending_level": "subawards",
+            }
+        ),
+    )
+    expected_result = [
+        {
+            "internal_id": "11112",
+            "prime_award_internal_id": 1,
+            "Sub-Award ID": "11112",
+            "prime_award_generated_internal_id": "CONT_AWD_TESTING_6",
+        },
+        {
+            "internal_id": "11111",
+            "prime_award_internal_id": 1,
+            "Sub-Award ID": "11111",
+            "prime_award_generated_internal_id": "CONT_AWD_TESTING_1",
+        },
+    ]
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.json().get("results")) == 2
+    assert resp.json().get("results") == expected_result, "NAICS Code filter does not match expected result"
+
+
 def _test_correct_response_for_psc_code_list(client):
     resp = client.post(
         "/api/v2/search/spending_by_award",
@@ -1729,6 +1769,12 @@ def _test_correct_response_for_def_codes_subaward(client):
             "prime_award_generated_internal_id": "CONT_AWD_TESTING_1",
         },
         {
+            "internal_id": "11112",
+            "prime_award_internal_id": 1,
+            "Sub-Award ID": "11112",
+            "prime_award_generated_internal_id": "CONT_AWD_TESTING_6",
+        },
+        {
             "internal_id": "11111",
             "prime_award_internal_id": 1,
             "Sub-Award ID": "11111",
@@ -1736,7 +1782,7 @@ def _test_correct_response_for_def_codes_subaward(client):
         },
     ]
     assert resp.status_code == status.HTTP_200_OK
-    assert len(resp.json().get("results")) == 2
+    assert len(resp.json().get("results")) == 3
     assert resp.json().get("results") == expected_result, "DEFC subaward filter does not match expected result"
 
     resp = client.post(

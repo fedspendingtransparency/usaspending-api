@@ -128,8 +128,9 @@ def test_data():
 
 
 @pytest.mark.django_db
-def test_spending_by_award_type_success(client, monkeypatch, elasticsearch_award_index):
+def test_spending_by_award_type_success(client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
 
     # test small request
     resp = client.post(
@@ -454,7 +455,8 @@ def test_spending_by_award_foreign_filter(client, monkeypatch, elasticsearch_awa
 
 # test subaward types
 @pytest.mark.django_db
-def test_spending_by_subaward_type_success(client):
+def test_spending_by_subaward_type_success(client, monkeypatch, elasticsearch_subaward_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     resp = client.post(
         "/api/v2/search/spending_by_award",
         content_type="application/json",

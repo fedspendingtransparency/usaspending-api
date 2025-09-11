@@ -116,7 +116,6 @@ base_mapping = {
     "Recipient UEI": "recipient_uei",
     "naics_code": "naics_code.keyword",
     "naics_description": "naics_description.keyword",
-    "sub_naics_code": "naics.keyword",
     "psc_code": "product_or_service_code.keyword",
     "psc_description": "product_or_service_description.keyword",
     "cfda_number": "cfda_number.keyword",

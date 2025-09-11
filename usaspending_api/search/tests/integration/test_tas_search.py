@@ -308,7 +308,8 @@ def test_spending_by_award_subaward_success(client, mock_tas_data, monkeypatch, 
 
 
 @pytest.mark.django_db
-def test_spending_by_award_subaward_failure(client, mock_tas_data):
+def test_spending_by_award_subaward_failure(client, mock_tas_data, monkeypatch, elasticsearch_subaward_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     data = {
         "filters": {"tas_codes": [{"aid": "000", "main": "0000"}], "award_type_codes": ["A", "B", "C", "D"]},
         "fields": ["Sub-Award ID"],
