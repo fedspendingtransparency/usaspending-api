@@ -7,6 +7,7 @@ class NAICS(models.Model):
     code = models.TextField(primary_key=True)
     description = models.TextField(null=False)
     year = models.IntegerField(default=0)
+    year_retired = models.IntegerField(null=True)
 
     class Meta:
         managed = True
