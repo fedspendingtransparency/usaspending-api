@@ -70,6 +70,7 @@ def load_single_naics(naics_code, naics_year, naics_desc):
         if int(naics_year) > int(obj.year):
             NAICS.objects.filter(pk=naics_code).update(description=naics_desc, year=naics_year)
 
+
 def load_naics_year_retired():
     oldest_naics_year = NAICS.objects.aggregate(models.Max("year"))["year__max"]
     retired_naics = NAICS.objects.filter(year__lt=oldest_naics_year)
@@ -79,7 +80,6 @@ def load_naics_year_retired():
         previous_naics_year_index = naics_years.index(naics.year)
         naics.year_retired = naics_years[previous_naics_year_index + 1]
         NAICS.objects.filter(pk=naics.pk).update(year_retired=naics.year_retired)
-
 
 
 @transaction.atomic
