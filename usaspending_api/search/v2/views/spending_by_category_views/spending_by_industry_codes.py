@@ -61,7 +61,7 @@ class AbstractIndustryCodeViewSet(AbstractSpendingByCategoryViewSet, metaclass=A
                     # doesn't have ID, set to None
                     name=F("description"),
                 )
-                .values("code", "name", "year_retired", "year")
+                .values("code", "name", "year_retired")
             )
         else:
             industry_info_query = (
