@@ -1096,7 +1096,7 @@ transaction_search_incremental_load_sql_string = [
     """,
     f"""
     MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS t
-    USING (SELECT * FROM temp_transaction_search_view) AS s
+    USING temp_transaction_search_view AS s
     ON t.transaction_id = s.transaction_id
     WHEN MATCHED AND
       ({" OR ".join([f"NOT (s.{col} <=> t.{col})" for col in TRANSACTION_SEARCH_GOLD_DELTA_COLUMNS])})
