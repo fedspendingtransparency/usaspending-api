@@ -10,5 +10,3 @@ LEFT OUTER JOIN treasury_appropriation_account AS TAA ON (FABA.treasury_account_
 LEFT OUTER JOIN cgac AS CGAC_AID ON (TAA.agency_id = CGAC_AID.cgac_code)
 LEFT OUTER JOIN cgac AS CGAC_ATA ON (TAA.allocation_transfer_agency_id = CGAC_ATA.cgac_code)
 ;
-
-select ussgl480210_rein_undel_obs_cpe from vw_financial_accounts_by_awards_download
