@@ -105,7 +105,7 @@ class TestWithMultipleDatabases(TransactionTestCase):
             is_quarter=True,
         )
 
-        connection = connections[settings.DATA_BROKER_DB_ALIAS]
+        connection = connections[settings.BROKER_DB_ALIAS]
         with connection.cursor() as cursor:
 
             self._nuke_broker_data()
@@ -310,7 +310,7 @@ class TestWithMultipleDatabases(TransactionTestCase):
         back Broker changes.  I spent entirely too much time trying to figure out a more graceful
         way, sooooo, brute force it is.
         """
-        connection = connections[settings.DATA_BROKER_DB_ALIAS]
+        connection = connections[settings.BROKER_DB_ALIAS]
         with connection.cursor() as cursor:
             cursor.execute(
                 """
@@ -465,7 +465,7 @@ class TestWithMultipleDatabases(TransactionTestCase):
         SubmissionAttributes.objects.filter(submission_id=1).delete()
 
         # Make it really old.
-        with connections[settings.DATA_BROKER_DB_ALIAS].cursor() as cursor:
+        with connections[settings.BROKER_DB_ALIAS].cursor() as cursor:
             cursor.execute("update submission set updated_at = '1999-01-01' where submission_id = 1")
 
         # Make sure it DOESN'T reload.
@@ -484,7 +484,7 @@ class TestWithMultipleDatabases(TransactionTestCase):
         assert SubmissionAttributes.objects.get(submission_id=2).update_date > update_date_sub_2
 
         # Let's test the new certified_date change detection code.  But first, bring submission 1 back to the present.
-        with connections[settings.DATA_BROKER_DB_ALIAS].cursor() as cursor:
+        with connections[settings.BROKER_DB_ALIAS].cursor() as cursor:
             cursor.execute("update submission set updated_at = now() where submission_id = 1")
         call_command("load_multiple_submissions", "--submission-ids", 1)
 

@@ -37,7 +37,7 @@ def update_program_activities(submission_id):
             now()
         from
             dblink(
-                '{settings.DATA_BROKER_DBLINK_NAME}',
+                '{settings.BROKER_DBLINK_NAME}',
                 '
                     select  b.program_activity_code,
                             upper(b.program_activity_name) program_activity_name,

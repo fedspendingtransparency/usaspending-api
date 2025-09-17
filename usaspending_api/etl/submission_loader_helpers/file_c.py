@@ -46,7 +46,7 @@ class PublishedAwardFinancialIterator:
             limit   {self.chunk_size}
         """
 
-        award_financial_frame = pd.read_sql(sql, connections[settings.DATA_BROKER_DB_ALIAS])
+        award_financial_frame = pd.read_sql(sql, connections[settings.BROKER_DB_ALIAS])
 
         if award_financial_frame.size > 0:
             award_financial_frame["object_class"] = award_financial_frame.apply(get_object_class_row, axis=1)
