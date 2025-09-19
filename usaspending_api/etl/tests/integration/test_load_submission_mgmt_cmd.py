@@ -488,6 +488,8 @@ def _assemble_published_award_financial_records() -> list:
         "ussgl497200_downward_adjus_cpe": None,
         "ussgl498100_upward_adjustm_cpe": None,
         "ussgl498200_upward_adjustm_cpe": None,
+        "ussgl480210_rein_undel_obs_cpe": None,
+        "ussgl497210_down_adj_refun_cpe": None,
         "tas": None,
         "account_num": -99999,
     }
