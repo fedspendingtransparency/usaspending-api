@@ -6,6 +6,7 @@ class NAICS(models.Model):
 
     code = models.TextField(primary_key=True)
     description = models.TextField(null=False)
+    long_description = models.TextField(null=True)
     year = models.IntegerField(default=0)
 
     class Meta:
