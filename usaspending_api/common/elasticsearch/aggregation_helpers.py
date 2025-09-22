@@ -12,5 +12,14 @@ def create_count_aggregation(field_name):
         init_script="state.list = []",
         map_script="if(doc[params.fieldName].size() > 0) state.list.add(doc[params.fieldName].value);",
         combine_script="return state.list;",
-        reduce_script="Map uniqueValueMap = new HashMap(); int count = 0;for(shardList in states) {if(shardList != null) { for(key in shardList) {if(!uniqueValueMap.containsKey(key)) {count +=1;uniqueValueMap.put(key, key); }}}}  return count;",
+        reduce_script="""
+            Set uniqueValues = new HashSet();
+            for (shardList in states) {
+                if (shardList != null) {
+                    Set tempValues = new HashSet(shardList);
+                    uniqueValues.addAll(tempValues);
+                }
+            }
+            return uniqueValues.size();
+        """,
     )
