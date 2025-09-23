@@ -77,6 +77,7 @@ from usaspending_api.transactions.delta_models import (
     transaction_search_incremental_load_sql_string,
     transaction_search_overwrite_load_sql_string,
 )
+from usaspending_api.transactions.delta_models.transaction_search_dataframe import load_transaction_search_dataframe
 
 AWARD_URL = f"{HOST}/award/" if "localhost" in HOST else f"https://{HOST}/award/"
 
@@ -214,7 +215,7 @@ TABLE_SPEC = {
     "transaction_search": {
         "model": TransactionSearch,
         "is_from_broker": False,
-        "source_query": transaction_search_overwrite_load_sql_string,
+        "source_query": load_transaction_search_dataframe,
         "source_query_incremental": transaction_search_incremental_load_sql_string,
         "source_database": None,
         "source_table": None,
@@ -426,7 +427,7 @@ class Command(BaseCommand):
             "--incremental",
             action="store_true",
             required=False,
-            help="Whether or note the table will be updated incrementally",
+            help="Whether or not the table will be updated incrementally",
         )
 
     def handle(self, *args, **options):
