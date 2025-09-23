@@ -98,7 +98,7 @@ class BaseDownloadViewSet(APIView):
             spark_jobs.start(
                 job_name="api_download-accounts",
                 command_name="generate_spark_download",
-                command_options=[f"--download-job-id={download_job.download_job_id}", f"--skip-local-cleanup"],
+                command_options=[f"--download-job-id={download_job.download_job_id}", "--skip-local-cleanup"],
             )
         else:
             spark_jobs = SparkJobs(DatabricksStrategy())
