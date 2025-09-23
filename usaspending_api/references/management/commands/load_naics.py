@@ -5,6 +5,7 @@ import re
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from django.db import models
 from openpyxl import load_workbook
 
 from usaspending_api.references.models import NAICS
@@ -33,22 +34,25 @@ def populate_naics_fields(ws, naics_year, path):
             break  # Reads file only until a blank line
 
         naics_desc = row[1].value.strip()
+        naics_long_desc = None
+        if int(naics_year) >= 2017:
+            naics_long_desc = row[2].value.strip()
 
         try:
             naics_code = int(row[0].value)
-            load_single_naics(naics_code, naics_year, naics_desc)
+            load_single_naics(naics_code, naics_year, naics_desc, naics_long_desc)
         # Occasionally you will see more "creative" ways of listing naics. The following tries to account for common
         # patterns
         except ValueError:
-            load_naics_range(row[0].value, naics_year, naics_desc, path)
+            load_naics_range(row[0].value, naics_year, naics_desc, naics_long_desc, path)
 
 
-def load_naics_range(naics_range_string, naics_year, naics_desc, path):
+def load_naics_range(naics_range_string, naics_year, naics_desc, naics_long_desc, path):
     if "-" in naics_range_string:
         try:
             minmax = naics_range_string.split("-")
             for naics_code in range(int(minmax[0].strip()), int(minmax[1].strip()) + 1):
-                load_single_naics(naics_code, naics_year, naics_desc)
+                load_single_naics(naics_code, naics_year, naics_desc, naics_long_desc)
         except ValueError:
             raise CommandError(
                 "Unparsable NAICS range value: {0}. Please review file {1}".format(naics_range_string, path)
@@ -57,17 +61,33 @@ def load_naics_range(naics_range_string, naics_year, naics_desc, path):
         raise CommandError("Unparsable NAICS range value: {0}. Please review file {1}".format(naics_range_string, path))
 
 
-def load_single_naics(naics_code, naics_year, naics_desc):
+def load_single_naics(naics_code, naics_year, naics_desc, naics_long_desc):
 
     # crude way of ignoring naics of length 3 and 5
     if len(str(naics_code)) not in (2, 4, 6):
         return
 
-    obj, created = NAICS.objects.get_or_create(pk=naics_code, defaults={"description": naics_desc, "year": naics_year})
+    obj, created = NAICS.objects.get_or_create(
+        pk=naics_code, defaults={"description": naics_desc, "year": naics_year, "long_description": naics_long_desc}
+    )
 
     if not created:
         if int(naics_year) > int(obj.year):
-            NAICS.objects.filter(pk=naics_code).update(description=naics_desc, year=naics_year)
+            NAICS.objects.filter(pk=naics_code).update(
+                description=naics_desc, year=naics_year, long_description=naics_long_desc
+            )
+
+
+def load_naics_year_retired():
+    oldest_naics_year = NAICS.objects.aggregate(models.Max("year"))["year__max"]
+    retired_naics = NAICS.objects.filter(year_retired=None, year__lt=oldest_naics_year)
+    naics_years = list(NAICS.objects.all().values_list("year", flat=True).distinct().order_by("year"))
+
+    for naics in retired_naics:
+        previous_naics_year_index = naics_years.index(naics.year)
+        naics.year_retired = naics_years[previous_naics_year_index + 1]
+
+    NAICS.objects.bulk_update(retired_naics, ["year_retired"])
 
 
 @transaction.atomic
@@ -91,3 +111,4 @@ def load_naics(path, append):
 
         naics_year = p_year.search(path).group()
         populate_naics_fields(ws, naics_year, path)
+    load_naics_year_retired()
