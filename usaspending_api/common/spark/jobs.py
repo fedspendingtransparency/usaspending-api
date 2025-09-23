@@ -4,6 +4,7 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING, Generator
 
 from databricks.sdk import WorkspaceClient
+from databricks.sdk.config import Config as DatabricksConfig
 from django.conf import settings
 from django.core.management import call_command
 
@@ -22,7 +23,6 @@ logger = logging.getLogger(__name__)
 
 
 class _AbstractStrategy(ABC):
-
     @property
     @abstractmethod
     def name(self) -> str:
@@ -36,7 +36,6 @@ class _AbstractStrategy(ABC):
 
 
 class DatabricksStrategy(_AbstractStrategy):
-
     _client: WorkspaceClient = None
 
     @property
@@ -46,20 +45,34 @@ class DatabricksStrategy(_AbstractStrategy):
     @property
     def client(self) -> WorkspaceClient:
         if not self._client:
-            self._client = WorkspaceClient()
+            self._client = WorkspaceClient(config=DatabricksConfig(retry_timeout_seconds=10))
         return self._client
 
-    def handle_start(self, job_name: str, command_name: str, command_options: list[str], **kwargs) -> dict[str, str]:
+    def handle_start(
+        self, job_name: str, command_name: str, command_options: list[str], **kwargs
+    ) -> dict[str, str | bool | None]:
         job_id = self.get_job_id(job_name)
+
+        if not job_id:
+            return {"timed_out": True, "job_id": None, "run_id": None}
+
         try:
             job_run = self.client.jobs.run_now(job_id, python_params=[command_name, *command_options])
+        except TimeoutError:
+            logger.exception(f"Connection timed out while starting a run of {command_name}")
+            return {"timed_out": True, "job_id": None, "run_id": None}
         except Exception:
             logger.exception(f'Failed to run job "{job_name}" with ID "{job_id}"')
             raise
-        return {"job_id": job_id, "run_id": job_run.bind()["run_id"]}
+        return {"timed_out": False, "job_id": job_id, "run_id": job_run.bind()["run_id"]}
 
-    def get_job_id(self, job_name: str) -> int:
-        run_list = list(self.client.jobs.list(name=job_name))
+    def get_job_id(self, job_name: str) -> int | None:
+        try:
+            run_list = list(self.client.jobs.list(name=job_name))
+        except TimeoutError:
+            logger.exception("Connection timed out while listing Spark jobs")
+            return None
+
         if len(run_list) == 0:
             raise ValueError(f"No job found with name: {job_name}")
         if len(run_list) > 1:
@@ -68,7 +81,6 @@ class DatabricksStrategy(_AbstractStrategy):
 
 
 class EmrServerlessStrategy(_AbstractStrategy):
-
     @property
     def name(self) -> str:
         return "EMR_SERVERLESS"
@@ -79,7 +91,6 @@ class EmrServerlessStrategy(_AbstractStrategy):
 
 
 class LocalStrategy(_AbstractStrategy):
-
     @property
     def name(self) -> str:
         return "LOCAL"
@@ -128,9 +139,14 @@ class SparkJobs:
     def start(self, job_name: str, command_name: str, command_options: list[str], **kwargs) -> dict[str, str] | None:
         logger.info(f'Starting {job_name} on {self.strategy.name}: "{command_name} {" ".join(command_options)}"')
         run_details = self.strategy.handle_start(job_name, command_name, command_options, **kwargs)
+
         if run_details is None:
-            success_msg = "Job completed successfully"
+            msg = "Job completed successfully"
+        elif run_details.get("timed_out"):
+            msg = "Job successfully queued, but the connection timed out while connecting to the Spark cluster"
         else:
-            success_msg = f"Job run successfully started; {run_details}"
-        logger.info(success_msg)
+            msg = f"Job run successfully started; {run_details}"
+
+        logger.info(msg)
+
         return run_details
