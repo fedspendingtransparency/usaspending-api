@@ -47,7 +47,7 @@ jobs:
           ref: ${{ needs.Setup-Variables.outputs.broker-branch }}
 
       - name: broker branch
-        run: echo "broker branch is ${{ needs.Setup-Variables.outputs.broker-branch }}
+        run: echo "broker branch is ${{ needs.Setup-Variables.outputs.broker-branch }}"
 
       - name: Init Python Environment
         uses: ./usaspending-api/.github/actions/init-python-environment
