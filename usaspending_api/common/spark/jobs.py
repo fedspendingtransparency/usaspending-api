@@ -45,7 +45,7 @@ class DatabricksStrategy(_AbstractStrategy):
     @property
     def client(self) -> WorkspaceClient:
         if not self._client:
-            self._client = WorkspaceClient(config=DatabricksConfig(retry_timeout_seconds=10))
+            self._client = WorkspaceClient(config=DatabricksConfig(retry_timeout_seconds=120))
         return self._client
 
     def handle_start(
