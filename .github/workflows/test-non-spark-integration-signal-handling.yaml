@@ -46,9 +46,6 @@ jobs:
           path: data-act-broker-backend
           ref: ${{ needs.Setup-Variables.outputs.branch }}
 
-      - name: broker branch
-        run: echo "broker branch is ${{ needs.Setup-Variables.outputs.branch }}"
-
       - name: Init Python Environment
         uses: ./usaspending-api/.github/actions/init-python-environment
         with:

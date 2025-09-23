@@ -19,7 +19,7 @@ jobs:
         with:
           repository: fedspendingtransparency/data-act-broker-backend
           path: data-act-broker-backend
-          ref: ${{ needs.Setup-Variables.outputs.broker-branch }}
+          ref: ${{ needs.Setup-Variables.outputs.branch }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
