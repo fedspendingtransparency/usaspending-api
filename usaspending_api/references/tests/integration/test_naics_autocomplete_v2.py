@@ -9,10 +9,10 @@ from usaspending_api.references.models import NAICS
 
 @pytest.fixture
 def naics_data(db):
-    baker.make(NAICS, code="212113", description="Anthracite Mining")
-    baker.make(NAICS, code="212112", description="Bituminous Coal Underground Mining")
-    baker.make(NAICS, code="213111", description="Drilling Oil and Gas Wells")
-    baker.make(NAICS, code="111331", description="Apple Orchards")
+    baker.make(NAICS, code="212113", description="Anthracite Mining", year_retired=None)
+    baker.make(NAICS, code="212112", description="Bituminous Coal Underground Mining", year_retired=2017)
+    baker.make(NAICS, code="213111", description="Drilling Oil and Gas Wells", year_retired=None)
+    baker.make(NAICS, code="111331", description="Apple Orchards", year_retired=2012)
 
 
 @pytest.mark.django_db
@@ -25,6 +25,7 @@ def test_naics_autocomplete_success(client, naics_data):
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp.data["results"]) == 1
     assert resp.data["results"][0]["naics_description"] == "Bituminous Coal Underground Mining"
+    assert resp.data["results"][0]["year_retired"] == 2017
 
     # test for similarity
     resp = client.post(
