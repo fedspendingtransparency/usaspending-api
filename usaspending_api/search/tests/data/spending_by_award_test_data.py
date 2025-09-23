@@ -1206,6 +1206,19 @@ def spending_by_award_test_data():
 
     baker.make(
         "search.SubawardSearch",
+        broker_subaward_id=12,
+        award=award_1,
+        latest_transaction_id=1,
+        subaward_number=11112,
+        prime_award_type="A",
+        sub_action_date="2020-04-02",
+        action_date="2020-04-02",
+        unique_award_key="CONT_AWD_TESTING_6",
+        naics="112244",
+    )
+
+    baker.make(
+        "search.SubawardSearch",
         broker_subaward_id=10,
         award=award_6,
         subaward_number=44450,
