@@ -22,20 +22,10 @@ on:
   workflow_call:
 
 jobs:
-  Setup-Variables:
-    uses: ./.github/workflows/determine-broker-branch.yaml
-
   Run:
     name: Run
     runs-on: ${{ vars.RUNNER_VERSION }}
-    needs: Setup-Variables
     steps:
-      - name: Checkout Broker Backend
-        uses: actions/checkout@v4
-        with:
-          repository: fedspendingtransparency/data-act-broker-backend
-          path: data-act-broker-backend
-          ref: ${{ needs.Setup-Variables.outputs.broker-branch }}
       - name: Checkout Source Repository
         uses: actions/checkout@v4
         with:
