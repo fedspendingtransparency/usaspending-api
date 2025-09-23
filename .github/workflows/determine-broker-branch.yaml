@@ -2,6 +2,10 @@ name: Reusable Broker branch workflow
 
 on:
   workflow_call:
+    outputs:
+      branch:
+        description: "broker-branch"
+        value: ${{ jobs.Setup-Variables.outputs.broker-branch }}
 
 jobs:
   # This job is a workaround that allows defining a dynamic variable that is provided as input
