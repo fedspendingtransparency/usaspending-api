@@ -1,5 +1,17 @@
 from pyspark.sql import DataFrame, SparkSession, types, functions as sf, Column, Window
-from pyspark.sql.types import DecimalType, ShortType, StringType
+from pyspark.sql.types import (
+    ArrayType,
+    BooleanType,
+    DateType,
+    DecimalType,
+    IntegerType,
+    LongType,
+    ShortType,
+    StringType,
+    StructField,
+    StructType,
+    TimestampType,
+)
 
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.config import CONFIG
@@ -233,19 +245,19 @@ def load_transaction_search_dataframe(spark: SparkSession) -> DataFrame:
     ]
 
     date_cols = [
-        sf.to_date(tn.action_date),
+        sf.to_date(tn.action_date).alias("action_date"),
         sf.add_months(sf.to_date(tn.action_date), 3).alias("fiscal_action_date"),
-        sf.to_date(tn.last_modified_date),
+        sf.to_date(tn.last_modified_date).alias("last_modified_date"),
         tn.fiscal_year,
         awards.certified_date.alias("award_certified_date"),
         sf.year(sf.add_months(sf.to_date(awards.certified_date), 3)).alias("award_fiscal_year"),
-        tn.create_date,
-        tn.update_date,
-        awards.update_date.alias("award_update_date"),
+        tn.create_date.cast(TimestampType()),
+        tn.update_date.cast(TimestampType()),
+        awards.update_date.cast(TimestampType()).alias("award_update_date"),
         sf.to_date(awards.date_signed).alias("award_date_signed"),
         sf.greatest(sf.to_timestamp(tn.update_date), awards.update_date).alias("etl_update_date"),
-        tn.period_of_performance_start_date,
-        tn.period_of_performance_current_end_date,
+        sf.to_date(tn.period_of_performance_start_date).alias("period_of_performance_start_date"),
+        sf.to_date(tn.period_of_performance_current_end_date).alias("period_of_performance_current_end_date"),
         sf.coalesce(
             sf.to_date(tfabs.created_at),
             sf.to_date(tfpds.initial_report_date),
@@ -330,7 +342,7 @@ def load_transaction_search_dataframe(spark: SparkSession) -> DataFrame:
         sf.coalesce(tn.face_value_loan_guarantee, sf.lit(0))
         .cast(DecimalType(23, 2))
         .alias("face_value_loan_guarantee"),
-        tn.indirect_federal_sharing,
+        tn.indirect_federal_sharing.cast(DecimalType(23, 2)),
         tn.funding_amount,
         sf.coalesce(tfabs.total_funding_amount, sf.lit("0")).cast(DecimalType(23, 2)).alias("total_funding_amount"),
         tn.non_federal_funding_amount,
@@ -411,7 +423,7 @@ def load_transaction_search_dataframe(spark: SparkSession) -> DataFrame:
         sf.coalesce(tfpds.ultimate_parent_legal_enti, tfabs.ultimate_parent_legal_enti).alias(
             "parent_recipient_name_raw"
         ),
-        sf.upper(prl.parent_recipient_name),
+        sf.upper(prl.parent_recipient_name).alias("parent_recipient_name"),
         sf.coalesce(tfpds.ultimate_parent_unique_ide, tfabs.ultimate_parent_unique_ide).alias(
             "parent_recipient_unique_id"
         ),
@@ -494,7 +506,7 @@ def load_transaction_search_dataframe(spark: SparkSession) -> DataFrame:
             "place_of_performance_zip4a"
         ),
         sf.coalesce(tfpds.place_of_perform_zip_last4, tfabs.place_of_perform_zip_last4).alias(
-            "place_of_performance_last4"
+            "place_of_perform_zip_last4"
         ),
         sf.rtrim(sf.coalesce(tfpds.place_of_perform_city_name, tfabs.place_of_performance_city)).alias("pop_city_name"),
         tfabs.place_of_performance_forei,
@@ -891,5 +903,4 @@ def load_transaction_search_dataframe(spark: SparkSession) -> DataFrame:
             *fpds_cols,
         )
     )
-
     return df
