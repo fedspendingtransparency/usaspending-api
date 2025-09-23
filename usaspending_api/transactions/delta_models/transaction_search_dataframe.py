@@ -1,3 +1,4 @@
+from delta.tables import DeltaTable
 from pyspark.sql import DataFrame, SparkSession, types, functions as sf, Column, Window
 from pyspark.sql.types import (
     ArrayType,
@@ -24,13 +25,13 @@ def hash_col(col: Column) -> Column:
     return sf.regexp_replace(sf.md5(sf.upper(col)), "^(.{8})(.{4})(.{4})(.{4})(.{12})$", "$1-$2-$3-$4-$5")
 
 
-def extract_numbers_as_string(col: Column, length: int = 2, pad: str = "0"):
+def extract_numbers_as_string(col: Column, length: int = 2, pad: str = "0") -> Column:
     return sf.lpad(
         sf.regexp_extract(col, "^[A-Z]*(\d+)(?:.\d+)?$", 1).cast(ShortType()).cast(StringType()), length, pad
     )
 
 
-def load_transaction_search_dataframe(spark: SparkSession) -> DataFrame:
+def transaction_search_dataframe(spark: SparkSession) -> DataFrame:
 
     # Base Tables
     tn = spark.read.format("delta").load(f"{delta_root_path}/int/transaction_normalized")
@@ -902,5 +903,29 @@ def load_transaction_search_dataframe(spark: SparkSession) -> DataFrame:
             *fabs_cols,
             *fpds_cols,
         )
+        .withColumn("merge_hash_key", sf.xxhash64("*"))
     )
     return df
+
+
+def load_transaction_search(spark: SparkSession, destination_database: str, destination_table_name: str) -> None:
+    df = transaction_search_dataframe(spark)
+    (
+        df.write.format("delta")
+        .mode("overwrite")
+        .option("path", f"{delta_root_path}/{destination_database}/{destination_table_name}")
+        .saveAsTable(f"{destination_database}.{destination_table_name}")
+    )
+
+
+def load_transaction_search_incremental(
+    spark: SparkSession, destination_database: str, destination_table_name: str
+) -> None:
+    target = DeltaTable.forPath(spark, f"{delta_root_path}/{destination_database}/{destination_table_name}").alias("t")
+    source = transaction_search_dataframe(spark).alias("s")
+    (
+        target.merge(source, "s.merge_hash_key = t.merge_hash_key")
+        .whenNotMatchedInsertAll()
+        .whenNotMatchedBySourceDelete()
+        .execute()
+    )

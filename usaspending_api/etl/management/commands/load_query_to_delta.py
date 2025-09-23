@@ -77,7 +77,10 @@ from usaspending_api.transactions.delta_models import (
     transaction_search_incremental_load_sql_string,
     transaction_search_overwrite_load_sql_string,
 )
-from usaspending_api.transactions.delta_models.transaction_search_dataframe import load_transaction_search_dataframe
+from usaspending_api.transactions.delta_models.transaction_search_dataframe import (
+    load_transaction_search,
+    load_transaction_search_incremental,
+)
 
 AWARD_URL = f"{HOST}/award/" if "localhost" in HOST else f"https://{HOST}/award/"
 
@@ -215,8 +218,8 @@ TABLE_SPEC = {
     "transaction_search": {
         "model": TransactionSearch,
         "is_from_broker": False,
-        "source_query": load_transaction_search_dataframe,
-        "source_query_incremental": transaction_search_incremental_load_sql_string,
+        "source_query": load_transaction_search,
+        "source_query_incremental": load_transaction_search_incremental,
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
@@ -478,7 +481,7 @@ class Command(BaseCommand):
         if spark_created_by_command:
             self.spark.stop()
 
-    def run_spark_sql(self, query: str | Callable[[SparkSession], DataFrame]):
+    def run_spark_sql(self, query: str | Callable[[SparkSession, str, str], None]):
         if isinstance(query, str):
             jdbc_conn_props = get_jdbc_connection_properties()
             self.spark.sql(
@@ -493,13 +496,6 @@ class Command(BaseCommand):
                 )
             )
         elif isinstance(query, Callable):
-            delta_path = f"s3a://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.DELTA_LAKE_S3_PATH}/{self.destination_database}/{self.destination_table_name}"
-            (
-                query(self.spark)
-                .write.format("delta")
-                .mode("overwrite")
-                .option("path", delta_path)
-                .saveAsTable(f"{self.destination_database}.{self.destination_table_name}")
-            )
+            query(self.spark, self.destination_database, self.destination_table_name)
         else:
             raise ArgumentTypeError(f"Invalid query. `{query}` must be a string or a Callable.")

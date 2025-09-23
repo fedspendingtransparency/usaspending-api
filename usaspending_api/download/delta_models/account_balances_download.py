@@ -9,6 +9,9 @@ from pyspark.sql.types import (
     StructType,
     TimestampType,
 )
+from usaspending_api.config import CONFIG
+
+delta_root_path = f"s3a://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.DELTA_LAKE_S3_PATH}"
 
 account_balances_schema = StructType(
     [
@@ -174,4 +177,14 @@ def account_balances_df(spark: SparkSession) -> DataFrame:
             sa.reporting_fiscal_year,
             sa.quarter_format_flag,
         )
+    )
+
+
+def load_account_balances(spark: SparkSession, destination_database: str, destination_table_name: str) -> None:
+    df = account_balances_df(spark)
+    (
+        df.write.format("delta")
+        .mode("overwrite")
+        .option("path", f"{delta_root_path}/{destination_database}/{destination_table_name}")
+        .saveAsTable(f"{destination_database}.{destination_table_name}")
     )

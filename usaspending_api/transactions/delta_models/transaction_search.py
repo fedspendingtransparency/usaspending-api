@@ -391,6 +391,7 @@ TRANSACTION_SEARCH_COLUMNS = {
     "woman_owned_business": {"delta": "BOOLEAN", "postgres": "BOOLEAN", "gold": True},
     "women_owned_small_business": {"delta": "BOOLEAN", "postgres": "BOOLEAN", "gold": True},
     "program_activities": {"delta": "STRING", "postgres": "JSONB", "gold": False},
+    "merge_hash_key": {"delta": "LONG", "postgres": "BIGINT", "gold": False},
 }
 TRANSACTION_SEARCH_DELTA_COLUMNS = {k: v["delta"] for k, v in TRANSACTION_SEARCH_COLUMNS.items() if not v["gold"]}
 TRANSACTION_SEARCH_GOLD_DELTA_COLUMNS = {k: v["delta"] for k, v in TRANSACTION_SEARCH_COLUMNS.items()}
@@ -1098,7 +1099,7 @@ transaction_search_incremental_load_sql_string = [
     """,
     f"""
     MERGE INTO {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} AS t
-    USING (SELECT * FROM temp_transaction_search_view) AS s
+    USING temp_transaction_search_view AS s
     ON t.transaction_id = s.transaction_id
     WHEN MATCHED AND
       ({" OR ".join([f"NOT (s.{col} <=> t.{col})" for col in TRANSACTION_SEARCH_GOLD_DELTA_COLUMNS])})
