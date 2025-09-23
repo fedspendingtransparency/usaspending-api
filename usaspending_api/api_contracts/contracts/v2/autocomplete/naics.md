@@ -36,3 +36,4 @@ This route sends a request to the backend to retrieve NAICS objects matching the
 ## NAICSMatch (object)
 + `naics` (required, string)
 + `naics_description` (required, string)
++ `year_retired` (required, number, nullable)
