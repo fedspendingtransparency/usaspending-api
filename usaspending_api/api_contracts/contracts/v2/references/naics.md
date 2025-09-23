@@ -24,5 +24,6 @@ This endpoint returns a list of Tier 1 NAICS codes, their descriptions, and a co
 + `naics` (required, string)
 + `naics_description` (required, string)
 + `long_description` (optional, string)
++ `year_retired` (required, number)
 + `count` (required, number)
 + `children` (optional, array[NAICSObject], fixed-type)

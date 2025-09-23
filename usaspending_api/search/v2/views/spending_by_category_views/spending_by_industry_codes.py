@@ -61,7 +61,7 @@ class AbstractIndustryCodeViewSet(AbstractSpendingByCategoryViewSet, metaclass=A
                     # doesn't have ID, set to None
                     name=F("description"),
                 )
-                .values("code", "name")
+                .values("code", "name", "year_retired")
             )
         else:
             industry_info_query = (
@@ -76,19 +76,20 @@ class AbstractIndustryCodeViewSet(AbstractSpendingByCategoryViewSet, metaclass=A
         results = []
         for bucket in industry_info_buckets:
             industry_info = current_industry_info.get(bucket.get("key")) or {}
-            results.append(
-                {
-                    "id": industry_info.get("id"),
-                    "code": industry_info.get("code"),
-                    "name": industry_info.get("name"),
-                    "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
-                    "total_outlays": (
-                        bucket.get("sum_as_dollars_outlay", {"value": None}).get("value")
-                        if self.spending_level == SpendingLevel.AWARD or self.spending_level == SpendingLevel.FILE_C
-                        else None
-                    ),
-                }
-            )
+            entry = {
+                "id": industry_info.get("id"),
+                "code": industry_info.get("code"),
+                "name": industry_info.get("name"),
+                "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
+                "total_outlays": (
+                    bucket.get("sum_as_dollars_outlay", {"value": None}).get("value")
+                    if self.spending_level == SpendingLevel.AWARD or self.spending_level == SpendingLevel.FILE_C
+                    else None
+                ),
+            }
+            if self.industry_code_type == IndustryCodeType.NAICS:
+                entry["year_retired"] = industry_info.get("year_retired")
+            results.append(entry)
         return results
 
 

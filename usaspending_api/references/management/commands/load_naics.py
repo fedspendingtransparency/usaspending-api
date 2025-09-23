@@ -5,6 +5,7 @@ import re
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from django.db import models
 from openpyxl import load_workbook
 
 from usaspending_api.references.models import NAICS
@@ -77,6 +78,18 @@ def load_single_naics(naics_code, naics_year, naics_desc, naics_long_desc):
             )
 
 
+def load_naics_year_retired():
+    oldest_naics_year = NAICS.objects.aggregate(models.Max("year"))["year__max"]
+    retired_naics = NAICS.objects.filter(year_retired=None, year__lt=oldest_naics_year)
+    naics_years = list(NAICS.objects.all().values_list("year", flat=True).distinct().order_by("year"))
+
+    for naics in retired_naics:
+        previous_naics_year_index = naics_years.index(naics.year)
+        naics.year_retired = naics_years[previous_naics_year_index + 1]
+
+    NAICS.objects.bulk_update(retired_naics, ["year_retired"])
+
+
 @transaction.atomic
 def load_naics(path, append):
     logger = logging.getLogger("script")
@@ -98,3 +111,4 @@ def load_naics(path, append):
 
         naics_year = p_year.search(path).group()
         populate_naics_fields(ws, naics_year, path)
+    load_naics_year_retired()
