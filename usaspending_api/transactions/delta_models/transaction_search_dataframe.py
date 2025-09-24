@@ -8,10 +8,9 @@ from pyspark.sql.types import (
 )
 
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
-from usaspending_api.config import CONFIG
+
 
 ALL_AWARD_TYPES = list(award_type_mapping.keys())
-delta_root_path = f"s3a://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.DELTA_LAKE_S3_PATH}"
 
 
 def hash_col(col: Column) -> Column:
@@ -27,21 +26,17 @@ def extract_numbers_as_string(col: Column, length: int = 2, pad: str = "0") -> C
 def transaction_search_dataframe(spark: SparkSession) -> DataFrame:
 
     # Base Tables
-    tn = spark.read.format("delta").load(f"{delta_root_path}/int/transaction_normalized")
-    tfpds = spark.read.format("delta").load(f"{delta_root_path}/int/transaction_fpds")
-    tfabs = spark.read.format("delta").load(f"{delta_root_path}/int/transaction_fabs")
-    awards = spark.read.format("delta").load(f"{delta_root_path}/int/awards")
+    tn = spark.table("int.transaction_normalized")
+    tfpds = spark.table("int.transaction_fpds")
+    tfabs = spark.table("int.transaction_fabs")
+    awards = spark.table("int.awards")
     rcfda = spark.table("global_temp.references_cfda")
-    rlu = spark.read.format("delta").load(f"{delta_root_path}/rpt/recipient_lookup")
-    prl = (
-        spark.read.format("delta")
-        .load(f"{delta_root_path}/rpt/recipient_lookup")
-        .select(
-            sf.col("recipient_hash").alias("parent_recipient_hash"),
-            sf.col("legal_business_name").alias("parent_recipient_name"),
-        )
+    rlu = spark.table("rpt.recipient_lookup")
+    prl = spark.table("rpt.recipient_lookup").select(
+        sf.col("recipient_hash").alias("parent_recipient_hash"),
+        sf.col("legal_business_name").alias("parent_recipient_name"),
     )
-    rp = spark.read.format("delta").load(f"{delta_root_path}/rpt/recipient_profile")
+    rp = spark.table("rpt.recipient_profile")
     aa = spark.table("global_temp.agency")
     taa = (
         spark.table("global_temp.toptier_agency")
@@ -100,8 +95,8 @@ def transaction_search_dataframe(spark: SparkSession) -> DataFrame:
     rl_district_population = ref_population_cong_district.alias("rl_district_population").withColumn(
         "recipient_location_congressional_population", ref_population_cong_district.latest_population
     )
-    current_cd = spark.read.format("delta").load(f"{delta_root_path}/int/transaction_current_cd_lookup")
-    faba = spark.read.format("delta").load(f"{delta_root_path}/int/financial_accounts_by_awards")
+    current_cd = spark.table("int.transaction_current_cd_lookup")
+    faba = spark.table("int.financial_accounts_by_awards")
     federal_account = spark.table("global_temp.federal_account")
     treasury_appropriation_account = spark.table("global_temp.treasury_appropriation_account")
     rpa = spark.table("global_temp.ref_program_activity")
@@ -903,21 +898,16 @@ def transaction_search_dataframe(spark: SparkSession) -> DataFrame:
 
 def load_transaction_search(spark: SparkSession, destination_database: str, destination_table_name: str) -> None:
     df = transaction_search_dataframe(spark)
-    (
-        df.write.format("delta")
-        .mode("overwrite")
-        .option("path", f"{delta_root_path}/{destination_database}/{destination_table_name}")
-        .saveAsTable(f"{destination_database}.{destination_table_name}")
-    )
+    df.write.format("delta").mode("overwrite").saveAsTable(f"{destination_database}.{destination_table_name}")
 
 
 def load_transaction_search_incremental(
     spark: SparkSession, destination_database: str, destination_table_name: str
 ) -> None:
-    target = DeltaTable.forPath(spark, f"{delta_root_path}/{destination_database}/{destination_table_name}").alias("t")
+    target = DeltaTable.forName(spark, f"{destination_database}.{destination_table_name}").alias("t")
     source = transaction_search_dataframe(spark).alias("s")
     (
-        target.merge(source, "s.merge_hash_key = t.merge_hash_key")
+        target.merge(source, "s.transaction_id = t.transaction_id and s.merge_hash_key = t.merge_hash_key")
         .whenNotMatchedInsertAll()
         .whenNotMatchedBySourceDelete()
         .execute()

@@ -30,7 +30,10 @@ from usaspending_api.download.delta_models.object_class_program_activity_downloa
     object_class_program_activity_download_create_sql_string,
     object_class_program_activity_download_load_sql_string,
 )
-from usaspending_api.download.delta_models.account_balances_download import account_balances_df, account_balances_schema
+from usaspending_api.download.delta_models.account_balances_download import (
+    load_account_balances,
+    account_balances_schema,
+)
 from usaspending_api.recipient.delta_models import (
     RECIPIENT_LOOKUP_POSTGRES_COLUMNS,
     RECIPIENT_PROFILE_POSTGRES_COLUMNS,
@@ -328,7 +331,7 @@ TABLE_SPEC = {
     "account_balances_download": {
         "model": None,
         "is_from_broker": False,
-        "source_query": account_balances_df,
+        "source_query": load_account_balances,
         "source_query_incremental": None,
         "source_database": None,
         "source_table": None,
