@@ -3,7 +3,7 @@ from argparse import ArgumentTypeError
 from typing import Callable
 
 from django.core.management.base import BaseCommand
-from pyspark.sql import DataFrame, SparkSession
+from pyspark.sql import SparkSession
 
 from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.helpers.spark_helpers import (

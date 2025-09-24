@@ -1,16 +1,9 @@
 from delta.tables import DeltaTable
-from pyspark.sql import DataFrame, SparkSession, types, functions as sf, Column, Window
+from pyspark.sql import DataFrame, SparkSession, functions as sf, Column, Window
 from pyspark.sql.types import (
-    ArrayType,
-    BooleanType,
-    DateType,
     DecimalType,
-    IntegerType,
-    LongType,
     ShortType,
     StringType,
-    StructField,
-    StructType,
     TimestampType,
 )
 
@@ -27,7 +20,7 @@ def hash_col(col: Column) -> Column:
 
 def extract_numbers_as_string(col: Column, length: int = 2, pad: str = "0") -> Column:
     return sf.lpad(
-        sf.regexp_extract(col, "^[A-Z]*(\d+)(?:.\d+)?$", 1).cast(ShortType()).cast(StringType()), length, pad
+        sf.regexp_extract(col, r"^[A-Z]*(\d+)(?:.\d+)?$", 1).cast(ShortType()).cast(StringType()), length, pad
     )
 
 
