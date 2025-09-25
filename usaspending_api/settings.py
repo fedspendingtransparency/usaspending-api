@@ -131,12 +131,14 @@ if not FILES_SERVER_BASE_URL:
     )
     SERVER_BASE_URL = FILES_SERVER_BASE_URL[FILES_SERVER_BASE_URL.find(".") + 1 :]
 
+DATA_DICTIONARY_FILE_NAME = "Data_Dictionary_Crosswalk.xlsx"
+
 AGENCY_DOWNLOAD_URL = f"{FILES_SERVER_BASE_URL}/reference_data/agency_codes.csv"
-DATA_DICTIONARY_DOWNLOAD_URL = f"{FILES_SERVER_BASE_URL}/docs/Data_Dictionary_Crosswalk.xlsx"
+DATA_DICTIONARY_DOWNLOAD_URL = f"{FILES_SERVER_BASE_URL}/docs/{DATA_DICTIONARY_FILE_NAME}"
 
 # S3 Bucket and Key to retrieve the Data Dictionary
 DATA_DICTIONARY_S3_BUCKET_NAME = f"dti-da-public-files-{'nonprod' if CONFIG.ENV_CODE not in ('prd', 'stg') else 'prod'}"
-DATA_DICTIONARY_S3_KEY = "user_reference_docs/Data_Dictionary_Crosswalk.xlsx"
+DATA_DICTIONARY_S3_KEY = f"user_reference_docs/{DATA_DICTIONARY_FILE_NAME}"
 
 # Local download files
 IDV_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "idv_download_readme.txt")
@@ -322,10 +324,10 @@ if os.environ.get("DOWNLOAD_DATABASE_URL"):
     )
 
 # import a second database connection for ETL, connecting to data broker
-# using the environment variable, DATA_BROKER_DATABASE_URL - only if it is set
+# using the environment variable, DATA_BROKER_DB - only if it is set
 DATA_BROKER_DB_ALIAS = "data_broker"
-if os.environ.get("DATA_BROKER_DATABASE_URL"):
-    DATABASES[DATA_BROKER_DB_ALIAS] = _configure_database_connection("DATA_BROKER_DATABASE_URL")
+if os.environ.get("DATA_BROKER_DB"):
+    DATABASES[DATA_BROKER_DB_ALIAS] = _configure_database_connection("DATA_BROKER_DB")
 
 DATA_BROKER_DBLINK_NAME = "broker_server"
 

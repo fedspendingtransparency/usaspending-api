@@ -33,7 +33,7 @@ class Command(load_base.Command):
     db_cursor = None
 
     help = (
-        "Loads a single submission from Data Broker. The DATA_BROKER_DATABASE_URL environment variable "
+        "Loads a single submission from Data Broker. The DATA_BROKER_DB environment variable "
         "must set so we can pull submission data from their db."
     )
 

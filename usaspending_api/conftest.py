@@ -265,7 +265,7 @@ def django_db_setup(
                 {**settings.DATABASES[settings.DEFAULT_DB_ALIAS], **{"NAME": test_usas_db_name}}
             )
 
-            old_broker_db_url = CONFIG.DATA_BROKER_DATABASE_URL
+            old_broker_db_url = CONFIG.DATA_BROKER_DB
             old_broker_ps_db = CONFIG.BROKER_DB_NAME
 
             if settings.DATA_BROKER_DB_ALIAS in settings.DATABASES:
@@ -279,7 +279,7 @@ def django_db_setup(
                         f"DB 'NAME' for DB alias {settings.DATA_BROKER_DB_ALIAS} does not contain 'test' when expected to."
                     )
                 CONFIG.BROKER_DB_NAME = test_broker_db
-                CONFIG.DATA_BROKER_DATABASE_URL = build_dsn_string(
+                CONFIG.DATA_BROKER_DB = build_dsn_string(
                     {**settings.DATABASES[settings.DATA_BROKER_DB_ALIAS], **{"NAME": test_broker_db}}
                 )
 
@@ -288,7 +288,7 @@ def django_db_setup(
         CONFIG.DATABASE_URL = old_usas_db_url
         CONFIG.USASPENDING_DB_NAME = old_usas_ps_db
 
-        CONFIG.DATA_BROKER_DATABASE_URL = old_broker_db_url
+        CONFIG.DATA_BROKER_DB = old_broker_db_url
         CONFIG.BROKER_DB_NAME = old_broker_ps_db
 
     request.addfinalizer(reset_postgres_dsn)

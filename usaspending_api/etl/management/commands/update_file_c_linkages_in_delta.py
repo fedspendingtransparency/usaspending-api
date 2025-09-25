@@ -116,7 +116,7 @@ class Command(BaseCommand):
             self.spark.sql(delete_sql)
 
         # Clean up deletion view(s)
-        self.spark.sql("DROP VIEW identify_faba_deletions_query;")
+        self.spark.sql("DROP VIEW IF EXISTS identify_faba_deletions_query;")
 
         # Setup int table. Creates a shallow clone of the `raw` FABA table in the `int` schema.
         # If the --no-clone option is provided a full table is created instead.
@@ -135,6 +135,8 @@ class Command(BaseCommand):
                 "INSERT OVERWRITE int.financial_accounts_by_awards SELECT * FROM raw.financial_accounts_by_awards;"
             )
         else:
+            if self.spark.catalog.tableExists("int.financial_accounts_by_awards"):
+                self.spark.sql("DELETE FROM int.financial_accounts_by_awards;")
             self.spark.sql(
                 f"""
                 CREATE OR REPLACE TABLE int.financial_accounts_by_awards

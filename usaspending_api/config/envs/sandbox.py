@@ -25,9 +25,9 @@ class SandboxConfig(DefaultConfig):
 
     # ==== [AWS] ====
     AWS_PROFILE: Union[str, None] = None
-    SPARK_S3_BUCKET = "dti-da-usaspending-spark-qat"
+    SPARK_S3_BUCKET = "dti-usaspending-emr-qat"
     BULK_DOWNLOAD_S3_BUCKET_NAME: str = "dti-usaspending-bulk-download-qat"
     # Prefix data paths with data/sandbox to not interfere with qat data in the same shared bucket
-    DELTA_LAKE_S3_PATH: str = "data/sandbox/delta"
-    SPARK_CSV_S3_PATH: str = "data/sandbox/csv"
+    # DELTA_LAKE_S3_PATH: str = "data/sandbox/delta"
+    # SPARK_CSV_S3_PATH: str = "data/sandbox/csv"
     DATABASE_DOWNLOAD_S3_BUCKET_NAME = "dti-usaspending-db-nonprod"
