@@ -453,6 +453,7 @@ def test_file_c_spark_download(client, download_test_data, spark, s3_unittest_da
 
     assert resp.status_code == status.HTTP_200_OK
 
+
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
 def test_file_c_spark_download_columns(client, download_test_data, s3_unittest_data_bucket, hive_unittest_metastore_db):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
@@ -495,8 +496,11 @@ def test_file_c_spark_download_columns(client, download_test_data, s3_unittest_d
 
     assert resp.status_code == status.HTTP_200_OK
 
+
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
-def test_file_c_spark_download_unknown_columns(client, download_test_data, s3_unittest_data_bucket, hive_unittest_metastore_db):
+def test_file_c_spark_download_unknown_columns(
+    client, download_test_data, s3_unittest_data_bucket, hive_unittest_metastore_db
+):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
 
     call_command(
