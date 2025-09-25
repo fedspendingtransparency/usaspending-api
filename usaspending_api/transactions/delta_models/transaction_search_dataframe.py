@@ -781,7 +781,7 @@ def transaction_search_dataframe(spark: SparkSession) -> DataFrame:
         .join(aa, tn.awarding_agency_id == aa.id, "leftouter")
         .join(taa, aa.toptier_agency_id == taa.toptier_agency_id, "leftouter")
         .join(saa, aa.subtier_agency_id == saa.subtier_agency_id, "leftouter")
-        .join(aa_id, ((aa_id.toptier_agency_id == taa.toptier_agency_id) & aa_id.toptier_flag), "left_outer")
+        .join(aa_id, ((aa_id.toptier_agency_id == taa.toptier_agency_id) & aa_id.toptier_flag), "leftouter")
         .join(fa, tn.funding_agency_id == fa.id, "leftouter")
         .join(tfa, fa.funding_toptier_agency_id == tfa.toptier_agency_id, "leftouter")
         .join(sfa, fa.funding_subtier_agency_id == sfa.subtier_agency_id, "leftouter")
@@ -876,7 +876,7 @@ def transaction_search_dataframe(spark: SparkSession) -> DataFrame:
         .join(current_cd, tn.id == current_cd.transaction_id, "leftouter")
         .join(ao, ao.office_code == sf.coalesce(tfabs.awarding_office_code, tfpds.awarding_office_code), "leftouter")
         .join(fo, fo.office_code == sf.coalesce(tfabs.funding_office_code, tfpds.funding_office_code), "leftouter")
-        .join(fed_and_tres_acct, fed_and_tres_acct.award_id == tn.award_id)
+        .join(fed_and_tres_acct, fed_and_tres_acct.award_id == tn.award_id, "leftouter")
         .select(
             *key_cols,
             *date_cols,
