@@ -452,3 +452,87 @@ def test_file_c_spark_download(client, download_test_data, spark, s3_unittest_da
     )
 
     assert resp.status_code == status.HTTP_200_OK
+
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
+def test_file_c_spark_download_columns(client, download_test_data, s3_unittest_data_bucket, hive_unittest_metastore_db):
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
+
+    call_command(
+        "create_delta_table",
+        f"--spark-s3-bucket={s3_unittest_data_bucket}",
+        f"--destination-table=award_financial_download",
+    )
+    call_command(
+        "create_delta_table",
+        f"--spark-s3-bucket={s3_unittest_data_bucket}",
+        f"--destination-table=object_class_program_activity_download",
+    )
+    call_command(
+        "create_delta_table",
+        f"--spark-s3-bucket={s3_unittest_data_bucket}",
+        f"--destination-table=account_balances_download",
+    )
+
+    resp = client.post(
+        "/api/v2/download/accounts/",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "account_level": "federal_account",
+                "filters": {
+                    "budget_function": "all",
+                    "agency": "all",
+                    "submission_types": ["account_balances", "object_class_program_activity", "award_financial"],
+                    "fy": "2021",
+                    "period": 12,
+                },
+                "columns": ["owning_agency_name", "federal_account_name"],
+                "file_format": "csv",
+            }
+        ),
+        headers={"X-Experimental-API": "download"},
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
+def test_file_c_spark_download_unknown_columns(client, download_test_data, s3_unittest_data_bucket, hive_unittest_metastore_db):
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
+
+    call_command(
+        "create_delta_table",
+        f"--spark-s3-bucket={s3_unittest_data_bucket}",
+        f"--destination-table=award_financial_download",
+    )
+    call_command(
+        "create_delta_table",
+        f"--spark-s3-bucket={s3_unittest_data_bucket}",
+        f"--destination-table=object_class_program_activity_download",
+    )
+    call_command(
+        "create_delta_table",
+        f"--spark-s3-bucket={s3_unittest_data_bucket}",
+        f"--destination-table=account_balances_download",
+    )
+
+    resp = client.post(
+        "/api/v2/download/accounts/",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "account_level": "federal_account",
+                "filters": {
+                    "budget_function": "all",
+                    "agency": "all",
+                    "submission_types": ["account_balances", "object_class_program_activity", "award_financial"],
+                    "fy": "2021",
+                    "period": 12,
+                },
+                "columns": ["test", "federal_account_name"],
+                "file_format": "csv",
+            }
+        ),
+        headers={"X-Experimental-API": "download"},
+    )
+
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
