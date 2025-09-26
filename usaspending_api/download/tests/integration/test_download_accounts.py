@@ -506,8 +506,6 @@ def test_file_c_spark_download_columns(client, download_test_data, s3_unittest_d
                 assert list(df.columns) == ["owning_agency_name", "federal_account_name"]
 
 
-
-
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
 def test_file_c_spark_download_unknown_columns(
     client, download_test_data, s3_unittest_data_bucket, hive_unittest_metastore_db
