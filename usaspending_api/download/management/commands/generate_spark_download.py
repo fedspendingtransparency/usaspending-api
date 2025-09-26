@@ -65,7 +65,7 @@ class Command(BaseCommand):
     should_cleanup: bool
     spark: SparkSession
     working_dir_path: Path
-    columns: []
+    columns: list | None
 
     def add_arguments(self, parser):
         parser.add_argument("--download-job-id", type=int, required=True)
@@ -158,9 +158,9 @@ class Command(BaseCommand):
             if self.columns is not None:
                 for download in download_request.download_list:
                     source = download.dataframe.columns
-                    valid_columns = all(col in source for col in self.columns)
-                    if not valid_columns:
-                        raise InvalidParameterException("Unknown columns in: {}".format(self.columns))
+                    invalid_columns = [col in source for col in self.columns if col not in source]
+                    if invalid_columns:
+                        raise InvalidParameterException("Unknown columns in: {}".format(invalid_columns))
                     download.dataframe = download.dataframe.select(*self.columns)
 
             csvs_metadata = [

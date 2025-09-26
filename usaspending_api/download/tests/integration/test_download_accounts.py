@@ -1,6 +1,8 @@
 import json
 import pytest
 import random
+import zipfile
+import pandas as pd
 
 from unittest.mock import Mock
 
@@ -495,6 +497,15 @@ def test_file_c_spark_download_columns(client, download_test_data, s3_unittest_d
     )
 
     assert resp.status_code == status.HTTP_200_OK
+    zip_path = resp.data["file_url"]
+    with zipfile.ZipFile(zip_path, "r") as zip_ref:
+        assert len(zip_ref.namelist()) == 3
+        for file in zip_ref.namelist():
+            with zip_ref.open(file) as zip_ref_file:
+                df = pd.read_csv(zip_ref_file)
+                assert list(df.columns) == ["owning_agency_name", "federal_account_name"]
+
+
 
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
