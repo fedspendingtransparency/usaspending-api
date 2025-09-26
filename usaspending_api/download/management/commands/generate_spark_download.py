@@ -65,6 +65,7 @@ class Command(BaseCommand):
     should_cleanup: bool
     spark: SparkSession
     working_dir_path: Path
+    columns: list | None
 
     def add_arguments(self, parser):
         parser.add_argument("--download-job-id", type=int, required=True)
@@ -78,6 +79,7 @@ class Command(BaseCommand):
         self.download_json_request = json.loads(self.download_job.json_request)
         self.request_type = self.download_json_request["request_type"]
         self.working_dir_path = Path(settings.CSV_LOCAL_PATH)
+        self.columns = self.download_json_request["columns"] if "columns" in self.download_json_request else None
         if not self.working_dir_path.exists():
             self.working_dir_path.mkdir()
         create_ref_temp_views(self.spark)
@@ -147,13 +149,20 @@ class Command(BaseCommand):
                     "file_name": str(self.download_job.file_name),
                 }
             )
-
         self.start_download()
         files_to_cleanup = []
         try:
             spark_to_csv_strategy = SparkToCSVStrategy(logger)
             zip_file_path = self.working_dir_path / f"{self.download_zip_file_name}.zip"
             download_request = self.get_download_request()
+            if self.columns is not None:
+                for download in download_request.download_list:
+                    source = download.dataframe.columns
+                    invalid_columns = [col in source for col in self.columns if col not in source]
+                    if invalid_columns:
+                        raise InvalidParameterException("Unknown columns in: {}".format(invalid_columns))
+                    download.dataframe = download.dataframe.select(*self.columns)
+
             csvs_metadata = [
                 spark_to_csv_strategy.download_to_csv(
                     source_sql=None,
