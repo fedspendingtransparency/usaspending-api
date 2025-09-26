@@ -46,7 +46,7 @@ class DefaultConfig(BaseSettings):
         USASPENDING_DB_PASSWORD: Password for the user used to connect to the USAspending DB
         USASPENDING_DB_HOST: Host on which to to connect to the USAspending DB
         USASPENDING_DB_PORT: Port on which to connect to the USAspending DB
-        DATA_BROKER_DB: (optional) Full URL to Broker DB that can be used to override the URL-by-parts
+        BROKER_DB: (optional) Full URL to Broker DB that can be used to override the URL-by-parts
         BROKER_DB_NAME: The name of the Postgres DB that contains Broker data
         BROKER_DB_USER: Authorized user used to connect to the Broker DB
         BROKER_DB_PASSWORD: Password for the user used to connect to the Broker DB
@@ -86,7 +86,7 @@ class DefaultConfig(BaseSettings):
     USASPENDING_DB_HOST: str = ENV_SPECIFIC_OVERRIDE
     USASPENDING_DB_PORT: str = ENV_SPECIFIC_OVERRIDE
 
-    DATA_BROKER_DB: str = None  # FACTORY_PROVIDED_VALUE. See its root validator-factory below
+    BROKER_DB: str = None  # FACTORY_PROVIDED_VALUE. See its root validator-factory below
     BROKER_DB_SCHEME: str = "postgres"
     BROKER_DB_NAME: str = "data_broker"
     BROKER_DB_USER: str = ENV_SPECIFIC_OVERRIDE
@@ -158,8 +158,8 @@ class DefaultConfig(BaseSettings):
     # noinspection PyMethodParameters
     # Pydantic returns a classmethod for its validators, so the cls param is correct
     @root_validator
-    def _DATA_BROKER_DB_and_parts_factory(cls, values):
-        """A root validator to backfill DATA_BROKER_DB and BROKER_DB_* part config vars and validate
+    def _BROKER_DB_and_parts_factory(cls, values):
+        """A root validator to backfill BROKER_DB and BROKER_DB_* part config vars and validate
         that they are all consistent.
 
         - Serves as a factory function to fill out all places where we track the database URL as both one complete
@@ -171,7 +171,7 @@ class DefaultConfig(BaseSettings):
         cls._validate_database_url(
             cls=cls,
             values=values,
-            url_conf_name="DATA_BROKER_DB",
+            url_conf_name="BROKER_DB",
             resource_conf_prefix="BROKER_DB",
             required=False,
         )

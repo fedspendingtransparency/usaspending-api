@@ -60,7 +60,7 @@ Create a `.envrc` file in the repo root, which will be ignored by git. Change cr
 ```shell
 export DATABASE_URL=postgres://usaspending:usaspender@localhost:5432/data_store_api
 export ES_HOSTNAME=http://localhost:9200
-export DATA_BROKER_DB=postgres://admin:root@localhost:5435/data_broker
+export BROKER_DB=postgres://admin:root@localhost:5435/data_broker
 ```
 
 If `direnv` does not pick this up after saving the file, type
@@ -220,10 +220,10 @@ Deployed production API endpoints and docs are found by following links here: `h
 
 3. To run all USAspending tests in the docker services run
     ```shell
-    docker compose run --rm -e DATA_BROKER_DB='' usaspending-test
+    docker compose run --rm -e BROKER_DB='' usaspending-test
     ```
 
-_**NOTE**: If an env var named `DATA_BROKER_DB` is set, Broker Integration tests will attempt to be run as well. If doing so, Broker dependencies must be met (see below) or ALL tests will fail hard. Running the above command with `-e DATA_BROKER_DB=''` is a precaution to keep them excluded, unless you really want them (see below if so)._
+_**NOTE**: If an env var named `BROKER_DB` is set, Broker Integration tests will attempt to be run as well. If doing so, Broker dependencies must be met (see below) or ALL tests will fail hard. Running the above command with `-e BROKER_DB=''` is a precaution to keep them excluded, unless you really want them (see below if so)._
 
 To run tests locally and not in the docker services, you need:
 
@@ -273,7 +273,7 @@ To satisfy these dependencies and include execution of these tests, do the follo
     ```shell
     docker build -t dataact-broker-backend ../data-act-broker-backend
     ```
-1. Ensure you have the `DATA_BROKER_DB` environment variable set, and it points to what will be a live PostgreSQL server (no database required) at the time tests are run.
+1. Ensure you have the `BROKER_DB` environment variable set, and it points to what will be a live PostgreSQL server (no database required) at the time tests are run.
     1. _WARNING: If this is set at all, then ALL above dependencies must be met or ALL tests will fail (Django will try this connection on ALL tests' run)_
     1. This DB could be one you always have running in a local Postgres instance, or one you spin up in a Docker container just before tests are run
 1. If invoking `pytest` within a docker container (e.g. using the `usaspending-test` container), you _must_ mount the host's docker socket. This is declared already in the `docker-compose.yml` file services, but would be done manually with: `-v /var/run/docker.sock:/var/run/docker.sock`
@@ -286,7 +286,7 @@ Re-running the test suite using `pytest -rs` with these dependencies satisfied s
 
 _From within a container_
 
-_**NOTE**: `DATA_BROKER_DB` is set in the `docker-compose.yml` file (and could pick up `.env` values, if set)_
+_**NOTE**: `BROKER_DB` is set in the `docker-compose.yml` file (and could pick up `.env` values, if set)_
 
 ```shell
 docker compose run --rm usaspending-test pytest --capture=no --verbose --tb=auto --no-cov --log-cli-level=INFO -k test_broker_integration
@@ -294,7 +294,7 @@ docker compose run --rm usaspending-test pytest --capture=no --verbose --tb=auto
 
 _From Developer Desktop_
 
-_**NOTE**: `DATA_BROKER_DB` is set in the `.envrc` file and available in the shell_
+_**NOTE**: `BROKER_DB` is set in the `.envrc` file and available in the shell_
 ```shell
 pytest --capture=no --verbose --tb=auto --no-cov --log-cli-level=INFO -k test_broker_integration
 ```

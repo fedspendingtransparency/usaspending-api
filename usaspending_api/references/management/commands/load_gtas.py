@@ -54,7 +54,7 @@ class Command(mixins.ETLMixin, BaseCommand):
 
     @transaction.atomic()
     def process_data(self):
-        broker_cursor = connections[settings.DATA_BROKER_DB_ALIAS].cursor()
+        broker_cursor = connections[settings.BROKER_DB_ALIAS].cursor()
 
         logger.info("Extracting data from Broker")
         broker_cursor.execute(self.broker_fetch_sql)
