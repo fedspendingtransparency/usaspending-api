@@ -389,7 +389,7 @@ TRANSACTION_SEARCH_COLUMNS = {
     "woman_owned_business": {"delta": "BOOLEAN", "postgres": "BOOLEAN", "gold": True},
     "women_owned_small_business": {"delta": "BOOLEAN", "postgres": "BOOLEAN", "gold": True},
     "program_activities": {"delta": "STRING", "postgres": "JSONB", "gold": False},
-    "merge_hash_key": {"delta": "LONG", "postgres": "BIGINT", "gold": True},
+    "merge_hash_key": {"delta": "LONG", "postgres": "BIGINT", "gold": False},
 }
 TRANSACTION_SEARCH_DELTA_COLUMNS = {k: v["delta"] for k, v in TRANSACTION_SEARCH_COLUMNS.items() if not v["gold"]}
 TRANSACTION_SEARCH_GOLD_DELTA_COLUMNS = {k: v["delta"] for k, v in TRANSACTION_SEARCH_COLUMNS.items()}
