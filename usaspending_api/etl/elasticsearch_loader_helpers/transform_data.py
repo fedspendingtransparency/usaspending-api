@@ -122,7 +122,7 @@ def transform_subaward_data(worker: TaskSpec, records: List[dict]) -> List[dict]
         "funding_subtier_agency_agg_key": lambda x: x["funding_subtier_agency_code"],
         "awarding_toptier_agency_agg_key": lambda x: x["awarding_toptier_agency_code"],
         "funding_toptier_agency_agg_key": lambda x: x["funding_toptier_agency_code"],
-        "naics_agg_key": lambda x: x["naics"],
+        "naics_agg_key": lambda x: x["naics_code"],
         "psc_agg_key": lambda x: x["product_or_service_code"],
         "defc_agg_key": lambda x: x["disaster_emergency_fund_codes"],
         "cfda_agg_key": lambda x: x["cfda_number"],

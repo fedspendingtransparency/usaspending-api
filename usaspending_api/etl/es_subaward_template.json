@@ -299,7 +299,7 @@
       "award_description": {
         "type": "text"
       },
-      "naics": {
+      "naics_code": {
         "type": "text",
         "fields": {
           "keyword": {
