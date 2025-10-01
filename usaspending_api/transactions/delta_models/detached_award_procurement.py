@@ -304,6 +304,10 @@ DETACHED_AWARD_PROCUREMENT_COLUMNS = {
     "veterinary_hospital": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
     "woman_owned_business": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
     "women_owned_small_business": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
+    "ser_disabvet_own_bus_join_ven": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
+    "sba_cert_women_own_small_bus": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
+    "sba_cert_econ_disadv_wosb": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
+    "small_business_joint_venture": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
 }
 
 
@@ -312,7 +316,7 @@ DETACHED_AWARD_PROCUREMENT_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in DETA
 
 detached_award_procurement_create_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
-        {", ".join([f'{key} {val}' for key, val in DETACHED_AWARD_PROCUREMENT_DELTA_COLUMNS.items()])}
+        {", ".join([f"{key} {val}" for key, val in DETACHED_AWARD_PROCUREMENT_DELTA_COLUMNS.items()])}
     )
     USING DELTA
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'

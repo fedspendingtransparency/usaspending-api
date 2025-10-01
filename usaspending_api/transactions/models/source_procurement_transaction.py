@@ -1,7 +1,7 @@
-from django.db import models
 from django.contrib.postgres.fields import ArrayField
+from django.db import models
 
-from usaspending_api.common.custom_django_fields import NumericField, NaiveTimestampField
+from usaspending_api.common.custom_django_fields import NaiveTimestampField, NumericField
 
 
 class SourceProcurementTransaction(models.Model):
@@ -328,6 +328,10 @@ class SourceProcurementTransaction(models.Model):
     veterinary_hospital = models.BooleanField(null=True, blank=True)
     woman_owned_business = models.BooleanField(null=True, blank=True)
     women_owned_small_business = models.BooleanField(null=True, blank=True)
+    ser_disabvet_own_bus_join_ven = models.BooleanField(null=True, blank=True)
+    sba_cert_women_own_small_bus = models.BooleanField(null=True, blank=True)
+    sba_cert_econ_disadv_wosb = models.BooleanField(null=True, blank=True)
+    small_business_joint_venture = models.BooleanField(null=True, blank=True)
 
     class Meta:
         db_table = "source_procurement_transaction"
