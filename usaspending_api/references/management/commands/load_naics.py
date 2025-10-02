@@ -1,14 +1,23 @@
-import glob
 import logging
 import re
 
+from argparse import ArgumentTypeError
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.db import models
+from io import BytesIO
 from openpyxl import load_workbook
+from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
+from usaspending_api.references.models import Definition, NAICS
 
-from usaspending_api.references.models import NAICS
+NAICS_FILES = [
+    "2-6_digit_2002_Code_File.xlsx",
+    "2-6_digit_2007_Code_File.xlsx",
+    "2-6_digit_2012_Code_File.xlsx",
+    "2-6_digit_2017_Code_File.xlsx",
+    "2-6_digit_2022_Code_File.xlsx",
+]
 
 
 class Command(BaseCommand):
@@ -20,12 +29,16 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "-p", "--path", help="the path to the Excel spreadsheets to load", default=self.default_path
+            "-p",
+            "--path",
+            help="the path to the Excel spreadsheets to load",
+            default=f"{settings.FILES_SERVER_BASE_URL}/reference_data/",
         )
-        parser.add_argument("-a", "--append", help="Append to existing guide", action="store_true")
+        parser.add_argument("-append", "--append", help="Append to existing guide", action="store_true")
+        parser.add_argument("-overwrite", "--overwrite", help="Overwrite naics", action="store_true")
 
     def handle(self, *args, **options):
-        load_naics(path=options["path"], append=options["append"])
+        load_naics(path=options["path"], append=options["append"], overwrite=options["overwrite"])
 
 
 def populate_naics_fields(ws, naics_year, path):
@@ -91,24 +104,24 @@ def load_naics_year_retired():
 
 
 @transaction.atomic
-def load_naics(path, append):
+def load_naics(path, append, overwrite):
     logger = logging.getLogger("script")
 
     if append:
         logger.info("Appending definitions to existing guide")
+    elif overwrite:
+        logger.info("Overwriting existing guide")
+        Definition.objects.all().delete()
     else:
-        logger.info("Deleting existing definitions from guide")
-        NAICS.objects.all().delete()
+        raise ArgumentTypeError("command must supply either -overwrite or -append")
 
-    # year regex object precompile
+    naics_files = [path + file for file in NAICS_FILES]
+
     p_year = re.compile("(20[0-9]{2})")
-
-    dir_files = glob.glob(path + "/*.xlsx")
-
-    for path in sorted(dir_files, reverse=True):
-        wb = load_workbook(filename=path)
+    for file in naics_files:
+        file_object = RetrieveFileFromUri(f"{file}").get_file_object()
+        wb = load_workbook(filename=BytesIO(file_object.read()))
         ws = wb.active
-
-        naics_year = p_year.search(path).group()
-        populate_naics_fields(ws, naics_year, path)
+        naics_year = p_year.search(file).group()
+        populate_naics_fields(ws, naics_year, file)
     load_naics_year_retired()
