@@ -1,17 +1,21 @@
 # Standard library imports
+import json
 import logging
 import time
 import traceback
+from typing import Callable
 
 # Third-party library imports
 from opentelemetry.trace import SpanKind, Status, StatusCode
 
 # Django imports
+from django.conf import settings
 from django.core.management.base import BaseCommand
 
 # Application imports
 from usaspending_api.common.logging import configure_logging
-from usaspending_api.common.sqs.sqs_handler import get_sqs_queue
+from usaspending_api.common.spark.jobs import SparkJobs, LocalStrategy, DatabricksStrategy
+from usaspending_api.common.sqs.sqs_handler import DownloadLogic, get_sqs_queue
 from usaspending_api.common.sqs.sqs_job_logging import log_job_message
 from usaspending_api.common.sqs.sqs_work_dispatcher import (
     QueueWorkDispatcherError,
@@ -51,81 +55,129 @@ class Command(BaseCommand):
             # any Child span using .start_span() will automatically be the child of the parent
             # Refer to this link: https://github.com/open-telemetry/opentelemetry-python/issues/2787
 
-            queue = get_sqs_queue()
+            # Determine what queues should be monitored based on the supplied values in settings.py
+            # A set is used in this case to handle both queue names pointing to the same value
+            queues_names = {
+                settings.BULK_DOWNLOAD_PRIORITY_SQS_QUEUE_NAME,
+                settings.BULK_DOWNLOAD_SQS_QUEUE_NAME,
+            }
+            # Falsy check to validate that a name is neither an empty string nor null
+            queue_instances = [get_sqs_queue(name) for name in queues_names if name or settings.IS_LOCAL]
+
             log_job_message(logger=logger, message="Starting SQS polling", job_type=JOB_TYPE)
 
-            message_found = None
             keep_polling = True
 
             while keep_polling:
-                # Setup dispatcher that coordinates job activity on SQS
-                dispatcher = SQSWorkDispatcher(
-                    queue,
-                    worker_process_name=JOB_TYPE,
-                    worker_can_start_child_processes=True,
-                )
+                dispatchers = []
+                message_found = False
 
-                # Mark the job as failed if: there was an error processing the download; retries after interrupt
-                # are not allowed; or all retries have been exhausted
-                # If the job is interrupted by an OS signal, the dispatcher's signal handling logic will log and
-                # handle this case
-                # Retries are allowed or denied by the SQS queue's RedrivePolicy config
-                # That is, if maxReceiveCount > 1 in the policy, then retries are allowed
-                # - if queue retries are allowed, the queue message will retry to the max allowed by the queue
-                # - As coded, no cleanup should be needed to retry a download
-                #   - the psql -o will overwrite the output file
-                #   - the zip will use 'w' write mode to create from scratch each time
-                # The worker function controls the maximum allowed runtime of the job
-
-                try:
-                    # Check the queue for work and hand it to the given processing function
-                    message_found = dispatcher.dispatch(download_service_app)
-
-                    # Start a new span only if a message is found
-                    if message_found:
-                        with SubprocessTrace(
-                            name=f"job.{JOB_TYPE}.message_processing",
-                            kind=SpanKind.INTERNAL,
-                            service="bulk-download",
-                        ) as poll_span:
-                            poll_span.set_attributes(
-                                {
-                                    "service": "bulk-download",
-                                    "job_type": str(JOB_TYPE),
-                                    "resource": str(queue.url),
-                                    "span_type": "Internal",
-                                    "message": "Processing download job message",
-                                }
-                            )
-
-                except (QueueWorkerProcessError, QueueWorkDispatcherError) as exc:
-                    _handle_queue_error(exc)
-
-                    # Start a span only for the error, capturing details
-                    with SubprocessTrace(
-                        name=f"job.{JOB_TYPE}.error_handling",
-                        kind=SpanKind.INTERNAL,
-                        service="bulk-download",
-                    ) as error_span:
-                        error_span.set_attributes(
-                            {
-                                "service": "bulk-download",
-                                "span_type": "Internal",
-                                "message": "Error processing message",
-                                "error": str(exc),
-                            }
+                for queue in queue_instances:
+                    # Setup dispatchers that coordinates job activity on SQS
+                    dispatchers.append(
+                        SQSWorkDispatcher(
+                            queue,
+                            worker_process_name=JOB_TYPE,
+                            worker_can_start_child_processes=True,
                         )
-                        error_span.set_status(Status(StatusCode.ERROR, str(exc)))
+                    )
+                    message_found = self.handle_dispatch(dispatchers[-1], run_download)
+
+                    if message_found:
+                        # If a message is found we break out of the loop so that we can first iterate
+                        # through messages in the higher priority queues
+                        break
 
                 if not message_found:
-                    # Not using the EagerlyDropTraceFilter since we are no longer sending traces every iteration. Only when actionabe events happen
+                    # When you receive an empty response from the queue, wait before trying again
                     time.sleep(1)
 
                 # If this process is exiting, don't poll for more work
-                keep_polling = not dispatcher.is_exiting
+                keep_polling = not any([dispatcher.is_exiting for dispatcher in dispatchers])
+
+    def handle_dispatch(self, dispatcher: SQSWorkDispatcher, func: Callable) -> bool:
+        # Mark the job as failed if: there was an error processing the download; retries after interrupt
+        # are not allowed; or all retries have been exhausted
+        # If the job is interrupted by an OS signal, the dispatcher's signal handling logic will log and
+        # handle this case
+        # Retries are allowed or denied by the SQS queue's RedrivePolicy config
+        # That is, if maxReceiveCount > 1 in the policy, then retries are allowed
+        # - if queue retries are allowed, the queue message will retry to the max allowed by the queue
+        # - As coded, no cleanup should be needed to retry a download
+        #   - the psql -o will overwrite the output file
+        #   - the zip will use 'w' write mode to create from scratch each time
+        # The worker function controls the maximum allowed runtime of the job
+        message_found = None
+        try:
+            # Check the queue for work and hand it to the given processing function
+            message_found = dispatcher.dispatch(func, message_transformer=lambda msg: json.loads(msg.body))
+
+            # Start a new span only if a message is found
+            if message_found:
+                with SubprocessTrace(
+                    name=f"job.{JOB_TYPE}.message_processing",
+                    kind=SpanKind.INTERNAL,
+                    service="bulk-download",
+                ) as poll_span:
+                    poll_span.set_attributes(
+                        {
+                            "service": "bulk-download",
+                            "job_type": str(JOB_TYPE),
+                            "resource": str(dispatcher.sqs_queue_instance.url),
+                            "span_type": "Internal",
+                            "message": "Processing download job message",
+                        }
+                    )
+
+        except (QueueWorkerProcessError, QueueWorkDispatcherError) as exc:
+            _handle_queue_error(exc)
+
+            # Start a span only for the error, capturing details
+            with SubprocessTrace(
+                name=f"job.{JOB_TYPE}.error_handling",
+                kind=SpanKind.INTERNAL,
+                service="bulk-download",
+            ) as error_span:
+                error_span.set_attributes(
+                    {
+                        "service": "bulk-download",
+                        "span_type": "Internal",
+                        "message": "Error processing message",
+                        "error": str(exc),
+                    }
+                )
+                error_span.set_status(Status(StatusCode.ERROR, str(exc)))
+
+        return message_found
 
 
-def download_service_app(download_job_id):
+def run_download(download_job_id: int, download_logic: DownloadLogic, **kwargs):
+    match download_logic:
+        case DownloadLogic.POSTGRES:
+            _run_postgres_download(download_job_id)
+        case DownloadLogic.SPARK:
+            _run_spark_download(download_job_id, **kwargs)
+
+
+def _run_spark_download(download_job_id: int, job_name: str) -> None:
+    if settings.IS_LOCAL:
+        strategy = LocalStrategy()
+        command_options = [f"--skip-local-cleanup"]
+        extra_options = {"run_as_container": True}
+    else:
+        strategy = DatabricksStrategy()
+        command_options = []
+        extra_options = {}
+    spark_jobs = SparkJobs(strategy)
+    spark_jobs.start(
+        job_name=job_name,
+        command_name="generate_spark_download",
+        command_options=[f"--download-job-id={download_job_id}", *command_options],
+        **extra_options,
+    )
+
+
+def _run_postgres_download(download_job_id: int) -> None:
 
     download_job = _retrieve_download_job_from_db(download_job_id)
 

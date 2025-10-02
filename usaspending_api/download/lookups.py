@@ -61,6 +61,7 @@ JOB_STATUS = [
 ]
 
 JOB_STATUS_DICT = {item.name: item.id for item in JOB_STATUS}
+JOB_STATUS_DICT_BY_ID = {item.id: item.name for item in JOB_STATUS}
 
 VALUE_MAPPINGS = {
     # Elasticsearch Award Level

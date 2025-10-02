@@ -18,6 +18,7 @@ SPARK_SESSION_JARS = [
     "org.postgresql:postgresql:42.2.23",
     f"io.delta:delta-spark_{_SCALA_VERSION}:{_DELTA_VERSION}",
 ]
+OPTIONAL_SPARK_HIVE_JAR = f"org.apache.spark:spark-hive_{_SCALA_VERSION}:{_SPARK_VERSION}"
 
 # TODO: This should be used more widely across our different commands
 DEFAULT_EXTRA_CONF = {
