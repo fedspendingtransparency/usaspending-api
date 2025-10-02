@@ -1,3 +1,12 @@
+"""
+The files loaded from s3 in this command are all downloaded from https://www.census.gov/eos/www/naics/downloadables/downloadables.html from 2002 through 2022
+They are parsed by this management command load_naics.py (manage.py load_naics) to populate the naics table in the usaspending database.
+These file are pre-formatted in the following ways:
+* The parser determines the year for the naics file by searching the title for 20xx. This can appear anywhere in the file name
+* The parser expects two columns if the year is less than 2017, the first with the naics code, and the second with naics description
+* If the year is greater than or equal to 2017 it expects three columns. The third column is a long description of the naics code
+"""
+
 import logging
 import re
 
