@@ -9,7 +9,7 @@ from django.db import models
 from io import BytesIO
 from openpyxl import load_workbook
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
-from usaspending_api.references.models import Definition, NAICS
+from usaspending_api.references.models import NAICS
 
 NAICS_FILES = [
     "2-6_digit_2002_Code_File.xlsx",
@@ -111,9 +111,9 @@ def load_naics(path, append, overwrite):
         logger.info("Appending definitions to existing guide")
     elif overwrite:
         logger.info("Overwriting existing guide")
-        Definition.objects.all().delete()
+        NAICS.objects.all().delete()
     else:
-        raise ArgumentTypeError("command must supply either -overwrite or -append")
+        raise ArgumentTypeError("command must supply either --overwrite or --append")
 
     naics_files = [path + file for file in NAICS_FILES]
 
