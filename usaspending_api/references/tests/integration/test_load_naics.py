@@ -52,4 +52,4 @@ def test_naics_command_with_append_overwrite():
     with pytest.raises(ArgumentTypeError) as e:
         call_command("load_naics")
 
-    assert "command must supply either -overwrite or -append" in str(e.value)
+    assert "command must supply either --overwrite or --append" in str(e.value)
