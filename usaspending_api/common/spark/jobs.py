@@ -70,12 +70,16 @@ class DatabricksStrategy(_AbstractStrategy):
         return job_list[0]
 
     def _wait_for_run_to_start(self, job: BaseJob, job_run_id: int) -> None:
-        max_wait_time_seconds = 60
-        job_status = None
+        max_wait_time = 2 * 60
         expected_job_statuses = [RunLifeCycleState.SKIPPED, RunLifeCycleState.PENDING, RunLifeCycleState.RUNNING]
+
+        # Initial wait to give the job time to start or be marked as skipped
+        time.sleep(5)
+
+        job_status = None
         job_run = self.client.jobs.get_run(job_run_id)
 
-        while (time.time() * 1_000) - job_run.start_time < max_wait_time_seconds and job_status is None:
+        while time.time() - (job_run.start_time / 1_000) < max_wait_time and job_status is None:
             job_status = job_run.state.life_cycle_state
             if job_status not in expected_job_statuses:
                 # Databricks jobs have a start-up time associated that will always run longer than the short wait time
@@ -83,12 +87,14 @@ class DatabricksStrategy(_AbstractStrategy):
                 # been picked up for processing.
                 job_status = None
             if job_status is None:
-                time.sleep(15)
+                time.sleep(5)
+                # Fetch the job_run for next iteration
+                job_run = self.client.jobs.get_run(job_run_id)
 
-        if (time.time() * 1_000) - job_run.start_time > max_wait_time_seconds:
+        if job_status is None:
             msg = (
                 f"Job with ID of '{job_run.job_id}' and run with ID of '{job_run_id}' failed to reach one of the"
-                f" expected statuses in {max_wait_time_seconds} seconds; status is '{job_run.state.life_cycle_state.value}'."
+                f" expected statuses in {max_wait_time} seconds; status is '{job_run.state.life_cycle_state.value}'."
                 f" Expected one of the following: {', '.join([status.value for status in expected_job_statuses])}."
             )
             logger.error(msg)
@@ -217,8 +223,6 @@ class SparkJobs:
 
         if run_details is None:
             msg = "Job completed successfully"
-        elif run_details.get("timed_out"):
-            msg = "Job successfully queued, but the connection timed out while connecting to the Spark cluster"
         else:
             msg = f"Job run successfully started; {run_details}"
 
