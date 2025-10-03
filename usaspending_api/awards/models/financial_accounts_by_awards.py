@@ -120,6 +120,8 @@ class AbstractFinancialAccountsByAwards(DataSourceTrackedModel):
     ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe = models.DecimalField(
         max_digits=23, decimal_places=2, blank=True, null=True
     )
+    ussgl480210_rein_undel_obs_cpe = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    ussgl497210_down_adj_refun_cpe = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     deobligations_recoveries_refunds_of_prior_year_by_award_cpe = models.DecimalField(
         max_digits=23, decimal_places=2, blank=True, null=True
     )
