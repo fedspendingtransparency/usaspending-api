@@ -11,7 +11,6 @@ from rest_framework.views import APIView
 from usaspending_api.broker.lookups import EXTERNAL_DATA_TYPE_DICT
 from usaspending_api.broker.models import ExternalDataLoadDate
 from usaspending_api.common.api_versioning import API_TRANSFORM_FUNCTIONS, api_transformations
-from usaspending_api.common.experimental_api_flags import is_experimental_download_api
 from usaspending_api.common.helpers.dict_helpers import order_nested_object
 from usaspending_api.common.spark.jobs import LocalStrategy, SparkJobs
 from usaspending_api.common.sqs.sqs_handler import DownloadLogic, get_sqs_queue
@@ -68,24 +67,20 @@ class BaseDownloadViewSet(APIView):
         )
 
         log_new_download_job(request, download_job)
-        self.process_request(download_job, request, json_request)
+        self.process_request(download_job, json_request)
 
         return self.build_download_response(download_job)
 
     @staticmethod
-    def is_spark_download(request: Request, json_request: dict) -> bool:
-        return (
-            is_experimental_download_api(request)
-            and json_request["request_type"] == "account"
-            and "award_financial" in json_request["download_types"]
-        )
+    def is_spark_download(json_request: dict) -> bool:
+        return json_request["request_type"] == "account" and "award_financial" in json_request["download_types"]
 
-    def process_request(self, download_job: DownloadJob, request: Request, json_request: dict):
+    def process_request(self, download_job: DownloadJob, json_request: dict):
         job_name = f"{settings.BULK_DOWNLOAD_SPARK_JOB_NAME_PREFIX}-{json_request['request_type']}"
 
         if settings.IS_LOCAL and settings.RUN_LOCAL_DOWNLOAD_IN_PROCESS:
             # Eagerly execute the download in this running process
-            if self.is_spark_download(request, json_request):
+            if self.is_spark_download(json_request):
                 spark_jobs = SparkJobs(LocalStrategy())
                 spark_jobs.start(
                     job_name=job_name,
@@ -97,7 +92,7 @@ class BaseDownloadViewSet(APIView):
                 download_generation.generate_download(download_job)
         else:
             # The keys used in the message bodies below are specific values expected by the SQS handlers
-            if self.is_spark_download(request, json_request):
+            if self.is_spark_download(json_request):
                 # Fallback to the non-priority queue if the priority queue isn't setup
                 queue_name = settings.BULK_DOWNLOAD_PRIORITY_SQS_QUEUE_NAME or settings.BULK_DOWNLOAD_SQS_QUEUE_NAME
                 message_body = json.dumps(
