@@ -150,7 +150,7 @@ services:
     volumes:
       - .:/dockermount
       # Required to interact with host's docker daemon from within this running container,
-      # to submit a spark job via the spark-submit container (see download_sqs_worker.run_spark_download)
+      # to submit a spark job via the spark-submit container (see download_sqs_worker._run_spark_download)
       - /var/run/docker.sock:/var/run/docker.sock
     command: python3 manage.py download_sqs_worker
     environment:
