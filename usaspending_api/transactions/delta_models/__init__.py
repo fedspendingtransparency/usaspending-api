@@ -19,7 +19,6 @@ from usaspending_api.transactions.delta_models.transaction_normalized import (
 )
 from usaspending_api.transactions.delta_models.transaction_search import (
     TRANSACTION_SEARCH_COLUMNS,
-    TRANSACTION_SEARCH_DELTA_COLUMNS,
     TRANSACTION_SEARCH_POSTGRES_COLUMNS,
     TRANSACTION_SEARCH_POSTGRES_GOLD_COLUMNS,
     transaction_search_create_sql_string,
@@ -60,7 +59,6 @@ __all__ = [
     "TRANSACTION_NORMALIZED_COLUMNS",
     "transaction_normalized_sql_string",
     "TRANSACTION_SEARCH_COLUMNS",
-    "TRANSACTION_SEARCH_DELTA_COLUMNS",
     "TRANSACTION_SEARCH_POSTGRES_COLUMNS",
     "TRANSACTION_SEARCH_POSTGRES_GOLD_COLUMNS",
     "transaction_search_create_sql_string",

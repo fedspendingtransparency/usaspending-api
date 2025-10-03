@@ -389,10 +389,14 @@ TRANSACTION_SEARCH_COLUMNS = {
     "woman_owned_business": {"delta": "BOOLEAN", "postgres": "BOOLEAN", "gold": True},
     "women_owned_small_business": {"delta": "BOOLEAN", "postgres": "BOOLEAN", "gold": True},
     "program_activities": {"delta": "STRING", "postgres": "JSONB", "gold": False},
-    "merge_hash_key": {"delta": "LONG", "postgres": "BIGINT", "gold": True},
 }
-TRANSACTION_SEARCH_DELTA_COLUMNS = {k: v["delta"] for k, v in TRANSACTION_SEARCH_COLUMNS.items() if not v["gold"]}
-TRANSACTION_SEARCH_GOLD_DELTA_COLUMNS = {k: v["delta"] for k, v in TRANSACTION_SEARCH_COLUMNS.items()}
+DELTA_ONLY_COLUMNS = {
+    "merge_hash_key": "LONG",
+}
+TRANSACTION_SEARCH_DELTA_COLUMNS = {
+    **{k: v["delta"] for k, v in TRANSACTION_SEARCH_COLUMNS.items()},
+    **DELTA_ONLY_COLUMNS,
+}
 TRANSACTION_SEARCH_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in TRANSACTION_SEARCH_COLUMNS.items() if not v["gold"]}
 TRANSACTION_SEARCH_POSTGRES_GOLD_COLUMNS = {k: v["postgres"] for k, v in TRANSACTION_SEARCH_COLUMNS.items()}
 
@@ -400,7 +404,7 @@ ALL_AWARD_TYPES = list(award_type_mapping.keys())
 
 transaction_search_create_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
-        {", ".join([f'{key} {val}' for key, val in TRANSACTION_SEARCH_GOLD_DELTA_COLUMNS.items()])}
+        {", ".join([f'{key} {val}' for key, val in TRANSACTION_SEARCH_DELTA_COLUMNS.items()])}
     )
     USING DELTA
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
