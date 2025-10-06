@@ -107,6 +107,7 @@ class Command(BaseCommand):
 
     def load_csv(self):
         delta_path = f"{delta_root}/{self.csv_metadata.db_name}/{self.csv_metadata.table_name}"
+        self.spark.sql(f"CREATE DATABASE IF NOT EXISTS {self.csv_metadata.db_name};")
         df = self.spark.read.csv(self.csv_metadata.path, header=True, schema=self.csv_metadata.schema)
         df.write.saveAsTable(
             f"{self.csv_metadata.db_name}.{self.csv_metadata.table_name}",
