@@ -2,7 +2,7 @@ import logging
 from dataclasses import dataclass
 
 from django.core.management.base import BaseCommand
-from pyspark.sql import DataFrame, SparkSession
+from pyspark.sql import SparkSession
 from pyspark.sql.types import StructType
 
 from usaspending_api.common.helpers.spark_helpers import (
