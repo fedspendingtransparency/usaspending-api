@@ -43,8 +43,8 @@ class Command(BaseCommand):
             help="the path to the Excel spreadsheets to load",
             default=f"{settings.FILES_SERVER_BASE_URL}/reference_data/",
         )
-        parser.add_argument("-append", "--append", help="Append to existing guide", action="store_true")
-        parser.add_argument("-overwrite", "--overwrite", help="Overwrite naics", action="store_true")
+        parser.add_argument("-a", "--append", help="Append to existing guide", action="store_true")
+        parser.add_argument("-o", "--overwrite", help="Overwrite naics", action="store_true")
 
     def handle(self, *args, **options):
         load_naics(path=options["path"], append=options["append"], overwrite=options["overwrite"])
@@ -116,13 +116,13 @@ def load_naics_year_retired():
 def load_naics(path, append, overwrite):
     logger = logging.getLogger("script")
 
-    if append:
+    if append == overwrite:
+        raise ArgumentTypeError("command must supply either --overwrite or --append")
+    elif append:
         logger.info("Appending definitions to existing guide")
-    elif overwrite:
+    else:
         logger.info("Overwriting existing guide")
         NAICS.objects.all().delete()
-    else:
-        raise ArgumentTypeError("command must supply either --overwrite or --append")
 
     naics_files = [path + file for file in NAICS_FILES]
 

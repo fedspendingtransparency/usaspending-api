@@ -53,3 +53,11 @@ def test_naics_command_with_append_overwrite():
         call_command("load_naics")
 
     assert "command must supply either --overwrite or --append" in str(e.value)
+
+
+@pytest.mark.django_db
+def test_naics_with_append_and_overwrite():
+    with pytest.raises(ArgumentTypeError) as e:
+        call_command("load_naics", "--overwrite", "--append")
+
+    assert "command must supply either --overwrite or --append" in str(e.value)
