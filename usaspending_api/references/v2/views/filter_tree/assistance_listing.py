@@ -8,6 +8,7 @@ from usaspending_api.references.models import Cfda
 
 
 class AssistanceListingViewSet(APIView):
+    """Return a list of Assistance Listings or a filtered list of Assistance Listings"""
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/references/assistance_listing.md"
 
