@@ -108,9 +108,9 @@ class Command(BaseCommand):
     def load_csv(self):
         delta_path = f"{delta_root}/{self.csv_metadata.db_name}/{self.csv_metadata.table_name}"
         df = self.spark.read.csv(self.csv_metadata.path, header=True, schema=self.csv_metadata.schema)
-        (
-            df.write.format("delta")
-            .mode("overwrite")
-            .option("path", delta_path)
-            .saveAsTable(f"{self.csv_metadata.db_name}.{self.csv_metadata.table_name}")
+        df.write.saveAsTable(
+            f"{self.csv_metadata.db_name}.{self.csv_metadata.table_name}",
+            mode="overwrite",
+            format="delta",
+            options={"path": delta_path, "overwriteSchema": True},
         )
