@@ -10,8 +10,8 @@ includes the full CFDA code and description.
 
 + Request
     + Parameters
-        + `CODE`:  `CODE=11` (optional, number) - Must be a two-digit number.
-        + `filter`: `filter=11.00` (optional, string) - This will filter the CFDAs by their description or code. 
+        + `code`:  `code=11` (optional, number) Must be a two-digit number.
+        + `filter`: `filter=11.00` (optional, string) This will filter the CFDAs by their description or code. 
 
 + Response 200 (application/json)
     + Attributes (object)
