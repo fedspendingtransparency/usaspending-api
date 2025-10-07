@@ -4,6 +4,7 @@ from rest_framework.views import APIView
 
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.common.validator import TinyShield
 from usaspending_api.references.models import Cfda
 
 
@@ -14,8 +15,24 @@ class AssistanceListingViewSet(APIView):
 
     queryset = Cfda.objects.all()
 
-    def _business_logic(self, cfda_code, filter) -> list:
-        if len(str(cfda_code)) == 2 and int(cfda_code):
+    def _parse_and_validate_request(self, cfda: int, requested_data) -> dict:
+        data = {"code": cfda, "filter": requested_data.query_params.get("filter", None)}
+        models = [
+            {"key": "code", "name": "code", "type": "integer", "default": None, "allow_nulls": True, "optional": True},
+            {
+                "key": "filter",
+                "name": "filter",
+                "type": "text",
+                "text_type": "search",
+                "default": None,
+                "optional": True,
+                "allow_nulls": True,
+            },
+        ]
+        return TinyShield(models).block(data)
+
+    def _business_logic(self, cfda_code: int, cfda_filter: str) -> list:
+        if len(str(cfda_code)) == 2:
             self.queryset = Cfda.objects.filter(program_number__startswith=cfda_code)
 
         elif cfda_code is not None:
@@ -26,14 +43,16 @@ class AssistanceListingViewSet(APIView):
         cfdas = []
         for prefix in prefixes:
             filter_query = (
-                Cfda.objects.filter(Q(program_number__contains=filter) | Q(program_title__contains=filter))
-                if filter is not None
+                Cfda.objects.filter(Q(program_number__contains=cfda_filter) | Q(program_title__contains=cfda_filter))
+                if cfda_filter is not None
                 else Cfda.objects.all()
             )
-            print("filter_query", filter_query)
-            cfda_with_prefix = filter_query.filter(program_number__startswith=prefix)
-            print("cfda_with_prefix", cfda_with_prefix)
-            children = [{"code": cfda.program_number, "description": cfda.program_title} for cfda in cfda_with_prefix]
+            cfda_with_prefix = filter_query.filter(program_number__startswith=prefix).values(
+                "program_number", "program_title"
+            )
+            children = [
+                {"code": cfda["program_number"], "description": cfda["program_title"]} for cfda in cfda_with_prefix
+            ]
             cfdas.append(
                 {
                     "code": prefix,
@@ -47,7 +66,6 @@ class AssistanceListingViewSet(APIView):
 
     @cache_response()
     def get(self, request, cfda=None) -> Response:
-        filter = request.query_params.get("filter", None)
-        print("filter: ", filter)
-        results = self._business_logic(cfda, filter)
+        requested_data = self._parse_and_validate_request(cfda, request)
+        results = self._business_logic(requested_data["code"], requested_data["filter"])
         return Response(results)
