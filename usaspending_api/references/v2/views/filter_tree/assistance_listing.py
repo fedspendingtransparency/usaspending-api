@@ -62,7 +62,7 @@ class AssistanceListingViewSet(APIView):
                 }
             )
 
-        return cfdas
+        return sorted(cfdas, key=lambda cfda: cfda["code"])
 
     @cache_response()
     def get(self, request, cfda=None) -> Response:
