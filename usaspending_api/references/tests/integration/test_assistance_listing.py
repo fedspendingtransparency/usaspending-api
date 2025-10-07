@@ -34,28 +34,8 @@ def test_success(client, assistance_listings_test_data):
     resp = client.get("/api/v2/references/assistance_listing/", content_type="application/json")
 
     expected_results = [
-        {
-            "code": "10",
-            "description": None,
-            "count": 3,
-            "children": [
-                {"code": "10.001", "description": "CFDA Title 1"},
-                {
-                    "code": "10.002",
-                    "description": "CFDA Title 2",
-                },
-                {
-                    "code": "10.003",
-                    "description": "CFDA Title 3",
-                },
-            ],
-        },
-        {
-            "code": "11",
-            "description": None,
-            "count": 1,
-            "children": [{"code": "11.004", "description": "CFDA Title 1"}],
-        },
+        {"code": "10", "description": None, "count": 3},
+        {"code": "11", "description": None, "count": 1},
     ]
 
     assert resp.status_code == status.HTTP_200_OK
@@ -111,18 +91,8 @@ def test_filter_without_code(client, assistance_listings_test_data):
     resp = client.get("/api/v2/references/assistance_listing/?filter=Title 1", content_type="application/json")
 
     expected_results = [
-        {
-            "code": "10",
-            "description": None,
-            "count": 1,
-            "children": [{"code": "10.001", "description": "CFDA Title 1"}],
-        },
-        {
-            "code": "11",
-            "description": None,
-            "count": 1,
-            "children": [{"code": "11.004", "description": "CFDA Title 1"}],
-        },
+        {"code": "10", "description": None, "count": 1},
+        {"code": "11", "description": None, "count": 1},
     ]
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_results
