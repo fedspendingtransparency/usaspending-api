@@ -41,6 +41,7 @@ class NAICSViewSet(APIView):
             {
                 "naics": naics.code,
                 "naics_description": naics.description,
+                "year_retired": naics.year_retired,
                 "count": self.get_six_digit_naics_count(naics.code) if len(naics.code) < 6 else DEFAULT_CHILDREN,
             }
             for naics in self.naics_queryset.filter(code__startswith=naics_code, text_len=length)
@@ -79,6 +80,7 @@ class NAICSViewSet(APIView):
             result = {
                 "naics": naics.code,
                 "naics_description": naics.description,
+                "year_retired": naics.year_retired,
                 "count": self.get_six_digit_naics_count(naics.code),
                 "children": [],
             }
@@ -88,6 +90,7 @@ class NAICSViewSet(APIView):
             result = {
                 "naics": naics.code,
                 "naics_description": naics.description,
+                "year_retired": naics.year_retired,
                 "count": DEFAULT_CHILDREN,
             }
             tier2_results[naics.code[:4]]["children"].append(result)
@@ -97,6 +100,7 @@ class NAICSViewSet(APIView):
             result = {
                 "naics": naics.code,
                 "naics_description": naics.description,
+                "year_retired": naics.year_retired,
                 "count": self.get_six_digit_naics_count(naics.code),
                 "children": [],
             }
@@ -113,6 +117,7 @@ class NAICSViewSet(APIView):
             {
                 "naics": naics.code,
                 "naics_description": naics.description,
+                "year_retired": naics.year_retired,
                 "count": self.get_six_digit_naics_count(naics.code),
             }
             for naics in self.naics_queryset.filter(text_len=2)
@@ -139,6 +144,7 @@ class NAICSViewSet(APIView):
                 result = {
                     "naics": naics.code,
                     "naics_description": naics.description,
+                    "year_retired": naics.year_retired,
                     "count": self.get_six_digit_naics_count(naics.code),
                     "children": self._fetch_children(naics.code),
                 }
@@ -146,6 +152,7 @@ class NAICSViewSet(APIView):
                 result = {
                     "naics": naics.code,
                     "naics_description": naics.description,
+                    "year_retired": naics.year_retired,
                     "count": DEFAULT_CHILDREN,
                 }
             results.append(result)

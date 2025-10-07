@@ -54,7 +54,7 @@ SELECT
 	s.place_of_perform_congressio AS pop_congressional_code,
 	s.place_of_performance_congressional_current AS pop_congressional_code_current,
 	s.award_description,
-	s.naics,
+	s.naics as naics_code,
 	s.naics_description,
 	s.cfda_numbers as cfda_number,
 	s.cfda_titles,

@@ -34,7 +34,7 @@ class BaseDownloadViewSet(APIView):
         origination: Optional[str] = None,
     ):
         validator = validator_type(request.data)
-        json_request = order_nested_object(validator.json_request)
+        json_request = validator.json_request
 
         # Check if download is pre-generated
         pre_generated_download = json_request.pop("pre_generated_download", None)
@@ -51,7 +51,8 @@ class BaseDownloadViewSet(APIView):
             return self.build_download_response(download_job)
 
         # Check if the same request has been called today
-        ordered_json_request = json.dumps(json_request)
+        sorted_json_request = order_nested_object(validator.json_request)
+        ordered_json_request = json.dumps(sorted_json_request)
         cached_download = self._get_cached_download(ordered_json_request, json_request.get("download_types", []))
 
         if cached_download and not settings.IS_LOCAL:
@@ -61,7 +62,9 @@ class BaseDownloadViewSet(APIView):
 
         final_output_zip_name = create_unique_filename(json_request, origination=origination)
         download_job = DownloadJob.objects.create(
-            job_status_id=JOB_STATUS_DICT["ready"], file_name=final_output_zip_name, json_request=ordered_json_request
+            job_status_id=JOB_STATUS_DICT["ready"],
+            file_name=final_output_zip_name,
+            json_request=json.dumps(json_request),
         )
 
         log_new_download_job(request, download_job)
@@ -98,7 +101,7 @@ class BaseDownloadViewSet(APIView):
             spark_jobs.start(
                 job_name="api_download-accounts",
                 command_name="generate_spark_download",
-                command_options=[f"--download-job-id={download_job.download_job_id}", f"--skip-local-cleanup"],
+                command_options=[f"--download-job-id={download_job.download_job_id}", "--skip-local-cleanup"],
             )
         else:
             spark_jobs = SparkJobs(DatabricksStrategy())
