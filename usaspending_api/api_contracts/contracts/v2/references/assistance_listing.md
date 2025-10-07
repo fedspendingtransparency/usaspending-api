@@ -34,17 +34,6 @@ includes the full CFDA code and description.
                             "description": "census Customer Services"
                         }
                     ]
-                },
-                {
-                    "code": "16",
-                    "description": null,
-                    "count" 1,
-                    "children": [
-                        {
-                            "code": "16.001",
-                            "description": "Law Enforcement Assistance Narcotics and Dangerous Drugs Laboratory Analysis"
-                        }
-                    ]
                 }
             ]
 

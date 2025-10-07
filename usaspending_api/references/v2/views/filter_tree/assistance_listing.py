@@ -32,7 +32,8 @@ class AssistanceListingViewSet(APIView):
         return TinyShield(models).block(data)
 
     def _business_logic(self, cfda_code: int, cfda_filter: str) -> list:
-        if len(str(cfda_code)) == 2:
+        valid_cfda_code = True if len(str(cfda_code)) == 2 else False
+        if valid_cfda_code:
             self.queryset = Cfda.objects.filter(program_number__startswith=cfda_code)
 
         elif cfda_code is not None:
@@ -53,14 +54,23 @@ class AssistanceListingViewSet(APIView):
             children = [
                 {"code": cfda["program_number"], "description": cfda["program_title"]} for cfda in cfda_with_prefix
             ]
-            cfdas.append(
-                {
-                    "code": prefix,
-                    "description": None,
-                    "count": len(children),
-                    "children": children,
-                }
-            )
+            if valid_cfda_code:
+                cfdas.append(
+                    {
+                        "code": prefix,
+                        "description": None,
+                        "count": len(children),
+                        "children": children,
+                    }
+                )
+            else:
+                cfdas.append(
+                    {
+                        "code": prefix,
+                        "description": None,
+                        "count": len(children),
+                    }
+                )
 
         return sorted(cfdas, key=lambda cfda: cfda["code"])
 
