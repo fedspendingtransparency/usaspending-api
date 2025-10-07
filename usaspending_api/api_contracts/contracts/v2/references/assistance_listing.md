@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Assistance Listing [/api/v2/references/assistance_listing/{CODE}?filter]
+# Assistance Listing [/api/v2/references/assistance_listing/{code}?filter]
 
 ## GET
 

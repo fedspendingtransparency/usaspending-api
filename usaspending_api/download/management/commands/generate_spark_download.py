@@ -160,7 +160,7 @@ class Command(BaseCommand):
                     source = download.dataframe.columns
                     invalid_columns = [col in source for col in self.columns if col not in source]
                     if invalid_columns:
-                        raise InvalidParameterException("Unknown columns in: {}".format(invalid_columns))
+                        raise ValueError("Unknown columns: {}".format(invalid_columns))
                     download.dataframe = download.dataframe.select(*self.columns)
 
             csvs_metadata = [
