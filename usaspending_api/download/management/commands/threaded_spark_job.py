@@ -129,7 +129,7 @@ class Command(BaseCommand):
             for future in concurrent.futures.as_completed(download_futures):
                 download_category = download_futures[future]
                 try:
-                    logger.info(f"\t{download_category} | File Name: {future.result()}")
+                    logger.info(f"\t{download_category} | File Name(s): {future.result()}")
                 except Exception:
                     logger.exception(f"Error occurred while generated download for '{download_category}'")
                     raise
@@ -179,16 +179,26 @@ class Command(BaseCommand):
         return spark, spark_created_by_command
 
     @staticmethod
+    def cleanup(path_list: list[Path | str]) -> None:
+        for path in path_list:
+            if isinstance(path, str):
+                path = Path(path)
+            logger.info(f"Removing {path}")
+            path.unlink()
+
+    @staticmethod
     def cast_arrays_to_string(df: DataFrame) -> DataFrame:
         array_types = [ArrayType(StringType()), ArrayType(IntegerType())]
         fields_to_convert = [field for field in df.schema if field.dataType in array_types]
         df = df.withColumns({field.name: df[field.name].cast(StringType()) for field in fields_to_convert})
         return df
 
-    def generate_download(self, download_category: DownloadCategory) -> str:
+    def generate_download(self, download_category: DownloadCategory) -> list[str]:
         with Timer(f"Generating download for {download_category}"):
             spark_to_csv_strategy = SparkToCSVStrategy(logger)
             working_dir_path = Path(settings.CSV_LOCAL_PATH)
+            if not working_dir_path.exists():
+                working_dir_path.mkdir()
             download_file_name = (
                 f"MONTHLY_DOWNLOAD_TEST_{download_category.agency_abbreviation}_{download_category.fiscal_year}"
             )
@@ -210,4 +220,6 @@ class Command(BaseCommand):
             logger.info(
                 f"Download contains {download_metadata.number_of_columns} columns and {download_metadata.number_of_rows} rows"
             )
-        return download_metadata.filepaths[0]
+            self.cleanup(download_metadata.filepaths)
+
+        return download_metadata.filepaths
