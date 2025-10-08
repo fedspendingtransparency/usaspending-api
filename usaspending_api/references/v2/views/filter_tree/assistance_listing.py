@@ -39,7 +39,7 @@ class AssistanceListingViewSet(APIView):
             (Q(program_title__contains=cfda_filter) | Q(program_number__contains=cfda_filter)) if cfda_filter else Q()
         )
         annotations = {}
-        filters = (Q(program_number__startswith=cfda_code)) if cfda_code else Q()
+        cfda_filters = (Q(program_number__startswith=cfda_code)) if cfda_code else Q()
         valid_cfda_code = True if len(str(cfda_code)) == 2 else False
         if valid_cfda_code:
             annotations["children"] = ArrayAgg(
@@ -56,7 +56,7 @@ class AssistanceListingViewSet(APIView):
             raise InvalidParameterException(f"The assistance listing code should be two digits or not provided at all")
 
         results = (
-            Cfda.objects.filter(filter_condition, filters)
+            Cfda.objects.filter(filter_condition, cfda_filters)
             .annotate(
                 code=Func(F("program_number"), function="SPLIT_PART", template="%(function)s(%(expressions)s, '.', 1)")
             )
