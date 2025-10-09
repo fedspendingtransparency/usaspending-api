@@ -7,6 +7,7 @@ from databricks.sdk import WorkspaceClient
 from databricks.sdk.config import Config as DatabricksConfig
 from django.conf import settings
 from django.core.management import call_command
+from duckdb.experimental.spark.sql import SparkSession as duckdb_spark_session
 
 from usaspending_api.common.spark.configs import LOCAL_EXTENDED_EXTRA_CONF
 
@@ -119,6 +120,40 @@ class LocalStrategy(_AbstractStrategy):
         try:
             with self._get_spark_session():
                 call_command(command_name, *command_options)
+        except Exception:
+            logger.exception(f"Failed on command: {command_name} {' '.join(command_options)}")
+            raise
+
+
+class DuckDBStrategy(_AbstractStrategy):
+    @property
+    def name(self) -> str:
+        return "DUCKDB"
+
+    @staticmethod
+    @contextmanager
+    def _get_spark_session() -> Generator["SparkSession", None, None]:
+        extra_conf = {
+            **LOCAL_EXTENDED_EXTRA_CONF,
+            # Overwrite to allow more memory given this will process more data than test cases
+            "spark.driver.memory": "2g",
+            "spark.executor.memory": "2g",
+        }
+        spark = get_active_spark_session()
+        spark_created_for_job = False
+        if not spark:
+            spark_created_for_job = True
+            spark = configure_spark_session(**extra_conf, spark_context=spark, enable_hive_support=True)
+
+        yield spark
+
+        if spark_created_for_job:
+            spark.stop()
+
+    def handle_start(self, job_name: str, command_name: str, command_options: list[str], **kwargs) -> None:
+        try:
+            spark = duckdb_spark_session.builder.getOrCreate()
+            call_command(command_name, *command_options)
         except Exception:
             logger.exception(f"Failed on command: {command_name} {' '.join(command_options)}")
             raise

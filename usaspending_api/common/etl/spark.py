@@ -11,6 +11,7 @@ from collections import namedtuple
 from itertools import chain
 from typing import List
 
+import duckdb
 from py4j.protocol import Py4JError
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql.functions import col, concat, concat_ws, expr, lit, regexp_replace, to_date, transform, when
@@ -97,7 +98,6 @@ def extract_db_data_frame(
     is_date_partitioning_col: bool = False,
     custom_schema: StructType = None,
 ) -> DataFrame:
-
     logger.info(f"Getting partition bounds using SQL:\n{min_max_sql}")
 
     data_df = None
@@ -427,7 +427,7 @@ def diff(
     cols_to_show = (
         ["diff"]
         + [f"l.{unique_key_col}", f"r.{unique_key_col}"]
-        + list(chain(*zip([f"l.{c}" for c in compare_cols], [f"r.{c}" for c in compare_cols])))
+        + list(chain(*zip([f"l.{c}" for c in compare_cols], [f"r.{c}" for c in compare_cols], strict=False)))
     )
     differences = differences.select(*cols_to_show)
     if not include_unchanged_rows:
@@ -555,31 +555,72 @@ def _generate_global_view_sql_strings(tables: List[str], jdbc_url: str) -> List[
     return sql_strings
 
 
-def create_ref_temp_views(spark: SparkSession, create_broker_views: bool = False):
+def create_ref_temp_views(spark: SparkSession, create_broker_views: bool = False, use_duckdb: bool = False) -> None:
     """Create global temporary Spark reference views that sit atop remote PostgreSQL RDS tables
     Setting create_broker_views to True will create views for all tables list in _BROKER_REF_TABLES
     Note: They will all be listed under global_temp.{table_name}
+
+    Args:
+        spark (SparkSession): Spark connection
+        create_broker_views (bool): Should the temporary views, using the Broker tables, be created?
+        use_duckdb (bool): Is DuckDB being used for the queries?
     """
 
     # Create USAS temp views
     rds_ref_tables = build_ref_table_name_list()
-    rds_sql_strings = _generate_global_view_sql_strings(
-        tables=rds_ref_tables,
-        jdbc_url=get_usas_jdbc_url(),
-    )
     logger.info(f"Creating the following tables under the global_temp database: {rds_ref_tables}")
-    for sql_statement in rds_sql_strings:
-        spark.sql(sql_statement)
 
-    # Create Broker temp views
-    if create_broker_views:
-        broker_sql_strings = _generate_global_view_sql_strings(
-            tables=_BROKER_REF_TABLES,
-            jdbc_url=get_broker_jdbc_url(),
-        )
-        logger.info(f"Creating the following Broker tables under the global_temp database: {_BROKER_REF_TABLES}")
-        for sql_statement in broker_sql_strings:
-            spark.sql(sql_statement)
+    match use_duckdb:
+        case True:
+            spark.sql("LOAD postgres;")  # Load the Postgres extension from DuckDB
+            spark.sql(f"""
+                ATTACH
+                    '{CONFIG.DATABASE_URL}'
+                AS usas (TYPE postgres, READ_ONLY);
+            """)
+            spark.sql("CREATE SCHEMA IF NOT EXISTS global_temp;")
+
+            for table in rds_ref_tables:
+                try:
+                    spark.sql(f"CREATE OR REPLACE VIEW global_temp.{table} AS SELECT * FROM usas.public.{table};")
+                except duckdb.duckdb.CatalogException:
+                    logger.error(f"Failed to create view {table} for {table}")
+
+            if create_broker_views:
+                spark.sql(f"""
+                    ATTACH
+                        '{CONFIG.DATA_BROKER_DATABASE_URL}'
+                    AS broker (TYPE postgres, READ_ONLY);
+                """)
+                logger.info(
+                    f"Creating the following Broker tables under the global_temp database: {_BROKER_REF_TABLES}"
+                )
+                for table in _BROKER_REF_TABLES:
+                    try:
+                        spark.sql(f"CREATE OR REPLACE VIEW global_temp.{table} AS SELECT * FROM broker.public.{table};")
+                    except duckdb.duckdb.CatalogException:
+                        logger.error(f"Failed to create view {table} for {table}")
+        case False:
+            rds_sql_strings = _generate_global_view_sql_strings(
+                tables=rds_ref_tables,
+                jdbc_url=get_usas_jdbc_url(),
+            )
+            for sql_statement in rds_sql_strings:
+                spark.sql(sql_statement)
+
+            # Create Broker temp views
+            if create_broker_views:
+                broker_sql_strings = _generate_global_view_sql_strings(
+                    tables=_BROKER_REF_TABLES,
+                    jdbc_url=get_broker_jdbc_url(),
+                )
+                logger.info(
+                    f"Creating the following Broker tables under the global_temp database: {_BROKER_REF_TABLES}"
+                )
+                for sql_statement in broker_sql_strings:
+                    spark.sql(sql_statement)
+        case _:
+            raise TypeError(f"'use_duckdb' must be True or False, but got {type(use_duckdb)}")
 
     logger.info("Created the reference views in the global_temp database")
 
@@ -682,9 +723,7 @@ def hadoop_copy_merge(
 
     # Don't delete first if disallowing overwrite.
     if not overwrite and fs.exists(file_path):
-        raise Py4JError(
-            spark._jvm.org.apache.hadoop.fs.FileAlreadyExistsException(f"{str(file_path)} " f"already exists")
-        )
+        raise Py4JError(spark._jvm.org.apache.hadoop.fs.FileAlreadyExistsException(f"{str(file_path)} already exists"))
     part_files = []
 
     for f in fs.listStatus(parts_dir_path):

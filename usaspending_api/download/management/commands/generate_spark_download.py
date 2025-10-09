@@ -10,6 +10,7 @@ from typing import Literal, Optional, TypeVar, Union
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils.functional import cached_property
+from duckdb.experimental.spark.sql import SparkSession as duckdb_spark_session
 from opentelemetry.trace import SpanKind
 from pyspark.sql import SparkSession
 
@@ -27,10 +28,10 @@ from usaspending_api.common.tracing import SubprocessTrace
 from usaspending_api.download.delta_downloads.abstract_downloads.base_download import AbstractDownload
 from usaspending_api.download.delta_downloads.account_balances import AccountBalancesDownloadFactory
 from usaspending_api.download.delta_downloads.award_financial import AwardFinancialDownloadFactory
+from usaspending_api.download.delta_downloads.filters.account_filters import AccountDownloadFilters
 from usaspending_api.download.delta_downloads.object_class_program_activity import (
     ObjectClassProgramActivityDownloadFactory,
 )
-from usaspending_api.download.delta_downloads.filters.account_filters import AccountDownloadFilters
 from usaspending_api.download.lookups import FILE_FORMATS, JOB_STATUS_DICT
 from usaspending_api.download.models import DownloadJob
 from usaspending_api.settings import TRACE_ENV
@@ -56,7 +57,6 @@ class DownloadRequest:
 
 
 class Command(BaseCommand):
-
     help = "Generate a download zip file based on the provided type and level."
 
     download_job: DownloadJob
@@ -66,24 +66,37 @@ class Command(BaseCommand):
     spark: SparkSession
     working_dir_path: Path
     columns: list | None
+    duckdb_download_types: list[str]
 
     def add_arguments(self, parser):
         parser.add_argument("--download-job-id", type=int, required=True)
         parser.add_argument("--skip-local-cleanup", action="store_true")
 
     def handle(self, *args, **options):
+        duckdb_download_types = ["account_balances", "object_class_program_activity"]
         configure_logging(service_name="usaspending-downloader-" + TRACE_ENV)
-        self.spark, spark_created_by_command = self.setup_spark_session()
+
         self.should_cleanup = not options["skip_local_cleanup"]
         self.download_job = self.get_download_job(options["download_job_id"])
         self.download_json_request = json.loads(self.download_job.json_request)
         self.request_type = self.download_json_request["request_type"]
         self.working_dir_path = Path(settings.CSV_LOCAL_PATH)
         self.columns = self.download_json_request["columns"] if "columns" in self.download_json_request else None
+
+        if any(
+            download_type in self.download_json_request["download_types"] for download_type in duckdb_download_types
+        ):
+            self.spark = duckdb_spark_session.builder.getOrCreate()
+            spark_created_by_command = False
+            create_ref_temp_views(self.spark, use_duckdb=True)
+        else:
+            self.spark, spark_created_by_command = self.setup_spark_session()
+            create_ref_temp_views(self.spark)
+
         if not self.working_dir_path.exists():
             self.working_dir_path.mkdir()
-        create_ref_temp_views(self.spark)
         self.process_download()
+
         if spark_created_by_command:
             self.spark.stop()
 
@@ -131,7 +144,7 @@ class Command(BaseCommand):
                     "service": "spark",
                     "span_type": "Internal",
                     "job_type": str(JOB_TYPE),
-                    "message": f"Processing spark account download.",
+                    "message": "Processing spark account download.",
                     # download job details
                     "download_job_id": str(self.download_job.download_job_id),
                     "download_job_status": str(self.download_job.job_status.name),
