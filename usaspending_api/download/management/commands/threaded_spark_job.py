@@ -216,6 +216,7 @@ class Command(BaseCommand):
                 download_zip_path=zip_file_path,
                 source_df=download_df,
             )
+            logger.info(f"Uploading zip file to S3 for {download_category}")
             upload_download_file_to_s3(zip_file_path)
             logger.info(
                 f"Download contains {download_metadata.number_of_columns} columns and {download_metadata.number_of_rows} rows"
