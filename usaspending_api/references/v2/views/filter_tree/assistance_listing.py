@@ -3,7 +3,7 @@ from django.db.models.functions import Cast
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.db.models import Func, F, TextField, Value, Count, JSONField
+from django.db.models import Func, F, TextField, Value, Count, JSONField, QuerySet, CharField
 from django.db.models.query import Q
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.exceptions import InvalidParameterException
@@ -15,8 +15,6 @@ class AssistanceListingViewSet(APIView):
     """Return a list of Assistance Listings or a filtered list of Assistance Listings"""
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/references/assistance_listing.md"
-
-    all_cfdas = Cfda.objects.all()
 
     def _parse_and_validate_request(self, cfda: str | None, requested_data: Request) -> dict[str, int | str | None]:
         data = {"code": cfda, "filter": requested_data.query_params.get("filter", None)}
@@ -32,16 +30,20 @@ class AssistanceListingViewSet(APIView):
                 "allow_nulls": True,
             },
         ]
+
+        if cfda is not None and (len(str(cfda)) != 2 or not cfda.isdigit()):
+            raise InvalidParameterException(f"The assistance listing code should be two digits or not provided at all")
+
         return TinyShield(models).block(data)
 
-    def _business_logic(self, cfda_code: int | None, cfda_filter: str | None) -> list[dict]:
-        filter_condition = (
-            (Q(program_title__contains=cfda_filter) | Q(program_number__contains=cfda_filter)) if cfda_filter else Q()
-        )
-        annotations = {}
-        cfda_filters = (Q(program_number__startswith=cfda_code)) if cfda_code else Q()
-        valid_cfda_code = True if len(str(cfda_code)) == 2 else False
-        if valid_cfda_code:
+    def _business_logic(self, cfda_code: int | None, cfda_filter: str | None) -> QuerySet:
+        qs = Cfda.objects.all()
+        annotations = {"description": Value(None, output_field=CharField()), "count": Count("code")}
+        if cfda_filter:
+            qs = qs.filter(Q(program_title__contains=cfda_filter) | Q(program_number__contains=cfda_filter))
+
+        if cfda_code:
+            qs = qs.filter(program_number__startswith=cfda_code)
             annotations["children"] = ArrayAgg(
                 Func(
                     Cast(Value("code"), TextField()),
@@ -52,20 +54,17 @@ class AssistanceListingViewSet(APIView):
                     output_field=JSONField(),
                 )
             )
-        elif cfda_code is not None:
-            raise InvalidParameterException(f"The assistance listing code should be two digits or not provided at all")
 
         results = (
-            Cfda.objects.filter(filter_condition, cfda_filters)
-            .annotate(
+            qs.annotate(
                 code=Func(F("program_number"), function="SPLIT_PART", template="%(function)s(%(expressions)s, '.', 1)")
             )
             .values("code")
-            .annotate(count=Count("code"))
             .annotate(**annotations)
+            .order_by("code")
         )
 
-        return sorted(results, key=lambda cfda: cfda["code"])
+        return results
 
     @cache_response()
     def get(self, request: Request, cfda=None) -> Response:
