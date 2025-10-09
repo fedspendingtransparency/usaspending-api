@@ -4,9 +4,8 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ("transactions", "0010_auto_20240126_1915"),
+        ("transactions", "0011_distinct_awarding_funding_office_codes_transactions"),
     ]
 
     operations = [
