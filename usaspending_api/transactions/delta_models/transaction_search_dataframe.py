@@ -201,12 +201,14 @@ def transaction_search_dataframe(spark: SparkSession) -> DataFrame:
                 ),
                 True,
             ).alias("tas_components"),
-            sf.collect_set(
-                sf.to_json(
-                    sf.struct(
-                        sf.coalesce(pap.name, sf.upper(rpa.program_activity_name)).alias("name"),
-                        sf.coalesce(pap.code, sf.lpad(rpa.program_activity_code, 4, "0")).alias("code"),
-                        sf.when(pap["code"].isNotNull(), sf.lit("PARK")).otherwise(sf.lit("PAC/PAN")).alias("type"),
+            sf.sort_array(
+                sf.collect_set(
+                    sf.to_json(
+                        sf.struct(
+                            sf.coalesce(pap.name, sf.upper(rpa.program_activity_name)).alias("name"),
+                            sf.coalesce(pap.code, sf.lpad(rpa.program_activity_code, 4, "0")).alias("code"),
+                            sf.when(pap["code"].isNotNull(), sf.lit("PARK")).otherwise(sf.lit("PAC/PAN")).alias("type"),
+                        )
                     )
                 )
             ).alias("program_activities"),
