@@ -58,7 +58,7 @@ class Command(BaseCommand):
             # Determine what queues should be monitored based on the supplied values in settings.py
             # A set is used in this case to handle both queue names pointing to the same value
             queues_names = {
-                settings.BULK_DOWNLOAD_PRIORITY_SQS_QUEUE_NAME,
+                settings.PRIORITY_DOWNLOAD_SQS_QUEUE_NAME,
                 settings.BULK_DOWNLOAD_SQS_QUEUE_NAME,
             }
             # Falsy check to validate that a name is neither an empty string nor null
