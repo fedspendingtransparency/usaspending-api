@@ -331,6 +331,7 @@ class SourceProcurementTransaction(models.Model):
 
     class Meta:
         db_table = "source_procurement_transaction"
+        indexes = [models.Index(fields=["awarding_office_code", "funding_office_code"])]
 
     @property
     def table_name(self):

@@ -1,7 +1,7 @@
-from django.db import models
 from django.contrib.postgres.fields import ArrayField
+from django.db import models
 
-from usaspending_api.common.custom_django_fields import NumericField, NaiveTimestampField, BooleanFieldWithDefault
+from usaspending_api.common.custom_django_fields import BooleanFieldWithDefault, NaiveTimestampField, NumericField
 
 
 class SourceAssistanceTransaction(models.Model):
@@ -125,6 +125,7 @@ class SourceAssistanceTransaction(models.Model):
     class Meta:
         db_table = "source_assistance_transaction"
         # UNIQUE index also created on UPPER(afa_generated_unique)
+        indexes = [models.Index(fields=["awarding_office_code", "funding_office_code"])]
 
     @property
     def table_name(self):

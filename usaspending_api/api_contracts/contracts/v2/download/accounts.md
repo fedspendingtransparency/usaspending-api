@@ -32,6 +32,9 @@ Generate files and return metadata using filters on custom account
                 + `pstxt`
         + `filters` (required, AdvancedFilterObject)
             The filters used to filter the data
+        + `columns` (optional, array[string])
+          The columns specified to be included in the download. 
+          + Default: all columns
     + Body
 
             {
