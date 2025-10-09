@@ -1,5 +1,8 @@
 import os
+import logging
 import zipfile
+
+logger = logging.getLogger(__name__)
 
 
 def append_files_to_zip_file(file_paths, zip_file_path):
@@ -13,6 +16,7 @@ def append_files_to_zip_file(file_paths, zip_file_path):
     Use caution in this case by removing the zip in the finally of an exception and also checking for and removing
     the zip if it exists before you begin to create it from scratch
     """
+    logger.info(f"Appending {len(file_paths)} files to {zip_file_path}")
     with zipfile.ZipFile(zip_file_path, "a", compression=zipfile.ZIP_DEFLATED, allowZip64=True) as zip_file:
         for file_path in file_paths:
             archive_name = os.path.basename(file_path)
