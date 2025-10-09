@@ -13,7 +13,7 @@ from botocore.client import BaseClient
 
 from usaspending_api.config import CONFIG
 
-logger = logging.getLogger("script")
+logger = logging.getLogger(__name__)
 
 
 def _get_boto3(method_name: str, *args, region_name=CONFIG.AWS_REGION, **kwargs):
@@ -154,6 +154,7 @@ def delete_s3_objects(
     object_list = []
 
     if key_prefix:
+        logger.info(f"Gathering objects to delete from S3 that match the prefix: {key_prefix}")
         bucket = get_s3_bucket(bucket_name, region_name)
         objects = bucket.objects.filter(Prefix=key_prefix)
         object_list.extend([{"Key": obj.key} for obj in objects])
@@ -161,6 +162,7 @@ def delete_s3_objects(
     if key_list:
         object_list.extend([{"Key": key} for key in key_list])
 
+    logger.info(f"Deleting {len(object_list)} objects from S3")
     s3_client = _get_boto3("client", "s3", region_name=region_name)
     resp = s3_client.delete_objects(Bucket=bucket_name, Delete={"Objects": object_list})
 
