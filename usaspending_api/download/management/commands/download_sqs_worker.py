@@ -62,7 +62,7 @@ class Command(BaseCommand):
                 settings.BULK_DOWNLOAD_SQS_QUEUE_NAME,
             }
             # Falsy check to validate that a name is neither an empty string nor null
-            queue_instances = [get_sqs_queue(name) for name in queues_names if name or settings.IS_LOCAL]
+            queue_instances = [get_sqs_queue(queue_name=name) for name in queues_names if name or settings.IS_LOCAL]
 
             log_job_message(logger=logger, message="Starting SQS polling", job_type=JOB_TYPE)
 
