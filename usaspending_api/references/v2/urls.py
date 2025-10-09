@@ -12,12 +12,14 @@ from usaspending_api.references.v2.views import (
     toptier_agencies,
     total_budgetary_resources,
 )
-from usaspending_api.references.v2.views.filter_tree import naics, tas, psc
+from usaspending_api.references.v2.views.filter_tree import naics, tas, psc, assistance_listing
 
 urlpatterns = [
     re_path(r"^agency/(?P<pk>[0-9]+)/$", agency.AgencyViewSet.as_view()),
     re_path(r"^award_types/$", award_types.AwardTypeGroups.as_view()),
     re_path(r"^cfda/totals/$", cfda.CFDAViewSet.as_view()),
+    re_path(r"^assistance_listing/$", assistance_listing.AssistanceListingViewSet.as_view()),
+    re_path(r"^assistance_listing/(?P<cfda>\w*)/$", assistance_listing.AssistanceListingViewSet.as_view()),
     re_path(r"^cfda/totals/(?P<cfda>[0-9]+\.[0-9]+)/$", cfda.CFDAViewSet.as_view()),
     re_path(r"^data_dictionary/$", data_dictionary.DataDictionaryViewSet.as_view()),
     re_path(r"^def_codes/$", def_codes.DEFCodesViewSet.as_view()),
