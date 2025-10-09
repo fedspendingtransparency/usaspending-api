@@ -140,16 +140,18 @@ def delete_s3_objects(
     key_list: Optional[list[str]] = None,
     key_prefix: Optional[str] = None,
     region_name: Optional[str] = settings.USASPENDING_AWS_REGION,
-) -> int:
+    dry_run: bool = False,
+) -> list[dict]:
     """Deletes all objects based on a list of keys
     Args:
         bucket_name: The name of the bucket where the objects are located
         key_list: A list of keys representing objects in the bucket to delete
         key_prefix: A prefix in the bucket used to generate a list of objects to delete
         region_name: AWS region to use; defaults to the settings provided region
+        dry_run: If true, do not actually delete the objects
 
     Returns:
-        Number of objects delete
+        List of keys that either were or would be deleted
     """
     object_list = []
 
@@ -162,8 +164,13 @@ def delete_s3_objects(
     if key_list:
         object_list.extend([{"Key": key} for key in key_list])
 
-    logger.info(f"Deleting {len(object_list)} objects from S3")
-    s3_client = _get_boto3("client", "s3", region_name=region_name)
-    resp = s3_client.delete_objects(Bucket=bucket_name, Delete={"Objects": object_list})
+    if dry_run:
+        logger.info(f"Skipping deletion of {len(object_list)} objects from S3")
+        result = object_list
+    else:
+        logger.info(f"Deleting {len(object_list)} objects from S3")
+        s3_client = _get_boto3("client", "s3", region_name=region_name)
+        resp = s3_client.delete_objects(Bucket=bucket_name, Delete={"Objects": object_list})
+        result = resp.get("Deleted", [])
 
-    return len(resp.get("Deleted", []))
+    return result

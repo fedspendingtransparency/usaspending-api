@@ -10,10 +10,8 @@ from django.conf import settings
 from django.core.management import BaseCommand
 from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.types import ArrayType, StringType, IntegerType
-from usaspending_api.common.helpers.s3_helpers import upload_download_file_to_s3
-
-from usaspending_api.common.helpers.download_csv_strategies import SparkToCSVStrategy
-
+from usaspending_api.common.helpers.download_csv_strategies import CSVDownloadMetadata, SparkToCSVStrategy
+from usaspending_api.common.helpers.s3_helpers import upload_download_file_to_s3, delete_s3_objects
 from usaspending_api.common.helpers.spark_helpers import get_active_spark_session, configure_spark_session
 from usaspending_api.common.helpers.timing_helpers import Timer as BaseTimer
 from usaspending_api.common.spark.configs import DEFAULT_EXTRA_CONF
@@ -47,7 +45,7 @@ class DownloadCategory:
     fiscal_year: int
 
     def __str__(self):
-        return f"ID: {self.download_unique_id} | Agency: {self.agency_abbreviation} | Fiscal Year: {self.fiscal_year}"
+        return f"Agency: {self.agency_abbreviation} | Fiscal Year: {self.fiscal_year}"
 
 
 class Timer(BaseTimer):
@@ -125,17 +123,25 @@ class Command(BaseCommand):
                     for download_category in download_category_list
                 }
 
-            logger.info("File locations for the following combinations:")
-            for future in concurrent.futures.as_completed(download_futures):
-                download_category = download_futures[future]
+        for future in concurrent.futures.as_completed(download_futures):
+            download_category = download_futures[future]
+            with Timer(f"[{download_category.download_unique_id}] Removing S3 objects for '{download_category}'"):
                 try:
-                    logger.info(f"\t{download_category} | File Name(s): {future.result()}")
+                    download_metadata = future.result()
+                    objects_to_delete = download_metadata.s3_objects
+                    logger.info(
+                        f"[{download_category.download_unique_id}] Attempting to delete {len(objects_to_delete)} S3 objects"
+                    )
+                    deleted_objects = delete_s3_objects(
+                        settings.BULK_DOWNLOAD_S3_BUCKET_NAME, key_list=objects_to_delete
+                    )
+                    logger.info(f"[{download_category.download_unique_id}] Deleted {len(deleted_objects)} S3 objects")
                 except Exception:
-                    logger.exception(f"Error occurred while generated download for '{download_category}'")
+                    logger.exception(f"Error occurred while generating download for '{download_category}'")
                     raise
 
-            if spark_created_by_command:
-                self.spark.stop()
+        if spark_created_by_command:
+            self.spark.stop()
 
     @staticmethod
     def validate_options(options: dict) -> None:
@@ -193,7 +199,7 @@ class Command(BaseCommand):
         df = df.withColumns({field.name: df[field.name].cast(StringType()) for field in fields_to_convert})
         return df
 
-    def generate_download(self, download_category: DownloadCategory) -> list[str]:
+    def generate_download(self, download_category: DownloadCategory) -> CSVDownloadMetadata:
         with Timer(f"Generating download for {download_category}"):
             spark_to_csv_strategy = SparkToCSVStrategy(logger)
             working_dir_path = Path(settings.CSV_LOCAL_PATH)
@@ -216,11 +222,12 @@ class Command(BaseCommand):
                 download_zip_path=zip_file_path,
                 source_df=download_df,
             )
-            logger.info(f"Uploading zip file to S3 for {download_category}")
+            logger.info(f"[{download_category.download_unique_id}] Uploading zip file to S3 for {download_category}")
             upload_download_file_to_s3(zip_file_path)
             logger.info(
-                f"Download contains {download_metadata.number_of_columns} columns and {download_metadata.number_of_rows} rows"
+                f"[{download_category.download_unique_id}] Download contains {download_metadata.number_of_columns}"
+                " columns and {download_metadata.number_of_rows} rows"
             )
             self.cleanup(download_metadata.filepaths)
 
-        return download_metadata.filepaths
+        return download_metadata
