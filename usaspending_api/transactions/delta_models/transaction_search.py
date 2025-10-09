@@ -1070,7 +1070,7 @@ _base_load_sql_string = rf"""
                 ),
                 TRUE
             ) AS tas_components,
-            COLLECT_SET(
+            SORT_ARRAY(COLLECT_SET(
                 TO_JSON(
                     NAMED_STRUCT(
                         'name', COALESCE(pap.name, UPPER(rpa.program_activity_name)),
@@ -1078,7 +1078,7 @@ _base_load_sql_string = rf"""
                         'type', CASE WHEN pap.code IS NOT NULL THEN 'PARK' ELSE 'PAC/PAN' END
                     )
                 )
-            ) AS program_activities
+            )) AS program_activities
         FROM int.financial_accounts_by_awards AS faba
         INNER JOIN global_temp.treasury_appropriation_account AS taa ON taa.treasury_account_identifier = faba.treasury_account_id
         INNER JOIN global_temp.federal_account AS fa ON fa.id = taa.federal_account_id
