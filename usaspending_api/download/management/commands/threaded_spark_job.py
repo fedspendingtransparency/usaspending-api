@@ -136,24 +136,24 @@ class Command(BaseCommand):
                         for download_category in download_category_list
                     }
 
-            with Timer("Creating zip files and pushing to S3"):
-                with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as finish_download_executor:
-                    finish_download_futures = {
-                        finish_download_executor.submit(
-                            self.finalize_download, download_category, future
-                        ): download_category
-                        for (future, download_category) in generate_download_futures.items()
-                    }
-                for future in concurrent.futures.as_completed(finish_download_futures):
-                    download_category = finish_download_futures[future]
-                    try:
-                        # We don't use the result, but want to make sure this didn't run into an exception
-                        future.result()
-                    except Exception:
-                        logger.exception(f"Error occurred while generating download '{download_category}'")
-                        raise
-                    else:
-                        logger.info(f"Download complete for '{download_category}'")
+                    with Timer("Creating zip files and pushing to S3"):
+                        with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as finish_download_executor:
+                            finish_download_futures = {
+                                finish_download_executor.submit(
+                                    self.finalize_download, download_category, future
+                                ): download_category
+                                for (future, download_category) in generate_download_futures.items()
+                            }
+                        for future in concurrent.futures.as_completed(finish_download_futures):
+                            download_category = finish_download_futures[future]
+                            try:
+                                # We don't use the result, but want to make sure this didn't run into an exception
+                                future.result()
+                            except Exception:
+                                logger.exception(f"Error occurred while generating download '{download_category}'")
+                                raise
+                            else:
+                                logger.info(f"Download complete for '{download_category}'")
 
         if spark_created_by_command:
             self.spark.stop()
