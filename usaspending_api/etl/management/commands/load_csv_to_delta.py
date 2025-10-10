@@ -1,5 +1,6 @@
 import logging
 from dataclasses import dataclass
+from datetime import datetime
 
 from django.core.management.base import BaseCommand
 from pyspark.sql import SparkSession
@@ -107,8 +108,11 @@ class Command(BaseCommand):
 
     def load_csv(self):
         delta_path = f"{delta_root}/{self.csv_metadata.db_name}/{self.csv_metadata.table_name}"
+        csv_path = f"{csv_root}/{self.csv_metadata.db_name}/{self.csv_metadata.table_name}"
         self.spark.sql(f"CREATE DATABASE IF NOT EXISTS {self.csv_metadata.db_name};")
         df = self.spark.read.csv(self.csv_metadata.path, header=True, schema=self.csv_metadata.schema)
+        created_at = str(datetime.now())
+        df.write.parquet(f"{csv_path}/{self.csv_metadata.table_name}-{created_at}.parquet", mode="overwrite")
         df.write.saveAsTable(
             f"{self.csv_metadata.db_name}.{self.csv_metadata.table_name}",
             mode="overwrite",
