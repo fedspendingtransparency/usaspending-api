@@ -135,6 +135,7 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
         delimiter=",",
         file_format="csv",
         skip_s3_delete=False,
+        skip_zip_file=False,
     ):
         # These imports are here for a reason.
         #   some strategies do not require spark
@@ -204,7 +205,8 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
             )
             if self.spark_created_by_command:
                 self.spark.stop()
-        append_files_to_zip_file(final_csv_data_file_locations, download_zip_path)
+        if not skip_zip_file:
+            append_files_to_zip_file(final_csv_data_file_locations, download_zip_path)
         self._logger.info(f"Generated the following data csv files {final_csv_data_file_locations}")
         return CSVDownloadMetadata(final_csv_data_file_locations, record_count, column_count, deleted_keys)
 

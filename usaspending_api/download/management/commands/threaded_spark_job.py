@@ -10,11 +10,13 @@ from django.conf import settings
 from django.core.management import BaseCommand
 from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.types import ArrayType, StringType, IntegerType
+
 from usaspending_api.common.helpers.download_csv_strategies import CSVDownloadMetadata, SparkToCSVStrategy
 from usaspending_api.common.helpers.s3_helpers import upload_download_file_to_s3, delete_s3_objects
 from usaspending_api.common.helpers.spark_helpers import get_active_spark_session, configure_spark_session
 from usaspending_api.common.helpers.timing_helpers import Timer as BaseTimer
 from usaspending_api.common.spark.configs import DEFAULT_EXTRA_CONF
+from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_file
 from usaspending_api.references.models import ToptierAgency
 
 logger = logging.getLogger(__name__)
@@ -41,6 +43,7 @@ class SchedulerType(str, Enum):
 class DownloadCategory:
     download_unique_id: int
     table_name: str
+    file_name: str
     agency_abbreviation: str
     fiscal_year: int
 
@@ -57,6 +60,8 @@ class Command(BaseCommand):
     help = "Proof of concept to test threads when performing multiple Spark jobs that involve I/O"
 
     spark: SparkSession
+
+    working_dir_path = Path(settings.CSV_LOCAL_PATH)
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -109,34 +114,46 @@ class Command(BaseCommand):
         num_threads = options["num_threads"]
         download_category_list = []
         logger.info("Downloads will be generated for the following combinations:")
-        for idx, option_pair in enumerate(itertools.product(options["agencies"], options["fiscal_years"])):
-            temp_download_category = DownloadCategory(idx, options["table_name"], *option_pair)
+        for idx, (agency_abbreviation, fiscal_year) in enumerate(
+            itertools.product(options["agencies"], options["fiscal_years"])
+        ):
+            temp_file_name = self.build_file_name(agency_abbreviation, fiscal_year)
+            temp_download_category = DownloadCategory(
+                idx, options["table_name"], temp_file_name, agency_abbreviation, fiscal_year
+            )
             download_category_list.append(temp_download_category)
             logger.info(f"\t{temp_download_category}")
 
+        self.spark, spark_created_by_command = self.setup_spark_session(options["schedular"])
+
         with Timer(f"Starting generation of {len(download_category_list)} downloads with {num_threads} thread(s)"):
-            self.spark, spark_created_by_command = self.setup_spark_session(options["schedular"])
+            with Timer("Generating download files"):
+                with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as generate_download_executor:
+                    generate_download_futures = {
+                        generate_download_executor.submit(
+                            self.generate_download_files, download_category
+                        ): download_category
+                        for download_category in download_category_list
+                    }
 
-            with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
-                download_futures = {
-                    executor.submit(self.generate_download, download_category): download_category
-                    for download_category in download_category_list
-                }
-
-        for future in concurrent.futures.as_completed(download_futures):
-            download_category = download_futures[future]
-            with Timer(f"[{download_category.download_unique_id}] Removing S3 objects for '{download_category}'"):
-                try:
-                    download_metadata = future.result()
-                    object_keys = download_metadata.s3_object_keys
-                    logger.info(
-                        f"[{download_category.download_unique_id}] Attempting to delete {len(object_keys)} S3 objects"
-                    )
-                    deleted_keys = delete_s3_objects(settings.BULK_DOWNLOAD_S3_BUCKET_NAME, key_list=object_keys)
-                    logger.info(f"[{download_category.download_unique_id}] Deleted {len(deleted_keys)} S3 objects")
-                except Exception:
-                    logger.exception(f"Error occurred while generating download for '{download_category}'")
-                    raise
+            with Timer("Creating zip files and pushing to S3"):
+                with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as finish_download_executor:
+                    finish_download_futures = {
+                        finish_download_executor.submit(
+                            self.finalize_download, download_category, future
+                        ): download_category
+                        for (future, download_category) in generate_download_futures.items()
+                    }
+                for future in concurrent.futures.as_completed(finish_download_futures):
+                    download_category = finish_download_futures[future]
+                    try:
+                        # We don't use the result, but want to make sure this didn't run into an exception
+                        future.result()
+                    except Exception:
+                        logger.exception(f"Error occurred while generating download '{download_category}'")
+                        raise
+                    else:
+                        logger.info(f"Download complete for '{download_category}'")
 
         if spark_created_by_command:
             self.spark.stop()
@@ -197,35 +214,64 @@ class Command(BaseCommand):
         df = df.withColumns({field.name: df[field.name].cast(StringType()) for field in fields_to_convert})
         return df
 
-    def generate_download(self, download_category: DownloadCategory) -> CSVDownloadMetadata:
-        with Timer(f"Generating download for {download_category}"):
+    @staticmethod
+    def build_file_name(agency_abbreviation: str, fiscal_year: int) -> str:
+        download_file_name = f"MONTHLY_DOWNLOAD_TEST_{agency_abbreviation}_{fiscal_year}"
+        return download_file_name
+
+    def generate_download_files(self, download_category: DownloadCategory) -> CSVDownloadMetadata:
+        with Timer(f"[{download_category.download_unique_id}] Generating download for '{download_category}'"):
             spark_to_csv_strategy = SparkToCSVStrategy(logger)
-            working_dir_path = Path(settings.CSV_LOCAL_PATH)
-            if not working_dir_path.exists():
-                working_dir_path.mkdir()
-            download_file_name = (
-                f"MONTHLY_DOWNLOAD_TEST_{download_category.agency_abbreviation}_{download_category.fiscal_year}"
-            )
+            if not self.working_dir_path.exists():
+                self.working_dir_path.mkdir()
             download_df = self.cast_arrays_to_string(self.spark.table(download_category.table_name))
             download_df = download_df.filter(
                 (download_df.awarding_toptier_agency_abbreviation == download_category.agency_abbreviation)
                 & (download_df.fiscal_year == download_category.fiscal_year)
             )
-            zip_file_path = working_dir_path / f"{download_file_name}.zip"
+            download_file_name = download_category.file_name
+            zip_file_path = self.working_dir_path / f"{download_file_name}.zip"
             download_metadata = spark_to_csv_strategy.download_to_csv(
                 source_sql=None,
-                destination_path=working_dir_path / download_file_name,
+                destination_path=self.working_dir_path / download_file_name,
                 destination_file_name=download_file_name,
-                working_dir_path=working_dir_path,
+                working_dir_path=self.working_dir_path,
                 download_zip_path=zip_file_path,
                 source_df=download_df,
+                skip_s3_delete=True,
+                skip_zip_file=True,
             )
-            logger.info(f"[{download_category.download_unique_id}] Uploading zip file to S3 for {download_category}")
-            upload_download_file_to_s3(zip_file_path)
             logger.info(
                 f"[{download_category.download_unique_id}] Download contains {download_metadata.number_of_columns}"
-                " columns and {download_metadata.number_of_rows} rows"
+                f" columns and {download_metadata.number_of_rows} rows"
             )
-            self.cleanup(download_metadata.filepaths)
 
         return download_metadata
+
+    def finalize_download(
+        self, download_category: DownloadCategory, generate_download_future: concurrent.futures.Future
+    ) -> DownloadCategory:
+        try:
+            download_metadata = generate_download_future.result()
+        except Exception:
+            logger.exception(f"Error occurred while finalizing download for '{download_category}'")
+            raise
+        with Timer(f"[{download_category.download_unique_id}] Finalizing download for {download_category}"):
+            object_keys = download_metadata.s3_object_keys
+
+            download_file_name = download_category.file_name
+            zip_file_path = self.working_dir_path / f"{download_file_name}.zip"
+
+            logger.info(f"[{download_category.download_unique_id}] Appending files to zip file")
+            append_files_to_zip_file(download_metadata.filepaths, zip_file_path)
+
+            logger.info(f"[{download_category.download_unique_id}] Uploading zip file to S3 for {download_category}")
+            upload_download_file_to_s3(zip_file_path)
+
+            logger.info(f"[{download_category.download_unique_id}] Attempting to delete {len(object_keys)} S3 objects")
+            deleted_keys = delete_s3_objects(settings.BULK_DOWNLOAD_S3_BUCKET_NAME, key_list=object_keys)
+            logger.info(f"[{download_category.download_unique_id}] Deleted {len(deleted_keys)} S3 objects")
+
+            self.cleanup(download_metadata.filepaths)
+
+        return download_category
