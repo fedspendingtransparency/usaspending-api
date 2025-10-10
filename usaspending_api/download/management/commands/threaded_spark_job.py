@@ -223,24 +223,11 @@ class Command(BaseCommand):
             spark_to_csv_strategy = SparkToCSVStrategy(logger)
             if not self.working_dir_path.exists():
                 self.working_dir_path.mkdir()
-            # download_df = self.cast_arrays_to_string(self.spark.table(download_category.table_name))
-            # download_df = download_df.filter(
-            #     (download_df.awarding_toptier_agency_abbreviation == download_category.agency_abbreviation)
-            #     & (download_df.fiscal_year == download_category.fiscal_year)
-            # )
-            data = [
-                ("Alice", 1, "A"),
-                ("Bob", 2, "B"),
-                ("Charlie", 3, "A"),
-                ("David", 4, "C"),
-                ("Eve", 5, "B"),
-                ("Frank", 6, "A"),
-                ("Grace", 7, "C"),
-                ("Heidi", 8, "B"),
-                ("Ivan", 9, "A"),
-                ("Judy", 10, "C"),
-            ]
-            download_df = self.spark.createDataFrame(data)
+            download_df = self.cast_arrays_to_string(self.spark.table(download_category.table_name))
+            download_df = download_df.filter(
+                (download_df.awarding_toptier_agency_abbreviation == download_category.agency_abbreviation)
+                & (download_df.fiscal_year == download_category.fiscal_year)
+            )
             download_file_name = download_category.file_name
             zip_file_path = self.working_dir_path / f"{download_file_name}.zip"
             download_metadata = spark_to_csv_strategy.download_to_csv(
