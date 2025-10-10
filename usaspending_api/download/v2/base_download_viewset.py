@@ -38,12 +38,13 @@ class BaseDownloadViewSet(APIView):
         validator = validator_type(request.data)
         json_request = validator.json_request
         # checks if columns exist
-        all_cols = []
-        for download_type in json_request["download_types"]:
-            all_cols.extend(query_paths[download_type][json_request["account_level"]])
-        invalid_columns = [col for col in json_request["columns"] if col not in all_cols]
-        if invalid_columns:
-            raise InvalidParameterException("Unknown columns: {}".format(invalid_columns))
+        if "columns" in json_request:
+            all_cols = []
+            for download_type in json_request["download_types"]:
+                all_cols.extend(query_paths[download_type][json_request["account_level"]])
+            invalid_columns = [col for col in json_request["columns"] if col not in all_cols]
+            if invalid_columns:
+                raise InvalidParameterException("Unknown columns: {}".format(invalid_columns))
 
         # Check if download is pre-generated
         pre_generated_download = json_request.pop("pre_generated_download", None)
