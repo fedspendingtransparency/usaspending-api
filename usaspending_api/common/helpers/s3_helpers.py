@@ -141,7 +141,7 @@ def delete_s3_objects(
     key_prefix: Optional[str] = None,
     region_name: Optional[str] = settings.USASPENDING_AWS_REGION,
     dry_run: bool = False,
-) -> list[dict]:
+) -> list[str]:
     """Deletes all objects based on a list of keys
     Args:
         bucket_name: The name of the bucket where the objects are located
@@ -173,4 +173,4 @@ def delete_s3_objects(
         resp = s3_client.delete_objects(Bucket=bucket_name, Delete={"Objects": object_list})
         result = resp.get("Deleted", [])
 
-    return result
+    return [val["Key"] for val in result]

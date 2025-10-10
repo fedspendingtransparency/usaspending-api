@@ -24,9 +24,9 @@ from usaspending_api.download.lookups import FILE_FORMATS
 @dataclass
 class CSVDownloadMetadata:
     filepaths: list[str]
-    s3_objects: list[dict]
     number_of_rows: int
     number_of_columns: Optional[int] = None
+    s3_object_keys: Optional[list[str]] = None
 
 
 class AbstractToCSVStrategy(ABC):
@@ -199,14 +199,14 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
             self._logger.exception("Exception encountered. See logs")
             raise
         finally:
-            deleted_objects = delete_s3_objects(
+            deleted_keys = delete_s3_objects(
                 s3_bucket_name, key_prefix=f"{s3_bucket_sub_path}/{destination_file_name}", dry_run=skip_s3_delete
             )
             if self.spark_created_by_command:
                 self.spark.stop()
         append_files_to_zip_file(final_csv_data_file_locations, download_zip_path)
         self._logger.info(f"Generated the following data csv files {final_csv_data_file_locations}")
-        return CSVDownloadMetadata(final_csv_data_file_locations, deleted_objects, record_count, column_count)
+        return CSVDownloadMetadata(final_csv_data_file_locations, record_count, column_count, deleted_keys)
 
     def _move_data_csv_s3_to_local(
         self, bucket_name, s3_file_paths, s3_bucket_path, s3_bucket_sub_path, destination_path_dir

@@ -128,14 +128,12 @@ class Command(BaseCommand):
             with Timer(f"[{download_category.download_unique_id}] Removing S3 objects for '{download_category}'"):
                 try:
                     download_metadata = future.result()
-                    objects_to_delete = download_metadata.s3_objects
+                    object_keys = download_metadata.s3_object_keys
                     logger.info(
-                        f"[{download_category.download_unique_id}] Attempting to delete {len(objects_to_delete)} S3 objects"
+                        f"[{download_category.download_unique_id}] Attempting to delete {len(object_keys)} S3 objects"
                     )
-                    deleted_objects = delete_s3_objects(
-                        settings.BULK_DOWNLOAD_S3_BUCKET_NAME, key_list=objects_to_delete
-                    )
-                    logger.info(f"[{download_category.download_unique_id}] Deleted {len(deleted_objects)} S3 objects")
+                    deleted_keys = delete_s3_objects(settings.BULK_DOWNLOAD_S3_BUCKET_NAME, key_list=object_keys)
+                    logger.info(f"[{download_category.download_unique_id}] Deleted {len(deleted_keys)} S3 objects")
                 except Exception:
                     logger.exception(f"Error occurred while generating download for '{download_category}'")
                     raise
