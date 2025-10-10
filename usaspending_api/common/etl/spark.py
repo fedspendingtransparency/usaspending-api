@@ -12,8 +12,8 @@ from itertools import chain
 from typing import List
 
 from py4j.protocol import Py4JError
-from pyspark.sql import DataFrame, SparkSession
-from pyspark.sql.functions import col, concat, concat_ws, expr, lit, regexp_replace, to_date, transform, when
+from pyspark.sql import DataFrame, SparkSession, Observation
+from pyspark.sql.functions import col, concat, count, concat_ws, expr, lit, regexp_replace, to_date, transform, when
 from pyspark.sql.types import ArrayType, DecimalType, StringType, StructType
 
 from usaspending_api.accounts.models import AppropriationAccountBalances, FederalAccount, TreasuryAppropriationAccount
@@ -616,7 +616,8 @@ def write_csv_file(
         fs.delete(parts_dir_path, True)
     start = time.time()
     logger.info(f"Writing source data DataFrame to csv part files for file {parts_dir}...")
-    df_record_count = df.count()
+    df_metrics = Observation("metrics")
+    df = df.observe(df_metrics, count("*").alias("row_count"))
     df.repartition(num_partitions).write.options(
         # NOTE: this is a suggestion, to be used by Spark if partitions yield multiple files
         maxRecordsPerFile=max_records_per_file,
@@ -631,6 +632,7 @@ def write_csv_file(
         mode="overwrite" if overwrite else "errorifexists",
         sep=delimiter,
     )
+    df_record_count = df_metrics.get["row_count"]
     logger.info(f"{parts_dir} contains {df_record_count:,} rows of data")
     logger.info(f"Wrote source data DataFrame to csv part files in {(time.time() - start):3f}s")
     return df_record_count
