@@ -4,7 +4,7 @@ from decimal import Decimal
 from django.core.management import call_command
 
 
-def test_load_world_cities_csv_to_delta(spark, hive_unittest_metastore_db):
+def test_load_world_cities_csv_to_delta(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
     test_data = [
         [
             "city",
