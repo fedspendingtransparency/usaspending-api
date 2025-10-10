@@ -37,14 +37,6 @@ class BaseDownloadViewSet(APIView):
     ):
         validator = validator_type(request.data)
         json_request = validator.json_request
-        # checks if columns exist
-        if "columns" in json_request:
-            all_cols = []
-            for download_type in json_request["download_types"]:
-                all_cols.extend(query_paths[download_type][json_request["account_level"]])
-            invalid_columns = [col for col in json_request["columns"] if col not in all_cols]
-            if invalid_columns:
-                raise InvalidParameterException("Unknown columns: {}".format(invalid_columns))
 
         # Check if download is pre-generated
         pre_generated_download = json_request.pop("pre_generated_download", None)
@@ -89,7 +81,7 @@ class BaseDownloadViewSet(APIView):
             and "award_financial" in json_request["download_types"]
         ):
             # goes to spark for File C account download
-            self.process_account_download_in_spark(download_job=download_job)
+            self.process_account_download_in_spark(download_job=download_job, json_request=json_request)
         elif settings.IS_LOCAL and settings.RUN_LOCAL_DOWNLOAD_IN_PROCESS:
             # Eagerly execute the download in this running process
             download_generation.generate_download(download_job)
@@ -102,10 +94,18 @@ class BaseDownloadViewSet(APIView):
             queue = get_sqs_queue(queue_name=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
             queue.send_message(MessageBody=str(download_job.download_job_id))
 
-    def process_account_download_in_spark(self, download_job: DownloadJob):
+    def process_account_download_in_spark(self, download_job: DownloadJob, json_request: dict):
         """
         Process File C downloads through spark instead of sqs for better performance
         """
+        # checks if columns exist
+        if "columns" in json_request:
+            all_cols = []
+            for download_type in json_request["download_types"]:
+                all_cols.extend(query_paths[download_type][json_request["account_level"]])
+            invalid_columns = [col for col in json_request["columns"] if col not in all_cols]
+            if invalid_columns:
+                raise InvalidParameterException("Unknown columns: {}".format(invalid_columns))
         if settings.IS_LOCAL:
             spark_jobs = SparkJobs(LocalStrategy())
             spark_jobs.start(
