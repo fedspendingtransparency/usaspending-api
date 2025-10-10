@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 from usaspending_api.broker.lookups import EXTERNAL_DATA_TYPE_DICT
 from usaspending_api.broker.models import ExternalDataLoadDate
 from usaspending_api.common.api_versioning import API_TRANSFORM_FUNCTIONS, api_transformations
+from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.experimental_api_flags import is_experimental_download_api
 from usaspending_api.common.helpers.dict_helpers import order_nested_object
 from usaspending_api.common.spark.jobs import DatabricksStrategy, LocalStrategy, SparkJobs
@@ -21,6 +22,7 @@ from usaspending_api.download.filestreaming.s3_handler import S3Handler
 from usaspending_api.download.helpers import write_to_download_log as write_to_log
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.models.download_job import DownloadJob
+from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 from usaspending_api.download.v2.request_validations import DownloadValidatorBase
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
@@ -35,6 +37,13 @@ class BaseDownloadViewSet(APIView):
     ):
         validator = validator_type(request.data)
         json_request = validator.json_request
+        # checks if columns exist
+        all_cols = []
+        for download_type in json_request["download_types"]:
+            all_cols.extend(query_paths[download_type][json_request["account_level"]])
+        invalid_columns = [col for col in json_request["columns"] if col not in all_cols]
+        if invalid_columns:
+            raise InvalidParameterException("Unknown columns: {}".format(invalid_columns))
 
         # Check if download is pre-generated
         pre_generated_download = json_request.pop("pre_generated_download", None)
