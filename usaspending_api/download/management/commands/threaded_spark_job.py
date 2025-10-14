@@ -126,6 +126,8 @@ class Command(BaseCommand):
 
         self.spark, spark_created_by_command = self.setup_spark_session(options["schedular"])
 
+        download_metadata_list = []
+
         with Timer(f"Starting generation of {len(download_category_list)} downloads with {num_threads} thread(s)"):
             with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as generate_download_executor:
                 generate_download_futures = {
@@ -136,7 +138,7 @@ class Command(BaseCommand):
                 }
 
                 with Timer("Creating zip files and pushing to S3"):
-                    with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as finish_download_executor:
+                    with concurrent.futures.ThreadPoolExecutor() as finish_download_executor:
                         finish_download_futures = {
                             finish_download_executor.submit(
                                 self.finalize_download, download_category, future
@@ -147,12 +149,15 @@ class Command(BaseCommand):
                         download_category = finish_download_futures[future]
                         try:
                             # We don't use the result, but want to make sure this didn't run into an exception
-                            future.result()
+                            download_metadata_list.append(future.result())
                         except Exception:
                             logger.exception(f"Error occurred while generating download '{download_category}'")
                             raise
                         else:
                             logger.info(f"Download complete for '{download_category}'")
+
+        total_num_rows = sum([val.number_of_rows for val in download_metadata_list])
+        logger.info(f"Total number of rows generated: {total_num_rows}")
 
         if spark_created_by_command:
             self.spark.stop()
@@ -249,7 +254,7 @@ class Command(BaseCommand):
 
     def finalize_download(
         self, download_category: DownloadCategory, generate_download_future: concurrent.futures.Future
-    ) -> DownloadCategory:
+    ) -> CSVDownloadMetadata:
         try:
             download_metadata = generate_download_future.result()
         except Exception:
@@ -273,4 +278,4 @@ class Command(BaseCommand):
 
             self.cleanup(download_metadata.filepaths)
 
-        return download_category
+        return download_metadata
