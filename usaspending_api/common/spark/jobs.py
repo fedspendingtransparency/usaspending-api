@@ -71,7 +71,7 @@ class DatabricksStrategy(_AbstractStrategy):
 
     def _wait_for_run_to_start(self, job: BaseJob, job_run_id: int) -> None:
         max_wait_time = 2 * 60
-        expected_job_statuses = [RunLifeCycleState.SKIPPED, RunLifeCycleState.PENDING, RunLifeCycleState.RUNNING]
+        expected_job_statuses = [RunLifeCycleState.SKIPPED, RunLifeCycleState.RUNNING]
 
         # Initial wait to give the job time to start or be marked as skipped
         time.sleep(5)
@@ -87,7 +87,7 @@ class DatabricksStrategy(_AbstractStrategy):
                 # been picked up for processing.
                 job_status = None
             if job_status is None:
-                time.sleep(5)
+                time.sleep(15)
                 # Fetch the job_run for next iteration
                 job_run = self.client.jobs.get_run(job_run_id)
 
