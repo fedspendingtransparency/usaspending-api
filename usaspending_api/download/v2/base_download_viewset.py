@@ -84,12 +84,12 @@ class BaseDownloadViewSet(APIView):
             all_cols.update(query_paths[download_type][json_request["account_level"]])
         invalid_columns = set(json_request["columns"]) - all_cols
         if invalid_columns:
-            raise InvalidParameterException(f"Unknown columns: {invalid_columns}")
+            raise InvalidParameterException(f"Unknown columns: {list(invalid_columns)}")
 
     def process_request(self, download_job: DownloadJob, json_request: dict):
         job_name = f"{settings.BULK_DOWNLOAD_SPARK_JOB_NAME_PREFIX}-{json_request['request_type']}"
 
-        if self.is_spark_download(json_request):
+        if self.is_spark_download(json_request) and "columns" in json_request:
             # TODO: This currently only supports Custom Account download as this is the only download for Spark as of
             #       right now. As we migrate more downloads away from Postgres this logic should be updated further.
             self.validate_columns(json_request)
