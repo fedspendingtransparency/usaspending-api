@@ -4,15 +4,17 @@ from enum import Enum
 from functools import reduce
 from typing import TypeVar
 
-from pyspark.sql import functions as sf, Column, SparkSession
+from duckdb.experimental.spark.sql import SparkSession
+from duckdb.experimental.spark.sql import functions as sf
+from duckdb.experimental.spark.sql.column import Column
 
+# from pyspark.sql import functions as sf, Column, SparkSession
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.download.delta_downloads.abstract_downloads.account_download import (
     AbstractAccountDownload,
     AccountLevel,
 )
 from usaspending_api.download.delta_downloads.filters.account_filters import AccountDownloadFilters
-
 
 AccountDownload = TypeVar("AccountDownload", bound=AbstractAccountDownload)
 
@@ -28,7 +30,6 @@ class AccountDownloadConditionName(Enum):
 
 
 class AbstractAccountDownloadFactory(ABC):
-
     def __init__(self, spark: SparkSession, filters: AccountDownloadFilters):
         self._spark = spark
         self._filters = filters
