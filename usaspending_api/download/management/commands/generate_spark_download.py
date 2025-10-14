@@ -157,10 +157,6 @@ class Command(BaseCommand):
             download_request = self.get_download_request()
             if self.columns is not None:
                 for download in download_request.download_list:
-                    source = download.dataframe.columns
-                    invalid_columns = [col in source for col in self.columns if col not in source]
-                    if invalid_columns:
-                        raise InvalidParameterException("Unknown columns in: {}".format(invalid_columns))
                     download.dataframe = download.dataframe.select(*self.columns)
 
             csvs_metadata = [
