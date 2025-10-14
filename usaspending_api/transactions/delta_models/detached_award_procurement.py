@@ -245,15 +245,19 @@ DETACHED_AWARD_PROCUREMENT_COLUMNS = {
     "research_description": {"delta": "STRING", "postgres": "TEXT"},
     "sam_exception": {"delta": "STRING", "postgres": "TEXT"},
     "sam_exception_description": {"delta": "STRING", "postgres": "TEXT"},
+    "sba_cert_econ_disadv_wosb": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
+    "sba_cert_women_own_small_bus": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
     "sba_certified_8_a_joint_ve": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
     "school_district_local_gove": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
     "school_of_forestry": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
     "sea_transportation": {"delta": "STRING", "postgres": "TEXT"},
     "sea_transportation_desc": {"delta": "STRING", "postgres": "TEXT"},
     "self_certified_small_disad": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
+    "ser_disabvet_own_bus_join_ven": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
     "service_disabled_veteran_o": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
     "small_agricultural_coopera": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
     "small_business_competitive": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
+    "small_business_joint_venture": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
     "small_disadvantaged_busine": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
     "sole_proprietorship": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
     "solicitation_date": {"delta": "STRING", "postgres": "TEXT"},
@@ -312,7 +316,7 @@ DETACHED_AWARD_PROCUREMENT_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in DETA
 
 detached_award_procurement_create_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
-        {", ".join([f'{key} {val}' for key, val in DETACHED_AWARD_PROCUREMENT_DELTA_COLUMNS.items()])}
+        {", ".join([f"{key} {val}" for key, val in DETACHED_AWARD_PROCUREMENT_DELTA_COLUMNS.items()])}
     )
     USING DELTA
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'

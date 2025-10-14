@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 from usaspending_api.broker.lookups import EXTERNAL_DATA_TYPE_DICT
 from usaspending_api.broker.models import ExternalDataLoadDate
 from usaspending_api.common.api_versioning import API_TRANSFORM_FUNCTIONS, api_transformations
+from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.dict_helpers import order_nested_object
 from usaspending_api.common.spark.jobs import LocalStrategy, SparkJobs
 from usaspending_api.common.sqs.sqs_handler import DownloadLogic, get_sqs_queue
@@ -20,6 +21,7 @@ from usaspending_api.download.filestreaming.s3_handler import S3Handler
 from usaspending_api.download.helpers import write_to_download_log as write_to_log
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.models.download_job import DownloadJob
+from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 from usaspending_api.download.v2.request_validations import DownloadValidatorBase
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
@@ -75,8 +77,22 @@ class BaseDownloadViewSet(APIView):
     def is_spark_download(json_request: dict) -> bool:
         return json_request["request_type"] == "account" and "award_financial" in json_request["download_types"]
 
+    @staticmethod
+    def validate_columns(json_request: dict):
+        all_cols = set()
+        for download_type in json_request["download_types"]:
+            all_cols.update(query_paths[download_type][json_request["account_level"]])
+        invalid_columns = set(json_request["columns"]) - all_cols
+        if invalid_columns:
+            raise InvalidParameterException(f"Unknown columns: {invalid_columns}")
+
     def process_request(self, download_job: DownloadJob, json_request: dict):
         job_name = f"{settings.BULK_DOWNLOAD_SPARK_JOB_NAME_PREFIX}-{json_request['request_type']}"
+
+        if self.is_spark_download(json_request):
+            # TODO: This currently only supports Custom Account download as this is the only download for Spark as of
+            #       right now. As we migrate more downloads away from Postgres this logic should be updated further.
+            self.validate_columns(json_request)
 
         if settings.IS_LOCAL and settings.RUN_LOCAL_DOWNLOAD_IN_PROCESS:
             # Eagerly execute the download in this running process
