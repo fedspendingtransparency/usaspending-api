@@ -1,7 +1,7 @@
-from django.db import models
 from django.contrib.postgres.fields import ArrayField
+from django.db import models
 
-from usaspending_api.common.custom_django_fields import NumericField, NaiveTimestampField
+from usaspending_api.common.custom_django_fields import NaiveTimestampField, NumericField
 
 
 class SourceProcurementTransaction(models.Model):
@@ -267,15 +267,19 @@ class SourceProcurementTransaction(models.Model):
     research_description = models.TextField(blank=True, null=True)
     sam_exception = models.TextField(blank=True, null=True)
     sam_exception_description = models.TextField(blank=True, null=True)
+    sba_cert_econ_disadv_wosb = models.BooleanField(null=True, blank=True)
+    sba_cert_women_own_small_bus = models.BooleanField(null=True, blank=True)
     sba_certified_8_a_joint_ve = models.BooleanField(null=True, blank=True)
     school_district_local_gove = models.BooleanField(null=True, blank=True)
     school_of_forestry = models.BooleanField(null=True, blank=True)
     sea_transportation = models.TextField(blank=True, null=True)
     sea_transportation_desc = models.TextField(blank=True, null=True)
     self_certified_small_disad = models.BooleanField(null=True, blank=True)
+    ser_disabvet_own_bus_join_ven = models.BooleanField(null=True, blank=True)
     service_disabled_veteran_o = models.BooleanField(null=True, blank=True)
     small_agricultural_coopera = models.BooleanField(null=True, blank=True)
     small_business_competitive = models.BooleanField(null=True, blank=True)
+    small_business_joint_venture = models.BooleanField(null=True, blank=True)
     small_disadvantaged_busine = models.BooleanField(null=True, blank=True)
     sole_proprietorship = models.BooleanField(null=True, blank=True)
     solicitation_date = models.TextField(blank=True, null=True)
