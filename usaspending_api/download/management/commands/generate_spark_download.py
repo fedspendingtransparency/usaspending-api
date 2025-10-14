@@ -31,7 +31,7 @@ from usaspending_api.download.delta_downloads.object_class_program_activity impo
     ObjectClassProgramActivityDownloadFactory,
 )
 from usaspending_api.download.delta_downloads.filters.account_filters import AccountDownloadFilters
-from usaspending_api.download.lookups import FILE_FORMATS, JOB_STATUS_DICT
+from usaspending_api.download.lookups import FILE_FORMATS, JOB_STATUS_DICT, JOB_STATUS_DICT_BY_ID
 from usaspending_api.download.models import DownloadJob
 from usaspending_api.settings import TRACE_ENV
 
@@ -113,7 +113,7 @@ class Command(BaseCommand):
                 get_download_job_error.set_attributes(
                     {
                         "download_job_id": download_job_id,
-                        "download_job_status": JOB_STATUS_DICT[download_job.job_status_id],
+                        "download_job_status": JOB_STATUS_DICT_BY_ID[download_job.job_status_id],
                         "message": f"Download Job {download_job_id} is not ready,",
                     }
                 )

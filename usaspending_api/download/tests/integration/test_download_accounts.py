@@ -450,7 +450,6 @@ def test_file_c_spark_download(client, download_test_data, spark, s3_unittest_da
                 "file_format": "csv",
             }
         ),
-        headers={"X-Experimental-API": "download"},
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -493,7 +492,6 @@ def test_file_c_spark_download_columns(client, download_test_data, s3_unittest_d
                 "file_format": "csv",
             }
         ),
-        headers={"X-Experimental-API": "download"},
     )
 
     assert resp.status_code == status.HTTP_200_OK
@@ -546,7 +544,6 @@ def test_file_c_spark_download_unknown_columns(
                 "file_format": "csv",
             }
         ),
-        headers={"X-Experimental-API": "download"},
     )
 
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
