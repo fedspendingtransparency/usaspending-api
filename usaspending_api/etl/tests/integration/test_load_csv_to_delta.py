@@ -1,10 +1,14 @@
 import tempfile
 from decimal import Decimal
+from unittest.mock import patch
 
 from django.core.management import call_command
+from usaspending_api.etl.management.commands.load_csv_to_delta import CONFIG
 
 
-def test_load_world_cities_csv_to_delta(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+@patch.object(CONFIG, "SPARK_S3_BUCKET")
+def test_load_world_cities_csv_to_delta(mock_config_bucket, spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+    mock_config_bucket.return_value = s3_unittest_data_bucket
     test_data = [
         [
             "city",
