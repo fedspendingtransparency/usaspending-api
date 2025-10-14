@@ -40,7 +40,7 @@ class AssistanceListingViewSet(APIView):
         qs = Cfda.objects.all()
         annotations = {"description": Value(None, output_field=CharField()), "count": Count("code")}
         if cfda_filter:
-            qs = qs.filter(Q(program_title__contains=cfda_filter) | Q(program_number__contains=cfda_filter))
+            qs = qs.filter(Q(program_title__icontains=cfda_filter) | Q(program_number__icontains=cfda_filter))
 
         if cfda_code:
             qs = qs.filter(program_number__startswith=cfda_code)
