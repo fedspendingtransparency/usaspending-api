@@ -1,14 +1,10 @@
 import tempfile
 from decimal import Decimal
-from unittest.mock import patch
 
 from django.core.management import call_command
-from usaspending_api.etl.management.commands.load_csv_to_delta import CONFIG
 
 
-@patch.object(CONFIG, "SPARK_S3_BUCKET")
-def test_load_world_cities_csv_to_delta(mock_config_bucket, spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
-    mock_config_bucket.return_value = s3_unittest_data_bucket
+def test_load_world_cities_csv_to_delta(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
     test_data = [
         [
             "city",
@@ -64,7 +60,12 @@ def test_load_world_cities_csv_to_delta(mock_config_bucket, spark, s3_unittest_d
             f.write(",".join(str(v) for v in row) + "\n")
         f.flush()
         f.seek(0)
-        call_command("load_csv_to_delta", "--destination-table=world_cities", f"--alt-path={f.name}")
+        call_command(
+            "load_csv_to_delta",
+            "--destination-table=world_cities",
+            f"--alt-path={f.name}",
+            f"--spark-s3-bucket={s3_unittest_data_bucket}",
+        )
     df = spark.sql("SELECT * FROM raw.world_cities")
     assert df.count() == 1
     assert df.columns == test_data[0]

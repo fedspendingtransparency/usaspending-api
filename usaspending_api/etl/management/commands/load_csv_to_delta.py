@@ -16,9 +16,6 @@ from usaspending_api.references.delta_models.world_cities import schema as world
 
 logger = logging.getLogger(__name__)
 
-csv_root = f"s3a://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.SPARK_CSV_S3_PATH}"
-delta_root = f"s3a://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.DELTA_LAKE_S3_PATH}"
-
 
 @dataclass
 class CsvTableMetadata:
@@ -33,7 +30,7 @@ destination_tables = {
         db_name="raw",
         table_name="world_cities",
         schema=world_cities_schema,
-        path=f"{csv_root}/raw/world_cities/world_cities.csv",
+        path=f"s3a://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.SPARK_CSV_S3_PATH}/raw/world_cities/world_cities.csv",
     )
 }
 
@@ -46,6 +43,7 @@ class Command(BaseCommand):
 
     # Values defined in the handler
     csv_metadata: CsvTableMetadata
+    spark_s3_bucket: str
     spark: SparkSession
 
     def add_arguments(self, parser):
@@ -74,6 +72,13 @@ class Command(BaseCommand):
             required=False,
             help="An alternate path for the csv file, overriding the destination-table path.  Supports the s3a:// protocol",
         )
+        parser.add_argument(
+            "--spark-s3-bucket",
+            type=str,
+            required=False,
+            default=CONFIG.SPARK_S3_BUCKET,
+            help="The destination bucket in S3",
+        )
 
     def handle(self, *args, **options):
         extra_conf = {
@@ -85,7 +90,6 @@ class Command(BaseCommand):
             "spark.sql.legacy.parquet.int96RebaseModeInWrite": "LEGACY",  # for timestamps at/before 1900
             "spark.sql.jsonGenerator.ignoreNullFields": "false",  # keep nulls in our json
         }
-
         self.spark = get_active_spark_session()
         spark_created_by_command = False
         if not self.spark:
@@ -100,6 +104,8 @@ class Command(BaseCommand):
             self.csv_metadata.db_name = options["alt_name"]
         if options["alt_path"]:
             self.csv_metadata.path = options["alt_path"]
+        if options["spark_s3_bucket"]:
+            self.spark_s3_bucket = options["spark_s3_bucket"]
 
         self.load_csv()
 
@@ -107,8 +113,8 @@ class Command(BaseCommand):
             self.spark.stop()
 
     def load_csv(self):
-        delta_path = f"{delta_root}/{self.csv_metadata.db_name}/{self.csv_metadata.table_name}"
-        csv_path = f"{csv_root}/{self.csv_metadata.db_name}/{self.csv_metadata.table_name}"
+        delta_path = f"s3a://{self.spark_s3_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/{self.csv_metadata.db_name}/{self.csv_metadata.table_name}"
+        csv_path = f"s3a://{self.spark_s3_bucket}/{CONFIG.SPARK_CSV_S3_PATH}/{self.csv_metadata.db_name}/{self.csv_metadata.table_name}"
         self.spark.sql(f"CREATE DATABASE IF NOT EXISTS {self.csv_metadata.db_name};")
         df = self.spark.read.csv(self.csv_metadata.path, header=True, schema=self.csv_metadata.schema)
         created_at = str(datetime.now())
