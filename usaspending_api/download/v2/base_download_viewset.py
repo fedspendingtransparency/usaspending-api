@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 from usaspending_api.broker.lookups import EXTERNAL_DATA_TYPE_DICT
 from usaspending_api.broker.models import ExternalDataLoadDate
 from usaspending_api.common.api_versioning import API_TRANSFORM_FUNCTIONS, api_transformations
+from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.experimental_api_flags import is_experimental_download_api
 from usaspending_api.common.helpers.dict_helpers import order_nested_object
 from usaspending_api.common.spark.jobs import DatabricksStrategy, LocalStrategy, SparkJobs
@@ -21,6 +22,7 @@ from usaspending_api.download.filestreaming.s3_handler import S3Handler
 from usaspending_api.download.helpers import write_to_download_log as write_to_log
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.models.download_job import DownloadJob
+from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 from usaspending_api.download.v2.request_validations import DownloadValidatorBase
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
@@ -79,7 +81,7 @@ class BaseDownloadViewSet(APIView):
             and "award_financial" in json_request["download_types"]
         ):
             # goes to spark for File C account download
-            self.process_account_download_in_spark(download_job=download_job)
+            self.process_account_download_in_spark(download_job=download_job, json_request=json_request)
         elif settings.IS_LOCAL and settings.RUN_LOCAL_DOWNLOAD_IN_PROCESS:
             # Eagerly execute the download in this running process
             download_generation.generate_download(download_job)
@@ -92,10 +94,18 @@ class BaseDownloadViewSet(APIView):
             queue = get_sqs_queue(queue_name=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
             queue.send_message(MessageBody=str(download_job.download_job_id))
 
-    def process_account_download_in_spark(self, download_job: DownloadJob):
+    def process_account_download_in_spark(self, download_job: DownloadJob, json_request: dict):
         """
         Process File C downloads through spark instead of sqs for better performance
         """
+        # checks if columns exist
+        if "columns" in json_request:
+            all_cols = []
+            for download_type in json_request["download_types"]:
+                all_cols.extend(query_paths[download_type][json_request["account_level"]])
+            invalid_columns = [col for col in json_request["columns"] if col not in all_cols]
+            if invalid_columns:
+                raise InvalidParameterException("Unknown columns: {}".format(invalid_columns))
         if settings.IS_LOCAL:
             spark_jobs = SparkJobs(LocalStrategy())
             spark_jobs.start(
