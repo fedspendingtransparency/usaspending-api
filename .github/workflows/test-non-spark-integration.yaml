@@ -43,7 +43,7 @@ jobs:
         with:
           repository: fedspendingtransparency/data-act-broker-backend
           path: data-act-broker-backend
-          ref: ${{ needs.Setup-Broker-Branch.outputs.branch }}
+          ref: qat
 
       - name: Init Python Environment
         uses: ./usaspending-api/.github/actions/init-python-environment
