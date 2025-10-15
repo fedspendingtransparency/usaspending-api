@@ -11,16 +11,17 @@ from rest_framework.views import APIView
 from usaspending_api.broker.lookups import EXTERNAL_DATA_TYPE_DICT
 from usaspending_api.broker.models import ExternalDataLoadDate
 from usaspending_api.common.api_versioning import API_TRANSFORM_FUNCTIONS, api_transformations
-from usaspending_api.common.experimental_api_flags import is_experimental_download_api
+from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.dict_helpers import order_nested_object
-from usaspending_api.common.spark.jobs import DatabricksStrategy, LocalStrategy, SparkJobs
-from usaspending_api.common.sqs.sqs_handler import get_sqs_queue
+from usaspending_api.common.spark.jobs import LocalStrategy, SparkJobs
+from usaspending_api.common.sqs.sqs_handler import DownloadLogic, get_sqs_queue
 from usaspending_api.download.download_utils import create_unique_filename, log_new_download_job
 from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.download.filestreaming.s3_handler import S3Handler
 from usaspending_api.download.helpers import write_to_download_log as write_to_log
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.models.download_job import DownloadJob
+from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 from usaspending_api.download.v2.request_validations import DownloadValidatorBase
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
@@ -68,48 +69,70 @@ class BaseDownloadViewSet(APIView):
         )
 
         log_new_download_job(request, download_job)
-        self.process_request(download_job, request, json_request)
+        self.process_request(download_job, json_request)
 
         return self.build_download_response(download_job)
 
-    def process_request(self, download_job: DownloadJob, request: Request, json_request: dict):
-        if (
-            is_experimental_download_api(request)
-            and json_request["request_type"] == "account"
-            and "award_financial" in json_request["download_types"]
-        ):
-            # goes to spark for File C account download
-            self.process_account_download_in_spark(download_job=download_job)
-        elif settings.IS_LOCAL and settings.RUN_LOCAL_DOWNLOAD_IN_PROCESS:
-            # Eagerly execute the download in this running process
-            download_generation.generate_download(download_job)
-        else:
-            # Send a SQS message that will be processed by another server which will eventually run
-            # download_generation.generate_download(download_source) (see download_sqs_worker.py)
-            write_to_log(
-                message=f"Passing download_job {download_job.download_job_id} to SQS", download_job=download_job
-            )
-            queue = get_sqs_queue(queue_name=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
-            queue.send_message(MessageBody=str(download_job.download_job_id))
+    @staticmethod
+    def is_spark_download(json_request: dict) -> bool:
+        return json_request["request_type"] == "account" and "award_financial" in json_request["download_types"]
 
-    def process_account_download_in_spark(self, download_job: DownloadJob):
-        """
-        Process File C downloads through spark instead of sqs for better performance
-        """
-        if settings.IS_LOCAL:
-            spark_jobs = SparkJobs(LocalStrategy())
-            spark_jobs.start(
-                job_name="api_download-accounts",
-                command_name="generate_spark_download",
-                command_options=[f"--download-job-id={download_job.download_job_id}", "--skip-local-cleanup"],
-            )
+    @staticmethod
+    def validate_columns(json_request: dict):
+        all_cols = set()
+        for download_type in json_request["download_types"]:
+            all_cols.update(query_paths[download_type][json_request["account_level"]])
+        invalid_columns = set(json_request["columns"]) - all_cols
+        if invalid_columns:
+            raise InvalidParameterException(f"Unknown columns: {list(invalid_columns)}")
+
+    def process_request(self, download_job: DownloadJob, json_request: dict):
+        job_name = f"{settings.BULK_DOWNLOAD_SPARK_JOB_NAME_PREFIX}-{json_request['request_type']}"
+
+        if self.is_spark_download(json_request) and "columns" in json_request:
+            # TODO: This currently only supports Custom Account download as this is the only download for Spark as of
+            #       right now. As we migrate more downloads away from Postgres this logic should be updated further.
+            self.validate_columns(json_request)
+
+        if settings.IS_LOCAL and settings.RUN_LOCAL_DOWNLOAD_IN_PROCESS:
+            # Eagerly execute the download in this running process
+            if self.is_spark_download(json_request):
+                spark_jobs = SparkJobs(LocalStrategy())
+                spark_jobs.start(
+                    job_name=job_name,
+                    command_name="generate_spark_download",
+                    command_options=[f"--download-job-id={download_job.download_job_id}", f"--skip-local-cleanup"],
+                    run_as_container=False,
+                )
+            else:
+                download_generation.generate_download(download_job)
         else:
-            spark_jobs = SparkJobs(DatabricksStrategy())
-            spark_jobs.start(
-                job_name="api_download-accounts",
-                command_name="generate_spark_download",
-                command_options=[f"--download-job-id={download_job.download_job_id}"],
+            # The keys used in the message bodies below are specific values expected by the SQS handlers
+            if self.is_spark_download(json_request):
+                # Fallback to the non-priority queue if the priority queue isn't setup
+                queue_name = settings.PRIORITY_DOWNLOAD_SQS_QUEUE_NAME or settings.BULK_DOWNLOAD_SQS_QUEUE_NAME
+                message_body = json.dumps(
+                    {
+                        "download_job_id": download_job.download_job_id,
+                        "job_name": job_name,
+                        "download_logic": DownloadLogic.SPARK,
+                    }
+                )
+            else:
+                queue_name = settings.BULK_DOWNLOAD_SQS_QUEUE_NAME
+                message_body = json.dumps(
+                    {"download_job_id": download_job.download_job_id, "download_logic": DownloadLogic.POSTGRES}
+                )
+
+            # Send a SQS message that will be processed by another server which will eventually run
+            # download_generation.generate_download(download_source) for Postgres downloads
+            # or generate_spark_download management command for Spark downloads (see download_sqs_worker.py)
+            write_to_log(
+                message=f"Passing download_job {download_job.download_job_id} to SQS {queue_name}",
+                download_job=download_job,
             )
+            queue = get_sqs_queue(queue_name=queue_name)
+            queue.send_message(MessageBody=message_body)
 
     def build_download_response(self, download_job: DownloadJob) -> Response:
         """

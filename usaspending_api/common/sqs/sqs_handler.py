@@ -1,14 +1,16 @@
 from __future__ import annotations
+
 import logging
 import pathlib
+import pickle
+import uuid
+from collections import deque
+from enum import Enum
+from itertools import islice
+from typing import List
 
 import boto3
-from collections import deque
-from itertools import islice
 from filelock import FileLock
-import pickle
-from typing import List
-import uuid
 
 from django.conf import settings
 
@@ -16,6 +18,11 @@ LOCAL_FAKE_QUEUE_NAME = "local-fake-queue"
 UNITTEST_FAKE_QUEUE_NAME = "unittest-fake-queue"
 UNITTEST_FAKE_DEAD_LETTER_QUEUE_NAME = "unittest-fake-dead-letter-queue"
 FAKE_QUEUE_DATA_PATH = pathlib.Path(settings.BULK_DOWNLOAD_LOCAL_PATH) / "local_queue"
+
+
+class DownloadLogic(str, Enum):
+    POSTGRES = "postgres"
+    SPARK = "spark"
 
 
 class _FakeFileBackedSQSQueue:

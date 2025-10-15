@@ -10,6 +10,7 @@ from pyspark.sql.types import (
     TimestampType,
 )
 
+
 account_balances_schema = StructType(
     [
         StructField("funding_toptier_agency_id", IntegerType()),
@@ -175,3 +176,8 @@ def account_balances_df(spark: SparkSession) -> DataFrame:
             sa.quarter_format_flag,
         )
     )
+
+
+def load_account_balances(spark: SparkSession, destination_database: str, destination_table_name: str) -> None:
+    df = account_balances_df(spark)
+    df.write.format("delta").mode("overwrite").saveAsTable(f"{destination_database}.{destination_table_name}")

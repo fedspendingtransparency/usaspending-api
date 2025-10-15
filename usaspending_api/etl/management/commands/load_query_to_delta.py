@@ -3,7 +3,7 @@ from argparse import ArgumentTypeError
 from typing import Callable
 
 from django.core.management.base import BaseCommand
-from pyspark.sql import DataFrame, SparkSession
+from pyspark.sql import SparkSession
 
 from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.helpers.spark_helpers import (
@@ -30,7 +30,10 @@ from usaspending_api.download.delta_models.object_class_program_activity_downloa
     object_class_program_activity_download_create_sql_string,
     object_class_program_activity_download_load_sql_string,
 )
-from usaspending_api.download.delta_models.account_balances_download import account_balances_df, account_balances_schema
+from usaspending_api.download.delta_models.account_balances_download import (
+    load_account_balances,
+    account_balances_schema,
+)
 from usaspending_api.recipient.delta_models import (
     RECIPIENT_LOOKUP_POSTGRES_COLUMNS,
     RECIPIENT_PROFILE_POSTGRES_COLUMNS,
@@ -74,8 +77,10 @@ from usaspending_api.transactions.delta_models import (
     transaction_current_cd_lookup_create_sql_string,
     transaction_current_cd_lookup_load_sql_string,
     transaction_search_create_sql_string,
-    transaction_search_incremental_load_sql_string,
-    transaction_search_overwrite_load_sql_string,
+)
+from usaspending_api.transactions.delta_models.transaction_search_dataframe import (
+    load_transaction_search,
+    load_transaction_search_incremental,
 )
 
 AWARD_URL = f"{HOST}/award/" if "localhost" in HOST else f"https://{HOST}/award/"
@@ -214,8 +219,8 @@ TABLE_SPEC = {
     "transaction_search": {
         "model": TransactionSearch,
         "is_from_broker": False,
-        "source_query": transaction_search_overwrite_load_sql_string,
-        "source_query_incremental": transaction_search_incremental_load_sql_string,
+        "source_query": load_transaction_search,
+        "source_query_incremental": load_transaction_search_incremental,
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
@@ -235,8 +240,8 @@ TABLE_SPEC = {
     "transaction_search_gold": {
         "model": TransactionSearch,
         "is_from_broker": False,
-        "source_query": transaction_search_overwrite_load_sql_string,
-        "source_query_incremental": transaction_search_incremental_load_sql_string,
+        "source_query": load_transaction_search,
+        "source_query_incremental": load_transaction_search_incremental,
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
@@ -326,7 +331,7 @@ TABLE_SPEC = {
     "account_balances_download": {
         "model": None,
         "is_from_broker": False,
-        "source_query": account_balances_df,
+        "source_query": load_account_balances,
         "source_query_incremental": None,
         "source_database": None,
         "source_table": None,
@@ -426,7 +431,7 @@ class Command(BaseCommand):
             "--incremental",
             action="store_true",
             required=False,
-            help="Whether or note the table will be updated incrementally",
+            help="Whether or not the table will be updated incrementally",
         )
 
     def handle(self, *args, **options):
@@ -477,7 +482,7 @@ class Command(BaseCommand):
         if spark_created_by_command:
             self.spark.stop()
 
-    def run_spark_sql(self, query: str | Callable[[SparkSession], DataFrame]):
+    def run_spark_sql(self, query: str | Callable[[SparkSession, str, str], None]):
         if isinstance(query, str):
             jdbc_conn_props = get_jdbc_connection_properties()
             self.spark.sql(
@@ -492,13 +497,6 @@ class Command(BaseCommand):
                 )
             )
         elif isinstance(query, Callable):
-            delta_path = f"s3a://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.DELTA_LAKE_S3_PATH}/{self.destination_database}/{self.destination_table_name}"
-            (
-                query(self.spark)
-                .write.format("delta")
-                .mode("overwrite")
-                .option("path", delta_path)
-                .saveAsTable(f"{self.destination_database}.{self.destination_table_name}")
-            )
+            query(self.spark, self.destination_database, self.destination_table_name)
         else:
             raise ArgumentTypeError(f"Invalid query. `{query}` must be a string or a Callable.")
