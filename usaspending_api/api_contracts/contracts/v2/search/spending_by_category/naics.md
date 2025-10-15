@@ -88,6 +88,7 @@ This endpoint returns a list of the top results of NAICS sorted by the total amo
                         "id": null,
                         "name": "Aircraft Manufacturing",
                         "total_outlays": null,
+                        "year_retired": 2017
                     },
                     {
                         "amount": 1446126444.05,
@@ -95,6 +96,7 @@ This endpoint returns a list of the top results of NAICS sorted by the total amo
                         "id": null,
                         "name": "Commercial and Institutional Building Construction",
                         "total_outlays": null,
+                        "year_retired": null
                     },
                 ],
                 "messages": [
@@ -112,6 +114,7 @@ This endpoint returns a list of the top results of NAICS sorted by the total amo
     `code` is a user-displayable code (such as a program activity or NAICS code, but **not** a database ID). When no such code is relevant, return a `null`.
 + `amount` (required, number)
 + `total_outlays` (required, number, nullable)
++ `year_retired` (required, number, nullable)
 
 ## PageMetadataObject (object)
 + `page` (required, number)

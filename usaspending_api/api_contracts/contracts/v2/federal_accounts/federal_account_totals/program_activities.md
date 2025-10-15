@@ -20,7 +20,7 @@ This endpoint returns an array of each program activity's obligation, code, name
             }
 
     + Attributes (object)
-        + `filters` (optional, ProgramActivityTotalsFilterObject)
+        + `filters` (optional, FederalAccountTotalsFilterObject)
             This can filter by time period, object class, and/or program activity
         + `limit` (optional, number)
             The number of results to include per page.
@@ -70,7 +70,7 @@ This endpoint returns an array of each program activity's obligation, code, name
 
 # Data Structure
 
-## ProgramActivityTotalsFilterObject (object)
+## FederalAccountTotalsFilterObject (object)
 + `time_period`: `[
                         {
                             "start_date": "2019-10-01",

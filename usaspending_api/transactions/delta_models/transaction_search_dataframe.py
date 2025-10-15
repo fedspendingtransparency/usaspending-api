@@ -201,12 +201,14 @@ def transaction_search_dataframe(spark: SparkSession) -> DataFrame:
                 ),
                 True,
             ).alias("tas_components"),
-            sf.collect_set(
-                sf.to_json(
-                    sf.struct(
-                        sf.coalesce(pap.name, sf.upper(rpa.program_activity_name)).alias("name"),
-                        sf.coalesce(pap.code, sf.lpad(rpa.program_activity_code, 4, "0")).alias("code"),
-                        sf.when(pap["code"].isNotNull(), sf.lit("PARK")).otherwise(sf.lit("PAC/PAN")).alias("type"),
+            sf.sort_array(
+                sf.collect_set(
+                    sf.to_json(
+                        sf.struct(
+                            sf.coalesce(pap.name, sf.upper(rpa.program_activity_name)).alias("name"),
+                            sf.coalesce(pap.code, sf.lpad(rpa.program_activity_code, 4, "0")).alias("code"),
+                            sf.when(pap["code"].isNotNull(), sf.lit("PARK")).otherwise(sf.lit("PAC/PAN")).alias("type"),
+                        )
                     )
                 )
             ).alias("program_activities"),
@@ -856,7 +858,7 @@ def transaction_search_dataframe(spark: SparkSession) -> DataFrame:
             & (
                 rl_county_population.county_number
                 == extract_numbers_as_string(
-                    sf.coalesce(tfpds.place_of_perform_county_co, tfabs.place_of_perform_county_co),
+                    sf.coalesce(tfpds.legal_entity_county_code, tfabs.legal_entity_county_code),
                     3,
                 )
             ),
@@ -868,7 +870,7 @@ def transaction_search_dataframe(spark: SparkSession) -> DataFrame:
             & (
                 rl_district_population.congressional_district
                 == extract_numbers_as_string(
-                    sf.coalesce(tfpds.place_of_performance_congr, tfabs.place_of_performance_congr),
+                    sf.coalesce(tfpds.legal_entity_congressional, tfabs.legal_entity_congressional),
                 )
             ),
             "leftouter",

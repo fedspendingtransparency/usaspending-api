@@ -128,6 +128,7 @@ services:
     # Must wait on postgres db to be up (~9s)
     command: /bin/sh -c "sleep 9s; python3 -u manage.py runserver --verbosity 2 0.0.0.0:8000"
     environment:
+      IS_LOCAL: ${IS_LOCAL}
       DJANGO_DEBUG: ${DJANGO_DEBUG}
       RUN_LOCAL_DOWNLOAD_IN_PROCESS: "False"
       DB_SOURCE: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
@@ -140,14 +141,20 @@ services:
   usaspending-bulk-download:
     profiles:
       - usaspending  # must pass --profile usaspending to docker compose for this to come up
-    image: usaspending-backend  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
-    build: .
+    image: usaspending-download  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
+    build:
+      context: .
+      dockerfile: Dockerfile.download
     container_name: usaspending-bulk-download
     restart: on-failure:5 # 5 max attempt, and then it will stop restarting. NOTE: bulk download errors will cause one failure+restart iterations
     volumes:
-    - .:/dockermount
+      - .:/dockermount
+      # Required to interact with host's docker daemon from within this running container,
+      # to submit a spark job via the spark-submit container (see download_sqs_worker._run_spark_download)
+      - /var/run/docker.sock:/var/run/docker.sock
     command: python3 manage.py download_sqs_worker
     environment:
+      IS_LOCAL: ${IS_LOCAL}
       DJANGO_DEBUG: ${DJANGO_DEBUG}
       DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
       DOWNLOAD_DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
@@ -359,6 +366,9 @@ services:
       - spark-history-server
       - minio
     environment:
+      IS_LOCAL: ${IS_LOCAL}
+      DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
+      MINIO_HOST: ${MINIO_HOST}
       SPARK_MASTER_HOST: ${SPARK_MASTER_HOST:-spark-master}
       SPARK_MASTER_PORT: ${SPARK_MASTER_PORT:-7077}
       # i.e. target where host warehouse dir is bound in below volume config.
@@ -393,6 +403,7 @@ services:
         source: ${HOME}/.ivy2
         target: /root/.ivy2
         read_only: false
+
   otel-collector:
     profiles:
       - tracing
@@ -400,6 +411,7 @@ services:
     command: [ "--config=/etc/otel-collector.yaml" ]
     volumes:
       - ./otel-collector.yaml:/etc/otel-collector.yaml
+
   # Tempo runs as user 10001, and docker compose creates the volume as root.
   # As such, we need to chown the volume in order for Tempo to start correctly.
   tempo-init:
@@ -411,6 +423,7 @@ services:
       - "/var/tempo"
     volumes:
       - ./tempo-data:/var/tempo
+
   tempo:
     profiles:
       - tracing
@@ -424,6 +437,7 @@ services:
       - "4317" # otlp grpc
     depends_on:
       - tempo-init
+
   grafana:
     profiles:
       - tracing

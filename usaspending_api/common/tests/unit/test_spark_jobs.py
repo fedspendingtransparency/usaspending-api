@@ -1,4 +1,7 @@
+import time
 from unittest.mock import MagicMock, patch
+
+from databricks.sdk.service.jobs import RunLifeCycleState
 
 from usaspending_api.common.spark.jobs import DatabricksStrategy, EmrServerlessStrategy, LocalStrategy, SparkJobs
 
@@ -30,15 +33,21 @@ def test_databricks_strategy_handle_start(databricks_strategy_client):
 
     mock_job_run_wait = MagicMock()
     mock_job_run_wait.bind = MagicMock(return_value={"run_id": 10})
-    mock_job_run = MagicMock(return_value=mock_job_run_wait)
+
+    mock_job_run = MagicMock()
+    mock_job_run.job_id = 1
+    mock_job_run.start_time = time.time() * 1_000
+    mock_job_run.state.life_cycle_state = RunLifeCycleState.RUNNING
 
     mock_jobs = MagicMock()
     mock_jobs.list = MagicMock(return_value=[mock_job])
-    mock_jobs.run_now = mock_job_run
+    mock_jobs.run_now = MagicMock(return_value=mock_job_run_wait)
+    mock_jobs.get_run = MagicMock(return_value=mock_job_run)
+
     databricks_strategy_client.jobs = mock_jobs
 
     strategy = DatabricksStrategy()
-    assert strategy.get_job_id("test_job_name") == 1
+    assert strategy._get_job("test_job_name") == mock_job
 
     spark_job = SparkJobs(DatabricksStrategy())
     assert spark_job.start(job_name="", command_name="", command_options=[""]) == {"job_id": 1, "run_id": 10}

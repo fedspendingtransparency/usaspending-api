@@ -51,10 +51,12 @@ class FederalAccountBase(APIView):
         filters = validated_data.get("filters")
         if filters is not None:
             if "time_period" in filters:
+                time_period_query = Q()
                 for period in filters["time_period"]:
                     start_date = period["start_date"]
                     end_date = period["end_date"]
-                    query &= Q(reporting_period_start__gte=start_date, reporting_period_end__lte=end_date)
+                    time_period_query |= Q(reporting_period_start__gte=start_date, reporting_period_end__lte=end_date)
+                query &= time_period_query
             if "object_class" in filters:
                 query &= Q(
                     Q(object_class__object_class_name__in=filters["object_class"])

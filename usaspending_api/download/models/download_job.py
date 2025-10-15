@@ -17,7 +17,7 @@ class JobStatus(models.Model):
 class DownloadJob(models.Model):
     download_job_id = models.AutoField(primary_key=True)
     job_status = models.ForeignKey(JobStatus, models.DO_NOTHING, null=False)
-    file_name = models.TextField(blank=False, null=False)
+    file_name = models.TextField(blank=False, null=False, db_index=True)
     file_size = models.BigIntegerField(blank=True, null=True)
     number_of_rows = models.IntegerField(blank=True, null=True)
     number_of_columns = models.IntegerField(blank=True, null=True)

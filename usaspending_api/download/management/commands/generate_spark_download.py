@@ -31,7 +31,7 @@ from usaspending_api.download.delta_downloads.object_class_program_activity impo
     ObjectClassProgramActivityDownloadFactory,
 )
 from usaspending_api.download.delta_downloads.filters.account_filters import AccountDownloadFilters
-from usaspending_api.download.lookups import FILE_FORMATS, JOB_STATUS_DICT
+from usaspending_api.download.lookups import FILE_FORMATS, JOB_STATUS_DICT, JOB_STATUS_DICT_BY_ID
 from usaspending_api.download.models import DownloadJob
 from usaspending_api.settings import TRACE_ENV
 
@@ -65,6 +65,7 @@ class Command(BaseCommand):
     should_cleanup: bool
     spark: SparkSession
     working_dir_path: Path
+    columns: list | None
 
     def add_arguments(self, parser):
         parser.add_argument("--download-job-id", type=int, required=True)
@@ -78,6 +79,7 @@ class Command(BaseCommand):
         self.download_json_request = json.loads(self.download_job.json_request)
         self.request_type = self.download_json_request["request_type"]
         self.working_dir_path = Path(settings.CSV_LOCAL_PATH)
+        self.columns = self.download_json_request["columns"] if "columns" in self.download_json_request else None
         if not self.working_dir_path.exists():
             self.working_dir_path.mkdir()
         create_ref_temp_views(self.spark)
@@ -111,7 +113,7 @@ class Command(BaseCommand):
                 get_download_job_error.set_attributes(
                     {
                         "download_job_id": download_job_id,
-                        "download_job_status": JOB_STATUS_DICT[download_job.job_status_id],
+                        "download_job_status": JOB_STATUS_DICT_BY_ID[download_job.job_status_id],
                         "message": f"Download Job {download_job_id} is not ready,",
                     }
                 )
@@ -147,13 +149,16 @@ class Command(BaseCommand):
                     "file_name": str(self.download_job.file_name),
                 }
             )
-
         self.start_download()
         files_to_cleanup = []
         try:
             spark_to_csv_strategy = SparkToCSVStrategy(logger)
             zip_file_path = self.working_dir_path / f"{self.download_zip_file_name}.zip"
             download_request = self.get_download_request()
+            if self.columns is not None:
+                for download in download_request.download_list:
+                    download.dataframe = download.dataframe.select(*self.columns)
+
             csvs_metadata = [
                 spark_to_csv_strategy.download_to_csv(
                     source_sql=None,
