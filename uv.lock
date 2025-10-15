@@ -471,6 +471,19 @@ wheels = [
 ]
 
 [[package]]
+name = "delta-spark"
+version = "3.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "importlib-metadata" },
+    { name = "pyspark" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/38/06/a64cc4e17fe959cf60dc126bf3283fc9f22fc91f000b7f3f5e465338022d/delta-spark-3.2.0.tar.gz", hash = "sha256:641967828e47c64805f8c746513da80bea24b5f19b069cdcf64561cd3692e11d", size = 22147, upload-time = "2024-05-09T17:26:10.754Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/3c/8e/bb778f5049aa371bf80a7a781b237eb10ef104f8736fe00d25fcfee80c2b/delta_spark-3.2.0-py3-none-any.whl", hash = "sha256:c4ff3fa7218e58a702cb71eb64384b0005c4d6f0bbdd0fe0b38a53564d946e09", size = 21186, upload-time = "2024-05-09T17:26:09.544Z" },
+]
+
+[[package]]
 name = "deprecated"
 version = "1.2.18"
 source = { registry = "https://pypi.org/simple" }
@@ -2162,6 +2175,7 @@ dependencies = [
     { name = "certifi" },
     { name = "databricks-sdk" },
     { name = "dataclasses-json" },
+    { name = "delta-spark" },
     { name = "dj-database-url" },
     { name = "django" },
     { name = "django-cors-headers" },
@@ -2271,6 +2285,7 @@ requires-dist = [
     { name = "click", marker = "extra == 'dev'", specifier = "==8.1.7" },
     { name = "databricks-sdk", specifier = "==0.44.1" },
     { name = "dataclasses-json", specifier = "==0.6.*" },
+    { name = "delta-spark", specifier = "==3.2.*" },
     { name = "dj-database-url", specifier = "==2.1.0" },
     { name = "django", specifier = "==4.2.*" },
     { name = "django-cors-headers", specifier = "==4.3.*" },

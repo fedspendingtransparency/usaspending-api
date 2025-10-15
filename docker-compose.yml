@@ -144,7 +144,7 @@ services:
     image: usaspending-download  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
     build:
       context: .
-      dockerfile: Dockerfile.download
+      dockerfile: download.Dockerfile
     container_name: usaspending-bulk-download
     restart: on-failure:5 # 5 max attempt, and then it will stop restarting. NOTE: bulk download errors will cause one failure+restart iterations
     volumes:
