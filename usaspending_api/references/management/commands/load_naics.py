@@ -1,14 +1,32 @@
-import glob
+"""
+The files loaded from s3 in this command are all downloaded from https://www.census.gov/eos/www/naics/downloadables/downloadables.html from 2002 through 2022
+They are parsed by this management command load_naics.py (manage.py load_naics) to populate the naics table in the usaspending database.
+These file are pre-formatted in the following ways:
+* The parser determines the year for the naics file by searching the title for 20xx. This can appear anywhere in the file name
+* The parser expects two columns if the year is less than 2017, the first with the naics code, and the second with naics description
+* If the year is greater than or equal to 2017 it expects three columns. The third column is a long description of the naics code
+"""
+
 import logging
 import re
 
+from argparse import ArgumentTypeError
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.db import models
+from io import BytesIO
 from openpyxl import load_workbook
-
+from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 from usaspending_api.references.models import NAICS
+
+NAICS_FILES = [
+    "2-6_digit_2002_Code_File.xlsx",
+    "2-6_digit_2007_Code_File.xlsx",
+    "2-6_digit_2012_Code_File.xlsx",
+    "2-6_digit_2017_Code_File.xlsx",
+    "2-6_digit_2022_Code_File.xlsx",
+]
 
 
 class Command(BaseCommand):
@@ -20,12 +38,16 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "-p", "--path", help="the path to the Excel spreadsheets to load", default=self.default_path
+            "-p",
+            "--path",
+            help="the path to the Excel spreadsheets to load",
+            default=f"{settings.FILES_SERVER_BASE_URL}/reference_data/",
         )
         parser.add_argument("-a", "--append", help="Append to existing guide", action="store_true")
+        parser.add_argument("-o", "--overwrite", help="Overwrite naics", action="store_true")
 
     def handle(self, *args, **options):
-        load_naics(path=options["path"], append=options["append"])
+        load_naics(path=options["path"], append=options["append"], overwrite=options["overwrite"])
 
 
 def populate_naics_fields(ws, naics_year, path):
@@ -91,24 +113,24 @@ def load_naics_year_retired():
 
 
 @transaction.atomic
-def load_naics(path, append):
+def load_naics(path, append, overwrite):
     logger = logging.getLogger("script")
 
-    if append:
+    if append == overwrite:
+        raise ArgumentTypeError("command must supply either --overwrite or --append")
+    elif append:
         logger.info("Appending definitions to existing guide")
     else:
-        logger.info("Deleting existing definitions from guide")
+        logger.info("Overwriting existing guide")
         NAICS.objects.all().delete()
 
-    # year regex object precompile
+    naics_files = [path + file for file in NAICS_FILES]
+
     p_year = re.compile("(20[0-9]{2})")
-
-    dir_files = glob.glob(path + "/*.xlsx")
-
-    for path in sorted(dir_files, reverse=True):
-        wb = load_workbook(filename=path)
+    for file in naics_files:
+        file_object = RetrieveFileFromUri(f"{file}").get_file_object()
+        wb = load_workbook(filename=BytesIO(file_object.read()))
         ws = wb.active
-
-        naics_year = p_year.search(path).group()
-        populate_naics_fields(ws, naics_year, path)
+        naics_year = p_year.search(file).group()
+        populate_naics_fields(ws, naics_year, file)
     load_naics_year_retired()

@@ -1,17 +1,14 @@
 import datetime
-
 from decimal import Decimal
 
 import pytest
-
 from django.conf import settings
 from django.core.management import call_command
-from django.db import connections, DEFAULT_DB_ALIAS
+from django.db import DEFAULT_DB_ALIAS, connections
 from django.test import override_settings
 from model_bakery import baker
 
 from usaspending_api.transactions.models import SourceProcurementTransaction
-
 
 BROKER_TABLE = SourceProcurementTransaction().broker_source_table
 NUMBER_OF_RECORDS = 100
@@ -150,7 +147,6 @@ def test_data_transfer_from_broker(load_broker_data):
     table = SourceProcurementTransaction().table_name
 
     with connections[DEFAULT_DB_ALIAS].cursor() as cursor:
-
         cursor.execute(f"SELECT COUNT(*) FROM {table}")
         assert cursor.fetchall()[0][0] == NUMBER_OF_RECORDS
 
@@ -469,6 +465,10 @@ def test_data_transfer_from_broker(load_broker_data):
             False,
             True,
             "D&B",
+            None,
+            None,
+            None,
+            None,
         )
 
 
