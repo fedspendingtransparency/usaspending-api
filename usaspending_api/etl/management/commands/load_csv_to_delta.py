@@ -1,6 +1,5 @@
 import logging
 from dataclasses import dataclass
-from datetime import datetime
 
 from django.core.management.base import BaseCommand
 from pyspark.sql import SparkSession
@@ -22,7 +21,7 @@ class CsvTableMetadata:
     db_name: str
     table_name: str
     schema: StructType
-    path: str
+    source_path: str
 
 
 destination_tables = {
@@ -30,14 +29,14 @@ destination_tables = {
         db_name="raw",
         table_name="world_cities",
         schema=world_cities_schema,
-        path=f"s3a://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.SPARK_CSV_S3_PATH}/raw/world_cities/world_cities.csv",
+        source_path=f"s3a://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.SPARK_CSV_S3_PATH}/worldcities.csv",
     )
 }
 
 
 class Command(BaseCommand):
     help = """
-    This command reads a csv file into a delta table. It only supports a full reload of a table.
+    This command reads a csv file into a spark table. It only supports a full reload of a table.
     All existing data will be deleted before new data is written.
     """
 
@@ -51,7 +50,7 @@ class Command(BaseCommand):
             "--destination-table",
             type=str,
             required=True,
-            help="The destination Delta Table to write the data",
+            help="The destination spark table to write the data",
             choices=list(destination_tables),
         )
         parser.add_argument(
@@ -67,10 +66,10 @@ class Command(BaseCommand):
             help="An alternate delta table name for the created table, overriding the destination-table table name",
         )
         parser.add_argument(
-            "--alt-path",
+            "--alt-source-path",
             type=str,
             required=False,
-            help="An alternate path for the csv file, overriding the destination-table path.  Supports the s3a:// protocol",
+            help="An alternate path for the source csv file, overriding the destination-table path.  Supports the s3a:// protocol",
         )
         parser.add_argument(
             "--spark-s3-bucket",
@@ -94,7 +93,7 @@ class Command(BaseCommand):
         spark_created_by_command = False
         if not self.spark:
             spark_created_by_command = True
-            self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)  # type: SparkSession
+            self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)
 
         # Resolve Parameters
         self.csv_metadata = destination_tables[options["destination_table"]]
@@ -102,8 +101,8 @@ class Command(BaseCommand):
             self.csv_metadata.db_name = options["alt_db"]
         if options["alt_name"]:
             self.csv_metadata.db_name = options["alt_name"]
-        if options["alt_path"]:
-            self.csv_metadata.path = options["alt_path"]
+        if options["alt_source_path"]:
+            self.csv_metadata.source_path = options["alt_source_path"]
         if options["spark_s3_bucket"]:
             self.spark_s3_bucket = options["spark_s3_bucket"]
 
@@ -114,14 +113,12 @@ class Command(BaseCommand):
 
     def load_csv(self):
         delta_path = f"s3a://{self.spark_s3_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/{self.csv_metadata.db_name}/{self.csv_metadata.table_name}"
-        csv_path = f"s3a://{self.spark_s3_bucket}/{CONFIG.SPARK_CSV_S3_PATH}/{self.csv_metadata.db_name}/{self.csv_metadata.table_name}"
         self.spark.sql(f"CREATE DATABASE IF NOT EXISTS {self.csv_metadata.db_name};")
-        df = self.spark.read.csv(self.csv_metadata.path, header=True, schema=self.csv_metadata.schema)
-        created_at = str(datetime.now())
-        df.write.parquet(f"{csv_path}/{self.csv_metadata.table_name}-{created_at}.parquet", mode="overwrite")
+        df = self.spark.read.csv(self.csv_metadata.source_path, header=True, schema=self.csv_metadata.schema)
         df.write.saveAsTable(
             f"{self.csv_metadata.db_name}.{self.csv_metadata.table_name}",
             mode="overwrite",
             format="delta",
-            options={"path": delta_path, "overwriteSchema": True},
+            path=delta_path,
+            options={"overwriteSchema": True},
         )

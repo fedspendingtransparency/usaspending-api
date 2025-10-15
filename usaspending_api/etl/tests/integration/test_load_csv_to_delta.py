@@ -63,7 +63,7 @@ def test_load_world_cities_csv_to_delta(spark, s3_unittest_data_bucket, hive_uni
         call_command(
             "load_csv_to_delta",
             "--destination-table=world_cities",
-            f"--alt-path={f.name}",
+            f"--alt-source-path={f.name}",
             f"--spark-s3-bucket={s3_unittest_data_bucket}",
         )
     df = spark.sql("SELECT * FROM raw.world_cities")
@@ -106,7 +106,7 @@ def test_load_world_cities_csv_to_delta(spark, s3_unittest_data_bucket, hive_uni
         call_command(
             "load_csv_to_delta",
             "--destination-table=world_cities",
-            f"--alt-path={f.name}",
+            f"--alt-source-path={f.name}",
             f"--spark-s3-bucket={s3_unittest_data_bucket}",
         )
     df = spark.sql("SELECT * FROM raw.world_cities")
