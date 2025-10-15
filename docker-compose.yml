@@ -128,28 +128,39 @@ services:
     # Must wait on postgres db to be up (~9s)
     command: /bin/sh -c "sleep 9s; python3 -u manage.py runserver --verbosity 2 0.0.0.0:8000"
     environment:
+      IS_LOCAL: ${IS_LOCAL}
       DJANGO_DEBUG: ${DJANGO_DEBUG}
       RUN_LOCAL_DOWNLOAD_IN_PROCESS: "False"
       DB_SOURCE: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
       DB_R1: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
       DOWNLOAD_DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
       ES_HOSTNAME: ${ES_HOSTNAME}
+      TOGGLE_OTEL_CONSOLE_LOGGING: ${TOGGLE_OTEL_CONSOLE_LOGGING}
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}
 
   usaspending-bulk-download:
     profiles:
       - usaspending  # must pass --profile usaspending to docker compose for this to come up
-    image: usaspending-backend  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
-    build: .
+    image: usaspending-download  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
+    build:
+      context: .
+      dockerfile: Dockerfile.download
     container_name: usaspending-bulk-download
     restart: on-failure:5 # 5 max attempt, and then it will stop restarting. NOTE: bulk download errors will cause one failure+restart iterations
     volumes:
-    - .:/dockermount
+      - .:/dockermount
+      # Required to interact with host's docker daemon from within this running container,
+      # to submit a spark job via the spark-submit container (see download_sqs_worker._run_spark_download)
+      - /var/run/docker.sock:/var/run/docker.sock
     command: python3 manage.py download_sqs_worker
     environment:
+      IS_LOCAL: ${IS_LOCAL}
       DJANGO_DEBUG: ${DJANGO_DEBUG}
       DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
       DOWNLOAD_DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
       ES_HOSTNAME: ${ES_HOSTNAME}
+      TOGGLE_OTEL_CONSOLE_LOGGING: ${TOGGLE_OTEL_CONSOLE_LOGGING}
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}
 
   usaspending-es:
     profiles:
@@ -354,6 +365,9 @@ services:
       - spark-history-server
       - minio
     environment:
+      IS_LOCAL: ${IS_LOCAL}
+      DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
+      MINIO_HOST: ${MINIO_HOST}
       SPARK_MASTER_HOST: ${SPARK_MASTER_HOST:-spark-master}
       SPARK_MASTER_PORT: ${SPARK_MASTER_PORT:-7077}
       # i.e. target where host warehouse dir is bound in below volume config.
@@ -363,6 +377,8 @@ services:
       #   This env var needs to be picked up as the path part of the config for the spark.hadoop.javax.jdo.option.ConnectionURL spark conf setting when SparkSessions are created inside of a spark-submitted job
       HIVE_METASTORE_DERBY_DB_DIR: /spark-warehouse/metastore_db
       PYTHONPATH: "/project"
+      TOGGLE_OTEL_CONSOLE_LOGGING: ${TOGGLE_OTEL_CONSOLE_LOGGING}
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}
     # NOTE: entrypoint CANNOT interpolate env vars when processed. They are passed through literally.
     # So in using 1 $ rather than 2 $$, the var is evaluated based on the current SHELL ENV when docker compose is run,
     # and interpolated before accessed as the entrypoint.
@@ -386,3 +402,51 @@ services:
         source: ${HOME}/.ivy2
         target: /root/.ivy2
         read_only: false
+
+  otel-collector:
+    profiles:
+      - tracing
+    image: otel/opentelemetry-collector:0.86.0
+    command: [ "--config=/etc/otel-collector.yaml" ]
+    volumes:
+      - ./otel-collector.yaml:/etc/otel-collector.yaml
+
+  # Tempo runs as user 10001, and docker compose creates the volume as root.
+  # As such, we need to chown the volume in order for Tempo to start correctly.
+  tempo-init:
+    image: &tempoImage grafana/tempo:2.8.2
+    user: root
+    entrypoint:
+      - "chown"
+      - "10001:10001"
+      - "/var/tempo"
+    volumes:
+      - ./tempo-data:/var/tempo
+
+  tempo:
+    profiles:
+      - tracing
+    image: *tempoImage
+    command: [ "-config.file=/etc/tempo.yaml" ]
+    volumes:
+      - ./tempo.yaml:/etc/tempo.yaml
+      - ./tempo-data:/var/tempo
+    ports:
+      - "3200" # tempo
+      - "4317" # otlp grpc
+    depends_on:
+      - tempo-init
+
+  grafana:
+    profiles:
+      - tracing
+    image: grafana/grafana:11.0.0
+    volumes:
+      - ./grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+      - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor
+    ports:
+      - "3000:3000"

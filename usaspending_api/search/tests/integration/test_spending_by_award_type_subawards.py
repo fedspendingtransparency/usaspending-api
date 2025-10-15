@@ -8,7 +8,8 @@ from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
 @pytest.mark.django_db
-def test_spending_by_award_subawards_success(client):
+def test_spending_by_award_subawards_success(client, monkeypatch, elasticsearch_subaward_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     # test idv subawards search
     resp = client.post(
         "/api/v2/search/spending_by_award",

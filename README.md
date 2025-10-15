@@ -171,6 +171,15 @@ docker compose run --rm usaspending-manage python3 -u manage.py elasticsearch_in
 docker compose run --rm usaspending-manage python3 -u manage.py elasticsearch_indexer --create-new-index --index-name "$CURR_DATE-subaward" --load-type subaward
 ```
 
+### Observability/Tracing Setup
+The project uses grafana, tempo, and opentelemetry for observability.  This enables developers to trace functionality across multiple services resulting in better visibility of issues.
+There are two options for using the observability framework in the local development setup.  You can log traces to the console by setting the `TOGGLE_OTEL_CONSOLE_LOGGING` environmental variable to `True` for the `usaspending-api` container.
+Alternatively you can run the `otel-collector`, `tempo`, and `grafana` containers to more fully replicate the production observability framework.  These containers are part of the `tracing` profile and can be brought up with:
+```shell
+docker compose --profile tracing up -d
+```
+When using these containers the `TOGGLE_OTEL_CONSOLE_LOGGING` must be set to `False` and `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` must be set to `http://otel-collector:4318/v1/traces`
+
 ## Running the API
 
 Run the following to bring up the Django app for the RESTful API:

@@ -1,8 +1,9 @@
 import json
 import pytest
 import random
+import zipfile
+import pandas as pd
 
-from itertools import chain, combinations
 from unittest.mock import Mock
 
 from django.conf import settings
@@ -15,7 +16,7 @@ from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.download.filestreaming import download_generation
-from usaspending_api.download.lookups import JOB_STATUS, VALID_ACCOUNT_SUBMISSION_TYPES
+from usaspending_api.download.lookups import JOB_STATUS
 from usaspending_api.etl.award_helpers import update_awards
 from usaspending_api.search.models import TransactionSearch
 
@@ -163,25 +164,6 @@ def test_tas_b_defaults_success(client, download_test_data):
 
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
-def test_tas_c_defaults_success(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
-    resp = client.post(
-        "/api/v2/download/accounts/",
-        content_type="application/json",
-        data=json.dumps(
-            {
-                "account_level": "treasury_account",
-                "filters": {"submission_types": ["award_financial"], "fy": "2016", "quarter": "4"},
-                "file_format": "csv",
-            }
-        ),
-    )
-
-    assert resp.status_code == status.HTTP_200_OK
-    assert ".zip" in resp.json()["file_url"]
-
-
-@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
 def test_federal_account_a_defaults_success(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
     resp = client.post(
@@ -210,25 +192,6 @@ def test_federal_account_b_defaults_success(client, download_test_data):
             {
                 "account_level": "federal_account",
                 "filters": {"submission_types": ["object_class_program_activity"], "fy": "2018", "quarter": "1"},
-                "file_format": "csv",
-            }
-        ),
-    )
-
-    assert resp.status_code == status.HTTP_200_OK
-    assert ".zip" in resp.json()["file_url"]
-
-
-@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
-def test_federal_account_c_defaults_success(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
-    resp = client.post(
-        "/api/v2/download/accounts/",
-        content_type="application/json",
-        data=json.dumps(
-            {
-                "account_level": "federal_account",
-                "filters": {"submission_types": ["award_financial"], "fy": "2016", "quarter": "4"},
                 "file_format": "csv",
             }
         ),
@@ -277,29 +240,6 @@ def test_agency_filter_failure(client, download_test_data):
     )
 
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
-
-
-@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
-def test_federal_account_filter_success(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
-    resp = client.post(
-        "/api/v2/download/accounts/",
-        content_type="application/json",
-        data=json.dumps(
-            {
-                "account_level": "treasury_account",
-                "filters": {
-                    "submission_types": ["award_financial"],
-                    "fy": "2017",
-                    "quarter": "4",
-                    "federal_account": "10",
-                },
-                "file_format": "csv",
-            }
-        ),
-    )
-
-    assert resp.status_code == status.HTTP_200_OK
 
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
@@ -407,35 +347,9 @@ def test_download_accounts_bad_filter_type_raises(client, download_test_data):
 
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
-def test_multiple_submission_types_success(client, download_test_data):
-    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
-
-    def all_subsets(ss):
-        return chain(*map(lambda x: combinations(ss, x), range(1, len(ss) + 1)))
-
-    for submission_list in all_subsets(VALID_ACCOUNT_SUBMISSION_TYPES):
-        resp = client.post(
-            "/api/v2/download/accounts/",
-            content_type="application/json",
-            data=json.dumps(
-                {
-                    "account_level": "treasury_account",
-                    "filters": {"submission_types": submission_list, "fy": "2017", "quarter": "3"},
-                    "file_format": "csv",
-                }
-            ),
-        )
-
-        assert resp.status_code == status.HTTP_200_OK
-        assert ".zip" in resp.json()["file_url"]
-        if len(submission_list) > 1:
-            assert "AccountData" in resp.json()["file_url"]
-
-
-@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
 def test_duplicate_submission_types_success(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
-    duplicated_submission_list = VALID_ACCOUNT_SUBMISSION_TYPES * 11
+    duplicated_submission_list = ["account_balances", "object_class_program_activity"] * 11
 
     resp = client.post(
         "/api/v2/download/accounts/",
@@ -452,8 +366,8 @@ def test_duplicate_submission_types_success(client, download_test_data):
     download_types = resp.json()["download_request"]["download_types"]
 
     assert resp.status_code == status.HTTP_200_OK
-    assert len(download_types) == len(VALID_ACCOUNT_SUBMISSION_TYPES), "De-duplication failed"
-    assert set(download_types) == set(VALID_ACCOUNT_SUBMISSION_TYPES), "Wrong values in response"
+    assert len(download_types) == 2, "De-duplication failed"
+    assert sorted(download_types) == ["account_balances", "object_class_program_activity"], "Wrong values in response"
 
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
@@ -507,7 +421,17 @@ def test_file_c_spark_download(client, download_test_data, spark, s3_unittest_da
     call_command(
         "create_delta_table",
         f"--spark-s3-bucket={s3_unittest_data_bucket}",
-        f"--destination-table=account_download",
+        f"--destination-table=award_financial_download",
+    )
+    call_command(
+        "create_delta_table",
+        f"--spark-s3-bucket={s3_unittest_data_bucket}",
+        f"--destination-table=object_class_program_activity_download",
+    )
+    call_command(
+        "create_delta_table",
+        f"--spark-s3-bucket={s3_unittest_data_bucket}",
+        f"--destination-table=account_balances_download",
     )
 
     resp = client.post(
@@ -519,14 +443,108 @@ def test_file_c_spark_download(client, download_test_data, spark, s3_unittest_da
                 "filters": {
                     "budget_function": "all",
                     "agency": "all",
-                    "submission_types": ["award_financial"],
+                    "submission_types": ["account_balances", "object_class_program_activity", "award_financial"],
                     "fy": "2021",
                     "period": 12,
                 },
                 "file_format": "csv",
             }
         ),
-        headers={"X-Experimental-API": "download"},
     )
 
     assert resp.status_code == status.HTTP_200_OK
+
+
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
+def test_file_c_spark_download_columns(client, download_test_data, s3_unittest_data_bucket, hive_unittest_metastore_db):
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
+
+    call_command(
+        "create_delta_table",
+        f"--spark-s3-bucket={s3_unittest_data_bucket}",
+        f"--destination-table=award_financial_download",
+    )
+    call_command(
+        "create_delta_table",
+        f"--spark-s3-bucket={s3_unittest_data_bucket}",
+        f"--destination-table=object_class_program_activity_download",
+    )
+    call_command(
+        "create_delta_table",
+        f"--spark-s3-bucket={s3_unittest_data_bucket}",
+        f"--destination-table=account_balances_download",
+    )
+
+    resp = client.post(
+        "/api/v2/download/accounts/",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "account_level": "federal_account",
+                "filters": {
+                    "budget_function": "all",
+                    "agency": "all",
+                    "submission_types": ["account_balances", "object_class_program_activity", "award_financial"],
+                    "fy": "2021",
+                    "period": 12,
+                },
+                "columns": ["owning_agency_name", "federal_account_name"],
+                "file_format": "csv",
+            }
+        ),
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    zip_path = resp.data["file_url"]
+    with zipfile.ZipFile(zip_path, "r") as zip_ref:
+        assert len(zip_ref.namelist()) == 3
+        for file in zip_ref.namelist():
+            with zip_ref.open(file) as zip_ref_file:
+                df = pd.read_csv(zip_ref_file)
+                assert list(df.columns) == ["owning_agency_name", "federal_account_name"]
+
+
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
+def test_file_c_spark_download_unknown_columns(
+    client, download_test_data, s3_unittest_data_bucket, hive_unittest_metastore_db
+):
+
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
+
+    call_command(
+        "create_delta_table",
+        f"--spark-s3-bucket={s3_unittest_data_bucket}",
+        f"--destination-table=award_financial_download",
+    )
+    call_command(
+        "create_delta_table",
+        f"--spark-s3-bucket={s3_unittest_data_bucket}",
+        f"--destination-table=object_class_program_activity_download",
+    )
+    call_command(
+        "create_delta_table",
+        f"--spark-s3-bucket={s3_unittest_data_bucket}",
+        f"--destination-table=account_balances_download",
+    )
+
+    resp = client.post(
+        "/api/v2/download/accounts/",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "account_level": "federal_account",
+                "filters": {
+                    "budget_function": "all",
+                    "agency": "all",
+                    "submission_types": ["account_balances", "object_class_program_activity", "award_financial"],
+                    "fy": "2021",
+                    "period": 12,
+                },
+                "columns": ["test", "federal_account_name"],
+                "file_format": "csv",
+            }
+        ),
+    )
+
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+    assert resp.json()["detail"] == "Unknown columns: ['test']"

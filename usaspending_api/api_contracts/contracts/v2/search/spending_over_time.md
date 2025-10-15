@@ -150,7 +150,7 @@ These fields are defined in the [StandardLocationObject](../../../search_filters
 ### ProgramActivityObject (object)
 At least one of the following fields are required when using the ProgramActivityObject.
 + `name`: (optional, string)
-+ `code`: (optional, number)
++ `code`: (optional, string)
 
 ### AgencyObject (object)
 + `type` (required, enum[string])

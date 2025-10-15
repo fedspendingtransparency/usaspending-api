@@ -128,6 +128,30 @@ def awards_and_transactions(db):
     baker.make("search.AwardSearch", award_id=6, latest_transaction_id=60, action_date="2020-01-01")
     baker.make("search.AwardSearch", award_id=7, latest_transaction_id=70, action_date="2020-01-01")
     baker.make("search.AwardSearch", award_id=8, latest_transaction_id=80, action_date="2020-01-01")
+    baker.make(
+        "search.AwardSearch",
+        award_id=9,
+        action_date="2025-01-01",
+        date_signed="2025-02-01",
+        recipient_hash="26b30496-92ab-426a-ac30-c75803307041",
+        recipient_levels=["C", "R"],
+    )
+    baker.make(
+        "search.AwardSearch",
+        award_id=10,
+        action_date="2025-01-01",
+        date_signed="2025-02-01",
+        recipient_hash="8301261f-8fd1-49d1-9720-8afa3ce6e26f",
+        recipient_levels=["P", "R"],
+    )
+    baker.make(
+        "search.AwardSearch",
+        award_id=11,
+        action_date="2025-01-01",
+        date_signed="2025-02-01",
+        recipient_hash="d85c52ee-e54c-47d4-977d-fcfd3eb4a67e",
+        recipient_levels=["X"],
+    )
     ref_program_activity1 = baker.make(
         "references.RefProgramActivity",
         id=1,
@@ -789,6 +813,27 @@ def awards_and_transactions(db):
         recipient_hash="f1400310-181e-9a06-ac94-0d80a819bb5e",
         duns="123456789",
         uei="123456789AAA",
+    )
+    baker.make(
+        "recipient.RecipientLookup",
+        legal_business_name="C RECIPIENT",
+        recipient_hash="26b30496-92ab-426a-ac30-c75803307041",
+        duns="DUNS009",
+        uei="UEI009",
+    )
+    baker.make(
+        "recipient.RecipientLookup",
+        legal_business_name="P RECIPIENT",
+        recipient_hash="8301261f-8fd1-49d1-9720-8afa3ce6e26f",
+        duns="DUNS010",
+        uei="UEI010",
+    )
+    baker.make(
+        "recipient.RecipientLookup",
+        legal_business_name="BAD LEVEL RECIPIENT",
+        recipient_hash="d85c52ee-e54c-47d4-977d-fcfd3eb4a67e",
+        duns="DUNS011",
+        uei="UEI011",
     )
 
     # PSC
