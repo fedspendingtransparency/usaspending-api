@@ -223,7 +223,7 @@ def verify_delta_table_loaded_to_delta(
             dummy_data = list(dummy_query.all().values())
         elif is_from_broker:
             # model can be None if loading from the Broker
-            broker_connection = connections[settings.DATA_BROKER_DB_ALIAS]
+            broker_connection = connections[settings.BROKER_DB_ALIAS]
             source_broker_name = TABLE_SPEC[delta_table_name]["source_table"]
             with broker_connection.cursor() as cursor:
                 dummy_query = f"SELECT * from {source_broker_name}"
@@ -306,7 +306,7 @@ def verify_delta_table_loaded_from_delta(
     )
 
 
-@pytest.mark.django_db(databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_load_table_to_from_delta_for_recipient_lookup(
     spark, s3_unittest_data_bucket, populate_usas_data_and_recipients_from_broker, hive_unittest_metastore_db
 ):
@@ -436,7 +436,7 @@ def test_load_table_to_delta_for_published_fabs(spark, s3_unittest_data_bucket, 
     verify_delta_table_loaded_to_delta(spark, "published_fabs", s3_unittest_data_bucket)
 
 
-@pytest.mark.django_db(databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_load_table_to_from_delta_for_recipient_profile(
     spark, s3_unittest_data_bucket, populate_usas_data_and_recipients_from_broker, hive_unittest_metastore_db
 ):
@@ -653,7 +653,7 @@ def test_load_table_to_from_delta_for_recipient_profile_testing(
     )
 
 
-@pytest.mark.django_db(databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_load_table_to_from_delta_for_transaction_search(
     spark, s3_unittest_data_bucket, populate_usas_data_and_recipients_from_broker, hive_unittest_metastore_db
 ):
@@ -771,7 +771,7 @@ def test_load_table_to_from_delta_for_transaction_search_alt_db_and_name(
     # )
 
 
-@pytest.mark.django_db(databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_load_table_to_from_delta_for_award_search(
     spark, s3_unittest_data_bucket, populate_usas_data_and_recipients_from_broker, hive_unittest_metastore_db
 ):
@@ -813,7 +813,7 @@ def test_load_table_to_from_delta_for_award_search(
     verify_delta_table_loaded_from_delta(spark, "award_search", jdbc_inserts=True)  # test alt write strategy
 
 
-@pytest.mark.django_db(databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_incremental_load_table_to_delta_for_award_search(
     spark, s3_unittest_data_bucket, populate_usas_data_and_recipients_from_broker, hive_unittest_metastore_db
 ):
@@ -893,7 +893,7 @@ def test_incremental_load_table_to_delta_for_award_search(
     pd.testing.assert_frame_equal(result, expected)
 
 
-@pytest.mark.django_db(databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_incremental_load_table_to_delta_for_transaction_search(
     spark, s3_unittest_data_bucket, populate_usas_data_and_recipients_from_broker, hive_unittest_metastore_db
 ):
@@ -973,7 +973,7 @@ def test_incremental_load_table_to_delta_for_transaction_search(
     pd.testing.assert_frame_equal(result, expected)
 
 
-@pytest.mark.django_db(databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_load_table_to_delta_for_sam_recipient(spark, s3_unittest_data_bucket, populate_broker_data):
     expected_data = [
         {
@@ -1004,10 +1004,10 @@ def test_load_table_to_delta_for_sam_recipient(spark, s3_unittest_data_bucket, p
 
 
 @pytest.mark.skipif(
-    settings.DATA_BROKER_DB_ALIAS not in settings.DATABASES,
+    settings.BROKER_DB_ALIAS not in settings.DATABASES,
     reason="'data_broker' database not configured in django settings.DATABASES.",
 )
-@pytest.mark.django_db(databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_load_table_to_delta_for_summary_state_view(
     spark, s3_unittest_data_bucket, populate_usas_data_and_recipients_from_broker, hive_unittest_metastore_db
 ):
