@@ -332,7 +332,7 @@ class DefaultConfig(BaseSettings):
     # ==== [MISC] ====
     # Miscellaneous configs that are used through the codebase but don't fall into one of the categories above
     COVID19_DOWNLOAD_README_FILE_NAME: str = "COVID-19_download_readme.txt"
-    COVID19_DOWNLOAD_README_OBJECT_KEY: str = f"master/{COVID19_DOWNLOAD_README_FILE_NAME}"
+    COVID19_DOWNLOAD_README_OBJECT_KEY: str = f"files/{COVID19_DOWNLOAD_README_FILE_NAME}"
 
     class Config:
         pass
