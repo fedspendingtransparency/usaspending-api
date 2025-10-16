@@ -92,8 +92,7 @@ def test_can_connect_to_broker_by_dblink(broker_server_dblink_setup, db):
                 "USAspending database.  Skipping the test of integration with that server via dblink"
             )
         cursor.execute(
-            f"SELECT * FROM dblink('{settings.BROKER_DBLINK_NAME}','SELECT now()') "
-            "AS broker_time(the_now timestamp)"
+            f"SELECT * FROM dblink('{settings.BROKER_DBLINK_NAME}','SELECT now()') " "AS broker_time(the_now timestamp)"
         )
         results = cursor.fetchall()
     assert results is not None
