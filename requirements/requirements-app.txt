@@ -4,6 +4,7 @@ boto3==1.34.*
 certifi==2024.7.4
 databricks-sdk==0.44.1  # Pinned because newer versions use v2.2 of the API which is not supported by PVC
 dataclasses-json==0.6.*
+delta-spark==3.2.*
 dj-database-url==2.1.0
 django-cors-headers==4.3.*
 django-debug-toolbar==4.3.*

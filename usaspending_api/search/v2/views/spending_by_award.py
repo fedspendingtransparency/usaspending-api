@@ -275,14 +275,12 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
     def get_elastic_sort_by_fields(self):
         match self.pagination["sort_key"]:
-            case "Award ID" | "Sub-Award ID":
+            case "Award ID":
                 sort_by_fields = ["display_award_id"]
+            case "Sub-Award ID":
+                sort_by_fields = ["subaward_number.keyword"]
             case "NAICS":
-                sort_by_fields = (
-                    [contracts_mapping["sub_naics_code"], contracts_mapping["naics_description"]]
-                    if self.spending_level == SpendingLevel.SUBAWARD
-                    else [contracts_mapping["naics_code"], contracts_mapping["naics_description"]]
-                )
+                sort_by_fields = [contracts_mapping["naics_code"], contracts_mapping["naics_description"]]
             case "PSC":
                 sort_by_fields = [contracts_mapping["psc_code"], contracts_mapping["psc_description"]]
             case "Recipient Location":
@@ -617,7 +615,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         if "NAICS" in self.fields:
             row["NAICS"] = {
-                "code": hit.get("naics"),
+                "code": hit.get("naics_code"),
                 "description": hit.get("naics_description"),
             }
 
@@ -669,7 +667,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                         zip5 = hit.get("sub_pop_zip")
                     case _:
                         zip4 = None
-                        zip5 = None
+                        zip5 = hit.get("sub_pop_zip5")
             else:
                 zip4 = None
                 zip5 = None

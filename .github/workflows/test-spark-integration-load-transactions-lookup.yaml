@@ -16,6 +16,7 @@ env:
   USASPENDING_DB_USER: usaspending
   USASPENDING_DB_PASSWORD: usaspender
   USASPENDING_DB_NAME: data_store_api
+  IS_LOCAL: true
 
 on:
   workflow_call:
@@ -25,6 +26,9 @@ defaults:
     working-directory: ./usaspending-api
 
 jobs:
+  Setup-Broker-Branch:
+    uses: ./.github/workflows/determine-broker-branch.yaml
+
   Run:
     name: Run
     runs-on: ${{ vars.RUNNER_VERSION }}
@@ -39,6 +43,7 @@ jobs:
         with:
           repository: fedspendingtransparency/data-act-broker-backend
           path: data-act-broker-backend
+          ref: ${{ needs.Setup-Broker-Branch.outputs.branch }}
 
       - name: Init Python Environment
         uses: ./usaspending-api/.github/actions/init-python-environment

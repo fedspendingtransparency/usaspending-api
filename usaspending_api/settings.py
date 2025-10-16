@@ -58,7 +58,7 @@ HOST = "localhost:3000"
 ALLOWED_HOSTS = ["*"]
 
 # Define local flag to affect location of downloads
-IS_LOCAL = True
+IS_LOCAL = os.environ.get("IS_LOCAL", "").lower() in ["true", "1", "yes"]
 
 # Indicates which environment is sending traces to Grafana.
 # This will be overwritten by Ansible
@@ -83,6 +83,8 @@ DATABASE_DOWNLOAD_S3_BUCKET_NAME = CONFIG.DATABASE_DOWNLOAD_S3_BUCKET_NAME
 BULK_DOWNLOAD_S3_BUCKET_NAME = CONFIG.BULK_DOWNLOAD_S3_BUCKET_NAME
 BULK_DOWNLOAD_S3_REDIRECT_DIR = "generated_downloads"
 BULK_DOWNLOAD_SQS_QUEUE_NAME = ""
+PRIORITY_DOWNLOAD_SQS_QUEUE_NAME = ""
+BULK_DOWNLOAD_SPARK_JOB_NAME_PREFIX = "api_download"
 DATABASE_DOWNLOAD_S3_REDIRECT_DIR = "database_download"
 MONTHLY_DOWNLOAD_S3_BUCKET_NAME = ""
 MONTHLY_DOWNLOAD_S3_REDIRECT_DIR = "award_data_archive"

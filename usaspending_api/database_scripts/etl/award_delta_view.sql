@@ -114,8 +114,10 @@ SELECT
 
   "tas_paths",
   "tas_components",
+
   "disaster_emergency_fund_codes",
   CAST("spending_by_defc" AS STRING),
+
   "total_covid_outlay",
   "total_covid_obligation",
 
@@ -123,7 +125,10 @@ SELECT
   "total_iija_obligation",
 
   "generated_pragmatic_obligation",
-  CAST("program_activities" AS STRING)
+  CAST("program_activities" AS STRING),
+  "subaward_count",
+  "total_subaward_amount",
+  "transaction_count"
 
 FROM "award_search"
 WHERE "action_date" >= '2007-10-01';

@@ -10,6 +10,7 @@ from usaspending_api.etl.submission_loader_helpers.bulk_create_manager import Bu
 from usaspending_api.etl.submission_loader_helpers.disaster_emergency_fund_codes import get_disaster_emergency_fund
 from usaspending_api.etl.submission_loader_helpers.object_class import get_object_class
 from usaspending_api.etl.submission_loader_helpers.program_activities import get_program_activity
+from usaspending_api.etl.submission_loader_helpers.program_activity_park import get_program_activity_park
 from usaspending_api.etl.submission_loader_helpers.treasury_appropriation_account import (
     bulk_treasury_appropriation_account_tas_lookup,
     get_treasury_appropriation_account_tas_lookup,
@@ -92,6 +93,7 @@ def get_file_b(submission_attributes, db_cursor):
             "ussgl480110_rein_undel_ord_cpe",
             "ussgl480200_undelivered_or_cpe",
             "ussgl480200_undelivered_or_fyb",
+            "ussgl480210_rein_undel_obs_cpe",
             "ussgl483100_undelivered_or_cpe",
             "ussgl483200_undelivered_or_cpe",
             "ussgl487100_downward_adjus_cpe",
@@ -109,6 +111,7 @@ def get_file_b(submission_attributes, db_cursor):
             "ussgl497200_downward_adjus_cpe",
             "ussgl498100_upward_adjustm_cpe",
             "ussgl498200_upward_adjustm_cpe",
+            "ussgl497210_down_adj_refun_cpe",
         ],
     }
 
@@ -196,6 +199,7 @@ def load_file_b(submission_attributes, prg_act_obj_cls_data, db_cursor):
             "object_class": get_object_class(row["object_class"], row["by_direct_reimbursable_fun"]),
             "program_activity": get_program_activity(row, submission_attributes),
             "disaster_emergency_fund": get_disaster_emergency_fund(row),
+            "program_activity_reporting_key": get_program_activity_park(row),
         }
 
         save_manager.append(
