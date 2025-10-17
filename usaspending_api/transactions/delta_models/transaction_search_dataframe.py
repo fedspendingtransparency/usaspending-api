@@ -178,7 +178,7 @@ class TransactionSearchDataframe:
                 self.faba.program_activity_reporting_key == self.program_activity_park.code,
                 "left",
             )
-            .filter(self.faba["award_id"].isNoself.transaction_normalizedull())
+            .filter(self.faba["award_id"].isNotNull())
             .groupBy(self.faba.award_id)
             .agg(
                 sf.to_json(
@@ -228,7 +228,7 @@ class TransactionSearchDataframe:
                                     sf.lpad(self.ref_program_activity.program_activity_code, 4, "0"),
                                 ).alias("code"),
                                 sf.when(
-                                    self.program_activity_park["code"].isNoself.transaction_normalizedull(),
+                                    self.program_activity_park["code"].isNotNull(),
                                     sf.lit("PARK"),
                                 )
                                 .otherwise(sf.lit("PAC/PAN"))
@@ -412,12 +412,10 @@ class TransactionSearchDataframe:
         ]
 
     @property
-    def recipient_hash(self) -> Column:
+    def generated_recipient_hash(self) -> Column:
         return hash_col(
             sf.when(
-                sf.coalesce(
-                    self.transaction_fpds.awardee_or_recipient_uei, self.transaction_fabs.uei
-                ).isNoself.transaction_normalizedull(),
+                sf.coalesce(self.transaction_fpds.awardee_or_recipient_uei, self.transaction_fabs.uei).isNotNull(),
                 sf.concat(
                     sf.lit("uei-"),
                     sf.coalesce(self.transaction_fpds.awardee_or_recipient_uei, self.transaction_fabs.uei),
@@ -427,7 +425,7 @@ class TransactionSearchDataframe:
                     sf.coalesce(
                         self.transaction_fpds.awardee_or_recipient_uniqu,
                         self.transaction_fabs.awardee_or_recipient_uniqu,
-                    ).isNoself.transaction_normalizedull(),
+                    ).isNotNull(),
                     sf.concat(
                         sf.lit("duns-"),
                         sf.coalesce(
@@ -448,12 +446,12 @@ class TransactionSearchDataframe:
         )
 
     @property
-    def parent_recipient_hash(self) -> Column:
+    def generated_parent_recipient_hash(self) -> Column:
         return hash_col(
             sf.when(
                 sf.coalesce(
                     self.transaction_fpds.ultimate_parent_uei, self.transaction_fabs.ultimate_parent_uei
-                ).isNoself.transaction_normalizedull(),
+                ).isNotNull(),
                 sf.concat(
                     sf.lit("uei-"),
                     sf.coalesce(self.transaction_fpds.ultimate_parent_uei, self.transaction_fabs.ultimate_parent_uei),
@@ -463,7 +461,7 @@ class TransactionSearchDataframe:
                     sf.coalesce(
                         self.transaction_fpds.ultimate_parent_unique_ide,
                         self.transaction_fabs.ultimate_parent_unique_ide,
-                    ).isNoself.transaction_normalizedull(),
+                    ).isNotNull(),
                     sf.concat(
                         sf.lit("duns-"),
                         sf.coalesce(
@@ -492,7 +490,7 @@ class TransactionSearchDataframe:
                     sf.when(
                         sf.coalesce(
                             self.transaction_fpds.awardee_or_recipient_uei, self.transaction_fabs.uei
-                        ).isNoself.transaction_normalizedull(),
+                        ).isNotNull(),
                         sf.concat(
                             sf.lit("uei-"),
                             sf.coalesce(self.transaction_fpds.awardee_or_recipient_uei, self.transaction_fabs.uei),
@@ -502,7 +500,7 @@ class TransactionSearchDataframe:
                             sf.coalesce(
                                 self.transaction_fpds.awardee_or_recipient_uniqu,
                                 self.transaction_fabs.awardee_or_recipient_uniqu,
-                            ).isNoself.transaction_normalizedull(),
+                            ).isNotNull(),
                             sf.concat(
                                 sf.lit("duns-"),
                                 sf.coalesce(
@@ -994,7 +992,11 @@ class TransactionSearchDataframe:
                 self.transaction_fabs.cfda_number == self.references_cfda.program_number,
                 "leftouter",
             )
-            .join(self.recipient_lookup, self.recipient_lookup.recipient_hash == self.recipient_hash, "leftouter")
+            .join(
+                self.recipient_lookup,
+                self.recipient_lookup.recipient_hash == self.generated_recipient_hash,
+                "leftouter",
+            )
             .join(self.awards, self.transaction_normalized.award_id == self.awards.id, "leftouter")
             .join(
                 self.awarding_agency,
@@ -1044,12 +1046,12 @@ class TransactionSearchDataframe:
             )
             .join(
                 self.parent_recipient,
-                self.parent_recipient.parent_recipient_hash == self.parent_recipient_hash,
+                self.parent_recipient.parent_recipient_hash == self.generated_parent_recipient_hash,
                 "leftouter",
             )
             .join(
                 self.recipient_hash_and_levels,
-                (sf.col("recipient_hash") == self.recipient_hash_and_levels.recipient_level_hash)
+                (sf.col("recipient_hash") == sf.col("recipient_level_hash"))
                 & ~(
                     sf.col("legal_business_name").isin(
                         [
@@ -1066,7 +1068,7 @@ class TransactionSearchDataframe:
             )
             .join(
                 self.pop_state_lookup,
-                self.pop_state_lookup.pop_state_code
+                sf.col("pop_state_code")
                 == sf.coalesce(
                     self.transaction_fpds.place_of_performance_state, self.transaction_fabs.place_of_perfor_state_code
                 ),
@@ -1074,13 +1076,13 @@ class TransactionSearchDataframe:
             )
             .join(
                 self.pop_state_population,
-                (self.pop_state_population.state_code == self.pop_state_lookup.pop_state_fips)
+                (self.pop_state_population.state_code == sf.col("pop_state_fips"))
                 & (self.pop_state_population.county_number == "000"),
                 "leftouter",
             )
             .join(
                 self.pop_county_population,
-                (self.pop_county_population.state_code == self.pop_state_lookup.pop_state_fips)
+                (self.pop_county_population.state_code == sf.col("pop_state_fips"))
                 & (
                     self.pop_county_population.county_number
                     == extract_numbers_as_string(
@@ -1095,7 +1097,7 @@ class TransactionSearchDataframe:
             )
             .join(
                 self.pop_district_population,
-                (self.pop_district_population.state_code == self.pop_state_lookup.pop_state_fips)
+                (self.pop_district_population.state_code == sf.col("pop_state_fips"))
                 & (
                     self.pop_district_population.congressional_district
                     == extract_numbers_as_string(
@@ -1109,7 +1111,7 @@ class TransactionSearchDataframe:
             )
             .join(
                 self.rl_state_lookup,
-                self.rl_state_lookup.rl_state_code
+                sf.col("rl_state_code")
                 == sf.coalesce(
                     self.transaction_fpds.legal_entity_state_code, self.transaction_fabs.legal_entity_state_code
                 ),
@@ -1117,13 +1119,13 @@ class TransactionSearchDataframe:
             )
             .join(
                 self.rl_state_population,
-                (self.rl_state_population.state_code == self.rl_state_lookup.recipient_location_state_fips)
+                (self.rl_state_population.state_code == sf.col("recipient_location_state_fips"))
                 & (self.rl_state_population.county_number == "000"),
                 "leftouter",
             )
             .join(
                 self.rl_county_population,
-                (self.rl_county_population.state_code == self.rl_state_lookup.recipient_location_state_fips)
+                (self.rl_county_population.state_code == sf.col("recipient_location_state_fips"))
                 & (
                     self.rl_county_population.county_number
                     == extract_numbers_as_string(
@@ -1138,7 +1140,7 @@ class TransactionSearchDataframe:
             )
             .join(
                 self.rl_district_population,
-                (self.rl_district_population.state_code == self.rl_state_lookup.recipient_location_state_fips)
+                (self.rl_district_population.state_code == sf.col("recipient_location_state_fips"))
                 & (
                     self.rl_district_population.congressional_district
                     == extract_numbers_as_string(
