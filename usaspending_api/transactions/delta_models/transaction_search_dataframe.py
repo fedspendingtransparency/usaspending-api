@@ -521,7 +521,7 @@ class TransactionSearchDataframe:
                     )
                 ),
             ).alias("recipient_hash"),
-            self.recipient_hash_and_levels.recipient_levels,
+            sf.col("recipient_levels"),
             sf.coalesce(self.transaction_fpds.awardee_or_recipient_uei, self.transaction_fabs.uei).alias(
                 "recipient_uei"
             ),
@@ -566,7 +566,7 @@ class TransactionSearchDataframe:
             sf.coalesce(
                 self.transaction_fpds.legal_entity_state_descrip, self.transaction_fabs.legal_entity_state_name
             ).alias("recipient_location_state_name"),
-            self.rl_state_lookup.recipient_location_state_fips,
+            sf.col("recipient_location_state_fips"),
             self.rl_state_population.recipient_location_state_population,
             extract_numbers_as_string(
                 sf.coalesce(
@@ -612,7 +612,7 @@ class TransactionSearchDataframe:
             self.transaction_fabs.legal_entity_foreign_posta,
             self.transaction_fabs.legal_entity_foreign_provi,
             sf.concat(
-                self.rl_state_lookup.recipient_location_state_fips,
+                sf.col("recipient_location_state_fips"),
                 sf.coalesce(
                     self.transaction_fpds.legal_entity_county_code, self.transaction_fabs.legal_entity_county_code
                 ),
@@ -636,7 +636,7 @@ class TransactionSearchDataframe:
             sf.coalesce(
                 self.transaction_fpds.place_of_perfor_state_desc, self.transaction_fabs.place_of_perform_state_nam
             ).alias("pop_state_name"),
-            self.pop_state_lookup.pop_state_fips,
+            sf.col("pop_state_fips"),
             self.pop_state_population.pop_state_population,
             extract_numbers_as_string(
                 sf.coalesce(
@@ -671,7 +671,7 @@ class TransactionSearchDataframe:
             ).alias("pop_city_name"),
             self.transaction_fabs.place_of_performance_forei,
             sf.concat(
-                self.pop_state_lookup.pop_state_fips,
+                sf.col("pop_state_fips"),
                 sf.coalesce(
                     self.transaction_fpds.place_of_perform_county_co, self.transaction_fabs.place_of_perform_county_co
                 ),
@@ -681,11 +681,11 @@ class TransactionSearchDataframe:
     @property
     def accounts_cols(self) -> list[Column]:
         return [
-            self.fed_and_tres_acct.treasury_account_identifiers,
-            self.fed_and_tres_acct.tas_paths,
-            self.fed_and_tres_acct.tas_components,
-            self.fed_and_tres_acct.federal_accounts,
-            self.fed_and_tres_acct.disaster_emergency_fund_codes,
+            sf.col("treasury_account_identifiers"),
+            sf.col("tas_paths"),
+            sf.col("tas_components"),
+            sf.col("federal_accounts"),
+            sf.col("disaster_emergency_fund_codes"),
         ]
 
     @property
@@ -888,7 +888,7 @@ class TransactionSearchDataframe:
             self.transaction_fpds.other_than_full_and_o_desc,
             self.transaction_fpds.other_than_full_and_open_c,
             self.transaction_fpds.parent_award_id,
-            self.transaction_fpds.parself.transaction_normalizedership_or_limited_lia,
+            self.transaction_fpds.partnership_or_limited_lia,
             self.transaction_fpds.performance_based_se_desc,
             self.transaction_fpds.performance_based_service,
             self.transaction_fpds.period_of_perf_potential_e,
@@ -970,7 +970,7 @@ class TransactionSearchDataframe:
             self.transaction_fpds.veterinary_hospital,
             self.transaction_fpds.woman_owned_business,
             self.transaction_fpds.women_owned_small_business,
-            self.fed_and_tres_acct.program_activities.cast(StringType()),
+            sf.col("program_activities").cast(StringType()),
         ]
 
     def __call__(self) -> DataFrame:
@@ -1190,7 +1190,11 @@ class TransactionSearchDataframe:
 
 def load_transaction_search(spark: SparkSession, destination_database: str, destination_table_name: str) -> None:
     df = TransactionSearchDataframe(spark)()
-    df.write.format("delta").mode("overwrite").saveAsTable(f"{destination_database}.{destination_table_name}")
+    df.write.saveAsTable(
+        f"{destination_database}.{destination_table_name}",
+        mode="overwrite",
+        format="delta",
+    )
 
 
 def load_transaction_search_incremental(
