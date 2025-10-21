@@ -7,15 +7,18 @@ from pathlib import Path
 from typing import List, Optional
 
 from django.conf import settings
-from pyspark.sql import DataFrame
+from duckdb.experimental.spark.sql.dataframe import DataFrame as DuckDBSparkDataFrame
+from duckdb.experimental.spark.sql.session import SparkSession as DuckDBSparkSession
+from pyspark.sql import DataFrame, SparkSession
+
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
 from usaspending_api.common.helpers.s3_helpers import delete_s3_objects, download_s3_object
 from usaspending_api.download.filestreaming.download_generation import (
     EXCEL_ROW_LIMIT,
-    split_and_zip_data_files,
-    wait_for_process,
     execute_psql,
     generate_export_query_temp_file,
+    split_and_zip_data_files,
+    wait_for_process,
 )
 from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_file
 from usaspending_api.download.lookups import FILE_FORMATS
@@ -139,17 +142,15 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
         #   we do not want to force all containers where
         #   other strategies run to have pyspark installed when the strategy
         #   doesn't require it.
-        from usaspending_api.common.etl.spark import hadoop_copy_merge, write_csv_file
-        from usaspending_api.common.helpers.spark_helpers import configure_spark_session, get_active_spark_session
 
-        self.spark = None
-        destination_path_dir = str(destination_path).replace(f"/{destination_file_name}", "")
-        # The place to write intermediate data files to in s3
-        s3_bucket_name = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
-        s3_bucket_path = f"s3a://{s3_bucket_name}"
-        s3_bucket_sub_path = "temp_download"
-        s3_destination_path = f"{s3_bucket_path}/{s3_bucket_sub_path}/{destination_file_name}"
-        try:
+        if type(source_df) is DuckDBSparkDataFrame:
+            self.spark = DuckDBSparkSession.builder.getOrCreate()
+            from usaspending_api.common.etl.spark import write_csv_file_duckdb
+        else:
+            from usaspending_api.common.etl.spark import hadoop_copy_merge, write_csv_file
+            from usaspending_api.common.helpers.spark_helpers import configure_spark_session, get_active_spark_session
+
+            self.spark = None
             extra_conf = {
                 # Config for Delta Lake tables and SQL. Need these to keep Dela table metadata in the metastore
                 "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension",
@@ -164,42 +165,67 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
             if not self.spark:
                 self.spark_created_by_command = True
                 self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)
+
+        destination_path_dir = str(destination_path).replace(f"/{destination_file_name}", "")
+        # The place to write intermediate data files to in s3
+        s3_bucket_name = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
+        s3_bucket_path = f"s3a://{s3_bucket_name}"
+        s3_bucket_sub_path = "temp_download"
+        s3_destination_path = f"{s3_bucket_path}/{s3_bucket_sub_path}/{destination_file_name}"
+
+        try:
             if source_df is not None:
                 df = source_df
             else:
                 df = self.spark.sql(source_sql)
-            record_count = write_csv_file(
-                self.spark,
-                df,
-                parts_dir=s3_destination_path,
-                num_partitions=1,
-                max_records_per_file=EXCEL_ROW_LIMIT,
-                logger=self._logger,
-                delimiter=delimiter,
-            )
+
+            if type(self.spark) is DuckDBSparkSession:
+                record_count, final_csv_data_file_locations = write_csv_file_duckdb(
+                    self.spark,
+                    df,
+                    parts_dir=s3_destination_path,
+                    max_records_per_file=EXCEL_ROW_LIMIT,
+                    logger=self._logger,
+                    delimiter=delimiter,
+                )
+            else:
+                record_count = write_csv_file(
+                    self.spark,
+                    df,
+                    parts_dir=s3_destination_path,
+                    num_partitions=1,
+                    max_records_per_file=EXCEL_ROW_LIMIT,
+                    logger=self._logger,
+                    delimiter=delimiter,
+                )
             column_count = len(df.columns)
-            # When combining these later, will prepend the extracted header to each resultant file.
-            # The parts therefore must NOT have headers or the headers will show up in the data when combined.
-            header = ",".join([_.name for _ in df.schema.fields])
             self._logger.info("Concatenating partitioned output files ...")
-            merged_file_paths = hadoop_copy_merge(
-                spark=self.spark,
-                parts_dir=s3_destination_path,
-                header=header,
-                logger=self._logger,
-                part_merge_group_size=1,
-                file_format=file_format,
-            )
-            final_csv_data_file_locations = self._move_data_csv_s3_to_local(
-                s3_bucket_name, merged_file_paths, s3_bucket_path, s3_bucket_sub_path, destination_path_dir
-            )
+
+            if type(self.spark) is SparkSession:
+                # When combining these later, will prepend the extracted header to each resultant file.
+                # The parts therefore must NOT have headers or the headers will show up in the data when combined.
+                header = ",".join([_.name for _ in df.schema.fields])
+                merged_file_paths = hadoop_copy_merge(
+                    spark=self.spark,
+                    parts_dir=s3_destination_path,
+                    header=header,
+                    logger=self._logger,
+                    part_merge_group_size=1,
+                    file_format=file_format,
+                )
+
+                final_csv_data_file_locations = self._move_data_csv_s3_to_local(
+                    s3_bucket_name, merged_file_paths, s3_bucket_path, s3_bucket_sub_path, destination_path_dir
+                )
         except Exception:
             self._logger.exception("Exception encountered. See logs")
             raise
         finally:
-            delete_s3_objects(s3_bucket_name, key_prefix=f"{s3_bucket_sub_path}/{destination_file_name}")
-            if self.spark_created_by_command:
-                self.spark.stop()
+            if type(self.spark) is SparkSession:
+                delete_s3_objects(s3_bucket_name, key_prefix=f"{s3_bucket_sub_path}/{destination_file_name}")
+                if self.spark_created_by_command:
+                    self.spark.stop()
+
         append_files_to_zip_file(final_csv_data_file_locations, download_zip_path)
         self._logger.info(f"Generated the following data csv files {final_csv_data_file_locations}")
         return CSVDownloadMetadata(final_csv_data_file_locations, record_count, column_count)

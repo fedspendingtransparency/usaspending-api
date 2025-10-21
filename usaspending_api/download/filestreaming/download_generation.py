@@ -2,34 +2,29 @@ import json
 import logging
 import multiprocessing
 import os
-from copy import deepcopy
-from pathlib import Path
-from typing import Optional, Tuple, List
-from datetime import datetime, timezone
-
-import psutil as ps
 import re
 import shutil
 import subprocess
 import tempfile
 import time
 import traceback
+from copy import deepcopy
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import List, Optional, Tuple
 
+import psutil as ps
 from django.conf import settings
 from django.db.models import QuerySet
 from django.db.models.expressions import Ref
-
 from opentelemetry import trace
 from opentelemetry.trace import SpanKind
 
-from usaspending_api.download.models.download_job_lookup import DownloadJobLookup
-from usaspending_api.search.filters.time_period.decorators import NEW_AWARDS_ONLY_KEYWORD
-from usaspending_api.settings import MAX_DOWNLOAD_LIMIT
-from usaspending_api.awards.v2.lookups.lookups import contract_type_mapping, assistance_type_mapping, idv_type_mapping
+from usaspending_api.awards.v2.lookups.lookups import assistance_type_mapping, contract_type_mapping, idv_type_mapping
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file, partition_large_delimited_file
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.orm_helpers import generate_raw_quoted_query
-from usaspending_api.common.helpers.s3_helpers import multipart_upload
+from usaspending_api.common.helpers.s3_helpers import download_s3_object, multipart_upload
 from usaspending_api.common.helpers.text_helpers import slugify_text_for_file_names
 from usaspending_api.common.tracing import SubprocessTrace
 from usaspending_api.download.download_utils import construct_data_date_range
@@ -37,14 +32,17 @@ from usaspending_api.download.filestreaming import NAMING_CONFLICT_DISCRIMINATOR
 from usaspending_api.download.filestreaming.download_source import DownloadSource
 from usaspending_api.download.filestreaming.file_description import build_file_description, save_file_description
 from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_file
-from usaspending_api.download.helpers import verify_requested_columns_available, write_to_download_log as write_to_log
-from usaspending_api.download.lookups import JOB_STATUS_DICT, VALUE_MAPPINGS, FILE_FORMATS
+from usaspending_api.download.helpers import verify_requested_columns_available
+from usaspending_api.download.helpers import write_to_download_log as write_to_log
+from usaspending_api.download.lookups import FILE_FORMATS, JOB_STATUS_DICT, VALUE_MAPPINGS
 from usaspending_api.download.models.download_job import DownloadJob
-from usaspending_api.common.helpers.s3_helpers import download_s3_object
+from usaspending_api.download.models.download_job_lookup import DownloadJobLookup
+from usaspending_api.search.filters.time_period.decorators import NEW_AWARDS_ONLY_KEYWORD
+from usaspending_api.settings import MAX_DOWNLOAD_LIMIT
 
 DOWNLOAD_VISIBILITY_TIMEOUT = 60 * 10
 MAX_VISIBILITY_TIMEOUT = 60 * 60 * settings.DOWNLOAD_DB_TIMEOUT_IN_HOURS
-EXCEL_ROW_LIMIT = 1000000
+EXCEL_ROW_LIMIT = 1_000_000
 WAIT_FOR_PROCESS_SLEEP = 5
 JOB_TYPE = "USAspendingDownloader"
 
@@ -99,7 +97,6 @@ def generate_download(download_job: DownloadJob, origination: Optional[str] = No
     working_dir = None
     try:
         if limit is not None and limit > MAX_DOWNLOAD_LIMIT:
-
             with SubprocessTrace(
                 name=f"job.{JOB_TYPE}.generate_download_{request_type}",
                 kind=SpanKind.INTERNAL,
@@ -623,7 +620,6 @@ def wait_for_process(process, start_time, download_job):
     # Let the thread run until it finishes (max MAX_VISIBILITY_TIMEOUT), with a buffer of DOWNLOAD_VISIBILITY_TIMEOUT
     sleep_count = 0
     while process.is_alive():
-
         if (
             download_job
             and not download_job.monthly_download

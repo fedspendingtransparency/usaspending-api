@@ -1,5 +1,10 @@
-from pyspark.sql import functions as sf, Column, DataFrame, SparkSession
+from duckdb.experimental.spark.sql import SparkSession
+from duckdb.experimental.spark.sql import functions as sf
+from duckdb.experimental.spark.sql.column import Column
+from duckdb.experimental.spark.sql.dataframe import DataFrame
 
+# from pyspark.sql import Column, DataFrame, SparkSession
+# from pyspark.sql import functions as sf
 from usaspending_api.common.spark.utils import collect_concat
 from usaspending_api.download.delta_downloads.abstract_downloads.account_download import (
     AbstractAccountDownload,
@@ -49,7 +54,6 @@ class AccountBalancesMixin:
 
 
 class FederalAccountDownload(AccountBalancesMixin, AbstractAccountDownload):
-
     @property
     def account_level(self) -> AccountLevel:
         return AccountLevel.FEDERAL_ACCOUNT
@@ -105,7 +109,7 @@ class FederalAccountDownload(AccountBalancesMixin, AbstractAccountDownload):
                 ).otherwise(0)
             ).alias("gross_outlay_amount"),
             sf.sum(sf.col("status_of_budgetary_resources_total")).alias("status_of_budgetary_resources_total"),
-            sf.max(sf.date_format("last_modified_date", "yyyy-MM-dd")).alias("last_modified_date"),
+            sf.max(sf.call_function("strptime", "last_modified_date", "yyyy-MM-dd")).alias("max_last_modified_date"),
         ]
 
     @property
@@ -132,12 +136,11 @@ class FederalAccountDownload(AccountBalancesMixin, AbstractAccountDownload):
             sf.col("unobligated_balance"),
             sf.col("gross_outlay_amount"),
             sf.col("status_of_budgetary_resources_total"),
-            sf.col("last_modified_date"),
+            sf.col("max_last_modified_date").alias("last_modified_date"),
         ]
 
 
 class TreasuryAccountDownload(AccountBalancesMixin, AbstractAccountDownload):
-
     @property
     def account_level(self) -> AccountLevel:
         return AccountLevel.TREASURY_ACCOUNT
@@ -201,7 +204,7 @@ class TreasuryAccountDownload(AccountBalancesMixin, AbstractAccountDownload):
     @property
     def agg_cols(self) -> list[Column]:
         return [
-            sf.max(sf.date_format("last_modified_date", "yyyy-MM-dd")).alias("max_last_modified_date"),
+            sf.max(sf.call_function("strptime", "last_modified_date", "yyyy-MM-dd")).alias("max_last_modified_date"),
         ]
 
     @property

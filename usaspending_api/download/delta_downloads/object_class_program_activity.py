@@ -1,6 +1,10 @@
-from pyspark.sql import Column, DataFrame, SparkSession
-from pyspark.sql import functions as sf
+from duckdb.experimental.spark.sql import SparkSession
+from duckdb.experimental.spark.sql import functions as sf
+from duckdb.experimental.spark.sql.column import Column
+from duckdb.experimental.spark.sql.dataframe import DataFrame
 
+# from pyspark.sql import Column, DataFrame, SparkSession
+# from pyspark.sql import functions as sf
 from usaspending_api.common.spark.utils import collect_concat, filter_submission_and_sum
 from usaspending_api.download.delta_downloads.abstract_downloads.account_download import (
     AbstractAccountDownload,
@@ -221,7 +225,7 @@ class TreasuryAccountDownload(ObjectClassProgramActivityMixin, AbstractAccountDo
     @property
     def agg_cols(self) -> dict[str, callable]:
         return {
-            "last_modified_date": lambda col: sf.max(col).alias(col),
+            "last_modified_date": lambda col: sf.max(col).alias("max_last_modified_date"),
         }
 
     @property
@@ -230,7 +234,7 @@ class TreasuryAccountDownload(ObjectClassProgramActivityMixin, AbstractAccountDo
             sf.col(col)
             for col in query_paths["object_class_program_activity"]["treasury_account"].keys()
             if not col.startswith("last_modified_date")
-        ] + [sf.col("last_modified_date")]
+        ] + [sf.col("max_last_modified_date").alias("last_modified_date")]
 
 
 class ObjectClassProgramActivityDownloadFactory(AbstractAccountDownloadFactory):

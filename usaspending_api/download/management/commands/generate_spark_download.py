@@ -10,7 +10,7 @@ from typing import Literal, Optional, TypeVar, Union
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils.functional import cached_property
-from duckdb.experimental.spark.sql import SparkSession as duckdb_spark_session
+from duckdb.experimental.spark.sql.session import SparkSession as DuckDBSparkSession
 from opentelemetry.trace import SpanKind
 from pyspark.sql import SparkSession
 
@@ -63,7 +63,7 @@ class Command(BaseCommand):
     download_json_request: dict
     request_type: str
     should_cleanup: bool
-    spark: SparkSession
+    spark: SparkSession | DuckDBSparkSession
     working_dir_path: Path
     columns: list | None
     duckdb_download_types: list[str]
@@ -86,8 +86,9 @@ class Command(BaseCommand):
         if any(
             download_type in self.download_json_request["download_types"] for download_type in duckdb_download_types
         ):
-            self.spark = duckdb_spark_session.builder.getOrCreate()
-            spark_created_by_command = False
+            self.spark = DuckDBSparkSession.builder.getOrCreate()
+            self.should_cleanup = True
+            spark_created_by_command = True
             create_ref_temp_views(self.spark, use_duckdb=True)
         else:
             self.spark, spark_created_by_command = self.setup_spark_session()

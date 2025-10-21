@@ -1,4 +1,7 @@
-from pyspark.sql import functions as sf, Column, DataFrame, SparkSession
+from duckdb.experimental.spark.sql import functions as sf
+from duckdb.experimental.spark.sql.column import Column
+from duckdb.experimental.spark.sql.dataframe import DataFrame
+from duckdb.experimental.spark.sql.session import SparkSession
 
 from usaspending_api.common.spark.utils import collect_concat, filter_submission_and_sum
 from usaspending_api.download.delta_downloads.abstract_downloads.account_download import (
@@ -36,7 +39,6 @@ class AwardFinancialMixin:
 
 
 class FederalAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
-
     @property
     def account_level(self) -> AccountLevel:
         return AccountLevel.FEDERAL_ACCOUNT
@@ -164,7 +166,6 @@ class FederalAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
 
 
 class TreasuryAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
-
     @property
     def account_level(self) -> AccountLevel:
         return AccountLevel.TREASURY_ACCOUNT
@@ -174,6 +175,7 @@ class TreasuryAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
         return SubmissionType.AWARD_FINANCIAL
 
     def _build_dataframe(self) -> DataFrame:
+        a = 1  # debug
         select_cols = (
             [sf.col("treasury_owning_agency_name").alias("owning_agency_name")]
             + [
@@ -181,13 +183,14 @@ class TreasuryAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
                 for col in query_paths["award_financial"]["treasury_account"].keys()
                 if col != "owning_agency_name" and not col.startswith("last_modified_date")
             ]
-            + [sf.date_format("last_modified_date", "yyyy-MM-dd").alias("last_modified_date")]
+            # format is not yet supported as DuckDB and PySpark use a different way of specifying them.
+            # As a workaround, you can use F.call_function('strptime', col, format)
+            + [sf.call_function("strptime", "last_modified_date", "yyyy-MM-dd").alias("last_modified_date")]
         )
         return self.download_table.filter(self.dynamic_filters & self.non_zero_filters).select(select_cols)
 
 
 class AwardFinancialDownloadFactory(AbstractAccountDownloadFactory):
-
     def create_federal_account_download(self) -> FederalAccountDownload:
         return FederalAccountDownload(self.spark, self.filters, self.dynamic_filters)
 

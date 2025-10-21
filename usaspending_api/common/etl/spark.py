@@ -6,6 +6,7 @@ functions for setup and configuration of the spark environment
 """
 
 import logging
+import os
 import time
 from collections import namedtuple
 from itertools import chain
@@ -48,6 +49,7 @@ from usaspending_api.references.models import (
     ZipsGrouped,
 )
 from usaspending_api.reporting.models import ReportingAgencyMissingTas, ReportingAgencyOverview
+from usaspending_api.settings import CSV_LOCAL_PATH, IS_LOCAL
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule, SubmissionAttributes
 
 MAX_PARTITIONS = CONFIG.SPARK_MAX_PARTITIONS
@@ -541,7 +543,7 @@ def _generate_global_view_sql_strings(tables: List[str], jdbc_url: str) -> List[
     for table_name in tables:
         sql_strings.append(
             f"""
-            CREATE OR REPLACE GLOBAL TEMPORARY VIEW {table_name}
+            CREATE OR REPLACE TEMPORARY VIEW {table_name}
             USING JDBC
             OPTIONS (
                 driver '{jdbc_conn_props["driver"]}',
@@ -572,12 +574,47 @@ def create_ref_temp_views(spark: SparkSession, create_broker_views: bool = False
 
     match use_duckdb:
         case True:
-            spark.sql("LOAD postgres;")  # Load the Postgres extension from DuckDB
+            # DuckDB will prepend the HTTP or HTTPS so we need to strip it from the AWS endpoint URL
+            if os.getenv("AWS_ENDPOINT_URL") and "://" in os.getenv("AWS_ENDPOINT_URL"):
+                endpoint_url = os.getenv("AWS_ENDPOINT_URL").split("://")[1]
+            else:
+                endpoint_url = os.getenv("AWS_ENDPOINT_URL", f"s3.{os.getenv('AWS_DEFAULT_REGION')}.amazonaws.com")
+
             spark.sql(f"""
-                ATTACH
-                    '{CONFIG.DATABASE_URL}'
-                AS usas (TYPE postgres, READ_ONLY);
+                CREATE OR REPLACE SECRET (
+                    TYPE s3,
+                    PROVIDER credential_chain,
+                    CHAIN 'config;env',
+                    KEY_ID '{os.getenv("AWS_ACCESS_KEY_ID")}',
+                    SECRET '{os.getenv("AWS_SECRET_ACCESS_KEY")}',
+                    REGION '{os.getenv("AWS_DEFAULT_REGION")}',
+                    ENDPOINT '{endpoint_url}',
+                    USE_SSL {"false" if IS_LOCAL else "true"},
+                    URL_STYLE 'path'
+                )
             """)
+
+            _download_delta_tables = [
+                "account_balances_download",
+                "object_class_program_activity_download",
+            ]
+
+            # The DuckDB Delta extension is needed to interact with DeltaLake tables
+            spark.sql("LOAD delta;")
+            spark.sql("CREATE SCHEMA IF NOT EXISTS rpt;")
+            for table in _download_delta_tables:
+                try:
+                    spark.sql(f"""
+                    CREATE OR REPLACE TABLE rpt.{table} AS
+                    SELECT * FROM delta_scan('s3://dti-da-usaspending-spark-qat/data/delta/rpt/{table}');
+                    """)
+                    logger.info(f"Successfully created table rpt.{table}")
+                except duckdb.IOException:
+                    logger.error(f"Failed to create table {table}")
+
+            # The DuckDB Postgres extension is needed to interact with the USAS Postgres DB
+            spark.sql("LOAD postgres;")
+            spark.sql(f"ATTACH '{CONFIG.DATABASE_URL}' AS usas (TYPE postgres, READ_ONLY);")
             spark.sql("CREATE SCHEMA IF NOT EXISTS global_temp;")
 
             for table in rds_ref_tables:
@@ -675,6 +712,76 @@ def write_csv_file(
     logger.info(f"{parts_dir} contains {df_record_count:,} rows of data")
     logger.info(f"Wrote source data DataFrame to csv part files in {(time.time() - start):3f}s")
     return df_record_count
+
+
+def write_csv_file_duckdb(
+    spark: duckdb.experimental.spark.sql.session.SparkSession,
+    df: duckdb.experimental.spark.sql.dataframe.DataFrame,
+    parts_dir: str,
+    max_records_per_file=EXCEL_ROW_LIMIT,
+    overwrite=True,
+    logger=None,
+    delimiter=",",
+) -> tuple[int, list[str] | list]:
+    """Write DataFrame data to CSV file parts.
+    Args:
+        spark: passed-in active SparkSession
+        df: the DataFrame wrapping the data source to be dumped to CSV.
+            parts_dir: Path to dir that will contain the outputted parts files from partitions
+        overwrite: Whether to replace the file CSV files if they already exist by that name
+        max_records_per_file: Suggestion to Spark of how many records to put in each written CSV file part,
+            if it will end up writing multiple files.
+        logger: The logger to use. If one note provided (e.g. to log to console or stdout) the underlying JVM-based
+            Logger will be extracted from the ``spark`` ``SparkSession`` and used as the logger.
+        delimiter: Charactor used to separate columns in the CSV
+    Returns:
+        record count of the DataFrame that was used to populate the CSV file(s)
+        list of full paths to the temp CSV file(s)
+    """
+
+    # Register the dataframe as a virtual table (similar to a SQL View) for partitioning
+    duckdb.register("df_view", df.toPandas())
+
+    # Add a `file_index` column specifying which file each row belongs in so that no file exceeds
+    #   the `max_records_per_file` limit
+    # NOTE: This isn't perfect and sometimes partitions more than `max_records_per_file` rows, but it works for
+    #   this proof-of-concept
+    indexed_query = f"""
+    WITH indexed_data AS (
+        SELECT
+            *,
+            CAST((ROW_NUMBER() OVER () - 1) / {max_records_per_file} AS integer) AS file_index
+        FROM
+            df_view
+    )
+    SELECT * FROM indexed_data
+    """
+
+    filename = parts_dir.split("/")[-1]
+    start = time.time()
+    df_record_count = df.count()
+
+    file_numbers = sorted(
+        [row[0] for row in duckdb.sql(f"SELECT DISTINCT file_index FROM ({indexed_query});").fetchall()]
+    )
+    full_file_paths = []
+
+    logger.info(f"Writing source data DataFrame to csv files for file {filename}")
+    for index in file_numbers:
+        duckdb.sql(f"SELECT {', '.join(df.columns)} FROM ({indexed_query}) WHERE file_index = {index};").to_csv(
+            file_name=f"{CSV_LOCAL_PATH}{filename}_{index}.csv",
+            sep=delimiter,
+            timestamp_format=CONFIG.SPARK_CSV_TIMEZONE_FORMAT,
+            escapechar='"',
+            header=True,
+            overwrite=overwrite,
+            per_thread_output=False,
+        )
+        full_file_paths.append(f"{CSV_LOCAL_PATH}{filename}_{index}.csv")
+
+    logger.info(f"{parts_dir} contains {df_record_count:,} rows of data")
+    logger.info(f"Wrote source data DataFrame to csv part files in {(time.time() - start):3f}s")
+    return df_record_count, full_file_paths
 
 
 def hadoop_copy_merge(
