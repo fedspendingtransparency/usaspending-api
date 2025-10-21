@@ -8,6 +8,7 @@ from pyspark.sql.types import (
 )
 
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
+from usaspending_api.recipient.v2.lookups import SPECIAL_CASES
 
 
 ALL_AWARD_TYPES = list(award_type_mapping.keys())
@@ -23,7 +24,7 @@ def extract_numbers_as_string(col: Column, length: int = 2, pad: str = "0") -> C
     )
 
 
-class TransactionSearchDataframe:
+class TransactionSearch:
 
     def __init__(self, spark: SparkSession):
         # Base Tables
@@ -973,7 +974,8 @@ class TransactionSearchDataframe:
             sf.col("program_activities").cast(StringType()),
         ]
 
-    def __call__(self) -> DataFrame:
+    @property
+    def dataframe(self) -> DataFrame:
         return (
             self.transaction_normalized.join(
                 self.transaction_fabs,
@@ -1052,18 +1054,7 @@ class TransactionSearchDataframe:
             .join(
                 self.recipient_hash_and_levels,
                 (sf.col("recipient_hash") == sf.col("recipient_level_hash"))
-                & ~(
-                    sf.col("legal_business_name").isin(
-                        [
-                            "MULTIPLE RECIPIENTS",
-                            "REDACTED DUE TO PII",
-                            "MULTIPLE FOREIGN RECIPIENTS",
-                            "PRIVATE INDIVIDUAL",
-                            "INDIVIDUAL RECIPIENT",
-                            "MISCELLANEOUS FOREIGN AWARDEES",
-                        ]
-                    )
-                ),
+                & ~(sf.col("legal_business_name").isin(SPECIAL_CASES)),
                 "leftouter",
             )
             .join(
@@ -1189,7 +1180,7 @@ class TransactionSearchDataframe:
 
 
 def load_transaction_search(spark: SparkSession, destination_database: str, destination_table_name: str) -> None:
-    df = TransactionSearchDataframe(spark)()
+    df = TransactionSearch(spark).dataframe
     df.write.saveAsTable(
         f"{destination_database}.{destination_table_name}",
         mode="overwrite",
@@ -1201,7 +1192,7 @@ def load_transaction_search_incremental(
     spark: SparkSession, destination_database: str, destination_table_name: str
 ) -> None:
     target = DeltaTable.forName(spark, f"{destination_database}.{destination_table_name}").alias("t")
-    source = TransactionSearchDataframe(spark)().alias("s")
+    source = TransactionSearch(spark).dataframe.alias("s")
     (
         target.merge(source, "s.transaction_id = t.transaction_id and s.merge_hash_key = t.merge_hash_key")
         .whenNotMatchedInsertAll()
