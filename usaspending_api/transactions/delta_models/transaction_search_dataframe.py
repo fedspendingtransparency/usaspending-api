@@ -24,7 +24,7 @@ def extract_numbers_as_string(col: Column, length: int = 2, pad: str = "0") -> C
     )
 
 
-class TransactionSearch:
+class AbstractSearch:
 
     def __init__(self, spark: SparkSession):
         # Base Tables
@@ -113,6 +113,44 @@ class TransactionSearch:
         self.treasury_appropriation_account = spark.table("global_temp.treasury_appropriation_account")
         self.ref_program_activity = spark.table("global_temp.ref_program_activity")
         self.program_activity_park = spark.table("global_temp.program_activity_park")
+        self.product_service_code = spark.table("global_temp.psc")
+
+    @property
+    def generated_recipient_hash(self) -> Column:
+        return hash_col(
+            sf.when(
+                sf.coalesce(self.transaction_fpds.awardee_or_recipient_uei, self.transaction_fabs.uei).isNotNull(),
+                sf.concat(
+                    sf.lit("uei-"),
+                    sf.coalesce(self.transaction_fpds.awardee_or_recipient_uei, self.transaction_fabs.uei),
+                ),
+            ).otherwise(
+                sf.when(
+                    sf.coalesce(
+                        self.transaction_fpds.awardee_or_recipient_uniqu,
+                        self.transaction_fabs.awardee_or_recipient_uniqu,
+                    ).isNotNull(),
+                    sf.concat(
+                        sf.lit("duns-"),
+                        sf.coalesce(
+                            self.transaction_fpds.awardee_or_recipient_uniqu,
+                            self.transaction_fabs.awardee_or_recipient_uniqu,
+                        ),
+                    ),
+                ).otherwise(
+                    sf.concat(
+                        sf.lit("name-"),
+                        sf.coalesce(
+                            self.transaction_fpds.awardee_or_recipient_legal,
+                            self.transaction_fabs.awardee_or_recipient_legal,
+                        ),
+                    )
+                )
+            )
+        )
+
+
+class TransactionSearch(AbstractSearch):
 
     @property
     def recipient_hash_and_levels(self) -> DataFrame:
@@ -411,40 +449,6 @@ class TransactionSearch:
             .alias("total_funding_amount"),
             self.transaction_normalized.non_federal_funding_amount,
         ]
-
-    @property
-    def generated_recipient_hash(self) -> Column:
-        return hash_col(
-            sf.when(
-                sf.coalesce(self.transaction_fpds.awardee_or_recipient_uei, self.transaction_fabs.uei).isNotNull(),
-                sf.concat(
-                    sf.lit("uei-"),
-                    sf.coalesce(self.transaction_fpds.awardee_or_recipient_uei, self.transaction_fabs.uei),
-                ),
-            ).otherwise(
-                sf.when(
-                    sf.coalesce(
-                        self.transaction_fpds.awardee_or_recipient_uniqu,
-                        self.transaction_fabs.awardee_or_recipient_uniqu,
-                    ).isNotNull(),
-                    sf.concat(
-                        sf.lit("duns-"),
-                        sf.coalesce(
-                            self.transaction_fpds.awardee_or_recipient_uniqu,
-                            self.transaction_fabs.awardee_or_recipient_uniqu,
-                        ),
-                    ),
-                ).otherwise(
-                    sf.concat(
-                        sf.lit("name-"),
-                        sf.coalesce(
-                            self.transaction_fpds.awardee_or_recipient_legal,
-                            self.transaction_fabs.awardee_or_recipient_legal,
-                        ),
-                    )
-                )
-            )
-        )
 
     @property
     def generated_parent_recipient_hash(self) -> Column:
@@ -1176,6 +1180,35 @@ class TransactionSearch:
                 *self.fpds_cols,
             )
             .withColumn("merge_hash_key", sf.xxhash64("*"))
+        )
+
+
+class AwardSearch(AbstractSearch):
+
+    def dataframe(self) -> DataFrame:
+        return (
+            self.awards.join(
+                self.transaction_normalized,
+                self.transaction_normalized.id == self.awards.latest_transaction_id,
+                "inner",
+            )
+            .join(
+                self.transaction_fpds,
+                (self.transaction_fpds.transaction_id == self.awards.latest_transaction_id)
+                & self.transaction_normalized.is_fpds,
+                "leftouter",
+            )
+            .join(
+                self.transaction_fabs,
+                (self.transaction_fabs.transaction_id == self.awards.latest_transaction_id)
+                & ~self.transaction_normalized.is_fabs,
+                "leftouter",
+            )
+            .join(self.recipient_lookup, self.recipient_lookup.recipient_hash == self.generated_recipient_hash)
+            .join(
+                self.product_service_code,
+                self.transaction_fpds.product_or_service_code == self.product_service_code.code,
+            )
         )
 
 
