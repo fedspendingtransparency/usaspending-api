@@ -44,6 +44,8 @@ class AssistanceListingViewSet(APIView):
 
         if cfda_code:
             qs = qs.filter(program_number__startswith=cfda_code)
+
+        if cfda_code or cfda_filter:
             annotations["children"] = ArrayAgg(
                 Func(
                     Cast(Value("code"), TextField()),
