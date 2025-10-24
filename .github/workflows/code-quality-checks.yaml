@@ -1,0 +1,58 @@
+name: Run Pylint
+
+env:
+  BROKER_DB_HOST: localhost
+  BROKER_DB_PORT: 5432
+  BROKER_DB_USER: admin
+  BROKER_DB_PASSWORD: root
+  BROKER_DB_NAME: data_broker
+  DJANGO_SETTINGS_MODULE: usaspending_api.settings
+  ES_SCHEME: http
+  ES_HOST: localhost
+  ES_PORT: 9200
+  MINIO_HOST: localhost
+  USASPENDING_DB_HOST: localhost
+  USASPENDING_DB_PORT: 5432
+  USASPENDING_DB_USER: usaspending
+  USASPENDING_DB_PASSWORD: usaspender
+  USASPENDING_DB_NAME: data_store_api
+
+on:
+  workflow_call
+
+jobs:
+  Run:
+    # These checks are not broken out into multiple jobs because the steps to prepare the environment
+    # take the bulk of the time. Running them in parallel saves minimal time at the cost of using more
+    # runners than needed.
+    name: Run
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Repository
+        uses: actions/checkout@v4
+      - name: Get Changed Files
+        id: changed-files
+        uses: tj-actions/changed-files
+        with:
+          files: |
+            **.py
+          separator: ","
+      - name: install pylint
+        run: pip install pylint==4.0.2
+      - name: pylint
+        run: pylint --load-plugins pylint.extensions.mccabe --disable=all --enable=\          
+          too-many-instance-attributes,\
+          too-many-public-methods,\
+          too-many-return-statements,\
+          too-many-branches,\
+          too-many-arguments,\
+          too-many-statements,\
+          too-many-boolean-expressions,\
+          too-complex,\
+          too-many-lines,\
+          too-many-nested-blocks \
+          ${{ steps.changed-files.outputs.all_changed_files }}
+
+
+
+
