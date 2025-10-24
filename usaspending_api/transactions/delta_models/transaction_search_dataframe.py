@@ -42,7 +42,7 @@ class TransactionSearch:
         self.awarding_agency = (
             spark.table("global_temp.agency")
             .withColumn("awarding_toptier_agency_id", sf.col("toptier_agency_id"))
-            .withColumn("funding_subtier_agency_id", sf.col("subtier_agency_id"))
+            .withColumn("awarding_subtier_agency_id", sf.col("subtier_agency_id"))
         )
         self.awarding_toptier_agency = (
             spark.table("global_temp.toptier_agency")
