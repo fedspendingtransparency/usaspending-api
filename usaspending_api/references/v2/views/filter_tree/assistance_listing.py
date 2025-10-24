@@ -61,9 +61,18 @@ class AssistanceListingViewSet(APIView):
             }
         elif cfda_code:
             qs = qs.filter(program_number__startswith=cfda_code)
-            annotations = {"code": F("program_number"), "description": F("program_title")}
-            results = qs.annotate(**annotations).values(**annotations).order_by(*page.robust_order_by_fields)
-            return results
+
+        if cfda_code or cfda_filter:
+            annotations["children"] = ArrayAgg(
+                Func(
+                    Cast(Value("code"), TextField()),
+                    F("program_number"),
+                    Cast(Value("description"), TextField()),
+                    F("program_title"),
+                    function="jsonb_build_object",
+                    output_field=JSONField(),
+                )
+            )
 
         results = (
             qs.annotate(
