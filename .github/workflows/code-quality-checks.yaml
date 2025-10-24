@@ -19,7 +19,7 @@ jobs:
         with:
           files: |
             **.py
-          separator: ","
+          separator: " "
       - name: install pylint
         run: pip install pylint==4.0.2
       - name: pylint
