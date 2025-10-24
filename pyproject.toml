@@ -33,8 +33,25 @@ line-length = 120
 target-version = ['py310']
 exclude = '/(\.git|\.venv|venv|migrations)/'
 
-[tool.pylint.main]
-load-plugins=pylint.extensions.mccabe
+[tool.pylint]
+load-plugins = [
+    "pylint.extensions.mccabe"
+]
+disable = [
+    "all"
+]
+enable = [
+    "too-many-instance-attributes",
+    "too-many-public-methods",
+    "too-many-return-statements",
+    "too-many-branches",
+    "too-many-arguments",
+    "too-many-statements",
+    "too-many-boolean-expressions",
+    "too-complex",
+    "too-many-lines",
+    "too-many-nested-blocks"
+]
 
 [tool.pylint.design]
 max-args = 6

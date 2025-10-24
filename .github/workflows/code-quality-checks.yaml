@@ -23,19 +23,4 @@ jobs:
       - name: install pylint
         run: pip install pylint==4.0.2
       - name: pylint
-        run: pylint --load-plugins pylint.extensions.mccabe --disable=all --enable=\          
-          too-many-instance-attributes,\
-          too-many-public-methods,\
-          too-many-return-statements,\
-          too-many-branches,\
-          too-many-arguments,\
-          too-many-statements,\
-          too-many-boolean-expressions,\
-          too-complex,\
-          too-many-lines,\
-          too-many-nested-blocks \
-          ${{ steps.changed-files.outputs.all_changed_files }}
-
-
-
-
+        run: pylint ${{ steps.changed-files.outputs.all_changed_files }}
