@@ -83,13 +83,13 @@ class TooManyAttributesAndMethods:
 
     def too_many_returns(self):
         num = random.randint(1, 21)
-        if self.one == 1:
+        if num == 1:
             return self.one
-        if self.two == 2:
+        if num == 2:
             return self.two
-        if self.three == 3:
+        if num == 3:
             return self.three
-        if self.four == 4:
+        if num == 4:
             return self.four
         else:
             return self.five
