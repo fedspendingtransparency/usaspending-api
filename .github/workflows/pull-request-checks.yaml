@@ -33,6 +33,14 @@ jobs:
       needs.Cancel-If-Draft-Pull-Request.result == 'skipped'
     uses: ./.github/workflows/code-style-checks.yaml
 
+  Run-Code-Quality-Checks:
+    name: Run Code Quality Checks
+    needs: Cancel-If-Draft-Pull-Request
+    if: |
+      always() &&
+      needs.Cancel-If-Draft-Pull-Request.result == 'skipped'
+    uses: ./.github/workflows/code-quality-checks.yaml
+
   # Many of the integration tests below rely on testing against Broker which requires building the
   # Broker backend image. To avoid having to run this multiple times we instead build it once
   # and store it as an artifact on the workflow.
