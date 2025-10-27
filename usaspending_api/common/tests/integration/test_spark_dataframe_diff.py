@@ -71,7 +71,7 @@ def test_diff_one_change(spark: SparkSession):
 
     data_right = deepcopy(data_left)
     changed_row_id = data_right[0]["id"]
-    data_right[0]["numeric_val"] = data_right[0]["numeric_val"] * 2
+    data_right[0]["numeric_val"] = data_right[0]["numeric_val"] + 1
 
     left_df = spark.createDataFrame([Row(**data_row) for data_row in data_left])
     right_df = spark.createDataFrame([Row(**data_row) for data_row in data_right])
@@ -99,7 +99,7 @@ def test_diff_one_change(spark: SparkSession):
     assert diff_df_data[0][3] == diff_df_data[0][4]
     assert diff_df_data[0][5] == diff_df_data[0][6]
     assert diff_df_data[0][7] != diff_df_data[0][8]
-    assert diff_df_data[0][8] == 2 * diff_df_data[0][7]
+    assert diff_df_data[0][8] == diff_df_data[0][7] + 1
 
 
 def test_diff_one_insert(spark: SparkSession):
