@@ -5,6 +5,7 @@ from django.core.management.base import BaseCommand
 from pyspark.sql import SparkSession
 
 from usaspending_api.awards.delta_models import c_to_d_linkage_view_sql_strings, c_to_d_linkage_drop_view_sql_strings
+from usaspending_api.awards.models import CToDLinkageUpdates
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
@@ -199,9 +200,9 @@ class Command(BaseCommand):
         c_to_d_linkage_updates_df = self.spark.sql("SELECT * FROM union_all_priority;")
         c_to_d_linkage_updates_df.write.jdbc(
             url=get_usas_jdbc_url(),
-            table="public.c_to_d_linkage_updates",
+            table=f"public.{CToDLinkageUpdates._meta.db_table}",
             mode="overwrite",
-            properties=get_jdbc_connection_properties(),
+            properties=get_jdbc_connection_properties(truncate=True),
         )
 
         # Run Linkage Queries
