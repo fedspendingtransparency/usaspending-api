@@ -149,7 +149,7 @@ def type_filter(_type, filters, limit=None):
     # Apply filters to queryset results
     alt_set, queryset = spending_filter(alt_set, queryset, filters, _type)
 
-    if _type == "recipient" or _type == "award" or _type == "award_category":
+    if _type in {"award", "award_category", "recipient"}:
         # Annotate and get explorer _type filtered results
         exp = Explorer(alt_set, queryset)
 
