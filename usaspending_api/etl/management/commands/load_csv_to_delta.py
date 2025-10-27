@@ -21,16 +21,11 @@ class CsvTableMetadata:
     db_name: str
     table_name: str
     schema: StructType
-    source_path: str
+    source_path: str | None = None
 
 
 destination_tables = {
-    "world_cities": CsvTableMetadata(
-        db_name="raw",
-        table_name="world_cities",
-        schema=world_cities_schema,
-        source_path=f"s3a://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.SPARK_CSV_S3_PATH}/worldcities.csv",
-    )
+    "world_cities": CsvTableMetadata(db_name="raw", table_name="world_cities", schema=world_cities_schema)
 }
 
 
@@ -54,6 +49,12 @@ class Command(BaseCommand):
             choices=list(destination_tables),
         )
         parser.add_argument(
+            "--source-path",
+            type=str,
+            required=True,
+            help="The path for the source csv file.  Supports the s3a:// protocol",
+        )
+        parser.add_argument(
             "--alt-db",
             type=str,
             required=False,
@@ -64,12 +65,6 @@ class Command(BaseCommand):
             type=str,
             required=False,
             help="An alternate delta table name for the created table, overriding the destination-table table name",
-        )
-        parser.add_argument(
-            "--alt-source-path",
-            type=str,
-            required=False,
-            help="An alternate path for the source csv file, overriding the destination-table path.  Supports the s3a:// protocol",
         )
         parser.add_argument(
             "--spark-s3-bucket",
@@ -97,12 +92,11 @@ class Command(BaseCommand):
 
         # Resolve Parameters
         self.csv_metadata = destination_tables[options["destination_table"]]
+        self.csv_metadata.source_path = options["source_path"]
         if options["alt_db"]:
             self.csv_metadata.db_name = options["alt_db"]
         if options["alt_name"]:
             self.csv_metadata.db_name = options["alt_name"]
-        if options["alt_source_path"]:
-            self.csv_metadata.source_path = options["alt_source_path"]
         if options["spark_s3_bucket"]:
             self.spark_s3_bucket = options["spark_s3_bucket"]
 
