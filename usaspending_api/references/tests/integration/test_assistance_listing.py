@@ -100,20 +100,23 @@ def test_with_code_and_filter(client, assistance_listings_test_data):
 def test_with_filter(client, assistance_listings_test_data):
     resp = client.get("/api/v2/references/assistance_listing/?filter=Title 1", content_type="application/json")
 
-    expected_results = [
-        {
-            "code": "10",
-            "description": None,
-            "count": 1,
-            "children": [{"code": "10.001", "description": "CFDA Title 1"}],
-        },
-        {
-            "code": "11",
-            "description": None,
-            "count": 1,
-            "children": [{"code": "11.004", "description": "CFDA Title 1"}],
-        },
-    ]
+    expected_results = {
+        "results": [
+            {
+                "code": "11",
+                "description": None,
+                "count": 1,
+                "children": [{"code": "11.004", "description": "CFDA Title 1"}],
+            },
+            {
+                "code": "10",
+                "description": None,
+                "count": 1,
+                "children": [{"code": "10.001", "description": "CFDA Title 1"}],
+            },
+        ],
+        "message": 'Pagination is ignored when providing a "filter" without specifying the first two digits of an assistance listing code',
+    }
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_results
 
