@@ -57,6 +57,7 @@ dependencies = [
     "requests==2.31.*",
     "retrying==1.3.4",
     "urllib3==1.26.*",
+    "xlrd3==1.1.0",
 
     # Opentelemetry Dependencies
     "opentelemetry-api==1.28.2",
@@ -92,7 +93,6 @@ dependencies = [
     "opentelemetry-semantic-conventions==0.49b2",
     "opentelemetry-util-http==0.49b2",
     # The above packages are listed and pinned to avoid using the 'opentelemetry-bootstrap -a install' command
-    "xlrd3==1.1.0",
 ]
 
 [project.optional-dependencies]
