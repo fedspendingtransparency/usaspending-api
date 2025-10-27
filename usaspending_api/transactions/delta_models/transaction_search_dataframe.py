@@ -421,27 +421,27 @@ class TransactionSearch:
                     sf.lit("uei-"),
                     sf.coalesce(self.transaction_fpds.awardee_or_recipient_uei, self.transaction_fabs.uei),
                 ),
-            ).otherwise(
-                sf.when(
+            )
+            .when(
+                sf.coalesce(
+                    self.transaction_fpds.awardee_or_recipient_uniqu,
+                    self.transaction_fabs.awardee_or_recipient_uniqu,
+                ).isNotNull(),
+                sf.concat(
+                    sf.lit("duns-"),
                     sf.coalesce(
                         self.transaction_fpds.awardee_or_recipient_uniqu,
                         self.transaction_fabs.awardee_or_recipient_uniqu,
-                    ).isNotNull(),
-                    sf.concat(
-                        sf.lit("duns-"),
-                        sf.coalesce(
-                            self.transaction_fpds.awardee_or_recipient_uniqu,
-                            self.transaction_fabs.awardee_or_recipient_uniqu,
-                        ),
                     ),
-                ).otherwise(
-                    sf.concat(
-                        sf.lit("name-"),
-                        sf.coalesce(
-                            self.transaction_fpds.awardee_or_recipient_legal,
-                            self.transaction_fabs.awardee_or_recipient_legal,
-                        ),
-                    )
+                ),
+            )
+            .otherwise(
+                sf.concat(
+                    sf.lit("name-"),
+                    sf.coalesce(
+                        self.transaction_fpds.awardee_or_recipient_legal,
+                        self.transaction_fabs.awardee_or_recipient_legal,
+                    ),
                 )
             )
         )
@@ -457,27 +457,27 @@ class TransactionSearch:
                     sf.lit("uei-"),
                     sf.coalesce(self.transaction_fpds.ultimate_parent_uei, self.transaction_fabs.ultimate_parent_uei),
                 ),
-            ).otherwise(
-                sf.when(
+            )
+            .when(
+                sf.coalesce(
+                    self.transaction_fpds.ultimate_parent_unique_ide,
+                    self.transaction_fabs.ultimate_parent_unique_ide,
+                ).isNotNull(),
+                sf.concat(
+                    sf.lit("duns-"),
                     sf.coalesce(
                         self.transaction_fpds.ultimate_parent_unique_ide,
                         self.transaction_fabs.ultimate_parent_unique_ide,
-                    ).isNotNull(),
-                    sf.concat(
-                        sf.lit("duns-"),
-                        sf.coalesce(
-                            self.transaction_fpds.ultimate_parent_unique_ide,
-                            self.transaction_fabs.ultimate_parent_unique_ide,
-                        ),
                     ),
-                ).otherwise(
-                    sf.concat(
-                        sf.lit("name-"),
-                        sf.coalesce(
-                            self.transaction_fpds.ultimate_parent_legal_enti,
-                            self.transaction_fabs.ultimate_parent_legal_enti,
-                        ),
-                    )
+                ),
+            )
+            .otherwise(
+                sf.concat(
+                    sf.lit("name-"),
+                    sf.coalesce(
+                        self.transaction_fpds.ultimate_parent_legal_enti,
+                        self.transaction_fabs.ultimate_parent_legal_enti,
+                    ),
                 )
             )
         )
@@ -496,28 +496,28 @@ class TransactionSearch:
                             sf.lit("uei-"),
                             sf.coalesce(self.transaction_fpds.awardee_or_recipient_uei, self.transaction_fabs.uei),
                         ),
-                    ).otherwise(
-                        sf.when(
+                    )
+                    .when(
+                        sf.coalesce(
+                            self.transaction_fpds.awardee_or_recipient_uniqu,
+                            self.transaction_fabs.awardee_or_recipient_uniqu,
+                        ).isNotNull(),
+                        sf.concat(
+                            sf.lit("duns-"),
                             sf.coalesce(
                                 self.transaction_fpds.awardee_or_recipient_uniqu,
                                 self.transaction_fabs.awardee_or_recipient_uniqu,
-                            ).isNotNull(),
-                            sf.concat(
-                                sf.lit("duns-"),
-                                sf.coalesce(
-                                    self.transaction_fpds.awardee_or_recipient_uniqu,
-                                    self.transaction_fabs.awardee_or_recipient_uniqu,
-                                ),
                             ),
-                        ).otherwise(
-                            sf.concat(
-                                sf.lit("name-"),
-                                sf.coalesce(
-                                    self.transaction_fpds.awardee_or_recipient_legal,
-                                    self.transaction_fabs.awardee_or_recipient_legal,
-                                    sf.lit(""),
-                                ),
-                            )
+                        ),
+                    )
+                    .otherwise(
+                        sf.concat(
+                            sf.lit("name-"),
+                            sf.coalesce(
+                                self.transaction_fpds.awardee_or_recipient_legal,
+                                self.transaction_fabs.awardee_or_recipient_legal,
+                                sf.lit(""),
+                            ),
                         )
                     )
                 ),
