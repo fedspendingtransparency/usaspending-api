@@ -20,6 +20,10 @@ class Command(AbstractElasticsearchIndexer):
     node instance sizes did.
     """
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.valid_load_types = {"transaction", "award", "recipient", "location", "subaward"}
+
     def create_controller(self, config: dict) -> AbstractElasticsearchIndexerController:
         extra_conf = {
             # Config for Delta Lake tables and SQL. Need these to keep Dela table metadata in the metastore

@@ -134,16 +134,6 @@ def transform_subaward_data(worker: TaskSpec, records: List[dict]) -> List[dict]
     return transform_data(worker, records, replace_fields, insert_fields, drop_fields, None)
 
 
-def transform_location_data(worker: TaskSpec, records: List[dict]) -> List[dict]:
-    replace_fields = {
-        "location_json": dump_dict_to_string,
-    }
-    insert_fields = {"location_type": funcs.location_type_agg_key}
-    drop_fields = []
-
-    return transform_data(worker, records, replace_fields, insert_fields, drop_fields, None)
-
-
 def transform_data(
     worker: TaskSpec,
     records: List[dict],
