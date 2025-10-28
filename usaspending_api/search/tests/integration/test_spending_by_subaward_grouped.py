@@ -43,21 +43,25 @@ def test_spending_by_subaward_grouped_success(
         data=json.dumps({"page": 1, "limit": 2, "sort": "award_id", "filters": {}}),
     )
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.json()["page_metadata"]["page"] == 1
-    assert resp.json()["limit"] == 2
-    assert len(resp.json()["results"]) == 2
-    assert resp.json()["results"][0] == {
+
+    resp_json = resp.json()
+    resp_results = resp_json["results"]
+    assert resp_json["page_metadata"]["page"] == 1
+    assert resp_json["limit"] == 2
+    assert len(resp_results) == 2
+    assert resp_results[0] == {
         "award_id": "N6247318F4102",
         "subaward_count": 1,
         "award_generated_internal_id": "CONT_AWD_N6247318F4138_9700_N6247316D1884_9002",
         "subaward_obligation": 1500,
     }
-    assert resp.json()["results"][1] == {
+    assert resp_results[1] == {
         "award_id": "N6247318F4101",
         "subaward_count": 2,
         "award_generated_internal_id": "CONT_AWD_N6247318F4138_9700_N6247316D1884_9001",
         "subaward_obligation": 6912,
     }
+    assert resp_json["messages"][0] == "This endpoint is under active development and subject to change"
 
 
 @pytest.mark.django_db
