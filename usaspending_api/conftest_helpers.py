@@ -220,7 +220,6 @@ class TestElasticSearchIndex:
 
             self.client.index(
                 index=self.index_name,
-                # body=json.dumps(record, cls=DjangoJSONEncoder),
                 body=record,
                 id=es_id_value,
                 routing=routing_value,
