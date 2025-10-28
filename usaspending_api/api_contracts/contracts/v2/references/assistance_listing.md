@@ -21,30 +21,30 @@ includes the full CFDA code and description.
     + Attributes (object)
         + `results` (required, array[AssistanceListingObject], fixed-type)
   
-          + Body
+    + Body
   
-                  [
-                      {
-                          "code": "98",
-                          "description": null,
-                          "count": 12
-                      },
-                      {
-                          "code": "97",
-                          "description": null,
-                          "count": 147
-                      },
-                      {
-                          "code": "96",
-                          "description": null,
-                          "count": 12
-                      },
-                      {
-                          "code": "95",
-                          "description": null,
-                          "count": 9
-                      }
-                  ]
+            [
+                {
+                    "code": "98",
+                    "description": null,
+                    "count": 12
+                },
+                {
+                    "code": "97",
+                    "description": null,
+                    "count": 147
+                },
+                {
+                    "code": "96",
+                    "description": null,
+                    "count": 12
+                },
+                {
+                    "code": "95",
+                    "description": null,
+                    "count": 9
+                }
+            ]
 
 ## Data Structures
 
