@@ -4,7 +4,7 @@ from django.db import models
 class CToDLinkageUpdates(models.Model):
 
     financial_accounts_by_awards_id = models.IntegerField(primary_key=True)
-    award_id = models.IntegerField(unique=False)
+    award_id = models.IntegerField(unique=False, null=True)
 
     class Meta:
         managed = True
