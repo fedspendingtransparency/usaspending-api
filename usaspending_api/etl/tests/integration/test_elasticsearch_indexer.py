@@ -1,9 +1,9 @@
 import logging
+import re
 from datetime import datetime, timedelta, timezone
 
 import pytest
-from django.conf import settings
-from django.db import connection
+from django.core.management import call_command, CommandError
 from django.test import override_settings
 from elasticsearch import Elasticsearch
 from model_bakery import baker
@@ -208,73 +208,6 @@ def recipient_data_fixture(db):
     )
 
 
-@pytest.fixture
-def location_data_fixture(db):
-    baker.make(
-        "search.TransactionSearch",
-        transaction_id=100,
-        is_fpds=False,
-        transaction_unique_id="TRANSACTION100",
-        pop_country_name="UNITED STATES",
-        pop_state_name="CALIFORNIA",
-        pop_city_name="LOS ANGELES",
-        pop_county_name="LOS ANGELES",
-        pop_zip5=90001,
-        pop_congressional_code_current="34",
-        pop_congressional_code="34",
-        recipient_location_country_name="UNITED STATES",
-        recipient_location_state_name="NEVADA",
-        recipient_location_city_name="LAS VEGAS",
-        recipient_location_county_name="CLARK",
-        recipient_location_zip5=88901,
-        recipient_location_congressional_code_current="01",
-        recipient_location_congressional_code="01",
-    )
-    baker.make(
-        "search.TransactionSearch",
-        transaction_id=101,
-        is_fpds=False,
-        transaction_unique_id="TRANSACTION101",
-        pop_country_name="DENMARK",
-        pop_state_name=None,
-        pop_city_name=None,
-        pop_county_name=None,
-        pop_zip5=None,
-        pop_congressional_code_current=None,
-        pop_congressional_code=None,
-        recipient_location_country_name="UNITED STATES",
-        recipient_location_state_name="TEXAS",
-        recipient_location_city_name="DALLAS",
-        recipient_location_county_name="DALLAS",
-        recipient_location_zip5=75001,
-        recipient_location_congressional_code_current="30",
-        recipient_location_congressional_code="30",
-    )
-    baker.make(
-        "search.TransactionSearch",
-        transaction_id=102,
-        is_fpds=False,
-        transaction_unique_id="TRANSACTION102",
-        pop_country_name="DENMARK",
-        pop_state_name=None,
-        pop_city_name=None,
-        pop_county_name=None,
-        pop_zip5=None,
-        pop_congressional_code_current=None,
-        pop_congressional_code=None,
-        recipient_location_country_name="UNITED STATES",
-        recipient_location_state_name="FAKE STATE",
-        recipient_location_city_name="FAKE CITY",
-        recipient_location_county_name="FAKE COUNTY",
-        recipient_location_zip5=75001,
-        recipient_location_congressional_code_current="30",
-        recipient_location_congressional_code="30",
-    )
-    baker.make("recipient.StateData", id=1, fips="06", code="CA", name="California", type="state", year=2024)
-    baker.make("recipient.StateData", id=2, fips="32", code="NV", name="Nevada", type="state", year=2024)
-    baker.make("recipient.StateData", id=3, fips="48", code="TX", name="Texas", type="state", year=2024)
-
-
 def mock_execute_sql(sql, results, verbosity=None):
     """SQL method is being mocked here since the `execute_sql_statement` used
     doesn't use the same DB connection to avoid multiprocessing errors
@@ -346,26 +279,16 @@ def test_create_and_load_new_recipient_index(recipient_data_fixture, elasticsear
     assert es_recipient_docs == original_db_recipients_count
 
 
-@pytest.mark.django_db(transaction=True)
-def test_create_and_load_new_location_index(location_data_fixture, elasticsearch_location_index, monkeypatch):
-    """Test the `elasticsearch_indexer` Django management command to create and load a new locations index"""
-
-    client: Elasticsearch = elasticsearch_location_index.client
-
-    # Ensure index is not yet created
-    assert not client.indices.exists(elasticsearch_location_index.index_name)
-
-    setup_elasticsearch_test(monkeypatch, elasticsearch_location_index)
-    assert client.indices.exists(elasticsearch_location_index.index_name)
-
-    es_location_docs = client.count(index=elasticsearch_location_index.index_name)["count"]
-
-    ensure_view_exists(settings.ES_LOCATIONS_ETL_VIEW_NAME)
-    with connection.cursor() as cursor:
-        cursor.execute("SELECT COUNT(*) FROM location_delta_view")
-        db_response = cursor.fetchone()
-
-    assert es_location_docs == db_response[0]
+def test_location_index_raises_error():
+    """Test the `elasticsearch_indexer` Django management command with location to ensure that an error is raised."""
+    valid_load_types = {"transaction", "award", "recipient", "subaward"}
+    with pytest.raises(
+        CommandError,
+        match=re.escape(
+            f"""Error: argument --load-type: invalid choice: 'location' (choose from '{"', '".join(valid_load_types)}')"""
+        ),
+    ):
+        call_command("elasticsearch_indexer", create_new_index=True, load_type="location", index_name="2025-locations")
 
 
 def test_create_and_load_new_transaction_index(award_data_fixture, elasticsearch_transaction_index, monkeypatch):

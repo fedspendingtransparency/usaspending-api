@@ -24,7 +24,6 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     create_award_type_aliases,
     execute_sql_statement,
     transform_award_data,
-    transform_location_data,
     transform_subaward_data,
     transform_transaction_data,
 )
@@ -206,8 +205,6 @@ class TestElasticSearchIndex:
                 records = transform_transaction_data(self.worker, records)
             elif self.index_type == "subaward":
                 records = transform_subaward_data(self.worker, records)
-            elif self.index_type == "location":
-                records = transform_location_data(self.worker, records)
 
         for record in records:
             # Special cases where we convert array of JSON to an array of strings to avoid nested types
@@ -238,8 +235,6 @@ class TestElasticSearchIndex:
             required_suffix = "-" + settings.ES_SUBAWARD_NAME_SUFFIX
         elif self.index_type == "recipient":
             required_suffix = "-" + settings.ES_RECIPIENTS_NAME_SUFFIX
-        elif self.index_type == "location":
-            required_suffix = "-" + settings.ES_LOCATIONS_NAME_SUFFIX
         return (
             f"test-{datetime.now(timezone.utc).strftime('%Y-%m-%d-%H-%M-%S-%f')}"
             f"-{generate_random_string()}"
