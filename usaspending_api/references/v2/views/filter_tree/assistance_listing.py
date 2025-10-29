@@ -18,6 +18,11 @@ class AssistanceListingViewSet(PaginationMixin, APIView):
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/references/assistance_listing.md"
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.default_sort_column = "code"
+        self.sortable_columns = ["code", "description"]
+
     def _parse_and_validate_request(self, cfda: str | None, requested_data: Request) -> dict[str, int | str | None]:
         data = {"code": cfda, "filter": requested_data.query_params.get("filter", None)}
         models = [
@@ -79,8 +84,6 @@ class AssistanceListingViewSet(PaginationMixin, APIView):
     @cache_response()
     def get(self, request: Request, cfda=None) -> Response:
         requested_data = self._parse_and_validate_request(cfda, request)
-        self.sortable_columns = ["code", "description"]
-        self.default_sort_column = "code"
         results = self._business_logic(requested_data["code"], requested_data["filter"])
         page_metadata = get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
         if cfda:
