@@ -1,7 +1,9 @@
 from datetime import datetime
 from django.core.management import call_command
+from django.db import connection
 from pytest import mark
 
+from usaspending_api.awards.models import CToDLinkageUpdates
 from usaspending_api.common.helpers.spark_helpers import load_dict_to_delta_table
 
 starting_update_date = datetime.utcfromtimestamp(0)
@@ -226,7 +228,17 @@ def test_update_file_c_linkages_in_delta(spark, s3_unittest_data_bucket, hive_un
         spark, s3_unittest_data_bucket, "int", "financial_accounts_by_awards", full_int_faba_records, True
     )
 
+    # Validate that the table has indexes before running the update
+    with connection.cursor() as cursor:
+        cursor.execute(f"SELECT COUNT(*) FROM pg_indexes WHERE tablename = '{CToDLinkageUpdates._meta.db_table}'")
+        assert cursor.fetchone()[0] > 0
+
     call_command("update_file_c_linkages_in_delta", "--no-clone", "--spark-s3-bucket", s3_unittest_data_bucket)
+
+    # Validate that indexes are still present after the command
+    with connection.cursor() as cursor:
+        cursor.execute(f"SELECT COUNT(*) FROM pg_indexes WHERE tablename = '{CToDLinkageUpdates._meta.db_table}'")
+        assert cursor.fetchone()[0] > 0
 
     # Verify mapping of FABA->Awards matches the expected results
     output_faba_to_award_id = read_output_faba_to_award_id(spark)
