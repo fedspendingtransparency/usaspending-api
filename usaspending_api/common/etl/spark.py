@@ -6,6 +6,7 @@ functions for setup and configuration of the spark environment
 """
 
 import logging
+import math
 import time
 from collections import namedtuple
 from itertools import chain
@@ -97,7 +98,6 @@ def extract_db_data_frame(
     is_date_partitioning_col: bool = False,
     custom_schema: StructType = None,
 ) -> DataFrame:
-
     logger.info(f"Getting partition bounds using SQL:\n{min_max_sql}")
 
     data_df = None
@@ -427,7 +427,7 @@ def diff(
     cols_to_show = (
         ["diff"]
         + [f"l.{unique_key_col}", f"r.{unique_key_col}"]
-        + list(chain(*zip([f"l.{c}" for c in compare_cols], [f"r.{c}" for c in compare_cols])))
+        + list(chain(*zip([f"l.{c}" for c in compare_cols], [f"r.{c}" for c in compare_cols], strict=False)))
     )
     differences = differences.select(*cols_to_show)
     if not include_unchanged_rows:
@@ -588,7 +588,6 @@ def write_csv_file(
     spark: SparkSession,
     df: DataFrame,
     parts_dir: str,
-    num_partitions: int,
     max_records_per_file=EXCEL_ROW_LIMIT,
     overwrite=True,
     logger=None,
@@ -599,7 +598,6 @@ def write_csv_file(
         spark: passed-in active SparkSession
         df: the DataFrame wrapping the data source to be dumped to CSV.
             parts_dir: Path to dir that will contain the outputted parts files from partitions
-        num_partitions: Indicates the number of partitions to use when writing the Dataframe
         overwrite: Whether to replace the file CSV files if they already exist by that name
         max_records_per_file: Suggestion to Spark of how many records to put in each written CSV file part,
             if it will end up writing multiple files.
@@ -617,12 +615,13 @@ def write_csv_file(
     start = time.time()
     logger.info(f"Writing source data DataFrame to csv part files for file {parts_dir}...")
     df_record_count = df.count()
+    num_partitions = math.ceil(df_record_count / max_records_per_file) or 1
     df.repartition(num_partitions).write.options(
         # NOTE: this is a suggestion, to be used by Spark if partitions yield multiple files
         maxRecordsPerFile=max_records_per_file,
     ).csv(
         path=parts_dir,
-        header=False,
+        header=True,
         emptyValue="",  # "" creates the output of ,,, for null values to match behavior of previous Postgres job
         escape='"',  # " is used to escape the 'quote' character setting (which defaults to "). Escaped quote = ""
         ignoreLeadingWhiteSpace=False,  # must set for CSV write, as it defaults to true
@@ -682,9 +681,7 @@ def hadoop_copy_merge(
 
     # Don't delete first if disallowing overwrite.
     if not overwrite and fs.exists(file_path):
-        raise Py4JError(
-            spark._jvm.org.apache.hadoop.fs.FileAlreadyExistsException(f"{str(file_path)} " f"already exists")
-        )
+        raise Py4JError(spark._jvm.org.apache.hadoop.fs.FileAlreadyExistsException(f"{str(file_path)} already exists"))
     part_files = []
 
     for f in fs.listStatus(parts_dir_path):

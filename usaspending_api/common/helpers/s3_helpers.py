@@ -1,15 +1,15 @@
-import boto3
 import io
 import logging
 import math
 import time
-
-from boto3.s3.transfer import TransferConfig, S3Transfer
-from botocore.exceptions import ClientError
-from django.conf import settings
 from pathlib import Path
 from typing import Optional
+
+import boto3
+from boto3.s3.transfer import S3Transfer, TransferConfig
 from botocore.client import BaseClient
+from botocore.exceptions import ClientError
+from django.conf import settings
 
 from usaspending_api.config import CONFIG
 
@@ -165,3 +165,21 @@ def delete_s3_objects(
     resp = s3_client.delete_objects(Bucket=bucket_name, Delete={"Objects": object_list})
 
     return len(resp.get("Deleted", []))
+
+
+def rename_s3_object(bucket_name: str, old_key: str, new_key: str, region_name: str = settings.USASPENDING_AWS_REGION):
+    """Rename an existing S3 object by:
+        1) Copying the file (old_key) to a new file with the new name (new_key)
+        2) If the copy was successful, delete the old file (old_key)
+    Args:
+        bucket_name: The name of the bucket where the current object is located.
+        old_key: The current name of the key to be renamed.
+        new_key: The new name of the key.
+        region_name: AWS region to use; defaults to the settings provided region.
+    """
+
+    s3 = _get_boto3("client", "s3", region_name=region_name)
+    response = s3.copy_object(Bucket=bucket_name, CopySource=old_key, Key=new_key)
+
+    if response["ResponseMetadata"]["HTTPStatusCode"] == 200:
+        s3.delete_object(Bucket=bucket_name, Key=old_key)
