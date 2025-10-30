@@ -3,7 +3,9 @@ from decimal import Decimal
 
 from django.core.management import call_command
 
+from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
 from usaspending_api.common.etl.spark import create_ref_temp_views
+from usaspending_api.etl.elasticsearch_loader_helpers.location_dataframe import LocationDataFrame
 
 
 test_data = [
@@ -17,7 +19,7 @@ test_data = [
         "lng",
         "country",
         "iso2",
-        "IND",
+        "iso3",
         "admin_name",
         "admin_name_ascii",
         "admin_code",
@@ -73,7 +75,7 @@ def test_location_elasticsearch_indexer(spark, s3_unittest_data_bucket, hive_uni
             f"--source-path={f.name}",
             f"--spark-s3-bucket={s3_unittest_data_bucket}",
         )
-    transaction_search_df = spark.DataFrame(
+    transaction_search_df = spark.createDataFrame(
         [
             {
                 "pop_state_code": "MO",
@@ -81,7 +83,7 @@ def test_location_elasticsearch_indexer(spark, s3_unittest_data_bucket, hive_uni
                 "recipient_location_state_code": "MO",
                 "recipient_location_congressional_code_current": "01",
                 "pop_congressional_code": "01",
-                "recipient_locatoin_congressional_code": "01",
+                "recipient_location_congressional_code": "01",
             },
             {
                 "pop_state_code": "KS",
@@ -89,11 +91,38 @@ def test_location_elasticsearch_indexer(spark, s3_unittest_data_bucket, hive_uni
                 "recipient_location_state_code": "KS",
                 "recipient_location_congressional_code_current": "01",
                 "pop_congressional_code": "01",
-                "recipient_locatoin_congressional_code": "01",
+                "recipient_location_congressional_code": "01",
             },
         ]
     )
     transaction_search_df.write.saveAsTable("rpt.transaction_search")
-    call_command(
-        "elasticsearch_indexer_for_spark", create_new_index=True, load_type="location", index_name="2025-locations"
+    df = LocationDataFrame(spark).dataframe
+    assert (
+        df.filter(
+            df.location.isin(
+                ["TEST_CITY, GERMANY", "TEST_CITY_ALT, GERMANY", "ANOTHER TEST CITY, GERMANY", "HELLO WORLD, GERMANY"]
+            )
+        ).count()
+        == 4
     )
+    assert df.filter(df.location.isin(["MO01"])).count() == 1
+    index_name = "test-locations"
+    client = instantiate_elasticsearch_client()
+    try:
+        call_command(
+            "elasticsearch_indexer_for_spark", create_new_index=True, load_type="location", index_name=index_name
+        )
+        response = client.search(
+            index=index_name,
+            body={"query": {"multi_match": {"query": "HELLO WORLD, GERMANY", "fields": ["location"]}}},
+        )
+        assert response["hits"]["total"]["value"] == 1
+        _ = response["hits"]["hits"][0]["_source"].pop("id")
+        assert response["hits"]["hits"][0]["_source"] == {
+            "location": "HELLO WORLD, GERMANY",
+            "location_json": '{"city_name":"HELLO WORLD","country_name":"GERMANY","location_type":"city"}',
+        }
+    except Exception as e:
+        raise e
+    finally:
+        client.indices.delete(index_name, ignore_unavailable=True)
