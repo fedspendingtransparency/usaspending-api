@@ -23,8 +23,14 @@ class AssistanceListingViewSet(PaginationMixin, APIView):
         self.default_sort_column = "code"
         self.sortable_columns = ["code", "description"]
 
-    def _parse_and_validate_request(self, cfda: str | None, requested_data: Request) -> dict[str, int | str | None]:
-        data = {"code": cfda, "filter": requested_data.query_params.get("filter", None)}
+    def _parse_and_validate_request(
+        self, cfda: str | None, requested_data: Request
+    ) -> dict[str, int | str | bool | None]:
+        data = {
+            "code": cfda,
+            "filter": requested_data.query_params.get("filter", None),
+            "flat": requested_data.query_params.__contains__("flat"),
+        }
         models = [
             {"key": "code", "name": "code", "type": "integer", "default": None, "allow_nulls": True, "optional": True},
             {
@@ -36,6 +42,7 @@ class AssistanceListingViewSet(PaginationMixin, APIView):
                 "optional": True,
                 "allow_nulls": True,
             },
+            {"key": "flat", "name": "flat", "type": "boolean", "default": False, "allow_nulls": True, "optional": True},
         ]
 
         if cfda is not None and (len(str(cfda)) != 2 or not cfda.isdigit()):
@@ -43,17 +50,16 @@ class AssistanceListingViewSet(PaginationMixin, APIView):
 
         return TinyShield(models).block(data)
 
-    def _business_logic(self, cfda_code: int | None, cfda_filter: str | None) -> QuerySet:
+    def _business_logic(self, cfda_code: int | None, cfda_filter: str | None, flat: bool) -> QuerySet:
         qs = Cfda.objects.all()
         annotations = {"description": Value(None, output_field=CharField()), "count": Count("code")}
         if cfda_filter:
             qs = qs.filter(Q(program_title__icontains=cfda_filter) | Q(program_number__icontains=cfda_filter))
 
         if cfda_code is None and cfda_filter:
-            annotations = {
-                "description": Value(None, output_field=CharField()),
-                "count": Count("code"),
-                "children": ArrayAgg(
+            annotations = {"description": Value(None, output_field=CharField()), "count": Count("code")}
+            if not flat:
+                annotations["children"] = ArrayAgg(
                     Func(
                         Cast(Value("code"), TextField()),
                         F("program_number"),
@@ -62,8 +68,7 @@ class AssistanceListingViewSet(PaginationMixin, APIView):
                         function="jsonb_build_object",
                         output_field=JSONField(),
                     )
-                ),
-            }
+                )
         elif cfda_code:
             qs = qs.filter(program_number__startswith=cfda_code)
             annotations = {"code": F("program_number"), "description": F("program_title")}
@@ -84,9 +89,9 @@ class AssistanceListingViewSet(PaginationMixin, APIView):
     @cache_response()
     def get(self, request: Request, cfda=None) -> Response:
         requested_data = self._parse_and_validate_request(cfda, request)
-        results = self._business_logic(requested_data["code"], requested_data["filter"])
+        results = self._business_logic(requested_data["code"], requested_data["filter"], requested_data["flat"])
         page_metadata = get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
-        if cfda:
+        if cfda or requested_data["flat"]:
             return Response(
                 {
                     "results": results[self.pagination.lower_limit : self.pagination.upper_limit],
@@ -97,7 +102,7 @@ class AssistanceListingViewSet(PaginationMixin, APIView):
             return Response(
                 {
                     "results": results,
-                    "message": 'Pagination is ignored when providing a "filter" without specifying the first two digits of an assistance listing code',
+                    "message": 'Pagination is ignored when providing a "filter" if the first two digits of an assistance listing code are not specified or "flat" is not included in the query parameters',
                 }
             )
         return Response(results)

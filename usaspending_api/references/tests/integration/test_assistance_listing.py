@@ -122,6 +122,38 @@ def test_with_filter(client, assistance_listings_test_data):
 
 
 @pytest.mark.django_db
+def test_with_flat(client, assistance_listings_test_data):
+    resp = client.get("/api/v2/references/assistance_listing/?filter=Title 1&flat", content_type="application/json")
+
+    expected_results = {
+        "results": [
+            {
+                "code": "11",
+                "description": None,
+                "count": 1,
+            },
+            {
+                "code": "10",
+                "description": None,
+                "count": 1,
+            },
+        ],
+        "page_metadata": {
+            "page": 1,
+            "total": 2,
+            "limit": 10,
+            "next": None,
+            "previous": None,
+            "hasNext": False,
+            "hasPrevious": False,
+        },
+    }
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json() == expected_results
+
+
+@pytest.mark.django_db
 def test_bad_code(client, assistance_listings_test_data):
     resp = client.get("/api/v2/references/assistance_listing/1/", content_type="application/json")
 
