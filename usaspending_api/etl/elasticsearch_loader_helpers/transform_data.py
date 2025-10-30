@@ -9,7 +9,6 @@ from usaspending_api.etl.elasticsearch_loader_helpers.utilities import (
     TaskSpec,
     convert_json_array_to_list_of_str,
     convert_json_data_to_dict,
-    dump_dict_to_string,
     format_log,
 )
 
