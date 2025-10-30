@@ -116,7 +116,7 @@ SELECT
   "tas_components",
 
   "disaster_emergency_fund_codes",
-  CAST("spending_by_defc" AS STRING),
+  CAST("spending_by_defc" AS VARCHAR(65535)) AS spending_by_defc,
 
   "total_covid_outlay",
   "total_covid_obligation",
@@ -125,7 +125,7 @@ SELECT
   "total_iija_obligation",
 
   "generated_pragmatic_obligation",
-  CAST("program_activities" AS STRING),
+  CAST("program_activities" AS VARCHAR(65535)) AS program_activities,
   "subaward_count",
   "total_subaward_amount",
   "transaction_count"
