@@ -22,6 +22,7 @@ class LocationDataFrame:
                     sf.lit("country_name"), sf.col("country_name"), sf.lit("location_type"), sf.lit("country")
                 )
             ).alias("location_json"),
+            sf.lit("country").alias("location_type"),
         )
 
     @property
@@ -38,6 +39,7 @@ class LocationDataFrame:
                     sf.lit("state"),
                 )
             ).alias("location_json"),
+            sf.lit("state").alias("location_type"),
         )
 
     @property
@@ -61,6 +63,7 @@ class LocationDataFrame:
                     sf.lit("city"),
                 )
             ).alias("location_json"),
+            sf.lit("city").alias("location_type"),
         )
 
     @property
@@ -95,6 +98,7 @@ class LocationDataFrame:
                     sf.lit("city"),
                 )
             ).alias("location_json"),
+            sf.lit("city").alias("location_type"),
         )
 
     @property
@@ -121,6 +125,7 @@ class LocationDataFrame:
                     sf.lit("county"),
                 )
             ).alias("location_json"),
+            sf.lit("county").alias("location_type"),
         )
 
     @property
@@ -143,6 +148,7 @@ class LocationDataFrame:
                     sf.lit("zip_code"),
                 )
             ).alias("location_json"),
+            sf.lit("zip_code").alias("location_type"),
         )
 
     @property
@@ -172,6 +178,7 @@ class LocationDataFrame:
                         sf.lit("current_cd"),
                     )
                 ).alias("location_json"),
+                sf.lit("current_cd").alias("location_type"),
             )
         )
 
@@ -206,6 +213,7 @@ class LocationDataFrame:
                         sf.lit("current_cd"),
                     )
                 ).alias("location_json"),
+                sf.lit("current_cd").alias("location_type"),
             )
         )
 
@@ -233,9 +241,10 @@ class LocationDataFrame:
                         sf.lit("country_name"),
                         sf.lit("UNITED STATES"),
                         sf.lit("location_type"),
-                        sf.lit("current_cd"),
+                        sf.lit("original_cd"),
                     )
                 ).alias("location_json"),
+                sf.lit("original_cd").alias("location_type"),
             )
         )
 
@@ -267,9 +276,10 @@ class LocationDataFrame:
                         sf.lit("country_name"),
                         sf.lit("UNITED STATES"),
                         sf.lit("location_type"),
-                        sf.lit("current_cd"),
+                        sf.lit("original_cd"),
                     )
                 ).alias("location_json"),
+                sf.lit("original_cd").alias("location_type"),
             )
         )
 
