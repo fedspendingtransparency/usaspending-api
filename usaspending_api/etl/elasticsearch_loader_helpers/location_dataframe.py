@@ -67,7 +67,7 @@ class LocationDataFrame:
     def city_foreign(self) -> DataFrame:
         world_cities_tidy = (
             self.world_cities.filter(self.world_cities.iso3 != sf.lit("USA"))
-            .withColumn("alt_city_list", sf.split("city_alt", "\|"))
+            .withColumn("alt_city_list", sf.split("city_alt", r"\|"))
             .withColumn("alt_cities", sf.explode_outer("alt_city_list"))
             .withColumn("all_city_names_list", sf.array("city", "alt_cities"))
             .withColumn("all_city_names", sf.explode_outer("all_city_names_list"))
