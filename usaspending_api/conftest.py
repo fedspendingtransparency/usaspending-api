@@ -1,7 +1,9 @@
+import logging
 import os
 import sys
 import tempfile
 from decimal import Decimal
+from pathlib import Path
 from typing import List
 
 import docker
@@ -34,6 +36,7 @@ from usaspending_api.common.sqs.sqs_handler import (
     UNITTEST_FAKE_QUEUE_NAME,
     _FakeUnitTestFileBackedSQSQueue,
 )
+from usaspending_api.config import CONFIG
 
 # Compose other supporting conftest_*.py files
 from usaspending_api.conftest_helpers import (
@@ -407,8 +410,8 @@ def elasticsearch_recipient_index(db):
 
 @pytest.fixture
 def location_data_fixture(db):
-    denmark = baker.make("references.RefCountryCode", country_code="DNK", country_name="DENMARK")
-    france = baker.make("references.RefCountryCode", country_code="FRA", country_name="FRANCE")
+    baker.make("references.RefCountryCode", country_code="DNK", country_name="DENMARK")
+    baker.make("references.RefCountryCode", country_code="FRA", country_name="FRANCE")
     baker.make("references.RefCountryCode", country_code="TST", country_name="TEST COUNTRY")
     baker.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")
 
