@@ -29,7 +29,7 @@ class AssistanceListingViewSet(PaginationMixin, APIView):
         data = {
             "code": cfda,
             "filter": requested_data.query_params.get("filter", None),
-            "flat": requested_data.query_params.__contains__("flat"),
+            "flat": "flat" in requested_data.query_params,
         }
         models = [
             {"key": "code", "name": "code", "type": "integer", "default": None, "allow_nulls": True, "optional": True},
