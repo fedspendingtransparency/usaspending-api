@@ -26,7 +26,7 @@ from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.management.commands.create_delta_table import (
     TABLE_SPEC,
 )
-from usaspending_api.etl.tests.integration.test_model import TestModel, TEST_TABLE_POSTGRES, TEST_TABLE_SPEC
+from usaspending_api.etl.tests.data.delta_model_for_test import TestModel, TEST_TABLE_POSTGRES, TEST_TABLE_SPEC
 from usaspending_api.recipient.models import RecipientLookup
 from usaspending_api.tests.conftest_spark import create_and_load_all_delta_tables
 from copy import deepcopy

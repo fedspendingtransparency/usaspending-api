@@ -4,12 +4,12 @@ from django.core.management import call_command
 from django.db import DEFAULT_DB_ALIAS, connections
 
 from usaspending_api.references.models import ProgramActivityPark
-from usaspending_api.settings import DATA_BROKER_DB_ALIAS
+from usaspending_api.settings import BROKER_DB_ALIAS
 
 
 @pytest.fixture
 def setup_broker_data(broker_db_setup):
-    with connections[DATA_BROKER_DB_ALIAS].cursor() as cursor:
+    with connections[BROKER_DB_ALIAS].cursor() as cursor:
         cursor.execute(
             """
             INSERT INTO program_activity_park (program_activity_park_id, fiscal_year, period, agency_id, allocation_transfer_id, main_account_number, sub_account_number, park_code, park_name)
@@ -19,11 +19,11 @@ def setup_broker_data(broker_db_setup):
         """
         )
     yield
-    with connections[DATA_BROKER_DB_ALIAS].cursor() as cursor:
+    with connections[BROKER_DB_ALIAS].cursor() as cursor:
         cursor.execute("TRUNCATE program_activity_park;")
 
 
-@pytest.mark.django_db(databases=[DATA_BROKER_DB_ALIAS, DEFAULT_DB_ALIAS], transaction=True)
+@pytest.mark.django_db(databases=[BROKER_DB_ALIAS, DEFAULT_DB_ALIAS], transaction=True)
 def test_load_park(setup_broker_data):
     actual_park_count = ProgramActivityPark.objects.count()
     assert actual_park_count == 0
@@ -41,7 +41,7 @@ def test_load_park(setup_broker_data):
     actual_park = list(ProgramActivityPark.objects.order_by("code").values_list("code", "name"))
     assert actual_park == expected_results
 
-    with connections[DATA_BROKER_DB_ALIAS].cursor() as cursor:
+    with connections[BROKER_DB_ALIAS].cursor() as cursor:
         cursor.execute(
             """
             INSERT INTO program_activity_park (program_activity_park_id, fiscal_year, period, agency_id, allocation_transfer_id, main_account_number, sub_account_number, park_code, park_name)
