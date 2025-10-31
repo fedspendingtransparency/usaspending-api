@@ -897,9 +897,7 @@ def test_data_act_database_url_and_parts_error_if_inconsistent_none_parts():
                 # The error keeps the provided password obfuscated as a SecretStr
                 provided = SecretStr(provided)
                 expected = "*" * len(expected) if expected else None
-            expected_error = (
-                f"Part: {part}, Part Value Provided: {provided}, " f"Value found in BROKER_DB:" f" {expected}"
-            )
+            expected_error = f"Part: {part}, Part Value Provided: {provided}, Value found in BROKER_DB: {expected}"
             assert exc_info.match(re.escape(expected_error))
 
 
@@ -947,9 +945,7 @@ def test_data_act_database_url_and_parts_error_if_inconsistent_placeholder_parts
                 # The error keeps the provided password obfuscated as a SecretStr
                 provided = SecretStr(provided)
                 expected = "*" * len(expected) if expected else None
-            expected_error = (
-                f"Part: {part}, Part Value Provided: {provided}, " f"Value found in BROKER_DB:" f" {expected}"
-            )
+            expected_error = f"Part: {part}, Part Value Provided: {provided}, Value found in BROKER_DB: {expected}"
             assert exc_info.match(re.escape(expected_error))
 
 

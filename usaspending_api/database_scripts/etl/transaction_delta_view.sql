@@ -124,8 +124,8 @@ SELECT
   "funding_subtier_agency_abbreviation",
   "tas_paths",
   "tas_components",
-  CAST("federal_accounts" AS VARCHAR(65535)),
+  CAST("federal_accounts" AS VARCHAR(65535)) AS federal_accounts,
   "disaster_emergency_fund_codes",
-  CAST("program_activities" AS VARCHAR(65535))
+  CAST("program_activities" AS VARCHAR(65535)) AS program_activities
 FROM "transaction_search"
 WHERE "action_date" >= '2007-10-01';
