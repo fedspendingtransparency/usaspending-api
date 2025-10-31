@@ -239,6 +239,10 @@ def get_time_period_message():
     )
 
 
+def under_development_message() -> str:
+    return "This endpoint is under active development and subject to change"
+
+
 def unused_filters_message(filters):
     return f"The following filters from the request were not used: {filters}. See https://api.usaspending.gov/docs/endpoints for a list of appropriate filters"
 
