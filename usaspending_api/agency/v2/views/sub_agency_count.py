@@ -1,9 +1,10 @@
 from rest_framework.request import Request
 from rest_framework.response import Response
 from typing import Any
-from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
+from usaspending_api.agency.v2.views.agency_base import AgencyBase
 from fiscalyear import FiscalYear
 from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.common.helpers.pagination_mixin import PaginationMixin
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 from usaspending_api.common.elasticsearch.aggregation_helpers import create_count_aggregation
 from usaspending_api.common.query_with_filters import QueryWithFilters

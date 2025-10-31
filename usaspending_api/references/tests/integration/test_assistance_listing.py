@@ -34,8 +34,8 @@ def test_success(client, assistance_listings_test_data):
     resp = client.get("/api/v2/references/assistance_listing/", content_type="application/json")
 
     expected_results = [
-        {"code": "10", "description": None, "count": 3},
         {"code": "11", "description": None, "count": 1},
+        {"code": "10", "description": None, "count": 3},
     ]
 
     assert resp.status_code == status.HTTP_200_OK
@@ -46,24 +46,51 @@ def test_success(client, assistance_listings_test_data):
 def test_with_code(client, assistance_listings_test_data):
     resp = client.get("/api/v2/references/assistance_listing/10/", content_type="application/json")
 
-    expected_results = [
-        {
-            "code": "10",
-            "description": None,
-            "count": 3,
-            "children": [
-                {"code": "10.001", "description": "CFDA Title 1"},
-                {
-                    "code": "10.002",
-                    "description": "CFDA Title 2",
-                },
-                {
-                    "code": "10.003",
-                    "description": "CFDA Title 3",
-                },
-            ],
-        }
-    ]
+    expected_results = {
+        "results": [
+            {"code": "10.003", "description": "CFDA Title 3"},
+            {
+                "code": "10.002",
+                "description": "CFDA Title 2",
+            },
+            {
+                "code": "10.001",
+                "description": "CFDA Title 1",
+            },
+        ],
+        "page_metadata": {
+            "page": 1,
+            "total": 3,
+            "limit": 10,
+            "next": None,
+            "previous": None,
+            "hasNext": False,
+            "hasPrevious": False,
+        },
+    }
+
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json() == expected_results
+
+
+@pytest.mark.django_db
+def test_with_code_and_filter(client, assistance_listings_test_data):
+    resp = client.get("/api/v2/references/assistance_listing/10/?filter=Title 1", content_type="application/json")
+
+    expected_results = {
+        "results": [
+            {"code": "10.001", "description": "CFDA Title 1"},
+        ],
+        "page_metadata": {
+            "page": 1,
+            "total": 1,
+            "limit": 10,
+            "next": None,
+            "previous": None,
+            "hasNext": False,
+            "hasPrevious": False,
+        },
+    }
 
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_results
@@ -71,39 +98,25 @@ def test_with_code(client, assistance_listings_test_data):
 
 @pytest.mark.django_db
 def test_with_filter(client, assistance_listings_test_data):
-    resp = client.get("/api/v2/references/assistance_listing/10/?filter=Title 1", content_type="application/json")
-
-    expected_results = [
-        {
-            "code": "10",
-            "description": None,
-            "count": 1,
-            "children": [{"code": "10.001", "description": "CFDA Title 1"}],
-        }
-    ]
-
-    assert resp.status_code == status.HTTP_200_OK
-    assert resp.json() == expected_results
-
-
-@pytest.mark.django_db
-def test_filter_without_code(client, assistance_listings_test_data):
     resp = client.get("/api/v2/references/assistance_listing/?filter=Title 1", content_type="application/json")
 
-    expected_results = [
-        {
-            "code": "10",
-            "description": None,
-            "count": 1,
-            "children": [{"code": "10.001", "description": "CFDA Title 1"}],
-        },
-        {
-            "code": "11",
-            "description": None,
-            "count": 1,
-            "children": [{"code": "11.004", "description": "CFDA Title 1"}],
-        },
-    ]
+    expected_results = {
+        "results": [
+            {
+                "code": "11",
+                "description": None,
+                "count": 1,
+                "children": [{"code": "11.004", "description": "CFDA Title 1"}],
+            },
+            {
+                "code": "10",
+                "description": None,
+                "count": 1,
+                "children": [{"code": "10.001", "description": "CFDA Title 1"}],
+            },
+        ],
+        "message": 'Pagination is ignored when providing a "filter" without specifying the first two digits of an assistance listing code',
+    }
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_results
 
