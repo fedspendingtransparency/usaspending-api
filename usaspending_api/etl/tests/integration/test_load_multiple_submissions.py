@@ -106,6 +106,7 @@ class TestWithMultipleDatabases(TransactionTestCase):
             submission_fiscal_month=9,
             is_quarter=True,
         )
+        baker.make("references.ProgramActivityPark", code="ABCD0000", name="TEST PARK")
         connection = connections[settings.BROKER_DB_ALIAS]
         with connection.cursor() as cursor:
 
