@@ -11,7 +11,7 @@ from usaspending_api.common.api_versioning import API_TRANSFORM_FUNCTIONS, api_t
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
 from usaspending_api.common.exceptions import UnprocessableEntityException
-from usaspending_api.common.helpers.generic_helper import get_generic_filters_message
+from usaspending_api.common.helpers.generic_helper import get_generic_filters_message, under_development_message
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator.award_filter import (
     AWARD_FILTER,
@@ -125,8 +125,10 @@ class SpendingByTransactionGroupedVisualizationViewSet(APIView):
             {
                 "award_id": source["_source"]["display_award_id"],
                 "transaction_count": source["_source"]["transaction_count"],
-                "transaction_obligation": Decimal(source["_source"]["generated_pragmatic_obligation"]).quantize(
-                    Decimal(".01") if source["_source"]["generated_pragmatic_obligation"] else 0.0
+                "transaction_obligation": (
+                    Decimal(source["_source"]["generated_pragmatic_obligation"]).quantize(Decimal(".01"))
+                    if source["_source"]["generated_pragmatic_obligation"]
+                    else 0.0
                 ),
                 "award_generated_internal_id": source["_source"]["generated_unique_award_id"],
             }
@@ -147,8 +149,11 @@ class SpendingByTransactionGroupedVisualizationViewSet(APIView):
                 "limit": validated_payload["limit"],
                 "results": results,
                 "page_metadata": metadata,
-                "messages": get_generic_filters_message(
-                    validated_payload["filters"].keys(), [elem["name"] for elem in AWARD_FILTER_NO_RECIPIENT_ID]
-                ),
+                "messages": [
+                    under_development_message(),
+                    *get_generic_filters_message(
+                        validated_payload["filters"].keys(), [elem["name"] for elem in AWARD_FILTER_NO_RECIPIENT_ID]
+                    ),
+                ],
             }
         )

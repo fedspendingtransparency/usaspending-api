@@ -15,6 +15,7 @@ from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
 from usaspending_api.common.helpers.generic_helper import (
     get_generic_filters_message,
+    under_development_message,
 )
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.validator.award_filter import AWARD_FILTER_NO_RECIPIENT_ID
@@ -101,9 +102,10 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
                 "page": self.pagination["page"],
                 "hasNext": True if len(results) > self.pagination["limit"] else False,
             },
-            "messages": get_generic_filters_message(
-                self.original_filters.keys(), [elem["name"] for elem in self.models]
-            ),
+            "messages": [
+                under_development_message(),
+                *get_generic_filters_message(self.original_filters.keys(), [elem["name"] for elem in self.models]),
+            ],
         }
 
     def build_elasticsearch_search(self, filter_query: ES_Q) -> list[dict[str, Any]]:
