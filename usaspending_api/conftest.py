@@ -1,5 +1,6 @@
 import logging
 import os
+import uuid
 import sys
 import tempfile
 from decimal import Decimal
@@ -607,8 +608,7 @@ def elasticsearch_location_index(
         except IntegrityError:
             pass
     create_ref_temp_views(spark)
-
-    index_name = "test-locations"
+    index_name = f"{uuid.uuid4()}-test-locations"
     client = instantiate_elasticsearch_client()
     try:
         call_command(
