@@ -234,7 +234,7 @@ class LocationDataFrame:
                 ).alias("location"),
                 sf.to_json(
                     sf.named_struct(
-                        sf.lit("current_cd"),
+                        sf.lit("original_cd"),
                         sf.concat(sf.upper("pop_state_code"), sf.lit("-"), sf.col("pop_congressional_code")),
                         sf.lit("state_name"),
                         sf.upper(self.state_data.name),
@@ -265,7 +265,7 @@ class LocationDataFrame:
                 ).alias("location"),
                 sf.to_json(
                     sf.named_struct(
-                        sf.lit("current_cd"),
+                        sf.lit("original_cd"),
                         sf.concat(
                             sf.upper("recipient_location_state_code"),
                             sf.lit("-"),

@@ -22,6 +22,7 @@ def test_exact_match(client, elasticsearch_location_index):
     assert response.data["results"] == {"countries": [{"country_name": "DENMARK"}]}
 
 
+@pytest.mark.django_db(transaction=True)
 def test_multiple_types_of_matches(client, elasticsearch_location_index):
     """Test query with multiple types of matches"""
 
@@ -39,6 +40,7 @@ def test_multiple_types_of_matches(client, elasticsearch_location_index):
     }
 
 
+@pytest.mark.django_db(transaction=True)
 def test_congressional_district_results(client, elasticsearch_location_index):
 
     response = client.post(
@@ -57,6 +59,7 @@ def test_congressional_district_results(client, elasticsearch_location_index):
     }
 
 
+@pytest.mark.django_db(transaction=True)
 def test_zipcode_results(client, elasticsearch_location_index):
 
     response = client.post(
@@ -76,6 +79,7 @@ def test_zipcode_results(client, elasticsearch_location_index):
     }
 
 
+@pytest.mark.django_db(transaction=True)
 def test_county_results(client, elasticsearch_location_index):
 
     response = client.post(
@@ -95,6 +99,7 @@ def test_county_results(client, elasticsearch_location_index):
     }
 
 
+@pytest.mark.django_db(transaction=True)
 def test_no_results(client, elasticsearch_location_index):
 
     response = client.post(
@@ -128,6 +133,7 @@ def test_verify_no_missing_fields(elasticsearch_location_index):
     assert len(results.hits) == 0
 
 
+@pytest.mark.django_db(transaction=True)
 def test_limits_by_location_type(client, elasticsearch_location_index):
     """Test that the endpoint returns (at most) 5 results of each `location_type` by default"""
 

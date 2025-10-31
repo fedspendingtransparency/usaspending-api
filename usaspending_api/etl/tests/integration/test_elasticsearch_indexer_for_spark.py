@@ -19,7 +19,7 @@ def test_location_elasticsearch_indexer(spark, elasticsearch_location_index):
         ).count()
         == 4
     )
-    assert df.filter(df.location.isin(["MO01"])).count() == 1
+    assert df.filter(df.location.isin(["MO01"])).count() == 2
     response = elasticsearch_location_index.search(
         body={"query": {"multi_match": {"query": "HELLO WORLD, TEST COUNTRY", "fields": ["location"]}}},
     )
@@ -28,4 +28,5 @@ def test_location_elasticsearch_indexer(spark, elasticsearch_location_index):
     assert response["hits"]["hits"][0]["_source"] == {
         "location": "HELLO WORLD, TEST COUNTRY",
         "location_json": '{"city_name":"HELLO WORLD","country_name":"TEST COUNTRY","location_type":"city"}',
+        "location_type": "city",
     }
