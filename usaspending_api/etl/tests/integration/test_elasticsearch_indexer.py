@@ -281,12 +281,9 @@ def test_create_and_load_new_recipient_index(recipient_data_fixture, elasticsear
 
 def test_location_index_raises_error():
     """Test the `elasticsearch_indexer` Django management command with location to ensure that an error is raised."""
-    valid_load_types = {"transaction", "award", "recipient", "subaward"}
     with pytest.raises(
         CommandError,
-        match=re.escape(
-            f"""Error: argument --load-type: invalid choice: 'location' (choose from '{"', '".join(valid_load_types)}')"""
-        ),
+        match=re.escape(f"Error: argument --load-type: invalid choice: 'location'"),
     ):
         call_command("elasticsearch_indexer", create_new_index=True, load_type="location", index_name="2025-locations")
 
