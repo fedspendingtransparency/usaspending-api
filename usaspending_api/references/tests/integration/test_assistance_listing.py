@@ -115,7 +115,7 @@ def test_with_filter(client, assistance_listings_test_data):
                 "children": [{"code": "10.001", "description": "CFDA Title 1"}],
             },
         ],
-        "message": 'Pagination is ignored when providing a "filter" without specifying the first two digits of an assistance listing code',
+        "message": 'Pagination is ignored when providing a "filter" if the first two digits of an assistance listing code are not specified or "flat" is not included in the query parameters',
     }
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == expected_results
