@@ -16,6 +16,7 @@ includes the full CFDA code and description.
         + `sort`: `sort=description` (optional, enum) `code` and `description` are the only valid inputs. The default is `code`.
         + `limit`: `limit=15` (optional, number) How many results appear on a page. The default is 10.
         + `order`: `order=asc` (optional, string) What order results are returned in. The default is descending.
+        + `flat`: `flat` (optional, string) Removes children from results that would otherwise contain them.
 
 + Response 200 (application/json)
     + Attributes (object)
