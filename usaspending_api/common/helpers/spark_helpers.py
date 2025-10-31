@@ -365,7 +365,7 @@ def attach_java_gateway(
     return gateway
 
 
-def get_jdbc_connection_properties(fix_strings=True) -> dict:
+def get_jdbc_connection_properties(fix_strings: bool = True, truncate: bool = False) -> dict:
     jdbc_props = {"driver": "org.postgresql.Driver", "fetchsize": str(CONFIG.SPARK_PARTITION_ROWS)}
     if fix_strings:
         # This setting basically tells the JDBC driver how to process the strings, which could be a special type casted
@@ -373,6 +373,8 @@ def get_jdbc_connection_properties(fix_strings=True) -> dict:
         # tells the driver to not make that assumption and let the schema try to infer the type on insertion.
         # See the `stringtype` param on https://jdbc.postgresql.org/documentation/94/connect.html for details.
         jdbc_props["stringtype"] = "unspecified"
+    if truncate:
+        jdbc_props["truncate"] = "true"
     return jdbc_props
 
 
