@@ -1,14 +1,14 @@
-import pandas as pd
-import logging
 import inspect
-
-from pytest import mark
+import logging
 from datetime import datetime
 
-from usaspending_api.common.helpers.s3_helpers import download_s3_object
+import pandas as pd
+from pytest import mark
+
 from usaspending_api.common.etl.spark import hadoop_copy_merge, write_csv_file
-from usaspending_api.tests.conftest_spark import create_and_load_all_delta_tables
+from usaspending_api.common.helpers.s3_helpers import download_s3_object
 from usaspending_api.config import CONFIG
+from usaspending_api.tests.conftest_spark import create_and_load_all_delta_tables
 
 
 @mark.django_db(transaction=True)  # Need this to save/commit it to Postgres, so we can dump it to delta
@@ -35,9 +35,7 @@ def test_load_csv_file(
     # When combining these later, will prepend the extracted header to each resultant file.
     # The parts therefore must NOT have headers or the headers will show up in the data when combined.
     header = ",".join([_.name for _ in df.schema.fields])
-    write_csv_file(
-        spark, df, parts_dir=bucket_path, num_partitions=1, logger=test_logger
-    )  # write Delta to CSV in S3 using Spark
+    write_csv_file(spark, df, parts_dir=bucket_path, logger=test_logger)  # write Delta to CSV in S3 using Spark
     hadoop_copy_merge(
         spark, parts_dir=bucket_path, part_merge_group_size=1, header=header, logger=test_logger
     )  # merge CSV parts into 1 file
