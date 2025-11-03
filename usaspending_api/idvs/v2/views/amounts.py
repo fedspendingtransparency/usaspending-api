@@ -111,7 +111,7 @@ def fetch_idv_child_outlays(award_id: int, award_id_column) -> dict:
     if award_id_column != "award_id":
         award_id = re.sub(r"[']", r"''", award_id)
     sql = """
-        with child_cte (award_id) as ({child_sql}
+        with child_cte (award_id) as ({child_sql})
         SELECT sum(total_outlays) AS total_outlay from award_search where award_id::text ='{award_id}';
         """
     child_results = execute_sql_to_ordered_dictionary(
