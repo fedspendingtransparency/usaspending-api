@@ -6,7 +6,6 @@ from string import Template
 
 from django.conf import settings
 from django.core.management import call_command
-from django.core.serializers.json import DjangoJSONEncoder, json
 from django.db import connection
 from elasticsearch import Elasticsearch
 from pytest import Session
@@ -218,7 +217,7 @@ class TestElasticSearchIndex:
 
             self.client.index(
                 index=self.index_name,
-                body=json.dumps(record, cls=DjangoJSONEncoder),
+                body=record,
                 id=es_id_value,
                 routing=routing_value,
             )
