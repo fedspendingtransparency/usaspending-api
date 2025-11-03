@@ -42,7 +42,7 @@ class AbstractSearch:
         self.awarding_agency = (
             spark.table("global_temp.agency")
             .withColumn("awarding_toptier_agency_id", sf.col("toptier_agency_id"))
-            .withColumn("funding_subtier_agency_id", sf.col("subtier_agency_id"))
+            .withColumn("awarding_subtier_agency_id", sf.col("subtier_agency_id"))
         )
         self.awarding_toptier_agency = (
             spark.table("global_temp.toptier_agency")
@@ -124,27 +124,27 @@ class AbstractSearch:
                     sf.lit("uei-"),
                     sf.coalesce(self.transaction_fpds.awardee_or_recipient_uei, self.transaction_fabs.uei),
                 ),
-            ).otherwise(
-                sf.when(
+            )
+            .when(
+                sf.coalesce(
+                    self.transaction_fpds.awardee_or_recipient_uniqu,
+                    self.transaction_fabs.awardee_or_recipient_uniqu,
+                ).isNotNull(),
+                sf.concat(
+                    sf.lit("duns-"),
                     sf.coalesce(
                         self.transaction_fpds.awardee_or_recipient_uniqu,
                         self.transaction_fabs.awardee_or_recipient_uniqu,
-                    ).isNotNull(),
-                    sf.concat(
-                        sf.lit("duns-"),
-                        sf.coalesce(
-                            self.transaction_fpds.awardee_or_recipient_uniqu,
-                            self.transaction_fabs.awardee_or_recipient_uniqu,
-                        ),
                     ),
-                ).otherwise(
-                    sf.concat(
-                        sf.lit("name-"),
-                        sf.coalesce(
-                            self.transaction_fpds.awardee_or_recipient_legal,
-                            self.transaction_fabs.awardee_or_recipient_legal,
-                        ),
-                    )
+                ),
+            )
+            .otherwise(
+                sf.concat(
+                    sf.lit("name-"),
+                    sf.coalesce(
+                        self.transaction_fpds.awardee_or_recipient_legal,
+                        self.transaction_fabs.awardee_or_recipient_legal,
+                    ),
                 )
             )
         )
@@ -461,27 +461,27 @@ class TransactionSearch(AbstractSearch):
                     sf.lit("uei-"),
                     sf.coalesce(self.transaction_fpds.ultimate_parent_uei, self.transaction_fabs.ultimate_parent_uei),
                 ),
-            ).otherwise(
-                sf.when(
+            )
+            .when(
+                sf.coalesce(
+                    self.transaction_fpds.ultimate_parent_unique_ide,
+                    self.transaction_fabs.ultimate_parent_unique_ide,
+                ).isNotNull(),
+                sf.concat(
+                    sf.lit("duns-"),
                     sf.coalesce(
                         self.transaction_fpds.ultimate_parent_unique_ide,
                         self.transaction_fabs.ultimate_parent_unique_ide,
-                    ).isNotNull(),
-                    sf.concat(
-                        sf.lit("duns-"),
-                        sf.coalesce(
-                            self.transaction_fpds.ultimate_parent_unique_ide,
-                            self.transaction_fabs.ultimate_parent_unique_ide,
-                        ),
                     ),
-                ).otherwise(
-                    sf.concat(
-                        sf.lit("name-"),
-                        sf.coalesce(
-                            self.transaction_fpds.ultimate_parent_legal_enti,
-                            self.transaction_fabs.ultimate_parent_legal_enti,
-                        ),
-                    )
+                ),
+            )
+            .otherwise(
+                sf.concat(
+                    sf.lit("name-"),
+                    sf.coalesce(
+                        self.transaction_fpds.ultimate_parent_legal_enti,
+                        self.transaction_fabs.ultimate_parent_legal_enti,
+                    ),
                 )
             )
         )
@@ -500,28 +500,28 @@ class TransactionSearch(AbstractSearch):
                             sf.lit("uei-"),
                             sf.coalesce(self.transaction_fpds.awardee_or_recipient_uei, self.transaction_fabs.uei),
                         ),
-                    ).otherwise(
-                        sf.when(
+                    )
+                    .when(
+                        sf.coalesce(
+                            self.transaction_fpds.awardee_or_recipient_uniqu,
+                            self.transaction_fabs.awardee_or_recipient_uniqu,
+                        ).isNotNull(),
+                        sf.concat(
+                            sf.lit("duns-"),
                             sf.coalesce(
                                 self.transaction_fpds.awardee_or_recipient_uniqu,
                                 self.transaction_fabs.awardee_or_recipient_uniqu,
-                            ).isNotNull(),
-                            sf.concat(
-                                sf.lit("duns-"),
-                                sf.coalesce(
-                                    self.transaction_fpds.awardee_or_recipient_uniqu,
-                                    self.transaction_fabs.awardee_or_recipient_uniqu,
-                                ),
                             ),
-                        ).otherwise(
-                            sf.concat(
-                                sf.lit("name-"),
-                                sf.coalesce(
-                                    self.transaction_fpds.awardee_or_recipient_legal,
-                                    self.transaction_fabs.awardee_or_recipient_legal,
-                                    sf.lit(""),
-                                ),
-                            )
+                        ),
+                    )
+                    .otherwise(
+                        sf.concat(
+                            sf.lit("name-"),
+                            sf.coalesce(
+                                self.transaction_fpds.awardee_or_recipient_legal,
+                                self.transaction_fabs.awardee_or_recipient_legal,
+                                sf.lit(""),
+                            ),
                         )
                     )
                 ),

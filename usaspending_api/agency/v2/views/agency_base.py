@@ -8,7 +8,6 @@ from rest_framework.exceptions import NotFound
 from rest_framework.views import APIView
 
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping
-from usaspending_api.common.data_classes import Pagination
 from usaspending_api.common.helpers.date_helper import fy
 from usaspending_api.common.helpers.dict_helpers import update_list_of_dictionaries
 from usaspending_api.common.helpers.fiscal_year_helpers import (
@@ -17,7 +16,7 @@ from usaspending_api.common.helpers.fiscal_year_helpers import (
     current_fiscal_year,
 )
 from usaspending_api.common.helpers.generic_helper import get_account_data_time_period_message
-from usaspending_api.common.validator import TinyShield, customize_pagination_with_sort_columns
+from usaspending_api.common.validator import TinyShield
 from usaspending_api.references.models import ToptierAgency, Agency
 from usaspending_api.submissions.helpers import validate_request_within_revealed_submissions
 
@@ -181,18 +180,3 @@ class AgencyBase(APIView):
             + "-Agency_Comments.txt"
         )
         return f"{host}/agency_submissions/{file_name}"
-
-
-class PaginationMixin:
-    @cached_property
-    def pagination(self):
-        model = customize_pagination_with_sort_columns(self.sortable_columns, self.default_sort_column)
-        request_data = TinyShield(model).block(self.request.query_params)
-        return Pagination(
-            page=request_data["page"],
-            limit=request_data["limit"],
-            lower_limit=(request_data["page"] - 1) * request_data["limit"],
-            upper_limit=(request_data["page"] * request_data["limit"]),
-            sort_key=request_data.get("sort", self.default_sort_column),
-            sort_order=request_data["order"],
-        )
