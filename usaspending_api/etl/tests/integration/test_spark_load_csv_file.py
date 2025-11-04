@@ -5,7 +5,7 @@ from datetime import datetime
 import pandas as pd
 from pytest import mark
 
-from usaspending_api.common.etl.spark import hadoop_copy_merge, write_csv_file
+from usaspending_api.common.etl.spark import rename_part_files, write_csv_file
 from usaspending_api.common.helpers.s3_helpers import download_s3_object
 from usaspending_api.config import CONFIG
 from usaspending_api.tests.conftest_spark import create_and_load_all_delta_tables
@@ -32,19 +32,19 @@ def test_load_csv_file(
     bucket_name = s3_unittest_data_bucket
     obj_prefix = f"{CONFIG.SPARK_CSV_S3_PATH}/unit_test_csv_data/{file_timestamp}"
     bucket_path = f"s3a://{bucket_name}/{obj_prefix}"
-    # When combining these later, will prepend the extracted header to each resultant file.
-    # The parts therefore must NOT have headers or the headers will show up in the data when combined.
-    header = ",".join([_.name for _ in df.schema.fields])
     write_csv_file(spark, df, parts_dir=bucket_path, logger=test_logger)  # write Delta to CSV in S3 using Spark
-    hadoop_copy_merge(
-        spark, parts_dir=bucket_path, part_merge_group_size=1, header=header, logger=test_logger
-    )  # merge CSV parts into 1 file
-
     file_ext = "csv"
+    rename_part_files(
+        bucket_name=bucket_name,
+        destination_file_name=f"csv/unit_test_csv_data/{file_timestamp}",
+        temp_download_dir_name="data",
+        file_format=file_ext,
+        logger=test_logger,
+    )
     download_path = tmp_path / f"{file_timestamp}.{file_ext}"
     download_s3_object(
         bucket_name=bucket_name,
-        key=f"{obj_prefix}.{file_ext}",
+        key=f"{obj_prefix}_01.{file_ext}",
         file_path=str(download_path),
     )
     pd_df = pd.read_csv(download_path)
