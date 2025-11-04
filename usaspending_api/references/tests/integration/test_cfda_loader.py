@@ -32,7 +32,7 @@ def test_program_number(cfda_data):
         "popular_name": "(ECP)",
         "federal_agency": "FARM SERVICE AGENCY, AGRICULTURE, DEPARTMENT OF",
         "authorization": '{"list":[{"act":{"description":"Agricultural Credit Act of 1978"},"publicLaw":{"congressCode":"95","number":"334"},"statute":{"page":"420","volume":"92"},"USC":{"title":"16","section":"2201-2205"},"authorizationTypes":{"USC":true,"act":true,"statute":true,"publicLaw":true,"executiveOrder":false},"usc":{"title":"16","section":"2201-2205"}}]}',
-        "objectives": "To enable farmers to perform emergency conservation measures to control wind erosion on farmlands, to rehabilitate farmlands damaged by wind erosion, floods, hurricanes, or other natural disasters and to carry out emergency water conservation or water enhancing measures during periods of severe drought.\r\n",
+        "objectives": "To enable farmers to perform emergency conservation measures to control wind erosion on farmlands, to rehabilitate farmlands damaged by wind erosion, floods, hurricanes, or other natural disasters and to carry out emergency water conservation or water enhancing measures during periods of severe drought.",
         "types_of_assistance": "DIRECT PAYMENTS FOR SPECIFIED USE",
         "uses_and_use_restrictions": "Not Applicable",
         "applicant_eligibility": "Any agricultural producer who as owner, landlord, tenant, or sharecropper on a farm or ranch, including associated groups, and bears a part of the cost of an approved conservation practice in a disaster area, is eligible to apply for cost-share conservation assistance.  This program is also available in American Samoa, Guam, Commonwealth of the Northern Mariana Islands, Puerto Rico, and the Virgin Islands.",
