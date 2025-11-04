@@ -18,6 +18,7 @@ from pyspark.sql.functions import col, concat, concat_ws, expr, lit, regexp_repl
 from pyspark.sql.types import ArrayType, DecimalType, StringType, StructType
 
 from usaspending_api.accounts.models import AppropriationAccountBalances, FederalAccount, TreasuryAppropriationAccount
+from usaspending_api.common.helpers.s3_helpers import rename_s3_object, retrieve_s3_bucket_object_list
 from usaspending_api.common.helpers.spark_helpers import (
     get_broker_jdbc_url,
     get_jdbc_connection_properties,
@@ -764,3 +765,49 @@ def _merge_grouper(items, group_size):
     group_generator = (items[i : i + group_size] for i in range(0, len(items), group_size))
     for i, group in enumerate(group_generator, start=1):
         yield FileMergeGroup(i, group)
+
+
+def rename_part_files(
+    bucket_name: str,
+    destination_file_name: str,
+    logger: logging.Logger,
+    temp_download_dir_name: str = "temp_download",
+    file_format: str = "csv",
+) -> list[str]:
+    """Renames the part-000.csv files to match the zip filename structure.
+
+    Args:
+        bucket_name: S3 bucket that contains the file to be renamed and will contain the renamed file.
+        destination_file_name: Timestamped download file name. This is used to find the correct folder within the
+            bucket.
+        logger: Logger instance.
+        temp_download_dir_name: Name of the folder to used to store the renamed CSV files before they are downloaded.
+            Defaults to "temp_download".
+        file_format: What file format to save the files in.
+            Defaults to "csv".
+
+    Returns:
+        A list of the full S3 paths for the CSV files.
+    """
+    list_of_part_files = sorted(
+        [
+            file.key
+            for file in retrieve_s3_bucket_object_list(bucket_name)
+            if (
+                file.key.startswith(f"{temp_download_dir_name}/{destination_file_name}/part-")
+                and file.key.endswith(file_format)
+            )
+        ]
+    )
+
+    full_file_paths = []
+
+    for index, part_file in enumerate(list_of_part_files):
+        old_key = f"{bucket_name}/{part_file}"
+        new_key = f"{temp_download_dir_name}/{destination_file_name}_{str(index + 1).zfill(2)}.{file_format}"
+        logger.info(f"Renaming {old_key} to {bucket_name}/{new_key}")
+
+        rename_s3_object(bucket_name=bucket_name, old_key=old_key, new_key=new_key)
+        full_file_paths.append(f"s3a://{bucket_name}/{new_key}")
+
+    return full_file_paths

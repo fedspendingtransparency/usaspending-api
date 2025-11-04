@@ -10,11 +10,10 @@ from django.conf import settings
 from pyspark.sql import DataFrame
 
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
+from usaspending_api.common.etl.spark import rename_part_files
 from usaspending_api.common.helpers.s3_helpers import (
     delete_s3_objects,
     download_s3_object,
-    rename_s3_object,
-    retrieve_s3_bucket_object_list,
 )
 from usaspending_api.download.filestreaming.download_generation import (
     EXCEL_ROW_LIMIT,
@@ -184,11 +183,10 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
             )
             column_count = len(df.columns)
             self._logger.info("Concatenating partitioned output files ...")
-            merged_file_paths = self._rename_part_files(
-                s3_bucket_path=s3_bucket_path,
-                s3_bucket_name=s3_bucket_name,
-                s3_bucket_sub_path=s3_bucket_sub_path,
+            merged_file_paths = rename_part_files(
+                bucket_name=s3_bucket_name,
                 destination_file_name=destination_file_name,
+                logger=self._logger,
                 file_format=file_format,
             )
             final_csv_data_file_locations = self._move_data_csv_s3_to_local(
@@ -247,47 +245,3 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
             local_csv_file_paths.append(final_path)
         self._logger.info(f"Copied data files from S3 to local machine in {(time.time() - start_time):3f}s")
         return local_csv_file_paths
-
-    def _rename_part_files(
-        self,
-        s3_bucket_path: str,
-        s3_bucket_name: str,
-        s3_bucket_sub_path: str,
-        destination_file_name: str,
-        file_format: str = "csv",
-    ) -> list[str]:
-        """Renames the part-000.csv files to match the zip filename structure.
-
-        Args:
-            s3_bucket_path: S3 bucket name with "s3a://" prefix.
-            s3_bucket_name: S3 bucket name without "s3a://" prefix.
-            s3_bucket_sub_path: Bucket within s3_bucket_name to look for files in.
-            destination_file_name: Timestamped download file name.
-            file_format: What file format to save the files in.
-                Defaults to "csv".
-
-        Returns:
-            A list of the full S3 paths for the CSV files.
-        """
-        list_of_part_files = sorted(
-            [
-                file.key
-                for file in retrieve_s3_bucket_object_list(s3_bucket_name)
-                if (
-                    file.key.endswith(file_format)
-                    and file.key.startswith(f"{s3_bucket_sub_path}/{destination_file_name}/part-")
-                )
-            ]
-        )
-
-        full_file_paths = []
-
-        for index, part_file in enumerate(list_of_part_files):
-            old_key = f"{s3_bucket_name}/{part_file}"
-            new_key = f"{s3_bucket_sub_path}/{destination_file_name}_0{index + 1}.{file_format}"
-            self._logger.info(f"Renaming {old_key} to {s3_bucket_name}/{new_key}")
-
-            rename_s3_object(bucket_name=s3_bucket_name, old_key=old_key, new_key=new_key)
-            full_file_paths.append(f"{s3_bucket_path}/{new_key}")
-
-        return full_file_paths
