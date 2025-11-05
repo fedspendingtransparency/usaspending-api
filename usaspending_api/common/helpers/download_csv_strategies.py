@@ -267,18 +267,12 @@ class DuckDBToCSVStrategy(AbstractToCSVStrategy):
     ):
         from usaspending_api.common.etl.spark import write_csv_file_duckdb
 
-        destination_path_dir = str(destination_path).replace(f"/{destination_file_name}", "")
-        # The place to write intermediate data files to in s3
-        s3_bucket_name = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
-        s3_bucket_path = f"s3a://{s3_bucket_name}"
-        s3_bucket_sub_path = "temp_download"
-        s3_destination_path = f"{s3_bucket_path}/{s3_bucket_sub_path}/{destination_file_name}"
         try:
             if source_df is not None:
                 df = source_df
             else:
                 df = self.spark.sql(source_sql)
-            record_count = write_csv_file_duckdb(
+            record_count, final_csv_data_file_locations = write_csv_file_duckdb(
                 df=df,
                 download_file_name=destination_file_name,
                 max_records_per_file=EXCEL_ROW_LIMIT,
@@ -286,16 +280,9 @@ class DuckDBToCSVStrategy(AbstractToCSVStrategy):
                 delimiter=delimiter,
             )
             column_count = len(df.columns)
-            self._logger.info("Concatenating partitioned output files ...")
-            merged_file_paths = ...
-            final_csv_data_file_locations = self._move_data_csv_s3_to_local(
-                s3_bucket_name, merged_file_paths, s3_bucket_path, s3_bucket_sub_path, destination_path_dir
-            )
         except Exception:
             self._logger.exception("Exception encountered. See logs")
             raise
-        finally:
-            delete_s3_objects(s3_bucket_name, key_prefix=f"{s3_bucket_sub_path}/{destination_file_name}")
         append_files_to_zip_file(final_csv_data_file_locations, download_zip_path)
         self._logger.info(f"Generated the following data csv files {final_csv_data_file_locations}")
         return CSVDownloadMetadata(final_csv_data_file_locations, record_count, column_count)

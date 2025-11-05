@@ -17,7 +17,17 @@ from duckdb.experimental.spark.sql import SparkSession as DuckDBSparkSession
 from duckdb.experimental.spark.sql.dataframe import DataFrame as DuckDBDataFrame
 from py4j.protocol import Py4JError
 from pyspark.sql import DataFrame, SparkSession
-from pyspark.sql.functions import col, concat, concat_ws, expr, lit, regexp_replace, to_date, transform, when
+from pyspark.sql.functions import (
+    col,
+    concat,
+    concat_ws,
+    expr,
+    lit,
+    regexp_replace,
+    to_date,
+    transform,
+    when,
+)
 from pyspark.sql.types import ArrayType, DecimalType, StringType, StructType
 
 from usaspending_api.accounts.models import AppropriationAccountBalances, FederalAccount, TreasuryAppropriationAccount
@@ -740,44 +750,33 @@ def write_csv_file_duckdb(
 
     # Convert the Spark DataFrame to a DuckDBPyRelation type to take advantage of the built-in functions
     _pandas_df = df.toPandas()
-    rel = duckdb.sql("SELECT * FROM _pandas_df;")
 
     # Add a `file_index` column specifying which file each row belongs in so that no file exceeds
-    #   the `max_records_per_file` limit
-    # NOTE: This isn't perfect and sometimes partitions more than `max_records_per_file` rows
-    indexed_query = f"""
-    WITH indexed_data AS (
+    rel = duckdb.sql(f"""
         SELECT
             *,
-            CAST((ROW_NUMBER() OVER () - 1) / {max_records_per_file} AS integer) AS file_index
-        FROM
-            df_view
-    )
-    SELECT * FROM indexed_data
-    """
+            CAST((ROW_NUMBER() OVER () - 1) / {max_records_per_file - 1} AS integer) + 1 AS file_number
+        FROM _pandas_df;
+    """)
 
     start = time.time()
-    df_record_count = df.count()
-
-    file_numbers = sorted(
-        [row[0] for row in duckdb.sql(f"SELECT DISTINCT file_index FROM ({indexed_query});").fetchall()]
-    )
+    df_record_count = rel.count("*").fetchone()[0]
+    file_numbers = sorted(rel.select("file_number").distinct().list("file_number").fetchone())[0]
     full_file_paths = []
 
     logger.info(f"Writing source data DataFrame to csv files for file {download_file_name}")
     for index in file_numbers:
-        duckdb.sql(f"SELECT {', '.join(df.columns)} FROM ({indexed_query}) WHERE file_index = {index};").to_csv(
-            file_name=f"{temp_csv_directory_path}{download_file_name}_{index}.csv",
+        full_path = f"{temp_csv_directory_path}{download_file_name}_{str(index).zfill(2)}.csv"
+        rel.filter(f"file_number = {index}").select(", ".join(df.columns)).to_csv(
+            file_name=full_path,
             sep=delimiter,
-            timestamp_format=CONFIG.SPARK_CSV_TIMEZONE_FORMAT,
             escapechar='"',
             header=True,
-            per_thread_output=False,
         )
-        full_file_paths.append(f"{CSV_LOCAL_PATH}{download_file_name}_{index}.csv")
+        full_file_paths.append(full_path)
 
-    logger.info(f"{CSV_LOCAL_PATH}{download_file_name} contains {df_record_count:,} rows of data")
-    logger.info(f"Wrote source data DataFrame to csv part files in {(time.time() - start):3f}s")
+    logger.info(f"{temp_csv_directory_path}{download_file_name} contains {df_record_count:,} rows of data")
+    logger.info(f"Wrote source data DataFrame to {len(full_file_paths)} CSV files in {(time.time() - start):3f}s")
     return df_record_count, full_file_paths
 
 

@@ -75,20 +75,21 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         configure_logging(service_name="usaspending-downloader-" + TRACE_ENV)
-        self.use_duckdb = options["use_duckdb"]
-
-        if options["use_duckdb"]:
-            self.spark: DuckDBSparkSession = DuckDBSparkSession.builder.getOrCreate()
-            spark_created_by_command = False
-        else:
-            self.spark, spark_created_by_command = self.setup_spark_session()
-
         self.should_cleanup = not options["skip_local_cleanup"]
         self.download_job = self.get_download_job(options["download_job_id"])
         self.download_json_request = json.loads(self.download_job.json_request)
         self.request_type = self.download_json_request["request_type"]
         self.working_dir_path = Path(settings.CSV_LOCAL_PATH)
         self.columns = self.download_json_request["columns"] if "columns" in self.download_json_request else None
+
+        self.use_duckdb = options["use_duckdb"]
+        if options["use_duckdb"]:
+            self.spark: DuckDBSparkSession = DuckDBSparkSession.builder.getOrCreate()
+            spark_created_by_command = False
+            self.should_cleanup = True
+        else:
+            self.spark, spark_created_by_command = self.setup_spark_session()
+
         if not self.working_dir_path.exists():
             self.working_dir_path.mkdir()
         create_ref_temp_views(self.spark)
