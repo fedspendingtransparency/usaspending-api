@@ -529,7 +529,7 @@ def monthly_download_data(db, monkeypatch):
     monkeypatch.setattr("usaspending_api.settings.MONTHLY_DOWNLOAD_S3_BUCKET_NAME", "whatever")
 
 
-@pytest.mark.django_db(databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
 def test_all_agencies(client, fake_csv_local_path, monthly_download_data, monkeypatch):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string(settings.DOWNLOAD_DB_ALIAS))
     call_command("populate_monthly_files", "--fiscal_year=2020", "--local", "--clobber")
@@ -539,7 +539,7 @@ def test_all_agencies(client, fake_csv_local_path, monthly_download_data, monkey
     assert f"FY2020_All_Assistance_Full_{TODAY}.zip" in file_list
 
 
-@pytest.mark.django_db(databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
 def test_specific_agency(client, fake_csv_local_path, monthly_download_data, monkeypatch):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string(settings.DOWNLOAD_DB_ALIAS))
     contract_data = generate_contract_data(2020, 1)
@@ -586,7 +586,7 @@ def test_specific_agency(client, fake_csv_local_path, monthly_download_data, mon
         assert row_count >= 1
 
 
-@pytest.mark.django_db(databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
 def test_agency_no_data(client, fake_csv_local_path, monthly_download_data, monkeypatch):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string(settings.DOWNLOAD_DB_ALIAS))
     call_command("populate_monthly_files", "--agencies=2", "--fiscal_year=2022", "--local", "--clobber")
@@ -609,7 +609,7 @@ def test_agency_no_data(client, fake_csv_local_path, monthly_download_data, monk
             assert row_count == 1, f"{csv_file} was not empty"
 
 
-@pytest.mark.django_db(databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
 def test_fiscal_years(client, fake_csv_local_path, monthly_download_data, monkeypatch):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string(settings.DOWNLOAD_DB_ALIAS))
     # contract_data = generate_contract_data(2020, 1)
@@ -628,7 +628,7 @@ def test_fiscal_years(client, fake_csv_local_path, monthly_download_data, monkey
         assert expected_file in file_list
 
 
-@pytest.mark.django_db(databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
 def test_award_type(client, fake_csv_local_path, monthly_download_data, monkeypatch):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string(settings.DOWNLOAD_DB_ALIAS))
     call_command(

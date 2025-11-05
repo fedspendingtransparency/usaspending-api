@@ -16,6 +16,7 @@ from usaspending_api.awards.management.sql.spark.unlinked_contracts_file_d1 impo
 from usaspending_api.awards.management.sql.spark.unlinked_awards_summary_file import summary_file
 from usaspending_api.awards.management.sql.spark.unlinked_assistance_file_d2 import file_d2_sql_string
 from usaspending_api.awards.management.sql.spark.unlinked_accounts_file_c import file_c_sql_string
+from usaspending_api.config import CONFIG
 from usaspending_api.download.filestreaming.file_description import build_file_description, save_file_description
 from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_file
 from usaspending_api.references.models.toptier_agency import ToptierAgency
@@ -108,9 +109,10 @@ class Command(BaseCommand):
         # Save queries as delta tables for efficiency
         for delta_table_name, sql_file, final_name in self.download_file_list:
             df = self.spark.sql(sql_file)
-            df.write.format(source="delta").mode(saveMode="overwrite").option("overwriteSchema", "True").saveAsTable(
-                name=delta_table_name
-            )
+            df.write.format(source="delta").mode(saveMode="overwrite").options(
+                overwriteSchema=True,
+                path=f"s3a://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.DELTA_LAKE_S3_PATH}/temp/{delta_table_name}",
+            ).saveAsTable(name=f"temp.{delta_table_name}")
 
         for agency in toptier_agencies:
             agency_name = agency["name"]
@@ -140,7 +142,7 @@ class Command(BaseCommand):
         self.filepaths_to_delete.append(zip_file_path)
 
         for delta_table_name, sql_file, final_name in self.download_file_list:
-            df = self.spark.sql(f"select * from {delta_table_name} where toptier_code = '{self._toptier_code}'")
+            df = self.spark.sql(f"select * from temp.{delta_table_name} where toptier_code = '{self._toptier_code}'")
             sql_file = None
             final_path = self._create_data_csv_dest_path(final_name)
             intermediate_data_file_path = final_path.parent / (final_path.name + "_temp")

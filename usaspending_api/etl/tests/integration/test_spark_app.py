@@ -252,7 +252,7 @@ def test_spark_write_to_s3_delta_from_db(
 
 
 @mark.skipif(
-    settings.DATA_BROKER_DB_ALIAS not in settings.DATABASES,
+    settings.BROKER_DB_ALIAS not in settings.DATABASES,
     reason="'data_broker' database not configured in django settings.DATABASES.",
 )
 @mark.django_db(transaction=True)

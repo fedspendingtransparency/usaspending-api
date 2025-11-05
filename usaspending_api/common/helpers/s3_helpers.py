@@ -13,7 +13,7 @@ from django.conf import settings
 
 from usaspending_api.config import CONFIG
 
-logger = logging.getLogger("script")
+logger = logging.getLogger(__name__)
 
 
 def _get_boto3(method_name: str, *args, region_name=CONFIG.AWS_REGION, **kwargs):
@@ -111,7 +111,9 @@ def download_s3_object(
         s3_client = _get_boto3("client", "s3", region_name=region_name)
     for attempt in range(retry_count + 1):
         try:
+            logger.info(f"Retrieving file from S3. Bucket: {bucket_name} Key: {key}")
             s3_client.download_file(bucket_name, key, file_path)
+            logger.info(f"Saving {key} to: {file_path}")
             return
         except ClientError as e:
             logger.info(
