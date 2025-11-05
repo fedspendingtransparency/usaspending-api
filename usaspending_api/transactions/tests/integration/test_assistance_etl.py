@@ -131,20 +131,20 @@ VALUES
 (E'2018-11-28 20:12:42.541441',E'2018-11-28 20:12:42.541445',89126462,E'20181003',E'A',E'10',E'AGRICULTURAL RISK COVERAGE PROG - COUNTY',E'Redacted due to PII',NULL,E'012',E'12346T',E'12D2',NULL,E'NON',E'P',E'10.112',NULL,NULL,E'12FA00PY58106320',1499,NULL,E'012',E'12346T',E'12D2',NULL,NULL,NULL,E'USA',NULL,NULL,NULL,E'52565',NULL,0,NULL,E'20181003',E'20181003',E'IA40935',E'02',E'USA',NULL,E'52565',3,E'SAI EXEMPT',NULL,E'02',E'1499.00',E'Price Loss Coverage',E'Department of Agriculture (USDA)',E'Farm Service Agency',E'Department of Agriculture (USDA)',E'Farm Service Agency',NULL,E'Van Buren',E'Iowa',E'KEOSAUQUA',E'KEOSAUQUA',E'177',E'Van Buren',E'IA',E'Iowa',E'2018-11-28 20:12:42.540405',E'12D2_12FA00PY58106320_-none-_10.112_-none-',TRUE,E'Deputy Administrator Farm Programs',E'Deputy Administrator Farm Programs',E'40935',NULL,E'UNITED STATES',E'UNITED STATES',E'177',14903,NULL,E'52565',NULL,E'{{individuals}}',E'New',E'direct payment with unrestricted use (retirement, pension, veterans benefits, etc.) (D)',E'Not Recovery Act',E'Individual',NULL,E'Non-Aggregate Record to an Individual Recipient (PII-Redacted)',NULL,NULL,E'ASST_NON_12FA00PY58106320_12D2',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,E'Single ZIP Code',NULL,NULL,NULL,NULL,NULL),
 (E'2017-09-16 23:41:06.101705',E'2017-09-16 23:41:06.101705',46763320,E'09/22/2016',E'C',E'06',E'GRANT PROGRAM',E'Central Carolina Technical College',E'073708414',E'091',NULL,E'9100',E'0008',E'NON',E'06',E'84.063',NULL,0,E'P063P162482',2665,NULL,NULL,NULL,NULL,E'506 N Guignard Dr',NULL,NULL,E'USA',NULL,NULL,NULL,E'29150',E'2468',0,0,E'08/31/2022',E'03/23/2016',E'4570405',E'05',E'USA',NULL,E'291502468',2,E'SAI NOT AVAILABLE',NULL,E'05',E'2665.0',E'PELL',E'Department of Education (ED)',E'Department of Education',NULL,NULL,TRUE,E'Sumter',E'SOUTH CAROLINA',E'SUMTER',E'Sumter',E'085',E'Sumter',E'SC',E'South Carolina',E'2016-10-05 00:00:00',E'9100_P063P162482_-none-_84.063_0008',TRUE,NULL,NULL,E'70405',NULL,E'UNITED STATES',E'UNITED STATES',E'085',NULL,E'SC',E'29150',E'2468',NULL,NULL,NULL,NULL,NULL,NULL,NULL,E'CENTRAL CAROLINA TECHNICAL COLLEGE',E'073708414',E'ASST_NON_P063P162482_9100',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
     """
-    with connections[settings.DATA_BROKER_DB_ALIAS].cursor() as cursor:
+    with connections[settings.BROKER_DB_ALIAS].cursor() as cursor:
         cursor.execute(insert_test_data)
         cursor.execute(f"SELECT COUNT(*) FROM {BROKER_TABLE}")
         assert cursor.fetchall()[0][0] == NUMBER_OF_SOURCE_RECORDS
 
     yield
 
-    with connections[settings.DATA_BROKER_DB_ALIAS].cursor() as cursor:
+    with connections[settings.BROKER_DB_ALIAS].cursor() as cursor:
         cursor.execute(f"TRUNCATE {BROKER_TABLE}")
         cursor.execute(f"SELECT COUNT(*) FROM {BROKER_TABLE}")
         assert cursor.fetchall()[0][0] == 0
 
 
-@pytest.mark.django_db(databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_data_transfer_from_broker(load_broker_data):
     call_command("transfer_assistance_records", "--reload-all")
     table = SourceAssistanceTransaction().table_name
@@ -266,7 +266,7 @@ def test_data_transfer_from_broker(load_broker_data):
         )
 
 
-@pytest.mark.django_db(databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_correction_overwrites_when_afa_casing_is_different(load_broker_data):
     """Verify that if a correction comes in for a FABS record that has the same case-INSENSITIVE afa_generated_unique
     key, but in fact has different letter-casing than the original, that it will STILL replace the record and put its
@@ -302,7 +302,7 @@ VALUES
     (E'2017-09-16 22:22:42.760993','{insert_now_time}',{new_published_fabs_id},E'07/12/2017',E'C',E'06',E'UNKNOWN TITLE',E'Columbus State Community College',NULL,E'091',NULL,E'9100',E'3',E'NON',E'06',E'84.033',E'C',0,E'P033A173267',520000,NULL,E'091',NULL,NULL,E'550 E Spring St',NULL,NULL,E'USA',NULL,NULL,NULL,E'43215',E'1722',0,0,E'08/31/2023',NULL,E'OH18000',E'03',E'USA',NULL,E'432151722',2,NULL,NULL,E'03',E'520000.0',E'Federal Work-Study Program',E'Department of Education (ED)',E'Department of Education',E'EDUCATION, DEPARTMENT OF (9100)',NULL,TRUE,E'Delaware',E'Ohio',E'COLUMBUS',E'Columbus',E'049',E'Franklin',E'OH',E'Ohio',E'2017-07-21 00:00:00','{case_change_afa}',TRUE,NULL,NULL,NULL,NULL,E'UNITED STATES',E'UNITED STATES',E'041',NULL,E'OH',E'43215',E'1722',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,E'ASST_NON_P033A173267_9100',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,E'Single ZIP Code',E'awardee-uei',E'parent-uei',E'funding-opportunity-goals',E'funding-opportunity-number',123456)
     ;
     """
-    with connections[settings.DATA_BROKER_DB_ALIAS].cursor() as cursor:
+    with connections[settings.BROKER_DB_ALIAS].cursor() as cursor:
         cursor.execute(update_fabs_record)
         cursor.execute(insert_corrected_fabs_record)
         cursor.execute(f"SELECT COUNT(*) FROM {BROKER_TABLE}")
@@ -430,7 +430,7 @@ VALUES
 
 
 @override_settings(IS_LOCAL=False)
-@pytest.mark.django_db(databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_delete(load_broker_data):
     # Load initial Broker data into USAspending
     call_command("transfer_assistance_records", "--reload-all")
@@ -475,7 +475,7 @@ def test_delete(load_broker_data):
         WHERE UPPER({transaction_unique_field}) IN %s
     """
 
-    with connections[settings.DATA_BROKER_DB_ALIAS].cursor() as cursor:
+    with connections[settings.BROKER_DB_ALIAS].cursor() as cursor:
         cursor.execute(insert_deleted_transactions)
         cursor.execute(f"SELECT COUNT(*) FROM {BROKER_TABLE}")
         assert cursor.fetchall()[0][0] == NUMBER_OF_SOURCE_RECORDS + 4
