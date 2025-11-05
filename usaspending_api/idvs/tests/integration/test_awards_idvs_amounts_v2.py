@@ -64,7 +64,7 @@ def _test_get(client, _id, expected_response=None, expected_status_code=status.H
 @pytest.mark.django_db
 def test_awards_idvs_amounts_v2(client, _test_data):
     _test_get(client, 1, EXPECTED_GOOD_OUTPUT)
-    _test_get(client, "CONT_IDV_2", EXPECTED_GOOD_OUTPUT)
+    _test_get(client, "CONT_IDV_2_2", EXPECTED_GOOD_OUTPUT)
     try:
         response = client.get("/api/v2/idvs/amounts/3/")
         assert json.loads(response.content.decode("utf-8"))["detail"] == "No IDV award found with this id"
@@ -86,7 +86,7 @@ def test_awards_idvs_amounts_v2(client, _test_data):
 
 @pytest.mark.django_db
 def test_special_characters(client):
-    baker.make("search.AwardSearch", award_id=100, generated_unique_award_id="CONT_IDV_:~$@*\"()#/,^&+=`!'%/_. -_9700")
-    baker.make("awards.ParentAward", award_id=100, generated_unique_award_id="CONT_IDV_:~$@*\"()#/,^&+=`!'%/_. -_9700")
-    response = client.get("/api/v2/idvs/amounts/CONT_IDV_:~$@*\"()%23/,^&+=`!'%/_. -_9700/")
+    baker.make("search.AwardSearch", award_id=100, generated_unique_award_id="CONT_IDV_:~$@*\"()#/,^&+=`!'%/. -_9700")
+    baker.make("awards.ParentAward", award_id=100, generated_unique_award_id="CONT_IDV_:~$@*\"()#/,^&+=`!'%/. -_9700")
+    response = client.get("/api/v2/idvs/amounts/CONT_IDV_:~$@*\"()%23/,^&+=`!'%/. -_9700/")
     assert response.status_code == status.HTTP_200_OK
