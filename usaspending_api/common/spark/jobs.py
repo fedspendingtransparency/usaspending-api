@@ -7,8 +7,9 @@ from typing import TYPE_CHECKING, Generator
 
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.config import Config as DatabricksConfig
-from databricks.sdk.service.jobs import RunLifeCycleState, BaseJob
+from databricks.sdk.service.jobs import BaseJob, RunLifeCycleState
 from django.core.management import call_command
+from duckdb.experimental.spark.sql import SparkSession as DuckDBSparkSession
 
 from usaspending_api.common.spark.configs import LOCAL_EXTENDED_EXTRA_CONF, OPTIONAL_SPARK_HIVE_JAR, SPARK_SESSION_JARS
 
@@ -153,7 +154,7 @@ class LocalStrategy(_AbstractStrategy):
             template_container = client.containers.get("spark-submit")
         except docker.errors.NotFound:
             logger.exception(
-                f"The 'spark-submit' container was not found. Please create this container first via the supported"
+                "The 'spark-submit' container was not found. Please create this container first via the supported"
                 " spark-submit docker compose workflow."
             )
             raise
@@ -203,6 +204,27 @@ class LocalStrategy(_AbstractStrategy):
             logger.exception(f"Failed on command: {command_name} {' '.join(command_options)}")
             raise
         return run_details
+
+
+class DuckDBStrategy(_AbstractStrategy):
+    @property
+    def name(self) -> str:
+        return "DUCKDB"
+
+    @staticmethod
+    @contextmanager
+    def _get_spark_session() -> Generator["SparkSession", None, None]:
+        spark = DuckDBSparkSession.builder.getOrCreate()
+        yield spark
+        spark.stop()
+
+    def handle_start(self, job_name: str, command_name: str, command_options: list[str], **kwargs) -> None:
+        try:
+            with self._get_spark_session():
+                call_command(command_name, *command_options)
+        except Exception:
+            logger.exception(f"Failed on command: {command_name} {' '.join(command_options)}")
+            raise
 
 
 class SparkJobs:
