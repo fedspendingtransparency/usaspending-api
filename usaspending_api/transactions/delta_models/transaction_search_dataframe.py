@@ -1549,6 +1549,93 @@ class AwardSearch(AbstractSearch):
                 self.awards.total_indirect_federal_sharing,
                 self.awards.base_and_all_options_value,
                 self.awards.non_federal_funding_amount,
+                self.generated_recipient_hash.alias("recipient_hash"),
+                self.recipient_hash_and_levels.recipient_levels,
+                sf.upper(
+                    sf.coalesce(
+                        self.recipient_lookup.legal_business_name,
+                        self.transaction_fpds.awardee_or_recipient_legal,
+                        self.transaction_fabs.awardee_or_recipient_legal,
+                    )
+                ).alias("recipient_name"),
+                sf.upper(
+                    sf.coalesce(
+                        self.transaction_fpds.awardee_or_recipient_legal,
+                        self.transaction_fabs.awardee_or_recipient_legal,
+                    )
+                ).alias("raw_recipient_name"),
+                sf.coalesce(
+                    self.transaction_fpds.awardee_or_recipient_uniqu, self.transaction_fabs.awardee_or_recipient_uniqu
+                ).alias("recipient_unique_id"),
+                sf.coalesce(
+                    self.transaction_fpds.ultimate_parent_unique_ide, self.transaction_fabs.ultimate_parent_unique_ide
+                ).alias("parent_recipient_unique_id"),
+                sf.coalesce(self.transaction_fpds.awardee_or_recipient_uei, self.transaction_fabs.uei).alias(
+                    "recipient_uei"
+                ),
+                sf.coalesce(self.transaction_fpds.ultimate_parent_uei, self.transaction_fabs.ultimate_parent_uei).alias(
+                    "parent_uei"
+                ),
+                sf.coalesce(
+                    self.transaction_fpds.ultimate_parent_legal_enti, self.transaction_fabs.ultimate_parent_legal_enti
+                ).alias("parent_recipient_name"),
+                self.transaction_normalized.business_categories,
+                self.awards.total_subaward_amount,
+                self.awards.subaward_count,
+                self.transaction_normalized.action_date,
+                self.transaction_normalized.fiscal_year,
+                self.transaction_normalized.last_modified_date,
+                self.awards.period_of_performance_state_date,
+                self.awards.period_of_performance_current_end_date,
+                self.awards.date_signed,
+                self.transaction_fpds.ordering_period_end_date,
+                sf.coalesce(self.transaction_fabs.original_loan_subsidy_cost, sf.lit(0)).alias(
+                    "original_loan_subsidy_cost"
+                ),
+                sf.coalesce(self.transaction_fabs.face_value_guarantee, sf.lit(0)).alias("face_value_loan_guarantee"),
+                self.transaction_normalized.awarding_agency_id,
+                self.transaction_normalized.funding_agency_id,
+                self.awarding_toptier_agency.name.alias("awarding_toptier_agency_name"),
+                self.funding_toptier_agency.name.alias("funding_toptier_agency_name"),
+                self.awarding_subtier_agency.name.alias("awarding_subtier_agency_name"),
+                self.funding_subtier_agency.name.alias("funding_subtier_agency_name"),
+                sf.coalesce(
+                    self.transaction_fabs.awarding_agency_name, self.transaction_fpds.awarding_agency_name
+                ).alias("awarding_toptier_agency_name_raw"),
+                sf.coalesce(self.transaction_fabs.funding_agency_name, self.transaction_fpds.funding_agency_name).alias(
+                    "funding_toptier_agency_name_raw"
+                ),
+                sf.coalesce(
+                    self.transaction_fabs.awarding_sub_tier_agency_n, self.transaction_fpds.awarding_sub_tier_agency_n
+                ).alias("awarding_subtier_agency_name_raw"),
+                sf.coalesce(
+                    self.transaction_fabs.funding_sub_tier_agency_na, self.transaction_fpds.funding_sub_tier_agency_na
+                ).alias("funding_subtier_agency_name_raw"),
+                self.awarding_toptier_agency.toptier_code.alias("awarding_toptier_agency_code"),
+                self.funding_toptier_agency.toptier_code.alias("funding_toptier_agency_code"),
+                self.awarding_subtier_agency.toptier_code.alias("awarding_subtier_agency_code"),
+                self.funding_subtier_agency.toptier_code.alias("funding_subtier_agency_code"),
+                sf.coalesce(
+                    self.transaction_fabs.awarding_agency_code, self.transaction_fpds.awarding_agency_code
+                ).alias("awarding_toptier_agency_code_raw"),
+                sf.coalesce(self.transaction_fabs.funding_agency_code, self.transaction_fpds.funding_agency_code).alias(
+                    "funding_toptier_agency_code_raw"
+                ),
+                sf.coalesce(
+                    self.transaction_fabs.awarding_sub_tier_agency_c, self.transaction_fpds.awarding_sub_tier_agency_c
+                ).alias("awarding_subtier_agency_code_raw"),
+                sf.coalesce(
+                    self.transaction_fabs.funding_sub_tier_agency_co, self.transaction_fpds.funding_sub_tier_agency_co
+                ).alias("funding_subtier_agency_code_raw"),
+                self.funding_agency_id.id.alias("funding_toptier_agency_id"),
+                self.transaction_normalized.funding_agency_id.alias("funding_subtier_agency_id"),
+                self.awards.fpds_agency_id,
+                self.awards.fpds_parent_agency_id,
+                sf.coalesce(
+                    self.transaction_fpds.legal_entity_country_code,
+                    self.transaction_fabs.legal_entity_country_code,
+                    sf.lit("USA"),
+                ).alias("recipient_location_country_code"),
             )
             .withColumn("merge_hash_key", sf.xxhash64("*"))
         )
