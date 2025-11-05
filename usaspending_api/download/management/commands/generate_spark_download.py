@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import time
 import traceback
 from dataclasses import dataclass
 from enum import Enum
@@ -67,6 +68,7 @@ class Command(BaseCommand):
     working_dir_path: Path
     columns: list | None
     use_duckdb: bool
+    start_time: time.time
 
     def add_arguments(self, parser):
         parser.add_argument("--download-job-id", type=int, required=True)
@@ -74,6 +76,8 @@ class Command(BaseCommand):
         parser.add_argument("--use-duckdb", action="store_true")
 
     def handle(self, *args, **options):
+        self.start_time = time.time()
+
         configure_logging(service_name="usaspending-downloader-" + TRACE_ENV)
         self.should_cleanup = not options["skip_local_cleanup"]
         self.download_job = self.get_download_job(options["download_job_id"])
@@ -278,6 +282,7 @@ class Command(BaseCommand):
         self.download_job.job_status_id = JOB_STATUS_DICT["finished"]
         self.download_job.save()
         logger.info(f"Finished processing DownloadJob {self.download_job.download_job_id}")
+        logger.info(f"Download generation took {(time.time() - self.start_time):3f} seconds")
 
     def cleanup(self, path_list: list[Union[Path, str]]) -> None:
         for path in path_list:
