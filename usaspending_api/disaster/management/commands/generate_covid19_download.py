@@ -8,7 +8,7 @@ from django.utils.functional import cached_property
 from pathlib import Path
 from usaspending_api.common.etl.spark import create_ref_temp_views
 
-from usaspending_api.common.helpers.s3_helpers import upload_download_file_to_s3
+from usaspending_api.common.helpers.s3_helpers import download_s3_object, upload_download_file_to_s3
 from usaspending_api.common.helpers.spark_helpers import configure_spark_session, get_active_spark_session
 from usaspending_api.common.helpers.sql_helpers import read_sql_file_to_text
 from usaspending_api.common.helpers.download_csv_strategies import (
@@ -67,7 +67,6 @@ class Command(BaseCommand):
                 "disaster_covid19_file_f_grants": "usaspending_api/disaster/management/sql/disaster_covid19_file_f_grants.sql",
             },
             "download_to_csv_strategy": PostgresToCSVStrategy(logger=logger),
-            "readme_path": Path(settings.COVID19_DOWNLOAD_README_FILE_PATH),
         },
         ComputeTypeEnum.SPARK.value: {
             "source_sql_strategy": {
@@ -79,7 +78,6 @@ class Command(BaseCommand):
                 "disaster_covid19_file_f_grants": f_grants_sql_string,
             },
             "download_to_csv_strategy": SparkToCSVStrategy(logger=logger),
-            "readme_path": Path(CONFIG.SPARK_COVID19_DOWNLOAD_README_FILE_PATH),
         },
     }
 
@@ -119,7 +117,6 @@ class Command(BaseCommand):
                 self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)
             create_ref_temp_views(self.spark)
 
-        self.readme_path = self.compute_types[self.compute_type_arg]["readme_path"]
         self.download_csv_strategy = self.compute_types[self.compute_type_arg]["download_to_csv_strategy"]
         self.download_source_sql = self.compute_types[self.compute_type_arg]["source_sql_strategy"]
         self.zip_file_path = (
@@ -210,13 +207,16 @@ class Command(BaseCommand):
             path.unlink()
 
     def finalize_zip_contents(self):
-        self.filepaths_to_delete.append(self.working_dir_path / "Data_Dictionary_Crosswalk.xlsx")
+        # Handle the data dictionary
+        self.filepaths_to_delete.append(self.working_dir_path / settings.DATA_DICTIONARY_FILE_NAME)
+        add_data_dictionary_to_zip(str(self.working_dir_path), str(self.zip_file_path))
 
-        add_data_dictionary_to_zip(str(self.zip_file_path.parent), str(self.zip_file_path))
-
-        file_description = build_file_description(str(self.readme_path), dict())
+        # Handle the COVID-19 readme
+        covid_readme_path = self.working_dir_path / CONFIG.COVID19_DOWNLOAD_README_FILE_NAME
+        download_s3_object(CONFIG.SPARK_S3_BUCKET, CONFIG.COVID19_DOWNLOAD_README_OBJECT_KEY, str(covid_readme_path))
+        file_description = build_file_description(str(covid_readme_path), dict())
         file_description_path = save_file_description(
-            str(self.zip_file_path.parent), self.readme_path.name, file_description
+            str(self.working_dir_path), covid_readme_path.name, file_description
         )
         self.filepaths_to_delete.append(Path(file_description_path))
         append_files_to_zip_file([file_description_path], str(self.zip_file_path))

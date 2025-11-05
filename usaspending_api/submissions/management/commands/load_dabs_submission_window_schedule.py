@@ -145,7 +145,7 @@ class Command(BaseCommand):
     def generate_schedules_from_broker(self):
 
         logger.info("Creating broker cursor")
-        broker_cursor = connections[settings.DATA_BROKER_DB_ALIAS].cursor()
+        broker_cursor = connections[settings.BROKER_DB_ALIAS].cursor()
 
         logger.info("Running MONTH_SCHEDULE_SQL")
         broker_cursor.execute(MONTH_SCHEDULE_SQL)

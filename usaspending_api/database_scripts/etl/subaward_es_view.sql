@@ -118,7 +118,7 @@ SELECT
     a.disaster_emergency_fund_codes,
     a.recipient_hash,
     a.parent_uei,
-    s.program_activities::JSON,
+    CAST(s.program_activities AS VARCHAR(65535)) AS program_activities,
     s.prime_award_recipient_id,
     a.tas_paths,
     a.tas_components,
