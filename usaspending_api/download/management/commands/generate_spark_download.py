@@ -10,12 +10,13 @@ from typing import Literal, Optional, TypeVar, Union
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils.functional import cached_property
+from duckdb.experimental.spark.sql import SparkSession as DuckDBSparkSession
 from opentelemetry.trace import SpanKind
 from pyspark.sql import SparkSession
 
 from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers.download_csv_strategies import SparkToCSVStrategy
+from usaspending_api.common.helpers.download_csv_strategies import DuckDBToCSVStrategy, SparkToCSVStrategy
 from usaspending_api.common.helpers.s3_helpers import upload_download_file_to_s3
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
@@ -27,10 +28,10 @@ from usaspending_api.common.tracing import SubprocessTrace
 from usaspending_api.download.delta_downloads.abstract_downloads.base_download import AbstractDownload
 from usaspending_api.download.delta_downloads.account_balances import AccountBalancesDownloadFactory
 from usaspending_api.download.delta_downloads.award_financial import AwardFinancialDownloadFactory
+from usaspending_api.download.delta_downloads.filters.account_filters import AccountDownloadFilters
 from usaspending_api.download.delta_downloads.object_class_program_activity import (
     ObjectClassProgramActivityDownloadFactory,
 )
-from usaspending_api.download.delta_downloads.filters.account_filters import AccountDownloadFilters
 from usaspending_api.download.lookups import FILE_FORMATS, JOB_STATUS_DICT, JOB_STATUS_DICT_BY_ID
 from usaspending_api.download.models import DownloadJob
 from usaspending_api.settings import TRACE_ENV
@@ -56,7 +57,6 @@ class DownloadRequest:
 
 
 class Command(BaseCommand):
-
     help = "Generate a download zip file based on the provided type and level."
 
     download_job: DownloadJob
@@ -66,14 +66,23 @@ class Command(BaseCommand):
     spark: SparkSession
     working_dir_path: Path
     columns: list | None
+    use_duckdb: bool
 
     def add_arguments(self, parser):
         parser.add_argument("--download-job-id", type=int, required=True)
         parser.add_argument("--skip-local-cleanup", action="store_true")
+        parser.add_argument("--use-duckdb", action="store_true")
 
     def handle(self, *args, **options):
         configure_logging(service_name="usaspending-downloader-" + TRACE_ENV)
-        self.spark, spark_created_by_command = self.setup_spark_session()
+        self.use_duckdb = options["use_duckdb"]
+
+        if options["use_duckdb"]:
+            self.spark: DuckDBSparkSession = DuckDBSparkSession.builder.getOrCreate()
+            spark_created_by_command = False
+        else:
+            self.spark, spark_created_by_command = self.setup_spark_session()
+
         self.should_cleanup = not options["skip_local_cleanup"]
         self.download_job = self.get_download_job(options["download_job_id"])
         self.download_json_request = json.loads(self.download_job.json_request)
@@ -131,7 +140,7 @@ class Command(BaseCommand):
                     "service": "spark",
                     "span_type": "Internal",
                     "job_type": str(JOB_TYPE),
-                    "message": f"Processing spark account download.",
+                    "message": "Processing spark account download.",
                     # download job details
                     "download_job_id": str(self.download_job.download_job_id),
                     "download_job_status": str(self.download_job.job_status.name),
@@ -152,7 +161,9 @@ class Command(BaseCommand):
         self.start_download()
         files_to_cleanup = []
         try:
-            spark_to_csv_strategy = SparkToCSVStrategy(logger)
+            spark_to_csv_strategy = (
+                DuckDBToCSVStrategy(logger, self.spark) if self.use_duckdb else SparkToCSVStrategy(logger)
+            )
             zip_file_path = self.working_dir_path / f"{self.download_zip_file_name}.zip"
             download_request = self.get_download_request()
             if self.columns is not None:

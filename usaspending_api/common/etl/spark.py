@@ -6,11 +6,15 @@ functions for setup and configuration of the spark environment
 """
 
 import logging
+import os
 import time
 from collections import namedtuple
 from itertools import chain
 from typing import List
 
+import duckdb
+from duckdb.experimental.spark.sql import SparkSession as DuckDBSparkSession
+from duckdb.experimental.spark.sql.dataframe import DataFrame as DuckDBDataFrame
 from py4j.protocol import Py4JError
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql.functions import col, concat, concat_ws, expr, lit, regexp_replace, to_date, transform, when
@@ -47,6 +51,7 @@ from usaspending_api.references.models import (
     ZipsGrouped,
 )
 from usaspending_api.reporting.models import ReportingAgencyMissingTas, ReportingAgencyOverview
+from usaspending_api.settings import CSV_LOCAL_PATH, IS_LOCAL
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule, SubmissionAttributes
 
 MAX_PARTITIONS = CONFIG.SPARK_MAX_PARTITIONS
@@ -97,7 +102,6 @@ def extract_db_data_frame(
     is_date_partitioning_col: bool = False,
     custom_schema: StructType = None,
 ) -> DataFrame:
-
     logger.info(f"Getting partition bounds using SQL:\n{min_max_sql}")
 
     data_df = None
@@ -427,7 +431,7 @@ def diff(
     cols_to_show = (
         ["diff"]
         + [f"l.{unique_key_col}", f"r.{unique_key_col}"]
-        + list(chain(*zip([f"l.{c}" for c in compare_cols], [f"r.{c}" for c in compare_cols])))
+        + list(chain(*zip([f"l.{c}" for c in compare_cols], [f"r.{c}" for c in compare_cols], strict=False)))
     )
     differences = differences.select(*cols_to_show)
     if not include_unchanged_rows:
@@ -555,7 +559,7 @@ def _generate_global_view_sql_strings(tables: List[str], jdbc_url: str) -> List[
     return sql_strings
 
 
-def create_ref_temp_views(spark: SparkSession, create_broker_views: bool = False):
+def create_ref_temp_views(spark: SparkSession | DuckDBSparkSession, create_broker_views: bool = False):
     """Create global temporary Spark reference views that sit atop remote PostgreSQL RDS tables
     Setting create_broker_views to True will create views for all tables list in _BROKER_REF_TABLES
     Note: They will all be listed under global_temp.{table_name}
@@ -563,23 +567,96 @@ def create_ref_temp_views(spark: SparkSession, create_broker_views: bool = False
 
     # Create USAS temp views
     rds_ref_tables = build_ref_table_name_list()
-    rds_sql_strings = _generate_global_view_sql_strings(
-        tables=rds_ref_tables,
-        jdbc_url=get_usas_jdbc_url(),
-    )
     logger.info(f"Creating the following tables under the global_temp database: {rds_ref_tables}")
-    for sql_statement in rds_sql_strings:
-        spark.sql(sql_statement)
 
-    # Create Broker temp views
-    if create_broker_views:
-        broker_sql_strings = _generate_global_view_sql_strings(
-            tables=_BROKER_REF_TABLES,
-            jdbc_url=get_broker_jdbc_url(),
-        )
-        logger.info(f"Creating the following Broker tables under the global_temp database: {_BROKER_REF_TABLES}")
-        for sql_statement in broker_sql_strings:
-            spark.sql(sql_statement)
+    match type(spark) is DuckDBSparkSession:
+        case True:
+            logger.info("Creating ref temp views using DuckDB")
+
+            # DuckDB will prepend the HTTP or HTTPS so we need to strip it from the AWS endpoint URL
+            if os.getenv("AWS_ENDPOINT_URL") and "://" in os.getenv("AWS_ENDPOINT_URL"):
+                endpoint_url = os.getenv("AWS_ENDPOINT_URL").split("://")[1]
+            else:
+                endpoint_url = os.getenv("AWS_ENDPOINT_URL", f"s3.{os.getenv('AWS_DEFAULT_REGION')}.amazonaws.com")
+
+            spark.sql(f"""
+                CREATE OR REPLACE SECRET (
+                    TYPE s3,
+                    PROVIDER credential_chain,
+                    CHAIN 'config;env',
+                    KEY_ID '{os.getenv("AWS_ACCESS_KEY_ID")}',
+                    SECRET '{os.getenv("AWS_SECRET_ACCESS_KEY")}',
+                    REGION '{os.getenv("AWS_DEFAULT_REGION")}',
+                    ENDPOINT '{endpoint_url}',
+                    USE_SSL {"false" if IS_LOCAL else "true"},
+                    URL_STYLE 'path'
+                )
+            """)
+
+            _download_delta_tables = [
+                {"schema": "rpt", "table_name": "account_balances_download"},
+                {"schema": "rpt", "table_name": "object_class_program_activity_download"},
+            ]
+
+            # The DuckDB Delta extension is needed to interact with DeltaLake tables
+            spark.sql("LOAD delta;")
+            spark.sql("CREATE SCHEMA IF NOT EXISTS rpt;")
+            for table in _download_delta_tables:
+                try:
+                    spark.sql(f"""
+                        CREATE OR REPLACE TABLE {table["schema"]}.{table["table_name"]} AS
+                        SELECT * FROM delta_scan('s3://{CONFIG.SPARK_S3_BUCKET}/data/delta/{table["schema"]}/{table["table_name"]}');
+                    """)
+                    logger.info(f"Successfully created table {table['schema']}.{table['table_name']}")
+                except duckdb.IOException:
+                    logger.error(f"Failed to create table {table['table_name']}")
+
+            # The DuckDB Postgres extension is needed to connect to the USAS Postgres DB
+            spark.sql("LOAD postgres;")
+            spark.sql(f"ATTACH '{CONFIG.DATABASE_URL}' AS usas (TYPE postgres, READ_ONLY);")
+            spark.sql("CREATE SCHEMA IF NOT EXISTS global_temp;")
+
+            for table in rds_ref_tables:
+                try:
+                    spark.sql(f"CREATE OR REPLACE VIEW global_temp.{table} AS SELECT * FROM usas.public.{table};")
+                except duckdb.CatalogException:
+                    logger.error(f"Failed to create view {table} for {table}")
+
+            if create_broker_views:
+                spark.sql(f"""
+                    ATTACH '{CONFIG.DATA_BROKER_DATABASE_URL}' AS broker (TYPE postgres, READ_ONLY);
+                """)
+                logger.info(
+                    f"Creating the following Broker tables under the global_temp database: {_BROKER_REF_TABLES}"
+                )
+                for table in _BROKER_REF_TABLES:
+                    try:
+                        spark.sql(f"CREATE OR REPLACE VIEW global_temp.{table} AS SELECT * FROM broker.public.{table};")
+                    except duckdb.CatalogException:
+                        logger.error(f"Failed to create view {table} for {table}")
+        case False:
+            logger.info("Creating ref temp views using Spark")
+
+            rds_sql_strings = _generate_global_view_sql_strings(
+                tables=rds_ref_tables,
+                jdbc_url=get_usas_jdbc_url(),
+            )
+
+            for sql_statement in rds_sql_strings:
+                spark.sql(sql_statement)
+
+            if create_broker_views:
+                broker_sql_strings = _generate_global_view_sql_strings(
+                    tables=_BROKER_REF_TABLES,
+                    jdbc_url=get_broker_jdbc_url(),
+                )
+                logger.info(
+                    f"Creating the following Broker tables under the global_temp database: {_BROKER_REF_TABLES}"
+                )
+                for sql_statement in broker_sql_strings:
+                    spark.sql(sql_statement)
+        case _:
+            raise RuntimeError(f"Unsupported spark session type: {type(spark)}")
 
     logger.info("Created the reference views in the global_temp database")
 
@@ -596,9 +673,9 @@ def write_csv_file(
 ) -> int:
     """Write DataFrame data to CSV file parts.
     Args:
-        spark: passed-in active SparkSession
-        df: the DataFrame wrapping the data source to be dumped to CSV.
-            parts_dir: Path to dir that will contain the outputted parts files from partitions
+        spark: Ppassed-in active SparkSession
+        df: The DataFrame wrapping the data source to be dumped to CSV.
+        parts_dir: Path to dir that will contain the outputted parts files from partitions
         num_partitions: Indicates the number of partitions to use when writing the Dataframe
         overwrite: Whether to replace the file CSV files if they already exist by that name
         max_records_per_file: Suggestion to Spark of how many records to put in each written CSV file part,
@@ -634,6 +711,74 @@ def write_csv_file(
     logger.info(f"{parts_dir} contains {df_record_count:,} rows of data")
     logger.info(f"Wrote source data DataFrame to csv part files in {(time.time() - start):3f}s")
     return df_record_count
+
+
+def write_csv_file_duckdb(
+    df: DuckDBDataFrame,
+    download_file_name: str,
+    temp_csv_directory_path: str = CSV_LOCAL_PATH,
+    max_records_per_file: int = EXCEL_ROW_LIMIT,
+    logger=None,
+    delimiter=",",
+) -> tuple[int, list[str] | list]:
+    """Write DataFrame data to CSV file parts.
+    Args:
+        df: The DataFrame wrapping the data source to be dumped to CSV.
+        download_file_name: Name of the download being generated.
+        temp_csv_directory_path: Directory that will contain the individual CSV files before zipping.
+            Defaults to CSV_LOCAL_PATH
+        max_records_per_file: Max number of records to put in each written CSV file.
+            Defaults to EXCEL_ROW_LIMIT
+        logger: Logging instance to use.
+            Defaults to None
+        delimiter: Charactor used to separate columns in the CSV
+            Defaults to ","
+    Returns:
+        record count of the DataFrame that was used to populate the CSV file(s)
+        list of full path(s) to the temp CSV file(s)
+    """
+
+    # Convert the Spark DataFrame to a DuckDBPyRelation type to take advantage of the built-in functions
+    _pandas_df = df.toPandas()
+    rel = duckdb.sql("SELECT * FROM _pandas_df;")
+
+    # Add a `file_index` column specifying which file each row belongs in so that no file exceeds
+    #   the `max_records_per_file` limit
+    # NOTE: This isn't perfect and sometimes partitions more than `max_records_per_file` rows
+    indexed_query = f"""
+    WITH indexed_data AS (
+        SELECT
+            *,
+            CAST((ROW_NUMBER() OVER () - 1) / {max_records_per_file} AS integer) AS file_index
+        FROM
+            df_view
+    )
+    SELECT * FROM indexed_data
+    """
+
+    start = time.time()
+    df_record_count = df.count()
+
+    file_numbers = sorted(
+        [row[0] for row in duckdb.sql(f"SELECT DISTINCT file_index FROM ({indexed_query});").fetchall()]
+    )
+    full_file_paths = []
+
+    logger.info(f"Writing source data DataFrame to csv files for file {download_file_name}")
+    for index in file_numbers:
+        duckdb.sql(f"SELECT {', '.join(df.columns)} FROM ({indexed_query}) WHERE file_index = {index};").to_csv(
+            file_name=f"{temp_csv_directory_path}{download_file_name}_{index}.csv",
+            sep=delimiter,
+            timestamp_format=CONFIG.SPARK_CSV_TIMEZONE_FORMAT,
+            escapechar='"',
+            header=True,
+            per_thread_output=False,
+        )
+        full_file_paths.append(f"{CSV_LOCAL_PATH}{download_file_name}_{index}.csv")
+
+    logger.info(f"{CSV_LOCAL_PATH}{download_file_name} contains {df_record_count:,} rows of data")
+    logger.info(f"Wrote source data DataFrame to csv part files in {(time.time() - start):3f}s")
+    return df_record_count, full_file_paths
 
 
 def hadoop_copy_merge(
@@ -682,9 +827,7 @@ def hadoop_copy_merge(
 
     # Don't delete first if disallowing overwrite.
     if not overwrite and fs.exists(file_path):
-        raise Py4JError(
-            spark._jvm.org.apache.hadoop.fs.FileAlreadyExistsException(f"{str(file_path)} " f"already exists")
-        )
+        raise Py4JError(spark._jvm.org.apache.hadoop.fs.FileAlreadyExistsException(f"{str(file_path)} already exists"))
     part_files = []
 
     for f in fs.listStatus(parts_dir_path):
