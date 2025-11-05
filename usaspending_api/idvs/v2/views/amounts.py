@@ -111,20 +111,24 @@ def fetch_idv_child_outlays(award_id: int, award_id_column) -> dict:
     award_id_piid = award_id
     if award_id_column != "award_id":
         award_id = re.sub(r"[']", r"''", award_id)
-        award_id_piid = re.search(r'^[^_]*_[^_]*_([^_]+)', award_id)
+        award_id_piid = re.search(r"^[^_]*_[^_]*_([^_]+)", award_id)
         if award_id_piid:
             award_id_piid = award_id_piid.group(1)
 
     sql = """
         with child_cte (award_id) as ({child_sql})
-        SELECT sum(total_outlays) as total_outlay from award_search where parent_award_piid in
-        (SELECT DISTINCT parent_award_piid from award_search where generated_unique_award_id::text like '%{award_id}%')
+        SELECT sum(total_outlays) as total_outlay from award_search where parent_award_piid = '{award_id}'
         """
     child_results = execute_sql_to_ordered_dictionary(
-        sql.format(award_id=award_id_piid,child_sql=child_award_sql.format(award_id=award_id, award_id_column=award_id_column))
+        sql.format(
+            award_id=award_id_piid, child_sql=child_award_sql.format(award_id=award_id, award_id_column=award_id_column)
+        )
     )
     grandchild_results = execute_sql_to_ordered_dictionary(
-        sql.format(award_id=award_id_piid,child_sql=grandchild_award_sql.format(award_id=award_id, award_id_column=award_id_column))
+        sql.format(
+            award_id=award_id_piid,
+            child_sql=grandchild_award_sql.format(award_id=award_id, award_id_column=award_id_column),
+        )
     )
     if len(child_results) == 0:
         child_results = None
