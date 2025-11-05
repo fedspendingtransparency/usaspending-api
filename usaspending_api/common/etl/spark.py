@@ -12,7 +12,6 @@ from collections import namedtuple
 from itertools import chain
 from typing import List
 
-from py4j.protocol import Py4JError
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql.functions import col, concat, concat_ws, expr, lit, regexp_replace, to_date, transform, when
 from pyspark.sql.types import ArrayType, DecimalType, StringType, StructType
@@ -634,110 +633,6 @@ def write_csv_file(
     logger.info(f"{parts_dir} contains {df_record_count:,} rows of data")
     logger.info(f"Wrote source data DataFrame to csv part files in {(time.time() - start):3f}s")
     return df_record_count
-
-
-def hadoop_copy_merge(
-    spark: SparkSession,
-    parts_dir: str,
-    header: str,
-    part_merge_group_size: int,
-    logger=None,
-    file_format="csv",
-) -> List[str]:
-    """PySpark impl of Hadoop 2.x copyMerge() (deprecated in Hadoop 3.x)
-    Merges files from a provided input directory and then redivides them
-        into multiple files based on merge group size.
-    Args:
-        spark: passed-in active SparkSession
-        parts_dir: Path to the dir that contains the input parts files. The parts dir name
-            determines the name of the merged files. Parts_dir cannot have a trailing slash.
-        header: A comma-separated list of field names, to be placed as the first row of every final CSV file.
-            Individual part files must NOT therefore be created with their own header.
-        part_merge_group_size: Final CSV data will be subdivided into numbered files. This indicates how many part files
-            should be combined into a numbered file.
-        logger: The logger to use. If one note provided (e.g. to log to console or stdout) the underlying JVM-based
-            Logger will be extracted from the ``spark`` ``SparkSession`` and used as the logger.
-        file_format: The format of the part files and the format of the final merged file, e.g. "csv"
-
-    Returns:
-        A list of file paths where each element in the list denotes a path to
-            a merged file that was generated during the copy merge.
-    """
-    overwrite = True
-    hadoop = spark.sparkContext._jvm.org.apache.hadoop
-    conf = spark.sparkContext._jsc.hadoopConfiguration()
-
-    # Guard against incorrectly formatted argument value
-    parts_dir = parts_dir.rstrip("/")
-
-    parts_dir_path = hadoop.fs.Path(parts_dir)
-
-    fs = parts_dir_path.getFileSystem(conf)
-
-    if not fs.exists(parts_dir_path):
-        raise ValueError("Source directory {} does not exist".format(parts_dir))
-
-    file = parts_dir
-    file_path = hadoop.fs.Path(file)
-
-    # Don't delete first if disallowing overwrite.
-    if not overwrite and fs.exists(file_path):
-        raise Py4JError(spark._jvm.org.apache.hadoop.fs.FileAlreadyExistsException(f"{str(file_path)} already exists"))
-    part_files = []
-
-    for f in fs.listStatus(parts_dir_path):
-        if f.isFile():
-            # Sometimes part files can be empty, we need to ignore them
-            if f.getLen() == 0:
-                continue
-            file_path = f.getPath()
-            if file_path.getName().startswith("_"):
-                logger.debug(f"Skipping non-part file: {file_path.getName()}")
-                continue
-            logger.debug(f"Including part file: {file_path.getName()}")
-            part_files.append(f.getPath())
-    if not part_files:
-        logger.warning("Source directory is empty with no part files. Attempting creation of file with CSV header only")
-        out_stream = None
-        try:
-            merged_file_path = f"{parts_dir}.{file_format}"
-            out_stream = fs.create(hadoop.fs.Path(merged_file_path), overwrite)
-            out_stream.writeBytes(header + "\n")
-        finally:
-            if out_stream is not None:
-                out_stream.close()
-        return [merged_file_path]
-
-    part_files.sort(key=lambda f: str(f))  # put parts in order by part number for merging
-    paths_to_merged_files = []
-    for parts_file_group in _merge_grouper(part_files, part_merge_group_size):
-        part_suffix = f"_{str(parts_file_group.part).zfill(2)}" if parts_file_group.part else ""
-        partial_merged_file = f"{parts_dir}.partial{part_suffix}"
-        partial_merged_file_path = hadoop.fs.Path(partial_merged_file)
-        merged_file_path = f"{parts_dir}{part_suffix}.{file_format}"
-        paths_to_merged_files.append(merged_file_path)
-        # Make path a hadoop path because we are working with a hadoop file system
-        merged_file_path = hadoop.fs.Path(merged_file_path)
-        if overwrite and fs.exists(merged_file_path):
-            fs.delete(merged_file_path, True)
-        out_stream = None
-        try:
-            if fs.exists(partial_merged_file_path):
-                fs.delete(partial_merged_file_path, True)
-            out_stream = fs.create(partial_merged_file_path)
-            out_stream.writeBytes(header + "\n")
-            _merge_file_parts(fs, out_stream, conf, hadoop, partial_merged_file_path, parts_file_group.file_list)
-        finally:
-            if out_stream is not None:
-                out_stream.close()
-        try:
-            fs.rename(partial_merged_file_path, merged_file_path)
-        except Exception:
-            if fs.exists(partial_merged_file_path):
-                fs.delete(partial_merged_file_path, True)
-            logger.exception("Exception encountered. See logs")
-            raise
-    return paths_to_merged_files
 
 
 def _merge_file_parts(fs, out_stream, conf, hadoop, partial_merged_file_path, part_file_list):
