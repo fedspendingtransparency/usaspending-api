@@ -63,7 +63,7 @@ class Command(BaseCommand):
             f'Copying "{broker_schema_name}"."{broker_table_name}" from Broker to '
             f'"{usas_schema_name}"."{usas_table_name}" in USAspending.'
         )
-        broker_conn = connections[settings.DATA_BROKER_DB_ALIAS]
+        broker_conn = connections[settings.BROKER_DB_ALIAS]
         usas_conn = connections[settings.DEFAULT_DB_ALIAS]
         table_exists_query = f"""
             SELECT EXISTS (
