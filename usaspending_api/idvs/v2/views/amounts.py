@@ -111,21 +111,25 @@ def fetch_idv_child_outlays(award_id: int, award_id_column) -> dict:
     award_id_piid = award_id
     if award_id_column != "award_id":
         award_id = re.sub(r"[']", r"''", award_id)
-        _, _, award_id_piid, _ = award_id.split("_")
+        parts = award_id.split("_")
+        if len(parts) >= 3:
+            award_id_piid = parts[2]
 
     sql = """
+        with child_cte (award_id) as ({child_sql})
         SELECT  sum(total_outlays) as total_outlay FROM rpt.award_search 
+        INNER JOIN child_cte ON child_cte.award_id = award_search.award_id
         WHERE parent_award_piid = '{award_id_piid}' OR parent_award_piid IN
         (SELECT piid FROM rpt.award_search WHERE parent_award_piid = '{award_id_piid}' AND category='idv')
         """
     child_results = execute_sql_to_ordered_dictionary(
         sql.format(
-            award_id_piid=award_id_piid, child_sql=child_award_sql.format(award_id=award_id, award_id_column=award_id_column)
+            award_id_piid=award_id_piid, award_id_column=award_id_column, award_id=award_id, child_sql=child_award_sql.format(award_id=award_id, award_id_column=award_id_column)
         )
     )
     grandchild_results = execute_sql_to_ordered_dictionary(
         sql.format(
-            award_id_piid=award_id_piid,
+            award_id_piid=award_id_piid, award_id=award_id, award_id_column=award_id_column,
             child_sql=grandchild_award_sql.format(award_id=award_id, award_id_column=award_id_column),
         )
     )
