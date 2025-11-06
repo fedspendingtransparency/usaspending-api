@@ -593,7 +593,7 @@ def create_ref_temp_views(spark: SparkSession | DuckDBSparkSession, create_broke
                 CREATE OR REPLACE SECRET (
                     TYPE s3,
                     PROVIDER credential_chain,
-                    CHAIN 'config;env',
+                    CHAIN 'env;config',
                     ENDPOINT '{endpoint_url}',
                     USE_SSL {"false" if IS_LOCAL else "true"},
                     URL_STYLE 'path'
