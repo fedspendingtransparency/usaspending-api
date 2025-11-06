@@ -182,9 +182,12 @@ class AbstractSearch(ABC):
         return (
             df.join(
                 self.pop_state_lookup,
-                sf.col("pop_state_code")
-                == sf.coalesce(
-                    self.transaction_fpds.place_of_performance_state, self.transaction_fabs.place_of_perfor_state_code
+                (
+                    sf.col("pop_state_code")
+                    == sf.coalesce(
+                        self.transaction_fpds.place_of_performance_state,
+                        self.transaction_fabs.place_of_perfor_state_code,
+                    )
                 ),
                 "leftouter",
             )
@@ -1145,10 +1148,8 @@ class TransactionSearch(AbstractSearch):
             )
             .join(
                 self.funding_agency_id,
-                (
-                    (self.funding_agency_id.toptier_agency_id == self.funding_toptier_agency.funding_toptier_agency_id)
-                    & (self.funding_agency_id.row_num == 1)
-                ),
+                (self.funding_agency_id.toptier_agency_id == self.funding_toptier_agency.funding_toptier_agency_id)
+                & (self.funding_agency_id.row_num == 1),
                 "leftouter",
             )
             .join(
@@ -1220,29 +1221,30 @@ class AwardSearch(AbstractSearch):
                 "inner",
             )
             .groupby(sf.col("award_id"))
-            .select(
-                sf.col("award_id"),
+            .agg(
                 sf.sort_array(
                     sf.collect_set(
-                        sf.distinct(
-                            sf.to_json(
-                                sf.named_struct(
-                                    sf.lit("cfda_number"),
-                                    sf.col("cfda_number"),
-                                    sf.lit("cfda_program_title"),
-                                    sf.col("cfda_title"),
-                                )
+                        sf.to_json(
+                            sf.named_struct(
+                                sf.lit("cfda_number"),
+                                sf.col("cfda_number"),
+                                sf.lit("cfda_program_title"),
+                                sf.col("cfda_title"),
                             )
                         )
                     )
-                ).alias("cfdas"),
+                ).alias("cfdas")
+            )
+            .select(
+                sf.col("award_id"),
+                sf.col("cfdas"),
             )
         )
 
     @property
     def recipient_hash_and_levels(self) -> DataFrame:
         return (
-            self.recipient_profile.filter(sf.col("recipient_level" != sf.lit("P")))
+            self.recipient_profile.filter(sf.col("recipient_level") != sf.lit("P"))
             .groupBy("recipient_hash", "uei")
             .agg(sf.sort_array(sf.collect_set("recipient_level")).alias("recipient_levels"))
             .select(
@@ -1275,15 +1277,12 @@ class AwardSearch(AbstractSearch):
                 | sf.col("transaction_obligated_amount").isNotNull()
             )
             .groupby(sf.col("award_id"), sf.col("disaster_emergency_fund_code"), sf.col("group_name"))
-            .select(
-                sf.col("award_id"),
-                sf.col("disaster_emergency_fund_code"),
-                sf.col("group_name"),
+            .agg(
                 sf.coalesce(
                     sf.sum(
                         sf.when(
                             self.submission_attributes.is_final_balances_for_fy,
-                            sf.coalesce(self.faba.gross_outlat_amount_by_award_cpe, sf.lit(0))
+                            sf.coalesce(self.faba.gross_outlay_amount_by_award_cpe, sf.lit(0))
                             + sf.coalesce(
                                 self.faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe, sf.lit(0)
                             )
@@ -1296,13 +1295,20 @@ class AwardSearch(AbstractSearch):
                 ).alias("outlay"),
                 sf.coalesce(sf.sum(self.faba.transaction_obligated_amount), sf.lit(0)).alias("obligation"),
             )
-            .filter(sf.col("award_id").isNotNull())
-            .groupby(sf.col("award_id"))
             .select(
                 sf.col("award_id"),
+                sf.col("disaster_emergency_fund_code"),
+                sf.col("group_name"),
+                sf.col("outlay"),
+                sf.col("obligation"),
+            )
+            .filter(sf.col("award_id").isNotNull())
+            .groupby(sf.col("award_id"))
+            .agg(
                 sf.sort_array(
                     sf.collect_set(
-                        sf.filter(
+                        sf.when(
+                            sf.col("disaster_emergency_fund_code").isNotNull(),
                             sf.to_json(
                                 sf.named_struct(
                                     sf.lit("defc"),
@@ -1313,25 +1319,33 @@ class AwardSearch(AbstractSearch):
                                     sf.col("obligation"),
                                 )
                             ),
-                            sf.col("disaster_emergency_fund_code").isNotNull(),
                         )
                     )
                 )
                 .cast(StringType())
                 .alias("spending_by_defc"),
                 sf.sum(sf.col("outlay")).alias("total_outlays"),
-                sf.sum(sf.filter(sf.col("outlay"), sf.col("group_name") == sf.lit("covid_19"))).alias(
+                sf.sum(sf.when(sf.col("group_name") == sf.lit("covid_19"), sf.col("outlay"))).alias(
                     "total_covid_outlay"
                 ),
-                sf.sum(sf.filter(sf.col("obligation"), sf.col("group_name") == sf.lit("covid_19"))).alias(
+                sf.sum(sf.when(sf.col("group_name") == sf.lit("covid_19"), sf.col("obligation"))).alias(
                     "total_covid_obligation"
                 ),
-                sf.sum(sf.filter(sf.col("outlay"), sf.col("group_name") == sf.lit("infrastructure"))).alias(
+                sf.sum(sf.when(sf.col("group_name") == sf.lit("infrastructure"), sf.col("outlay"))).alias(
                     "total_iija_outlay"
                 ),
-                sf.sum(sf.filter(sf.col("obligation"), sf.col("group_name") == sf.lit("infrastructure"))).alias(
+                sf.sum(sf.when(sf.col("group_name") == sf.lit("infrastructure"), sf.col("obligation"))).alias(
                     "total_iija_obligation"
                 ),
+            )
+            .select(
+                sf.col("award_id"),
+                sf.col("spending_by_defc"),
+                sf.col("total_outlays"),
+                sf.col("total_covid_outlay"),
+                sf.col("total_covid_obligation"),
+                sf.col("total_iija_outlay"),
+                sf.col("total_iija_obligation"),
             )
         )
 
@@ -1343,7 +1357,11 @@ class AwardSearch(AbstractSearch):
                 self.treasury_appropriation_account.treasury_account_identifier == self.faba.treasury_account_id,
                 "inner",
             )
-            .join(self.federal_account, self.federal_account.id == self.treasury_account.federal_account_id, "inner")
+            .join(
+                self.federal_account,
+                self.federal_account.id == self.treasury_appropriation_account.federal_account_id,
+                "inner",
+            )
             .join(
                 self.awarding_toptier_agency,
                 self.awarding_toptier_agency.toptier_agency_id == self.federal_account.parent_toptier_agency_id,
@@ -1399,7 +1417,7 @@ class AwardSearch(AbstractSearch):
             .join(
                 self.transaction_fabs,
                 (self.transaction_fabs.transaction_id == self.awards.latest_transaction_id)
-                & ~self.transaction_normalized.is_fabs,
+                & ~self.transaction_normalized.is_fpds,
                 "leftouter",
             )
             .join(
@@ -1430,25 +1448,26 @@ class AwardSearch(AbstractSearch):
             .join(self.funding_agency, self.funding_agency.id == self.awards.funding_agency_id, "leftouter")
             .join(
                 self.funding_toptier_agency,
-                self.funding_toptier_agency.toptier_agency_id == self.funding_agency.toptier_agency_id,
+                self.funding_toptier_agency.toptier_agency_id == self.funding_agency.funding_toptier_agency_id,
                 "leftouter",
             )
             .join(
                 self.funding_subtier_agency,
-                self.funding_subtier_agency.subtier_agency_id == self.funding_agency.subtier_agency_id,
+                self.funding_subtier_agency.subtier_agency_id == self.funding_agency.funding_subtier_agency_id,
                 "leftouter",
             )
             .join(
                 self.funding_agency_id,
-                (self.funding_agency_id.toptier_agency_id == self.funding_toptier_agency.toptier_agency_id)
+                (self.funding_agency_id.toptier_agency_id == self.funding_toptier_agency.funding_toptier_agency_id)
                 & (self.funding_agency_id.row_num == 1),
                 "leftouter",
             )
         )
         df_with_location = self.join_location_data(df)
-        return (
+
+        print(
             df_with_location.join(
-                self.current_cd, self.awards.latest_transaction_id == self.current_cd.transaction_id, "leftouter"
+                self.current_cd, (self.awards.latest_transaction_id == self.current_cd.transaction_id), "leftouter"
             )
             .join(
                 self.recipient_hash_and_levels,
@@ -1458,9 +1477,9 @@ class AwardSearch(AbstractSearch):
                 "leftouter",
             )
             .join(self.outlays_and_obligations, self.outlays_and_obligations.award_id == self.awards.id, "leftouter")
-            .join(self.treasury_account, self.treasury_account.id == self.awards.id, "leftouter")
+            .join(self.treasury_account, self.treasury_account.award_id == self.awards.id, "leftouter")
             .select(
-                self.treasury_account.treasury_account_identifiers,
+                sf.col("treasury_account_identifiers"),
                 self.awards.id.alias("award_id"),
                 self.awards.data_source,
                 self.awards.transaction_unique_id,
@@ -1491,11 +1510,11 @@ class AwardSearch(AbstractSearch):
                     ),
                 )
                 .when(
-                    ~self.awards.is_fpdsm,
+                    ~self.awards.is_fpds,
                     sf.upper(
                         sf.concat(
                             sf.lit("ASST_NON_"),
-                            sf.coalesce(self.transaction_fabs.fain, "-none-"),
+                            sf.coalesce(self.transaction_fabs.fain, sf.lit("-none-")),
                             sf.lit("_"),
                             sf.coalesce(self.awarding_subtier_agency.subtier_code, sf.lit("-none-")),
                         )
@@ -1521,7 +1540,7 @@ class AwardSearch(AbstractSearch):
                     sf.when(self.awards.type.isin(["07", "08"]), self.awards.total_subsidy_cost).otherwise(
                         self.awards.total_obligation
                     ),
-                    sf.list(0),
+                    sf.lit(0),
                 )
                 .cast(DecimalType(23, 2))
                 .alias("award_amount"),
@@ -1538,7 +1557,7 @@ class AwardSearch(AbstractSearch):
                     sf.lit(0),
                 )
                 .cast(DecimalType(23, 2))
-                .alias("tota_subsidy_cost"),
+                .alias("total_subsidy_cost"),
                 sf.coalesce(
                     sf.when(self.awards.type.isin(["07", "08"]), self.awards.total_loan_value).otherwise(sf.lit(0)),
                     sf.lit(0),
@@ -1585,14 +1604,16 @@ class AwardSearch(AbstractSearch):
                 self.transaction_normalized.action_date,
                 self.transaction_normalized.fiscal_year,
                 self.transaction_normalized.last_modified_date,
-                self.awards.period_of_performance_state_date,
+                self.awards.period_of_performance_start_date,
                 self.awards.period_of_performance_current_end_date,
                 self.awards.date_signed,
                 self.transaction_fpds.ordering_period_end_date,
                 sf.coalesce(self.transaction_fabs.original_loan_subsidy_cost, sf.lit(0)).alias(
                     "original_loan_subsidy_cost"
                 ),
-                sf.coalesce(self.transaction_fabs.face_value_guarantee, sf.lit(0)).alias("face_value_loan_guarantee"),
+                sf.coalesce(self.transaction_fabs.face_value_loan_guarantee, sf.lit(0)).alias(
+                    "face_value_loan_guarantee"
+                ),
                 self.transaction_normalized.awarding_agency_id,
                 self.transaction_normalized.funding_agency_id,
                 self.awarding_toptier_agency.name.alias("awarding_toptier_agency_name"),
@@ -1613,8 +1634,8 @@ class AwardSearch(AbstractSearch):
                 ).alias("funding_subtier_agency_name_raw"),
                 self.awarding_toptier_agency.toptier_code.alias("awarding_toptier_agency_code"),
                 self.funding_toptier_agency.toptier_code.alias("funding_toptier_agency_code"),
-                self.awarding_subtier_agency.toptier_code.alias("awarding_subtier_agency_code"),
-                self.funding_subtier_agency.toptier_code.alias("funding_subtier_agency_code"),
+                self.awarding_subtier_agency.subtier_code.alias("awarding_subtier_agency_code"),
+                self.funding_subtier_agency.subtier_code.alias("funding_subtier_agency_code"),
                 sf.coalesce(
                     self.transaction_fabs.awarding_agency_code, self.transaction_fpds.awarding_agency_code
                 ).alias("awarding_toptier_agency_code_raw"),
@@ -1636,8 +1657,158 @@ class AwardSearch(AbstractSearch):
                     self.transaction_fabs.legal_entity_country_code,
                     sf.lit("USA"),
                 ).alias("recipient_location_country_code"),
+                sf.coalesce(
+                    self.transaction_fpds.legal_entity_state_code, self.transaction_fabs.legal_entity_state_code
+                ).alias("recipient_location_state_code"),
+                extract_numbers_as_string(
+                    sf.coalesce(
+                        self.transaction_fpds.legal_entity_county_code, self.transaction_fabs.legal_entity_county_code
+                    ),
+                    3,
+                ).alias("recipient_location_county_code"),
+                sf.coalesce(
+                    self.transaction_fpds.legal_entity_county_name, self.transaction_fabs.legal_entity_county_name
+                ).alias("recipient_location_county_name"),
+                extract_numbers_as_string(
+                    sf.coalesce(
+                        self.transaction_fpds.legal_entity_congressional,
+                        self.transaction_fabs.legal_entity_congressional,
+                    ),
+                    2,
+                ).alias("recipient_location_congressional_code"),
+                self.current_cd.recipient_location_congressional_code_current,
+                sf.coalesce(self.transaction_fpds.legal_entity_zip5, self.transaction_fabs.legal_entity_zip5).alias(
+                    "recipient_location_zip5"
+                ),
+                sf.rtrim(
+                    sf.coalesce(
+                        self.transaction_fpds.legal_entity_city_name, self.transaction_fabs.legal_entity_city_name
+                    )
+                ).alias("recipient_location_city_name"),
+                    sf.coalesce(
+                        self.transaction_fpds.legal_entity_state_descrip, self.transaction_fabs.legal_entity_state_name
+                    ).alias("recipient_location_state_name"),
+                    self.rl_state_lookup.recipient_location_state_fips,
+                    self.rl_state_population.recipient_location_state_population,
+                    self.rl_county_population.recipient_location_county_population,
+                    self.rl_district_population.recipient_location_congressional_population,
+                    sf.concat(
+                        self.rl_state_lookup.recipient_location_state_fips,
+                        sf.coalesce(
+                            self.transaction_fpds.legal_entity_county_code, self.transaction_fabs.legal_entity_county_code
+                        ),
+                    ).alias("recipient_location_county_fips"),
+                    sf.coalesce(
+                        self.transaction_fpds.legal_entity_address_line1, self.transaction_fabs.legal_entity_address_line1
+                    ).alias("recipient_location_address_line1"),
+                    sf.coalesce(
+                        self.transaction_fpds.legal_entity_address_line2, self.transaction_fabs.legal_entity_address_line2
+                    ).alias("recipient_location_address_line2"),
+                    sf.coalesce(
+                        self.transaction_fpds.legal_entity_address_line3, self.transaction_fabs.legal_entity_address_line3
+                    ).alias("recipient_location_address_line3"),
+                    self.transaction_fabs.legal_entity_foreign_posta.alias("recipient_location_foreign_postal_code"),
+                    self.transaction_fabs.legal_entity_foreign_provi.alias("recipient_location_foreign_province_code"),
+                    sf.coalesce(
+                        self.transaction_fpds.place_of_perf_country_desc, self.transaction_fabs.place_of_perform_country_n
+                    ).alias("pop_country_name"),
+                    sf.coalesce(
+                        self.transaction_fpds.place_of_perform_country_c,
+                        self.transaction_fabs.place_of_perform_country_c,
+                        sf.lit("USA"),
+                    ).alias("pop_country_code"),
+                    sf.coalesce(
+                        self.transaction_fpds.place_of_performance_state, self.transaction_fabs.place_of_perfor_state_code
+                    ).alias("pop_state_code"),
+                    extract_numbers_as_string(
+                        sf.coalesce(
+                            self.transaction_fpds.place_of_perform_county_co,
+                            self.transaction_fabs.place_of_perform_county_co,
+                        ),
+                        3,
+                    ).alias("pop_county_code"),
+                    sf.coalesce(
+                        self.transaction_fpds.place_of_perform_county_na, self.transaction_fabs.place_of_perform_county_na
+                    ).alias("pop_county_name"),
+                    self.transaction_fabs.place_of_performance_code.alias("pop_city_code"),
+                    sf.coalesce(
+                        self.transaction_fpds.place_of_performance_zip5, self.transaction_fabs.place_of_performance_zip5
+                    ).alias("pop_zip5"),
+                    extract_numbers_as_string(
+                        sf.coalesce(
+                            self.transaction_fpds.place_of_performance_congr,
+                            self.transaction_fabs.place_of_performance_congr,
+                        ),
+                        2,
+                    ).alias("pop_congressional_code"),
+                    self.current_cd.pop_congressional_code_current,
+                    sf.rtrim(
+                        sf.coalesce(
+                            self.transaction_fpds.place_of_perform_city_name,
+                            self.transaction_fabs.place_of_performance_city,
+                        )
+                    ).alias("pop_city_name"),
+                    sf.coalesce(
+                        self.transaction_fpds.place_of_perfor_state_desc, self.transaction_fabs.place_of_perform_state_nam
+                    ).alias("pop_state_name"),
+                    self.pop_state_lookup.pop_state_fips,
+                    self.pop_state_population.pop_state_population,
+                    self.pop_county_population.pop_county_population,
+                    self.pop_district_population.pop_congressional_population,
+                    sf.concat(
+                        self.pop_state_lookup.pop_state_fips,
+                        sf.coalesce(
+                            self.transaction_fpds.place_of_perform_county_co,
+                            self.transaction_fabs.place_of_perform_county_co,
+                        ),
+                    ).alias("pop_county_fips"),
+                    sf.coalesce(
+                        self.transaction_fpds.place_of_performance_zip4a, self.transaction_fabs.place_of_performance_zip4a
+                    ).alias("pop_zip4a"),
+                    self.transaction_fabs.cfda_title.alias("cfda_program_title"),
+                    self.transaction_fabs.cfda_number,
+                    sf.when(~self.awards.is_fpds, self.transaction_cfdas.cfdas).otherwise(sf.lit(None)).alias("cfdas"),
+                    self.transaction_fabs.sai_number,
+                    self.transaction_fpds.type_of_contract_pricing,
+                    self.transaction_fpds.extent_competed,
+                    self.transaction_fpds.type_set_aside,
+                    self.transaction_fpds.product_or_service_code,
+                    self.product_service_code.description.alias("product_service_description"),
+                    self.transaction_fpds.naics.alias("naics_code"),
+                    self.transaction_fpds.naics_description,
+                    self.treasury_account.tas_paths,
+                    self.treasury_account.tas_components,
+                    self.treasury_account.federal_accounts,
+                    self.treasury_account.disaster_emergency_fund_codes,
+                    self.outlays_and_obligations.spending_by_defc,
+                    self.outlays_and_obligations.total_covid_outlay,
+                    self.outlays_and_obligations.total_covid_obligation,
+                    self.awards.officer_1_amount,
+                    self.awards.officer_1_name,
+                    self.awards.officer_2_amount,
+                    self.awards.officer_2_name,
+                    self.awards.officer_3_amount,
+                    self.awards.officer_3_name,
+                    self.awards.officer_4_amount,
+                    self.awards.officer_4_name,
+                    self.awards.officer_5_amount,
+                    self.awards.officer_5_name,
+                    self.outlays_and_obligations.total_iija_outlay,
+                    self.outlays_and_obligations.total_iija_obligation,
+                    self.outlays_and_obligations.total_outlays.cast(DecimalType(23, 2)).alias("total_outlays"),
+                    sf.coalesce(
+                        sf.when(self.awards.type.isin(["07", "08"]), self.awards.total_subsidy_cost).otherwise(
+                            self.awards.total_obligation
+                        ),
+                        sf.lit(0),
+                    )
+                    .cast(DecimalType(23, 2))
+                    .alias("generated_pragmatic_obligation"),
+                    self.treasury_account.program_activities,
+                    self.awards.transaction_count,
             )
             .withColumn("merge_hash_key", sf.xxhash64("*"))
+            .show(1)
         )
 
 
