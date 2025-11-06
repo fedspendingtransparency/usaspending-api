@@ -594,9 +594,6 @@ def create_ref_temp_views(spark: SparkSession | DuckDBSparkSession, create_broke
                     TYPE s3,
                     PROVIDER credential_chain,
                     CHAIN 'config;env',
-                    KEY_ID '{os.getenv("AWS_ACCESS_KEY_ID")}',
-                    SECRET '{os.getenv("AWS_SECRET_ACCESS_KEY")}',
-                    REGION '{os.getenv("AWS_DEFAULT_REGION")}',
                     ENDPOINT '{endpoint_url}',
                     USE_SSL {"false" if IS_LOCAL else "true"},
                     URL_STYLE 'path'
