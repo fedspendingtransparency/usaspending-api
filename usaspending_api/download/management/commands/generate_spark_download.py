@@ -8,6 +8,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Literal, Optional, TypeVar, Union
 
+import duckdb
+import psutil
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils.functional import cached_property
@@ -91,6 +93,18 @@ class Command(BaseCommand):
             self.spark: DuckDBSparkSession = DuckDBSparkSession.builder.getOrCreate()
             spark_created_by_command = False
             self.should_cleanup = True
+
+            # DuckDB can sometimes see an incorrect RAM amount in AWS, so we manually set the limit to 80% here
+            memory_limit = int(psutil.virtual_memory().total / (1024**3) * 0.8)
+
+            self.spark.sql(f"SET memory_limit = '{memory_limit}G'")
+            duckdb_settings = self.spark.sql(
+                "SELECT name, value FROM duckdb_settings() WHERE name IN ('memory_limit', 'threads')"
+            ).collect()
+
+            logger.info(f"Using DuckDB {duckdb.version()}")
+            for duckdb_setting in duckdb_settings:
+                logger.info(f"DuckDB {duckdb_setting.name}: {duckdb_setting.value}")
         else:
             self.spark, spark_created_by_command = self.setup_spark_session()
 
