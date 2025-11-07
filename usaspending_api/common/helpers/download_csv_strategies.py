@@ -8,14 +8,19 @@ from typing import List, Optional
 
 from django.conf import settings
 from pyspark.sql import DataFrame
+
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
-from usaspending_api.common.helpers.s3_helpers import delete_s3_objects, download_s3_object
+from usaspending_api.common.etl.spark import rename_part_files
+from usaspending_api.common.helpers.s3_helpers import (
+    delete_s3_objects,
+    download_s3_object,
+)
 from usaspending_api.download.filestreaming.download_generation import (
     EXCEL_ROW_LIMIT,
-    split_and_zip_data_files,
-    wait_for_process,
     execute_psql,
     generate_export_query_temp_file,
+    split_and_zip_data_files,
+    wait_for_process,
 )
 from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_file
 from usaspending_api.download.lookups import FILE_FORMATS
@@ -139,7 +144,7 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
         #   we do not want to force all containers where
         #   other strategies run to have pyspark installed when the strategy
         #   doesn't require it.
-        from usaspending_api.common.etl.spark import hadoop_copy_merge, write_csv_file
+        from usaspending_api.common.etl.spark import write_csv_file
         from usaspending_api.common.helpers.spark_helpers import configure_spark_session, get_active_spark_session
 
         self.spark = None
@@ -172,26 +177,24 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
                 self.spark,
                 df,
                 parts_dir=s3_destination_path,
-                num_partitions=1,
                 max_records_per_file=EXCEL_ROW_LIMIT,
                 logger=self._logger,
                 delimiter=delimiter,
             )
             column_count = len(df.columns)
-            # When combining these later, will prepend the extracted header to each resultant file.
-            # The parts therefore must NOT have headers or the headers will show up in the data when combined.
-            header = ",".join([_.name for _ in df.schema.fields])
             self._logger.info("Concatenating partitioned output files ...")
-            merged_file_paths = hadoop_copy_merge(
-                spark=self.spark,
-                parts_dir=s3_destination_path,
-                header=header,
+            merged_file_paths = rename_part_files(
+                bucket_name=s3_bucket_name,
+                destination_file_name=destination_file_name,
                 logger=self._logger,
-                part_merge_group_size=1,
                 file_format=file_format,
             )
             final_csv_data_file_locations = self._move_data_csv_s3_to_local(
-                s3_bucket_name, merged_file_paths, s3_bucket_path, s3_bucket_sub_path, destination_path_dir
+                s3_bucket_name,
+                merged_file_paths,
+                s3_bucket_path,
+                s3_bucket_sub_path,
+                destination_path_dir,
             )
         except Exception:
             self._logger.exception("Exception encountered. See logs")
@@ -205,7 +208,12 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
         return CSVDownloadMetadata(final_csv_data_file_locations, record_count, column_count)
 
     def _move_data_csv_s3_to_local(
-        self, bucket_name, s3_file_paths, s3_bucket_path, s3_bucket_sub_path, destination_path_dir
+        self,
+        bucket_name: str,
+        s3_file_paths: list[str],
+        s3_bucket_path: str,
+        s3_bucket_sub_path: str,
+        destination_path_dir: str,
     ) -> List[str]:
         """Moves files from s3 data csv location to a location on the local machine.
 
@@ -216,7 +224,7 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
             s3_bucket_path: The bucket path, e.g. s3a:// + bucket name
             s3_bucket_sub_path: The path to the s3 files in the bucket, exluding s3a:// + bucket name, e.g. temp_directory/files
             destination_path_dir: The location to move those files from s3 to, must not include the
-                file name in the path. This path should be a diretory.
+                file name in the path. This path should be a directory.
 
         Returns:
             A list of the final location on the local machine that the
