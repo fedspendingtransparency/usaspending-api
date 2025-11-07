@@ -1,4 +1,5 @@
 from pyspark.sql import functions as sf, Column, DataFrame, SparkSession
+from usaspending_api.config import CONFIG
 
 from usaspending_api.common.spark.utils import collect_concat, filter_submission_and_sum
 from usaspending_api.download.delta_downloads.abstract_downloads.account_download import (
@@ -23,7 +24,11 @@ class AwardFinancialMixin:
 
     @property
     def download_table(self) -> DataFrame:
-        return self.spark.table("rpt.award_financial_download")
+        # TODO: This should be reverted back after Spark downloads are migrated to EMR
+        # return self.spark.table("rpt.award_financial_download")
+        return self.spark.read.format("delta").load(
+            f"s3a://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.DELTA_LAKE_S3_PATH}/rpt/award_financial_download"
+        )
 
     @property
     def non_zero_filters(self) -> Column:
@@ -152,6 +157,9 @@ class FederalAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
         )
 
     def _build_dataframe(self) -> DataFrame:
+        # TODO: Should handle the aggregate columns via a new name instead of relying on drops. If the Delta tables are
+        #       referenced by their location then the ability to use the table identifier is lost as it doesn't
+        #       appear to use the metastore for the Delta tables.
         return (
             self.download_table.filter(self.dynamic_filters)
             .groupBy(self.group_by_cols)
