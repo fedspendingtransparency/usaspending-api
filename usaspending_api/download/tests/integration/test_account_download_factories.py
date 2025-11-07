@@ -1,9 +1,12 @@
+from decimal import Decimal
 from unittest.mock import patch
 
+import numpy as np
 import pandas as pd
 import pytest
 from django.core.management import call_command
 from model_bakery import baker
+from usaspending_api.config import CONFIG
 
 from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.download.delta_downloads.account_balances import AccountBalancesDownloadFactory
@@ -13,51 +16,35 @@ from usaspending_api.download.delta_downloads.object_class_program_activity impo
     ObjectClassProgramActivityDownloadFactory,
 )
 from usaspending_api.download.delta_models.account_balances_download import account_balances_schema
-from usaspending_api.download.v2.download_column_historical_lookups import query_paths
+from usaspending_api.download.delta_models.award_financial_download import award_financial_schema
+from usaspending_api.download.delta_models.object_class_program_activity_download import (
+    object_class_program_activity_schema,
+)
 
 
 @pytest.fixture(scope="function")
-def award_financial_table(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+def award_financial_table(spark, s3_unittest_data_bucket, hive_unittest_metastore_db, monkeypatch):
     call_command(
         "create_delta_table",
         "--destination-table=award_financial_download",
         f"--spark-s3-bucket={s3_unittest_data_bucket}",
     )
-    columns = list(
-        set(
-            [
-                col
-                for col in query_paths["award_financial"]["federal_account"].keys()
-                if col != "owning_agency_name" and not col.startswith("last_modified_date")
-            ]
-            + [
-                col
-                for col in query_paths["award_financial"]["treasury_account"].keys()
-                if col != "owning_agency_name" and not col.startswith("last_modified_date")
-            ]
-            + [
-                "federal_owning_agency_name",
-                "treasury_owning_agency_name",
-                "last_modified_date",
-                "reporting_fiscal_year",
-                "reporting_fiscal_quarter",
-                "reporting_fiscal_period",
-                "quarter_format_flag",
-                "submission_id",
-                "federal_account_id",
-                "funding_toptier_agency_id",
-                "budget_function_code",
-                "budget_subfunction_code",
-            ]
-        )
+    monkeypatch.setattr(
+        f"usaspending_api.download.delta_downloads.award_financial.AwardFinancialMixin.download_table",
+        spark.read.format("delta").load(
+            f"s3a://{s3_unittest_data_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/rpt/award_financial_download"
+        ),
     )
+    column_placeholders = {field.name: [None] * 5 for field in award_financial_schema}
     test_data_df = pd.DataFrame(
         data={
+            **column_placeholders,
+            "financial_accounts_by_awards_id": [1, 2, 3, 4, 5],
             "reporting_fiscal_year": [2018, 2018, 2018, 2018, 2019],
             "quarter_format_flag": [True, True, False, True, True],
             "reporting_fiscal_quarter": [1, 2, None, 4, 2],
             "reporting_fiscal_period": [None, None, 5, None, None],
-            "transaction_obligated_amount": [100, 100, 100, 100, 100],
+            "transaction_obligated_amount": [Decimal(100).quantize(Decimal(".01"))] * 5,
             "submission_id": [1, 2, 3, 4, 5],
             "federal_owning_agency_name": ["test1", "test2", "test2", "test2", "test3"],
             "reporting_agency_name": ["A", "B", "C", "D", "E"],
@@ -65,32 +52,44 @@ def award_financial_table(spark, s3_unittest_data_bucket, hive_unittest_metastor
             "budget_function_code": ["A100", "B100", "C100", "D100", "E100"],
             "budget_subfunction": ["A", "B", "C", "D", "E"],
             "budget_subfunction_code": ["A200", "B200", "C200", "D200", "E200"],
-            "gross_outlay_amount_FYB_to_period_end": [100, 100, 100, 100, 100],
+            "gross_outlay_amount_fyb_to_period_end": [Decimal(100).quantize(Decimal(".01"))] * 5,
             "funding_toptier_agency_id": [1, 2, 2, 2, 3],
             "federal_account_id": [1, 2, 2, 2, 3],
             "disaster_emergency_fund_code": ["L", "L", "L", "L", "L"],
-        },
-        columns=columns,
-    ).fillna("dummy_text")
+        }
+    )
+    # Some data manipulation for matching the Spark schema
+    test_data_df[["reporting_fiscal_quarter", "reporting_fiscal_period"]] = test_data_df[
+        ["reporting_fiscal_quarter", "reporting_fiscal_period"]
+    ].astype(pd.Int8Dtype())
+    test_data_df = test_data_df.replace([np.nan], [None])
+
     (
-        spark.createDataFrame(test_data_df)
+        spark.createDataFrame(test_data_df, schema=award_financial_schema)
         .write.format("delta")
         .mode("overwrite")
-        .option("overwriteSchema", "true")
         .saveAsTable("rpt.award_financial_download")
     )
     yield
 
 
 @pytest.fixture(scope="function")
-def account_balances_download_table(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+def account_balances_download_table(spark, s3_unittest_data_bucket, hive_unittest_metastore_db, monkeypatch):
     call_command(
         "create_delta_table",
         "--destination-table=account_balances_download",
         f"--spark-s3-bucket={s3_unittest_data_bucket}",
     )
+    monkeypatch.setattr(
+        f"usaspending_api.download.delta_downloads.account_balances.AccountBalancesMixin.download_table",
+        spark.read.format("delta").load(
+            f"s3a://{s3_unittest_data_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/rpt/account_balances_download"
+        ),
+    )
+    column_placeholders = {field.name: [None] * 5 for field in account_balances_schema}
     test_data_df = pd.DataFrame(
         data={
+            **column_placeholders,
             "reporting_fiscal_year": [2018, 2018, 2018, 2018, 2019],
             "quarter_format_flag": [True, True, False, True, True],
             "reporting_fiscal_quarter": [1, 2, None, 4, 2],
@@ -102,72 +101,45 @@ def account_balances_download_table(spark, s3_unittest_data_bucket, hive_unittes
             "budget_function_code": ["A100", "B100", "C100", "D100", "E100"],
             "budget_subfunction": ["A", "B", "C", "D", "E"],
             "budget_subfunction_code": ["A200", "B200", "C200", "D200", "E200"],
-            "gross_outlay_amount": [100, 100, 100, 100, 100],
+            "gross_outlay_amount": [Decimal(100).quantize(Decimal(".01"))] * 5,
             "funding_toptier_agency_id": [1, 2, 2, 2, 3],
             "federal_account_id": [1, 2, 2, 2, 3],
-        },
-        columns=[field.name for field in account_balances_schema],
-    ).fillna("dummy_text")
+        }
+    )
+    # Some data manipulation for matching the Spark schema
+    test_data_df[["reporting_fiscal_quarter", "reporting_fiscal_period"]] = test_data_df[
+        ["reporting_fiscal_quarter", "reporting_fiscal_period"]
+    ].astype(pd.Int8Dtype())
+    test_data_df = test_data_df.replace([np.nan], [None])
+
     (
-        spark.createDataFrame(test_data_df)
+        spark.createDataFrame(test_data_df, schema=account_balances_schema)
         .write.format("delta")
         .mode("overwrite")
-        .option("overwriteSchema", "true")
         .saveAsTable("rpt.account_balances_download")
     )
     yield
 
 
 @pytest.fixture(scope="function")
-def object_class_by_program_activity_download_table(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+def object_class_by_program_activity_download_table(
+    spark, s3_unittest_data_bucket, hive_unittest_metastore_db, monkeypatch
+):
     call_command(
         "create_delta_table",
         "--destination-table=object_class_program_activity_download",
         f"--spark-s3-bucket={s3_unittest_data_bucket}",
     )
-    columns = list(
-        set(
-            [
-                col
-                for col in query_paths["object_class_program_activity"]["federal_account"].keys()
-                if not col.startswith("last_modified_date")
-            ]
-            + [
-                col
-                for col in query_paths["object_class_program_activity"]["treasury_account"].keys()
-                if not col.startswith("last_modified_date")
-            ]
-            + [
-                "last_modified_date",
-                "reporting_fiscal_year",
-                "reporting_fiscal_quarter",
-                "reporting_fiscal_period",
-                "quarter_format_flag",
-                "submission_id",
-                "federal_account_id",
-                "funding_toptier_agency_id",
-                "budget_function_code",
-                "budget_subfunction_code",
-                "data_source",
-                "financial_accounts_by_program_activity_object_class_id",
-                "update_date",
-                "object_class_id",
-                "drv_obligations_incurred_by_program_object_class",
-                "prior_year_adjustment",
-                "drv_obligations_undelivered_orders_unpaid",
-                "USSGL490110_rein_deliv_ord_CPE",
-                "program_activity_id",
-                "USSGL480110_rein_undel_ord_CPE",
-                "treasury_account_id",
-                "create_date",
-                "reporting_period_end",
-                "reporting_period_start",
-                "certified_date",
-            ]
-        )
+    monkeypatch.setattr(
+        f"usaspending_api.download.delta_downloads.object_class_program_activity.ObjectClassProgramActivityMixin.download_table",
+        spark.read.format("delta").load(
+            f"s3a://{s3_unittest_data_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/rpt/object_class_program_activity_download"
+        ),
     )
+    column_placeholders = {field.name: [None] * 5 for field in object_class_program_activity_schema}
     test_data_df = pd.DataFrame(
         data={
+            **column_placeholders,
             "financial_accounts_by_program_activity_object_class_id": [1, 2, 3, 4, 5],
             "submission_id": [1, 2, 3, 4, 5],
             "owning_agency_name": ["test1", "test2", "test2", "test2", "test3"],
@@ -192,18 +164,22 @@ def object_class_by_program_activity_download_table(spark, s3_unittest_data_buck
                 "BudgetSubFunction5",
             ],
             "budget_subfunction_code": ["SF01", "SF02", "SF03", "SF04", "SF05"],
-            "gross_outlay_amount_FYB_to_period_end": [100, 100, 100, 100, 100],
+            "gross_outlay_amount_FYB_to_period_end": [Decimal(100).quantize(Decimal(".01"))] * 5,
             "funding_toptier_agency_id": [1, 2, 2, 2, 3],
             "federal_account_id": [1, 2, 2, 2, 3],
             "disaster_emergency_fund_code": ["L", "L", "L", "L", "L"],
         },
-        columns=columns,
-    ).fillna("dummy_text")
+    )
+    # Some data manipulation for matching the Spark schema
+    test_data_df[["reporting_fiscal_quarter", "reporting_fiscal_period"]] = test_data_df[
+        ["reporting_fiscal_quarter", "reporting_fiscal_period"]
+    ].astype(pd.Int8Dtype())
+    test_data_df = test_data_df.replace([np.nan], [None])
+
     (
-        spark.createDataFrame(test_data_df)
+        spark.createDataFrame(test_data_df, schema=object_class_program_activity_schema)
         .write.format("delta")
         .mode("overwrite")
-        .option("overwriteSchema", "true")
         .saveAsTable("rpt.object_class_program_activity_download")
     )
     yield
