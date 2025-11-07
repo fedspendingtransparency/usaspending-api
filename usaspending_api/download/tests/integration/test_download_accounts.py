@@ -510,7 +510,7 @@ def test_file_c_spark_download_columns(client, download_test_data, create_downlo
 
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
-def test_file_c_spark_download_unknown_columns(client):
+def test_file_c_spark_download_unknown_columns(client, download_test_data):
     resp = client.post(
         "/api/v2/download/accounts/",
         content_type="application/json",
