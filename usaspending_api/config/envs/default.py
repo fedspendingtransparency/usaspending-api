@@ -9,24 +9,25 @@
 # - Values will be overridden by ENVIRONMENT variables declared in a user's .env file if present at ../.env
 # - See https://pydantic-docs.helpmanual.io/usage/settings/#field-value-priority for precedence of overrides
 ########################################################################################################################
+import os
 import pathlib
 from typing import ClassVar
-import os
 
-from usaspending_api.config.utils import (
-    ENV_SPECIFIC_OVERRIDE,
-    eval_default_factory_from_root_validator,
-    check_for_full_url_config,
-    validate_url_and_parts,
-    check_required_url_parts,
-    backfill_url_parts_config,
-)
 from pydantic import (
     AnyHttpUrl,
     BaseSettings,
     PostgresDsn,
     SecretStr,
     root_validator,
+)
+
+from usaspending_api.config.utils import (
+    ENV_SPECIFIC_OVERRIDE,
+    backfill_url_parts_config,
+    check_for_full_url_config,
+    check_required_url_parts,
+    eval_default_factory_from_root_validator,
+    validate_url_and_parts,
 )
 
 _PROJECT_NAME = "usaspending-api"
@@ -86,7 +87,7 @@ class DefaultConfig(BaseSettings):
     USASPENDING_DB_HOST: str = ENV_SPECIFIC_OVERRIDE
     USASPENDING_DB_PORT: str = ENV_SPECIFIC_OVERRIDE
 
-    DATA_BROKER_DATABASE_URL: str = None  # FACTORY_PROVIDED_VALUE. See its root validator-factory below
+    DATA_BROKER_DB: str = None  # FACTORY_PROVIDED_VALUE. See its root validator-factory below
     BROKER_DB_SCHEME: str = "postgres"
     BROKER_DB_NAME: str = "data_broker"
     BROKER_DB_USER: str = ENV_SPECIFIC_OVERRIDE
