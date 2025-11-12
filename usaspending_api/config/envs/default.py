@@ -159,8 +159,8 @@ class DefaultConfig(BaseSettings):
     # noinspection PyMethodParameters
     # Pydantic returns a classmethod for its validators, so the cls param is correct
     @root_validator
-    def _DATA_BROKER_DATABASE_URL_and_parts_factory(cls, values):
-        """A root validator to backfill DATA_BROKER_DATABASE_URL and BROKER_DB_* part config vars and validate
+    def _DATA_BROKER_DB_and_parts_factory(cls, values):
+        """A root validator to backfill DATA_BROKER_DB and BROKER_DB_* part config vars and validate
         that they are all consistent.
 
         - Serves as a factory function to fill out all places where we track the database URL as both one complete
@@ -172,7 +172,7 @@ class DefaultConfig(BaseSettings):
         cls._validate_database_url(
             cls=cls,
             values=values,
-            url_conf_name="DATA_BROKER_DATABASE_URL",
+            url_conf_name="DATA_BROKER_DB",
             resource_conf_prefix="BROKER_DB",
             required=False,
         )
