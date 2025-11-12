@@ -6,17 +6,18 @@ functions for setup and configuration of the spark environment
 """
 
 import logging
+import math
 import time
 from collections import namedtuple
 from itertools import chain
 from typing import List
 
-from py4j.protocol import Py4JError
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql.functions import col, concat, concat_ws, expr, lit, regexp_replace, to_date, transform, when
 from pyspark.sql.types import ArrayType, DecimalType, StringType, StructType
 
 from usaspending_api.accounts.models import AppropriationAccountBalances, FederalAccount, TreasuryAppropriationAccount
+from usaspending_api.common.helpers.s3_helpers import rename_s3_object, retrieve_s3_bucket_object_list
 from usaspending_api.common.helpers.spark_helpers import (
     get_broker_jdbc_url,
     get_jdbc_connection_properties,
@@ -97,7 +98,6 @@ def extract_db_data_frame(
     is_date_partitioning_col: bool = False,
     custom_schema: StructType = None,
 ) -> DataFrame:
-
     logger.info(f"Getting partition bounds using SQL:\n{min_max_sql}")
 
     data_df = None
@@ -427,7 +427,7 @@ def diff(
     cols_to_show = (
         ["diff"]
         + [f"l.{unique_key_col}", f"r.{unique_key_col}"]
-        + list(chain(*zip([f"l.{c}" for c in compare_cols], [f"r.{c}" for c in compare_cols])))
+        + list(chain(*zip([f"l.{c}" for c in compare_cols], [f"r.{c}" for c in compare_cols], strict=False)))
     )
     differences = differences.select(*cols_to_show)
     if not include_unchanged_rows:
@@ -588,7 +588,6 @@ def write_csv_file(
     spark: SparkSession,
     df: DataFrame,
     parts_dir: str,
-    num_partitions: int,
     max_records_per_file=EXCEL_ROW_LIMIT,
     overwrite=True,
     logger=None,
@@ -599,7 +598,6 @@ def write_csv_file(
         spark: passed-in active SparkSession
         df: the DataFrame wrapping the data source to be dumped to CSV.
             parts_dir: Path to dir that will contain the outputted parts files from partitions
-        num_partitions: Indicates the number of partitions to use when writing the Dataframe
         overwrite: Whether to replace the file CSV files if they already exist by that name
         max_records_per_file: Suggestion to Spark of how many records to put in each written CSV file part,
             if it will end up writing multiple files.
@@ -617,12 +615,13 @@ def write_csv_file(
     start = time.time()
     logger.info(f"Writing source data DataFrame to csv part files for file {parts_dir}...")
     df_record_count = df.count()
+    num_partitions = math.ceil(df_record_count / max_records_per_file) or 1
     df.repartition(num_partitions).write.options(
         # NOTE: this is a suggestion, to be used by Spark if partitions yield multiple files
         maxRecordsPerFile=max_records_per_file,
     ).csv(
         path=parts_dir,
-        header=False,
+        header=True,
         emptyValue="",  # "" creates the output of ,,, for null values to match behavior of previous Postgres job
         escape='"',  # " is used to escape the 'quote' character setting (which defaults to "). Escaped quote = ""
         ignoreLeadingWhiteSpace=False,  # must set for CSV write, as it defaults to true
@@ -634,112 +633,6 @@ def write_csv_file(
     logger.info(f"{parts_dir} contains {df_record_count:,} rows of data")
     logger.info(f"Wrote source data DataFrame to csv part files in {(time.time() - start):3f}s")
     return df_record_count
-
-
-def hadoop_copy_merge(
-    spark: SparkSession,
-    parts_dir: str,
-    header: str,
-    part_merge_group_size: int,
-    logger=None,
-    file_format="csv",
-) -> List[str]:
-    """PySpark impl of Hadoop 2.x copyMerge() (deprecated in Hadoop 3.x)
-    Merges files from a provided input directory and then redivides them
-        into multiple files based on merge group size.
-    Args:
-        spark: passed-in active SparkSession
-        parts_dir: Path to the dir that contains the input parts files. The parts dir name
-            determines the name of the merged files. Parts_dir cannot have a trailing slash.
-        header: A comma-separated list of field names, to be placed as the first row of every final CSV file.
-            Individual part files must NOT therefore be created with their own header.
-        part_merge_group_size: Final CSV data will be subdivided into numbered files. This indicates how many part files
-            should be combined into a numbered file.
-        logger: The logger to use. If one note provided (e.g. to log to console or stdout) the underlying JVM-based
-            Logger will be extracted from the ``spark`` ``SparkSession`` and used as the logger.
-        file_format: The format of the part files and the format of the final merged file, e.g. "csv"
-
-    Returns:
-        A list of file paths where each element in the list denotes a path to
-            a merged file that was generated during the copy merge.
-    """
-    overwrite = True
-    hadoop = spark.sparkContext._jvm.org.apache.hadoop
-    conf = spark.sparkContext._jsc.hadoopConfiguration()
-
-    # Guard against incorrectly formatted argument value
-    parts_dir = parts_dir.rstrip("/")
-
-    parts_dir_path = hadoop.fs.Path(parts_dir)
-
-    fs = parts_dir_path.getFileSystem(conf)
-
-    if not fs.exists(parts_dir_path):
-        raise ValueError("Source directory {} does not exist".format(parts_dir))
-
-    file = parts_dir
-    file_path = hadoop.fs.Path(file)
-
-    # Don't delete first if disallowing overwrite.
-    if not overwrite and fs.exists(file_path):
-        raise Py4JError(
-            spark._jvm.org.apache.hadoop.fs.FileAlreadyExistsException(f"{str(file_path)} " f"already exists")
-        )
-    part_files = []
-
-    for f in fs.listStatus(parts_dir_path):
-        if f.isFile():
-            # Sometimes part files can be empty, we need to ignore them
-            if f.getLen() == 0:
-                continue
-            file_path = f.getPath()
-            if file_path.getName().startswith("_"):
-                logger.debug(f"Skipping non-part file: {file_path.getName()}")
-                continue
-            logger.debug(f"Including part file: {file_path.getName()}")
-            part_files.append(f.getPath())
-    if not part_files:
-        logger.warning("Source directory is empty with no part files. Attempting creation of file with CSV header only")
-        out_stream = None
-        try:
-            merged_file_path = f"{parts_dir}.{file_format}"
-            out_stream = fs.create(hadoop.fs.Path(merged_file_path), overwrite)
-            out_stream.writeBytes(header + "\n")
-        finally:
-            if out_stream is not None:
-                out_stream.close()
-        return [merged_file_path]
-
-    part_files.sort(key=lambda f: str(f))  # put parts in order by part number for merging
-    paths_to_merged_files = []
-    for parts_file_group in _merge_grouper(part_files, part_merge_group_size):
-        part_suffix = f"_{str(parts_file_group.part).zfill(2)}" if parts_file_group.part else ""
-        partial_merged_file = f"{parts_dir}.partial{part_suffix}"
-        partial_merged_file_path = hadoop.fs.Path(partial_merged_file)
-        merged_file_path = f"{parts_dir}{part_suffix}.{file_format}"
-        paths_to_merged_files.append(merged_file_path)
-        # Make path a hadoop path because we are working with a hadoop file system
-        merged_file_path = hadoop.fs.Path(merged_file_path)
-        if overwrite and fs.exists(merged_file_path):
-            fs.delete(merged_file_path, True)
-        out_stream = None
-        try:
-            if fs.exists(partial_merged_file_path):
-                fs.delete(partial_merged_file_path, True)
-            out_stream = fs.create(partial_merged_file_path)
-            out_stream.writeBytes(header + "\n")
-            _merge_file_parts(fs, out_stream, conf, hadoop, partial_merged_file_path, parts_file_group.file_list)
-        finally:
-            if out_stream is not None:
-                out_stream.close()
-        try:
-            fs.rename(partial_merged_file_path, merged_file_path)
-        except Exception:
-            if fs.exists(partial_merged_file_path):
-                fs.delete(partial_merged_file_path, True)
-            logger.exception("Exception encountered. See logs")
-            raise
-    return paths_to_merged_files
 
 
 def _merge_file_parts(fs, out_stream, conf, hadoop, partial_merged_file_path, part_file_list):
@@ -767,3 +660,49 @@ def _merge_grouper(items, group_size):
     group_generator = (items[i : i + group_size] for i in range(0, len(items), group_size))
     for i, group in enumerate(group_generator, start=1):
         yield FileMergeGroup(i, group)
+
+
+def rename_part_files(
+    bucket_name: str,
+    destination_file_name: str,
+    logger: logging.Logger,
+    temp_download_dir_name: str = "temp_download",
+    file_format: str = "csv",
+) -> list[str]:
+    """Renames the part-000.csv files to match the zip filename structure.
+
+    Args:
+        bucket_name: S3 bucket that contains the file to be renamed and will contain the renamed file.
+        destination_file_name: Timestamped download file name. This is used to find the correct folder within the
+            bucket.
+        logger: Logger instance.
+        temp_download_dir_name: Name of the folder to used to store the renamed CSV files before they are downloaded.
+            Defaults to "temp_download".
+        file_format: What file format to save the files in.
+            Defaults to "csv".
+
+    Returns:
+        A list of the full S3 paths for the CSV files.
+    """
+    list_of_part_files = sorted(
+        [
+            file.key
+            for file in retrieve_s3_bucket_object_list(bucket_name)
+            if (
+                file.key.startswith(f"{temp_download_dir_name}/{destination_file_name}/part-")
+                and file.key.endswith(file_format)
+            )
+        ]
+    )
+
+    full_file_paths = []
+
+    for index, part_file in enumerate(list_of_part_files):
+        old_key = f"{bucket_name}/{part_file}"
+        new_key = f"{temp_download_dir_name}/{destination_file_name}_{str(index + 1).zfill(2)}.{file_format}"
+        logger.info(f"Renaming {old_key} to {bucket_name}/{new_key}")
+
+        rename_s3_object(bucket_name=bucket_name, old_key=old_key, new_key=new_key)
+        full_file_paths.append(f"s3a://{bucket_name}/{new_key}")
+
+    return full_file_paths
