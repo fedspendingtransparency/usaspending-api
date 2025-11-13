@@ -534,7 +534,7 @@ def test_file_c_spark_download_unknown_columns(client, download_test_data):
     assert resp.json()["detail"] == "Unknown columns: ['test']"
 
 
-def test_download_caching(client, download_test_data, caplog):
+def test_download_caching(client, download_test_data, create_download_delta_tables, caplog):
 
     resp1 = client.post(
         "/api/v2/download/accounts/",
