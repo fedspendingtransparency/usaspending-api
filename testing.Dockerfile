@@ -27,6 +27,6 @@ RUN export PATH=${JAVA_HOME}/bin:$PATH
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    uv sync --extra dev --locked
+    uv sync --extra dev --extra spark --locked
 
 WORKDIR /dockermount

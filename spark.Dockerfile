@@ -1,5 +1,7 @@
 FROM python:3.10.12-slim-bullseye
 
+COPY --from=ghcr.io/astral-sh/uv:0.7.19 /uv /uvx /bin/
+
 # Build ARGs
 ARG HADOOP_VERSION=3.3.4
 ARG SPARK_VERSION=3.5.0
@@ -55,6 +57,7 @@ RUN cp $SPARK_HOME/conf/spark-defaults.conf.template $SPARK_HOME/conf/spark-defa
 # Bake project dependencies into any spark-base -based container that will run Project python code (and require these dependencies)
 # NOTE: We must exclude any dependencies on the host machine installed in a virtual environment (assumed to be stored under ./.venv)
 WORKDIR /project
+
 ##### The following ENV vars are optimizations from https://github.com/astral-sh/uv-docker-example/blob/main/Dockerfile
 ##### and https://docs.astral.sh/uv/guides/integration/docker/#optimizations
 # Enable bytecode compilation

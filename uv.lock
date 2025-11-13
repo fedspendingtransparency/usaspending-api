@@ -2175,7 +2175,6 @@ dependencies = [
     { name = "certifi" },
     { name = "databricks-sdk" },
     { name = "dataclasses-json" },
-    { name = "delta-spark" },
     { name = "dj-database-url" },
     { name = "django" },
     { name = "django-cors-headers" },
@@ -2258,7 +2257,6 @@ dev = [
     { name = "model-bakery" },
     { name = "pip" },
     { name = "pre-commit" },
-    { name = "pyspark" },
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "pytest-django" },
@@ -2271,6 +2269,10 @@ server = [
     { name = "pyparsing" },
     { name = "supervisor" },
     { name = "uwsgi" },
+]
+spark = [
+    { name = "delta-spark" },
+    { name = "pyspark" },
 ]
 
 [package.metadata]
@@ -2285,7 +2287,7 @@ requires-dist = [
     { name = "click", marker = "extra == 'dev'", specifier = "==8.1.7" },
     { name = "databricks-sdk", specifier = "==0.44.1" },
     { name = "dataclasses-json", specifier = "==0.6.*" },
-    { name = "delta-spark", specifier = "==3.2.*" },
+    { name = "delta-spark", marker = "extra == 'spark'", specifier = "==3.2.*" },
     { name = "dj-database-url", specifier = "==2.1.0" },
     { name = "django", specifier = "==4.2.*" },
     { name = "django-cors-headers", specifier = "==4.3.*" },
@@ -2354,7 +2356,7 @@ requires-dist = [
     { name = "py-gfm", specifier = "==2.0.0" },
     { name = "pydantic", extras = ["dotenv"], specifier = "==1.9.*" },
     { name = "pyparsing", marker = "extra == 'server'", specifier = "==3.2.1" },
-    { name = "pyspark", marker = "extra == 'dev'", specifier = "==3.5.0" },
+    { name = "pyspark", marker = "extra == 'spark'", specifier = "==3.5.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = "==8.0.*" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = "==4.1.*" },
     { name = "pytest-django", marker = "extra == 'dev'", specifier = "==4.8.*" },
@@ -2368,7 +2370,7 @@ requires-dist = [
     { name = "uwsgi", marker = "extra == 'server'", specifier = "==2.0.23" },
     { name = "xlrd3", specifier = "==1.1.0" },
 ]
-provides-extras = ["dev", "server", "ansible", "awscli"]
+provides-extras = ["dev", "spark", "server", "ansible", "awscli"]
 
 [[package]]
 name = "uwsgi"
