@@ -248,6 +248,7 @@ class TreasuryAccountDownload(ObjectClassProgramActivityMixin, AbstractAccountDo
 
     @property
     def sort_by_cols(self) -> list[str]:
+        # Sorting by a value that is repeated often will help improve compression during the zipping step
         return [
             "owning_agency_name",
             "reporting_agency_name",
