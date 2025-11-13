@@ -532,3 +532,49 @@ def test_file_c_spark_download_unknown_columns(client, download_test_data):
 
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
     assert resp.json()["detail"] == "Unknown columns: ['test']"
+
+
+def test_download_caching(client, download_test_data, caplog):
+
+    resp1 = client.post(
+        "/api/v2/download/accounts/",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "account_level": "federal_account",
+                "filters": {
+                    "budget_function": "all",
+                    "agency": "all",
+                    "submission_types": ["account_balances", "object_class_program_activity", "award_financial"],
+                    "fy": "2021",
+                    "period": 12,
+                },
+                "columns": ["owning_agency_name", "federal_account_name"],
+                "file_format": "csv",
+            }
+        ),
+    )
+
+    resp2 = client.post(
+        "/api/v2/download/accounts/",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "account_level": "federal_account",
+                "filters": {
+                    "budget_function": "all",
+                    "agency": "all",
+                    "submission_types": ["award_financial", "account_balances", "object_class_program_activity"],
+                    "fy": "2021",
+                    "period": 12,
+                },
+                "columns": ["federal_account_name", "owning_agency_name"],
+                "file_format": "csv",
+            }
+        ),
+    )
+    assert resp1.status_code == status.HTTP_200_OK
+    assert resp2.status_code == status.HTTP_200_OK
+
+    records = caplog.records
+    assert records[0].message == "download is pre-generated"

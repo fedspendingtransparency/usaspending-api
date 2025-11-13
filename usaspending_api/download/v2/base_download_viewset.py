@@ -50,6 +50,7 @@ class BaseDownloadViewSet(APIView):
                 .order_by("-update_date")
                 .first()
             )
+            write_to_log(message="download is pre-generated")
             return self.build_download_response(download_job)
 
         # Check if the same request has been called today
