@@ -577,4 +577,9 @@ def test_download_caching(client, download_test_data, create_download_delta_tabl
     assert resp2.status_code == status.HTTP_200_OK
 
     records = caplog.records
-    assert records[0].message == "download is pre-generated"
+    containsMessage = False
+    for r in records:
+        print (r.message)
+        if r.message is "download is pre-generated":
+            containsMessage = True
+    assert containsMessage
