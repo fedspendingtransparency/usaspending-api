@@ -1,0 +1,26 @@
+name: Run Code Quality Checks
+
+on:
+  workflow_call:
+
+jobs:
+  Run:
+    # These checks are not broken out into multiple jobs because the steps to prepare the environment
+    # take the bulk of the time. Running them in parallel saves minimal time at the cost of using more
+    # runners than needed.
+    name: Run
+    runs-on: ${{ vars.RUNNER_VERSION }}
+    steps:
+      - name: Checkout Source Repository
+        uses: actions/checkout@v4
+      - name: Get Changed Files
+        id: changed-files
+        uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62 # v47
+        with:
+          files: |
+            **.py
+          separator: " "
+      - name: install pylint
+        run: pip install pylint==4.0.2
+      - name: pylint
+        run: pylint ${{ steps.changed-files.outputs.all_changed_files }}
