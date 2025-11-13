@@ -19,7 +19,7 @@ def test_load_offices(monkeypatch):
     data_broker_mock.cursor.return_value = PhonyCursor("usaspending_api/references/tests/data/broker_offices.json")
     mock_connections = {
         settings.DEFAULT_DB_ALIAS: MagicMock(),
-        settings.DATA_BROKER_DB_ALIAS: data_broker_mock,
+        settings.BROKER_DB_ALIAS: data_broker_mock,
     }
 
     monkeypatch.setattr("usaspending_api.references.management.commands.load_offices.connections", mock_connections)

@@ -39,17 +39,14 @@ def get_unreported_data_obj(
 
     queryset = queryset[:limit] if spending_type == "award" else queryset
 
-    result_set = []
     result_keys = ["id", "code", "type", "name", "amount"]
     if spending_type == "agency":
         result_keys.append("link")
     if spending_type == "federal_account":
         result_keys.append("account_number")
-    for entry in queryset:
-        condensed_entry = {}
-        for key in result_keys:
-            condensed_entry[key] = entry[key] if key != "id" else str(entry[key])
-        result_set.append(condensed_entry)
+    result_set = [
+        {k: (v if k != "id" else str(v)) for k, v in entry.items()} for entry in queryset.values(*result_keys)
+    ]
     gtas = (
         GTASSF133Balances.objects.filter(fiscal_year=fiscal_year, fiscal_period=fiscal_period)
         .values("fiscal_year", "fiscal_period")
@@ -75,17 +72,15 @@ def get_unreported_data_obj(
 
 def type_filter(_type, filters, limit=None):
     _types = [
+        "agency",
+        "award",
+        "award_category",
         "budget_function",
         "budget_subfunction",
         "federal_account",
-        "program_activity",
         "object_class",
+        "program_activity",
         "recipient",
-        "award",
-        "award_category",
-        "agency",
-        "agency_type",
-        "agency_sub",
     ]
 
     # Validate explorer _type
@@ -93,11 +88,7 @@ def type_filter(_type, filters, limit=None):
         raise InvalidParameterException('Missing Required Request Parameter, "type": "type"')
 
     elif _type not in _types:
-        raise InvalidParameterException(
-            "Type does not have a valid value. "
-            "Valid Types: budget_function, budget_subfunction, federal_account, program_activity,"
-            "object_class, recipient, award, award_category agency, agency_type, agency_sub"
-        )
+        raise InvalidParameterException("Type does not have a valid value. " f"Valid Types: {_types}")
 
     if filters is None:
         raise InvalidParameterException('Missing Required Request Parameter, "filters": { "filter_options" }')
@@ -158,7 +149,7 @@ def type_filter(_type, filters, limit=None):
     # Apply filters to queryset results
     alt_set, queryset = spending_filter(alt_set, queryset, filters, _type)
 
-    if _type == "recipient" or _type == "award" or _type == "award_category" or _type == "agency_type":
+    if _type in {"award", "award_category", "recipient"}:
         # Annotate and get explorer _type filtered results
         exp = Explorer(alt_set, queryset)
 
@@ -191,10 +182,6 @@ def type_filter(_type, filters, limit=None):
             actual_total += award["total"] or 0
 
         result_set = list(alt_set)
-
-        # we need to get the File B data for the same set of filters, so we re-run the spending_filter but without setting the _type to any of the alt keys.
-        alt_set2, queryset2 = spending_filter(alt_set, queryset, filters, "")
-        expected_total = queryset2.aggregate(total=Sum("amount"))["total"]
 
         result_set.sort(key=lambda k: k["amount"], reverse=True)
 

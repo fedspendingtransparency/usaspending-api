@@ -237,7 +237,7 @@ def populate_broker_data(broker_server_dblink_setup):
         ),
     }
     insert_statement = "INSERT INTO %(table_name)s (%(columns)s) VALUES %(values)s"
-    with connections[settings.DATA_BROKER_DB_ALIAS].cursor() as cursor:
+    with connections[settings.BROKER_DB_ALIAS].cursor() as cursor:
         for table_name, rows in broker_data.items():
             # An assumption is made that each set of rows have the same columns in the same order
             columns = list(rows[0])
@@ -249,7 +249,7 @@ def populate_broker_data(broker_server_dblink_setup):
             cursor.execute(sql_string)
     yield
     # Cleanup test data for each Broker test table
-    with connections[settings.DATA_BROKER_DB_ALIAS].cursor() as cursor:
+    with connections[settings.BROKER_DB_ALIAS].cursor() as cursor:
         for table in broker_data:
             cursor.execute(f"TRUNCATE TABLE {table} RESTART IDENTITY CASCADE")
 
