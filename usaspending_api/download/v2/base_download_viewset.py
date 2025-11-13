@@ -36,9 +36,10 @@ class BaseDownloadViewSet(APIView):
     ):
         validator = validator_type(request.data)
         json_request = validator.json_request
+        sorted_json_request = order_nested_object(json_request)
 
         # Check if download is pre-generated
-        pre_generated_download = json_request.pop("pre_generated_download", None)
+        pre_generated_download = sorted_json_request.pop("pre_generated_download", None)
         if pre_generated_download:
             download_job = (
                 DownloadJob.objects.filter(
@@ -52,7 +53,6 @@ class BaseDownloadViewSet(APIView):
             return self.build_download_response(download_job)
 
         # Check if the same request has been called today
-        sorted_json_request = order_nested_object(validator.json_request)
         ordered_json_request = json.dumps(sorted_json_request)
         cached_download = self._get_cached_download(ordered_json_request, json_request.get("download_types", []))
 
