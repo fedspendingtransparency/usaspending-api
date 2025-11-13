@@ -13,7 +13,7 @@ class TestThingWithMultipleDatabases(TestCase):
 
     @classmethod
     def setUpTestData(cls):
-        connection = connections[settings.DATA_BROKER_DB_ALIAS]
+        connection = connections[settings.BROKER_DB_ALIAS]
         with connection.cursor() as cursor:
 
             cursor.execute("select count(*) from published_fabs")

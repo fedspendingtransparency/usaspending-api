@@ -264,11 +264,11 @@ def ensure_broker_server_dblink_exists():
     # Gather tokens from database connection strings
     if settings.DEFAULT_DB_ALIAS not in settings.DATABASES:
         raise Exception(f"'{settings.DEFAULT_DATABASE_ALIAS}' database not configured in django settings.DATABASES")
-    if settings.DATA_BROKER_DB_ALIAS not in settings.DATABASES:
-        raise Exception(f"'{settings.DATA_BROKER_DB_ALIAS}' database not configured in django settings.DATABASES")
+    if settings.BROKER_DB_ALIAS not in settings.DATABASES:
+        raise Exception(f"'{settings.BROKER_DB_ALIAS}' database not configured in django settings.DATABASES")
     db_conn_tokens_dict = {
         **{"USASPENDING_DB_" + k: v for k, v in settings.DATABASES[settings.DEFAULT_DB_ALIAS].items()},
-        **{"BROKER_DB_" + k: v for k, v in settings.DATABASES[settings.DATA_BROKER_DB_ALIAS].items()},
+        **{"BROKER_DB_" + k: v for k, v in settings.DATABASES[settings.BROKER_DB_ALIAS].items()},
     }
 
     extensions_script_path = str(settings.APP_DIR / "database_scripts" / "extensions" / "extensions.sql")

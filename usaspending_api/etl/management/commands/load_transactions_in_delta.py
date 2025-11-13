@@ -1064,7 +1064,7 @@ class Command(BaseCommand):
             # managed table in the temp database.
             self.spark.sql("CREATE DATABASE IF NOT EXISTS temp")
             self.spark.sql(
-                """
+                f"""
                     CREATE OR REPLACE TABLE temp.orphaned_transaction_info (
                         transaction_id        LONG NOT NULL,
                         transaction_unique_id STRING NOT NULL,
@@ -1072,6 +1072,7 @@ class Command(BaseCommand):
                         unique_award_key      STRING NOT NULL
                     )
                     USING DELTA
+                    LOCATION 's3a://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.DELTA_LAKE_S3_PATH}/temp/orphaned_transaction_info'
                 """
             )
 
@@ -1086,11 +1087,12 @@ class Command(BaseCommand):
         def prepare_orphaned_award_temp_table():
             # We actually need another temporary table to handle orphaned awards
             self.spark.sql(
-                """
+                f"""
                     CREATE OR REPLACE TABLE temp.orphaned_award_info (
                         award_id LONG NOT NULL
                     )
                     USING DELTA
+                    LOCATION 's3a://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.DELTA_LAKE_S3_PATH}/temp/orphaned_award_info'
                 """
             )
 

@@ -4,7 +4,7 @@ import pytest
 from django.core.management import call_command
 from django.db import connections
 
-from usaspending_api.settings import DATA_BROKER_DB_ALIAS, DEFAULT_DB_ALIAS
+from usaspending_api.settings import BROKER_DB_ALIAS, DEFAULT_DB_ALIAS
 
 
 @pytest.fixture(scope="module")
@@ -14,7 +14,7 @@ def now():
 
 @pytest.fixture
 def broker_zips_grouped(now):
-    with connections[DATA_BROKER_DB_ALIAS].cursor() as cursor:
+    with connections[BROKER_DB_ALIAS].cursor() as cursor:
         cursor.execute(
             """
             CREATE TABLE zips_grouped_test (
@@ -37,11 +37,11 @@ def broker_zips_grouped(now):
         """
         )
     yield
-    with connections[DATA_BROKER_DB_ALIAS].cursor() as cursor:
+    with connections[BROKER_DB_ALIAS].cursor() as cursor:
         cursor.execute("DROP TABLE zips_grouped_test;")
 
 
-@pytest.mark.django_db(databases=[DATA_BROKER_DB_ALIAS, DEFAULT_DB_ALIAS], transaction=True)
+@pytest.mark.django_db(databases=[BROKER_DB_ALIAS, DEFAULT_DB_ALIAS], transaction=True)
 def test_load_broker_table(broker_zips_grouped, now):
     call_command(
         "load_broker_table",
@@ -61,7 +61,7 @@ def test_load_broker_table(broker_zips_grouped, now):
         assert rows == [(now, now, 1, "00001", "KS", "01", "01"), (now, now, 2, "00002", "KS", "02", "02")]
 
 
-@pytest.mark.django_db(databases=[DATA_BROKER_DB_ALIAS, DEFAULT_DB_ALIAS], transaction=True)
+@pytest.mark.django_db(databases=[BROKER_DB_ALIAS, DEFAULT_DB_ALIAS], transaction=True)
 def test_load_broker_table_exists_failure(broker_zips_grouped):
     with pytest.raises(ValueError):
         call_command(

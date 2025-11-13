@@ -101,11 +101,14 @@ def load_cfda_csv_into_pandas(data_file_handle):
 
     for field in DATA_CLEANING_MAP.keys():
         if field not in list(df.columns):
-            raise ValueError("{} is required for loading table".format(field))
+            raise ValueError(f"{field} is required for loading table")
 
     df = df[list(DATA_CLEANING_MAP.keys())]  # toss out any columns from the csv that aren't in the fieldMap parameter
     df = df.rename(columns=DATA_CLEANING_MAP)  # rename columns as specified in fieldMap
-    df["data_source"] = "USA"
+    df = df.assign(
+        data_source="USA",
+        program_number=df["program_number"].str.upper(),
+    )
     return df
 
 

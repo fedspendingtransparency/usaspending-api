@@ -243,7 +243,7 @@ class TreasuryAccountDownload(ObjectClassProgramActivityMixin, AbstractAccountDo
     @property
     def agg_cols(self) -> dict[str, callable]:
         return {
-            "last_modified_date": lambda col: self.sf.max(col).alias("max_last_modified_date"),
+            "last_modified_date": lambda col: self.sf.max(col).alias(f"max_{col}"),
         }
 
     @property

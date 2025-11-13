@@ -95,7 +95,7 @@ class Command(BaseCommand):
             fy=fiscal_year,
             broker_where=broker_where,
             usaspending_where=usaspending_where,
-            broker_server=settings.DATA_BROKER_DBLINK_NAME,
+            broker_server=settings.BROKER_DBLINK_NAME,
         )
         return sql_statement
 

@@ -265,22 +265,22 @@ def django_db_setup(
                 {**settings.DATABASES[settings.DEFAULT_DB_ALIAS], **{"NAME": test_usas_db_name}}
             )
 
-            old_broker_db_url = CONFIG.DATA_BROKER_DATABASE_URL
+            old_broker_db_url = CONFIG.BROKER_DB
             old_broker_ps_db = CONFIG.BROKER_DB_NAME
 
-            if settings.DATA_BROKER_DB_ALIAS in settings.DATABASES:
-                test_broker_db = settings.DATABASES[settings.DATA_BROKER_DB_ALIAS].get("NAME")
+            if settings.BROKER_DB_ALIAS in settings.DATABASES:
+                test_broker_db = settings.DATABASES[settings.BROKER_DB_ALIAS].get("NAME")
                 if test_broker_db is None:
                     raise ValueError(
-                        f"DB 'NAME' for DB alias {settings.DATA_BROKER_DB_ALIAS} came back as None. Check config."
+                        f"DB 'NAME' for DB alias {settings.BROKER_DB_ALIAS} came back as None. Check config."
                     )
                 if "test" not in test_broker_db:
                     raise ValueError(
-                        f"DB 'NAME' for DB alias {settings.DATA_BROKER_DB_ALIAS} does not contain 'test' when expected to."
+                        f"DB 'NAME' for DB alias {settings.BROKER_DB_ALIAS} does not contain 'test' when expected to."
                     )
                 CONFIG.BROKER_DB_NAME = test_broker_db
-                CONFIG.DATA_BROKER_DATABASE_URL = build_dsn_string(
-                    {**settings.DATABASES[settings.DATA_BROKER_DB_ALIAS], **{"NAME": test_broker_db}}
+                CONFIG.BROKER_DB = build_dsn_string(
+                    {**settings.DATABASES[settings.BROKER_DB_ALIAS], **{"NAME": test_broker_db}}
                 )
 
     # This will be added to the finalizer which will be run when the newly made test database is being torn down
@@ -288,7 +288,7 @@ def django_db_setup(
         CONFIG.DATABASE_URL = old_usas_db_url
         CONFIG.USASPENDING_DB_NAME = old_usas_ps_db
 
-        CONFIG.DATA_BROKER_DATABASE_URL = old_broker_db_url
+        CONFIG.BROKER_DB = old_broker_db_url
         CONFIG.BROKER_DB_NAME = old_broker_ps_db
 
     request.addfinalizer(reset_postgres_dsn)
@@ -453,7 +453,7 @@ def broker_db_setup(django_db_setup, django_db_use_migrations, worker_id):
     broker_integrationtest_secrets_file = f"{broker_config_env_envvar}_secrets.yml"
 
     # Check that a Connection to the Broker DB has been configured
-    if settings.DATA_BROKER_DB_ALIAS not in settings.DATABASES:
+    if settings.BROKER_DB_ALIAS not in settings.DATABASES:
         logger.error("Error finding 'data_broker' database configured in django settings.DATABASES.")
         pytest.skip(
             "'data_broker' database not configured in django settings.DATABASES. "
@@ -486,7 +486,7 @@ def broker_db_setup(django_db_setup, django_db_use_migrations, worker_id):
 
     # ==== Run the DB setup script using the Broker docker image. ====
 
-    broker_test_db_name = settings.DATABASES[settings.DATA_BROKER_DB_ALIAS]["NAME"]
+    broker_test_db_name = settings.DATABASES[settings.BROKER_DB_ALIAS]["NAME"]
 
     # Using a mounts to copy the broker source code into the container, and create a modifiable copy
     # of the broker config dir in order to execute broker DB setup code using that config
@@ -534,13 +534,13 @@ def broker_db_setup(django_db_setup, django_db_use_migrations, worker_id):
     # Setup Broker config files to work with the same DB configured via the Broker DB URL env var
     # This will ensure that when the broker script is run, it uses the same test broker DB
     broker_db_config_cmds = rf"""                                                                 \
-        sed -i.bak -E "s/host:.*$/host: {settings.DATABASES[settings.DATA_BROKER_DB_ALIAS]["HOST"]}/"             \
+        sed -i.bak -E "s/host:.*$/host: {settings.DATABASES[settings.BROKER_DB_ALIAS]["HOST"]}/"             \
             {broker_src_target}/{broker_config_dir}/{broker_integrationtest_config_file};         \
-        sed -i.bak -E "s/port:.*$/port: {settings.DATABASES[settings.DATA_BROKER_DB_ALIAS]["PORT"]}/"             \
+        sed -i.bak -E "s/port:.*$/port: {settings.DATABASES[settings.BROKER_DB_ALIAS]["PORT"]}/"             \
             {broker_src_target}/{broker_config_dir}/{broker_integrationtest_config_file};         \
-        sed -i.bak -E "s/username:.*$/username: {settings.DATABASES[settings.DATA_BROKER_DB_ALIAS]["USER"]}/"     \
+        sed -i.bak -E "s/username:.*$/username: {settings.DATABASES[settings.BROKER_DB_ALIAS]["USER"]}/"     \
             {broker_src_target}/{broker_config_dir}/{broker_integrationtest_secrets_file};        \
-        sed -i.bak -E "s/password:.*$/password: {settings.DATABASES[settings.DATA_BROKER_DB_ALIAS]["PASSWORD"]}/" \
+        sed -i.bak -E "s/password:.*$/password: {settings.DATABASES[settings.BROKER_DB_ALIAS]["PASSWORD"]}/" \
             {broker_src_target}/{broker_config_dir}/{broker_integrationtest_secrets_file};        \
     """
 
