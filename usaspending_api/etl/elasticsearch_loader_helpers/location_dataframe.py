@@ -138,7 +138,7 @@ class LocationDataFrame:
             )
             .filter(
                 self.transaction_search.pop_state_code.isNotNull()
-                & sf.rlike(self.transaction_search.pop_congressional_code_current, sf.lit("^[0-9]{2}$"))
+                & (sf.regexp_extract(self.transaction_search.pop_congressional_code_current, "^[0-9]{2}$", 0) != "")
             )
             .select(
                 sf.concat(
@@ -167,7 +167,12 @@ class LocationDataFrame:
             )
             .filter(
                 self.transaction_search.recipient_location_state_code.isNotNull()
-                & sf.rlike(self.transaction_search.recipient_location_congressional_code_current, sf.lit("^[0-9]{2}$"))
+                & (
+                    sf.regexp_extract(
+                        self.transaction_search.recipient_location_congressional_code_current, "^[0-9]{2}$", 0
+                    )
+                    != ""
+                )
             )
             .select(
                 sf.concat(
@@ -198,7 +203,7 @@ class LocationDataFrame:
             )
             .filter(
                 self.transaction_search.pop_state_code.isNotNull()
-                & sf.rlike(self.transaction_search.pop_congressional_code, sf.lit("^[0-9]{2}$"))
+                & (sf.regexp_extract(self.transaction_search.pop_congressional_code, "^[0-9]{2}$", 0) != "")
             )
             .select(
                 sf.concat(
@@ -227,7 +232,10 @@ class LocationDataFrame:
             )
             .filter(
                 self.transaction_search.recipient_location_state_code.isNotNull()
-                & sf.rlike(self.transaction_search.recipient_location_congressional_code, sf.lit("^[0-9]{2}$"))
+                & (
+                    sf.regexp_extract(self.transaction_search.recipient_location_congressional_code, "^[0-9]{2}$", 0)
+                    != ""
+                )
             )
             .select(
                 sf.concat(
