@@ -166,7 +166,6 @@ CURR_DATE=$(date '+%Y-%m-%d-%H-%M-%S')
 docker compose run --rm usaspending-manage python3 -u manage.py elasticsearch_indexer --create-new-index --index-name "$CURR_DATE-transactions" --load-type transaction
 docker compose run --rm usaspending-manage python3 -u manage.py elasticsearch_indexer --create-new-index --index-name "$CURR_DATE-awards" --load-type award
 docker compose run --rm usaspending-manage python3 -u manage.py elasticsearch_indexer --create-new-index --index-name "$CURR_DATE-recipients" --load-type recipient
-docker compose run --rm usaspending-manage python3 -u manage.py elasticsearch_indexer --create-new-index --index-name "$CURR_DATE-locations" --load-type location
 docker compose run --rm usaspending-manage python3 -u manage.py elasticsearch_indexer --create-new-index --index-name "$CURR_DATE-subaward" --load-type subaward
 ```
 
