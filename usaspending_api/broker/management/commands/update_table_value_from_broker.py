@@ -5,7 +5,7 @@ from django.core.management import BaseCommand
 from django.db import connections
 
 from usaspending_api.common.helpers.timing_helpers import Timer
-from usaspending_api.settings import DATA_BROKER_DB_ALIAS, DEFAULT_DB_ALIAS
+from usaspending_api.settings import BROKER_DB_ALIAS, DEFAULT_DB_ALIAS
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +85,7 @@ class Command(BaseCommand):
             yield n, min(n + self.CHUNK_SIZE, max_id)
 
     def get_match_field_range(self) -> tuple[int, int]:
-        with connections[DATA_BROKER_DB_ALIAS].cursor() as cursor:
+        with connections[BROKER_DB_ALIAS].cursor() as cursor:
             cursor.execute(
                 f"""
                 SELECT min({self.broker_match_field}), max({self.broker_match_field})

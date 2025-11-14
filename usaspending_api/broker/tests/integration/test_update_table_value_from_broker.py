@@ -3,7 +3,7 @@ from django.core.management import call_command
 
 from django.db import connections
 
-from usaspending_api.settings import DATA_BROKER_DB_ALIAS, DEFAULT_DB_ALIAS
+from usaspending_api.settings import BROKER_DB_ALIAS, DEFAULT_DB_ALIAS
 
 
 @pytest.fixture
@@ -32,7 +32,7 @@ def setup_usas_test_table():
 
 @pytest.fixture
 def setup_broker_matching_table():
-    with connections[DATA_BROKER_DB_ALIAS].cursor() as cursor:
+    with connections[BROKER_DB_ALIAS].cursor() as cursor:
         cursor.execute(
             """
             CREATE TABLE test_update_usas (
@@ -50,13 +50,13 @@ def setup_broker_matching_table():
         """
         )
     yield
-    with connections[DATA_BROKER_DB_ALIAS].cursor() as cursor:
+    with connections[BROKER_DB_ALIAS].cursor() as cursor:
         cursor.execute("DROP TABLE test_update_usas;")
 
 
 @pytest.fixture
 def setup_broker_different_table():
-    with connections[DATA_BROKER_DB_ALIAS].cursor() as cursor:
+    with connections[BROKER_DB_ALIAS].cursor() as cursor:
         cursor.execute(
             """
             CREATE TABLE test_update_usas_from_broker (
@@ -74,7 +74,7 @@ def setup_broker_different_table():
         """
         )
     yield
-    with connections[DATA_BROKER_DB_ALIAS].cursor() as cursor:
+    with connections[BROKER_DB_ALIAS].cursor() as cursor:
         cursor.execute("DROP TABLE test_update_usas_from_broker;")
 
 
@@ -96,7 +96,7 @@ def validate_usas_test_data(is_updated: bool):
 
 def validate_broker_test_data(is_table_match: bool):
     sql_parts_suffix = "" if is_table_match else "_from_broker"
-    with connections[DATA_BROKER_DB_ALIAS].cursor() as cursor:
+    with connections[BROKER_DB_ALIAS].cursor() as cursor:
         cursor.execute(
             f"""
             SELECT match_field{sql_parts_suffix}, load_field{sql_parts_suffix}
@@ -108,7 +108,7 @@ def validate_broker_test_data(is_table_match: bool):
     assert rows == [(1, "UPDATED TEXT 1"), (3, "UPDATED TEXT 3")]
 
 
-@pytest.mark.django_db(databases=[DATA_BROKER_DB_ALIAS, DEFAULT_DB_ALIAS], transaction=True)
+@pytest.mark.django_db(databases=[BROKER_DB_ALIAS, DEFAULT_DB_ALIAS], transaction=True)
 def test_update_with_only_usas_fields(broker_server_dblink_setup, setup_usas_test_table, setup_broker_matching_table):
     validate_usas_test_data(is_updated=False)
     validate_broker_test_data(is_table_match=True)
@@ -124,7 +124,7 @@ def test_update_with_only_usas_fields(broker_server_dblink_setup, setup_usas_tes
     validate_usas_test_data(is_updated=True)
 
 
-@pytest.mark.django_db(databases=[DATA_BROKER_DB_ALIAS, DEFAULT_DB_ALIAS], transaction=True)
+@pytest.mark.django_db(databases=[BROKER_DB_ALIAS, DEFAULT_DB_ALIAS], transaction=True)
 def test_update_with_broker_fields(broker_server_dblink_setup, setup_usas_test_table, setup_broker_different_table):
     validate_usas_test_data(is_updated=False)
     validate_broker_test_data(is_table_match=False)

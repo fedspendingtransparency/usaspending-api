@@ -25,6 +25,6 @@ class QATConfig(DefaultConfig):
 
     # ==== [AWS] ====
     AWS_PROFILE: Union[str, None] = None
-    SPARK_S3_BUCKET = "dti-da-usaspending-spark-qat"
+    SPARK_S3_BUCKET = "dti-usaspending-emr-qat"
     BULK_DOWNLOAD_S3_BUCKET_NAME: str = "dti-usaspending-bulk-download-qat"
     DATABASE_DOWNLOAD_S3_BUCKET_NAME = "dti-usaspending-db-nonprod"

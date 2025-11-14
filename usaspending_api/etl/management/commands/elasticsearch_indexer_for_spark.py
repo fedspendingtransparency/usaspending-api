@@ -22,7 +22,7 @@ class Command(AbstractElasticsearchIndexer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.valid_load_types = {"transaction", "award", "recipient", "location", "subaward"}
+        self.valid_load_types = {*self.valid_load_types, "location"}
 
     def create_controller(self, config: dict) -> AbstractElasticsearchIndexerController:
         extra_conf = {

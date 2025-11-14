@@ -29,8 +29,8 @@ def get_database_dsn_string(db_alias: str = DEFAULT_DB_ALIAS):
 
 
 def get_broker_dsn_string():
-    if settings.DATA_BROKER_DB_ALIAS in settings.DATABASES:  # Primary DB connection in a deployed environment
-        return build_dsn_string(settings.DATABASES[settings.DATA_BROKER_DB_ALIAS])
+    if settings.BROKER_DB_ALIAS in settings.DATABASES:  # Primary DB connection in a deployed environment
+        return build_dsn_string(settings.DATABASES[settings.BROKER_DB_ALIAS])
     else:
         raise Exception("No valid Broker database connection is configured")
 
