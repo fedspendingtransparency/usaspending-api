@@ -584,5 +584,7 @@ def test_download_caching(client, download_test_data, create_download_delta_tabl
 
     for text in caplog.text:
         print("text:", text)
+    for m in caplog.messages:
+        print("message:", m)
     assert "download is pre-generated" in caplog.text
     assert containsMessage
