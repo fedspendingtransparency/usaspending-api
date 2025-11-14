@@ -579,7 +579,7 @@ def test_download_caching(client, download_test_data, create_download_delta_tabl
     records = caplog.records
     containsMessage = False
     for r in records:
-        print (r.message)
-        if r.message is "download is pre-generated":
+        print(r.message)
+        if r.message == "download is pre-generated":
             containsMessage = True
     assert containsMessage
