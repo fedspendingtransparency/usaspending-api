@@ -17,11 +17,9 @@ class LocationDataFrame:
     def country(self):
         return self.ref_country_code.select(
             sf.upper(sf.col("country_name")).alias("location"),
-            sf.to_json(
-                sf.named_struct(
-                    sf.lit("country_name"), sf.col("country_name"), sf.lit("location_type"), sf.lit("country")
-                )
-            ).alias("location_json"),
+            sf.to_json(sf.struct(sf.col("country_name"), sf.lit("country").alias("location_type"))).alias(
+                "location_json"
+            ),
             sf.lit("country").alias("location_type"),
         )
 
@@ -30,13 +28,10 @@ class LocationDataFrame:
         return self.state_data.select(
             sf.concat(sf.upper(self.state_data.name), sf.lit(", UNITED STATES")).alias("location"),
             sf.to_json(
-                sf.named_struct(
-                    sf.lit("state_name"),
-                    sf.upper(self.state_data.name),
-                    sf.lit("country_name"),
-                    sf.lit("UNITED STATES"),
-                    sf.lit("location_type"),
-                    sf.lit("state"),
+                sf.struct(
+                    sf.upper(self.state_data.name).alias("state_name"),
+                    sf.lit("UNITED STATES").alias("country_name"),
+                    sf.lit("state").alias("location_type"),
                 )
             ).alias("location_json"),
             sf.lit("state").alias("location_type"),
@@ -52,15 +47,11 @@ class LocationDataFrame:
                 sf.upper("feature_name"), sf.lit(", "), sf.upper(self.state_data.name), sf.lit(", UNITED STATES")
             ).alias("location"),
             sf.to_json(
-                sf.named_struct(
-                    sf.lit("city_name"),
-                    sf.upper("feature_name"),
-                    sf.lit("state_name"),
-                    sf.upper(self.state_data.name),
-                    sf.lit("country_name"),
-                    sf.lit("UNITED STATES"),
-                    sf.lit("location_type"),
-                    sf.lit("city"),
+                sf.struct(
+                    sf.upper("feature_name").alias("city_name"),
+                    sf.upper(self.state_data.name).alias("state_name"),
+                    sf.lit("UNITED STATES").alias("country_name"),
+                    sf.lit("city").alias("location_type"),
                 )
             ).alias("location_json"),
             sf.lit("city").alias("location_type"),
@@ -87,15 +78,11 @@ class LocationDataFrame:
                 "location"
             ),
             sf.to_json(
-                sf.named_struct(
-                    sf.lit("city_name"),
-                    sf.upper("city_name"),
-                    sf.lit("state_name"),
-                    sf.lit(None),
-                    sf.lit("country_name"),
+                sf.struct(
+                    sf.upper("city_name").alias("city_name"),
+                    sf.lit(None).alias("state_name"),
                     self.ref_country_code.country_name,
-                    sf.lit("location_type"),
-                    sf.lit("city"),
+                    sf.lit("city").alias("location_type"),
                 )
             ).alias("location_json"),
             sf.lit("city").alias("location_type"),
@@ -114,15 +101,11 @@ class LocationDataFrame:
                 sf.lit(", UNITED STATES"),
             ).alias("location"),
             sf.to_json(
-                sf.named_struct(
-                    sf.lit("county_name"),
+                sf.struct(
                     sf.upper(self.ref_city_county_state_code.county_name),
-                    sf.lit("state_name"),
-                    sf.upper(self.state_data.name),
-                    sf.lit("country_name"),
-                    sf.lit("UNITED STATES"),
-                    sf.lit("location_type"),
-                    sf.lit("county"),
+                    sf.upper(self.state_data.name).alias("state_name"),
+                    sf.lit("UNITED STATES").alias("country_name"),
+                    sf.lit("county").alias("location_type"),
                 )
             ).alias("location_json"),
             sf.lit("county").alias("location_type"),
@@ -137,15 +120,11 @@ class LocationDataFrame:
                 self.zips_grouped.zip5, sf.lit(", "), sf.upper(self.state_data.name), sf.lit(", UNITED STATES")
             ).alias("location"),
             sf.to_json(
-                sf.named_struct(
-                    sf.lit("zip_code"),
-                    self.zips_grouped.zip5,
-                    sf.lit("state_name"),
-                    sf.upper(self.state_data.name),
-                    sf.lit("country_name"),
-                    sf.lit("UNITED STATES"),
-                    sf.lit("location_type"),
-                    sf.lit("zip_code"),
+                sf.struct(
+                    self.zips_grouped.zip5.alias("zip_code"),
+                    sf.upper(self.state_data.name).alias("state_name"),
+                    sf.lit("UNITED STATES").alias("country_name"),
+                    sf.lit("zip_code").alias("location_type"),
                 )
             ).alias("location_json"),
             sf.lit("zip_code").alias("location_type"),
@@ -167,15 +146,13 @@ class LocationDataFrame:
                     self.transaction_search.pop_congressional_code_current,
                 ).alias("location"),
                 sf.to_json(
-                    sf.named_struct(
-                        sf.lit("current_cd"),
-                        sf.concat(sf.upper("pop_state_code"), sf.lit("-"), sf.col("pop_congressional_code_current")),
-                        sf.lit("state_name"),
-                        sf.upper(self.state_data.name),
-                        sf.lit("country_name"),
-                        sf.lit("UNITED STATES"),
-                        sf.lit("location_type"),
-                        sf.lit("current_cd"),
+                    sf.struct(
+                        sf.concat(
+                            sf.upper("pop_state_code"), sf.lit("-"), sf.col("pop_congressional_code_current")
+                        ).alias("current_cd"),
+                        sf.upper(self.state_data.name).alias("state_name"),
+                        sf.lit("UNITED STATES").alias("country_name"),
+                        sf.lit("current_cd").alias("location_type"),
                     )
                 ).alias("location_json"),
                 sf.lit("current_cd").alias("location_type"),
@@ -198,19 +175,15 @@ class LocationDataFrame:
                     self.transaction_search.recipient_location_congressional_code_current,
                 ).alias("location"),
                 sf.to_json(
-                    sf.named_struct(
-                        sf.lit("current_cd"),
+                    sf.struct(
                         sf.concat(
                             sf.upper("recipient_location_state_code"),
                             sf.lit("-"),
                             sf.col("recipient_location_congressional_code_current"),
-                        ),
-                        sf.lit("state_name"),
-                        sf.upper(self.state_data.name),
-                        sf.lit("country_name"),
-                        sf.lit("UNITED STATES"),
-                        sf.lit("location_type"),
-                        sf.lit("current_cd"),
+                        ).alias("current_cd"),
+                        sf.upper(self.state_data.name).alias("state_name"),
+                        sf.lit("UNITED STATES").alias("country_name"),
+                        sf.lit("current_cd").alias("location_type"),
                     )
                 ).alias("location_json"),
                 sf.lit("current_cd").alias("location_type"),
@@ -233,15 +206,13 @@ class LocationDataFrame:
                     self.transaction_search.pop_congressional_code,
                 ).alias("location"),
                 sf.to_json(
-                    sf.named_struct(
-                        sf.lit("original_cd"),
-                        sf.concat(sf.upper("pop_state_code"), sf.lit("-"), sf.col("pop_congressional_code")),
-                        sf.lit("state_name"),
-                        sf.upper(self.state_data.name),
-                        sf.lit("country_name"),
-                        sf.lit("UNITED STATES"),
-                        sf.lit("location_type"),
-                        sf.lit("original_cd"),
+                    sf.struct(
+                        sf.concat(sf.upper("pop_state_code"), sf.lit("-"), sf.col("pop_congressional_code")).alias(
+                            "original_cd"
+                        ),
+                        sf.upper(self.state_data.name).alias("state_name"),
+                        sf.lit("UNITED STATES").alias("country_name"),
+                        sf.lit("original_cd").alias("location_type"),
                     )
                 ).alias("location_json"),
                 sf.lit("original_cd").alias("location_type"),
@@ -264,19 +235,15 @@ class LocationDataFrame:
                     self.transaction_search.recipient_location_congressional_code,
                 ).alias("location"),
                 sf.to_json(
-                    sf.named_struct(
-                        sf.lit("original_cd"),
+                    sf.struct(
                         sf.concat(
                             sf.upper("recipient_location_state_code"),
                             sf.lit("-"),
                             sf.col("recipient_location_congressional_code"),
-                        ),
-                        sf.lit("state_name"),
-                        sf.upper(self.state_data.name),
-                        sf.lit("country_name"),
-                        sf.lit("UNITED STATES"),
-                        sf.lit("location_type"),
-                        sf.lit("original_cd"),
+                        ).alias("original_cd"),
+                        sf.upper(self.state_data.name).alias("state_name"),
+                        sf.lit("UNITED STATES").alias("country_name"),
+                        sf.lit("original_cd").alias("location_type"),
                     )
                 ).alias("location_json"),
                 sf.lit("original_cd").alias("location_type"),
