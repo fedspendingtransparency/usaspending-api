@@ -102,7 +102,7 @@ class LocationDataFrame:
             ).alias("location"),
             sf.to_json(
                 sf.struct(
-                    sf.upper(self.ref_city_county_state_code.county_name),
+                    sf.upper(self.ref_city_county_state_code.county_name).alias("county_name"),
                     sf.upper(self.state_data.name).alias("state_name"),
                     sf.lit("UNITED STATES").alias("country_name"),
                     sf.lit("county").alias("location_type"),
