@@ -1,217 +1,104 @@
-OBJECT_CLASS_PROGRAM_ACTIVITY_DOWNLOAD_COLUMNS = {
-    "financial_accounts_by_program_activity_object_class_id": {
-        "delta": "INTEGER NOT NULL",
-        "postgres": "INTEGER NOT NULL",
-    },
-    "submission_id": {"delta": "INTEGER NOT NULL", "postgres": "INTEGER NOT NULL"},
-    "owning_agency_name": {"delta": "STRING", "postgres": "TEXT"},
-    "federal_account_symbol": {"delta": "STRING", "postgres": "TEXT"},
-    "federal_account_name": {"delta": "STRING", "postgres": "TEXT"},
-    "agency_identifier_name": {"delta": "STRING", "postgres": "TEXT"},
-    "allocation_transfer_agency_identifier_name": {"delta": "STRING", "postgres": "TEXT"},
-    "program_activity_code": {"delta": "STRING", "postgres": "TEXT"},
-    "program_activity_name": {"delta": "STRING", "postgres": "TEXT"},
-    "object_class_code": {"delta": "STRING", "postgres": "TEXT"},
-    "object_class_name": {"delta": "STRING", "postgres": "TEXT"},
-    "direct_or_reimbursable_funding_source": {"delta": "STRING", "postgres": "TEXT"},
-    "disaster_emergency_fund_code": {"delta": "STRING", "postgres": "TEXT"},
-    "disaster_emergency_fund_name": {"delta": "STRING", "postgres": "TEXT"},
-    "funding_toptier_agency_id": {"delta": "INTEGER", "postgres": "INTEGER"},
-    "federal_account_id": {"delta": "INTEGER", "postgres": "INTEGER"},
-    "budget_function": {"delta": "STRING", "postgres": "TEXT"},
-    "budget_function_code": {"delta": "STRING", "postgres": "TEXT"},
-    "budget_subfunction": {"delta": "STRING", "postgres": "TEXT"},
-    "budget_subfunction_code": {"delta": "STRING", "postgres": "TEXT"},
-    "reporting_agency_name": {"delta": "STRING", "postgres": "TEXT"},
-    "reporting_fiscal_period": {"delta": "INTEGER", "postgres": "INTEGER"},
-    "reporting_fiscal_quarter": {"delta": "INTEGER", "postgres": "INTEGER"},
-    "reporting_fiscal_year": {"delta": "INTEGER", "postgres": "INTEGER"},
-    "quarter_format_flag": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
-    "submission_period": {"delta": "STRING", "postgres": "TEXT"},
-    "USSGL480100_undelivered_orders_obligations_unpaid_FYB": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
-    "USSGL480100_undelivered_orders_obligations_unpaid": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
-    "USSGL483100_undelivered_orders_obligations_transferred_unpaid": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
-    "USSGL488100_upward_adj_prior_year_undeliv_orders_oblig_unpaid": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
-    "USSGL490100_delivered_orders_obligations_unpaid_FYB": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
-    "USSGL490100_delivered_orders_obligations_unpaid": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
-    "USSGL493100_delivered_orders_obligations_transferred_unpaid": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
-    "USSGL498100_upward_adj_of_prior_year_deliv_orders_oblig_unpaid": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
-    "USSGL480200_undelivered_orders_obligations_prepaid_advanced_FYB": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
-    "USSGL480200_undelivered_orders_obligations_prepaid_advanced": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
-    "USSGL483200_undeliv_orders_oblig_transferred_prepaid_advanced": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
-    "USSGL488200_upward_adj_prior_year_undeliv_orders_oblig_prepaid": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
-    "USSGL490200_delivered_orders_obligations_paid": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
-    "USSGL490800_authority_outlayed_not_yet_disbursed_FYB": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
-    "USSGL490800_authority_outlayed_not_yet_disbursed": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
-    "USSGL498200_upward_adj_of_prior_year_deliv_orders_oblig_paid": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
-    "obligations_undelivered_orders_unpaid_total_FYB": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
-    "obligations_undelivered_orders_unpaid_total": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
-    "obligations_delivered_orders_unpaid_total": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
-    "obligations_delivered_orders_unpaid_total_FYB": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
-    "gross_outlays_undelivered_orders_prepaid_total": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
-    "gross_outlays_undelivered_orders_prepaid_total_fyb": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
-    "gross_outlays_delivered_orders_paid_total_FYB": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
-    "gross_outlays_delivered_orders_paid_total": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
-    "gross_outlay_amount_FYB": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
-    "gross_outlay_amount_FYB_to_period_end": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
-    "obligations_incurred": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
-    "USSGL487100_downward_adj_prior_year_unpaid_undeliv_orders_oblig": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
-    "USSGL497100_downward_adj_prior_year_unpaid_deliv_orders_oblig": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
-    "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
-    "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
-    "deobligations_or_recoveries_or_refunds_from_prior_year": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
-    "last_modified_date": {"delta": "DATE", "postgres": "DATE"},
-    "data_source": {"delta": "STRING", "postgres": "TEXT"},
-    "program_activity_id": {"delta": "INTEGER", "postgres": "INTEGER"},
-    "object_class_id": {"delta": "INTEGER", "postgres": "INTEGER"},
-    "prior_year_adjustment": {"delta": "STRING", "postgres": "TEXT"},
-    "ussgl480110_rein_undel_ord_cpe": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
-    "ussgl490110_rein_deliv_ord_cpe": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
-    "drv_obligations_incurred_by_program_object_class": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
-    "drv_obligations_undelivered_orders_unpaid": {
-        "delta": "NUMERIC(23,2)",
-        "postgres": "NUMERIC(23,2)",
-    },
-    "reporting_period_start": {"delta": "DATE", "postgres": "DATE"},
-    "reporting_period_end": {"delta": "DATE", "postgres": "DATE"},
-    "certified_date": {"delta": "DATE", "postgres": "DATE"},
-    "create_date": {"delta": "DATE", "postgres": "DATE"},
-    "update_date": {"delta": "DATE", "postgres": "DATE"},
-    "treasury_account_id": {"delta": "INTEGER", "postgres": "INTEGER"},
-    "allocation_transfer_agency_identifier_code": {"delta": "STRING", "postgres": "TEXT"},
-    "agency_identifier_code": {"delta": "STRING", "postgres": "TEXT"},
-    "beginning_period_of_availability": {"delta": "STRING", "postgres": "TEXT"},
-    "ending_period_of_availability": {"delta": "STRING", "postgres": "TEXT"},
-    "availability_type_code": {"delta": "STRING", "postgres": "TEXT"},
-    "main_account_code": {"delta": "STRING", "postgres": "TEXT"},
-    "sub_account_code": {"delta": "STRING", "postgres": "TEXT"},
-    "treasury_account_symbol": {"delta": "STRING", "postgres": "TEXT"},
-    "treasury_account_name": {"delta": "STRING", "postgres": "TEXT"},
-}
+from pyspark.sql.types import (
+    BooleanType,
+    DateType,
+    DecimalType,
+    IntegerType,
+    StringType,
+    StructField,
+    StructType,
+)
 
-OBJECT_CLASS_PROGRAM_ACTIVITY_DOWNLOAD_DELTA_COLUMNS = {
-    k: v["delta"] for k, v in OBJECT_CLASS_PROGRAM_ACTIVITY_DOWNLOAD_COLUMNS.items()
-}
-OBJECT_CLASS_PROGRAM_ACTIVITY_DOWNLOAD_POSTGRES_COLUMNS = {
-    k: v["postgres"] for k, v in OBJECT_CLASS_PROGRAM_ACTIVITY_DOWNLOAD_COLUMNS.items()
-}
+object_class_program_activity_schema = StructType(
+    [
+        StructField("financial_accounts_by_program_activity_object_class_id", IntegerType(), False),
+        StructField("submission_id", IntegerType(), False),
+        StructField("owning_agency_name", StringType()),
+        StructField("federal_account_symbol", StringType()),
+        StructField("federal_account_name", StringType()),
+        StructField("agency_identifier_name", StringType()),
+        StructField("allocation_transfer_agency_identifier_name", StringType()),
+        StructField("program_activity_code", StringType()),
+        StructField("program_activity_name", StringType()),
+        StructField("object_class_code", StringType()),
+        StructField("object_class_name", StringType()),
+        StructField("direct_or_reimbursable_funding_source", StringType()),
+        StructField("disaster_emergency_fund_code", StringType()),
+        StructField("disaster_emergency_fund_name", StringType()),
+        StructField("funding_toptier_agency_id", IntegerType()),
+        StructField("federal_account_id", IntegerType()),
+        StructField("budget_function", StringType()),
+        StructField("budget_function_code", StringType()),
+        StructField("budget_subfunction", StringType()),
+        StructField("budget_subfunction_code", StringType()),
+        StructField("reporting_agency_name", StringType()),
+        StructField("reporting_fiscal_period", IntegerType()),
+        StructField("reporting_fiscal_quarter", IntegerType()),
+        StructField("reporting_fiscal_year", IntegerType()),
+        StructField("quarter_format_flag", BooleanType()),
+        StructField("submission_period", StringType()),
+        StructField("USSGL480100_undelivered_orders_obligations_unpaid_FYB", DecimalType(23, 2)),
+        StructField("USSGL480100_undelivered_orders_obligations_unpaid", DecimalType(23, 2)),
+        StructField("USSGL483100_undelivered_orders_obligations_transferred_unpaid", DecimalType(23, 2)),
+        StructField("USSGL488100_upward_adj_prior_year_undeliv_orders_oblig_unpaid", DecimalType(23, 2)),
+        StructField("USSGL490100_delivered_orders_obligations_unpaid_FYB", DecimalType(23, 2)),
+        StructField("USSGL490100_delivered_orders_obligations_unpaid", DecimalType(23, 2)),
+        StructField("USSGL493100_delivered_orders_obligations_transferred_unpaid", DecimalType(23, 2)),
+        StructField("USSGL498100_upward_adj_of_prior_year_deliv_orders_oblig_unpaid", DecimalType(23, 2)),
+        StructField("USSGL480200_undelivered_orders_obligations_prepaid_advanced_FYB", DecimalType(23, 2)),
+        StructField("USSGL480200_undelivered_orders_obligations_prepaid_advanced", DecimalType(23, 2)),
+        StructField("USSGL483200_undeliv_orders_oblig_transferred_prepaid_advanced", DecimalType(23, 2)),
+        StructField("USSGL488200_upward_adj_prior_year_undeliv_orders_oblig_prepaid", DecimalType(23, 2)),
+        StructField("USSGL490200_delivered_orders_obligations_paid", DecimalType(23, 2)),
+        StructField("USSGL490800_authority_outlayed_not_yet_disbursed_FYB", DecimalType(23, 2)),
+        StructField("USSGL490800_authority_outlayed_not_yet_disbursed", DecimalType(23, 2)),
+        StructField("USSGL498200_upward_adj_of_prior_year_deliv_orders_oblig_paid", DecimalType(23, 2)),
+        StructField("obligations_undelivered_orders_unpaid_total_FYB", DecimalType(23, 2)),
+        StructField("obligations_undelivered_orders_unpaid_total", DecimalType(23, 2)),
+        StructField("obligations_delivered_orders_unpaid_total", DecimalType(23, 2)),
+        StructField("obligations_delivered_orders_unpaid_total_FYB", DecimalType(23, 2)),
+        StructField("gross_outlays_undelivered_orders_prepaid_total", DecimalType(23, 2)),
+        StructField("gross_outlays_undelivered_orders_prepaid_total_fyb", DecimalType(23, 2)),
+        StructField("gross_outlays_delivered_orders_paid_total_FYB", DecimalType(23, 2)),
+        StructField("gross_outlays_delivered_orders_paid_total", DecimalType(23, 2)),
+        StructField("gross_outlay_amount_FYB", DecimalType(23, 2)),
+        StructField("gross_outlay_amount_FYB_to_period_end", DecimalType(23, 2)),
+        StructField("obligations_incurred", DecimalType(23, 2)),
+        StructField("USSGL487100_downward_adj_prior_year_unpaid_undeliv_orders_oblig", DecimalType(23, 2)),
+        StructField("USSGL497100_downward_adj_prior_year_unpaid_deliv_orders_oblig", DecimalType(23, 2)),
+        StructField("USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig", DecimalType(23, 2)),
+        StructField("USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig", DecimalType(23, 2)),
+        StructField("deobligations_or_recoveries_or_refunds_from_prior_year", DecimalType(23, 2)),
+        StructField("last_modified_date", DateType()),
+        StructField("data_source", StringType()),
+        StructField("program_activity_id", IntegerType()),
+        StructField("object_class_id", IntegerType()),
+        StructField("prior_year_adjustment", StringType()),
+        StructField("ussgl480110_rein_undel_ord_cpe", DecimalType(23, 2)),
+        StructField("ussgl490110_rein_deliv_ord_cpe", DecimalType(23, 2)),
+        StructField("drv_obligations_incurred_by_program_object_class", DecimalType(23, 2)),
+        StructField("drv_obligations_undelivered_orders_unpaid", DecimalType(23, 2)),
+        StructField("reporting_period_start", DateType()),
+        StructField("reporting_period_end", DateType()),
+        StructField("certified_date", DateType()),
+        StructField("create_date", DateType()),
+        StructField("update_date", DateType()),
+        StructField("treasury_account_id", IntegerType()),
+        StructField("allocation_transfer_agency_identifier_code", StringType()),
+        StructField("agency_identifier_code", StringType()),
+        StructField("beginning_period_of_availability", StringType()),
+        StructField("ending_period_of_availability", StringType()),
+        StructField("availability_type_code", StringType()),
+        StructField("main_account_code", StringType()),
+        StructField("sub_account_code", StringType()),
+        StructField("treasury_account_symbol", StringType()),
+        StructField("treasury_account_name", StringType()),
+    ]
+)
 
-object_class_program_activity_download_create_sql_string = rf"""
-    CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
-        {", ".join([f"{key} {val}" for key, val in OBJECT_CLASS_PROGRAM_ACTIVITY_DOWNLOAD_DELTA_COLUMNS.items()])}
-    )
-    USING DELTA
-    LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
-    """
 
 object_class_program_activity_download_load_sql_string = rf"""
     INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} (
-        {",".join(list(OBJECT_CLASS_PROGRAM_ACTIVITY_DOWNLOAD_COLUMNS))}
+        {",".join(list([field.name for field in object_class_program_activity_schema]))}
     )
     SELECT
         fabpaoc.financial_accounts_by_program_activity_object_class_id,
