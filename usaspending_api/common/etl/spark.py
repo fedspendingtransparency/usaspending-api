@@ -751,7 +751,6 @@ def write_csv_file_duckdb(
         record count of the DataFrame that was used to populate the CSV file(s)
         list of full path(s) to the temp CSV file(s)
     """
-    max_records_per_file = 500  # TODO: Remove
 
     # Convert the Spark DataFrame to a DuckDBPyRelation type to take advantage of the built-in functions
     _pandas_df = df.toPandas()
