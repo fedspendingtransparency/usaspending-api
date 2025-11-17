@@ -600,7 +600,7 @@ def create_ref_temp_views(spark: SparkSession | DuckDBSparkSession, create_broke
                 spark.sql(f"""
                     CREATE OR REPLACE SECRET (
                         TYPE s3,
-                        REGION 'us-gov-west-1'
+                        REGION 'us-gov-west-1',
                         ENDPOINT '{cleaned_endpoint_url}',
                         PROVIDER 'credential_chain'
                     );
