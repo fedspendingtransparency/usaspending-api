@@ -8,6 +8,7 @@ functions for setup and configuration of the spark environment
 import logging
 import math
 import os
+import shutil
 import time
 from collections import namedtuple
 from itertools import chain
@@ -564,32 +565,46 @@ def create_ref_temp_views(spark: SparkSession | DuckDBSparkSession, create_broke
     """Create global temporary Spark reference views that sit atop remote PostgreSQL RDS tables
     Setting create_broker_views to True will create views for all tables list in _BROKER_REF_TABLES
     Note: They will all be listed under global_temp.{table_name}
+
+    Args:
+        spark (SparkSession | DuckDBSparkSession): Spark session
+        create_broker_views (bool): Should the temporary views, using the Broker tables, be created
+            Default: False
     """
 
     # Create USAS temp views
     rds_ref_tables = build_ref_table_name_list()
     logger.info(f"Creating the following tables under the global_temp database: {rds_ref_tables}")
 
-    match type(spark) is DuckDBSparkSession:
+    match isinstance(spark, DuckDBSparkSession):
         case True:
             logger.info("Creating ref temp views using DuckDB")
 
-            # DuckDB will prepend the HTTP or HTTPS so we need to strip it from the AWS endpoint URL
-            if os.getenv("AWS_ENDPOINT_URL") and "://" in os.getenv("AWS_ENDPOINT_URL"):
-                endpoint_url = os.getenv("AWS_ENDPOINT_URL").split("://")[1]
+            if IS_LOCAL:
+                endpoint_url = f"{os.getenv('MINIO_HOST', 'localhost')}:{os.getenv('MINIO_PORT', 10001)}"
+                spark.sql(f"""
+                    CREATE OR REPLACE SECRET (
+                        TYPE s3,
+                        PROVIDER config,
+                        KEY_ID '{os.getenv("MINIO_ROOT_USER", "usaspending")}',
+                        SECRET '{os.getenv("MINIO_ROOT_PASSWORD", "usaspender")}',
+                        ENDPOINT '{endpoint_url}',
+                        URL_STYLE 'path',
+                        USE_SSL 'false'
+                    );
+                """)
             else:
-                endpoint_url = os.getenv("AWS_ENDPOINT_URL", f"s3.{os.getenv('AWS_DEFAULT_REGION')}.amazonaws.com")
-
-            spark.sql(f"""
-                CREATE OR REPLACE SECRET (
-                    TYPE s3,
-                    PROVIDER credential_chain,
-                    CHAIN 'env;config',
-                    ENDPOINT '{endpoint_url}',
-                    USE_SSL {"false" if IS_LOCAL else "true"},
-                    URL_STYLE 'path'
-                )
-            """)
+                # DuckDB will prepend the HTTP or HTTPS so we need to strip it from the AWS endpoint URL
+                endpoint_url = os.getenv("AWS_ENDPOINT_URL", "s3.us-gov-west-1.amazonaws.com")
+                cleaned_endpoint_url = endpoint_url.split("://")[1] if "://" in endpoint_url else endpoint_url
+                spark.sql(f"""
+                    CREATE OR REPLACE SECRET (
+                        TYPE s3,
+                        REGION 'us-gov-west-1'
+                        ENDPOINT '{cleaned_endpoint_url}',
+                        PROVIDER 'credential_chain'
+                    );
+                """)
 
             _download_delta_tables = [
                 {"schema": "rpt", "table_name": "account_balances_download"},
@@ -600,10 +615,11 @@ def create_ref_temp_views(spark: SparkSession | DuckDBSparkSession, create_broke
             spark.sql("LOAD delta;")
             spark.sql("CREATE SCHEMA IF NOT EXISTS rpt;")
             for table in _download_delta_tables:
+                s3_path = f"s3://{CONFIG.SPARK_S3_BUCKET}/data/delta/{table['schema']}/{table['table_name']}"
                 try:
                     spark.sql(f"""
                         CREATE OR REPLACE TABLE {table["schema"]}.{table["table_name"]} AS
-                        SELECT * FROM delta_scan('s3://{CONFIG.SPARK_S3_BUCKET}/data/delta/{table["schema"]}/{table["table_name"]}');
+                        SELECT * FROM delta_scan('{s3_path}');
                     """)
                     logger.info(f"Successfully created table {table['schema']}.{table['table_name']}")
                 except duckdb.IOException:
@@ -622,7 +638,7 @@ def create_ref_temp_views(spark: SparkSession | DuckDBSparkSession, create_broke
 
             if create_broker_views:
                 spark.sql(f"""
-                    ATTACH '{CONFIG.DATA_BROKER_DATABASE_URL}' AS broker (TYPE postgres, READ_ONLY);
+                    ATTACH '{CONFIG.BROKER_DB}' AS broker (TYPE postgres, READ_ONLY);
                 """)
                 logger.info(
                     f"Creating the following Broker tables under the global_temp database: {_BROKER_REF_TABLES}"
@@ -716,8 +732,8 @@ def write_csv_file_duckdb(
     download_file_name: str,
     temp_csv_directory_path: str = CSV_LOCAL_PATH,
     max_records_per_file: int = EXCEL_ROW_LIMIT,
-    logger=None,
-    delimiter=",",
+    logger: logging.Logger | None = None,
+    delimiter: str = ",",
 ) -> tuple[int, list[str] | list]:
     """Write DataFrame data to CSV file parts.
     Args:
@@ -735,6 +751,7 @@ def write_csv_file_duckdb(
         record count of the DataFrame that was used to populate the CSV file(s)
         list of full path(s) to the temp CSV file(s)
     """
+    max_records_per_file = 500  # TODO: Remove
 
     # Convert the Spark DataFrame to a DuckDBPyRelation type to take advantage of the built-in functions
     _pandas_df = df.toPandas()
@@ -749,19 +766,45 @@ def write_csv_file_duckdb(
 
     start = time.time()
     df_record_count = rel.count("*").fetchone()[0]
-    file_numbers = sorted(rel.select("file_number").distinct().list("file_number").fetchone())[0]
+    # file_numbers = sorted(rel.select("file_number").distinct().list("file_number").fetchone())[0]
     full_file_paths = []
 
     logger.info(f"Writing source data DataFrame to csv files for file {download_file_name}")
-    for index in file_numbers:
-        full_path = f"{temp_csv_directory_path}{download_file_name}_{str(index).zfill(2)}.csv"
-        rel.filter(f"file_number = {index}").select(", ".join(df.columns)).to_csv(
-            file_name=full_path,
-            sep=delimiter,
-            escapechar='"',
-            header=True,
+    rel.to_csv(
+        file_name=f"{temp_csv_directory_path}{download_file_name}",
+        sep=delimiter,
+        escapechar='"',
+        header=True,
+        partition_by=["file_number"],
+        write_partition_columns=False,
+        overwrite=True,
+    )
+
+    # Move and rename the CSV files to match the expected format
+    _partition_dirs = [
+        f"{temp_csv_directory_path}{download_file_name}/{d}"
+        for d in os.listdir(f"{temp_csv_directory_path}{download_file_name}")
+    ]
+    for dir in _partition_dirs:
+        _old_csv_path = f"{dir}/{os.listdir(dir)[0]}"
+        _new_csv_path = (
+            f"{temp_csv_directory_path}{download_file_name}/{download_file_name}_{dir.split('=')[1].zfill(2)}.csv"
         )
-        full_file_paths.append(full_path)
+        shutil.move(_old_csv_path, _new_csv_path)
+        full_file_paths.append(_new_csv_path)
+        os.rmdir(dir)
+
+    # for index in file_numbers:
+    #     full_path = f"{temp_csv_directory_path}{download_file_name}_{str(index).zfill(2)}.csv"
+    #     rel.filter(f"file_number = {index}").select(", ".join(df.columns)).to_csv(
+    #         file_name=full_path,
+    #         sep=delimiter,
+    #         escapechar='"',
+    #         header=True,
+    #         partition_by=["file_number"],
+    #         write_partition_columns=False,
+    #     )
+    #     full_file_paths.append(full_path)
 
     logger.info(f"{temp_csv_directory_path}{download_file_name} contains {df_record_count:,} rows of data")
     logger.info(f"Wrote source data DataFrame to {len(full_file_paths)} CSV files in {(time.time() - start):3f}s")

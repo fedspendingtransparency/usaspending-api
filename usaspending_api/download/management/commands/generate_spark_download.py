@@ -304,3 +304,9 @@ class Command(BaseCommand):
                 path = Path(path)
             logger.info(f"Removing {path}")
             path.unlink()
+
+        # DuckDB will leave behind an empty directory that can be deleted
+        if isinstance(self.spark, DuckDBSparkSession):
+            empty_dir = Path(path_list[0]).parent
+            logger.info(f"Removing empty directory {empty_dir}")
+            Path.rmdir(empty_dir)
