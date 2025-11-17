@@ -54,8 +54,6 @@ from usaspending_api.search.delta_models.award_search import (
     AWARD_SEARCH_POSTGRES_COLUMNS,
     AWARD_SEARCH_POSTGRES_GOLD_COLUMNS,
     award_search_create_sql_string,
-    award_search_incremental_load_sql_string,
-    award_search_overwrite_load_sql_string,
 )
 from usaspending_api.search.delta_models.dataframes.award_search import load_award_search, load_award_search_incremental
 from usaspending_api.search.delta_models.dataframes.transaction_search import (
@@ -115,8 +113,8 @@ TABLE_SPEC = {
     "award_search_gold": {
         "model": AwardSearch,
         "is_from_broker": False,
-        "source_query": award_search_overwrite_load_sql_string,
-        "source_query_incremental": award_search_incremental_load_sql_string,
+        "source_query": load_award_search,
+        "source_query_incremental": load_award_search_incremental,
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",

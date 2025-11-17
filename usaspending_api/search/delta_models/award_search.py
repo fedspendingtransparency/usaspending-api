@@ -156,9 +156,12 @@ AWARD_SEARCH_COLUMNS = {
     "program_activities": {"delta": "STRING", "postgres": "JSONB", "gold": False},
     "transaction_count": {"delta": "INTEGER", "postgres": "INTEGER", "gold": False},
 }
+DELTA_ONLY_COLUMNS = {
+    "merge_hash_key": "LONG",
+}
 AWARD_SEARCH_DELTA_COLUMNS = {
     **{k: v["delta"] for k, v in AWARD_SEARCH_COLUMNS.items()},
-    "merge_hash_key": "LONG",
+    **DELTA_ONLY_COLUMNS,
 }
 AWARD_SEARCH_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in AWARD_SEARCH_COLUMNS.items() if not v["gold"]}
 AWARD_SEARCH_POSTGRES_GOLD_COLUMNS = {k: v["gold"] for k, v in AWARD_SEARCH_COLUMNS.items()}
