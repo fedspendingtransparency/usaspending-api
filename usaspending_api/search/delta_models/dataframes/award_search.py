@@ -1,11 +1,9 @@
 from delta.tables import DeltaTable
-from pyspark.sql import DataFrame, SparkSession, functions as sf, Column, Window
+from pyspark.sql import DataFrame, SparkSession, functions as sf, Column
 from pyspark.sql.types import (
     DateType,
     DecimalType,
-    ShortType,
     StringType,
-    TimestampType,
 )
 
 from usaspending_api.awards.v2.lookups.lookups import award_type_mapping

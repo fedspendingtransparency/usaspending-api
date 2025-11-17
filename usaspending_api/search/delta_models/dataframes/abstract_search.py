@@ -2,11 +2,8 @@ from abc import ABC, abstractmethod
 
 from pyspark.sql import DataFrame, SparkSession, functions as sf, Column, Window
 from pyspark.sql.types import (
-    DateType,
-    DecimalType,
     ShortType,
     StringType,
-    TimestampType,
 )
 
 
