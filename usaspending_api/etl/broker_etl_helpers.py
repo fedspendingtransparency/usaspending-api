@@ -44,7 +44,7 @@ def setup_broker_fdw():
 
     with connection.cursor() as cursor:
         with open("usaspending_api/etl/management/setup_broker_fdw.sql") as infile:
-            logger.info(connections.databases[settings.DATA_BROKER_DB_ALIAS])
+            logger.info(connections.databases[settings.BROKER_DB_ALIAS])
             for raw_sql in infile.read().split("\n\n\n"):
                 logger.info("SETUP BROKER FDW: Running SQL => " + str(raw_sql))
-                cursor.execute(raw_sql, connections.databases[settings.DATA_BROKER_DB_ALIAS])
+                cursor.execute(raw_sql, connections.databases[settings.BROKER_DB_ALIAS])

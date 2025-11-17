@@ -38,10 +38,10 @@ class Command(BaseCommand):
         # Grab data broker database connections
         if not options["test"]:
             try:
-                db_conn = connections[settings.DATA_BROKER_DB_ALIAS]
+                db_conn = connections[settings.BROKER_DB_ALIAS]
                 db_cursor = db_conn.cursor()
             except Exception as err:
-                logger.critical("Could not connect to database. Is DATA_BROKER_DATABASE_URL set?")
+                logger.critical("Could not connect to database. Is BROKER_DB set?")
                 logger.critical(print(err))
                 raise
         else:

@@ -21,14 +21,12 @@ from usaspending_api.disaster.delta_models import (
 )
 from usaspending_api.disaster.models import CovidFABASpending
 from usaspending_api.download.delta_models.award_financial_download import (
-    AWARD_FINANCIAL_DOWNLOAD_POSTGRES_COLUMNS,
-    award_financial_download_create_sql_string,
     award_financial_download_load_sql_string,
+    award_financial_schema,
 )
 from usaspending_api.download.delta_models.object_class_program_activity_download import (
-    OBJECT_CLASS_PROGRAM_ACTIVITY_DOWNLOAD_POSTGRES_COLUMNS,
-    object_class_program_activity_download_create_sql_string,
     object_class_program_activity_download_load_sql_string,
+    object_class_program_activity_schema,
 )
 from usaspending_api.download.delta_models.account_balances_download import (
     load_account_balances,
@@ -362,10 +360,10 @@ TABLE_SPEC = {
         "partition_column": "financial_accounts_by_awards_id",
         "partition_column_type": "numeric",
         "is_partition_column_unique": False,
-        "delta_table_create_sql": award_financial_download_create_sql_string,
-        "source_schema": AWARD_FINANCIAL_DOWNLOAD_POSTGRES_COLUMNS,
+        "delta_table_create_sql": award_financial_schema,
+        "source_schema": None,
         "custom_schema": None,
-        "column_names": list(AWARD_FINANCIAL_DOWNLOAD_POSTGRES_COLUMNS),
+        "column_names": list(),
         "postgres_seq_name": None,
         "tsvectors": None,
         "postgres_partition_spec": None,
@@ -383,10 +381,10 @@ TABLE_SPEC = {
         "partition_column": "financial_accounts_by_program_activity_object_class_id",
         "partition_column_type": "numeric",
         "is_partition_column_unique": False,
-        "delta_table_create_sql": object_class_program_activity_download_create_sql_string,
-        "source_schema": OBJECT_CLASS_PROGRAM_ACTIVITY_DOWNLOAD_POSTGRES_COLUMNS,
+        "delta_table_create_sql": object_class_program_activity_schema,
+        "source_schema": None,
         "custom_schema": None,
-        "column_names": list(OBJECT_CLASS_PROGRAM_ACTIVITY_DOWNLOAD_POSTGRES_COLUMNS),
+        "column_names": list(),
         "postgres_seq_name": None,
         "tsvectors": None,
         "postgres_partition_spec": None,

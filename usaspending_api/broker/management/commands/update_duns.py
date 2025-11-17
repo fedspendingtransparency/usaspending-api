@@ -82,7 +82,7 @@ class Command(BaseCommand):
         total_start = datetime.now()
         new_update_date = total_start.strftime("%Y-%m-%d")
 
-        db_cursor = connections[settings.DATA_BROKER_DB_ALIAS].cursor()
+        db_cursor = connections[settings.BROKER_DB_ALIAS].cursor()
 
         update_date_query = DUNS.objects.all().aggregate(Max("update_date"))
         update_date = update_date_query["update_date__max"]
