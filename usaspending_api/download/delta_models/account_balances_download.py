@@ -1,3 +1,4 @@
+from delta.tables import DeltaTable
 from pyspark.sql import Column, DataFrame, functions as sf, SparkSession
 from pyspark.sql.types import (
     BooleanType,
@@ -8,8 +9,8 @@ from pyspark.sql.types import (
     StructField,
     StructType,
     TimestampType,
+    LongType,
 )
-
 
 account_balances_schema = StructType(
     [
@@ -69,6 +70,7 @@ account_balances_schema = StructType(
         StructField("reporting_fiscal_quarter", IntegerType()),
         StructField("reporting_fiscal_year", IntegerType()),
         StructField("quarter_format_flag", BooleanType()),
+        StructField("merge_hash_key", LongType()),
     ]
 )
 
@@ -111,6 +113,7 @@ def account_balances_df(spark: SparkSession) -> DataFrame:
         .join(fa, on=taa.federal_account_id == fa.id, how="leftouter")
         .join(ta, on=fa.parent_toptier_agency_id == ta.toptier_agency_id, how="leftouter")
         .withColumn("submission_period", fy_quarter_period())
+        .withColumn("merge_hash_key", sf.xxhash64("*"))
         .select(
             taa.funding_toptier_agency_id,
             ta.name.alias("owning_agency_name"),
@@ -181,3 +184,19 @@ def account_balances_df(spark: SparkSession) -> DataFrame:
 def load_account_balances(spark: SparkSession, destination_database: str, destination_table_name: str) -> None:
     df = account_balances_df(spark)
     df.write.format("delta").mode("overwrite").saveAsTable(f"{destination_database}.{destination_table_name}")
+
+
+def load_account_balances_incremental(
+    spark: SparkSession, destination_database: str, destination_table_name: str
+) -> None:
+    target = DeltaTable.forName(spark, f"{destination_database}.{destination_table_name}").alias("t")
+    source = account_balances_df(spark).dataframe.alias("s")
+    (
+        target.merge(
+            source,
+            "s.appropriation_account_balances_id = t.appropriation_account_balances_id and s.merge_hash_key = t.merge_hash_key",
+        )
+        .whenNotMatchedInsertAll()
+        .whenNotMatchedBySourceDelete()
+        .execute()
+    )
