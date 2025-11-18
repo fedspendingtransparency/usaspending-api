@@ -612,8 +612,7 @@ def create_ref_temp_views(spark: SparkSession | DuckDBSparkSession, create_broke
             ]
 
             # The DuckDB Delta extension is needed to interact with DeltaLake tables
-            spark.sql("LOAD delta;")
-            spark.sql("CREATE SCHEMA IF NOT EXISTS rpt;")
+            spark.sql("LOAD delta; CREATE SCHEMA IF NOT EXISTS rpt;")
             for table in _download_delta_tables:
                 s3_path = f"s3://{CONFIG.SPARK_S3_BUCKET}/data/delta/{table['schema']}/{table['table_name']}"
                 try:
@@ -626,9 +625,8 @@ def create_ref_temp_views(spark: SparkSession | DuckDBSparkSession, create_broke
                     logger.error(f"Failed to create table {table['table_name']}")
 
             # The DuckDB Postgres extension is needed to connect to the USAS Postgres DB
-            spark.sql("LOAD postgres;")
+            spark.sql("LOAD postgres; CREATE SCHEMA IF NOT EXISTS global_temp;")
             spark.sql(f"ATTACH '{CONFIG.DATABASE_URL}' AS usas (TYPE postgres, READ_ONLY);")
-            spark.sql("CREATE SCHEMA IF NOT EXISTS global_temp;")
 
             for table in rds_ref_tables:
                 try:
