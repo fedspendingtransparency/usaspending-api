@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Literal, Optional, TypeVar, Union
 
 import duckdb
+import psutil
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils.functional import cached_property
