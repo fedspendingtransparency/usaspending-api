@@ -99,7 +99,7 @@ class Command(BaseCommand):
             memory_limit = 4
 
             self.spark.sql(f"SET memory_limit = '{memory_limit}GB';")
-            self.spark.sql("SET threads TO 6;")
+            self.spark.sql("SET threads TO 8;")
             duckdb_settings = self.spark.sql(
                 "SELECT name, value FROM duckdb_settings() WHERE name IN ('memory_limit', 'threads')"
             ).collect()
