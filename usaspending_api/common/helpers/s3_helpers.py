@@ -46,10 +46,12 @@ def get_s3_bucket(bucket_name: str, region_name: str = CONFIG.AWS_REGION) -> "bo
     return s3.Bucket(bucket_name)
 
 
-def retrieve_s3_bucket_object_list(bucket_name: str) -> list["boto3.resources.factory.s3.ObjectSummary"]:
+def retrieve_s3_bucket_object_list(
+    bucket_name: str, key_prefix: Optional[str] = None
+) -> list["boto3.resources.factory.s3.ObjectSummary"]:
     try:
         bucket = get_s3_bucket(bucket_name=bucket_name)
-        bucket_objects = list(bucket.objects.all())
+        bucket_objects = list(bucket.objects.filter(Prefix=key_prefix) if key_prefix else bucket.objects.all())
     except Exception as e:
         message = (
             f"Problem accessing S3 bucket '{bucket_name}' for deleted records.  Most likely the "
@@ -181,7 +183,7 @@ def rename_s3_object(bucket_name: str, old_key: str, new_key: str, region_name: 
     """
 
     s3 = _get_boto3("client", "s3", region_name=region_name)
-    response = s3.copy_object(Bucket=bucket_name, CopySource=old_key, Key=new_key)
+    response = s3.copy_object(Bucket=bucket_name, CopySource=f"{bucket_name}/{old_key}", Key=new_key)
 
     if response["ResponseMetadata"]["HTTPStatusCode"] == 200:
         s3.delete_object(Bucket=bucket_name, Key=old_key)
