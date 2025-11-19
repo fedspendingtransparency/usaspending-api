@@ -237,6 +237,7 @@ class AwardSearch(AbstractSearch):
             .join(
                 self.product_service_code,
                 self.transaction_fpds.product_or_service_code == self.product_service_code.code,
+                "leftouter",
             )
             .join(
                 self.transaction_cfdas,
@@ -251,7 +252,7 @@ class AwardSearch(AbstractSearch):
             )
             .join(
                 self.awarding_subtier_agency,
-                self.awarding_agency.subtier_agency_id == self.awarding_agency.subtier_agency_id,
+                self.awarding_agency.subtier_agency_id == self.awarding_subtier_agency.subtier_agency_id,
                 "leftouter",
             )
             .join(self.funding_agency, self.funding_agency.id == self.awards.funding_agency_id, "leftouter")
