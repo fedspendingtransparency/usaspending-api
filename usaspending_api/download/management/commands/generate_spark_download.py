@@ -96,7 +96,7 @@ class Command(BaseCommand):
 
             # DuckDB can sometimes see an incorrect RAM amount in AWS, so we manually set the limit to 80% here
             memory_limit = int(psutil.virtual_memory().total / (1024**3) * 0.5)
-            memory_limit = 10
+            memory_limit = 14
 
             self.spark.sql(f"SET memory_limit = '{memory_limit}GB';")
             self.spark.sql("SET threads TO 8;")
