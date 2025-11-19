@@ -98,7 +98,7 @@ class Command(BaseCommand):
             memory_limit = int(psutil.virtual_memory().total / (1024**3) * 0.8)
 
             self.spark.sql(f"SET memory_limit = '{memory_limit}GB';")
-            self.spark.sql("SET threads TO 2;")
+            self.spark.sql("SET threads TO 6;")
             duckdb_settings = self.spark.sql(
                 "SELECT name, value FROM duckdb_settings() WHERE name IN ('memory_limit', 'threads')"
             ).collect()
