@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Literal, Optional, TypeVar, Union
 
 import duckdb
-import psutil
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils.functional import cached_property
@@ -95,9 +94,9 @@ class Command(BaseCommand):
             self.should_cleanup = True
 
             # DuckDB can sometimes see an incorrect RAM amount in AWS, so we manually set the limit to 50% here
-            memory_limit = int(psutil.virtual_memory().total / (1024**3) * 0.5)
+            # memory_limit = int(psutil.virtual_memory().total / (1024**3) * 0.1)
 
-            self.spark.sql(f"SET memory_limit = '{memory_limit}G'")
+            self.spark.sql("SET memory_limit = '4GB'")
             duckdb_settings = self.spark.sql(
                 "SELECT name, value FROM duckdb_settings() WHERE name IN ('memory_limit', 'threads')"
             ).collect()
