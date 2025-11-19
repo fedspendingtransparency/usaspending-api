@@ -687,22 +687,20 @@ def rename_part_files(
     list_of_part_files = sorted(
         [
             file.key
-            for file in retrieve_s3_bucket_object_list(bucket_name)
-            if (
-                file.key.startswith(f"{temp_download_dir_name}/{destination_file_name}/part-")
-                and file.key.endswith(file_format)
+            for file in retrieve_s3_bucket_object_list(
+                bucket_name, key_prefix=f"{temp_download_dir_name}/{destination_file_name}/part-"
             )
+            if file.key.endswith(file_format)
         ]
     )
 
     full_file_paths = []
 
     for index, part_file in enumerate(list_of_part_files):
-        old_key = f"{bucket_name}/{part_file}"
         new_key = f"{temp_download_dir_name}/{destination_file_name}_{str(index + 1).zfill(2)}.{file_format}"
-        logger.info(f"Renaming {old_key} to {bucket_name}/{new_key}")
+        logger.info(f"Renaming {bucket_name}/{part_file} to {bucket_name}/{new_key}")
 
-        rename_s3_object(bucket_name=bucket_name, old_key=old_key, new_key=new_key)
+        rename_s3_object(bucket_name=bucket_name, old_key=part_file, new_key=new_key)
         full_file_paths.append(f"s3a://{bucket_name}/{new_key}")
 
     return full_file_paths
