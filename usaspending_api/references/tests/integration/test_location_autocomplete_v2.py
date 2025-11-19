@@ -94,7 +94,12 @@ def test_county_results(client, elasticsearch_location_index):
     assert response.data["messages"] == [""]
     assert response.data["results"] == {
         "counties": [
-            {"county_name": "LOS ANGELES", "state_name": "CALIFORNIA", "country_name": "UNITED STATES"},
+            {
+                "county_name": "LOS ANGELES",
+                "county_fips": "06107",
+                "state_name": "CALIFORNIA",
+                "country_name": "UNITED STATES",
+            },
         ],
     }
 
