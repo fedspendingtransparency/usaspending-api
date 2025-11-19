@@ -93,10 +93,11 @@ class Command(BaseCommand):
             spark_created_by_command = False
             self.should_cleanup = True
 
-            # DuckDB can sometimes see an incorrect RAM amount in AWS, so we manually set the limit to 50% here
-            # memory_limit = int(psutil.virtual_memory().total / (1024**3) * 0.1)
+            # DuckDB can sometimes see an incorrect RAM amount in AWS, so we manually set the limit to 80% here
+            memory_limit = int(psutil.virtual_memory().total / (1024**3) * 0.8)
 
-            self.spark.sql("SET memory_limit = '10GB'")
+            self.spark.sql(f"SET memory_limit = '{memory_limit}GB';")
+            self.spark.sql("SET threads TO 2;")
             duckdb_settings = self.spark.sql(
                 "SELECT name, value FROM duckdb_settings() WHERE name IN ('memory_limit', 'threads')"
             ).collect()
