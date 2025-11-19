@@ -6,8 +6,13 @@ class LocationDataFrame:
     def __init__(self, spark: SparkSession):
         self.ref_country_code = spark.table("global_temp.ref_country_code")
         # To prevent duplicate state data, we are filtering to the latest year available
-        latest_year = 2017
-        self.state_data = spark.table("global_temp.state_data").filter(sf.col("year") == latest_year)
+        w = Window.partitionBy(sf.col("fips"))
+        self.state_data = (
+            spark.table("global_temp.state_data")
+            .withColumn("max_year", sf.max("year").over(w))
+            .filter(sf.col("year") == sf.col("max_year"))
+            .drop(sf.col("max_year"))
+        )
         self.ref_city_county_state_code = spark.table("global_temp.ref_city_county_state_code")
         self.zips_grouped = spark.table("global_temp.zips_grouped")
         self.transaction_search = spark.table("rpt.transaction_search")
