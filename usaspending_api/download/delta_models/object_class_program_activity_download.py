@@ -97,7 +97,7 @@ object_class_program_activity_schema = StructType(
         StructField("sub_account_code", StringType()),
         StructField("treasury_account_symbol", StringType()),
         StructField("treasury_account_name", StringType()),
-        StructField("merged_hash_key", LongType()),
+        StructField("merge_hash_key", LongType()),
     ]
 )
 
@@ -140,6 +140,8 @@ def object_class_program_activity_df(spark: SparkSession):
             ta.name.alias("owning_agency_name"),
             fa.federal_account_code.alias("federal_account_symbol"),
             fa.account_title.alias("federal_account_name"),
+            sf.col("agency_identifier_name"),
+            sf.col("allocation_transfer_agency_identifier_name"),
             rpa.program_activity_code,
             rpa.program_activity_name,
             oc.object_class.alias("object_class_code"),

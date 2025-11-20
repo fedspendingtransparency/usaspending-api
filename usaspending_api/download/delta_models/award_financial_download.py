@@ -166,6 +166,8 @@ def award_financial_df(spark: SparkSession):
             tta.name.alias("treasury_owning_agency_name"),
             fa.federal_account_code.alias("federal_account_symbol"),
             fa.account_title.alias("federal_account_name"),
+            sf.col("agency_identifier_name"),
+            sf.col("allocation_transfer_agency_identifier_name"),
             rpa.program_activity_code,
             rpa.program_activity_name,
             oc.object_class.alias("object_class_code"),
