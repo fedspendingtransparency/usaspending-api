@@ -1046,7 +1046,9 @@ def test_load_table_to_delta_for_summary_state_view(
 
 
 @pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
-def test_load_object(spark, s3_unittest_data_bucket, hive_unittest_metastore_db, monkeypatch):
+def test_load_object_class_program_activity_class(
+    spark, s3_unittest_data_bucket, hive_unittest_metastore_db, monkeypatch
+):
     call_command(
         "create_delta_table",
         "--destination-table=object_class_program_activity_download",
@@ -1070,6 +1072,9 @@ def test_load_object(spark, s3_unittest_data_bucket, hive_unittest_metastore_db,
 
 @pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_load_award_financial_download(spark, s3_unittest_data_bucket, hive_unittest_metastore_db, monkeypatch):
+
+    tables_to_load = ["financial_accounts_by_awards"]
+    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
     call_command(
         "create_delta_table",
         "--destination-table=award_financial_download",

@@ -122,7 +122,7 @@ award_financial_schema = StructType(
 
 
 def award_financial_df(spark: SparkSession):
-    faba = spark.table("global_temp.financial_accounts_by_awards")
+    faba = spark.table("int.financial_accounts_by_awards")
     sa = spark.table("global_temp.submission_attributes")
     taa = spark.table("global_temp.treasury_appropriation_account")
     award_search = spark.table("award_search")
