@@ -1074,16 +1074,6 @@ def test_load_object_class_program_activity_class(
 
 @pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_load_award_financial_download(spark, s3_unittest_data_bucket, hive_unittest_metastore_db, monkeypatch):
-    tables_to_load = [
-        "awards",
-        "financial_accounts_by_awards",
-        "recipient_lookup",
-        "sam_recipient",
-        "transaction_fabs",
-        "transaction_fpds",
-        "transaction_normalized",
-    ]
-    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
     call_command(
         "create_delta_table",
         "--destination-table=award_financial_download",
