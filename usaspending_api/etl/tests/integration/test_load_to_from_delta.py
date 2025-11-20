@@ -1060,7 +1060,11 @@ def test_load_object(spark, s3_unittest_data_bucket, hive_unittest_metastore_db,
     )
 
     verify_delta_table_loaded_to_delta(
-        spark, "object_class_program_activity_download", s3_unittest_data_bucket, load_command="load_query_to_delta", dummy_data=[]
+        spark,
+        "object_class_program_activity_download",
+        s3_unittest_data_bucket,
+        load_command="load_query_to_delta",
+        dummy_data=[],
     )
 
 
