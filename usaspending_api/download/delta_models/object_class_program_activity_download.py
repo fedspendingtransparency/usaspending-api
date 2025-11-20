@@ -128,6 +128,7 @@ def object_class_program_activity_df(spark: SparkSession):
         .select(
             fabpaoc.financial_accounts_by_program_activity_object_class_id,
             fabpaoc.submission_id,
+            sf.col("submission_period"),
             ta.name.alias("owning_agency_name"),
             fa.federal_account_code.alias("federal_account_symbol"),
             fa.account_title.alias("federal_account_name"),

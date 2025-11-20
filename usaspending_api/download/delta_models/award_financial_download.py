@@ -153,6 +153,7 @@ def award_financial_df(spark: SparkSession):
         .select(
             faba.financial_accounts_by_awards_id,
             faba.submission_id,
+            sf.col("submission_period"),
             fta.name.alias("federal_owning_agency_name"),
             tta.name.alias("treasury_owning_agency_name"),
             fa.federal_account_code.alias("federal_account_symbol"),
