@@ -19,7 +19,7 @@ from pyspark.sql import SparkSession
 from django.conf import settings
 from django.core.management import call_command
 from django.db import connection, connections, transaction, models
-
+from usaspending_api.config import CONFIG
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.etl.award_helpers import update_awards
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
@@ -1043,3 +1043,22 @@ def test_load_table_to_delta_for_summary_state_view(
     )
     # Lastly, check using verify_delta_table_loaded_from_delta function which will run the load_table_from_delta command
     verify_delta_table_loaded_from_delta(spark, "summary_state_view", spark_s3_bucket=s3_unittest_data_bucket)
+
+
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
+def test_load_object(spark, s3_unittest_data_bucket, hive_unittest_metastore_db, monkeypatch):
+    call_command(
+        "create_delta_table",
+        "--destination-table=object_class_program_activity_download",
+        f"--spark-s3-bucket={s3_unittest_data_bucket}",
+    )
+    monkeypatch.setattr(
+        f"usaspending_api.download.delta_downloads.object_class_program_activity.ObjectClassProgramActivityMixin.download_table",
+        spark.read.format("delta").load(
+            f"s3a://{s3_unittest_data_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/rpt/object_class_program_activity_download"
+        ),
+    )
+
+    verify_delta_table_loaded_to_delta(
+        spark, "object_class_program_activity_download", s3_unittest_data_bucket, load_command="load_query_to_delta"
+    )

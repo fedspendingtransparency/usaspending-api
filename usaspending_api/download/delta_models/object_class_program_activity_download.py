@@ -10,6 +10,8 @@ from pyspark.sql.types import (
     StructType,
     LongType,
 )
+from usaspending_api.download.helpers.delta_models_helpers import fy_quarter_period
+
 
 object_class_program_activity_schema = StructType(
     [
@@ -122,7 +124,7 @@ def object_class_program_activity_df(spark: SparkSession):
         .join(defc, on=defc.code == fabpaoc.disaster_emergency_fund_code, how="left")
         .join(cgac_aid, on=taa.agency_id == cgac_aid.cgac_code, how="left")
         .join(cgac_ata, on=cgac_ata.cgac_code == taa.allocation_transfer_agency_id, how="left")
-        .withColumn("merge_hash_key", sf.xxhash64("*"))
+        .withColumn("submission_period", fy_quarter_period())
         .select(
             fabpaoc.financial_accounts_by_program_activity_object_class_id,
             fabpaoc.submission_id,
@@ -149,18 +151,6 @@ def object_class_program_activity_df(spark: SparkSession):
             sa.reporting_fiscal_quarter,
             sa.reporting_fiscal_year,
             sa.quarter_format_flag,
-            sf.when(
-                sa.quarter_format_flag is True,
-                sf.concat(
-                    sf.lit("FY"), sf.lit(sa.reporting_fiscal_year), sf.lit("Q"), sf.lit(sa.reporting_fiscal_quarter)
-                ),
-            )
-            .otherwise(
-                sf.concat(
-                    sf.lit("FY"), sf.lit(sa.reporting_fiscal_year), sf.lit("P"), sf.lit(sa.reporting_fiscal_period)
-                )
-            )
-            .alias("submission_period"),
             fabpaoc.ussgl480100_undelivered_orders_obligations_unpaid_fyb.alias(
                 "USSGL480100_undelivered_orders_obligations_unpaid_FYB"
             ),
@@ -272,6 +262,7 @@ def object_class_program_activity_df(spark: SparkSession):
             taa.tas_rendering_label.alias("treasury_account_symbol"),
             taa.account_title.alias("treasury_account_name"),
         )
+        .withColumn("merge_hash_key", sf.xxhash64("*"))
     )
 
 

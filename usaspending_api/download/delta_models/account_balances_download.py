@@ -1,5 +1,6 @@
 from delta.tables import DeltaTable
-from pyspark.sql import Column, DataFrame, functions as sf, SparkSession
+from usaspending_api.download.helpers.delta_models_helpers import fy_quarter_period
+from pyspark.sql import DataFrame, functions as sf, SparkSession
 from pyspark.sql.types import (
     BooleanType,
     DateType,
@@ -75,20 +76,6 @@ account_balances_schema = StructType(
 )
 
 
-def fy_quarter_period() -> Column:
-    return sf.when(
-        sf.col("quarter_format_flag"),
-        sf.concat(sf.lit("FY"), sf.col("reporting_fiscal_year"), sf.lit("Q"), sf.col("reporting_fiscal_quarter")),
-    ).otherwise(
-        sf.concat(
-            sf.lit("FY"),
-            sf.col("reporting_fiscal_year"),
-            sf.lit("P"),
-            sf.lpad(sf.col("reporting_fiscal_period"), 2, "0"),
-        )
-    )
-
-
 def account_balances_df(spark: SparkSession) -> DataFrame:
     aab = spark.table("global_temp.appropriation_account_balances")
     sa = spark.table("global_temp.submission_attributes")
@@ -113,7 +100,6 @@ def account_balances_df(spark: SparkSession) -> DataFrame:
         .join(fa, on=taa.federal_account_id == fa.id, how="leftouter")
         .join(ta, on=fa.parent_toptier_agency_id == ta.toptier_agency_id, how="leftouter")
         .withColumn("submission_period", fy_quarter_period())
-        .withColumn("merge_hash_key", sf.xxhash64("*"))
         .select(
             taa.funding_toptier_agency_id,
             ta.name.alias("owning_agency_name"),
@@ -178,6 +164,7 @@ def account_balances_df(spark: SparkSession) -> DataFrame:
             sa.reporting_fiscal_year,
             sa.quarter_format_flag,
         )
+        .withColumn("merge_hash_key", sf.xxhash64("*"))
     )
 
 

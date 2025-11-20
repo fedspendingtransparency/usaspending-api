@@ -11,6 +11,8 @@ from pyspark.sql.types import (
     StructType,
     LongType,
 )
+from usaspending_api.download.helpers.delta_models_helpers import fy_quarter_period
+
 
 award_financial_schema = StructType(
     [
@@ -147,7 +149,7 @@ def award_financial_df(spark: SparkSession):
         .join(tta, on=tta.toptier_agency_id == taa.funding_toptier_agency_id, how="left")
         .join(cgac_aid, on=cgac_aid.code == taa.agency_id, how="left")
         .join(cgac_ata, on=cgac_ata.cgac_code == taa.allocation_transfer_agency_id, how="left")
-        .withColumn("merge_hash_key", sf.xxhash64("*"))
+        .withColumn("submission_period", fy_quarter_period())
         .select(
             faba.financial_accounts_by_awards_id,
             faba.submission_id,
@@ -214,21 +216,6 @@ def award_financial_df(spark: SparkSession):
             ts.national_interest_action.alias("national_interest_action_code"),
             ts.national_interest_desc.alias("national_interest_action"),
             sa.reporting_agency_name.alias("reporting_agency_name"),
-            sf.when(
-                sa.quarter_format_flag is True,
-                sf.concat(
-                    sf.lit("FY"), sf.lit(sa.reporting_fiscal_year), sf.lit("Q"), sf.lit(sa.reporting_fiscal_quarter)
-                ),
-            )
-            .otherwise(
-                sf.concat(
-                    sf.lit("FY"),
-                    sf.lit(sa.reporting_fiscal_year),
-                    sf.lit("P"),
-                    sf.lpad(sf.lit(sa.reporting_fiscal_period), 2, "0"),
-                )
-            )
-            .alias("submission_period"),
             taa.allocation_transfer_agency_id.alias("allocation_transfer_agency_identifier_code"),
             taa.agency_id.alais("agency_identifier_code"),
             taa.beginning_period_of_availability.alias("beginning_period_of_availability"),
@@ -276,7 +263,7 @@ def award_financial_df(spark: SparkSession):
             .alias("prime_award_summary_recipient_cd_current"),
             sf.coalesce(
                 ts.legal_entity_zip4,
-                sf.concat(ts.recipient_location_zip5.StringType(), ts.legal_entity_zip_last4.StringType()),
+                sf.concat(ts.recipient_location_zip5.cast(StringType()), ts.legal_entity_zip_last4.cast(StringType())),
             ).alias("recipient_zip_code"),
             sf.when(
                 ts.pop_state_code.isNotNull()
@@ -300,12 +287,13 @@ def award_financial_df(spark: SparkSession):
             )
             .otherwise("")
             .alias("usaspending_permalink"),
-            sa.published_date.DateType().alias("last_modified_date"),
+            sa.published_date.cast(DateType()).alias("last_modified_date"),
             sa.reporting_fiscal_period,
             sa.reporting_fiscal_quarter,
             sa.reporting_fiscal_year,
             sa.quarter_format_flag,
         )
+        .withColumn("merge_hash_key", sf.xxhash64("*"))
     )
 
 
