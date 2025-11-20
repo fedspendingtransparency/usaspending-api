@@ -257,7 +257,7 @@ def object_class_program_activity_df(spark: SparkSession):
             fabpaoc.reporting_period_end,
             fabpaoc.certified_date,
             fabpaoc.create_date.cast(DateType()),
-            fabpaoc.update_date,
+            fabpaoc.update_date.cast(DateType()),
             fabpaoc.treasury_account_id,
             taa.allocation_transfer_agency_id.alias("allocation_transfer_agency_identifier_code"),
             taa.agency_id.alias("agency_identifier_code"),
