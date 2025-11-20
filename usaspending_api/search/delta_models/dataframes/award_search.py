@@ -69,7 +69,7 @@ class AwardSearch(AbstractSearch):
             .join(
                 self.dabs_submission_window_schedule,
                 (self.submission_attributes.submission_window_id == self.dabs_submission_window_schedule.id)
-                & (self.dabs_submission_window_schedule.submission_reveal_date <= sf.now()),
+                & (self.dabs_submission_window_schedule.submission_reveal_date <= sf.current_timestamp()),
                 "inner",
             )
             .join(
