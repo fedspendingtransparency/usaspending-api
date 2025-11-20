@@ -34,11 +34,9 @@ class AwardSearch(AbstractSearch):
                 sf.sort_array(
                     sf.collect_set(
                         sf.to_json(
-                            sf.named_struct(
-                                sf.lit("cfda_number"),
+                            sf.struct(
                                 sf.col("cfda_number"),
-                                sf.lit("cfda_program_title"),
-                                sf.col("cfda_title"),
+                                sf.col("cfda_title").alias("cfda_program_title"),
                             )
                         )
                     )
@@ -119,12 +117,9 @@ class AwardSearch(AbstractSearch):
                         sf.when(
                             sf.col("disaster_emergency_fund_code").isNotNull(),
                             sf.to_json(
-                                sf.named_struct(
-                                    sf.lit("defc"),
-                                    sf.col("disaster_emergency_fund_code"),
-                                    sf.lit("outlay"),
+                                sf.struct(
+                                    sf.col("disaster_emergency_fund_code").alias("defc"),
                                     sf.col("outlay"),
-                                    sf.lit("obligation"),
                                     sf.col("obligation"),
                                 )
                             ),
