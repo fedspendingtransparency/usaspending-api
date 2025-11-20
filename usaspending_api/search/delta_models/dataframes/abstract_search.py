@@ -145,6 +145,7 @@ class AbstractSearch(ABC):
                     sf.coalesce(
                         self.transaction_fpds.awardee_or_recipient_legal,
                         self.transaction_fabs.awardee_or_recipient_legal,
+                        sf.lit(""),
                     ),
                 )
             )

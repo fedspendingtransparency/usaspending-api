@@ -250,6 +250,7 @@ class TransactionSearch(AbstractSearch):
                     sf.coalesce(
                         self.transaction_fpds.ultimate_parent_legal_enti,
                         self.transaction_fabs.ultimate_parent_legal_enti,
+                        sf.lit(""),
                     ),
                 )
             )
