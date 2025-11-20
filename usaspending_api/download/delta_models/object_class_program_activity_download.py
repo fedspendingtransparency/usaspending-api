@@ -122,8 +122,16 @@ def object_class_program_activity_df(spark: SparkSession):
         .join(rpa, on=rpa.id == fabpaoc.program_activity_id, how="left")
         .join(oc, on=fabpaoc.object_class_id == oc.id, how="left")
         .join(defc, on=defc.code == fabpaoc.disaster_emergency_fund_code, how="left")
-        .join(cgac_aid, on=taa.agency_id == cgac_aid.cgac_code, how="left")
-        .join(cgac_ata, on=cgac_ata.cgac_code == taa.allocation_transfer_agency_id, how="left")
+        .join(
+            cgac_aid.withColumnRenamed("agency_name", "agency_identifier_name"),
+            on=taa.agency_id == cgac_aid.cgac_code,
+            how="left",
+        )
+        .join(
+            cgac_ata.withColumnRenamed("agency_name", "allocation_transfer_agency_identifier_name"),
+            on=cgac_ata.cgac_code == taa.allocation_transfer_agency_id,
+            how="left",
+        )
         .withColumn("submission_period", fy_quarter_period())
         .select(
             fabpaoc.financial_accounts_by_program_activity_object_class_id,

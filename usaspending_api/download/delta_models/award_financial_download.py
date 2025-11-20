@@ -147,8 +147,16 @@ def award_financial_df(spark: SparkSession):
         .join(fa, on=taa.federal_account_id == fa.id, how="left")
         .join(fta, on=fa.parent_toptier_agency_id == fta.toptier_agency_id, how="left")
         .join(tta, on=tta.toptier_agency_id == taa.funding_toptier_agency_id, how="left")
-        .join(cgac_aid, on=cgac_aid.code == taa.agency_id, how="left")
-        .join(cgac_ata, on=cgac_ata.cgac_code == taa.allocation_transfer_agency_id, how="left")
+        .join(
+            cgac_aid.withColumnRenamed("agency_name", "agency_identifier_name"),
+            on=cgac_aid.code == taa.agency_id,
+            how="left",
+        )
+        .join(
+            cgac_ata.withColumnRenamed("agency_name", "allocation_transfer_agency_identifier_name"),
+            on=cgac_ata.cgac_code == taa.allocation_transfer_agency_id,
+            how="left",
+        )
         .withColumn("submission_period", fy_quarter_period())
         .select(
             faba.financial_accounts_by_awards_id,

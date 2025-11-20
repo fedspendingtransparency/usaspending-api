@@ -1062,3 +1062,41 @@ def test_load_object(spark, s3_unittest_data_bucket, hive_unittest_metastore_db,
     verify_delta_table_loaded_to_delta(
         spark, "object_class_program_activity_download", s3_unittest_data_bucket, load_command="load_query_to_delta"
     )
+
+
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
+def test_load_award_financial_download(spark, s3_unittest_data_bucket, hive_unittest_metastore_db, monkeypatch):
+    call_command(
+        "create_delta_table",
+        "--destination-table=award_financial_download",
+        f"--spark-s3-bucket={s3_unittest_data_bucket}",
+    )
+    monkeypatch.setattr(
+        f"usaspending_api.download.delta_downloads.award_financial.AwardFinancialMixin.download_table",
+        spark.read.format("delta").load(
+            f"s3a://{s3_unittest_data_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/rpt/award_financial_download"
+        ),
+    )
+
+    verify_delta_table_loaded_to_delta(
+        spark, "award_financial_download", s3_unittest_data_bucket, load_command="load_query_to_delta"
+    )
+
+
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
+def test_load_account_balances_download(spark, s3_unittest_data_bucket, hive_unittest_metastore_db, monkeypatch):
+    call_command(
+        "create_delta_table",
+        "--destination-table=account_balances_download",
+        f"--spark-s3-bucket={s3_unittest_data_bucket}",
+    )
+    monkeypatch.setattr(
+        f"usaspending_api.download.delta_downloads.account_balances.AccountBalancesMixin.download_table",
+        spark.read.format("delta").load(
+            f"s3a://{s3_unittest_data_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/rpt/account_balances_download"
+        ),
+    )
+
+    verify_delta_table_loaded_to_delta(
+        spark, "account_balances_download", s3_unittest_data_bucket, load_command="load_query_to_delta"
+    )
