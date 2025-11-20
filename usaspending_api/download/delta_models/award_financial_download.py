@@ -122,7 +122,7 @@ award_financial_schema = StructType(
 
 
 def award_financial_df(spark: SparkSession):
-    faba = spark.table("int.financial_accounts_by_awards")
+    faba = spark.table("global_temp.financial_accounts_by_awards")
     sa = spark.table("global_temp.submission_attributes")
     taa = spark.table("global_temp.treasury_appropriation_account")
     award_search = spark.table("award_search")
@@ -166,8 +166,6 @@ def award_financial_df(spark: SparkSession):
             tta.name.alias("treasury_owning_agency_name"),
             fa.federal_account_code.alias("federal_account_symbol"),
             fa.account_title.alias("federal_account_name"),
-            cgac_aid.agency_name.alias("agency_identifier_name"),
-            cgac_ata.agency_name.alias("allocation_transfer_agency_identifier_name"),
             rpa.program_activity_code,
             rpa.program_activity_name,
             oc.object_class.alias("object_class_code"),

@@ -140,8 +140,6 @@ def object_class_program_activity_df(spark: SparkSession):
             ta.name.alias("owning_agency_name"),
             fa.federal_account_code.alias("federal_account_symbol"),
             fa.account_title.alias("federal_account_name"),
-            cgac_aid.agency_name.alias("agency_identifier_name"),
-            cgac_ata.agency_name.alias("allocation_transfer_agency_identifier_name"),
             rpa.program_activity_code,
             rpa.program_activity_name,
             oc.object_class.alias("object_class_code"),

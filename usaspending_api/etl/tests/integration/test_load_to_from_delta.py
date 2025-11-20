@@ -1060,7 +1060,7 @@ def test_load_object(spark, s3_unittest_data_bucket, hive_unittest_metastore_db,
     )
 
     verify_delta_table_loaded_to_delta(
-        spark, "object_class_program_activity_download", s3_unittest_data_bucket, load_command="load_query_to_delta"
+        spark, "object_class_program_activity_download", s3_unittest_data_bucket, load_command="load_query_to_delta", dummy_data=[]
     )
 
 
@@ -1079,7 +1079,7 @@ def test_load_award_financial_download(spark, s3_unittest_data_bucket, hive_unit
     )
 
     verify_delta_table_loaded_to_delta(
-        spark, "award_financial_download", s3_unittest_data_bucket, load_command="load_query_to_delta"
+        spark, "award_financial_download", s3_unittest_data_bucket, load_command="load_query_to_delta", dummy_data=[]
     )
 
 
@@ -1098,5 +1098,5 @@ def test_load_account_balances_download(spark, s3_unittest_data_bucket, hive_uni
     )
 
     verify_delta_table_loaded_to_delta(
-        spark, "account_balances_download", s3_unittest_data_bucket, load_command="load_query_to_delta"
+        spark, "account_balances_download", s3_unittest_data_bucket, load_command="load_query_to_delta", dummy_data=[]
     )
