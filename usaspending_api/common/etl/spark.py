@@ -53,7 +53,6 @@ from usaspending_api.references.models import (
     ZipsGrouped,
 )
 from usaspending_api.reporting.models import ReportingAgencyMissingTas, ReportingAgencyOverview
-from usaspending_api.settings import CSV_LOCAL_PATH, IS_LOCAL
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule, SubmissionAttributes
 
 MAX_PARTITIONS = CONFIG.SPARK_MAX_PARTITIONS
@@ -791,18 +790,6 @@ def write_csv_file_duckdb(
         full_file_paths.append(_new_csv_path)
         os.rmdir(dir)
 
-    # for index in file_numbers:
-    #     full_path = f"{temp_csv_directory_path}{download_file_name}_{str(index).zfill(2)}.csv"
-    #     rel.filter(f"file_number = {index}").select(", ".join(df.columns)).to_csv(
-    #         file_name=full_path,
-    #         sep=delimiter,
-    #         escapechar='"',
-    #         header=True,
-    #         partition_by=["file_number"],
-    #         write_partition_columns=False,
-    #     )
-    #     full_file_paths.append(full_path)
-
     logger.info(f"{temp_csv_directory_path}{download_file_name} contains {df_record_count:,} rows of data")
     logger.info(f"Wrote source data DataFrame to {len(full_file_paths)} CSV files in {(time.time() - start):3f}s")
     return df_record_count, full_file_paths
@@ -860,22 +847,20 @@ def rename_part_files(
     list_of_part_files = sorted(
         [
             file.key
-            for file in retrieve_s3_bucket_object_list(bucket_name)
-            if (
-                file.key.startswith(f"{temp_download_dir_name}/{destination_file_name}/part-")
-                and file.key.endswith(file_format)
+            for file in retrieve_s3_bucket_object_list(
+                bucket_name, key_prefix=f"{temp_download_dir_name}/{destination_file_name}/part-"
             )
+            if file.key.endswith(file_format)
         ]
     )
 
     full_file_paths = []
 
     for index, part_file in enumerate(list_of_part_files):
-        old_key = f"{bucket_name}/{part_file}"
         new_key = f"{temp_download_dir_name}/{destination_file_name}_{str(index + 1).zfill(2)}.{file_format}"
-        logger.info(f"Renaming {old_key} to {bucket_name}/{new_key}")
+        logger.info(f"Renaming {bucket_name}/{part_file} to {bucket_name}/{new_key}")
 
-        rename_s3_object(bucket_name=bucket_name, old_key=old_key, new_key=new_key)
+        rename_s3_object(bucket_name=bucket_name, old_key=part_file, new_key=new_key)
         full_file_paths.append(f"s3a://{bucket_name}/{new_key}")
 
     return full_file_paths
