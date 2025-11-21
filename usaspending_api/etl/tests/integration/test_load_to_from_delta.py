@@ -1073,7 +1073,13 @@ def test_load_object_class_program_activity_class(
 
 
 @pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
-def test_load_award_financial_download(spark, s3_unittest_data_bucket, populate_usas_data_and_recipients_from_broker, hive_unittest_metastore_db, monkeypatch):
+def test_load_award_financial_download(
+    spark,
+    s3_unittest_data_bucket,
+    populate_usas_data_and_recipients_from_broker,
+    hive_unittest_metastore_db,
+    monkeypatch,
+):
 
     load_delta_table_from_postgres("published_fabs", s3_unittest_data_bucket)
     load_delta_table_from_postgres("detached_award_procurement", s3_unittest_data_bucket)
