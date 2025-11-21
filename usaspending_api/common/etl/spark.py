@@ -53,6 +53,7 @@ from usaspending_api.references.models import (
     ZipsGrouped,
 )
 from usaspending_api.reporting.models import ReportingAgencyMissingTas, ReportingAgencyOverview
+from usaspending_api.settings import CSV_LOCAL_PATH, IS_LOCAL
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule, SubmissionAttributes
 
 MAX_PARTITIONS = CONFIG.SPARK_MAX_PARTITIONS
@@ -750,9 +751,9 @@ def write_csv_file_duckdb(
     """
 
     # Convert the Spark DataFrame to a DuckDBPyRelation type to take advantage of the built-in functions
-    _pandas_df = df.toPandas()
+    # flake8 checks don't see this variable as being used even though it's used in the SQL query below
+    _pandas_df = df.toPandas()  # noqa: F841
 
-    # Add a `file_index` column specifying which file each row belongs in so that no file exceeds
     rel = duckdb.sql(f"""
         SELECT
             *,
@@ -762,7 +763,6 @@ def write_csv_file_duckdb(
 
     start = time.time()
     df_record_count = rel.count("*").fetchone()[0]
-    # file_numbers = sorted(rel.select("file_number").distinct().list("file_number").fetchone())[0]
     full_file_paths = []
 
     logger.info(f"Writing source data DataFrame to csv files for file {download_file_name}")
