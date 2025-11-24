@@ -998,8 +998,6 @@ def test_load_table_to_delta_for_sam_recipient(spark, s3_unittest_data_bucket, p
             "ultimate_parent_uei": "KDULNMSMR7E6",
         }
     ]
-    tables_to_load = ["sam_recipient"]
-    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
     verify_delta_table_loaded_to_delta(
         spark, "sam_recipient", s3_unittest_data_bucket, load_command="load_query_to_delta", dummy_data=expected_data
     )
@@ -1102,13 +1100,14 @@ def test_load_award_financial_download(
         spark, "award_search", s3_unittest_data_bucket, load_command="load_query_to_delta"
     )
     verify_delta_table_loaded_to_delta(
-        spark, "transaction_search", s3_unittest_data_bucket, load_command="load_query_to_delta"
+        spark,
+        "transaction_search",
+        s3_unittest_data_bucket,
+        load_command="load_query_to_delta",
+        ignore_fields=["award_update_date", "etl_update_date"],
     )
 
     tables_to_load = [
-        "transaction_fabs",
-        "transaction_fpds",
-        "transaction_normalized",
         "award_search",
         "transaction_search",
     ]

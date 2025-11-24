@@ -1,6 +1,5 @@
 from delta.tables import DeltaTable
 from pyspark.sql import SparkSession, functions as sf
-from pyspark.sql.functions import add_months
 from pyspark.sql.types import (
     BooleanType,
     DateType,
@@ -12,7 +11,7 @@ from pyspark.sql.types import (
     LongType,
 )
 from usaspending_api.download.helpers.delta_models_helpers import fy_quarter_period
-
+from usaspending_api.download.helpers.download_annotation_functions import AWARD_URL
 
 award_financial_schema = StructType(
     [
@@ -122,19 +121,19 @@ award_financial_schema = StructType(
 
 
 def award_financial_df(spark: SparkSession):
-    faba = spark.table("int.financial_accounts_by_awards")
-    sa = spark.table("global_temp.submission_attributes")
-    taa = spark.table("global_temp.treasury_appropriation_account")
-    award_search = spark.table("award_search")
-    ts = spark.table("transaction_search")
-    rpa = spark.table("global_temp.ref_program_activity")
-    oc = spark.table("global_temp.object_class")
-    defc = spark.table("global_temp.disaster_emergency_fund_code")
-    fa = spark.table("global_temp.federal_account")
-    fta = spark.table("global_temp.toptier_agency")
-    tta = spark.table("global_temp.toptier_agency")
-    cgac_aid = spark.table("global_temp.cgac")
-    cgac_ata = spark.table("global_temp.cgac")
+    faba = spark.table("int.financial_accounts_by_awards").alias("faba")
+    sa = spark.table("global_temp.submission_attributes").alias("sa")
+    taa = spark.table("global_temp.treasury_appropriation_account").alias("taa")
+    award_search = spark.table("award_search").alias("award_search")
+    ts = spark.table("transaction_search").alias("ts")
+    rpa = spark.table("global_temp.ref_program_activity").alias("rpa")
+    oc = spark.table("global_temp.object_class").alias("oc")
+    defc = spark.table("global_temp.disaster_emergency_fund_code").alias("defc")
+    fa = spark.table("global_temp.federal_account").alias("fa")
+    fta = spark.table("global_temp.toptier_agency").alias("fta")
+    tta = spark.table("global_temp.toptier_agency").alias("tta")
+    cgac_aid = spark.table("global_temp.cgac").alias("cgac_aid")
+    cgac_ata = spark.table("global_temp.cgac").alias("cgac_ata")
 
     return (
         faba.join(sa, on="submission_id", how="inner")
@@ -145,11 +144,19 @@ def award_financial_df(spark: SparkSession):
         .join(oc, on=oc.id == faba.object_class_id, how="left")
         .join(defc, on=defc.code == faba.disaster_emergency_fund_code, how="left")
         .join(fa, on=taa.federal_account_id == fa.id, how="left")
-        .join(fta, on=fa.parent_toptier_agency_id == fta.toptier_agency_id, how="left")
-        .join(tta, on=tta.toptier_agency_id == taa.funding_toptier_agency_id, how="left")
+        .join(
+            fta.withColumnRenamed("name", "federal_owning_agency_name"),
+            on=fa.parent_toptier_agency_id == fta.toptier_agency_id,
+            how="left",
+        )
+        .join(
+            tta.withColumnRenamed("name", "treasury_owning_agency_name"),
+            on=tta.toptier_agency_id == taa.funding_toptier_agency_id,
+            how="left",
+        )
         .join(
             cgac_aid.withColumnRenamed("agency_name", "agency_identifier_name"),
-            on=cgac_aid.code == taa.agency_id,
+            on=cgac_aid.cgac_code == taa.agency_id,
             how="left",
         )
         .join(
@@ -162,8 +169,8 @@ def award_financial_df(spark: SparkSession):
             faba.financial_accounts_by_awards_id,
             faba.submission_id,
             sf.col("submission_period"),
-            fta.name.alias("federal_owning_agency_name"),
-            tta.name.alias("treasury_owning_agency_name"),
+            sf.col("federal_owning_agency_name"),
+            sf.col("treasury_owning_agency_name"),
             fa.federal_account_code.alias("federal_account_symbol"),
             fa.account_title.alias("federal_account_name"),
             sf.col("agency_identifier_name"),
@@ -226,9 +233,9 @@ def award_financial_df(spark: SparkSession):
             ts.national_interest_desc.alias("national_interest_action"),
             sa.reporting_agency_name.alias("reporting_agency_name"),
             taa.allocation_transfer_agency_id.alias("allocation_transfer_agency_identifier_code"),
-            taa.agency_id.alais("agency_identifier_code"),
-            taa.beginning_period_of_availability.alias("beginning_period_of_availability"),
-            taa.ending_period_of_availability.alias("ending_period_of_availability"),
+            taa.agency_id.alias("agency_identifier_code"),
+            taa.beginning_period_of_availability.alias("beginning_period_of_availability").cast(DateType()),
+            taa.ending_period_of_availability.alias("ending_period_of_availability").cast(DateType()),
             taa.availability_type_code.alias("availability_type_code"),
             taa.main_account_code.alias("main_account_code"),
             taa.sub_account_code.alias("sub_account_code"),
@@ -248,8 +255,10 @@ def award_financial_df(spark: SparkSession):
             faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe.alias(
                 "ussgl497200_downward_adj_of_prior_year_paid_deliv_orders_oblig"
             ),
-            sf.extract("year", add_months(award_search.date_signed), 3).alias("award_base_action_date_fiscal_year"),
-            sf.extract("year", add_months(award_search.certified_date), 3).alias(
+            sf.expr("EXTRACT(YEAR FROM ADD_MONTHS(award_search.date_signed, 3))").alias(
+                "award_base_action_date_fiscal_year"
+            ),
+            sf.expr("EXTRACT(YEAR FROM ADD_MONTHS(award_search.certified_date, 3))").alias(
                 "award_latest_action_date_fiscal_year"
             ),
             sf.coalesce(ts.contract_award_type, ts.type).alias("award_type_code"),
@@ -257,16 +266,22 @@ def award_financial_df(spark: SparkSession):
             sf.when(
                 ts.recipient_location_state_code.isNotNull()
                 & ts.recipient_location_congressional_code.isNotNull()
-                & ~(ts.recipient_location_state_code == "" & ts.recipient_location_state_code.isNotNull()),
-                sf.concat(ts.recipient_location_state_code, "-", ts.recipient_location_congressional_code),
+                & (~(ts.recipient_location_state_code.isNotNull() & (ts.recipient_location_state_code == ""))),
+                sf.concat(
+                    ts["recipient_location_state_code"], sf.lit("-"), ts["recipient_location_congressional_code"]
+                ),
             )
-            .otherwise(ts.recipient_location_conggressional_code)
+            .otherwise(ts.recipient_location_congressional_code)
             .alias("prime_award_summary_recipient_cd_original"),
             sf.when(
                 ts.recipient_location_state_code.isNotNull()
                 & ts.recipient_location_congressional_code_current.isNotNull()
-                & ~(ts.recipient_location_state_code.isNotNull() & ts.recipient_location_state_code == ""),
-                sf.concat(ts.recipient_location_state_code, "-", ts.recipient_location_congressional_code_current),
+                & (~(ts.recipient_location_state_code.isNotNull() & (ts.recipient_location_state_code == ""))),
+                sf.concat(
+                    ts["recipient_location_state_code"],
+                    sf.lit("-"),
+                    ts["recipient_location_congressional_code_current"],
+                ),
             )
             .otherwise(ts.recipient_location_congressional_code_current)
             .alias("prime_award_summary_recipient_cd_current"),
@@ -277,22 +292,22 @@ def award_financial_df(spark: SparkSession):
             sf.when(
                 ts.pop_state_code.isNotNull()
                 & ts.pop_congressional_code.isNotNull()
-                & ~(ts.pop_state_code.isNotNull() & ts.pop_state_code == ""),
-                sf.concat(ts.pop_state_code, "-", ts.pop_congressional_code),
+                & (~(ts.pop_state_code.isNotNull() & (ts.pop_state_code == ""))),
+                sf.concat(ts["pop_state_code"], sf.lit("-"), ts["pop_congressional_code"]),
             )
             .otherwise(ts.pop_congressional_code)
             .alias("prime_award_summary_place_of_performance_cd_original"),
             sf.when(
                 ts.pop_state_code.isNotNull()
                 & ts.pop_congressional_code_current.isNotNull()
-                & ~(ts.pop_state_code.isNotNull() & ts.pop_state_code == ""),
-                sf.concat(ts.pop_state_code, "-", ts.pop_congressional_code_current),
+                & (~(ts.pop_state_code.isNotNull() & (ts.pop_state_code == ""))),
+                sf.concat(ts["pop_state_code"], sf.lit("-"), ts["pop_congressional_code_current"]),
             )
             .otherwise(ts.pop_congressional_code_current)
             .alias("prime_award_summary_place_of_performance_cd_current"),
             sf.when(
                 award_search.generated_unique_award_id.isNotNull(),
-                sf.concat("{{AWARD_URL}}", sf.url_encode(award_search.generated_unique_award_id), "/"),
+                sf.concat(sf.lit(AWARD_URL), sf.url_encode(award_search.generated_unique_award_id), sf.lit("/")),
             )
             .otherwise("")
             .alias("usaspending_permalink"),
@@ -317,10 +332,7 @@ def load_award_financial_incremental(
     target = DeltaTable.forName(spark, f"{destination_database}.{destination_table_name}").alias("t")
     source = award_financial_df(spark).dataframe.alias("s")
     (
-        target.merge(
-            source,
-            "s.financial_accounts_by_awards_id = t.financial_accounts_by_awards_id and s.merge_hash_key = t.merge_hash_key",
-        )
+        target.merge(source, "s.financial_accounts_by_awards_id = t.financial_accounts_by_awards_id")
         .whenNotMatchedInsertAll()
         .whenNotMatchedBySourceDelete()
         .execute()
