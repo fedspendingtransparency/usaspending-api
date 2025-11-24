@@ -115,7 +115,7 @@ award_financial_schema = StructType(
         StructField("reporting_fiscal_quarter", IntegerType()),
         StructField("reporting_fiscal_year", IntegerType()),
         StructField("quarter_format_flag", BooleanType()),
-        StructField("merged_hash_key", LongType()),
+        StructField("merge_hash_key", LongType()),
     ]
 )
 
