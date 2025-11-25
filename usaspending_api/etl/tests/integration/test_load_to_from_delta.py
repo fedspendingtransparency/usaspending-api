@@ -974,7 +974,9 @@ def test_incremental_load_table_to_delta_for_transaction_search(
 
 
 @pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
-def test_load_table_to_delta_for_sam_recipient(spark, s3_unittest_data_bucket, populate_broker_data):
+def test_load_table_to_delta_for_sam_recipient(
+    spark, s3_unittest_data_bucket, populate_broker_data, hive_unittest_metastore_db
+):
     expected_data = [
         {
             "awardee_or_recipient_uniqu": "812918241",
@@ -1001,6 +1003,48 @@ def test_load_table_to_delta_for_sam_recipient(spark, s3_unittest_data_bucket, p
     verify_delta_table_loaded_to_delta(
         spark, "sam_recipient", s3_unittest_data_bucket, load_command="load_query_to_delta", dummy_data=expected_data
     )
+
+
+@pytest.mark.skipif(
+    settings.BROKER_DB_ALIAS not in settings.DATABASES,
+    reason="'data_broker' database not configured in django settings.DATABASES.",
+)
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
+def test_load_table_to_delta_for_summary_state_view(
+    spark, s3_unittest_data_bucket, populate_usas_data_and_recipients_from_broker, hive_unittest_metastore_db
+):
+
+    # We need the award_search table to create the summary_state_view in delta
+    # And in order to create the award_search table, we need the following
+    load_delta_table_from_postgres("published_fabs", s3_unittest_data_bucket)
+    load_delta_table_from_postgres("detached_award_procurement", s3_unittest_data_bucket)
+
+    tables_to_load = [
+        "awards",
+        "financial_accounts_by_awards",
+        "recipient_lookup",
+        "recipient_profile",
+        "sam_recipient",
+        "transaction_current_cd_lookup",
+        "transaction_fabs",
+        "transaction_fpds",
+        "transaction_normalized",
+        "zips",
+    ]
+    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
+    verify_delta_table_loaded_to_delta(
+        spark, "award_search", s3_unittest_data_bucket, load_command="load_query_to_delta"
+    )
+
+    # We now want to load the award_search table that we created above along with other tables needed to create award_search
+    # Then create the summay_state_view table and populate it using the load_query_to_delta command
+    tables_to_load = ["transaction_fabs", "transaction_fpds", "transaction_normalized", "award_search"]
+    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
+    verify_delta_table_loaded_to_delta(
+        spark, "summary_state_view", s3_unittest_data_bucket, load_command="load_query_to_delta"
+    )
+    # Lastly, check using verify_delta_table_loaded_from_delta function which will run the load_table_from_delta command
+    verify_delta_table_loaded_from_delta(spark, "summary_state_view", spark_s3_bucket=s3_unittest_data_bucket)
 
 
 @pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
@@ -1105,45 +1149,3 @@ def test_load_account_balances_download(spark, s3_unittest_data_bucket, hive_uni
     verify_delta_table_loaded_to_delta(
         spark, "account_balances_download", s3_unittest_data_bucket, load_command="load_query_to_delta", dummy_data=[]
     )
-
-
-@pytest.mark.skipif(
-    settings.BROKER_DB_ALIAS not in settings.DATABASES,
-    reason="'data_broker' database not configured in django settings.DATABASES.",
-)
-@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
-def test_load_table_to_delta_for_summary_state_view(
-    spark, s3_unittest_data_bucket, populate_usas_data_and_recipients_from_broker, hive_unittest_metastore_db
-):
-
-    # We need the award_search table to create the summary_state_view in delta
-    # And in order to create the award_search table, we need the following
-    load_delta_table_from_postgres("published_fabs", s3_unittest_data_bucket)
-    load_delta_table_from_postgres("detached_award_procurement", s3_unittest_data_bucket)
-
-    tables_to_load = [
-        "awards",
-        "financial_accounts_by_awards",
-        "recipient_lookup",
-        "recipient_profile",
-        "sam_recipient",
-        "transaction_current_cd_lookup",
-        "transaction_fabs",
-        "transaction_fpds",
-        "transaction_normalized",
-        "zips",
-    ]
-    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
-    verify_delta_table_loaded_to_delta(
-        spark, "award_search", s3_unittest_data_bucket, load_command="load_query_to_delta"
-    )
-
-    # We now want to load the award_search table that we created above along with other tables needed to create award_search
-    # Then create the summay_state_view table and populate it using the load_query_to_delta command
-    tables_to_load = ["transaction_fabs", "transaction_fpds", "transaction_normalized", "award_search"]
-    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
-    verify_delta_table_loaded_to_delta(
-        spark, "summary_state_view", s3_unittest_data_bucket, load_command="load_query_to_delta"
-    )
-    # Lastly, check using verify_delta_table_loaded_from_delta function which will run the load_table_from_delta command
-    verify_delta_table_loaded_from_delta(spark, "summary_state_view", spark_s3_bucket=s3_unittest_data_bucket)
