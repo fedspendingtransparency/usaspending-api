@@ -53,8 +53,11 @@ from usaspending_api.search.delta_models.award_search import (
     AWARD_SEARCH_POSTGRES_COLUMNS,
     AWARD_SEARCH_POSTGRES_GOLD_COLUMNS,
     award_search_create_sql_string,
-    award_search_incremental_load_sql_string,
-    award_search_overwrite_load_sql_string,
+)
+from usaspending_api.search.delta_models.dataframes.award_search import load_award_search, load_award_search_incremental
+from usaspending_api.search.delta_models.dataframes.transaction_search import (
+    load_transaction_search,
+    load_transaction_search_incremental,
 )
 from usaspending_api.search.delta_models.subaward_search import (
     SUBAWARD_SEARCH_COLUMNS,
@@ -77,10 +80,7 @@ from usaspending_api.transactions.delta_models import (
     transaction_current_cd_lookup_load_sql_string,
     transaction_search_create_sql_string,
 )
-from usaspending_api.transactions.delta_models.transaction_search_dataframe import (
-    load_transaction_search,
-    load_transaction_search_incremental,
-)
+
 
 AWARD_URL = f"{HOST}/award/" if "localhost" in HOST else f"https://{HOST}/award/"
 
@@ -90,8 +90,8 @@ TABLE_SPEC = {
     "award_search": {
         "model": AwardSearch,
         "is_from_broker": False,
-        "source_query": award_search_overwrite_load_sql_string,
-        "source_query_incremental": award_search_incremental_load_sql_string,
+        "source_query": load_award_search,
+        "source_query_incremental": load_award_search_incremental,
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
@@ -112,8 +112,8 @@ TABLE_SPEC = {
     "award_search_gold": {
         "model": AwardSearch,
         "is_from_broker": False,
-        "source_query": award_search_overwrite_load_sql_string,
-        "source_query_incremental": award_search_incremental_load_sql_string,
+        "source_query": load_award_search,
+        "source_query_incremental": load_award_search_incremental,
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
