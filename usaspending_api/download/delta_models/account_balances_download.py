@@ -177,7 +177,7 @@ def load_account_balances_incremental(
     spark: SparkSession, destination_database: str, destination_table_name: str
 ) -> None:
     target = DeltaTable.forName(spark, f"{destination_database}.{destination_table_name}").alias("t")
-    source = account_balances_df(spark).dataframe.alias("s")
+    source = account_balances_df(spark).alias("s")
     (
         target.merge(
             source,

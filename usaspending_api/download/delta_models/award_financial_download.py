@@ -330,9 +330,9 @@ def load_award_financial_incremental(
     spark: SparkSession, destination_database: str, destination_table_name: str
 ) -> None:
     target = DeltaTable.forName(spark, f"{destination_database}.{destination_table_name}").alias("t")
-    source = award_financial_df(spark).dataframe.alias("s")
+    source = award_financial_df(spark).alias("s")
     (
-        target.merge(source, "s.financial_accounts_by_awards_id = t.financial_accounts_by_awards_id")
+        target.merge(source, "s.financial_accounts_by_awards_id = t.financial_accounts_by_awards_id and s.merge_hash_key = t.merge_hash_key")
         .whenNotMatchedInsertAll()
         .whenNotMatchedBySourceDelete()
         .execute()
