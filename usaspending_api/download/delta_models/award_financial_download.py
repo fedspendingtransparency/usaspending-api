@@ -1,6 +1,6 @@
 from delta.tables import DeltaTable
 from pyspark.sql import SparkSession, functions as sf
-from pyspark.sql.functions import pandas_udf
+from pyspark.sql.functions import expr
 from pyspark.sql.types import (
     BooleanType,
     DateType,
@@ -11,7 +11,6 @@ from pyspark.sql.types import (
     StructType,
     LongType,
 )
-from urllib.parse import quote
 from usaspending_api.download.helpers.delta_models_helpers import fy_quarter_period
 from usaspending_api.download.helpers.download_annotation_functions import AWARD_URL
 
@@ -122,11 +121,6 @@ award_financial_schema = StructType(
 )
 
 
-@pandas_udf(StringType())
-def encode_url(url):
-    return url.apply(quote)
-
-
 def award_financial_df(spark: SparkSession):
     faba = spark.table("int.financial_accounts_by_awards").alias("faba")
     sa = spark.table("global_temp.submission_attributes").alias("sa")
@@ -172,6 +166,19 @@ def award_financial_df(spark: SparkSession):
             how="left",
         )
         .withColumn("submission_period", fy_quarter_period())
+        .withColumn(
+            "usaspending_permalink",
+            sf.when(
+                award_search.generated_unique_award_id.isNotNull(),
+                sf.concat(
+                    sf.lit(AWARD_URL),
+                    expr(
+                        "java_method('java.net.URLEncoder', 'encode', award_search.generated_unique_award_id, 'UTF-8')"
+                    ),
+                    sf.lit("/"),
+                ),
+            ).otherwise(""),
+        )
         .select(
             faba.financial_accounts_by_awards_id,
             faba.submission_id,
@@ -312,12 +319,6 @@ def award_financial_df(spark: SparkSession):
             )
             .otherwise(ts.pop_congressional_code_current)
             .alias("prime_award_summary_place_of_performance_cd_current"),
-            sf.when(
-                award_search.generated_unique_award_id.isNotNull(),
-                sf.concat(sf.lit(AWARD_URL), encode_url(award_search.generated_unique_award_id), sf.lit("/")),
-            )
-            .otherwise("")
-            .alias("usaspending_permalink"),
             sa.published_date.cast(DateType()).alias("last_modified_date"),
             sa.reporting_fiscal_period,
             sa.reporting_fiscal_quarter,
