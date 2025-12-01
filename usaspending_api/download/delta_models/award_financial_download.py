@@ -1,5 +1,6 @@
 from delta.tables import DeltaTable
 from pyspark.sql import SparkSession, functions as sf
+from pyspark.sql.functions import pandas_udf
 from pyspark.sql.types import (
     BooleanType,
     DateType,
@@ -10,6 +11,7 @@ from pyspark.sql.types import (
     StructType,
     LongType,
 )
+from urllib.parse import quote
 from usaspending_api.download.helpers.delta_models_helpers import fy_quarter_period
 from usaspending_api.download.helpers.download_annotation_functions import AWARD_URL
 
@@ -118,6 +120,11 @@ award_financial_schema = StructType(
         StructField("merge_hash_key", LongType()),
     ]
 )
+
+
+@pandas_udf(StringType())
+def encode_url(url):
+    return url.apply(quote)
 
 
 def award_financial_df(spark: SparkSession):
@@ -307,7 +314,7 @@ def award_financial_df(spark: SparkSession):
             .alias("prime_award_summary_place_of_performance_cd_current"),
             sf.when(
                 award_search.generated_unique_award_id.isNotNull(),
-                sf.concat(sf.lit(AWARD_URL), sf.url_encode(award_search.generated_unique_award_id), sf.lit("/")),
+                sf.concat(sf.lit(AWARD_URL), encode_url(award_search.generated_unique_award_id), sf.lit("/")),
             )
             .otherwise("")
             .alias("usaspending_permalink"),

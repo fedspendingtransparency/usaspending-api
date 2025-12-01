@@ -29,6 +29,7 @@ pandas==2.2.*
 psutil==5.9.*
 psycopg2==2.9.9  # Pinning exact version because this package will drop support for Python versions in patches
 py-gfm==2.0.0
+pyarrow==22.0.0
 pydantic[dotenv]==1.9.*
 python-dateutil==2.9.*
 python-json-logger==2.0.7
