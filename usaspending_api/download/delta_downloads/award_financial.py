@@ -133,7 +133,9 @@ class FederalAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
             "budget_function": lambda col: collect_concat(col, spark=self.spark),
             "budget_subfunction": lambda col: collect_concat(col, spark=self.spark),
             "transaction_obligated_amount": lambda col: sf.sum(col).alias(col),
-            "gross_outlay_amount_FYB_to_period_end": lambda col: filter_submission_and_sum(col, self.filters, spark=self.spark),
+            "gross_outlay_amount_FYB_to_period_end": lambda col: filter_submission_and_sum(
+                col, self.filters, spark=self.spark
+            ),
             "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig": lambda col: filter_submission_and_sum(
                 col, self.filters, spark=self.spark
             ),
