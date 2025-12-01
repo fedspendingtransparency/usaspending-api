@@ -319,6 +319,7 @@ def award_financial_df(spark: SparkSession):
             )
             .otherwise(ts.pop_congressional_code_current)
             .alias("prime_award_summary_place_of_performance_cd_current"),
+            sf.col("usaspending_permalink"),
             sa.published_date.cast(DateType()).alias("last_modified_date"),
             sa.reporting_fiscal_period,
             sa.reporting_fiscal_quarter,
