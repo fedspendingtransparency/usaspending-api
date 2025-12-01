@@ -332,7 +332,10 @@ def load_award_financial_incremental(
     target = DeltaTable.forName(spark, f"{destination_database}.{destination_table_name}").alias("t")
     source = award_financial_df(spark).alias("s")
     (
-        target.merge(source, "s.financial_accounts_by_awards_id = t.financial_accounts_by_awards_id and s.merge_hash_key = t.merge_hash_key")
+        target.merge(
+            source,
+            "s.financial_accounts_by_awards_id = t.financial_accounts_by_awards_id and s.merge_hash_key = t.merge_hash_key",
+        )
         .whenNotMatchedInsertAll()
         .whenNotMatchedBySourceDelete()
         .execute()
