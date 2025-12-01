@@ -129,9 +129,9 @@ class FederalAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
     @property
     def agg_cols(self) -> dict[str, callable]:
         return {
-            "reporting_agency_name": collect_concat,
-            "budget_function": collect_concat,
-            "budget_subfunction": collect_concat,
+            "reporting_agency_name": lambda col: collect_concat(col, spark=self.spark),
+            "budget_function": lambda col: collect_concat(col, spark=self.spark),
+            "budget_subfunction": lambda col: collect_concat(col, spark=self.spark),
             "transaction_obligated_amount": lambda col: sf.sum(col).alias(col),
             "gross_outlay_amount_FYB_to_period_end": lambda col: filter_submission_and_sum(col, self.filters),
             "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig": lambda col: filter_submission_and_sum(
