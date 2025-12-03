@@ -62,7 +62,7 @@ class BaseDownloadViewSet(APIView):
             write_to_log(message=f"Generating file from cached download job ID: {cached_download.download_job_id}")
             return self.build_download_response(cached_download)
 
-        final_output_zip_name = create_unique_filename(json_request, origination=origination)
+        final_output_zip_name = create_unique_filename(sorted_json_request, origination=origination)
         download_job = DownloadJob.objects.create(
             job_status_id=JOB_STATUS_DICT["ready"],
             file_name=final_output_zip_name,
