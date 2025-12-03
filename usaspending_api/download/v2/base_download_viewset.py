@@ -50,12 +50,11 @@ class BaseDownloadViewSet(APIView):
                 .order_by("-update_date")
                 .first()
             )
-            write_to_log(message="download is pre-generated")
             return self.build_download_response(download_job)
 
         # Check if the same request has been called today
         ordered_json_request = json.dumps(sorted_json_request)
-        cached_download = self._get_cached_download(ordered_json_request, json_request.get("download_types", []))
+        cached_download = self._get_cached_download(ordered_json_request, sorted_json_request.get("download_types", []))
 
         if cached_download and not settings.IS_LOCAL:
             # By returning the cached files, there should be no duplicates on a daily basis
