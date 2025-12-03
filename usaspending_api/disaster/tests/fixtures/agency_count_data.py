@@ -24,7 +24,7 @@ def faba_with_toptier_agencies(award_count_sub_schedule, award_count_submission,
         disaster_emergency_fund_codes=["M"],
         total_covid_obligation=8,
         total_covid_outlay=0,
-        covid_spending_by_defc=[{"defc": "M", "outlay": 0, "obligaton": 8}],
+        spending_by_defc=[{"defc": "M", "outlay": 0, "obligaton": 8}],
         action_date="2020-10-01",
     )
 
@@ -118,7 +118,7 @@ def award_with_toptier_agency(id, toa=0, outlay=0):
         disaster_emergency_fund_codes=["M"],
         total_covid_obligation=toa,
         total_covid_outlay=outlay,
-        covid_spending_by_defc=[{"defc": "M", "outlay": outlay, "obligaton": toa}],
+        spending_by_defc=[{"defc": "M", "outlay": outlay, "obligaton": toa}],
         action_date="2020-10-01",
     )
     baker.make(

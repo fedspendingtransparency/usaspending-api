@@ -12,11 +12,11 @@ from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import drop_
 from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
 from usaspending_api.etl.elasticsearch_loader_helpers import (
     check_new_index_name_is_ok,
+    check_pipeline_dates,
     execute_sql_statement,
     format_log,
     toggle_refresh_off,
     transform_award_data,
-    transform_location_data,
     transform_subaward_data,
     transform_transaction_data,
 )
@@ -26,7 +26,6 @@ from usaspending_api.etl.elasticsearch_loader_helpers.controller import (
 )
 from usaspending_api.etl.elasticsearch_loader_helpers.index_config import (
     ES_AWARDS_UNIQUE_KEY_FIELD,
-    ES_LOCATION_UNIQUE_KEY_FIELD,
     ES_RECIPIENT_UNIQUE_KEY_FIELD,
     ES_SUBAWARD_UNIQUE_KEY_FIELD,
     ES_TRANSACTIONS_UNIQUE_KEY_FIELD,
@@ -36,6 +35,11 @@ logger = logging.getLogger("script")
 
 
 class AbstractElasticsearchIndexer(ABC, BaseCommand):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.valid_load_types = {"transaction", "award", "recipient", "subaward"}
+
     def add_arguments(self, parser):
         parser.add_argument(
             "--process-deletes",
@@ -78,7 +82,7 @@ class AbstractElasticsearchIndexer(ABC, BaseCommand):
             type=str,
             required=True,
             help="Select which data the ETL will process.",
-            choices=["transaction", "award", "recipient", "location", "subaward"],
+            choices=self.valid_load_types,
         )
         parser.add_argument(
             "--processes",
@@ -100,6 +104,15 @@ class AbstractElasticsearchIndexer(ABC, BaseCommand):
             "--drop-db-view",
             action="store_true",
             help="After completing the ETL, drop the SQL view used for the data extraction",
+        )
+        parser.add_argument(
+            "--skip-date-check",
+            action="store_true",
+            help=(
+                "When creating a new index it is verified that the es_deletes timestamp occurs after the earliest"
+                " timestamp associated with the Transaction loader. If that check fails it is recommended that the"
+                " es_deletes and other Elasticsearch timestamps are updated manually prior to proceeding."
+            ),
         )
 
     def handle(self, *args, **options):
@@ -183,6 +196,7 @@ def parse_cli_args(options: dict, es_client) -> dict:
         "processes",
         "skip_counts",
         "skip_delete_index",
+        "skip_date_check",
     ]
     config = set_config(passthrough_values, options)
 
@@ -192,6 +206,8 @@ def parse_cli_args(options: dict, es_client) -> dict:
         config["index_name"] = config["index_name"].lower()
         config["starting_date"] = config["initial_datetime"]
         check_new_index_name_is_ok(config["index_name"], config["required_index_name"])
+        if not config["skip_date_check"]:
+            check_pipeline_dates(config["load_type"])
     elif options["start_datetime"]:
         config["starting_date"] = options["start_datetime"]
     else:
@@ -373,7 +389,7 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             "base_table": "transaction_search",
             "base_table_id": "transaction_id",
             "create_award_type_aliases": False,
-            "data_transform_func": transform_location_data,
+            "data_transform_func": None,
             "data_type": "location",
             "execute_sql_func": execute_sql_statement,
             "extra_null_partition": False,
@@ -386,7 +402,7 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             "required_index_name": settings.ES_LOCATIONS_NAME_SUFFIX,
             "sql_view": settings.ES_LOCATIONS_ETL_VIEW_NAME,
             "stored_date_key": None,
-            "unique_key_field": ES_LOCATION_UNIQUE_KEY_FIELD,
+            "unique_key_field": None,
             "write_alias": settings.ES_LOCATIONS_WRITE_ALIAS,
         }
     else:

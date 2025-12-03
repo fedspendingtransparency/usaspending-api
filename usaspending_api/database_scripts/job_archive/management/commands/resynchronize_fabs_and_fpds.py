@@ -392,7 +392,7 @@ class Command(BaseCommand):
                 return
             sql = broker_sql % (str(ids) if len(ids) > 1 else f"({ids[0]})")
 
-            connection = connections[settings.DATA_BROKER_DB_ALIAS]
+            connection = connections[settings.BROKER_DB_ALIAS]
             with connection.cursor() as cursor:
                 cursor.execute(sql)
                 results = cursor.fetchall()

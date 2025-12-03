@@ -308,7 +308,10 @@ recipient_lookup_load_sql_string_list = [
                             ORDER BY
                                 sr.ultimate_parent_unique_ide ASC NULLS LAST,
                                 sr.ultimate_parent_uei ASC NULLS LAST,
-                                sr.update_date DESC NULLS LAST
+                                sr.update_date DESC NULLS LAST,
+                                -- Order by the legal_business_name as a last resort for cases where all other columns
+                                -- are the same within the same partition.
+                                UPPER(sr.ultimate_parent_legal_enti)
                         ) AS row_num
                     FROM int.sam_recipient sr
 

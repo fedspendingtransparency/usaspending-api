@@ -3,9 +3,7 @@ from datetime import datetime, timezone
 from typing import List, Optional, Type
 
 from django.conf import settings
-from django.db import connections
-from django.db.models import Max, QuerySet
-from rest_framework.exceptions import NotFound
+from django.db.models import Max
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -13,16 +11,18 @@ from rest_framework.views import APIView
 from usaspending_api.broker.lookups import EXTERNAL_DATA_TYPE_DICT
 from usaspending_api.broker.models import ExternalDataLoadDate
 from usaspending_api.common.api_versioning import API_TRANSFORM_FUNCTIONS, api_transformations
+from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.dict_helpers import order_nested_object
-from usaspending_api.common.sqs.sqs_handler import get_sqs_queue
+from usaspending_api.common.spark.jobs import LocalStrategy, SparkJobs
+from usaspending_api.common.sqs.sqs_handler import DownloadLogic, get_sqs_queue
 from usaspending_api.download.download_utils import create_unique_filename, log_new_download_job
 from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.download.filestreaming.s3_handler import S3Handler
 from usaspending_api.download.helpers import write_to_download_log as write_to_log
 from usaspending_api.download.lookups import JOB_STATUS_DICT
 from usaspending_api.download.models.download_job import DownloadJob
+from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 from usaspending_api.download.v2.request_validations import DownloadValidatorBase
-from usaspending_api.routers.replicas import ReadReplicaRouter
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
 
@@ -35,72 +35,119 @@ class BaseDownloadViewSet(APIView):
         origination: Optional[str] = None,
     ):
         validator = validator_type(request.data)
-        json_request = order_nested_object(validator.json_request)
+        json_request = validator.json_request
 
         # Check if download is pre-generated
         pre_generated_download = json_request.pop("pre_generated_download", None)
         if pre_generated_download:
-            filename = (
+            download_job = (
                 DownloadJob.objects.filter(
                     file_name__startswith=pre_generated_download["name_match"],
                     json_request__contains=pre_generated_download["request_match"],
                     error_message__isnull=True,
                 )
                 .order_by("-update_date")
-                .values_list("file_name", flat=True)
                 .first()
             )
-            return self.get_download_response(file_name=filename)
+            return self.build_download_response(download_job)
 
         # Check if the same request has been called today
-        ordered_json_request = json.dumps(json_request)
+        sorted_json_request = order_nested_object(validator.json_request)
+        ordered_json_request = json.dumps(sorted_json_request)
         cached_download = self._get_cached_download(ordered_json_request, json_request.get("download_types", []))
 
         if cached_download and not settings.IS_LOCAL:
             # By returning the cached files, there should be no duplicates on a daily basis
-            write_to_log(message=f"Generating file from cached download job ID: {cached_download['download_job_id']}")
-            cached_filename = cached_download["file_name"]
-            return self.get_download_response(file_name=cached_filename)
+            write_to_log(message=f"Generating file from cached download job ID: {cached_download.download_job_id}")
+            return self.build_download_response(cached_download)
 
         final_output_zip_name = create_unique_filename(json_request, origination=origination)
         download_job = DownloadJob.objects.create(
-            job_status_id=JOB_STATUS_DICT["ready"], file_name=final_output_zip_name, json_request=ordered_json_request
+            job_status_id=JOB_STATUS_DICT["ready"],
+            file_name=final_output_zip_name,
+            json_request=json.dumps(json_request),
         )
 
         log_new_download_job(request, download_job)
-        self.process_request(download_job)
+        self.process_request(download_job, json_request)
 
-        return self.get_download_response(file_name=final_output_zip_name)
+        return self.build_download_response(download_job)
 
-    def process_request(self, download_job: DownloadJob):
+    @staticmethod
+    def is_spark_download(json_request: dict) -> bool:
+        return json_request["request_type"] == "account" and "award_financial" in json_request["download_types"]
+
+    @staticmethod
+    def validate_columns(json_request: dict):
+        all_cols = set()
+        for download_type in json_request["download_types"]:
+            all_cols.update(query_paths[download_type][json_request["account_level"]])
+        invalid_columns = set(json_request["columns"]) - all_cols
+        if invalid_columns:
+            raise InvalidParameterException(f"Unknown columns: {list(invalid_columns)}")
+
+    def process_request(self, download_job: DownloadJob, json_request: dict):
+        job_name = f"{settings.BULK_DOWNLOAD_SPARK_JOB_NAME_PREFIX}-{json_request['request_type']}"
+
+        if self.is_spark_download(json_request) and "columns" in json_request:
+            # TODO: This currently only supports Custom Account download as this is the only download for Spark as of
+            #       right now. As we migrate more downloads away from Postgres this logic should be updated further.
+            self.validate_columns(json_request)
+
         if settings.IS_LOCAL and settings.RUN_LOCAL_DOWNLOAD_IN_PROCESS:
             # Eagerly execute the download in this running process
-            download_generation.generate_download(download_job)
+            if self.is_spark_download(json_request):
+                spark_jobs = SparkJobs(LocalStrategy())
+                spark_jobs.start(
+                    job_name=job_name,
+                    command_name="generate_spark_download",
+                    command_options=[f"--download-job-id={download_job.download_job_id}", f"--skip-local-cleanup"],
+                    run_as_container=False,
+                )
+            else:
+                download_generation.generate_download(download_job)
         else:
-            # Send a SQS message that will be processed by another server which will eventually run
-            # download_generation.generate_download(download_source) (see download_sqs_worker.py)
-            write_to_log(
-                message=f"Passing download_job {download_job.download_job_id} to SQS", download_job=download_job
-            )
-            queue = get_sqs_queue(queue_name=settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
-            queue.send_message(MessageBody=str(download_job.download_job_id))
+            # The keys used in the message bodies below are specific values expected by the SQS handlers
+            if self.is_spark_download(json_request):
+                # Fallback to the non-priority queue if the priority queue isn't setup
+                queue_name = settings.PRIORITY_DOWNLOAD_SQS_QUEUE_NAME or settings.BULK_DOWNLOAD_SQS_QUEUE_NAME
+                message_body = json.dumps(
+                    {
+                        "download_job_id": download_job.download_job_id,
+                        "job_name": job_name,
+                        "download_logic": DownloadLogic.SPARK,
+                    }
+                )
+            else:
+                queue_name = settings.BULK_DOWNLOAD_SQS_QUEUE_NAME
+                message_body = json.dumps(
+                    {"download_job_id": download_job.download_job_id, "download_logic": DownloadLogic.POSTGRES}
+                )
 
-    def get_download_response(self, file_name: str):
+            # Send a SQS message that will be processed by another server which will eventually run
+            # download_generation.generate_download(download_source) for Postgres downloads
+            # or generate_spark_download management command for Spark downloads (see download_sqs_worker.py)
+            write_to_log(
+                message=f"Passing download_job {download_job.download_job_id} to SQS {queue_name}",
+                download_job=download_job,
+            )
+            queue = get_sqs_queue(queue_name=queue_name)
+            queue.send_message(MessageBody=message_body)
+
+    def build_download_response(self, download_job: DownloadJob) -> Response:
         """
         Generate download response which encompasses various elements to provide accurate status for state of a
         download job
         """
-        download_job = get_download_job(file_name)
-
         # Compile url to file
-        file_path = get_file_path(file_name)
+        file_path = get_file_path(download_job.file_name)
 
         # Generate the status endpoint for the file
-        status_url = self._get_status_url(file_name)
+        status_url = self._get_status_url(download_job.file_name)
 
         response = {
             "status_url": status_url,
-            "file_name": file_name,
+            "file_name": download_job.file_name,
             "file_url": file_path,
             "download_request": json.loads(download_job.json_request),
         }
@@ -122,7 +169,7 @@ class BaseDownloadViewSet(APIView):
     @staticmethod
     def _get_cached_download(
         ordered_json_request: str, download_types: Optional[List[str]] = None
-    ) -> Optional[QuerySet]:
+    ) -> Optional[DownloadJob]:
         # External data types that directly affect download results
         if download_types and "elasticsearch_awards" in download_types:
             external_data_type_name_list = ["es_awards"]
@@ -153,7 +200,6 @@ class BaseDownloadViewSet(APIView):
                 )
                 .order_by("-update_date")
                 .exclude(job_status_id=JOB_STATUS_DICT["failed"])
-                .values("download_job_id", "file_name")
                 .first()
             )
         return cached_download
@@ -169,20 +215,3 @@ def get_file_path(file_name: str) -> str:
         file_path = s3_handler.get_simple_url(file_name=file_name)
 
     return file_path
-
-
-def get_download_job(file_name: str) -> DownloadJob:
-    # If we have a read replicas connection defined, then use that connection for querying the download_job
-    #    table, otherwise use the default connection
-    read_replica = ReadReplicaRouter.read_replicas[0]
-
-    db_connections = connections.__dict__["_settings"]
-
-    if read_replica in db_connections.keys():
-        download_job = DownloadJob.objects.using(read_replica).filter(file_name=file_name).first()
-    else:
-        download_job = DownloadJob.objects.filter(file_name=file_name).first()
-
-    if not download_job:
-        raise NotFound(f"Download job with filename {file_name} does not exist.")
-    return download_job

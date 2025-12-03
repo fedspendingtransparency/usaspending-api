@@ -93,7 +93,12 @@
         }
       },
       "product_or_service_description": {
-        "type": "text"
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
       },
       "psc_agg_key": {
         "type": "keyword",
@@ -113,7 +118,12 @@
         }
       },
       "naics_description": {
-        "type": "text"
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
       },
       "naics_agg_key": {
         "type": "keyword",
@@ -403,6 +413,9 @@
         "fields": {
           "hash": {
             "type": "murmur3"
+          },
+          "keyword": {
+            "type": "keyword"
           }
         }
       },
@@ -459,7 +472,12 @@
         "type": "keyword"
       },
       "pop_country_name": {
-        "type": "text"
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
       },
       "pop_state_code": {
         "type": "keyword"
@@ -542,7 +560,12 @@
         "type": "keyword"
       },
       "recipient_location_country_name": {
-        "type": "text"
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
       },
       "recipient_location_state_code": {
         "type": "keyword"
@@ -612,6 +635,30 @@
         "fields": {
           "hash": {
             "type": "murmur3"
+          }
+        }
+      },
+      "recipient_location_address_line1": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "recipient_location_address_line2": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "recipient_location_address_line3": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
           }
         }
       },
@@ -733,6 +780,14 @@
             }
           },
           "code": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          },
+          "type": {
             "type": "text",
             "fields": {
               "keyword": {

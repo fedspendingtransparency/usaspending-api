@@ -1,4 +1,5 @@
 import logging
+import re
 from datetime import datetime
 from time import perf_counter
 from typing import Dict, List, Optional, Union
@@ -463,6 +464,12 @@ def _gather_deleted_transaction_keys(
             x.key.endswith(".csv")
             and not x.key.startswith("staging")
             and delete_window_start <= x.last_modified <= end_date
+        )
+        # matches the pattern YYYY-mm-DD_FABSdeletions_{TIME_IN_SECONDS}.csv
+        or (
+            re.fullmatch(r"^\d{4}-(0[1-9]|1[0-2])-(0?[1-9]|[12][0-9]|3[01])_FABSdeletions_.*\.csv", x.key)
+            and not x.key.startswith("staging")
+            and delete_window_start <= x.last_modified
         )
     ]
 

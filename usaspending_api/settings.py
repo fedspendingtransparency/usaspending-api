@@ -28,7 +28,7 @@ DATA_DICTIONARY_DOWNLOAD_RETRY_COOLDOWN = 15
 
 # Default timeout for SQL statements in Django
 DEFAULT_DB_TIMEOUT_IN_SECONDS = int(os.environ.get("DEFAULT_DB_TIMEOUT_IN_SECONDS", 0))
-DOWNLOAD_DB_TIMEOUT_IN_HOURS = 4
+DOWNLOAD_DB_TIMEOUT_IN_HOURS = 6
 CONNECTION_MAX_SECONDS = 10
 
 # Default type for when a Primary Key is not specified
@@ -58,7 +58,7 @@ HOST = "localhost:3000"
 ALLOWED_HOSTS = ["*"]
 
 # Define local flag to affect location of downloads
-IS_LOCAL = True
+IS_LOCAL = os.environ.get("IS_LOCAL", "").lower() in ["true", "1", "yes"]
 
 # Indicates which environment is sending traces to Grafana.
 # This will be overwritten by Ansible
@@ -83,6 +83,8 @@ DATABASE_DOWNLOAD_S3_BUCKET_NAME = CONFIG.DATABASE_DOWNLOAD_S3_BUCKET_NAME
 BULK_DOWNLOAD_S3_BUCKET_NAME = CONFIG.BULK_DOWNLOAD_S3_BUCKET_NAME
 BULK_DOWNLOAD_S3_REDIRECT_DIR = "generated_downloads"
 BULK_DOWNLOAD_SQS_QUEUE_NAME = ""
+PRIORITY_DOWNLOAD_SQS_QUEUE_NAME = ""
+BULK_DOWNLOAD_SPARK_JOB_NAME_PREFIX = "api_download"
 DATABASE_DOWNLOAD_S3_REDIRECT_DIR = "database_download"
 MONTHLY_DOWNLOAD_S3_BUCKET_NAME = ""
 MONTHLY_DOWNLOAD_S3_REDIRECT_DIR = "award_data_archive"
@@ -131,12 +133,14 @@ if not FILES_SERVER_BASE_URL:
     )
     SERVER_BASE_URL = FILES_SERVER_BASE_URL[FILES_SERVER_BASE_URL.find(".") + 1 :]
 
+DATA_DICTIONARY_FILE_NAME = "Data_Dictionary_Crosswalk.xlsx"
+
 AGENCY_DOWNLOAD_URL = f"{FILES_SERVER_BASE_URL}/reference_data/agency_codes.csv"
-DATA_DICTIONARY_DOWNLOAD_URL = f"{FILES_SERVER_BASE_URL}/docs/Data_Dictionary_Crosswalk.xlsx"
+DATA_DICTIONARY_DOWNLOAD_URL = f"{FILES_SERVER_BASE_URL}/docs/{DATA_DICTIONARY_FILE_NAME}"
 
 # S3 Bucket and Key to retrieve the Data Dictionary
 DATA_DICTIONARY_S3_BUCKET_NAME = f"dti-da-public-files-{'nonprod' if CONFIG.ENV_CODE not in ('prd', 'stg') else 'prod'}"
-DATA_DICTIONARY_S3_KEY = "user_reference_docs/Data_Dictionary_Crosswalk.xlsx"
+DATA_DICTIONARY_S3_KEY = f"user_reference_docs/{DATA_DICTIONARY_FILE_NAME}"
 
 # Local download files
 IDV_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "idv_download_readme.txt")
@@ -322,12 +326,12 @@ if os.environ.get("DOWNLOAD_DATABASE_URL"):
     )
 
 # import a second database connection for ETL, connecting to data broker
-# using the environment variable, DATA_BROKER_DATABASE_URL - only if it is set
-DATA_BROKER_DB_ALIAS = "data_broker"
-if os.environ.get("DATA_BROKER_DATABASE_URL"):
-    DATABASES[DATA_BROKER_DB_ALIAS] = _configure_database_connection("DATA_BROKER_DATABASE_URL")
+# using the environment variable, BROKER_DB - only if it is set
+BROKER_DB_ALIAS = "data_broker"
+if os.environ.get("BROKER_DB"):
+    DATABASES[BROKER_DB_ALIAS] = _configure_database_connection("BROKER_DB")
 
-DATA_BROKER_DBLINK_NAME = "broker_server"
+BROKER_DBLINK_NAME = "broker_server"
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators

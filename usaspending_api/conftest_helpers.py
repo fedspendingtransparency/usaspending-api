@@ -6,7 +6,6 @@ from string import Template
 
 from django.conf import settings
 from django.core.management import call_command
-from django.core.serializers.json import DjangoJSONEncoder, json
 from django.db import connection
 from elasticsearch import Elasticsearch
 from pytest import Session
@@ -24,7 +23,6 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     create_award_type_aliases,
     execute_sql_statement,
     transform_award_data,
-    transform_location_data,
     transform_subaward_data,
     transform_transaction_data,
 )
@@ -206,8 +204,6 @@ class TestElasticSearchIndex:
                 records = transform_transaction_data(self.worker, records)
             elif self.index_type == "subaward":
                 records = transform_subaward_data(self.worker, records)
-            elif self.index_type == "location":
-                records = transform_location_data(self.worker, records)
 
         for record in records:
             # Special cases where we convert array of JSON to an array of strings to avoid nested types
@@ -221,7 +217,7 @@ class TestElasticSearchIndex:
 
             self.client.index(
                 index=self.index_name,
-                body=json.dumps(record, cls=DjangoJSONEncoder),
+                body=record,
                 id=es_id_value,
                 routing=routing_value,
             )
@@ -238,8 +234,6 @@ class TestElasticSearchIndex:
             required_suffix = "-" + settings.ES_SUBAWARD_NAME_SUFFIX
         elif self.index_type == "recipient":
             required_suffix = "-" + settings.ES_RECIPIENTS_NAME_SUFFIX
-        elif self.index_type == "location":
-            required_suffix = "-" + settings.ES_LOCATIONS_NAME_SUFFIX
         return (
             f"test-{datetime.now(timezone.utc).strftime('%Y-%m-%d-%H-%M-%S-%f')}"
             f"-{generate_random_string()}"
@@ -265,11 +259,11 @@ def ensure_broker_server_dblink_exists():
     # Gather tokens from database connection strings
     if settings.DEFAULT_DB_ALIAS not in settings.DATABASES:
         raise Exception(f"'{settings.DEFAULT_DATABASE_ALIAS}' database not configured in django settings.DATABASES")
-    if settings.DATA_BROKER_DB_ALIAS not in settings.DATABASES:
-        raise Exception(f"'{settings.DATA_BROKER_DB_ALIAS}' database not configured in django settings.DATABASES")
+    if settings.BROKER_DB_ALIAS not in settings.DATABASES:
+        raise Exception(f"'{settings.BROKER_DB_ALIAS}' database not configured in django settings.DATABASES")
     db_conn_tokens_dict = {
         **{"USASPENDING_DB_" + k: v for k, v in settings.DATABASES[settings.DEFAULT_DB_ALIAS].items()},
-        **{"BROKER_DB_" + k: v for k, v in settings.DATABASES[settings.DATA_BROKER_DB_ALIAS].items()},
+        **{"BROKER_DB_" + k: v for k, v in settings.DATABASES[settings.BROKER_DB_ALIAS].items()},
     }
 
     extensions_script_path = str(settings.APP_DIR / "database_scripts" / "extensions" / "extensions.sql")

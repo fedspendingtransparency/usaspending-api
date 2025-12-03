@@ -455,9 +455,8 @@ class _RecipientLocations(_Filter):
     @classmethod
     def generate_elasticsearch_query(cls, filter_values: List[dict], query_type: QueryType, **options) -> ES_Q:
         recipient_locations_query = []
-
+        field_prefix = "sub_" if query_type == QueryType.SUBAWARDS else ""
         for filter_value in filter_values:
-            location_query = []
             county = filter_value.get("county")
             state = filter_value.get("state")
             country = filter_value.get("country")
@@ -473,21 +472,19 @@ class _RecipientLocations(_Filter):
                 "zip5": filter_value.get("zip"),
             }
 
-            for location_key, location_value in location_lookup.items():
-                if (state is None or country != "USA" or county is not None) and (
-                    district_current is not None or district_original is not None
-                ):
-                    raise InvalidParameterException(INCOMPATIBLE_DISTRICT_LOCATION_PARAMETERS)
-                if location_value is not None:
-                    location_value = location_value.upper()
-                    if query_type == QueryType.SUBAWARDS:
-                        location_query.append(
-                            ES_Q("match", **{f"sub_recipient_location_{location_key}": location_value})
-                        )
-                    else:
-                        location_query.append(ES_Q("match", **{f"recipient_location_{location_key}": location_value}))
+            if (state is None or country != "USA" or county is not None) and (
+                district_current is not None or district_original is not None
+            ):
+                raise InvalidParameterException(INCOMPATIBLE_DISTRICT_LOCATION_PARAMETERS)
 
-            recipient_locations_query.append(ES_Q("bool", must=location_query))
+            location_query = [
+                ES_Q("match", **{f"{field_prefix}recipient_location_{location_key}": location_value.upper()})
+                for location_key, location_value in location_lookup.items()
+                if location_value is not None
+            ]
+
+            if location_query:
+                recipient_locations_query.append(ES_Q("bool", must=location_query))
 
         return ES_Q("bool", should=recipient_locations_query, minimum_should_match=1)
 
@@ -532,8 +529,8 @@ class _PlaceOfPerformanceLocations(_Filter):
     @classmethod
     def generate_elasticsearch_query(cls, filter_values: List[dict], query_type: QueryType, **options) -> ES_Q:
         pop_locations_query = []
+        field_prefix = "sub_" if query_type == QueryType.SUBAWARDS else ""
         for filter_value in filter_values:
-            location_query = []
             county = filter_value.get("county")
             state = filter_value.get("state")
             country = filter_value.get("country")
@@ -546,25 +543,19 @@ class _PlaceOfPerformanceLocations(_Filter):
                 "congressional_code_current": district_current,
                 "congressional_code": district_original,
                 "city_name__keyword": filter_value.get("city"),
+                "zip5": filter_value.get("zip"),
             }
 
-            if query_type == QueryType.SUBAWARDS:
-                location_lookup["zip"] = filter_value.get("zip")
-            else:
-                location_lookup["zip5"] = filter_value.get("zip")
+            _PlaceOfPerformanceLocations._validate_district(state, country, county, district_current, district_original)
 
-            for location_key, location_value in location_lookup.items():
-                _PlaceOfPerformanceLocations._validate_district(
-                    state, country, county, district_current, district_original
-                )
+            location_query = [
+                ES_Q("match", **{f"{field_prefix}pop_{location_key}": location_value.upper()})
+                for location_key, location_value in location_lookup.items()
+                if location_value is not None
+            ]
 
-                if location_value is not None:
-                    location_value = location_value.upper()
-                    if query_type == QueryType.SUBAWARDS:
-                        location_query.append(ES_Q("match", **{f"sub_pop_{location_key}": location_value}))
-                    else:
-                        location_query.append(ES_Q("match", **{f"pop_{location_key}": location_value}))
-            pop_locations_query.append(ES_Q("bool", must=location_query))
+            if location_query:
+                pop_locations_query.append(ES_Q("bool", must=location_query))
 
         return ES_Q("bool", should=pop_locations_query, minimum_should_match=1)
 
@@ -658,6 +649,9 @@ class _ProgramActivities(_Filter):
                 )
             if "code" in filter_value:
                 temp_must.append(ES_Q("match", program_activities__code__keyword=str(filter_value["code"]).zfill(4)))
+
+            if "type" in filter_value:
+                temp_must.append(ES_Q("match", program_activities__type__keyword=filter_value["type"].upper()))
 
             if temp_must:
                 program_activity_match_queries.append(

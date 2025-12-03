@@ -14,8 +14,14 @@ class AbstractFinancialAccountsByProgramActivityObjectClass(DataSourceTrackedMod
         "accounts.TreasuryAppropriationAccount", models.CASCADE, related_name="program_balances", null=True
     )
     prior_year_adjustment = models.TextField(blank=True, null=True)
-    program_activity_reporting_key = models.TextField(
-        blank=True, null=True, help_text="A unique identifier for a Program Activity"
+    program_activity_reporting_key = models.ForeignKey(
+        "references.ProgramActivityPark",
+        models.DO_NOTHING,
+        null=True,
+        blank=True,
+        db_index=True,
+        db_column="program_activity_reporting_key",
+        help_text="A unique identifier for a Program Activity",
     )
     disaster_emergency_fund = models.ForeignKey(
         "references.DisasterEmergencyFundCode",
@@ -37,6 +43,7 @@ class AbstractFinancialAccountsByProgramActivityObjectClass(DataSourceTrackedMod
     ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe = models.DecimalField(max_digits=23, decimal_places=2)
     ussgl480200_undelivered_orders_oblig_prepaid_advanced_fyb = models.DecimalField(max_digits=23, decimal_places=2)
     ussgl480200_undelivered_orders_oblig_prepaid_advanced_cpe = models.DecimalField(max_digits=23, decimal_places=2)
+    ussgl480210_rein_undel_obs_cpe = models.DecimalField(max_digits=23, decimal_places=2, null=True)
     ussgl483200_undeliv_orders_oblig_transferred_prepaid_adv_cpe = models.DecimalField(max_digits=23, decimal_places=2)
     ussgl488200_up_adjust_pri_undeliv_order_oblig_ppaid_adv_cpe = models.DecimalField(max_digits=23, decimal_places=2)
     ussgl490200_delivered_orders_obligations_paid_cpe = models.DecimalField(max_digits=23, decimal_places=2)
@@ -58,6 +65,7 @@ class AbstractFinancialAccountsByProgramActivityObjectClass(DataSourceTrackedMod
     ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe = models.DecimalField(max_digits=23, decimal_places=2)
     ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe = models.DecimalField(max_digits=23, decimal_places=2)
     ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe = models.DecimalField(max_digits=23, decimal_places=2)
+    ussgl497210_down_adj_refun_cpe = models.DecimalField(max_digits=23, decimal_places=2, null=True)
     deobligations_recoveries_refund_pri_program_object_class_cpe = models.DecimalField(max_digits=23, decimal_places=2)
     drv_obligations_incurred_by_program_object_class = models.DecimalField(
         max_digits=23, decimal_places=2, blank=True, null=True

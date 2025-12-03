@@ -19,6 +19,7 @@ from usaspending_api.etl.submission_loader_helpers.bulk_create_manager import Bu
 from usaspending_api.etl.submission_loader_helpers.disaster_emergency_fund_codes import get_disaster_emergency_fund
 from usaspending_api.etl.submission_loader_helpers.object_class import get_object_class_row
 from usaspending_api.etl.submission_loader_helpers.program_activities import get_program_activity
+from usaspending_api.etl.submission_loader_helpers.program_activity_park import get_program_activity_park
 from usaspending_api.etl.submission_loader_helpers.treasury_appropriation_account import (
     bulk_treasury_appropriation_account_tas_lookup,
     get_treasury_appropriation_account_tas_lookup,
@@ -46,7 +47,7 @@ class PublishedAwardFinancialIterator:
             limit   {self.chunk_size}
         """
 
-        award_financial_frame = pd.read_sql(sql, connections[settings.DATA_BROKER_DB_ALIAS])
+        award_financial_frame = pd.read_sql(sql, connections[settings.BROKER_DB_ALIAS])
 
         if award_financial_frame.size > 0:
             award_financial_frame["object_class"] = award_financial_frame.apply(get_object_class_row, axis=1)
@@ -180,6 +181,7 @@ def _save_file_c_rows(published_award_financial, total_rows, start_time, skipped
             "program_activity": row.get("program_activity"),
             "disaster_emergency_fund": get_disaster_emergency_fund(row),
             "distinct_award_key": create_distinct_award_key(row),
+            "program_activity_reporting_key": get_program_activity_park(row),
         }
 
         save_manager.append(

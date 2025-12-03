@@ -1,6 +1,6 @@
 # <p align="center"><img src="https://www.usaspending.gov/img/logo@2x.png" alt="USAspending API"></p>
 
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/python/black) [![Pull Request Checks](https://github.com/fedspendingtransparency/usaspending-api/actions/workflows/pull-request-checks.yaml/badge.svg)](https://github.com/fedspendingtransparency/usaspending-api/actions/workflows/pull-request-checks.yaml) [![Test Coverage](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/badges/coverage.svg)](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/coverage) [![Code Climate](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/badges/gpa.svg)](https://codeclimate.com/github/fedspendingtransparency/usaspending-api)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/python/black) [![Pull Request Checks](https://github.com/fedspendingtransparency/usaspending-api/actions/workflows/pull-request-checks.yaml/badge.svg?branch=staging)](https://github.com/fedspendingtransparency/usaspending-api/actions/workflows/pull-request-checks.yaml) [![Test Coverage](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/badges/coverage.svg)](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/coverage) [![Code Climate](https://codeclimate.com/github/fedspendingtransparency/usaspending-api/badges/gpa.svg)](https://codeclimate.com/github/fedspendingtransparency/usaspending-api)
 
 _This API is utilized by USAspending.gov to obtain all federal spending data which is open source and provided to the public as part of the DATA Act._
 
@@ -60,7 +60,7 @@ Create a `.envrc` file in the repo root, which will be ignored by git. Change cr
 ```shell
 export DATABASE_URL=postgres://usaspending:usaspender@localhost:5432/data_store_api
 export ES_HOSTNAME=http://localhost:9200
-export DATA_BROKER_DATABASE_URL=postgres://admin:root@localhost:5435/data_broker
+export BROKER_DB=postgres://admin:root@localhost:5435/data_broker
 ```
 
 If `direnv` does not pick this up after saving the file, type
@@ -166,9 +166,17 @@ CURR_DATE=$(date '+%Y-%m-%d-%H-%M-%S')
 docker compose run --rm usaspending-manage python3 -u manage.py elasticsearch_indexer --create-new-index --index-name "$CURR_DATE-transactions" --load-type transaction
 docker compose run --rm usaspending-manage python3 -u manage.py elasticsearch_indexer --create-new-index --index-name "$CURR_DATE-awards" --load-type award
 docker compose run --rm usaspending-manage python3 -u manage.py elasticsearch_indexer --create-new-index --index-name "$CURR_DATE-recipients" --load-type recipient
-docker compose run --rm usaspending-manage python3 -u manage.py elasticsearch_indexer --create-new-index --index-name "$CURR_DATE-locations" --load-type location
 docker compose run --rm usaspending-manage python3 -u manage.py elasticsearch_indexer --create-new-index --index-name "$CURR_DATE-subaward" --load-type subaward
 ```
+
+### Observability/Tracing Setup
+The project uses grafana, tempo, and opentelemetry for observability.  This enables developers to trace functionality across multiple services resulting in better visibility of issues.
+There are two options for using the observability framework in the local development setup.  You can log traces to the console by setting the `TOGGLE_OTEL_CONSOLE_LOGGING` environmental variable to `True` for the `usaspending-api` container.
+Alternatively you can run the `otel-collector`, `tempo`, and `grafana` containers to more fully replicate the production observability framework.  These containers are part of the `tracing` profile and can be brought up with:
+```shell
+docker compose --profile tracing up -d
+```
+When using these containers the `TOGGLE_OTEL_CONSOLE_LOGGING` must be set to `False` and `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` must be set to `http://otel-collector:4318/v1/traces`
 
 ## Running the API
 
@@ -211,10 +219,10 @@ Deployed production API endpoints and docs are found by following links here: `h
 
 3. To run all USAspending tests in the docker services run
     ```shell
-    docker compose run --rm -e DATA_BROKER_DATABASE_URL='' usaspending-test
+    docker compose run --rm -e BROKER_DB='' usaspending-test
     ```
 
-_**NOTE**: If an env var named `DATA_BROKER_DATABASE_URL` is set, Broker Integration tests will attempt to be run as well. If doing so, Broker dependencies must be met (see below) or ALL tests will fail hard. Running the above command with `-e DATA_BROKER_DATABASE_URL=''` is a precaution to keep them excluded, unless you really want them (see below if so)._
+_**NOTE**: If an env var named `BROKER_DB` is set, Broker Integration tests will attempt to be run as well. If doing so, Broker dependencies must be met (see below) or ALL tests will fail hard. Running the above command with `-e BROKER_DB=''` is a precaution to keep them excluded, unless you really want them (see below if so)._
 
 To run tests locally and not in the docker services, you need:
 
@@ -264,7 +272,7 @@ To satisfy these dependencies and include execution of these tests, do the follo
     ```shell
     docker build -t dataact-broker-backend ../data-act-broker-backend
     ```
-1. Ensure you have the `DATA_BROKER_DATABASE_URL` environment variable set, and it points to what will be a live PostgreSQL server (no database required) at the time tests are run.
+1. Ensure you have the `BROKER_DB` environment variable set, and it points to what will be a live PostgreSQL server (no database required) at the time tests are run.
     1. _WARNING: If this is set at all, then ALL above dependencies must be met or ALL tests will fail (Django will try this connection on ALL tests' run)_
     1. This DB could be one you always have running in a local Postgres instance, or one you spin up in a Docker container just before tests are run
 1. If invoking `pytest` within a docker container (e.g. using the `usaspending-test` container), you _must_ mount the host's docker socket. This is declared already in the `docker-compose.yml` file services, but would be done manually with: `-v /var/run/docker.sock:/var/run/docker.sock`
@@ -277,7 +285,7 @@ Re-running the test suite using `pytest -rs` with these dependencies satisfied s
 
 _From within a container_
 
-_**NOTE**: `DATA_BROKER_DATABASE_URL` is set in the `docker-compose.yml` file (and could pick up `.env` values, if set)_
+_**NOTE**: `BROKER_DB` is set in the `docker-compose.yml` file (and could pick up `.env` values, if set)_
 
 ```shell
 docker compose run --rm usaspending-test pytest --capture=no --verbose --tb=auto --no-cov --log-cli-level=INFO -k test_broker_integration
@@ -285,7 +293,7 @@ docker compose run --rm usaspending-test pytest --capture=no --verbose --tb=auto
 
 _From Developer Desktop_
 
-_**NOTE**: `DATA_BROKER_DATABASE_URL` is set in the `.envrc` file and available in the shell_
+_**NOTE**: `BROKER_DB` is set in the `.envrc` file and available in the shell_
 ```shell
 pytest --capture=no --verbose --tb=auto --no-cov --log-cli-level=INFO -k test_broker_integration
 ```

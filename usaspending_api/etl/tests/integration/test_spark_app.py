@@ -19,7 +19,6 @@ from pyspark.sql import SparkSession, Row
 from pytest import fixture, mark
 from usaspending_api.awards.models import TransactionFABS, TransactionFPDS
 from usaspending_api.common.helpers.spark_helpers import (
-    get_jvm_logger,
     get_jdbc_url_from_pg_uri,
     get_jdbc_connection_properties,
     get_broker_jdbc_url,
@@ -27,6 +26,8 @@ from usaspending_api.common.helpers.spark_helpers import (
 from usaspending_api.common.etl.spark import _USAS_RDS_REF_TABLES, _BROKER_REF_TABLES, create_ref_temp_views
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.config import CONFIG
+
+logger = logging.getLogger(__name__)
 
 
 def test_jvm_sparksession(spark: SparkSession):
@@ -89,7 +90,6 @@ def test_spark_app_run_local_master(spark: SparkSession):
     discovered in the PYTHONPATH, and treat the client machine as the spark driver.
     And furthermore, the default config for spark.master property if not set is local[*]
     """
-    logger = get_jvm_logger(spark)
 
     versions = f"""
     @       Python Version: {sys.version}
@@ -180,13 +180,12 @@ def test_spark_write_to_s3_delta_from_db(
 
     # ==== transaction_normalized ====
     table_name = "vw_transaction_normalized"
-    logging.info(f"Reading db records for {table_name} from connection: {jdbc_url}")
+    logger.info(f"Reading db records for {table_name} from connection: {jdbc_url}")
     df = spark.read.jdbc(url=jdbc_url, table=table_name, properties=get_jdbc_connection_properties())
     # NOTE! NOTE! NOTE! MinIO locally does not support a TRAILING SLASH after object (folder) name
     path = f"s3a://{s3_unittest_data_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/{table_name}"
 
-    log = get_jvm_logger(spark, request.node.name)
-    log.info(f"Loading {df.count()} rows from DB to Delta table named {schema_name}.{table_name} at path {path}")
+    logger.info(f"Loading {df.count()} rows from DB to Delta table named {schema_name}.{table_name} at path {path}")
 
     # Create table in the metastore using DataFrame's schema and write data to the table
     df.write.saveAsTable(
@@ -198,13 +197,12 @@ def test_spark_write_to_s3_delta_from_db(
 
     # ==== transaction_fabs ====
     table_name = "vw_transaction_fabs"
-    logging.info(f"Reading db records for {table_name} from connection: {jdbc_url}")
+    logger.info(f"Reading db records for {table_name} from connection: {jdbc_url}")
     df = spark.read.jdbc(url=jdbc_url, table=table_name, properties=get_jdbc_connection_properties())
     # NOTE! NOTE! NOTE! MinIO locally does not support a TRAILING SLASH after object (folder) name
     path = f"s3a://{s3_unittest_data_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/{table_name}"
 
-    log = get_jvm_logger(spark, request.node.name)
-    log.info(f"Loading {df.count()} rows from DB to Delta table named {schema_name}.{table_name} at path {path}")
+    logger.info(f"Loading {df.count()} rows from DB to Delta table named {schema_name}.{table_name} at path {path}")
 
     # Create table in the metastore using DataFrame's schema and write data to the table
     df.write.saveAsTable(
@@ -216,13 +214,12 @@ def test_spark_write_to_s3_delta_from_db(
 
     # ==== transaction_fpds ====
     table_name = "vw_transaction_fpds"
-    logging.info(f"Reading db records for {table_name} from connection: {jdbc_url}")
+    logger.info(f"Reading db records for {table_name} from connection: {jdbc_url}")
     df = spark.read.jdbc(url=jdbc_url, table=table_name, properties=get_jdbc_connection_properties())
     # NOTE! NOTE! NOTE! MinIO locally does not support a TRAILING SLASH after object (folder) name
     path = f"s3a://{s3_unittest_data_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/{table_name}"
 
-    log = get_jvm_logger(spark, request.node.name)
-    log.info(f"Loading {df.count()} rows from DB to Delta table named {schema_name}.{table_name} at path {path}")
+    logger.info(f"Loading {df.count()} rows from DB to Delta table named {schema_name}.{table_name} at path {path}")
 
     # Create table in the metastore using DataFrame's schema and write data to the table
     df.write.saveAsTable(
@@ -255,7 +252,7 @@ def test_spark_write_to_s3_delta_from_db(
 
 
 @mark.skipif(
-    settings.DATA_BROKER_DB_ALIAS not in settings.DATABASES,
+    settings.BROKER_DB_ALIAS not in settings.DATABASES,
     reason="'data_broker' database not configured in django settings.DATABASES.",
 )
 @mark.django_db(transaction=True)

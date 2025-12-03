@@ -1,3 +1,7 @@
+import logging
+from argparse import ArgumentTypeError
+from typing import Callable
+
 from django.core.management.base import BaseCommand
 from pyspark.sql import SparkSession
 
@@ -7,7 +11,6 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_active_spark_session,
     get_broker_jdbc_url,
     get_jdbc_connection_properties,
-    get_jvm_logger,
 )
 from usaspending_api.config import CONFIG
 from usaspending_api.disaster.delta_models import (
@@ -17,6 +20,19 @@ from usaspending_api.disaster.delta_models import (
     covid_faba_spending_load_sql_strings,
 )
 from usaspending_api.disaster.models import CovidFABASpending
+from usaspending_api.download.delta_models.award_financial_download import (
+    award_financial_download_load_sql_string,
+    award_financial_schema,
+)
+from usaspending_api.download.delta_models.object_class_program_activity_download import (
+    object_class_program_activity_download_load_sql_string,
+    object_class_program_activity_schema,
+)
+from usaspending_api.download.delta_models.account_balances_download import (
+    load_account_balances,
+    account_balances_schema,
+)
+from usaspending_api.download.delta_models.transaction_download import transaction_download_schema
 from usaspending_api.recipient.delta_models import (
     RECIPIENT_LOOKUP_POSTGRES_COLUMNS,
     RECIPIENT_PROFILE_POSTGRES_COLUMNS,
@@ -37,7 +53,11 @@ from usaspending_api.search.delta_models.award_search import (
     AWARD_SEARCH_POSTGRES_COLUMNS,
     AWARD_SEARCH_POSTGRES_GOLD_COLUMNS,
     award_search_create_sql_string,
-    award_search_load_sql_string,
+)
+from usaspending_api.search.delta_models.dataframes.award_search import load_award_search, load_award_search_incremental
+from usaspending_api.search.delta_models.dataframes.transaction_search import (
+    load_transaction_search,
+    load_transaction_search_incremental,
 )
 from usaspending_api.search.delta_models.subaward_search import (
     SUBAWARD_SEARCH_COLUMNS,
@@ -47,6 +67,7 @@ from usaspending_api.search.delta_models.subaward_search import (
     subaward_search_load_sql_string,
 )
 from usaspending_api.search.models import AwardSearch, SubawardSearch, SummaryStateView, TransactionSearch
+from usaspending_api.settings import HOST
 from usaspending_api.transactions.delta_models import (
     SUMMARY_STATE_VIEW_COLUMNS,
     SUMMARY_STATE_VIEW_POSTGRES_COLUMNS,
@@ -58,14 +79,19 @@ from usaspending_api.transactions.delta_models import (
     transaction_current_cd_lookup_create_sql_string,
     transaction_current_cd_lookup_load_sql_string,
     transaction_search_create_sql_string,
-    transaction_search_load_sql_string,
 )
+
+
+AWARD_URL = f"{HOST}/award/" if "localhost" in HOST else f"https://{HOST}/award/"
+
+logger = logging.getLogger(__name__)
 
 TABLE_SPEC = {
     "award_search": {
         "model": AwardSearch,
         "is_from_broker": False,
-        "source_query": award_search_load_sql_string,
+        "source_query": load_award_search,
+        "source_query_incremental": load_award_search_incremental,
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
@@ -86,7 +112,8 @@ TABLE_SPEC = {
     "award_search_gold": {
         "model": AwardSearch,
         "is_from_broker": False,
-        "source_query": award_search_load_sql_string,
+        "source_query": load_award_search,
+        "source_query_incremental": load_award_search_incremental,
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
@@ -108,6 +135,7 @@ TABLE_SPEC = {
         "model": RecipientLookup,
         "is_from_broker": False,
         "source_query": recipient_lookup_load_sql_string_list,
+        "source_query_incremental": None,
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
@@ -128,6 +156,7 @@ TABLE_SPEC = {
         "model": RecipientProfile,
         "is_from_broker": False,
         "source_query": recipient_profile_load_sql_strings,
+        "source_query_incremental": None,
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
@@ -148,6 +177,7 @@ TABLE_SPEC = {
         "model": SummaryStateView,
         "is_from_broker": False,
         "source_query": summary_state_view_load_sql_string,
+        "source_query_incremental": None,
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
@@ -168,6 +198,7 @@ TABLE_SPEC = {
         "model": None,
         "is_from_broker": True,
         "source_query": sam_recipient_load_sql_string,
+        "source_query_incremental": None,
         "source_database": None,
         "source_table": None,
         "destination_database": "int",
@@ -187,7 +218,8 @@ TABLE_SPEC = {
     "transaction_search": {
         "model": TransactionSearch,
         "is_from_broker": False,
-        "source_query": transaction_search_load_sql_string,
+        "source_query": load_transaction_search,
+        "source_query_incremental": load_transaction_search_incremental,
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
@@ -207,7 +239,8 @@ TABLE_SPEC = {
     "transaction_search_gold": {
         "model": TransactionSearch,
         "is_from_broker": False,
-        "source_query": transaction_search_load_sql_string,
+        "source_query": load_transaction_search,
+        "source_query_incremental": load_transaction_search_incremental,
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
@@ -235,6 +268,7 @@ TABLE_SPEC = {
         "model": None,
         "is_from_broker": False,
         "source_query": transaction_current_cd_lookup_load_sql_string,
+        "source_query_incremental": None,
         "source_database": None,
         "source_table": None,
         "destination_database": "int",
@@ -255,6 +289,7 @@ TABLE_SPEC = {
         "model": SubawardSearch,
         "is_from_broker": False,
         "source_query": subaward_search_load_sql_string,
+        "source_query_incremental": None,
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
@@ -275,6 +310,7 @@ TABLE_SPEC = {
         "model": CovidFABASpending,
         "is_from_broker": False,
         "source_query": covid_faba_spending_load_sql_strings,
+        "source_query_incremental": None,
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
@@ -291,11 +327,94 @@ TABLE_SPEC = {
         "tsvectors": None,
         "postgres_partition_spec": None,
     },
+    "account_balances_download": {
+        "model": None,
+        "is_from_broker": False,
+        "source_query": load_account_balances,
+        "source_query_incremental": None,
+        "source_database": None,
+        "source_table": None,
+        "destination_database": "rpt",
+        "swap_table": None,
+        "swap_schema": None,
+        "partition_column": "appropriation_account_balances_id",
+        "partition_column_type": "numeric",
+        "is_partition_column_unique": False,
+        "delta_table_create_sql": account_balances_schema,
+        "source_schema": None,
+        "custom_schema": None,
+        "column_names": list(),
+        "postgres_seq_name": None,
+        "tsvectors": None,
+        "postgres_partition_spec": None,
+    },
+    "award_financial_download": {
+        "model": None,
+        "is_from_broker": False,
+        "source_query": [award_financial_download_load_sql_string],
+        "source_query_incremental": None,
+        "source_database": None,
+        "source_table": None,
+        "destination_database": "rpt",
+        "swap_table": None,
+        "swap_schema": None,
+        "partition_column": "financial_accounts_by_awards_id",
+        "partition_column_type": "numeric",
+        "is_partition_column_unique": False,
+        "delta_table_create_sql": award_financial_schema,
+        "source_schema": None,
+        "custom_schema": None,
+        "column_names": list(),
+        "postgres_seq_name": None,
+        "tsvectors": None,
+        "postgres_partition_spec": None,
+    },
+    "object_class_program_activity_download": {
+        "model": None,
+        "is_from_broker": False,
+        "source_query": [object_class_program_activity_download_load_sql_string],
+        "source_query_incremental": None,
+        "source_database": None,
+        "source_table": None,
+        "destination_database": "rpt",
+        "swap_table": None,
+        "swap_schema": None,
+        "partition_column": "financial_accounts_by_program_activity_object_class_id",
+        "partition_column_type": "numeric",
+        "is_partition_column_unique": False,
+        "delta_table_create_sql": object_class_program_activity_schema,
+        "source_schema": None,
+        "custom_schema": None,
+        "column_names": list(),
+        "postgres_seq_name": None,
+        "tsvectors": None,
+        "postgres_partition_spec": None,
+    },
+    "transaction_download": {
+        "model": None,
+        "is_from_broker": False,
+        "source_query": None,
+        "source_query_incremental": None,
+        "source_database": None,
+        "source_table": None,
+        "destination_database": "rpt",
+        "swap_table": None,
+        "swap_schema": None,
+        "partition_column": "transaction_id",
+        "partition_column_type": "numeric",
+        "is_partition_column_unique": False,
+        "delta_table_create_sql": transaction_download_schema,
+        "source_schema": None,
+        "custom_schema": None,
+        "column_names": list(),
+        "postgres_seq_name": None,
+        "tsvectors": None,
+        "postgres_partition_spec": None,
+    },
 }
 
 
 class Command(BaseCommand):
-
     help = """
     This command reads data via a Spark SQL query that relies on delta tables that have already been loaded paired
     with temporary views of tables in a Postgres database. As of now, it only supports a full reload of a table.
@@ -328,6 +447,12 @@ class Command(BaseCommand):
             help="An alternate delta table name for the created table, overriding the TABLE_SPEC destination_table "
             "name",
         )
+        parser.add_argument(
+            "--incremental",
+            action="store_true",
+            required=False,
+            help="Whether or not the table will be updated incrementally",
+        )
 
     def handle(self, *args, **options):
         extra_conf = {
@@ -346,14 +471,15 @@ class Command(BaseCommand):
             spark_created_by_command = True
             self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)  # type: SparkSession
 
-        # Setup Logger
-        logger = get_jvm_logger(self.spark, __name__)
-
         # Resolve Parameters
         destination_table = options["destination_table"]
         table_spec = TABLE_SPEC[destination_table]
         self.destination_database = options["alt_db"] or table_spec["destination_database"]
         self.destination_table_name = options["alt_name"] or destination_table.split(".")[-1]
+        source_query_key = "source_query_incremental" if options["incremental"] else "source_query"
+        load_query = table_spec.get(source_query_key)
+        if load_query is None:
+            raise ArgumentTypeError(f"Invalid source query. `{source_query_key}` must be specified in the TABLE_SPEC.")
 
         # Set the database that will be interacted with for all Delta Lake table Spark-based activity
         logger.info(f"Using Spark Database: {self.destination_database}")
@@ -366,7 +492,6 @@ class Command(BaseCommand):
 
         create_ref_temp_views(self.spark, create_broker_views=True)
 
-        load_query = table_spec["source_query"]
         if isinstance(load_query, list):
             for index, query in enumerate(load_query):
                 logger.info(f"Running query number: {index + 1}\nPreview of query: {query[:100]}")
@@ -377,15 +502,21 @@ class Command(BaseCommand):
         if spark_created_by_command:
             self.spark.stop()
 
-    def run_spark_sql(self, query):
-        jdbc_conn_props = get_jdbc_connection_properties()
-        self.spark.sql(
-            query.format(
-                DESTINATION_DATABASE=self.destination_database,
-                DESTINATION_TABLE=self.destination_table_name,
-                DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
-                JDBC_DRIVER=jdbc_conn_props["driver"],
-                JDBC_FETCHSIZE=jdbc_conn_props["fetchsize"],
-                JDBC_URL=get_broker_jdbc_url(),
+    def run_spark_sql(self, query: str | Callable[[SparkSession, str, str], None]):
+        if isinstance(query, str):
+            jdbc_conn_props = get_jdbc_connection_properties()
+            self.spark.sql(
+                query.format(
+                    DESTINATION_DATABASE=self.destination_database,
+                    DESTINATION_TABLE=self.destination_table_name,
+                    DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+                    JDBC_DRIVER=jdbc_conn_props["driver"],
+                    JDBC_FETCHSIZE=jdbc_conn_props["fetchsize"],
+                    JDBC_URL=get_broker_jdbc_url(),
+                    AWARD_URL=AWARD_URL,
+                )
             )
-        )
+        elif isinstance(query, Callable):
+            query(self.spark, self.destination_database, self.destination_table_name)
+        else:
+            raise ArgumentTypeError(f"Invalid query. `{query}` must be a string or a Callable.")

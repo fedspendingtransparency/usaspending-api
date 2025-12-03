@@ -12,6 +12,7 @@ from django.conf import settings
 from django.db.models import F
 from django.utils.text import slugify
 from elasticsearch_dsl import Q as ES_Q
+from elasticsearch_dsl.response import Response as ES_Response
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -28,6 +29,7 @@ from usaspending_api.awards.v2.lookups.elasticsearch_lookups import (
     non_loan_assist_mapping,
 )
 from usaspending_api.awards.v2.lookups.lookups import (
+    SUBAWARD_MAPPING_LOOKUP,
     contract_type_mapping,
     idv_type_mapping,
     loan_type_mapping,
@@ -49,7 +51,8 @@ from usaspending_api.common.validator.award_filter import AWARD_FILTER_NO_RECIPI
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.recipient.models import RecipientProfile
-from usaspending_api.references.models import Agency, ToptierAgencyPublishedDABSView
+from usaspending_api.references.helpers import get_def_codes_by_group
+from usaspending_api.references.models import Agency
 from usaspending_api.search.filters.elasticsearch.filter import QueryType
 from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
 from usaspending_api.search.filters.time_period.query_types import AwardSearchTimePeriod, SubawardSearchTimePeriod
@@ -71,15 +74,15 @@ GLOBAL_MAP = {
     },
     "subawards": {
         "minimum_db_fields": {"subaward_number", "piid", "fain", "prime_award_group", "award_id"},
-        "api_to_db_mapping_list": [subaward_mapping],
+        "api_to_db_mapping_list": [SUBAWARD_MAPPING_LOOKUP],
         "award_semaphore": "prime_award_group",
         "award_id_fields": ["award__piid", "award__fain"],
         "internal_id_fields": {"internal_id": "subaward_number", "prime_award_internal_id": "award_id"},
         "generated_award_field": ("prime_award_generated_internal_id", "prime_award_internal_id"),
-        "type_code_to_field_map": {"procurement": subaward_mapping, "grant": subaward_mapping},
+        "type_code_to_field_map": {"procurement": SUBAWARD_MAPPING_LOOKUP, "grant": SUBAWARD_MAPPING_LOOKUP},
         "annotations": {"_prime_award_recipient_id": annotate_prime_award_recipient_id},
         "filter_queryset_func": subaward_filter,
-        "elasticsearch_type_code_to_field_map": subaward_mapping,
+        "elasticsearch_type_code_to_field_map": SUBAWARD_MAPPING_LOOKUP,
     },
 }
 
@@ -115,12 +118,40 @@ class SpendingByAwardVisualizationViewSet(APIView):
             return Response(self.populate_response(results=[], has_next=False, models=models))
 
         raise_if_award_types_not_valid_subset(self.filters["award_type_codes"], self.spending_level)
-        raise_if_sort_key_not_valid(
-            self.pagination["sort_key"], self.fields, self.filters["award_type_codes"], self.spending_level
-        )
+
+        # These are the objects returned rather than a single field
+        if self.pagination["sort_key"] not in [
+            "NAICS",
+            "PSC",
+            "Recipient Location",
+            "Primary Place of Performance",
+            "Assistance Listing",
+            "Sub-Recipient Location",
+            "Sub-Award Primary Place of Performance",
+        ]:
+            raise_if_sort_key_not_valid(
+                self.pagination["sort_key"], self.fields, self.filters["award_type_codes"], self.spending_level
+            )
 
         self.last_record_unique_id = json_request.get("last_record_unique_id")
         self.last_record_sort_value = json_request.get("last_record_sort_value")
+
+        self.spending_by_defc_lookup = {
+            "COVID-19 Obligations": {"group_name": "covid_19", "field_type": "obligation"},
+            "COVID-19 Outlays": {"group_name": "covid_19", "field_type": "outlay"},
+            "Infrastructure Obligations": {"group_name": "infrastructure", "field_type": "obligation"},
+            "Infrastructure Outlays": {"group_name": "infrastructure", "field_type": "outlay"},
+        }
+        self.def_codes_by_group = (
+            get_def_codes_by_group(list({val["group_name"] for val in self.spending_by_defc_lookup.values()}))
+            if set(self.fields) & set(self.spending_by_defc_lookup)
+            else {}
+        )
+        if self.filters.get("def_codes"):
+            self.def_codes_by_group = {
+                group_name: list(set(def_codes) & set(self.filters["def_codes"]))
+                for group_name, def_codes in self.def_codes_by_group.items()
+            }
 
         if self.spending_level == SpendingLevel.SUBAWARD:
             return Response(self.construct_es_response_for_subawards(self.query_elasticsearch_subawards()))
@@ -164,13 +195,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
         }
         models = [
             {"name": "fields", "key": "fields", "type": "array", "array_type": "text", "text_type": "search", "min": 1},
-            {
-                "name": "object_class",
-                "key": "filter|object_class",
-                "type": "array",
-                "array_type": "text",
-                "text_type": "search",
-            },
             {
                 "name": "program_activity",
                 "key": "filter|program_activity",
@@ -250,19 +274,61 @@ class SpendingByAwardVisualizationViewSet(APIView):
         return records
 
     def get_elastic_sort_by_fields(self):
-        if self.pagination["sort_key"] == "Award ID" or self.pagination["sort_key"] == "Sub-Award ID":
-            sort_by_fields = ["display_award_id"]
-        else:
-            if self.spending_level == SpendingLevel.SUBAWARD:
-                sort_by_fields = [subaward_mapping[self.pagination["sort_key"]]]
-            elif set(self.filters["award_type_codes"]) <= set(contract_type_mapping):
-                sort_by_fields = [contracts_mapping[self.pagination["sort_key"]]]
-            elif set(self.filters["award_type_codes"]) <= set(loan_type_mapping):
-                sort_by_fields = [loan_mapping[self.pagination["sort_key"]]]
-            elif set(self.filters["award_type_codes"]) <= set(idv_type_mapping):
-                sort_by_fields = [idv_mapping[self.pagination["sort_key"]]]
-            elif set(self.filters["award_type_codes"]) <= set(non_loan_assistance_type_mapping):
-                sort_by_fields = [non_loan_assist_mapping[self.pagination["sort_key"]]]
+        match self.pagination["sort_key"]:
+            case "Award ID":
+                sort_by_fields = ["display_award_id"]
+            case "Sub-Award ID":
+                sort_by_fields = ["subaward_number.keyword"]
+            case "NAICS":
+                sort_by_fields = [contracts_mapping["naics_code"], contracts_mapping["naics_description"]]
+            case "PSC":
+                sort_by_fields = [contracts_mapping["psc_code"], contracts_mapping["psc_description"]]
+            case "Recipient Location":
+                sort_by_fields = [
+                    contracts_mapping["recipient_location_city_name"],
+                    contracts_mapping["recipient_location_state_code"],
+                    contracts_mapping["recipient_location_country_name"],
+                    contracts_mapping["recipient_location_address_line1"],
+                    contracts_mapping["recipient_location_address_line2"],
+                    contracts_mapping["recipient_location_address_line3"],
+                ]
+            case "Primary Place of Performance":
+                sort_by_fields = [
+                    contracts_mapping["pop_city_name"],
+                    contracts_mapping["pop_state_code"],
+                    contracts_mapping["pop_country_name"],
+                ]
+            case "Assistance Listings":
+                sort_by_fields = [contracts_mapping["cfda_number"], contracts_mapping["cfda_program_title"]]
+            case "Assistance Listing":
+                sort_by_fields = [contracts_mapping["cfda_number"], contracts_mapping["sub_cfda_program_titles"]]
+            case "Sub-Recipient Location":
+                sort_by_fields = [
+                    contracts_mapping["sub_recipient_location_city_name"],
+                    contracts_mapping["sub_recipient_location_state_code"],
+                    contracts_mapping["sub_recipient_location_country_name"],
+                    contracts_mapping["sub_recipient_location_address_line1"],
+                ]
+            case "Sub-Award Primary Place of Performance":
+                sort_by_fields = [
+                    contracts_mapping["sub_pop_city_name"],
+                    contracts_mapping["sub_pop_state_code"],
+                    contracts_mapping["sub_pop_country_name"],
+                ]
+            # TODO: Add additional field for Award Descriptions in case they exceed the keyword limit like subawards
+            case "Sub-Award Description":
+                sort_by_fields = [subaward_mapping["subaward_description_sorted"]]
+            case _:
+                if self.spending_level == SpendingLevel.SUBAWARD:
+                    sort_by_fields = [subaward_mapping[self.pagination["sort_key"]]]
+                elif set(self.filters["award_type_codes"]) <= set(contract_type_mapping):
+                    sort_by_fields = [contracts_mapping[self.pagination["sort_key"]]]
+                elif set(self.filters["award_type_codes"]) <= set(loan_type_mapping):
+                    sort_by_fields = [loan_mapping[self.pagination["sort_key"]]]
+                elif set(self.filters["award_type_codes"]) <= set(idv_type_mapping):
+                    sort_by_fields = [idv_mapping[self.pagination["sort_key"]]]
+                elif set(self.filters["award_type_codes"]) <= set(non_loan_assistance_type_mapping):
+                    sort_by_fields = [non_loan_assist_mapping[self.pagination["sort_key"]]]
 
         sort_by_fields.append("award_id")
 
@@ -300,7 +366,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
     def query_elasticsearch(
         self, base_search: AwardSearch | SubawardSearch, filter_query: ES_Q, sorts: list[dict[str, str]]
-    ) -> Response:
+    ) -> ES_Response:
         record_num = (self.pagination["page"] - 1) * self.pagination["limit"]
         # random page jumping was removed due to performance concerns
         if (self.last_record_sort_value is None and self.last_record_unique_id is not None) or (
@@ -336,7 +402,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         return response
 
-    def query_elasticsearch_awards(self) -> Response:
+    def query_elasticsearch_awards(self) -> ES_Response:
         filter_options = {}
         time_period_obj = AwardSearchTimePeriod(
             default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
@@ -348,51 +414,42 @@ class SpendingByAwardVisualizationViewSet(APIView):
         query_with_filters = QueryWithFilters(QueryType.AWARDS)
         filter_query = query_with_filters.generate_elasticsearch_query(self.filters, **filter_options)
         sort_field = self.get_elastic_sort_by_fields()
-        covid_sort_fields = {"COVID-19 Obligations": "obligation", "COVID-19 Outlays": "outlay"}
-        iija_sort_fields = {"Infrastructure Obligations": "obligation", "Infrastructure Outlays": "outlay"}
 
-        if "iija_spending_by_defc" in sort_field:
-            sort_field.remove("iija_spending_by_defc")
+        if "spending_by_defc" in sort_field:
+            sort_field.remove("spending_by_defc")
+            group_name = self.spending_by_defc_lookup[self.pagination["sort_key"]]["group_name"]
+            field_type = self.spending_by_defc_lookup[self.pagination["sort_key"]]["field_type"]
+            defc_for_group = self.def_codes_by_group[group_name]
             sorts = [
                 {
-                    f"iija_spending_by_defc.{iija_sort_fields[self.pagination['sort_key']]}": {
+                    f"spending_by_defc.{field_type}": {
                         "mode": "sum",
                         "order": self.pagination["sort_order"],
                         "nested": {
-                            "path": "iija_spending_by_defc",
+                            "path": "spending_by_defc",
+                            "filter": {
+                                "terms": {
+                                    "spending_by_defc.defc": defc_for_group,
+                                }
+                            },
                         },
                     }
                 }
             ]
-            if self.filters.get("def_codes") is not None:
-                sorts[0][f"iija_spending_by_defc.{iija_sort_fields[self.pagination['sort_key']]}"]["nested"].update(
-                    {"filter": {"terms": {"iija_spending_by_defc.defc": self.filters.get("def_codes", [])}}}
-                )
             sorts.extend([{field: self.pagination["sort_order"]} for field in sort_field])
-        elif "covid_spending_by_defc" in sort_field:
-            sort_field.remove("covid_spending_by_defc")
-            sorts = [
-                {
-                    f"covid_spending_by_defc.{covid_sort_fields[self.pagination['sort_key']]}": {
-                        "mode": "sum",
-                        "order": self.pagination["sort_order"],
-                        "nested": {
-                            "path": "covid_spending_by_defc",
-                        },
-                    }
-                }
-            ]
-            if self.filters.get("def_codes") is not None:
-                sorts[0][f"covid_spending_by_defc.{covid_sort_fields[self.pagination['sort_key']]}"]["nested"].update(
-                    {"filter": {"terms": {"covid_spending_by_defc.defc": self.filters.get("def_codes", [])}}}
-                )
-            sorts.extend([{field: self.pagination["sort_order"]} for field in sort_field])
+        elif "Recipient Location" in self.pagination["sort_key"]:
+            sorts = []
+            for field in sort_field:
+                if "recipient_location_address" in field:
+                    sorts.append({field: {"order": self.pagination["sort_order"], "unmapped_type": "keyword"}})
+                else:
+                    sorts.append({field: self.pagination["sort_order"]})
         else:
             sorts = [{field: self.pagination["sort_order"]} for field in sort_field]
 
         return self.query_elasticsearch(AwardSearch(), filter_query, sorts)
 
-    def query_elasticsearch_subawards(self) -> Response:
+    def query_elasticsearch_subawards(self) -> ES_Response:
         filter_options = {}
         time_period_obj = SubawardSearchTimePeriod(
             default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
@@ -408,25 +465,31 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         return self.query_elasticsearch(SubawardSearch(), filter_query, sorts)
 
-    # For an unknown reason, ES tends to return the awarding agency toptier codes as integers or floats, instead of as
-    # text. This function casts the code back to a string and appends any leading zeroes that were lost.
-    def get_agency_database_id(self, code):
-        code = str(code).zfill(3)
-        agency_id = Agency.objects.filter(toptier_agency__toptier_code=code, toptier_flag=True).first()
-        submission = SubmissionAttributes.objects.filter(toptier_code=code).first()
-        if submission is None or agency_id is None:
-            return None
-        return agency_id.id
+    def _get_lookup_data(self) -> dict[str, dict[str, str | int]]:
+        # { <toptier_code>: {"id": <id>, "slug": <slug>} }
+        agency_lookup: dict[str, dict[str, str | int]] = {
+            ag["code"]: {"id": ag["id"], "slug": slugify(ag["name"])}
+            for ag in (
+                Agency.objects.filter(
+                    toptier_flag=True,
+                    toptier_agency__toptier_code__in=SubmissionAttributes.objects.values("toptier_code"),
+                )
+                .select_related("toptieragencypublisheddabsview")
+                .annotate(code=F("toptier_agency__toptier_code"), name=F("toptieragencypublisheddabsview__name"))
+                .values("id", "code", "name")
+                .all()
+            )
+        }
 
-    def get_agency_slug(self, code):
-        code = str(code).zfill(3)
-        submission = ToptierAgencyPublishedDABSView.objects.filter(toptier_code=code).first()
-        if submission is None:
-            return None
-        return slugify(submission.name)
+        return agency_lookup
 
-    def construct_es_response_for_prime_awards(self, response) -> dict:
+    def construct_es_response_for_prime_awards(self, response: ES_Response) -> dict:
         results = []
+
+        if len(response) == 0:
+            return self.construct_es_response(results, response)
+
+        agency_lookup = self._get_lookup_data()
         should_return_display_award_id = "Award ID" in self.fields
         should_return_recipient_id = "recipient_id" in self.fields
         for res in response:
@@ -455,57 +518,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
             if row.get("Total Outlays"):
                 row["Total Outlays"] = float(row["Total Outlays"])
             if row.get("Awarding Agency"):
-                code = row.pop("agency_code")
-                row["awarding_agency_id"] = self.get_agency_database_id(code)
-                row["agency_slug"] = self.get_agency_slug(code)
-            if row.get("COVID-19 Obligations"):
-                row["COVID-19 Obligations"] = sum(
-                    [
-                        (
-                            x["obligation"]
-                            if (self.filters.get("def_codes") is not None and x["defc"] in self.filters["def_codes"])
-                            or self.filters.get("def_codes") is None
-                            else 0
-                        )
-                        for x in row.get("COVID-19 Obligations")
-                    ]
-                )
-            if row.get("COVID-19 Outlays"):
-                row["COVID-19 Outlays"] = sum(
-                    [
-                        (
-                            x["outlay"]
-                            if (self.filters.get("def_codes") is not None and x["defc"] in self.filters["def_codes"])
-                            or self.filters.get("def_codes") is None
-                            else 0
-                        )
-                        for x in row.get("COVID-19 Outlays")
-                    ]
-                )
-            if row.get("Infrastructure Obligations"):
-                row["Infrastructure Obligations"] = sum(
-                    [
-                        (
-                            x["obligation"]
-                            if (self.filters.get("def_codes") is not None and x["defc"] in self.filters["def_codes"])
-                            or self.filters.get("def_codes") is None
-                            else 0
-                        )
-                        for x in row.get("Infrastructure Obligations")
-                    ]
-                )
-            if row.get("Infrastructure Outlays"):
-                row["Infrastructure Outlays"] = sum(
-                    [
-                        (
-                            x["outlay"]
-                            if (self.filters.get("def_codes") is not None and x["defc"] in self.filters["def_codes"])
-                            or self.filters.get("def_codes") is None
-                            else 0
-                        )
-                        for x in row.get("Infrastructure Outlays")
-                    ]
-                )
+                code = str(row.pop("agency_code")).zfill(3)
+                row["awarding_agency_id"] = agency_lookup.get(code, {}).get("id", None)
+                row["agency_slug"] = agency_lookup.get(code, {}).get("slug", None)
             if row.get("def_codes"):
                 if self.filters.get("def_codes"):
                     row["def_codes"] = list(filter(lambda x: x in self.filters.get("def_codes"), row["def_codes"]))
@@ -572,11 +587,13 @@ class SpendingByAwardVisualizationViewSet(APIView):
             if should_return_recipient_id:
                 row["recipient_id"] = self.get_recipient_hash_with_level(hit)
 
+            row.update(self.get_defc_row_values(row))
+
             results.append(row)
 
         return self.construct_es_response(results, response)
 
-    def construct_es_response_for_subawards(self, response: Response) -> dict[str, Any]:
+    def construct_es_response_for_subawards(self, response: ES_Response) -> dict[str, Any]:
         results = []
         for res in response:
             hit = res.to_dict()
@@ -598,7 +615,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         if "NAICS" in self.fields:
             row["NAICS"] = {
-                "code": hit.get("naics"),
+                "code": hit.get("naics_code"),
                 "description": hit.get("naics_description"),
             }
 
@@ -650,7 +667,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                         zip5 = hit.get("sub_pop_zip")
                     case _:
                         zip4 = None
-                        zip5 = None
+                        zip5 = hit.get("sub_pop_zip5")
             else:
                 zip4 = None
                 zip5 = None
@@ -679,7 +696,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         return row
 
-    def construct_es_response(self, results: list[dict[str, Any]], response: Response) -> dict[str, Any]:
+    def construct_es_response(self, results: list[dict[str, Any]] | list, response: ES_Response) -> dict[str, Any]:
         last_record_unique_id = None
         last_record_sort_value = None
         offset = 1
@@ -725,3 +742,22 @@ class SpendingByAwardVisualizationViewSet(APIView):
         recipient_level = RecipientProfile.return_one_level(recipient_levels)
 
         return f"{recipient_hash}-{recipient_level}"
+
+    def get_defc_row_values(self, row: dict[str, any]) -> dict[str, any]:
+        """
+        Fields powered by DEFC outlays and obligations all come from the same spending_by_defc field. The final outlay
+        and obligation total for each field depends on the DEFC that fall under the specific group represented by each
+        field. If the specific DEFC based fields are part of the row then they will be returned for the row to update.
+        """
+        result = {
+            field: sum(
+                [
+                    spending_by_defc[lookup_values["field_type"]]
+                    for spending_by_defc in row[field]
+                    if spending_by_defc["defc"] in self.def_codes_by_group[lookup_values["group_name"]]
+                ]
+            )
+            for field, lookup_values in self.spending_by_defc_lookup.items()
+            if field in row and row[field] is not None
+        }
+        return result

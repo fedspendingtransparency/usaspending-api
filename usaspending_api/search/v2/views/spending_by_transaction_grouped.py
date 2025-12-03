@@ -7,22 +7,20 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
+from usaspending_api.common.api_versioning import API_TRANSFORM_FUNCTIONS, api_transformations
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
+from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
 from usaspending_api.common.exceptions import UnprocessableEntityException
-from usaspending_api.common.helpers.generic_helper import get_generic_filters_message
+from usaspending_api.common.helpers.generic_helper import get_generic_filters_message, under_development_message
 from usaspending_api.common.query_with_filters import QueryWithFilters
-from usaspending_api.search.filters.elasticsearch.filter import QueryType
 from usaspending_api.common.validator.award_filter import (
     AWARD_FILTER,
     AWARD_FILTER_NO_RECIPIENT_ID,
 )
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
-from usaspending_api.search.v2.elasticsearch_helper import get_number_of_unique_terms_for_transactions
+from usaspending_api.search.filters.elasticsearch.filter import QueryType
 from usaspending_api.search.v2.es_sanitization import es_minimal_sanitize
-from elasticsearch_dsl import A
 
 logger = logging.getLogger(__name__)
 
@@ -92,38 +90,52 @@ class SpendingByTransactionGroupedVisualizationViewSet(APIView):
                 }
             )
         lower_limit = (validated_payload["page"] - 1) * validated_payload["limit"]
-        upper_limit = (validated_payload["page"]) * validated_payload["limit"] + 1
         if "keywords" in validated_payload["filters"]:
             validated_payload["filters"]["keyword_search"] = [
                 es_minimal_sanitize(keyword) for keyword in validated_payload["filters"]["keywords"]
             ]
             validated_payload["filters"].pop("keywords")
-        query_with_filters = QueryWithFilters(QueryType.TRANSACTIONS)
-        filter_query = query_with_filters.generate_elasticsearch_query(validated_payload["filters"])
-        search = TransactionSearch().filter(filter_query)
-        (
-            search.aggs.bucket("group_by_prime_award", A("terms", field="display_award_id"))
-            .metric("transaction_obligation", A("sum", field="federal_action_obligation"))
-            .metric("award_generated_internal_id", A("terms", field="generated_unique_award_id"))
-        )
-        bucket_count = get_number_of_unique_terms_for_transactions(filter_query, "display_award_id")
-        agg_response = search.handle_execute()
 
-        agg_buckets = sorted(
-            agg_response.aggregations.group_by_prime_award.buckets,
-            key=self.sort_fn,
-            reverse=True if validated_payload["order"] == "desc" else False,
-        )[lower_limit:upper_limit]
+        # <Field in API request> : <Field name in ElasticSearch document>
+        api_request_field_to_es_field_mapper = {
+            "award_generated_internal_id": "generated_unique_award_id",
+            "award_id": "display_award_id",
+            "transaction_count": "transaction_count",
+            "transaction_obligation": "generated_pragmatic_obligation",
+        }
+
+        query_with_filters = QueryWithFilters(QueryType.AWARDS)
+        filter_query = query_with_filters.generate_elasticsearch_query(validated_payload["filters"])
+        search = (
+            AwardSearch()
+            .filter(filter_query)
+            .source(fields=list(api_request_field_to_es_field_mapper.values()))
+            .sort(
+                {
+                    api_request_field_to_es_field_mapper[self.sort_by]: {
+                        "order": "asc" if validated_payload["order"] == "asc" else "desc"
+                    }
+                }
+            )
+            .extra(from_=lower_limit, size=validated_payload["limit"])
+        )
+        es_response = search.handle_execute()
+
         results = [
             {
-                "award_id": prime_award.key,
-                "transaction_count": prime_award.doc_count,
-                "transaction_obligation": Decimal(prime_award.transaction_obligation.value).quantize(Decimal(".01")),
-                "award_generated_internal_id": prime_award.award_generated_internal_id.buckets[0].key,
+                "award_id": source["_source"]["display_award_id"],
+                "transaction_count": source["_source"]["transaction_count"],
+                "transaction_obligation": (
+                    Decimal(source["_source"]["generated_pragmatic_obligation"]).quantize(Decimal(".01"))
+                    if source["_source"]["generated_pragmatic_obligation"]
+                    else 0.0
+                ),
+                "award_generated_internal_id": source["_source"]["generated_unique_award_id"],
             }
-            for prime_award in agg_buckets
+            for source in es_response.hits.hits
         ]
-        has_next = bucket_count > validated_payload["limit"]
+
+        has_next = es_response.hits.total.value > (validated_payload["limit"] * validated_payload["page"])
         has_previous = validated_payload["page"] > 1
         metadata = {
             "page": validated_payload["page"],
@@ -135,24 +147,13 @@ class SpendingByTransactionGroupedVisualizationViewSet(APIView):
         return Response(
             {
                 "limit": validated_payload["limit"],
-                "results": results[: validated_payload["limit"]],
+                "results": results,
                 "page_metadata": metadata,
-                "messages": get_generic_filters_message(
-                    validated_payload["filters"].keys(), [elem["name"] for elem in AWARD_FILTER_NO_RECIPIENT_ID]
-                ),
+                "messages": [
+                    under_development_message(),
+                    *get_generic_filters_message(
+                        validated_payload["filters"].keys(), [elem["name"] for elem in AWARD_FILTER_NO_RECIPIENT_ID]
+                    ),
+                ],
             }
         )
-
-    def sort_fn(self, item):
-        match self.sort_by:
-            case "award_id":
-                key = item.key
-            case "transaction_count":
-                key = item.doc_count
-            case "award_generated_internal_id":
-                key = item.award_generated_internal_id.buckets[0].key
-            case "transaction_obligation":
-                key = item.transaction_obligation.value
-            case _:
-                raise ValueError("Invalid sort key")
-        return key

@@ -18,8 +18,14 @@ class AbstractFinancialAccountsByAwards(DataSourceTrackedModel):
     fain = models.TextField(blank=True, null=True)
     uri = models.TextField(blank=True, null=True)
     prior_year_adjustment = models.TextField(blank=True, null=True)
-    program_activity_reporting_key = models.TextField(
-        blank=True, null=True, help_text="A unique identifier for a Program Activity"
+    program_activity_reporting_key = models.ForeignKey(
+        "references.ProgramActivityPark",
+        models.DO_NOTHING,
+        null=True,
+        blank=True,
+        db_index=True,
+        db_column="program_activity_reporting_key",
+        help_text="A unique identifier for a Program Activity",
     )
     disaster_emergency_fund = models.ForeignKey(
         "references.DisasterEmergencyFundCode",
@@ -114,6 +120,8 @@ class AbstractFinancialAccountsByAwards(DataSourceTrackedModel):
     ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe = models.DecimalField(
         max_digits=23, decimal_places=2, blank=True, null=True
     )
+    ussgl480210_rein_undel_obs_cpe = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    ussgl497210_down_adj_refun_cpe = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
     deobligations_recoveries_refunds_of_prior_year_by_award_cpe = models.DecimalField(
         max_digits=23, decimal_places=2, blank=True, null=True
     )

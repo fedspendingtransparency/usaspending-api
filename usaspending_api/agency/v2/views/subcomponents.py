@@ -3,11 +3,12 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from typing import Any
 from usaspending_api.accounts.models.appropriation_account_balances import AppropriationAccountBalances
-from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
+from usaspending_api.agency.v2.views.agency_base import AgencyBase
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.calculations.file_b import FileBCalculations
 from usaspending_api.common.helpers.date_helper import now
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata, sort_with_null_last
+from usaspending_api.common.helpers.pagination_mixin import PaginationMixin
 from usaspending_api.common.helpers.orm_helpers import ConcatAll
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import BureauTitleLookup
@@ -29,7 +30,7 @@ class SubcomponentList(PaginationMixin, AgencyBase):
     @cache_response()
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         self.sortable_columns = ["name", "total_obligations", "total_outlays", "total_budgetary_resources"]
-        self.default_sort_column = "total_obligations"
+        self.default_sort_column = "total_budgetary_resources"
         results = self.format_results(self.get_file_a_queryset(), self.get_file_b_queryset())
         page_metadata = get_pagination_metadata(len(results), self.pagination.limit, self.pagination.page)
         return Response(

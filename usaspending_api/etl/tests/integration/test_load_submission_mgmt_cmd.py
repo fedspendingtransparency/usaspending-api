@@ -11,6 +11,7 @@ from django.test import TestCase
 from model_bakery import baker
 from usaspending_api.awards.models import FinancialAccountsByAwards
 from usaspending_api.etl.submission_loader_helpers.object_class import reset_object_class_cache
+from usaspending_api.etl.submission_loader_helpers.program_activity_park import reset_program_activity_park_cache
 from usaspending_api.etl.transaction_loaders.data_load_helpers import format_insert_or_update_column_sql
 
 earlier_time = datetime.now() - timedelta(days=1)
@@ -25,6 +26,7 @@ class TestWithMultipleDatabases(TestCase):
     def setUpTestData(cls):
 
         reset_object_class_cache()
+        reset_program_activity_park_cache()
 
         baker.make(
             "accounts.TreasuryAppropriationAccount",
@@ -49,6 +51,7 @@ class TestWithMultipleDatabases(TestCase):
             submission_fiscal_quarter=0,
             is_quarter=False,
         )
+        baker.make("references.ProgramActivityPark", code="0000", name="OTHER/UNKNOWN")
 
         # Setup default data in Broker Test DB
         broker_objects_to_insert = {
@@ -65,7 +68,7 @@ class TestWithMultipleDatabases(TestCase):
                 "conflict_column": "published_award_financial_id",
             },
         }
-        connection = connections[settings.DATA_BROKER_DB_ALIAS]
+        connection = connections[settings.BROKER_DB_ALIAS]
         with connection.cursor() as cursor:
 
             for broker_table_name, value in broker_objects_to_insert.items():
@@ -461,6 +464,7 @@ def _assemble_published_award_financial_records() -> list:
         "piid": None,
         "program_activity_code": None,
         "program_activity_name": None,
+        "program_activity_reporting_key": "0000",
         "sub_account_code": None,
         "transaction_obligated_amou": 100,
         "uri": None,
