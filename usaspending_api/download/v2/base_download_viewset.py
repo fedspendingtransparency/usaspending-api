@@ -13,7 +13,7 @@ from usaspending_api.broker.models import ExternalDataLoadDate
 from usaspending_api.common.api_versioning import API_TRANSFORM_FUNCTIONS, api_transformations
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.dict_helpers import order_nested_object
-from usaspending_api.common.spark.jobs import DuckDBStrategy, SparkJobs
+from usaspending_api.common.spark.jobs import SparkJobs, DatabricksStrategy
 from usaspending_api.common.sqs.sqs_handler import DownloadLogic, get_sqs_queue
 from usaspending_api.download.download_utils import create_unique_filename, log_new_download_job
 from usaspending_api.download.filestreaming import download_generation
@@ -100,7 +100,7 @@ class BaseDownloadViewSet(APIView):
         if settings.IS_LOCAL and settings.RUN_LOCAL_DOWNLOAD_IN_PROCESS:
             # Eagerly execute the download in this running process
             if self.is_spark_download(json_request):
-                spark_jobs = SparkJobs(DuckDBStrategy())
+                spark_jobs = SparkJobs(DatabricksStrategy())
                 spark_jobs.start(
                     job_name=job_name,
                     command_name="generate_spark_download",
