@@ -75,10 +75,7 @@ class BaseDownloadViewSet(APIView):
 
     @staticmethod
     def is_spark_download(json_request: dict) -> bool:
-        return json_request["request_type"] == "account" and any(
-            download_type in ("account_balances", "award_financial", "object_class_program_activity")
-            for download_type in json_request["download_types"]
-        )
+        return json_request["request_type"] == "account" and "award_financial" in json_request["download_types"]
 
     @staticmethod
     def validate_columns(json_request: dict):
