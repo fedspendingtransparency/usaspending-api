@@ -3,8 +3,6 @@ import zipfile
 from ctypes import CDLL, POINTER, c_char_p, c_int
 from pathlib import Path
 
-from usaspending_api.config.envs.default import _PROJECT_ROOT_DIR
-
 
 def append_files_to_zip_file(file_paths, zip_file_path):
     """
@@ -39,7 +37,7 @@ def append_files_to_zip_file_go(file_paths: list[str] | list[bytes], zip_file_pa
     """
 
     # Import the shared library
-    lib = CDLL(f"{_PROJECT_ROOT_DIR}/utilities/zipper.so")
+    lib = CDLL(f"{Path(__file__).parent.parent}/utilities/zipper.so")
 
     # Document the function's argument and return types
     lib.AppendFilesToZipFile.argtypes = [POINTER(c_char_p), c_int, c_char_p]
