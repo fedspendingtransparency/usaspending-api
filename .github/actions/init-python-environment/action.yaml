@@ -21,4 +21,4 @@ runs:
     - name: Install dev dependencies
       working-directory: ${{ inputs.working-directory }}
       shell: bash
-      run: pip install ".[dev]"
+      run: pip install ".[dev,spark]"
