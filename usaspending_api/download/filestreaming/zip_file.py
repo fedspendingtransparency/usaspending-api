@@ -1,6 +1,7 @@
 import os
 import zipfile
 from ctypes import CDLL, POINTER, c_char_p, c_int
+from pathlib import Path
 
 from usaspending_api.config.envs.default import _PROJECT_ROOT_DIR
 
@@ -22,7 +23,7 @@ def append_files_to_zip_file(file_paths, zip_file_path):
             zip_file.write(file_path, archive_name)
 
 
-def append_files_to_zip_file_go(file_paths: list[str] | list[bytes], zip_file_path: str | bytes):
+def append_files_to_zip_file_go(file_paths: list[str] | list[bytes], zip_file_path: str | bytes | Path):
     """Create zip archive at the specified zip_file_path if it does not exist, and add all the files at provided
     file_paths to it. This uses a shared library written in Go and imported using the CDLL function.
 
@@ -44,9 +45,17 @@ def append_files_to_zip_file_go(file_paths: list[str] | list[bytes], zip_file_pa
     lib.AppendFilesToZipFile.argtypes = [POINTER(c_char_p), c_int, c_char_p]
     lib.AppendFilesToZipFile.restype = c_int
 
+    # Ensure we're using the correct datatypes that the shared library expects
     file_paths = [p.encode() if type(p) is str else p for p in file_paths]
     c_file_paths = (c_char_p * len(file_paths))(*file_paths)
-    zip_file_path = zip_file_path.encode() if type(zip_file_path) is str else zip_file_path
+
+    match zip_file_path:
+        case Path() | str():
+            zip_file_path = str(zip_file_path).encode()
+        case bytes():
+            ...
+        case _:
+            raise TypeError(f"zip_file_path must be bytes, string, or path. Got {type(zip_file_path).__name__}")
 
     zip_result: int = lib.AppendFilesToZipFile(c_file_paths, len(c_file_paths), zip_file_path)
 
