@@ -2,6 +2,7 @@ import logging
 import multiprocessing
 import time
 from abc import ABC, abstractmethod
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional
@@ -189,7 +190,7 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
                 logger=self._logger,
                 file_format=file_format,
             )
-            final_csv_data_file_locations = self._move_data_csv_s3_to_local(
+            final_csv_data_file_locations = self._move_data_csv_s3_to_local_threading(
                 s3_bucket_name,
                 merged_file_paths,
                 s3_bucket_path,
@@ -208,6 +209,38 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
         return CSVDownloadMetadata(final_csv_data_file_locations, record_count, column_count)
 
     def _move_data_csv_s3_to_local(
+        self,
+        bucket_name: str,
+        s3_file_path: str,
+        s3_bucket_path: str,
+        s3_bucket_sub_path: str,
+        destination_path_dir: str,
+    ) -> str:
+        """Moves files from s3 data csv location to a location on the local machine.
+
+        Args:
+            bucket_name: The name of the bucket in s3 where file_names and s3_path are
+            s3_file_path: A file path to move from s3, name should include s3a:// and bucket name
+            s3_bucket_path: The bucket path, e.g. s3a:// + bucket name
+            s3_bucket_sub_path: The path to the s3 files in the bucket, exluding s3a:// + bucket name, e.g. temp_directory/files
+            destination_path_dir: The location to move those files from s3 to, must not include the
+                file name in the path. This path should be a directory.
+
+        Returns:
+            A list of the final location on the local machine that the
+            files were moved to from s3.
+        """
+        s3_key = s3_file_path.replace(f"{s3_bucket_path}/", "")
+        file_name_only = s3_key.replace(f"{s3_bucket_sub_path}/", "")
+        final_path = f"{destination_path_dir}/{file_name_only}"
+        download_s3_object(
+            bucket_name,
+            s3_key,
+            final_path,
+        )
+        return final_path
+
+    def _move_data_csv_s3_to_local_threading(
         self,
         bucket_name: str,
         s3_file_paths: list[str],
@@ -231,17 +264,24 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
             files were moved to from s3.
         """
         start_time = time.time()
-        self._logger.info("Moving data files from S3 to local machine...")
+        self._logger.info("Moving data files from S3 to local machine using threading...")
         local_csv_file_paths = []
-        for file_name in s3_file_paths:
-            s3_key = file_name.replace(f"{s3_bucket_path}/", "")
-            file_name_only = s3_key.replace(f"{s3_bucket_sub_path}/", "")
-            final_path = f"{destination_path_dir}/{file_name_only}"
-            download_s3_object(
-                bucket_name,
-                s3_key,
-                final_path,
-            )
-            local_csv_file_paths.append(final_path)
+
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            futures = []
+            for file_name in s3_file_paths:
+                futures.append(
+                    executor.submit(
+                        self._move_data_csv_s3_to_local,
+                        bucket_name,
+                        file_name,
+                        s3_bucket_path,
+                        s3_bucket_sub_path,
+                        destination_path_dir,
+                    )
+                )
+
+            for future in as_completed(futures):
+                local_csv_file_paths.append(future.result())
         self._logger.info(f"Copied data files from S3 to local machine in {(time.time() - start_time):3f}s")
         return local_csv_file_paths
