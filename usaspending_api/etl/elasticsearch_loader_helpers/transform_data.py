@@ -9,7 +9,6 @@ from usaspending_api.etl.elasticsearch_loader_helpers.utilities import (
     TaskSpec,
     convert_json_array_to_list_of_str,
     convert_json_data_to_dict,
-    dump_dict_to_string,
     format_log,
 )
 
@@ -129,16 +128,6 @@ def transform_subaward_data(worker: TaskSpec, records: List[dict]) -> List[dict]
         "sub_recipient_agg_key": funcs.subaward_recipient_agg_key,
         "sub_fiscal_action_date": funcs.sub_fiscal_action_date,
     }
-    drop_fields = []
-
-    return transform_data(worker, records, replace_fields, insert_fields, drop_fields, None)
-
-
-def transform_location_data(worker: TaskSpec, records: List[dict]) -> List[dict]:
-    replace_fields = {
-        "location_json": dump_dict_to_string,
-    }
-    insert_fields = {"location_type": funcs.location_type_agg_key}
     drop_fields = []
 
     return transform_data(worker, records, replace_fields, insert_fields, drop_fields, None)

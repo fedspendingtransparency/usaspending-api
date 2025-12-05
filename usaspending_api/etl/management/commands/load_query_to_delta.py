@@ -21,17 +21,21 @@ from usaspending_api.disaster.delta_models import (
 )
 from usaspending_api.disaster.models import CovidFABASpending
 from usaspending_api.download.delta_models.award_financial_download import (
-    award_financial_download_load_sql_string,
+    load_award_financial,
+    load_award_financial_incremental,
     award_financial_schema,
 )
 from usaspending_api.download.delta_models.object_class_program_activity_download import (
-    object_class_program_activity_download_load_sql_string,
     object_class_program_activity_schema,
+    load_object_class_program_activity,
+    load_object_class_program_activity_incremental,
 )
 from usaspending_api.download.delta_models.account_balances_download import (
     load_account_balances,
+    load_account_balances_incremental,
     account_balances_schema,
 )
+from usaspending_api.download.delta_models.transaction_download import transaction_download_schema
 from usaspending_api.recipient.delta_models import (
     RECIPIENT_LOOKUP_POSTGRES_COLUMNS,
     RECIPIENT_PROFILE_POSTGRES_COLUMNS,
@@ -52,8 +56,11 @@ from usaspending_api.search.delta_models.award_search import (
     AWARD_SEARCH_POSTGRES_COLUMNS,
     AWARD_SEARCH_POSTGRES_GOLD_COLUMNS,
     award_search_create_sql_string,
-    award_search_incremental_load_sql_string,
-    award_search_overwrite_load_sql_string,
+)
+from usaspending_api.search.delta_models.dataframes.award_search import load_award_search, load_award_search_incremental
+from usaspending_api.search.delta_models.dataframes.transaction_search import (
+    load_transaction_search,
+    load_transaction_search_incremental,
 )
 from usaspending_api.search.delta_models.subaward_search import (
     SUBAWARD_SEARCH_COLUMNS,
@@ -76,10 +83,7 @@ from usaspending_api.transactions.delta_models import (
     transaction_current_cd_lookup_load_sql_string,
     transaction_search_create_sql_string,
 )
-from usaspending_api.transactions.delta_models.transaction_search_dataframe import (
-    load_transaction_search,
-    load_transaction_search_incremental,
-)
+
 
 AWARD_URL = f"{HOST}/award/" if "localhost" in HOST else f"https://{HOST}/award/"
 
@@ -89,8 +93,8 @@ TABLE_SPEC = {
     "award_search": {
         "model": AwardSearch,
         "is_from_broker": False,
-        "source_query": award_search_overwrite_load_sql_string,
-        "source_query_incremental": award_search_incremental_load_sql_string,
+        "source_query": load_award_search,
+        "source_query_incremental": load_award_search_incremental,
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
@@ -111,8 +115,8 @@ TABLE_SPEC = {
     "award_search_gold": {
         "model": AwardSearch,
         "is_from_broker": False,
-        "source_query": award_search_overwrite_load_sql_string,
-        "source_query_incremental": award_search_incremental_load_sql_string,
+        "source_query": load_award_search,
+        "source_query_incremental": load_award_search_incremental,
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
@@ -330,7 +334,7 @@ TABLE_SPEC = {
         "model": None,
         "is_from_broker": False,
         "source_query": load_account_balances,
-        "source_query_incremental": None,
+        "source_query_incremental": load_account_balances_incremental,
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
@@ -350,8 +354,8 @@ TABLE_SPEC = {
     "award_financial_download": {
         "model": None,
         "is_from_broker": False,
-        "source_query": [award_financial_download_load_sql_string],
-        "source_query_incremental": None,
+        "source_query": load_award_financial,
+        "source_query_incremental": load_award_financial_incremental,
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
@@ -371,8 +375,8 @@ TABLE_SPEC = {
     "object_class_program_activity_download": {
         "model": None,
         "is_from_broker": False,
-        "source_query": [object_class_program_activity_download_load_sql_string],
-        "source_query_incremental": None,
+        "source_query": load_object_class_program_activity,
+        "source_query_incremental": load_object_class_program_activity_incremental,
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
@@ -382,6 +386,27 @@ TABLE_SPEC = {
         "partition_column_type": "numeric",
         "is_partition_column_unique": False,
         "delta_table_create_sql": object_class_program_activity_schema,
+        "source_schema": None,
+        "custom_schema": None,
+        "column_names": list(),
+        "postgres_seq_name": None,
+        "tsvectors": None,
+        "postgres_partition_spec": None,
+    },
+    "transaction_download": {
+        "model": None,
+        "is_from_broker": False,
+        "source_query": None,
+        "source_query_incremental": None,
+        "source_database": None,
+        "source_table": None,
+        "destination_database": "rpt",
+        "swap_table": None,
+        "swap_schema": None,
+        "partition_column": "transaction_id",
+        "partition_column_type": "numeric",
+        "is_partition_column_unique": False,
+        "delta_table_create_sql": transaction_download_schema,
         "source_schema": None,
         "custom_schema": None,
         "column_names": list(),

@@ -1,14 +1,17 @@
 import logging
 import os
+import uuid
 import sys
 import tempfile
+from decimal import Decimal
 from pathlib import Path
 from typing import List
 
 import docker
 import pytest
 from django.conf import settings
-from django.db import connections
+from django.core.management import call_command
+from django.db import connections, IntegrityError
 from django.test import override_settings
 from model_bakery import baker
 from pytest_django.fixtures import _set_suffix_to_test_databases
@@ -19,10 +22,12 @@ from xdist.plugin import (
     pytest_xdist_auto_num_workers,
 )
 
+from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
 from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import (
     ensure_business_categories_functions_exist,
     ensure_view_exists,
 )
+from usaspending_api.common.etl.spark import create_ref_temp_views, _USAS_RDS_REF_TABLES
 from usaspending_api.common.helpers.generic_helper import generate_matviews
 from usaspending_api.common.helpers.sql_helpers import (
     build_dsn_string,
@@ -43,6 +48,7 @@ from usaspending_api.conftest_helpers import (
     remove_unittest_queue_data_files,
     transform_xdist_worker_id_to_django_test_db_id,
 )
+
 
 # Compose ALL fixtures from conftest_spark
 from usaspending_api.tests.conftest_spark import *  # noqa
@@ -404,21 +410,271 @@ def elasticsearch_recipient_index(db):
 
 
 @pytest.fixture
-def elasticsearch_location_index(db):
-    """
-    Add this fixture to your test if you intend to use the Elasticsearch
-    location index.  To use, create some mock database data then call
-    elasticsearch_location_index.update_index to populate Elasticsearch.
+def location_data_fixture(db):
+    baker.make("references.RefCountryCode", country_code="DNK", country_name="DENMARK")
+    baker.make("references.RefCountryCode", country_code="FRA", country_name="FRANCE")
+    baker.make("references.RefCountryCode", country_code="TST", country_name="TEST COUNTRY")
+    baker.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")
 
-    See test_demo_elasticsearch_tests.py for sample usage.
-    """
-    elastic_search_index = TestElasticSearchIndex("location")
-    with override_settings(
-        ES_LOCATIONS_QUERY_ALIAS_PREFIX=elastic_search_index.alias_prefix,
-        ES_LOCATIONS_WRITE_ALIAS=elastic_search_index.etl_config["write_alias"],
-    ):
-        yield elastic_search_index
-        elastic_search_index.delete_index()
+    baker.make("recipient.StateData", id="1", code="CO", name="Colorado", year=2017)
+    baker.make("recipient.StateData", id="2", code="CA", name="California", year=2017)
+    baker.make("recipient.StateData", id="3", code="TX", name="Texas", year=2017)
+    baker.make("recipient.StateData", id="4", code="IL", name="Illinois", year=2017)
+    baker.make("recipient.StateData", id="5", code="OK", name="Oklahoma", year=2017)
+    baker.make("recipient.StateData", id="6", name="MISSOURI", code="MO", year=2017)
+    baker.make("recipient.StateData", id="7", name="KANSAS", code="KS", year=2017)
+
+    baker.make(
+        "references.CityCountyStateCode",
+        id=1,
+        feature_name="Denver",
+        state_alpha="CO",
+        state_numeric="08",
+        county_numeric="100",
+    )
+    baker.make(
+        "references.CityCountyStateCode",
+        id=2,
+        feature_name="Texas A City",
+        state_alpha="TX",
+        state_numeric="48",
+        county_numeric="101",
+    )
+    baker.make(
+        "references.CityCountyStateCode",
+        id=3,
+        feature_name="Texas B City",
+        state_alpha="TX",
+        state_numeric="48",
+        county_numeric="102",
+    )
+    baker.make(
+        "references.CityCountyStateCode",
+        id=4,
+        feature_name="Texas C City",
+        state_alpha="IL",
+        state_numeric="17",
+        county_numeric="103",
+    )
+    baker.make(
+        "references.CityCountyStateCode",
+        id=5,
+        feature_name="Texas D City",
+        state_alpha="OK",
+        state_numeric="40",
+        county_numeric="104",
+    )
+    baker.make(
+        "references.CityCountyStateCode",
+        id=6,
+        feature_name="Texas E City",
+        state_alpha="TX",
+        state_numeric="48",
+        county_numeric="105",
+    )
+    baker.make(
+        "references.CityCountyStateCode",
+        id=7,
+        feature_name="Texas F City",
+        state_alpha="TX",
+        state_numeric="48",
+        county_numeric="106",
+    )
+    baker.make(
+        "references.CityCountyStateCode",
+        id=8,
+        county_name="Los Angeles",
+        state_alpha="CA",
+        state_numeric="06",
+        county_numeric="107",
+    )
+
+    baker.make("references.ZipsGrouped", zips_grouped_id=1, zip5="90210", state_abbreviation="CA")
+    baker.make("references.ZipsGrouped", zips_grouped_id=2, zip5="90211", state_abbreviation="CA")
+
+
+@pytest.fixture
+def world_cities_delta_table(s3_unittest_data_bucket):
+    test_data = [
+        [
+            "city",
+            "city_ascii",
+            "city_alt",
+            "city_local",
+            "city_local_lang",
+            "lat",
+            "lng",
+            "country",
+            "iso2",
+            "iso3",
+            "admin_name",
+            "admin_name_ascii",
+            "admin_code",
+            "admin_type",
+            "capital",
+            "density",
+            "population",
+            "population_proper",
+            "ranking",
+            "timezone",
+            "same_name",
+            "id",
+        ],
+        [
+            "test_city",
+            "test_city_ascii",
+            "test_city_alt|another test city|hello world",
+            "test_city_local",
+            "test_city_local_lang",
+            Decimal("90.0000"),
+            Decimal("180.0000"),
+            "test_country",
+            "test_iso2",
+            "TST",
+            "test_admin_name",
+            "test_admin_name_ascii",
+            "test_admin_code",
+            "test_admin_type",
+            "test_capital",
+            10.0,
+            100_000,
+            100_000,
+            "test_ranking",
+            "test_timezone",
+            False,
+            1234,
+        ],
+        [
+            "COPENHAGEN",
+            "test_city_ascii",
+            "",
+            "test_city_local",
+            "test_city_local_lang",
+            Decimal("90.0000"),
+            Decimal("180.0000"),
+            "test_country",
+            "test_iso2",
+            "DNK",
+            "test_admin_name",
+            "test_admin_name_ascii",
+            "test_admin_code",
+            "test_admin_type",
+            "test_capital",
+            10.0,
+            100_000,
+            100_000,
+            "test_ranking",
+            "test_timezone",
+            False,
+            1234,
+        ],
+        [
+            "PARIS",
+            "test_city_ascii",
+            "",
+            "test_city_local",
+            "test_city_local_lang",
+            Decimal("90.0000"),
+            Decimal("180.0000"),
+            "test_country",
+            "test_iso2",
+            "FRA",
+            "test_admin_name",
+            "test_admin_name_ascii",
+            "test_admin_code",
+            "test_admin_type",
+            "test_capital",
+            10.0,
+            100_000,
+            100_000,
+            "test_ranking",
+            "test_timezone",
+            False,
+            1234,
+        ],
+    ]
+
+    with tempfile.NamedTemporaryFile(mode="w") as f:
+        for row in test_data:
+            f.write(",".join(str(v) for v in row) + "\n")
+        f.flush()
+        f.seek(0)
+        call_command(
+            "load_csv_to_delta",
+            "--destination-table=world_cities",
+            f"--source-path={f.name}",
+            f"--spark-s3-bucket={s3_unittest_data_bucket}",
+        )
+
+
+@pytest.fixture
+def transaction_search_delta_table(spark):
+    spark.sql("CREATE DATABASE IF NOT EXISTS rpt")
+    transaction_search_df = spark.createDataFrame(
+        [
+            {
+                "pop_state_code": "MO",
+                "pop_congressional_code_current": "01",
+                "recipient_location_state_code": "MO",
+                "recipient_location_congressional_code_current": "01",
+                "pop_congressional_code": "01",
+                "recipient_location_congressional_code": "01",
+            },
+            {
+                "pop_state_code": "KS",
+                "pop_congressional_code_current": "01",
+                "recipient_location_state_code": "KS",
+                "recipient_location_congressional_code_current": "01",
+                "pop_congressional_code": "01",
+                "recipient_location_congressional_code": "01",
+            },
+            {
+                "pop_state_code": "CA",
+                "pop_congressional_code_current": "34",
+                "recipient_location_state_code": "CA",
+                "recipient_location_congressional_code_current": "34",
+                "pop_congressional_code": "34",
+                "recipient_location_congressional_code": "34",
+            },
+            {
+                "pop_state_code": "CA",
+                "pop_congressional_code_current": "34",
+                "recipient_location_state_code": "CA",
+                "recipient_location_congressional_code_current": "34",
+                "pop_congressional_code": "34",
+                "recipient_location_congressional_code": "34",
+            },
+        ]
+    )
+    transaction_search_df.write.saveAsTable("rpt.transaction_search")
+
+
+@pytest.fixture
+def elasticsearch_location_index(
+    location_data_fixture,
+    world_cities_delta_table,
+    transaction_search_delta_table,
+    spark,
+    s3_unittest_data_bucket,
+    hive_unittest_metastore_db,
+):
+    for rds_ref_table in _USAS_RDS_REF_TABLES:
+        try:
+            baker.make(rds_ref_table)
+        except IntegrityError:
+            pass
+    create_ref_temp_views(spark)
+    index_name = f"{uuid.uuid4()}-test-locations"
+    client = instantiate_elasticsearch_client()
+    try:
+        call_command(
+            "elasticsearch_indexer_for_spark", create_new_index=True, load_type="location", index_name=index_name
+        )
+        yield client
+    except Exception as e:
+        raise e
+    finally:
+        client.indices.delete(index_name, ignore_unavailable=True)
 
 
 @pytest.fixture(scope="session")

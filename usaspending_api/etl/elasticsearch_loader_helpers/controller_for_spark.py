@@ -19,6 +19,7 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     load_data,
     obtain_extract_all_partitions_sql,
 )
+from usaspending_api.etl.elasticsearch_loader_helpers.location_dataframe import LocationDataFrame
 from usaspending_api.etl.elasticsearch_loader_helpers.controller import AbstractElasticsearchIndexerController
 
 logger = logging.getLogger("script")
@@ -40,6 +41,11 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
         # Ensure reference tables the TEMP VIEW may depend on exist
         create_ref_temp_views(self.spark)
 
+        if self.config["load_type"] == "location":
+            df = LocationDataFrame(self.spark).dataframe
+            df.createOrReplaceTempView(sql_view_name)
+            return
+
         view_file_path = settings.APP_DIR / "database_scripts" / "etl" / f"{sql_view_name}.sql"
 
         view_sql = view_file_path.read_text()
@@ -57,15 +63,6 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
             identifier_replacements["toptier_agency"] = "global_temp.toptier_agency"
         elif self.config["load_type"] == "recipient":
             identifier_replacements = None
-        elif self.config["load_type"] == "location":
-            identifier_replacements["~"] = "rlike"
-            identifier_replacements["jsonb_build_object"] = "map"
-            identifier_replacements["to_jsonb"] = "to_json"
-            identifier_replacements["state_data"] = "global_temp.state_data"
-            identifier_replacements["ref_country_code"] = "global_temp.ref_country_code"
-            identifier_replacements["ref_city_county_state_code"] = "global_temp.ref_city_county_state_code"
-            identifier_replacements["zips_grouped"] = "global_temp.zips_grouped"
-
         else:
             raise ValueError(
                 f"Unrecognized load_type {self.config['load_type']}, or this function does not yet support it"
