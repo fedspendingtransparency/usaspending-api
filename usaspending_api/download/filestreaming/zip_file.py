@@ -22,7 +22,7 @@ def append_files_to_zip_file(file_paths, zip_file_path):
             zip_file.write(file_path, archive_name)
 
 
-def append_files_to_zip_file_new(file_paths: list[str] | list[bytes], zip_file_path: str | bytes) -> int:
+def append_files_to_zip_file_go(file_paths: list[str] | list[bytes], zip_file_path: str | bytes):
     """Create zip archive at the specified zip_file_path if it does not exist, and add all the files at provided
     file_paths to it. This uses a shared library written in Go and imported using the CDLL function.
 
@@ -35,9 +35,6 @@ def append_files_to_zip_file_new(file_paths: list[str] | list[bytes], zip_file_p
     Args:
         file_paths: List of file paths to zip
         zip_file_path: Path to zip file
-
-    Returns:
-        0 on success, 1 on failure
     """
 
     # Import the shared library
@@ -51,4 +48,7 @@ def append_files_to_zip_file_new(file_paths: list[str] | list[bytes], zip_file_p
     c_file_paths = (c_char_p * len(file_paths))(*file_paths)
     zip_file_path = zip_file_path.encode() if type(zip_file_path) is str else zip_file_path
 
-    return lib.AppendFilesToZipFile(c_file_paths, len(c_file_paths), zip_file_path)
+    zip_result: int = lib.AppendFilesToZipFile(c_file_paths, len(c_file_paths), zip_file_path)
+
+    if zip_result != 0:
+        raise Exception(f"Zip file {zip_file_path} was not created")
