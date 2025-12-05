@@ -37,7 +37,14 @@ def append_files_to_zip_file_go(file_paths: list[str] | list[bytes], zip_file_pa
     """
 
     # Import the shared library
-    lib = CDLL(f"{Path(__file__).parent.parent}/utilities/zipper.so")
+    library_path = f"{Path(__file__).parent.parent}/utilities/zipper.so"
+    if library_path != "/databricks/python/lib/python3.10/site-packages/usaspending_api/download/utilities/zipper.so":
+        print("Path not correct")
+        library_path = "/databricks/python/lib/python3.10/site-packages/usaspending_api/download/utilities/zipper.so"
+    else:
+        print("Path is correct!")
+
+    lib = CDLL(library_path)
 
     # Document the function's argument and return types
     lib.AppendFilesToZipFile.argtypes = [POINTER(c_char_p), c_int, c_char_p]
