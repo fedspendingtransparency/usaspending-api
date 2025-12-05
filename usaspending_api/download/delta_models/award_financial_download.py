@@ -1,3 +1,6 @@
+from delta.tables import DeltaTable
+from pyspark.sql import SparkSession, functions as sf
+from pyspark.sql.functions import expr
 from pyspark.sql.types import (
     BooleanType,
     DateType,
@@ -6,7 +9,10 @@ from pyspark.sql.types import (
     StringType,
     StructField,
     StructType,
+    LongType,
 )
+from usaspending_api.download.helpers.delta_models_helpers import fy_quarter_period
+from usaspending_api.download.helpers.download_annotation_functions import AWARD_URL
 
 award_financial_schema = StructType(
     [
@@ -110,246 +116,236 @@ award_financial_schema = StructType(
         StructField("reporting_fiscal_quarter", IntegerType()),
         StructField("reporting_fiscal_year", IntegerType()),
         StructField("quarter_format_flag", BooleanType()),
+        StructField("merge_hash_key", LongType()),
     ]
 )
 
 
-award_financial_download_load_sql_string = rf"""
-    INSERT OVERWRITE {{DESTINATION_DATABASE}}.{{DESTINATION_TABLE}} (
-        {",".join(list([field.name for field in award_financial_schema]))}
-    )
-    SELECT
-        financial_accounts_by_awards.financial_accounts_by_awards_id,
-        financial_accounts_by_awards.submission_id,
-        federal_toptier_agency.name AS federal_owning_agency_name,
-        treasury_toptier_agency.name AS treasury_owning_agency_name,
-        federal_account.federal_account_code AS federal_account_symbol,
-        federal_account.account_title AS federal_account_name,
-        cgac_aid.agency_name AS agency_identifier_name,
-        cgac_ata.agency_name AS allocation_transfer_agency_identifier_name,
-        ref_program_activity.program_activity_code,
-        ref_program_activity.program_activity_name,
-        object_class.object_class AS object_class_code,
-        object_class.object_class_name,
-        object_class.direct_reimbursable AS direct_or_reimbursable_funding_source,
-        financial_accounts_by_awards.disaster_emergency_fund_code,
-        disaster_emergency_fund_code.title AS disaster_emergency_fund_name,
-        award_search.generated_unique_award_id AS award_unique_key,
-        financial_accounts_by_awards.piid AS award_id_piid,
-        financial_accounts_by_awards.parent_award_id AS parent_award_id_piid,
-        financial_accounts_by_awards.fain AS award_id_fain,
-        financial_accounts_by_awards.uri AS award_id_uri,
-        CAST(award_search.date_signed AS DATE) AS award_base_action_date,
-        CAST(award_search.certified_date AS DATE) AS award_latest_action_date,
-        CAST(award_search.period_of_performance_start_date AS DATE),
-        CAST(award_search.period_of_performance_current_end_date AS DATE),
-        CAST(transaction_search.ordering_period_end_date AS DATE),
-        transaction_search.idv_type AS idv_type_code,
-        transaction_search.idv_type_description AS idv_type,
-        award_search.description AS prime_award_base_transaction_description,
-        transaction_search.awarding_agency_code,
-        transaction_search.awarding_toptier_agency_name_raw AS awarding_agency_name,
-        transaction_search.awarding_sub_tier_agency_c AS awarding_subagency_code,
-        transaction_search.awarding_subtier_agency_name_raw AS awarding_subagency_name,
-        transaction_search.awarding_office_code,
-        transaction_search.awarding_office_name,
-        transaction_search.funding_agency_code,
-        transaction_search.funding_toptier_agency_name_raw AS funding_agency_name,
-        transaction_search.funding_sub_tier_agency_co AS funding_sub_agency_code,
-        transaction_search.funding_subtier_agency_name_raw AS funding_sub_agency_name,
-        transaction_search.funding_office_code,
-        transaction_search.funding_office_name,
-        transaction_search.recipient_uei,
-        transaction_search.recipient_unique_id AS recipient_duns,
-        transaction_search.recipient_name,
-        transaction_search.recipient_name_raw,
-        transaction_search.parent_uei AS recipient_parent_uei,
-        transaction_search.parent_uei AS recipient_parent_duns,
-        transaction_search.parent_recipient_name AS recipient_parent_name,
-        transaction_search.parent_recipient_name_raw AS recipient_parent_name_raw,
-        transaction_search.recipient_location_country_code AS recipient_country,
-        transaction_search.recipient_location_state_code AS recipient_state,
-        transaction_search.recipient_location_county_name AS recipient_county,
-        transaction_search.recipient_location_city_name AS recipient_city,
-        transaction_search.pop_country_name AS primary_place_of_performance_country,
-        transaction_search.pop_state_name AS primary_place_of_performance_state,
-        transaction_search.pop_county_name AS primary_place_of_performance_county,
-        transaction_search.place_of_performance_zip4a AS primary_place_of_performance_zip_code,
-        transaction_search.cfda_number,
-        transaction_search.cfda_title,
-        transaction_search.product_or_service_code,
-        transaction_search.product_or_service_description AS product_or_service_code_description,
-        transaction_search.naics_code,
-        transaction_search.naics_description,
-        transaction_search.national_interest_action AS national_interest_action_code,
-        transaction_search.national_interest_desc AS national_interest_action,
-        submission_attributes.reporting_agency_name AS reporting_agency_name,
-        CASE
-            WHEN submission_attributes.quarter_format_flag = TRUE
-                THEN
-                    CONCAT(
-                        CAST('FY' AS STRING),
-                        CAST(submission_attributes.reporting_fiscal_year AS STRING),
-                        CAST('Q' AS STRING),
-                        CAST(
-                            submission_attributes.reporting_fiscal_quarter AS STRING
-                        )
-                    )
-            ELSE
-                CONCAT(
-                    CAST('FY' AS STRING),
-                    CAST(submission_attributes.reporting_fiscal_year AS STRING),
-                    CAST('P' AS STRING),
-                    LPAD(
-                        CAST(
-                            submission_attributes.reporting_fiscal_period AS STRING
-                        ),
-                        2,
-                        '0'
-                    )
-                )
-        END AS submission_period,
-        treasury_appropriation_account.allocation_transfer_agency_id AS allocation_transfer_agency_identifier_code,
-        treasury_appropriation_account.agency_id AS agency_identifier_code,
-        treasury_appropriation_account.beginning_period_of_availability AS beginning_period_of_availability,
-        treasury_appropriation_account.ending_period_of_availability AS ending_period_of_availability,
-        treasury_appropriation_account.availability_type_code AS availability_type_code,
-        treasury_appropriation_account.main_account_code AS main_account_code,
-        treasury_appropriation_account.sub_account_code AS sub_account_code,
-        treasury_appropriation_account.tas_rendering_label AS treasury_account_symbol,
-        treasury_appropriation_account.account_title AS treasury_account_name,
-        treasury_appropriation_account.funding_toptier_agency_id AS funding_toptier_agency_id,
-        treasury_appropriation_account.federal_account_id AS federal_account_id,
-        treasury_appropriation_account.budget_function_title AS budget_function,
-        treasury_appropriation_account.budget_function_code AS budget_function_code,
-        treasury_appropriation_account.budget_subfunction_title AS budget_subfunction,
-        treasury_appropriation_account.budget_subfunction_code AS budget_subfunction_code,
-        financial_accounts_by_awards.transaction_obligated_amount AS transaction_obligated_amount,
-        financial_accounts_by_awards.gross_outlay_amount_by_award_cpe as gross_outlay_amount_fyb_to_period_end,
-        financial_accounts_by_awards.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe as ussgl487200_downward_adj_prior_year_prepaid_undeliv_order_oblig,
-        financial_accounts_by_awards.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe as ussgl497200_downward_adj_of_prior_year_paid_deliv_orders_oblig,
-        EXTRACT(
-            YEAR FROM (award_search.date_signed) + INTERVAL '3 months'
-        ) AS award_base_action_date_fiscal_year,
-        EXTRACT(
-            YEAR FROM (award_search.certified_date) + INTERVAL '3 months'
-        ) AS award_latest_action_date_fiscal_year,
-        COALESCE(
-            transaction_search.contract_award_type,
-            transaction_search.type
-        ) AS award_type_code,
-        COALESCE(
-            transaction_search.contract_award_type_desc,
-            transaction_search.type_description
-        ) AS award_type,
-        CASE
-            WHEN
-                transaction_search.recipient_location_state_code IS NOT NULL
-                AND transaction_search.recipient_location_congressional_code IS NOT NULL
-                AND NOT (
-                    transaction_search.recipient_location_state_code = ''
-                    AND transaction_search.recipient_location_state_code IS NOT NULL
-                )
-                THEN
-                    CONCAT(
-                        transaction_search.recipient_location_state_code, '-',
-                        transaction_search.recipient_location_congressional_code
-                    )
-            ELSE transaction_search.recipient_location_congressional_code
-        END AS prime_award_summary_recipient_cd_original,
-        CASE
-            WHEN
-                transaction_search.recipient_location_state_code IS NOT NULL
-                AND transaction_search.recipient_location_congressional_code_current IS NOT NULL
-                AND NOT (
-                    transaction_search.recipient_location_state_code = ''
-                    AND transaction_search.recipient_location_state_code IS NOT NULL
-                )
-                THEN
-                    CONCAT(
-                        transaction_search.recipient_location_state_code, '-',
-                        transaction_search.recipient_location_congressional_code_current
-                    )
-            ELSE transaction_search.recipient_location_congressional_code_current
-        END AS prime_award_summary_recipient_cd_current,
-        COALESCE(
-            transaction_search.legal_entity_zip4,
-            CONCAT(
-                CAST(transaction_search.recipient_location_zip5 AS STRING),
-                CAST(transaction_search.legal_entity_zip_last4 AS STRING)
+def award_financial_df(spark: SparkSession):
+    faba = spark.table("int.financial_accounts_by_awards").alias("faba")
+    sa = spark.table("global_temp.submission_attributes").alias("sa")
+    taa = spark.table("global_temp.treasury_appropriation_account").alias("taa")
+    award_search = spark.table("award_search").alias("award_search")
+    ts = spark.table("transaction_search").alias("ts")
+    rpa = spark.table("global_temp.ref_program_activity").alias("rpa")
+    oc = spark.table("global_temp.object_class").alias("oc")
+    defc = spark.table("global_temp.disaster_emergency_fund_code").alias("defc")
+    fa = spark.table("global_temp.federal_account").alias("fa")
+    fta = spark.table("global_temp.toptier_agency").alias("fta")
+    tta = spark.table("global_temp.toptier_agency").alias("tta")
+    cgac_aid = spark.table("global_temp.cgac").alias("cgac_aid")
+    cgac_ata = spark.table("global_temp.cgac").alias("cgac_ata")
+
+    return (
+        faba.join(sa, on="submission_id", how="inner")
+        .join(taa, on=taa.treasury_account_identifier == faba.treasury_account_id, how="left")
+        .join(award_search, on=award_search.award_id == faba.award_id, how="left")
+        .join(rpa, on=faba.program_activity_id == rpa.id, how="left")
+        .join(ts, on=award_search.latest_transaction_search_id == ts.transaction_id, how="left")
+        .join(oc, on=oc.id == faba.object_class_id, how="left")
+        .join(defc, on=defc.code == faba.disaster_emergency_fund_code, how="left")
+        .join(fa, on=taa.federal_account_id == fa.id, how="left")
+        .join(
+            fta.withColumnRenamed("name", "federal_owning_agency_name"),
+            on=fa.parent_toptier_agency_id == fta.toptier_agency_id,
+            how="left",
+        )
+        .join(
+            tta.withColumnRenamed("name", "treasury_owning_agency_name"),
+            on=tta.toptier_agency_id == taa.funding_toptier_agency_id,
+            how="left",
+        )
+        .join(
+            cgac_aid.withColumnRenamed("agency_name", "agency_identifier_name"),
+            on=cgac_aid.cgac_code == taa.agency_id,
+            how="left",
+        )
+        .join(
+            cgac_ata.withColumnRenamed("agency_name", "allocation_transfer_agency_identifier_name"),
+            on=cgac_ata.cgac_code == taa.allocation_transfer_agency_id,
+            how="left",
+        )
+        .withColumn("submission_period", fy_quarter_period())
+        .withColumn(
+            "usaspending_permalink",
+            sf.when(
+                award_search.generated_unique_award_id.isNotNull(),
+                sf.concat(
+                    sf.lit(AWARD_URL),
+                    expr(
+                        "java_method('java.net.URLEncoder', 'encode', award_search.generated_unique_award_id, 'UTF-8')"
+                    ),
+                    sf.lit("/"),
+                ),
+            ).otherwise(""),
+        )
+        .select(
+            faba.financial_accounts_by_awards_id,
+            faba.submission_id,
+            sf.col("submission_period"),
+            sf.col("federal_owning_agency_name"),
+            sf.col("treasury_owning_agency_name"),
+            fa.federal_account_code.alias("federal_account_symbol"),
+            fa.account_title.alias("federal_account_name"),
+            sf.col("agency_identifier_name"),
+            sf.col("allocation_transfer_agency_identifier_name"),
+            rpa.program_activity_code,
+            rpa.program_activity_name,
+            oc.object_class.alias("object_class_code"),
+            oc.object_class_name,
+            oc.direct_reimbursable.alias("direct_or_reimbursable_funding_source"),
+            faba.disaster_emergency_fund_code,
+            defc.title.alias("disaster_emergency_fund_name"),
+            award_search.generated_unique_award_id.alias("award_unique_key"),
+            faba.piid.alias("award_id_piid"),
+            faba.parent_award_id.alias("parent_award_id_piid"),
+            faba.fain.alias("award_id_fain"),
+            faba.uri.alias("award_id_uri"),
+            award_search.date_signed.alias("award_base_action_date").cast(DateType()),
+            award_search.certified_date.alias("award_latest_action_date").cast(DateType()),
+            award_search.period_of_performance_start_date.cast(DateType()),
+            award_search.period_of_performance_current_end_date.cast(DateType()),
+            ts.ordering_period_end_date.cast(DateType()),
+            ts.idv_type.alias("idv_type_code"),
+            ts.idv_type_description.alias("idv_type"),
+            award_search.description.alias("prime_award_base_transaction_description"),
+            ts.awarding_agency_code,
+            ts.awarding_toptier_agency_name_raw.alias("awarding_agency_name"),
+            ts.awarding_sub_tier_agency_c.alias("awarding_subagency_code"),
+            ts.awarding_subtier_agency_name_raw.alias("awarding_subagency_name"),
+            ts.awarding_office_code,
+            ts.awarding_office_name,
+            ts.funding_agency_code,
+            ts.funding_toptier_agency_name_raw.alias("funding_agency_name"),
+            ts.funding_sub_tier_agency_co.alias("funding_sub_agency_code"),
+            ts.funding_subtier_agency_name_raw.alias("funding_sub_agency_name"),
+            ts.funding_office_code,
+            ts.funding_office_name,
+            ts.recipient_uei,
+            ts.recipient_unique_id.alias("recipient_duns"),
+            ts.recipient_name,
+            ts.recipient_name_raw,
+            ts.parent_uei.alias("recipient_parent_uei"),
+            ts.parent_uei.alias("recipient_parent_duns"),
+            ts.parent_recipient_name.alias("recipient_parent_name"),
+            ts.parent_recipient_name_raw.alias("recipient_parent_name_raw"),
+            ts.recipient_location_country_code.alias("recipient_country"),
+            ts.recipient_location_state_code.alias("recipient_state"),
+            ts.recipient_location_county_name.alias("recipient_county"),
+            ts.recipient_location_city_name.alias("recipient_city"),
+            ts.pop_country_name.alias("primary_place_of_performance_country"),
+            ts.pop_state_name.alias("primary_place_of_performance_state"),
+            ts.pop_county_name.alias("primary_place_of_performance_county"),
+            ts.place_of_performance_zip4a.alias("primary_place_of_performance_zip_code"),
+            ts.cfda_number,
+            ts.cfda_title,
+            ts.product_or_service_code,
+            ts.product_or_service_description.alias("product_or_service_code_description"),
+            ts.naics_code,
+            ts.naics_description,
+            ts.national_interest_action.alias("national_interest_action_code"),
+            ts.national_interest_desc.alias("national_interest_action"),
+            sa.reporting_agency_name.alias("reporting_agency_name"),
+            taa.allocation_transfer_agency_id.alias("allocation_transfer_agency_identifier_code"),
+            taa.agency_id.alias("agency_identifier_code"),
+            taa.beginning_period_of_availability.alias("beginning_period_of_availability").cast(DateType()),
+            taa.ending_period_of_availability.alias("ending_period_of_availability").cast(DateType()),
+            taa.availability_type_code.alias("availability_type_code"),
+            taa.main_account_code.alias("main_account_code"),
+            taa.sub_account_code.alias("sub_account_code"),
+            taa.tas_rendering_label.alias("treasury_account_symbol"),
+            taa.account_title.alias("treasury_account_name"),
+            taa.funding_toptier_agency_id.alias("funding_toptier_agency_id"),
+            taa.federal_account_id.alias("federal_account_id"),
+            taa.budget_function_title.alias("budget_function"),
+            taa.budget_function_code.alias("budget_function_code"),
+            taa.budget_subfunction_title.alias("budget_subfunction"),
+            taa.budget_subfunction_code.alias("budget_subfunction_code"),
+            faba.transaction_obligated_amount.alias("transaction_obligated_amount"),
+            faba.gross_outlay_amount_by_award_cpe.alias("gross_outlay_amount_fyb_to_period_end"),
+            faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe.alias(
+                "ussgl487200_downward_adj_prior_year_prepaid_undeliv_order_oblig"
+            ),
+            faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe.alias(
+                "ussgl497200_downward_adj_of_prior_year_paid_deliv_orders_oblig"
+            ),
+            sf.expr("EXTRACT(YEAR FROM ADD_MONTHS(award_search.date_signed, 3))").alias(
+                "award_base_action_date_fiscal_year"
+            ),
+            sf.expr("EXTRACT(YEAR FROM ADD_MONTHS(award_search.certified_date, 3))").alias(
+                "award_latest_action_date_fiscal_year"
+            ),
+            sf.coalesce(ts.contract_award_type, ts.type).alias("award_type_code"),
+            sf.coalesce(ts.contract_award_type_desc, ts.type_description).alias("award_type"),
+            sf.when(
+                ts.recipient_location_state_code.isNotNull()
+                & ts.recipient_location_congressional_code.isNotNull()
+                & (~(ts.recipient_location_state_code.isNotNull() & (ts.recipient_location_state_code == ""))),
+                sf.concat(
+                    ts["recipient_location_state_code"], sf.lit("-"), ts["recipient_location_congressional_code"]
+                ),
             )
-        ) AS recipient_zip_code,
-        CASE
-            WHEN
-                transaction_search.pop_state_code IS NOT NULL
-                AND transaction_search.pop_congressional_code IS NOT NULL
-                AND NOT (
-                    transaction_search.pop_state_code = ''
-                    AND transaction_search.pop_state_code IS NOT NULL
-                )
-                THEN
-                    CONCAT(
-                        transaction_search.pop_state_code,
-                        '-',
-                        transaction_search.pop_congressional_code
-                    )
-            ELSE transaction_search.pop_congressional_code
-        END AS prime_award_summary_place_of_performance_cd_original,
-        CASE
-            WHEN
-                transaction_search.pop_state_code IS NOT NULL
-                AND transaction_search.pop_congressional_code_current IS NOT NULL
-                AND NOT (
-                    transaction_search.pop_state_code = ''
-                    AND transaction_search.pop_state_code IS NOT NULL
-                )
-                THEN
-                    CONCAT(
-                        transaction_search.pop_state_code,
-                        '-',
-                        transaction_search.pop_congressional_code_current
-                    )
-            ELSE transaction_search.pop_congressional_code_current
-        END AS prime_award_summary_place_of_performance_cd_current,
-        CASE
-            WHEN award_search.generated_unique_award_id IS NOT NULL
-                THEN
-                    CONCAT(
-                        '{{AWARD_URL}}',
-                        URL_ENCODE(award_search.generated_unique_award_id),
-                        '/'
-                    )
-            ELSE ''
-        END AS usaspending_permalink,
-        CAST(submission_attributes.published_date AS DATE) AS last_modified_date,
-        submission_attributes.reporting_fiscal_period,
-        submission_attributes.reporting_fiscal_quarter,
-        submission_attributes.reporting_fiscal_year,
-        submission_attributes.quarter_format_flag
-    FROM
-        int.financial_accounts_by_awards
-        INNER JOIN global_temp.submission_attributes
-            ON (financial_accounts_by_awards.submission_id = submission_attributes.submission_id)
-        LEFT OUTER JOIN global_temp.treasury_appropriation_account
-            ON (financial_accounts_by_awards.treasury_account_id = treasury_appropriation_account.treasury_account_identifier)
-        LEFT OUTER JOIN award_search
-            ON (financial_accounts_by_awards.award_id = award_search.award_id)
-        LEFT OUTER JOIN transaction_search
-            ON (award_search.latest_transaction_search_id = transaction_search.transaction_id)
-        LEFT OUTER JOIN global_temp.ref_program_activity
-            ON (financial_accounts_by_awards.program_activity_id = ref_program_activity.id)
-        LEFT OUTER JOIN global_temp.object_class
-            ON (financial_accounts_by_awards.object_class_id = object_class.id)
-        LEFT OUTER JOIN global_temp.disaster_emergency_fund_code
-            ON (financial_accounts_by_awards.disaster_emergency_fund_code = disaster_emergency_fund_code.code)
-        LEFT OUTER JOIN global_temp.federal_account
-            ON (treasury_appropriation_account.federal_account_id = federal_account.id)
-        LEFT OUTER JOIN global_temp.toptier_agency as federal_toptier_agency
-            ON (federal_account.parent_toptier_agency_id = federal_toptier_agency.toptier_agency_id)
-        LEFT OUTER JOIN global_temp.toptier_agency as treasury_toptier_agency
-            ON (treasury_appropriation_account.funding_toptier_agency_id = treasury_toptier_agency.toptier_agency_id)
-        LEFT OUTER JOIN global_temp.cgac AS cgac_aid
-            ON (treasury_appropriation_account.agency_id = cgac_aid.cgac_code)
-        LEFT OUTER JOIN global_temp.cgac AS cgac_ata
-            ON (treasury_appropriation_account.allocation_transfer_agency_id = cgac_ata.cgac_code);
-    """
+            .otherwise(ts.recipient_location_congressional_code)
+            .alias("prime_award_summary_recipient_cd_original"),
+            sf.when(
+                ts.recipient_location_state_code.isNotNull()
+                & ts.recipient_location_congressional_code_current.isNotNull()
+                & (~(ts.recipient_location_state_code.isNotNull() & (ts.recipient_location_state_code == ""))),
+                sf.concat(
+                    ts["recipient_location_state_code"],
+                    sf.lit("-"),
+                    ts["recipient_location_congressional_code_current"],
+                ),
+            )
+            .otherwise(ts.recipient_location_congressional_code_current)
+            .alias("prime_award_summary_recipient_cd_current"),
+            sf.coalesce(
+                ts.legal_entity_zip4,
+                sf.concat(ts.recipient_location_zip5.cast(StringType()), ts.legal_entity_zip_last4.cast(StringType())),
+            ).alias("recipient_zip_code"),
+            sf.when(
+                ts.pop_state_code.isNotNull()
+                & ts.pop_congressional_code.isNotNull()
+                & (~(ts.pop_state_code.isNotNull() & (ts.pop_state_code == ""))),
+                sf.concat(ts["pop_state_code"], sf.lit("-"), ts["pop_congressional_code"]),
+            )
+            .otherwise(ts.pop_congressional_code)
+            .alias("prime_award_summary_place_of_performance_cd_original"),
+            sf.when(
+                ts.pop_state_code.isNotNull()
+                & ts.pop_congressional_code_current.isNotNull()
+                & (~(ts.pop_state_code.isNotNull() & (ts.pop_state_code == ""))),
+                sf.concat(ts["pop_state_code"], sf.lit("-"), ts["pop_congressional_code_current"]),
+            )
+            .otherwise(ts.pop_congressional_code_current)
+            .alias("prime_award_summary_place_of_performance_cd_current"),
+            sf.col("usaspending_permalink"),
+            sa.published_date.cast(DateType()).alias("last_modified_date"),
+            sa.reporting_fiscal_period,
+            sa.reporting_fiscal_quarter,
+            sa.reporting_fiscal_year,
+            sa.quarter_format_flag,
+        )
+        .withColumn("merge_hash_key", sf.xxhash64("*"))
+    )
+
+
+def load_award_financial(spark: SparkSession, destination_database: str, destination_table_name: str) -> None:
+    df = award_financial_df(spark)
+    df.write.format("delta").mode("overwrite").saveAsTable(f"{destination_database}.{destination_table_name}")
+
+
+def load_award_financial_incremental(
+    spark: SparkSession, destination_database: str, destination_table_name: str
+) -> None:
+    target = DeltaTable.forName(spark, f"{destination_database}.{destination_table_name}").alias("t")
+    source = award_financial_df(spark).alias("s")
+    (
+        target.merge(
+            source,
+            "s.financial_accounts_by_awards_id = t.financial_accounts_by_awards_id and s.merge_hash_key = t.merge_hash_key",
+        )
+        .whenNotMatchedInsertAll()
+        .whenNotMatchedBySourceDelete()
+        .execute()
+    )
