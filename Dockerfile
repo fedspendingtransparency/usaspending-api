@@ -16,11 +16,19 @@ RUN apt update && apt install -y \
     libpq-dev \
     postgresql-13
 
-##### Copy python packaged
 COPY . /dockermount
+
 RUN python3 -m pip install -r requirements/requirements.txt && \
     python3 -m pip install -r requirements/requirements-server.txt && \
     python3 -m pip install ansible==2.9.15 awscli==1.34.19
 
-##### Ensure Python STDOUT gets sent to container logs
+# Install DuckDB extensions
+
+RUN mkdir -p /root/.duckdb/extensions/v1.4.1/linux_amd64 && \
+    curl http://extensions.duckdb.org/v1.4.1/linux_amd64/delta.duckdb_extension.gz | gunzip > /root/.duckdb/extensions/v1.4.1/linux_amd64/delta.duckdb_extension && \
+    curl http://extensions.duckdb.org/v1.4.1/linux_amd64/aws.duckdb_extension.gz | gunzip > /root/.duckdb/extensions/v1.4.1/linux_amd64/aws.duckdb_extension && \
+    curl http://extensions.duckdb.org/v1.4.1/linux_amd64/httpfs.duckdb_extension.gz | gunzip > /root/.duckdb/extensions/v1.4.1/linux_amd64/httpfs.duckdb_extension && \
+    curl http://extensions.duckdb.org/v1.4.1/linux_amd64/postgres_scanner.duckdb_extension.gz | gunzip > /root/.duckdb/extensions/v1.4.1/linux_amd64/postgres_scanner.duckdb_extension
+
+# Ensure Python STDOUT gets sent to container logs
 ENV PYTHONUNBUFFERED=1
