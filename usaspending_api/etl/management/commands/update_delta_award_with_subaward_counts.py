@@ -1,11 +1,14 @@
+import logging
+
 from django.core.management.base import BaseCommand
 from pyspark.sql import SparkSession
 
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
-    get_jvm_logger,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
@@ -36,9 +39,6 @@ class Command(BaseCommand):
             spark_created_by_command = True
             self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)  # type: SparkSession
 
-        # Setup Logger
-        logger = get_jvm_logger(self.spark, __name__)
-
         award_table = "int.awards"
         update_award_query = f"""
             WITH subaward_totals AS (
@@ -53,18 +53,25 @@ class Command(BaseCommand):
             )
             MERGE INTO
                 {award_table} AS a
-                    USING subaward_totals st
-                        ON (a.id = st.award_id
-                            AND (
-                                a.total_subaward_amount IS DISTINCT FROM st.total_subaward_amount
-                                OR a.subaward_count IS DISTINCT FROM COALESCE(st.subaward_count, 0)
-                            )
-                        )
-                WHEN matched THEN
+                    USING subaward_totals st ON a.id = st.award_id
+                WHEN MATCHED
+                    AND (
+                        a.total_subaward_amount IS DISTINCT FROM st.total_subaward_amount
+                        OR a.subaward_count IS DISTINCT FROM COALESCE(st.subaward_count, 0)
+                    )
+                    THEN
+                        UPDATE SET
+                            a.update_date=NOW(),
+                            a.total_subaward_amount=st.total_subaward_amount,
+                            a.subaward_count=COALESCE(st.subaward_count, 0)
+                WHEN NOT MATCHED BY SOURCE AND (
+                    a.total_subaward_amount > 0
+                    OR a.subaward_count > 0
+                ) THEN
                     UPDATE SET
                         a.update_date=NOW(),
-                        a.total_subaward_amount=st.total_subaward_amount,
-                        a.subaward_count=COALESCE(st.subaward_count, 0)
+                        a.total_subaward_amount=NULL,
+                        a.subaward_count=0
         """
         logger.info(
             f"Updating {award_table} columns (total_subaward_amount, subaward_count) based on rpt.subaward_search."

@@ -13,7 +13,7 @@ def get_new_or_updated_submission_ids(since_datetime=None):
             bs.submission_id
         from
             dblink(
-                '{settings.DATA_BROKER_DBLINK_NAME}',
+                '{settings.BROKER_DBLINK_NAME}',
                 '
                     select
                         s.submission_id,

@@ -3,11 +3,12 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from typing import Any, List
 from usaspending_api.accounts.models.appropriation_account_balances import AppropriationAccountBalances
-from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
+from usaspending_api.agency.v2.views.agency_base import AgencyBase
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.calculations import file_b
+from usaspending_api.common.calculations.file_b import FileBCalculations
 from usaspending_api.common.helpers.date_helper import now
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
+from usaspending_api.common.helpers.pagination_mixin import PaginationMixin
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.references.models import BureauTitleLookup
 from usaspending_api.submissions.models import SubmissionAttributes
@@ -129,14 +130,14 @@ class BureauFederalAccountList(PaginationMixin, AgencyBase):
         Query Obligations and Outlays per Bureau from File B for a single Period
         """
         filters, annotations = self.get_common_query_objects(federal_accounts, "treasury_account")
-
+        file_b_calculations = FileBCalculations()
         return (
             FinancialAccountsByProgramActivityObjectClass.objects.filter(*filters)
             .annotate(**annotations)
             .values("name", "account_code")
             .annotate(
-                total_obligations=Sum(file_b.get_obligations()),
-                total_outlays=Sum(file_b.get_outlays()),
+                total_obligations=Sum(file_b_calculations.get_obligations()),
+                total_outlays=Sum(file_b_calculations.get_outlays()),
             )
             .values("name", "account_code", "total_obligations", "total_outlays")
         )

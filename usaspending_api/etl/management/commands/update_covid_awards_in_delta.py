@@ -1,3 +1,5 @@
+import logging
+
 from django.core.management.base import BaseCommand
 from pyspark.sql import SparkSession
 
@@ -5,12 +7,12 @@ from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
-    get_jvm_logger,
 )
 from usaspending_api.etl.management.helpers.recent_periods import retrieve_recent_periods
 
-UPDATE_AWARDS_SQL = """
-  WITH recent_covid_awards AS (
+logger = logging.getLogger(__name__)
+
+DISTINCT_AWARD_SQL = """
     SELECT
         DISTINCT award_id
     FROM
@@ -43,30 +45,34 @@ UPDATE_AWARDS_SQL = """
             AND submission_fiscal_month = {this_quarters_month}
             AND is_quarter = TRUE
         )
-  )
-  {operation_sql}
-  WHERE
-      id IN (
-          SELECT
-              award_id
-          FROM
-              recent_covid_awards
-      )
-      AND update_date < '{submission_reveal_date}'
 """
 
-UPDATE_OPERATION_SQL = """
-UPDATE
-    int.awards
-SET
-    update_date = NOW()
+CONDITION_SQL = """
+    update_date < '{submission_reveal_date}'
 """
 
 COUNT_OPERATION_SQL = """
-SELECT
-    count(*)
-FROM
-    int.awards AS award_to_update_count
+    WITH recent_covid_awards AS (
+        {distinct_award_sql}
+    )
+    SELECT COUNT(*)
+    FROM int.awards
+    WHERE
+        {condition_sql}
+        AND EXISTS (
+            SELECT 1
+            FROM recent_covid_awards
+            WHERE awards.id = recent_covid_awards.award_id
+        )
+"""
+
+UPDATE_OPERATION_SQL = """
+    MERGE INTO int.awards USING ({distinct_award_sql}) AS recent_covid_awards
+    ON
+        {condition_sql}
+        AND awards.id = recent_covid_awards.award_id
+    WHEN MATCHED
+        THEN UPDATE SET update_date = NOW()
 """
 
 
@@ -107,9 +113,6 @@ class Command(BaseCommand):
 
         create_ref_temp_views(self.spark)
 
-        # Setup Logger
-        logger = get_jvm_logger(self.spark, __name__)
-
         # Read arguments
         dry_run = options["dry_run"]
 
@@ -118,23 +121,28 @@ class Command(BaseCommand):
 
         # Use the dry_run option to determine whether to actually update awards or only determine the count of
         # awards that would be updated
+        distinct_award_sql = DISTINCT_AWARD_SQL.format(
+            last_months_year=periods["last_month"]["year"],
+            last_months_month=periods["last_month"]["month"],
+            last_quarters_year=periods["last_quarter"]["year"],
+            last_quarters_month=periods["last_quarter"]["month"],
+            this_months_year=periods["this_month"]["year"],
+            this_months_month=periods["this_month"]["month"],
+            this_quarters_year=periods["this_quarter"]["year"],
+            this_quarters_month=periods["this_quarter"]["month"],
+        )
+        condition_sql = CONDITION_SQL.format(
+            submission_reveal_date=periods["this_month"]["submission_reveal_date"],
+        )
         operation_sql = UPDATE_OPERATION_SQL
         if dry_run:
             logger.info("Dry run flag provided. No records will be updated.")
             operation_sql = COUNT_OPERATION_SQL
 
         results = self.spark.sql(
-            UPDATE_AWARDS_SQL.format(
-                last_months_year=periods["last_month"]["year"],
-                last_months_month=periods["last_month"]["month"],
-                last_quarters_year=periods["last_quarter"]["year"],
-                last_quarters_month=periods["last_quarter"]["month"],
-                this_months_year=periods["this_month"]["year"],
-                this_months_month=periods["this_month"]["month"],
-                this_quarters_year=periods["this_quarter"]["year"],
-                this_quarters_month=periods["this_quarter"]["month"],
-                submission_reveal_date=periods["this_month"]["submission_reveal_date"],
-                operation_sql=operation_sql,
+            operation_sql.format(
+                distinct_award_sql=distinct_award_sql,
+                condition_sql=condition_sql,
             )
         )
 

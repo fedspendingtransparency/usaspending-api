@@ -1,27 +1,27 @@
-**Description:**
-High level description of what the PR addresses should be put here. Should be detailed enough to communicate to a PO what this PR addresses without diving into the technical nuances
+## Description:
+<!-- High level description of what the PR addresses should be put here. Should be detailed enough to communicate to a PO what this PR addresses without diving into the technical nuances. -->
 
-**Technical details:**
-The technical details for the knowledge of other developers. Any detailed caveats or specific deployment steps should be outlined here.
 
-**Requirements for PR merge:**
+
+## Technical Details:
+<!-- The technical details for the knowledge of other developers. Any detailed caveats or specific deployment steps should be outlined here. -->
+
+
+
+## Requirements for PR Merge:
+<!-- Items that aren't relevant should be marked as N/A and explained below as needed. -->
 
 1. [ ] Unit & integration tests updated
-2. [ ] API documentation updated
-3. [ ] Necessary PR reviewers:
-    - [ ] Backend
-    - [ ] Frontend <OPTIONAL>
-    - [ ] Operations <OPTIONAL>
-    - [ ] Domain Expert <OPTIONAL>
-4. [ ] Matview impact assessment completed
-5. [ ] Frontend impact assessment completed
-6. [ ] Data validation completed
-7. [ ] Appropriate Operations ticket(s) created
-8. [ ] Jira Ticket [DEV-123](https://federal-spending-transparency.atlassian.net/browse/DEV-123):
-    - [ ] Link to this Pull-Request
-    - [ ] Performance evaluation of affected (API | Script | Download)
-    - [ ] Before / After data comparison
+2. [ ] API documentation updated (examples listed below)
+    1. API Contracts
+    2. API UI
+    3. Comments
+3. [ ] Data validation completed (examples listed below)
+    1. Does this work well with the current frontend? Or is the frontend aware of a needed change?
+    2. Is performance impacted in the changes (e.g., API, pipeline, downloads, etc.)?
+    3. Is the expected data returned with the expected format?
+4. [ ] Appropriate Operations ticket(s) created
+5. [ ] Jira Ticket(s)
+    1. [DEV-0](https://federal-spending-transparency.atlassian.net/browse/DEV-0)
 
-**Area for explaining above N/A when needed:**
-```
-```
+### Explain N/A in above checklist:

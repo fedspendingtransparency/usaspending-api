@@ -1,9 +1,8 @@
 import pytest
-
 from django.db.models import Sum
 from model_bakery import baker
 
-from usaspending_api.common.calculations.file_b import is_non_zero_total_spending, get_obligations, get_outlays
+from usaspending_api.common.calculations.file_b import FileBCalculations
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 
 
@@ -163,6 +162,28 @@ def non_zero_test_data():
         ussgl480110_rein_undel_ord_cpe=0,
         ussgl490110_rein_deliv_ord_cpe=0,
     )
+    baker.make(
+        "financial_activities.FinancialAccountsByProgramActivityObjectClass",
+        prior_year_adjustment="X",
+        obligations_incurred_by_program_object_class_cpe=0,
+        gross_outlay_amount_by_program_object_class_cpe=0,
+        deobligations_recoveries_refund_pri_program_object_class_cpe=-100,
+        ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe=0,
+        ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe=0,
+        ussgl480100_undelivered_orders_obligations_unpaid_cpe=0,
+        ussgl480200_undelivered_orders_oblig_prepaid_advanced_cpe=0,
+        ussgl487100_down_adj_pri_unpaid_undel_orders_oblig_recov_cpe=0,
+        ussgl488100_upward_adjust_pri_undeliv_order_oblig_unpaid_cpe=0,
+        ussgl488200_up_adjust_pri_undeliv_order_oblig_ppaid_adv_cpe=0,
+        ussgl490100_delivered_orders_obligations_unpaid_cpe=0,
+        ussgl490200_delivered_orders_obligations_paid_cpe=0,
+        ussgl490800_authority_outlayed_not_yet_disbursed_cpe=0,
+        ussgl497100_down_adj_pri_unpaid_deliv_orders_oblig_recov_cpe=0,
+        ussgl498100_upward_adjust_pri_deliv_orders_oblig_unpaid_cpe=0,
+        ussgl498200_upward_adjust_pri_deliv_orders_oblig_paid_cpe=0,
+        ussgl480110_rein_undel_ord_cpe=0,
+        ussgl490110_rein_deliv_ord_cpe=0,
+    )
 
 
 @pytest.fixture
@@ -201,59 +222,84 @@ def obligation_and_outlay_data():
 
 @pytest.mark.django_db
 def test_is_non_zero_total_spending_filter(non_zero_test_data):
-    """
-    This should return a total of three File B records for each of the following cases:
-        - One record includes PYA == "P" and wouldn't have the columns necessary for the non-zero check
-        - One record includes Obligation total of 100 while Outlay is 0
-        - One record includes Outlay total of 100 while Obligation is 0
-    """
-    nonzero_count = FinancialAccountsByProgramActivityObjectClass.objects.filter(is_non_zero_total_spending()).count()
-    assert nonzero_count == 3
+    covid_calc = FileBCalculations(is_covid_page=True)
+    nonzero_count = FinancialAccountsByProgramActivityObjectClass.objects.filter(
+        covid_calc.is_non_zero_total_spending()
+    ).count()
+    assert nonzero_count == 5
+
+    single_year_calc = FileBCalculations(is_covid_page=False)
+    nonzero_count = FinancialAccountsByProgramActivityObjectClass.objects.filter(
+        single_year_calc.is_non_zero_total_spending()
+    ).count()
+    assert nonzero_count == 6
 
 
 @pytest.mark.django_db
 def test_get_obligations(obligation_and_outlay_data):
+    covid_calc = FileBCalculations(include_final_sub_filter=False, is_covid_page=True)
     result = (
         FinancialAccountsByProgramActivityObjectClass.objects.values("object_class")
-        .annotate(total=Sum(get_obligations(is_multi_year=True, include_final_sub_filter=False)))
+        .annotate(total=Sum(covid_calc.get_obligations()))
         .get()
     )
-    assert result["total"] == 125200
+    assert result["total"] == 85200
 
+    covid_final_sub_calc = FileBCalculations(include_final_sub_filter=True, is_covid_page=True)
     result = (
         FinancialAccountsByProgramActivityObjectClass.objects.values("object_class")
-        .annotate(total=Sum(get_obligations(is_multi_year=True, include_final_sub_filter=True)))
+        .annotate(total=Sum(covid_final_sub_calc.get_obligations()))
         .get()
     )
-    assert result["total"] == 62600
+    assert result["total"] == 42600
 
+    single_year_calc = FileBCalculations(include_final_sub_filter=False, is_covid_page=False)
     result = (
         FinancialAccountsByProgramActivityObjectClass.objects.values("object_class")
-        .annotate(total=Sum(get_obligations(is_multi_year=False, include_final_sub_filter=False)))
+        .annotate(total=Sum(single_year_calc.get_obligations()))
         .get()
     )
-    assert result["total"] == 40400
+    assert result["total"] == 200
 
+    single_year_final_sub_calc = FileBCalculations(include_final_sub_filter=True, is_covid_page=False)
     result = (
         FinancialAccountsByProgramActivityObjectClass.objects.values("object_class")
-        .annotate(total=Sum(get_obligations(is_multi_year=False, include_final_sub_filter=True)))
+        .annotate(total=Sum(single_year_final_sub_calc.get_obligations()))
         .get()
     )
-    assert result["total"] == 20200
+    assert result["total"] == 100
 
 
 @pytest.mark.django_db
 def test_get_outlays(obligation_and_outlay_data):
+    covid_calc = FileBCalculations(include_final_sub_filter=False, is_covid_page=True)
     result = (
         FinancialAccountsByProgramActivityObjectClass.objects.values("object_class")
-        .annotate(total=Sum(get_outlays(include_final_sub_filter=False)))
+        .annotate(total=Sum(covid_calc.get_outlays()))
         .get()
     )
     assert result["total"] == 600
 
+    covid_final_sub_calc = FileBCalculations(include_final_sub_filter=True, is_covid_page=True)
     result = (
         FinancialAccountsByProgramActivityObjectClass.objects.values("object_class")
-        .annotate(total=Sum(get_outlays(include_final_sub_filter=True)))
+        .annotate(total=Sum(covid_final_sub_calc.get_outlays()))
         .get()
     )
     assert result["total"] == 300
+
+    single_year_calc = FileBCalculations(include_final_sub_filter=False, is_covid_page=False)
+    result = (
+        FinancialAccountsByProgramActivityObjectClass.objects.values("object_class")
+        .annotate(total=Sum(single_year_calc.get_outlays()))
+        .get()
+    )
+    assert result["total"] == 200
+
+    single_year_final_sub_calc = FileBCalculations(include_final_sub_filter=True, is_covid_page=False)
+    result = (
+        FinancialAccountsByProgramActivityObjectClass.objects.values("object_class")
+        .annotate(total=Sum(single_year_final_sub_calc.get_outlays()))
+        .get()
+    )
+    assert result["total"] == 100

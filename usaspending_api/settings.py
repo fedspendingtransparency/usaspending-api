@@ -6,7 +6,6 @@ For the full list of settings and their values: https://docs.djangoproject.com/e
 import os
 from pathlib import Path
 
-import ddtrace
 import dj_database_url
 from django.db import DEFAULT_DB_ALIAS
 from django.utils.crypto import get_random_string
@@ -29,7 +28,7 @@ DATA_DICTIONARY_DOWNLOAD_RETRY_COOLDOWN = 15
 
 # Default timeout for SQL statements in Django
 DEFAULT_DB_TIMEOUT_IN_SECONDS = int(os.environ.get("DEFAULT_DB_TIMEOUT_IN_SECONDS", 0))
-DOWNLOAD_DB_TIMEOUT_IN_HOURS = 4
+DOWNLOAD_DB_TIMEOUT_IN_HOURS = 6
 CONNECTION_MAX_SECONDS = 10
 
 # Default type for when a Primary Key is not specified
@@ -41,7 +40,7 @@ DEFAULT_TEXT_SEARCH_CONFIG = "pg_catalog.simple"
 # MAX_CONNECTIONS in this case refers to those serving downloads
 DOWNLOAD_DB_WORK_MEM_IN_MB = os.environ.get("DOWNLOAD_DB_WORK_MEM_IN_MB", 128)
 
-API_MAX_DATE = "2024-09-30"  # End of FY2024
+API_MAX_DATE = "2027-09-30"  # End of FY2027
 API_MIN_DATE = "2000-10-01"  # Beginning of FY2001
 API_SEARCH_MIN_DATE = "2007-10-01"  # Beginning of FY2008
 
@@ -59,7 +58,11 @@ HOST = "localhost:3000"
 ALLOWED_HOSTS = ["*"]
 
 # Define local flag to affect location of downloads
-IS_LOCAL = True
+IS_LOCAL = os.environ.get("IS_LOCAL", "").lower() in ["true", "1", "yes"]
+
+# Indicates which environment is sending traces to Grafana.
+# This will be overwritten by Ansible
+TRACE_ENV = "unspecified"
 
 # How to handle downloads locally
 # True: process it right away by the API;
@@ -80,6 +83,8 @@ DATABASE_DOWNLOAD_S3_BUCKET_NAME = CONFIG.DATABASE_DOWNLOAD_S3_BUCKET_NAME
 BULK_DOWNLOAD_S3_BUCKET_NAME = CONFIG.BULK_DOWNLOAD_S3_BUCKET_NAME
 BULK_DOWNLOAD_S3_REDIRECT_DIR = "generated_downloads"
 BULK_DOWNLOAD_SQS_QUEUE_NAME = ""
+PRIORITY_DOWNLOAD_SQS_QUEUE_NAME = ""
+BULK_DOWNLOAD_SPARK_JOB_NAME_PREFIX = "api_download"
 DATABASE_DOWNLOAD_S3_REDIRECT_DIR = "database_download"
 MONTHLY_DOWNLOAD_S3_BUCKET_NAME = ""
 MONTHLY_DOWNLOAD_S3_REDIRECT_DIR = "award_data_archive"
@@ -128,12 +133,14 @@ if not FILES_SERVER_BASE_URL:
     )
     SERVER_BASE_URL = FILES_SERVER_BASE_URL[FILES_SERVER_BASE_URL.find(".") + 1 :]
 
+DATA_DICTIONARY_FILE_NAME = "Data_Dictionary_Crosswalk.xlsx"
+
 AGENCY_DOWNLOAD_URL = f"{FILES_SERVER_BASE_URL}/reference_data/agency_codes.csv"
-DATA_DICTIONARY_DOWNLOAD_URL = f"{FILES_SERVER_BASE_URL}/docs/Data_Dictionary_Crosswalk.xlsx"
+DATA_DICTIONARY_DOWNLOAD_URL = f"{FILES_SERVER_BASE_URL}/docs/{DATA_DICTIONARY_FILE_NAME}"
 
 # S3 Bucket and Key to retrieve the Data Dictionary
 DATA_DICTIONARY_S3_BUCKET_NAME = f"dti-da-public-files-{'nonprod' if CONFIG.ENV_CODE not in ('prd', 'stg') else 'prod'}"
-DATA_DICTIONARY_S3_KEY = "user_reference_docs/Data_Dictionary_Crosswalk.xlsx"
+DATA_DICTIONARY_S3_KEY = f"user_reference_docs/{DATA_DICTIONARY_FILE_NAME}"
 
 # Local download files
 IDV_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "idv_download_readme.txt")
@@ -201,6 +208,7 @@ INSTALLED_APPS = [
     "debug_toolbar",
     "django_extensions",
     "django_spaghetti",
+    "opentelemetry",
     "rest_framework",
     "rest_framework_tracking",
     # Project applications
@@ -225,40 +233,6 @@ INSTALLED_APPS = [
 ]
 
 INTERNAL_IPS = ()
-
-# Replace below param with enabled=True during env-deploys to turn on
-ddtrace.tracer.configure(enabled=False)
-if ddtrace.tracer.enabled:
-    ddtrace.config.django["service_name"] = "api"
-    ddtrace.config.django["analytics_enabled"] = True  # capture APM "Traces" & "Analyzed Spans" in App Analytics
-    ddtrace.config.django["analytics_sample_rate"] = 1.0  # Including 100% of traces in sample
-    ddtrace.config.django["trace_query_string"] = True
-    # Distributed tracing only needed if picking up disjoint traces by HTTP Header value
-    ddtrace.config.django["distributed_tracing_enabled"] = False
-    # Trace HTTP Request or Response Headers listed in this whitelist
-    ddtrace.config.trace_headers(
-        [
-            "content-length",  # req and resp
-            "content-type",  # req and resp
-            "host",
-            "origin",
-            "referer",
-            "ua-is-bot",
-            "user-agent",
-            "x-forwarded-for",
-            "x-requested-with",
-            # Response Headers
-            "allow",
-            "cache-trace",
-            "is-dynamically-rendered",
-            "key",  # cache key
-            "strict-transport-security",
-        ]
-    )
-    # patch_all() captures traces from integrated components' libraries by patching them. See:
-    # - http://pypi.datadoghq.com/trace/docs/advanced_usage.html#patch-all
-    # - Integrated Libs: http://pypi.datadoghq.com/trace/docs/index.html#supported-libraries
-    ddtrace.patch_all()
 
 DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": lambda request: DEBUG}
 
@@ -352,12 +326,12 @@ if os.environ.get("DOWNLOAD_DATABASE_URL"):
     )
 
 # import a second database connection for ETL, connecting to data broker
-# using the environment variable, DATA_BROKER_DATABASE_URL - only if it is set
-DATA_BROKER_DB_ALIAS = "data_broker"
-if os.environ.get("DATA_BROKER_DATABASE_URL"):
-    DATABASES[DATA_BROKER_DB_ALIAS] = _configure_database_connection("DATA_BROKER_DATABASE_URL")
+# using the environment variable, BROKER_DB - only if it is set
+BROKER_DB_ALIAS = "data_broker"
+if os.environ.get("BROKER_DB"):
+    DATABASES[BROKER_DB_ALIAS] = _configure_database_connection("BROKER_DB")
 
-DATA_BROKER_DBLINK_NAME = "broker_server"
+BROKER_DBLINK_NAME = "broker_server"
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators

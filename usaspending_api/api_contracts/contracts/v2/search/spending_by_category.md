@@ -25,6 +25,7 @@ This endpoint returns a list of the top results of specific categories sorted by
                 + `cfda`
                 + `country`
                 + `county`
+                + `defc`
                 + `district`
                 + `federal_account`
                 + `funding_agency`
@@ -49,6 +50,7 @@ This endpoint returns a list of the top results of specific categories sorted by
                 + `transactions`
                 + `awards`
                 + `subawards`
+                + `award_financial` - Only supported by the defc category; filters to an award(s) and uses obligation and outlays from the linked File C records
             + Default
                 + `transactions`
         + `subawards` (optional, boolean)
@@ -88,6 +90,7 @@ This endpoint returns a list of the top results of specific categories sorted by
 + `code` (required, string, nullable)
     `code` is a user-displayable code (such as a program activity or NAICS code, but **not** a database ID). When no such code is relevant, return a `null`.
 + `amount` (required, number)
++ `total_outlays` (required, number, nullable)
 
 ## PageMetadataObject (object)
 + `page` (required, number)

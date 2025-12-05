@@ -7,6 +7,7 @@ from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.disaster.v2.views.disaster_base import DisasterBase
 from usaspending_api.disaster.v2.views.elasticsearch_base import ElasticsearchLoansPaginationMixin
 from usaspending_api.search.v2.elasticsearch_helper import get_number_of_unique_terms_for_awards
+from usaspending_api.search.filters.elasticsearch.filter import QueryType
 
 
 class CfdaCountViewSet(DisasterBase):
@@ -20,7 +21,8 @@ class CfdaCountViewSet(DisasterBase):
 
     @cache_response()
     def post(self, request: Request) -> Response:
-        filter_query = QueryWithFilters.generate_awards_elasticsearch_query(self.filters)
+        query_with_filters = QueryWithFilters(QueryType.AWARDS)
+        filter_query = query_with_filters.generate_elasticsearch_query(self.filters)
 
         # Ensure that only non-zero values are taken into consideration
         non_zero_columns = list(ElasticsearchLoansPaginationMixin.sum_column_mapping.values())

@@ -117,6 +117,9 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/federal_accounts/<ACCOUNT_CODE\>/available_object_classes/](/api/v2/federal_accounts/4324/available_object_classes/)|GET| Returns financial spending data by object class based on account's internal ID |
 |[/api/v2/federal_accounts/<ACCOUNT_CODE\>/fiscal_year_snapshot/<YEAR\>/](/api/v2/federal_accounts/4324/fiscal_year_snapshot/2017/)|GET| Returns budget information for a federal account for the year provided based on account's internal ID |
 |[/api/v2/federal_accounts/<ACCOUNT_CODE\>/fiscal_year_snapshot/](/api/v2/federal_accounts/4324/fiscal_year_snapshot/)|GET| Returns budget information for a federal account for the most recent year based on account's internal ID |
+|[/api/v2/federal_accounts/<ACCOUNT_CODE\>/object_classes/total/](/api/v2/federal_accounts/020-0550/object_classes/total/)|POST| Return a list of object classes under a federal account including the sum of their obligation |
+|[/api/v2/federal_accounts/<ACCOUNT_CODE\>/program_activities/](/api/v2/federal_accounts/020-0550/program_activities/)|GET| Returns a list of program activities under a federal account based on its federal account code |
+|[/api/v2/federal_accounts/<ACCOUNT_CODE\>/program_activities/total](/api/v2/federal_accounts/020-0550/program_activities/total/)|POST| Returns a list of program activities including the sum of their obligations under a federal account based on its federal account code in |
 |[/api/v2/federal_accounts/](/api/v2/federal_accounts/)|POST| Returns financial spending data by object class |
 |[/api/v2/federal_obligations/](/api/v2/federal_obligations/?fiscal_year=2019&funding_agency_id=315&limit=10&page=1)|GET| Returns a paginated list of obligations for the provided agency for the provided year |
 |[/api/v2/financial_balances/agencies/](/api/v2/financial_balances/agencies/?fiscal_year=2017&funding_agency_id=4324)|GET| Returns financial balances by agency and the latest quarter for the given fiscal year |
@@ -141,6 +144,8 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/reporting/agencies/<TOPTIER_CODE\>/differences/](/api/v2/reporting/agencies/097/differences/)|GET| Returns About the Data information about differences in account balance and spending obligations for a specific agency/year/period |
 |[/api/v2/reporting/agencies/<TOPTIER_CODE\>/discrepancies/](/api/v2/reporting/agencies/097/discrepancies/)|GET| Returns TAS discrepancies of the specified agency's submission data for a specific FY/FP |
 |[/api/v2/references/agency/<AGENCY_ID\>/](/api/v2/references/agency/479/)|GET| Returns basic information about a federal agency |
+|[api/v2/references/assistance_listing/](/api/v2/references/assistance_listing/)|GET| Returns all Tier 1 (2-digit) CFDAs and their children |
+|[api/v2/references/assistance_listing/<CFDA>](/api/v2/references/assistance_listing/)|GET| Returns Tier 1 (2-digit) for provided CFDAs and their children |
 |[/api/v2/references/award_types/](/api/v2/references/award_types/)|GET| Returns a map of award types by award grouping. |
 |[/api/v2/references/cfda/totals/<CFDA/>/](/api/v2/references/cfda/totals/10.555/)|GET| Provides total values for provided CFDA |
 |[/api/v2/references/cfda/totals/](/api/v2/references/cfda/totals/)|GET| Provides total values for all CFDAs |
@@ -186,9 +191,10 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/search/spending_by_category/state_territory/](/api/v2/search/spending_by_category/state_territory/)|POST| Returns data that is grouped in preset units to support the Spending by State Territory data visualizations on USAspending.gov's Recipient Profile page |
 |[/api/v2/search/spending_by_category/defc/](/api/v2/search/spending_by_category/defc/)|POST| Returns data that is grouped in preset units to support the Spending by DEFC data visualizations on USAspending.gov's Advanced Search page |
 |[/api/v2/search/spending_by_geography/](/api/v2/search/spending_by_geography/)|POST| Returns Spending by state code, county code, or congressional district code |
+|[/api/v2/search/spending_by_subaward_grouped/](/api/v2/search/spending_by_subaward_grouped/)|POST| Returns the award id, number of Subawards for the award, total amount of Subaward obligations for the award, and the award generated internal id |
 |[/api/v2/search/spending_by_transaction/](/api/v2/search/spending_by_transaction/)|POST| Returns awards where a certain subset of fields match against search term |
 |[/api/v2/search/spending_by_transaction_count/](/api/v2/search/spending_by_transaction_count/)|POST| Returns counts of awards where a certain subset of fields match against search term |
-|[/api/v2/search/spending_by_transaction_grouped/](/api/v2/search/spending_by_transaction_grouped/)|POST| Returns transactions where a certain subset of fields match against search terms and results are grouped by their prime award. |
+|[/api/v2/search/spending_by_transaction_grouped/](/api/v2/search/spending_by_transaction_grouped/)|POST| Returns information about transactions where a certain subset of fields match against search terms and results are grouped by their prime award. |
 |[/api/v2/search/spending_over_time/](/api/v2/search/spending_over_time/)|POST| Returns transaction aggregated amounts for Spending Over Time data visualizations on USAspending.gov |
 |[/api/v2/search/transaction_spending_summary/](/api/v2/search/transaction_spending_summary/)|POST| Returns the number of transactions and the sum of federal action obligations for prime awards given a set of award of filters |
 |[/api/v2/spending/](/api/v2/spending/)|POST| Returns spending data information through various types and filters |

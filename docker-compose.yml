@@ -1,6 +1,4 @@
 # See usages of this compose file and its commands in the README.md file
-version: '3.7'
-
 volumes:
   local_pg_data:
     driver: local
@@ -12,11 +10,12 @@ services:
   usaspending-db:
     command: postgres -c 'max_connections=500'
     profiles:
-      - usaspending  # must pass --profile usaspending to docker-compose for this to come up, or run a service with one of these other profiles
+      - usaspending  # must pass --profile usaspending to docker compose for this to come up, or run a service with one of these other profiles
       - manage
       - test
       - ci
     image: postgres:13.8-alpine
+    shm_size: 1g
     container_name: usaspending-db
     volumes:
       - type: volume
@@ -31,36 +30,37 @@ services:
 
   usaspending-manage:
     profiles:
-      - manage  # must pass --profile manage to docker-compose for this to come up, or use docker-compose run
+      - manage  # must pass --profile manage to docker compose for this to come up, or use docker compose run
     image: usaspending-backend  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
     build: .
     container_name: usaspending-manage
     volumes:
-     - .:/dockermount
+      - .:/dockermount
     depends_on:
       - usaspending-db
-    # For an interactive shell, override this command with: docker-compose run --rm usaspending-manage python3 -u manage.py shell
+    # For an interactive shell, override this command with: docker compose run --rm usaspending-manage python3 -u manage.py shell
     command: python3 -u manage.py help
     environment:
       DJANGO_DEBUG: ${DJANGO_DEBUG}
       DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
       ES_HOSTNAME: ${ES_HOSTNAME}
-      DATA_BROKER_DATABASE_URL: postgresql://${BROKER_DB_USER}:${BROKER_DB_PASSWORD}@${BROKER_DB_HOST}:${BROKER_DB_PORT}/data_broker
+      BROKER_DB: postgresql://${BROKER_DB_USER}:${BROKER_DB_PASSWORD}@${BROKER_DB_HOST}:${BROKER_DB_PORT}/data_broker
 
   usaspending-test:
     profiles:
-      - test  # must pass --profile test to docker-compose for this to come up, or use docker-compose run
+      - test  # must pass --profile test to docker compose for this to come up, or use docker compose run
     image: usaspending-testing  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
     build:
       context: .
       dockerfile: Dockerfile.testing
     container_name: usaspending-test
     volumes:
-     - .:/dockermount
-     # Required to interact with host's docker daemon from within this running container,
-     # to spin up the data-act-broker-init-test-db container used for broker integration tests (see: conftest.broker_db_setup)
-     - /var/run/docker.sock:/var/run/docker.sock
+      - .:/usaspending-api
+      # Required to interact with host's docker daemon from within this running container,
+      # to spin up the data-act-broker-init-test-db container used for broker integration tests (see: conftest.broker_db_setup)
+      - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
+      - minio
       - usaspending-db
       - usaspending-es
     command: make tests
@@ -68,23 +68,25 @@ services:
       DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
       ES_HOST: ${ES_HOST}
       ES_HOSTNAME: ${ES_HOSTNAME}
-      DATA_BROKER_DATABASE_URL: postgresql://${BROKER_DB_USER}:${BROKER_DB_PASSWORD}@${BROKER_DB_HOST}:${BROKER_DB_PORT}/data_broker
-      # Location in host machine where broker src code root can be found
-      DATA_BROKER_SRC_PATH: "$PWD/../data-act-broker-backend"
+      BROKER_DB: postgresql://${BROKER_DB_USER}:${BROKER_DB_PASSWORD}@${BROKER_DB_HOST}:${BROKER_DB_PORT}/data_broker
       MINIO_HOST: ${MINIO_HOST}
       DOWNLOAD_DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
+      # Location in host machine where broker src code root can be found
+      DATA_BROKER_SRC_PATH: "${PWD}/../data-act-broker-backend"
+      # Tests will retrieve the root directory from the path and use it to assume the docker network name
+      PROJECT_SRC_PATH: "${PWD}"
 
   usaspending-ci:
     profiles:
-      - ci  # must pass --profile ci to docker-compose for this to come up, or use docker-compose run
+      - ci  # must pass --profile ci to docker compose for this to come up, or use docker compose run
     image: usaspending-backend  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
     build: .
     container_name: usaspending-ci
     volumes:
-     - .:/dockermount
-     # Required to interact with host's docker daemon from within this running container,
-     # to spin up the data-act-broker-init-test-db container used for broker integration tests (see: conftest.broker_db_setup)
-     - /var/run/docker.sock:/var/run/docker.sock
+      - .:/dockermount
+      # Required to interact with host's docker daemon from within this running container,
+      # to spin up the data-act-broker-init-test-db container used for broker integration tests (see: conftest.broker_db_setup)
+      - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       - usaspending-db
       - usaspending-es
@@ -105,13 +107,13 @@ services:
     environment:
       DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
       ES_HOSTNAME: ${ES_HOSTNAME}
-      DATA_BROKER_DATABASE_URL: postgresql://${BROKER_DB_USER}:${BROKER_DB_PASSWORD}@${BROKER_DB_HOST}:${BROKER_DB_PORT}/data_broker
+      BROKER_DB: postgresql://${BROKER_DB_USER}:${BROKER_DB_PASSWORD}@${BROKER_DB_HOST}:${BROKER_DB_PORT}/data_broker
       # Location in host machine where broker src code root can be found
-      DATA_BROKER_SRC_PATH: "$PWD/../data-act-broker-backend"
+      DATA_BROKER_SRC_PATH: "${PWD}/../data-act-broker-backend"
 
   usaspending-api:
     profiles:
-      - usaspending  # must pass --profile usaspending to docker-compose for this to come up
+      - usaspending  # must pass --profile usaspending to docker compose for this to come up
     image: usaspending-backend  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
     build: .
     container_name: usaspending-api
@@ -126,31 +128,43 @@ services:
     # Must wait on postgres db to be up (~9s)
     command: /bin/sh -c "sleep 9s; python3 -u manage.py runserver --verbosity 2 0.0.0.0:8000"
     environment:
+      IS_LOCAL: ${IS_LOCAL}
       DJANGO_DEBUG: ${DJANGO_DEBUG}
       RUN_LOCAL_DOWNLOAD_IN_PROCESS: "False"
       DB_SOURCE: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
       DB_R1: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
       DOWNLOAD_DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
       ES_HOSTNAME: ${ES_HOSTNAME}
+      TOGGLE_OTEL_CONSOLE_LOGGING: ${TOGGLE_OTEL_CONSOLE_LOGGING}
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}
 
   usaspending-bulk-download:
     profiles:
-      - usaspending  # must pass --profile usaspending to docker-compose for this to come up
-    image: usaspending-backend  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
-    build: .
+      - usaspending  # must pass --profile usaspending to docker compose for this to come up
+    image: usaspending-download  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
+    build:
+      context: .
+      dockerfile: Dockerfile.download
     container_name: usaspending-bulk-download
     restart: on-failure:5 # 5 max attempt, and then it will stop restarting. NOTE: bulk download errors will cause one failure+restart iterations
     volumes:
-    - .:/dockermount
+      - .:/dockermount
+      # Required to interact with host's docker daemon from within this running container,
+      # to submit a spark job via the spark-submit container (see download_sqs_worker._run_spark_download)
+      - /var/run/docker.sock:/var/run/docker.sock
     command: python3 manage.py download_sqs_worker
     environment:
+      IS_LOCAL: ${IS_LOCAL}
       DJANGO_DEBUG: ${DJANGO_DEBUG}
       DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
       DOWNLOAD_DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
+      ES_HOSTNAME: ${ES_HOSTNAME}
+      TOGGLE_OTEL_CONSOLE_LOGGING: ${TOGGLE_OTEL_CONSOLE_LOGGING}
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}
 
   usaspending-es:
     profiles:
-      - usaspending  # must pass --profile usaspending to docker-compose for this to come up
+      - usaspending  # must pass --profile usaspending to docker compose for this to come up
       - test
       - ci
     image: docker.elastic.co/elasticsearch/elasticsearch:7.1.1
@@ -161,8 +175,9 @@ services:
       - cluster.initial_master_nodes=usaspending-es
       - cluster.name=usaspending
       - network.host=0.0.0.0
+      - transport.host=localhost
       - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=-Xms1536m -Xmx1536m"  # Ensure Docker is allocated plenty of memory, otherwise this will fail
+      - "ES_JAVA_OPTS=-Xms2048m -Xmx2048m"  # Ensure Docker is allocated plenty of memory, otherwise this will fail
     # Inject plugin install, then resume with orignial entrypoint command
     command: >
       /bin/sh -c "
@@ -185,7 +200,7 @@ services:
 
   usaspending-kibana-es:
     profiles:
-      - usaspending  # must pass --profile usaspending to docker-compose for this to come up
+      - usaspending  # must pass --profile usaspending to docker compose for this to come up
     image: docker.elastic.co/kibana/kibana-oss:7.1.1
     container_name: usaspending-kibana-es
     # ELASTICSEARCH_HOSTS should match the port for "usaspending-es"; value will need to be updated if using Windows
@@ -195,7 +210,7 @@ services:
       - 5601:5601
 
   minio:
-    profiles:  # must pass one of these with --profile to docker-compose
+    profiles:  # must pass one of these with --profile to docker compose
       - s3
       - spark
       - test
@@ -217,8 +232,12 @@ services:
         # Create the bucket within MinIO and file path for the data dict
         mkdir -p data/dti-da-public-files-nonprod/user_reference_docs
         # Create the bucket within MinIO used for endpoints that list generated downloads
-        mkdir -p data/bulk_download
+        mkdir -p data/bulk-download
+        # Create the bucket for MinIO used for Spark
+        mkdir -p data/data/files
+        # Populate initial files in buckets
         cp dockermount/usaspending_api/data/Data_Dictionary_Crosswalk.xlsx data/dti-da-public-files-nonprod/user_reference_docs/Data_Dictionary_Crosswalk.xlsx
+        cp dockermount/usaspending_api/data/COVID-19_download_readme.txt data/data/files/COVID-19_download_readme.txt
         minio server --address ":10001" --console-address ":10002" /data
       "
     healthcheck:
@@ -229,10 +248,10 @@ services:
 
   spark-master:
     profiles:
-      - spark  # must pass --profile spark to docker-compose for this to come up
+      - spark  # must pass --profile spark to docker compose for this to come up
       - test
     image: spark-base  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
-    # build context path needs to be relative to project root, from where docker-compose will be run
+    # build context path needs to be relative to project root, from where docker compose will be run
     build:
       context: .
       dockerfile: Dockerfile.spark
@@ -259,10 +278,10 @@ services:
 
   spark-worker:
     profiles:
-      - spark  # must pass --profile spark to docker-compose for this to come up
+      - spark  # must pass --profile spark to docker compose for this to come up
       - test
     image: spark-base  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
-    # build context path needs to be relative to project root, from where docker-compose will be run
+    # build context path needs to be relative to project root, from where docker compose will be run
     build:
       context: .
       dockerfile: Dockerfile.spark
@@ -275,6 +294,9 @@ services:
       SPARK_MASTER_HOST: ${SPARK_MASTER_HOST:-spark-master}
       SPARK_MASTER_PORT: ${SPARK_MASTER_PORT:-7077}
       SPARK_WORKER_WEBUI_PORT: ${SPARK_WORKER_WEBUI_PORT:-4041}
+      PYTHONPATH: /project
+      DJANGO_SETTINGS_MODULE: "usaspending_api.settings"
+      DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
     command: /bin/sh -c "$${SPARK_HOME}/bin/spark-class org.apache.spark.deploy.worker.Worker --webui-port $${SPARK_WORKER_WEBUI_PORT} spark://$${SPARK_MASTER_HOST}:$${SPARK_MASTER_PORT}"
     ports:
       - ${SPARK_WORKER_WEBUI_PORT:-4041}:4041
@@ -286,10 +308,10 @@ services:
 
   spark-history-server:
     profiles:
-      - spark  # must pass --profile spark to docker-compose for this to come up
+      - spark  # must pass --profile spark to docker compose for this to come up
       - test
     image: spark-base  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
-    # build context path needs to be relative to project root, from where docker-compose will be run
+    # build context path needs to be relative to project root, from where docker compose will be run
     build:
       context: .
       dockerfile: Dockerfile.spark
@@ -331,10 +353,10 @@ services:
   #      /project/usaspending_api/etl/tests/path_to_your_spark_prototype_script.py"
   spark-submit:
     profiles:
-      - spark  # must pass --profile spark to docker-compose for this to come up
+      - spark  # must pass --profile spark to docker compose for this to come up
       - test
     image: spark-base  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
-    # build context path needs to be relative to project root, from where docker-compose will be run
+    # build context path needs to be relative to project root, from where docker compose will be run
     build:
       context: .
       dockerfile: Dockerfile.spark
@@ -347,6 +369,9 @@ services:
       - spark-history-server
       - minio
     environment:
+      IS_LOCAL: ${IS_LOCAL}
+      DATABASE_URL: postgres://${USASPENDING_DB_USER}:${USASPENDING_DB_PASSWORD}@${USASPENDING_DB_HOST}:${USASPENDING_DB_PORT}/data_store_api
+      MINIO_HOST: ${MINIO_HOST}
       SPARK_MASTER_HOST: ${SPARK_MASTER_HOST:-spark-master}
       SPARK_MASTER_PORT: ${SPARK_MASTER_PORT:-7077}
       # i.e. target where host warehouse dir is bound in below volume config.
@@ -356,12 +381,14 @@ services:
       #   This env var needs to be picked up as the path part of the config for the spark.hadoop.javax.jdo.option.ConnectionURL spark conf setting when SparkSessions are created inside of a spark-submitted job
       HIVE_METASTORE_DERBY_DB_DIR: /spark-warehouse/metastore_db
       PYTHONPATH: "/project"
+      TOGGLE_OTEL_CONSOLE_LOGGING: ${TOGGLE_OTEL_CONSOLE_LOGGING}
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}
     # NOTE: entrypoint CANNOT interpolate env vars when processed. They are passed through literally.
-    # So in using 1 $ rather than 2 $$, the var is evaluated based on the current SHELL ENV when docker-compose is run,
+    # So in using 1 $ rather than 2 $$, the var is evaluated based on the current SHELL ENV when docker compose is run,
     # and interpolated before accessed as the entrypoint.
     # While this service has values for these interpolated vars in the environment: element, those are not used here,
     # but merely passed into the container. KEEP the two references to these vars and their defaults consistent!
-    # To see what it will be, you can run docker-compose config (i.e. make docker-compose-config in this project's Makefile)
+    # To see what it will be, you can run docker compose config (i.e. make docker-compose-config in this project's Makefile)
     entrypoint: ./bin/spark-submit --master spark://${SPARK_MASTER_HOST:-spark-master}:${SPARK_MASTER_PORT:-7077}
     command: --help
     volumes:
@@ -374,8 +401,56 @@ services:
         source: ${SPARK_SQL_WAREHOUSE_DIR:-./spark-warehouse}
         target: /spark-warehouse
       # Mount the JAR dependencies local repo on host into container to take advantage of caching/reuse
-      # i.e., to download the dependencies only once and reuse on subsequent docker-compose run calls
+      # i.e., to download the dependencies only once and reuse on subsequent docker compose run calls
       - type: bind
         source: ${HOME}/.ivy2
         target: /root/.ivy2
         read_only: false
+
+  otel-collector:
+    profiles:
+      - tracing
+    image: otel/opentelemetry-collector:0.86.0
+    command: [ "--config=/etc/otel-collector.yaml" ]
+    volumes:
+      - ./otel-collector.yaml:/etc/otel-collector.yaml
+
+  # Tempo runs as user 10001, and docker compose creates the volume as root.
+  # As such, we need to chown the volume in order for Tempo to start correctly.
+  tempo-init:
+    image: &tempoImage grafana/tempo:2.8.2
+    user: root
+    entrypoint:
+      - "chown"
+      - "10001:10001"
+      - "/var/tempo"
+    volumes:
+      - ./tempo-data:/var/tempo
+
+  tempo:
+    profiles:
+      - tracing
+    image: *tempoImage
+    command: [ "-config.file=/etc/tempo.yaml" ]
+    volumes:
+      - ./tempo.yaml:/etc/tempo.yaml
+      - ./tempo-data:/var/tempo
+    ports:
+      - "3200" # tempo
+      - "4317" # otlp grpc
+    depends_on:
+      - tempo-init
+
+  grafana:
+    profiles:
+      - tracing
+    image: grafana/grafana:11.0.0
+    volumes:
+      - ./grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+      - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor
+    ports:
+      - "3000:3000"

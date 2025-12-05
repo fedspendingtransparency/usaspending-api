@@ -25,6 +25,7 @@ from usaspending_api.etl.elasticsearch_loader_helpers.extract_data import (
 )
 from usaspending_api.etl.elasticsearch_loader_helpers.index_config import (
     check_new_index_name_is_ok,
+    check_pipeline_dates,
     create_award_type_aliases,
     create_index,
     set_final_index_config,
@@ -68,8 +69,8 @@ __all__ = [
     "toggle_refresh_off",
     "toggle_refresh_on",
     "check_new_index_name_is_ok",
+    "check_pipeline_dates",
     "transform_award_data",
-    "transform_recipient_profile_data",
     "transform_transaction_data",
     "transform_subaward_data",
 ]

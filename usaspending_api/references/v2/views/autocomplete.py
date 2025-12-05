@@ -350,7 +350,7 @@ class NAICSAutocompleteViewSet(BaseAutocompleteViewSet):
         # rename columns...
         queryset = queryset.annotate(naics=F("code"), naics_description=F("description"))
 
-        return Response({"results": list(queryset.values("naics", "naics_description")[:limit])})
+        return Response({"results": list(queryset.values("naics", "naics_description", "year_retired")[:limit])})
 
 
 class PSCAutocompleteViewSet(BaseAutocompleteViewSet):

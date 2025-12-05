@@ -29,6 +29,7 @@ This endpoint should return a an aggregate list of DEFC's sorted by the total am
                 + `transactions`
                 + `awards`
                 + `subawards`
+                + `award_financial` - Filters to an award(s) and uses obligation and outlays from the linked File C records
             + Default
                 + `transactions`
         + `subawards` (optional, boolean)
@@ -89,12 +90,14 @@ This endpoint should return a an aggregate list of DEFC's sorted by the total am
                        "code": "1",
                        "id": null,
                        "name": "Infrastructure Investment and Jobs Act",
+                       "total_outlays": null,
                     },
                     {
                        "amount": 1250000.00,
                        "code": "7",
                        "id": null,
                        "name": "Bipartisan Safer Communities Act",
+                       "total_outlays": null,
                     }
                 ],
                 "messages": [
@@ -111,6 +114,7 @@ This endpoint should return a an aggregate list of DEFC's sorted by the total am
 + `code` (required, string, nullable)
     `code` is a user-displayable code (such as a program activity or NAICS code, but **not** a database ID). When no such code is relevant, return a `null`.
 + `amount` (required, number)
++ `total_outlays` (required, number, nullable)
 
 ## PageMetadataObject (object)
 + `page` (required, number)
@@ -129,7 +133,7 @@ This endpoint should return a an aggregate list of DEFC's sorted by the total am
 + `agencies` (optional, array[AgencyObject], fixed-type)
 + `recipient_search_text`: [`Hampton`, `Roads`] (optional, array[string])
 + `recipient_id` (optional, string)
-    A unique identifier for the recipient which includes the recipient hash and level.
+    A unique identifier for the recipient which includes the recipient hash and level. This filter is not supported by subawards.
 + `recipient_scope` (optional, enum[string])
     + Members
         + `domestic`

@@ -43,7 +43,7 @@ def get_delete_pks_for_afa_keys(afa_ids_to_delete):
             is_active is not true
     """
 
-    with connections[settings.DATA_BROKER_DB_ALIAS].cursor() as cursor:
+    with connections[settings.BROKER_DB_ALIAS].cursor() as cursor:
         cursor.execute(sql, [uppercased])
         rows = cursor.fetchall()
 

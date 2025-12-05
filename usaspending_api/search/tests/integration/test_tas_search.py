@@ -148,6 +148,8 @@ def mock_tas_data(db):
         prime_award_group="procurement",
         subaward_number="1A",
         treasury_account_identifiers=[1],
+        action_date="2020-01-01",
+        sub_action_date="2020-01-01",
     )
     baker.make(
         "search.SubawardSearch",
@@ -158,6 +160,8 @@ def mock_tas_data(db):
         prime_award_group="procurement",
         subaward_number="2A",
         treasury_account_identifiers=[2],
+        action_date="2020-01-01",
+        sub_action_date="2020-01-01",
     )
     baker.make(
         "search.SubawardSearch",
@@ -168,6 +172,8 @@ def mock_tas_data(db):
         prime_award_group="procurement",
         subaward_number="3A",
         treasury_account_identifiers=[3],
+        action_date="2020-01-01",
+        sub_action_date="2020-01-01",
     )
 
     baker.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")
@@ -276,7 +282,9 @@ def test_spending_by_award_tas_ata(client, monkeypatch, elasticsearch_award_inde
 
 
 @pytest.mark.django_db
-def test_spending_by_award_subaward_success(client, mock_tas_data):
+def test_spending_by_award_subaward_success(client, mock_tas_data, monkeypatch, elasticsearch_subaward_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
+
     data = {
         "filters": {"tas_codes": [{"aid": "028", "main": "8006"}], "award_type_codes": ["A", "B", "C", "D"]},
         "fields": ["Sub-Award ID"],
@@ -300,7 +308,8 @@ def test_spending_by_award_subaward_success(client, mock_tas_data):
 
 
 @pytest.mark.django_db
-def test_spending_by_award_subaward_failure(client, mock_tas_data):
+def test_spending_by_award_subaward_failure(client, mock_tas_data, monkeypatch, elasticsearch_subaward_index):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
     data = {
         "filters": {"tas_codes": [{"aid": "000", "main": "0000"}], "award_type_codes": ["A", "B", "C", "D"]},
         "fields": ["Sub-Award ID"],

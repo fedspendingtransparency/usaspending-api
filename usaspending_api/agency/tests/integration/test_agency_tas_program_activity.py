@@ -27,37 +27,40 @@ def test_tas_program_activity_success(client, monkeypatch, agency_account_data, 
         "results": [
             {
                 "name": "NAME 3",
-                "gross_outlay_amount": 250000.0,
-                "obligated_amount": 229.0,
+                "gross_outlay_amount": 100000.0,
+                "obligated_amount": 100.0,
+                "type": "PAC/PAN",
                 "children": [
                     {
                         "name": "Other",
-                        "gross_outlay_amount": 250000.0,
-                        "obligated_amount": 229.0,
+                        "gross_outlay_amount": 100000.0,
+                        "obligated_amount": 100.0,
                     }
                 ],
             },
             {
                 "name": "NAME 2",
-                "gross_outlay_amount": 1150000.0,
-                "obligated_amount": 139.0,
+                "gross_outlay_amount": 1000000.0,
+                "obligated_amount": 10.0,
+                "type": "PAC/PAN",
                 "children": [
                     {
                         "name": "Other",
-                        "gross_outlay_amount": 1150000.0,
-                        "obligated_amount": 139.0,
+                        "gross_outlay_amount": 1000000.0,
+                        "obligated_amount": 10.0,
                     }
                 ],
             },
             {
-                "name": "NAME 1",
-                "gross_outlay_amount": 10150000.0,
-                "obligated_amount": 130.0,
+                "name": "PARK 1",
+                "gross_outlay_amount": 10000000.0,
+                "obligated_amount": 1.0,
+                "type": "PARK",
                 "children": [
                     {
                         "name": "Other",
-                        "gross_outlay_amount": 10150000.0,
-                        "obligated_amount": 130.0,
+                        "gross_outlay_amount": 10000000.0,
+                        "obligated_amount": 1.0,
                     }
                 ],
             },
@@ -108,14 +111,15 @@ def test_tas_program_activity_success(client, monkeypatch, agency_account_data, 
         },
         "results": [
             {
-                "gross_outlay_amount": 1150000.0,
+                "gross_outlay_amount": 1000000.0,
                 "name": "NAME 5",
-                "obligated_amount": 139.0,
+                "obligated_amount": 10.0,
+                "type": "PAC/PAN",
                 "children": [
                     {
                         "name": "Other",
-                        "gross_outlay_amount": 1150000.0,
-                        "obligated_amount": 139.0,
+                        "gross_outlay_amount": 1000000.0,
+                        "obligated_amount": 10.0,
                     }
                 ],
             }
@@ -151,6 +155,7 @@ def test_tas_multiple_program_activity_belonging_one_object_class(
                 "name": "NAME 2",
                 "gross_outlay_amount": 1000000.0,
                 "obligated_amount": 10.0,
+                "type": "PAC/PAN",
                 "children": [
                     {
                         "gross_outlay_amount": 1000000.0,
@@ -160,9 +165,10 @@ def test_tas_multiple_program_activity_belonging_one_object_class(
                 ],
             },
             {
-                "name": "NAME 1",
+                "name": "PARK 1",
                 "gross_outlay_amount": 10000000.0,
                 "obligated_amount": 1.0,
+                "type": "PARK",
                 "children": [
                     {
                         "gross_outlay_amount": 10000000.0,
@@ -199,10 +205,11 @@ def test_tas_program_activity_multiple_submission_years(client, agency_account_d
         },
         "results": [
             {
-                "gross_outlay_amount": 160000.0,
+                "gross_outlay_amount": 10000.0,
                 "name": "NAME 4",
-                "obligated_amount": 1129.0,
-                "children": [{"gross_outlay_amount": 160000.0, "name": "Other", "obligated_amount": 1129.0}],
+                "obligated_amount": 1000.0,
+                "type": "PAC/PAN",
+                "children": [{"gross_outlay_amount": 10000.0, "name": "Other", "obligated_amount": 1000.0}],
             }
         ],
     }
@@ -235,6 +242,7 @@ def test_tas_program_activity_multiple_object_classes(client, tas_mulitple_oc_pe
                 "name": "NAME 4",
                 "gross_outlay_amount": 111000.0,
                 "obligated_amount": 11100.0,
+                "type": "PAC/PAN",
                 "children": [
                     {
                         "gross_outlay_amount": 101000.0,

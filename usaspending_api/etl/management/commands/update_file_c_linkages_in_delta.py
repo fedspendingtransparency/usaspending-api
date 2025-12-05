@@ -1,16 +1,20 @@
+import logging
+
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from pyspark.sql import SparkSession
 
 from usaspending_api.awards.delta_models import c_to_d_linkage_view_sql_strings, c_to_d_linkage_drop_view_sql_strings
+from usaspending_api.awards.models import CToDLinkageUpdates
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
     get_jdbc_connection_properties,
-    get_jvm_logger,
     get_usas_jdbc_url,
 )
 from usaspending_api.config import CONFIG
+
+logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
@@ -82,9 +86,6 @@ class Command(BaseCommand):
             spark_created_by_command = True
             self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)  # type: SparkSession
 
-        # Setup Logger
-        logger = get_jvm_logger(self.spark, __name__)
-
         # Before we lose history after a clone or drop table of our int.financial_accounts_by_awards table
         #   we need to identify FABA records (file C submissions) that were deleted.
         #   This step is important because we need to identify which awards need to be unlinked
@@ -116,7 +117,7 @@ class Command(BaseCommand):
             self.spark.sql(delete_sql)
 
         # Clean up deletion view(s)
-        self.spark.sql("DROP VIEW identify_faba_deletions_query;")
+        self.spark.sql("DROP VIEW IF EXISTS identify_faba_deletions_query;")
 
         # Setup int table. Creates a shallow clone of the `raw` FABA table in the `int` schema.
         # If the --no-clone option is provided a full table is created instead.
@@ -135,6 +136,8 @@ class Command(BaseCommand):
                 "INSERT OVERWRITE int.financial_accounts_by_awards SELECT * FROM raw.financial_accounts_by_awards;"
             )
         else:
+            if self.spark.catalog.tableExists("int.financial_accounts_by_awards"):
+                self.spark.sql("DELETE FROM int.financial_accounts_by_awards;")
             self.spark.sql(
                 f"""
                 CREATE OR REPLACE TABLE int.financial_accounts_by_awards
@@ -197,9 +200,9 @@ class Command(BaseCommand):
         c_to_d_linkage_updates_df = self.spark.sql("SELECT * FROM union_all_priority;")
         c_to_d_linkage_updates_df.write.jdbc(
             url=get_usas_jdbc_url(),
-            table="public.c_to_d_linkage_updates",
+            table=f"public.{CToDLinkageUpdates._meta.db_table}",
             mode="overwrite",
-            properties=get_jdbc_connection_properties(),
+            properties=get_jdbc_connection_properties(truncate=True),
         )
 
         # Run Linkage Queries

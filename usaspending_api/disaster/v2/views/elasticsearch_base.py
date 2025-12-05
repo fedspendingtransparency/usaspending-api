@@ -13,6 +13,7 @@ from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
 from usaspending_api.common.exceptions import ForbiddenException
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.query_with_filters import QueryWithFilters
+from usaspending_api.search.filters.elasticsearch.filter import QueryType
 from usaspending_api.disaster.v2.views.disaster_base import DisasterBase, _BasePaginationMixin
 from usaspending_api.search.v2.elasticsearch_helper import (
     get_number_of_unique_terms_for_awards,
@@ -80,7 +81,8 @@ class ElasticsearchDisasterBase(DisasterBase):
         query = self.filters.pop("query", None)
         if query:
             self.filters["query"] = {"text": query, "fields": self.query_fields}
-        self.filter_query = QueryWithFilters.generate_awards_elasticsearch_query(self.filters)
+        query_with_filters = QueryWithFilters(QueryType.AWARDS)
+        self.filter_query = query_with_filters.generate_elasticsearch_query(self.filters)
 
         # Ensure that only non-zero values are taken into consideration
         # TODO: Refactor to use new NonzeroFields filter in QueryWithFilters
@@ -167,10 +169,10 @@ class ElasticsearchDisasterBase(DisasterBase):
         group_by_agg_key = A("terms", **group_by_agg_key_values)
 
         # Create the aggregations
-        filter_agg_query = ES_Q("terms", **{"covid_spending_by_defc.defc": self.filters.get("def_codes")})
+        filter_agg_query = ES_Q("terms", **{"spending_by_defc.defc": self.covid_def_codes})
         filtered_aggs = A("filter", filter_agg_query)
-        sum_covid_outlay = A("sum", field="covid_spending_by_defc.outlay", script="_value * 100")
-        sum_covid_obligation = A("sum", field="covid_spending_by_defc.obligation", script="_value * 100")
+        sum_covid_outlay = A("sum", field="spending_by_defc.outlay", script="_value * 100")
+        sum_covid_obligation = A("sum", field="spending_by_defc.obligation", script="_value * 100")
         sum_loan_value = A("sum", field="total_loan_value", script="_value * 100")
         if self.top_hits_fields:
             dim_metadata = A(
@@ -183,7 +185,7 @@ class ElasticsearchDisasterBase(DisasterBase):
 
         # Apply the aggregations
         search.aggs.bucket(self.agg_group_name, group_by_agg_key).bucket(
-            "nested", A("nested", path="covid_spending_by_defc")
+            "nested", A("nested", path="spending_by_defc")
         ).bucket("filtered_aggs", A("filter", filter_agg_query)).metric(
             "total_covid_obligation", sum_covid_obligation
         ).metric(
@@ -195,7 +197,7 @@ class ElasticsearchDisasterBase(DisasterBase):
         )
         if self.top_hits_fields:
             search.aggs[self.agg_group_name].metric("dim_metadata", dim_metadata)
-        search.aggs.bucket("totals", A("nested", path="covid_spending_by_defc")).bucket(
+        search.aggs.bucket("totals", A("nested", path="spending_by_defc")).bucket(
             "filtered_aggs", filtered_aggs
         ).metric("total_covid_obligation", sum_covid_obligation).metric("total_covid_outlay", sum_covid_outlay).bucket(
             "reverse_nested", reverse_nested
@@ -248,11 +250,11 @@ class ElasticsearchDisasterBase(DisasterBase):
         sub_group_by_sub_agg_key = A("terms", **sub_group_by_sub_agg_key_values)
 
         # Create the aggregations
-        sum_covid_outlay = A("sum", field="covid_spending_by_defc.outlay", script="_value * 100")
-        sum_covid_obligation = A("sum", field="covid_spending_by_defc.obligation", script="_value * 100")
+        sum_covid_outlay = A("sum", field="spending_by_defc.outlay", script="_value * 100")
+        sum_covid_obligation = A("sum", field="spending_by_defc.obligation", script="_value * 100")
         reverse_nested = A("reverse_nested", **{})
         sum_loan_value = A("sum", field="total_loan_value", script="_value * 100")
-        filter_agg_query = ES_Q("terms", **{"covid_spending_by_defc.defc": self.filters.get("def_codes")})
+        filter_agg_query = ES_Q("terms", **{"spending_by_defc.defc": self.covid_def_codes})
         filtered_aggs = A("filter", filter_agg_query)
         if self.sub_top_hits_fields:
             sub_dim_metadata = A(
@@ -264,7 +266,7 @@ class ElasticsearchDisasterBase(DisasterBase):
 
         # Apply the aggregations
         search.aggs[self.agg_group_name].bucket(self.sub_agg_group_name, sub_group_by_sub_agg_key).bucket(
-            "nested", A("nested", path="covid_spending_by_defc")
+            "nested", A("nested", path="spending_by_defc")
         ).bucket("filtered_aggs", filtered_aggs).metric("total_covid_obligation", sum_covid_obligation).metric(
             "total_covid_outlay", sum_covid_outlay
         ).bucket(

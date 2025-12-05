@@ -1,14 +1,17 @@
 import logging
 import os
+import uuid
 import sys
 import tempfile
+from decimal import Decimal
 from pathlib import Path
 from typing import List
 
 import docker
 import pytest
 from django.conf import settings
-from django.db import connections
+from django.core.management import call_command
+from django.db import connections, IntegrityError
 from django.test import override_settings
 from model_bakery import baker
 from pytest_django.fixtures import _set_suffix_to_test_databases
@@ -19,10 +22,12 @@ from xdist.plugin import (
     pytest_xdist_auto_num_workers,
 )
 
+from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
 from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import (
     ensure_business_categories_functions_exist,
     ensure_view_exists,
 )
+from usaspending_api.common.etl.spark import create_ref_temp_views, _USAS_RDS_REF_TABLES
 from usaspending_api.common.helpers.generic_helper import generate_matviews
 from usaspending_api.common.helpers.sql_helpers import (
     build_dsn_string,
@@ -43,6 +48,7 @@ from usaspending_api.conftest_helpers import (
     remove_unittest_queue_data_files,
     transform_xdist_worker_id_to_django_test_db_id,
 )
+
 
 # Compose ALL fixtures from conftest_spark
 from usaspending_api.tests.conftest_spark import *  # noqa
@@ -265,22 +271,22 @@ def django_db_setup(
                 {**settings.DATABASES[settings.DEFAULT_DB_ALIAS], **{"NAME": test_usas_db_name}}
             )
 
-            old_broker_db_url = CONFIG.DATA_BROKER_DATABASE_URL
+            old_broker_db_url = CONFIG.BROKER_DB
             old_broker_ps_db = CONFIG.BROKER_DB_NAME
 
-            if settings.DATA_BROKER_DB_ALIAS in settings.DATABASES:
-                test_broker_db = settings.DATABASES[settings.DATA_BROKER_DB_ALIAS].get("NAME")
+            if settings.BROKER_DB_ALIAS in settings.DATABASES:
+                test_broker_db = settings.DATABASES[settings.BROKER_DB_ALIAS].get("NAME")
                 if test_broker_db is None:
                     raise ValueError(
-                        f"DB 'NAME' for DB alias {settings.DATA_BROKER_DB_ALIAS} came back as None. Check config."
+                        f"DB 'NAME' for DB alias {settings.BROKER_DB_ALIAS} came back as None. Check config."
                     )
                 if "test" not in test_broker_db:
                     raise ValueError(
-                        f"DB 'NAME' for DB alias {settings.DATA_BROKER_DB_ALIAS} does not contain 'test' when expected to."
+                        f"DB 'NAME' for DB alias {settings.BROKER_DB_ALIAS} does not contain 'test' when expected to."
                     )
                 CONFIG.BROKER_DB_NAME = test_broker_db
-                CONFIG.DATA_BROKER_DATABASE_URL = build_dsn_string(
-                    {**settings.DATABASES[settings.DATA_BROKER_DB_ALIAS], **{"NAME": test_broker_db}}
+                CONFIG.BROKER_DB = build_dsn_string(
+                    {**settings.DATABASES[settings.BROKER_DB_ALIAS], **{"NAME": test_broker_db}}
                 )
 
     # This will be added to the finalizer which will be run when the newly made test database is being torn down
@@ -288,7 +294,7 @@ def django_db_setup(
         CONFIG.DATABASE_URL = old_usas_db_url
         CONFIG.USASPENDING_DB_NAME = old_usas_ps_db
 
-        CONFIG.DATA_BROKER_DATABASE_URL = old_broker_db_url
+        CONFIG.BROKER_DB = old_broker_db_url
         CONFIG.BROKER_DB_NAME = old_broker_ps_db
 
     request.addfinalizer(reset_postgres_dsn)
@@ -404,21 +410,271 @@ def elasticsearch_recipient_index(db):
 
 
 @pytest.fixture
-def elasticsearch_location_index(db):
-    """
-    Add this fixture to your test if you intend to use the Elasticsearch
-    location index.  To use, create some mock database data then call
-    elasticsearch_location_index.update_index to populate Elasticsearch.
+def location_data_fixture(db):
+    baker.make("references.RefCountryCode", country_code="DNK", country_name="DENMARK")
+    baker.make("references.RefCountryCode", country_code="FRA", country_name="FRANCE")
+    baker.make("references.RefCountryCode", country_code="TST", country_name="TEST COUNTRY")
+    baker.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES")
 
-    See test_demo_elasticsearch_tests.py for sample usage.
-    """
-    elastic_search_index = TestElasticSearchIndex("location")
-    with override_settings(
-        ES_LOCATIONS_QUERY_ALIAS_PREFIX=elastic_search_index.alias_prefix,
-        ES_LOCATIONS_WRITE_ALIAS=elastic_search_index.etl_config["write_alias"],
-    ):
-        yield elastic_search_index
-        elastic_search_index.delete_index()
+    baker.make("recipient.StateData", id="1", code="CO", name="Colorado", year=2017)
+    baker.make("recipient.StateData", id="2", code="CA", name="California", year=2017)
+    baker.make("recipient.StateData", id="3", code="TX", name="Texas", year=2017)
+    baker.make("recipient.StateData", id="4", code="IL", name="Illinois", year=2017)
+    baker.make("recipient.StateData", id="5", code="OK", name="Oklahoma", year=2017)
+    baker.make("recipient.StateData", id="6", name="MISSOURI", code="MO", year=2017)
+    baker.make("recipient.StateData", id="7", name="KANSAS", code="KS", year=2017)
+
+    baker.make(
+        "references.CityCountyStateCode",
+        id=1,
+        feature_name="Denver",
+        state_alpha="CO",
+        state_numeric="08",
+        county_numeric="100",
+    )
+    baker.make(
+        "references.CityCountyStateCode",
+        id=2,
+        feature_name="Texas A City",
+        state_alpha="TX",
+        state_numeric="48",
+        county_numeric="101",
+    )
+    baker.make(
+        "references.CityCountyStateCode",
+        id=3,
+        feature_name="Texas B City",
+        state_alpha="TX",
+        state_numeric="48",
+        county_numeric="102",
+    )
+    baker.make(
+        "references.CityCountyStateCode",
+        id=4,
+        feature_name="Texas C City",
+        state_alpha="IL",
+        state_numeric="17",
+        county_numeric="103",
+    )
+    baker.make(
+        "references.CityCountyStateCode",
+        id=5,
+        feature_name="Texas D City",
+        state_alpha="OK",
+        state_numeric="40",
+        county_numeric="104",
+    )
+    baker.make(
+        "references.CityCountyStateCode",
+        id=6,
+        feature_name="Texas E City",
+        state_alpha="TX",
+        state_numeric="48",
+        county_numeric="105",
+    )
+    baker.make(
+        "references.CityCountyStateCode",
+        id=7,
+        feature_name="Texas F City",
+        state_alpha="TX",
+        state_numeric="48",
+        county_numeric="106",
+    )
+    baker.make(
+        "references.CityCountyStateCode",
+        id=8,
+        county_name="Los Angeles",
+        state_alpha="CA",
+        state_numeric="06",
+        county_numeric="107",
+    )
+
+    baker.make("references.ZipsGrouped", zips_grouped_id=1, zip5="90210", state_abbreviation="CA")
+    baker.make("references.ZipsGrouped", zips_grouped_id=2, zip5="90211", state_abbreviation="CA")
+
+
+@pytest.fixture
+def world_cities_delta_table(s3_unittest_data_bucket):
+    test_data = [
+        [
+            "city",
+            "city_ascii",
+            "city_alt",
+            "city_local",
+            "city_local_lang",
+            "lat",
+            "lng",
+            "country",
+            "iso2",
+            "iso3",
+            "admin_name",
+            "admin_name_ascii",
+            "admin_code",
+            "admin_type",
+            "capital",
+            "density",
+            "population",
+            "population_proper",
+            "ranking",
+            "timezone",
+            "same_name",
+            "id",
+        ],
+        [
+            "test_city",
+            "test_city_ascii",
+            "test_city_alt|another test city|hello world",
+            "test_city_local",
+            "test_city_local_lang",
+            Decimal("90.0000"),
+            Decimal("180.0000"),
+            "test_country",
+            "test_iso2",
+            "TST",
+            "test_admin_name",
+            "test_admin_name_ascii",
+            "test_admin_code",
+            "test_admin_type",
+            "test_capital",
+            10.0,
+            100_000,
+            100_000,
+            "test_ranking",
+            "test_timezone",
+            False,
+            1234,
+        ],
+        [
+            "COPENHAGEN",
+            "test_city_ascii",
+            "",
+            "test_city_local",
+            "test_city_local_lang",
+            Decimal("90.0000"),
+            Decimal("180.0000"),
+            "test_country",
+            "test_iso2",
+            "DNK",
+            "test_admin_name",
+            "test_admin_name_ascii",
+            "test_admin_code",
+            "test_admin_type",
+            "test_capital",
+            10.0,
+            100_000,
+            100_000,
+            "test_ranking",
+            "test_timezone",
+            False,
+            1234,
+        ],
+        [
+            "PARIS",
+            "test_city_ascii",
+            "",
+            "test_city_local",
+            "test_city_local_lang",
+            Decimal("90.0000"),
+            Decimal("180.0000"),
+            "test_country",
+            "test_iso2",
+            "FRA",
+            "test_admin_name",
+            "test_admin_name_ascii",
+            "test_admin_code",
+            "test_admin_type",
+            "test_capital",
+            10.0,
+            100_000,
+            100_000,
+            "test_ranking",
+            "test_timezone",
+            False,
+            1234,
+        ],
+    ]
+
+    with tempfile.NamedTemporaryFile(mode="w") as f:
+        for row in test_data:
+            f.write(",".join(str(v) for v in row) + "\n")
+        f.flush()
+        f.seek(0)
+        call_command(
+            "load_csv_to_delta",
+            "--destination-table=world_cities",
+            f"--source-path={f.name}",
+            f"--spark-s3-bucket={s3_unittest_data_bucket}",
+        )
+
+
+@pytest.fixture
+def transaction_search_delta_table(spark):
+    spark.sql("CREATE DATABASE IF NOT EXISTS rpt")
+    transaction_search_df = spark.createDataFrame(
+        [
+            {
+                "pop_state_code": "MO",
+                "pop_congressional_code_current": "01",
+                "recipient_location_state_code": "MO",
+                "recipient_location_congressional_code_current": "01",
+                "pop_congressional_code": "01",
+                "recipient_location_congressional_code": "01",
+            },
+            {
+                "pop_state_code": "KS",
+                "pop_congressional_code_current": "01",
+                "recipient_location_state_code": "KS",
+                "recipient_location_congressional_code_current": "01",
+                "pop_congressional_code": "01",
+                "recipient_location_congressional_code": "01",
+            },
+            {
+                "pop_state_code": "CA",
+                "pop_congressional_code_current": "34",
+                "recipient_location_state_code": "CA",
+                "recipient_location_congressional_code_current": "34",
+                "pop_congressional_code": "34",
+                "recipient_location_congressional_code": "34",
+            },
+            {
+                "pop_state_code": "CA",
+                "pop_congressional_code_current": "34",
+                "recipient_location_state_code": "CA",
+                "recipient_location_congressional_code_current": "34",
+                "pop_congressional_code": "34",
+                "recipient_location_congressional_code": "34",
+            },
+        ]
+    )
+    transaction_search_df.write.saveAsTable("rpt.transaction_search")
+
+
+@pytest.fixture
+def elasticsearch_location_index(
+    location_data_fixture,
+    world_cities_delta_table,
+    transaction_search_delta_table,
+    spark,
+    s3_unittest_data_bucket,
+    hive_unittest_metastore_db,
+):
+    for rds_ref_table in _USAS_RDS_REF_TABLES:
+        try:
+            baker.make(rds_ref_table)
+        except IntegrityError:
+            pass
+    create_ref_temp_views(spark)
+    index_name = f"{uuid.uuid4()}-test-locations"
+    client = instantiate_elasticsearch_client()
+    try:
+        call_command(
+            "elasticsearch_indexer_for_spark", create_new_index=True, load_type="location", index_name=index_name
+        )
+        yield client
+    except Exception as e:
+        raise e
+    finally:
+        client.indices.delete(index_name, ignore_unavailable=True)
 
 
 @pytest.fixture(scope="session")
@@ -453,7 +709,7 @@ def broker_db_setup(django_db_setup, django_db_use_migrations, worker_id):
     broker_integrationtest_secrets_file = f"{broker_config_env_envvar}_secrets.yml"
 
     # Check that a Connection to the Broker DB has been configured
-    if settings.DATA_BROKER_DB_ALIAS not in settings.DATABASES:
+    if settings.BROKER_DB_ALIAS not in settings.DATABASES:
         logger.error("Error finding 'data_broker' database configured in django settings.DATABASES.")
         pytest.skip(
             "'data_broker' database not configured in django settings.DATABASES. "
@@ -486,7 +742,7 @@ def broker_db_setup(django_db_setup, django_db_use_migrations, worker_id):
 
     # ==== Run the DB setup script using the Broker docker image. ====
 
-    broker_test_db_name = settings.DATABASES[settings.DATA_BROKER_DB_ALIAS]["NAME"]
+    broker_test_db_name = settings.DATABASES[settings.BROKER_DB_ALIAS]["NAME"]
 
     # Using a mounts to copy the broker source code into the container, and create a modifiable copy
     # of the broker config dir in order to execute broker DB setup code using that config
@@ -534,13 +790,13 @@ def broker_db_setup(django_db_setup, django_db_use_migrations, worker_id):
     # Setup Broker config files to work with the same DB configured via the Broker DB URL env var
     # This will ensure that when the broker script is run, it uses the same test broker DB
     broker_db_config_cmds = rf"""                                                                 \
-        sed -i.bak -E "s/host:.*$/host: {settings.DATABASES[settings.DATA_BROKER_DB_ALIAS]["HOST"]}/"             \
+        sed -i.bak -E "s/host:.*$/host: {settings.DATABASES[settings.BROKER_DB_ALIAS]["HOST"]}/"             \
             {broker_src_target}/{broker_config_dir}/{broker_integrationtest_config_file};         \
-        sed -i.bak -E "s/port:.*$/port: {settings.DATABASES[settings.DATA_BROKER_DB_ALIAS]["PORT"]}/"             \
+        sed -i.bak -E "s/port:.*$/port: {settings.DATABASES[settings.BROKER_DB_ALIAS]["PORT"]}/"             \
             {broker_src_target}/{broker_config_dir}/{broker_integrationtest_config_file};         \
-        sed -i.bak -E "s/username:.*$/username: {settings.DATABASES[settings.DATA_BROKER_DB_ALIAS]["USER"]}/"     \
+        sed -i.bak -E "s/username:.*$/username: {settings.DATABASES[settings.BROKER_DB_ALIAS]["USER"]}/"     \
             {broker_src_target}/{broker_config_dir}/{broker_integrationtest_secrets_file};        \
-        sed -i.bak -E "s/password:.*$/password: {settings.DATABASES[settings.DATA_BROKER_DB_ALIAS]["PASSWORD"]}/" \
+        sed -i.bak -E "s/password:.*$/password: {settings.DATABASES[settings.BROKER_DB_ALIAS]["PASSWORD"]}/" \
             {broker_src_target}/{broker_config_dir}/{broker_integrationtest_secrets_file};        \
     """
 
@@ -561,19 +817,28 @@ def broker_db_setup(django_db_setup, django_db_use_migrations, worker_id):
         else f"_{transform_xdist_worker_id_to_django_test_db_id(worker_id)}"
     )
 
-    # NOTE: use of network_mode="host" applies ONLY when on Linux (i.e. ignored elsewhere)
-    # It allows docker to resolve network addresses (like "localhost") as if running from the docker host
-    log_gen = docker_client.containers.run(
-        broker_docker_image,
-        name="data-act-broker-init-test-db" + container_name_suffix,
-        command=broker_container_command,
-        remove=True,
-        network_mode="host",
-        environment={"env": broker_config_env_envvar},
-        mounts=docker_run_mounts,
-        stderr=True,
-        stream=True,
-    )
+    docker_run_args = {
+        "name": "data-act-broker-init-test-db" + container_name_suffix,
+        "command": broker_container_command,
+        "remove": True,
+        # network_mode = "host",
+        # network=f"{os.path.basename(os.environ.get('PROJECT_SRC_PATH') or os.getcwd())}_default",
+        "environment": {"env": broker_config_env_envvar},
+        "mounts": docker_run_mounts,
+        "stderr": True,
+        "stream": True,
+    }
+    if os.environ.get("PROJECT_SRC_PATH") is None:
+        # NOTE: use of network_mode="host" applies ONLY when on Linux (i.e. ignored elsewhere)
+        # It allows docker to resolve network addresses (like "localhost") as if running from the docker host
+        docker_run_args["network_mode"] = "host"
+    else:
+        # The PROJECT_SRC_PATH env is defined in the docker-compose.yaml when running tests inside a container.
+        # In order for the test container to see the Broker containers created by this command we add it to the same
+        # network; this assumes that the network is not set in the docker-compose.yaml and is using the default.
+        docker_run_args["network"] = f"{os.path.basename(os.environ['PROJECT_SRC_PATH'])}_default"
+
+    log_gen = docker_client.containers.run(broker_docker_image, **docker_run_args)
     [logger.info(str(log)) for log in log_gen]  # log container logs from returned streaming log generator
     logger.info("Command ran to completion in container. Broker DB should be setup for tests.")
 

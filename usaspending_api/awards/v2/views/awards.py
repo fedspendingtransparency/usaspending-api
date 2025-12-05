@@ -14,6 +14,7 @@ from usaspending_api.awards.v2.data_layer.orm import (
 )
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.validator.tinyshield import TinyShield
+from usaspending_api.search.models import AwardSearch
 
 
 logger = logging.getLogger("console")
@@ -55,18 +56,30 @@ class AwardRetrieveViewSet(APIView):
             }
         ]
         if str(provided_award_id).isdigit():
-            request_dict = {"id": int(provided_award_id)}
-            models = [{"key": "id", "name": "id", "type": "integer", "optional": False}]
+            request_dict = {"award_id": int(provided_award_id)}
+            models = [{"key": "award_id", "name": "award_id", "type": "integer", "optional": False}]
 
         validated_request_data = TinyShield(models).block(request_dict)
         return validated_request_data
 
     def _business_logic(self, request_dict: dict) -> dict:
-        try:
-            award = Award.objects.get(**request_dict)
-        except Award.DoesNotExist:
-            logger.info("No Award found with: '{}'".format(request_dict))
-            raise NotFound("No Award found with: '{}'".format(request_dict))
+        award_queryset = AwardSearch.objects.filter(**request_dict)
+
+        if not award_queryset and "generated_unique_award_id" in request_dict:
+            # This is handled as a different DB call to avoid the possibility that one Award's current unique key
+            # matches the legacy unique key of a different Award.
+            logger.info(f"No Award found with: {request_dict}. Checking against legacy unique award key.")
+            request_dict = {"generated_unique_award_id_legacy": request_dict["generated_unique_award_id"]}
+            award_queryset = AwardSearch.objects.filter(**request_dict)
+
+        if not award_queryset:
+            logger.info(f"No Award found with: {request_dict}")
+            raise NotFound(f"No Award found with: {request_dict}")
+
+        award = award_queryset[0]
+
+        # Normalize the different logic branches to all provide the Award's PK to the response logic
+        request_dict = {"id": award.award_id}
 
         if award.category == "contract":
             response_content = construct_contract_response(request_dict)

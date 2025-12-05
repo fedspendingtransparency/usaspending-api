@@ -86,13 +86,15 @@ This endpoint returns a list of the top results of Funding Subagencies sorted by
                         "amount": 440219861071.72,
                         "name": "Centers for Medicare and Medicaid Services",
                         "code": "CMS",
-                        "id": 831
+                        "id": 831,
+                        "total_outlays": null,
                     },
                     {
                         "amount": 284429830939.4,
                         "name": "Social Security Administration",
                         "code": "SSA",
-                        "id": 539
+                        "id": 539,
+                        "total_outlays": null,
                     }
                 ],
                 "messages": [
@@ -115,6 +117,7 @@ This endpoint returns a list of the top results of Funding Subagencies sorted by
     The `agency_abbreviation` refers to the abbreviation for the toptier agency associated with the subtier agency.
 + `agency_name`(required, string)
 + `agency_slug`(required, string)
++ `total_outlays` (required, number, nullable)
 
 ## PageMetadataObject (object)
 + `page` (required, number)
@@ -133,7 +136,7 @@ This endpoint returns a list of the top results of Funding Subagencies sorted by
 + `agencies` (optional, array[AgencyObject], fixed-type)
 + `recipient_search_text`: [`Hampton`, `Roads`] (optional, array[string])
 + `recipient_id` (optional, string)
-    A unique identifier for the recipient which includes the recipient hash and level.
+    A unique identifier for the recipient which includes the recipient hash and level. This filter is not supported by subawards.
 + `recipient_scope` (optional, enum[string])
     + Members
         + `domestic`

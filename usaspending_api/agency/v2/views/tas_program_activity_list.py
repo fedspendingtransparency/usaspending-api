@@ -1,13 +1,15 @@
 from typing import Any, List
 
-from django.db.models import Q, Sum, F
+from django.db.models import Q, Sum, F, Case, When, Value, CharField
+from django.db.models.functions import Coalesce
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
+from usaspending_api.agency.v2.views.agency_base import AgencyBase
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.calculations import file_b
+from usaspending_api.common.calculations.file_b import FileBCalculations
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
+from usaspending_api.common.helpers.pagination_mixin import PaginationMixin
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 from usaspending_api.submissions.helpers import get_latest_submission_ids_for_fiscal_year
 
@@ -19,6 +21,8 @@ class TASProgramActivityList(PaginationMixin, AgencyBase):
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/agency/treasury_account/tas/program_activity.md"
+
+    file_b_calculations = FileBCalculations()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -62,10 +66,13 @@ class TASProgramActivityList(PaginationMixin, AgencyBase):
 
     def get_program_activity_list(self) -> List[dict]:
         filters = [
-            Q(program_activity__program_activity_name__isnull=False),
+            (
+                Q(program_activity_reporting_key__name__isnull=False)
+                | Q(program_activity__program_activity_name__isnull=False)
+            ),
             Q(submission_id__in=self.submission_ids),
             Q(treasury_account__tas_rendering_label=self.tas_rendering_label),
-            file_b.is_non_zero_total_spending(),
+            self.file_b_calculations.is_non_zero_total_spending(),
         ]
         if self.filter:
             filters.append(Q(program_activity__program_activity_name__icontains=self.filter))
@@ -73,13 +80,19 @@ class TASProgramActivityList(PaginationMixin, AgencyBase):
         queryset_results = (
             FinancialAccountsByProgramActivityObjectClass.objects.filter(*filters)
             .values("program_activity__program_activity_name")
+            .values("program_activity_reporting_key__name")
             .annotate(
-                name=F("program_activity__program_activity_name"),
-                obligated_amount=Sum(file_b.get_obligations()),
-                gross_outlay_amount=Sum(file_b.get_outlays()),
+                name=Coalesce("program_activity_reporting_key__name", "program_activity__program_activity_name"),
+                obligated_amount=Sum(self.file_b_calculations.get_obligations()),
+                gross_outlay_amount=Sum(self.file_b_calculations.get_outlays()),
+                type=Case(
+                    When(program_activity_reporting_key__name__isnull=False, then=Value("PARK")),
+                    default=Value("PAC/PAN"),
+                    output_field=CharField(),
+                ),
             )
             .order_by(f"{'-' if self.pagination.sort_order == 'desc' else ''}{self.pagination.sort_key}")
-            .values("name", "obligated_amount", "gross_outlay_amount")
+            .values("name", "obligated_amount", "gross_outlay_amount", "type")
         )
         return queryset_results
 
@@ -87,17 +100,20 @@ class TASProgramActivityList(PaginationMixin, AgencyBase):
         filters = [
             Q(object_class__major_object_class_name__isnull=False),
             Q(submission_id__in=self.submission_ids),
-            Q(program_activity__program_activity_name=program_activity_name),
+            (
+                Q(program_activity__program_activity_name=program_activity_name)
+                | Q(program_activity_reporting_key__name=program_activity_name)
+            ),
             Q(treasury_account__tas_rendering_label=self.tas_rendering_label),
-            file_b.is_non_zero_total_spending(),
+            self.file_b_calculations.is_non_zero_total_spending(),
         ]
         queryset_results = (
             FinancialAccountsByProgramActivityObjectClass.objects.filter(*filters)
             .values("object_class__major_object_class_name")
             .annotate(
                 name=F("object_class__major_object_class_name"),
-                obligated_amount=Sum(file_b.get_obligations()),
-                gross_outlay_amount=Sum(file_b.get_outlays()),
+                obligated_amount=Sum(self.file_b_calculations.get_obligations()),
+                gross_outlay_amount=Sum(self.file_b_calculations.get_outlays()),
             )
             .order_by(f"{'-' if self.pagination.sort_order == 'desc' else ''}{self.pagination.sort_key}")
             .values("name", "obligated_amount", "gross_outlay_amount")

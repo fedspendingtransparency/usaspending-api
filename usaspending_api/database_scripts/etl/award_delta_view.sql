@@ -73,6 +73,12 @@ SELECT
   "recipient_location_zip5",
   "recipient_location_city_name",
   "recipient_location_county_fips",
+  "recipient_location_address_line1",
+  "recipient_location_address_line2",
+  "recipient_location_address_line3",
+  "recipient_location_zip4",
+  "recipient_location_foreign_postal_code",
+  "recipient_location_foreign_province",
 
   "pop_country_code",
   "pop_country_name",
@@ -90,9 +96,10 @@ SELECT
   "pop_city_name",
   "pop_city_code",
   "pop_county_fips",
+  "pop_zip4",
 
   "cfda_number",
-  "cfda_program_title" as cfda_title,
+  "cfda_program_title" AS cfda_title,
   "cfdas",
 
   "sai_number",
@@ -107,17 +114,21 @@ SELECT
 
   "tas_paths",
   "tas_components",
+
   "disaster_emergency_fund_codes",
-  "covid_spending_by_defc"::JSON,
+  CAST("spending_by_defc" AS VARCHAR(65535)) AS spending_by_defc,
+
   "total_covid_outlay",
   "total_covid_obligation",
 
-  "iija_spending_by_defc"::JSON,
   "total_iija_outlay",
   "total_iija_obligation",
 
   "generated_pragmatic_obligation",
-  "program_activities"::JSON
+  CAST("program_activities" AS VARCHAR(65535)) AS program_activities,
+  "subaward_count",
+  "total_subaward_amount",
+  "transaction_count"
 
 FROM "award_search"
 WHERE "action_date" >= '2007-10-01';

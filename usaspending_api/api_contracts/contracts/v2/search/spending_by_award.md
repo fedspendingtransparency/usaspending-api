@@ -38,6 +38,13 @@ This endpoint takes award filters and fields, and returns the fields of the filt
             The unique id of the last record in the results set. Used in the experimental Elasticsearch API functionality.
         + `last_record_sort_value` (optional, string)
             The value of the last record that is being sorted on. Used in the experimental Elasticsearch API functionality.
+        + `spending_level` (optional, enum[string])
+            Group the spending by level. This also determines what data source is used for the totals.
+            + Members
+                + `awards`
+                + `subawards`
+            + Default
+                + `awards`
     + Body
 
             {
@@ -65,6 +72,13 @@ This endpoint takes award filters and fields, and returns the fields of the filt
 
 + Response 200 (application/json)
     + Attributes (object)
+        + `spending_level` (required, enum[string])
+            Group the spending by level. This also determines what data source is used for the totals.
+            + Members
+                + `awards`
+                + `subawards`
+            + Default
+                + `awards`
         + `limit` (required, number)
         + `results` (required, array[SpendingByAwardResponse], fixed-type)
         + `page_metadata` (PageMetadataObject)
@@ -107,6 +121,9 @@ Award based searches have a base set of fields that are valid for all award type
 - `COVID-19 Outlays`
 - `Infrastructure Obligations`
 - `Infrastructure Outlays`
+- `Recipient UEI`
+- `Recipient Location`
+- `Primary Place of Performance`
 
 #### Contracts
 Contracts can be searched for specifically by using the Contract Type Codes (A, B, C, or D) and the following fields are additional fields that can be requested.
@@ -116,6 +133,8 @@ Contracts can be searched for specifically by using the Contract Type Codes (A, 
 - `Award Amount`
 - `Total Outlays`
 - `Contract Award Type`
+- `NAICS`
+- `PSC`
 
 #### IDV
 IDV can be searched for specifically by using the IDV Type Codes (IDV_A, IDV_B, IDV_B_A, IDV_B_B, IDV_B_C, IDV_C, IDV_D or IDV_E) and the following fields are additional fields that can be requested.
@@ -125,6 +144,8 @@ IDV can be searched for specifically by using the IDV Type Codes (IDV_A, IDV_B, 
 - `Total Outlays`
 - `Contract Award Type`
 - `Last Date to Order`
+- `NAICS`
+- `PSC`
 
 #### Loan
 Loans can be searched for specifically by using the Loan Type Codes (07 or 08) and the following fields are additional fields that can be requested.
@@ -134,6 +155,8 @@ Loans can be searched for specifically by using the Loan Type Codes (07 or 08) a
 - `Subsidy Cost`
 - `SAI Number`
 - `CFDA Number`
+- `Assistance Listings`
+- `primary_assistance_listing`
 
 #### Non Loan Assistance
 Non Loan Assistance Awards can be searched for specifically by using the Non Loan Assistance Type Codes. The Non Loan Assist Type Codes include Grant Type Codes (02, 03, 04 or 05), Direct Payments (06 or 10), and Other Type Codes (09, 11, or -1). The following fields are additional fields that can be requested.
@@ -145,32 +168,49 @@ Non Loan Assistance Awards can be searched for specifically by using the Non Loa
 - `Award Type`
 - `SAI Number`
 - `CFDA Number`
+- `Assistance Listings`
+- `primary_assistance_listing`
 
 ### Subaward
 
 #### Contract Subawards
-- `Sub-Award ID`
-- `Sub-Award Type`
-- `Sub-Awardee Name`
-- `Sub-Award Date`
-- `Sub-Award Amount`
 - `Awarding Agency`
 - `Awarding Sub Agency`
+- `NAICS`
 - `Prime Award ID`
-- `Prime Recipient Name`
 - `prime_award_recipient_id`
+- `Prime Award Recipient UEI`
+- `Prime Recipient Name`
+- `PSC`
+- `Sub-Award Amount`
+- `Sub-Award Date`
+- `Sub-Award Description`
+- `Sub-Award ID`
+- `Sub-Award Primary Place of Performance`
+- `sub_award_recipient_id`
+- `Sub-Award Type`
+- `Sub-Awardee Name`
+- `Sub-Recipient Location`
+- `Sub-Recipient UEI`
 
 #### Grant Subawards
-- `Sub-Award ID`
-- `Sub-Award Type`
-- `Sub-Awardee Name`
-- `Sub-Award Date`
-- `Sub-Award Amount`
+- `Assistance Listing`
 - `Awarding Agency`
 - `Awarding Sub Agency`
 - `Prime Award ID`
-- `Prime Recipient Name`
 - `prime_award_recipient_id`
+- `Prime Award Recipient UEI`
+- `Prime Recipient Name`
+- `Sub-Award Amount`
+- `Sub-Award Date`
+- `Sub-Award Description`
+- `Sub-Award ID`
+- `Sub-Award Primary Place of Performance`
+- `sub_award_recipient_id`
+- `Sub-Award Type`
+- `Sub-Awardee Name`
+- `Sub-Recipient Location`
+- `Sub-Recipient UEI`
 
 ## SpendingByAwardResponse (object)
 + `internal_id` (required, number)
@@ -282,7 +322,6 @@ Non Loan Assistance Awards can be searched for specifically by using the Non Loa
 + `set_aside_type_codes`: [`NONE`] (optional, array[string])
 + `extent_competed_type_codes`: [`A`] (optional, array[string])
 + `treasury_account_components` (optional, array[TreasuryAccountComponentsObject], fixed-type)
-+ `object_class` (optional, array[string])
 + `program_activity` (optional, array[number])
 + `program_activities` (optional, array[ProgramActivityObject])
     A filter option that supports filtering by a program activity name or code. Please note that if this filter is used at least one of the members of the object, ProgramActivityObject, need to be provided.
@@ -290,6 +329,7 @@ Non Loan Assistance Awards can be searched for specifically by using the Non Loa
   If the `def_codes` provided are in the COVID-19 or IIJA group and the subaward flag is set to `False`, the query will only return prime awards that have at least one File C record with the supplied DEFC and also have non-zero COVID-19 or IIJA related obligations or outlays.
   If the `def_codes` provided are in the COVID-19 or IIJA group and the subaward parameter is set to `True`, the query will only return results that have a sub_action_date on or after the enactment date of the public law associated with that disaster code.
     + Example: Providing the `Z` DEF code and setting the subaward parameter to `True` will only return results where the `sub_action_date` is on or after `11/15/2021` since this is the enactment date of the public law associated with disaster code `Z`.
++ `award_unique_id` (optional, string)
 
 ### TimePeriodObject (object)
 This TimePeriodObject can fall into different categories based on the request.

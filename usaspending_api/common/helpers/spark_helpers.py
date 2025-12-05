@@ -42,6 +42,8 @@ from usaspending_api.transactions.delta_models.transaction_fpds import (
 )
 from usaspending_api.transactions.delta_models.transaction_normalized import TRANSACTION_NORMALIZED_COLUMNS
 
+logger = logging.getLogger(__name__)
+
 
 def get_active_spark_context() -> Optional[SparkContext]:
     """Returns the active ``SparkContext`` if there is one and it's not stopped, otherwise returns None"""
@@ -75,6 +77,7 @@ def stop_spark_context() -> bool:
             sc = SparkContext._active_spark_context
             if (
                 sc._jvm
+                and hasattr(sc._jvm, "SparkSession")
                 and sc._jvm.SparkSession
                 and not sc._jvm.SparkSession.getDefaultSession().get().sparkContext().isStopped()
             ):
@@ -268,7 +271,6 @@ def configure_spark_session(
             log_level_name = "WARN"  # tranlate to short-form used by log4j
         spark.sparkContext.setLogLevel(log_level_name)
 
-    logger = get_jvm_logger(spark)
     logger.info("PySpark Job started!")
     logger.info(
         f"""
@@ -363,7 +365,7 @@ def attach_java_gateway(
     return gateway
 
 
-def get_jdbc_connection_properties(fix_strings=True) -> dict:
+def get_jdbc_connection_properties(fix_strings: bool = True, truncate: bool = False) -> dict:
     jdbc_props = {"driver": "org.postgresql.Driver", "fetchsize": str(CONFIG.SPARK_PARTITION_ROWS)}
     if fix_strings:
         # This setting basically tells the JDBC driver how to process the strings, which could be a special type casted
@@ -371,6 +373,8 @@ def get_jdbc_connection_properties(fix_strings=True) -> dict:
         # tells the driver to not make that assumption and let the schema try to infer the type on insertion.
         # See the `stringtype` param on https://jdbc.postgresql.org/documentation/94/connect.html for details.
         jdbc_props["stringtype"] = "unspecified"
+    if truncate:
+        jdbc_props["truncate"] = "true"
     return jdbc_props
 
 
@@ -395,10 +399,10 @@ def get_usas_jdbc_url():
 
 def get_broker_jdbc_url():
     """Getting a JDBC-compliant Broker Postgres DB connection string hard-wired to the POSTGRES vars set in CONFIG"""
-    if not CONFIG.DATA_BROKER_DATABASE_URL:
-        raise ValueError("DATA_BROKER_DATABASE_URL config val must provided")
+    if not CONFIG.BROKER_DB:
+        raise ValueError("BROKER_DB config val must provided")
 
-    return get_jdbc_url_from_pg_uri(CONFIG.DATA_BROKER_DATABASE_URL)
+    return get_jdbc_url_from_pg_uri(CONFIG.BROKER_DB)
 
 
 def get_es_config():  # pragma: no cover -- will be used eventually
@@ -531,7 +535,6 @@ def configure_s3_credentials(
 
 def log_spark_config(spark: SparkSession, config_key_contains=""):
     """Log at log4j INFO the values of the SparkConf object in the current SparkSession"""
-    logger = get_jvm_logger(spark)
     [
         logger.info(f"{item[0]}={item[1]}")
         for item in spark.sparkContext.getConf().getAll()
@@ -543,7 +546,6 @@ def log_hadoop_config(spark: SparkSession, config_key_contains=""):
     """Print out to the log the current config values for hadoop. Limit to only those whose key contains the string
     provided to narrow in on a particular subset of config values.
     """
-    logger = get_jvm_logger(spark)
     conf = spark.sparkContext._jsc.hadoopConfiguration()
     [
         logger.info(f"{k}={v}")

@@ -54,7 +54,7 @@ SELECT
 	s.place_of_perform_congressio AS pop_congressional_code,
 	s.place_of_performance_congressional_current AS pop_congressional_code_current,
 	s.award_description,
-	s.naics,
+	s.naics as naics_code,
 	s.naics_description,
 	s.cfda_numbers as cfda_number,
 	s.cfda_titles,
@@ -79,18 +79,24 @@ SELECT
 	s.sub_legal_entity_congressional_current AS sub_recipient_location_congressional_code_current,
 	s.sub_legal_entity_foreign_posta AS sub_recipient_location_foreign_posta,
 	s.sub_legal_entity_city_name AS sub_recipient_location_city_name,
+	s.sub_legal_entity_county_name AS sub_recipient_location_county_name,
+	s.sub_legal_entity_address_line1 AS sub_recipient_location_address_line1,
 	s.sub_business_types,
 	s.sub_place_of_perform_country_co AS sub_pop_country_code,
 	s.sub_place_of_perform_country_name AS sub_pop_country_name,
 	s.sub_place_of_perform_state_code AS sub_pop_state_code,
 	s.sub_place_of_perform_state_name AS sub_pop_state_name,
     s.sub_place_of_perform_county_code AS sub_pop_county_code,
+    s.sub_place_of_perform_zip5 AS sub_pop_zip5,
 	s.sub_place_of_performance_zip AS sub_pop_zip,
 	s.sub_place_of_perform_congressio AS sub_pop_congressional_code,
 	s.sub_place_of_performance_congressional_current AS sub_pop_congressional_code_current,
 	s.sub_place_of_perform_city_name AS sub_pop_city_name,
 	s.sub_place_of_perform_street AS sub_pop_street,
+	s.sub_place_of_perform_county_name AS sub_pop_county_name,
 	s.subaward_description,
+	-- Keywords have a byte limit in elasticsearch that subaward_description was exceeding when sorting
+	LEFT(s.subaward_description, 8190) AS subaward_description_sort,
 	s.prime_award_group,
 	s.prime_award_type,
 	s.latest_transaction_id,
@@ -112,9 +118,16 @@ SELECT
     a.disaster_emergency_fund_codes,
     a.recipient_hash,
     a.parent_uei,
-    s.program_activities::JSON
+    CAST(s.program_activities AS VARCHAR(65535)) AS program_activities,
+    s.prime_award_recipient_id,
+    a.tas_paths,
+    a.tas_components,
+    s.subaward_recipient_hash,
+    s.subaward_recipient_level,
+    s.awarding_toptier_agency_code,
+    s.funding_toptier_agency_code
 FROM
 	rpt.subaward_search s
 LEFT JOIN rpt.award_search a
-ON s.award_id = a.award_id
+    ON s.award_id = a.award_id
 WHERE s.action_date >= '2007-10-01';

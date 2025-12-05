@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from usaspending_api.accounts.models import AppropriationAccountBalances
 from usaspending_api.agency.v2.views.agency_base import AgencyBase
 from usaspending_api.common.cache_decorator import cache_response
-from usaspending_api.common.calculations import file_b
+from usaspending_api.common.calculations.file_b import FileBCalculations
 from usaspending_api.common.helpers.date_helper import now
 from usaspending_api.common.helpers.fiscal_year_helpers import current_fiscal_year
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
@@ -17,6 +17,8 @@ class BudgetaryResources(AgencyBase):
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/agency/toptier_code/budgetary_resources.md"
+
+    file_b_calulcations = FileBCalculations()
 
     @cache_response()
     def get(self, request, *args, **kwargs):
@@ -56,7 +58,7 @@ class BudgetaryResources(AgencyBase):
             .annotate(
                 fiscal_year=F("submission__reporting_fiscal_year"),
                 fiscal_period=F("submission__reporting_fiscal_period"),
-                obligation_sum=Sum(file_b.get_obligations()),
+                obligation_sum=Sum(self.file_b_calulcations.get_obligations()),
             )
             .order_by("fiscal_year", "fiscal_period")
         )
@@ -108,7 +110,10 @@ class BudgetaryResources(AgencyBase):
                 submission__is_final_balances_for_fy=True,
             )
             .values("submission__reporting_fiscal_year")
-            .annotate(agency_total_obligated=Sum(file_b.get_obligations()))
+            .annotate(
+                agency_total_obligated=Sum(self.file_b_calulcations.get_obligations()),
+                agency_total_outlayed=Sum(self.file_b_calulcations.get_outlays()),
+            )
         )
         fabpaoc_by_year = {val["submission__reporting_fiscal_year"]: val for val in fabpaoc}
 
@@ -124,6 +129,7 @@ class BudgetaryResources(AgencyBase):
                         "fiscal_year": year,
                         "agency_budgetary_resources": None,
                         "agency_total_obligated": None,
+                        "agency_total_outlayed": None,
                         "total_budgetary_resources": resources.get(year),
                         "agency_obligation_by_period": [],
                     }
@@ -134,6 +140,7 @@ class BudgetaryResources(AgencyBase):
                         "fiscal_year": year,
                         "agency_budgetary_resources": aab_by_year[year]["agency_budgetary_resources"],
                         "agency_total_obligated": fabpaoc_by_year.get(year, {}).get("agency_total_obligated"),
+                        "agency_total_outlayed": fabpaoc_by_year.get(year, {}).get("agency_total_outlayed"),
                         "total_budgetary_resources": resources.get(year),
                         "agency_obligation_by_period": periods_by_year.get(year, []),
                     }

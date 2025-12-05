@@ -1,25 +1,16 @@
 from django.db.models import Exists, F, OuterRef, Sum, TextField, Value
-from django.db.models.functions import Coalesce
+from django_cte import With
 
-from usaspending_api.common.calculations import file_b
+from usaspending_api.common.calculations.file_b import FileBCalculations
 from usaspending_api.references.models import Agency
 from usaspending_api.submissions.models import SubmissionAttributes
 
 
 class Explorer(object):
+
+    file_b_calculations = FileBCalculations()
+
     def __init__(self, alt_set, queryset):
-        # Moving agency mapping outside function to reduce response time
-        agency_queryet = (
-            Agency.objects.filter(toptier_flag=True)
-            .values("id", "toptier_agency__toptier_code")
-            .annotate(
-                link=Exists(SubmissionAttributes.objects.filter(toptier_code=OuterRef("toptier_agency__toptier_code")))
-            )
-        )
-        self.agency_ids = {
-            agency["toptier_agency__toptier_code"]: {"id": agency["id"], "link": agency["link"]}
-            for agency in agency_queryet
-        }
         self.alt_set = alt_set
         self.queryset = queryset
 
@@ -33,7 +24,7 @@ class Explorer(object):
                 code=F("treasury_account__budget_function_code"),
             )
             .values("id", "type", "name", "code", "amount")
-            .annotate(total=Sum(file_b.get_obligations()))
+            .annotate(total=Sum(self.file_b_calculations.get_obligations()))
             .order_by("-total")
         )
 
@@ -49,7 +40,7 @@ class Explorer(object):
                 code=F("treasury_account__budget_subfunction_code"),
             )
             .values("id", "type", "name", "code", "amount")
-            .annotate(total=Sum(file_b.get_obligations()))
+            .annotate(total=Sum(self.file_b_calculations.get_obligations()))
             .order_by("-total")
         )
 
@@ -66,7 +57,7 @@ class Explorer(object):
                 code=F("treasury_account__federal_account__main_account_code"),
             )
             .values("id", "account_number", "type", "name", "code", "amount")
-            .annotate(total=Sum(file_b.get_obligations()))
+            .annotate(total=Sum(self.file_b_calculations.get_obligations()))
             .order_by("-total")
         )
 
@@ -82,7 +73,7 @@ class Explorer(object):
                 code=F("program_activity__program_activity_code"),
             )
             .values("id", "type", "name", "code", "amount")
-            .annotate(total=Sum(file_b.get_obligations()))
+            .annotate(total=Sum(self.file_b_calculations.get_obligations()))
             .order_by("-total")
         )
 
@@ -98,7 +89,7 @@ class Explorer(object):
                 code=F("object_class__major_object_class"),
             )
             .values("id", "type", "name", "code", "amount")
-            .annotate(total=Sum(file_b.get_obligations()))
+            .annotate(total=Sum(self.file_b_calculations.get_obligations()))
             .order_by("-total")
         )
 
@@ -109,22 +100,10 @@ class Explorer(object):
         alt_set = (
             self.alt_set.filter(transaction_obligated_amount__isnull=False)
             .annotate(
-                id=Coalesce(
-                    "award__latest_transaction__contract_data__awardee_or_recipient_legal",
-                    "award__latest_transaction__assistance_data__awardee_or_recipient_legal",
-                    output_field=TextField(),
-                ),
+                id=F("award__recipient_hash"),
                 type=Value("recipient", output_field=TextField()),
-                name=Coalesce(
-                    "award__latest_transaction__contract_data__awardee_or_recipient_legal",
-                    "award__latest_transaction__assistance_data__awardee_or_recipient_legal",
-                    output_field=TextField(),
-                ),
-                code=Coalesce(
-                    "award__latest_transaction__assistance_data__awardee_or_recipient_legal",
-                    "award__latest_transaction__contract_data__awardee_or_recipient_legal",
-                    output_field=TextField(),
-                ),
+                name=F("award__recipient_name"),
+                code=F("award__recipient_name"),
             )
             .values("id", "type", "name", "code", "amount")
             .annotate(total=Sum("transaction_obligated_amount"))
@@ -135,21 +114,34 @@ class Explorer(object):
 
     def agency(self):
         # Funding Top Tier Agencies Querysets
-        queryset = (
-            self.queryset.filter(treasury_account__funding_toptier_agency__isnull=False)
+        agency_cte = With(
+            Agency.objects.filter(toptier_flag=True)
+            .values("id")
             .annotate(
-                type=Value("agency", output_field=TextField()),
-                name=F("treasury_account__funding_toptier_agency__name"),
-                code=F("treasury_account__funding_toptier_agency__toptier_code"),
+                link=Exists(SubmissionAttributes.objects.filter(toptier_code=OuterRef("toptier_agency__toptier_code"))),
+                code=F("toptier_agency__toptier_code"),
             )
-            .values("type", "name", "code")
-            .annotate(amount=Sum(file_b.get_obligations()))
-            .order_by("-amount")
+        )
+        queryset = (
+            agency_cte.join(
+                self.queryset.filter(treasury_account__funding_toptier_agency__isnull=False)
+                .annotate(
+                    type=Value("agency", output_field=TextField()),
+                    name=F("treasury_account__funding_toptier_agency__name"),
+                    code=F("treasury_account__funding_toptier_agency__toptier_code"),
+                )
+                .values("type", "name", "code")
+                .annotate(amount=Sum(self.file_b_calculations.get_obligations()))
+                .order_by("-amount"),
+                treasury_account__funding_toptier_agency__toptier_code=agency_cte.col.code,
+            )
+            .with_cte(agency_cte)
+            .annotate(
+                id=agency_cte.col.id,
+                link=agency_cte.col.link,
+            )
         )
 
-        for element in queryset:
-            element["id"] = self.agency_ids[element["code"]]["id"]
-            element["link"] = self.agency_ids[element["code"]]["link"]
         return queryset
 
     def award_category(self):

@@ -7,6 +7,7 @@ import pytest
 from django.conf import settings
 from django.core.management import call_command
 from django.db import connections
+from django.test import override_settings
 from model_bakery import baker
 
 from usaspending_api.transactions.models import SourceAssistanceTransaction
@@ -130,20 +131,20 @@ VALUES
 (E'2018-11-28 20:12:42.541441',E'2018-11-28 20:12:42.541445',89126462,E'20181003',E'A',E'10',E'AGRICULTURAL RISK COVERAGE PROG - COUNTY',E'Redacted due to PII',NULL,E'012',E'12346T',E'12D2',NULL,E'NON',E'P',E'10.112',NULL,NULL,E'12FA00PY58106320',1499,NULL,E'012',E'12346T',E'12D2',NULL,NULL,NULL,E'USA',NULL,NULL,NULL,E'52565',NULL,0,NULL,E'20181003',E'20181003',E'IA40935',E'02',E'USA',NULL,E'52565',3,E'SAI EXEMPT',NULL,E'02',E'1499.00',E'Price Loss Coverage',E'Department of Agriculture (USDA)',E'Farm Service Agency',E'Department of Agriculture (USDA)',E'Farm Service Agency',NULL,E'Van Buren',E'Iowa',E'KEOSAUQUA',E'KEOSAUQUA',E'177',E'Van Buren',E'IA',E'Iowa',E'2018-11-28 20:12:42.540405',E'12D2_12FA00PY58106320_-none-_10.112_-none-',TRUE,E'Deputy Administrator Farm Programs',E'Deputy Administrator Farm Programs',E'40935',NULL,E'UNITED STATES',E'UNITED STATES',E'177',14903,NULL,E'52565',NULL,E'{{individuals}}',E'New',E'direct payment with unrestricted use (retirement, pension, veterans benefits, etc.) (D)',E'Not Recovery Act',E'Individual',NULL,E'Non-Aggregate Record to an Individual Recipient (PII-Redacted)',NULL,NULL,E'ASST_NON_12FA00PY58106320_12D2',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,E'Single ZIP Code',NULL,NULL,NULL,NULL,NULL),
 (E'2017-09-16 23:41:06.101705',E'2017-09-16 23:41:06.101705',46763320,E'09/22/2016',E'C',E'06',E'GRANT PROGRAM',E'Central Carolina Technical College',E'073708414',E'091',NULL,E'9100',E'0008',E'NON',E'06',E'84.063',NULL,0,E'P063P162482',2665,NULL,NULL,NULL,NULL,E'506 N Guignard Dr',NULL,NULL,E'USA',NULL,NULL,NULL,E'29150',E'2468',0,0,E'08/31/2022',E'03/23/2016',E'4570405',E'05',E'USA',NULL,E'291502468',2,E'SAI NOT AVAILABLE',NULL,E'05',E'2665.0',E'PELL',E'Department of Education (ED)',E'Department of Education',NULL,NULL,TRUE,E'Sumter',E'SOUTH CAROLINA',E'SUMTER',E'Sumter',E'085',E'Sumter',E'SC',E'South Carolina',E'2016-10-05 00:00:00',E'9100_P063P162482_-none-_84.063_0008',TRUE,NULL,NULL,E'70405',NULL,E'UNITED STATES',E'UNITED STATES',E'085',NULL,E'SC',E'29150',E'2468',NULL,NULL,NULL,NULL,NULL,NULL,NULL,E'CENTRAL CAROLINA TECHNICAL COLLEGE',E'073708414',E'ASST_NON_P063P162482_9100',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
     """
-    with connections[settings.DATA_BROKER_DB_ALIAS].cursor() as cursor:
+    with connections[settings.BROKER_DB_ALIAS].cursor() as cursor:
         cursor.execute(insert_test_data)
         cursor.execute(f"SELECT COUNT(*) FROM {BROKER_TABLE}")
         assert cursor.fetchall()[0][0] == NUMBER_OF_SOURCE_RECORDS
 
     yield
 
-    with connections[settings.DATA_BROKER_DB_ALIAS].cursor() as cursor:
+    with connections[settings.BROKER_DB_ALIAS].cursor() as cursor:
         cursor.execute(f"TRUNCATE {BROKER_TABLE}")
         cursor.execute(f"SELECT COUNT(*) FROM {BROKER_TABLE}")
         assert cursor.fetchall()[0][0] == 0
 
 
-@pytest.mark.django_db(databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_data_transfer_from_broker(load_broker_data):
     call_command("transfer_assistance_records", "--reload-all")
     table = SourceAssistanceTransaction().table_name
@@ -265,7 +266,7 @@ def test_data_transfer_from_broker(load_broker_data):
         )
 
 
-@pytest.mark.django_db(databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_correction_overwrites_when_afa_casing_is_different(load_broker_data):
     """Verify that if a correction comes in for a FABS record that has the same case-INSENSITIVE afa_generated_unique
     key, but in fact has different letter-casing than the original, that it will STILL replace the record and put its
@@ -301,7 +302,7 @@ VALUES
     (E'2017-09-16 22:22:42.760993','{insert_now_time}',{new_published_fabs_id},E'07/12/2017',E'C',E'06',E'UNKNOWN TITLE',E'Columbus State Community College',NULL,E'091',NULL,E'9100',E'3',E'NON',E'06',E'84.033',E'C',0,E'P033A173267',520000,NULL,E'091',NULL,NULL,E'550 E Spring St',NULL,NULL,E'USA',NULL,NULL,NULL,E'43215',E'1722',0,0,E'08/31/2023',NULL,E'OH18000',E'03',E'USA',NULL,E'432151722',2,NULL,NULL,E'03',E'520000.0',E'Federal Work-Study Program',E'Department of Education (ED)',E'Department of Education',E'EDUCATION, DEPARTMENT OF (9100)',NULL,TRUE,E'Delaware',E'Ohio',E'COLUMBUS',E'Columbus',E'049',E'Franklin',E'OH',E'Ohio',E'2017-07-21 00:00:00','{case_change_afa}',TRUE,NULL,NULL,NULL,NULL,E'UNITED STATES',E'UNITED STATES',E'041',NULL,E'OH',E'43215',E'1722',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,E'ASST_NON_P033A173267_9100',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,E'Single ZIP Code',E'awardee-uei',E'parent-uei',E'funding-opportunity-goals',E'funding-opportunity-number',123456)
     ;
     """
-    with connections[settings.DATA_BROKER_DB_ALIAS].cursor() as cursor:
+    with connections[settings.BROKER_DB_ALIAS].cursor() as cursor:
         cursor.execute(update_fabs_record)
         cursor.execute(insert_corrected_fabs_record)
         cursor.execute(f"SELECT COUNT(*) FROM {BROKER_TABLE}")
@@ -426,3 +427,71 @@ VALUES
             "funding-opportunity-number",
             123456,
         )
+
+
+@override_settings(IS_LOCAL=False)
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
+def test_delete(load_broker_data):
+    # Load initial Broker data into USAspending
+    call_command("transfer_assistance_records", "--reload-all")
+    table = SourceAssistanceTransaction().table_name
+    transaction_unique_field = "afa_generated_unique"
+    initial_usas_records = NUMBER_OF_SOURCE_RECORDS - 1
+
+    with connections[settings.DEFAULT_DB_ALIAS].cursor() as cursor:
+        cursor.execute(f"SELECT COUNT(*) FROM {table}")
+        broker_count = cursor.fetchall()[0][0]
+        assert broker_count == initial_usas_records, "Wrong number of records copied"
+
+    # Validate that the specific delete records exist in USAspending
+    deleted_transactions = (
+        "3620_-NONE-_18040416.0120739_64.012_-NONE-",
+        "9100_P033A173267_-NONE-_84.033_3",
+        "9100_P063Q152482_-NONE-_84.063_0002",
+        "3620_-NONE-_18040416.0120635_64.012_-NONE-",
+    )
+    with connections[settings.DEFAULT_DB_ALIAS].cursor() as cursor:
+        cursor.execute(
+            f"SELECT COUNT(*) FROM {table} WHERE UPPER({transaction_unique_field}) IN %s", (deleted_transactions,)
+        )
+        assert cursor.fetchall()[0][0] == len(deleted_transactions), "Transactions under test don't exist"
+
+    # Create Broker records that mark a file for deletion
+    insert_deleted_transactions = """
+        INSERT INTO "{}"
+            ("created_at","updated_at","published_fabs_id","action_date","action_type","assistance_type","award_description","awardee_or_recipient_legal","awardee_or_recipient_uniqu","awarding_agency_code","awarding_office_code","awarding_sub_tier_agency_c","award_modification_amendme","business_funds_indicator","business_types","assistance_listing_number","correction_delete_indicatr","face_value_loan_guarantee","fain","federal_action_obligation","fiscal_year_and_quarter_co","funding_agency_code","funding_office_code","funding_sub_tier_agency_co","legal_entity_address_line1","legal_entity_address_line2","legal_entity_address_line3","legal_entity_country_code","legal_entity_foreign_city","legal_entity_foreign_posta","legal_entity_foreign_provi","legal_entity_zip5","legal_entity_zip_last4","non_federal_funding_amount","original_loan_subsidy_cost","period_of_performance_curr","period_of_performance_star","place_of_performance_code","place_of_performance_congr","place_of_perform_country_c","place_of_performance_forei","place_of_performance_zip4a","record_type","sai_number","uri","legal_entity_congressional","total_funding_amount","assistance_listing_title","awarding_agency_name","awarding_sub_tier_agency_n","funding_agency_name","funding_sub_tier_agency_na","is_historical","place_of_perform_county_na","place_of_perform_state_nam","place_of_performance_city","legal_entity_city_name","legal_entity_county_code","legal_entity_county_name","legal_entity_state_code","legal_entity_state_name","modified_at","afa_generated_unique","is_active","awarding_office_name","funding_office_name","legal_entity_city_code","legal_entity_foreign_descr","legal_entity_country_name","place_of_perform_country_n","place_of_perform_county_co","submission_id","place_of_perfor_state_code","place_of_performance_zip5","place_of_perform_zip_last4","business_categories","action_type_description","assistance_type_desc","business_funds_ind_desc","business_types_desc","correction_delete_ind_desc","record_type_description","ultimate_parent_legal_enti","ultimate_parent_unique_ide","unique_award_key","high_comp_officer1_amount","high_comp_officer1_full_na","high_comp_officer2_amount","high_comp_officer2_full_na","high_comp_officer3_amount","high_comp_officer3_full_na","high_comp_officer4_amount","high_comp_officer4_full_na","high_comp_officer5_amount","high_comp_officer5_full_na","place_of_performance_scope","uei","ultimate_parent_uei","funding_opportunity_goals","funding_opportunity_number","indirect_federal_sharing")
+        VALUES
+            (E'2018-04-17 16:36:56.6039',E'2018-04-17 16:36:56.603906',123123123,E'20180131',NULL,E'11',NULL,E'MULTIPLE RECIPIENTS',NULL,E'036',NULL,E'3620',NULL,E'NON',E'X',E'64.012',E'D',NULL,NULL,6719,NULL,E'036',NULL,E'3600',NULL,NULL,NULL,E'USA',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,E'KS**039',E'01',E'USA',NULL,NULL,1,NULL,E'18040416.0120739',E'01',E'6719',E'Veterans Prescription Service',E'Department of Veterans Affairs (VA)',E'Under Secretary for Health/Veterans Health Administration',E'Department of Veterans Affairs (VA)',E'Department of Veterans Affairs',NULL,E'Decatur',E'Kansas',NULL,NULL,E'039',E'Decatur',E'KS',E'Kansas',E'2018-04-17 16:36:56.602576',E'{}',FALSE,NULL,NULL,NULL,NULL,E'UNITED STATES',E'UNITED STATES',E'039',9640,E'KS',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,E'ASST_AGG_18040416.0120739_3620',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,E'County-wide',NULL,NULL,NULL,NULL,NULL),
+            (E'2017-09-16 22:22:42.760993',E'2017-09-16 22:22:42.760993',123123124,E'07/12/2017',E'C',E'06',E'UNKNOWN TITLE',E'Columbus State Community College',NULL,E'091',NULL,E'9100',E'3',E'NON',E'06',E'84.033',E'D',0,E'p033a173267',520000,NULL,E'091',NULL,NULL,E'550 E Spring St',NULL,NULL,E'USA',NULL,NULL,NULL,E'43215',E'1722',0,0,E'08/31/2023',NULL,E'OH18000',E'03',E'USA',NULL,E'432151722',2,NULL,NULL,E'03',E'520000.0',E'Federal Work-Study Program',E'Department of Education (ED)',E'Department of Education',E'EDUCATION, DEPARTMENT OF (9100)',NULL,TRUE,E'Delaware',E'Ohio',E'COLUMBUS',E'Columbus',E'049',E'Franklin',E'OH',E'Ohio',E'2017-07-21 00:00:00',E'{}',FALSE,NULL,NULL,NULL,NULL,E'UNITED STATES',E'UNITED STATES',E'041',NULL,E'OH',E'43215',E'1722',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,E'ASST_NON_P033A173267_9100',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,E'Single ZIP Code',E'awardee-uei',E'parent-uei',E'funding-opportunity-goals',E'funding-opportunity-number',123456),
+            (E'2017-09-16 23:41:06.101705',E'2017-09-16 23:41:06.101705',123123125,E'08/25/2016',E'C',E'06',E'PELL GRANTS',E'Central Carolina Technical College',E'073708414',E'091',NULL,E'9100',E'0002',E'NON',E'06',E'84.063',E'D',0,E'p063q152482',1090,NULL,NULL,NULL,NULL,E'506 N Guignard Dr',NULL,NULL,E'USA',NULL,NULL,NULL,E'29150',E'2468',0,0,E'08/31/2021',E'03/23/2015',E'4570405',E'05',E'USA',NULL,E'291502468',2,E'SAI NOT AVAILABLE',NULL,E'05',E'1090.0',E'PELL',E'Department of Education (ED)',E'Department of Education',NULL,NULL,TRUE,E'Sumter',E'SOUTH CAROLINA',E'SUMTER',E'Sumter',E'085',E'Sumter',E'SC',E'South Carolina',E'2016-09-07 00:00:00',E'{}',FALSE,NULL,NULL,E'70405',NULL,E'UNITED STATES',E'UNITED STATES',E'085',NULL,E'SC',E'29150',E'2468',NULL,NULL,NULL,NULL,NULL,NULL,NULL,E'CENTRAL CAROLINA TECHNICAL COLLEGE',E'073708414',E'ASST_NON_P063Q152482_9100',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
+            (E'2018-04-17 16:36:57.918546',E'2018-04-17 16:36:57.918552',123123126,E'20180131',NULL,E'11',NULL,E'MULTIPLE RECIPIENTS',NULL,E'036',NULL,E'3620',NULL,E'NON',E'X',E'64.012',E'D',NULL,NULL,33254,NULL,E'036',NULL,E'3600',NULL,NULL,NULL,E'USA',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,E'IA**029',E'03',E'USA',NULL,NULL,1,NULL,E'18040416.0120635',E'03',E'33254',E'Veterans Prescription Service',E'Department of Veterans Affairs (VA)',E'Under Secretary for Health/Veterans Health Administration',E'Department of Veterans Affairs (VA)',E'Department of Veterans Affairs',NULL,E'Cass',E'Iowa',NULL,NULL,E'029',E'Cass',E'IA',E'Iowa',E'2018-04-17 16:36:57.917212',E'{}',FALSE,NULL,NULL,NULL,NULL,E'UNITED STATES',E'UNITED STATES',E'029',9640,E'IA',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,E'ASST_AGG_18040416.0120635_3620',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,E'County-wide',NULL,NULL,NULL,NULL,NULL)
+    """.format(
+        BROKER_TABLE, *[trx_id.lower() for trx_id in deleted_transactions]
+    )
+
+    update_delete_transactions = f"""
+        UPDATE "{BROKER_TABLE}"
+        SET is_active = False
+        WHERE UPPER({transaction_unique_field}) IN %s
+    """
+
+    with connections[settings.BROKER_DB_ALIAS].cursor() as cursor:
+        cursor.execute(insert_deleted_transactions)
+        cursor.execute(f"SELECT COUNT(*) FROM {BROKER_TABLE}")
+        assert cursor.fetchall()[0][0] == NUMBER_OF_SOURCE_RECORDS + 4
+
+        cursor.execute(update_delete_transactions, (deleted_transactions,))
+
+    # Run deletions
+    call_command("delete_assistance_records", "--skip-upload", "--date=2008-10-01")
+
+    with connections[settings.DEFAULT_DB_ALIAS].cursor() as cursor:
+        # Validate that the deleted records have been removed
+        cursor.execute(
+            f"SELECT COUNT(*) FROM {table} WHERE UPPER({transaction_unique_field}) IN %s", (deleted_transactions,)
+        )
+        assert cursor.fetchall()[0][0] == 0, "Failed to delete transactions"
+
+        # Validate that only those transactions were deleted
+        cursor.execute(f"SELECT COUNT(*) FROM {table}")
+        assert cursor.fetchall()[0][0] == initial_usas_records - 4, "Failed to delete transactions"

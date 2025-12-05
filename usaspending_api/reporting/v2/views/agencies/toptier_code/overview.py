@@ -1,13 +1,14 @@
-from django.db.models import Subquery, OuterRef, DecimalField, Func, F, Q, IntegerField
+from django.db.models import DecimalField, F, Func, IntegerField, OuterRef, Q, Subquery
 from rest_framework.response import Response
 
-from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
+from usaspending_api.agency.v2.views.agency_base import AgencyBase
+from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
-from usaspending_api.references.models import GTASSF133Balances
-from usaspending_api.references.models import ToptierAgency
-from usaspending_api.reporting.models import ReportingAgencyOverview, ReportingAgencyTas, ReportingAgencyMissingTas
-from usaspending_api.submissions.models import SubmissionAttributes
+from usaspending_api.common.helpers.pagination_mixin import PaginationMixin
+from usaspending_api.references.models import GTASSF133Balances, ToptierAgency
+from usaspending_api.reporting.models import ReportingAgencyMissingTas, ReportingAgencyOverview, ReportingAgencyTas
 from usaspending_api.submissions.helpers import is_valid_monthly_period
+from usaspending_api.submissions.models import SubmissionAttributes
 
 
 class AgencyOverview(PaginationMixin, AgencyBase):
@@ -15,6 +16,7 @@ class AgencyOverview(PaginationMixin, AgencyBase):
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/reporting/agencies/toptier_code/overview.md"
 
+    @cache_response()
     def get(self, request, toptier_code):
         self.sortable_columns = [
             "current_total_budget_authority_amount",
@@ -192,13 +194,13 @@ class AgencyOverview(PaginationMixin, AgencyBase):
                 else None
             )
             unlinked_assistance_award_count = (
-                result["unlinked_assistance_c_awards"] + result["unlinked_assistance_d_awards"]
-                if result["unlinked_assistance_c_awards"] and result["unlinked_assistance_d_awards"]
+                (result["unlinked_assistance_c_awards"] or 0) + (result["unlinked_assistance_d_awards"] or 0)
+                if result["unlinked_assistance_c_awards"] or result["unlinked_assistance_d_awards"]
                 else None
             )
             unlinked_contract_award_count = (
-                result["unlinked_procurement_c_awards"] + result["unlinked_procurement_d_awards"]
-                if result["unlinked_procurement_c_awards"] and result["unlinked_procurement_d_awards"]
+                (result["unlinked_procurement_c_awards"] or 0) + (result["unlinked_procurement_d_awards"] or 0)
+                if result["unlinked_procurement_c_awards"] or result["unlinked_procurement_d_awards"]
                 else None
             )
             formatted_result.update(

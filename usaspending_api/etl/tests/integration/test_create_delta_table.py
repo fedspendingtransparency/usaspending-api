@@ -3,9 +3,8 @@
 NOTE: Uses Pytest Fixtures from immediate parent conftest.py: usaspending_api/etl/tests/conftest.py
 """
 
-from pyspark.sql import SparkSession
-
 from django.core.management import call_command
+from pyspark.sql import SparkSession
 
 from usaspending_api.etl.management.commands.create_delta_table import TABLE_SPEC
 
@@ -106,3 +105,21 @@ def test_create_delta_table_for_recipient_lookup_with_alt_db_and_name(
     _verify_delta_table_creation(
         spark, "recipient_lookup", s3_unittest_data_bucket, alt_db="my_alt_db", alt_name="recipient_lookup_alt_name"
     )
+
+
+def test_create_delta_table_for_object_class_program_activity_download(
+    spark, s3_unittest_data_bucket, hive_unittest_metastore_db
+):
+    _verify_delta_table_creation(spark, "object_class_program_activity_download", s3_unittest_data_bucket)
+
+
+def test_create_delta_table_for_award_id_lookup(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+    _verify_delta_table_creation(spark, "award_id_lookup", s3_unittest_data_bucket)
+
+
+def test_create_delta_table_for_transaction_id_lookup(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+    _verify_delta_table_creation(spark, "transaction_id_lookup", s3_unittest_data_bucket)
+
+
+def test_create_delta_table_for_transaction_download(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+    _verify_delta_table_creation(spark, "transaction_download", s3_unittest_data_bucket)

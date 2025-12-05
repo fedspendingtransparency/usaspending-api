@@ -1,14 +1,15 @@
-from collections import OrderedDict
+import logging
+import re
 from datetime import datetime, timedelta, timezone
 
 import pytest
-from django.db.models import F, Q
-from django.db.models.functions import Upper
+from django.core.management import call_command, CommandError
 from django.test import override_settings
 from elasticsearch import Elasticsearch
 from model_bakery import baker
 
 from usaspending_api.awards.models import Award, TransactionNormalized
+from usaspending_api.broker.lookups import EXTERNAL_DATA_TYPE_DICT
 from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import ensure_view_exists
 from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
 from usaspending_api.conftest_helpers import TestElasticSearchIndex
@@ -30,13 +31,31 @@ from usaspending_api.etl.management.commands.elasticsearch_indexer import (
 from usaspending_api.etl.management.commands.elasticsearch_indexer import (
     parse_cli_args,
 )
-from usaspending_api.recipient.models import RecipientProfile, StateData
+from usaspending_api.recipient.models import RecipientProfile
 from usaspending_api.search.models import AwardSearch, TransactionSearch
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
+from usaspending_api.tests.conftest_spark import create_and_load_all_delta_tables
 
 
 @pytest.fixture
 def award_data_fixture(db):
+    external_load_dates = [
+        {
+            "external_data_type__external_data_type_id": EXTERNAL_DATA_TYPE_DICT["transaction_fabs"],
+            "last_load_date": datetime(2021, 1, 30, 12, 0, 0, 0, timezone.utc),
+        },
+        {
+            "external_data_type__external_data_type_id": EXTERNAL_DATA_TYPE_DICT["transaction_fpds"],
+            "last_load_date": datetime(2021, 1, 30, 12, 0, 0, 0, timezone.utc),
+        },
+        {
+            "external_data_type__external_data_type_id": EXTERNAL_DATA_TYPE_DICT["es_deletes"],
+            "last_load_date": datetime(2021, 1, 17, 16, 0, 0, 0, timezone.utc),
+        },
+    ]
+    for load_date in external_load_dates:
+        baker.make("broker.ExternalDataLoadDate", **load_date)
+
     fpds_unique_key = "fpds_transaction_id_1".upper()  # our ETL UPPERs all these when brought from Broker
     baker.make(
         "search.TransactionSearch",
@@ -107,6 +126,8 @@ def award_data_fixture(db):
         funding_agency_id=1,
         update_date="2012-05-19",
         action_date="2012-05-19",
+        subaward_count=0,
+        transaction_unique_id=fpds_unique_key,
     )
     baker.make(
         "search.AwardSearch",
@@ -123,6 +144,29 @@ def award_data_fixture(db):
         date_signed="2016-10-01",
         update_date="2014-07-21",
         action_date="2016-10-01",
+        subaward_count=0,
+        transaction_unique_id=fabs_unique_key,
+    )
+    baker.make(
+        "search.AwardSearch",
+        award_id=3,
+        generated_unique_award_id="'CONT_AWD_IND12PB00323",
+        latest_transaction_id=1,
+        earliest_transaction_search_id=1,
+        latest_transaction_search_id=1,
+        is_fpds=True,
+        type="A",
+        category="contracts",
+        piid="IND12PB00323",
+        description="pop tarts and assorted cereals",
+        total_obligation=500000.00,
+        date_signed="2010-10-1",
+        awarding_agency_id=1,
+        funding_agency_id=1,
+        update_date="2012-05-19",
+        action_date="2012-05-19",
+        subaward_count=0,
+        transaction_unique_id=fpds_unique_key,
     )
     baker.make("accounts.FederalAccount", id=1)
     baker.make(
@@ -164,73 +208,6 @@ def recipient_data_fixture(db):
     )
 
 
-@pytest.fixture
-def location_data_fixture(db):
-    baker.make(
-        "search.TransactionSearch",
-        transaction_id=100,
-        is_fpds=False,
-        transaction_unique_id="TRANSACTION100",
-        pop_country_name="UNITED STATES",
-        pop_state_name="CALIFORNIA",
-        pop_city_name="LOS ANGELES",
-        pop_county_name="LOS ANGELES",
-        pop_zip5=90001,
-        pop_congressional_code_current="34",
-        pop_congressional_code="34",
-        recipient_location_country_name="UNITED STATES",
-        recipient_location_state_name="NEVADA",
-        recipient_location_city_name="LAS VEGAS",
-        recipient_location_county_name="CLARK",
-        recipient_location_zip5=88901,
-        recipient_location_congressional_code_current="01",
-        recipient_location_congressional_code="01",
-    )
-    baker.make(
-        "search.TransactionSearch",
-        transaction_id=101,
-        is_fpds=False,
-        transaction_unique_id="TRANSACTION101",
-        pop_country_name="DENMARK",
-        pop_state_name=None,
-        pop_city_name=None,
-        pop_county_name=None,
-        pop_zip5=None,
-        pop_congressional_code_current=None,
-        pop_congressional_code=None,
-        recipient_location_country_name="UNITED STATES",
-        recipient_location_state_name="TEXAS",
-        recipient_location_city_name="DALLAS",
-        recipient_location_county_name="DALLAS",
-        recipient_location_zip5=75001,
-        recipient_location_congressional_code_current="30",
-        recipient_location_congressional_code="30",
-    )
-    baker.make(
-        "search.TransactionSearch",
-        transaction_id=102,
-        is_fpds=False,
-        transaction_unique_id="TRANSACTION102",
-        pop_country_name="DENMARK",
-        pop_state_name=None,
-        pop_city_name=None,
-        pop_county_name=None,
-        pop_zip5=None,
-        pop_congressional_code_current=None,
-        pop_congressional_code=None,
-        recipient_location_country_name="UNITED STATES",
-        recipient_location_state_name="FAKE STATE",
-        recipient_location_city_name="FAKE CITY",
-        recipient_location_county_name="FAKE COUNTY",
-        recipient_location_zip5=75001,
-        recipient_location_congressional_code_current="30",
-        recipient_location_congressional_code="30",
-    )
-    baker.make("recipient.StateData", id=1, fips="06", code="CA", name="California", type="state", year=2024)
-    baker.make("recipient.StateData", id=2, fips="32", code="NV", name="Nevada", type="state", year=2024)
-    baker.make("recipient.StateData", id=3, fips="48", code="TX", name="Texas", type="state", year=2024)
-
-
 def mock_execute_sql(sql, results, verbosity=None):
     """SQL method is being mocked here since the `execute_sql_statement` used
     doesn't use the same DB connection to avoid multiprocessing errors
@@ -238,11 +215,12 @@ def mock_execute_sql(sql, results, verbosity=None):
     return execute_sql_to_ordered_dictionary(sql)
 
 
-def test_create_and_load_new_award_index(award_data_fixture, elasticsearch_award_index, monkeypatch):
+def test_create_and_load_new_award_index(award_data_fixture, elasticsearch_award_index, monkeypatch, caplog):
     """Test the ``elasticsearch_loader`` django management command to create a new awards index and load it
     with data from the DB
     """
     client = elasticsearch_award_index.client  # type: Elasticsearch
+    monkeypatch.setattr("usaspending_api.etl.elasticsearch_loader_helpers.index_config.logger", logging.getLogger())
 
     # Ensure index is not yet created
     assert not client.indices.exists(elasticsearch_award_index.index_name)
@@ -250,7 +228,20 @@ def test_create_and_load_new_award_index(award_data_fixture, elasticsearch_award
 
     # Inject ETL arg into config for this run, which loads a newly created index
     elasticsearch_award_index.etl_config["create_new_index"] = True
-    es_etl_config = _process_es_etl_test_config(client, elasticsearch_award_index)
+    try:
+        _process_es_etl_test_config(client, elasticsearch_award_index)
+    except SystemExit:
+        assert (
+            f"The earliest Transaction / Award load date of 2021-01-30 12:00:00+00:00 is later than the value"
+            f" of 'es_deletes' (2021-01-17 16:00:00+00:00). To reduce the amount of data loaded in the next incremental"
+            " load the values of 'es_deletes', 'es_awards', and 'es_transactions' should most likely be updated to"
+            f" 2021-01-30 12:00:00+00:00 before proceeding. This recommendation assumes that the 'rpt' tables are"
+            f" up to date. Optionally, this can be bypassed with the '--skip-date-check' option."
+        ) in caplog.records[-1].message
+    else:
+        assert False, "No exception or the wrong exception was raised"
+
+    es_etl_config = _process_es_etl_test_config(client, elasticsearch_award_index, options={"skip_date_check": True})
 
     # Must use mock sql function to share test DB conn+transaction in ETL code
     # Patching on the module into which it is imported, not the module where it is defined
@@ -288,41 +279,13 @@ def test_create_and_load_new_recipient_index(recipient_data_fixture, elasticsear
     assert es_recipient_docs == original_db_recipients_count
 
 
-def test_create_and_load_new_location_index(location_data_fixture, elasticsearch_location_index, monkeypatch):
-    """Test the `elasticsearch_indexer` Django management command to create and load a new locations index"""
-
-    client: Elasticsearch = elasticsearch_location_index.client
-
-    # Ensure index is not yet created
-    assert not client.indices.exists(elasticsearch_location_index.index_name)
-
-    valid_state_names = StateData.objects.values_list(Upper("name"), flat=True)
-    pop_ts = (
-        TransactionSearch.objects.filter(
-            (Q(pop_country_name="UNITED STATES") & Q(pop_state_name__in=valid_state_names))
-            | ~(Q(pop_country_name="UNITED STATES") & Q(pop_state_name__isnull=False))
-        )
-        .annotate(countries=F("pop_country_name"), states=F("pop_state_name"))
-        .values("countries", "states")
-    )
-    rl_ts = (
-        TransactionSearch.objects.filter(
-            (
-                Q(recipient_location_country_name="UNITED STATES")
-                & Q(recipient_location_state_name__in=valid_state_names)
-            )
-            | ~(Q(recipient_location_country_name="UNITED STATES") & Q(recipient_location_state_name__isnull=False))
-        )
-        .annotate(countries=F("recipient_location_country_name"), states=F("recipient_location_state_name"))
-        .values("countries", "states")
-    )
-    original_db_locations_count = pop_ts.union(rl_ts).count()
-
-    setup_elasticsearch_test(monkeypatch, elasticsearch_location_index)
-    assert client.indices.exists(elasticsearch_location_index.index_name)
-
-    es_location_docs = client.count(index=elasticsearch_location_index.index_name)["count"]
-    assert es_location_docs == original_db_locations_count
+def test_location_index_raises_error():
+    """Test the `elasticsearch_indexer` Django management command with location to ensure that an error is raised."""
+    with pytest.raises(
+        CommandError,
+        match=re.escape(f"Error: argument --load-type: invalid choice: 'location'"),
+    ):
+        call_command("elasticsearch_indexer", create_new_index=True, load_type="location", index_name="2025-locations")
 
 
 def test_create_and_load_new_transaction_index(award_data_fixture, elasticsearch_transaction_index, monkeypatch):
@@ -503,17 +466,38 @@ def test_delete_docs_by_unique_key_exceed_max_results_window(award_data_fixture,
             assert "controlled by the [index.max_result_window] index level setting" in str(exc_info.value)
 
 
-def test__check_awards_for_deletes(award_data_fixture, monkeypatch, db):
+@pytest.mark.django_db(transaction=True)
+def test__check_awards_for_deletes(
+    award_data_fixture, monkeypatch, spark, s3_unittest_data_bucket, hive_unittest_metastore_db
+):
+    test_config = {"verbose": False}
     monkeypatch.setattr(
         "usaspending_api.etl.elasticsearch_loader_helpers.delete_data.execute_sql_statement", mock_execute_sql
     )
     id_list = ["CONT_AWD_IND12PB00323"]
-    awards = _check_awards_for_deletes(id_list)
+    awards = _check_awards_for_deletes(test_config, id_list)
     assert awards == []
 
     id_list = ["CONT_AWD_WHATEVER", "CONT_AWD_IND12PB00323"]
-    awards = _check_awards_for_deletes(id_list)
-    assert awards == [OrderedDict([("generated_unique_award_id", "CONT_AWD_WHATEVER")])]
+    awards = _check_awards_for_deletes(test_config, id_list)
+    assert awards == ["CONT_AWD_WHATEVER"]
+
+    # Check to ensure sql properly escapes characters
+    id_list = ["CONT_AWD_SOMETHING_BEFORE", "'CONT_AWD_IND12PB00323", "CONT_AWD_SOMETHING_AFTER"]
+    awards = _check_awards_for_deletes(test_config, id_list)
+    assert sorted(awards) == [
+        "CONT_AWD_SOMETHING_AFTER",
+        "CONT_AWD_SOMETHING_BEFORE",
+    ]
+
+    tables_to_load = ["awards"]
+    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
+    id_list = ["CONT_AWD_SOMETHING_BEFORE", "'CONT_AWD_IND12PB00323", "CONT_AWD_SOMETHING_AFTER"]
+    awards = _check_awards_for_deletes(test_config, id_list, spark)
+    assert sorted(awards) == [
+        "CONT_AWD_SOMETHING_AFTER",
+        "CONT_AWD_SOMETHING_BEFORE",
+    ]
 
 
 def test_delete_awards(award_data_fixture, elasticsearch_transaction_index, elasticsearch_award_index, monkeypatch, db):
@@ -537,12 +521,12 @@ def test_delete_awards(award_data_fixture, elasticsearch_transaction_index, elas
         "ASST_TX_" + key.upper()
         for key in TransactionNormalized.objects.filter(is_fpds=False).values_list("transaction_unique_id", flat=True)
     ]
-    deleted_tx = {key: {"timestamp": delete_time} for key in fpds_keys + fabs_keys}
+    deleted_tx = [key for key in fpds_keys + fabs_keys]
     # Patch the function that fetches deleted transaction keys from the CSV delete-log file
     # in S3, and provide fake transaction keys
     monkeypatch.setattr(
         "usaspending_api.etl.elasticsearch_loader_helpers.delete_data._gather_deleted_transaction_keys",
-        lambda cfg, fabs_external_data_load_data_key, fpds_external_data_load_data_key: deleted_tx,
+        lambda cfg, delete_window_start, fabs_external_data_load_data_key, fpds_external_data_load_data_key: deleted_tx,
     )
 
     original_db_awards_count = Award.objects.count()
@@ -561,7 +545,7 @@ def test_delete_awards(award_data_fixture, elasticsearch_transaction_index, elas
     )
     delete_awards(client, es_etl_config)
     es_award_docs = client.count(index=elasticsearch_award_index.index_name)["count"]
-    assert es_award_docs == 0
+    assert es_award_docs == 1
 
 
 def test_delete_awards_zero_for_unmatched_transactions(
@@ -581,11 +565,11 @@ def test_delete_awards_zero_for_unmatched_transactions(
     # in S3, and provide fake transaction keys
     monkeypatch.setattr(
         "usaspending_api.etl.elasticsearch_loader_helpers.delete_data._gather_deleted_transaction_keys",
-        lambda cfg, fabs_external_data_load_data_key, fpds_external_data_load_data_key: {
-            "unmatchable_tx_key1": {"timestamp": delete_time},
-            "unmatchable_tx_key2": {"timestamp": delete_time},
-            "unmatchable_tx_key3": {"timestamp": delete_time},
-        },
+        lambda cfg, delete_window_start, fabs_external_data_load_data_key, fpds_external_data_load_data_key: [
+            "unmatchable_tx_key1",
+            "unmatchable_tx_key2",
+            "unmatchable_tx_key3",
+        ],
     )
 
     client = elasticsearch_award_index.client  # type: Elasticsearch
@@ -613,13 +597,12 @@ def test_delete_one_assistance_award(
 
     # Get FABS transaction with the lowest ID. This ONE will be deleted.
     tx = TransactionNormalized.objects.filter(is_fpds=False).order_by("pk").first()  # type: TransactionNormalized
-    fabs_key = "ASST_TX_" + tx.transaction_unique_id.upper()
-    deleted_tx = {fabs_key: {"timestamp": delete_time}}
+    deleted_tx = ["ASST_TX_" + tx.transaction_unique_id.upper()]
     # Patch the function that fetches deleted transaction keys from the CSV delete-log file
     # in S3, and provide fake transaction keys
     monkeypatch.setattr(
         "usaspending_api.etl.elasticsearch_loader_helpers.delete_data._gather_deleted_transaction_keys",
-        lambda cfg, fabs_external_data_load_data_key, fpds_external_data_load_data_key: deleted_tx,
+        lambda cfg, delete_window_start, fabs_external_data_load_data_key, fpds_external_data_load_data_key: deleted_tx,
     )
 
     original_db_awards_count = Award.objects.count()
@@ -651,13 +634,12 @@ def test_delete_one_assistance_transaction(award_data_fixture, elasticsearch_tra
 
     # Get FABS transaction with the lowest ID. This ONE will be deleted.
     tx = TransactionNormalized.objects.filter(is_fpds=False).order_by("pk").first()  # type: TransactionNormalized
-    fabs_key = "ASST_TX_" + tx.transaction_unique_id.upper()
-    deleted_tx = {fabs_key: {"timestamp": delete_time}}
+    deleted_tx = ["ASST_TX_" + tx.transaction_unique_id.upper()]
     # Patch the function that fetches deleted transaction keys from the CSV delete-log file
     # in S3, and provide fake transaction keys
     monkeypatch.setattr(
         "usaspending_api.etl.elasticsearch_loader_helpers.delete_data._gather_deleted_transaction_keys",
-        lambda cfg, fabs_external_data_load_data_key, fpds_external_data_load_data_key: deleted_tx,
+        lambda cfg, delete_window_start, fabs_external_data_load_data_key, fpds_external_data_load_data_key: deleted_tx,
     )
 
     original_db_tx_count = TransactionNormalized.objects.count()
@@ -681,7 +663,9 @@ def test_delete_one_assistance_transaction(award_data_fixture, elasticsearch_tra
     assert es_award_docs == original_db_tx_count - 1
 
 
-def _process_es_etl_test_config(client: Elasticsearch, test_es_index: TestElasticSearchIndex):
+def _process_es_etl_test_config(
+    client: Elasticsearch, test_es_index: TestElasticSearchIndex, options: dict | None = None
+):
     """Use the Django mgmt cmd to extract args with default values, then update those with test ETL config values"""
     cmd = ElasticsearchIndexerCommand()
     cmd_name = cmd.__module__.split(".")[-1]  # should give "elasticsearch_indexer" unless name changed
@@ -691,5 +675,8 @@ def _process_es_etl_test_config(client: Elasticsearch, test_es_index: TestElasti
     test_args = [arg_item for kvpair in list_of_arg_kvs for arg_item in kvpair]
     cli_args, _ = parser.parse_known_args(args=test_args)  # parse the known args programmatically
     cli_opts = {**vars(cli_args), **test_es_index.etl_config}  # update defaults with test config
+    if options:
+        cli_opts.update(options)
     es_etl_config = parse_cli_args(cli_opts, client)  # use command's config parser for final config for testing ETL
+    es_etl_config["slices"] = "auto"  # no need to calculate slices for testing
     return es_etl_config

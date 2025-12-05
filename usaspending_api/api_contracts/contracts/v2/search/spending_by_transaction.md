@@ -248,7 +248,6 @@ Returns transaction records which match the provided filters.
 + `set_aside_type_codes`: [`NONE`] (optional, array[string])
 + `extent_competed_type_codes`: [`A`] (optional, array[string])
 + `treasury_account_components` (optional, array[TreasuryAccountComponentsObject], fixed-type)
-+ `object_class` (optional, array[string])
 + `program_activity` (optional, array[number])
 + `program_activities` (optional, array[ProgramActivityObject])
     A filter option that supports filtering by a program activity name or code. Please note that if this filter is used at least one of the members of the object, ProgramActivityObject, need to be provided.
@@ -256,6 +255,7 @@ Returns transaction records which match the provided filters.
     If the `def_codes` provided are in the COVID-19 or IIJA group, the query will only return transactions that meet two requirements:
     1. The transaction's associated prime award has at least one File C record with one of the supplied DEFCs.
     2. The matching DEFC's associated public law has an enactment date prior to the transaction's action_date.
++ `award_unique_id` (optional, string)
 
 ### LocationObject (object)
 These fields are defined in the [StandardLocationObject](../../../search_filters.md#standard-location-object)
@@ -378,6 +378,8 @@ A list of current DEFC can be found [here.](https://files.usaspending.gov/refere
 ### FieldNameObject (array)
 List of column names to request
 - `Action Date`
+- `Action Type`
+- `Assistance Listing`
 - `Award ID`
 - `Award Type`
 - `Awarding Agency`
@@ -391,9 +393,16 @@ List of column names to request
 - `Last Date to Order`
 - `Loan Value`
 - `Mod`
+- `NAICS`
+- `PSC`
+- `Primary Place of Performance`
+- `recipient_id`
+- `Recipient Location`
 - `Recipient Name`
+- `Recipient UEI`
 - `Subsidy Cost`
 - `Transaction Amount`
+- `Transaction Description`
 - `def_codes`
 
 ## TransactionResponse (object)
@@ -407,6 +416,7 @@ List of column names to request
 + `internal_id`: `68856340` (required, string, nullable)
 + `generated_internal_id`: `CONT_AWD_00013U_7090_KJ88_4735` (required, string, nullable)
 + `Mod`: `P00206` (required, string, nullable)
++ `recipient_id`: `1e5032cf-11df-a3bf-4240-6dda5f6d45ff-C` (optional, string, nullable)
 + `Recipient Name`: `LEIDOS INNOVATIONS CORPORATION` (required, string, nullable)
 + `Transaction Amount`: `40000000.00` (required, string, nullable)
 
@@ -425,6 +435,7 @@ List of column names to request
 + `Last Date to Order` (required, string, nullable)
 + `Loan Value` (required, string, nullable)
 + `Mod` (required, string, nullable)
++ `recipient_id` (optional, string, nullable)
 + `Recipient Name` (required, string, nullable)
 + `Subsidy Cost` (required, string, nullable)
 + `Transaction Amount` (required, string, nullable)

@@ -65,6 +65,7 @@ SELECT
   "pop_county_name",
   "pop_county_population",
   "pop_zip5",
+  "place_of_perform_zip_last4",
   "pop_congressional_code",
   "pop_congressional_population",
   "pop_congressional_code_current",
@@ -85,6 +86,13 @@ SELECT
   "recipient_location_zip5",
   "recipient_location_city_name",
   "recipient_location_county_fips",
+  "action_type",
+  "legal_entity_address_line1",
+  "legal_entity_address_line2",
+  "legal_entity_address_line3",
+  "legal_entity_foreign_posta",
+  "legal_entity_foreign_provi",
+  "legal_entity_zip_last4",
   "recipient_hash",
   "recipient_name",
   "recipient_levels",
@@ -116,8 +124,8 @@ SELECT
   "funding_subtier_agency_abbreviation",
   "tas_paths",
   "tas_components",
-  "federal_accounts"::JSON,
+  CAST("federal_accounts" AS VARCHAR(65535)) AS federal_accounts,
   "disaster_emergency_fund_codes",
-  "program_activities"::JSON
+  CAST("program_activities" AS VARCHAR(65535)) AS program_activities
 FROM "transaction_search"
 WHERE "action_date" >= '2007-10-01';

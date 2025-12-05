@@ -1,0 +1,110 @@
+name: Initialize Test Environment
+
+inputs:
+  is-integration-test:
+    description: Triggers build steps needed to support integration tests
+    required: true
+  is-spark-test:
+    description: Triggers build steps needed to support tests that utilize Spark
+    required: true
+  working-directory:
+    description: Directory where the requirements can be found; used when multiple repos are checked out
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Set combined ENV
+      shell: bash
+      run: |
+        echo "BROKER_DB=postgres://$BROKER_DB_USER:$BROKER_DB_PASSWORD@$BROKER_DB_HOST:$BROKER_DB_PORT/$BROKER_DB_NAME" >> $GITHUB_ENV
+        echo "DATABASE_URL=postgres://$USASPENDING_DB_USER:$USASPENDING_DB_PASSWORD@$USASPENDING_DB_HOST:$USASPENDING_DB_PORT/$USASPENDING_DB_NAME" >> $GITHUB_ENV
+        echo "DOWNLOAD_DATABASE_URL=postgres://$USASPENDING_DB_USER:$USASPENDING_DB_PASSWORD@$USASPENDING_DB_HOST:$USASPENDING_DB_PORT/$USASPENDING_DB_NAME" >> $GITHUB_ENV
+        echo "ES_HOSTNAME=$ES_SCHEME://$ES_HOST:$ES_PORT" >> $GITHUB_ENV
+        echo "MINIO_DATA_DIR=$HOME/Development/data/usaspending/docker/usaspending-s3" >> $GITHUB_ENV
+
+    # The conditionals below this all check against a string because inputs for actions are actually
+    # strings, not booleans: https://github.com/actions/runner/issues/1483
+    - name: Create directories needed for Minio
+      if: ${{ inputs.is-integration-test == 'true' }}
+      shell: bash
+      run: mkdir -p "$MINIO_DATA_DIR"
+
+    - name: Create directories needed for Spark
+      if: ${{ inputs.is-spark-test == 'true' }}
+      shell: bash
+      run: mkdir -p "$HOME/.ivy2"
+
+    - name: Build docker containers for DB, ES, and Minio
+      working-directory: ${{ inputs.working-directory }}
+      if: ${{ inputs.is-integration-test == 'true' }}
+      shell: bash
+      run: docker compose up -d usaspending-db usaspending-es minio
+
+    - name: Download broker docker image
+      if: ${{ inputs.is-integration-test == 'true' }}
+      uses: actions/download-artifact@v4
+      with:
+        name: dataact-broker-backend
+        path: /tmp
+
+    - name: Load broker docker image
+      shell: bash
+      if: ${{ inputs.is-integration-test == 'true' }}
+      run: docker load --input /tmp/dataact-broker-backend.tar
+
+    - name: Wait on DB and ES containers to be available
+      if: ${{ inputs.is-integration-test == 'true' }}
+      shell: bash
+      run: |
+        ttl=30; echo "Try DB conn from container for $ttl seconds"; until [ $ttl -le 0 ] || psql $DATABASE_URL -c 'select 1 where 1=1'; do echo $ttl; ((ttl--)); sleep 1; done; [ $ttl -gt 0 ]
+        ttl=30; echo "Try ES conn from container for $ttl seconds"; until [ $ttl -le 0 ] || curl --silent -XGET --fail $ES_HOSTNAME; do echo $ttl; ((ttl--)); sleep 1; done; [ $ttl -gt 0 ]
+
+    - name: Add DB users and set search_path
+      if: ${{ inputs.is-integration-test == 'true' }}
+      shell: bash
+      run: |
+        psql $DATABASE_URL -c "ALTER USER $USASPENDING_DB_USER SET search_path TO public,raw,int,temp,rpt"
+        psql $DATABASE_URL -c "CREATE USER $BROKER_DB_USER PASSWORD '$BROKER_DB_PASSWORD' SUPERUSER"
+        psql $DATABASE_URL -c "CREATE ROLE readonly"
+        psql $DATABASE_URL -c "SELECT 'GRANT USAGE ON SCHEMA ' || nspname || ' TO readonly' FROM pg_namespace WHERE nspname IN ('raw','int','rpt','temp','public')"
+        psql $DATABASE_URL -c "SELECT 'GRANT SELECT ON ALL TABLES IN SCHEMA ' || nspname || ' TO readonly' FROM pg_namespace WHERE nspname IN ('raw','int','rpt','temp','public')"
+        psql $DATABASE_URL -c "SELECT 'ALTER DEFAULT PRIVILEGES IN SCHEMA ' || nspname || ' GRANT SELECT ON TABLES TO readonly' FROM pg_namespace WHERE nspname IN ('raw','int','rpt','temp','public')"
+
+    - name: Capture SPARK_HOME environment variable
+      if: ${{ inputs.is-spark-test == 'true' }}
+      shell: bash
+      run: echo "SPARK_HOME=$(python -c "import site;print(f'{site.getsitepackages()[0]}/pyspark')")" >> $GITHUB_ENV
+
+    - name: Setting spark log levels to warning
+      if: ${{ inputs.is-spark-test == 'true' }}
+      shell: bash
+      run: |
+        mkdir $SPARK_HOME/conf
+        touch $SPARK_HOME/conf/log4j2.properties
+        echo "
+        appender.console.type = Console
+        appender.console.name = CONSOLE
+        appender.console.layout.type = PatternLayout
+        appender.console.layout.pattern = [%d{yyyy-MM-dd HH:mm:ss.SSS}][%p] - %m%n
+
+        rootLogger.level = WARN
+        rootLogger.appenderRef.0.ref = CONSOLE
+        rootLogger.appenderRef.0.level = WARN
+        " >> $SPARK_HOME/conf/log4j2.properties
+
+    - name: Run initial test to trigger DB creation
+      if: ${{ inputs.is-integration-test == 'true' }}
+      working-directory: ${{ inputs.working-directory }}
+      shell: bash
+      run: >
+        pytest --create-db --numprocesses logical --no-cov --disable-warnings -r=fEs --verbosity=3 --capture=no --log-cli-level=WARNING --show-capture=log
+        2> /dev/null "usaspending_api/tests/integration/test_setup_of_test_dbs.py::test_trigger_test_db_setup"
+
+    - name: Run initial test to trigger JAR download
+      if: ${{ inputs.is-spark-test == 'true' }}
+      working-directory: ${{ inputs.working-directory }}
+      shell: bash
+      run: >
+        pytest --reuse-db --numprocesses logical --no-cov --disable-warnings -r=fEs --verbosity=3
+        "usaspending_api/tests/integration/test_setup_of_spark_dependencies.py::test_preload_spark_jars"

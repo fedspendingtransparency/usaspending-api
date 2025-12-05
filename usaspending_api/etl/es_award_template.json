@@ -63,7 +63,12 @@
         "null_value": "NULL"
       },
       "type_description": {
-        "type": "keyword"
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
       },
       "piid": {
         "type": "text",
@@ -183,6 +188,10 @@
         }
       },
       "action_date": {
+        "type": "date",
+        "format": "yyyy-MM-dd"
+      },
+      "fiscal_action_date": {
         "type": "date",
         "format": "yyyy-MM-dd"
       },
@@ -625,7 +634,12 @@
         }
       },
       "product_or_service_description": {
-        "type": "text"
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
       },
       "psc_agg_key": {
         "type": "keyword",
@@ -645,7 +659,12 @@
         }
       },
       "naics_description": {
-        "type": "text"
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
       },
       "naics_agg_key": {
         "type": "keyword",
@@ -683,7 +702,7 @@
           }
         }
       },
-      "covid_spending_by_defc": {
+      "spending_by_defc": {
         "type": "nested",
         "properties": {
           "defc": {
@@ -706,22 +725,6 @@
       "total_covid_outlay": {
         "type": "scaled_float",
         "scaling_factor": 100
-      },
-      "iija_spending_by_defc": {
-        "type": "nested",
-        "properties": {
-          "defc": {
-            "type": "keyword"
-          },
-          "obligation": {
-            "scaling_factor": 100,
-            "type": "scaled_float"
-          },
-          "outlay": {
-            "scaling_factor": 100,
-            "type": "scaled_float"
-          }
-        }
       },
       "total_iija_obligation": {
         "type": "scaled_float",
@@ -759,6 +762,30 @@
         "type": "scaled_float",
         "scaling_factor": 100
       },
+      "recipient_location_address_line1": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "recipient_location_address_line2": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "recipient_location_address_line3": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
       "program_activities": {
         "type": "nested",
         "properties": {
@@ -777,8 +804,26 @@
                 "type": "keyword"
               }
             }
+          },
+          "type": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
           }
         }
+      },
+      "subaward_count": {
+        "type": "integer"
+      },
+      "total_subaward_amount": {
+        "type": "scaled_float",
+        "scaling_factor": 100
+      },
+      "transaction_count": {
+        "type": "integer"
       }
     }
   }

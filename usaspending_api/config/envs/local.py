@@ -35,8 +35,9 @@ class LocalConfig(DefaultConfig):
 
     # ==== [Global] ====
     ENV_CODE: ClassVar[str] = "lcl"
+
     # Common credentials to share across services for convenience / ease on remembering
-    _USASPENDING_USER: str = "usaspending"
+    _USASPENDING_USER: SecretStr = "usaspending"
     _USASPENDING_PASSWORD: SecretStr = "usaspender"
 
     # ==== [Postgres USAS] ====
@@ -67,7 +68,6 @@ class LocalConfig(DefaultConfig):
     # Sensible defaults to underneath the project root dir. But look in .env for overriding of these
     SPARK_SQL_WAREHOUSE_DIR: str = str(_PROJECT_ROOT_DIR / "spark-warehouse")
     HIVE_METASTORE_DERBY_DB_DIR: str = str(_PROJECT_ROOT_DIR / "spark-warehouse" / "metastore_db")
-    SPARK_COVID19_DOWNLOAD_README_FILE_PATH = str(_PROJECT_ROOT_DIR / "data" / "COVID-19_download_readme.txt")
 
     # ==== [MinIO] ====
     MINIO_HOST: str = "localhost"
@@ -93,7 +93,7 @@ class LocalConfig(DefaultConfig):
     AWS_PROFILE: str = None
     AWS_REGION: str = ""
     SPARK_S3_BUCKET: str = "data"
-    BULK_DOWNLOAD_S3_BUCKET_NAME: str = "bulk_download"
+    BULK_DOWNLOAD_S3_BUCKET_NAME: str = "bulk-download"
     DATABASE_DOWNLOAD_S3_BUCKET_NAME = "dti-usaspending-db"
 
     # Since this config values is built by composing others, we want to late/lazily-evaluate their values,

@@ -4,7 +4,7 @@
     "index.max_result_window": null,
     "index.refresh_interval": -1,
     "index": {
-      "number_of_shards": 5,
+      "number_of_shards": 15,
       "number_of_replicas": 0
     },
     "analysis": {
@@ -77,7 +77,12 @@
       },
       "transaction_description": {
         "type": "text",
-        "analyzer": "stemmer_analyzer"
+        "analyzer": "stemmer_analyzer",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
       },
       "product_or_service_code": {
         "type": "text",
@@ -88,7 +93,12 @@
         }
       },
       "product_or_service_description": {
-        "type": "text"
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
       },
       "psc_agg_key": {
         "type": "keyword",
@@ -108,7 +118,12 @@
         }
       },
       "naics_description": {
-        "type": "text"
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
       },
       "naics_agg_key": {
         "type": "keyword",
@@ -398,6 +413,9 @@
         "fields": {
           "hash": {
             "type": "murmur3"
+          },
+          "keyword": {
+            "type": "keyword"
           }
         }
       },
@@ -454,7 +472,12 @@
         "type": "keyword"
       },
       "pop_country_name": {
-        "type": "text"
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
       },
       "pop_state_code": {
         "type": "keyword"
@@ -537,7 +560,12 @@
         "type": "keyword"
       },
       "recipient_location_country_name": {
-        "type": "text"
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
       },
       "recipient_location_state_code": {
         "type": "keyword"
@@ -610,11 +638,84 @@
           }
         }
       },
+      "recipient_location_address_line1": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "recipient_location_address_line2": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "recipient_location_address_line3": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
       "recipient_location_state_fips": {
         "type": "keyword"
       },
       "recipient_location_county_fips": {
         "type": "keyword"
+      },
+      "action_type": {
+        "type": "keyword"
+      },
+      "legal_entity_address_line1": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "legal_entity_address_line2": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "legal_entity_address_line3": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "legal_entity_foreign_posta": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "legal_entity_foreign_provi": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      },
+      "legal_entity_zip_last4": {
+        "type": "text"
+      },
+      "place_of_perform_zip_last4": {
+        "type": "text"
       },
       "tas_paths": {
         "type": "keyword"
@@ -679,6 +780,14 @@
             }
           },
           "code": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword"
+              }
+            }
+          },
+          "type": {
             "type": "text",
             "fields": {
               "keyword": {

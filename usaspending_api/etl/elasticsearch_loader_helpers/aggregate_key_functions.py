@@ -1,7 +1,9 @@
+import datetime
 import json
 import logging
-
 from typing import Optional
+
+from dateutil.relativedelta import relativedelta
 
 from usaspending_api.recipient.models import RecipientProfile
 
@@ -23,6 +25,18 @@ def transaction_recipient_agg_key(record: dict) -> str:
         str(record["recipient_hash"])
         + "/"
         + (RecipientProfile.return_one_level(record["recipient_levels"] or []) or "")
+    )
+
+
+def subaward_recipient_agg_key(record: dict) -> str:
+    """Dictionary key order impacts Elasticsearch behavior!!!"""
+    if record["subaward_recipient_hash"] is None:
+        return ""
+
+    return (
+        str(record["subaward_recipient_hash"])
+        + "/"
+        + (str(record["subaward_recipient_level"]) if record["subaward_recipient_level"] is not None else "")
     )
 
 
@@ -75,15 +89,26 @@ def pop_county_agg_key(record: dict) -> Optional[str]:
     return _county_agg_key("pop", record)
 
 
+def sub_pop_county_agg_key(record: dict) -> Optional[str]:
+    return _county_agg_key("pop", record, True)
+
+
 def recipient_location_county_agg_key(record: dict) -> Optional[str]:
     return _county_agg_key("recipient_location", record)
 
 
-def _county_agg_key(location_type, record: dict) -> Optional[str]:
+def sub_recipient_location_county_agg_key(record: dict) -> Optional[str]:
+    return _county_agg_key("recipient_location", record, True)
+
+
+def _county_agg_key(location_type, record: dict, is_subaward: bool = False) -> Optional[str]:
     """Dictionary key order impacts Elasticsearch behavior!!!"""
-    if record[f"{location_type}_state_code"] is None or record[f"{location_type}_county_code"] is None:
+    subaward_str = "sub_" if is_subaward else ""
+    state_code_field = f"{subaward_str}{location_type}_state_code"
+    county_code_field = f"{subaward_str}{location_type}_county_code"
+    if record[state_code_field] is None or record[county_code_field] is None:
         return None
-    return f"{record[f'{location_type}_state_code']}{record[f'{location_type}_county_code']}"
+    return f"{record[state_code_field]}{record[county_code_field]}"
 
 
 def pop_congressional_agg_key(record: dict) -> Optional[str]:
@@ -94,6 +119,10 @@ def pop_congressional_cur_agg_key(record: dict) -> Optional[str]:
     return _congressional_agg_key("pop", True, record)
 
 
+def sub_pop_congressional_cur_agg_key(record: dict) -> Optional[str]:
+    return _congressional_agg_key("pop", True, record, True)
+
+
 def recipient_location_congressional_agg_key(record: dict) -> Optional[str]:
     return _congressional_agg_key("recipient_location", False, record)
 
@@ -102,12 +131,19 @@ def recipient_location_congressional_cur_agg_key(record: dict) -> Optional[str]:
     return _congressional_agg_key("recipient_location", True, record)
 
 
-def _congressional_agg_key(location_type, current, record: dict) -> Optional[str]:
+def sub_recipient_location_congressional_cur_agg_key(record: dict) -> Optional[str]:
+    return _congressional_agg_key("recipient_location", True, record, True)
+
+
+def _congressional_agg_key(location_type, current, record: dict, is_subaward: bool = False) -> Optional[str]:
     """Dictionary key order impacts Elasticsearch behavior!!!"""
     cur_str = "_current" if current else ""
-    if record[f"{location_type}_state_code"] is None or record[f"{location_type}_congressional_code{cur_str}"] is None:
+    subaward_str = "sub_" if is_subaward else ""
+    state_code_field = f"{subaward_str}{location_type}_state_code"
+    congressional_code_field = f"{subaward_str}{location_type}_congressional_code{cur_str}"
+    if record[state_code_field] is None or record[congressional_code_field] is None:
         return None
-    return f"{record[f'{location_type}_state_code']}{record[f'{location_type}_congressional_code{cur_str}']}"
+    return f"{record[state_code_field]}{record[congressional_code_field]}"
 
 
 def pop_state_agg_key(record: dict) -> Optional[str]:
@@ -150,3 +186,29 @@ def _country_agg_key(location_type, record: dict) -> Optional[str]:
             "country_name": record[f"{location_type}_country_name"],
         }
     )
+
+
+def location_type_agg_key(record: dict) -> Optional[str]:
+    if record.get("location_json") is None:
+        return ""
+    else:
+        json_data = record.get("location_json")
+
+    if isinstance(json_data, str):
+        return json.loads(json_data).get("location_type")
+    elif isinstance(json_data, dict):
+        return json_data.get("location_type")
+    else:
+        raise ValueError("Unable to get the 'location_type' key from the 'location_json' field")
+
+
+def fiscal_action_date(record: dict) -> Optional[datetime.date]:
+    if record.get("action_date") is None:
+        return None
+    return record["action_date"] + relativedelta(months=3)
+
+
+def sub_fiscal_action_date(record: dict) -> Optional[datetime.date]:
+    if record.get("sub_action_date") is None:
+        return None
+    return record["sub_action_date"] + relativedelta(months=3)

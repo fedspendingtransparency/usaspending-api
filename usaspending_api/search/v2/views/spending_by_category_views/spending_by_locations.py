@@ -10,10 +10,7 @@ from django.db.models.functions import Concat
 from usaspending_api.recipient.models import StateData
 from usaspending_api.references.abbreviations import code_to_state, fips_to_code
 from usaspending_api.references.models import PopCongressionalDistrict, PopCounty, RefCountryCode
-from usaspending_api.search.helpers.spending_by_category_helpers import (
-    fetch_country_name_from_code,
-    fetch_state_name_from_code,
-)
+from usaspending_api.search.v2.views.enums import SpendingLevel
 from usaspending_api.search.v2.views.spending_by_category_views.spending_by_category import (
     AbstractSpendingByCategoryViewSet,
     Category,
@@ -164,6 +161,11 @@ class AbstractLocationViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMe
                     "code": location_info.get("code"),
                     "name": location_info.get("name"),
                     "amount": int(bucket.get("sum_field", {"value": 0})["value"]) / Decimal("100"),
+                    "total_outlays": (
+                        bucket.get("sum_as_dollars_outlay", {"value": None}).get("value")
+                        if self.spending_level == SpendingLevel.AWARD
+                        else None
+                    ),
                 }
             )
 
@@ -174,59 +176,6 @@ class AbstractLocationViewSet(AbstractSpendingByCategoryViewSet, metaclass=ABCMe
             results = _combine_dicts_by_keys(results, ["code", "name"], "amount")
 
         return results
-
-    def query_django_for_subawards(self, base_queryset: QuerySet) -> List[dict]:
-        subaward_mappings = {
-            LocationType.COUNTY: "sub_place_of_perform_county_code",
-            LocationType.CONGRESSIONAL_DISTRICT: "sub_place_of_performance_congressional_current",
-            LocationType.STATE_TERRITORY: "sub_place_of_perform_state_code",
-            LocationType.COUNTRY: "sub_place_of_perform_country_co",
-        }
-        django_filters = {f"{subaward_mappings[self.location_type]}__isnull": False}
-
-        if self.location_type == LocationType.COUNTY:
-            django_values = [
-                "sub_place_of_perform_country_co",
-                "sub_place_of_perform_state_code",
-                "sub_place_of_perform_county_code",
-                "sub_place_of_perform_county_name",
-            ]
-            annotations = {"code": F("sub_place_of_perform_county_code"), "name": F("sub_place_of_perform_county_name")}
-        elif self.location_type == LocationType.CONGRESSIONAL_DISTRICT:
-            django_values = [
-                "sub_place_of_perform_country_co",
-                "sub_place_of_perform_state_code",
-                "sub_place_of_performance_congressional_current",
-            ]
-            annotations = {"code": F("sub_place_of_performance_congressional_current")}
-        elif self.location_type == LocationType.STATE_TERRITORY:
-            django_values = ["sub_place_of_perform_country_co", "sub_place_of_perform_state_code"]
-            annotations = {"code": F("sub_place_of_perform_state_code")}
-        else:
-            django_values = ["sub_place_of_perform_country_co"]
-            annotations = {"code": F("sub_place_of_perform_country_co")}
-
-        queryset = self.common_db_query(base_queryset, django_filters, django_values).annotate(**annotations)
-        lower_limit = self.pagination.lower_limit
-        upper_limit = self.pagination.upper_limit
-        query_results = list(queryset[lower_limit:upper_limit])
-
-        for row in query_results:
-            row["id"] = None
-            if self.location_type == LocationType.CONGRESSIONAL_DISTRICT:
-                district_code = row["code"]
-                if district_code == "90":
-                    district_code = "MULTIPLE DISTRICTS"
-                row["name"] = f"{row['sub_place_of_perform_state_code']}-{district_code}"
-            elif self.location_type == LocationType.COUNTRY:
-                row["name"] = fetch_country_name_from_code(row["code"])
-            elif self.location_type == LocationType.STATE_TERRITORY:
-                row["name"] = fetch_state_name_from_code(row["code"])
-
-            for key in django_values:
-                row.pop(key)
-
-        return query_results
 
 
 class CountyViewSet(AbstractLocationViewSet):

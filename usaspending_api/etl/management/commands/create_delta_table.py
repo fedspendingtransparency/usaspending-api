@@ -1,17 +1,34 @@
-from django.core.management.base import BaseCommand
+import logging
 
+from django.core.management.base import BaseCommand
+from pyspark.sql.types import StructType
+
+from usaspending_api.awards.delta_models.award_id_lookup import AWARD_ID_LOOKUP_SCHEMA
 from usaspending_api.config import CONFIG
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
-    get_jvm_logger,
     get_active_spark_session,
 )
 from usaspending_api.etl.management.commands.archive_table_in_delta import TABLE_SPEC as ARCHIVE_TABLE_SPEC
 from usaspending_api.etl.management.commands.load_query_to_delta import TABLE_SPEC as LOAD_QUERY_TABLE_SPEC
 from usaspending_api.etl.management.commands.load_table_to_delta import TABLE_SPEC as LOAD_TABLE_TABLE_SPEC
+from usaspending_api.transactions.delta_models.transaction_id_lookup import TRANSACTION_ID_LOOKUP_SCHEMA
 
+TABLE_SPEC = {
+    **ARCHIVE_TABLE_SPEC,
+    **LOAD_TABLE_TABLE_SPEC,
+    **LOAD_QUERY_TABLE_SPEC,
+    "award_id_lookup": {
+        "destination_database": "int",
+        "delta_table_create_sql": AWARD_ID_LOOKUP_SCHEMA,
+    },
+    "transaction_id_lookup": {
+        "destination_database": "int",
+        "delta_table_create_sql": TRANSACTION_ID_LOOKUP_SCHEMA,
+    },
+}
 
-TABLE_SPEC = {**ARCHIVE_TABLE_SPEC, **LOAD_TABLE_TABLE_SPEC, **LOAD_QUERY_TABLE_SPEC}
+logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
@@ -66,9 +83,6 @@ class Command(BaseCommand):
             spark_created_by_command = True
             spark = configure_spark_session(**extra_conf, spark_context=spark)
 
-        # Setup Logger
-        logger = get_jvm_logger(spark)
-
         # Resolve Parameters
         destination_table = options["destination_table"]
         spark_s3_bucket = options["spark_s3_bucket"]
@@ -81,16 +95,31 @@ class Command(BaseCommand):
         logger.info(f"Using Spark Database: {destination_database}")
         spark.sql(f"create database if not exists {destination_database};")
         spark.sql(f"use {destination_database};")
-
-        # Define Schema Using CREATE TABLE AS command
-        spark.sql(
-            TABLE_SPEC[destination_table]["delta_table_create_sql"].format(
-                DESTINATION_TABLE=destination_table_name,
-                DESTINATION_DATABASE=destination_database,
-                SPARK_S3_BUCKET=spark_s3_bucket,
-                DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+        if isinstance(table_spec["delta_table_create_sql"], str):
+            # Define Schema Using CREATE TABLE AS command
+            spark.sql(
+                TABLE_SPEC[destination_table]["delta_table_create_sql"].format(
+                    DESTINATION_TABLE=destination_table_name,
+                    DESTINATION_DATABASE=destination_database,
+                    SPARK_S3_BUCKET=spark_s3_bucket,
+                    DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
+                )
             )
-        )
+        elif isinstance(table_spec["delta_table_create_sql"], StructType):
+            schema = table_spec["delta_table_create_sql"]
+            df = spark.createDataFrame([], schema)
+            (
+                df.write.format("delta")
+                .mode("overwrite")
+                .option(
+                    "path",
+                    f"s3a://{spark_s3_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/{destination_database}/{destination_table_name}",
+                )
+                .option("overwriteSchema", "true")
+                .saveAsTable(f"{destination_database}.{destination_table_name}")
+            )
+        else:
+            raise ValueError("Invalid Table Spec value for Delta Table creation.")
 
         if spark_created_by_command:
             spark.stop()

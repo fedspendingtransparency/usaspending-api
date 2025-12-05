@@ -64,6 +64,7 @@ class AbstractElasticsearchIndexerController(ABC):
 
         self.config["partitions"] = self.determine_partitions()
         self.config["processes"] = min(self.config["processes"], self.config["partitions"])
+
         self.tasks = self.construct_tasks()
 
         logger.info(
@@ -120,6 +121,23 @@ class AbstractElasticsearchIndexerController(ABC):
             sql=extract_sql_str,
             transform_func=self.config["data_transform_func"],
             view=self.config["sql_view"],
+            slices=self.config["slices"],
+        )
+
+    def set_slice_count(self) -> None:
+        """
+        Retrieves the number of slices that should be used when performing any type
+        of scroll operation (e.g., delete_by_query).
+        """
+        if self.config["create_new_index"] or self.config["load_type"] != "transaction":
+            # Only transactions are currently processing with more than 5 shards. As a result,
+            # all other load types are set to the original default of "auto".
+            slice_count = "auto"
+        else:
+            slice_count = 1
+        self.config["slices"] = slice_count
+        logger.info(
+            format_log(f"Setting the value of {self.config['load_type']} index slices: {self.config['slices']}")
         )
 
     @abstractmethod
@@ -222,15 +240,28 @@ class PostgresElasticsearchIndexerController(AbstractElasticsearchIndexerControl
 
     def _run_award_deletes(self):
         client = instantiate_elasticsearch_client()
-        delete_awards(client=client, config=self.config)
+        delete_awards(
+            client=client,
+            config=self.config,
+            fabs_external_data_load_date_key="transaction_fabs",
+            fpds_external_data_load_date_key="transaction_fpds",
+        )
 
     def _run_transaction_deletes(self):
         client = instantiate_elasticsearch_client()
-        delete_transactions(client=client, config=self.config)
+        delete_transactions(
+            client=client,
+            config=self.config,
+            fabs_external_data_load_date_key="transaction_fabs",
+            fpds_external_data_load_date_key="transaction_fpds",
+        )
         # Use the lesser of the fabs/fpds load dates as the es_deletes load date. This
         # ensures all records deleted since either job was run are taken into account
-        last_db_delete_time = get_earliest_load_date(["fabs", "fpds"])
+        last_db_delete_time = get_earliest_load_date(
+            ["transaction_fabs", "transaction_fpds"], format_func=(lambda log_msg: format_log(log_msg, action="Delete"))
+        )
         update_last_load_date("es_deletes", last_db_delete_time)
+        logger.info(format_log(f"Updating `es_deletes`: {last_db_delete_time}", action="Delete"))
 
     def cleanup(self) -> None:
         pass
