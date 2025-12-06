@@ -7,8 +7,8 @@ import os
 import pytest
 from pathlib import Path
 from pprint import pprint
-from pydantic import validator, root_validator, PostgresDsn, SecretStr
-from pydantic.fields import ModelField
+from pydantic import validator, model_validator, PostgresDsn, SecretStr, field_validator
+from pydantic.v1.fields import ModelField
 from pydantic.error_wrappers import ValidationError
 
 from usaspending_api.config import CONFIG, _load_config
@@ -51,7 +51,7 @@ class _UnitTestBaseConfig(DefaultConfig):
     # See if these are now replaced with the values of the result of the validator that references this field
     UNITTEST_CFG_O: str = UNITTEST_CFG_M + ":" + UNITTEST_CFG_N
 
-    @validator("UNITTEST_CFG_O")
+    @field_validator("UNITTEST_CFG_O")
     def _UNITTEST_CFG_O(cls, v, values):
         return values["UNITTEST_CFG_M"] + ":" + values["UNITTEST_CFG_N"]
 
@@ -59,7 +59,7 @@ class _UnitTestBaseConfig(DefaultConfig):
     UNITTEST_CFG_Q: str = "UNITTEST_CFG_Q"
     UNITTEST_CFG_R: str = UNITTEST_CFG_P + ":" + UNITTEST_CFG_Q
 
-    @validator("UNITTEST_CFG_R")
+    @field_validator("UNITTEST_CFG_R")
     def _UNITTEST_CFG_R(cls, v, values):
         return values["UNITTEST_CFG_P"] + ":" + values["UNITTEST_CFG_Q"]
 
@@ -67,7 +67,7 @@ class _UnitTestBaseConfig(DefaultConfig):
     UNITTEST_CFG_T: str = "UNITTEST_CFG_T"
     UNITTEST_CFG_U: str = None  # DO NOT SET. Value derived from validator (aka pre/post-processor) func below or env
 
-    @validator("UNITTEST_CFG_U")
+    @field_validator("UNITTEST_CFG_U")
     def _UNITTEST_CFG_U(cls, v, values, field: ModelField):
         def factory_func():
             return values["UNITTEST_CFG_S"] + ":" + values["UNITTEST_CFG_T"]
@@ -78,7 +78,7 @@ class _UnitTestBaseConfig(DefaultConfig):
     UNITTEST_CFG_W: str = "UNITTEST_CFG_W"
     UNITTEST_CFG_X: str = None  # DO NOT SET. Value derived from validator (aka pre/post-processor) func below or env
 
-    @validator("UNITTEST_CFG_X")
+    @field_validator("UNITTEST_CFG_X")
     def _UNITTEST_CFG_X(cls, v, values, field: ModelField):
         def factory_func():
             return values["UNITTEST_CFG_V"] + ":" + values["UNITTEST_CFG_W"]
@@ -88,7 +88,7 @@ class _UnitTestBaseConfig(DefaultConfig):
     # Value derived from validator (aka pre/post-processor) func below or overridden by env or subclass
     UNITTEST_CFG_Y: str = FACTORY_PROVIDED_VALUE
 
-    @validator("UNITTEST_CFG_Y")
+    @field_validator("UNITTEST_CFG_Y")
     def _UNITTEST_CFG_Y(cls, v, values, field: ModelField):
         def factory_func():
             return values["UNITTEST_CFG_V"] + ":" + values["UNITTEST_CFG_W"]
@@ -103,7 +103,7 @@ class _UnitTestBaseConfig(DefaultConfig):
     UNITTEST_CFG_AC: str = "UNITTEST_CFG_AC"
     UNITTEST_CFG_AD: str = "UNITTEST_CFG_AD"
 
-    @validator("UNITTEST_CFG_Z")
+    @field_validator("UNITTEST_CFG_Z")
     def _UNITTEST_CFG_Z(cls, v, values, field: ModelField):
         def factory_func():
             return values["UNITTEST_CFG_V"] + ":" + values["UNITTEST_CFG_W"]
@@ -120,34 +120,34 @@ class _UnitTestBaseConfig(DefaultConfig):
     UNITTEST_CFG_AL: str = FACTORY_PROVIDED_VALUE
     UNITTEST_CFG_AM: str = FACTORY_PROVIDED_VALUE
 
-    @validator("UNITTEST_CFG_AH")
+    @field_validator("UNITTEST_CFG_AH")
     def _UNITTEST_CFG_AH(cls, v, values, field: ModelField):
         def factory_func():
             return values["UNITTEST_CFG_AE"] + ":" + values["UNITTEST_CFG_AF"]
 
         return eval_default_factory(cls, v, values, field, factory_func)
 
-    # Leave NO validator for UNITTEST_CFG_AI, and create a root_validator on the subclass
+    # Leave NO validator for UNITTEST_CFG_AI, and create a model_validator on the subclass
     # --EMPTY--
 
-    # Use root_validator for UNITTEST_CFG_AJ on parent, and NO root_validator or overrides on child
-    @root_validator
+    # Use model_validator for UNITTEST_CFG_AJ on parent, and NO model_validator or overrides on child
+    @model_validator(mode="wrap")
     def _UNITTEST_CFG_AJ(cls, values):
         def factory_func():
             return values["UNITTEST_CFG_AE"] + ":" + values["UNITTEST_CFG_AF"]
 
         return eval_default_factory_from_root_validator(cls, values, "UNITTEST_CFG_AJ", factory_func)
 
-    # Use root_validator for UNITTEST_CFG_AK on parent, and overriding root_validator for same field on child
-    @root_validator
+    # Use model_validator for UNITTEST_CFG_AK on parent, and overriding model_validator for same field on child
+    @model_validator(mode="wrap")
     def _UNITTEST_CFG_AK(cls, values):
         def factory_func():
             return values["UNITTEST_CFG_AE"] + ":" + values["UNITTEST_CFG_AF"]
 
         return eval_default_factory_from_root_validator(cls, values, "UNITTEST_CFG_AK", factory_func)
 
-    # Use regular validator for UNITTEST_CFG_AL on parent, and root_validator for same field on child
-    @validator("UNITTEST_CFG_AL")
+    # Use regular validator for UNITTEST_CFG_AL on parent, and model_validator for same field on child
+    @field_validator("UNITTEST_CFG_AL")
     def _UNITTEST_CFG_AL(cls, v, values, field: ModelField):
         def factory_func():
             return values["UNITTEST_CFG_AE"] + ":" + values["UNITTEST_CFG_AF"]
@@ -156,7 +156,7 @@ class _UnitTestBaseConfig(DefaultConfig):
 
     # Show that env vars can't be honored if not using the helper eval function. They don't take precedence over
     # root_validators
-    @root_validator
+    @model_validator(mode="wrap")
     def _UNITTEST_CFG_AM(cls, values):
         values["UNITTEST_CFG_AM"] = values["UNITTEST_CFG_AE"] + ":" + values["UNITTEST_CFG_AF"]
         return values
@@ -187,7 +187,7 @@ class _UnitTestSubConfig(_UnitTestBaseConfig):
     UNITTEST_CFG_X = "SUB_UNITTEST_CFG_X"
 
     # See if this will override the parent class's validator and take precedence over it
-    @validator("UNITTEST_CFG_Y")
+    @field_validator("UNITTEST_CFG_Y")
     def _UNITTEST_CFG_Y(cls, v, values, field: ModelField):
         def factory_func():
             return "SUB_UNITTEST_CFG_Y"
@@ -195,7 +195,7 @@ class _UnitTestSubConfig(_UnitTestBaseConfig):
         return eval_default_factory(cls, v, values, field, factory_func)
 
     # See if this will override the parent class's validator, even when a different name is used (spoiler: no it won't)
-    @validator("UNITTEST_CFG_Z")
+    @field_validator("UNITTEST_CFG_Z")
     def _SUB_UNITTEST_CFG_Z(cls, v, values, field: ModelField):
         def factory_func():
             return "SUB_UNITTEST_CFG_Z"
@@ -203,7 +203,7 @@ class _UnitTestSubConfig(_UnitTestBaseConfig):
         return eval_default_factory(cls, v, values, field, factory_func)
 
     # See if this will override parent field default value, even if field it is validating is not redeclared on subclass
-    @validator("UNITTEST_CFG_AC")
+    @field_validator("UNITTEST_CFG_AC")
     def _UNITTEST_CFG_AC(cls, v, values, field: ModelField):
         def factory_func():
             return values["UNITTEST_CFG_AA"] + ":" + values["UNITTEST_CFG_AB"]
@@ -212,7 +212,7 @@ class _UnitTestSubConfig(_UnitTestBaseConfig):
 
     UNITTEST_CFG_AD: str = FACTORY_PROVIDED_VALUE
 
-    @validator("UNITTEST_CFG_AD")
+    @field_validator("UNITTEST_CFG_AD")
     def _UNITTEST_CFG_AD(cls, v, values, field: ModelField):
         def factory_func():
             return values["UNITTEST_CFG_AA"] + ":" + values["UNITTEST_CFG_AB"]
@@ -224,7 +224,7 @@ class _UnitTestSubConfig(_UnitTestBaseConfig):
     SUB_UNITTEST_8 = FACTORY_PROVIDED_VALUE
 
     # See if validator for field not defined in super class works fine to compose subclass field values
-    @validator("SUB_UNITTEST_8")
+    @field_validator("SUB_UNITTEST_8")
     def _SUB_UNITTEST_8(cls, v, values, field: ModelField):
         def factory_func():
             return values["SUB_UNITTEST_6"] + ":" + values["SUB_UNITTEST_7"]
@@ -238,8 +238,8 @@ class _UnitTestSubConfig(_UnitTestBaseConfig):
     UNITTEST_CFG_AK: str = FACTORY_PROVIDED_VALUE
     UNITTEST_CFG_AL: str = FACTORY_PROVIDED_VALUE
 
-    # Use root_validator for UNITTEST_CFG_AK on parent, and overriding root_validator for same field on child
-    @root_validator
+    # Use model_validator for UNITTEST_CFG_AK on parent, and overriding model_validator for same field on child
+    @model_validator(mode="wrap")
     def _UNITTEST_CFG_AI(cls, values):
         def factory_func():
             return values["SUB_UNITTEST_6"] + ":" + values["SUB_UNITTEST_7"]
@@ -247,7 +247,7 @@ class _UnitTestSubConfig(_UnitTestBaseConfig):
         return eval_default_factory_from_root_validator(cls, values, "UNITTEST_CFG_AI", factory_func)
 
     # See if validator overriding the same validator in super class works fine to compose subclass field values
-    @root_validator
+    @model_validator(mode="wrap")
     def _UNITTEST_CFG_AK(cls, values):
         def factory_func():
             return values["SUB_UNITTEST_6"] + ":" + values["SUB_UNITTEST_7"]
@@ -263,7 +263,7 @@ class _UnitTestSubConfigFailFindingSubclassFieldsInValidator1(_UnitTestBaseConfi
     UNITTEST_CFG_AH: str = FACTORY_PROVIDED_VALUE
 
     # See if validator not overriding the same validator in super class works fine to compose subclass field values
-    @validator("UNITTEST_CFG_AG", check_fields=False)
+    @field_validator("UNITTEST_CFG_AG", check_fields=False)
     def _UNITTEST_CFG_AG(cls, v, values, field: ModelField):
         def factory_func():
             return values["SUB_UNITTEST_6"] + ":" + values["SUB_UNITTEST_7"]
@@ -279,7 +279,7 @@ class _UnitTestSubConfigFailFindingSubclassFieldsInValidator2(_UnitTestBaseConfi
     UNITTEST_CFG_AH: str = FACTORY_PROVIDED_VALUE
 
     # See if validator overriding the same validator in super class works fine to compose subclass field values
-    @validator("UNITTEST_CFG_AH")
+    @field_validator("UNITTEST_CFG_AH")
     def _UNITTEST_CFG_AH(cls, v, values, field: ModelField):
         def factory_func():
             return values["SUB_UNITTEST_6"] + ":" + values["SUB_UNITTEST_7"]
@@ -294,9 +294,9 @@ class _UnitTestSubConfigFailFindingSubclassFieldsInValidator3(_UnitTestBaseConfi
     UNITTEST_CFG_AG: str = FACTORY_PROVIDED_VALUE
     UNITTEST_CFG_AH: str = FACTORY_PROVIDED_VALUE
 
-    # See if root_validator overriding the same function annotated as a validator in super class works fine to compose
+    # See if model_validator overriding the same function annotated as a validator in super class works fine to compose
     # subclass field values
-    @root_validator
+    @model_validator(mode="wrap")
     def _UNITTEST_CFG_AL(cls, values):
         def factory_func():
             return values["SUB_UNITTEST_6"] + ":" + values["SUB_UNITTEST_7"]
@@ -1196,7 +1196,7 @@ def test_override_with_dotenv_file_for_validated_var(tmpdir):
 )
 def test_override_with_dotenv_file_for_root_validated_var(tmpdir):
     """Ensure that when .env files are used, they overwrite default values in the instantiated config class,
-    rather than the other way around... EVEN when that value is provided by a root_validator factory function"""
+    rather than the other way around... EVEN when that value is provided by a model_validator factory function"""
     with mock.patch.dict(
         os.environ,
         {
@@ -1272,7 +1272,7 @@ def test_override_with_dotenv_file_for_subclass_overriding_validated_var(tmpdir)
 def test_override_with_dotenv_file_for_subclass_overriding_root_validated_var(tmpdir):
     """Ensure that when .env files are used, they overwrite default values in the instantiated config class,
     rather than the other way around... EVEN when that value is provided by a subclass root_validator factory function
-    that overrides its parent class root_validator factory function"""
+    that overrides its parent class model_validator factory function"""
     with mock.patch.dict(
         os.environ,
         {
@@ -1500,7 +1500,7 @@ def test_new_runtime_env_overrides_config():
         assert cfg.UNITTEST_CFG_AD == "UNITTEST_CFG_AA:UNITTEST_CFG_AB"
         # 14. See if validator for field not defined in super class works fine to compose subclass field values
         assert cfg.SUB_UNITTEST_8 == "SUB_UNITTEST_6" + ":" + "SUB_UNITTEST_7"
-        # 15. See if root_validator not overriding the same validator in super class works fine to compose subclass
+        # 15. See if model_validator not overriding the same validator in super class works fine to compose subclass
         # field values. NOTE: The field must be re-declared on the subclass (with FACTORY_PROVIDED_VALUE)
         assert cfg.UNITTEST_CFG_AI == "SUB_UNITTEST_6" + ":" + "SUB_UNITTEST_7"
         # 16. Ensure this hasn't changed, and is inherited (not overridden) on child class
@@ -1560,7 +1560,7 @@ def test_new_runtime_env_overrides_config_errors_subclass_only_validated_fields_
     _UNITTEST_ENVS_DICTS,
 )
 def test_new_runtime_env_overrides_config_errors_root_validator_overriding_validator():
-    """Test that a ValidationError is raised if a validator in the parent class is overridden by a root_validator in
+    """Test that a ValidationError is raised if a validator in the parent class is overridden by a model_validator in
     the child class
     """
     with mock.patch.dict(
@@ -1656,7 +1656,7 @@ def test_new_runtime_env_overrides_config_with_env_vars_in_play():
 
         # 7. Circumvent the below default behavior of pydantic, to allow an assigned or (env)
         # sourced value of a field to take precedence over the
-        # late-bound result of a root_validator, by having the root_validator delegate to our
+        # late-bound result of a model_validator, by having the model_validator delegate to our
         # usaspending_api.config.utils.eval_default_factory_from_root_validator function
         assert "UNITTEST_CFG_AJ" in cfg.__fields__.keys()
         assert cfg.UNITTEST_CFG_AJ == "ENVVAR_UNITTEST_CFG_AJ"

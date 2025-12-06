@@ -9,7 +9,7 @@
 ########################################################################################################################
 from typing import ClassVar
 
-from pydantic import root_validator
+from pydantic import model_validator, Field
 from pydantic.types import SecretStr
 from usaspending_api.config.envs.default import DefaultConfig, _PROJECT_ROOT_DIR
 from usaspending_api.config.utils import (
@@ -60,7 +60,7 @@ class LocalConfig(DefaultConfig):
 
     # ==== [Elasticsearch] ====
     # Where to connect to elasticsearch.
-    ES_SCHEME: str = "http"
+    ES_SCHEME: str = None
     ES_HOST: str = "localhost"
     ES_PORT: str = "9200"
 
@@ -90,17 +90,18 @@ class LocalConfig(DefaultConfig):
     USE_AWS: bool = False
     AWS_ACCESS_KEY: SecretStr = MINIO_ACCESS_KEY
     AWS_SECRET_KEY: SecretStr = MINIO_SECRET_KEY
-    AWS_PROFILE: str = None
+    AWS_PROFILE: str | None = None
     AWS_REGION: str = ""
     SPARK_S3_BUCKET: str = "data"
     BULK_DOWNLOAD_S3_BUCKET_NAME: str = "bulk-download"
-    DATABASE_DOWNLOAD_S3_BUCKET_NAME = "dti-usaspending-db"
+    DATABASE_DOWNLOAD_S3_BUCKET_NAME: str = "dti-usaspending-db"
 
     # Since this config values is built by composing others, we want to late/lazily-evaluate their values,
     # in case the declared value is overridden by a shell env var or .env file value
     AWS_S3_ENDPOINT: str = FACTORY_PROVIDED_VALUE  # See below validator-based factory
 
-    @root_validator
+    @model_validator(mode="after")
+    @classmethod
     def _AWS_S3_ENDPOINT_factory(cls, values):
         def factory_func():
             return values["MINIO_HOST"] + ":" + values["MINIO_PORT"]

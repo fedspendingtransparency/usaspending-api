@@ -25,6 +25,6 @@ class ProductionConfig(DefaultConfig):
 
     # ==== [AWS] ====
     AWS_PROFILE: Union[str, None] = None
-    SPARK_S3_BUCKET = "dti-usaspending-emr-prod"
+    SPARK_S3_BUCKET: str = "dti-usaspending-emr-prod"
     BULK_DOWNLOAD_S3_BUCKET_NAME: str = "dti-usaspending-bulk-download"
-    DATABASE_DOWNLOAD_S3_BUCKET_NAME = "dti-usaspending-db-prod"
+    DATABASE_DOWNLOAD_S3_BUCKET_NAME: str = "dti-usaspending-db-prod"

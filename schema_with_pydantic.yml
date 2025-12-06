@@ -1,0 +1,670 @@
+openapi: 3.0.3
+info:
+  title: USAspending API
+  version: 0.0.0
+  description: The USAspending API (Application Programming Interface) allows the
+    public to access comprehensive U.S. government spending data. The data include
+    spending on awards (e.g., who received federal contracts or grants, geographic
+    breakdowns, agency breakdowns, and much more). The data also include account-level
+    such as federal employee compensation. You can learn more about the data and the
+    federal law that requires it to be publicly accessible (the DATA Act) at http://fedspendingtransparency.github.io.
+paths:
+  /api/v2/search/new_awards_over_time:
+    post:
+      operationId: v2_search_new_awards_over_time_create
+      description: |-
+        This route returns a list of time periods with the new awards in the
+        appropriate period within the provided time range
+      tags:
+      - v2
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_award:
+    post:
+      operationId: v2_search_spending_by_award_create
+      description: Return all awards matching the provided filters and limits
+      tags:
+      - v2
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdvancedFilter'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AdvancedFilter'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AdvancedFilter'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpendingByAwardResponse'
+          description: ''
+  /api/v2/search/spending_by_award_count:
+    post:
+      operationId: v2_search_spending_by_award_count_create
+      description: |-
+        This route takes award filters, and returns the number of awards in each award type.
+
+        (Contracts, Loans, Grants, etc.)
+      tags:
+      - v2
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_category:
+    post:
+      operationId: v2_search_spending_by_category_create
+      description: Return all budget function/subfunction titles matching the provided
+        search text
+      tags:
+      - v2
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_category/awarding_agency:
+    post:
+      operationId: v2_search_spending_by_category_awarding_agency_create
+      description: This route takes award filters and returns spending by awarding
+        agencies.
+      tags:
+      - v2
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_category/awarding_subagency:
+    post:
+      operationId: v2_search_spending_by_category_awarding_subagency_create
+      description: This route takes award filters and returns spending by awarding
+        subagencies.
+      tags:
+      - v2
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_category/cfda:
+    post:
+      operationId: v2_search_spending_by_category_cfda_create
+      description: This route takes award filters and returns spending by CFDA.
+      tags:
+      - v2
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_category/country:
+    post:
+      operationId: v2_search_spending_by_category_country_create
+      description: This route takes award filters and returns spending by Country.
+      tags:
+      - v2
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_category/county:
+    post:
+      operationId: v2_search_spending_by_category_county_create
+      description: This route takes award filters and returns spending by County.
+      tags:
+      - v2
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_category/defc:
+    post:
+      operationId: v2_search_spending_by_category_defc_create
+      description: This route takes award filters and returns spending by DEFC.
+      tags:
+      - v2
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_category/district:
+    post:
+      operationId: v2_search_spending_by_category_district_create
+      description: This route takes award filters and returns spending by Congressional
+        District.
+      tags:
+      - v2
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_category/federal_account:
+    post:
+      operationId: v2_search_spending_by_category_federal_account_create
+      description: This route takes award filters and returns spending by Federal
+        Account.
+      tags:
+      - v2
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_category/funding_agency:
+    post:
+      operationId: v2_search_spending_by_category_funding_agency_create
+      description: This route takes award filters and returns spending by funding
+        agencies.
+      tags:
+      - v2
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_category/funding_subagency:
+    post:
+      operationId: v2_search_spending_by_category_funding_subagency_create
+      description: This route takes award filters and returns spending by funding
+        subagencies.
+      tags:
+      - v2
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_category/naics:
+    post:
+      operationId: v2_search_spending_by_category_naics_create
+      description: This route takes award filters and returns spending by NAICS.
+      tags:
+      - v2
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_category/psc:
+    post:
+      operationId: v2_search_spending_by_category_psc_create
+      description: This route takes award filters and returns spending by PSC.
+      tags:
+      - v2
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_category/recipient/:
+    post:
+      operationId: v2_search_spending_by_category_recipient_create
+      description: This route takes award filters and returns spending by Recipient
+        UEI.
+      tags:
+      - v2
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_category/recipient_duns:
+    post:
+      operationId: v2_search_spending_by_category_recipient_duns_create
+      description: |-
+        <em>Deprecated: Please see <a href="../recipient">this endpoint</a> instead.</em>
+
+        This route takes award filters and returns spending by Recipient DUNS.
+      tags:
+      - v2
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_category/state_territory:
+    post:
+      operationId: v2_search_spending_by_category_state_territory_create
+      description: This route takes award filters and returns spending by State Territory.
+      tags:
+      - v2
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_geography:
+    post:
+      operationId: v2_search_spending_by_geography_create
+      description: This route takes award filters, and returns spending by state code,
+        county code, or congressional district code.
+      tags:
+      - v2
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_subaward_grouped:
+    post:
+      operationId: v2_search_spending_by_subaward_grouped_create
+      description: Return all subawards matching given awards
+      tags:
+      - v2
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_transaction:
+    post:
+      operationId: v2_search_spending_by_transaction_create
+      description: This route takes keyword search fields, and returns the fields
+        of the searched term.
+      tags:
+      - v2
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_transaction_count:
+    post:
+      operationId: v2_search_spending_by_transaction_count_create
+      description: This route takes transaction search fields, and returns the transaction
+        counts of the searched term.
+      tags:
+      - v2
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_transaction_grouped:
+    post:
+      operationId: v2_search_spending_by_transaction_grouped_create
+      description: |-
+        This route provides aggregated information about transactions grouped by their prime awards. Additionally, allows
+        the transactions to be filtered.
+      tags:
+      - v2
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_over_time:
+    post:
+      operationId: v2_search_spending_over_time_create
+      description: This route takes award filters, and returns spending by time. The
+        amount of time is denoted by the "group" value.
+      tags:
+      - v2
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/transaction_spending_summary:
+    post:
+      operationId: v2_search_transaction_spending_summary_create
+      description: |-
+        Returns a summary of transactions which match the award search filter
+            Desired values:
+                total number of transactions `award_count`
+                The federal_action_obligation sum of all those transactions `award_spending`
+
+        *Note* Only deals with prime awards, future plans to include sub-awards.
+      tags:
+      - v2
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+components:
+  schemas:
+    AdvancedFilter:
+      properties:
+        keywords:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Keywords
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        time_period:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/TimePeriod'
+            type: array
+          - type: 'null'
+          title: Time Period
+        place_of_performance:
+          anyOf:
+          - enum:
+            - domestic
+            - foreign
+            type: string
+          - type: 'null'
+          title: Place Of Performance
+        agencies:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/Agency'
+            type: array
+          - type: 'null'
+          title: Agencies
+        recipient_search_text:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Recipient Search Text
+        recipient_scope:
+          anyOf:
+          - enum:
+            - domestic
+            - foreign
+            type: string
+          - type: 'null'
+          title: Recipient Scope
+        recipient_locations:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/Location'
+            type: array
+          - type: 'null'
+          title: Recipient Locations
+      required:
+      - keywords
+      - description
+      - time_period
+      - place_of_performance
+      - agencies
+      - recipient_search_text
+      - recipient_scope
+      - recipient_locations
+      title: AdvancedFilter
+      type: object
+    Agency:
+      properties:
+        type:
+          allOf:
+          - $ref: '#/components/schemas/TypeEnum'
+          title: Type
+        tier:
+          allOf:
+          - $ref: '#/components/schemas/TierEnum'
+          title: Tier
+        name:
+          title: Name
+          type: string
+        toptier_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Toptier Name
+      required:
+      - type
+      - tier
+      - name
+      - toptier_name
+      title: Agency
+      type: object
+    Location:
+      properties:
+        country:
+          title: Country
+          type: string
+        state:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: State
+        county:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: County
+        city:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: City
+        district_original:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: District Original
+        district_current:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: District Current
+        zip:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Zip
+      required:
+      - country
+      - state
+      - county
+      - city
+      - district_original
+      - district_current
+      - zip
+      title: Location
+      type: object
+    PageMetadataResponse:
+      properties:
+        hasNext:
+          description: Whether another page exists
+          title: Hasnext
+          type: boolean
+        last_record_sort_value:
+          description: Provided in the request when filtering past 50,000 records
+          title: Last Record Sort Value
+          type: string
+        last_record_unique_id:
+          description: Provided in the request when filtering past 50,000 records
+          title: Last Record Unique Id
+          type: integer
+        page:
+          description: Page number
+          title: Page
+          type: integer
+      required:
+      - hasNext
+      - last_record_sort_value
+      - last_record_unique_id
+      - page
+      title: PageMetadataResponse
+      type: object
+    SpendingByAwardResponse:
+      properties:
+        limit:
+          description: Number of results to return
+          title: Limit
+          type: integer
+        messages:
+          description: List of messages pertaining to the request, response, etc.
+          items:
+            type: string
+          title: Messages
+          type: array
+        page_metadata:
+          $ref: '#/components/schemas/PageMetadataResponse'
+        results:
+          description: List of results
+          items:
+            $ref: '#/components/schemas/_Result'
+          title: Results
+          type: array
+        spending_level:
+          allOf:
+          - $ref: '#/components/schemas/SpendingLevelEnum'
+          description: Type of data that will be returned
+          title: Spending Level
+      required:
+      - limit
+      - messages
+      - page_metadata
+      - results
+      - spending_level
+      title: SpendingByAwardResponse
+      type: object
+    SpendingLevelEnum:
+      enum:
+      - awards
+      - subawards
+      type: string
+    TierEnum:
+      enum:
+      - toptier
+      - subtier
+      type: string
+    TimePeriod:
+      description: |-
+        A date range to use when searching for records.
+
+        Awards filter to records that overlap the date range since awards are themselves a range of dates.
+        Subawards and transactions filter to records that fall within the range since they are a single point in time.
+
+        Values should be formatted as yyyy-MM-dd (e.g., 2025-01-31).
+      properties:
+        start_date:
+          description: Earliest date of the range
+          examples:
+          - '2024-10-01'
+          title: Start Date
+          type: string
+        end_date:
+          description: Latest date of the range
+          examples:
+          - '2025-09-30'
+          title: End Date
+          type: string
+        date_type:
+          anyOf:
+          - enum:
+            - action_date
+            - date_signed
+            - last_modified_date
+            - new_awards_only
+            type: string
+          - type: 'null'
+          default: null
+          description: Date fields that can be filtered
+          examples:
+          - action_date
+          title: Date Type
+      required:
+      - start_date
+      - end_date
+      title: TimePeriod
+      type: object
+    TypeEnum:
+      enum:
+      - awarding
+      - funding
+      type: string
+    _Result:
+      properties:
+        Award Amount:
+          description: Amount for the award
+          title: Award Amount
+          type: number
+        Award ID:
+          description: ID of the award
+          title: Award Id
+          type: integer
+      required:
+      - Award Amount
+      - Award ID
+      title: _Result
+      type: object
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid

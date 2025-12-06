@@ -1,0 +1,386 @@
+openapi: 3.0.3
+info:
+  title: USAspending API
+  version: 0.0.0
+  description: The USAspending API (Application Programming Interface) allows the
+    public to access comprehensive U.S. government spending data. The data include
+    spending on awards (e.g., who received federal contracts or grants, geographic
+    breakdowns, agency breakdowns, and much more). The data also include account-level
+    such as federal employee compensation. You can learn more about the data and the
+    federal law that requires it to be publicly accessible (the DATA Act) at http://fedspendingtransparency.github.io.
+paths:
+  /api/v2/search/new_awards_over_time:
+    post:
+      operationId: new_awards_over_time_create
+      description: |-
+        This route returns a list of time periods with the new awards in the
+        appropriate period within the provided time range
+      tags:
+      - new_awards_over_time
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_award:
+    post:
+      operationId: spending_by_award_create
+      description: Return all awards matching the provided filters and limits
+      tags:
+      - spending_by_award
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_award_count:
+    post:
+      operationId: spending_by_award_count_create
+      description: |-
+        This route takes award filters, and returns the number of awards in each award type.
+
+        (Contracts, Loans, Grants, etc.)
+      tags:
+      - spending_by_award_count
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_category:
+    post:
+      operationId: spending_by_category_create
+      description: Return all budget function/subfunction titles matching the provided
+        search text
+      tags:
+      - spending_by_category
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_category/awarding_agency:
+    post:
+      operationId: spending_by_category_awarding_agency_create
+      description: This route takes award filters and returns spending by awarding
+        agencies.
+      tags:
+      - spending_by_category
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_category/awarding_subagency:
+    post:
+      operationId: spending_by_category_awarding_subagency_create
+      description: This route takes award filters and returns spending by awarding
+        subagencies.
+      tags:
+      - spending_by_category
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_category/cfda:
+    post:
+      operationId: spending_by_category_cfda_create
+      description: This route takes award filters and returns spending by CFDA.
+      tags:
+      - spending_by_category
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_category/country:
+    post:
+      operationId: spending_by_category_country_create
+      description: This route takes award filters and returns spending by Country.
+      tags:
+      - spending_by_category
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_category/county:
+    post:
+      operationId: spending_by_category_county_create
+      description: This route takes award filters and returns spending by County.
+      tags:
+      - spending_by_category
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_category/defc:
+    post:
+      operationId: spending_by_category_defc_create
+      description: This route takes award filters and returns spending by DEFC.
+      tags:
+      - spending_by_category
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_category/district:
+    post:
+      operationId: spending_by_category_district_create
+      description: This route takes award filters and returns spending by Congressional
+        District.
+      tags:
+      - spending_by_category
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_category/federal_account:
+    post:
+      operationId: spending_by_category_federal_account_create
+      description: This route takes award filters and returns spending by Federal
+        Account.
+      tags:
+      - spending_by_category
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_category/funding_agency:
+    post:
+      operationId: spending_by_category_funding_agency_create
+      description: This route takes award filters and returns spending by funding
+        agencies.
+      tags:
+      - spending_by_category
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_category/funding_subagency:
+    post:
+      operationId: spending_by_category_funding_subagency_create
+      description: This route takes award filters and returns spending by funding
+        subagencies.
+      tags:
+      - spending_by_category
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_category/naics:
+    post:
+      operationId: spending_by_category_naics_create
+      description: This route takes award filters and returns spending by NAICS.
+      tags:
+      - spending_by_category
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_category/psc:
+    post:
+      operationId: spending_by_category_psc_create
+      description: This route takes award filters and returns spending by PSC.
+      tags:
+      - spending_by_category
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_category/recipient/:
+    post:
+      operationId: spending_by_category_recipient_create
+      description: This route takes award filters and returns spending by Recipient
+        UEI.
+      tags:
+      - spending_by_category
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_category/recipient_duns:
+    post:
+      operationId: spending_by_category_recipient_duns_create
+      description: |-
+        <em>Deprecated: Please see <a href="../recipient">this endpoint</a> instead.</em>
+
+        This route takes award filters and returns spending by Recipient DUNS.
+      tags:
+      - spending_by_category
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_category/state_territory:
+    post:
+      operationId: spending_by_category_state_territory_create
+      description: This route takes award filters and returns spending by State Territory.
+      tags:
+      - spending_by_category
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_geography:
+    post:
+      operationId: spending_by_geography_create
+      description: This route takes award filters, and returns spending by state code,
+        county code, or congressional district code.
+      tags:
+      - spending_by_geography
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_subaward_grouped:
+    post:
+      operationId: spending_by_subaward_grouped_create
+      description: Return all subawards matching given awards
+      tags:
+      - spending_by_subaward_grouped
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_transaction:
+    post:
+      operationId: spending_by_transaction_create
+      description: This route takes keyword search fields, and returns the fields
+        of the searched term.
+      tags:
+      - spending_by_transaction
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_transaction_count:
+    post:
+      operationId: spending_by_transaction_count_create
+      description: This route takes transaction search fields, and returns the transaction
+        counts of the searched term.
+      tags:
+      - spending_by_transaction_count
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_by_transaction_grouped:
+    post:
+      operationId: spending_by_transaction_grouped_create
+      description: |-
+        This route provides aggregated information about transactions grouped by their prime awards. Additionally, allows
+        the transactions to be filtered.
+      tags:
+      - spending_by_transaction_grouped
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/spending_over_time:
+    post:
+      operationId: spending_over_time_create
+      description: This route takes award filters, and returns spending by time. The
+        amount of time is denoted by the "group" value.
+      tags:
+      - spending_over_time
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v2/search/transaction_spending_summary:
+    post:
+      operationId: transaction_spending_summary_create
+      description: |-
+        Returns a summary of transactions which match the award search filter
+            Desired values:
+                total number of transactions `award_count`
+                The federal_action_obligation sum of all those transactions `award_spending`
+
+        *Note* Only deals with prime awards, future plans to include sub-awards.
+      tags:
+      - transaction_spending_summary
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+components:
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid

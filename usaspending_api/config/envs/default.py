@@ -13,6 +13,8 @@ import pathlib
 from typing import ClassVar
 import os
 
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
 from usaspending_api.config.utils import (
     ENV_SPECIFIC_OVERRIDE,
     eval_default_factory_from_root_validator,
@@ -20,13 +22,14 @@ from usaspending_api.config.utils import (
     validate_url_and_parts,
     check_required_url_parts,
     backfill_url_parts_config,
+    USER_SPECIFIC_OVERRIDE,
 )
 from pydantic import (
     AnyHttpUrl,
-    BaseSettings,
     PostgresDsn,
     SecretStr,
-    root_validator,
+    model_validator,
+    Field,
 )
 
 _PROJECT_NAME = "usaspending-api"
@@ -64,6 +67,10 @@ class DefaultConfig(BaseSettings):
         BRANCH: The USASPENDING-API git branch
     """
 
+    model_config = SettingsConfigDict(
+        env_file=str(_PROJECT_ROOT_DIR / ".env"), env_file_encoding="utf-8", extra="allow"
+    )
+
     def __new__(cls, *args, **kwargs):
         if cls is DefaultConfig:
             raise NotImplementedError(
@@ -79,16 +86,16 @@ class DefaultConfig(BaseSettings):
 
     # ==== [Postgres] ====
     DATABASE_URL: str = None  # FACTORY_PROVIDED_VALUE. See its root validator-factory below
-    USASPENDING_DB_SCHEME: str = "postgres"
-    USASPENDING_DB_NAME: str = "data_store_api"
+    USASPENDING_DB_SCHEME: str = None
+    USASPENDING_DB_NAME: str = None
     USASPENDING_DB_USER: str = ENV_SPECIFIC_OVERRIDE
     USASPENDING_DB_PASSWORD: SecretStr = ENV_SPECIFIC_OVERRIDE
     USASPENDING_DB_HOST: str = ENV_SPECIFIC_OVERRIDE
     USASPENDING_DB_PORT: str = ENV_SPECIFIC_OVERRIDE
 
     BROKER_DB: str = None  # FACTORY_PROVIDED_VALUE. See its root validator-factory below
-    BROKER_DB_SCHEME: str = "postgres"
-    BROKER_DB_NAME: str = "data_broker"
+    BROKER_DB_SCHEME: str = None
+    BROKER_DB_NAME: str = None
     BROKER_DB_USER: str = ENV_SPECIFIC_OVERRIDE
     BROKER_DB_PASSWORD: SecretStr = ENV_SPECIFIC_OVERRIDE
     BROKER_DB_HOST: str = ENV_SPECIFIC_OVERRIDE
@@ -139,7 +146,8 @@ class DefaultConfig(BaseSettings):
 
     # noinspection PyMethodParameters
     # Pydantic returns a classmethod for its validators, so the cls param is correct
-    @root_validator
+    @model_validator(mode="before")
+    @classmethod
     def _DATABASE_URL_and_parts_factory(cls, values):
         """A root validator to backfill DATABASE_URL and USASPENDING_DB_* part config vars and validate that they are
         all consistent.
@@ -157,7 +165,8 @@ class DefaultConfig(BaseSettings):
 
     # noinspection PyMethodParameters
     # Pydantic returns a classmethod for its validators, so the cls param is correct
-    @root_validator
+    @model_validator(mode="before")
+    @classmethod
     def _BROKER_DB_and_parts_factory(cls, values):
         """A root validator to backfill BROKER_DB and BROKER_DB_* part config vars and validate
         that they are all consistent.
@@ -180,16 +189,17 @@ class DefaultConfig(BaseSettings):
     # ==== [Elasticsearch] ====
     # Where to connect to elasticsearch.
     ES_HOSTNAME: str = None  # FACTORY_PROVIDED_VALUE. See below validator-factory
-    ES_SCHEME: str = "https"
+    ES_SCHEME: str = None
     ES_HOST: str = ENV_SPECIFIC_OVERRIDE
     ES_PORT: str = None
-    ES_USER: str = None
-    ES_PASSWORD: SecretStr = None
-    ES_NAME: str = None
+    ES_USER: str | None = None
+    ES_PASSWORD: SecretStr | None = None
+    ES_NAME: str | None = None
 
     # noinspection PyMethodParameters
     # Pydantic returns a classmethod for its validators, so the cls param is correct
-    @root_validator
+    @model_validator(mode="before")
+    @classmethod
     def _ES_HOSTNAME_and_parts_factory(cls, values):
         """A root validator to backfill ES_HOSTNAME and ES_* part config vars and validate that they are
         all consistent.
@@ -258,7 +268,7 @@ class DefaultConfig(BaseSettings):
     # Those clusters are the only place we currently need this variable,
     # If you write code that depends on this config, make sure you
     # set BRANCH as an environment variable on your machine
-    BRANCH: str = os.environ.get("BRANCH")
+    BRANCH: str | None = os.environ.get("BRANCH")
 
     # SPARK_SCHEDULER_MODE = "FAIR"  # if used with weighted pools, could allow round-robin tasking of simultaneous jobs
     # TODO: have to deal with this if really wanting balanced (FAIR) task execution
@@ -321,7 +331,7 @@ class DefaultConfig(BaseSettings):
     AWS_ACCESS_KEY: SecretStr = ENV_SPECIFIC_OVERRIDE
     AWS_SECRET_KEY: SecretStr = ENV_SPECIFIC_OVERRIDE
     # Setting AWS_PROFILE to None so boto3 doesn't try to pick up the placeholder string as an actual profile to find
-    AWS_PROFILE: str = None  # USER_SPECIFIC_OVERRIDE
+    AWS_PROFILE: str | None = None  # USER_SPECIFIC_OVERRIDE
     SPARK_S3_BUCKET: str = ENV_SPECIFIC_OVERRIDE
     BULK_DOWNLOAD_S3_BUCKET_NAME: str = ENV_SPECIFIC_OVERRIDE
     DELTA_LAKE_S3_PATH: str = "data/delta"  # path within SPARK_S3_BUCKET where Delta output data will accumulate
@@ -333,9 +343,3 @@ class DefaultConfig(BaseSettings):
     # Miscellaneous configs that are used through the codebase but don't fall into one of the categories above
     COVID19_DOWNLOAD_README_FILE_NAME: str = "COVID-19_download_readme.txt"
     COVID19_DOWNLOAD_README_OBJECT_KEY: str = f"files/{COVID19_DOWNLOAD_README_FILE_NAME}"
-
-    class Config:
-        pass
-        # supporting use of a user-provided (ang git-ignored) .env file for overrides
-        env_file = str(_PROJECT_ROOT_DIR / ".env")
-        env_file_encoding = "utf-8"

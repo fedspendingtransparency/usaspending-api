@@ -1,8 +1,9 @@
 from typing import Any, Dict, Callable, TypeVar, Union
 from urllib.parse import ParseResult, urlparse, parse_qs
 
-from pydantic import BaseSettings, SecretStr
-from pydantic.fields import ModelField
+from pydantic import SecretStr
+from pydantic.v1.fields import ModelField
+from pydantic_settings import BaseSettings
 
 # Placeholder sentinel value indicating a config var that is expected to be overridden in a runtime-env-specific
 # config declaration. If this value emerges, it has not yet been set in the runtime env config and must be.
@@ -34,6 +35,7 @@ def eval_default_factory(
     assigned_or_sourced_value: Any,
     configured_vars: Dict[str, Any],
     config_var: ModelField,
+    config_var_name: str,
     factory_func: Callable,
 ):
     """A delegate function that acts as a default factory to produce/derive (or transform) a config var value
@@ -62,7 +64,7 @@ def eval_default_factory(
             See Example below for a no-param lambda closure
 
         Example:
-            >>> @validator("MY_COMPOSED_FIELD")
+            >>> @field_validator("MY_COMPOSED_FIELD")
             >>> def _MY_COMPOSED_FIELD(cls, v, values, field: ModelField):
             >>>     def factory_func():
             >>>         return values["MY_FIELD_1"] + ":" + values["MY_FIELD_2"]
@@ -75,14 +77,14 @@ def eval_default_factory(
 
     # Get any parent config class fields, to determine if this field may be overriding it
     overridable_config_base_classes = [
-        bc for bc in config_class.__bases__ if issubclass(bc, BaseSettings) and "__fields__" in dir(bc)
+        bc for bc in config_class.__bases__ if issubclass(bc, BaseSettings) and bc.model_fields_set.fset is not None
     ]
-    overridable_config_fields = {k for bc in overridable_config_base_classes for k in bc.__fields__.keys()}
-    is_override = config_var.name in overridable_config_fields
+    overridable_config_fields = {k for bc in overridable_config_base_classes for k in bc.model_fields_set.fset}
+    is_override = config_var_name in overridable_config_fields
 
     if not is_override and default_value is not None and unveil(default_value) not in CONFIG_VAR_PLACEHOLDERS:
         raise ValueError(
-            f'The "{config_var.name}" field, which is tied to a default-factory-based validator, must have its '
+            f'The "{config_var_name}" field, which is tied to a default-factory-based validator, must have its '
             f"default value set to None, "
             f"or to one of the CONFIG_VAR_PLACEHOLDERS. This is so that when a value is sourced or assigned "
             f"elsewhere for this field, it can easily be identified as a non-default value, and will take "
@@ -118,37 +120,41 @@ def eval_default_factory(
 
 def eval_default_factory_from_root_validator(
     config_class: TBaseSettings,
-    configured_vars: Dict[str, Any],
+    configured_vars: Dict[str, Any] | TBaseSettings,
     config_var_name: str,
     factory_func: Callable,
 ):
-    """Wrapper to allow for the same eval logic when coming from a pydantic root_validator,
+    """Wrapper to allow for the same eval logic when coming from a pydantic model_validator,
     which provides a different set of args.
 
     See Also: eval_default_factory
     """
     # Get any parent config class validators
     overridable_config_base_classes = [
-        bc for bc in config_class.__bases__ if issubclass(bc, BaseSettings) and "__fields__" in dir(bc)
+        bc for bc in config_class.__bases__ if issubclass(bc, BaseSettings) and bc.model_fields_set.fset is not None
     ]
-    base_class_validated_fields = {k for bc in overridable_config_base_classes for k in bc.__validators__.keys()}
+    base_class_validated_fields = {k for bc in overridable_config_base_classes for k in bc.model_fields_set.fset}
     is_validated_in_base_class = config_var_name in base_class_validated_fields
 
     if is_validated_in_base_class:
         raise ValueError(
             f'root_validators cannot override validators. The "{config_var_name}" field, which is tied to a '
-            f"default-factory-based root_validator, is not supported for root_validator in a subclass because its "
+            f"default-factory-based model_validator, is not supported for model_validator in a subclass because its "
             f"value is produced from a parent class validator. Whether the assigned value comes from the "
             f"environment or from the parent validator cannot be distinguished. Consider making the parent validator "
-            f"into a root_validator and override that."
+            f"into a model_validator and override that."
         )
 
     assigned_or_sourced_value = configured_vars[config_var_name] if config_var_name in configured_vars else None
-    config_var = config_class.__fields__[config_var_name]
+    config_var = config_class.model_fields[config_var_name]
     produced_value = eval_default_factory(
-        config_class, assigned_or_sourced_value, configured_vars, config_var, factory_func
+        config_class, assigned_or_sourced_value, configured_vars, config_var, config_var_name, factory_func
     )
-    configured_vars[config_var_name] = produced_value
+    if type(configured_vars) == dict:
+        configured_vars[config_var_name] = produced_value
+    else:
+        setattr(configured_vars, config_var_name, produced_value)
+
     return configured_vars
 
 

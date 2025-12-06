@@ -11,6 +11,7 @@ from typing import (
 from django.conf import settings
 from django.db.models import F
 from django.utils.text import slugify
+from drf_spectacular.utils import extend_schema
 from elasticsearch_dsl import Q as ES_Q
 from elasticsearch_dsl.response import Response as ES_Response
 from rest_framework.response import Response
@@ -50,6 +51,8 @@ from usaspending_api.common.recipient_lookups import annotate_prime_award_recipi
 from usaspending_api.common.validator.award_filter import AWARD_FILTER_NO_RECIPIENT_ID
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
+from usaspending_api.dynamic_docs.request_models.advanced_filter import AdvancedFilter
+from usaspending_api.dynamic_docs.response_models.v2.search.spending_by_award import SpendingByAwardResponse
 from usaspending_api.recipient.models import RecipientProfile
 from usaspending_api.references.helpers import get_def_codes_by_group
 from usaspending_api.references.models import Agency
@@ -95,6 +98,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_award.md"
 
+    @extend_schema(request=AdvancedFilter, responses={"200": SpendingByAwardResponse})
     @cache_response()
     def post(self, request):
         """Return all awards matching the provided filters and limits"""

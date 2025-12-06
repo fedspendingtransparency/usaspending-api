@@ -1,4 +1,6 @@
 from django.urls import re_path
+from drf_spectacular.views import SpectacularSwaggerView, SpectacularRedocView
+
 from usaspending_api.common.views import MarkdownView
 from django_spaghetti.views import Plate
 
@@ -10,5 +12,7 @@ urlpatterns = [
     re_path(r"^recipes", MarkdownView.as_view(markdown="request_recipes.md")),
     re_path(r"^using-the-api", MarkdownView.as_view(markdown="using_the_api.md")),
     re_path(r"^entity-relationships", Plate.as_view(plate_template_name="plate.html"), name="plate"),
-    re_path(r"^endpoints", MarkdownView.as_view(markdown="endpoints.md")),
+    # re_path(r"^endpoints", MarkdownView.as_view(markdown="endpoints.md")),
+    # re_path(r"^endpoints", SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    re_path(r"^endpoints", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
 ]

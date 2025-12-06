@@ -208,6 +208,7 @@ INSTALLED_APPS = [
     "debug_toolbar",
     "django_extensions",
     "django_spaghetti",
+    "drf_spectacular",
     "opentelemetry",
     "rest_framework",
     "rest_framework_tracking",
@@ -222,6 +223,7 @@ INSTALLED_APPS = [
     "usaspending_api.database_scripts.job_archive",
     "usaspending_api.disaster",
     "usaspending_api.download",
+    "usaspending_api.dynamic_docs",
     "usaspending_api.etl",
     "usaspending_api.financial_activities",
     "usaspending_api.recipient",
@@ -355,6 +357,7 @@ REST_FRAMEWORK = {
         "usaspending_api.common.renderers.DocumentAPIRenderer",
         "usaspending_api.common.renderers.BrowsableAPIRendererWithoutForms",
     ),
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "EXCEPTION_HANDLER": "usaspending_api.common.custom_exception_handler.custom_exception_handler",
 }
 
@@ -493,3 +496,19 @@ SPAGHETTI_SAUCE = {
 SESSION_COOKIE_SECURE = True
 
 CSRF_COOKIE_SECURE = True
+
+# Settings for drf-spectacular
+SPECTACULAR_SETTINGS = {
+    "TITLE": "USAspending API",
+    "DESCRIPTION": (
+        "The USAspending API (Application Programming Interface) allows the public to access comprehensive U.S."
+        " government spending data. The data include spending on awards (e.g., who received federal contracts or"
+        " grants, geographic breakdowns, agency breakdowns, and much more). The data also include account-level such as"
+        " federal employee compensation. You can learn more about the data and the federal law that requires it to be"
+        " publicly accessible (the DATA Act) at http://fedspendingtransparency.github.io."
+    ),
+    "VERSION": "0.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    # OTHER SETTINGS
+    "DISABLE_ERRORS_AND_WARNINGS": True,
+}
