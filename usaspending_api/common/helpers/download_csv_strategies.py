@@ -247,6 +247,7 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
         s3_bucket_path: str,
         s3_bucket_sub_path: str,
         destination_path_dir: str,
+        max_threads: int = 15,
     ) -> List[str]:
         """Moves files from s3 data csv location to a location on the local machine.
 
@@ -267,21 +268,21 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
         self._logger.info("Moving data files from S3 to local machine using threading...")
         local_csv_file_paths = []
 
-        with ThreadPoolExecutor(max_workers=10) as executor:
-            futures = []
-            for file_name in s3_file_paths:
-                futures.append(
-                    executor.submit(
-                        self._move_data_csv_s3_to_local,
-                        bucket_name,
-                        file_name,
-                        s3_bucket_path,
-                        s3_bucket_sub_path,
-                        destination_path_dir,
-                    )
+        with ThreadPoolExecutor(max_workers=max_threads) as executor:
+            futures = [
+                executor.submit(
+                    self._move_data_csv_s3_to_local,
+                    bucket_name,
+                    file_name,
+                    s3_bucket_path,
+                    s3_bucket_sub_path,
+                    destination_path_dir,
                 )
+                for file_name in s3_file_paths
+            ]
 
             for future in as_completed(futures):
                 local_csv_file_paths.append(future.result())
+
         self._logger.info(f"Copied data files from S3 to local machine in {(time.time() - start_time):3f}s")
         return local_csv_file_paths

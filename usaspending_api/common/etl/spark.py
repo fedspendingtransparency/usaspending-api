@@ -763,9 +763,6 @@ def rename_part_files_threaded(
             if success:
                 full_file_paths.append(new_path)
 
-            if completed_count % 10 == 0 or completed_count == total_files:
-                logger.info(f"Progress: {completed_count}/{total_files} files processed")
-
     if failed_count > 0:
         logger.info(
             f"Renamed completed with errors: {len(full_file_paths)} succeeded, {failed_count} failed out of {total_files} total"
