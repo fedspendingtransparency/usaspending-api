@@ -23,7 +23,7 @@ from usaspending_api.download.filestreaming.download_generation import (
     split_and_zip_data_files,
     wait_for_process,
 )
-from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_file
+from usaspending_api.download.filestreaming.zip_file import append_files_to_zip_file_go
 from usaspending_api.download.lookups import FILE_FORMATS
 
 
@@ -204,7 +204,11 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
             delete_s3_objects(s3_bucket_name, key_prefix=f"{s3_bucket_sub_path}/{destination_file_name}")
             if self.spark_created_by_command:
                 self.spark.stop()
-        append_files_to_zip_file(final_csv_data_file_locations, download_zip_path)
+
+        zip_start_time = time.perf_counter()
+        append_files_to_zip_file_go(final_csv_data_file_locations, download_zip_path)
+        self._logger.info(f"Zipping took {time.perf_counter() - zip_start_time}")
+
         self._logger.info(f"Generated the following data csv files {final_csv_data_file_locations}")
         return CSVDownloadMetadata(final_csv_data_file_locations, record_count, column_count)
 
