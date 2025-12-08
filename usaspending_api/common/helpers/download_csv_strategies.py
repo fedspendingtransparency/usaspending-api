@@ -11,7 +11,7 @@ from django.conf import settings
 from pyspark.sql import DataFrame
 
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
-from usaspending_api.common.etl.spark import rename_part_files
+from usaspending_api.common.etl.spark import rename_part_files_threaded
 from usaspending_api.common.helpers.s3_helpers import (
     delete_s3_objects,
     download_s3_object,
@@ -184,7 +184,7 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
             )
             column_count = len(df.columns)
             self._logger.info("Concatenating partitioned output files ...")
-            merged_file_paths = rename_part_files(
+            merged_file_paths = rename_part_files_threaded(
                 bucket_name=s3_bucket_name,
                 destination_file_name=destination_file_name,
                 logger=self._logger,
