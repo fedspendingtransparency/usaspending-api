@@ -15,7 +15,7 @@ ENV CGO_ENABLED=1
 ENV GOOS=linux
 
 WORKDIR /src
-COPY ./utilities /src
+COPY ./usaspending_api/download/utilities /src
 
 RUN make build
 
@@ -47,4 +47,4 @@ RUN python3 -m pip install -r requirements/requirements.txt && \
 ENV PYTHONUNBUFFERED=1
 
 ##### Copy the .so file built from Go in the previous stage
-COPY --from=go_build /src/zipper.so /dockermount/utilities/zipper.so
+COPY --from=go_build /src/zipper.so /dockermount/usaspending_api/download/utilities/zipper.so
