@@ -713,7 +713,7 @@ def rename_part_files_threaded(
     logger: logging.Logger,
     temp_download_dir_name: str = "temp_download",
     file_format: str = "csv",
-    max_threads: int = 5,
+    max_threads: int = 15,
 ) -> list[str] | list:
     start_time = time.perf_counter()
 
