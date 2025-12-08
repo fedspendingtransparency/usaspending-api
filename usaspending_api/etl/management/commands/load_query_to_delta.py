@@ -21,15 +21,18 @@ from usaspending_api.disaster.delta_models import (
 )
 from usaspending_api.disaster.models import CovidFABASpending
 from usaspending_api.download.delta_models.award_financial_download import (
-    award_financial_download_load_sql_string,
+    load_award_financial,
+    load_award_financial_incremental,
     award_financial_schema,
 )
 from usaspending_api.download.delta_models.object_class_program_activity_download import (
-    object_class_program_activity_download_load_sql_string,
     object_class_program_activity_schema,
+    load_object_class_program_activity,
+    load_object_class_program_activity_incremental,
 )
 from usaspending_api.download.delta_models.account_balances_download import (
     load_account_balances,
+    load_account_balances_incremental,
     account_balances_schema,
 )
 from usaspending_api.download.delta_models.transaction_download import transaction_download_schema
@@ -331,7 +334,7 @@ TABLE_SPEC = {
         "model": None,
         "is_from_broker": False,
         "source_query": load_account_balances,
-        "source_query_incremental": None,
+        "source_query_incremental": load_account_balances_incremental,
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
@@ -351,8 +354,8 @@ TABLE_SPEC = {
     "award_financial_download": {
         "model": None,
         "is_from_broker": False,
-        "source_query": [award_financial_download_load_sql_string],
-        "source_query_incremental": None,
+        "source_query": load_award_financial,
+        "source_query_incremental": load_award_financial_incremental,
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
@@ -372,8 +375,8 @@ TABLE_SPEC = {
     "object_class_program_activity_download": {
         "model": None,
         "is_from_broker": False,
-        "source_query": [object_class_program_activity_download_load_sql_string],
-        "source_query_incremental": None,
+        "source_query": load_object_class_program_activity,
+        "source_query_incremental": load_object_class_program_activity_incremental,
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",

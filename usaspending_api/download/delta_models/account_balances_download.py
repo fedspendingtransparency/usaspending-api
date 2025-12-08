@@ -1,4 +1,6 @@
-from pyspark.sql import Column, DataFrame, functions as sf, SparkSession
+from delta.tables import DeltaTable
+from usaspending_api.download.helpers.delta_models_helpers import fy_quarter_period
+from pyspark.sql import DataFrame, functions as sf, SparkSession
 from pyspark.sql.types import (
     BooleanType,
     DateType,
@@ -8,8 +10,8 @@ from pyspark.sql.types import (
     StructField,
     StructType,
     TimestampType,
+    LongType,
 )
-
 
 account_balances_schema = StructType(
     [
@@ -69,22 +71,9 @@ account_balances_schema = StructType(
         StructField("reporting_fiscal_quarter", IntegerType()),
         StructField("reporting_fiscal_year", IntegerType()),
         StructField("quarter_format_flag", BooleanType()),
+        StructField("merge_hash_key", LongType()),
     ]
 )
-
-
-def fy_quarter_period() -> Column:
-    return sf.when(
-        sf.col("quarter_format_flag"),
-        sf.concat(sf.lit("FY"), sf.col("reporting_fiscal_year"), sf.lit("Q"), sf.col("reporting_fiscal_quarter")),
-    ).otherwise(
-        sf.concat(
-            sf.lit("FY"),
-            sf.col("reporting_fiscal_year"),
-            sf.lit("P"),
-            sf.lpad(sf.col("reporting_fiscal_period"), 2, "0"),
-        )
-    )
 
 
 def account_balances_df(spark: SparkSession) -> DataFrame:
@@ -175,9 +164,26 @@ def account_balances_df(spark: SparkSession) -> DataFrame:
             sa.reporting_fiscal_year,
             sa.quarter_format_flag,
         )
+        .withColumn("merge_hash_key", sf.xxhash64("*"))
     )
 
 
 def load_account_balances(spark: SparkSession, destination_database: str, destination_table_name: str) -> None:
     df = account_balances_df(spark)
     df.write.format("delta").mode("overwrite").saveAsTable(f"{destination_database}.{destination_table_name}")
+
+
+def load_account_balances_incremental(
+    spark: SparkSession, destination_database: str, destination_table_name: str
+) -> None:
+    target = DeltaTable.forName(spark, f"{destination_database}.{destination_table_name}").alias("t")
+    source = account_balances_df(spark).alias("s")
+    (
+        target.merge(
+            source,
+            "s.appropriation_account_balances_id = t.appropriation_account_balances_id and s.merge_hash_key = t.merge_hash_key",
+        )
+        .whenNotMatchedInsertAll()
+        .whenNotMatchedBySourceDelete()
+        .execute()
+    )
