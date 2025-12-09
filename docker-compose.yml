@@ -178,7 +178,7 @@ services:
       - transport.host=localhost
       - bootstrap.memory_lock=true
       - plugins.security.disabled=true
-      - "OPENSEARCH_JAVA_OPTS=-Xms6048m -Xmx6048m"  # Ensure Docker is allocated plenty of memory, otherwise this will fail
+      - "OPENSEARCH_JAVA_OPTS=-Xms2g -Xmx2g"  # Ensure Docker is allocated plenty of memory, otherwise this will fail
     # Inject plugin install, then resume with orignial entrypoint command
     command: >
       /bin/sh -c "
