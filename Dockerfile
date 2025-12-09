@@ -14,7 +14,7 @@ RUN apt update && apt install -y \
     curl \
     gcc \
     libpq-dev \
-    postgresql-13
+    postgresql-16
 
 ##### Copy python packaged
 COPY . /dockermount
