@@ -108,16 +108,16 @@ class Command(BaseCommand):
         elif isinstance(table_spec["delta_table_create_sql"], StructType):
             schema = table_spec["delta_table_create_sql"]
             df = spark.createDataFrame([], schema)
-            (
-                df.write.format("delta")
-                .mode("overwrite")
-                .option(
-                    "path",
-                    f"s3a://{spark_s3_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/{destination_database}/{destination_table_name}",
-                )
-                .option("overwriteSchema", "true")
-                .saveAsTable(f"{destination_database}.{destination_table_name}")
-            )
+            writer = df.write.format("delta").mode("overwrite")
+
+            if table_spec.get("delta_table_partition_columns"):
+                writer = writer.partitionBy(*table_spec["delta_table_partition_columns"])
+
+            writer.option(
+                "path",
+                f"s3a://{spark_s3_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/{destination_database}/{destination_table_name}",
+            ).option("overwriteSchema", "true").saveAsTable(f"{destination_database}.{destination_table_name}")
+
         else:
             raise ValueError("Invalid Table Spec value for Delta Table creation.")
 

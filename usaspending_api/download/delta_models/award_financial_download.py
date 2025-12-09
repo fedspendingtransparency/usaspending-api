@@ -1,16 +1,18 @@
 from delta.tables import DeltaTable
-from pyspark.sql import SparkSession, functions as sf
+from pyspark.sql import SparkSession
+from pyspark.sql import functions as sf
 from pyspark.sql.functions import expr
 from pyspark.sql.types import (
     BooleanType,
     DateType,
     DecimalType,
     IntegerType,
+    LongType,
     StringType,
     StructField,
     StructType,
-    LongType,
 )
+
 from usaspending_api.download.helpers.delta_models_helpers import fy_quarter_period
 from usaspending_api.download.helpers.download_annotation_functions import AWARD_URL
 
@@ -332,7 +334,9 @@ def award_financial_df(spark: SparkSession):
 
 def load_award_financial(spark: SparkSession, destination_database: str, destination_table_name: str) -> None:
     df = award_financial_df(spark)
-    df.write.format("delta").mode("overwrite").saveAsTable(f"{destination_database}.{destination_table_name}")
+    df.write.format("delta").mode("overwrite").partitionBy(
+        "reporting_fiscal_year", "funding_toptier_agency_id"
+    ).saveAsTable(f"{destination_database}.{destination_table_name}")
 
 
 def load_award_financial_incremental(

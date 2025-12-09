@@ -20,20 +20,20 @@ from usaspending_api.disaster.delta_models import (
     covid_faba_spending_load_sql_strings,
 )
 from usaspending_api.disaster.models import CovidFABASpending
-from usaspending_api.download.delta_models.award_financial_download import (
-    load_award_financial,
-    load_award_financial_incremental,
-    award_financial_schema,
-)
-from usaspending_api.download.delta_models.object_class_program_activity_download import (
-    object_class_program_activity_schema,
-    load_object_class_program_activity,
-    load_object_class_program_activity_incremental,
-)
 from usaspending_api.download.delta_models.account_balances_download import (
+    account_balances_schema,
     load_account_balances,
     load_account_balances_incremental,
-    account_balances_schema,
+)
+from usaspending_api.download.delta_models.award_financial_download import (
+    award_financial_schema,
+    load_award_financial,
+    load_award_financial_incremental,
+)
+from usaspending_api.download.delta_models.object_class_program_activity_download import (
+    load_object_class_program_activity,
+    load_object_class_program_activity_incremental,
+    object_class_program_activity_schema,
 )
 from usaspending_api.download.delta_models.transaction_download import transaction_download_schema
 from usaspending_api.recipient.delta_models import (
@@ -83,7 +83,6 @@ from usaspending_api.transactions.delta_models import (
     transaction_current_cd_lookup_load_sql_string,
     transaction_search_create_sql_string,
 )
-
 
 AWARD_URL = f"{HOST}/award/" if "localhost" in HOST else f"https://{HOST}/award/"
 
@@ -350,6 +349,7 @@ TABLE_SPEC = {
         "postgres_seq_name": None,
         "tsvectors": None,
         "postgres_partition_spec": None,
+        "delta_table_partition_columns": ["reporting_fiscal_year", "funding_toptier_agency_id"],
     },
     "award_financial_download": {
         "model": None,
@@ -371,6 +371,7 @@ TABLE_SPEC = {
         "postgres_seq_name": None,
         "tsvectors": None,
         "postgres_partition_spec": None,
+        "delta_table_partition_columns": ["reporting_fiscal_year", "funding_toptier_agency_id"],
     },
     "object_class_program_activity_download": {
         "model": None,
@@ -392,6 +393,7 @@ TABLE_SPEC = {
         "postgres_seq_name": None,
         "tsvectors": None,
         "postgres_partition_spec": None,
+        "delta_table_partition_columns": ["reporting_fiscal_year", "funding_toptier_agency_id"],
     },
     "transaction_download": {
         "model": None,
