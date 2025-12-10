@@ -116,12 +116,8 @@ class Command(BaseCommand):
 
             # Apply all options
             (
-                df_writer
-                .mode("overwrite")
-                .options(
-                    **default_options,
-                    **additional_options
-                )
+                df_writer.mode("overwrite")
+                .options(**default_options, **additional_options)
                 .saveAsTable(f"{destination_database}.{destination_table_name}")
             )
         else:
