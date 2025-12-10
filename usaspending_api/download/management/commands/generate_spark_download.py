@@ -89,24 +89,7 @@ class Command(BaseCommand):
         self.columns = self.download_json_request["columns"] if "columns" in self.download_json_request else None
 
         self.use_duckdb = options["use_duckdb"]
-        if options["use_duckdb"]:
-            self.spark: DuckDBSparkSession = DuckDBSparkSession.builder.getOrCreate()
-            spark_created_by_command = False
-            self.should_cleanup = True
-
-            # DuckDB can sometimes see an incorrect RAM amount in AWS, so we manually set the limit to 80% here
-            memory_limit = int(psutil.virtual_memory().total / (1024**3) * 0.8)
-
-            self.spark.sql(f"SET memory_limit = '{memory_limit}G'")
-            duckdb_settings = self.spark.sql(
-                "SELECT name, value FROM duckdb_settings() WHERE name IN ('memory_limit', 'threads')"
-            ).collect()
-
-            logger.info(f"Using DuckDB {duckdb.version()}")
-            for duckdb_setting in duckdb_settings:
-                logger.info(f"DuckDB {duckdb_setting.name}: {duckdb_setting.value}")
-        else:
-            self.spark, spark_created_by_command = self.setup_spark_session()
+        self.spark, spark_created_by_command = self.setup_spark_session(options["use_duckdb"])
 
         if not self.working_dir_path.exists():
             self.working_dir_path.mkdir()
@@ -116,12 +99,29 @@ class Command(BaseCommand):
             self.spark.stop()
 
     @staticmethod
-    def setup_spark_session() -> tuple[SparkSession, bool]:
-        spark = get_active_spark_session()
-        spark_created_by_command = False
-        if not spark:
+    def setup_spark_session(use_duckdb: bool = False) -> tuple[SparkSession | DuckDBSparkSession, bool]:
+        if use_duckdb:
+            spark: DuckDBSparkSession = DuckDBSparkSession.builder.getOrCreate()
             spark_created_by_command = True
-            spark = configure_spark_session(**DEFAULT_EXTRA_CONF, spark_context=spark)
+
+            # DuckDB can sometimes see an incorrect RAM amount in AWS, so we manually set the limit to 80% here
+            memory_limit = int(psutil.virtual_memory().total / (1024**3) * 0.8)
+
+            spark.sql(f"SET memory_limit = '{memory_limit}G'")
+            duckdb_settings = spark.sql(
+                "SELECT name, value FROM duckdb_settings() WHERE name IN ('memory_limit', 'threads')"
+            ).collect()
+
+            logger.info(f"Using DuckDB {duckdb.version()}")
+            for duckdb_setting in duckdb_settings:
+                logger.info(f"DuckDB {duckdb_setting.name}: {duckdb_setting.value}")
+        else:
+            spark = get_active_spark_session()
+            spark_created_by_command = False
+            if not spark:
+                spark_created_by_command = True
+                spark = configure_spark_session(**DEFAULT_EXTRA_CONF, spark_context=spark)
+
         return spark, spark_created_by_command
 
     @cached_property
