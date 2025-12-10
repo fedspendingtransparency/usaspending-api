@@ -110,6 +110,7 @@ TABLE_SPEC = {
         "postgres_seq_name": None,
         "tsvectors": None,
         "postgres_partition_spec": None,
+        "delta_table_create_partitions": None,
     },
     "award_search_gold": {
         "model": AwardSearch,
@@ -132,6 +133,7 @@ TABLE_SPEC = {
         "postgres_seq_name": None,
         "tsvectors": None,
         "postgres_partition_spec": None,
+        "delta_table_create_partitions": None,
     },
     "recipient_lookup": {
         "model": RecipientLookup,
@@ -153,6 +155,7 @@ TABLE_SPEC = {
         "postgres_seq_name": "recipient_lookup_id_seq",
         "tsvectors": None,
         "postgres_partition_spec": None,
+        "delta_table_create_partitions": None,
     },
     "recipient_profile": {
         "model": RecipientProfile,
@@ -174,6 +177,7 @@ TABLE_SPEC = {
         "postgres_seq_name": "recipient_profile_id_seq",
         "tsvectors": None,
         "postgres_partition_spec": None,
+        "delta_table_create_partitions": None,
     },
     "summary_state_view": {
         "model": SummaryStateView,
@@ -195,6 +199,7 @@ TABLE_SPEC = {
         "postgres_seq_name": None,
         "tsvectors": None,
         "postgres_partition_spec": None,
+        "delta_table_create_partitions": None,
     },
     "sam_recipient": {
         "model": None,
@@ -216,6 +221,7 @@ TABLE_SPEC = {
         "postgres_seq_name": None,
         "tsvectors": None,
         "postgres_partition_spec": None,
+        "delta_table_create_partitions": None,
     },
     "transaction_search": {
         "model": TransactionSearch,
@@ -237,6 +243,7 @@ TABLE_SPEC = {
         "postgres_seq_name": None,
         "tsvectors": None,
         "postgres_partition_spec": None,
+        "delta_table_create_partitions": None,
     },
     "transaction_search_gold": {
         "model": TransactionSearch,
@@ -265,6 +272,7 @@ TABLE_SPEC = {
                 {"table_suffix": "_fabs", "partitioning_clause": "FOR VALUES IN (FALSE)"},
             ],
         },
+        "delta_table_create_partitions": None,
     },
     "transaction_current_cd_lookup": {
         "model": None,
@@ -286,6 +294,7 @@ TABLE_SPEC = {
         "postgres_seq_name": None,
         "tsvectors": None,
         "postgres_partition_spec": None,
+        "delta_table_create_partitions": None,
     },
     "subaward_search": {
         "model": SubawardSearch,
@@ -307,6 +316,7 @@ TABLE_SPEC = {
         "postgres_seq_name": None,
         "tsvectors": SUBAWARD_SEARCH_POSTGRES_VECTORS,
         "postgres_partition_spec": None,
+        "delta_table_create_partitions": None,
     },
     "covid_faba_spending": {
         "model": CovidFABASpending,
@@ -328,6 +338,7 @@ TABLE_SPEC = {
         "postgres_seq_name": None,
         "tsvectors": None,
         "postgres_partition_spec": None,
+        "delta_table_create_partitions": None,
     },
     "account_balances_download": {
         "model": None,
@@ -415,6 +426,7 @@ TABLE_SPEC = {
         "postgres_seq_name": None,
         "tsvectors": None,
         "postgres_partition_spec": None,
+        "delta_table_create_partitions": None,
     },
 }
 
