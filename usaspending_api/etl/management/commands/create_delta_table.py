@@ -4,11 +4,11 @@ from django.core.management.base import BaseCommand
 from pyspark.sql.types import StructType
 
 from usaspending_api.awards.delta_models.award_id_lookup import AWARD_ID_LOOKUP_SCHEMA
-from usaspending_api.config import CONFIG
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
 )
+from usaspending_api.config import CONFIG
 from usaspending_api.etl.management.commands.archive_table_in_delta import TABLE_SPEC as ARCHIVE_TABLE_SPEC
 from usaspending_api.etl.management.commands.load_query_to_delta import TABLE_SPEC as LOAD_QUERY_TABLE_SPEC
 from usaspending_api.etl.management.commands.load_table_to_delta import TABLE_SPEC as LOAD_TABLE_TABLE_SPEC
@@ -32,7 +32,6 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
-
     help = """
     This command creates an empty Delta Table based on the provided --destination-table argument.
     """
@@ -107,13 +106,14 @@ class Command(BaseCommand):
             )
         elif isinstance(table_spec["delta_table_create_sql"], StructType):
             schema = table_spec["delta_table_create_sql"]
+            partition_cols = table_spec.get("delta_table_create_partitions", [])
             df = spark.createDataFrame([], schema)
-            writer = df.write.format("delta").mode("overwrite")
+            df_writer = df.write.format("delta").mode("overwrite")
 
-            if table_spec.get("delta_table_partition_columns"):
-                writer = writer.partitionBy(*table_spec["delta_table_partition_columns"])
+            if partition_cols:
+                df_writer = df_writer.partitionBy(partition_cols)
 
-            writer.option(
+            df_writer.option(
                 "path",
                 f"s3a://{spark_s3_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/{destination_database}/{destination_table_name}",
             ).option("overwriteSchema", "true").saveAsTable(f"{destination_database}.{destination_table_name}")

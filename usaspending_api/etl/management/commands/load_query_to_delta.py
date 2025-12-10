@@ -349,7 +349,7 @@ TABLE_SPEC = {
         "postgres_seq_name": None,
         "tsvectors": None,
         "postgres_partition_spec": None,
-        "delta_table_partition_columns": ["reporting_fiscal_year", "funding_toptier_agency_id"],
+        "delta_table_create_partitions": ["reporting_fiscal_year", "funding_toptier_agency_id"],
     },
     "award_financial_download": {
         "model": None,
@@ -371,7 +371,7 @@ TABLE_SPEC = {
         "postgres_seq_name": None,
         "tsvectors": None,
         "postgres_partition_spec": None,
-        "delta_table_partition_columns": ["reporting_fiscal_year", "funding_toptier_agency_id"],
+        "delta_table_create_partitions": ["reporting_fiscal_year", "funding_toptier_agency_id"],
     },
     "object_class_program_activity_download": {
         "model": None,
@@ -393,7 +393,7 @@ TABLE_SPEC = {
         "postgres_seq_name": None,
         "tsvectors": None,
         "postgres_partition_spec": None,
-        "delta_table_partition_columns": ["reporting_fiscal_year", "funding_toptier_agency_id"],
+        "delta_table_create_partitions": ["reporting_fiscal_year", "funding_toptier_agency_id"],
     },
     "transaction_download": {
         "model": None,
