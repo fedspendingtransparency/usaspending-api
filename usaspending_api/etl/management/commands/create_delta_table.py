@@ -98,8 +98,8 @@ class Command(BaseCommand):
             )
         elif isinstance(table_spec["delta_table_create_sql"], StructType):
             schema = table_spec["delta_table_create_sql"]
-            additional_options = table_spec.get("delta_table_create_options", {})
-            partition_cols = table_spec.get("delta_table_create_partitions", [])
+            additional_options = table_spec.get("delta_table_create_options") or {}
+            partition_cols = table_spec.get("delta_table_create_partitions") or []
             df = spark.createDataFrame([], schema)
 
             default_options = {
