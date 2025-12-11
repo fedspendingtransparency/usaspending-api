@@ -32,7 +32,7 @@ class ObjectClassProgramActivityMixin:
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        if type(self.spark) is DuckDBSparkSession:
+        if isinstance(self.spark, DuckDBSparkSession):
             from duckdb.experimental.spark.sql import functions
         else:
             from pyspark.sql import functions
