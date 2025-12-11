@@ -677,8 +677,6 @@ def create_ref_temp_views(spark: SparkSession | DuckDBSparkSession, create_broke
                 )
                 for sql_statement in broker_sql_strings:
                     spark.sql(sql_statement)
-        case _:
-            raise RuntimeError(f"Unsupported spark session type: {type(spark)}")
 
     logger.info("Created the reference views in the global_temp database")
 
