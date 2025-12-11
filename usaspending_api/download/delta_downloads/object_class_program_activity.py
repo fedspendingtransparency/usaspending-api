@@ -4,6 +4,7 @@ from duckdb.experimental.spark.sql.dataframe import DataFrame as DuckDBSparkData
 from pyspark.sql import Column, DataFrame, SparkSession
 
 from usaspending_api.common.spark.utils import collect_concat, filter_submission_and_sum
+from usaspending_api.config import CONFIG
 from usaspending_api.download.delta_downloads.abstract_downloads.account_download import (
     AbstractAccountDownload,
     AccountLevel,
@@ -41,7 +42,13 @@ class ObjectClassProgramActivityMixin:
 
     @property
     def download_table(self) -> DataFrame | DuckDBSparkDataFrame:
-        return self.spark.table("rpt.object_class_program_activity_download")
+        if isinstance(self.spark, DuckDBSparkSession):
+            return self.spark.table("rpt.object_class_program_activity_download")
+        else:
+            # TODO: This should be reverted back after Spark downloads are migrated to EMR
+            return self.spark.read.format("delta").load(
+                f"s3a://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.DELTA_LAKE_S3_PATH}/rpt/object_class_program_activity_download"
+            )
 
     def _build_dataframe(self) -> DataFrame | DuckDBSparkDataFrame:
         return (
