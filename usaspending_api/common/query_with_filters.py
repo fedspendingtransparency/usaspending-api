@@ -364,7 +364,6 @@ class _RecipientSearchText(_Filter):
     @classmethod
     def generate_elasticsearch_query(cls, filter_values: List[str], query_type: QueryType, **options) -> ES_Q:
         recipient_search_query = []
-        words_to_escape = ["AND", "OR"]  # These need to be escaped to be included as text to be searched for
 
         for filter_value in filter_values:
 
@@ -385,10 +384,6 @@ class _RecipientSearchText(_Filter):
                     "parent_uei",
                     "parent_recipient_unique_id",
                 ]
-
-            for special_word in words_to_escape:
-                if len(re.findall(rf"\b{special_word}\b", search_text)) > 0:
-                    search_text = re.sub(rf"\b{special_word}\b", rf"\\{special_word}", search_text)
 
             query_options = {"query": search_text}
             if is_exact_match:
