@@ -200,7 +200,9 @@ def test_recipient_ending_with_special_character_award(monkeypatch, elasticsearc
 
 
 @pytest.mark.django_db
-def test_recipient_ending_with_special_character_subaward(monkeypatch, elasticsearch_subaward_index, es_test_data_fixture):
+def test_recipient_ending_with_special_character_subaward(
+    monkeypatch, elasticsearch_subaward_index, es_test_data_fixture
+):
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
 
     filters = {"recipient_search_text": ["SOME COMPANY INC"]}
