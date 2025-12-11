@@ -150,7 +150,7 @@ class Command(BaseCommand):
                 logger.info(f"Running post-delete SQL for '{self.etl_level}' ETL")
                 self.award_id_lookup_post_delete(possibly_modified_award_ids)
 
-            last_etl_date = get_last_load_date(self.etl_level)
+            last_etl_date = None  # get_last_load_date(self.etl_level)
             if last_etl_date is None:
                 # Table has not been loaded yet.  To avoid checking for None in all the locations where
                 # last_etl_date is used, set it to a long time ago.
