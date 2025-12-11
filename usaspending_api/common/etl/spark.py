@@ -53,7 +53,7 @@ from usaspending_api.references.models import (
     ZipsGrouped,
 )
 from usaspending_api.reporting.models import ReportingAgencyMissingTas, ReportingAgencyOverview
-from usaspending_api.settings import CSV_LOCAL_PATH, IS_LOCAL
+from usaspending_api.settings import CSV_LOCAL_PATH, IS_LOCAL, USASPENDING_AWS_REGION
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule, SubmissionAttributes
 
 MAX_PARTITIONS = CONFIG.SPARK_MAX_PARTITIONS
@@ -597,13 +597,13 @@ def create_ref_temp_views(spark: SparkSession | DuckDBSparkSession, create_broke
                 )
             else:
                 # DuckDB will prepend the HTTP or HTTPS so we need to strip it from the AWS endpoint URL
-                endpoint_url = os.getenv("AWS_ENDPOINT_URL", "s3.us-gov-west-1.amazonaws.com")
+                endpoint_url = os.getenv("AWS_ENDPOINT_URL", USASPENDING_AWS_REGION)
                 cleaned_endpoint_url = endpoint_url.split("://")[1] if "://" in endpoint_url else endpoint_url
                 spark.sql(
                     f"""
                     CREATE OR REPLACE SECRET (
                         TYPE s3,
-                        REGION 'us-gov-west-1',
+                        REGION '{USASPENDING_AWS_REGION}',
                         ENDPOINT '{cleaned_endpoint_url}',
                         PROVIDER 'credential_chain'
                     );
@@ -618,7 +618,9 @@ def create_ref_temp_views(spark: SparkSession | DuckDBSparkSession, create_broke
             # The DuckDB Delta extension is needed to interact with DeltaLake tables
             spark.sql("LOAD delta; CREATE SCHEMA IF NOT EXISTS rpt;")
             for table in _download_delta_tables:
-                s3_path = f"s3://{CONFIG.SPARK_S3_BUCKET}/data/delta/{table['schema']}/{table['table_name']}"
+                s3_path = (
+                    f"s3://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.DELTA_LAKE_S3_PATH}/{table['schema']}/{table['table_name']}"
+                )
                 try:
                     spark.sql(
                         f"""
