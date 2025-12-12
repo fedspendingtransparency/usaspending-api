@@ -758,22 +758,11 @@ def write_csv_file_duckdb(
         record count of the DataFrame that was used to populate the CSV file(s)
         list of full path(s) to the temp CSV file(s)
     """
-
-    # Convert the Spark DataFrame to a DuckDBPyRelation type to take advantage of the built-in functions
-    # flake8 checks don't see this variable as being used even though it's used in the SQL query below
-    _pandas_df = df.toPandas()  # noqa: F841
-
-    rel = duckdb.sql(
-        f"""
-        SELECT
-            *,
-            CAST((ROW_NUMBER() OVER () - 1) / {max_records_per_file - 1} AS integer) + 1 AS file_number
-        FROM _pandas_df;
-    """
-    )
-
     start = time.time()
-    df_record_count = rel.count("*").fetchone()[0]
+    _pandas_df = df.toPandas()
+    _pandas_df["file_number"] = (_pandas_df.index // max_records_per_file ) + 1
+    df_record_count = len(_pandas_df)
+
     full_file_paths = []
 
     logger.info(f"Writing source data DataFrame to csv files for file {download_file_name}")
@@ -783,7 +772,7 @@ def write_csv_file_duckdb(
         escapechar='"',
         header=True,
         partition_by=["file_number"],
-        write_partition_columns=False,
+        write_partition_columns=False,  # Don't include the columns that are used for partitioning in the CSV
         overwrite=True,
     )
 
