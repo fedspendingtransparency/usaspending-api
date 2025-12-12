@@ -596,13 +596,13 @@ def create_ref_temp_views(spark: SparkSession | DuckDBSparkSession, create_broke
                 )
             else:
                 # DuckDB will prepend the HTTP or HTTPS so we need to strip it from the AWS endpoint URL
-                cleaned_endpoint_url = CONFIG.AWS_S3_ENDPOINT.replace("http://", "").replace("https://", "")
+                endpoint_url = CONFIG.AWS_S3_ENDPOINT.replace("http://", "").replace("https://", "")
                 spark.sql(
                     f"""
                     CREATE OR REPLACE SECRET (
                         TYPE s3,
                         REGION '{USASPENDING_AWS_REGION}',
-                        ENDPOINT '{cleaned_endpoint_url}',
+                        ENDPOINT '{endpoint_url}',
                         PROVIDER 'credential_chain'
                     );
                 """
@@ -628,7 +628,8 @@ def create_ref_temp_views(spark: SparkSession | DuckDBSparkSession, create_broke
                     )
                     logger.info(f"Successfully created table {table['schema']}.{table['table_name']}")
                 except duckdb.IOException:
-                    logger.error(f"Failed to create table {table['table_name']}")
+                    logger.exception(f"Failed to create table {table['table_name']}")
+                    raise RuntimeError(f"Failed to create table {table['table_name']}")
 
             # The DuckDB Postgres extension is needed to connect to the USAS Postgres DB
             spark.sql("LOAD postgres; CREATE SCHEMA IF NOT EXISTS global_temp;")
@@ -638,7 +639,8 @@ def create_ref_temp_views(spark: SparkSession | DuckDBSparkSession, create_broke
                 try:
                     spark.sql(f"CREATE OR REPLACE VIEW global_temp.{table} AS SELECT * FROM usas.public.{table};")
                 except duckdb.CatalogException:
-                    logger.error(f"Failed to create view {table} for {table}")
+                    logger.exception(f"Failed to create view {table} for {table}")
+                    raise RuntimeError(f"Failed to create view {table} for {table}")
 
             if create_broker_views:
                 spark.sql(
@@ -653,7 +655,8 @@ def create_ref_temp_views(spark: SparkSession | DuckDBSparkSession, create_broke
                     try:
                         spark.sql(f"CREATE OR REPLACE VIEW global_temp.{table} AS SELECT * FROM broker.public.{table};")
                     except duckdb.CatalogException:
-                        logger.error(f"Failed to create view {table} for {table}")
+                        logger.exception(f"Failed to create view {table} for {table}")
+                        raise RuntimeError(f"Failed to create view {table} for {table}")
         case False:
             logger.info("Creating ref temp views using Spark")
 
