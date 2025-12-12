@@ -581,15 +581,14 @@ def create_ref_temp_views(spark: SparkSession | DuckDBSparkSession, create_broke
             logger.info("Creating ref temp views using DuckDB")
 
             if IS_LOCAL:
-                endpoint_url = f"{os.getenv('MINIO_HOST', 'localhost')}:{os.getenv('MINIO_PORT', 10001)}"
                 spark.sql(
                     f"""
                     CREATE OR REPLACE SECRET (
                         TYPE s3,
                         PROVIDER config,
-                        KEY_ID '{os.getenv("MINIO_ROOT_USER", "usaspending")}',
-                        SECRET '{os.getenv("MINIO_ROOT_PASSWORD", "usaspender")}',
-                        ENDPOINT '{endpoint_url}',
+                        KEY_ID '{CONFIG.AWS_ACCESS_KEY}',
+                        SECRET '{CONFIG.AWS_SECRET_KEY}',
+                        ENDPOINT '{CONFIG.AWS_S3_ENDPOINT}',
                         URL_STYLE 'path',
                         USE_SSL 'false'
                     );
@@ -597,8 +596,7 @@ def create_ref_temp_views(spark: SparkSession | DuckDBSparkSession, create_broke
                 )
             else:
                 # DuckDB will prepend the HTTP or HTTPS so we need to strip it from the AWS endpoint URL
-                endpoint_url = os.getenv("AWS_ENDPOINT_URL", USASPENDING_AWS_REGION)
-                cleaned_endpoint_url = endpoint_url.split("://")[1] if "://" in endpoint_url else endpoint_url
+                cleaned_endpoint_url = CONFIG.AWS_S3_ENDPOINT.replace("http://", "").replace("https://", "")
                 spark.sql(
                     f"""
                     CREATE OR REPLACE SECRET (
