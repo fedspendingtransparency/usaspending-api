@@ -12,7 +12,7 @@ from pyspark.sql.types import (
 _common_schema = StructType(
     [
         # --- Award ---
-        StructField("award_id", StringType(), False),
+        StructField("award_id", LongType(), False),
         StructField("award_unique_key", StringType(), False),
         StructField("award_description", StringType()),
         StructField("total_obligated_amount", DecimalType(23, 2)),
