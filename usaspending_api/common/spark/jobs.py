@@ -120,8 +120,7 @@ class EmrServerlessStrategy(_AbstractStrategy):
     @property
     def client(self) -> BaseClient:
         if not self._client:
-            session = boto3.Session(profile_name="data_act_nonprod")
-            self._client = session.client("emr-serverless", settings.USASPENDING_AWS_REGION)
+            self._client = boto3.client("emr-serverless", settings.USASPENDING_AWS_REGION)
         return self._client
 
     def _get_application_id(self, application_name: str) -> str:
