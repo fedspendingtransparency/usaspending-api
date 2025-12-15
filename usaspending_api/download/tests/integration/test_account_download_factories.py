@@ -235,9 +235,9 @@ def test_federal_award_financial_factory(
     )
     factory = AwardFinancialDownloadFactory(spark, award_financial_filter)
     ta_dataframe = factory.create_treasury_account_download()
-    assert ta_dataframe.dataframe.count() == 1
+    assert ta_dataframe.dataframes[1].count() == 1
     fa_dataframe = factory.create_federal_account_download()
-    assert fa_dataframe.dataframe.count() == 1
+    assert fa_dataframe.dataframes[1].count() == 1
 
 
 @patch("usaspending_api.common.spark.utils.get_submission_ids_for_periods")

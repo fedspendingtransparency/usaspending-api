@@ -46,8 +46,8 @@ class AwardFinancialMixin:
     @property
     def award_categories(self) -> dict[str, Column]:
         return {
-            "Assistance": sf.col("is_fpds"),
-            "Contracts": (sf.isnotnull(sf.col("is_fpds")) & ~sf.col("is_fpds")),
+            "Assistance": (sf.isnotnull(sf.col("is_fpds")) & ~sf.col("is_fpds")),
+            "Contracts": sf.col("is_fpds"),
             "Unlinked": sf.isnull(sf.col("is_fpds")),
         }
 
