@@ -46,8 +46,8 @@ class AwardFinancialMixin:
     @property
     def award_categories(self) -> dict[str, Column]:
         return {
-            "Assistance": sf.col("is_fpds" == True),
-            "Contracts": (sf.isnotnull(sf.col("is_fpds")) & (sf.col("is_fpds") == False)),
+            "Assistance": sf.col("is_fpds"),
+            "Contracts": (sf.isnotnull(sf.col("is_fpds")) & ~sf.col("is_fpds")),
             "Unlinked": sf.isnull(sf.col("is_fpds")),
         }
 
@@ -147,6 +147,7 @@ class FederalAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
             "prime_award_summary_recipient_cd_current",
             "prime_award_summary_place_of_performance_cd_original",
             "prime_award_summary_place_of_performance_cd_current",
+            "is_fpds",
         ]
 
     @property

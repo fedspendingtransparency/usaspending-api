@@ -187,7 +187,7 @@ class Command(BaseCommand):
             download_request = self.get_download_request()
             if self.columns is not None:
                 for download in download_request.download_list:
-                    download.dataframe = download.dataframe.select(*self.columns)
+                    download.dataframes = [df.select(*self.columns) for df in download.dataframes]
 
             csvs_metadata = [
                 spark_to_csv_strategy.download_to_csv(
