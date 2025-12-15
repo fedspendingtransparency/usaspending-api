@@ -56,6 +56,7 @@ def award_financial_table(spark, s3_unittest_data_bucket, hive_unittest_metastor
             "funding_toptier_agency_id": [1, 2, 2, 2, 3],
             "federal_account_id": [1, 2, 2, 2, 3],
             "disaster_emergency_fund_code": ["L", "L", "L", "L", "L"],
+            "is_fpds": [True, True, True, True, True],
         }
     )
     # Some data manipulation for matching the Spark schema
@@ -214,7 +215,7 @@ def test_federal_award_financial_factory(
     )
     factory = AwardFinancialDownloadFactory(spark, award_financial_filter)
     result = factory.create_federal_account_download()
-    result_df = result.dataframe.toPandas()
+    result_df = result.dataframes[1].toPandas()
     for col in ["reporting_agency_name", "budget_function", "budget_subfunction"]:
         assert sorted(result_df[col].to_list()) == ["A", "B; C; D"]
     assert sorted(result_df.transaction_obligated_amount.to_list()) == [100, 300]
@@ -252,7 +253,7 @@ def test_filter_federal_by_agency(mock_get_submission_ids_for_periods, spark, aw
     )
     factory = AwardFinancialDownloadFactory(spark, award_financial_filter)
     result = factory.create_federal_account_download()
-    result_df = result.dataframe.toPandas()
+    result_df = result.dataframes[1].toPandas()
     for col in ["reporting_agency_name", "budget_function", "budget_subfunction"]:
         assert sorted(result_df[col].to_list()) == ["B; C; D"]
     assert result_df.transaction_obligated_amount.to_list() == [300]
@@ -274,7 +275,7 @@ def test_filter_federal_by_federal_account_id(
     )
     factory = AwardFinancialDownloadFactory(spark, award_financial_filter)
     result = factory.create_federal_account_download()
-    result_df = result.dataframe.toPandas()
+    result_df = result.dataframes[1].toPandas()
     for col in ["reporting_agency_name", "budget_function", "budget_subfunction"]:
         assert sorted(result_df[col].to_list()) == ["A"]
     assert sorted(result_df.transaction_obligated_amount.to_list()) == [100]
@@ -290,7 +291,7 @@ def test_treasury_award_financial_factory(spark, award_financial_table, agency_m
     )
     factory = AwardFinancialDownloadFactory(spark, award_financial_filter)
     result = factory.create_treasury_account_download()
-    result_df = result.dataframe.toPandas()
+    result_df = result.dataframes[1].toPandas()
     for col in ["reporting_agency_name", "budget_function", "budget_subfunction"]:
         assert sorted(result_df[col].to_list()) == ["A", "B", "C", "D"]
         assert result_df.transaction_obligated_amount.to_list() == [100] * 4
@@ -307,7 +308,7 @@ def test_filter_treasury_by_agency(spark, award_financial_table, agency_models):
     )
     factory = AwardFinancialDownloadFactory(spark, award_financial_filter)
     result = factory.create_treasury_account_download()
-    result_df = result.dataframe.toPandas()
+    result_df = result.dataframes[1].toPandas()
     for col in ["reporting_agency_name", "budget_function", "budget_subfunction"]:
         assert sorted(result_df[col].to_list()) == ["B", "C", "D"]
     assert result_df.transaction_obligated_amount.to_list() == [100] * 3
@@ -329,9 +330,9 @@ def test_account_balances(
     )
     factory = AccountBalancesDownloadFactory(spark, account_balances_filter)
     ta_dataframe = factory.create_treasury_account_download()
-    assert ta_dataframe.dataframe.count() == 3
+    assert ta_dataframe.dataframes[0].count() == 3
     fa_dataframe = factory.create_federal_account_download()
-    assert fa_dataframe.dataframe.count() == 2
+    assert fa_dataframe.dataframes[0].count() == 2
 
     # Test all the filters
     account_balances_filter = AccountDownloadFilters(
@@ -347,9 +348,9 @@ def test_account_balances(
     )
     factory = AccountBalancesDownloadFactory(spark, account_balances_filter)
     ta_dataframe = factory.create_treasury_account_download()
-    assert ta_dataframe.dataframe.count() == 1
+    assert ta_dataframe.dataframes[0].count() == 1
     fa_dataframe = factory.create_federal_account_download()
-    assert fa_dataframe.dataframe.count() == 1
+    assert fa_dataframe.dataframes[0].count() == 1
 
 
 @patch("usaspending_api.download.delta_downloads.object_class_program_activity.get_submission_ids_for_periods")
@@ -371,9 +372,9 @@ def test_object_class_by_program_activity(
     )
     factory = ObjectClassProgramActivityDownloadFactory(spark, ocpa_filter)
     ta_dataframe = factory.create_treasury_account_download()
-    assert ta_dataframe.dataframe.count() == 3
+    assert ta_dataframe.dataframes[0].count() == 3
     fa_dataframe = factory.create_federal_account_download()
-    assert fa_dataframe.dataframe.count() == 2
+    assert fa_dataframe.dataframes[0].count() == 2
 
     # Test all the filters
     ocpa_filter = AccountDownloadFilters(
@@ -389,6 +390,6 @@ def test_object_class_by_program_activity(
     )
     factory = ObjectClassProgramActivityDownloadFactory(spark, ocpa_filter)
     ta_dataframe = factory.create_treasury_account_download()
-    assert ta_dataframe.dataframe.count() == 1
+    assert ta_dataframe.dataframes[0].count() == 1
     fa_dataframe = factory.create_federal_account_download()
-    assert fa_dataframe.dataframe.count() == 1
+    assert fa_dataframe.dataframes[0].count() == 1

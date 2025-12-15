@@ -1,3 +1,6 @@
+from datetime import datetime
+
+
 from pyspark.sql import functions as sf, Column, DataFrame, SparkSession
 from usaspending_api.config import CONFIG
 
@@ -11,6 +14,7 @@ from usaspending_api.download.delta_downloads.abstract_factories.account_downloa
     AbstractAccountDownloadFactory,
 )
 from usaspending_api.download.delta_downloads.filters.account_filters import AccountDownloadFilters
+from usaspending_api.download.download_utils import construct_data_date_range, obtain_filename_prefix_from_agency_id
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 
 
@@ -39,8 +43,27 @@ class AwardFinancialMixin:
             | (sf.col("transaction_obligated_amount") != 0)
         )
 
+    @property
+    def award_categories(self) -> dict[str, Column]:
+        return {
+            "Assistance": sf.col("is_fpds" == True),
+            "Contracts": (sf.isnotnull(sf.col("is_fpds")) & (sf.col("is_fpds") == False)),
+            "Unlinked": sf.isnull(sf.col("is_fpds")),
+        }
+
 
 class FederalAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
+
+    def _build_file_names(self) -> list[str]:
+        date_range = construct_data_date_range(self.filters.dict())
+        agency = obtain_filename_prefix_from_agency_id(self.filters.agency)
+        level = self.account_level.abbreviation
+        title = self.submission_type.title
+        timestamp = datetime.strftime(self.start_time, "%Y-%m-%d_H%HM%MS%S")
+        return [
+            f"{date_range}_{agency}_{level}_{award_category}_{title}_{timestamp}"
+            for award_category in self.award_categories
+        ]
 
     @property
     def account_level(self) -> AccountLevel:
@@ -158,19 +181,22 @@ class FederalAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
             + ["last_modified_date"]
         )
 
-    def _build_dataframe(self) -> DataFrame:
+    def _build_dataframes(self) -> list[DataFrame]:
         # TODO: Should handle the aggregate columns via a new name instead of relying on drops. If the Delta tables are
         #       referenced by their location then the ability to use the table identifier is lost as it doesn't
         #       appear to use the metastore for the Delta tables.
-        return (
+        combined_download = (
             self.download_table.filter(self.dynamic_filters)
             .groupBy(self.group_by_cols)
             .agg(*[agg_func(col) for col, agg_func in self.agg_cols.items()])
             # drop original agg columns from the dataframe to avoid ambiguous column names
             .drop(*[sf.col(f"award_financial_download.{col}") for col in self.agg_cols])
             .filter(self.non_zero_filters)
-            .select(self.select_cols)
         )
+        return [
+            combined_download.filter(award_category_filter).select(self.select_cols)
+            for award_category_filter in self.award_categories.values()
+        ]
 
 
 class TreasuryAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
@@ -183,7 +209,7 @@ class TreasuryAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
     def submission_type(self) -> SubmissionType:
         return SubmissionType.AWARD_FINANCIAL
 
-    def _build_dataframe(self) -> DataFrame:
+    def _build_dataframes(self) -> list[DataFrame]:
         select_cols = (
             [sf.col("treasury_owning_agency_name").alias("owning_agency_name")]
             + [
@@ -193,7 +219,11 @@ class TreasuryAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
             ]
             + [sf.date_format("last_modified_date", "yyyy-MM-dd").alias("last_modified_date")]
         )
-        return self.download_table.filter(self.dynamic_filters & self.non_zero_filters).select(select_cols)
+        combined_download = self.download_table.filter(self.dynamic_filters & self.non_zero_filters)
+        return [
+            combined_download.filter(award_category_filter).select(select_cols)
+            for award_category_filter in self.award_categories.values()
+        ]
 
 
 class AwardFinancialDownloadFactory(AbstractAccountDownloadFactory):

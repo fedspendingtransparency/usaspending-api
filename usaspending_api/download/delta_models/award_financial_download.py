@@ -116,6 +116,7 @@ award_financial_schema = StructType(
         StructField("reporting_fiscal_quarter", IntegerType()),
         StructField("reporting_fiscal_year", IntegerType()),
         StructField("quarter_format_flag", BooleanType()),
+        StructField("is_fpds", BooleanType(), nullable=True),
         StructField("merge_hash_key", LongType()),
     ]
 )
@@ -325,6 +326,7 @@ def award_financial_df(spark: SparkSession):
             sa.reporting_fiscal_quarter,
             sa.reporting_fiscal_year,
             sa.quarter_format_flag,
+            ts.is_fpds,
         )
         .withColumn("merge_hash_key", sf.xxhash64("*"))
     )
