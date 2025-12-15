@@ -1,21 +1,25 @@
 import json
 import logging
 import os
+import time
 import traceback
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from typing import Literal, Optional, TypeVar, Union
 
+import duckdb
+import psutil
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils.functional import cached_property
+from duckdb.experimental.spark.sql import SparkSession as DuckDBSparkSession
 from opentelemetry.trace import SpanKind
 from pyspark.sql import SparkSession
 
 from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers.download_csv_strategies import SparkToCSVStrategy
+from usaspending_api.common.helpers.download_csv_strategies import DuckDBToCSVStrategy, SparkToCSVStrategy
 from usaspending_api.common.helpers.s3_helpers import upload_download_file_to_s3
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
@@ -27,10 +31,10 @@ from usaspending_api.common.tracing import SubprocessTrace
 from usaspending_api.download.delta_downloads.abstract_downloads.base_download import AbstractDownload
 from usaspending_api.download.delta_downloads.account_balances import AccountBalancesDownloadFactory
 from usaspending_api.download.delta_downloads.award_financial import AwardFinancialDownloadFactory
+from usaspending_api.download.delta_downloads.filters.account_filters import AccountDownloadFilters
 from usaspending_api.download.delta_downloads.object_class_program_activity import (
     ObjectClassProgramActivityDownloadFactory,
 )
-from usaspending_api.download.delta_downloads.filters.account_filters import AccountDownloadFilters
 from usaspending_api.download.lookups import FILE_FORMATS, JOB_STATUS_DICT, JOB_STATUS_DICT_BY_ID
 from usaspending_api.download.models import DownloadJob
 from usaspending_api.settings import TRACE_ENV
@@ -56,7 +60,6 @@ class DownloadRequest:
 
 
 class Command(BaseCommand):
-
     help = "Generate a download zip file based on the provided type and level."
 
     download_job: DownloadJob
@@ -66,20 +69,28 @@ class Command(BaseCommand):
     spark: SparkSession
     working_dir_path: Path
     columns: list | None
+    use_duckdb: bool
+    start_time: time.time
 
     def add_arguments(self, parser):
         parser.add_argument("--download-job-id", type=int, required=True)
         parser.add_argument("--skip-local-cleanup", action="store_true")
+        parser.add_argument("--use-duckdb", action="store_true")
 
     def handle(self, *args, **options):
+        self.start_time = time.time()
+
         configure_logging(service_name="usaspending-downloader-" + TRACE_ENV)
-        self.spark, spark_created_by_command = self.setup_spark_session()
         self.should_cleanup = not options["skip_local_cleanup"]
         self.download_job = self.get_download_job(options["download_job_id"])
         self.download_json_request = json.loads(self.download_job.json_request)
         self.request_type = self.download_json_request["request_type"]
         self.working_dir_path = Path(settings.CSV_LOCAL_PATH)
         self.columns = self.download_json_request["columns"] if "columns" in self.download_json_request else None
+
+        self.use_duckdb = options["use_duckdb"]
+        self.spark, spark_created_by_command = self.setup_spark_session(options["use_duckdb"])
+
         if not self.working_dir_path.exists():
             self.working_dir_path.mkdir()
         create_ref_temp_views(self.spark)
@@ -88,12 +99,29 @@ class Command(BaseCommand):
             self.spark.stop()
 
     @staticmethod
-    def setup_spark_session() -> tuple[SparkSession, bool]:
-        spark = get_active_spark_session()
-        spark_created_by_command = False
-        if not spark:
+    def setup_spark_session(use_duckdb: bool = False) -> tuple[SparkSession | DuckDBSparkSession, bool]:
+        if use_duckdb:
+            spark: DuckDBSparkSession = DuckDBSparkSession.builder.getOrCreate()
             spark_created_by_command = True
-            spark = configure_spark_session(**DEFAULT_EXTRA_CONF, spark_context=spark)
+
+            # DuckDB can sometimes see an incorrect RAM amount in AWS, so we manually set the limit to 80% here
+            memory_limit = int(psutil.virtual_memory().total / (1024**3) * 0.8)
+
+            spark.sql(f"SET memory_limit = '{memory_limit}G'")
+            duckdb_settings = spark.sql(
+                "SELECT name, value FROM duckdb_settings() WHERE name IN ('memory_limit', 'threads')"
+            ).collect()
+
+            logger.info(f"Using DuckDB {duckdb.version()}")
+            for duckdb_setting in duckdb_settings:
+                logger.info(f"DuckDB {duckdb_setting.name}: {duckdb_setting.value}")
+        else:
+            spark = get_active_spark_session()
+            spark_created_by_command = False
+            if not spark:
+                spark_created_by_command = True
+                spark = configure_spark_session(**DEFAULT_EXTRA_CONF, spark_context=spark)
+
         return spark, spark_created_by_command
 
     @cached_property
@@ -131,7 +159,7 @@ class Command(BaseCommand):
                     "service": "spark",
                     "span_type": "Internal",
                     "job_type": str(JOB_TYPE),
-                    "message": f"Processing spark account download.",
+                    "message": "Processing spark account download.",
                     # download job details
                     "download_job_id": str(self.download_job.download_job_id),
                     "download_job_status": str(self.download_job.job_status.name),
@@ -152,7 +180,9 @@ class Command(BaseCommand):
         self.start_download()
         files_to_cleanup = []
         try:
-            spark_to_csv_strategy = SparkToCSVStrategy(logger)
+            spark_to_csv_strategy = (
+                DuckDBToCSVStrategy(logger, self.spark) if self.use_duckdb else SparkToCSVStrategy(logger)
+            )
             zip_file_path = self.working_dir_path / f"{self.download_zip_file_name}.zip"
             download_request = self.get_download_request()
             if self.columns is not None:
@@ -266,6 +296,7 @@ class Command(BaseCommand):
         self.download_job.job_status_id = JOB_STATUS_DICT["finished"]
         self.download_job.save()
         logger.info(f"Finished processing DownloadJob {self.download_job.download_job_id}")
+        logger.info(f"Download generation took {(time.time() - self.start_time):3f} seconds")
 
     def cleanup(self, path_list: list[Union[Path, str]]) -> None:
         for path in path_list:
@@ -273,3 +304,9 @@ class Command(BaseCommand):
                 path = Path(path)
             logger.info(f"Removing {path}")
             path.unlink()
+
+        # DuckDB will leave behind an empty directory that can be deleted
+        if isinstance(self.spark, DuckDBSparkSession):
+            empty_dir = Path(path_list[0]).parent
+            logger.info(f"Removing empty directory {empty_dir}")
+            Path.rmdir(empty_dir)
