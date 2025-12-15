@@ -760,8 +760,9 @@ def write_csv_file_duckdb(
     """
     start = time.time()
     _pandas_df = df.toPandas()
-    _pandas_df["file_number"] = (_pandas_df.index // max_records_per_file ) + 1
+    _pandas_df["file_number"] = (_pandas_df.index // max_records_per_file) + 1
     df_record_count = len(_pandas_df)
+    rel = duckdb.from_df(_pandas_df)
 
     full_file_paths = []
 
