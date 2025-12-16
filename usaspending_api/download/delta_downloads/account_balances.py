@@ -131,11 +131,15 @@ class FederalAccountDownload(AccountBalancesMixin, AbstractAccountDownload):
                 "status_of_budgetary_resources_total"
             ),
             (
-                self.sf.max(self.sf.call_function("strptime", "last_modified_date", "yyyy-MM-dd")).alias(
-                    "max_last_modified_date"
-                )
-                if isinstance(self.spark, DuckDBSparkSession)
-                else self.sf.max(self.sf.date_format("last_modified_date", "yyyy-MM-dd")).alias("last_modified_date"),
+                (
+                    self.sf.max(self.sf.call_function("strptime", "last_modified_date", "yyyy-MM-dd")).alias(
+                        "max_last_modified_date"
+                    )
+                    if isinstance(self.spark, DuckDBSparkSession)
+                    else self.sf.max(self.sf.date_format("last_modified_date", "yyyy-MM-dd")).alias(
+                        "last_modified_date"
+                    )
+                ),
             ),
         ]
 
