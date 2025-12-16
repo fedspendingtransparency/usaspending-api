@@ -50,8 +50,8 @@ class ObjectClassProgramActivityMixin:
                 f"s3a://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.DELTA_LAKE_S3_PATH}/rpt/object_class_program_activity_download"
             )
 
-    def _build_dataframe(self) -> DataFrame | DuckDBSparkDataFrame:
-        return (
+    def _build_dataframes(self) -> list[DataFrame | DuckDBSparkDataFrame]:
+        return [
             self.download_table.filter(
                 self.sf.col("submission_id").isin(
                     get_submission_ids_for_periods(
@@ -67,8 +67,8 @@ class ObjectClassProgramActivityMixin:
             .drop(*[self.sf.col(f"object_class_program_activity_download.{col}") for col in self.agg_cols])
             .select(*self.select_cols)
             # Sorting by a value that is repeated often will help improve compression during the zipping step
-            .sort(self.sort_by_cols)
-        )
+            .sort(self.sort_by_cols),
+        ]
 
 
 class FederalAccountDownload(ObjectClassProgramActivityMixin, AbstractAccountDownload):
