@@ -334,9 +334,7 @@ def award_financial_df(spark: SparkSession):
 
 def load_award_financial(spark: SparkSession, destination_database: str, destination_table_name: str) -> None:
     df = award_financial_df(spark)
-    df.write.format("delta").mode("overwrite").partitionBy(
-        "reporting_fiscal_year", "funding_toptier_agency_id"
-    ).saveAsTable(f"{destination_database}.{destination_table_name}")
+    df.write.format("delta").mode("overwrite").saveAsTable(f"{destination_database}.{destination_table_name}")
 
 
 def load_award_financial_incremental(

@@ -280,9 +280,7 @@ def load_object_class_program_activity(
     spark: SparkSession, destination_database: str, destination_table_name: str
 ) -> None:
     df = object_class_program_activity_df(spark)
-    df.write.format("delta").mode("overwrite").partitionBy(
-        "reporting_fiscal_year", "funding_toptier_agency_id"
-    ).saveAsTable(f"{destination_database}.{destination_table_name}")
+    df.write.format("delta").mode("overwrite").saveAsTable(f"{destination_database}.{destination_table_name}")
 
 
 def load_object_class_program_activity_incremental(
