@@ -53,7 +53,7 @@ from usaspending_api.references.models import (
     ZipsGrouped,
 )
 from usaspending_api.reporting.models import ReportingAgencyMissingTas, ReportingAgencyOverview
-from usaspending_api.settings import CSV_LOCAL_PATH, IS_LOCAL
+from usaspending_api.settings import CSV_LOCAL_PATH, IS_LOCAL, USASPENDING_AWS_REGION
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule, SubmissionAttributes
 
 MAX_PARTITIONS = CONFIG.SPARK_MAX_PARTITIONS
@@ -581,15 +581,14 @@ def create_ref_temp_views(spark: SparkSession | DuckDBSparkSession, create_broke
             logger.info("Creating ref temp views using DuckDB")
 
             if IS_LOCAL:
-                endpoint_url = f"{os.getenv('MINIO_HOST', 'localhost')}:{os.getenv('MINIO_PORT', 10001)}"
                 spark.sql(
                     f"""
                     CREATE OR REPLACE SECRET (
                         TYPE s3,
                         PROVIDER config,
-                        KEY_ID '{os.getenv("MINIO_ROOT_USER", "usaspending")}',
-                        SECRET '{os.getenv("MINIO_ROOT_PASSWORD", "usaspender")}',
-                        ENDPOINT '{endpoint_url}',
+                        KEY_ID '{CONFIG.AWS_ACCESS_KEY}',
+                        SECRET '{CONFIG.AWS_SECRET_KEY}',
+                        ENDPOINT '{CONFIG.AWS_S3_ENDPOINT}',
                         URL_STYLE 'path',
                         USE_SSL 'false'
                     );
@@ -597,14 +596,13 @@ def create_ref_temp_views(spark: SparkSession | DuckDBSparkSession, create_broke
                 )
             else:
                 # DuckDB will prepend the HTTP or HTTPS so we need to strip it from the AWS endpoint URL
-                endpoint_url = os.getenv("AWS_ENDPOINT_URL", "s3.us-gov-west-1.amazonaws.com")
-                cleaned_endpoint_url = endpoint_url.split("://")[1] if "://" in endpoint_url else endpoint_url
+                endpoint_url = CONFIG.AWS_S3_ENDPOINT.replace("http://", "").replace("https://", "")
                 spark.sql(
                     f"""
                     CREATE OR REPLACE SECRET (
                         TYPE s3,
-                        REGION 'us-gov-west-1',
-                        ENDPOINT '{cleaned_endpoint_url}',
+                        REGION '{USASPENDING_AWS_REGION}',
+                        ENDPOINT '{endpoint_url}',
                         PROVIDER 'credential_chain'
                     );
                 """
@@ -618,7 +616,9 @@ def create_ref_temp_views(spark: SparkSession | DuckDBSparkSession, create_broke
             # The DuckDB Delta extension is needed to interact with DeltaLake tables
             spark.sql("LOAD delta; CREATE SCHEMA IF NOT EXISTS rpt;")
             for table in _download_delta_tables:
-                s3_path = f"s3://{CONFIG.SPARK_S3_BUCKET}/data/delta/{table['schema']}/{table['table_name']}"
+                s3_path = (
+                    f"s3://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.DELTA_LAKE_S3_PATH}/{table['schema']}/{table['table_name']}"
+                )
                 try:
                     spark.sql(
                         f"""
@@ -628,7 +628,8 @@ def create_ref_temp_views(spark: SparkSession | DuckDBSparkSession, create_broke
                     )
                     logger.info(f"Successfully created table {table['schema']}.{table['table_name']}")
                 except duckdb.IOException:
-                    logger.error(f"Failed to create table {table['table_name']}")
+                    logger.exception(f"Failed to create table {table['table_name']}")
+                    raise RuntimeError(f"Failed to create table {table['table_name']}")
 
             # The DuckDB Postgres extension is needed to connect to the USAS Postgres DB
             spark.sql("LOAD postgres; CREATE SCHEMA IF NOT EXISTS global_temp;")
@@ -638,7 +639,8 @@ def create_ref_temp_views(spark: SparkSession | DuckDBSparkSession, create_broke
                 try:
                     spark.sql(f"CREATE OR REPLACE VIEW global_temp.{table} AS SELECT * FROM usas.public.{table};")
                 except duckdb.CatalogException:
-                    logger.error(f"Failed to create view {table} for {table}")
+                    logger.exception(f"Failed to create view {table} for {table}")
+                    raise RuntimeError(f"Failed to create view {table} for {table}")
 
             if create_broker_views:
                 spark.sql(
@@ -653,7 +655,8 @@ def create_ref_temp_views(spark: SparkSession | DuckDBSparkSession, create_broke
                     try:
                         spark.sql(f"CREATE OR REPLACE VIEW global_temp.{table} AS SELECT * FROM broker.public.{table};")
                     except duckdb.CatalogException:
-                        logger.error(f"Failed to create view {table} for {table}")
+                        logger.exception(f"Failed to create view {table} for {table}")
+                        raise RuntimeError(f"Failed to create view {table} for {table}")
         case False:
             logger.info("Creating ref temp views using Spark")
 
@@ -675,8 +678,6 @@ def create_ref_temp_views(spark: SparkSession | DuckDBSparkSession, create_broke
                 )
                 for sql_statement in broker_sql_strings:
                     spark.sql(sql_statement)
-        case _:
-            raise RuntimeError(f"Unsupported spark session type: {type(spark)}")
 
     logger.info("Created the reference views in the global_temp database")
 
@@ -757,22 +758,12 @@ def write_csv_file_duckdb(
         record count of the DataFrame that was used to populate the CSV file(s)
         list of full path(s) to the temp CSV file(s)
     """
-
-    # Convert the Spark DataFrame to a DuckDBPyRelation type to take advantage of the built-in functions
-    # flake8 checks don't see this variable as being used even though it's used in the SQL query below
-    _pandas_df = df.toPandas()  # noqa: F841
-
-    rel = duckdb.sql(
-        f"""
-        SELECT
-            *,
-            CAST((ROW_NUMBER() OVER () - 1) / {max_records_per_file - 1} AS integer) + 1 AS file_number
-        FROM _pandas_df;
-    """
-    )
-
     start = time.time()
-    df_record_count = rel.count("*").fetchone()[0]
+    _pandas_df = df.toPandas()
+    _pandas_df["file_number"] = (_pandas_df.index // max_records_per_file) + 1
+    df_record_count = len(_pandas_df)
+    rel = duckdb.from_df(_pandas_df)
+
     full_file_paths = []
 
     logger.info(f"Writing source data DataFrame to csv files for file {download_file_name}")
@@ -782,7 +773,7 @@ def write_csv_file_duckdb(
         escapechar='"',
         header=True,
         partition_by=["file_number"],
-        write_partition_columns=False,
+        write_partition_columns=False,  # Don't include the columns that are used for partitioning in the CSV
         overwrite=True,
     )
 
