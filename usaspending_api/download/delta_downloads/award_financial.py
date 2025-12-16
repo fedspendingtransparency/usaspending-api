@@ -25,6 +25,9 @@ class AwardFinancialMixin:
 
     filters: AccountDownloadFilters
     dynamic_filters: Column
+    account_level: AccountLevel
+    submission_type: SubmissionType
+    start_time: datetime
 
     @property
     def download_table(self) -> DataFrame:
@@ -51,9 +54,6 @@ class AwardFinancialMixin:
             "Unlinked": sf.isnull(sf.col("is_fpds")),
         }
 
-
-class FederalAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
-
     def _build_file_names(self) -> list[str]:
         date_range = construct_data_date_range(self.filters.dict())
         agency = obtain_filename_prefix_from_agency_id(self.filters.agency)
@@ -64,6 +64,9 @@ class FederalAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
             f"{date_range}_{agency}_{level}_{award_category}_{title}_{timestamp}"
             for award_category in self.award_categories
         ]
+
+
+class FederalAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
 
     @property
     def account_level(self) -> AccountLevel:
