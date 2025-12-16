@@ -1,16 +1,18 @@
 from delta.tables import DeltaTable
-from pyspark.sql import SparkSession, functions as sf
+from pyspark.sql import SparkSession
+from pyspark.sql import functions as sf
 from pyspark.sql.functions import expr
 from pyspark.sql.types import (
     BooleanType,
     DateType,
     DecimalType,
     IntegerType,
+    LongType,
     StringType,
     StructField,
     StructType,
-    LongType,
 )
+
 from usaspending_api.download.helpers.delta_models_helpers import fy_quarter_period
 from usaspending_api.download.helpers.download_annotation_functions import AWARD_URL
 
