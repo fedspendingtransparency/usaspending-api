@@ -41,15 +41,15 @@ class AbstractDownload(ABC):
         return self._spark
 
     @cached_property
-    def file_name(self) -> str:
-        return self._build_file_name()
+    def file_names(self) -> list[str]:
+        return self._build_file_names()
 
     @cached_property
-    def dataframe(self) -> DataFrame | DuckDBSparkDataFrame:
-        return self._build_dataframe()
+    def dataframes(self) -> list[DataFrame | DuckDBSparkDataFrame]:
+        return self._build_dataframes()
 
     @abstractmethod
-    def _build_file_name(self) -> str: ...
+    def _build_file_names(self) -> list[str]: ...
 
     @abstractmethod
-    def _build_dataframe(self) -> DataFrame | DuckDBSparkDataFrame: ...
+    def _build_dataframes(self) -> list[DataFrame | DuckDBSparkDataFrame]: ...
