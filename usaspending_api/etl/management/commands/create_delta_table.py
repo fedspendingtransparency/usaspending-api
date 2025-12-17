@@ -4,11 +4,12 @@ from django.core.management.base import BaseCommand
 from pyspark.sql.types import StructType
 
 from usaspending_api.awards.delta_models.award_id_lookup import AWARD_ID_LOOKUP_SCHEMA
-from usaspending_api.config import CONFIG
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
 )
+from usaspending_api.common.spark.configs import DEFAULT_EXTRA_CONF
+from usaspending_api.config import CONFIG
 from usaspending_api.etl.management.commands.archive_table_in_delta import TABLE_SPEC as ARCHIVE_TABLE_SPEC
 from usaspending_api.etl.management.commands.load_query_to_delta import TABLE_SPEC as LOAD_QUERY_TABLE_SPEC
 from usaspending_api.etl.management.commands.load_table_to_delta import TABLE_SPEC as LOAD_TABLE_TABLE_SPEC
@@ -32,7 +33,6 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
-
     help = """
     This command creates an empty Delta Table based on the provided --destination-table argument.
     """
@@ -67,21 +67,11 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        extra_conf = {
-            # Config for Delta Lake tables and SQL. Need these to keep Dela table metadata in the metastore
-            "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension",
-            "spark.sql.catalog.spark_catalog": "org.apache.spark.sql.delta.catalog.DeltaCatalog",
-            # See comment below about old date and time values cannot parsed without these
-            "spark.sql.legacy.parquet.datetimeRebaseModeInWrite": "LEGACY",  # for dates at/before 1900
-            "spark.sql.legacy.parquet.int96RebaseModeInWrite": "LEGACY",  # for timestamps at/before 1900
-            "spark.sql.jsonGenerator.ignoreNullFields": "false",  # keep nulls in our json
-        }
-
         spark = get_active_spark_session()
         spark_created_by_command = False
         if not spark:
             spark_created_by_command = True
-            spark = configure_spark_session(**extra_conf, spark_context=spark)
+            spark = configure_spark_session(**DEFAULT_EXTRA_CONF, spark_context=spark)
 
         # Resolve Parameters
         destination_table = options["destination_table"]
@@ -107,15 +97,26 @@ class Command(BaseCommand):
             )
         elif isinstance(table_spec["delta_table_create_sql"], StructType):
             schema = table_spec["delta_table_create_sql"]
+            additional_options = table_spec.get("delta_table_create_options") or {}
+            partition_cols = table_spec.get("delta_table_create_partitions") or []
             df = spark.createDataFrame([], schema)
+
+            default_options = {
+                "path": f"s3a://{spark_s3_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/{destination_database}/{destination_table_name}",
+                "overwriteSchema": "true",
+            }
+
+            # Create the initial DataFrameWriter
+            df_writer = df.write.format("delta")
+
+            # Optional changes to the DataFrameWriter
+            if partition_cols:
+                df_writer = df_writer.partitionBy(partition_cols)
+
+            # Apply all options
             (
-                df.write.format("delta")
-                .mode("overwrite")
-                .option(
-                    "path",
-                    f"s3a://{spark_s3_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/{destination_database}/{destination_table_name}",
-                )
-                .option("overwriteSchema", "true")
+                df_writer.mode("overwrite")
+                .options(**default_options, **additional_options)
                 .saveAsTable(f"{destination_database}.{destination_table_name}")
             )
         else:

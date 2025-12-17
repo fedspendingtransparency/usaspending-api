@@ -24,11 +24,11 @@ RUN apt update && apt install -y \
     gcc \
     libpq-dev
 
-##### Copy python packaged
 COPY . /dockermount
+
 RUN python3 -m pip install -r requirements/requirements.txt && \
     python3 -m pip install -r requirements/requirements-server.txt && \
     python3 -m pip install ansible==2.9.15 awscli==1.34.19
 
-##### Ensure Python STDOUT gets sent to container logs
+# Ensure Python STDOUT gets sent to container logs
 ENV PYTHONUNBUFFERED=1
