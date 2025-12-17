@@ -65,7 +65,7 @@ class BaseDownloadViewSet(APIView):
         download_job = DownloadJob.objects.create(
             job_status_id=JOB_STATUS_DICT["ready"],
             file_name=final_output_zip_name,
-            json_request=json.dumps(json_request),
+            json_request=json.dumps(sorted_json_request),
         )
 
         log_new_download_job(request, download_job)
