@@ -101,7 +101,10 @@ class BaseDownloadViewSet(APIView):
                 spark_jobs.start(
                     job_name=job_name,
                     command_name="generate_spark_download",
-                    command_options=[f"--download-job-id={download_job.download_job_id}", f"--skip-local-cleanup"],
+                    command_options=[
+                        f"--download-job-id={download_job.download_job_id}",
+                        "--skip-local-cleanup",
+                    ],
                     run_as_container=False,
                 )
             else:

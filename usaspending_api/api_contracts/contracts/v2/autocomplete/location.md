@@ -89,9 +89,9 @@ This route sends a request to the backend to retrieve locations matching the spe
 + `country_name` (required, string)
 
 ## CountyMatch (object)
++ `county_name` (required, string)
 + `county_fips` (required, string)
     The 5 digit FIPS code (2 digit state FIPS code + 3 digit county FIPS code)
-+ `county_name` (required, string)
 + `state_name` (required, string)
 + `country_name` (required, string)
 

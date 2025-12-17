@@ -7,11 +7,16 @@ functions for setup and configuration of the spark environment
 
 import logging
 import math
+import os
+import shutil
 import time
 from collections import namedtuple
 from itertools import chain
 from typing import List
 
+import duckdb
+from duckdb.experimental.spark.sql import SparkSession as DuckDBSparkSession
+from duckdb.experimental.spark.sql.dataframe import DataFrame as DuckDBDataFrame
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql.functions import col, concat, concat_ws, expr, lit, regexp_replace, to_date, transform, when
 from pyspark.sql.types import ArrayType, DecimalType, StringType, StructType
@@ -48,6 +53,7 @@ from usaspending_api.references.models import (
     ZipsGrouped,
 )
 from usaspending_api.reporting.models import ReportingAgencyMissingTas, ReportingAgencyOverview
+from usaspending_api.settings import CSV_LOCAL_PATH, IS_LOCAL, USASPENDING_AWS_REGION
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule, SubmissionAttributes
 
 MAX_PARTITIONS = CONFIG.SPARK_MAX_PARTITIONS
@@ -555,31 +561,123 @@ def _generate_global_view_sql_strings(tables: List[str], jdbc_url: str) -> List[
     return sql_strings
 
 
-def create_ref_temp_views(spark: SparkSession, create_broker_views: bool = False):
+def create_ref_temp_views(spark: SparkSession | DuckDBSparkSession, create_broker_views: bool = False):
     """Create global temporary Spark reference views that sit atop remote PostgreSQL RDS tables
     Setting create_broker_views to True will create views for all tables list in _BROKER_REF_TABLES
     Note: They will all be listed under global_temp.{table_name}
+
+    Args:
+        spark (SparkSession | DuckDBSparkSession): Spark session
+        create_broker_views (bool): Should the temporary views, using the Broker tables, be created
+            Default: False
     """
 
     # Create USAS temp views
     rds_ref_tables = build_ref_table_name_list()
-    rds_sql_strings = _generate_global_view_sql_strings(
-        tables=rds_ref_tables,
-        jdbc_url=get_usas_jdbc_url(),
-    )
     logger.info(f"Creating the following tables under the global_temp database: {rds_ref_tables}")
-    for sql_statement in rds_sql_strings:
-        spark.sql(sql_statement)
 
-    # Create Broker temp views
-    if create_broker_views:
-        broker_sql_strings = _generate_global_view_sql_strings(
-            tables=_BROKER_REF_TABLES,
-            jdbc_url=get_broker_jdbc_url(),
-        )
-        logger.info(f"Creating the following Broker tables under the global_temp database: {_BROKER_REF_TABLES}")
-        for sql_statement in broker_sql_strings:
-            spark.sql(sql_statement)
+    match isinstance(spark, DuckDBSparkSession):
+        case True:
+            logger.info("Creating ref temp views using DuckDB")
+
+            if IS_LOCAL:
+                spark.sql(
+                    f"""
+                    CREATE OR REPLACE SECRET (
+                        TYPE s3,
+                        PROVIDER config,
+                        KEY_ID '{CONFIG.AWS_ACCESS_KEY}',
+                        SECRET '{CONFIG.AWS_SECRET_KEY}',
+                        ENDPOINT '{CONFIG.AWS_S3_ENDPOINT}',
+                        URL_STYLE 'path',
+                        USE_SSL 'false'
+                    );
+                """
+                )
+            else:
+                # DuckDB will prepend the HTTP or HTTPS so we need to strip it from the AWS endpoint URL
+                endpoint_url = CONFIG.AWS_S3_ENDPOINT.replace("http://", "").replace("https://", "")
+                spark.sql(
+                    f"""
+                    CREATE OR REPLACE SECRET (
+                        TYPE s3,
+                        REGION '{USASPENDING_AWS_REGION}',
+                        ENDPOINT '{endpoint_url}',
+                        PROVIDER 'credential_chain'
+                    );
+                """
+                )
+
+            _download_delta_tables = [
+                {"schema": "rpt", "table_name": "account_balances_download"},
+                {"schema": "rpt", "table_name": "object_class_program_activity_download"},
+            ]
+
+            # The DuckDB Delta extension is needed to interact with DeltaLake tables
+            spark.sql("LOAD delta; CREATE SCHEMA IF NOT EXISTS rpt;")
+            for table in _download_delta_tables:
+                s3_path = (
+                    f"s3://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.DELTA_LAKE_S3_PATH}/{table['schema']}/{table['table_name']}"
+                )
+                try:
+                    spark.sql(
+                        f"""
+                        CREATE OR REPLACE TABLE {table["schema"]}.{table["table_name"]} AS
+                        SELECT * FROM delta_scan('{s3_path}');
+                    """
+                    )
+                    logger.info(f"Successfully created table {table['schema']}.{table['table_name']}")
+                except duckdb.IOException:
+                    logger.exception(f"Failed to create table {table['table_name']}")
+                    raise RuntimeError(f"Failed to create table {table['table_name']}")
+
+            # The DuckDB Postgres extension is needed to connect to the USAS Postgres DB
+            spark.sql("LOAD postgres; CREATE SCHEMA IF NOT EXISTS global_temp;")
+            spark.sql(f"ATTACH '{CONFIG.DATABASE_URL}' AS usas (TYPE postgres, READ_ONLY);")
+
+            for table in rds_ref_tables:
+                try:
+                    spark.sql(f"CREATE OR REPLACE VIEW global_temp.{table} AS SELECT * FROM usas.public.{table};")
+                except duckdb.CatalogException:
+                    logger.exception(f"Failed to create view {table} for {table}")
+                    raise RuntimeError(f"Failed to create view {table} for {table}")
+
+            if create_broker_views:
+                spark.sql(
+                    f"""
+                    ATTACH '{CONFIG.BROKER_DB}' AS broker (TYPE postgres, READ_ONLY);
+                """
+                )
+                logger.info(
+                    f"Creating the following Broker tables under the global_temp database: {_BROKER_REF_TABLES}"
+                )
+                for table in _BROKER_REF_TABLES:
+                    try:
+                        spark.sql(f"CREATE OR REPLACE VIEW global_temp.{table} AS SELECT * FROM broker.public.{table};")
+                    except duckdb.CatalogException:
+                        logger.exception(f"Failed to create view {table} for {table}")
+                        raise RuntimeError(f"Failed to create view {table} for {table}")
+        case False:
+            logger.info("Creating ref temp views using Spark")
+
+            rds_sql_strings = _generate_global_view_sql_strings(
+                tables=rds_ref_tables,
+                jdbc_url=get_usas_jdbc_url(),
+            )
+
+            for sql_statement in rds_sql_strings:
+                spark.sql(sql_statement)
+
+            if create_broker_views:
+                broker_sql_strings = _generate_global_view_sql_strings(
+                    tables=_BROKER_REF_TABLES,
+                    jdbc_url=get_broker_jdbc_url(),
+                )
+                logger.info(
+                    f"Creating the following Broker tables under the global_temp database: {_BROKER_REF_TABLES}"
+                )
+                for sql_statement in broker_sql_strings:
+                    spark.sql(sql_statement)
 
     logger.info("Created the reference views in the global_temp database")
 
@@ -595,9 +693,10 @@ def write_csv_file(
 ) -> int:
     """Write DataFrame data to CSV file parts.
     Args:
-        spark: passed-in active SparkSession
-        df: the DataFrame wrapping the data source to be dumped to CSV.
-            parts_dir: Path to dir that will contain the outputted parts files from partitions
+        spark: Passed-in active SparkSession
+        df: The DataFrame wrapping the data source to be dumped to CSV.
+        parts_dir: Path to dir that will contain the outputted parts files from partitions
+        num_partitions: Indicates the number of partitions to use when writing the Dataframe
         overwrite: Whether to replace the file CSV files if they already exist by that name
         max_records_per_file: Suggestion to Spark of how many records to put in each written CSV file part,
             if it will end up writing multiple files.
@@ -633,6 +732,68 @@ def write_csv_file(
     logger.info(f"{parts_dir} contains {df_record_count:,} rows of data")
     logger.info(f"Wrote source data DataFrame to csv part files in {(time.time() - start):3f}s")
     return df_record_count
+
+
+def write_csv_file_duckdb(
+    df: DuckDBDataFrame,
+    download_file_name: str,
+    temp_csv_directory_path: str = CSV_LOCAL_PATH,
+    max_records_per_file: int = EXCEL_ROW_LIMIT,
+    logger: logging.Logger | None = None,
+    delimiter: str = ",",
+) -> tuple[int, list[str] | list]:
+    """Write DataFrame data to CSV file parts.
+    Args:
+        df: The DataFrame wrapping the data source to be dumped to CSV.
+        download_file_name: Name of the download being generated.
+        temp_csv_directory_path: Directory that will contain the individual CSV files before zipping.
+            Defaults to CSV_LOCAL_PATH
+        max_records_per_file: Max number of records to put in each written CSV file.
+            Defaults to EXCEL_ROW_LIMIT
+        logger: Logging instance to use.
+            Defaults to None
+        delimiter: Charactor used to separate columns in the CSV
+            Defaults to ","
+    Returns:
+        record count of the DataFrame that was used to populate the CSV file(s)
+        list of full path(s) to the temp CSV file(s)
+    """
+    start = time.time()
+    _pandas_df = df.toPandas()
+    _pandas_df["file_number"] = (_pandas_df.index // max_records_per_file) + 1
+    df_record_count = len(_pandas_df)
+    rel = duckdb.from_df(_pandas_df)
+
+    full_file_paths = []
+
+    logger.info(f"Writing source data DataFrame to csv files for file {download_file_name}")
+    rel.to_csv(
+        file_name=f"{temp_csv_directory_path}{download_file_name}",
+        sep=delimiter,
+        escapechar='"',
+        header=True,
+        partition_by=["file_number"],
+        write_partition_columns=False,  # Don't include the columns that are used for partitioning in the CSV
+        overwrite=True,
+    )
+
+    # Move and rename the CSV files to match the expected format
+    _partition_dirs = [
+        f"{temp_csv_directory_path}{download_file_name}/{d}"
+        for d in os.listdir(f"{temp_csv_directory_path}{download_file_name}")
+    ]
+    for dir in _partition_dirs:
+        _old_csv_path = f"{dir}/{os.listdir(dir)[0]}"
+        _new_csv_path = (
+            f"{temp_csv_directory_path}{download_file_name}/{download_file_name}_{dir.split('=')[1].zfill(2)}.csv"
+        )
+        shutil.move(_old_csv_path, _new_csv_path)
+        full_file_paths.append(_new_csv_path)
+        os.rmdir(dir)
+
+    logger.info(f"{temp_csv_directory_path}{download_file_name} contains {df_record_count:,} rows of data")
+    logger.info(f"Wrote source data DataFrame to {len(full_file_paths)} CSV files in {(time.time() - start):3f}s")
+    return df_record_count, full_file_paths
 
 
 def _merge_file_parts(fs, out_stream, conf, hadoop, partial_merged_file_path, part_file_list):
@@ -687,22 +848,20 @@ def rename_part_files(
     list_of_part_files = sorted(
         [
             file.key
-            for file in retrieve_s3_bucket_object_list(bucket_name)
-            if (
-                file.key.startswith(f"{temp_download_dir_name}/{destination_file_name}/part-")
-                and file.key.endswith(file_format)
+            for file in retrieve_s3_bucket_object_list(
+                bucket_name, key_prefix=f"{temp_download_dir_name}/{destination_file_name}/part-"
             )
+            if file.key.endswith(file_format)
         ]
     )
 
     full_file_paths = []
 
     for index, part_file in enumerate(list_of_part_files):
-        old_key = f"{bucket_name}/{part_file}"
         new_key = f"{temp_download_dir_name}/{destination_file_name}_{str(index + 1).zfill(2)}.{file_format}"
-        logger.info(f"Renaming {old_key} to {bucket_name}/{new_key}")
+        logger.info(f"Renaming {bucket_name}/{part_file} to {bucket_name}/{new_key}")
 
-        rename_s3_object(bucket_name=bucket_name, old_key=old_key, new_key=new_key)
+        rename_s3_object(bucket_name=bucket_name, old_key=part_file, new_key=new_key)
         full_file_paths.append(f"s3a://{bucket_name}/{new_key}")
 
     return full_file_paths
