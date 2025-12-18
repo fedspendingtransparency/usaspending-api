@@ -1,7 +1,9 @@
+import itertools
 from collections import OrderedDict
-from typing import Any, Dict, List, Union
+from typing import Any, Union
 
-from elasticsearch_dsl import Q as ES_Q
+from elasticsearch_dsl import A, Q as ES_Q
+from elasticsearch_dsl.response import AggResponse
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -33,10 +35,15 @@ class RecipientAutocompleteViewSet(APIView):
     specified search text.
     """
 
+    limit: int
+    recipient_levels: list[str] | None
+    search_text: str
+
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/autocomplete/recipient.md"
+    search_fields = ["recipient_name", "uei", "duns"]
 
     @cache_response()
-    def post(self, request: Request, format=None) -> Response:
+    def post(self, request: Request) -> Response:
         """
         Handle POST requests to the endpoint.
         Args:
@@ -47,19 +54,26 @@ class RecipientAutocompleteViewSet(APIView):
                     "limit": int (optional)
                     "duns": string (optional)
                 }
-            format: The format of the response (default=None).
 
         Returns:
             Returns a list of Recipients matching the input search_text and recipient_levels, if passed in.
         """
-        search_text, recipient_levels = self._prepare_search_terms(request.data)
-        limit = request.data["limit"]
-        query = self._create_es_search(search_text, recipient_levels, limit)
-        results = self._query_elasticsearch(query)
-        response = OrderedDict([("count", len(results)), ("results", results), ("messages", [""])])
+        self.search_text, self.recipient_levels = self._prepare_search_terms(request.data)
+        self.limit = request.data["limit"]
+        search = self._create_es_search()
+        results = self._query_elasticsearch(search)
+        recipient_level_response_message = (
+            "The response value of 'recipient_level' is deprecated to avoid to confusion when returning"
+            " only a single Recipient in the response. The request value of 'recipient_levels' will"
+            " continue to limit the response."
+        )
+        response = OrderedDict(
+            [("count", len(results)), ("results", results), ("messages", [recipient_level_response_message])]
+        )
         return Response(response)
 
-    def _prepare_search_terms(self, request_data: Dict[str, Union[str, List[str]]]) -> List[Union[str, List[str]]]:
+    @staticmethod
+    def _prepare_search_terms(request_data: dict[str, Union[str, list[str]]]) -> list[Union[str, list[str]]]:
         """
         Prepare search terms & recipient_levels from the request data.
 
@@ -72,91 +86,99 @@ class RecipientAutocompleteViewSet(APIView):
         fields = [request_data["search_text"], request_data.get("recipient_levels", [])]
         return [es_sanitize(field).upper() if isinstance(field, str) else field for field in fields]
 
-    def _create_es_search(self, search_text: str, recipient_levels: List[str], limit: int) -> RecipientSearch:
+    def _create_es_search(self) -> RecipientSearch:
         """
         Create an Elasticsearch search query for recipient autocomplete.
-
-        Args:
-            search_text: The search text entered by the user.
-            recipient_levels: The list of recipient levels to filter by.
-            duns: Any specific duns key specified by the user.
-            limit: The maximum number of results to return.
 
         Returns:
             An Elasticsearch search query.
         """
-        es_recipient_search_fields = ["recipient_name", "uei", "duns"]
-
-        should_query = [
-            query
-            for search_field in es_recipient_search_fields
-            for query in [
-                ES_Q("match_phrase_prefix", **{f"{search_field}": {"query": search_text, "boost": 5}}),
-                ES_Q("match_phrase_prefix", **{f"{search_field}.contains": {"query": search_text, "boost": 3}}),
-                ES_Q("match", **{f"{search_field}": {"query": search_text, "operator": "and", "boost": 1}}),
+        should_queries = {
+            search_field: [
+                ES_Q("match_phrase_prefix", **{f"{search_field}": {"query": self.search_text, "boost": 5}}),
+                ES_Q("match_phrase_prefix", **{f"{search_field}.contains": {"query": self.search_text, "boost": 3}}),
+                ES_Q("match", **{f"{search_field}": {"query": self.search_text, "operator": "and", "boost": 1}}),
             ]
-        ]
+            for search_field in self.search_fields
+        }
+        query = ES_Q(
+            "bool", should=list(itertools.chain.from_iterable(should_queries.values())), minimum_should_match=1
+        )
 
-        query = ES_Q("bool", should=should_query, minimum_should_match=1)
-
-        if recipient_levels:
+        if self.recipient_levels:
             recipient_should_clause = [
                 ES_Q(
                     "bool",
-                    should=[ES_Q("match", recipient_level=level) for level in recipient_levels],
+                    should=[ES_Q("match", recipient_level=level) for level in self.recipient_levels],
                     minimum_should_match=1,
                 )
             ]
-            # if there are recipient levels, then any of the options from the recipient levels as well as the search text should match  # noqa: E501
+            # if there are recipient levels, then any of the options from the recipient levels as well
+            # as the search text should match
             query = ES_Q("bool", must=[ES_Q("bool", should=recipient_should_clause), ES_Q("bool", should=query)])
 
-        query = RecipientSearch().query(query)[:limit]
-        return query
+        search = RecipientSearch().query(query)
 
-    def _query_elasticsearch(self, query: RecipientSearch) -> List[Dict[str, Any]]:
+        # Size is set to 1 as way to easily check if any results were found
+        search.update_from_dict({"size": 1})
+
+        for search_field, query in should_queries.items():
+            search.aggs.bucket(
+                f"filter_{search_field}",
+                self._build_filter_aggregation(search_field, query, search_field != "recipient_name"),
+            )
+
+        return search
+
+    def _query_elasticsearch(self, search: RecipientSearch) -> list[dict[str, Any]]:
         """
         Query Elasticsearch with the given search query.
 
         Args:
-            query: The Elasticsearch search query.
+            search: An Elasticsearch RecipientSearch object.
 
         Returns:
             A dictionary containing results from the Elasticsearch search query.
         """
-        hits = query.handle_execute()
-        results = []
-        if (
-            hits
-            and "hits" in hits
-            and "total" in hits["hits"]
-            and "value" in hits["hits"]["total"]
-            and hits["hits"]["total"]["value"] > 0
-        ):  # noqa: E501
-            results = self._parse_elasticsearch_response(hits)
+        response = search.handle_execute()
+        results = self._parse_elasticsearch_response(response.aggregations) if response.hits else []
         return results
 
-    def _parse_elasticsearch_response(self, hits: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _parse_elasticsearch_response(self, response_aggregations: AggResponse) -> list[dict[str, Any]]:
         """
         Parse Elasticsearch response and extract relevant information.
 
         Args:
-            hits: The Elasticsearch response containing search hits.
+            response: The Elasticsearch response containing search hits.
 
         Returns:
             A dictionary containing parsed search results (recipient_name, uei, and recipient_level).
         """
-        recipients = hits["hits"]["hits"]
         results = []
-        for temp in recipients:
-            recipient = temp["_source"]
-            results.append(
-                OrderedDict(
-                    [
-                        ("recipient_name", recipient["recipient_name"]),
-                        ("uei", recipient["uei"]),
-                        ("recipient_level", recipient["recipient_level"]),
-                        ("duns", recipient["duns"] if "duns" in recipient else None),
-                    ]
+        result_template = dict.fromkeys(["recipient_name", "recipient_level", "uei", "duns"])
+        for search_field in self.search_fields:
+            filtered_subset = getattr(response_aggregations, f"filter_{search_field}")
+            for bucket in getattr(filtered_subset, f"unique_{search_field}"):
+                temp_result = {search_field: bucket.key}
+                if search_field != "recipient_name":
+                    temp_result["recipient_name"] = bucket.recipient_details[0].recipient_name
+                results.append(
+                    {
+                        **result_template,
+                        **temp_result,
+                    }
                 )
-            )
+
         return results
+
+    def _build_filter_aggregation(self, field_name: str, query: ES_Q, include_recipient_name: bool) -> A:
+        sub_query_filter = A(f"filter", ES_Q("bool", should=query, minimum_should_match=1))
+        unique_field_agg = A("terms", field=f"{field_name}.keyword", size=self.limit)
+
+        if include_recipient_name:
+            top_hits_agg = A("top_hits", size=1, _source={"includes": "recipient_name"})
+            unique_field_agg.bucket("recipient_details", top_hits_agg)
+
+        sub_query_filter.bucket(f"unique_{field_name}", unique_field_agg)
+
+        return sub_query_filter

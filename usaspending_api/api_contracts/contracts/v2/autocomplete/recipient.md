@@ -40,7 +40,11 @@ This route sends a request to the backend to retrieve recipients matching the sp
     + Attributes (object)
         + `limit` (optional, number)
         + `search_text` (required, string)
-        + `recipient_levels` (optional, array[string])
+        + `recipient_levels` (optional, array[enum[string]])
+            + Members
+                + `C`
+                + `P`
+                + `R`
     + Body
 
             {
@@ -58,19 +62,13 @@ This route sends a request to the backend to retrieve recipients matching the sp
                 "results": [
                     {
                         "recipient_name": "LOCKHEED MARTIN",
-                        "recipient_level": "P",
+                        "recipient_level": null,
                         "uei": "PUETYBNR91Z3"
                         "duns": "956973523"
                     },
                     {
                         "recipient_name": "LOCKHEED MARTIN",
-                        "recipient_level": "C",
-                        "uei": "PUETYBNR91Z3",
-                        "duns": "956973523"
-                    },
-                    {
-                        "recipient_name": "LOCKHEED MARTIN",
-                        "recipient_level": "R",
+                        "recipient_level": null,
                         "uei": "null",
                         "duns": "null"
                     }
@@ -80,7 +78,11 @@ This route sends a request to the backend to retrieve recipients matching the sp
 # Data Structures
 
 ## RecipientMatch (object)
-+ `recipient_name` (required, string)
-+ `recipient_level` (required, string)
-+ `uei` (required, string)
-+ `duns` (required, string)
++ `recipient_name` (required, string, nullable)
+    Populated with the matching value when the search text matches, otherwise, populated for matches on UEI and DUNS.
++ `recipient_level` (required, string, nullable)
+    This value is deprecated to avoid confusion when returning only a single Recipient.
++ `uei` (required, string, nullable)
+    This value is only populated when the search text matches a UEI.
++ `duns` (required, string, nullable)
+    This value is only populated when the search text matches a DUNS.

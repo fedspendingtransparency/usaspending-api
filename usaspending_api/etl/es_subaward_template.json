@@ -378,16 +378,30 @@
         "format": "yyyy-MM-dd"
       },
       "sub_awardee_or_recipient_uniqu": {
-        "type": "text"
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
       },
       "sub_awardee_or_recipient_uei": {
-        "type": "keyword"
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
       },
       "sub_awardee_or_recipient_legal": {
         "type": "text",
         "fields": {
           "keyword": {
             "type": "keyword"
+          },
+          "contains": {
+            "type": "text",
+            "analyzer": "contains_analyzer"
           }
         }
       },

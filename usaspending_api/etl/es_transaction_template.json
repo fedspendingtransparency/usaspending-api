@@ -15,6 +15,13 @@
             "lowercase",
             "singular_stemmer"
           ]
+        },
+        "contains_analyzer": {
+          "type": "custom",
+          "tokenizer": "ngram",
+          "filter": [
+            "uppercase"
+          ]
         }
       },
       "filter": {
@@ -166,6 +173,10 @@
         "fields": {
           "keyword": {
             "type": "keyword"
+          },
+          "contains": {
+            "type": "text",
+            "analyzer": "contains_analyzer"
           }
         }
       },
@@ -200,6 +211,10 @@
         "fields": {
           "keyword": {
             "type": "keyword"
+          },
+          "contains": {
+            "type": "text",
+            "analyzer": "contains_analyzer"
           }
         }
       },

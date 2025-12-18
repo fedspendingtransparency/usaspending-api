@@ -2,11 +2,10 @@ import json
 
 import pytest
 from django.conf import settings
+from elasticsearch_dsl import AttrDict
 from model_bakery import baker
 
-from usaspending_api.recipient.models import RecipientProfile
 from usaspending_api.references.v2.views.recipients import RecipientAutocompleteViewSet
-from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
 @pytest.fixture
@@ -76,10 +75,9 @@ def test_prepare_search_terms():
 
 def test_create_es_search():
     view_set_instance = RecipientAutocompleteViewSet()
-
-    search_text = "test"
-    recipient_levels = ["C", "P"]
-    limit = 20
+    view_set_instance.search_text = "test"
+    view_set_instance.recipient_levels = ["C", "P"]
+    view_set_instance.limit = 20
 
     expected_query = {
         "query": {
@@ -133,14 +131,68 @@ def test_create_es_search():
                 ]
             }
         },
-        "from": 0,
-        "size": 20,
+        "aggs": {
+            "filter_recipient_name": {
+                "filter": {
+                    "bool": {
+                        "should": [
+                            {"match_phrase_prefix": {"recipient_name": {"query": "test", "boost": 5}}},
+                            {"match_phrase_prefix": {"recipient_name.contains": {"query": "test", "boost": 3}}},
+                            {"match": {"recipient_name": {"query": "test", "operator": "and", "boost": 1}}},
+                        ],
+                        "minimum_should_match": 1,
+                    }
+                },
+                "aggs": {"unique_recipient_name": {"terms": {"field": "recipient_name.keyword", "size": 20}}},
+            },
+            "filter_uei": {
+                "filter": {
+                    "bool": {
+                        "should": [
+                            {"match_phrase_prefix": {"uei": {"query": "test", "boost": 5}}},
+                            {"match_phrase_prefix": {"uei.contains": {"query": "test", "boost": 3}}},
+                            {"match": {"uei": {"query": "test", "operator": "and", "boost": 1}}},
+                        ],
+                        "minimum_should_match": 1,
+                    }
+                },
+                "aggs": {
+                    "unique_uei": {
+                        "terms": {"field": "uei.keyword", "size": 20},
+                        "aggs": {
+                            "recipient_details": {"top_hits": {"size": 1, "_source": {"includes": "recipient_name"}}}
+                        },
+                    }
+                },
+            },
+            "filter_duns": {
+                "filter": {
+                    "bool": {
+                        "should": [
+                            {"match_phrase_prefix": {"duns": {"query": "test", "boost": 5}}},
+                            {"match_phrase_prefix": {"duns.contains": {"query": "test", "boost": 3}}},
+                            {"match": {"duns": {"query": "test", "operator": "and", "boost": 1}}},
+                        ],
+                        "minimum_should_match": 1,
+                    }
+                },
+                "aggs": {
+                    "unique_duns": {
+                        "terms": {"field": "duns.keyword", "size": 20},
+                        "aggs": {
+                            "recipient_details": {"top_hits": {"size": 1, "_source": {"includes": "recipient_name"}}}
+                        },
+                    }
+                },
+            },
+        },
+        "size": 1,
     }
-    assert view_set_instance._create_es_search(search_text, recipient_levels, limit).to_dict() == expected_query
+    assert view_set_instance._create_es_search().to_dict() == expected_query
 
-    search_text = "test"
-    recipient_levels = []
-    limit = 20
+    view_set_instance.search_text = "test"
+    view_set_instance.recipient_levels = []
+    view_set_instance.limit = 20
     expected_query = {
         "query": {
             "bool": {
@@ -158,45 +210,97 @@ def test_create_es_search():
                 "minimum_should_match": 1,
             }
         },
-        "from": 0,
-        "size": 20,
+        "aggs": {
+            "filter_recipient_name": {
+                "filter": {
+                    "bool": {
+                        "should": [
+                            {"match_phrase_prefix": {"recipient_name": {"query": "test", "boost": 5}}},
+                            {"match_phrase_prefix": {"recipient_name.contains": {"query": "test", "boost": 3}}},
+                            {"match": {"recipient_name": {"query": "test", "operator": "and", "boost": 1}}},
+                        ],
+                        "minimum_should_match": 1,
+                    }
+                },
+                "aggs": {"unique_recipient_name": {"terms": {"field": "recipient_name.keyword", "size": 20}}},
+            },
+            "filter_uei": {
+                "filter": {
+                    "bool": {
+                        "should": [
+                            {"match_phrase_prefix": {"uei": {"query": "test", "boost": 5}}},
+                            {"match_phrase_prefix": {"uei.contains": {"query": "test", "boost": 3}}},
+                            {"match": {"uei": {"query": "test", "operator": "and", "boost": 1}}},
+                        ],
+                        "minimum_should_match": 1,
+                    }
+                },
+                "aggs": {
+                    "unique_uei": {
+                        "terms": {"field": "uei.keyword", "size": 20},
+                        "aggs": {
+                            "recipient_details": {"top_hits": {"size": 1, "_source": {"includes": "recipient_name"}}}
+                        },
+                    }
+                },
+            },
+            "filter_duns": {
+                "filter": {
+                    "bool": {
+                        "should": [
+                            {"match_phrase_prefix": {"duns": {"query": "test", "boost": 5}}},
+                            {"match_phrase_prefix": {"duns.contains": {"query": "test", "boost": 3}}},
+                            {"match": {"duns": {"query": "test", "operator": "and", "boost": 1}}},
+                        ],
+                        "minimum_should_match": 1,
+                    }
+                },
+                "aggs": {
+                    "unique_duns": {
+                        "terms": {"field": "duns.keyword", "size": 20},
+                        "aggs": {
+                            "recipient_details": {"top_hits": {"size": 1, "_source": {"includes": "recipient_name"}}}
+                        },
+                    }
+                },
+            },
+        },
+        "size": 1,
     }
-    assert view_set_instance._create_es_search(search_text, recipient_levels, limit).to_dict() == expected_query
-
-
-def test_query_elasticsearch(recipient_data_fixture, elasticsearch_recipient_index, monkeypatch):
-    client = elasticsearch_recipient_index.client
-    original_db_recipients_count = RecipientProfile.objects.count()
-    assert original_db_recipients_count == 5
-
-    setup_elasticsearch_test(monkeypatch, elasticsearch_recipient_index)
-    assert client.indices.exists(elasticsearch_recipient_index.index_name)
-
-    view_set_instance = RecipientAutocompleteViewSet()
-
-    search_text = "sdfsdg"
-    recipient_levels = ["C"]
-    limit = 1
-
-    elasticsearch_query = view_set_instance._create_es_search(search_text, recipient_levels, limit)
-    expected_result = view_set_instance._query_elasticsearch(elasticsearch_query)
-
-    response_actual = client.search(index=elasticsearch_recipient_index.index_name, body=elasticsearch_query.to_dict())
-    format_response_actual = view_set_instance._parse_elasticsearch_response(response_actual)
-
-    assert format_response_actual == expected_result
+    assert view_set_instance._create_es_search().to_dict() == expected_query
 
 
 def test_parse_elasticsearch_response():
     view_set_instance = RecipientAutocompleteViewSet()
+    sample_response = AttrDict(
+        {
+            "filter_recipient_name": {"unique_recipient_name": [{"key": "SAMPLE RECIPIENT"}]},
+            "filter_uei": {
+                "unique_uei": [
+                    {"key": "SAMPLE UEI", "recipient_details": [{"recipient_name": "SAMPLE RECIPIENT WITH UEI"}]}
+                ]
+            },
+            "filter_duns": {
+                "unique_duns": [
+                    {"key": "SAMPLE DUNS", "recipient_details": [{"recipient_name": "SAMPLE RECIPIENT WITH DUNS"}]}
+                ]
+            },
+        }
+    )
+    expected_results = [
+        {"recipient_name": "SAMPLE RECIPIENT", "uei": None, "recipient_level": None, "duns": None},
+        {"recipient_name": "SAMPLE RECIPIENT WITH UEI", "uei": "SAMPLE UEI", "recipient_level": None, "duns": None},
+        {"recipient_name": "SAMPLE RECIPIENT WITH DUNS", "uei": None, "recipient_level": None, "duns": "SAMPLE DUNS"},
+    ]
+    assert view_set_instance._parse_elasticsearch_response(sample_response) == expected_results
 
-    hits_with_data = {
-        "hits": {"hits": [{"_source": {"recipient_name": "Test", "uei": "UEI-01", "recipient_level": "C"}}]}
-    }
-    expected_results = [{"recipient_name": "Test", "uei": "UEI-01", "recipient_level": "C", "duns": None}]
-    assert view_set_instance._parse_elasticsearch_response(hits_with_data) == expected_results
-
-    hits_without_data = {"hits": {"hits": []}}
+    hits_without_data = AttrDict(
+        {
+            "filter_recipient_name": {"unique_recipient_name": []},
+            "filter_uei": {"unique_uei": []},
+            "filter_duns": {"unique_duns": []},
+        }
+    )
     expected_results = []
     assert view_set_instance._parse_elasticsearch_response(hits_without_data) == expected_results
 
@@ -239,7 +343,7 @@ def test_recipient_search_multiple_recipient_levels(
     elasticsearch_recipient_index.update_index()
     body = {"search_text": "batman", "recipient_levels": ["C", "P"], "limit": 20}
     response = client.post("/api/v2/autocomplete/recipient", content_type="application/json", data=json.dumps(body))
-    assert response.data["count"] == 2
+    assert response.data["count"] == 1
     for entry in response.data["results"]:
         assert entry["recipient_name"].lower().find("batman") > -1
 
@@ -267,6 +371,6 @@ def test_recipient_search_special_characters(
     elasticsearch_recipient_index.update_index()
     body = {"search_text": "batman+()[]{}?<>\\", "recipient_levels": ["C", "P", "R"]}
     response = client.post("/api/v2/autocomplete/recipient", content_type="application/json", data=json.dumps(body))
-    assert response.data["count"] == 2
+    assert response.data["count"] == 1
     for entry in response.data["results"]:
         assert entry["recipient_name"].lower().find("batman") > -1
