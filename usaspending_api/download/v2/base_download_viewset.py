@@ -38,14 +38,14 @@ class BaseDownloadViewSet(APIView):
         json_request = validator.json_request
 
         # Keeps specified columns in the same order
-        if "filters" in json_request and "submission_types" in json_request["filters"]:
-            submission_types = json_request["filters"]["submission_types"]
+        if "columns" in json_request:
+            columns = json_request["columns"]
         else:
-            submission_types = None
+            columns = None
 
         json_request = order_nested_object(json_request)
-        if submission_types:
-            json_request["filters"]["submission_types"] = submission_types
+        if columns:
+            json_request["columns"] = columns
 
         # Check if download is pre-generated
         pre_generated_download = json_request.pop("pre_generated_download", None)
