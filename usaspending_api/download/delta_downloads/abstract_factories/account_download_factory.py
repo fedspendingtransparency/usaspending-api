@@ -4,7 +4,9 @@ from enum import Enum
 from functools import reduce
 from typing import TypeVar
 
-from pyspark.sql import functions as sf, Column, SparkSession
+from duckdb.experimental.spark.sql import SparkSession as DuckDBSparkSession
+from duckdb.experimental.spark.sql.column import Column as DuckDBColumn
+from pyspark.sql import Column, SparkSession
 
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.download.delta_downloads.abstract_downloads.account_download import (
@@ -12,7 +14,6 @@ from usaspending_api.download.delta_downloads.abstract_downloads.account_downloa
     AccountLevel,
 )
 from usaspending_api.download.delta_downloads.filters.account_filters import AccountDownloadFilters
-
 
 AccountDownload = TypeVar("AccountDownload", bound=AbstractAccountDownload)
 
@@ -28,13 +29,12 @@ class AccountDownloadConditionName(Enum):
 
 
 class AbstractAccountDownloadFactory(ABC):
-
-    def __init__(self, spark: SparkSession, filters: AccountDownloadFilters):
+    def __init__(self, spark: SparkSession | DuckDBSparkSession, filters: AccountDownloadFilters):
         self._spark = spark
         self._filters = filters
 
     @property
-    def spark(self) -> SparkSession:
+    def spark(self) -> SparkSession | DuckDBSparkSession:
         return self._spark
 
     @property
@@ -46,11 +46,16 @@ class AbstractAccountDownloadFactory(ABC):
         return list(AccountDownloadConditionName)
 
     @property
-    def dynamic_filters(self) -> Column:
+    def dynamic_filters(self) -> Column | DuckDBColumn:
+        if type(self._spark) is DuckDBSparkSession:
+            from duckdb.experimental.spark.sql import functions as sf
+        else:
+            from pyspark.sql import functions as sf
+
         @dataclass
         class Condition:
             name: AccountDownloadConditionName
-            condition: Column
+            condition: Column | DuckDBColumn
             apply: bool
 
         conditions = [
