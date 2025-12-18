@@ -20,20 +20,20 @@ from usaspending_api.disaster.delta_models import (
     covid_faba_spending_load_sql_strings,
 )
 from usaspending_api.disaster.models import CovidFABASpending
-from usaspending_api.download.delta_models.award_financial_download import (
-    load_award_financial,
-    load_award_financial_incremental,
-    award_financial_schema,
-)
-from usaspending_api.download.delta_models.object_class_program_activity_download import (
-    object_class_program_activity_schema,
-    load_object_class_program_activity,
-    load_object_class_program_activity_incremental,
-)
 from usaspending_api.download.delta_models.account_balances_download import (
+    account_balances_schema,
     load_account_balances,
     load_account_balances_incremental,
-    account_balances_schema,
+)
+from usaspending_api.download.delta_models.award_financial_download import (
+    award_financial_schema,
+    load_award_financial,
+    load_award_financial_incremental,
+)
+from usaspending_api.download.delta_models.object_class_program_activity_download import (
+    load_object_class_program_activity,
+    load_object_class_program_activity_incremental,
+    object_class_program_activity_schema,
 )
 from usaspending_api.download.delta_models.transaction_download import transaction_download_schema
 from usaspending_api.recipient.delta_models import (
@@ -84,7 +84,6 @@ from usaspending_api.transactions.delta_models import (
     transaction_search_create_sql_string,
 )
 
-
 AWARD_URL = f"{HOST}/award/" if "localhost" in HOST else f"https://{HOST}/award/"
 
 logger = logging.getLogger(__name__)
@@ -104,6 +103,7 @@ TABLE_SPEC = {
         "partition_column_type": "numeric",
         "is_partition_column_unique": True,
         "delta_table_create_sql": award_search_create_sql_string,
+        "delta_table_create_options": None,
         "source_schema": AWARD_SEARCH_POSTGRES_COLUMNS,
         "custom_schema": "recipient_hash STRING, federal_accounts STRING, cfdas ARRAY<STRING>,"
         " tas_components ARRAY<STRING>",
@@ -111,6 +111,7 @@ TABLE_SPEC = {
         "postgres_seq_name": None,
         "tsvectors": None,
         "postgres_partition_spec": None,
+        "delta_table_create_partitions": None,
     },
     "award_search_gold": {
         "model": AwardSearch,
@@ -126,6 +127,7 @@ TABLE_SPEC = {
         "partition_column_type": "numeric",
         "is_partition_column_unique": True,
         "delta_table_create_sql": award_search_create_sql_string,
+        "delta_table_create_options": None,
         "source_schema": AWARD_SEARCH_POSTGRES_GOLD_COLUMNS,
         "custom_schema": "recipient_hash STRING, federal_accounts STRING, cfdas ARRAY<STRING>,"
         " tas_components ARRAY<STRING>",
@@ -133,6 +135,7 @@ TABLE_SPEC = {
         "postgres_seq_name": None,
         "tsvectors": None,
         "postgres_partition_spec": None,
+        "delta_table_create_partitions": None,
     },
     "recipient_lookup": {
         "model": RecipientLookup,
@@ -148,12 +151,14 @@ TABLE_SPEC = {
         "partition_column_type": "string",
         "is_partition_column_unique": True,
         "delta_table_create_sql": rpt_recipient_lookup_create_sql_string,
+        "delta_table_create_options": None,
         "source_schema": RECIPIENT_LOOKUP_POSTGRES_COLUMNS,
         "custom_schema": "recipient_hash STRING",
         "column_names": list(RPT_RECIPIENT_LOOKUP_DELTA_COLUMNS),
         "postgres_seq_name": "recipient_lookup_id_seq",
         "tsvectors": None,
         "postgres_partition_spec": None,
+        "delta_table_create_partitions": None,
     },
     "recipient_profile": {
         "model": RecipientProfile,
@@ -169,12 +174,14 @@ TABLE_SPEC = {
         "partition_column_type": "string",
         "is_partition_column_unique": False,
         "delta_table_create_sql": recipient_profile_create_sql_string,
+        "delta_table_create_options": None,
         "source_schema": RECIPIENT_PROFILE_POSTGRES_COLUMNS,
         "custom_schema": "recipient_hash STRING",
         "column_names": list(RPT_RECIPIENT_PROFILE_DELTA_COLUMNS),
         "postgres_seq_name": "recipient_profile_id_seq",
         "tsvectors": None,
         "postgres_partition_spec": None,
+        "delta_table_create_partitions": None,
     },
     "summary_state_view": {
         "model": SummaryStateView,
@@ -190,12 +197,14 @@ TABLE_SPEC = {
         "partition_column_type": "string",
         "is_partition_column_unique": True,
         "delta_table_create_sql": summary_state_view_create_sql_string,
+        "delta_table_create_options": None,
         "source_schema": SUMMARY_STATE_VIEW_POSTGRES_COLUMNS,
         "custom_schema": "duh STRING",
         "column_names": list(SUMMARY_STATE_VIEW_COLUMNS),
         "postgres_seq_name": None,
         "tsvectors": None,
         "postgres_partition_spec": None,
+        "delta_table_create_partitions": None,
     },
     "sam_recipient": {
         "model": None,
@@ -211,12 +220,14 @@ TABLE_SPEC = {
         "partition_column_type": "string",
         "is_partition_column_unique": True,
         "delta_table_create_sql": sam_recipient_create_sql_string,
+        "delta_table_create_options": None,
         "source_schema": SAM_RECIPIENT_POSTGRES_COLUMNS,
         "custom_schema": None,
         "column_names": list(SAM_RECIPIENT_COLUMNS),
         "postgres_seq_name": None,
         "tsvectors": None,
         "postgres_partition_spec": None,
+        "delta_table_create_partitions": None,
     },
     "transaction_search": {
         "model": TransactionSearch,
@@ -232,12 +243,14 @@ TABLE_SPEC = {
         "partition_column_type": "numeric",
         "is_partition_column_unique": True,
         "delta_table_create_sql": transaction_search_create_sql_string,
+        "delta_table_create_options": None,
         "source_schema": TRANSACTION_SEARCH_POSTGRES_COLUMNS,
         "custom_schema": "recipient_hash STRING, federal_accounts STRING, parent_recipient_hash STRING",
         "column_names": list(TRANSACTION_SEARCH_POSTGRES_COLUMNS),
         "postgres_seq_name": None,
         "tsvectors": None,
         "postgres_partition_spec": None,
+        "delta_table_create_partitions": None,
     },
     "transaction_search_gold": {
         "model": TransactionSearch,
@@ -253,6 +266,7 @@ TABLE_SPEC = {
         "partition_column_type": "numeric",
         "is_partition_column_unique": True,
         "delta_table_create_sql": transaction_search_create_sql_string,
+        "delta_table_create_options": None,
         "source_schema": TRANSACTION_SEARCH_POSTGRES_GOLD_COLUMNS,
         "custom_schema": "recipient_hash STRING, federal_accounts STRING, parent_recipient_hash STRING",
         "column_names": list(TRANSACTION_SEARCH_POSTGRES_GOLD_COLUMNS),
@@ -266,6 +280,7 @@ TABLE_SPEC = {
                 {"table_suffix": "_fabs", "partitioning_clause": "FOR VALUES IN (FALSE)"},
             ],
         },
+        "delta_table_create_partitions": None,
     },
     "transaction_current_cd_lookup": {
         "model": None,
@@ -281,12 +296,14 @@ TABLE_SPEC = {
         "partition_column_type": "numeric",
         "is_partition_column_unique": True,
         "delta_table_create_sql": transaction_current_cd_lookup_create_sql_string,
+        "delta_table_create_options": None,
         "source_schema": TRANSACTION_CURRENT_CD_LOOKUP_COLUMNS,
         "custom_schema": "",
         "column_names": list(TRANSACTION_CURRENT_CD_LOOKUP_COLUMNS),
         "postgres_seq_name": None,
         "tsvectors": None,
         "postgres_partition_spec": None,
+        "delta_table_create_partitions": None,
     },
     "subaward_search": {
         "model": SubawardSearch,
@@ -302,12 +319,14 @@ TABLE_SPEC = {
         "partition_column_type": "numeric",
         "is_partition_column_unique": True,
         "delta_table_create_sql": subaward_search_create_sql_string,
+        "delta_table_create_options": None,
         "source_schema": SUBAWARD_SEARCH_POSTGRES_COLUMNS,
         "custom_schema": "treasury_account_identifiers ARRAY<INTEGER>",
         "column_names": list(SUBAWARD_SEARCH_COLUMNS),
         "postgres_seq_name": None,
         "tsvectors": SUBAWARD_SEARCH_POSTGRES_VECTORS,
         "postgres_partition_spec": None,
+        "delta_table_create_partitions": None,
     },
     "covid_faba_spending": {
         "model": CovidFABASpending,
@@ -323,12 +342,14 @@ TABLE_SPEC = {
         "partition_column_type": "numeric",
         "is_partition_column_unique": False,
         "delta_table_create_sql": covid_faba_spending_create_sql_string,
+        "delta_table_create_options": None,
         "source_schema": COVID_FABA_SPENDING_POSTGRES_COLUMNS,
         "custom_schema": None,
         "column_names": list(COVID_FABA_SPENDING_DELTA_COLUMNS),
         "postgres_seq_name": None,
         "tsvectors": None,
         "postgres_partition_spec": None,
+        "delta_table_create_partitions": None,
     },
     "account_balances_download": {
         "model": None,
@@ -344,12 +365,14 @@ TABLE_SPEC = {
         "partition_column_type": "numeric",
         "is_partition_column_unique": False,
         "delta_table_create_sql": account_balances_schema,
+        "delta_table_create_options": {"delta.enableChangeDataFeed": True},
         "source_schema": None,
         "custom_schema": None,
         "column_names": list(),
         "postgres_seq_name": None,
         "tsvectors": None,
         "postgres_partition_spec": None,
+        "delta_table_create_partitions": ["reporting_fiscal_year", "funding_toptier_agency_id"],
     },
     "award_financial_download": {
         "model": None,
@@ -365,12 +388,14 @@ TABLE_SPEC = {
         "partition_column_type": "numeric",
         "is_partition_column_unique": False,
         "delta_table_create_sql": award_financial_schema,
+        "delta_table_create_options": {"delta.enableChangeDataFeed": True},
         "source_schema": None,
         "custom_schema": None,
         "column_names": list(),
         "postgres_seq_name": None,
         "tsvectors": None,
         "postgres_partition_spec": None,
+        "delta_table_create_partitions": ["reporting_fiscal_year", "funding_toptier_agency_id"],
     },
     "object_class_program_activity_download": {
         "model": None,
@@ -386,12 +411,14 @@ TABLE_SPEC = {
         "partition_column_type": "numeric",
         "is_partition_column_unique": False,
         "delta_table_create_sql": object_class_program_activity_schema,
+        "delta_table_create_options": {"delta.enableChangeDataFeed": True},
         "source_schema": None,
         "custom_schema": None,
         "column_names": list(),
         "postgres_seq_name": None,
         "tsvectors": None,
         "postgres_partition_spec": None,
+        "delta_table_create_partitions": ["reporting_fiscal_year", "funding_toptier_agency_id"],
     },
     "transaction_download": {
         "model": None,
@@ -407,12 +434,14 @@ TABLE_SPEC = {
         "partition_column_type": "numeric",
         "is_partition_column_unique": False,
         "delta_table_create_sql": transaction_download_schema,
+        "delta_table_create_options": {"delta.enableChangeDataFeed": True},
         "source_schema": None,
         "custom_schema": None,
         "column_names": list(),
         "postgres_seq_name": None,
         "tsvectors": None,
         "postgres_partition_spec": None,
+        "delta_table_create_partitions": ["awarding_agency_code", "is_fpds", "action_date_fiscal_year"],
     },
 }
 

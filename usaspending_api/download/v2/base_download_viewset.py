@@ -36,7 +36,12 @@ class BaseDownloadViewSet(APIView):
     ):
         validator = validator_type(request.data)
         json_request = validator.json_request
+
         sorted_json_request = order_nested_object(json_request)
+
+        # Keeps specified columns in the same order
+        if "columns" in json_request:
+            sorted_json_request["columns"] = json_request["columns"]
 
         # Check if download is pre-generated
         pre_generated_download = sorted_json_request.pop("pre_generated_download", None)
@@ -65,11 +70,11 @@ class BaseDownloadViewSet(APIView):
         download_job = DownloadJob.objects.create(
             job_status_id=JOB_STATUS_DICT["ready"],
             file_name=final_output_zip_name,
-            json_request=json.dumps(json_request),
+            json_request=json.dumps(sorted_json_request),
         )
 
         log_new_download_job(request, download_job)
-        self.process_request(download_job, json_request)
+        self.process_request(download_job, sorted_json_request)
 
         return self.build_download_response(download_job)
 
@@ -101,7 +106,10 @@ class BaseDownloadViewSet(APIView):
                 spark_jobs.start(
                     job_name=job_name,
                     command_name="generate_spark_download",
-                    command_options=[f"--download-job-id={download_job.download_job_id}", f"--skip-local-cleanup"],
+                    command_options=[
+                        f"--download-job-id={download_job.download_job_id}",
+                        "--skip-local-cleanup",
+                    ],
                     run_as_container=False,
                 )
             else:
