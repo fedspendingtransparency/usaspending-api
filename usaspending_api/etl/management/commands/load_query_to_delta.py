@@ -388,7 +388,7 @@ TABLE_SPEC = {
         "partition_column_type": "numeric",
         "is_partition_column_unique": False,
         "delta_table_create_sql": award_financial_schema,
-        "delta_table_create_options": {"delta.enableChangeDataFeed": True},
+        "delta_table_create_options": {"delta.enableChangeDataFeed": "true"},
         "source_schema": None,
         "custom_schema": None,
         "column_names": list(),
