@@ -1,6 +1,7 @@
 import re
 
 from django.db.models import Q
+from django.db.models.functions import Substr, Length
 from string import ascii_uppercase, digits
 from usaspending_api.references.models import PSC
 from usaspending_api.references.v2.views.filter_tree.filter_tree import FilterTree
@@ -168,7 +169,7 @@ class PSCFilterTree(FilterTree):
                     "id": code,
                     "ancestors": ancestors,
                     "description": object.description,
-                    "count": self.get_count([object.code], object.code),
+                    "count": self.get_count([object.code], code),
                     "children": None,
                 }
             )
@@ -255,8 +256,11 @@ class PSCFilterTree(FilterTree):
             filters = [Q(code__iregex=PSC_GROUPS.get(id, {}).get("count_pattern") or "(?!)")]
             return PSC.objects.filter(*filters).count()
         else:
-            filters = [
-                Q(length=4),
-                Q(code__startswith=id),
-            ]
-            return PSC.objects.filter(*filters).count()
+            new_length = len(id) + 1
+            filters = [Q(code__startswith=id), ~Q(code__endswith=0)]
+            all_codes = (
+                PSC.objects.filter(*filters)
+                .annotate(code_prefix=Substr("code", 1, new_length), code_len=Length("code"))
+                .filter(code_len__gte=new_length)
+            )
+            return all_codes.values("code_prefix").distinct().count()
