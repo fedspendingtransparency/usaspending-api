@@ -37,6 +37,19 @@ def transaction_data():
         transaction_count=2,
         generated_pragmatic_obligation=65.00,
     )
+    baker.make(
+        "search.AwardSearch",
+        description="award 3",
+        award_id=3,
+        display_award_id="BOI1243L98AT",
+        generated_unique_award_id="BOI1243L98AT-generated",
+        latest_transaction_id=5,
+        is_fpds=True,
+        type="A",
+        action_date="2020-01-01",
+        transaction_count=1,
+        generated_pragmatic_obligation=0,
+    )
 
 
 @pytest.mark.django_db
@@ -48,19 +61,26 @@ def test_spending_by_transaction_grouped_success(client, monkeypatch, transactio
         content_type="application/json",
         data=json.dumps(
             {
-                "filters": {"keywords": ["award 1"], "award_type_codes": ["A"], "award_ids": ["IND12PB00323"]},
+                "filters": {
+                    "keywords": ["award 1", "award 3"],
+                    "award_type_codes": ["A"],
+                    "award_ids": ["IND12PB00323", "BOI1243L98AT"],
+                },
                 "sort": "transaction_obligation",
             }
         ),
     )
 
-    resp_results = resp.data.get("results", {})
     assert resp.status_code == status.HTTP_200_OK
-    assert len(resp_results) == 1
+
+    resp_json = resp.json()
+    resp_results = resp_json["results"]
+    assert len(resp_results) == 2
     assert resp_results[0]["award_id"] == "IND12PB00323"
     assert resp_results[0]["transaction_count"] == 2
     assert resp_results[0]["transaction_obligation"] == 135.00
     assert resp_results[0]["award_generated_internal_id"] == "IND12PB00323-generated"
+    assert resp_json["messages"][0] == "This endpoint is under active development and subject to change"
 
     resp = client.post(
         ENDPOINT,
@@ -227,7 +247,7 @@ def test_spending_by_transaction_grouped_pagination(client, monkeypatch, transac
         ENDPOINT,
         content_type="application/json",
         data=json.dumps(
-            {"filters": {"award_type_codes": ["A"]}, "sort": "transaction_obligation", "page": 2, "limit": 1}
+            {"filters": {"award_type_codes": ["A"]}, "sort": "transaction_obligation", "page": 3, "limit": 1}
         ),
     )
 
@@ -235,11 +255,11 @@ def test_spending_by_transaction_grouped_pagination(client, monkeypatch, transac
     page_metadata = resp.data.get("page_metadata", {})
     assert resp.status_code == status.HTTP_200_OK
     assert len(resp_results) == 1
-    assert page_metadata["page"] == 2
+    assert page_metadata["page"] == 3
     assert page_metadata["hasNext"] is False
     assert page_metadata["hasPrevious"] is True
 
-    assert resp_results[0]["award_id"] == "BOI1243L98AS"
-    assert resp_results[0]["transaction_count"] == 2
-    assert resp_results[0]["transaction_obligation"] == 65.00
-    assert resp_results[0]["award_generated_internal_id"] == "BOI1243L98AS-generated"
+    assert resp_results[0]["award_id"] == "BOI1243L98AT"
+    assert resp_results[0]["transaction_count"] == 1
+    assert resp_results[0]["transaction_obligation"] == 0.0
+    assert resp_results[0]["award_generated_internal_id"] == "BOI1243L98AT-generated"

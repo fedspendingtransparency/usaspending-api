@@ -63,7 +63,7 @@ def initial_award_and_subaward_data():
             "sub_action_date": "2024-01-01",
         },
     ]
-    with connections[settings.DATA_BROKER_DB_ALIAS].cursor() as cursor:
+    with connections[settings.BROKER_DB_ALIAS].cursor() as cursor:
         for subaward in broker_subawards:
             cursor.execute(
                 """
@@ -80,7 +80,7 @@ def initial_award_and_subaward_data():
         "subaward_to_delete": broker_subawards[2],
     }
 
-    with connections[settings.DATA_BROKER_DB_ALIAS].cursor() as cursor:
+    with connections[settings.BROKER_DB_ALIAS].cursor() as cursor:
         cursor.execute(f"TRUNCATE subaward")
         cursor.execute(f"SELECT COUNT(*) FROM subaward")
         assert cursor.fetchall()[0][0] == 0
@@ -88,7 +88,7 @@ def initial_award_and_subaward_data():
 
 @pytest.fixture
 def create_new_subaward(initial_award_and_subaward_data):
-    with connections[settings.DATA_BROKER_DB_ALIAS].cursor() as cursor:
+    with connections[settings.BROKER_DB_ALIAS].cursor() as cursor:
         subaward = {
             "unique_award_key": initial_award_and_subaward_data[
                 "manipulated_award_with_subawards"
@@ -111,7 +111,7 @@ def create_new_subaward(initial_award_and_subaward_data):
 @pytest.fixture
 def delete_one_subaward(initial_award_and_subaward_data):
     subaward_to_delete = initial_award_and_subaward_data["subaward_to_delete"]
-    with connections[settings.DATA_BROKER_DB_ALIAS].cursor() as cursor:
+    with connections[settings.BROKER_DB_ALIAS].cursor() as cursor:
         cursor.execute(
             """
                 DELETE FROM subaward WHERE subaward_number = %(subaward_number)s
@@ -124,7 +124,7 @@ def delete_one_subaward(initial_award_and_subaward_data):
 @pytest.fixture
 def delete_all_subawards(initial_award_and_subaward_data):
     subaward_to_delete = initial_award_and_subaward_data["subaward_to_delete"]
-    with connections[settings.DATA_BROKER_DB_ALIAS].cursor() as cursor:
+    with connections[settings.BROKER_DB_ALIAS].cursor() as cursor:
         cursor.execute(
             """
                 DELETE FROM subaward WHERE unique_award_key = %(unique_award_key)s
@@ -134,7 +134,7 @@ def delete_all_subawards(initial_award_and_subaward_data):
     return initial_award_and_subaward_data
 
 
-@pytest.mark.django_db(transaction=True, databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
+@pytest.mark.django_db(transaction=True, databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
 @pytest.mark.parametrize(
     "fixture_name,expected_manipulated_value",
     [

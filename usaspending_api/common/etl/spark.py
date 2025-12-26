@@ -6,17 +6,23 @@ functions for setup and configuration of the spark environment
 """
 
 import logging
+import math
+import os
+import shutil
 import time
 from collections import namedtuple
 from itertools import chain
 from typing import List
 
-from py4j.protocol import Py4JError
+import duckdb
+from duckdb.experimental.spark.sql import SparkSession as DuckDBSparkSession
+from duckdb.experimental.spark.sql.dataframe import DataFrame as DuckDBDataFrame
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql.functions import col, concat, concat_ws, expr, lit, regexp_replace, to_date, transform, when
 from pyspark.sql.types import ArrayType, DecimalType, StringType, StructType
 
 from usaspending_api.accounts.models import AppropriationAccountBalances, FederalAccount, TreasuryAppropriationAccount
+from usaspending_api.common.helpers.s3_helpers import rename_s3_object, retrieve_s3_bucket_object_list
 from usaspending_api.common.helpers.spark_helpers import (
     get_broker_jdbc_url,
     get_jdbc_connection_properties,
@@ -47,6 +53,7 @@ from usaspending_api.references.models import (
     ZipsGrouped,
 )
 from usaspending_api.reporting.models import ReportingAgencyMissingTas, ReportingAgencyOverview
+from usaspending_api.settings import CSV_LOCAL_PATH, IS_LOCAL, USASPENDING_AWS_REGION
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule, SubmissionAttributes
 
 MAX_PARTITIONS = CONFIG.SPARK_MAX_PARTITIONS
@@ -97,7 +104,6 @@ def extract_db_data_frame(
     is_date_partitioning_col: bool = False,
     custom_schema: StructType = None,
 ) -> DataFrame:
-
     logger.info(f"Getting partition bounds using SQL:\n{min_max_sql}")
 
     data_df = None
@@ -427,7 +433,7 @@ def diff(
     cols_to_show = (
         ["diff"]
         + [f"l.{unique_key_col}", f"r.{unique_key_col}"]
-        + list(chain(*zip([f"l.{c}" for c in compare_cols], [f"r.{c}" for c in compare_cols])))
+        + list(chain(*zip([f"l.{c}" for c in compare_cols], [f"r.{c}" for c in compare_cols], strict=False)))
     )
     differences = differences.select(*cols_to_show)
     if not include_unchanged_rows:
@@ -555,31 +561,123 @@ def _generate_global_view_sql_strings(tables: List[str], jdbc_url: str) -> List[
     return sql_strings
 
 
-def create_ref_temp_views(spark: SparkSession, create_broker_views: bool = False):
+def create_ref_temp_views(spark: SparkSession | DuckDBSparkSession, create_broker_views: bool = False):
     """Create global temporary Spark reference views that sit atop remote PostgreSQL RDS tables
     Setting create_broker_views to True will create views for all tables list in _BROKER_REF_TABLES
     Note: They will all be listed under global_temp.{table_name}
+
+    Args:
+        spark (SparkSession | DuckDBSparkSession): Spark session
+        create_broker_views (bool): Should the temporary views, using the Broker tables, be created
+            Default: False
     """
 
     # Create USAS temp views
     rds_ref_tables = build_ref_table_name_list()
-    rds_sql_strings = _generate_global_view_sql_strings(
-        tables=rds_ref_tables,
-        jdbc_url=get_usas_jdbc_url(),
-    )
     logger.info(f"Creating the following tables under the global_temp database: {rds_ref_tables}")
-    for sql_statement in rds_sql_strings:
-        spark.sql(sql_statement)
 
-    # Create Broker temp views
-    if create_broker_views:
-        broker_sql_strings = _generate_global_view_sql_strings(
-            tables=_BROKER_REF_TABLES,
-            jdbc_url=get_broker_jdbc_url(),
-        )
-        logger.info(f"Creating the following Broker tables under the global_temp database: {_BROKER_REF_TABLES}")
-        for sql_statement in broker_sql_strings:
-            spark.sql(sql_statement)
+    match isinstance(spark, DuckDBSparkSession):
+        case True:
+            logger.info("Creating ref temp views using DuckDB")
+
+            if IS_LOCAL:
+                spark.sql(
+                    f"""
+                    CREATE OR REPLACE SECRET (
+                        TYPE s3,
+                        PROVIDER config,
+                        KEY_ID '{CONFIG.AWS_ACCESS_KEY}',
+                        SECRET '{CONFIG.AWS_SECRET_KEY}',
+                        ENDPOINT '{CONFIG.AWS_S3_ENDPOINT}',
+                        URL_STYLE 'path',
+                        USE_SSL 'false'
+                    );
+                """
+                )
+            else:
+                # DuckDB will prepend the HTTP or HTTPS so we need to strip it from the AWS endpoint URL
+                endpoint_url = CONFIG.AWS_S3_ENDPOINT.replace("http://", "").replace("https://", "")
+                spark.sql(
+                    f"""
+                    CREATE OR REPLACE SECRET (
+                        TYPE s3,
+                        REGION '{USASPENDING_AWS_REGION}',
+                        ENDPOINT '{endpoint_url}',
+                        PROVIDER 'credential_chain'
+                    );
+                """
+                )
+
+            _download_delta_tables = [
+                {"schema": "rpt", "table_name": "account_balances_download"},
+                {"schema": "rpt", "table_name": "object_class_program_activity_download"},
+            ]
+
+            # The DuckDB Delta extension is needed to interact with DeltaLake tables
+            spark.sql("LOAD delta; CREATE SCHEMA IF NOT EXISTS rpt;")
+            for table in _download_delta_tables:
+                s3_path = (
+                    f"s3://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.DELTA_LAKE_S3_PATH}/{table['schema']}/{table['table_name']}"
+                )
+                try:
+                    spark.sql(
+                        f"""
+                        CREATE OR REPLACE TABLE {table["schema"]}.{table["table_name"]} AS
+                        SELECT * FROM delta_scan('{s3_path}');
+                    """
+                    )
+                    logger.info(f"Successfully created table {table['schema']}.{table['table_name']}")
+                except duckdb.IOException:
+                    logger.exception(f"Failed to create table {table['table_name']}")
+                    raise RuntimeError(f"Failed to create table {table['table_name']}")
+
+            # The DuckDB Postgres extension is needed to connect to the USAS Postgres DB
+            spark.sql("LOAD postgres; CREATE SCHEMA IF NOT EXISTS global_temp;")
+            spark.sql(f"ATTACH '{CONFIG.DATABASE_URL}' AS usas (TYPE postgres, READ_ONLY);")
+
+            for table in rds_ref_tables:
+                try:
+                    spark.sql(f"CREATE OR REPLACE VIEW global_temp.{table} AS SELECT * FROM usas.public.{table};")
+                except duckdb.CatalogException:
+                    logger.exception(f"Failed to create view {table} for {table}")
+                    raise RuntimeError(f"Failed to create view {table} for {table}")
+
+            if create_broker_views:
+                spark.sql(
+                    f"""
+                    ATTACH '{CONFIG.BROKER_DB}' AS broker (TYPE postgres, READ_ONLY);
+                """
+                )
+                logger.info(
+                    f"Creating the following Broker tables under the global_temp database: {_BROKER_REF_TABLES}"
+                )
+                for table in _BROKER_REF_TABLES:
+                    try:
+                        spark.sql(f"CREATE OR REPLACE VIEW global_temp.{table} AS SELECT * FROM broker.public.{table};")
+                    except duckdb.CatalogException:
+                        logger.exception(f"Failed to create view {table} for {table}")
+                        raise RuntimeError(f"Failed to create view {table} for {table}")
+        case False:
+            logger.info("Creating ref temp views using Spark")
+
+            rds_sql_strings = _generate_global_view_sql_strings(
+                tables=rds_ref_tables,
+                jdbc_url=get_usas_jdbc_url(),
+            )
+
+            for sql_statement in rds_sql_strings:
+                spark.sql(sql_statement)
+
+            if create_broker_views:
+                broker_sql_strings = _generate_global_view_sql_strings(
+                    tables=_BROKER_REF_TABLES,
+                    jdbc_url=get_broker_jdbc_url(),
+                )
+                logger.info(
+                    f"Creating the following Broker tables under the global_temp database: {_BROKER_REF_TABLES}"
+                )
+                for sql_statement in broker_sql_strings:
+                    spark.sql(sql_statement)
 
     logger.info("Created the reference views in the global_temp database")
 
@@ -588,7 +686,6 @@ def write_csv_file(
     spark: SparkSession,
     df: DataFrame,
     parts_dir: str,
-    num_partitions: int,
     max_records_per_file=EXCEL_ROW_LIMIT,
     overwrite=True,
     logger=None,
@@ -596,9 +693,9 @@ def write_csv_file(
 ) -> int:
     """Write DataFrame data to CSV file parts.
     Args:
-        spark: passed-in active SparkSession
-        df: the DataFrame wrapping the data source to be dumped to CSV.
-            parts_dir: Path to dir that will contain the outputted parts files from partitions
+        spark: Passed-in active SparkSession
+        df: The DataFrame wrapping the data source to be dumped to CSV.
+        parts_dir: Path to dir that will contain the outputted parts files from partitions
         num_partitions: Indicates the number of partitions to use when writing the Dataframe
         overwrite: Whether to replace the file CSV files if they already exist by that name
         max_records_per_file: Suggestion to Spark of how many records to put in each written CSV file part,
@@ -617,12 +714,13 @@ def write_csv_file(
     start = time.time()
     logger.info(f"Writing source data DataFrame to csv part files for file {parts_dir}...")
     df_record_count = df.count()
+    num_partitions = math.ceil(df_record_count / max_records_per_file) or 1
     df.repartition(num_partitions).write.options(
         # NOTE: this is a suggestion, to be used by Spark if partitions yield multiple files
         maxRecordsPerFile=max_records_per_file,
     ).csv(
         path=parts_dir,
-        header=False,
+        header=True,
         emptyValue="",  # "" creates the output of ,,, for null values to match behavior of previous Postgres job
         escape='"',  # " is used to escape the 'quote' character setting (which defaults to "). Escaped quote = ""
         ignoreLeadingWhiteSpace=False,  # must set for CSV write, as it defaults to true
@@ -636,110 +734,66 @@ def write_csv_file(
     return df_record_count
 
 
-def hadoop_copy_merge(
-    spark: SparkSession,
-    parts_dir: str,
-    header: str,
-    part_merge_group_size: int,
-    logger=None,
-    file_format="csv",
-) -> List[str]:
-    """PySpark impl of Hadoop 2.x copyMerge() (deprecated in Hadoop 3.x)
-    Merges files from a provided input directory and then redivides them
-        into multiple files based on merge group size.
+def write_csv_file_duckdb(
+    df: DuckDBDataFrame,
+    download_file_name: str,
+    temp_csv_directory_path: str = CSV_LOCAL_PATH,
+    max_records_per_file: int = EXCEL_ROW_LIMIT,
+    logger: logging.Logger | None = None,
+    delimiter: str = ",",
+) -> tuple[int, list[str] | list]:
+    """Write DataFrame data to CSV file parts.
     Args:
-        spark: passed-in active SparkSession
-        parts_dir: Path to the dir that contains the input parts files. The parts dir name
-            determines the name of the merged files. Parts_dir cannot have a trailing slash.
-        header: A comma-separated list of field names, to be placed as the first row of every final CSV file.
-            Individual part files must NOT therefore be created with their own header.
-        part_merge_group_size: Final CSV data will be subdivided into numbered files. This indicates how many part files
-            should be combined into a numbered file.
-        logger: The logger to use. If one note provided (e.g. to log to console or stdout) the underlying JVM-based
-            Logger will be extracted from the ``spark`` ``SparkSession`` and used as the logger.
-        file_format: The format of the part files and the format of the final merged file, e.g. "csv"
-
+        df: The DataFrame wrapping the data source to be dumped to CSV.
+        download_file_name: Name of the download being generated.
+        temp_csv_directory_path: Directory that will contain the individual CSV files before zipping.
+            Defaults to CSV_LOCAL_PATH
+        max_records_per_file: Max number of records to put in each written CSV file.
+            Defaults to EXCEL_ROW_LIMIT
+        logger: Logging instance to use.
+            Defaults to None
+        delimiter: Charactor used to separate columns in the CSV
+            Defaults to ","
     Returns:
-        A list of file paths where each element in the list denotes a path to
-            a merged file that was generated during the copy merge.
+        record count of the DataFrame that was used to populate the CSV file(s)
+        list of full path(s) to the temp CSV file(s)
     """
-    overwrite = True
-    hadoop = spark.sparkContext._jvm.org.apache.hadoop
-    conf = spark.sparkContext._jsc.hadoopConfiguration()
+    start = time.time()
+    _pandas_df = df.toPandas()
+    _pandas_df["file_number"] = (_pandas_df.index // max_records_per_file) + 1
+    df_record_count = len(_pandas_df)
+    rel = duckdb.from_df(_pandas_df)
 
-    # Guard against incorrectly formatted argument value
-    parts_dir = parts_dir.rstrip("/")
+    full_file_paths = []
 
-    parts_dir_path = hadoop.fs.Path(parts_dir)
+    logger.info(f"Writing source data DataFrame to csv files for file {download_file_name}")
+    rel.to_csv(
+        file_name=f"{temp_csv_directory_path}{download_file_name}",
+        sep=delimiter,
+        escapechar='"',
+        header=True,
+        partition_by=["file_number"],
+        write_partition_columns=False,  # Don't include the columns that are used for partitioning in the CSV
+        overwrite=True,
+    )
 
-    fs = parts_dir_path.getFileSystem(conf)
-
-    if not fs.exists(parts_dir_path):
-        raise ValueError("Source directory {} does not exist".format(parts_dir))
-
-    file = parts_dir
-    file_path = hadoop.fs.Path(file)
-
-    # Don't delete first if disallowing overwrite.
-    if not overwrite and fs.exists(file_path):
-        raise Py4JError(
-            spark._jvm.org.apache.hadoop.fs.FileAlreadyExistsException(f"{str(file_path)} " f"already exists")
+    # Move and rename the CSV files to match the expected format
+    _partition_dirs = [
+        f"{temp_csv_directory_path}{download_file_name}/{d}"
+        for d in os.listdir(f"{temp_csv_directory_path}{download_file_name}")
+    ]
+    for dir in _partition_dirs:
+        _old_csv_path = f"{dir}/{os.listdir(dir)[0]}"
+        _new_csv_path = (
+            f"{temp_csv_directory_path}{download_file_name}/{download_file_name}_{dir.split('=')[1].zfill(2)}.csv"
         )
-    part_files = []
+        shutil.move(_old_csv_path, _new_csv_path)
+        full_file_paths.append(_new_csv_path)
+        os.rmdir(dir)
 
-    for f in fs.listStatus(parts_dir_path):
-        if f.isFile():
-            # Sometimes part files can be empty, we need to ignore them
-            if f.getLen() == 0:
-                continue
-            file_path = f.getPath()
-            if file_path.getName().startswith("_"):
-                logger.debug(f"Skipping non-part file: {file_path.getName()}")
-                continue
-            logger.debug(f"Including part file: {file_path.getName()}")
-            part_files.append(f.getPath())
-    if not part_files:
-        logger.warning("Source directory is empty with no part files. Attempting creation of file with CSV header only")
-        out_stream = None
-        try:
-            merged_file_path = f"{parts_dir}.{file_format}"
-            out_stream = fs.create(hadoop.fs.Path(merged_file_path), overwrite)
-            out_stream.writeBytes(header + "\n")
-        finally:
-            if out_stream is not None:
-                out_stream.close()
-        return [merged_file_path]
-
-    part_files.sort(key=lambda f: str(f))  # put parts in order by part number for merging
-    paths_to_merged_files = []
-    for parts_file_group in _merge_grouper(part_files, part_merge_group_size):
-        part_suffix = f"_{str(parts_file_group.part).zfill(2)}" if parts_file_group.part else ""
-        partial_merged_file = f"{parts_dir}.partial{part_suffix}"
-        partial_merged_file_path = hadoop.fs.Path(partial_merged_file)
-        merged_file_path = f"{parts_dir}{part_suffix}.{file_format}"
-        paths_to_merged_files.append(merged_file_path)
-        # Make path a hadoop path because we are working with a hadoop file system
-        merged_file_path = hadoop.fs.Path(merged_file_path)
-        if overwrite and fs.exists(merged_file_path):
-            fs.delete(merged_file_path, True)
-        out_stream = None
-        try:
-            if fs.exists(partial_merged_file_path):
-                fs.delete(partial_merged_file_path, True)
-            out_stream = fs.create(partial_merged_file_path)
-            out_stream.writeBytes(header + "\n")
-            _merge_file_parts(fs, out_stream, conf, hadoop, partial_merged_file_path, parts_file_group.file_list)
-        finally:
-            if out_stream is not None:
-                out_stream.close()
-        try:
-            fs.rename(partial_merged_file_path, merged_file_path)
-        except Exception:
-            if fs.exists(partial_merged_file_path):
-                fs.delete(partial_merged_file_path, True)
-            logger.exception("Exception encountered. See logs")
-            raise
-    return paths_to_merged_files
+    logger.info(f"{temp_csv_directory_path}{download_file_name} contains {df_record_count:,} rows of data")
+    logger.info(f"Wrote source data DataFrame to {len(full_file_paths)} CSV files in {(time.time() - start):3f}s")
+    return df_record_count, full_file_paths
 
 
 def _merge_file_parts(fs, out_stream, conf, hadoop, partial_merged_file_path, part_file_list):
@@ -767,3 +821,47 @@ def _merge_grouper(items, group_size):
     group_generator = (items[i : i + group_size] for i in range(0, len(items), group_size))
     for i, group in enumerate(group_generator, start=1):
         yield FileMergeGroup(i, group)
+
+
+def rename_part_files(
+    bucket_name: str,
+    destination_file_name: str,
+    logger: logging.Logger,
+    temp_download_dir_name: str = "temp_download",
+    file_format: str = "csv",
+) -> list[str]:
+    """Renames the part-000.csv files to match the zip filename structure.
+
+    Args:
+        bucket_name: S3 bucket that contains the file to be renamed and will contain the renamed file.
+        destination_file_name: Timestamped download file name. This is used to find the correct folder within the
+            bucket.
+        logger: Logger instance.
+        temp_download_dir_name: Name of the folder to used to store the renamed CSV files before they are downloaded.
+            Defaults to "temp_download".
+        file_format: What file format to save the files in.
+            Defaults to "csv".
+
+    Returns:
+        A list of the full S3 paths for the CSV files.
+    """
+    list_of_part_files = sorted(
+        [
+            file.key
+            for file in retrieve_s3_bucket_object_list(
+                bucket_name, key_prefix=f"{temp_download_dir_name}/{destination_file_name}/part-"
+            )
+            if file.key.endswith(file_format)
+        ]
+    )
+
+    full_file_paths = []
+
+    for index, part_file in enumerate(list_of_part_files):
+        new_key = f"{temp_download_dir_name}/{destination_file_name}_{str(index + 1).zfill(2)}.{file_format}"
+        logger.info(f"Renaming {bucket_name}/{part_file} to {bucket_name}/{new_key}")
+
+        rename_s3_object(bucket_name=bucket_name, old_key=part_file, new_key=new_key)
+        full_file_paths.append(f"s3a://{bucket_name}/{new_key}")
+
+    return full_file_paths

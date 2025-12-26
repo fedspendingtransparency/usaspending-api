@@ -3,8 +3,9 @@ from django.db.models.functions import Coalesce
 from rest_framework.response import Response
 from rest_framework.request import Request
 
-from usaspending_api.accounts.v2.views.federal_account_base import FederalAccountBase, PaginationMixin
+from usaspending_api.accounts.v2.views.federal_account_base import FederalAccountBase
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
+from usaspending_api.common.helpers.pagination_mixin import PaginationMixin
 from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
 
 

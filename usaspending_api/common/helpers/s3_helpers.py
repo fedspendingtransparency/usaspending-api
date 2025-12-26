@@ -1,19 +1,19 @@
-import boto3
 import io
 import logging
 import math
 import time
-
-from boto3.s3.transfer import TransferConfig, S3Transfer
-from botocore.exceptions import ClientError
-from django.conf import settings
 from pathlib import Path
 from typing import Optional
+
+import boto3
+from boto3.s3.transfer import S3Transfer, TransferConfig
 from botocore.client import BaseClient
+from botocore.exceptions import ClientError
+from django.conf import settings
 
 from usaspending_api.config import CONFIG
 
-logger = logging.getLogger("script")
+logger = logging.getLogger(__name__)
 
 
 def _get_boto3(method_name: str, *args, region_name=CONFIG.AWS_REGION, **kwargs):
@@ -46,10 +46,12 @@ def get_s3_bucket(bucket_name: str, region_name: str = CONFIG.AWS_REGION) -> "bo
     return s3.Bucket(bucket_name)
 
 
-def retrieve_s3_bucket_object_list(bucket_name: str) -> list["boto3.resources.factory.s3.ObjectSummary"]:
+def retrieve_s3_bucket_object_list(
+    bucket_name: str, key_prefix: Optional[str] = None
+) -> list["boto3.resources.factory.s3.ObjectSummary"]:
     try:
         bucket = get_s3_bucket(bucket_name=bucket_name)
-        bucket_objects = list(bucket.objects.all())
+        bucket_objects = list(bucket.objects.filter(Prefix=key_prefix) if key_prefix else bucket.objects.all())
     except Exception as e:
         message = (
             f"Problem accessing S3 bucket '{bucket_name}' for deleted records.  Most likely the "
@@ -111,7 +113,9 @@ def download_s3_object(
         s3_client = _get_boto3("client", "s3", region_name=region_name)
     for attempt in range(retry_count + 1):
         try:
+            logger.info(f"Retrieving file from S3. Bucket: {bucket_name} Key: {key}")
             s3_client.download_file(bucket_name, key, file_path)
+            logger.info(f"Saving {key} to: {file_path}")
             return
         except ClientError as e:
             logger.info(
@@ -165,3 +169,21 @@ def delete_s3_objects(
     resp = s3_client.delete_objects(Bucket=bucket_name, Delete={"Objects": object_list})
 
     return len(resp.get("Deleted", []))
+
+
+def rename_s3_object(bucket_name: str, old_key: str, new_key: str, region_name: str = settings.USASPENDING_AWS_REGION):
+    """Rename an existing S3 object by:
+        1) Copying the file (old_key) to a new file with the new name (new_key)
+        2) If the copy was successful, delete the old file (old_key)
+    Args:
+        bucket_name: The name of the bucket where the current object is located.
+        old_key: The current name of the key to be renamed.
+        new_key: The new name of the key.
+        region_name: AWS region to use; defaults to the settings provided region.
+    """
+
+    s3 = _get_boto3("client", "s3", region_name=region_name)
+    response = s3.copy_object(Bucket=bucket_name, CopySource=f"{bucket_name}/{old_key}", Key=new_key)
+
+    if response["ResponseMetadata"]["HTTPStatusCode"] == 200:
+        s3.delete_object(Bucket=bucket_name, Key=old_key)

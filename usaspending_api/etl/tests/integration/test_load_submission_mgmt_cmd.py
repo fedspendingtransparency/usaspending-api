@@ -68,7 +68,7 @@ class TestWithMultipleDatabases(TestCase):
                 "conflict_column": "published_award_financial_id",
             },
         }
-        connection = connections[settings.DATA_BROKER_DB_ALIAS]
+        connection = connections[settings.BROKER_DB_ALIAS]
         with connection.cursor() as cursor:
 
             for broker_table_name, value in broker_objects_to_insert.items():

@@ -51,3 +51,49 @@ def test_databricks_strategy_handle_start(databricks_strategy_client):
 
     spark_job = SparkJobs(DatabricksStrategy())
     assert spark_job.start(job_name="", command_name="", command_options=[""]) == {"job_id": 1, "run_id": 10}
+
+
+@patch("usaspending_api.common.spark.jobs.EmrServerlessStrategy.client")
+def test_emr_serverless_strategy_handle_start(emr_serverless_strategy_client):
+    mock_application = MagicMock()
+    mock_application.application_id = 1
+    mock_application.name = "application_1"
+
+    mock_application_paginator = MagicMock()
+    mock_application_paginator.paginate = MagicMock(
+        return_value=[{"applications": [{"id": mock_application.application_id, "name": mock_application.name}]}]
+    )
+
+    emr_serverless_strategy_client.get_paginator = MagicMock(return_value=mock_application_paginator)
+    emr_serverless_strategy_client.start_job_run = MagicMock()
+
+    strategy = EmrServerlessStrategy()
+    assert strategy._get_application_id("application_1") == 1
+
+    emr_serverless_strategy_client.reset_mock()
+
+    spark_job = SparkJobs(strategy)
+    spark_job.start(
+        job_name="",
+        command_name="",
+        command_options=[""],
+        application_id="Some ID",
+        application_name="application_1",
+        execution_role_arn="Some ARN",
+    )
+    assert emr_serverless_strategy_client.get_paginator.call_count == 0
+    assert emr_serverless_strategy_client.start_job_run.call_count == 1
+
+    emr_serverless_strategy_client.reset_mock()
+
+    spark_job = SparkJobs(strategy)
+    spark_job.start(
+        job_name="",
+        command_name="",
+        command_options=[""],
+        application_id=None,
+        application_name="application_1",
+        execution_role_arn="Some ARN",
+    )
+    assert emr_serverless_strategy_client.get_paginator.call_count == 1
+    assert emr_serverless_strategy_client.start_job_run.call_count == 1

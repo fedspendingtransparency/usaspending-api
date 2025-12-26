@@ -19,14 +19,14 @@ from pyspark.sql import SparkSession
 from django.conf import settings
 from django.core.management import call_command
 from django.db import connection, connections, transaction, models
-
+from usaspending_api.config import CONFIG
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.etl.award_helpers import update_awards
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.management.commands.create_delta_table import (
     TABLE_SPEC,
 )
-from usaspending_api.etl.tests.integration.test_model import TestModel, TEST_TABLE_POSTGRES, TEST_TABLE_SPEC
+from usaspending_api.etl.tests.data.delta_model_for_test import TestModel, TEST_TABLE_POSTGRES, TEST_TABLE_SPEC
 from usaspending_api.recipient.models import RecipientLookup
 from usaspending_api.tests.conftest_spark import create_and_load_all_delta_tables
 from copy import deepcopy
@@ -223,7 +223,7 @@ def verify_delta_table_loaded_to_delta(
             dummy_data = list(dummy_query.all().values())
         elif is_from_broker:
             # model can be None if loading from the Broker
-            broker_connection = connections[settings.DATA_BROKER_DB_ALIAS]
+            broker_connection = connections[settings.BROKER_DB_ALIAS]
             source_broker_name = TABLE_SPEC[delta_table_name]["source_table"]
             with broker_connection.cursor() as cursor:
                 dummy_query = f"SELECT * from {source_broker_name}"
@@ -306,7 +306,7 @@ def verify_delta_table_loaded_from_delta(
     )
 
 
-@pytest.mark.django_db(databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_load_table_to_from_delta_for_recipient_lookup(
     spark, s3_unittest_data_bucket, populate_usas_data_and_recipients_from_broker, hive_unittest_metastore_db
 ):
@@ -436,7 +436,7 @@ def test_load_table_to_delta_for_published_fabs(spark, s3_unittest_data_bucket, 
     verify_delta_table_loaded_to_delta(spark, "published_fabs", s3_unittest_data_bucket)
 
 
-@pytest.mark.django_db(databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_load_table_to_from_delta_for_recipient_profile(
     spark, s3_unittest_data_bucket, populate_usas_data_and_recipients_from_broker, hive_unittest_metastore_db
 ):
@@ -653,7 +653,7 @@ def test_load_table_to_from_delta_for_recipient_profile_testing(
     )
 
 
-@pytest.mark.django_db(databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_load_table_to_from_delta_for_transaction_search(
     spark, s3_unittest_data_bucket, populate_usas_data_and_recipients_from_broker, hive_unittest_metastore_db
 ):
@@ -771,7 +771,7 @@ def test_load_table_to_from_delta_for_transaction_search_alt_db_and_name(
     # )
 
 
-@pytest.mark.django_db(databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_load_table_to_from_delta_for_award_search(
     spark, s3_unittest_data_bucket, populate_usas_data_and_recipients_from_broker, hive_unittest_metastore_db
 ):
@@ -813,7 +813,7 @@ def test_load_table_to_from_delta_for_award_search(
     verify_delta_table_loaded_from_delta(spark, "award_search", jdbc_inserts=True)  # test alt write strategy
 
 
-@pytest.mark.django_db(databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_incremental_load_table_to_delta_for_award_search(
     spark, s3_unittest_data_bucket, populate_usas_data_and_recipients_from_broker, hive_unittest_metastore_db
 ):
@@ -893,7 +893,7 @@ def test_incremental_load_table_to_delta_for_award_search(
     pd.testing.assert_frame_equal(result, expected)
 
 
-@pytest.mark.django_db(databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_incremental_load_table_to_delta_for_transaction_search(
     spark, s3_unittest_data_bucket, populate_usas_data_and_recipients_from_broker, hive_unittest_metastore_db
 ):
@@ -973,8 +973,10 @@ def test_incremental_load_table_to_delta_for_transaction_search(
     pd.testing.assert_frame_equal(result, expected)
 
 
-@pytest.mark.django_db(databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
-def test_load_table_to_delta_for_sam_recipient(spark, s3_unittest_data_bucket, populate_broker_data):
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
+def test_load_table_to_delta_for_sam_recipient(
+    spark, s3_unittest_data_bucket, populate_broker_data, hive_unittest_metastore_db
+):
     expected_data = [
         {
             "awardee_or_recipient_uniqu": "812918241",
@@ -1004,10 +1006,10 @@ def test_load_table_to_delta_for_sam_recipient(spark, s3_unittest_data_bucket, p
 
 
 @pytest.mark.skipif(
-    settings.DATA_BROKER_DB_ALIAS not in settings.DATABASES,
+    settings.BROKER_DB_ALIAS not in settings.DATABASES,
     reason="'data_broker' database not configured in django settings.DATABASES.",
 )
-@pytest.mark.django_db(databases=[settings.DATA_BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_load_table_to_delta_for_summary_state_view(
     spark, s3_unittest_data_bucket, populate_usas_data_and_recipients_from_broker, hive_unittest_metastore_db
 ):
@@ -1043,3 +1045,217 @@ def test_load_table_to_delta_for_summary_state_view(
     )
     # Lastly, check using verify_delta_table_loaded_from_delta function which will run the load_table_from_delta command
     verify_delta_table_loaded_from_delta(spark, "summary_state_view", spark_s3_bucket=s3_unittest_data_bucket)
+
+
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
+def test_load_object_class_program_activity_class(
+    spark,
+    s3_unittest_data_bucket,
+    hive_unittest_metastore_db,
+    populate_usas_data_and_recipients_from_broker,
+    monkeypatch,
+):
+    call_command(
+        "create_delta_table",
+        "--destination-table=object_class_program_activity_download",
+        f"--spark-s3-bucket={s3_unittest_data_bucket}",
+    )
+    monkeypatch.setattr(
+        f"usaspending_api.download.delta_downloads.object_class_program_activity.ObjectClassProgramActivityMixin.download_table",
+        spark.read.format("delta").load(
+            f"s3a://{s3_unittest_data_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/rpt/object_class_program_activity_download"
+        ),
+    )
+
+    verify_delta_table_loaded_to_delta(
+        spark,
+        "object_class_program_activity_download",
+        s3_unittest_data_bucket,
+        load_command="load_query_to_delta",
+        dummy_data=[],
+    )
+
+
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
+def test_load_award_financial_download(
+    spark,
+    s3_unittest_data_bucket,
+    populate_usas_data_and_recipients_from_broker,
+    hive_unittest_metastore_db,
+    monkeypatch,
+):
+
+    load_delta_table_from_postgres("published_fabs", s3_unittest_data_bucket)
+    load_delta_table_from_postgres("detached_award_procurement", s3_unittest_data_bucket)
+
+    tables_to_load = [
+        "awards",
+        "financial_accounts_by_awards",
+        "recipient_lookup",
+        "recipient_profile",
+        "sam_recipient",
+        "transaction_current_cd_lookup",
+        "transaction_fabs",
+        "transaction_fpds",
+        "transaction_normalized",
+        "zips",
+    ]
+
+    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
+    verify_delta_table_loaded_to_delta(
+        spark, "award_search", s3_unittest_data_bucket, load_command="load_query_to_delta"
+    )
+    verify_delta_table_loaded_to_delta(
+        spark,
+        "transaction_search",
+        s3_unittest_data_bucket,
+        load_command="load_query_to_delta",
+        ignore_fields=["award_update_date", "etl_update_date"],
+    )
+
+    tables_to_load = [
+        "award_search",
+        "transaction_search",
+    ]
+    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
+
+    call_command(
+        "create_delta_table",
+        "--destination-table=award_financial_download",
+        f"--spark-s3-bucket={s3_unittest_data_bucket}",
+    )
+    monkeypatch.setattr(
+        f"usaspending_api.download.delta_downloads.award_financial.AwardFinancialMixin.download_table",
+        spark.read.format("delta").load(
+            f"s3a://{s3_unittest_data_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/rpt/award_financial_download"
+        ),
+    )
+
+    expected_data = [
+        {
+            "federal_owning_agency_name": "TEST AGENCY 1",
+            "agency_identifier_name": None,
+            "allocation_transfer_agency_identifier_name": None,
+            "program_activity_code": "0001",
+            "program_activity_name": "OFFICE OF THE SECRETARY",
+            "object_class_code": None,
+            "object_class_name": None,
+            "direct_or_reimbursable_funding_source": None,
+            "disaster_emergency_fund_code": "L",
+            "award_unique_key": "UNIQUE AWARD KEY B",
+            "award_id_piid": None,
+            "parent_award_id_piid": None,
+            "award_id_fain": None,
+            "award_id_uri": None,
+            "period_of_performance_start_date": None,
+            "period_of_performance_current_end_date": None,
+            "ordering_period_end_date": None,
+            "idv_type_code": None,
+            "idv_type": None,
+            "prime_award_base_transaction_description": None,
+            "awarding_agency_code": None,
+            "awarding_agency_name": "TEST AGENCY 2",
+            "awarding_subagency_code": None,
+            "awarding_subagency_name": "TEST SUBTIER 2",
+            "awarding_office_code": None,
+            "awarding_office_name": None,
+            "funding_agency_code": None,
+            "funding_agency_name": "TEST AGENCY 1",
+            "funding_sub_agency_code": None,
+            "funding_sub_agency_name": "TEST SUBTIER 1",
+            "funding_office_code": None,
+            "funding_office_name": None,
+            "recipient_uei": "FABSUEI12345",
+            "recipient_duns": "FABSDUNS12345",
+            "recipient_name": "FABS RECIPIENT 12345",
+            "recipient_name_raw": "FABS RECIPIENT 12345",
+            "recipient_parent_uei": "PARENTUEI12345",
+            "recipient_parent_duns": "PARENTUEI12345",
+            "recipient_parent_name": "PARENT RECIPIENT 12345",
+            "recipient_parent_name_raw": "PARENT RECIPIENT 12345",
+            "recipient_country": "USA",
+            "recipient_state": "VA",
+            "recipient_county": "COUNTY NAME",
+            "recipient_city": None,
+            "primary_place_of_performance_country": "UNITED STATES",
+            "primary_place_of_performance_state": "Virginia",
+            "primary_place_of_performance_county": "COUNTY NAME",
+            "primary_place_of_performance_zip_code": None,
+            "cfda_number": "12.456",
+            "cfda_title": None,
+            "product_or_service_code": None,
+            "product_or_service_code_description": None,
+            "naics_code": None,
+            "naics_description": None,
+            "national_interest_action_code": None,
+            "national_interest_action": None,
+            "reporting_agency_name": None,
+            "submission_period": None,
+            "allocation_transfer_agency_identifier_code": None,
+            "transaction_obligated_amount": 1.00,
+            "gross_outlay_amount_fyb_to_period_end": 1.00,
+            "ussgl487200_downward_adj_prior_year_prepaid_undeliv_order_oblig": 0.00,
+            "ussgl497200_downward_adj_of_prior_year_paid_deliv_orders_oblig": 0.00,
+            "award_base_action_date_fiscal_year": 2020,
+            "award_latest_action_date_fiscal_year": 2020,
+            "award_type_code": "07",
+            "prime_award_summary_recipient_cd_current": None,
+            "recipient_zip_code": None,
+            "prime_award_summary_place_of_performance_cd_current": None,
+            "last_modified_date": None,
+            "reporting_fiscal_period": None,
+            "reporting_fiscal_quarter": None,
+            "reporting_fiscal_year": None,
+            "quarter_format_flag": True,
+        }
+    ]
+
+    verify_delta_table_loaded_to_delta(
+        spark,
+        "award_financial_download",
+        s3_unittest_data_bucket,
+        load_command="load_query_to_delta",
+        dummy_data=expected_data,
+        ignore_fields=[
+            "financial_accounts_by_awards_id",
+            "treasury_owning_agency_name",
+            "federal_account_symbol",
+            "federal_account_name",
+            "disaster_emergency_fund_name",
+            "agency_identifier_code",
+            "award_base_action_date",
+            "award_latest_action_date",
+            "prime_award_summary_place_of_performance_cd_original",
+            "usaspending_permalink",
+            "prime_award_summary_recipient_cd_original",
+        ],
+    )
+
+
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
+def test_load_account_balances_download(
+    spark,
+    s3_unittest_data_bucket,
+    hive_unittest_metastore_db,
+    monkeypatch,
+    populate_usas_data_and_recipients_from_broker,
+):
+    call_command(
+        "create_delta_table",
+        "--destination-table=account_balances_download",
+        f"--spark-s3-bucket={s3_unittest_data_bucket}",
+    )
+    monkeypatch.setattr(
+        f"usaspending_api.download.delta_downloads.account_balances.AccountBalancesMixin.download_table",
+        spark.read.format("delta").load(
+            f"s3a://{s3_unittest_data_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/rpt/account_balances_download"
+        ),
+    )
+
+    verify_delta_table_loaded_to_delta(
+        spark,
+        "account_balances_download",
+        s3_unittest_data_bucket,
+        load_command="load_query_to_delta",
+        dummy_data=[],
+    )

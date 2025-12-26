@@ -1,8 +1,9 @@
 from django.db.models import DecimalField, F, Func, IntegerField, OuterRef, Q, Subquery, Value
 from rest_framework.response import Response
 
-from usaspending_api.agency.v2.views.agency_base import AgencyBase, PaginationMixin
+from usaspending_api.agency.v2.views.agency_base import AgencyBase
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
+from usaspending_api.common.helpers.pagination_mixin import PaginationMixin
 from usaspending_api.references.models import Agency, ToptierAgencyPublishedDABSView
 from usaspending_api.reporting.models import ReportingAgencyMissingTas, ReportingAgencyOverview, ReportingAgencyTas
 from usaspending_api.submissions.models import SubmissionAttributes

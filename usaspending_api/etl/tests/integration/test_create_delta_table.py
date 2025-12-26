@@ -111,3 +111,15 @@ def test_create_delta_table_for_object_class_program_activity_download(
     spark, s3_unittest_data_bucket, hive_unittest_metastore_db
 ):
     _verify_delta_table_creation(spark, "object_class_program_activity_download", s3_unittest_data_bucket)
+
+
+def test_create_delta_table_for_award_id_lookup(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+    _verify_delta_table_creation(spark, "award_id_lookup", s3_unittest_data_bucket)
+
+
+def test_create_delta_table_for_transaction_id_lookup(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+    _verify_delta_table_creation(spark, "transaction_id_lookup", s3_unittest_data_bucket)
+
+
+def test_create_delta_table_for_transaction_download(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+    _verify_delta_table_creation(spark, "transaction_download", s3_unittest_data_bucket)
