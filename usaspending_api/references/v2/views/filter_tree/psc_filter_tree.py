@@ -253,14 +253,50 @@ class PSCFilterTree(FilterTree):
 
     def get_count(self, tiered_keys: list, id) -> int:
         if len(tiered_keys) == 0:
-            filters = [Q(code__iregex=PSC_GROUPS.get(id, {}).get("count_pattern") or "(?!)")]
-            return PSC.objects.filter(*filters).count()
+            if id == "Research and Development":
+                return (
+                    PSC.objects.filter(Q(code__startswith="A"))
+                    .annotate(code_prefix=Substr("code", 1, 2))
+                    .values("code_prefix")
+                    .distinct()
+                    .count()
+                )
+            elif id == "Service":
+                return (
+                    PSC.objects.filter(Q(code__regex=r"^[B-Z]$"))
+                    .annotate(code_prefix=Substr("code", 1, 1))
+                    .values("code_prefix")
+                    .distinct()
+                    .count()
+                )
+            elif id == "Product":
+                return (
+                    PSC.objects.filter(Q(code__regex=r"^\d\d$"))
+                    .annotate(code_prefix=Substr("code", 1, 2))
+                    .values("code_prefix")
+                    .distinct()
+                    .count()
+                )
         else:
-            new_length = len(id) + 1
-            filters = [Q(code__startswith=id), ~Q(code__endswith=0)]
+            if id.startswith("A"):
+                return self.get_research_and_dev_count(id)
+            elif len(id) == 1:
+                new_length = 2
+            else:
+                new_length = 4
             all_codes = (
-                PSC.objects.filter(*filters)
+                PSC.objects.filter(code__startswith=id)
                 .annotate(code_prefix=Substr("code", 1, new_length), code_len=Length("code"))
                 .filter(code_len__gte=new_length)
             )
             return all_codes.values("code_prefix").distinct().count()
+
+    def get_research_and_dev_count(self, id):
+        new_length = len(id) + 1
+        filters = [Q(code__startswith=id), ~Q(code__endswith=0)]
+        all_codes = (
+            PSC.objects.filter(*filters)
+            .annotate(code_prefix=Substr("code", 1, new_length), code_len=Length("code"))
+            .filter(code_len__gte=new_length)
+        )
+        return all_codes.values("code_prefix").distinct().count()
