@@ -53,7 +53,7 @@ class Command(BaseCommand):
             type=int,
             required=False,
             default=20,
-            help="Maximum number of result records to display from Pyspark dataframe."
+            help="Maximum number of result records to display from Pyspark dataframe.",
         )
 
         parser.add_argument(
@@ -79,20 +79,20 @@ class Command(BaseCommand):
         if not self.spark:
             spark_created_by_command = True
             self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)  # type: SparkSession
-        
+
         # Resolve Parameters
-        sql_input = options.get('sql')
-        file_path = options.get('file')
-        create_temp_views = options.get('create_temp_views')
-        result_limit = options.get('result_limit')
-        dry_run = options.get('dry_run')
+        sql_input = options.get("sql")
+        file_path = options.get("file")
+        create_temp_views = options.get("create_temp_views")
+        result_limit = options.get("result_limit")
+        dry_run = options.get("dry_run")
 
         if create_temp_views:
             create_ref_temp_views(self.spark, create_broker_views=True)
-        
+
         # Prepare SQL Statements from either provided string or file
         if file_path and sql_input:
-            raise CommandError('Cannot use both --sql and --file. Choose one.')
+            raise CommandError("Cannot use both --sql and --file. Choose one.")
         elif file_path:
             with RetrieveFileFromUri(file_path).get_file_object(text=True) as f:
                 file_contents = f.read()
@@ -100,24 +100,24 @@ class Command(BaseCommand):
         elif sql_input:
             sql_statements = [sql_input.strip()]
         else:
-            raise CommandError('Either --sql or --file must be provided')
-        
-        logger.info(f'Found {len(sql_statements)} SQL statement(s)')
+            raise CommandError("Either --sql or --file must be provided")
+
+        logger.info(f"Found {len(sql_statements)} SQL statement(s)")
 
         # Execute SQL Statements
         for idx, statement in enumerate(sql_statements, 1):
-            logger.info(f'--- Statement {idx} ---')
+            logger.info(f"--- Statement {idx} ---")
             logger.info(statement)
 
             if dry_run:
-                logger.info('[DRY RUN - Not executed]')
+                logger.info("[DRY RUN - Not executed]")
             else:
                 try:
                     df = self.spark.sql(statement)
                     df.show(result_limit)
                     logger.info("Executed successfully")
                 except Exception as e:
-                    logger.info(f'Error: {e}')
+                    logger.info(f"Error: {e}")
 
         if spark_created_by_command:
             self.spark.stop()
