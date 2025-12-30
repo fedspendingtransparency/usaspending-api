@@ -101,7 +101,7 @@ def rnd_tier_two_special():
         "id": "AU",
         "description": "tier two R&D",
         "ancestors": ["Research and Development"],
-        "count": 1,
+        "count": 2,
         "children": None,
     }
 
@@ -145,7 +145,7 @@ def product_other_tier_three(parent):
 
 
 def service_tier_two():
-    return {"id": "B", "description": "tier two Service", "ancestors": ["Service"], "count": 1, "children": None}
+    return {"id": "B", "description": "tier two Service", "ancestors": ["Service"], "count": 2, "children": None}
 
 
 def service_tier_three():
