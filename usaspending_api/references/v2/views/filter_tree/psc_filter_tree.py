@@ -1,7 +1,7 @@
 import re
 
 from django.db.models import Q
-from django.db.models.functions import Substr, Length
+from django.db.models.functions import Substr
 from string import ascii_uppercase, digits
 from usaspending_api.references.models import PSC
 from usaspending_api.references.v2.views.filter_tree.filter_tree import FilterTree
@@ -169,7 +169,7 @@ class PSCFilterTree(FilterTree):
                     "id": code,
                     "ancestors": ancestors,
                     "description": object.description,
-                    "count": self.get_count([object.code], code),
+                    "count": self.get_count(code),
                     "children": None,
                 }
             )
@@ -203,7 +203,7 @@ class PSCFilterTree(FilterTree):
                     "id": object.code,
                     "ancestors": ancestors,
                     "description": object.description,
-                    "count": self.get_count([object.code], object.code),
+                    "count": self.get_count(code),
                     "children": None,
                 }
             )
@@ -213,7 +213,7 @@ class PSCFilterTree(FilterTree):
         retval = []
         if not filter_string and not tier1_nodes:
             return [
-                {"id": key, "ancestors": [], "description": "", "count": self.get_count([], key), "children": None}
+                {"id": key, "ancestors": [], "description": "", "count": self.get_count(key), "children": None}
                 for key in PSC_GROUPS.keys()
             ]
         if tier1_nodes:
@@ -225,7 +225,7 @@ class PSCFilterTree(FilterTree):
                             "id": key,
                             "ancestors": [],
                             "description": "",
-                            "count": self.get_count([], key),
+                            "count": self.get_count(key),
                             "children": None,
                         }
                     )
@@ -251,66 +251,25 @@ class PSCFilterTree(FilterTree):
                     return False
         return True
 
-    def get_count(self, tiered_keys: list, id) -> int | None:
-        if len(tiered_keys) == 0:
-            if id == "Research and Development":
-                return self.get_research_and_dev_count("A")
-            elif id == "Service":
-                return self.get_service_count(r"^[B-Z]", is_regex=True)
-            elif id == "Product":
-                return self.get_product_count(r"^\d\d", is_regex=True)
-        else:
-            if id.startswith("A"):
-                return self.get_research_and_dev_count(id)
-            elif re.search(r"^[B-Z]", id):
-                return self.get_service_count(id)
-            elif re.search(r"^\d\d", id):
-                return self.get_product_count(id)
+    def get_count(self, id: str) -> int:
+        if id == "Research and Development":
+            return self.get_tier_count(4, r"^[A]", is_regex=True)
+        elif id == "Service":
+            return self.get_tier_count(4, r"^[B-Z]", is_regex=True)
+        elif id == "Product":
+            return self.get_tier_count(4, r"^\d\d", is_regex=True)
+        elif id.startswith("A") and len(id) == 3:
+            # research and development data looks like AA10 instead of AA1
+            return self.get_tier_count(4, id, exclude_zero=True)
+        return self.get_tier_count(4, id)
 
-    def get_tier_count(self, tier_length, id, is_regex=False, is_r_and_d=False) -> int:
+    @staticmethod
+    def get_tier_count(tier_length: int, id: str, is_regex=False, exclude_zero=False) -> int:
         if is_regex:
             filters = [Q(code__regex=id)]
         else:
-            filters = [Q(code__startswith=id)]
-        if is_r_and_d:
+            filters = [Q(code__startswith=id), ~Q(code=id)]
+        if exclude_zero:
             filters.append(~Q(code__endswith=0))
-        all_codes = (
-            PSC.objects.filter(*filters)
-            .annotate(code_prefix=Substr("code", 1, tier_length), code_len=Length("code"))
-            .filter(code_len__gte=tier_length)
-        )
+        all_codes = PSC.objects.filter(*filters).annotate(code_prefix=Substr("code", 1, tier_length))
         return all_codes.values("code_prefix").distinct().count()
-
-    def get_research_and_dev_count(self, id) -> int:
-        # Will always need the lowest tier count
-        count = self.get_tier_count(4, id, is_r_and_d=True)
-        if len(id) == 3:  # ex: AA1
-            return count
-
-        count += self.get_tier_count(3, id, is_r_and_d=True)
-        if len(id) == 2:  # ex: AA
-            return count
-
-        count += self.get_tier_count(2, id, is_r_and_d=True)  # id = Research and Development
-        return count
-
-    def get_service_count(self, id, is_regex=False) -> int:
-        count = self.get_tier_count(4, id, is_regex)
-        if len(id) == 2:  # ex: B5
-            return count
-
-        count += self.get_tier_count(2, id, is_regex)
-
-        if len(id) == 1:  # ex: B
-            return count
-
-        count += self.get_tier_count(1, id, is_regex)  # id = Service
-        return count
-
-    def get_product_count(self, id, is_regex=False) -> int:
-        count = self.get_tier_count(4, id, is_regex)
-        if len(id) == 2:  # ex: 10
-            return count
-
-        count += self.get_tier_count(2, id, is_regex)  # id = Product
-        return count
