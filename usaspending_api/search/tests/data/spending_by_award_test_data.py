@@ -115,6 +115,7 @@ def spending_by_award_test_data():
         spending_by_defc=[{"defc": "L", "outlay": 100, "obligation": 100}],
         tas_paths=["aid=097main=4930"],
         tas_components=["aid=097main=4930ata=sub=bpoa=epoa=a="],
+        type_description="type description 1",
     )
     award_2 = baker.make(
         "search.AwardSearch",
@@ -140,6 +141,7 @@ def spending_by_award_test_data():
         naics_code="112244",
         description="the description for a test",
         naics_description="the description for a test",
+        type_description="type description 2",
     )
     award_3 = baker.make(
         "search.AwardSearch",
