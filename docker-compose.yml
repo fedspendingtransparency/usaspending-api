@@ -395,7 +395,7 @@ services:
     command: --help
     volumes:
       - type: bind
-        source: .
+        source: ${PROJECT_DIRECTORY:-.}
         target: /project
         read_only: false
       # NOTE: The hive metastore_db Derby database folder is expected to be configured to show up as a subfolder of the spark-warehouse dir
