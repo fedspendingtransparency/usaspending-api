@@ -361,3 +361,47 @@ def get_parent_partitioned_table(table, cursor):
     )
     parent_partition_results = cursor.fetchone()
     return parent_partition_results[0] if parent_partition_results else None
+
+
+def split_sql_statements(sql_content):
+    """Split SQL content on semicolons while respecting string literals."""
+    statements = []
+    current_statement = []
+    in_single_quote = False
+    in_double_quote = False
+    escaped = False
+
+    for char in sql_content:
+
+        # This escape logic is intended to bypass quotes being used to indicate literals
+        if escaped:
+            current_statement.append(char)
+            escaped = False
+            continue
+        if char == "\\":
+            escaped = True
+            current_statement.append(char)
+            continue
+
+        # Logic to determine if character is in a string literal. When in this state,
+        # semicolons will not split the SQL
+        if char == "'" and not in_double_quote:
+            in_single_quote = not in_single_quote
+        elif char == '"' and not in_single_quote:
+            in_double_quote = not in_double_quote
+
+        # Split SQL statement on semicolon unless in string literal
+        if char == ";" and not in_single_quote and not in_double_quote:
+            statement = "".join(current_statement).strip()
+            if statement:
+                statements.append(statement)
+            current_statement = []
+        else:
+            current_statement.append(char)
+
+    # Create final statement with remaining characters after final semicolon
+    final_statement = "".join(current_statement).strip()
+    if final_statement:
+        statements.append(final_statement)
+
+    return statements

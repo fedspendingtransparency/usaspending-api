@@ -4,6 +4,7 @@ from django.core.management.base import BaseCommand, CommandError
 from pyspark.sql import SparkSession
 
 from usaspending_api.common.etl.spark import create_ref_temp_views
+from usaspending_api.common.helpers.sql_helpers import split_sql_statements
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
@@ -96,7 +97,7 @@ class Command(BaseCommand):
         elif file_path:
             with RetrieveFileFromUri(file_path).get_file_object(text=True) as f:
                 file_contents = f.read()
-            sql_statements = [query.strip() for query in file_contents.split(";") if query.strip()]
+            sql_statements = [query.strip() for query in split_sql_statements(file_contents) if query.strip()]
         elif sql_input:
             sql_statements = [sql_input.strip()]
         else:
