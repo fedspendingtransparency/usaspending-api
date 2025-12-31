@@ -203,7 +203,7 @@ class PSCFilterTree(FilterTree):
                     "id": object.code,
                     "ancestors": ancestors,
                     "description": object.description,
-                    "count": self.get_count(code),
+                    "count": self.get_count(object.code),
                     "children": None,
                 }
             )
