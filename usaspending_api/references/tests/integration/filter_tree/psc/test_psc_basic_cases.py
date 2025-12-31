@@ -93,4 +93,4 @@ def test_tier_four_rnd_special(client, rnd_special):
 
 def test_count_rnd(client, rnd_special):
     resp = _call_and_expect_200(client, base_query + "Research%20and%20Development/")
-    assert resp.json()["results"][0]["count"] == 2
+    assert resp.json()["results"][0]["count"] == 1

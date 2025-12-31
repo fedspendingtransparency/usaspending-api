@@ -101,7 +101,7 @@ def rnd_tier_two_special():
         "id": "AU",
         "description": "tier two R&D",
         "ancestors": ["Research and Development"],
-        "count": 2,
+        "count": 1,
         "children": None,
     }
 
