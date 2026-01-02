@@ -16,10 +16,7 @@ logger = logging.getLogger(__name__)
 
 class Command(BaseCommand):
     help = """
-    This command executes a Spark SQL commands from two possible sources:
-        - SQL String - provide exactly one SQL String
-        - File - Either a local, s3, or http file containing one or more SQL strings separated by
-          semicolons
+    This command executes Spark SQL commands from either a file or a string.
     The resulting dataframe will be printed to standard out using the df.show() method
     """
 
@@ -32,7 +29,7 @@ class Command(BaseCommand):
             "--sql",
             type=str,
             required=False,
-            help="Single Spark SQL statement to execute",
+            help="A string containing semicolon-separated Spark SQL statements.",
         )
 
         parser.add_argument(
@@ -65,6 +62,13 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        # Resolve Parameters
+        sql_input = options.get("sql")
+        file_path = options.get("file")
+        create_temp_views = options.get("create_temp_views")
+        result_limit = options.get("result_limit")
+        dry_run = options.get("dry_run")
+
         extra_conf = {
             # Config for Delta Lake tables and SQL. Need these to keep Dela table metadata in the metastore
             "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension",
@@ -75,35 +79,31 @@ class Command(BaseCommand):
             "spark.sql.jsonGenerator.ignoreNullFields": "false",  # keep nulls in our json
         }
 
+        # Prepare SQL Statements from either provided string or file
+        if file_path and sql_input:
+            raise CommandError("Cannot use both --sql and --file. Choose one.")
+        elif file_path:
+            with RetrieveFileFromUri(file_path).get_file_object(text=True) as f:
+                sql_statement_string = f.read()
+        elif sql_input:
+            sql_statement_string = sql_input
+        else:
+            raise CommandError("Either --sql or --file must be provided")
+
+        sql_statements = [query.strip() for query in split_sql_statements(sql_statement_string) if query.strip()]
+
+        logger.info(f"Found {len(sql_statements)} SQL statement(s)")
+
+        # Prepare Spark Session after variables parameters have been resolved and
+        # SQL statements have been identified
         self.spark = get_active_spark_session()
         spark_created_by_command = False
         if not self.spark:
             spark_created_by_command = True
             self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)  # type: SparkSession
 
-        # Resolve Parameters
-        sql_input = options.get("sql")
-        file_path = options.get("file")
-        create_temp_views = options.get("create_temp_views")
-        result_limit = options.get("result_limit")
-        dry_run = options.get("dry_run")
-
         if create_temp_views:
             create_ref_temp_views(self.spark, create_broker_views=True)
-
-        # Prepare SQL Statements from either provided string or file
-        if file_path and sql_input:
-            raise CommandError("Cannot use both --sql and --file. Choose one.")
-        elif file_path:
-            with RetrieveFileFromUri(file_path).get_file_object(text=True) as f:
-                file_contents = f.read()
-            sql_statements = [query.strip() for query in split_sql_statements(file_contents) if query.strip()]
-        elif sql_input:
-            sql_statements = [sql_input.strip()]
-        else:
-            raise CommandError("Either --sql or --file must be provided")
-
-        logger.info(f"Found {len(sql_statements)} SQL statement(s)")
 
         # Execute SQL Statements
         for idx, statement in enumerate(sql_statements, 1):
