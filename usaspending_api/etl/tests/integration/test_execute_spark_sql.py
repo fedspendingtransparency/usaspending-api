@@ -52,6 +52,14 @@ def test_sql_functionality(
         call_command("execute_spark_sql", "--file", test_file_path)
         mock_logger.info.assert_any_call("Found 0 SQL statement(s)")
 
+    # Test SQL executes
+    mock_spark = MagicMock()
+    with patch(
+        "usaspending_api.etl.management.commands.execute_spark_sql.get_active_spark_session", return_value=mock_spark
+    ):
+        call_command("execute_spark_sql", "--sql", "SELECT 1;")
+        mock_spark.sql.assert_called()
+
     # Test --dry-run does not execute SQL
     mock_spark = MagicMock()
     with patch(
