@@ -169,6 +169,7 @@ class EmrServerlessStrategy(_AbstractStrategy):
                     "entryPointArguments": command_options,
                 }
             },
+            retryPolicy={"maxAttempts": 2},
         )
         return response
 
