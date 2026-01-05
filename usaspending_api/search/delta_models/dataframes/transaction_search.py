@@ -75,7 +75,7 @@ class TransactionSearch(AbstractSearch):
         return [
             sf.to_date(self.transaction_normalized.action_date).alias("action_date"),
             sf.add_months(sf.to_date(self.transaction_normalized.action_date), 3).alias("fiscal_action_date"),
-            sf.to_date(self.transaction_normalized.last_modified_date).alias("last_modified_date"),
+            self.transaction_normalized.last_modified_date,
             self.transaction_normalized.fiscal_year,
             self.awards.certified_date.alias("award_certified_date"),
             sf.year(sf.add_months(sf.to_date(self.awards.certified_date), 3)).alias("award_fiscal_year"),
@@ -94,7 +94,7 @@ class TransactionSearch(AbstractSearch):
             ),
             sf.coalesce(
                 sf.to_date(self.transaction_fabs.created_at),
-                sf.to_date(self.transaction_fpds.initial_report_date),
+                self.transaction_fpds.initial_report_date,
             ).alias("initial_report_date"),
         ]
 
