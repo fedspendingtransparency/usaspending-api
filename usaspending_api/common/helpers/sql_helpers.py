@@ -363,7 +363,7 @@ def get_parent_partitioned_table(table, cursor):
     return parent_partition_results[0] if parent_partition_results else None
 
 
-def split_sql_statements(sql_content):
+def split_sql_statements(sql_content: str): -> list[str]
     """Split SQL content on semicolons while respecting string literals."""
     statements = []
     current_statement = []
