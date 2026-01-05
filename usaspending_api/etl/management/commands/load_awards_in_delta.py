@@ -112,13 +112,13 @@ class Command(BaseCommand):
             self.spark.stop()
 
     def delete_records_sql(self):
-        id_col = "id"
+        id_col = "generated_unique_award_id"
         # TODO could do an outer join here to find awards that do not join to transaction fpds or transaction fabs
         subquery = """
-            SELECT awards.id AS id_to_remove
+            SELECT awards.generated_unique_award_id AS id_to_remove
             FROM int.awards
             LEFT JOIN int.transaction_normalized on awards.transaction_unique_id = transaction_normalized.transaction_unique_id
-            WHERE awards.id IS NOT NULL AND transaction_normalized.transaction_unique_id IS NULL
+            WHERE awards.generated_unique_award_id IS NOT NULL AND transaction_normalized.transaction_unique_id IS NULL
         """
 
         sql = f"""
@@ -135,7 +135,7 @@ class Command(BaseCommand):
     def update_awards(self):
         load_datetime = datetime.now(timezone.utc)
 
-        set_insert_special_columns = ["total_subaward_amount", "create_date", "update_date", "id"]
+        set_insert_special_columns = ["total_subaward_amount", "create_date", "update_date"]
         subquery_ignored_columns = set_insert_special_columns + ["subaward_count"]
 
         # Use a UNION in award_ids_to_update, not UNION ALL because there could be duplicates among the award ids
@@ -146,7 +146,7 @@ class Command(BaseCommand):
                 SELECT * FROM (
                     SELECT
                         tn.unique_award_key,
-                        tn.id AS earliest_transaction_id,
+                        tn.transaction_unique_id AS earliest_transaction_id,
                         tn.action_date AS date_signed,
                         tn.description,
                         tn.period_of_performance_start_date,
@@ -189,7 +189,7 @@ class Command(BaseCommand):
                         tn.unique_award_key AS generated_unique_award_id,
                         tn.is_fpds,
                         tn.last_modified_date,
-                        tn.id AS latest_transaction_id,
+                        tn.transaction_unique_id AS latest_transaction_id,
                         tn.period_of_performance_current_end_date,
                         tn.transaction_unique_id,
                         tn.type,

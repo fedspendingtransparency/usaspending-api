@@ -128,7 +128,6 @@ TRANSACTION_FABS_COLUMN_INFO = [
     TransactionColumn("sai_number", "sai_number", "STRING"),
     TransactionColumn("submission_id", "submission_id", "INTEGER"),
     TransactionColumn("total_funding_amount", "total_funding_amount", "STRING"),
-    TransactionColumn("transaction_id", None, "LONG NOT NULL"),
     TransactionColumn("uei", "uei", "STRING"),
     TransactionColumn("ultimate_parent_legal_enti", "ultimate_parent_legal_enti", "STRING"),
     TransactionColumn("ultimate_parent_uei", "ultimate_parent_uei", "STRING"),

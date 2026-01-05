@@ -87,7 +87,6 @@ class Command(BaseCommand):
                 raise Exception(f"Table: int.transaction_fpds does not exist.")
 
             logger.info(f"Running delete SQL for transaction_fpds ETL")
-            logger.info(f"delete records sql statement: {self.delete_records_sql()}")
             self.spark.sql(self.delete_records_sql())
 
             last_etl_date = None  # get_last_load_date(self.etl_level)
@@ -259,8 +258,7 @@ class Command(BaseCommand):
         # before inserting into overall sql statement.
         select_columns_str = ",\n    ".join(select_columns)
         sql = f"""
-            SELECT
-                row_number() over (order by detached_award_proc_unique) as transaction_id,
+            SELECT                
                 {select_columns_str}
             FROM {bronze_table_name}            
             WHERE {bronze_table_name}.updated_at >= '{self.last_etl_date}'
@@ -271,7 +269,6 @@ class Command(BaseCommand):
         col_info = copy.copy(TRANSACTION_FPDS_COLUMN_INFO)
         set_cols = [f"silver_table.{col.dest_name} = source_subquery.{col.dest_name}" for col in col_info]
         silver_table_cols = ", ".join([col.dest_name for col in col_info])
-        logger.info(f"transaction source subquery = {self.source_subquery_sql()}")
 
         sql = f"""
             MERGE INTO int.transaction_fpds AS silver_table
