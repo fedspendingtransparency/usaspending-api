@@ -28,11 +28,7 @@ def test_no_sql_and_file_raises_error():
 # Integration Tests
 
 
-def test_sql_functionality(
-    spark,
-    s3_unittest_data_bucket,
-    hive_unittest_metastore_db,
-):
+def test_sql_functionality():
     """Tests a variety of cases in a single test for Spark performance"""
 
     # Test --sql approach

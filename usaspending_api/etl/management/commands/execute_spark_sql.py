@@ -1,4 +1,5 @@
 import logging
+import sqlparse
 
 from django.core.management.base import BaseCommand, CommandError
 from pyspark.sql import SparkSession
@@ -8,7 +9,6 @@ from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
 )
-from usaspending_api.common.helpers.sql_helpers import split_sql_statements
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
 
 logger = logging.getLogger(__name__)
@@ -90,7 +90,7 @@ class Command(BaseCommand):
         else:
             raise CommandError("Either --sql or --file must be provided")
 
-        sql_statements = [query.strip() for query in split_sql_statements(sql_statement_string) if query.strip()]
+        sql_statements = [query.strip() for query in sqlparse.split(sql_statement_string) if query.strip()]
 
         logger.info(f"Found {len(sql_statements)} SQL statement(s)")
 
