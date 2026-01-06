@@ -13,6 +13,7 @@ from databricks.sdk.service.jobs import BaseJob, RunLifeCycleState
 from django.conf import settings
 from django.core.management import call_command
 from duckdb.experimental.spark.sql import SparkSession as DuckDBSparkSession
+from usaspending_api.config import CONFIG
 
 from usaspending_api.common.spark.configs import LOCAL_EXTENDED_EXTRA_CONF, OPTIONAL_SPARK_HIVE_JAR, SPARK_SESSION_JARS
 
@@ -165,8 +166,8 @@ class EmrServerlessStrategy(_AbstractStrategy):
             mode="BATCH",
             jobDriver={
                 "sparkSubmit": {
-                    "entryPoint": command_name,
-                    "entryPointArguments": command_options,
+                    "entryPoint": f"s3://{CONFIG.SPARK_S3_BUCKET}/master/manage.py",
+                    "entryPointArguments": [command_name, *command_options],
                 }
             },
             retryPolicy={"maxAttempts": 2},
