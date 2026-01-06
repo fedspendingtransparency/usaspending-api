@@ -1,6 +1,7 @@
 import re
 
 from django.db.models import Q
+from django.db.models.functions import Substr
 from string import ascii_uppercase, digits
 from usaspending_api.references.models import PSC
 from usaspending_api.references.v2.views.filter_tree.filter_tree import FilterTree
@@ -168,7 +169,7 @@ class PSCFilterTree(FilterTree):
                     "id": code,
                     "ancestors": ancestors,
                     "description": object.description,
-                    "count": self.get_count([object.code], object.code),
+                    "count": self.get_count(code),
                     "children": None,
                 }
             )
@@ -202,7 +203,7 @@ class PSCFilterTree(FilterTree):
                     "id": object.code,
                     "ancestors": ancestors,
                     "description": object.description,
-                    "count": self.get_count([object.code], object.code),
+                    "count": self.get_count(object.code),
                     "children": None,
                 }
             )
@@ -212,7 +213,7 @@ class PSCFilterTree(FilterTree):
         retval = []
         if not filter_string and not tier1_nodes:
             return [
-                {"id": key, "ancestors": [], "description": "", "count": self.get_count([], key), "children": None}
+                {"id": key, "ancestors": [], "description": "", "count": self.get_count(key), "children": None}
                 for key in PSC_GROUPS.keys()
             ]
         if tier1_nodes:
@@ -224,7 +225,7 @@ class PSCFilterTree(FilterTree):
                             "id": key,
                             "ancestors": [],
                             "description": "",
-                            "count": self.get_count([], key),
+                            "count": self.get_count(key),
                             "children": None,
                         }
                     )
@@ -250,13 +251,25 @@ class PSCFilterTree(FilterTree):
                     return False
         return True
 
-    def get_count(self, tiered_keys: list, id) -> int:
-        if len(tiered_keys) == 0:
-            filters = [Q(code__iregex=PSC_GROUPS.get(id, {}).get("count_pattern") or "(?!)")]
-            return PSC.objects.filter(*filters).count()
+    def get_count(self, id: str) -> int:
+        if id == "Research and Development":
+            return self.get_tier_count(4, r"^[A]", is_regex=True)
+        elif id == "Service":
+            return self.get_tier_count(4, r"^[B-Z]", is_regex=True)
+        elif id == "Product":
+            return self.get_tier_count(4, r"^\d\d", is_regex=True)
+        elif id.startswith("A") and len(id) == 3:
+            # research and development data looks like AA10 instead of AA1
+            return self.get_tier_count(4, id, exclude_zero=True)
+        return self.get_tier_count(4, id)
+
+    @staticmethod
+    def get_tier_count(tier_length: int, id: str, is_regex=False, exclude_zero=False) -> int:
+        if is_regex:
+            filters = [Q(code__regex=id)]
         else:
-            filters = [
-                Q(length=4),
-                Q(code__startswith=id),
-            ]
-            return PSC.objects.filter(*filters).count()
+            filters = [Q(code__startswith=id), ~Q(code=id)]
+        if exclude_zero:
+            filters.append(~Q(code__endswith=0))
+        all_codes = PSC.objects.filter(*filters).annotate(code_prefix=Substr("code", 1, tier_length))
+        return all_codes.values("code_prefix").distinct().count()
