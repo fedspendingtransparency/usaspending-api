@@ -1066,7 +1066,6 @@ class Command(BaseCommand):
             self.spark.sql(
                 f"""
                     CREATE OR REPLACE TABLE temp.orphaned_transaction_info (
-                        transaction_id        LONG NOT NULL,
                         transaction_unique_id STRING NOT NULL,
                         is_fpds               BOOLEAN NOT NULL,
                         unique_award_key      STRING NOT NULL
@@ -1089,7 +1088,7 @@ class Command(BaseCommand):
             self.spark.sql(
                 f"""
                     CREATE OR REPLACE TABLE temp.orphaned_award_info (
-                        award_id LONG NOT NULL
+                        generated_unique_award_id STRING NOT NULL
                     )
                     USING DELTA
                     LOCATION 's3a://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.DELTA_LAKE_S3_PATH}/temp/orphaned_award_info'
@@ -1104,28 +1103,6 @@ class Command(BaseCommand):
 
         delta_lake_s3_path = CONFIG.DELTA_LAKE_S3_PATH
         destination_database = "int"
-
-        # transaction_id_lookup
-        destination_table = "transaction_id_lookup"
-        set_last_load_date = True
-
-        logger.info(f"Creating database {destination_database}, if not already existing.")
-        self.spark.sql(f"CREATE DATABASE IF NOT EXISTS {destination_database}")
-
-        logger.info(f"Creating {destination_table} table")
-        self.spark.sql(
-            f"""
-                CREATE OR REPLACE TABLE {destination_database}.{destination_table} (
-                    transaction_id LONG NOT NULL,
-                    -- The is_fpds flag is needed in this table to allow the transaction_id_lookup ETL level to choose
-                    -- the correct rows for deleting.
-                    is_fpds BOOLEAN NOT NULL,
-                    transaction_unique_id STRING NOT NULL
-                )
-                USING DELTA
-                LOCATION 's3a://{self.spark_s3_bucket}/{delta_lake_s3_path}/{destination_database}/{destination_table}'
-            """
-        )
 
         # Although there SHOULDN'T be any "orphaned" transactions (transactions that are missing records
         #   in one of the source tables) by the time this code is ultimately run in production, putting in
@@ -1188,10 +1165,10 @@ class Command(BaseCommand):
                 else:
                     fabs_join = """
                         LEFT JOIN raw.transaction_fabs AS fabs ON (
-                            tn.id = fabs.transaction_id
+                            tn.transaction_unique_id = fabs.afa_generated_unique
                         )
                     """
-                    fabs_transaction_id_where = "fabs.transaction_id IS NULL"
+                    fabs_transaction_id_where = "fabs.afa_generated_unique IS NULL"
                     fabs_is_fpds_where = "is_fpds = FALSE"
 
                 try:
@@ -1216,10 +1193,10 @@ class Command(BaseCommand):
                 else:
                     fpds_join = """
                         LEFT JOIN raw.transaction_fpds AS fpds ON (
-                            tn.id = fpds.transaction_id
+                            tn.transaction_unique_id = fpds.detached_award_proc_unique
                         )
                     """
-                    fpds_transaction_id_where = "fpds.transaction_id IS NULL"
+                    fpds_transaction_id_where = "fpds.detached_award_proc_unique IS NULL"
                     fpds_is_fpds_where = "is_fpds = TRUE"
 
                 # As long as one of raw.transaction_fabs|fpds exists, extend temp.orphaned_transaction_info table
@@ -1243,7 +1220,7 @@ class Command(BaseCommand):
                         f"""
                             INSERT INTO temp.orphaned_transaction_info
                                 SELECT
-                                    tn.id AS transaction_id, tn.transaction_unique_id, tn.is_fpds, tn.unique_award_key
+                                    tn.transaction_unique_id, tn.is_fpds, tn.unique_award_key
                                 FROM raw.transaction_normalized AS tn
                                 {fabs_join}
                                 {fpds_join}
@@ -1255,36 +1232,6 @@ class Command(BaseCommand):
                         "No raw.transaction_fabs or raw.transaction_fpds tables, so not finding additional orphaned "
                         "transactions in raw.transaction_normalized"
                     )
-
-                # Insert existing non-orphaned transactions into the lookup table
-                logger.info("Populating transaction_id_lookup table")
-
-                # Note that the transaction loader code will convert string fields to upper case, so we have to match
-                # on the upper-cased versions of the strings.
-                self.spark.sql(
-                    f"""
-                    INSERT OVERWRITE {destination_database}.{destination_table}
-                        SELECT
-                            tn.id AS transaction_id,
-                            TRUE AS is_fpds,
-                            tn.transaction_unique_id
-                        FROM raw.transaction_normalized AS tn INNER JOIN raw.detached_award_procurement AS dap ON (
-                            tn.transaction_unique_id = ucase(dap.detached_award_proc_unique)
-                        )
-                        -- Want to exclude orphaned transactions, as they will not be copied into the int schema.
-                        WHERE tn.id NOT IN (SELECT transaction_id FROM temp.orphaned_transaction_info WHERE is_fpds)
-                        UNION ALL
-                        SELECT
-                            tn.id AS transaction_id,
-                            FALSE AS is_fpds,
-                            tn.transaction_unique_id
-                        FROM raw.transaction_normalized AS tn INNER JOIN raw.published_fabs AS pfabs ON (
-                            tn.transaction_unique_id = ucase(pfabs.afa_generated_unique)
-                        )
-                        -- Want to exclude orphaned transactions, as they will not be copied into the int schema.
-                        WHERE tn.id NOT IN (SELECT transaction_id FROM temp.orphaned_transaction_info WHERE NOT is_fpds)
-                    """
-                )
 
                 logger.info("Updating transaction_id_seq to the max transaction_id value")
                 # Make sure to get the maximum transaction id from the raw table in case there are records in
