@@ -50,7 +50,6 @@ class AccountBalancesMixin:
                 f"s3a://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.DELTA_LAKE_S3_PATH}/rpt/account_balances_download"
             )
 
-
     def _build_dataframes(self) -> list[DataFrame | DuckDBSparkDataFrame]:
         return [
             self.download_table.filter(
