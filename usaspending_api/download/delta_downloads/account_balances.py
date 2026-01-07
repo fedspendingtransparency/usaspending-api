@@ -50,8 +50,9 @@ class AccountBalancesMixin:
                 f"s3a://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.DELTA_LAKE_S3_PATH}/rpt/account_balances_download"
             )
 
-    def _build_dataframe(self) -> DataFrame | DuckDBSparkDataFrame:
-        return (
+
+    def _build_dataframes(self) -> list[DataFrame | DuckDBSparkDataFrame]:
+        return [
             self.download_table.filter(
                 self.sf.col("submission_id").isin(
                     get_submission_ids_for_periods(
@@ -64,8 +65,8 @@ class AccountBalancesMixin:
             .filter(self.dynamic_filters)
             .groupby(self.group_by_cols)
             .agg(*self.agg_cols)
-            .select(*self.select_cols)
-        )
+            .select(*self.select_cols),
+        ]
 
 
 class FederalAccountDownload(AccountBalancesMixin, AbstractAccountDownload):

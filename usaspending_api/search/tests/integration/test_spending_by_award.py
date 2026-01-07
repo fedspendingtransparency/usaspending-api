@@ -3863,3 +3863,45 @@ def test_spending_by_subaward_recipient_location_zip_filter(
     results = resp.json().get("results")
     assert len(results) == 1
     assert results[0]["Sub-Award ID"] == "99999"
+
+
+def test_spending_by_award_sort_contract_award_type(
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    test_payload = {
+        "spending_level": "awards",
+        "fields": [
+            "Award ID",
+            "Recipient Location",
+        ],
+        "filters": {"award_type_codes": ["08"]},
+        "sort": "Contract Award Type",
+        "order": "asc",
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+    assert resp.status_code == status.HTTP_200_OK
+
+
+def test_spending_by_award_sort_recipient_uei(
+    client, monkeypatch, elasticsearch_award_index, elasticsearch_subaward_index, spending_by_award_test_data
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    test_payload = {
+        "spending_level": "awards",
+        "fields": [
+            "Award ID",
+            "Recipient Location",
+        ],
+        "filters": {"award_type_codes": ["08"]},
+        "sort": "Recipient UEI",
+        "order": "asc",
+    }
+
+    resp = client.post(
+        "/api/v2/search/spending_by_award/", content_type="application/json", data=json.dumps(test_payload)
+    )
+    assert resp.status_code == status.HTTP_200_OK
