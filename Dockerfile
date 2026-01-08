@@ -41,7 +41,7 @@ COPY . /dockermount
 
 # Sync the project
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --locked --no-dev
+    uv sync --extra server --extra ansible --extra awscli --extra spark --locked --no-dev
 
 ##### Ensure Python STDOUT gets sent to container logs
 ENV PYTHONUNBUFFERED=1
