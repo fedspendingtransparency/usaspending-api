@@ -34,7 +34,7 @@ ENV UV_SYSTEM_PYTHON=1
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    uv sync --extra server --extra ansible --extra awscli --locked --no-install-project --no-dev
+    uv sync --extra server --extra ansible --extra awscli --extra spark --locked --no-install-project --no-dev
 
 # Copy the project into the image
 COPY . /dockermount
