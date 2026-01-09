@@ -50,7 +50,7 @@ AWARD_SEARCH_COLUMNS = {
     "subaward_count": {"delta": "INTEGER", "postgres": "INTEGER", "gold": True},
     "action_date": {"delta": "DATE", "postgres": "DATE", "gold": False},
     "fiscal_year": {"delta": "INTEGER", "postgres": "INTEGER", "gold": False},
-    "last_modified_date": {"delta": "DATE", "postgres": "DATE", "gold": False},
+    "last_modified_date": {"delta": "TIMESTAMP", "postgres": "TIMESTAMP", "gold": False},
     "period_of_performance_start_date": {"delta": "DATE", "postgres": "DATE", "gold": False},
     "period_of_performance_current_end_date": {"delta": "DATE", "postgres": "DATE", "gold": False},
     "date_signed": {"delta": "DATE", "postgres": "DATE", "gold": False},
