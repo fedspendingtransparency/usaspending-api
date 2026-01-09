@@ -755,6 +755,10 @@
         "fields": {
           "keyword": {
             "type": "keyword"
+          },
+          "contains": {
+            "type": "text",
+            "analyzer": "contains_analyzer"
           }
         }
       },

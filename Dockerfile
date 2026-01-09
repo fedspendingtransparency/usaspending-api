@@ -8,27 +8,40 @@
 
 FROM python:3.10.12-slim-bullseye
 
+COPY --from=ghcr.io/astral-sh/uv:0.7.19 /uv /uvx /bin/
+
 WORKDIR /dockermount
-
-##### Install postgres 16
-RUN apt-get update && apt-get install -y wget gnupg lsb-release \
- && wget -qO - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
- && echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" \
-      > /etc/apt/sources.list.d/pgdg.list \
- && apt-get update \
- && apt-get install -y postgresql-16
-
 
 RUN apt update && apt install -y \
     curl \
     gcc \
-    libpq-dev
+    libpq-dev \
+    postgresql-13
 
+##### The following ENV vars are optimizations from https://github.com/astral-sh/uv-docker-example/blob/main/Dockerfile
+##### and https://docs.astral.sh/uv/guides/integration/docker/#optimizations
+# Enable bytecode compilation
+ENV UV_COMPILE_BYTECODE=1
+
+# Copy from the cache instead of linking since it's a mounted volume
+ENV UV_LINK_MODE=copy
+
+# Use the system Python environment since the container is already isolated
+ENV UV_PROJECT_ENVIRONMENT=/usr/local
+ENV UV_SYSTEM_PYTHON=1
+
+# Install dependencies
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --extra server --extra ansible --extra awscli --extra spark --locked --no-install-project --no-dev
+
+# Copy the project into the image
 COPY . /dockermount
 
-RUN python3 -m pip install -r requirements/requirements.txt && \
-    python3 -m pip install -r requirements/requirements-server.txt && \
-    python3 -m pip install ansible==2.9.15 awscli==1.34.19
+# Sync the project
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --extra server --extra ansible --extra awscli --extra spark --locked --no-dev
 
-# Ensure Python STDOUT gets sent to container logs
+##### Ensure Python STDOUT gets sent to container logs
 ENV PYTHONUNBUFFERED=1
