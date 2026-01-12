@@ -1,6 +1,7 @@
 import logging
 
 from django.core.management import BaseCommand
+from pyspark.sql import functions as sf
 
 from usaspending_api.awards.delta_models import (
     AWARDS_COLUMNS,
@@ -75,6 +76,7 @@ TABLE_SPEC = {
         "custom_schema": "",
         "column_names": list(AWARDS_COLUMNS),
         "tsvectors": None,
+        "add_hash_field": False,
     },
     "detached_award_procurement": {
         "model": SourceProcurementTransaction,
@@ -92,6 +94,7 @@ TABLE_SPEC = {
         "custom_schema": "",
         "column_names": list(DETACHED_AWARD_PROCUREMENT_DELTA_COLUMNS),
         "tsvectors": None,
+        "add_hash_field": True,
     },
     "financial_accounts_by_awards": {
         "model": FinancialAccountsByAwards,
@@ -109,6 +112,7 @@ TABLE_SPEC = {
         "custom_schema": "award_id LONG",
         "column_names": list(FINANCIAL_ACCOUNTS_BY_AWARDS_COLUMNS),
         "tsvectors": None,
+        "add_hash_field": False,
     },
     "transaction_fabs": {
         "model": TransactionFABS,
@@ -126,6 +130,7 @@ TABLE_SPEC = {
         "custom_schema": "",
         "column_names": TRANSACTION_FABS_VIEW_COLUMNS,
         "tsvectors": None,
+        "add_hash_field": True,
     },
     "published_fabs": {
         "model": SourceAssistanceTransaction,
@@ -143,6 +148,7 @@ TABLE_SPEC = {
         "custom_schema": "",
         "column_names": list(PUBLISHED_FABS_COLUMNS),
         "tsvectors": None,
+        "add_hash_field": True,
     },
     "transaction_fpds": {
         "model": TransactionFPDS,
@@ -160,6 +166,7 @@ TABLE_SPEC = {
         "custom_schema": "",
         "column_names": TRANSACTION_FPDS_VIEW_COLUMNS,
         "tsvectors": None,
+        "add_hash_field": True,
     },
     "transaction_normalized": {
         "model": TransactionNormalized,
@@ -177,6 +184,7 @@ TABLE_SPEC = {
         "custom_schema": "",
         "column_names": list(TRANSACTION_NORMALIZED_COLUMNS),
         "tsvectors": None,
+        "add_hash_field": True,
     },
     # Tables loaded in from the Broker
     "subaward": {
@@ -195,6 +203,7 @@ TABLE_SPEC = {
         "custom_schema": "",
         "column_names": list(BROKER_SUBAWARDS_COLUMNS),
         "tsvectors": None,
+        "add_hash_field": False,
     },
     "zips": {
         "model": None,
@@ -212,6 +221,7 @@ TABLE_SPEC = {
         "custom_schema": "",
         "column_names": list(ZIPS_COLUMNS),
         "tsvectors": None,
+        "add_hash_field": False,
     },
     # Additional definitions for use in testing;
     # These are copies of Views / Materialized Views / Tables from Postgres to Spark to aid in
@@ -233,6 +243,7 @@ TABLE_SPEC = {
         "STRING, federal_accounts STRING, cfdas ARRAY<STRING>, tas_components ARRAY<STRING>",
         "column_names": list(AWARD_SEARCH_COLUMNS),
         "tsvectors": None,
+        "add_hash_field": False,
     },
     "recipient_lookup_testing": {
         "model": RecipientLookup,
@@ -250,6 +261,7 @@ TABLE_SPEC = {
         "custom_schema": "recipient_hash STRING",
         "column_names": list(RECIPIENT_LOOKUP_COLUMNS),
         "tsvectors": None,
+        "add_hash_field": False,
     },
     "recipient_profile_testing": {
         "model": RecipientProfile,
@@ -267,6 +279,7 @@ TABLE_SPEC = {
         "custom_schema": "recipient_hash STRING",
         "column_names": list(RECIPIENT_PROFILE_DELTA_COLUMNS),
         "tsvectors": None,
+        "add_hash_field": False,
     },
     "sam_recipient_testing": {
         "model": DUNS,
@@ -284,6 +297,7 @@ TABLE_SPEC = {
         "custom_schema": "broker_duns_id STRING, business_types_codes ARRAY<STRING>",
         "column_names": list(SAM_RECIPIENT_COLUMNS),
         "tsvectors": None,
+        "add_hash_field": False,
     },
     "transaction_search_testing": {
         "model": TransactionSearch,
@@ -301,6 +315,7 @@ TABLE_SPEC = {
         "custom_schema": "recipient_hash STRING, federal_accounts STRING, parent_recipient_hash STRING",
         "column_names": list(TRANSACTION_SEARCH_POSTGRES_COLUMNS),
         "tsvectors": None,
+        "add_hash_field": False,
     },
 }
 
@@ -366,6 +381,7 @@ class Command(BaseCommand):
         partition_column_type = table_spec["partition_column_type"]
         is_partition_column_unique = table_spec["is_partition_column_unique"]
         custom_schema = table_spec["custom_schema"]
+        add_hash_field = table_spec["add_hash_field"]
 
         # Set the database that will be interacted with for all Delta Lake table Spark-based activity
         logger.info(f"Using Spark Database: {destination_database}")
@@ -419,6 +435,9 @@ class Command(BaseCommand):
         # always needed, this should help to prevent any future mismatch between the two.
         if table_spec.get("column_names"):
             df = df.select(table_spec.get("column_names"))
+
+        if add_hash_field:
+            df = df.withColumn("hash", sf.xxhash64("*"))
 
         # Write to S3
         load_delta_table(spark, df, destination_table_name, True)

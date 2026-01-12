@@ -101,7 +101,13 @@ PUBLISHED_FABS_COLUMNS = {
     "updated_at": {"delta": "TIMESTAMP", "postgres": "TIMESTAMP"},
     "uri": {"delta": "STRING", "postgres": "TEXT"},
 }
-PUBLISHED_FABS_DELTA_COLUMNS = {k: v["delta"] for k, v in PUBLISHED_FABS_COLUMNS.items()}
+DELTA_ONLY_COLUMNS = {
+    "hash": "LONG",
+}
+PUBLISHED_FABS_DELTA_COLUMNS = {
+    **{k: v["delta"] for k, v in PUBLISHED_FABS_COLUMNS.items()},
+    **DELTA_ONLY_COLUMNS,
+}
 PUBLISHED_FABS_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in PUBLISHED_FABS_COLUMNS.items()}
 
 published_fabs_create_sql_string = rf"""

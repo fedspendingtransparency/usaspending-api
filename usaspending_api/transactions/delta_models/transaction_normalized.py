@@ -26,6 +26,7 @@ TRANSACTION_NORMALIZED_COLUMNS = {
     "unique_award_key": "STRING",
     "update_date": "TIMESTAMP",
     "usaspending_unique_transaction_id": "STRING",
+    "hash": "LONG",
 }
 
 transaction_normalized_sql_string = rf"""
