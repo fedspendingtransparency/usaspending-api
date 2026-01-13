@@ -170,7 +170,8 @@ class EmrServerlessStrategy(_AbstractStrategy):
                     "entryPointArguments": [command_name, *command_options],
                 }
             },
-            retryPolicy={"maxAttempts": 2},
+            # TODO: Requires updating to EMR 7
+            # retryPolicy={"maxAttempts": 2},
         )
         return response
 
