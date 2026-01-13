@@ -113,7 +113,7 @@ base_mapping = {
     "COVID-19 Outlays": "spending_by_defc",
     "Infrastructure Obligations": "spending_by_defc",
     "Infrastructure Outlays": "spending_by_defc",
-    "Recipient UEI": "recipient_uei",
+    "Recipient UEI": "recipient_uei.keyword",
     "naics_code": "naics_code.keyword",
     "naics_description": "naics_description.keyword",
     "psc_code": "product_or_service_code.keyword",
@@ -145,7 +145,7 @@ contracts_mapping = {
         "End Date": "period_of_performance_current_end_date",
         "Award Amount": "total_obligation",
         "Total Outlays": "total_outlays",
-        "Contract Award Type": "type_description",
+        "Contract Award Type": "type_description.keyword",
     },
 }
 idv_mapping = {
