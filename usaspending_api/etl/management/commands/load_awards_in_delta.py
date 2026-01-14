@@ -31,7 +31,6 @@ class Command(BaseCommand):
         for awards.
     """
 
-    last_etl_date: str
     spark_s3_bucket: str
     spark: SparkSession
 
@@ -62,12 +61,6 @@ class Command(BaseCommand):
             logger.info(f"Running delete SQL for awards ETL")
             self.spark.sql(self.delete_records_sql())
 
-            last_etl_date = None  # get_last_load_date(self.etl_level)
-            if last_etl_date is None:
-                # Table has not been loaded yet.  To avoid checking for None in all the locations where
-                # last_etl_date is used, set it to a long time ago.
-                last_etl_date = datetime.utcfromtimestamp(0)
-            self.last_etl_date = str(last_etl_date)
             logger.info(f"Running UPSERT SQL for awards ETL")
             self.update_awards()
             update_last_load_date("awards", next_last_load)
