@@ -135,6 +135,7 @@ TRANSACTION_FABS_COLUMN_INFO = [
     TransactionColumn("unique_award_key", "unique_award_key", "STRING"),
     TransactionColumn("updated_at", "updated_at", "TIMESTAMP"),
     TransactionColumn("uri", "uri", "STRING"),
+    TransactionColumn("hash", "hash", "LONG"),
 ]
 
 TRANSACTION_FABS_COLUMNS = [col.dest_name for col in TRANSACTION_FABS_COLUMN_INFO]
@@ -188,4 +189,5 @@ FABS_TO_NORMALIZED_COLUMN_INFO = [
     TransactionColumn("type_description", "assistance_type_desc", "STRING"),
     TransactionColumn("unique_award_key", "unique_award_key", "STRING"),
     TransactionColumn("usaspending_unique_transaction_id", "NULL", "STRING", "literal"),
+    TransactionColumn("hash", "hash", "LONG"),
 ]

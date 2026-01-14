@@ -3,7 +3,6 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 
 from django.core.management import BaseCommand, call_command
-from django.db import connection
 from pyspark.sql import SparkSession
 from pyspark.sql.types import ArrayType, StringType
 
@@ -14,7 +13,6 @@ from usaspending_api.broker.helpers.get_business_categories import (
 )
 from usaspending_api.broker.helpers.last_load_date import (
     get_earliest_load_date,
-    get_last_load_date,
     update_last_load_date,
 )
 from usaspending_api.common.helpers.spark_helpers import (
@@ -30,10 +28,7 @@ logger = logging.getLogger(__name__)
 class Command(BaseCommand):
     help = """
         This command reads transaction data from source / bronze tables in delta and creates the delta silver tables
-        specified via the "etl_level" argument. Each "etl_level" uses an exclusive value for "last_load_date" from the
-        "external_data_load_date" table in Postgres to determine the subset of transactions to load. For a full
-        pipeline run the "award_id_lookup" and "transaction_id_lookup" levels should be run first in order to populate the
-        lookup tables. These lookup tables are used to keep track of PK values across the different silver tables.
+        for awards.
     """
 
     last_etl_date: str
@@ -294,7 +289,6 @@ class Command(BaseCommand):
         insert_value_list = insert_col_name_list[: -len(set_insert_special_columns)]
         insert_value_list.extend(["NULL"])
         insert_value_list.extend([f"""'{load_datetime.isoformat(" ")}'"""] * 2)
-        insert_value_list.extend(["1"])
         insert_values = ", ".join([value for value in insert_value_list])
 
         sql = f"""

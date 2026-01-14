@@ -41,7 +41,7 @@ from usaspending_api.transactions.delta_models import (
     transaction_normalized_sql_string,
     TRANSACTION_SEARCH_POSTGRES_COLUMNS,
     transaction_search_create_sql_string,
-    PUBLISHED_FABS_COLUMNS,
+    PUBLISHED_FABS_DELTA_COLUMNS,
     published_fabs_create_sql_string,
 )
 from usaspending_api.transactions.models import SourceAssistanceTransaction
@@ -146,7 +146,7 @@ TABLE_SPEC = {
         "delta_table_create_sql": published_fabs_create_sql_string,
         "source_schema": None,
         "custom_schema": "",
-        "column_names": list(PUBLISHED_FABS_COLUMNS),
+        "column_names": list(PUBLISHED_FABS_DELTA_COLUMNS),
         "tsvectors": None,
         "add_hash_field": True,
     },
@@ -430,14 +430,14 @@ class Command(BaseCommand):
                 properties=get_jdbc_connection_properties(),
             )
 
+        if add_hash_field:
+            df = df.withColumn("hash", sf.xxhash64("*"))
+
         # Make sure that the column order defined in the Delta table schema matches
         # that of the Spark dataframe used to pull from the Postgres table. While not
         # always needed, this should help to prevent any future mismatch between the two.
         if table_spec.get("column_names"):
             df = df.select(table_spec.get("column_names"))
-
-        if add_hash_field:
-            df = df.withColumn("hash", sf.xxhash64("*"))
 
         # Write to S3
         load_delta_table(spark, df, destination_table_name, True)

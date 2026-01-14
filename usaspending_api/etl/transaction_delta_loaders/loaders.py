@@ -18,7 +18,7 @@ from usaspending_api.broker.helpers.last_load_date import (
     update_last_load_date,
 )
 from usaspending_api.common.data_classes import TransactionColumn
-
+from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
@@ -214,7 +214,7 @@ class FABSDeltaTransactionLoader(AbstractDeltaTransactionLoader):
     def __init__(self, spark_s3_bucket: str):
         super().__init__(etl_level="fabs", spark_s3_bucket=spark_s3_bucket)
         self.id_col = "afa_generated_unique"
-        self.source_table = "published_fabs"
+        self.source_table = "raw.published_fabs"
         self.col_info = TRANSACTION_FABS_COLUMN_INFO
 
     @property
@@ -224,11 +224,13 @@ class FABSDeltaTransactionLoader(AbstractDeltaTransactionLoader):
 
 class NormalizedMixin:
 
+    spark: SparkSession
     handle_column: Callable
     source_table: str
     etl_level: str
     select_columns: list[str]
     to_normalized_col_info: list[TransactionColumn]
+    normalization_type: Literal["FABS", "FPDS"]
 
     def source_subquery_sql(self):
         additional_joins = f"""            
@@ -258,6 +260,7 @@ class NormalizedMixin:
         """
 
     def transaction_merge_into_sql(self):
+        create_ref_temp_views(self.spark)
         load_datetime = datetime.now(timezone.utc)
         special_columns = ["create_date", "update_date"]
         # On set, create_date will not be changed and update_date will be set below.  All other column
@@ -284,7 +287,7 @@ class NormalizedMixin:
         sql = f"""
             MERGE INTO int.transaction_normalized
             USING (
-                {self.source_subquery_sql}
+                {self.source_subquery_sql()}
             ) AS source_subquery
             ON transaction_normalized.transaction_unique_id = source_subquery.transaction_unique_id
                 AND transaction_normalized.hash = source_subquery.hash        
@@ -292,7 +295,7 @@ class NormalizedMixin:
                 THEN INSERT
                     ({insert_col_names})
                     VALUES ({insert_values})
-            WHEN NOT MATCHED BY SOURCE AND {'NOT' if self.etl_level == 'fabs' else ''} transaction_normalized.is_fpds
+            WHEN NOT MATCHED BY SOURCE AND {'NOT' if self.normalization_type== 'FABS' else ''} transaction_normalized.is_fpds
                 THEN DELETE
         """
 
@@ -304,8 +307,9 @@ class FABSNormalizedDeltaTransactionLoader(NormalizedMixin, AbstractDeltaTransac
     def __init__(self, spark_s3_bucket: str):
         super().__init__(etl_level="normalized", spark_s3_bucket=spark_s3_bucket)
         self.id_col = "transaction_unique_id"
-        self.source_table = "published_fabs"
+        self.source_table = "raw.published_fabs"
         self.to_normalized_col_info = FABS_TO_NORMALIZED_COLUMN_INFO
+        self.normalization_type = "FABS"
 
     @property
     def select_columns(self):
@@ -347,8 +351,9 @@ class FPDSNormalizedDeltaTransactionLoader(NormalizedMixin, AbstractDeltaTransac
     def __init__(self, spark_s3_bucket: str):
         super().__init__(etl_level="normalized", spark_s3_bucket=spark_s3_bucket)
         self.id_col = "transaction_unique_id"
-        self.source_table = "published_fabs"
-        self.to_normalized_col_info = FABS_TO_NORMALIZED_COLUMN_INFO
+        self.source_table = "raw.detached_award_procurement"
+        self.to_normalized_col_info = DAP_TO_NORMALIZED_COLUMN_INFO
+        self.normalization_type = "FPDS"
 
     @property
     def select_columns(self):
