@@ -299,7 +299,3 @@ class Command(BaseCommand):
                     VALUES ({insert_values})
         """
         self.spark.sql(sql)
-
-        # Now that the award table update is done, we can empty the award_ids_delete_modified table.
-        # Note that an external (unmanaged) table can't be TRUNCATED; use blanket DELETE instead.
-        self.spark.sql("DELETE FROM int.award_ids_delete_modified")

@@ -51,7 +51,7 @@ class AbstractDeltaTransactionLoader(ABC):
     def load_transactions(self):
         with self.prepare_spark():
             if not self.spark._jsparkSession.catalog().tableExists(f"int.transaction_{self.etl_level}"):
-                raise Exception(f"Table: {self.etl_level} does not exist.")
+                raise Exception(f"Table: int.transaction_{self.etl_level} does not exist.")
             logger.info(f"Running UPSERT SQL for transaction_{self.etl_level} ETL")
             self.spark.sql(self.transaction_merge_into_sql())
             next_last_load = get_earliest_load_date(
