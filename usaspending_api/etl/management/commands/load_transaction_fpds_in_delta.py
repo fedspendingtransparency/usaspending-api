@@ -1,6 +1,6 @@
 import logging
 
-from django.core.management import BaseCommand, call_command
+from django.core.management import BaseCommand
 
 from usaspending_api.config import CONFIG
 from usaspending_api.etl.transaction_delta_loaders.loaders import FPDSDeltaTransactionLoader

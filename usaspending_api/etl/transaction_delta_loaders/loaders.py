@@ -62,12 +62,8 @@ class AbstractDeltaTransactionLoader(ABC):
     @contextmanager
     def prepare_spark(self):
         extra_conf = {
-            # Config for additional packages needed
-            # "spark.jars.packages": "org.postgresql:postgresql:42.2.23,io.delta:delta-core_2.12:1.2.1,org.apache.hadoop:hadoop-aws:3.3.1,org.apache.spark:spark-hive_2.12:3.2.1",
-            # Config for Delta Lake tables and SQL. Need these to keep Dela table metadata in the metastore
             "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension",
             "spark.sql.catalog.spark_catalog": "org.apache.spark.sql.delta.catalog.DeltaCatalog",
-            # See comment below about old date and time values cannot parsed without these
             "spark.sql.parquet.datetimeRebaseModeInWrite": "LEGACY",  # for dates at/before 1900
             "spark.sql.parquet.int96RebaseModeInWrite": "LEGACY",  # for timestamps at/before 1900
             "spark.sql.jsonGenerator.ignoreNullFields": "false",  # keep nulls in our json
@@ -182,7 +178,7 @@ class AbstractDeltaTransactionLoader(ABC):
             USING (
                 {self.source_subquery_sql()}
             ) AS source_subquery
-            ON 
+            ON
                 silver_table.{self.id_col} = source_subquery.{self.id_col}
                 AND silver_table.hash = source_subquery.hash
             WHEN NOT MATCHED
@@ -233,7 +229,7 @@ class NormalizedMixin:
     normalization_type: Literal["FABS", "FPDS"]
 
     def source_subquery_sql(self):
-        additional_joins = f"""            
+        additional_joins = f"""
             LEFT OUTER JOIN global_temp.subtier_agency AS funding_subtier_agency ON (
                 funding_subtier_agency.subtier_code = {self.source_table}.funding_sub_tier_agency_co
             )
@@ -255,8 +251,8 @@ class NormalizedMixin:
         return f"""
             SELECT
                 {select_columns_str}
-            FROM {self.source_table}            
-            {additional_joins}                    
+            FROM {self.source_table}
+            {additional_joins}
         """
 
     def transaction_merge_into_sql(self):
@@ -290,7 +286,7 @@ class NormalizedMixin:
                 {self.source_subquery_sql()}
             ) AS source_subquery
             ON transaction_normalized.transaction_unique_id = source_subquery.transaction_unique_id
-                AND transaction_normalized.hash = source_subquery.hash        
+                AND transaction_normalized.hash = source_subquery.hash
             WHEN NOT MATCHED
                 THEN INSERT
                     ({insert_col_names})

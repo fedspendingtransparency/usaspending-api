@@ -2,7 +2,7 @@ import logging
 from contextlib import contextmanager
 from datetime import datetime, timezone
 
-from django.core.management import BaseCommand, call_command
+from django.core.management import BaseCommand
 from pyspark.sql import SparkSession
 from pyspark.sql.types import ArrayType, StringType
 
@@ -128,7 +128,7 @@ class Command(BaseCommand):
 
         # Use a UNION in award_ids_to_update, not UNION ALL because there could be duplicates among the award ids
         # between the query parts or in int.award_ids_delete_modified.
-        subquery = f"""            
+        subquery = f"""
             WITH
             transaction_earliest AS (
                 SELECT * FROM (
