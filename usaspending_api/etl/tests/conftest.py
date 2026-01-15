@@ -2,7 +2,6 @@ import pytest
 
 from model_bakery import baker
 
-from usaspending_api.broker.models import ExternalDataType
 from usaspending_api.etl.tests.data.submissions import submissions
 
 # Pulling in specific fixtures elsewhere
