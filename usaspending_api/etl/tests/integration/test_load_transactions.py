@@ -113,7 +113,7 @@ _INITIAL_PROCURES = [
 
 
 @pytest.mark.django_db
-def test_load_transactions(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
+def test_load_transactions(spark, s3_unittest_data_bucket, hive_unittest_metastore_db, external_data_type):
 
     # Load initial Data
     load_dict_to_delta_table(
