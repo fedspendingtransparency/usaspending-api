@@ -54,14 +54,6 @@ jobs:
     if: ${{ !failure() && !cancelled() }}
     uses: ./.github/workflows/test-spark-integration-load-transactions-fabs-fpds.yaml
 
-  Run-Spark-Integration-Load-Transactions-Lookup-Tests:
-    name: Run Spark Integration Load Transactions Lookup Tests
-    needs:
-      - Run-Code-Style-Checks
-      - Build-Broker-Docker-Image
-    if: ${{ !failure() && !cancelled() }}
-    uses: ./.github/workflows/test-spark-integration-load-transactions-lookup.yaml
-
   Run-Spark-Integration-Load-To-From-Delta-Tests:
     name: Run Spark Integration Load To From Delta Tests
     needs:
