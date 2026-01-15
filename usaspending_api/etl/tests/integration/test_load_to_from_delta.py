@@ -799,7 +799,6 @@ def test_load_table_to_from_delta_for_award_search(
         "recipient_lookup",
         "recipient_profile",
         "sam_recipient",
-        "transaction_current_cd_lookup",
         "transaction_fabs",
         "transaction_fpds",
         "transaction_normalized",
