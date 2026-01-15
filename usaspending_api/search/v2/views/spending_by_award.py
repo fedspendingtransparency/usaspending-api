@@ -404,7 +404,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
         else:
             search = base_search.filter(filter_query).sort(*sorts)[record_num : record_num + self.pagination["limit"]]
 
-        response = search.handle_execute()
+        response = search.extra(track_scores=True).handle_execute()
 
         return response
 
@@ -696,7 +696,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
             and hit.get("subaward_recipient_hash") is not None
             and hit.get("subaward_recipient_level") is not None
         ):
-            row["sub_award_recipient_id"] = f'{hit["subaward_recipient_hash"]}-{hit["subaward_recipient_level"]}'
+            row["sub_award_recipient_id"] = f"{hit['subaward_recipient_hash']}-{hit['subaward_recipient_level']}"
 
         row["prime_award_generated_internal_id"] = hit["unique_award_key"]
 

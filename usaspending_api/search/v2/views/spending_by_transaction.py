@@ -8,7 +8,8 @@ from django.utils.text import slugify
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
+from usaspending_api.awards.v2.lookups.elasticsearch_lookups import TransactionField
+from usaspending_api.common.api_versioning import API_TRANSFORM_FUNCTIONS, api_transformations
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 from usaspending_api.common.exceptions import (
@@ -16,15 +17,14 @@ from usaspending_api.common.exceptions import (
     UnprocessableEntityException,
 )
 from usaspending_api.common.helpers.data_constants import state_name_from_code
-from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata, get_generic_filters_message
+from usaspending_api.common.helpers.generic_helper import get_generic_filters_message, get_simple_pagination_metadata
 from usaspending_api.common.query_with_filters import QueryWithFilters
-from usaspending_api.search.filters.elasticsearch.filter import QueryType
 from usaspending_api.common.validator.award_filter import AWARD_FILTER_W_FILTERS
 from usaspending_api.common.validator.pagination import customize_pagination_with_sort_columns
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.references.models import ToptierAgencyPublishedDABSView
+from usaspending_api.search.filters.elasticsearch.filter import QueryType
 from usaspending_api.search.v2.es_sanitization import es_minimal_sanitize
-from usaspending_api.awards.v2.lookups.elasticsearch_lookups import TransactionField
 
 logger = logging.getLogger(__name__)
 
@@ -154,7 +154,7 @@ class SpendingByTransactionVisualizationViewSet(APIView):
                 ]
             case _:
                 sort_by_fields = [TransactionField(payload_sort_key).full_path]
-        sorts = [{field: validated_payload["order"] for field in sort_by_fields}]
+        sorts = [dict.fromkeys(sort_by_fields, validated_payload["order"])]
 
         lower_limit = (validated_payload["page"] - 1) * validated_payload["limit"]
         upper_limit = (validated_payload["page"]) * validated_payload["limit"] + 1
@@ -165,7 +165,7 @@ class SpendingByTransactionVisualizationViewSet(APIView):
             validated_payload["filters"].pop("keywords")
         query_with_filters = QueryWithFilters(QueryType.TRANSACTIONS)
         filter_query = query_with_filters.generate_elasticsearch_query(validated_payload["filters"])
-        search = TransactionSearch().filter(filter_query).sort(*sorts)[lower_limit:upper_limit]
+        search = TransactionSearch().filter(filter_query).sort(*sorts)[lower_limit:upper_limit].extra(track_scores=True)
         response = search.handle_execute()
         return Response(self.build_elasticsearch_result(validated_payload, response))
 
