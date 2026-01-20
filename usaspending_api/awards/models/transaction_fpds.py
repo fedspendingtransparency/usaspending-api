@@ -355,6 +355,7 @@ FPDS_CASTED_COL_MAP = {
     "last_modified": "TEXT",
     "period_of_performance_star": "TEXT",
     "period_of_performance_curr": "TEXT",
+    "transaction_id": "TEXT",
 }
 
 FPDS_TO_TRANSACTION_SEARCH_COL_MAP = {

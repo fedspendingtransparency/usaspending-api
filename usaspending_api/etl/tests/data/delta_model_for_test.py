@@ -42,5 +42,6 @@ TEST_TABLE_SPEC = {
         "custom_schema": "",
         "column_names": ["id", "test_timestamp"],
         "tsvectors": None,
+        "add_hash_field": False,
     }
 }

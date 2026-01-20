@@ -1,11 +1,12 @@
 import copy
 import logging
-from abc import ABC, abstractmethod
+from abc import ABC
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from typing import Callable, Literal
 
-from pyspark.sql import SparkSession
+from delta import DeltaTable
+from pyspark.sql import functions as sf, SparkSession, Window
 from pyspark.sql.types import ArrayType, StringType
 
 from usaspending_api.broker.helpers.build_business_categories_boolean_dict import fpds_boolean_columns
@@ -158,8 +159,10 @@ class AbstractDeltaTransactionLoader(ABC):
         return retval
 
     @property
-    @abstractmethod
-    def select_columns(self): ...
+    def select_columns(self):
+        return ["CAST(NULL AS LONG) AS transaction_id"] + [
+            self.handle_column(col) for col in self.col_info if col.dest_name != "transaction_id"
+        ]
 
     def source_subquery_sql(self):
         select_columns_str = ",\n    ".join(self.select_columns)
@@ -171,8 +174,7 @@ class AbstractDeltaTransactionLoader(ABC):
         return sql
 
     def transaction_merge_into_sql(self):
-        silver_table_cols = ", ".join([col.dest_name for col in self.col_info])
-
+        silver_table_cols = ", ".join([col.dest_name for col in self.col_info if col.dest_name != "transaction_id"])
         sql = f"""
             MERGE INTO int.transaction_{self.etl_level} AS silver_table
             USING (
@@ -200,10 +202,6 @@ class FPDSDeltaTransactionLoader(AbstractDeltaTransactionLoader):
         self.source_table = "raw.detached_award_procurement"
         self.col_info = TRANSACTION_FPDS_COLUMN_INFO
 
-    @property
-    def select_columns(self):
-        return [self.handle_column(col) for col in self.col_info]
-
 
 class FABSDeltaTransactionLoader(AbstractDeltaTransactionLoader):
 
@@ -212,10 +210,6 @@ class FABSDeltaTransactionLoader(AbstractDeltaTransactionLoader):
         self.id_col = "afa_generated_unique"
         self.source_table = "raw.published_fabs"
         self.col_info = TRANSACTION_FABS_COLUMN_INFO
-
-    @property
-    def select_columns(self):
-        return [self.handle_column(col) for col in self.col_info]
 
 
 class NormalizedMixin:
@@ -226,7 +220,8 @@ class NormalizedMixin:
     etl_level: str
     select_columns: list[str]
     to_normalized_col_info: list[TransactionColumn]
-    normalization_type: Literal["FABS", "FPDS"]
+    normalization_type: Literal["fabs", "fpds"]
+    prepare_spark: Callable
 
     def source_subquery_sql(self):
         additional_joins = f"""
@@ -291,11 +286,54 @@ class NormalizedMixin:
                 THEN INSERT
                     ({insert_col_names})
                     VALUES ({insert_values})
-            WHEN NOT MATCHED BY SOURCE AND {'NOT' if self.normalization_type== 'FABS' else ''} transaction_normalized.is_fpds
+            WHEN NOT MATCHED BY SOURCE AND {'NOT' if self.normalization_type== 'fabs' else ''} transaction_normalized.is_fpds
                 THEN DELETE
         """
 
         return sql
+
+    def populate_transaction_normalized_ids(self):
+        target = DeltaTable.forName(self.spark, "int.transaction_normalized").alias("t")
+        tn = self.spark.table("int.transaction_normalized")
+        needs_ids = tn.filter(tn.id.isNull())
+        if not needs_ids.isEmpty():
+            max_id = tn.agg(sf.max("id")).collect()[0][0]
+            max_id = max_id if max_id else 0
+            w = Window.orderBy(needs_ids.transaction_unique_id)
+            with_ids = needs_ids.withColumn("id", (max_id + sf.row_number().over(w)).cast("LONG")).alias("s")
+            (
+                target.merge(with_ids, "t.transaction_unique_id = s.transaction_unique_id AND t.hash = s.hash")
+                .whenMatchedUpdateAll()
+                .execute()
+            )
+
+    def load_transactions(self):
+        super().load_transactions()
+        with self.prepare_spark():
+            self.populate_transaction_normalized_ids()
+            tn = self.spark.table("int.transaction_normalized")
+            tablename = f"int.transaction_{self.normalization_type}"
+            id_col = "detached_award_proc_unique" if self.normalization_type == "fpds" else "afa_generated_unique"
+            target = DeltaTable.forName(self.spark, tablename).alias("t")
+            source = self.spark.table(tablename)
+            needs_ids = (
+                source.join(
+                    tn,
+                    on=(
+                        (tn.transaction_unique_id == source[id_col])
+                        & (tn.hash == source.hash)
+                        & (source.transaction_id.isNull() | (source.transaction_id != tn.id))
+                    ),
+                    how="inner",
+                )
+                .select(tn.id, source[id_col], source.hash)
+                .alias("s")
+            )
+            (
+                target.merge(needs_ids, f"t.{id_col} = s.{id_col} AND t.hash = s.hash")
+                .whenMatchedUpdate(set={"t.transaction_id": "s.id"})
+                .execute()
+            )
 
 
 class FABSNormalizedDeltaTransactionLoader(NormalizedMixin, AbstractDeltaTransactionLoader):
@@ -305,7 +343,7 @@ class FABSNormalizedDeltaTransactionLoader(NormalizedMixin, AbstractDeltaTransac
         self.id_col = "transaction_unique_id"
         self.source_table = "raw.published_fabs"
         self.to_normalized_col_info = FABS_TO_NORMALIZED_COLUMN_INFO
-        self.normalization_type = "FABS"
+        self.normalization_type = "fabs"
 
     @property
     def select_columns(self):
@@ -314,6 +352,8 @@ class FABSNormalizedDeltaTransactionLoader(NormalizedMixin, AbstractDeltaTransac
         )
         parse_action_date_sql_snippet = self.handle_column(action_date_col, is_result_aliased=False)
         select_cols = [
+            "CAST(NULL AS LONG) AS id",
+            "CAST(NULL AS LONG) AS award_id",
             "awarding_agency.id AS awarding_agency_id",
             f"""CASE WHEN month({parse_action_date_sql_snippet}) > 9
                     THEN year({parse_action_date_sql_snippet}) + 1
@@ -349,7 +389,7 @@ class FPDSNormalizedDeltaTransactionLoader(NormalizedMixin, AbstractDeltaTransac
         self.id_col = "transaction_unique_id"
         self.source_table = "raw.detached_award_procurement"
         self.to_normalized_col_info = DAP_TO_NORMALIZED_COLUMN_INFO
-        self.normalization_type = "FPDS"
+        self.normalization_type = "fpds"
 
     @property
     def select_columns(self):
@@ -358,6 +398,8 @@ class FPDSNormalizedDeltaTransactionLoader(NormalizedMixin, AbstractDeltaTransac
         )
         parse_action_date_sql_snippet = self.handle_column(action_date_col, is_result_aliased=False)
         select_cols = [
+            "CAST(NULL AS LONG) AS id",
+            "CAST(NULL AS LONG) AS award_id",
             "awarding_agency.id AS awarding_agency_id",
             f"""CASE WHEN month({parse_action_date_sql_snippet}) > 9
                     THEN year({parse_action_date_sql_snippet}) + 1

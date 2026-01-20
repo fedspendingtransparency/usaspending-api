@@ -307,6 +307,7 @@ TRANSACTION_FPDS_COLUMN_INFO = [
     TransactionColumn("the_ability_one_program", "the_ability_one_program", "BOOLEAN"),
     TransactionColumn("total_obligated_amount", "total_obligated_amount", "STRING"),
     TransactionColumn("township_local_government", "township_local_government", "BOOLEAN"),
+    TransactionColumn("transaction_id", None, "LONG"),
     TransactionColumn("transaction_number", "transaction_number", "STRING"),
     TransactionColumn("transit_authority", "transit_authority", "BOOLEAN"),
     TransactionColumn("tribal_college", "tribal_college", "BOOLEAN"),

@@ -156,7 +156,7 @@ SUBAWARD_SEARCH_COLUMNS = {
     "prime_award_type": {"delta": "STRING", "postgres": "TEXT"},
     "piid": {"delta": "STRING", "postgres": "TEXT"},
     "fain": {"delta": "STRING", "postgres": "TEXT"},
-    "latest_transaction_id": {"delta": "LONG", "postgres": "BIGINT"},
+    "latest_transaction_id": {"delta": "STRING", "postgres": "BIGINT"},
     "last_modified_date": {"delta": "DATE", "postgres": "DATE"},
     "awarding_agency_id": {"delta": "INTEGER", "postgres": "INTEGER"},
     "awarding_toptier_agency_name": {"delta": "STRING", "postgres": "TEXT"},
@@ -591,10 +591,10 @@ subaward_search_load_sql_string = rf"""
             ON tn.id = a.latest_transaction_id
     LEFT OUTER JOIN
         int.transaction_fpds AS fpds
-            ON fpds.transaction_id = a.latest_transaction_id
+            ON fpds.detached_award_proc_unique = a.latest_transaction_id
     LEFT OUTER JOIN
         int.transaction_fabs AS fabs
-            ON fabs.transaction_id = a.latest_transaction_id
+            ON fabs.afa_generated_unique = a.latest_transaction_id
     LEFT OUTER JOIN
         global_temp.agency AS aa
             ON aa.id = a.awarding_agency_id
