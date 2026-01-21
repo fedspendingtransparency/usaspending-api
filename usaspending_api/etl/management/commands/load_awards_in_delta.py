@@ -135,7 +135,7 @@ class Command(BaseCommand):
                     SELECT
                         tn.award_id AS id,
                         tn.unique_award_key,
-                        tn.transaction_unique_id AS earliest_transaction_id,
+                        tn.id AS earliest_transaction_id,
                         tn.action_date AS date_signed,
                         tn.description,
                         tn.period_of_performance_start_date,
@@ -179,7 +179,7 @@ class Command(BaseCommand):
                         tn.unique_award_key AS generated_unique_award_id,
                         tn.is_fpds,
                         tn.last_modified_date,
-                        tn.transaction_unique_id AS latest_transaction_id,
+                        tn.id AS latest_transaction_id,
                         tn.period_of_performance_current_end_date,
                         tn.transaction_unique_id,
                         tn.type,
@@ -239,8 +239,7 @@ class Command(BaseCommand):
             ),
             transaction_totals AS (
                 SELECT
-                    -- Transaction Normalized Fields
-                    tn.award_id AS id,
+                    -- Transaction Normalized Fields                    
                     tn.unique_award_key,
                     SUM(tn.federal_action_obligation)   AS total_obligation,
                     SUM(tn.original_loan_subsidy_cost)  AS total_subsidy_cost,
@@ -254,7 +253,7 @@ class Command(BaseCommand):
                     COUNT(tn.transaction_unique_id) AS transaction_count
                 FROM int.transaction_normalized AS tn
                 LEFT JOIN int.transaction_fpds AS fpds ON tn.transaction_unique_id = fpds.detached_award_proc_unique
-                GROUP BY tn.unique_award_key, tn.award_id
+                GROUP BY tn.unique_award_key
             )
             SELECT
                 latest.id,
@@ -294,7 +293,7 @@ class Command(BaseCommand):
             USING (
                 {subquery}
             ) AS source_subquery
-            ON awards.generated_unique_award_id = source_subquery.unique_award_key
+            ON awards.id = source_subquery.id
             WHEN MATCHED
                 THEN UPDATE SET
                 {", ".join(set_cols)}

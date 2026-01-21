@@ -249,7 +249,7 @@ vw_awards_sql = """
             subaward_count,
             awarding_agency_id,
             funding_agency_id,
-            CAST(latest_transaction_id AS TEXT) AS latest_transaction_id,
+            latest_transaction_id,
             category,
             fiscal_year,
             total_loan_value,
@@ -268,7 +268,7 @@ vw_awards_sql = """
             officer_4_name,
             officer_5_amount,
             officer_5_name,
-            CAST(earliest_transaction_id AS TEXT) AS earliest_transaction_id,
+            earliest_transaction_id,
             total_indirect_federal_sharing,
             transaction_count
         FROM
