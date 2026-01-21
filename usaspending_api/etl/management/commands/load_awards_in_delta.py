@@ -239,7 +239,7 @@ class Command(BaseCommand):
             ),
             transaction_totals AS (
                 SELECT
-                    -- Transaction Normalized Fields                    
+                    -- Transaction Normalized Fields
                     tn.unique_award_key,
                     SUM(tn.federal_action_obligation)   AS total_obligation,
                     SUM(tn.original_loan_subsidy_cost)  AS total_subsidy_cost,
