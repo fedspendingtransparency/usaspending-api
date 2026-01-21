@@ -3,7 +3,7 @@ import logging
 from abc import ABC
 from contextlib import contextmanager
 from datetime import datetime, timezone
-from typing import Callable, Literal
+from typing import Callable, Generator, Literal
 
 from delta import DeltaTable
 from pyspark.sql import functions as sf, SparkSession, Window
@@ -45,11 +45,11 @@ class AbstractDeltaTransactionLoader(ABC):
     source_table: str
     col_info = list[TransactionColumn]
 
-    def __init__(self, etl_level: Literal["fabs", "fpds", "normalized"], spark_s3_bucket: str):
+    def __init__(self, etl_level: Literal["fabs", "fpds", "normalized"], spark_s3_bucket: str) -> None:
         self.etl_level = etl_level
         self.spark_s3_bucket: spark_s3_bucket
 
-    def load_transactions(self):
+    def load_transactions(self) -> None:
         with self.prepare_spark():
             if not self.spark._jsparkSession.catalog().tableExists(f"int.transaction_{self.etl_level}"):
                 raise Exception(f"Table: int.transaction_{self.etl_level} does not exist.")
@@ -61,7 +61,7 @@ class AbstractDeltaTransactionLoader(ABC):
             update_last_load_date(f"transaction_{self.etl_level}", next_last_load)
 
     @contextmanager
-    def prepare_spark(self):
+    def prepare_spark(self) -> Generator[None, None, None]:
         extra_conf = {
             "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension",
             "spark.sql.catalog.spark_catalog": "org.apache.spark.sql.delta.catalog.DeltaCatalog",
@@ -128,7 +128,7 @@ class AbstractDeltaTransactionLoader(ABC):
 
         return sql_snippet
 
-    def handle_column(self, col: TransactionColumn, is_result_aliased=True):
+    def handle_column(self, col: TransactionColumn, is_result_aliased=True) -> str:
         if col.handling == "cast":
             retval = f"CAST({self.source_table}.{col.source} AS {col.delta_type})"
         elif col.handling == "literal":
@@ -159,12 +159,12 @@ class AbstractDeltaTransactionLoader(ABC):
         return retval
 
     @property
-    def select_columns(self):
+    def select_columns(self) -> list[str]:
         return ["CAST(NULL AS LONG) AS transaction_id"] + [
             self.handle_column(col) for col in self.col_info if col.dest_name != "transaction_id"
         ]
 
-    def source_subquery_sql(self):
+    def source_subquery_sql(self) -> str:
         select_columns_str = ",\n    ".join(self.select_columns)
         sql = f"""
             SELECT
@@ -173,7 +173,7 @@ class AbstractDeltaTransactionLoader(ABC):
         """
         return sql
 
-    def transaction_merge_into_sql(self):
+    def transaction_merge_into_sql(self) -> str:
         silver_table_cols = ", ".join([col.dest_name for col in self.col_info if col.dest_name != "transaction_id"])
         sql = f"""
             MERGE INTO int.transaction_{self.etl_level} AS silver_table
@@ -196,7 +196,7 @@ class AbstractDeltaTransactionLoader(ABC):
 
 class FPDSDeltaTransactionLoader(AbstractDeltaTransactionLoader):
 
-    def __init__(self, spark_s3_bucket: str):
+    def __init__(self, spark_s3_bucket: str) -> None:
         super().__init__(etl_level="fpds", spark_s3_bucket=spark_s3_bucket)
         self.id_col = "detached_award_proc_unique"
         self.source_table = "raw.detached_award_procurement"
@@ -205,7 +205,7 @@ class FPDSDeltaTransactionLoader(AbstractDeltaTransactionLoader):
 
 class FABSDeltaTransactionLoader(AbstractDeltaTransactionLoader):
 
-    def __init__(self, spark_s3_bucket: str):
+    def __init__(self, spark_s3_bucket: str) -> None:
         super().__init__(etl_level="fabs", spark_s3_bucket=spark_s3_bucket)
         self.id_col = "afa_generated_unique"
         self.source_table = "raw.published_fabs"
@@ -223,7 +223,7 @@ class NormalizedMixin:
     normalization_type: Literal["fabs", "fpds"]
     prepare_spark: Callable
 
-    def source_subquery_sql(self):
+    def source_subquery_sql(self) -> str:
         additional_joins = f"""
             LEFT OUTER JOIN global_temp.subtier_agency AS funding_subtier_agency ON (
                 funding_subtier_agency.subtier_code = {self.source_table}.funding_sub_tier_agency_co
@@ -250,7 +250,7 @@ class NormalizedMixin:
             {additional_joins}
         """
 
-    def transaction_merge_into_sql(self):
+    def transaction_merge_into_sql(self) -> str:
         create_ref_temp_views(self.spark)
         load_datetime = datetime.now(timezone.utc)
         special_columns = ["create_date", "update_date"]
@@ -292,7 +292,7 @@ class NormalizedMixin:
 
         return sql
 
-    def populate_transaction_normalized_ids(self):
+    def populate_transaction_normalized_ids(self) -> None:
         target = DeltaTable.forName(self.spark, "int.transaction_normalized").alias("t")
         tn = self.spark.table("int.transaction_normalized")
         needs_ids = tn.filter(tn.id.isNull())
@@ -307,38 +307,65 @@ class NormalizedMixin:
                 .execute()
             )
 
-    def load_transactions(self):
+    def link_transactions_to_normalized(self) -> None:
+        tn = self.spark.table("int.transaction_normalized")
+        tablename = f"int.transaction_{self.normalization_type}"
+        id_col = "detached_award_proc_unique" if self.normalization_type == "fpds" else "afa_generated_unique"
+        target = DeltaTable.forName(self.spark, tablename).alias("t")
+        source = self.spark.table(tablename)
+        needs_ids = (
+            source.join(
+                tn,
+                on=(
+                    (tn.transaction_unique_id == source[id_col])
+                    & (tn.hash == source.hash)
+                    & (source.transaction_id.isNull() | (source.transaction_id != tn.id))
+                ),
+                how="inner",
+            )
+            .select(tn.id, source[id_col], source.hash)
+            .alias("s")
+        )
+        (
+            target.merge(needs_ids, f"t.{id_col} = s.{id_col} AND t.hash = s.hash")
+            .whenMatchedUpdate(set={"t.transaction_id": "s.id"})
+            .execute()
+        )
+
+    def populate_award_ids(self) -> None:
+        awards = self.spark.table("int.awards")
+        max_id = awards.agg(sf.max("id")).collect()[0][0]
+        max_id = max_id if max_id else 0
+        target = DeltaTable.forName(self.spark, "int.transaction_normalized").alias("t")
+        source = self.spark.table("int.transaction_normalized")
+        needs_ids = (
+            source.join(awards, awards.generated_unique_award_id == source.unique_award_key, how="left")
+            .filter(awards.id.isNull())
+            .select(source.unique_award_key)
+            .distinct()
+        )
+        logger.info(f"Found {needs_ids.count()} awards that need ids")
+        w = Window.orderBy(needs_ids.unique_award_key)
+        with_ids = needs_ids.withColumn("award_id", (max_id + sf.row_number().over(w)).cast("LONG")).alias("s")
+        logger.info(f"generated {with_ids.count()} award_id's")
+        logger.info(with_ids.show(10))
+        (
+            target.merge(with_ids, f"t.unique_award_key = s.unique_award_key")
+            .whenMatchedUpdate(set={"t.award_id": "s.award_id"})
+            .execute()
+        )
+
+    def load_transactions(self) -> None:
         super().load_transactions()
         with self.prepare_spark():
+            self.populate_award_ids()
             self.populate_transaction_normalized_ids()
-            tn = self.spark.table("int.transaction_normalized")
-            tablename = f"int.transaction_{self.normalization_type}"
-            id_col = "detached_award_proc_unique" if self.normalization_type == "fpds" else "afa_generated_unique"
-            target = DeltaTable.forName(self.spark, tablename).alias("t")
-            source = self.spark.table(tablename)
-            needs_ids = (
-                source.join(
-                    tn,
-                    on=(
-                        (tn.transaction_unique_id == source[id_col])
-                        & (tn.hash == source.hash)
-                        & (source.transaction_id.isNull() | (source.transaction_id != tn.id))
-                    ),
-                    how="inner",
-                )
-                .select(tn.id, source[id_col], source.hash)
-                .alias("s")
-            )
-            (
-                target.merge(needs_ids, f"t.{id_col} = s.{id_col} AND t.hash = s.hash")
-                .whenMatchedUpdate(set={"t.transaction_id": "s.id"})
-                .execute()
-            )
+            self.link_transactions_to_normalized()
 
 
 class FABSNormalizedDeltaTransactionLoader(NormalizedMixin, AbstractDeltaTransactionLoader):
 
-    def __init__(self, spark_s3_bucket: str):
+    def __init__(self, spark_s3_bucket: str) -> None:
         super().__init__(etl_level="normalized", spark_s3_bucket=spark_s3_bucket)
         self.id_col = "transaction_unique_id"
         self.source_table = "raw.published_fabs"
@@ -346,7 +373,7 @@ class FABSNormalizedDeltaTransactionLoader(NormalizedMixin, AbstractDeltaTransac
         self.normalization_type = "fabs"
 
     @property
-    def select_columns(self):
+    def select_columns(self) -> list[str]:
         action_date_col = next(
             filter(lambda c: c.dest_name == "action_date" and c.source == "action_date", FABS_TO_NORMALIZED_COLUMN_INFO)
         )
@@ -384,7 +411,7 @@ class FABSNormalizedDeltaTransactionLoader(NormalizedMixin, AbstractDeltaTransac
 
 class FPDSNormalizedDeltaTransactionLoader(NormalizedMixin, AbstractDeltaTransactionLoader):
 
-    def __init__(self, spark_s3_bucket: str):
+    def __init__(self, spark_s3_bucket: str) -> None:
         super().__init__(etl_level="normalized", spark_s3_bucket=spark_s3_bucket)
         self.id_col = "transaction_unique_id"
         self.source_table = "raw.detached_award_procurement"
@@ -392,7 +419,7 @@ class FPDSNormalizedDeltaTransactionLoader(NormalizedMixin, AbstractDeltaTransac
         self.normalization_type = "fpds"
 
     @property
-    def select_columns(self):
+    def select_columns(self) -> list[str]:
         action_date_col = next(
             filter(lambda c: c.dest_name == "action_date" and c.source == "action_date", DAP_TO_NORMALIZED_COLUMN_INFO)
         )

@@ -15,6 +15,7 @@ AWARDS_COLUMNS = {
     "fpds_parent_agency_id": "STRING",
     "funding_agency_id": "INTEGER",
     "generated_unique_award_id": "STRING NOT NULL",
+    "id": "LONG",
     "is_fpds": "BOOLEAN NOT NULL",
     "last_modified_date": "DATE",
     "latest_transaction_id": "STRING",

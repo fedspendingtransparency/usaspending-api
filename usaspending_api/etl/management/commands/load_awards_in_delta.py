@@ -124,7 +124,7 @@ class Command(BaseCommand):
         load_datetime = datetime.now(timezone.utc)
 
         set_insert_special_columns = ["total_subaward_amount", "create_date", "update_date"]
-        subquery_ignored_columns = set_insert_special_columns + ["subaward_count"]
+        subquery_ignored_columns = set_insert_special_columns + ["id", "subaward_count"]
 
         # Use a UNION in award_ids_to_update, not UNION ALL because there could be duplicates among the award ids
         # between the query parts or in int.award_ids_delete_modified.
@@ -133,6 +133,7 @@ class Command(BaseCommand):
             transaction_earliest AS (
                 SELECT * FROM (
                     SELECT
+                        tn.award_id AS id,
                         tn.unique_award_key,
                         tn.transaction_unique_id AS earliest_transaction_id,
                         tn.action_date AS date_signed,
@@ -156,6 +157,7 @@ class Command(BaseCommand):
                 SELECT * FROM (
                     SELECT
                         -- General update columns (id at top, rest alphabetically by alias/name)
+                        tn.award_id AS id,
                         tn.unique_award_key,
                         tn.awarding_agency_id,
                         CASE
@@ -210,6 +212,7 @@ class Command(BaseCommand):
             transaction_ec AS (
                 SELECT * FROM (
                     SELECT
+                        tn.award_id AS id,
                         tn.unique_award_key,
                         COALESCE(fpds.officer_1_amount, fabs.officer_1_amount) AS officer_1_amount,
                         COALESCE(fpds.officer_1_name, fabs.officer_1_name)     AS officer_1_name,
@@ -237,6 +240,7 @@ class Command(BaseCommand):
             transaction_totals AS (
                 SELECT
                     -- Transaction Normalized Fields
+                    tn.award_id AS id,
                     tn.unique_award_key,
                     SUM(tn.federal_action_obligation)   AS total_obligation,
                     SUM(tn.original_loan_subsidy_cost)  AS total_subsidy_cost,
@@ -250,9 +254,10 @@ class Command(BaseCommand):
                     COUNT(tn.transaction_unique_id) AS transaction_count
                 FROM int.transaction_normalized AS tn
                 LEFT JOIN int.transaction_fpds AS fpds ON tn.transaction_unique_id = fpds.detached_award_proc_unique
-                GROUP BY tn.unique_award_key
+                GROUP BY tn.unique_award_key, tn.award_id
             )
             SELECT
+                latest.id,
                 latest.unique_award_key,
                 0 AS subaward_count,  -- for consistency with Postgres table
                 {", ".join([col_name for col_name in AWARDS_COLUMNS if col_name not in subquery_ignored_columns])}
