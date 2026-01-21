@@ -1,29 +1,22 @@
 import copy
 import logging
 from abc import ABC
-from contextlib import contextmanager
 from datetime import datetime, timezone
-from typing import Callable, Generator, Literal
+from typing import Callable, Literal
 
 from delta import DeltaTable
 from pyspark.sql import functions as sf, SparkSession, Window
-from pyspark.sql.types import ArrayType, StringType
+
 
 from usaspending_api.broker.helpers.build_business_categories_boolean_dict import fpds_boolean_columns
-from usaspending_api.broker.helpers.get_business_categories import (
-    get_business_categories_fabs,
-    get_business_categories_fpds,
-)
+
 from usaspending_api.broker.helpers.last_load_date import (
     get_earliest_load_date,
     update_last_load_date,
 )
 from usaspending_api.common.data_classes import TransactionColumn
 from usaspending_api.common.etl.spark import create_ref_temp_views
-from usaspending_api.common.helpers.spark_helpers import (
-    configure_spark_session,
-    get_active_spark_session,
-)
+
 
 from usaspending_api.transactions.delta_models.transaction_fabs import (
     FABS_TO_NORMALIZED_COLUMN_INFO,
@@ -45,50 +38,20 @@ class AbstractDeltaTransactionLoader(ABC):
     source_table: str
     col_info = list[TransactionColumn]
 
-    def __init__(self, etl_level: Literal["fabs", "fpds", "normalized"], spark_s3_bucket: str) -> None:
+    def __init__(self, spark, etl_level: Literal["fabs", "fpds", "normalized"], spark_s3_bucket: str) -> None:
         self.etl_level = etl_level
         self.spark_s3_bucket: spark_s3_bucket
+        self.spark = spark
 
     def load_transactions(self) -> None:
-        with self.prepare_spark():
-            if not self.spark._jsparkSession.catalog().tableExists(f"int.transaction_{self.etl_level}"):
-                raise Exception(f"Table: int.transaction_{self.etl_level} does not exist.")
-            logger.info(f"Running UPSERT SQL for transaction_{self.etl_level} ETL")
-            self.spark.sql(self.transaction_merge_into_sql())
-            next_last_load = get_earliest_load_date(
-                ("source_procurement_transaction", "source_assistance_transaction"), datetime.utcfromtimestamp(0)
-            )
-            update_last_load_date(f"transaction_{self.etl_level}", next_last_load)
-
-    @contextmanager
-    def prepare_spark(self) -> Generator[None, None, None]:
-        extra_conf = {
-            "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension",
-            "spark.sql.catalog.spark_catalog": "org.apache.spark.sql.delta.catalog.DeltaCatalog",
-            "spark.sql.parquet.datetimeRebaseModeInWrite": "LEGACY",  # for dates at/before 1900
-            "spark.sql.parquet.int96RebaseModeInWrite": "LEGACY",  # for timestamps at/before 1900
-            "spark.sql.jsonGenerator.ignoreNullFields": "false",  # keep nulls in our json
-        }
-
-        # Create the Spark Session
-        self.spark = get_active_spark_session()
-        spark_created_by_command = False
-        if not self.spark:
-            spark_created_by_command = True
-            self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)  # type: SparkSession
-
-        # Create UDFs for Business Categories
-        self.spark.udf.register(
-            name="get_business_categories_fabs", f=get_business_categories_fabs, returnType=ArrayType(StringType())
+        if not self.spark._jsparkSession.catalog().tableExists(f"int.transaction_{self.etl_level}"):
+            raise Exception(f"Table: int.transaction_{self.etl_level} does not exist.")
+        logger.info(f"Running UPSERT SQL for transaction_{self.etl_level} ETL")
+        self.spark.sql(self.transaction_merge_into_sql())
+        next_last_load = get_earliest_load_date(
+            ("source_procurement_transaction", "source_assistance_transaction"), datetime.utcfromtimestamp(0)
         )
-        self.spark.udf.register(
-            name="get_business_categories_fpds", f=get_business_categories_fpds, returnType=ArrayType(StringType())
-        )
-
-        yield  # Going to wait for the Django command to complete then stop the spark session if needed
-
-        if spark_created_by_command:
-            self.spark.stop()
+        update_last_load_date(f"transaction_{self.etl_level}", next_last_load)
 
     def build_date_format_sql(self, col: TransactionColumn, is_casted_to_date: bool = True) -> str:
         # Each of these regexps allows for an optional timestamp portion, separated from the date by some character,
@@ -196,8 +159,8 @@ class AbstractDeltaTransactionLoader(ABC):
 
 class FPDSDeltaTransactionLoader(AbstractDeltaTransactionLoader):
 
-    def __init__(self, spark_s3_bucket: str) -> None:
-        super().__init__(etl_level="fpds", spark_s3_bucket=spark_s3_bucket)
+    def __init__(self, spark: SparkSession, spark_s3_bucket: str) -> None:
+        super().__init__(spark=spark, etl_level="fpds", spark_s3_bucket=spark_s3_bucket)
         self.id_col = "detached_award_proc_unique"
         self.source_table = "raw.detached_award_procurement"
         self.col_info = TRANSACTION_FPDS_COLUMN_INFO
@@ -205,8 +168,8 @@ class FPDSDeltaTransactionLoader(AbstractDeltaTransactionLoader):
 
 class FABSDeltaTransactionLoader(AbstractDeltaTransactionLoader):
 
-    def __init__(self, spark_s3_bucket: str) -> None:
-        super().__init__(etl_level="fabs", spark_s3_bucket=spark_s3_bucket)
+    def __init__(self, spark: SparkSession, spark_s3_bucket: str) -> None:
+        super().__init__(spark=spark, etl_level="fabs", spark_s3_bucket=spark_s3_bucket)
         self.id_col = "afa_generated_unique"
         self.source_table = "raw.published_fabs"
         self.col_info = TRANSACTION_FABS_COLUMN_INFO
@@ -357,16 +320,15 @@ class NormalizedMixin:
 
     def load_transactions(self) -> None:
         super().load_transactions()
-        with self.prepare_spark():
-            self.populate_award_ids()
-            self.populate_transaction_normalized_ids()
-            self.link_transactions_to_normalized()
+        self.populate_award_ids()
+        self.populate_transaction_normalized_ids()
+        self.link_transactions_to_normalized()
 
 
 class FABSNormalizedDeltaTransactionLoader(NormalizedMixin, AbstractDeltaTransactionLoader):
 
-    def __init__(self, spark_s3_bucket: str) -> None:
-        super().__init__(etl_level="normalized", spark_s3_bucket=spark_s3_bucket)
+    def __init__(self, spark: SparkSession, spark_s3_bucket: str) -> None:
+        super().__init__(spark=spark, etl_level="normalized", spark_s3_bucket=spark_s3_bucket)
         self.id_col = "transaction_unique_id"
         self.source_table = "raw.published_fabs"
         self.to_normalized_col_info = FABS_TO_NORMALIZED_COLUMN_INFO
@@ -411,8 +373,8 @@ class FABSNormalizedDeltaTransactionLoader(NormalizedMixin, AbstractDeltaTransac
 
 class FPDSNormalizedDeltaTransactionLoader(NormalizedMixin, AbstractDeltaTransactionLoader):
 
-    def __init__(self, spark_s3_bucket: str) -> None:
-        super().__init__(etl_level="normalized", spark_s3_bucket=spark_s3_bucket)
+    def __init__(self, spark, spark_s3_bucket: str) -> None:
+        super().__init__(spark=spark, etl_level="normalized", spark_s3_bucket=spark_s3_bucket)
         self.id_col = "transaction_unique_id"
         self.source_table = "raw.detached_award_procurement"
         self.to_normalized_col_info = DAP_TO_NORMALIZED_COLUMN_INFO

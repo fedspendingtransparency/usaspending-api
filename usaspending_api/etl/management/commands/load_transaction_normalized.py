@@ -3,6 +3,7 @@ import logging
 from django.core.management import BaseCommand
 
 from usaspending_api.config import CONFIG
+from usaspending_api.etl.transaction_delta_loaders.context_managers import prepare_spark
 from usaspending_api.etl.transaction_delta_loaders.loaders import (
     FABSNormalizedDeltaTransactionLoader,
     FPDSNormalizedDeltaTransactionLoader,
@@ -28,7 +29,8 @@ class Command(BaseCommand):
 
     @staticmethod
     def handle(*args, **options):
-        fabs_loader = FABSNormalizedDeltaTransactionLoader(spark_s3_bucket=options["spark_s3_bucket"])
-        fpds_loader = FPDSNormalizedDeltaTransactionLoader(spark_s3_bucket=options["spark_s3_bucket"])
-        fabs_loader.load_transactions()
-        fpds_loader.load_transactions()
+        with prepare_spark() as spark:
+            fabs_loader = FABSNormalizedDeltaTransactionLoader(spark=spark, spark_s3_bucket=options["spark_s3_bucket"])
+            fpds_loader = FPDSNormalizedDeltaTransactionLoader(spark=spark, spark_s3_bucket=options["spark_s3_bucket"])
+            fabs_loader.load_transactions()
+            fpds_loader.load_transactions()
