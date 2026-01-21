@@ -502,7 +502,7 @@ def test_file_c_spark_download_columns(client, download_test_data, create_downlo
     assert resp.status_code == status.HTTP_200_OK
     zip_path = resp.data["file_url"]
     with zipfile.ZipFile(zip_path, "r") as zip_ref:
-        assert len(zip_ref.namelist()) == 3
+        assert len(zip_ref.namelist()) == 5
         for file in zip_ref.namelist():
             with zip_ref.open(file) as zip_ref_file:
                 df = pd.read_csv(zip_ref_file)

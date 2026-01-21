@@ -52,10 +52,10 @@ services:
     image: usaspending-testing  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
     build:
       context: .
-      dockerfile: Dockerfile.testing
+      dockerfile: testing.Dockerfile
     container_name: usaspending-test
     volumes:
-      - .:/usaspending-api
+      - ${PROJECT_DIRECTORY:-.}:/usaspending-api
       # Required to interact with host's docker daemon from within this running container,
       # to spin up the data-act-broker-init-test-db container used for broker integration tests (see: conftest.broker_db_setup)
       - /var/run/docker.sock:/var/run/docker.sock
@@ -144,7 +144,7 @@ services:
     image: usaspending-download  # when an image by this name is not found in the local repo, and it is forced to build, it will use this as the tag
     build:
       context: .
-      dockerfile: Dockerfile.download
+      dockerfile: download.Dockerfile
     container_name: usaspending-bulk-download
     restart: on-failure:5 # 5 max attempt, and then it will stop restarting. NOTE: bulk download errors will cause one failure+restart iterations
     volumes:
@@ -167,7 +167,7 @@ services:
       - usaspending  # must pass --profile usaspending to docker compose for this to come up
       - test
       - ci
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.1.1
+    image: opensearchproject/opensearch:2.9.0
     container_name: usaspending-es
     environment:
       - node.name=usaspending-es
@@ -177,16 +177,15 @@ services:
       - network.host=0.0.0.0
       - transport.host=localhost
       - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=-Xms2048m -Xmx2048m"  # Ensure Docker is allocated plenty of memory, otherwise this will fail
+      - plugins.security.disabled=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms2g -Xmx2g"  # Ensure Docker is allocated plenty of memory, otherwise this will fail
     # Inject plugin install, then resume with orignial entrypoint command
     command: >
       /bin/sh -c "
-        if [ ! -d /usr/share/elasticsearch/plugins/mapper-murmur3 ]; then
-          # Certificate problem workaround when on VPN - wget without checking cert, then install from local filesystem
-          wget --no-check-certificate https://artifacts.elastic.co/downloads/elasticsearch-plugins/mapper-murmur3/mapper-murmur3-7.1.1.zip
-          ./bin/elasticsearch-plugin install file:///usr/share/elasticsearch/mapper-murmur3-7.1.1.zip
+        if [ ! -d /usr/share/opensearch/plugins/mapper-murmur3 ]; then
+          /usr/share/opensearch/bin/opensearch-plugin install mapper-murmur3
         fi
-        /usr/local/bin/docker-entrypoint.sh"
+        /usr/share/opensearch/opensearch-docker-entrypoint.sh"
     ulimits:
       memlock:
         soft: -1
@@ -194,18 +193,20 @@ services:
     volumes:
     - type: volume
       source: local_es_data
-      target: /usr/share/elasticsearch/data
+      target: /usr/share/opensearch/data
     ports:
       - 9200:9200
 
   usaspending-kibana-es:
     profiles:
       - usaspending  # must pass --profile usaspending to docker compose for this to come up
-    image: docker.elastic.co/kibana/kibana-oss:7.1.1
+    image: opensearchproject/opensearch-dashboards:2.9.0
     container_name: usaspending-kibana-es
     # ELASTICSEARCH_HOSTS should match the port for "usaspending-es"; value will need to be updated if using Windows
     environment:
-      - ELASTICSEARCH_HOSTS="http://docker.for.mac.localhost:9200"
+      - OPENSEARCH_HOSTS="http://usaspending-es:9200"
+      - DISABLE_SECURITY_DASHBOARDS_PLUGIN=true
+      - DISABLE_SECURITY_PLUGIN=true
     ports:
       - 5601:5601
 
@@ -254,7 +255,7 @@ services:
     # build context path needs to be relative to project root, from where docker compose will be run
     build:
       context: .
-      dockerfile: Dockerfile.spark
+      dockerfile: spark.Dockerfile
       args:
         PROJECT_LOG_DIR: ${PROJECT_LOG_DIR}
     container_name: spark-master
@@ -284,7 +285,7 @@ services:
     # build context path needs to be relative to project root, from where docker compose will be run
     build:
       context: .
-      dockerfile: Dockerfile.spark
+      dockerfile: spark.Dockerfile
       args:
         PROJECT_LOG_DIR: ${PROJECT_LOG_DIR}
     container_name: spark-worker
@@ -314,7 +315,7 @@ services:
     # build context path needs to be relative to project root, from where docker compose will be run
     build:
       context: .
-      dockerfile: Dockerfile.spark
+      dockerfile: spark.Dockerfile
       args:
         PROJECT_LOG_DIR: ${PROJECT_LOG_DIR}
     container_name: spark-history-server
@@ -351,6 +352,7 @@ services:
   #    make docker-compose-run profiles="--profile spark" args="--rm -e MINIO_HOST=minio -e JDBC_URL -e COMPONENT_NAME='My Spark Prototype Script' spark-submit \
   #      --packages org.postgresql:postgresql:42.2.23,io.delta:delta-core_2.12:1.2.1,org.apache.hadoop:hadoop-aws:3.3.1,org.apache.spark:spark-hive_2.12:3.2.1 \
   #      /project/usaspending_api/etl/tests/path_to_your_spark_prototype_script.py"
+
   spark-submit:
     profiles:
       - spark  # must pass --profile spark to docker compose for this to come up
@@ -359,7 +361,7 @@ services:
     # build context path needs to be relative to project root, from where docker compose will be run
     build:
       context: .
-      dockerfile: Dockerfile.spark
+      dockerfile: spark.Dockerfile
       args:
         PROJECT_LOG_DIR: ${PROJECT_LOG_DIR}
     container_name: spark-submit
@@ -393,7 +395,7 @@ services:
     command: --help
     volumes:
       - type: bind
-        source: .
+        source: ${PROJECT_DIRECTORY:-.}
         target: /project
         read_only: false
       # NOTE: The hive metastore_db Derby database folder is expected to be configured to show up as a subfolder of the spark-warehouse dir
