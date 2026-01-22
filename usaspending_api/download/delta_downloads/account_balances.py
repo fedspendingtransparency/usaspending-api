@@ -35,8 +35,8 @@ class AccountBalancesMixin:
             f"s3a://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.DELTA_LAKE_S3_PATH}/rpt/account_balances_download"
         )
 
-    def _build_dataframe(self) -> DataFrame:
-        return (
+    def _build_dataframes(self) -> list[DataFrame]:
+        return [
             self.download_table.filter(
                 sf.col("submission_id").isin(
                     get_submission_ids_for_periods(
@@ -49,8 +49,8 @@ class AccountBalancesMixin:
             .filter(self.dynamic_filters)
             .groupby(self.group_by_cols)
             .agg(*self.agg_cols)
-            .select(*self.select_cols)
-        )
+            .select(*self.select_cols),
+        ]
 
 
 class FederalAccountDownload(AccountBalancesMixin, AbstractAccountDownload):
@@ -70,10 +70,10 @@ class FederalAccountDownload(AccountBalancesMixin, AbstractAccountDownload):
     @property
     def agg_cols(self) -> list[Column]:
         return [
-            collect_concat("reporting_agency_name"),
-            collect_concat("agency_identifier_name"),
-            collect_concat("budget_function"),
-            collect_concat("budget_subfunction"),
+            collect_concat("reporting_agency_name", spark=self.spark),
+            collect_concat("agency_identifier_name", spark=self.spark),
+            collect_concat("budget_function", spark=self.spark),
+            collect_concat("budget_subfunction", spark=self.spark),
             sf.sum(sf.col("budget_authority_unobligated_balance_brought_forward")).alias(
                 "budget_authority_unobligated_balance_brought_forward"
             ),
