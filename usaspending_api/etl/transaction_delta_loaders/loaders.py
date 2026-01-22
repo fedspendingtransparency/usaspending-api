@@ -307,11 +307,8 @@ class NormalizedMixin:
             .select(source.unique_award_key)
             .distinct()
         )
-        logger.info(f"Found {needs_ids.count()} awards that need ids")
         w = Window.orderBy(needs_ids.unique_award_key)
         with_ids = needs_ids.withColumn("award_id", (max_id + sf.row_number().over(w)).cast("LONG")).alias("s")
-        logger.info(f"generated {with_ids.count()} award_id's")
-        logger.info(with_ids.show(10))
         (
             target.merge(with_ids, f"t.unique_award_key = s.unique_award_key")
             .whenMatchedUpdate(set={"t.award_id": "s.award_id"})
