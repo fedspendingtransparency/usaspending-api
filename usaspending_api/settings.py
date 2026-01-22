@@ -54,15 +54,15 @@ SECRET_KEY = get_random_string(length=12)
 # Defaults to False, unless DJANGO_DEBUG env var is set to a truthy value
 DEBUG = os.environ.get("DJANGO_DEBUG", "").lower() in ["true", "1", "yes"]
 
-HOST = "localhost:3000"
-ALLOWED_HOSTS = ["*"]
+HOST = os.environ.get("HOST", "localhost:3000")
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "*").split(",")
 
 # Define local flag to affect location of downloads
 IS_LOCAL = os.environ.get("IS_LOCAL", "").lower() in ["true", "1", "yes"]
 
 # Indicates which environment is sending traces to Grafana.
 # This will be overwritten by Ansible
-TRACE_ENV = "unspecified"
+TRACE_ENV = os.environ.get("TRACE_ENV", "unspecified")
 
 # How to handle downloads locally
 # True: process it right away by the API;
@@ -76,17 +76,17 @@ if not USASPENDING_AWS_REGION:
 
 # AWS locations for CSV files
 CSV_LOCAL_PATH = str(REPO_DIR / "csv_downloads") + "/"
-DOWNLOAD_ENV = ""
+DOWNLOAD_ENV = os.environ.get("DOWNLOAD_ENV", "")
 BULK_DOWNLOAD_LOCAL_PATH = str(REPO_DIR / "bulk_downloads") + "/"
 
 DATABASE_DOWNLOAD_S3_BUCKET_NAME = CONFIG.DATABASE_DOWNLOAD_S3_BUCKET_NAME
 BULK_DOWNLOAD_S3_BUCKET_NAME = CONFIG.BULK_DOWNLOAD_S3_BUCKET_NAME
 BULK_DOWNLOAD_S3_REDIRECT_DIR = "generated_downloads"
-BULK_DOWNLOAD_SQS_QUEUE_NAME = ""
-PRIORITY_DOWNLOAD_SQS_QUEUE_NAME = ""
+BULK_DOWNLOAD_SQS_QUEUE_NAME = os.environ.get("BULK_DOWNLOAD_SQS_QUEUE_NAME", "")
+PRIORITY_DOWNLOAD_SQS_QUEUE_NAME = os.environ.get("PRIORITY_DOWNLOAD_SQS_QUEUE_NAME", "")
 BULK_DOWNLOAD_SPARK_JOB_NAME_PREFIX = "api_download"
 DATABASE_DOWNLOAD_S3_REDIRECT_DIR = "database_download"
-MONTHLY_DOWNLOAD_S3_BUCKET_NAME = ""
+MONTHLY_DOWNLOAD_S3_BUCKET_NAME = os.environ.get("MONTHLY_DOWNLOAD_S3_BUCKET_NAME", "")
 MONTHLY_DOWNLOAD_S3_REDIRECT_DIR = "award_data_archive"
 BROKER_AGENCY_BUCKET_NAME = ""
 UNLINKED_AWARDS_DOWNLOAD_REDIRECT_DIR = "unlinked_awards_downloads"
@@ -122,8 +122,8 @@ if not STATE_DATA_BUCKET:
     STATE_DATA_BUCKET = os.environ.get("STATE_DATA_BUCKET")
 
 # Download URLs
-FILES_SERVER_BASE_URL = ""
-SERVER_BASE_URL = ""
+FILES_SERVER_BASE_URL = os.environ.get("FILES_SERVER_BASE_URL", "")
+SERVER_BASE_URL = os.environ.get("SERVER_BASE_URL", "")
 
 if not FILES_SERVER_BASE_URL:
     # This logic should be re-worked following DNS change for lower environments
@@ -151,9 +151,7 @@ UNLINKED_AWARDS_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "unlinked_awa
 COVID19_DOWNLOAD_FILENAME_PREFIX = "COVID-19_Profile"
 
 # Elasticsearch
-ES_HOSTNAME = ""
-if not ES_HOSTNAME:
-    ES_HOSTNAME = os.environ.get("ES_HOSTNAME")
+ES_HOSTNAME = os.environ.get("ES_HOSTNAME", "")
 
 ES_AWARDS_ETL_VIEW_NAME = "award_delta_view"
 ES_AWARDS_MAX_RESULT_WINDOW = 50000
@@ -370,7 +368,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
-STATIC_URL = "/static/"
+STATIC_URL = os.environ.get("STATIC_URL", "/static/")
 STATIC_ROOT = str(APP_DIR / "static/") + "/"
 STATICFILES_DIRS = (str(APP_DIR / "static_doc_files") + "/",)
 
@@ -451,19 +449,19 @@ CACHES = {
 }
 
 # Cache environment - 'local', 'disabled', or 'elasticache'
-CACHE_ENVIRONMENT = "disabled"
+CACHE_ENVIRONMENT = os.environ.get("CACHE_ENVIRONMENT", "disabled")
 
 # Set up the appropriate elasticache for our environment
 CACHE_ENVIRONMENTS = {
     # Elasticache settings are changed during deployment, or can be set manually
     "elasticache": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "ELASTICACHE-CONNECTION-STRING",
-        "TIMEOUT": "TIMEOUT-IN-SECONDS",
+        "LOCATION": os.environ.get("ELASTICACHE_CONNECTION_STRING", "ELASTICACHE-CONNECTION-STRING"),
+        "TIMEOUT": os.environ.get("ELASTICACHE_TIMEOUT_IN_SECONDS", "TIMEOUT-IN-SECONDS"),
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
             # Note: ELASTICACHE-MASTER-STRING is currently only used by Prod and will be removed in other environments.
-            "MASTER_CACHE": "ELASTICACHE-MASTER-STRING",
+            "MASTER_CACHE": os.environ.get("ELASTICACHE_MASTER_STRING", "ELASTICACHE-MASTER-STRING"),
         },
     },
     "local": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache", "LOCATION": "locations-loc-mem-cache"},
