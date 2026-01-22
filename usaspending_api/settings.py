@@ -4,6 +4,7 @@ For the full list of settings and their values: https://docs.djangoproject.com/e
 """
 
 import os
+import json
 from pathlib import Path
 
 import dj_database_url
@@ -282,10 +283,23 @@ def _configure_database_connection(environment_variable, test_options=None):
     Configure a Django database connection... configuration.  environment_variable is the name of
     the operating system environment variable that contains the database connection string or DSN
     """
+    connection_string = os.environ.get(environment_variable)
+    try:
+        parts = json.loads(connection_string)
+        host = parts["host"]
+        port = parts["port"]
+        username = parts["username"]
+        password = parts["password"]
+        dbname = parts["dbname"]
+        connection_string = f"postgres://{username}:{password}@{host}:{port}/{dbname}"
+    except KeyError:
+        raise EnvironmentError(f"{environment_variable} is valid JSON, but one or more parts is missing: host, port, username, password, dbname")
+    except json.JSONDecodeError:
+        pass 
     if test_options is None:
         test_options = {}
     default_options = {"options": "-c statement_timeout={0}".format(DEFAULT_DB_TIMEOUT_IN_SECONDS * 1000)}
-    config = dj_database_url.parse(os.environ.get(environment_variable), conn_max_age=CONNECTION_MAX_SECONDS)
+    config = dj_database_url.parse(connection_string, conn_max_age=CONNECTION_MAX_SECONDS)
     config["OPTIONS"] = {**config.setdefault("OPTIONS", {}), **default_options}
     config["TEST"] = {**test_options, "SERIALIZE": False}
     return config
