@@ -150,7 +150,7 @@ def awards_and_transactions(db):
         "is_fpds": True,
         "labor_standards": None,
         "labor_standards_descrip": "NO",
-        "last_modified_date": "2018-08-24",
+        "last_modified_date": "2018-08-24 00:00:00+00",
         "legal_entity_address_line1": "123 main st",
         "legal_entity_address_line2": None,
         "legal_entity_address_line3": None,
@@ -270,7 +270,7 @@ def awards_and_transactions(db):
         "is_fpds": True,
         "labor_standards": None,
         "labor_standards_descrip": "NO",
-        "last_modified_date": "2018-08-24",
+        "last_modified_date": "2018-08-24 00:00:00+00",
         "legal_entity_address_line1": "123 main st",
         "legal_entity_address_line2": None,
         "legal_entity_address_line3": None,
@@ -381,7 +381,7 @@ expected_response_idv = {
     "period_of_performance": {
         "start_date": "2004-02-04",
         "end_date": "2025-06-30",
-        "last_modified_date": "2018-08-24",
+        "last_modified_date": "2018-08-24 00:00:00+00",
         "potential_end_date": "2003-04-05",
     },
     "awarding_agency": {
