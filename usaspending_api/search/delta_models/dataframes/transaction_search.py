@@ -96,8 +96,8 @@ class TransactionSearch(AbstractSearch):
                 sf.coalesce(
                     sf.to_date(self.transaction_fabs.created_at),
                     self.transaction_fpds.initial_report_date,
-                ).alias("initial_report_date")
-            ),
+                )
+            ).alias("initial_report_date"),
         ]
 
     @property
