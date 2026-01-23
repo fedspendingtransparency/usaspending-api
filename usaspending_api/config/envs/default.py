@@ -322,9 +322,9 @@ class DefaultConfig(BaseSettings):
     AWS_SECRET_KEY: SecretStr = ENV_SPECIFIC_OVERRIDE
     # Setting AWS_PROFILE to None so boto3 doesn't try to pick up the placeholder string as an actual profile to find
     AWS_PROFILE: str = None  # USER_SPECIFIC_OVERRIDE
-    SPARK_S3_BUCKET = os.environ.get("SPARK_S3_BUCKET")
+    SPARK_S3_BUCKET: str = os.environ.get("SPARK_S3_BUCKET")
     BULK_DOWNLOAD_S3_BUCKET_NAME: str = os.environ.get("BULK_DOWNLOAD_S3_BUCKET_NAME")
-    DATABASE_DOWNLOAD_S3_BUCKET_NAME = os.environ.get("DATABASE_DOWNLOAD_S3_BUCKET_NAME")
+    DATABASE_DOWNLOAD_S3_BUCKET_NAME: str = os.environ.get("DATABASE_DOWNLOAD_S3_BUCKET_NAME")
     DELTA_LAKE_S3_PATH: str = "data/delta"  # path within SPARK_S3_BUCKET where Delta output data will accumulate
     SPARK_CSV_S3_PATH: str = "data/csv"  # path within SPARK_S3_BUCKET where CSV output data will accumulate
     AWS_S3_ENDPOINT: str = "s3.us-gov-west-1.amazonaws.com"
