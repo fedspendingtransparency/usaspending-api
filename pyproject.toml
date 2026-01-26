@@ -170,6 +170,7 @@ target-version = ['py310']
 exclude = '/(\.git|\.venv|venv|migrations)/'
 
 [tool.ruff.lint]
+preview = true  # enable new rules
 exclude = [
     '.git',
     '.venv',
