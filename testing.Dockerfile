@@ -23,7 +23,10 @@ RUN apt update && \
 RUN export JAVA_HOME=/usr/lib/jvm/java-1.8.0-amazon-corretto
 RUN export PATH=${JAVA_HOME}/bin:$PATH
 
-WORKDIR /usaspending-api
-COPY requirements/requirements-dev.txt requirements/requirements-dev.txt
+# Install dev dependencies
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --extra dev --extra spark --locked
 
-RUN python3 -m pip install -r requirements/requirements-dev.txt
+WORKDIR /dockermount
