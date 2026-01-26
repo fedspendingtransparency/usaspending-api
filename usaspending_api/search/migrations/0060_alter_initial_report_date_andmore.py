@@ -31,7 +31,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="awardsearch",
             name="last_modified_date",
-            field=models.DateTimeField(null=True),
+            field=models.DateTimeField(blank=True, null=True),
         ),
         migrations.RunSQL(
             sql=f"""
