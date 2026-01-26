@@ -6,7 +6,6 @@ import pandas as pd
 import pytest
 from django.core.management import call_command
 from model_bakery import baker
-from usaspending_api.config import CONFIG
 
 from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.download.delta_downloads.account_balances import AccountBalancesDownloadFactory
@@ -23,17 +22,11 @@ from usaspending_api.download.delta_models.object_class_program_activity_downloa
 
 
 @pytest.fixture(scope="function")
-def award_financial_table(spark, s3_unittest_data_bucket, hive_unittest_metastore_db, monkeypatch):
+def award_financial_table(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
     call_command(
         "create_delta_table",
         "--destination-table=award_financial_download",
         f"--spark-s3-bucket={s3_unittest_data_bucket}",
-    )
-    monkeypatch.setattr(
-        f"usaspending_api.download.delta_downloads.award_financial.AwardFinancialMixin.download_table",
-        spark.read.format("delta").load(
-            f"s3a://{s3_unittest_data_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/rpt/award_financial_download"
-        ),
     )
     column_placeholders = {field.name: [None] * 5 for field in award_financial_schema}
     test_data_df = pd.DataFrame(
@@ -75,17 +68,11 @@ def award_financial_table(spark, s3_unittest_data_bucket, hive_unittest_metastor
 
 
 @pytest.fixture(scope="function")
-def award_financial_table_award_category(spark, s3_unittest_data_bucket, hive_unittest_metastore_db, monkeypatch):
+def award_financial_table_award_category(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
     call_command(
         "create_delta_table",
         "--destination-table=award_financial_download",
         f"--spark-s3-bucket={s3_unittest_data_bucket}",
-    )
-    monkeypatch.setattr(
-        f"usaspending_api.download.delta_downloads.award_financial.AwardFinancialMixin.download_table",
-        spark.read.format("delta").load(
-            f"s3a://{s3_unittest_data_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/rpt/award_financial_download"
-        ),
     )
     column_placeholders = {field.name: [None] * 5 for field in award_financial_schema}
     test_data_df = pd.DataFrame(
@@ -127,17 +114,11 @@ def award_financial_table_award_category(spark, s3_unittest_data_bucket, hive_un
 
 
 @pytest.fixture(scope="function")
-def account_balances_download_table(spark, s3_unittest_data_bucket, hive_unittest_metastore_db, monkeypatch):
+def account_balances_download_table(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
     call_command(
         "create_delta_table",
         "--destination-table=account_balances_download",
         f"--spark-s3-bucket={s3_unittest_data_bucket}",
-    )
-    monkeypatch.setattr(
-        f"usaspending_api.download.delta_downloads.account_balances.AccountBalancesMixin.download_table",
-        spark.read.format("delta").load(
-            f"s3a://{s3_unittest_data_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/rpt/account_balances_download"
-        ),
     )
     column_placeholders = {field.name: [None] * 5 for field in account_balances_schema}
     test_data_df = pd.DataFrame(
@@ -175,19 +156,11 @@ def account_balances_download_table(spark, s3_unittest_data_bucket, hive_unittes
 
 
 @pytest.fixture(scope="function")
-def object_class_by_program_activity_download_table(
-    spark, s3_unittest_data_bucket, hive_unittest_metastore_db, monkeypatch
-):
+def object_class_by_program_activity_download_table(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
     call_command(
         "create_delta_table",
         "--destination-table=object_class_program_activity_download",
         f"--spark-s3-bucket={s3_unittest_data_bucket}",
-    )
-    monkeypatch.setattr(
-        f"usaspending_api.download.delta_downloads.object_class_program_activity.ObjectClassProgramActivityMixin.download_table",
-        spark.read.format("delta").load(
-            f"s3a://{s3_unittest_data_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/rpt/object_class_program_activity_download"
-        ),
     )
     column_placeholders = {field.name: [None] * 5 for field in object_class_program_activity_schema}
     test_data_df = pd.DataFrame(

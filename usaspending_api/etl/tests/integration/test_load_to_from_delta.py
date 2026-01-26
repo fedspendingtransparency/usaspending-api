@@ -19,7 +19,6 @@ from pyspark.sql import SparkSession
 from django.conf import settings
 from django.core.management import call_command
 from django.db import connection, connections, transaction, models
-from usaspending_api.config import CONFIG
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.etl.award_helpers import update_awards
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
@@ -1053,18 +1052,11 @@ def test_load_object_class_program_activity_class(
     s3_unittest_data_bucket,
     hive_unittest_metastore_db,
     populate_usas_data_and_recipients_from_broker,
-    monkeypatch,
 ):
     call_command(
         "create_delta_table",
         "--destination-table=object_class_program_activity_download",
         f"--spark-s3-bucket={s3_unittest_data_bucket}",
-    )
-    monkeypatch.setattr(
-        f"usaspending_api.download.delta_downloads.object_class_program_activity.ObjectClassProgramActivityMixin.download_table",
-        spark.read.format("delta").load(
-            f"s3a://{s3_unittest_data_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/rpt/object_class_program_activity_download"
-        ),
     )
 
     verify_delta_table_loaded_to_delta(
@@ -1082,7 +1074,6 @@ def test_load_award_financial_download(
     s3_unittest_data_bucket,
     populate_usas_data_and_recipients_from_broker,
     hive_unittest_metastore_db,
-    monkeypatch,
 ):
 
     load_delta_table_from_postgres("published_fabs", s3_unittest_data_bucket)
@@ -1123,12 +1114,6 @@ def test_load_award_financial_download(
         "create_delta_table",
         "--destination-table=award_financial_download",
         f"--spark-s3-bucket={s3_unittest_data_bucket}",
-    )
-    monkeypatch.setattr(
-        f"usaspending_api.download.delta_downloads.award_financial.AwardFinancialMixin.download_table",
-        spark.read.format("delta").load(
-            f"s3a://{s3_unittest_data_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/rpt/award_financial_download"
-        ),
     )
 
     expected_data = [
@@ -1237,19 +1222,12 @@ def test_load_account_balances_download(
     spark,
     s3_unittest_data_bucket,
     hive_unittest_metastore_db,
-    monkeypatch,
     populate_usas_data_and_recipients_from_broker,
 ):
     call_command(
         "create_delta_table",
         "--destination-table=account_balances_download",
         f"--spark-s3-bucket={s3_unittest_data_bucket}",
-    )
-    monkeypatch.setattr(
-        f"usaspending_api.download.delta_downloads.account_balances.AccountBalancesMixin.download_table",
-        spark.read.format("delta").load(
-            f"s3a://{s3_unittest_data_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/rpt/account_balances_download"
-        ),
     )
 
     verify_delta_table_loaded_to_delta(
