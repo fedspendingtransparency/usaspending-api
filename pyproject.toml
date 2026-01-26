@@ -189,6 +189,7 @@ select = [
     "PLR1702",  # max number of nested blocks
     "C901",  # cognitive complexity (functions)
     "I001",  # unsorted imports
+    "B",  # flake8 bugbear
     "E",  # pycodestyle errors
     "F",  # pyflakes
     "W",  # pycodestyle warnings
