@@ -1,5 +1,7 @@
 FROM python:3.10.12-slim-bullseye
 
+COPY --from=ghcr.io/astral-sh/uv:0.7.19 /uv /uvx /bin/
+
 # Build ARGs
 ARG HADOOP_VERSION=3.3.4
 ARG SPARK_VERSION=3.5.0
@@ -55,9 +57,24 @@ RUN cp $SPARK_HOME/conf/spark-defaults.conf.template $SPARK_HOME/conf/spark-defa
 # Bake project dependencies into any spark-base -based container that will run Project python code (and require these dependencies)
 # NOTE: We must exclude any dependencies on the host machine installed in a virtual environment (assumed to be stored under ./.venv)
 WORKDIR /project
-COPY requirements/ /project/requirements
-RUN rm -rf /project/.venv
-RUN python3 -m pip install -r requirements/requirements.txt
+
+##### The following ENV vars are optimizations from https://github.com/astral-sh/uv-docker-example/blob/main/Dockerfile
+##### and https://docs.astral.sh/uv/guides/integration/docker/#optimizations
+# Enable bytecode compilation
+ENV UV_COMPILE_BYTECODE=1
+
+# Copy from the cache instead of linking since it's a mounted volume
+ENV UV_LINK_MODE=copy
+
+# Use the system Python environment since the container is already isolated
+ENV UV_PROJECT_ENVIRONMENT=/usr/local
+ENV UV_SYSTEM_PYTHON=1
+
+# Install dependencies
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --locked --no-install-project --no-dev
 
 # Allow for entrypoints and commands to infer that they are running relative to this directory
 WORKDIR ${SPARK_HOME}
