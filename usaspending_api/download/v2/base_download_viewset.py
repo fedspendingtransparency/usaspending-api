@@ -163,11 +163,12 @@ class BaseDownloadViewSet(APIView):
         return Response(response)
 
     def _get_status_url(self, file_name: str) -> str:
+        protocol = "https"
+        host = settings.SERVER_BASE_URL
         if settings.IS_LOCAL:
             protocol = "http"
             host = "localhost:8000"
-        else:
-            protocol = "https"
+        elif settings.USE_LEGACY_SERVER_URL:
             host = f"api.{settings.SERVER_BASE_URL}"
             if settings.DOWNLOAD_ENV != "production":
                 host = f"{settings.DOWNLOAD_ENV}-{host}"

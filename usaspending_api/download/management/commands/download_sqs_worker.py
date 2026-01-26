@@ -165,7 +165,7 @@ def _run_spark_download(download_job_id: int, job_name: str) -> None:
         command_options = [f"--skip-local-cleanup"]
         extra_options = {"run_as_container": True}
     else:
-        strategy = DatabricksStrategy()
+        strategy = DatabricksStrategy() if settings.USE_DATABRICKS else LocalStrategy()
         command_options = []
         extra_options = {}
     spark_jobs = SparkJobs(strategy)

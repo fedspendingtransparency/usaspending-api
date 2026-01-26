@@ -125,6 +125,8 @@ if not STATE_DATA_BUCKET:
 # Download URLs
 FILES_SERVER_BASE_URL = os.environ.get("FILES_SERVER_BASE_URL", "")
 SERVER_BASE_URL = os.environ.get("SERVER_BASE_URL", "")
+# used to determine the API server url based on the frontend URL. To simplify we can now just use the API server url directly.
+USE_LEGACY_SERVER_URL = os.environ.get("USE_LEGACY_SERVER_URL", "True") == "True"
 
 if not FILES_SERVER_BASE_URL:
     # This logic should be re-worked following DNS change for lower environments
@@ -505,3 +507,5 @@ SPAGHETTI_SAUCE = {
 SESSION_COOKIE_SECURE = True
 
 CSRF_COOKIE_SECURE = True
+
+USE_DATABRICKS = os.environ.get("USE_DATABRICKS", "True") == "True"
