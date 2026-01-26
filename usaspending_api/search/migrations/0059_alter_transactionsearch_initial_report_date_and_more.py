@@ -2,6 +2,7 @@
 
 from django.db import migrations, models
 
+
 class Migration(migrations.Migration):
     atomic = False
     dependencies = [
@@ -13,6 +14,7 @@ class Migration(migrations.Migration):
         migrations.RunSQL(
             sql="""
                 DROP VIEW IF EXISTS
+                vw_awards,
                 vw_transaction_fabs,
                 vw_transaction_normalized,
                 vw_transaction_fpds,
