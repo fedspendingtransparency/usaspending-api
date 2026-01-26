@@ -31,21 +31,17 @@ jobs:
       - name: Checkout Source Repository
         uses: actions/checkout@v4
 
-      - name: Get Changed Files
-        id: changed-files
+      - name: Get Changed Python Files
+        id: changed-python-files
         uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62
         with:
           files: |
             **.py
           separator: " "
 
-      - name: List all changed files
-        env:
-          ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
-        run: |
-          for file in ${ALL_CHANGED_FILES}; do
-            echo "$file was changed"
-          done
+      - name: Check if changed files is an empty string
+        if: steps.changed-python-files.outputs.all_changed_files == ''
+        run: echo "No changed files detected"
 
       - name: Set Combined ENV
         run: |
@@ -75,7 +71,10 @@ jobs:
 #        run: black --check --diff .
 
       - name: Run ruff linter
-        run: ruff check ${{ steps.changed-files.outputs.all_changed_files }}
+        if: steps.changed-python-files.outputs.all_changed_files != ''
+        run: |
+          echo "Running: ruff check ${{ steps.changed-python-files.outputs.all_changed_files }}"
+          ruff check ${{ steps.changed-python-files.outputs.all_changed_files }}
 
       - name: Run Check For Endpoint Documentation
         run: python manage.py check_for_endpoint_documentation
