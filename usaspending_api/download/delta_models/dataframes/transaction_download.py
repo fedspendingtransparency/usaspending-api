@@ -14,14 +14,14 @@ class TransactionDownload:
         self.award_search = spark.table("rpt.award_search")
         self.disaster_emergency_fund_code = spark.table("global_temp.disaster_emergency_fund_code")
         self.federal_account = spark.table("global_temp.federal_account")
-        self.financial_accounts_by_awards = spark.table("int.financial_accounts_by_awards").withColumn(
-            "faba_award_id", sf.col("award_id")
+        self.financial_accounts_by_awards = spark.table("int.financial_accounts_by_awards").withColumnRenamed(
+            "award_id", "faba_award_id"
         )
         self.object_class = spark.table("global_temp.object_class")
         self.ref_program_activity = spark.table("global_temp.ref_program_activity")
         self.submission_attributes = spark.table("global_temp.submission_attributes")
-        self.transaction_search = spark.table("rpt.transaction_search").withColumn(
-            "transaction_award_id", sf.col("award_id")
+        self.transaction_search = spark.table("rpt.transaction_search").withColumnRenamed(
+            "award_id", "transaction_award_id"
         )
         self.treasury_appropriation_account = spark.table("global_temp.treasury_appropriation_account")
 
