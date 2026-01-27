@@ -44,8 +44,8 @@ class TransactionDownload:
         return self.defc_by_group["covid_19"]
 
     @property
-    def faba_aggs_df(self) -> DataFrame:
-        faba_aggregations = {
+    def financial_accounts_by_awards_aggs_df(self) -> DataFrame:
+        financial_accounts_by_awards_aggs = {
             "covid_19_obligated_amount": (
                 sf.sum(
                     sf.when(
@@ -181,7 +181,7 @@ class TransactionDownload:
                 "left",
             )
             .groupBy(self.financial_accounts_by_awards.faba_award_id)
-            .agg(*[agg.alias(name) for name, agg in faba_aggregations.items()])
+            .agg(*[agg.alias(name) for name, agg in financial_accounts_by_awards_aggs.items()])
         )
         return df
 
@@ -587,14 +587,18 @@ class TransactionDownload:
 
     @property
     def dataframe(self) -> DataFrame:
-        faba_cols = self.faba_aggs_df.columns
-        faba_cols.remove("faba_award_id")
+        financial_accounts_by_awards_cols = self.financial_accounts_by_awards_aggs_df.columns
+        financial_accounts_by_awards_cols.remove("faba_award_id")
         df = (
             self.transaction_search.join(
                 self.award_search, self.transaction_search.transaction_award_id == self.award_search.award_id
             )
-            .join(self.faba_aggs_df, self.award_search.award_id == self.faba_aggs_df.faba_award_id, "left")
-            .select(*self.common_cols, *faba_cols, *self.fabs_cols, *self.fpds_cols)
+            .join(
+                self.financial_accounts_by_awards_aggs_df,
+                self.award_search.award_id == self.financial_accounts_by_awards_aggs_df.faba_award_id,
+                "left",
+            )
+            .select(*self.common_cols, *financial_accounts_by_awards_cols, *self.fabs_cols, *self.fpds_cols)
             .withColumn("merge_hash_key", sf.xxhash64("*"))
         )
         return df
