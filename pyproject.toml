@@ -97,11 +97,9 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-#    "black==24.10.0",
     "click==8.1.7",
     "docker==7.0.0",
     "dredd-hooks==0.2.0",
-#    "flake8==7.1.0",
     "importlib-metadata==8.5.0",
     "mock==5.1.*",
     "model-bakery==1.17.*",
@@ -163,11 +161,6 @@ exclude_lines = [
     # Have to re-enable the standard pragma
     "pragma: no cover"
 ]
-
-[tool.black]
-line-length = 120
-target-version = ['py310']
-exclude = '/(\.git|\.venv|venv|migrations)/'
 
 [tool.ruff.lint]
 preview = true  # enable new rules
