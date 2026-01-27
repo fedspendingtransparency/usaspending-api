@@ -193,9 +193,19 @@ class TransactionDownload:
             self.award_search.generated_unique_award_id,
             self.award_search.description.alias("award_description"),
             self.award_search.total_obligation,
-            sf.concat(sf.lit(AWARD_URL), sf.url_encode(self.award_search.generated_unique_award_id), sf.lit("/")).alias(
-                "usaspending_permalink"
-            ),
+            # TODO: Update to use url_encode Spark SQL function
+            sf.when(
+                self.award_search.generated_unique_award_id.isNotNull(),
+                sf.concat(
+                    sf.lit(AWARD_URL),
+                    sf.expr(
+                        "java_method('java.net.URLEncoder', 'encode', award_search.generated_unique_award_id, 'UTF-8')"
+                    ),
+                    sf.lit("/"),
+                ),
+            )
+            .otherwise("")
+            .alias("usaspending_permalink"),
             # --- Transaction ---
             self.transaction_search.modification_number,
             self.transaction_search.transaction_id,

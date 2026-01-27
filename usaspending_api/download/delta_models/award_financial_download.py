@@ -169,6 +169,7 @@ def award_financial_df(spark: SparkSession):
             how="left",
         )
         .withColumn("submission_period", fy_quarter_period())
+        # TODO: Update to use url_encode Spark SQL function
         .withColumn(
             "usaspending_permalink",
             sf.when(
