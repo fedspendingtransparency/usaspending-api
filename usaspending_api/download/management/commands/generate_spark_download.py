@@ -187,20 +187,21 @@ class Command(BaseCommand):
             download_request = self.get_download_request()
             if self.columns is not None:
                 for download in download_request.download_list:
-                    download.dataframe = download.dataframe.select(*self.columns)
+                    download.dataframes = [df.select(*self.columns) for df in download.dataframes]
 
             csvs_metadata = [
                 spark_to_csv_strategy.download_to_csv(
                     source_sql=None,
-                    destination_path=self.working_dir_path / download.file_name,
-                    destination_file_name=download.file_name,
+                    destination_path=self.working_dir_path,
+                    destination_file_name=file_name,
                     working_dir_path=self.working_dir_path,
                     download_zip_path=zip_file_path,
-                    source_df=download.dataframe,
+                    source_df=df,
                     delimiter=download_request.file_delimiter,
                     file_format=download_request.file_extension,
                 )
                 for download in download_request.download_list
+                for file_name, df in zip(download.file_names, download.dataframes)
             ]
             for csv_metadata in csvs_metadata:
                 files_to_cleanup.extend(csv_metadata.filepaths)

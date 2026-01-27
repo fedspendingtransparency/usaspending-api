@@ -1,16 +1,18 @@
 from delta.tables import DeltaTable
-from pyspark.sql import SparkSession, functions as sf
+from pyspark.sql import SparkSession
+from pyspark.sql import functions as sf
 from pyspark.sql.functions import expr
 from pyspark.sql.types import (
     BooleanType,
     DateType,
     DecimalType,
     IntegerType,
+    LongType,
     StringType,
     StructField,
     StructType,
-    LongType,
 )
+
 from usaspending_api.download.helpers.delta_models_helpers import fy_quarter_period
 from usaspending_api.download.helpers.download_annotation_functions import AWARD_URL
 
@@ -116,6 +118,7 @@ award_financial_schema = StructType(
         StructField("reporting_fiscal_quarter", IntegerType()),
         StructField("reporting_fiscal_year", IntegerType()),
         StructField("quarter_format_flag", BooleanType()),
+        StructField("is_fpds", BooleanType(), nullable=True),
         StructField("merge_hash_key", LongType()),
     ]
 )
@@ -325,6 +328,7 @@ def award_financial_df(spark: SparkSession):
             sa.reporting_fiscal_quarter,
             sa.reporting_fiscal_year,
             sa.quarter_format_flag,
+            ts.is_fpds,
         )
         .withColumn("merge_hash_key", sf.xxhash64("*"))
     )
