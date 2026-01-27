@@ -25,6 +25,10 @@ from usaspending_api.download.delta_models.award_financial_download import (
     load_award_financial_incremental,
     award_financial_schema,
 )
+from usaspending_api.download.delta_models.dataframes.transaction_download import (
+    load_transaction_download,
+    load_transaction_download_incremental,
+)
 from usaspending_api.download.delta_models.object_class_program_activity_download import (
     object_class_program_activity_schema,
     load_object_class_program_activity,
@@ -424,8 +428,8 @@ TABLE_SPEC = {
     "transaction_download": {
         "model": None,
         "is_from_broker": False,
-        "source_query": None,
-        "source_query_incremental": None,
+        "source_query": load_transaction_download,
+        "source_query_incremental": load_transaction_download_incremental,
         "source_database": None,
         "source_table": None,
         "destination_database": "rpt",
@@ -433,7 +437,7 @@ TABLE_SPEC = {
         "swap_schema": None,
         "partition_column": "transaction_id",
         "partition_column_type": "numeric",
-        "is_partition_column_unique": False,
+        "is_partition_column_unique": True,
         "delta_table_create_sql": transaction_download_schema,
         "delta_table_create_options": {"delta.enableChangeDataFeed": True},
         "delta_table_create_partitions": ["awarding_agency_code", "is_fpds", "action_date_fiscal_year"],
