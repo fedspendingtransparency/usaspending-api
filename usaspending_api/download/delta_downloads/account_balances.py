@@ -130,17 +130,7 @@ class FederalAccountDownload(AccountBalancesMixin, AbstractAccountDownload):
             self.sf.sum(self.sf.col("status_of_budgetary_resources_total")).alias(
                 "status_of_budgetary_resources_total"
             ),
-            (
-                (
-                    self.sf.max(self.sf.call_function("strptime", "last_modified_date", "yyyy-MM-dd")).alias(
-                        "max_last_modified_date"
-                    )
-                    if isinstance(self.spark, DuckDBSparkSession)
-                    else self.sf.max(self.sf.date_format("last_modified_date", "yyyy-MM-dd")).alias(
-                        "last_modified_date"
-                    )
-                ),
-            ),
+            self.sf.max(self.sf.col("last_modified_date")).alias("max_last_modified_date"),
         ]
 
     @property
@@ -167,7 +157,7 @@ class FederalAccountDownload(AccountBalancesMixin, AbstractAccountDownload):
             self.sf.col("unobligated_balance"),
             self.sf.col("gross_outlay_amount"),
             self.sf.col("status_of_budgetary_resources_total"),
-            self.sf.col("last_modified_date"),
+            self.sf.col("max_last_modified_date").alias("last_modified_date"),
         ]
 
 
@@ -234,17 +224,9 @@ class TreasuryAccountDownload(AccountBalancesMixin, AbstractAccountDownload):
 
     @property
     def agg_cols(self) -> list[Column | DuckDBSparkColumn]:
-        if isinstance(self.spark, DuckDBSparkSession):
-            # DuckDB's Spark implementation doesn't include the `date_format()` function so we have to use Python's `strptime`
-            return [
-                self.sf.max(self.sf.call_function("strptime", "last_modified_date", "yyyy-MM-dd")).alias(
-                    "max_last_modified_date"
-                )
-            ]
-        else:
-            return [
-                self.sf.max(self.sf.date_format("last_modified_date", "yyyy-MM-dd")).alias("max_last_modified_date"),
-            ]
+        return [
+            self.sf.max(self.sf.col("last_modified_date")).alias("max_last_modified_date"),
+        ]
 
     @property
     def select_cols(self) -> list[Column | DuckDBSparkColumn]:
