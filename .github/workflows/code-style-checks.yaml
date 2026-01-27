@@ -39,7 +39,7 @@ jobs:
             **.py
           separator: " "
 
-      - name: Check if changed files is an empty string
+      - name: Check If `changed-python-files` Is An Empty String
         if: steps.changed-python-files.outputs.all_changed_files == ''
         run: echo "No changed files detected"
 
@@ -70,7 +70,8 @@ jobs:
 #      - name: Run Black
 #        run: black --check --diff .
 
-      - name: Run ruff linter
+      # changed-python-files could be an empty string, which would cause `ruff check` to be run against the entire project.
+      - name: Run Ruff Linter
         if: steps.changed-python-files.outputs.all_changed_files != ''
         run: |
           echo "Running: ruff check ${{ steps.changed-python-files.outputs.all_changed_files }}"
