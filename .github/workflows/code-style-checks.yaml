@@ -64,18 +64,10 @@ jobs:
       - name: Init Python Environment
         uses: ./.github/actions/init-python-environment
 
-#      - name: Run Flake8
-#        run: flake8
-#
-#      - name: Run Black
-#        run: black --check --diff .
-
       # changed-python-files could be an empty string, which would cause `ruff check` to be run against the entire project.
       - name: Run Ruff Linter
         if: steps.changed-python-files.outputs.all_changed_files != ''
-        run: |
-          echo "Running: ruff check ${{ steps.changed-python-files.outputs.all_changed_files }}"
-          ruff check ${{ steps.changed-python-files.outputs.all_changed_files }}
+        run: ruff check ${{ steps.changed-python-files.outputs.all_changed_files }}
 
       - name: Run Check For Endpoint Documentation
         run: python manage.py check_for_endpoint_documentation
