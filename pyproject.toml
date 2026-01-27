@@ -187,6 +187,9 @@ select = [
     "E",  # pycodestyle errors
     "F",  # pyflakes
     "W",  # pycodestyle warnings
+    "ANN001",  # missing type annotation for function argument
+    "ANN201",  # missing return type annotation for public function or method
+    "ANN202",  # missing return type annotation for private function or method
 ]
 ignore = [
     "E203",  # whitespace before punctuation
