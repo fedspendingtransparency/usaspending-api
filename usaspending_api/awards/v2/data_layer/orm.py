@@ -25,6 +25,7 @@ from usaspending_api.awards.v2.data_layer.orm_mappers import (
 from usaspending_api.awards.v2.data_layer.orm_utils import delete_keys_from_dict, split_mapper_into_qs
 from usaspending_api.common.helpers.business_categories_helper import get_business_category_display_names
 from usaspending_api.common.helpers.data_constants import state_code_from_name, state_name_from_code
+from usaspending_api.common.helpers.date_helper import get_date_from_datetime
 from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
 from usaspending_api.common.recipient_lookups import obtain_recipient_uri
 from usaspending_api.references.models import (
@@ -69,7 +70,7 @@ def construct_assistance_response(requested_award_dict: dict) -> OrderedDict:
         [
             ("start_date", award["_start_date"]),
             ("end_date", award["_end_date"]),
-            ("last_modified_date", transaction["_modified_at"].strftime("%Y-%m-%d %H:%M:%S%z")),
+            ("last_modified_date", get_date_from_datetime(transaction["_modified_at"])),
         ]
     )
     response["recipient"] = create_recipient_object(transaction)
@@ -112,7 +113,7 @@ def construct_contract_response(requested_award_dict: dict) -> OrderedDict:
         [
             ("start_date", award["_start_date"]),
             ("end_date", award["_end_date"]),
-            ("last_modified_date", transaction["_last_modified"]),
+            ("last_modified_date", get_date_from_datetime(transaction["_last_modified"])),
             ("potential_end_date", transaction["_period_of_perf_potential_e"]),
         ]
     )
@@ -164,7 +165,7 @@ def construct_idv_response(requested_award_dict: dict) -> OrderedDict:
         [
             ("start_date", award["_start_date"]),
             ("end_date", transaction["_end_date"]),
-            ("last_modified_date", transaction["_last_modified_date"]),
+            ("last_modified_date", get_date_from_datetime(transaction["_last_modified_date"])),
             ("potential_end_date", transaction["_period_of_perf_potential_e"]),
         ]
     )

@@ -1489,11 +1489,7 @@ expected_response_asst = {
             {"name": None, "amount": None},
         ]
     },
-    "period_of_performance": {
-        "start_date": "2004-02-04",
-        "end_date": "2005-02-04",
-        "last_modified_date": "2000-01-02 00:00:00+0000",
-    },
+    "period_of_performance": {"start_date": "2004-02-04", "end_date": "2005-02-04", "last_modified_date": "2000-01-02"},
     "place_of_performance": {
         "address_line1": None,
         "address_line2": None,
@@ -1590,7 +1586,7 @@ expected_response_cont = {
     "period_of_performance": {
         "start_date": "2004-02-04",
         "end_date": "2005-02-04",
-        "last_modified_date": "2001-02-03 00:00:00+00",
+        "last_modified_date": "2001-02-03",
         "potential_end_date": "2003-04-05",
     },
     "place_of_performance": {
