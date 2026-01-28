@@ -273,4 +273,3 @@ class AccountBalancesDownloadFactory(AbstractAccountDownloadFactory):
 
     def create_treasury_account_download(self) -> TreasuryAccountDownload:
         return TreasuryAccountDownload(self.spark, self.filters, self.dynamic_filters)
-
