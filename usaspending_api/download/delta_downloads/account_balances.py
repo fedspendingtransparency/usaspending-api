@@ -1,10 +1,9 @@
 from duckdb.experimental.spark.sql import SparkSession as DuckDBSparkSession
 from duckdb.experimental.spark.sql.column import Column as DuckDBSparkColumn
 from duckdb.experimental.spark.sql.dataframe import DataFrame as DuckDBSparkDataFrame
-from pyspark.sql import functions as sf, Column, DataFrame, SparkSession
+from pyspark.sql import Column, DataFrame, SparkSession
 
 from usaspending_api.common.spark.utils import collect_concat
-from usaspending_api.config import CONFIG
 from usaspending_api.download.delta_downloads.abstract_downloads.account_download import (
     AbstractAccountDownload,
     AccountLevel,
@@ -274,3 +273,4 @@ class AccountBalancesDownloadFactory(AbstractAccountDownloadFactory):
 
     def create_treasury_account_download(self) -> TreasuryAccountDownload:
         return TreasuryAccountDownload(self.spark, self.filters, self.dynamic_filters)
+
