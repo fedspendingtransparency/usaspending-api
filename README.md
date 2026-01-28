@@ -29,7 +29,8 @@ _**If not using Docker, you'll need to install app components on your machine:**
 - [`Elasticsearch`](https://www.elastic.co/downloads/elasticsearch) version 7.1
 - `Python` version 3.10 environment
   - Highly recommended to use a virtual environment. There are various tools and associated instructions depending on preferences
-  - See [Required Python Libraries](#required-python-libraries) for an example using `pyenv`
+  - See [Required Python Libraries](#required-python-libraries) for an example using `uv`
+- [`uv`](https://github.com/astral-sh/uv) python package/project manager
 
 ### Cloning the Repository
 Now, navigate to the base file directory where you will store the USAspending repositories
@@ -79,7 +80,7 @@ _This image is used as the basis for running application components and running 
 docker compose --profile usaspending build
 ```
 
-_:bangbang: Re-run this command if any python package dependencies change (in `requirements/requirements-app.txt`), since they are baked into the docker image at build-time._
+_:bangbang: Re-run this command if any python package dependencies change (in `pyproject.toml`/`uv.lock`), since they are baked into the docker image at build-time._
 
 ### Database Setup
 A postgres database is required to run the app. You can run it in a `postgres` docker container (preferred), or run a PostgreSQL server on your local machine. In either case, it will be empty until data is loaded.
@@ -229,9 +230,25 @@ To run tests locally and not in the docker services, you need:
 1. **Postgres**: A running PostgreSQL database server _(See [Database Setup above](#database-setup))_
 1. **Elasticsearch**: A running Elasticsearch cluster _(See [Elasticsearch Setup above](#elasticsearch-setup))_
 1. **Environment Variables**: Tell python where to connect to the various data stores _(See [Environmnet Variables](#environment-variables))_
-1. **Required Python Libraries**: Python package dependencies downloaded and discoverable _(See below)_
+1. **Install python version with uv**: python is installed with uv  _(See below)_
+1. **Sync uv project**: uv project is synced with lockfile  _(See below)_
 
 _**NOTE**: Running test locally might require you to run `export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES`. As discussed [here](https://github.com/rails/rails/issues/38560), there is an issue than can cause some of the Spark tests to fail without this environment variable set._
+
+#### Install python version with uv
+Install the currently supported python version with uv
+
+```shell
+uv python install 3.10.12
+```
+
+#### Sync uv project with lockfile
+Setup uv project and check version info:
+
+```shell
+make local-dev-setup
+```
+
 
 Once these are satisfied, run:
 
@@ -242,21 +259,7 @@ make tests
 or, alternatively to skip using `make`
 
 ```shell
-pytest
-```
-
-#### Required Python Libraries
-Setup python, virtual environment, and pip dependencies, then check version info
-
-```shell
-make local-dev-setup
-source $(make activate)
-```
-
-Your prompt should then look as below to show you are _in_ the virtual environment named `usaspending-api` (_to exit that virtual environment, simply type `deactivate` at the prompt_).
-
-```shell
-(usaspending-api) $
+uv run pytest
 ```
 
 ### Including Broker Integration Tests
