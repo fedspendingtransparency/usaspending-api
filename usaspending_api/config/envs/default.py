@@ -12,6 +12,7 @@
 import pathlib
 from typing import ClassVar
 import os
+import json
 
 from usaspending_api.config.utils import (
     ENV_SPECIFIC_OVERRIDE,
