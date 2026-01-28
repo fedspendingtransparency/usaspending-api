@@ -105,6 +105,7 @@ class DefaultConfig(BaseSettings):
             print(f"{url_conf_name} is JSON-formatted connection string")
             return
         except:
+            print(f"{url_conf_name} is NOT a JSON-formatted connection string")
             pass
 
         # First determine if full URL config was provided.
