@@ -92,6 +92,15 @@ MONTHLY_DOWNLOAD_S3_REDIRECT_DIR = "award_data_archive"
 BROKER_AGENCY_BUCKET_NAME = ""
 UNLINKED_AWARDS_DOWNLOAD_REDIRECT_DIR = "unlinked_awards_downloads"
 
+# AWS parameter store key names
+EMR_DOWNLOAD_APP_PARAM_NAME = ""
+if not EMR_DOWNLOAD_APP_PARAM_NAME:
+    EMR_DOWNLOAD_APP_PARAM_NAME = os.environ.get("EMR_DOWNLOAD_APP_PARAM_NAME")
+
+EMR_DOWNLOAD_ROLE_PARAM_NAME = ""
+if not EMR_DOWNLOAD_ROLE_PARAM_NAME:
+    EMR_DOWNLOAD_ROLE_PARAM_NAME = os.environ.get("EMR_DOWNLOAD_ROLE_PARAM_NAME")
+
 # This list contains any abnormal characters in agency names
 # This list is important to track which characters we need to replace in
 # the agency name before the name can be used in a file name

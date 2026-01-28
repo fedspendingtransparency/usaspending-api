@@ -10,7 +10,6 @@ from django.conf import settings
 from django.core.management import call_command
 from model_bakery import baker
 from rest_framework import status
-from usaspending_api.config import CONFIG
 
 from usaspending_api.accounts.models import FederalAccount, TreasuryAppropriationAccount
 from usaspending_api.awards.models import FinancialAccountsByAwards
@@ -23,17 +22,11 @@ from usaspending_api.search.models import TransactionSearch
 
 
 @pytest.fixture
-def create_download_delta_tables(spark, s3_unittest_data_bucket, hive_unittest_metastore_db, monkeypatch):
+def create_download_delta_tables(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
     call_command(
         "create_delta_table",
         f"--spark-s3-bucket={s3_unittest_data_bucket}",
         f"--destination-table=award_financial_download",
-    )
-    monkeypatch.setattr(
-        f"usaspending_api.download.delta_downloads.award_financial.AwardFinancialMixin.download_table",
-        spark.read.format("delta").load(
-            f"s3a://{s3_unittest_data_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/rpt/award_financial_download"
-        ),
     )
 
     call_command(
@@ -41,23 +34,11 @@ def create_download_delta_tables(spark, s3_unittest_data_bucket, hive_unittest_m
         f"--spark-s3-bucket={s3_unittest_data_bucket}",
         f"--destination-table=object_class_program_activity_download",
     )
-    monkeypatch.setattr(
-        f"usaspending_api.download.delta_downloads.object_class_program_activity.ObjectClassProgramActivityMixin.download_table",
-        spark.read.format("delta").load(
-            f"s3a://{s3_unittest_data_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/rpt/object_class_program_activity_download"
-        ),
-    )
 
     call_command(
         "create_delta_table",
         f"--spark-s3-bucket={s3_unittest_data_bucket}",
         f"--destination-table=account_balances_download",
-    )
-    monkeypatch.setattr(
-        f"usaspending_api.download.delta_downloads.account_balances.AccountBalancesMixin.download_table",
-        spark.read.format("delta").load(
-            f"s3a://{s3_unittest_data_bucket}/{CONFIG.DELTA_LAKE_S3_PATH}/rpt/account_balances_download"
-        ),
     )
     yield
 
