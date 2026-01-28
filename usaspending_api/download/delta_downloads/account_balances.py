@@ -1,5 +1,4 @@
 from pyspark.sql import functions as sf, Column, DataFrame, SparkSession
-from usaspending_api.config import CONFIG
 
 from usaspending_api.common.spark.utils import collect_concat
 from usaspending_api.download.delta_downloads.abstract_downloads.account_download import (
@@ -29,11 +28,7 @@ class AccountBalancesMixin:
 
     @property
     def download_table(self) -> DataFrame:
-        # TODO: This should be reverted back after Spark downloads are migrated to EMR
-        # return self.spark.table("rpt.account_balances_download")
-        return self.spark.read.format("delta").load(
-            f"s3a://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.DELTA_LAKE_S3_PATH}/rpt/account_balances_download"
-        )
+        return self.spark.table("rpt.account_balances_download")
 
     def _build_dataframes(self) -> list[DataFrame]:
         return [
