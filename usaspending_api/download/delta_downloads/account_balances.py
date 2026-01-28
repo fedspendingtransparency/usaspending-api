@@ -1,7 +1,7 @@
 from duckdb.experimental.spark.sql import SparkSession as DuckDBSparkSession
 from duckdb.experimental.spark.sql.column import Column as DuckDBSparkColumn
 from duckdb.experimental.spark.sql.dataframe import DataFrame as DuckDBSparkDataFrame
-from pyspark.sql import Column, DataFrame, SparkSession
+from pyspark.sql import functions as sf, Column, DataFrame, SparkSession
 
 from usaspending_api.common.spark.utils import collect_concat
 from usaspending_api.config import CONFIG
@@ -42,13 +42,7 @@ class AccountBalancesMixin:
 
     @property
     def download_table(self) -> DataFrame | DuckDBSparkDataFrame:
-        if isinstance(self.spark, DuckDBSparkSession):
-            return self.spark.table("rpt.account_balances_download")
-        else:
-            # TODO: This should be reverted back after Spark downloads are migrated to EMR
-            return self.spark.read.format("delta").load(
-                f"s3a://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.DELTA_LAKE_S3_PATH}/rpt/account_balances_download"
-            )
+        return self.spark.table("rpt.account_balances_download")
 
     def _build_dataframes(self) -> list[DataFrame | DuckDBSparkDataFrame]:
         return [
