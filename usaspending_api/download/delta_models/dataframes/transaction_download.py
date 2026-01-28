@@ -96,7 +96,7 @@ class TransactionDownload:
             "iija_outlayed_amount": (
                 sf.sum(
                     sf.when(
-                        self.financial_accounts_by_awards.disaster_emergency_fund_code.isin(self.covid_defc)
+                        self.financial_accounts_by_awards.disaster_emergency_fund_code.isin(self.iija_defc)
                         & self.submission_attributes.is_final_balances_for_fy,
                         self.financial_accounts_by_awards.gross_outlay_amount_by_award_cpe
                         + self.financial_accounts_by_awards.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe

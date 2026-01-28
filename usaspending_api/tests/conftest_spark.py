@@ -384,9 +384,38 @@ def _build_usas_data_for_spark():
     baker.make("references.PopCounty", state_code="51", county_number="000", latest_population=1, _fill_optional=True)
     baker.make("references.PopCounty", state_code="51", county_number="001", latest_population=1, _fill_optional=True)
     baker.make("references.PopCongressionalDistrict", state_code="51", latest_population=1, congressional_district="01")
-    defc_l = baker.make("references.DisasterEmergencyFundCode", code="L", group_name="covid_19", _fill_optional=True)
-    defc_m = baker.make("references.DisasterEmergencyFundCode", code="M", group_name="covid_19", _fill_optional=True)
-    defc_q = baker.make("references.DisasterEmergencyFundCode", code="Q", group_name=None, _fill_optional=True)
+    defc_l = baker.make(
+        "references.DisasterEmergencyFundCode",
+        code="L",
+        title="DEFC L",
+        group_name="covid_19",
+        public_law="DEFC L Public Law",
+        _fill_optional=True,
+    )
+    defc_m = baker.make(
+        "references.DisasterEmergencyFundCode",
+        code="M",
+        title="DEFC M",
+        group_name="covid_19",
+        public_law="DEFC M Public Law",
+        _fill_optional=True,
+    )
+    defc_q = baker.make(
+        "references.DisasterEmergencyFundCode",
+        code="Q",
+        title="DEFC Q",
+        group_name=None,
+        public_law="DEFC Q Public Law",
+        _fill_optional=True,
+    )
+    baker.make(
+        "references.DisasterEmergencyFundCode",
+        code="Z",
+        title="DEFC Z",
+        group_name="infrastructure",
+        public_law="DEFC Z Public Law",
+        _fill_optional=True,
+    )
     rpa_1 = baker.make(
         "references.RefProgramActivity",
         id=1,
@@ -408,11 +437,15 @@ def _build_usas_data_for_spark():
 
     # Create account data
     federal_account = baker.make(
-        "accounts.FederalAccount", parent_toptier_agency=funding_toptier_agency, _fill_optional=True
+        "accounts.FederalAccount",
+        parent_toptier_agency=funding_toptier_agency,
+        federal_account_code="123-4567",
+        _fill_optional=True,
     )
     tas = baker.make(
         "accounts.TreasuryAppropriationAccount",
         federal_account=federal_account,
+        tas_rendering_label="123-X-4567-000",
         allocation_transfer_agency_id=None,
         _fill_optional=True,
     )
