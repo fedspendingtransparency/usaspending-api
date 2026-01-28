@@ -99,6 +99,14 @@ class DefaultConfig(BaseSettings):
     def _validate_database_url(cls, values, url_conf_name, resource_conf_prefix, required=True):
         """Helper function to validate both DATABASE_URLs and their parts"""
 
+        # if JSON formatted connection string from RDS: use exactly that value and skip this validation step
+        try:
+            _ = json.loads(values[url_conf_name])
+            print(f"{url_conf_name} is JSON-formatted connection string")
+            return
+        except:
+            pass
+
         # First determine if full URL config was provided.
         is_full_url_provided = check_for_full_url_config(url_conf_name, values)
 
