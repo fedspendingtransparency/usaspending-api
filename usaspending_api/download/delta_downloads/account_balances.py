@@ -13,7 +13,9 @@ from usaspending_api.download.delta_downloads.abstract_factories.account_downloa
     AbstractAccountDownloadFactory,
     AccountDownloadConditionName,
 )
-from usaspending_api.download.delta_downloads.filters.account_filters import AccountDownloadFilters
+from usaspending_api.download.delta_downloads.filters.account_filters import (
+    AccountDownloadFilters,
+)
 from usaspending_api.submissions.helpers import get_submission_ids_for_periods
 
 
@@ -72,7 +74,12 @@ class FederalAccountDownload(AccountBalancesMixin, AbstractAccountDownload):
 
     @property
     def group_by_cols(self) -> list[str]:
-        return ["federal_account_symbol", "owning_agency_name", "federal_account_name", "submission_period"]
+        return [
+            "federal_account_symbol",
+            "owning_agency_name",
+            "federal_account_name",
+            "submission_period",
+        ]
 
     @property
     def agg_cols(self) -> list[Column | DuckDBSparkColumn]:
@@ -81,49 +88,70 @@ class FederalAccountDownload(AccountBalancesMixin, AbstractAccountDownload):
             collect_concat("agency_identifier_name", spark=self.spark),
             collect_concat("budget_function", spark=self.spark),
             collect_concat("budget_subfunction", spark=self.spark),
-            self.sf.sum(self.sf.col("budget_authority_unobligated_balance_brought_forward")).alias(
-                "budget_authority_unobligated_balance_brought_forward"
-            ),
-            self.sf.sum(self.sf.col("adjustments_to_unobligated_balance_brought_forward_cpe")).alias(
-                "adjustments_to_unobligated_balance_brought_forward_cpe"
-            ),
+            self.sf.sum(
+                self.sf.col("budget_authority_unobligated_balance_brought_forward")
+            ).alias("budget_authority_unobligated_balance_brought_forward"),
+            self.sf.sum(
+                self.sf.col("adjustments_to_unobligated_balance_brought_forward_cpe")
+            ).alias("adjustments_to_unobligated_balance_brought_forward_cpe"),
             self.sf.sum(self.sf.col("budget_authority_appropriated_amount")).alias(
                 "budget_authority_appropriated_amount"
             ),
-            self.sf.sum(self.sf.col("borrowing_authority_amount")).alias("borrowing_authority_amount"),
-            self.sf.sum(self.sf.col("contract_authority_amount")).alias("contract_authority_amount"),
-            self.sf.sum(self.sf.col("spending_authority_from_offsetting_collections_amount")).alias(
-                "spending_authority_from_offsetting_collections_amount"
+            self.sf.sum(self.sf.col("borrowing_authority_amount")).alias(
+                "borrowing_authority_amount"
             ),
+            self.sf.sum(self.sf.col("contract_authority_amount")).alias(
+                "contract_authority_amount"
+            ),
+            self.sf.sum(
+                self.sf.col("spending_authority_from_offsetting_collections_amount")
+            ).alias("spending_authority_from_offsetting_collections_amount"),
             self.sf.sum(self.sf.col("total_other_budgetary_resources_amount")).alias(
                 "total_other_budgetary_resources_amount"
             ),
-            self.sf.sum(self.sf.col("total_budgetary_resources")).alias("total_budgetary_resources"),
-            self.sf.sum(self.sf.col("obligations_incurred")).alias("obligations_incurred"),
-            self.sf.sum(self.sf.col("deobligations_or_recoveries_or_refunds_from_prior_year")).alias(
-                "deobligations_or_recoveries_or_refunds_from_prior_year"
+            self.sf.sum(self.sf.col("total_budgetary_resources")).alias(
+                "total_budgetary_resources"
             ),
-            self.sf.sum(self.sf.col("unobligated_balance")).alias("unobligated_balance"),
+            self.sf.sum(self.sf.col("obligations_incurred")).alias(
+                "obligations_incurred"
+            ),
+            self.sf.sum(
+                self.sf.col("deobligations_or_recoveries_or_refunds_from_prior_year")
+            ).alias("deobligations_or_recoveries_or_refunds_from_prior_year"),
+            self.sf.sum(self.sf.col("unobligated_balance")).alias(
+                "unobligated_balance"
+            ),
             self.sf.sum(
                 self.sf.when(
                     (
                         (
                             self.sf.col("quarter_format_flag")
-                            & (self.sf.col("reporting_fiscal_quarter") == self.filters.reporting_fiscal_quarter)
+                            & (
+                                self.sf.col("reporting_fiscal_quarter")
+                                == self.filters.reporting_fiscal_quarter
+                            )
                         )
                         | (
                             ~self.sf.col("quarter_format_flag")
-                            & (self.sf.col("reporting_fiscal_period") == self.filters.reporting_fiscal_period)
+                            & (
+                                self.sf.col("reporting_fiscal_period")
+                                == self.filters.reporting_fiscal_period
+                            )
                         )
                     )
-                    & (self.sf.col("reporting_fiscal_year") == self.filters.reporting_fiscal_year),
+                    & (
+                        self.sf.col("reporting_fiscal_year")
+                        == self.filters.reporting_fiscal_year
+                    ),
                     self.sf.col("gross_outlay_amount"),
                 ).otherwise(0)
             ).alias("gross_outlay_amount"),
             self.sf.sum(self.sf.col("status_of_budgetary_resources_total")).alias(
                 "status_of_budgetary_resources_total"
             ),
-            self.sf.max(self.sf.col("last_modified_date")).alias("max_last_modified_date"),
+            self.sf.max(self.sf.col("last_modified_date")).alias(
+                "max_last_modified_date"
+            ),
         ]
 
     @property
@@ -218,7 +246,9 @@ class TreasuryAccountDownload(AccountBalancesMixin, AbstractAccountDownload):
     @property
     def agg_cols(self) -> list[Column | DuckDBSparkColumn]:
         return [
-            self.sf.max(self.sf.col("last_modified_date")).alias("max_last_modified_date"),
+            self.sf.max(self.sf.col("last_modified_date")).alias(
+                "max_last_modified_date"
+            ),
         ]
 
     @property
