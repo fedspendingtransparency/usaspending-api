@@ -391,7 +391,7 @@ def get_jdbc_url_from_pg_uri(pg_uri: str) -> str:
 
 def get_jdbc_url_from_rds_json(rds_json: str) -> str:
     parts = json.loads(CONFIG.DATABASE_URL)
-    jdbc_url = f"jdbc:postgresql://{parts["host"]}:{parts["port"]}/{parts["dbname"]}?user={parts["username"]}&password={parts["password"]}"
+    jdbc_url = f"jdbc:postgresql://{parts['host']}:{parts['port']}/{parts['dbname']}?user={parts['username']}&password={parts['password']}"
     return jdbc_url
 
 def get_usas_jdbc_url():
