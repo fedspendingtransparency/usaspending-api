@@ -97,11 +97,9 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "black==24.10.0",
     "click==8.1.7",
     "docker==7.0.0",
     "dredd-hooks==0.2.0",
-    "flake8==7.1.0",
     "importlib-metadata==8.5.0",
     "mock==5.1.*",
     "model-bakery==1.17.*",
@@ -112,6 +110,7 @@ dev = [
     "pytest-django==4.8.*",
     "pytest-pretty==1.2.*",
     "pytest-xdist==3.5.*",
+    "ruff==0.14.14",
 ]
 spark = [
     "delta-spark==3.2.*",
@@ -163,7 +162,45 @@ exclude_lines = [
     "pragma: no cover"
 ]
 
-[tool.black]
-line-length = 120
-target-version = ['py310']
-exclude = '/(\.git|\.venv|venv|migrations)/'
+[tool.ruff.lint]
+preview = true  # enable new rules
+exclude = [
+    '.git',
+    '.venv',
+    'venv',
+    '**/migrations/**',
+    'build',
+    'usaspending_api.egg-info'
+]
+
+select = [
+    "PLR0913",  # max arguments in function
+    "PLR0904",  # max number of public methods
+    "PLR0911",  # max number of return statements
+    "PLR0916",  # max number of boolean expressions
+    "PLR0915",  # max number of lines in a function
+    "PLR0912",  # max number of logical branches in a function
+    "PLR1702",  # max number of nested blocks
+    "C901",  # cognitive complexity (functions)
+    "I001",  # unsorted imports
+    "B",  # flake8 bugbear
+    "E",  # pycodestyle errors
+    "F",  # pyflakes
+    "W",  # pycodestyle warnings
+    "ANN001",  # missing type annotation for function argument
+    "ANN201",  # missing return type annotation for public function or method
+    "ANN202",  # missing return type annotation for private function or method
+]
+ignore = [
+    "E203",  # whitespace before punctuation
+]
+
+pylint.max-args = 6
+pylint.max-public-methods = 20
+pylint.max-returns = 3
+pylint.max-bool-expr = 8
+pylint.max-statements = 45
+pylint.max-branches = 10
+pylint.max-nested-blocks = 5
+mccabe.max-complexity = 15
+pycodestyle.max-line-length = 120
