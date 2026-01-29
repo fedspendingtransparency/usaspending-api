@@ -28,7 +28,7 @@ class TransactionSearch(models.Model):
     # Dates
     action_date = models.DateField(null=True)
     fiscal_action_date = models.DateField(null=True)
-    last_modified_date = models.DateField(null=True)
+    last_modified_date = models.DateTimeField(null=True)
     fiscal_year = models.IntegerField(null=True)
     award_certified_date = models.DateField(null=True)
     award_fiscal_year = models.IntegerField(null=True)
@@ -39,7 +39,7 @@ class TransactionSearch(models.Model):
     etl_update_date = models.DateTimeField(null=True)
     period_of_performance_start_date = models.DateField(null=True)
     period_of_performance_current_end_date = models.DateField(null=True)
-    initial_report_date = models.DateField(null=True)
+    initial_report_date = models.DateTimeField(null=True)
 
     # Agencies
     awarding_agency_code = models.TextField(null=True)

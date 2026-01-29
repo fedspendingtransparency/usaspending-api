@@ -91,7 +91,7 @@ class TransactionNormalized(models.Model):
         help_text="The agency which is funding this transaction",
     )
     description = models.TextField(null=True, help_text="The description of this transaction")
-    last_modified_date = models.DateField(
+    last_modified_date = models.DateTimeField(
         blank=True, null=True, help_text="The date this transaction was last modified"
     )
     certified_date = models.DateField(blank=True, null=True, help_text="The date this transaction was certified")

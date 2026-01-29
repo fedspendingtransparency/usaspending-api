@@ -8,7 +8,7 @@ import logging
 import random
 import sys
 import uuid
-from datetime import date
+from datetime import datetime
 from unittest.mock import MagicMock, call
 
 import boto3
@@ -138,7 +138,7 @@ def _transaction_and_award_test_data(db):
         award=awd1,
         modification_number="1",
         awarding_agency_id=agency1.id,
-        last_modified_date=date(2012, 3, 1),
+        last_modified_date=datetime(2012, 3, 1),
         business_funds_indicator="a",
         record_type=1,
         total_funding_amount=1000.00,
@@ -153,7 +153,7 @@ def _transaction_and_award_test_data(db):
         award=awd2,
         modification_number="1",
         awarding_agency_id=agency1.id,
-        last_modified_date=date(2012, 4, 1),
+        last_modified_date=datetime(2012, 4, 1),
         is_fpds=True,
         piid="abc",
         base_and_all_options_value=1000,
