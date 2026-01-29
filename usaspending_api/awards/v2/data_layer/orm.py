@@ -113,7 +113,7 @@ def construct_contract_response(requested_award_dict: dict) -> OrderedDict:
         [
             ("start_date", award["_start_date"]),
             ("end_date", award["_end_date"]),
-            ("last_modified_date", transaction["_last_modified"]),
+            ("last_modified_date", get_date_from_datetime(transaction["_last_modified"])),
             ("potential_end_date", transaction["_period_of_perf_potential_e"]),
         ]
     )
@@ -165,7 +165,7 @@ def construct_idv_response(requested_award_dict: dict) -> OrderedDict:
         [
             ("start_date", award["_start_date"]),
             ("end_date", transaction["_end_date"]),
-            ("last_modified_date", transaction["_last_modified_date"]),
+            ("last_modified_date", get_date_from_datetime(transaction["_last_modified_date"])),
             ("potential_end_date", transaction["_period_of_perf_potential_e"]),
         ]
     )

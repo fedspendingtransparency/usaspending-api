@@ -363,7 +363,7 @@ def test_load_table_to_from_delta_for_recipient_lookup(
         award_id=new_award.award_id,
         is_fpds=False,
         type="07",
-        last_modified_date="2021-01-01",
+        last_modified_date="2021-01-01 00:00:00+00",
         cfda_number="12.456",
         recipient_uei="FABSUEI12345",
         recipient_unique_id="FABSDUNS12345",

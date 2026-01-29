@@ -16,7 +16,7 @@ TRANSACTION_NORMALIZED_COLUMNS = {
     "id": "LONG NOT NULL",
     "indirect_federal_sharing": "NUMERIC(23, 2)",
     "is_fpds": "BOOLEAN NOT NULL",
-    "last_modified_date": "DATE",
+    "last_modified_date": "TIMESTAMP",
     "modification_number": "STRING",
     "non_federal_funding_amount": "NUMERIC(23, 2)",
     "original_loan_subsidy_cost": "NUMERIC(23, 2)",

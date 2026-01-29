@@ -395,7 +395,7 @@ DAP_TO_NORMALIZED_COLUMN_INFO = [
     TransactionColumn("funding_amount", "NULL", "NUMERIC(23, 2)", "literal"),
     TransactionColumn("indirect_federal_sharing", "NULL", "NUMERIC(23, 2)", "literal"),
     TransactionColumn("is_fpds", "TRUE", "BOOLEAN", "literal"),
-    TransactionColumn("last_modified_date", "last_modified", "DATE", "cast"),
+    TransactionColumn("last_modified_date", "last_modified", "TIMESTAMP", "cast"),
     TransactionColumn("modification_number", "award_modification_amendme", "STRING"),
     TransactionColumn("non_federal_funding_amount", "NULL", "NUMERIC(23, 2)", "literal"),
     TransactionColumn("original_loan_subsidy_cost", "NULL", "NUMERIC(23, 2)", "literal"),

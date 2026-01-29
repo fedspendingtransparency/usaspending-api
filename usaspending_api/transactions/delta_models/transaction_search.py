@@ -12,7 +12,7 @@ TRANSACTION_SEARCH_COLUMNS = {
     # Dates
     "action_date": {"delta": "DATE", "postgres": "DATE", "gold": False},
     "fiscal_action_date": {"delta": "DATE", "postgres": "DATE", "gold": False},
-    "last_modified_date": {"delta": "DATE", "postgres": "DATE", "gold": False},
+    "last_modified_date": {"delta": "TIMESTAMP", "postgres": "TIMESTAMP", "gold": False},
     "fiscal_year": {"delta": "INTEGER", "postgres": "INTEGER", "gold": False},
     "award_certified_date": {"delta": "DATE", "postgres": "DATE", "gold": False},
     "award_fiscal_year": {"delta": "INTEGER", "postgres": "INTEGER", "gold": False},
@@ -23,7 +23,7 @@ TRANSACTION_SEARCH_COLUMNS = {
     "etl_update_date": {"delta": "TIMESTAMP", "postgres": "TIMESTAMP", "gold": False},
     "period_of_performance_start_date": {"delta": "DATE", "postgres": "DATE", "gold": False},
     "period_of_performance_current_end_date": {"delta": "DATE", "postgres": "DATE", "gold": False},
-    "initial_report_date": {"delta": "DATE", "postgres": "DATE", "gold": False},
+    "initial_report_date": {"delta": "TIMESTAMP", "postgres": "TIMESTAMP", "gold": False},
     # Agencies
     "awarding_agency_code": {"delta": "STRING", "postgres": "TEXT", "gold": False},
     "awarding_toptier_agency_name": {"delta": "STRING", "postgres": "TEXT", "gold": False},

@@ -1,7 +1,7 @@
 import operator
 
 from argparse import ArgumentTypeError
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from dateutil import parser
 from typing import Callable
 
@@ -68,13 +68,15 @@ def datetime_command_line_argument_type(naive):
     return _datetime_command_line_argument_type
 
 
-def get_date_from_datetime(date_time, **kwargs):
+def get_date_from_datetime(date_time: datetime | str, **kwargs) -> date:
     """
     Pass a keyword argument called "default" if you wish to have a specific
     value returned when the date cannot be extracted from date_time, otherwise
     date_time will be returned.
     """
     try:
+        if isinstance(date_time, str):
+            date_time = parser.parse(date_time)
         return date_time.date()
     except Exception:
         return kwargs.get("default", date_time)
