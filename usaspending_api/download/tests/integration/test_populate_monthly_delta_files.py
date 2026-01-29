@@ -1,18 +1,17 @@
-import zipfile
 import datetime
-import pytest
 import os
-
-from django.core.management import call_command
-from os import listdir
-from model_bakery import baker
+import zipfile
 from csv import reader
+from os import listdir
 
-from usaspending_api.settings import HOST
+import pytest
+from django.core.management import call_command
+from model_bakery import baker
+
 from usaspending_api.awards.models import TransactionDelta
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
-
+from usaspending_api.settings import HOST
 
 # Make sure UTC or test will fail later in the day
 TODAY = datetime.datetime.strftime(datetime.datetime.utcnow(), "%Y%m%d")
@@ -22,11 +21,19 @@ TODAY = datetime.datetime.strftime(datetime.datetime.utcnow(), "%Y%m%d")
 @pytest.mark.django_db(transaction=True)
 def monthly_download_delta_data(db, monkeypatch):
     baker.make(
-        "references.ToptierAgency", toptier_agency_id=1, toptier_code="001", name="Test_Agency", _fill_optional=True
+        "references.ToptierAgency",
+        toptier_agency_id=1,
+        toptier_code="001",
+        name="Test_Agency",
+        _fill_optional=True,
     )
     baker.make("references.Agency", pk=1, toptier_agency_id=1, _fill_optional=True)
     baker.make(
-        "references.ToptierAgency", toptier_agency_id=2, toptier_code="002", name="Test_Agency 2", _fill_optional=True
+        "references.ToptierAgency",
+        toptier_agency_id=2,
+        toptier_code="002",
+        name="Test_Agency 2",
+        _fill_optional=True,
     )
     baker.make("references.Agency", pk=2, toptier_agency_id=2, _fill_optional=True)
     i = 1
@@ -92,10 +99,16 @@ def monthly_download_delta_data(db, monkeypatch):
 
 @pytest.mark.django_db(transaction=True)
 def test_all_agencies(monthly_download_delta_data, monkeypatch):
-    call_command("populate_monthly_delta_files", "--debugging_skip_deleted", "--last_date=2020-12-31")
+    call_command(
+        "populate_monthly_delta_files",
+        "--debugging_skip_deleted",
+        "--last_date=2020-12-31",
+    )
     file_list = listdir("csv_downloads")
     assert f"FY(All)_All_Contracts_Delta_{TODAY}.zip" in file_list
-    os.remove(os.path.normpath(f"csv_downloads/FY(All)_All_Contracts_Delta_{TODAY}.zip"))
+    os.remove(
+        os.path.normpath(f"csv_downloads/FY(All)_All_Contracts_Delta_{TODAY}.zip")
+    )
 
 
 @pytest.mark.django_db(transaction=True)
@@ -397,23 +410,37 @@ def test_specific_agency(monthly_download_delta_data, monkeypatch):
         "",
         "",
         "",
-        f"{HOST}/award/CONT_AWD_1_0_0/" if "localhost" in HOST else f"https://{HOST}/award/CONT_AWD_1_0_0/",
+        f"{HOST}/award/CONT_AWD_1_0_0/"
+        if "localhost" in HOST
+        else f"https://{HOST}/award/CONT_AWD_1_0_0/",
         "",
         "2020-05-07 00:00:00+00",
     ]
-    call_command("populate_monthly_delta_files", "--agencies=1", "--debugging_skip_deleted", "--last_date=2020-12-31")
+    call_command(
+        "populate_monthly_delta_files",
+        "--agencies=1",
+        "--debugging_skip_deleted",
+        "--last_date=2020-12-31",
+    )
     file_list = listdir("csv_downloads")
     assert f"FY(All)_001_Contracts_Delta_{TODAY}.zip" in file_list
-    with zipfile.ZipFile(os.path.normpath(f"csv_downloads/FY(All)_001_Contracts_Delta_{TODAY}.zip"), "r") as zip_ref:
+    with zipfile.ZipFile(
+        os.path.normpath(f"csv_downloads/FY(All)_001_Contracts_Delta_{TODAY}.zip"), "r"
+    ) as zip_ref:
         zip_ref.extractall("csv_downloads")
         assert f"FY(All)_001_Contracts_Delta_{TODAY}_1.csv" in listdir("csv_downloads")
-    with open(os.path.normpath(f"csv_downloads/FY(All)_001_Contracts_Delta_{TODAY}_1.csv"), "r") as contract_file:
+    with open(
+        os.path.normpath(f"csv_downloads/FY(All)_001_Contracts_Delta_{TODAY}_1.csv"),
+        "r",
+    ) as contract_file:
         csv_reader = reader(contract_file)
         row_count = 0
         for row in csv_reader:
             if row_count == 0:
                 # 63 is the character limit for column names
-                expected_row = [s[:63] for s in query_paths["transaction_search"]["d1"].keys()]
+                expected_row = [
+                    s[:63] for s in query_paths["transaction_search"]["d1"].keys()
+                ]
                 # These cols are prepended during file processing
                 expected_row = ["correction_delete_ind", "agency_id"] + expected_row
                 assert row == expected_row
@@ -421,8 +448,12 @@ def test_specific_agency(monthly_download_delta_data, monkeypatch):
                 assert row == contract_data
             row_count += 1
     assert row_count == 2
-    os.remove(os.path.normpath(f"csv_downloads/FY(All)_001_Contracts_Delta_{TODAY}.zip"))
-    os.remove(os.path.normpath(f"csv_downloads/FY(All)_001_Contracts_Delta_{TODAY}_1.csv"))
+    os.remove(
+        os.path.normpath(f"csv_downloads/FY(All)_001_Contracts_Delta_{TODAY}.zip")
+    )
+    os.remove(
+        os.path.normpath(f"csv_downloads/FY(All)_001_Contracts_Delta_{TODAY}_1.csv")
+    )
 
 
 @pytest.mark.django_db(transaction=True)
@@ -474,7 +505,9 @@ def test_award_types(client, monthly_download_delta_data, monkeypatch):
         awarding_toptier_agency_name="Test_Agency",
         awarding_subtier_agency_name="Test_Agency",
     )
-    baker.make("awards.TransactionDelta", transaction_id=2, created_at=datetime.datetime.now())
+    baker.make(
+        "awards.TransactionDelta", transaction_id=2, created_at=datetime.datetime.now()
+    )
     call_command(
         "populate_monthly_delta_files",
         "--agencies=1",
@@ -484,4 +517,6 @@ def test_award_types(client, monthly_download_delta_data, monkeypatch):
     )
     file_list = listdir("csv_downloads")
     assert f"FY(All)_001_Assistance_Delta_{TODAY}.zip" in file_list
-    os.remove(os.path.normpath(f"csv_downloads/FY(All)_001_Assistance_Delta_{TODAY}.zip"))
+    os.remove(
+        os.path.normpath(f"csv_downloads/FY(All)_001_Assistance_Delta_{TODAY}.zip")
+    )

@@ -11,7 +11,9 @@ TAS_COMPONENT_TO_FIELD_MAPPING = {
 }
 
 
-def start_and_end_dates_from_fyq(fiscal_year: int, fiscal_quarter: int) -> tuple[datetime.date, datetime.date]:
+def start_and_end_dates_from_fyq(
+    fiscal_year: int, fiscal_quarter: int
+) -> tuple[datetime.date, datetime.date]:
     if fiscal_quarter == 1:
         start_date = datetime.date(fiscal_year - 1, 10, 1)
         end_date = datetime.date(fiscal_year - 1, 12, 31)

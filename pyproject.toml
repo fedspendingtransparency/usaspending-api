@@ -204,3 +204,19 @@ pylint.max-branches = 10
 pylint.max-nested-blocks = 5
 mccabe.max-complexity = 15
 pycodestyle.max-line-length = 120
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**/test*.py" = [
+    "ANN001",  # missing-type-function-argument; avoid conflict with fixtures
+    "ANN201",  # missing-return-type-undocumented-public-function; avoid conflict with test case return values
+    "ANN202",  # missing-return-type-undocumented-private-function; avoid conflict with test case return values
+    "PLR0913", # too-many-arguments; avoid conflict with too many fixtures
+    "PLR0915",  # too-many-statements; avoid conflict with long fixtures
+]
+"**/conftest*.py" = [
+    "ANN001",  # missing-type-function-argument; avoid conflict with fixtures
+    "ANN201",  # missing-return-type-undocumented-public-function; avoid conflict with test case return values
+    "ANN202",  # missing-return-type-undocumented-private-function; avoid conflict with test case return values
+    "PLR0913", # too-many-arguments; avoid conflict with too many fixtures
+    "PLR0915",  # too-many-statements; avoid conflict with long fixtures
+]

@@ -1,14 +1,15 @@
 import os
 
-from django.db import models
-
 from django.contrib.postgres.fields import ArrayField
+from django.db import models
 
 
 class TransactionNormalized(models.Model):
     id = models.BigAutoField(primary_key=True)
     award = models.ForeignKey(
-        "search.AwardSearch", on_delete=models.DO_NOTHING, help_text="The award which this transaction is contained in"
+        "search.AwardSearch",
+        on_delete=models.DO_NOTHING,
+        help_text="The award which this transaction is contained in",
     )
     usaspending_unique_transaction_id = models.TextField(
         blank=True,
@@ -29,7 +30,9 @@ class TransactionNormalized(models.Model):
         help_text="The plain text description of the transaction type",
     )
     period_of_performance_start_date = models.DateField(
-        verbose_name="Period of Performance Start Date", null=True, help_text="The period of performance start date"
+        verbose_name="Period of Performance Start Date",
+        null=True,
+        help_text="The period of performance start date",
     )
     period_of_performance_current_end_date = models.DateField(
         verbose_name="Period of Performance Current End Date",
@@ -37,9 +40,15 @@ class TransactionNormalized(models.Model):
         help_text="The current end date of the period of performance",
     )
     action_date = models.DateField(
-        verbose_name="Transaction Date", help_text="The date this transaction was actioned", db_index=True
+        verbose_name="Transaction Date",
+        help_text="The date this transaction was actioned",
+        db_index=True,
     )
-    action_type = models.TextField(blank=True, null=True, help_text="The type of transaction. For example, A, B, C, D")
+    action_type = models.TextField(
+        blank=True,
+        null=True,
+        help_text="The type of transaction. For example, A, B, C, D",
+    )
     action_type_description = models.TextField(blank=True, null=True)
     federal_action_obligation = models.DecimalField(
         max_digits=23,
@@ -90,22 +99,36 @@ class TransactionNormalized(models.Model):
         null=True,
         help_text="The agency which is funding this transaction",
     )
-    description = models.TextField(null=True, help_text="The description of this transaction")
+    description = models.TextField(
+        null=True, help_text="The description of this transaction"
+    )
     last_modified_date = models.DateTimeField(
         blank=True, null=True, help_text="The date this transaction was last modified"
     )
-    certified_date = models.DateField(blank=True, null=True, help_text="The date this transaction was certified")
+    certified_date = models.DateField(
+        blank=True, null=True, help_text="The date this transaction was certified"
+    )
     create_date = models.DateTimeField(
-        auto_now_add=True, blank=True, null=True, help_text="The date this transaction was created in the API"
+        auto_now_add=True,
+        blank=True,
+        null=True,
+        help_text="The date this transaction was created in the API",
     )
     update_date = models.DateTimeField(
-        auto_now=True, null=True, help_text="The last time this transaction was updated in the API", db_index=True
+        auto_now=True,
+        null=True,
+        help_text="The last time this transaction was updated in the API",
+        db_index=True,
     )
-    fiscal_year = models.IntegerField(blank=True, null=True, help_text="Fiscal Year calculated based on Action Date")
+    fiscal_year = models.IntegerField(
+        blank=True, null=True, help_text="Fiscal Year calculated based on Action Date"
+    )
     transaction_unique_id = models.TextField(
         blank=False, null=False, default="NONE", verbose_name="Transaction Unique ID"
     )
-    is_fpds = models.BooleanField(blank=False, null=False, default=False, verbose_name="Is FPDS")
+    is_fpds = models.BooleanField(
+        blank=False, null=False, default=False, verbose_name="Is FPDS"
+    )
     funding_amount = models.DecimalField(
         max_digits=23,
         decimal_places=2,
@@ -114,7 +137,11 @@ class TransactionNormalized(models.Model):
         help_text="Assistance data variable.  non_federal_funding_amount + federal_action_obligation",
     )
     non_federal_funding_amount = models.DecimalField(
-        max_digits=23, decimal_places=2, blank=True, null=True, help_text="Assistance Data variable."
+        max_digits=23,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        help_text="Assistance Data variable.",
     )
     unique_award_key = models.TextField(null=True, db_index=True)  # From broker.
     business_categories = ArrayField(models.TextField(), default=list)
@@ -149,9 +176,18 @@ NORM_TO_TRANSACTION_SEARCH_COL_MAP = {
 vw_transaction_normalized_sql = f"""
     CREATE OR REPLACE VIEW rpt.vw_transaction_normalized AS
         SELECT
-            {(','+os.linesep+' '*12).join([
-                (v+(f'::{NORM_CASTED_COL_MAP[k]}' if k in NORM_CASTED_COL_MAP else '')).ljust(62)+' AS '+k.ljust(48)
-                for k, v in NORM_TO_TRANSACTION_SEARCH_COL_MAP.items()])}
+            {
+    ("," + os.linesep + " " * 12).join(
+        [
+            (
+                v + (f"::{NORM_CASTED_COL_MAP[k]}" if k in NORM_CASTED_COL_MAP else "")
+            ).ljust(62)
+            + " AS "
+            + k.ljust(48)
+            for k, v in NORM_TO_TRANSACTION_SEARCH_COL_MAP.items()
+        ]
+    )
+}
         FROM
             rpt.transaction_search;
 """

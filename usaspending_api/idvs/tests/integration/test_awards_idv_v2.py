@@ -1,24 +1,45 @@
 import json
-import pytest
 
+import pytest
 from model_bakery import baker
 from rest_framework import status
 
-from usaspending_api.references.models import ToptierAgency, SubtierAgency
+from usaspending_api.references.models import SubtierAgency, ToptierAgency
 
 
 @pytest.fixture
 def awards_and_transactions(db):
-
     subag = {"pk": 1, "name": "agency name", "abbreviation": "some other stuff"}
-    baker.make("references.SubtierAgency", subtier_code="def", **subag, _fill_optional=True)
-    baker.make("references.ToptierAgency", toptier_code="abc", **subag, _fill_optional=True)
+    baker.make(
+        "references.SubtierAgency", subtier_code="def", **subag, _fill_optional=True
+    )
+    baker.make(
+        "references.ToptierAgency", toptier_code="abc", **subag, _fill_optional=True
+    )
 
-    duns = {"awardee_or_recipient_uniqu": "123", "uei": "ABC", "legal_business_name": "Sams Club"}
-    parent_recipient_lookup = {"duns": "123", "uei": "ABC", "recipient_hash": "cfd3f3f5-2162-7679-9f6b-429cecaa3e1e"}
-    recipient_lookup = {"duns": "456", "uei": "DEF", "recipient_hash": "66545a8d-bf37-3eda-cce5-29c6170c9aab"}
-    parent_recipient_profile = {"recipient_hash": "cfd3f3f5-2162-7679-9f6b-429cecaa3e1e", "recipient_level": "P"}
-    recipient_profile = {"recipient_hash": "66545a8d-bf37-3eda-cce5-29c6170c9aab", "recipient_level": "C"}
+    duns = {
+        "awardee_or_recipient_uniqu": "123",
+        "uei": "ABC",
+        "legal_business_name": "Sams Club",
+    }
+    parent_recipient_lookup = {
+        "duns": "123",
+        "uei": "ABC",
+        "recipient_hash": "cfd3f3f5-2162-7679-9f6b-429cecaa3e1e",
+    }
+    recipient_lookup = {
+        "duns": "456",
+        "uei": "DEF",
+        "recipient_hash": "66545a8d-bf37-3eda-cce5-29c6170c9aab",
+    }
+    parent_recipient_profile = {
+        "recipient_hash": "cfd3f3f5-2162-7679-9f6b-429cecaa3e1e",
+        "recipient_level": "P",
+    }
+    recipient_profile = {
+        "recipient_hash": "66545a8d-bf37-3eda-cce5-29c6170c9aab",
+        "recipient_level": "C",
+    }
     baker.make("references.Cfda", program_number=1234)
     baker.make("recipient.DUNS", **duns)
     baker.make("recipient.RecipientLookup", **parent_recipient_lookup)
@@ -26,14 +47,32 @@ def awards_and_transactions(db):
     baker.make("recipient.RecipientProfile", **parent_recipient_profile)
     baker.make("recipient.RecipientProfile", **recipient_profile)
 
-    ag = {"pk": 1, "toptier_agency": ToptierAgency.objects.get(pk=1), "subtier_agency": SubtierAgency.objects.get(pk=1)}
+    ag = {
+        "pk": 1,
+        "toptier_agency": ToptierAgency.objects.get(pk=1),
+        "subtier_agency": SubtierAgency.objects.get(pk=1),
+    }
     baker.make("references.Agency", **ag, _fill_optional=True)
 
-    baker.make("references.PSC", code="4730", description="HOSE, PIPE, TUBE, LUBRICATION, AND RAILING FITTINGS")
-    baker.make("references.PSC", code="47", description="PIPE, TUBING, HOSE, AND FITTINGS")
+    baker.make(
+        "references.PSC",
+        code="4730",
+        description="HOSE, PIPE, TUBE, LUBRICATION, AND RAILING FITTINGS",
+    )
+    baker.make(
+        "references.PSC", code="47", description="PIPE, TUBING, HOSE, AND FITTINGS"
+    )
 
-    baker.make("references.NAICS", code="333911", description="PUMP AND PUMPING EQUIPMENT MANUFACTURING")
-    baker.make("references.NAICS", code="3339", description="Other General Purpose Machinery Manufacturing")
+    baker.make(
+        "references.NAICS",
+        code="333911",
+        description="PUMP AND PUMPING EQUIPMENT MANUFACTURING",
+    )
+    baker.make(
+        "references.NAICS",
+        code="3339",
+        description="Other General Purpose Machinery Manufacturing",
+    )
     baker.make("references.NAICS", code="33", description="Manufacturing")
 
     award_1_model = {
@@ -102,7 +141,13 @@ def awards_and_transactions(db):
     baker.make("search.AwardSearch", **award_2_model)
     baker.make("search.AwardSearch", **award_3_model)
 
-    asst_data = {"is_fpds": False, "transaction_id": 1, "award_id": 1, "cfda_number": 1234, "cfda_title": "farms"}
+    asst_data = {
+        "is_fpds": False,
+        "transaction_id": 1,
+        "award_id": 1,
+        "cfda_number": 1234,
+        "cfda_title": "farms",
+    }
     baker.make("search.TransactionSearch", **asst_data)
 
     latest_transaction_contract_data = {
@@ -340,7 +385,10 @@ def awards_and_transactions(db):
         "funding_office_name": "funding_office",
     }
     baker.make("search.TransactionSearch", **latest_transaction_contract_data)
-    baker.make("search.TransactionSearch", **latest_transaction_contract_data_without_recipient_name_or_id)
+    baker.make(
+        "search.TransactionSearch",
+        **latest_transaction_contract_data_without_recipient_name_or_id,
+    )
 
 
 @pytest.mark.django_db
@@ -353,7 +401,10 @@ def test_no_data_idv_award_endpoint(client):
 
 @pytest.mark.django_db
 def test_award_endpoint_different_ids(client, awards_and_transactions):
-    resp = client.get("/api/v2/awards/CONT_AWD_03VD_9700_SPM30012D3486_9700/", content_type="application/json")
+    resp = client.get(
+        "/api/v2/awards/CONT_AWD_03VD_9700_SPM30012D3486_9700/",
+        content_type="application/json",
+    )
     assert resp.status_code == status.HTTP_200_OK
     assert json.loads(resp.content.decode("utf-8")) == expected_response_idv
 
@@ -366,7 +417,10 @@ def test_award_endpoint_different_ids(client, awards_and_transactions):
 def test_award_endpoint_for_null_recipient_information(client, awards_and_transactions):
     resp = client.get("/api/v2/awards/3/", content_type="application/json")
     assert resp.status_code == status.HTTP_200_OK
-    assert json.loads(resp.content.decode("utf-8")).get("recipient") == recipient_without_id_and_name
+    assert (
+        json.loads(resp.content.decode("utf-8")).get("recipient")
+        == recipient_without_id_and_name
+    )
 
 
 expected_response_idv = {
@@ -387,15 +441,33 @@ expected_response_idv = {
     "awarding_agency": {
         "id": 1,
         "has_agency_page": False,
-        "toptier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": "abc", "slug": None},
-        "subtier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": "def"},
+        "toptier_agency": {
+            "name": "agency name",
+            "abbreviation": "some other stuff",
+            "code": "abc",
+            "slug": None,
+        },
+        "subtier_agency": {
+            "name": "agency name",
+            "abbreviation": "some other stuff",
+            "code": "def",
+        },
         "office_agency_name": "awarding_office",
     },
     "funding_agency": {
         "id": 1,
         "has_agency_page": False,
-        "toptier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": "abc", "slug": None},
-        "subtier_agency": {"name": "agency name", "abbreviation": "some other stuff", "code": "def"},
+        "toptier_agency": {
+            "name": "agency name",
+            "abbreviation": "some other stuff",
+            "code": "abc",
+            "slug": None,
+        },
+        "subtier_agency": {
+            "name": "agency name",
+            "abbreviation": "some other stuff",
+            "code": "def",
+        },
         "office_agency_name": "funding_office",
     },
     "recipient": {
@@ -531,14 +603,26 @@ expected_response_idv = {
     "date_signed": "2004-03-02",
     "naics_hierarchy": {
         "toptier_code": {"description": "Manufacturing", "code": "33"},
-        "midtier_code": {"description": "Other General Purpose Machinery Manufacturing", "code": "3339"},
-        "base_code": {"description": "PUMP AND PUMPING EQUIPMENT MANUFACTURING", "code": "333911"},
+        "midtier_code": {
+            "description": "Other General Purpose Machinery Manufacturing",
+            "code": "3339",
+        },
+        "base_code": {
+            "description": "PUMP AND PUMPING EQUIPMENT MANUFACTURING",
+            "code": "333911",
+        },
     },
     "psc_hierarchy": {
         "toptier_code": {},
-        "midtier_code": {"description": "PIPE, TUBING, HOSE, AND FITTINGS", "code": "47"},
+        "midtier_code": {
+            "description": "PIPE, TUBING, HOSE, AND FITTINGS",
+            "code": "47",
+        },
         "subtier_code": {},
-        "base_code": {"description": "HOSE, PIPE, TUBE, LUBRICATION, AND RAILING FITTINGS", "code": "4730"},
+        "base_code": {
+            "description": "HOSE, PIPE, TUBE, LUBRICATION, AND RAILING FITTINGS",
+            "code": "4730",
+        },
     },
     "account_obligations_by_defc": [],
     "account_outlays_by_defc": [],

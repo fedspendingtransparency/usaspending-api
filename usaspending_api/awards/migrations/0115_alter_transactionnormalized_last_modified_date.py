@@ -1,7 +1,7 @@
 from django.db import migrations, models
 
-class Migration(migrations.Migration):
 
+class Migration(migrations.Migration):
     dependencies = [
         ("awards", "0114_alter_ctodlinkageupdates_award_id"),
     ]
