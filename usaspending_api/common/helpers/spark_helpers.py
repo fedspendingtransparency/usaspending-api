@@ -10,6 +10,7 @@ import logging
 import os
 import sys
 import re
+import json
 
 from datetime import date, datetime
 from typing import Dict, List, Optional, Sequence, Set, Union
@@ -388,13 +389,20 @@ def get_jdbc_url_from_pg_uri(pg_uri: str) -> str:
 
     return f"jdbc:{pg_uri}"
 
+def get_jdbc_url_from_rds_json(rds_json: str) -> str:
+    parts = json.loads(CONFIG.DATABASE_URL)
+    jdbc_url = f"jdbc:postgresql://{parts["host"]}:{parts["port"]}/{parts["dbname"]}?user={parts["username"]}&password={parts["password"]}"
+    return jdbc_url
 
 def get_usas_jdbc_url():
     """Getting a JDBC-compliant Postgres DB connection string hard-wired to the POSTGRES vars set in CONFIG"""
     if not CONFIG.DATABASE_URL:
         raise ValueError("DATABASE_URL config val must provided")
-
-    return get_jdbc_url_from_pg_uri(CONFIG.DATABASE_URL)
+    try:
+        jdbc_url = get_jdbc_url_from_rds_json(CONFIG.DATABASE_URL)
+    except json.JSONDecodeError:
+        jdbc_url = get_jdbc_url_from_pg_uri(CONFIG.DATABASE_URL)
+    return jdbc_url
 
 
 def get_broker_jdbc_url():
