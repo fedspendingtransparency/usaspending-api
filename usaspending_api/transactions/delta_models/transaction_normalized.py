@@ -2,7 +2,7 @@ TRANSACTION_NORMALIZED_COLUMNS = {
     "action_date": "DATE",
     "action_type": "STRING",
     "action_type_description": "STRING",
-    "award_id": "LONG NOT NULL",
+    "award_id": "LONG",
     "awarding_agency_id": "INTEGER",
     "business_categories": "ARRAY<STRING>",
     "certified_date": "DATE",
@@ -13,7 +13,7 @@ TRANSACTION_NORMALIZED_COLUMNS = {
     "fiscal_year": "INTEGER",
     "funding_agency_id": "INTEGER",
     "funding_amount": "NUMERIC(23, 2)",
-    "id": "LONG NOT NULL",
+    "id": "LONG",
     "indirect_federal_sharing": "NUMERIC(23, 2)",
     "is_fpds": "BOOLEAN NOT NULL",
     "last_modified_date": "TIMESTAMP",
@@ -28,6 +28,7 @@ TRANSACTION_NORMALIZED_COLUMNS = {
     "unique_award_key": "STRING",
     "update_date": "TIMESTAMP",
     "usaspending_unique_transaction_id": "STRING",
+    "hash": "LONG",
 }
 
 transaction_normalized_sql_string = rf"""

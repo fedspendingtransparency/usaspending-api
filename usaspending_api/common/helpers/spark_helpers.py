@@ -31,7 +31,10 @@ from usaspending_api.awards.delta_models.financial_accounts_by_awards import FIN
 from usaspending_api.common.helpers.aws_helpers import is_aws, get_aws_credentials
 from usaspending_api.config import CONFIG
 from usaspending_api.config.utils import parse_pg_uri, parse_http_url
-from usaspending_api.transactions.delta_models import DETACHED_AWARD_PROCUREMENT_DELTA_COLUMNS, PUBLISHED_FABS_COLUMNS
+from usaspending_api.transactions.delta_models import (
+    DETACHED_AWARD_PROCUREMENT_DELTA_COLUMNS,
+    PUBLISHED_FABS_DELTA_COLUMNS,
+)
 from usaspending_api.transactions.delta_models.transaction_fabs import (
     TRANSACTION_FABS_COLUMN_INFO,
     TRANSACTION_FABS_COLUMNS,
@@ -575,7 +578,7 @@ def load_dict_to_delta_table(spark, s3_data_bucket, table_schema, table_name, da
     table_to_col_names_dict["awards"] = list(AWARDS_COLUMNS)
     table_to_col_names_dict["financial_accounts_by_awards"] = list(FINANCIAL_ACCOUNTS_BY_AWARDS_COLUMNS)
     table_to_col_names_dict["detached_award_procurement"] = list(DETACHED_AWARD_PROCUREMENT_DELTA_COLUMNS)
-    table_to_col_names_dict["published_fabs"] = list(PUBLISHED_FABS_COLUMNS)
+    table_to_col_names_dict["published_fabs"] = list(PUBLISHED_FABS_DELTA_COLUMNS)
 
     table_to_col_info_dict = {}
     for tbl_name, col_info in zip(
@@ -586,15 +589,16 @@ def load_dict_to_delta_table(spark, s3_data_bucket, table_schema, table_name, da
             table_to_col_info_dict[tbl_name][col.dest_name] = col
 
     # Make sure the table has been created first
-    call_command(
-        "create_delta_table",
-        "--destination-table",
-        table_name,
-        "--alt-db",
-        table_schema,
-        "--spark-s3-bucket",
-        s3_data_bucket,
-    )
+    if not spark.catalog.tableExists(table_name, table_schema):
+        call_command(
+            "create_delta_table",
+            "--destination-table",
+            table_name,
+            "--alt-db",
+            table_schema,
+            "--spark-s3-bucket",
+            s3_data_bucket,
+        )
 
     if data:
         insert_sql = f"INSERT {'OVERWRITE' if overwrite else 'INTO'} {table_schema}.{table_name} VALUES\n"

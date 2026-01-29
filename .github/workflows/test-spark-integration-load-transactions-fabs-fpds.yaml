@@ -62,7 +62,7 @@ jobs:
         with:
           cov-report-name: 'spark-load-transactions-fabs-fpds-tests'
           include-glob: 'test_*.py *_test.py'
-          keyword: 'test_load_transactions_in_delta_fabs_fpds.py'
+          keyword: 'test_load_transactions.py'
           marker: 'spark'
           num-processes: 0
           working-directory: ./usaspending-api

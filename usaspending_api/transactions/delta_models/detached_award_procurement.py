@@ -309,9 +309,13 @@ DETACHED_AWARD_PROCUREMENT_COLUMNS = {
     "woman_owned_business": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
     "women_owned_small_business": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
 }
-
-
-DETACHED_AWARD_PROCUREMENT_DELTA_COLUMNS = {k: v["delta"] for k, v in DETACHED_AWARD_PROCUREMENT_COLUMNS.items()}
+DELTA_ONLY_COLUMNS = {
+    "hash": "LONG",
+}
+DETACHED_AWARD_PROCUREMENT_DELTA_COLUMNS = {
+    **{k: v["delta"] for k, v in DETACHED_AWARD_PROCUREMENT_COLUMNS.items()},
+    **DELTA_ONLY_COLUMNS,
+}
 DETACHED_AWARD_PROCUREMENT_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in DETACHED_AWARD_PROCUREMENT_COLUMNS.items()}
 
 detached_award_procurement_create_sql_string = rf"""

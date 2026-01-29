@@ -62,6 +62,6 @@ jobs:
         with:
           cov-report-name: 'spark-other-tests'
           include-glob: 'test_*.py *_test.py'
-          keyword: '(not test_load_to_from_delta.py and not test_load_transactions_in_delta_lookups.py and not test_load_transactions_in_delta_fabs_fpds.py)'
+          keyword: '(not test_load_to_from_delta.py and not test_load_transactions.py)'
           marker: 'spark'
           working-directory: ./usaspending-api
