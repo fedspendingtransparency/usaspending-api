@@ -16,7 +16,7 @@ TRANSACTION_NORMALIZED_COLUMNS = {
     "id": "LONG NOT NULL",
     "indirect_federal_sharing": "NUMERIC(23, 2)",
     "is_fpds": "BOOLEAN NOT NULL",
-    "last_modified_date": "DATE",
+    "last_modified_date": "TIMESTAMP",
     "modification_number": "STRING",
     "non_federal_funding_amount": "NUMERIC(23, 2)",
     "original_loan_subsidy_cost": "NUMERIC(23, 2)",
@@ -32,7 +32,7 @@ TRANSACTION_NORMALIZED_COLUMNS = {
 
 transaction_normalized_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
-        {", ".join([f'{key} {val}' for key, val in TRANSACTION_NORMALIZED_COLUMNS.items()])}
+        {", ".join([f"{key} {val}" for key, val in TRANSACTION_NORMALIZED_COLUMNS.items()])}
     )
     USING DELTA
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
