@@ -17,26 +17,37 @@ with open(transaction_delta_view_file, "r") as f:
 
 
 class Migration(migrations.Migration):
-    atomic = False
     dependencies = [
-        ("search", "0059_alter_transactionsearch_initial_report_date_and_more"),
+        ("search", "0060_populate_datetimes"),
     ]
 
     operations = [
-        migrations.AlterField(
+        migrations.RemoveField(
             model_name="transactionsearch",
             name="initial_report_date",
-            field=models.DateTimeField(null=True),
         ),
-        migrations.AlterField(
+        migrations.RemoveField(
             model_name="transactionsearch",
             name="last_modified_date",
-            field=models.DateTimeField(null=True),
         ),
-        migrations.AlterField(
+        migrations.RemoveField(
             model_name="awardsearch",
             name="last_modified_date",
-            field=models.DateTimeField(blank=True, null=True),
+        ),
+        migrations.RenameField(
+            model_name="transactionsearch",
+            old_name="initial_report_datetime",
+            new_name="initial_report_date",
+        ),
+        migrations.RenameField(
+            model_name="transactionsearch",
+            old_name="last_modified_datetime",
+            new_name="last_modified_date",
+        ),
+        migrations.RenameField(
+            model_name="awardsearch",
+            old_name="last_modified_datetime",
+            new_name="last_modified_date",
         ),
         migrations.RunSQL(
             sql=f"""

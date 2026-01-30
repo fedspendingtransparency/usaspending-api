@@ -61,7 +61,7 @@ class AwardSearch(models.Model):
 
     action_date = models.DateField(null=True)
     fiscal_year = models.IntegerField(null=True)
-    last_modified_date = models.DateTimeField(blank=True, null=True)
+    last_modified_date = models.DateTimeField(null=True)
 
     period_of_performance_start_date = models.DateField(null=True, db_index=True)
     period_of_performance_current_end_date = models.DateField(null=True, db_index=True)
