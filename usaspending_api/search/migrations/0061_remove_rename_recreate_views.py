@@ -1,4 +1,4 @@
-from django.db import migrations
+from django.db import migrations, models
 
 from usaspending_api.awards.models.award import vw_awards_sql
 from usaspending_api.awards.models.transaction_fabs import vw_transaction_fabs_sql
@@ -46,6 +46,12 @@ class Migration(migrations.Migration):
             model_name="awardsearch",
             old_name="last_modified_datetime",
             new_name="last_modified_date",
+        ),
+        migrations.AddIndex(
+            model_name="transactionsearch",
+            index=models.Index(
+                fields=["-last_modified_date"], name="ts_idx_last_modified_date"
+            ),
         ),
         migrations.RunSQL(
             sql=f"""

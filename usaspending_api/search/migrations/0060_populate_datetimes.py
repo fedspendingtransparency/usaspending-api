@@ -8,12 +8,15 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RunSQL(
-            "UPDATE rpt.transaction_search set last_modified_datetime = last_modified_date::timestamp with time zone"
+            "UPDATE rpt.transaction_search set last_modified_datetime = last_modified_date::timestamp with time zone",
+            migrations.RunSQL.noop,
         ),
         migrations.RunSQL(
-            "UPDATE rpt.transaction_search set initial_report_datetime = initial_report_date::timestamp with time zone"
+            "UPDATE rpt.transaction_search set initial_report_datetime = initial_report_date::timestamp with time zone",
+            migrations.RunSQL.noop,
         ),
         migrations.RunSQL(
-            "UPDATE rpt.award_search set last_modified_datetime = last_modified_date::timestamp with time zone"
+            "UPDATE rpt.award_search set last_modified_datetime = last_modified_date::timestamp with time zone",
+            migrations.RunSQL.noop,
         ),
     ]
