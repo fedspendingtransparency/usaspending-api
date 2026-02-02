@@ -20,6 +20,18 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RunSQL(
+            sql="""
+            DROP VIEW IF EXISTS
+            vw_awards,
+            vw_transaction_fabs,
+            vw_transaction_normalized,
+            vw_transaction_fpds,
+            transaction_delta_view
+            CASCADE;
+            """,
+            reverse_sql=migrations.RunSQL.noop,
+        ),
         migrations.RemoveField(
             model_name="transactionsearch",
             name="initial_report_date",

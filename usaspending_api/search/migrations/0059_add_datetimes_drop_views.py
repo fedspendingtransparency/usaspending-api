@@ -28,17 +28,4 @@ class Migration(migrations.Migration):
             name="last_modified_datetime",
             field=models.DateTimeField(null=True),
         ),
-        # Without dropping these tables, it caused the error cannot alter type of a column used by a view or rule
-        migrations.RunSQL(
-            sql="""
-                DROP VIEW IF EXISTS
-                vw_awards,
-                vw_transaction_fabs,
-                vw_transaction_normalized,
-                vw_transaction_fpds,
-                transaction_delta_view
-                CASCADE;
-                """,
-            reverse_sql=migrations.RunSQL.noop,
-        ),
     ]
