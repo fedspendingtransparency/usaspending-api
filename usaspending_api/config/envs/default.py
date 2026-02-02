@@ -12,6 +12,7 @@
 import pathlib
 from typing import ClassVar
 import os
+import json
 
 from usaspending_api.config.utils import (
     ENV_SPECIFIC_OVERRIDE,
@@ -98,6 +99,15 @@ class DefaultConfig(BaseSettings):
     # Pydantic returns a classmethod for its validators, so the cls param is correct
     def _validate_database_url(cls, values, url_conf_name, resource_conf_prefix, required=True):
         """Helper function to validate both DATABASE_URLs and their parts"""
+
+        # if JSON formatted connection string from RDS: use exactly that value and skip this validation step
+        try:
+            _ = json.loads(values[url_conf_name])
+            print(f"{url_conf_name} is JSON-formatted connection string")
+            return
+        except:
+            print(f"{url_conf_name} is NOT a JSON-formatted connection string")
+            pass
 
         # First determine if full URL config was provided.
         is_full_url_provided = check_for_full_url_config(url_conf_name, values)
