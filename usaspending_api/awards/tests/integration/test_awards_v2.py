@@ -2,6 +2,7 @@ import datetime
 import json
 
 import pytest
+from django.test import Client
 from model_bakery import baker
 from rest_framework import status
 
@@ -14,15 +15,29 @@ def awards_and_transactions(db):
     baker.make("recipient.DUNS", **duns)
 
     # Recipient Lookup
-    parent_recipient_lookup = {"duns": "123", "uei": "ABC", "recipient_hash": "cfd3f3f5-2162-7679-9f6b-429cecaa3e1e"}
-    recipient_lookup = {"duns": "456", "uei": "DEF", "recipient_hash": "66545a8d-bf37-3eda-cce5-29c6170c9aab"}
+    parent_recipient_lookup = {
+        "duns": "123",
+        "uei": "ABC",
+        "recipient_hash": "cfd3f3f5-2162-7679-9f6b-429cecaa3e1e",
+    }
+    recipient_lookup = {
+        "duns": "456",
+        "uei": "DEF",
+        "recipient_hash": "66545a8d-bf37-3eda-cce5-29c6170c9aab",
+    }
 
     baker.make("recipient.RecipientLookup", **parent_recipient_lookup)
     baker.make("recipient.RecipientLookup", **recipient_lookup)
 
     # Recipient Profile
-    parent_recipient_profile = {"recipient_hash": "cfd3f3f5-2162-7679-9f6b-429cecaa3e1e", "recipient_level": "P"}
-    recipient_profile = {"recipient_hash": "66545a8d-bf37-3eda-cce5-29c6170c9aab", "recipient_level": "C"}
+    parent_recipient_profile = {
+        "recipient_hash": "cfd3f3f5-2162-7679-9f6b-429cecaa3e1e",
+        "recipient_level": "P",
+    }
+    recipient_profile = {
+        "recipient_hash": "66545a8d-bf37-3eda-cce5-29c6170c9aab",
+        "recipient_level": "C",
+    }
 
     baker.make("recipient.RecipientProfile", **parent_recipient_profile)
     baker.make("recipient.RecipientProfile", **recipient_profile)
@@ -59,30 +74,66 @@ def awards_and_transactions(db):
     baker.make("references.PSC", code="1005", description="More specific whatever")
     baker.make("references.PSC", code="A", description="R&D")
     baker.make("references.PSC", code="A1", description="R&D - Steak Sauce")
-    baker.make("references.PSC", code="A13", description="R&D - Brand specific steak condiments")
-    baker.make("references.PSC", code="A136", description="R&D - Very specific steak research")
+    baker.make(
+        "references.PSC",
+        code="A13",
+        description="R&D - Brand specific steak condiments",
+    )
+    baker.make(
+        "references.PSC", code="A136", description="R&D - Very specific steak research"
+    )
     baker.make("references.PSC", code="M", description="Something")
     baker.make("references.PSC", code="M1", description="Something More Specific")
     baker.make("references.PSC", code="M123", description="Something Most Specific")
 
     # NAICS
     baker.make("references.NAICS", code="11", description="Agriculture")
-    baker.make("references.NAICS", code="1111", description="Soybean & Oilseed Agriculture")
+    baker.make(
+        "references.NAICS", code="1111", description="Soybean & Oilseed Agriculture"
+    )
     baker.make("references.NAICS", code="111120", description="Soybean Harvesting")
 
     # Toptier Agency
-    toptier_agency_1 = {"pk": 1, "abbreviation": "TA1", "name": "TOPTIER AGENCY 1", "toptier_code": "ABC"}
-    toptier_agency_2 = {"pk": 2, "abbreviation": "TA2", "name": "TOPTIER AGENCY 2", "toptier_code": "002"}
+    toptier_agency_1 = {
+        "pk": 1,
+        "abbreviation": "TA1",
+        "name": "TOPTIER AGENCY 1",
+        "toptier_code": "ABC",
+    }
+    toptier_agency_2 = {
+        "pk": 2,
+        "abbreviation": "TA2",
+        "name": "TOPTIER AGENCY 2",
+        "toptier_code": "002",
+    }
 
-    ta1 = baker.make("references.ToptierAgency", **toptier_agency_1, _fill_optional=True)
-    ta2 = baker.make("references.ToptierAgency", **toptier_agency_2, _fill_optional=True)
+    ta1 = baker.make(
+        "references.ToptierAgency", **toptier_agency_1, _fill_optional=True
+    )
+    ta2 = baker.make(
+        "references.ToptierAgency", **toptier_agency_2, _fill_optional=True
+    )
 
     # Subtier Agency
-    subtier_agency_1 = {"pk": 1, "abbreviation": "SA1", "name": "SUBTIER AGENCY 1", "subtier_code": "DEF"}
-    subtier_agency_2 = {"pk": 2, "abbreviation": "SA2", "name": "SUBTIER AGENCY 2", "subtier_code": "1000"}
+    subtier_agency_1 = {
+        "pk": 1,
+        "abbreviation": "SA1",
+        "name": "SUBTIER AGENCY 1",
+        "subtier_code": "DEF",
+    }
+    subtier_agency_2 = {
+        "pk": 2,
+        "abbreviation": "SA2",
+        "name": "SUBTIER AGENCY 2",
+        "subtier_code": "1000",
+    }
 
-    sa1 = baker.make("references.SubtierAgency", **subtier_agency_1, _fill_optional=True)
-    sa2 = baker.make("references.SubtierAgency", **subtier_agency_2, _fill_optional=True)
+    sa1 = baker.make(
+        "references.SubtierAgency", **subtier_agency_1, _fill_optional=True
+    )
+    sa2 = baker.make(
+        "references.SubtierAgency", **subtier_agency_2, _fill_optional=True
+    )
 
     # Agency
     agency = {
@@ -130,7 +181,7 @@ def awards_and_transactions(db):
         "recipient_location_state_name": "North Carolina",
         "legal_entity_zip_last4": "5312",
         "recipient_location_zip5": "12204",
-        "last_modified_date": "2000-01-02",
+        "last_modified_date": "2000-01-02 00:00:00+0000",
         "officer_1_amount": 50000.00,
         "officer_1_name": "John Apple",
         "officer_2_amount": 4623.00,
@@ -183,7 +234,7 @@ def awards_and_transactions(db):
         "recipient_location_state_name": "North Carolina",
         "legal_entity_zip_last4": "5312",
         "recipient_location_zip5": "12204",
-        "last_modified_date": "2000-01-02",
+        "last_modified_date": "2000-01-02 00:00:00+0000",
         "non_federal_funding_amount": 0,
         "officer_1_amount": 50000.00,
         "officer_1_name": "John Apple",
@@ -236,7 +287,7 @@ def awards_and_transactions(db):
         "recipient_location_state_name": "North Carolina",
         "legal_entity_zip_last4": "5312",
         "recipient_location_zip5": "12204",
-        "last_modified_date": "2000-01-02",
+        "last_modified_date": "2000-01-02 00:00:00+0000",
         "non_federal_funding_amount": 0,
         "officer_1_amount": 50000.00,
         "officer_1_name": "John Apple",
@@ -289,7 +340,7 @@ def awards_and_transactions(db):
         "recipient_location_state_name": "North Carolina",
         "legal_entity_zip_last4": "5312",
         "recipient_location_zip5": "12204",
-        "last_modified_date": "2000-01-02",
+        "last_modified_date": "2000-01-02 00:00:00+0000",
         "non_federal_funding_amount": 0,
         "officer_1_amount": 50000.00,
         "officer_1_name": "John Apple",
@@ -344,7 +395,7 @@ def awards_and_transactions(db):
         "recipient_location_state_name": None,
         "legal_entity_zip_last4": "5312",
         "recipient_location_zip5": "12204",
-        "last_modified_date": "2000-01-02",
+        "last_modified_date": "2000-01-02 00:00:00+0000",
         "non_federal_funding_amount": 0,
         "officer_1_amount": 50000.00,
         "officer_1_name": "John Apple",
@@ -405,7 +456,7 @@ def awards_and_transactions(db):
         "information_technolog_desc": "NOT IT PRODUCTS OR SERVICES",
         "interagency_contract_desc": "NOT APPLICABLE",
         "labor_standards_descrip": "NO",
-        "last_modified_date": "2001-02-03",
+        "last_modified_date": "2001-02-03 00:00:00+0000",
         "legal_entity_address_line1": "123 main st",
         "legal_entity_address_line2": None,
         "legal_entity_address_line3": None,
@@ -495,7 +546,7 @@ def awards_and_transactions(db):
         "information_technolog_desc": "NOT IT PRODUCTS OR SERVICES",
         "interagency_contract_desc": "NOT APPLICABLE",
         "labor_standards_descrip": "NO",
-        "last_modified_date": "2001-02-03",
+        "last_modified_date": "2001-02-03 00:00:00+0000",
         "legal_entity_address_line1": "123 main st",
         "legal_entity_address_line2": None,
         "legal_entity_address_line3": None,
@@ -585,7 +636,7 @@ def awards_and_transactions(db):
         "information_technolog_desc": "NOT IT PRODUCTS OR SERVICES",
         "interagency_contract_desc": "NOT APPLICABLE",
         "labor_standards_descrip": "NO",
-        "last_modified_date": "2001-02-03",
+        "last_modified_date": "2001-02-03 00:00:00+0000",
         "legal_entity_address_line1": "123 main st",
         "legal_entity_address_line2": None,
         "legal_entity_address_line3": None,
@@ -971,15 +1022,27 @@ def awards_and_transactions(db):
         "rollup_total_obligation": 4500,
         "parent_award_id": None,
     }
-    parent_award_2 = {"award_id": 8, "generated_unique_award_id": "CONT_IDV_AWARD8_1000", "parent_award_id": 9}
-    parent_award_3 = {"award_id": 9, "generated_unique_award_id": "CONT_IDV_AWARD9_1000", "parent_award_id": None}
+    parent_award_2 = {
+        "award_id": 8,
+        "generated_unique_award_id": "CONT_IDV_AWARD8_1000",
+        "parent_award_id": 9,
+    }
+    parent_award_3 = {
+        "award_id": 9,
+        "generated_unique_award_id": "CONT_IDV_AWARD9_1000",
+        "parent_award_id": None,
+    }
 
     baker.make("awards.ParentAward", **parent_award_1)
     baker.make("awards.ParentAward", **parent_award_2)
     baker.make("awards.ParentAward", **parent_award_3)
 
-    dsws1 = baker.make("submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2020-01-01")
-    baker.make("submissions.SubmissionAttributes", toptier_code="ABC", submission_window=dsws1)
+    dsws1 = baker.make(
+        "submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2020-01-01"
+    )
+    baker.make(
+        "submissions.SubmissionAttributes", toptier_code="ABC", submission_window=dsws1
+    )
 
 
 @pytest.fixture
@@ -988,14 +1051,14 @@ def update_awards(db):
     baker.make("search.AwardSearch", award_id=12)
 
 
-def test_award_last_updated_endpoint(client, update_awards):
+def test_award_last_updated_endpoint(client: Client, update_awards):
     """Test the awards endpoint."""
     resp = client.get("/api/v2/awards/last_updated/")
     assert resp.status_code == status.HTTP_200_OK
     assert resp.data["last_updated"] == datetime.datetime.now().strftime("%m/%d/%Y")
 
 
-def test_award_endpoint_generated_id(client, awards_and_transactions):
+def test_award_endpoint_generated_id(client: Client, awards_and_transactions):
     resp = client.get("/api/v2/awards/ASST_AGG_1830212.0481163_3620/")
     assert resp.status_code == status.HTTP_200_OK
     assert json.loads(resp.content.decode("utf-8")) == expected_response_asst
@@ -1017,38 +1080,23 @@ def test_award_endpoint_generated_id(client, awards_and_transactions):
     assert json.loads(resp.content.decode("utf-8")) == expected_response_asst
 
 
-def test_award_endpoint_parent_award(client, awards_and_transactions):
-    dsws1 = baker.make("submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2020-01-01")
-    baker.make("submissions.SubmissionAttributes", toptier_code="ABC", submission_window=dsws1)
-    baker.make("submissions.SubmissionAttributes", toptier_code="002", submission_window=dsws1)
+def test_award_endpoint_parent_award(client: Client, awards_and_transactions):
+    dsws1 = baker.make(
+        "submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2020-01-01"
+    )
+    baker.make(
+        "submissions.SubmissionAttributes", toptier_code="ABC", submission_window=dsws1
+    )
+    baker.make(
+        "submissions.SubmissionAttributes", toptier_code="002", submission_window=dsws1
+    )
 
     # Test contract award with parent
     resp = client.get("/api/v2/awards/7/")
     assert resp.status_code == status.HTTP_200_OK
-    assert json.loads(resp.content.decode("utf-8"))["parent_award"] == expected_contract_award_parent()
-
-    # Test contract award without parent
-    resp = client.get("/api/v2/awards/10/")
-    assert resp.status_code == status.HTTP_200_OK
-    assert json.loads(resp.content.decode("utf-8"))["parent_award"] is None
-
-    # Test idv award with parent
-    resp = client.get("/api/v2/awards/8/")
-    assert resp.status_code == status.HTTP_200_OK
-    assert json.loads(resp.content.decode("utf-8"))["parent_award"] == expected_idv_award_parent()
-
-    # Test idv award without parent
-    resp = client.get("/api/v2/awards/9/")
-    assert resp.status_code == status.HTTP_200_OK
-    assert json.loads(resp.content.decode("utf-8"))["parent_award"] is None
-
-
-def test_award_endpoint_parent_award_no_submissions(client, awards_and_transactions):
-    # Test contract award with parent
-    resp = client.get("/api/v2/awards/7/")
-    assert resp.status_code == status.HTTP_200_OK
-    assert json.loads(resp.content.decode("utf-8"))["parent_award"] == expected_contract_award_parent(
-        include_slug=False
+    assert (
+        json.loads(resp.content.decode("utf-8"))["parent_award"]
+        == expected_contract_award_parent()
     )
 
     # Test contract award without parent
@@ -1059,7 +1107,10 @@ def test_award_endpoint_parent_award_no_submissions(client, awards_and_transacti
     # Test idv award with parent
     resp = client.get("/api/v2/awards/8/")
     assert resp.status_code == status.HTTP_200_OK
-    assert json.loads(resp.content.decode("utf-8"))["parent_award"] == expected_idv_award_parent(include_slug=False)
+    assert (
+        json.loads(resp.content.decode("utf-8"))["parent_award"]
+        == expected_idv_award_parent()
+    )
 
     # Test idv award without parent
     resp = client.get("/api/v2/awards/9/")
@@ -1067,7 +1118,35 @@ def test_award_endpoint_parent_award_no_submissions(client, awards_and_transacti
     assert json.loads(resp.content.decode("utf-8"))["parent_award"] is None
 
 
-def test_award_multiple_cfdas(client, awards_and_transactions):
+def test_award_endpoint_parent_award_no_submissions(
+    client: Client, awards_and_transactions
+):
+    # Test contract award with parent
+    resp = client.get("/api/v2/awards/7/")
+    assert resp.status_code == status.HTTP_200_OK
+    assert json.loads(resp.content.decode("utf-8"))[
+        "parent_award"
+    ] == expected_contract_award_parent(include_slug=False)
+
+    # Test contract award without parent
+    resp = client.get("/api/v2/awards/10/")
+    assert resp.status_code == status.HTTP_200_OK
+    assert json.loads(resp.content.decode("utf-8"))["parent_award"] is None
+
+    # Test idv award with parent
+    resp = client.get("/api/v2/awards/8/")
+    assert resp.status_code == status.HTTP_200_OK
+    assert json.loads(resp.content.decode("utf-8"))[
+        "parent_award"
+    ] == expected_idv_award_parent(include_slug=False)
+
+    # Test idv award without parent
+    resp = client.get("/api/v2/awards/9/")
+    assert resp.status_code == status.HTTP_200_OK
+    assert json.loads(resp.content.decode("utf-8"))["parent_award"] is None
+
+
+def test_award_multiple_cfdas(client: Client, awards_and_transactions):
     resp = client.get("/api/v2/awards/3/")
     assert resp.status_code == status.HTTP_200_OK
     assert json.loads(resp.content.decode("utf-8"))["cfda_info"] == [
@@ -1104,14 +1183,20 @@ def test_award_multiple_cfdas(client, awards_and_transactions):
     ]
 
 
-def test_award_psc_hierarchy_types(client, awards_and_transactions):
+def test_award_psc_hierarchy_types(client: Client, awards_and_transactions):
     resp = client.get("/api/v2/awards/5/")
     assert resp.status_code == status.HTTP_200_OK
     assert json.loads(resp.content.decode("utf-8"))["psc_hierarchy"] == {
         "toptier_code": {"description": "R&D", "code": "A"},
         "midtier_code": {"description": "R&D - Steak Sauce", "code": "A1"},
-        "subtier_code": {"description": "R&D - Brand specific steak condiments", "code": "A13"},
-        "base_code": {"description": "R&D - Very specific steak research", "code": "A136"},
+        "subtier_code": {
+            "description": "R&D - Brand specific steak condiments",
+            "code": "A13",
+        },
+        "base_code": {
+            "description": "R&D - Very specific steak research",
+            "code": "A136",
+        },
     }
 
     resp = client.get("/api/v2/awards/6/")
@@ -1124,7 +1209,7 @@ def test_award_psc_hierarchy_types(client, awards_and_transactions):
     }
 
 
-def test_foreign_city(client, awards_and_transactions):
+def test_foreign_city(client: Client, awards_and_transactions):
     resp = client.get("/api/v2/awards/13/")
     assert resp.status_code == status.HTTP_200_OK
     assert json.loads(resp.content.decode("utf-8"))["recipient"]["location"] == {
@@ -1146,25 +1231,34 @@ def test_foreign_city(client, awards_and_transactions):
     }
 
 
-def test_special_characters(client, awards_and_transactions):
+def test_special_characters(client: Client, awards_and_transactions):
     resp = client.get("/api/v2/awards/ASST_NON_:~$@*\"()%23/,^&+=`!'%/_. -_9700/")
     assert resp.status_code == status.HTTP_200_OK
 
-    resp = client.get("/api/v2/awards/count/transaction/ASST_NON_:~$@*\"()%23/,^&+=`!'%/_. -_9700/")
+    resp = client.get(
+        "/api/v2/awards/count/transaction/ASST_NON_:~$@*\"()%23/,^&+=`!'%/_. -_9700/"
+    )
     assert resp.status_code == status.HTTP_200_OK
-    resp = client.get("/api/v2/awards/count/subaward/ASST_NON_:~$@*\"()%23/,^&+=`!'%/_. -_9700/")
+    resp = client.get(
+        "/api/v2/awards/count/subaward/ASST_NON_:~$@*\"()%23/,^&+=`!'%/_. -_9700/"
+    )
     assert resp.status_code == status.HTTP_200_OK
-    resp = client.get("/api/v2/awards/count/federal_account/ASST_NON_:~$@*\"()%23/,^&+=`!'%/_. -_9700/")
+    resp = client.get(
+        "/api/v2/awards/count/federal_account/ASST_NON_:~$@*\"()%23/,^&+=`!'%/_. -_9700/"
+    )
     assert resp.status_code == status.HTTP_200_OK
 
 
-def test_zip4_switch(client, awards_and_transactions):
+def test_zip4_switch(client: Client, awards_and_transactions):
     resp = client.get("/api/v2/awards/10/")
     assert resp.status_code == status.HTTP_200_OK
-    assert json.loads(resp.content.decode("utf-8"))["recipient"]["location"]["zip4"] == "0000"
+    assert (
+        json.loads(resp.content.decode("utf-8"))["recipient"]["location"]["zip4"]
+        == "0000"
+    )
 
 
-def test_file_c_data(client, awards_and_transactions):
+def test_file_c_data(client: Client, awards_and_transactions):
     defc = baker.make("references.DisasterEmergencyFundCode", code="L")
     baker.make(
         "submissions.DABSSubmissionWindowSchedule",
@@ -1211,8 +1305,12 @@ def test_file_c_data(client, awards_and_transactions):
     # fiscal period is not 12 & is not after 2020-04-01, so we expect no data to come back
     resp = client.get("/api/v2/awards/1/")
     assert resp.status_code == status.HTTP_200_OK
-    assert json.loads(resp.content.decode("utf-8"))["account_obligations_by_defc"] == [{"code": "L", "amount": 100.0}]
-    assert json.loads(resp.content.decode("utf-8"))["account_outlays_by_defc"] == [{"code": "L", "amount": 0.0}]
+    assert json.loads(resp.content.decode("utf-8"))["account_obligations_by_defc"] == [
+        {"code": "L", "amount": 100.0}
+    ]
+    assert json.loads(resp.content.decode("utf-8"))["account_outlays_by_defc"] == [
+        {"code": "L", "amount": 0.0}
+    ]
     assert json.loads(resp.content.decode("utf-8"))["total_account_obligation"] == 100.0
     assert json.loads(resp.content.decode("utf-8"))["total_account_outlay"] == 0.0
     baker.make(
@@ -1236,8 +1334,12 @@ def test_file_c_data(client, awards_and_transactions):
     resp = client.get("/api/v2/awards/1/")
     # now we have the period 12 data, so we expect outlays here
     assert resp.status_code == status.HTTP_200_OK
-    assert json.loads(resp.content.decode("utf-8"))["account_obligations_by_defc"] == [{"code": "L", "amount": 200.0}]
-    assert json.loads(resp.content.decode("utf-8"))["account_outlays_by_defc"] == [{"code": "L", "amount": 100.0}]
+    assert json.loads(resp.content.decode("utf-8"))["account_obligations_by_defc"] == [
+        {"code": "L", "amount": 200.0}
+    ]
+    assert json.loads(resp.content.decode("utf-8"))["account_outlays_by_defc"] == [
+        {"code": "L", "amount": 100.0}
+    ]
     assert json.loads(resp.content.decode("utf-8"))["total_account_obligation"] == 200.0
     assert json.loads(resp.content.decode("utf-8"))["total_account_outlay"] == 100.0
     baker.make(
@@ -1261,8 +1363,12 @@ def test_file_c_data(client, awards_and_transactions):
     # again, period is not 12, no data reported
     resp = client.get("/api/v2/awards/1/")
     assert resp.status_code == status.HTTP_200_OK
-    assert json.loads(resp.content.decode("utf-8"))["account_obligations_by_defc"] == [{"code": "L", "amount": 210.0}]
-    assert json.loads(resp.content.decode("utf-8"))["account_outlays_by_defc"] == [{"code": "L", "amount": 100.0}]
+    assert json.loads(resp.content.decode("utf-8"))["account_obligations_by_defc"] == [
+        {"code": "L", "amount": 210.0}
+    ]
+    assert json.loads(resp.content.decode("utf-8"))["account_outlays_by_defc"] == [
+        {"code": "L", "amount": 100.0}
+    ]
     assert json.loads(resp.content.decode("utf-8"))["total_account_obligation"] == 210.0
     assert json.loads(resp.content.decode("utf-8"))["total_account_outlay"] == 100.0
     baker.make(
@@ -1286,8 +1392,12 @@ def test_file_c_data(client, awards_and_transactions):
     # expect outlays here
     resp = client.get("/api/v2/awards/1/")
     assert resp.status_code == status.HTTP_200_OK
-    assert json.loads(resp.content.decode("utf-8"))["account_obligations_by_defc"] == [{"code": "L", "amount": 220.0}]
-    assert json.loads(resp.content.decode("utf-8"))["account_outlays_by_defc"] == [{"code": "L", "amount": 110.0}]
+    assert json.loads(resp.content.decode("utf-8"))["account_obligations_by_defc"] == [
+        {"code": "L", "amount": 220.0}
+    ]
+    assert json.loads(resp.content.decode("utf-8"))["account_outlays_by_defc"] == [
+        {"code": "L", "amount": 110.0}
+    ]
     assert json.loads(resp.content.decode("utf-8"))["total_account_obligation"] == 220.0
     assert json.loads(resp.content.decode("utf-8"))["total_account_outlay"] == 110.0
     baker.make(
@@ -1310,13 +1420,17 @@ def test_file_c_data(client, awards_and_transactions):
     # period is 12 but amounts are 0, so we expect no change
     resp = client.get("/api/v2/awards/1/")
     assert resp.status_code == status.HTTP_200_OK
-    assert json.loads(resp.content.decode("utf-8"))["account_obligations_by_defc"] == [{"code": "L", "amount": 220.0}]
-    assert json.loads(resp.content.decode("utf-8"))["account_outlays_by_defc"] == [{"code": "L", "amount": 110.0}]
+    assert json.loads(resp.content.decode("utf-8"))["account_obligations_by_defc"] == [
+        {"code": "L", "amount": 220.0}
+    ]
+    assert json.loads(resp.content.decode("utf-8"))["account_outlays_by_defc"] == [
+        {"code": "L", "amount": 110.0}
+    ]
     assert json.loads(resp.content.decode("utf-8"))["total_account_obligation"] == 220.0
     assert json.loads(resp.content.decode("utf-8"))["total_account_outlay"] == 110.0
 
 
-def test_outlay_calculations(client, awards_and_transactions):
+def test_outlay_calculations(client: Client, awards_and_transactions: None):
     defc = baker.make("references.DisasterEmergencyFundCode", code="L")
     baker.make(
         "submissions.DABSSubmissionWindowSchedule",
@@ -1374,8 +1488,12 @@ def test_outlay_calculations(client, awards_and_transactions):
 
     resp = client.get("/api/v2/awards/1/")
     assert resp.status_code == status.HTTP_200_OK
-    assert json.loads(resp.content.decode("utf-8"))["account_obligations_by_defc"] == [{"code": "L", "amount": 10.0}]
-    assert json.loads(resp.content.decode("utf-8"))["account_outlays_by_defc"] == [{"code": "L", "amount": 7.0}]
+    assert json.loads(resp.content.decode("utf-8"))["account_obligations_by_defc"] == [
+        {"code": "L", "amount": 10.0}
+    ]
+    assert json.loads(resp.content.decode("utf-8"))["account_outlays_by_defc"] == [
+        {"code": "L", "amount": 7.0}
+    ]
     assert json.loads(resp.content.decode("utf-8"))["total_account_obligation"] == 10.0
     assert json.loads(resp.content.decode("utf-8"))["total_account_outlay"] == 7.0
     assert json.loads(resp.content.decode("utf-8"))["total_outlay"] == 7.0
@@ -1435,7 +1553,11 @@ expected_response_asst = {
             "code": "ABC",
             "slug": "toptier-agency-1",
         },
-        "subtier_agency": {"name": "SUBTIER AGENCY 1", "abbreviation": "SA1", "code": "DEF"},
+        "subtier_agency": {
+            "name": "SUBTIER AGENCY 1",
+            "abbreviation": "SA1",
+            "code": "DEF",
+        },
         "office_agency_name": "awarding_office",
     },
     "funding_agency": {
@@ -1447,7 +1569,11 @@ expected_response_asst = {
             "code": "ABC",
             "slug": "toptier-agency-1",
         },
-        "subtier_agency": {"name": "SUBTIER AGENCY 1", "abbreviation": "SA1", "code": "DEF"},
+        "subtier_agency": {
+            "name": "SUBTIER AGENCY 1",
+            "abbreviation": "SA1",
+            "code": "DEF",
+        },
         "office_agency_name": "funding_office",
     },
     "recipient": {
@@ -1489,7 +1615,11 @@ expected_response_asst = {
             {"name": None, "amount": None},
         ]
     },
-    "period_of_performance": {"start_date": "2004-02-04", "end_date": "2005-02-04", "last_modified_date": "2000-01-02"},
+    "period_of_performance": {
+        "start_date": "2004-02-04",
+        "end_date": "2005-02-04",
+        "last_modified_date": "2000-01-02",
+    },
     "place_of_performance": {
         "address_line1": None,
         "address_line2": None,
@@ -1537,7 +1667,11 @@ expected_response_cont = {
             "code": "ABC",
             "slug": "toptier-agency-1",
         },
-        "subtier_agency": {"name": "SUBTIER AGENCY 1", "abbreviation": "SA1", "code": "DEF"},
+        "subtier_agency": {
+            "name": "SUBTIER AGENCY 1",
+            "abbreviation": "SA1",
+            "code": "DEF",
+        },
         "office_agency_name": "awarding_office",
     },
     "funding_agency": {
@@ -1549,7 +1683,11 @@ expected_response_cont = {
             "code": "ABC",
             "slug": "toptier-agency-1",
         },
-        "subtier_agency": {"name": "SUBTIER AGENCY 1", "abbreviation": "SA1", "code": "DEF"},
+        "subtier_agency": {
+            "name": "SUBTIER AGENCY 1",
+            "abbreviation": "SA1",
+            "code": "DEF",
+        },
         "office_agency_name": "funding_office",
     },
     "recipient": {
@@ -1691,7 +1829,10 @@ expected_response_cont = {
     "date_signed": "2004-03-02",
     "naics_hierarchy": {
         "toptier_code": {"description": "Agriculture", "code": "11"},
-        "midtier_code": {"description": "Soybean & Oilseed Agriculture", "code": "1111"},
+        "midtier_code": {
+            "description": "Soybean & Oilseed Agriculture",
+            "code": "1111",
+        },
         "base_code": {"description": "Soybean Harvesting", "code": "111120"},
     },
     "psc_hierarchy": {
@@ -1721,7 +1862,7 @@ expected_response_cont = {
 }
 
 
-def expected_contract_award_parent(include_slug=True):
+def expected_contract_award_parent(include_slug: bool = True) -> dict[str, any]:
     return {
         "agency_id": 2,
         "agency_name": "TOPTIER AGENCY 2",
@@ -1737,7 +1878,7 @@ def expected_contract_award_parent(include_slug=True):
     }
 
 
-def expected_idv_award_parent(include_slug=True):
+def expected_idv_award_parent(include_slug: bool = True) -> dict[str, any]:
     return {
         "agency_id": 2,
         "agency_name": "TOPTIER AGENCY 2",
