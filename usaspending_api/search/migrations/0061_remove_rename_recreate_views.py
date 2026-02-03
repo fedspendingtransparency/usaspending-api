@@ -30,7 +30,17 @@ class Migration(migrations.Migration):
             transaction_delta_view
             CASCADE;
             """,
-            reverse_sql=migrations.RunSQL.noop,
+            reverse_sql=f"""
+                {vw_awards_sql}
+                {vw_transaction_normalized_sql}
+                {vw_transaction_fpds_sql}
+                {vw_transaction_fabs_sql}
+                {transaction_delta_view}
+            """,
+        ),
+        migrations.RemoveIndex(
+            model_name="transactionsearch",
+            name="ts_idx_last_modified_date",
         ),
         migrations.RemoveField(
             model_name="transactionsearch",

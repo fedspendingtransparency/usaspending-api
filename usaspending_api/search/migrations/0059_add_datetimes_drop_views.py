@@ -9,10 +9,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveIndex(
-            model_name="transactionsearch",
-            name="ts_idx_last_modified_date",
-        ),
         migrations.AddField(
             model_name="transactionsearch",
             name="initial_report_datetime",
