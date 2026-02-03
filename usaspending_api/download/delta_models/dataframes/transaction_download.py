@@ -1,7 +1,8 @@
 from delta import DeltaTable
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.utils.functional import cached_property
-from pyspark.sql import DataFrame, SparkSession, column, functions as sf
+from pyspark.sql import DataFrame, SparkSession, column
+from pyspark.sql import functions as sf
 from pyspark.sql.types import DecimalType
 
 from usaspending_api.download.helpers.download_annotation_functions import AWARD_URL
@@ -14,7 +15,7 @@ class TransactionDownload:
         self.award_search = spark.table("rpt.award_search")
         self.disaster_emergency_fund_code = spark.table("global_temp.disaster_emergency_fund_code")
         self.federal_account = spark.table("global_temp.federal_account")
-        self.financial_accounts_by_awards = spark.table("int.financial_accounts_by_awards").withColumnRenamed(
+        self.faba = spark.table("int.financial_accounts_by_awards").withColumnRenamed(
             "award_id", "faba_award_id"
         )
         self.object_class = spark.table("global_temp.object_class")
@@ -26,7 +27,7 @@ class TransactionDownload:
         self.treasury_appropriation_account = spark.table("global_temp.treasury_appropriation_account")
 
     @cached_property
-    def defc_by_group(self):
+    def defc_by_group(self) -> dict[str, list[str]]:
         defc_groups = (
             DisasterEmergencyFundCode.objects.filter(group_name__isnull=False)
             .values("group_name")
@@ -44,24 +45,24 @@ class TransactionDownload:
         return self.defc_by_group["covid_19"]
 
     @property
-    def financial_accounts_by_awards_aggs_df(self) -> DataFrame:
-        financial_accounts_by_awards_aggs = {
+    def faba_aggs_df(self) -> DataFrame:
+        faba_aggs = {
             "covid_19_obligated_amount": (
                 sf.sum(
                     sf.when(
-                        self.financial_accounts_by_awards.disaster_emergency_fund_code.isin(self.covid_defc),
-                        self.financial_accounts_by_awards.transaction_obligated_amount,
+                        self.faba.disaster_emergency_fund_code.isin(self.covid_defc),
+                        self.faba.transaction_obligated_amount,
                     )
                 ).cast(DecimalType(23, 2))
             ),
             "covid_19_outlayed_amount": (
                 sf.sum(
                     sf.when(
-                        self.financial_accounts_by_awards.disaster_emergency_fund_code.isin(self.covid_defc)
+                        self.faba.disaster_emergency_fund_code.isin(self.covid_defc)
                         & self.submission_attributes.is_final_balances_for_fy,
-                        self.financial_accounts_by_awards.gross_outlay_amount_by_award_cpe
-                        + self.financial_accounts_by_awards.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe
-                        + self.financial_accounts_by_awards.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe,
+                        self.faba.gross_outlay_amount_by_award_cpe
+                        + self.faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe
+                        + self.faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe,
                     )
                 ).cast(DecimalType(23, 2))
             ),
@@ -71,9 +72,9 @@ class TransactionDownload:
                     sf.sort_array(
                         sf.collect_set(
                             sf.when(
-                                self.financial_accounts_by_awards.disaster_emergency_fund_code.isNotNull(),
+                                self.faba.disaster_emergency_fund_code.isNotNull(),
                                 sf.concat(
-                                    self.financial_accounts_by_awards.disaster_emergency_fund_code,
+                                    self.faba.disaster_emergency_fund_code,
                                     sf.lit(": "),
                                     self.disaster_emergency_fund_code.public_law,
                                 ),
@@ -88,19 +89,19 @@ class TransactionDownload:
             "iija_obligated_amount": (
                 sf.sum(
                     sf.when(
-                        self.financial_accounts_by_awards.disaster_emergency_fund_code.isin(self.iija_defc),
-                        self.financial_accounts_by_awards.transaction_obligated_amount,
+                        self.faba.disaster_emergency_fund_code.isin(self.iija_defc),
+                        self.faba.transaction_obligated_amount,
                     )
                 ).cast(DecimalType(23, 2))
             ),
             "iija_outlayed_amount": (
                 sf.sum(
                     sf.when(
-                        self.financial_accounts_by_awards.disaster_emergency_fund_code.isin(self.iija_defc)
+                        self.faba.disaster_emergency_fund_code.isin(self.iija_defc)
                         & self.submission_attributes.is_final_balances_for_fy,
-                        self.financial_accounts_by_awards.gross_outlay_amount_by_award_cpe
-                        + self.financial_accounts_by_awards.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe
-                        + self.financial_accounts_by_awards.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe,
+                        self.faba.gross_outlay_amount_by_award_cpe
+                        + self.faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe
+                        + self.faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe,
                     )
                 ).cast(DecimalType(23, 2))
             ),
@@ -111,7 +112,7 @@ class TransactionDownload:
                         sf.collect_set(
                             sf.when(
                                 self.submission_attributes.is_final_balances_for_fy
-                                & self.financial_accounts_by_awards.object_class_id.isNotNull(),
+                                & self.faba.object_class_id.isNotNull(),
                                 sf.concat(
                                     self.object_class.object_class, sf.lit(": "), self.object_class.object_class_name
                                 ),
@@ -127,7 +128,7 @@ class TransactionDownload:
                         sf.collect_set(
                             sf.when(
                                 self.submission_attributes.is_final_balances_for_fy
-                                & self.financial_accounts_by_awards.program_activity_id.isNotNull(),
+                                & self.faba.program_activity_id.isNotNull(),
                                 sf.concat(
                                     self.ref_program_activity.program_activity_code,
                                     sf.lit(": "),
@@ -142,12 +143,12 @@ class TransactionDownload:
                 sf.sum(
                     sf.when(
                         self.submission_attributes.is_final_balances_for_fy
-                        & self.financial_accounts_by_awards.gross_outlay_amount_by_award_cpe.isNotNull()
-                        & self.financial_accounts_by_awards.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe.isNotNull()
-                        & self.financial_accounts_by_awards.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe.isNotNull(),
-                        self.financial_accounts_by_awards.gross_outlay_amount_by_award_cpe
-                        + self.financial_accounts_by_awards.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe
-                        + self.financial_accounts_by_awards.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe,
+                        & self.faba.gross_outlay_amount_by_award_cpe.isNotNull()
+                        & self.faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe.isNotNull()
+                        & self.faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe.isNotNull(),
+                        self.faba.gross_outlay_amount_by_award_cpe
+                        + self.faba.ussgl487200_down_adj_pri_ppaid_undel_orders_oblig_refund_cpe
+                        + self.faba.ussgl497200_down_adj_pri_paid_deliv_orders_oblig_refund_cpe,
                     )
                 ).cast(DecimalType(23, 2))
             ),
@@ -159,29 +160,29 @@ class TransactionDownload:
         }
 
         df = (
-            self.financial_accounts_by_awards.join(self.submission_attributes, "submission_id")
+            self.faba.join(self.submission_attributes, "submission_id")
             .join(
                 self.disaster_emergency_fund_code,
-                self.financial_accounts_by_awards.disaster_emergency_fund_code
+                self.faba.disaster_emergency_fund_code
                 == self.disaster_emergency_fund_code.code,
                 "left",
             )
             .join(
                 self.treasury_appropriation_account,
-                self.financial_accounts_by_awards.treasury_account_id
+                self.faba.treasury_account_id
                 == self.treasury_appropriation_account.treasury_account_identifier,
             )
             .join(
                 self.federal_account, self.treasury_appropriation_account.federal_account_id == self.federal_account.id
             )
-            .join(self.object_class, self.financial_accounts_by_awards.object_class_id == self.object_class.id, "left")
+            .join(self.object_class, self.faba.object_class_id == self.object_class.id, "left")
             .join(
                 self.ref_program_activity,
-                self.financial_accounts_by_awards.program_activity_id == self.ref_program_activity.id,
+                self.faba.program_activity_id == self.ref_program_activity.id,
                 "left",
             )
-            .groupBy(self.financial_accounts_by_awards.faba_award_id)
-            .agg(*[agg.alias(name) for name, agg in financial_accounts_by_awards_aggs.items()])
+            .groupBy(self.faba.faba_award_id)
+            .agg(*[agg.alias(name) for name, agg in faba_aggs.items()])
         )
         return df
 
@@ -597,18 +598,18 @@ class TransactionDownload:
 
     @property
     def dataframe(self) -> DataFrame:
-        financial_accounts_by_awards_cols = self.financial_accounts_by_awards_aggs_df.columns
-        financial_accounts_by_awards_cols.remove("faba_award_id")
+        faba_cols = self.faba_aggs_df.columns
+        faba_cols.remove("faba_award_id")
         df = (
             self.transaction_search.join(
                 self.award_search, self.transaction_search.transaction_award_id == self.award_search.award_id
             )
             .join(
-                self.financial_accounts_by_awards_aggs_df,
-                self.award_search.award_id == self.financial_accounts_by_awards_aggs_df.faba_award_id,
+                self.faba_aggs_df,
+                self.award_search.award_id == self.faba_aggs_df.faba_award_id,
                 "left",
             )
-            .select(*self.common_cols, *financial_accounts_by_awards_cols, *self.fabs_cols, *self.fpds_cols)
+            .select(*self.common_cols, *faba_cols, *self.fabs_cols, *self.fpds_cols)
             .withColumn("merge_hash_key", sf.xxhash64("*"))
         )
         return df
