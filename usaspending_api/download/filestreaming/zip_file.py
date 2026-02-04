@@ -1,7 +1,8 @@
 import os
+import subprocess
 import zipfile
-from ctypes import CDLL, POINTER, c_char_p, c_int
 from pathlib import Path
+from subprocess import CompletedProcess
 
 
 def append_files_to_zip_file(file_paths, zip_file_path):
@@ -36,33 +37,46 @@ def append_files_to_zip_file_go(file_paths: list[str] | list[bytes], zip_file_pa
         zip_file_path: Path to zip file
     """
 
-    # Import the shared library
-    library_path = f"{Path(__file__).parent.parent}/utilities/zipper.so"
-    if library_path != "/databricks/python/lib/python3.10/site-packages/usaspending_api/download/utilities/zipper.so":
-        print("Path not correct")
-        library_path = "/databricks/python/lib/python3.10/site-packages/usaspending_api/download/utilities/zipper.so"
+    print("Using Go to create zip")
+
+    go_executable_path = f"{Path(__file__).parent.parent}/utilities/zipper_v2.so"
+    subprocess_output: CompletedProcess = subprocess.run(
+        args=[go_executable_path, "-out", zip_file_path, *file_paths],
+        capture_output=True,
+    )
+
+    if subprocess_output.returncode != 0:
+        print(f"Error while calling the Go executable: {subprocess_output.stderr}")
     else:
-        print("Path is correct!")
+        print(f"Successfully created zip file: {zip_file_path}")
 
-    lib = CDLL(library_path)
-
-    # Document the function's argument and return types
-    lib.AppendFilesToZipFile.argtypes = [POINTER(c_char_p), c_int, c_char_p]
-    lib.AppendFilesToZipFile.restype = c_int
-
-    # Ensure we're using the correct datatypes that the shared library expects
-    file_paths = [p.encode() if type(p) is str else p for p in file_paths]
-    c_file_paths = (c_char_p * len(file_paths))(*file_paths)
-
-    match zip_file_path:
-        case Path() | str():
-            zip_file_path = str(zip_file_path).encode()
-        case bytes():
-            ...
-        case _:
-            raise TypeError(f"zip_file_path must be bytes, string, or path. Got {type(zip_file_path).__name__}")
-
-    zip_result: int = lib.AppendFilesToZipFile(c_file_paths, len(c_file_paths), zip_file_path)
-
-    if zip_result != 0:
-        raise Exception(f"Zip file {zip_file_path} was not created")
+    # # Import the shared library
+    # library_path = f"{Path(__file__).parent.parent}/utilities/zipper.so"
+    # if library_path != "/databricks/python/lib/python3.10/site-packages/usaspending_api/download/utilities/zipper.so":
+    #     print("Path not correct")
+    #     library_path = "/databricks/python/lib/python3.10/site-packages/usaspending_api/download/utilities/zipper.so"
+    # else:
+    #     print("Path is correct!")
+    #
+    # lib = CDLL(library_path)
+    #
+    # # Document the function's argument and return types
+    # lib.AppendFilesToZipFile.argtypes = [POINTER(c_char_p), c_int, c_char_p]
+    # lib.AppendFilesToZipFile.restype = c_int
+    #
+    # # Ensure we're using the correct datatypes that the shared library expects
+    # file_paths = [p.encode() if type(p) is str else p for p in file_paths]
+    # c_file_paths = (c_char_p * len(file_paths))(*file_paths)
+    #
+    # match zip_file_path:
+    #     case Path() | str():
+    #         zip_file_path = str(zip_file_path).encode()
+    #     case bytes():
+    #         ...
+    #     case _:
+    #         raise TypeError(f"zip_file_path must be bytes, string, or path. Got {type(zip_file_path).__name__}")
+    #
+    # zip_result: int = lib.AppendFilesToZipFile(c_file_paths, len(c_file_paths), zip_file_path)
+    #
+    # if zip_result != 0:
+    #     raise Exception(f"Zip file {zip_file_path} was not created")

@@ -586,8 +586,8 @@ def create_ref_temp_views(spark: SparkSession | DuckDBSparkSession, create_broke
                     CREATE OR REPLACE SECRET (
                         TYPE s3,
                         PROVIDER config,
-                        KEY_ID '{CONFIG.AWS_ACCESS_KEY}',
-                        SECRET '{CONFIG.AWS_SECRET_KEY}',
+                        KEY_ID '{CONFIG.AWS_ACCESS_KEY.get_secret_value()}',
+                        SECRET '{CONFIG.AWS_SECRET_KEY.get_secret_value()}',
                         ENDPOINT '{CONFIG.AWS_S3_ENDPOINT}',
                         URL_STYLE 'path',
                         USE_SSL 'false'
