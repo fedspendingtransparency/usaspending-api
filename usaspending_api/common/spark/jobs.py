@@ -5,10 +5,15 @@ from contextlib import contextmanager
 from datetime import datetime
 from typing import TYPE_CHECKING, Generator
 
+import boto3
+from botocore.client import BaseClient
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.config import Config as DatabricksConfig
-from databricks.sdk.service.jobs import RunLifeCycleState, BaseJob
+from databricks.sdk.service.jobs import BaseJob, RunLifeCycleState
+from django.conf import settings
 from django.core.management import call_command
+from duckdb.experimental.spark.sql import SparkSession as DuckDBSparkSession
+from usaspending_api.config import CONFIG
 
 from usaspending_api.common.spark.configs import LOCAL_EXTENDED_EXTRA_CONF, OPTIONAL_SPARK_HIVE_JAR, SPARK_SESSION_JARS
 
@@ -108,13 +113,67 @@ class DatabricksStrategy(_AbstractStrategy):
 
 
 class EmrServerlessStrategy(_AbstractStrategy):
+    _client: BaseClient = None
+
     @property
     def name(self) -> str:
         return "EMR_SERVERLESS"
 
+    @property
+    def client(self) -> BaseClient:
+        if not self._client:
+            self._client = boto3.client("emr-serverless", settings.USASPENDING_AWS_REGION)
+        return self._client
+
+    def _get_application_id(self, application_name: str) -> str:
+        paginator = self.client.get_paginator("list_applications")
+        matched_applications = []
+        for list_applications_response in paginator.paginate():
+            temp_applications = list_applications_response.get("applications", [])
+            matched_applications.extend(
+                [application for application in temp_applications if application["name"] == application_name]
+            )
+
+        match len(matched_applications):
+            case 1:
+                application_id = matched_applications[0]["id"]
+            case 0:
+                raise ValueError(f"No EMR Serverless application found with name '{application_name}'")
+            case _:
+                arns_to_log = [application["arn"] for application in matched_applications]
+                raise ValueError(
+                    f"More than 1 EMR Serverless application found with name '{application_name}': {arns_to_log}"
+                )
+
+        return application_id
+
     def handle_start(self, job_name: str, command_name: str, command_options: list[str], **kwargs) -> dict:
-        # TODO: This will be implemented as we migrate, but added as a placeholder for now
-        pass
+        application_id = kwargs.get("application_id")
+        application_name = kwargs.get("application_name")
+        execution_role_arn = kwargs.get("execution_role_arn")
+
+        if not execution_role_arn:
+            raise ValueError(f"Execution role ARN is required to start an EMR Serverless job")
+        elif not application_name and not application_id:
+            raise ValueError(f"Application Name or ID is required to start an EMR Serverless job")
+        elif application_name and not application_id:
+            application_id = self._get_application_id(application_name)
+
+        response = self.client.start_job_run(
+            applicationId=application_id,
+            executionRoleArn=execution_role_arn,
+            name=job_name,
+            mode="BATCH",
+            jobDriver={
+                "sparkSubmit": {
+                    "entryPoint": f"s3://{CONFIG.SPARK_S3_BUCKET}/master/manage.py",
+                    "entryPointArguments": [command_name, *command_options],
+                }
+            },
+            # TODO: Requires updating to EMR 7
+            # retryPolicy={"maxAttempts": 2},
+        )
+        return response
 
 
 class LocalStrategy(_AbstractStrategy):
@@ -153,7 +212,7 @@ class LocalStrategy(_AbstractStrategy):
             template_container = client.containers.get("spark-submit")
         except docker.errors.NotFound:
             logger.exception(
-                f"The 'spark-submit' container was not found. Please create this container first via the supported"
+                "The 'spark-submit' container was not found. Please create this container first via the supported"
                 " spark-submit docker compose workflow."
             )
             raise
@@ -203,6 +262,27 @@ class LocalStrategy(_AbstractStrategy):
             logger.exception(f"Failed on command: {command_name} {' '.join(command_options)}")
             raise
         return run_details
+
+
+class DuckDBStrategy(_AbstractStrategy):
+    @property
+    def name(self) -> str:
+        return "DUCKDB"
+
+    @staticmethod
+    @contextmanager
+    def _get_spark_session() -> Generator["SparkSession", None, None]:
+        spark = DuckDBSparkSession.builder.getOrCreate()
+        yield spark
+        spark.stop()
+
+    def handle_start(self, job_name: str, command_name: str, command_options: list[str], **kwargs) -> None:
+        try:
+            with self._get_spark_session():
+                call_command(command_name, *command_options)
+        except Exception:
+            logger.exception(f"Failed on command: {command_name} {' '.join(command_options)}")
+            raise
 
 
 class SparkJobs:

@@ -26,6 +26,8 @@ RUN make build
 # Bookworm (at least) is required for a new enough version of GLIBC
 FROM python:3.10.12-slim-bookworm
 
+COPY --from=ghcr.io/astral-sh/uv:0.7.19 /uv /uvx /bin/
+
 WORKDIR /dockermount
 
 RUN apt update && apt install -y curl gcc
@@ -37,11 +39,30 @@ RUN install -d /usr/share/postgresql-common/pgdg && \
 
 RUN apt update && apt install -y libpq-dev postgresql-13
 
-##### Copy python packaged
+##### The following ENV vars are optimizations from https://github.com/astral-sh/uv-docker-example/blob/main/Dockerfile
+##### and https://docs.astral.sh/uv/guides/integration/docker/#optimizations
+# Enable bytecode compilation
+ENV UV_COMPILE_BYTECODE=1
+
+# Copy from the cache instead of linking since it's a mounted volume
+ENV UV_LINK_MODE=copy
+
+# Use the system Python environment since the container is already isolated
+ENV UV_PROJECT_ENVIRONMENT=/usr/local
+ENV UV_SYSTEM_PYTHON=1
+
+# Install dependencies
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --extra server --extra ansible --extra awscli --extra spark --locked --no-install-project --no-dev
+
+# Copy the project into the image
 COPY . /dockermount
-RUN python3 -m pip install -r requirements/requirements.txt && \
-    python3 -m pip install -r requirements/requirements-server.txt && \
-    python3 -m pip install ansible==2.9.15 awscli==1.34.19
+
+# Sync the project
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --extra server --extra ansible --extra awscli --extra spark --locked --no-dev
 
 ##### Ensure Python STDOUT gets sent to container logs
 ENV PYTHONUNBUFFERED=1

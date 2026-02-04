@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from django.conf import settings
+from duckdb.experimental.spark.sql import SparkSession as DuckDBSparkSession
 from pyspark.sql import DataFrame
 
 from usaspending_api.common.csv_helpers import count_rows_in_delimited_file
@@ -64,6 +65,7 @@ class AbstractToCSVStrategy(ABC):
             working_dir_path: The working directory path as a string
             download_zip_path: The path (as a string) to the download zip file
             source_df: A pyspark DataFrame that contains the data to be downloaded
+                Defaults to None.
 
         Returns:
             Returns a CSVDownloadMetadata object (a dataclass containing metadata about the download)
@@ -77,7 +79,13 @@ class PostgresToCSVStrategy(AbstractToCSVStrategy):
         self._logger = logger
 
     def download_to_csv(
-        self, source_sql, destination_path, destination_file_name, working_dir_path, download_zip_path, source_df=None
+        self,
+        source_sql,
+        destination_path,
+        destination_file_name,
+        working_dir_path,
+        download_zip_path,
+        source_df=None,
     ):
         start_time = time.perf_counter()
         self._logger.info(f"Downloading data to {destination_path}")
@@ -229,6 +237,80 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
             s3_bucket_sub_path: The path to the s3 files in the bucket, exluding s3a:// + bucket name, e.g. temp_directory/files
             destination_path_dir: The location to move those files from s3 to, must not include the
                 file name in the path. This path should be a directory.
+
+        Returns:
+            A list of the final location on the local machine that the
+            files were moved to from s3.
+        """
+        start_time = time.time()
+        self._logger.info("Moving data files from S3 to local machine...")
+        local_csv_file_paths = []
+        for file_name in s3_file_paths:
+            s3_key = file_name.replace(f"{s3_bucket_path}/", "")
+            file_name_only = s3_key.replace(f"{s3_bucket_sub_path}/", "")
+            final_path = f"{destination_path_dir}/{file_name_only}"
+            download_s3_object(
+                bucket_name,
+                s3_key,
+                final_path,
+            )
+            local_csv_file_paths.append(final_path)
+        self._logger.info(f"Copied data files from S3 to local machine in {(time.time() - start_time):3f}s")
+        return local_csv_file_paths
+
+
+class DuckDBToCSVStrategy(AbstractToCSVStrategy):
+    def __init__(self, logger: logging.Logger, spark: DuckDBSparkSession, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._logger = logger
+        self.spark = spark
+
+    def download_to_csv(
+        self,
+        source_sql: str | None,
+        destination_path: str,
+        destination_file_name: str,
+        working_dir_path: str,
+        download_zip_path: str,
+        source_df=None,
+        delimiter=",",
+        file_format="csv",
+    ):
+        from usaspending_api.common.etl.spark import write_csv_file_duckdb
+
+        try:
+            if source_df is not None:
+                df = source_df
+            else:
+                df = self.spark.sql(source_sql)
+            record_count, final_csv_data_file_locations = write_csv_file_duckdb(
+                df=df,
+                download_file_name=destination_file_name,
+                max_records_per_file=EXCEL_ROW_LIMIT,
+                logger=self._logger,
+                delimiter=delimiter,
+            )
+            column_count = len(df.columns)
+        except Exception:
+            self._logger.exception("Exception encountered. See logs")
+            raise
+        append_files_to_zip_file(final_csv_data_file_locations, download_zip_path)
+        self._logger.info(f"Generated the following data csv files {final_csv_data_file_locations}")
+        return CSVDownloadMetadata(final_csv_data_file_locations, record_count, column_count)
+
+    def _move_data_csv_s3_to_local(
+        self, bucket_name, s3_file_paths, s3_bucket_path, s3_bucket_sub_path, destination_path_dir
+    ) -> List[str]:
+        """Moves files from s3 data csv location to a location on the local machine.
+
+        Args:
+            bucket_name: The name of the bucket in s3 where file_names and s3_path are
+            s3_file_paths: A list of file paths to move from s3, name should
+                include s3a:// and bucket name
+            s3_bucket_path: The bucket path, e.g. s3a:// + bucket name
+            s3_bucket_sub_path: The path to the s3 files in the bucket, exluding s3a:// + bucket name, e.g. temp_directory/files
+            destination_path_dir: The location to move those files from s3 to, must not include the
+                file name in the path. This path should be a diretory.
 
         Returns:
             A list of the final location on the local machine that the

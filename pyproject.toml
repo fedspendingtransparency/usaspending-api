@@ -1,3 +1,137 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "usaspending-api"
+version = "1.0.0"
+description = """
+    This API is utilized by USAspending.gov to obtain all federal spending data which is open source and provided to
+    the public as part of the DATA Act.
+    """
+readme = 'README.md'
+license = "CC0-1.0"
+license-files = ["LICENSE"]
+requires-python = '>=3.10'
+classifiers=[
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3 :: Only",
+]
+dependencies = [
+    "asyncpg==0.29.*",
+    "attrs==23.2.*",
+    "boto3>=1.34,<1.36",
+    "certifi==2024.7.4",
+    "databricks-sdk==0.44.1",
+    "dataclasses-json==0.6.*",
+    "dj-database-url==2.1.0",
+    "django-cors-headers==4.3.*",
+    "django-debug-toolbar==4.3.*",
+    "django-extensions==3.2.*",
+    "django-spaghetti-and-meatballs==0.4.*",
+    "Django==4.2.*",
+    "django_cte==1.3.*",
+    "djangorestframework==3.15.*",
+    "docutils>=0.10,<0.17",
+    "drf-api-tracking==1.8.4",
+    "drf-extensions==0.7.*",
+    "duckdb==1.4.3",
+    "elasticsearch-dsl==7.4.*",
+    "elasticsearch==7.10.*",
+    "et-xmlfile==1.1.0",
+    "filelock==3.13.1",
+    "fiscalyear==0.4.0",
+    "Markdown==3.5.*",
+    "marshmallow==3.21.1",
+    "numpy==1.26.*",
+    "openpyxl==3.1.*",
+    "pandas==2.2.*",
+    "psutil==5.9.*",
+    "psycopg2==2.9.9", # Pinning exact version because this package will drop support for Python versions in patches
+    "py-gfm==2.0.0",
+    "pydantic[dotenv]==1.9.*",
+    "python-json-logger==2.0.7",
+    "requests==2.31.*",
+    "retrying==1.3.4",
+    "sqlparse==0.5.*",
+    "urllib3==1.26.*",
+    "xlrd3==1.1.0",
+    # Opentelemetry Dependencies
+    "opentelemetry-api==1.28.2",
+    "opentelemetry-distro==0.49b2",
+    "opentelemetry-exporter-otlp==1.28.2",
+    "opentelemetry-exporter-otlp-proto-common==1.28.2",
+    "opentelemetry-exporter-otlp-proto-grpc==1.28.2",
+    "opentelemetry-exporter-otlp-proto-http==1.28.2",
+    "opentelemetry-instrumentation==0.49b2",
+    "opentelemetry-instrumentation-asgi==0.49b2",
+    "opentelemetry-instrumentation-asyncio==0.49b2",
+    "opentelemetry-instrumentation-asyncpg==0.49b2",
+    "opentelemetry-instrumentation-boto3sqs==0.49b2",
+    "opentelemetry-instrumentation-botocore==0.49b2",
+    "opentelemetry-instrumentation-dbapi==0.49b2",
+    "opentelemetry-instrumentation-django==0.49b2",
+    "opentelemetry-instrumentation-elasticsearch==0.49b2",
+    "opentelemetry-instrumentation-grpc==0.49b2",
+    "opentelemetry-instrumentation-logging==0.49b2",
+    "opentelemetry-instrumentation-psycopg2==0.49b2",
+    "opentelemetry-instrumentation-redis==0.49b2",
+    "opentelemetry-instrumentation-requests==0.49b2",
+    "opentelemetry-instrumentation-sqlite3==0.49b2",
+    "opentelemetry-instrumentation-system-metrics==0.49b2",
+    "opentelemetry-instrumentation-threading==0.49b2",
+    "opentelemetry-instrumentation-tortoiseorm==0.49b2",
+    "opentelemetry-instrumentation-urllib==0.49b2",
+    "opentelemetry-instrumentation-urllib3==0.49b2",
+    "opentelemetry-instrumentation-wsgi==0.49b2",
+    "opentelemetry-propagator-aws-xray==1.0.1",
+    "opentelemetry-proto==1.28.2",
+    "opentelemetry-sdk==1.28.2",
+    "opentelemetry-semantic-conventions==0.49b2",
+    "opentelemetry-util-http==0.49b2",
+    # The above packages are listed and pinned to avoid using the 'opentelemetry-bootstrap -a install' command
+]
+
+[project.optional-dependencies]
+dev = [
+    "click==8.1.7",
+    "docker==7.0.0",
+    "dredd-hooks==0.2.0",
+    "importlib-metadata==8.5.0",
+    "mock==5.1.*",
+    "model-bakery==1.17.*",
+    "pip==23.2.*",
+    "pre-commit==3.6.2",
+    "pytest==8.0.*",
+    "pytest-cov==4.1.*",
+    "pytest-django==4.8.*",
+    "pytest-pretty==1.2.*",
+    "pytest-xdist==3.5.*",
+    "ruff==0.14.14",
+]
+spark = [
+    "delta-spark==3.2.*",
+    "pyspark==3.5.0",
+]
+server = [
+    "django-redis==5.4.*",
+    "packaging==22.0",
+    "pyparsing==3.2.1",
+    "setuptools>=68.1.2",
+    "supervisor==4.1.0",
+    "uwsgi==2.0.23",
+]
+ansible = ["ansible==2.9.*"]
+awscli = ["awscli==1.34.*"]
+
+[project.urls]
+homepage = 'https://www.usaspending.gov/'
+documentation = 'https://api.usaspending.gov/'
+repository = 'https://github.com/fedspendingtransparency/usaspending-api'
+
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "usaspending_api.settings"
 addopts = "--cov=usaspending_api"
@@ -28,7 +162,61 @@ exclude_lines = [
     "pragma: no cover"
 ]
 
-[tool.black]
-line-length = 120
-target-version = ['py310']
-exclude = '/(\.git|\.venv|venv|migrations)/'
+[tool.ruff.lint]
+preview = true  # enable new rules
+exclude = [
+    '.git',
+    '.venv',
+    'venv',
+    '**/migrations/**',
+    'build',
+    'usaspending_api.egg-info'
+]
+
+select = [
+    "PLR0913",  # max arguments in function
+    "PLR0904",  # max number of public methods
+    "PLR0911",  # max number of return statements
+    "PLR0916",  # max number of boolean expressions
+    "PLR0915",  # max number of lines in a function
+    "PLR0912",  # max number of logical branches in a function
+    "PLR1702",  # max number of nested blocks
+    "C901",  # cognitive complexity (functions)
+    "I001",  # unsorted imports
+    "B",  # flake8 bugbear
+    "E",  # pycodestyle errors
+    "F",  # pyflakes
+    "W",  # pycodestyle warnings
+    "ANN001",  # missing type annotation for function argument
+    "ANN201",  # missing return type annotation for public function or method
+    "ANN202",  # missing return type annotation for private function or method
+]
+ignore = [
+    "E203",  # whitespace before punctuation
+]
+
+pylint.max-args = 6
+pylint.max-public-methods = 20
+pylint.max-returns = 3
+pylint.max-bool-expr = 8
+pylint.max-statements = 45
+pylint.max-branches = 10
+pylint.max-nested-blocks = 5
+mccabe.max-complexity = 15
+pycodestyle.max-line-length = 120
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**/test*.py" = [
+    "ANN001",  # missing-type-function-argument; avoid conflict with fixtures
+    "ANN201",  # missing-return-type-undocumented-public-function; avoid conflict with test case return values
+    "ANN202",  # missing-return-type-undocumented-private-function; avoid conflict with test case return values
+    "PLR0913", # too-many-arguments; avoid conflict with too many fixtures
+    "PLR0915",  # too-many-statements; avoid conflict with long fixtures
+]
+"**/conftest*.py" = [
+    "ANN001",  # missing-type-function-argument; avoid conflict with fixtures
+    "ANN201",  # missing-return-type-undocumented-public-function; avoid conflict with test case return values
+    "ANN202",  # missing-return-type-undocumented-private-function; avoid conflict with test case return values
+    "PLR0913", # too-many-arguments; avoid conflict with too many fixtures
+    "PLR0915",  # too-many-statements; avoid conflict with long fixtures
+]
