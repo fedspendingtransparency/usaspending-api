@@ -120,7 +120,10 @@ class Command(BaseCommand):
             )
 
         # Retrieve data from Postgres
-        query_with_predicate = f"(SELECT * FROM {qualified_source_table} WHERE {archive_date_field} < '{archive_date_string}') AS tmp"
+        query_with_predicate = (
+            f"(SELECT * FROM {qualified_source_table} "
+            f"WHERE {archive_date_field} < '{archive_date_string}') AS tmp"
+        )
 
         df = spark.read.jdbc(
             url=jdbc_url,

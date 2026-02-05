@@ -24,6 +24,7 @@ from usaspending_api.common.helpers.spark_helpers import (
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.config import CONFIG
 from usaspending_api.etl.management.commands.create_delta_table import TABLE_SPEC
+from usaspending_api.etl.table_specs import QueryTableSpec
 from usaspending_api.settings import DEFAULT_TEXT_SEARCH_CONFIG
 
 logger = logging.getLogger(__name__)
@@ -155,7 +156,7 @@ class Command(BaseCommand):
             split_dfs.append(split_df)
         return split_dfs
 
-    def handle(self, *args, **options) -> None:
+    def _get_spark_session(self) -> SparkSession:
         extra_conf = {
             # Config for Delta Lake tables and SQL. Need these to keep Dela table metadata in the metastore
             "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension",
@@ -165,7 +166,6 @@ class Command(BaseCommand):
             "spark.sql.legacy.parquet.int96RebaseModeInWrite": "LEGACY",  # for timestamps at/before 1900
             "spark.sql.jsonGenerator.ignoreNullFields": "false",  # keep nulls in our json
         }
-
         spark = get_active_spark_session()
         spark_created_by_command = False
         if not spark:
@@ -173,11 +173,14 @@ class Command(BaseCommand):
             spark = configure_spark_session(
                 **extra_conf, spark_context=spark
             )  # type: SparkSession
+        return spark, spark_created_by_command
+
+    def handle(self, *args, **options) -> None:
+        spark, spark_created_by_command = self._get_spark_session()
 
         # Resolve Parameters
         delta_table = options["delta_table"]
         recreate = options["recreate"]
-
         table_spec = TABLE_SPEC[delta_table]
 
         # Delta side
@@ -193,7 +196,6 @@ class Command(BaseCommand):
 
         # Postgres side - source
         postgres_table = None
-        postgres_model = table_spec.model
         postgres_schema = table_spec.source_database or table_spec.swap_schema
         postgres_table_name = table_spec.source_table or table_spec.swap_table
         postgres_cols = table_spec.source_schema
@@ -212,10 +214,11 @@ class Command(BaseCommand):
         temp_table_suffix_appendage = (
             f"_{temp_table_suffix}" if {temp_table_suffix} else ""
         )
-        if postgres_table:
-            temp_table_name = f"{postgres_table_name}{temp_table_suffix_appendage}"
-        else:
-            temp_table_name = f"{delta_table_name}{temp_table_suffix_appendage}"
+        temp_table_name = (
+            f"{postgres_table_name}{temp_table_suffix_appendage}"
+            if postgres_table
+            else f"{delta_table_name}{temp_table_suffix_appendage}"
+        )
         temp_table = f"{temp_schema}.{temp_table_name}"
 
         summary_msg = (
@@ -225,115 +228,30 @@ class Command(BaseCommand):
             summary_msg = f"{summary_msg} The temp table will be based on the postgres table {postgres_table}"
         logger.info(summary_msg)
 
-        # Checking if the temp destination table already exists
-        temp_dest_table_exists_sql = f"""
-            SELECT EXISTS (
-                SELECT 1
-                FROM information_schema.tables
-                WHERE table_schema = '{temp_schema}'
-                    AND table_name = '{temp_table_name}')
-        """
-        with db.connection.cursor() as cursor:
-            cursor.execute(temp_dest_table_exists_sql)
-            temp_dest_table_exists = cursor.fetchone()[0]
+        temp_dest_table_exists = self._temp_table_exists(temp_schema, temp_table_name)
 
         # If it does, and we're recreating it, drop it first
         if temp_dest_table_exists and recreate:
-            logger.info(
-                f"{temp_table} exists and recreate argument provided. Dropping first."
-            )
-            # If the schema has changed and we need to do a complete reload, just drop the table and rebuild it
-            clear_table_sql = f"DROP TABLE {temp_table}"
-            with db.connection.cursor() as cursor:
-                cursor.execute(clear_table_sql)
-            logger.info(f"{temp_table} dropped.")
+            self._drop_temp_table(temp_table)
             temp_dest_table_exists = False
         make_new_table = not temp_dest_table_exists
 
-        is_postgres_table_partitioned = table_spec.postgres_partition_spec is not None
+        is_postgres_table_partitioned = (
+            hasattr(table_spec, "postgres_partition_spec")
+            and table_spec.postgres_partition_spec is not None
+        )
 
         if postgres_table or postgres_cols:
-            # Recreate the table if it doesn't exist. Spark's df.write automatically does this but doesn't account for
-            # the extra metadata (indexes, constraints, defaults) which CREATE TABLE X LIKE Y accounts for.
-            # If there is no postgres_table to base it on, it just relies on spark to make it and work with delta table
-            if make_new_table:
-                partition_clause = ""
-                storage_parameters = "WITH (autovacuum_enabled=FALSE)"
-                partitions_sql = []
-                if is_postgres_table_partitioned:
-                    partition_clause = (
-                        f"PARTITION BY {table_spec.postgres_partition_spec['partitioning_form']}"
-                        f"({', '.join(table_spec.postgres_partition_spec['partition_keys'])})"
-                    )
-                    storage_parameters = ""
-                    partitions_sql = [
-                        (
-                            f"CREATE TABLE "
-                            # Below: e.g. my_tbl_temp -> my_tbl_part_temp
-                            f"{temp_table[: -len(temp_table_suffix_appendage)]}"
-                            f"{pt['table_suffix']}{temp_table_suffix_appendage} "
-                            f"PARTITION OF {temp_table} {pt['partitioning_clause']} "
-                            f"{storage_parameters}"
-                        )
-                        for pt in table_spec.postgres_partition_spec["partitions"]
-                    ]
-                if postgres_table:
-                    create_temp_sql = f"""
-                        CREATE TABLE {temp_table} (
-                            LIKE {postgres_table} INCLUDING DEFAULTS INCLUDING GENERATED INCLUDING IDENTITY
-                        ) {partition_clause} {storage_parameters}
-                    """
-                elif postgres_cols:
-                    create_temp_sql = f"""
-                        CREATE TABLE {temp_table} (
-                            {", ".join([f"{key} {val}" for key, val in postgres_cols.items()])}
-                        ) {partition_clause} {storage_parameters}
-                    """
-                else:
-                    raise RuntimeError(
-                        "make_new_table=True but neither a postgres_table or postgres_cols are "
-                        "populated for the target delta table in the TABLE_SPEC"
-                    )
-                with db.connection.cursor() as cursor:
-                    logger.info(f"Creating {temp_table}")
-                    cursor.execute(create_temp_sql)
-                    logger.info(f"{temp_table} created.")
-
-                    if is_postgres_table_partitioned and partitions_sql:
-                        for create_partition in partitions_sql:
-                            logger.info(
-                                f"Creating partition of {temp_table} with SQL:\n{create_partition}"
-                            )
-                            cursor.execute(create_partition)
-                            logger.info("Partition created.")
-
-                    # If there are vectors, add the triggers that will populate them based on other calls
-                    # NOTE: Undetermined whether tsvector triggers can be applied on partitioned tables,
-                    #       at the top-level virtual/partitioned table (versus having to apply on each partition)
-                    for tsvector_name, derived_from_cols in tsvectors.items():
-                        logger.info(
-                            f"To prevent any confusion or duplicates, dropping the trigger"
-                            f" tsvector_update_{tsvector_name} if it exists before potentially recreating it."
-                        )
-                        cursor.execute(
-                            f"DROP TRIGGER IF EXISTS tsvector_update_{tsvector_name} ON {temp_table}"
-                        )
-
-                        logger.info(
-                            f"Adding tsvector trigger for column {tsvector_name}"
-                            f" based on the following columns: {derived_from_cols}"
-                        )
-                        derived_from_cols_str = ", ".join(derived_from_cols)
-                        tsvector_trigger_sql = f"""
-                            CREATE TRIGGER tsvector_update_{tsvector_name} BEFORE INSERT OR UPDATE
-                            ON {temp_table} FOR EACH ROW EXECUTE PROCEDURE
-                            tsvector_update_trigger({tsvector_name}, '{DEFAULT_TEXT_SEARCH_CONFIG}',
-                                                    {derived_from_cols_str})
-                        """
-                        cursor.execute(tsvector_trigger_sql)
-                        logger.info(
-                            f"tsvector trigger for column {tsvector_name} added."
-                        )
+            self._recreate_table(
+                make_new_table=make_new_table,
+                is_postgres_table_partitioned=is_postgres_table_partitioned,
+                table_spec=table_spec,
+                temp_table=temp_table,
+                temp_table_suffix_appendage=temp_table_suffix_appendage,
+                postgres_table=postgres_table,
+                postgres_cols=postgres_cols,
+                tsvectors=tsvectors,
+            )
 
         # Read from Delta
         df = spark.table(delta_table)
@@ -352,20 +270,174 @@ class Command(BaseCommand):
                 logger.info(f"{temp_table} truncated.")
 
         # Reset the sequence before load for a table if it exists
-        if options["reset_sequence"] and table_spec.postgres_seq_name:
-            postgres_seq_last_value = self._set_sequence_value(
-                table_spec.postgres_seq_name
-            )
-        else:
-            postgres_seq_last_value = None
+        postgres_seq_last_value = (
+            self._set_sequence_value(table_spec.postgres_seq_name)
+            if options["reset_sequence"]
+            and hasattr(table_spec, "postgres_seq_name")
+            and table_spec.postgres_seq_name
+            else None
+        )
 
-        # Write to Postgres
+        self._write_df(
+            delta_table=delta_table,
+            spark=spark,
+            df=df,
+            temp_table=temp_table,
+            postgres_cols=postgres_cols,
+            options=options,
+            destination_database=destination_database,
+            delta_table_name=delta_table_name,
+            column_names=column_names,
+            postgres_seq_last_value=postgres_seq_last_value,
+            table_spec=table_spec,
+        )
+
+        self._finish(
+            delta_table=delta_table,
+            temp_table=temp_table,
+            options=options,
+            spark_created_by_command=spark_created_by_command,
+            spark=spark,
+            postgres_table=postgres_table,
+        )
+
+    @staticmethod
+    def _temp_table_exists(temp_schema: str, temp_table_name: str) -> bool:
+        # Checking if the temp destination table already exists
+        temp_dest_table_exists_sql = f"""
+                    SELECT EXISTS (
+                        SELECT 1
+                        FROM information_schema.tables
+                        WHERE table_schema = '{temp_schema}'
+                            AND table_name = '{temp_table_name}')
+                """
+        with db.connection.cursor() as cursor:
+            cursor.execute(temp_dest_table_exists_sql)
+            return bool(cursor.fetchone()[0])
+
+    @staticmethod
+    def _drop_temp_table(temp_table: str) -> None:
+        logger.info(
+            f"{temp_table} exists and recreate argument provided. Dropping first."
+        )
+        # If the schema has changed and we need to do a complete reload, just drop the table and rebuild it
+        clear_table_sql = f"DROP TABLE {temp_table}"
+        with db.connection.cursor() as cursor:
+            cursor.execute(clear_table_sql)
+        logger.info(f"{temp_table} dropped.")
+
+    @override
+    @staticmethod
+    def _recreate_table(
+        make_new_table: bool,
+        is_postgres_table_partitioned: bool,
+        table_spec: QueryTableSpec,
+        temp_table: str,
+        temp_table_suffix_appendage: str,
+        postgres_table: str,
+        postgres_cols: list,
+        tsvectors: dict,
+    ) -> None:
+        # Recreate the table if it doesn't exist. Spark's df.write automatically does this but doesn't account for
+        # the extra metadata (indexes, constraints, defaults) which CREATE TABLE X LIKE Y accounts for.
+        # If there is no postgres_table to base it on, it just relies on spark to make it and work with delta table
+        if make_new_table:
+            partition_clause = ""
+            storage_parameters = "WITH (autovacuum_enabled=FALSE)"
+            partitions_sql = []
+            if is_postgres_table_partitioned:
+                partition_clause = (
+                    f"PARTITION BY {table_spec.postgres_partition_spec['partitioning_form']}"
+                    f"({', '.join(table_spec.postgres_partition_spec['partition_keys'])})"
+                )
+                storage_parameters = ""
+                partitions_sql = [
+                    (
+                        f"CREATE TABLE "
+                        # Below: e.g. my_tbl_temp -> my_tbl_part_temp
+                        f"{temp_table[: -len(temp_table_suffix_appendage)]}"
+                        f"{pt['table_suffix']}{temp_table_suffix_appendage} "
+                        f"PARTITION OF {temp_table} {pt['partitioning_clause']} "
+                        f"{storage_parameters}"
+                    )
+                    for pt in table_spec.postgres_partition_spec["partitions"]
+                ]
+            if postgres_table:
+                create_temp_sql = f"""
+                                CREATE TABLE {temp_table} (
+                                    LIKE {postgres_table} INCLUDING DEFAULTS INCLUDING GENERATED INCLUDING IDENTITY
+                                ) {partition_clause} {storage_parameters}
+                            """
+            elif postgres_cols:
+                create_temp_sql = f"""
+                                CREATE TABLE {temp_table} (
+                                    {", ".join([f"{key} {val}" for key, val in postgres_cols.items()])}
+                                ) {partition_clause} {storage_parameters}
+                            """
+            else:
+                raise RuntimeError(
+                    "make_new_table=True but neither a postgres_table or postgres_cols are "
+                    "populated for the target delta table in the TABLE_SPEC"
+                )
+            with db.connection.cursor() as cursor:
+                logger.info(f"Creating {temp_table}")
+                cursor.execute(create_temp_sql)
+                logger.info(f"{temp_table} created.")
+
+                if is_postgres_table_partitioned and partitions_sql:
+                    for create_partition in partitions_sql:
+                        logger.info(
+                            f"Creating partition of {temp_table} with SQL:\n{create_partition}"
+                        )
+                        cursor.execute(create_partition)
+                        logger.info("Partition created.")
+
+                # If there are vectors, add the triggers that will populate them based on other calls
+                # NOTE: Undetermined whether tsvector triggers can be applied on partitioned tables,
+                #       at the top-level virtual/partitioned table (versus having to apply on each partition)
+                for tsvector_name, derived_from_cols in tsvectors.items():
+                    logger.info(
+                        f"To prevent any confusion or duplicates, dropping the trigger"
+                        f" tsvector_update_{tsvector_name} if it exists before potentially recreating it."
+                    )
+                    cursor.execute(
+                        f"DROP TRIGGER IF EXISTS tsvector_update_{tsvector_name} ON {temp_table}"
+                    )
+
+                    logger.info(
+                        f"Adding tsvector trigger for column {tsvector_name}"
+                        f" based on the following columns: {derived_from_cols}"
+                    )
+                    derived_from_cols_str = ", ".join(derived_from_cols)
+                    tsvector_trigger_sql = f"""
+                                    CREATE TRIGGER tsvector_update_{tsvector_name} BEFORE INSERT OR UPDATE
+                                    ON {temp_table} FOR EACH ROW EXECUTE PROCEDURE
+                                    tsvector_update_trigger({tsvector_name}, '{DEFAULT_TEXT_SEARCH_CONFIG}',
+                                                            {derived_from_cols_str})
+                                """
+                    cursor.execute(tsvector_trigger_sql)
+                    logger.info(f"tsvector trigger for column {tsvector_name} added.")
+
+    @override
+    def _write_df(
+        self,
+        delta_table: str,
+        spark: SparkSession,
+        df: DataFrame,
+        temp_table: str,
+        postgres_cols: dict,
+        options: dict,
+        destination_database: str,
+        delta_table_name: str,
+        column_names: list,
+        postgres_seq_last_value: int | bool,
+        table_spec: QueryTableSpec,
+    ) -> None:
         use_jdbc_inserts = options["jdbc_inserts"]
         strategy = "JDBC INSERTs" if use_jdbc_inserts else "SQL bulk COPY CSV"
         logger.info(
             f"LOAD (START): Loading data from Delta table {delta_table} to {temp_table} using {strategy} strategy"
         )
-
         try:
             if use_jdbc_inserts:
                 self._write_with_jdbc_inserts(
@@ -373,7 +445,7 @@ class Command(BaseCommand):
                     df,
                     temp_table,
                     split_df_by_special_cols=True,
-                    postgres_model=postgres_model,
+                    postgres_model=table_spec.model,
                     postgres_cols=postgres_cols,
                     overwrite=False,
                 )
@@ -402,22 +474,6 @@ class Command(BaseCommand):
                     table_spec.postgres_seq_name, postgres_seq_last_value
                 )
             raise exc
-
-        logger.info(
-            f"LOAD (FINISH): Loaded data from Delta table {delta_table} to {temp_table} using {strategy} strategy"
-        )
-
-        # We're done with spark at this point
-        if spark_created_by_command:
-            spark.stop()
-
-        if postgres_table:
-            logger.info(
-                f"Note: this has merely loaded the data from Delta. For various reasons, we've separated the"
-                f" metadata portion of the table download to a separate script. If not already done so,"
-                f" please run the following additional command to complete the process: "
-                f" 'copy_table_metadata --source-table {postgres_table} --dest-table {temp_table}'."
-            )
 
     def _set_sequence_value(self, seq_name: str, val: Optional[int] = None) -> int:
         """
@@ -705,4 +761,32 @@ class Command(BaseCommand):
                 table=temp_table,
                 mode=save_mode,
                 properties=get_jdbc_connection_properties(),
+            )
+
+    @override
+    def _finish(
+        self,
+        delta_table: str,
+        temp_table: str,
+        options: dict,
+        spark_created_by_command: bool,
+        spark: SparkSession,
+        postgres_table: str | bool,
+    ) -> None:
+        use_jdbc_inserts = options["jdbc_inserts"]
+        strategy = "JDBC INSERTs" if use_jdbc_inserts else "SQL bulk COPY CSV"
+        logger.info(
+            f"LOAD (FINISH): Loaded data from Delta table {delta_table} to {temp_table} using {strategy} strategy"
+        )
+
+        # We're done with spark at this point
+        if spark_created_by_command:
+            spark.stop()
+
+        if postgres_table:
+            logger.info(
+                f"Note: this has merely loaded the data from Delta. For various reasons, we've separated the"
+                f" metadata portion of the table download to a separate script. If not already done so,"
+                f" please run the following additional command to complete the process: "
+                f" 'copy_table_metadata --source-table {postgres_table} --dest-table {temp_table}'."
             )
