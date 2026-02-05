@@ -2667,7 +2667,7 @@ def test_date_range_with_new_awards_only(
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
     assert (
         resp.json().get("detail")
-        == "Field 'filters|time_period' is outside valid values ['action_date', 'last_modified_date', 'date_signed', 'sub_action_date']"
+        == "Field 'filters|time_period' is outside valid values ['action_date', 'last_modified_date', 'date_signed', 'sub_action_date']"  # noqa: E501
     )
 
 
