@@ -13,18 +13,21 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_usas_jdbc_url,
 )
 from usaspending_api.download.delta_models.download_job import download_job_create_sql_string
+from usaspending_api.etl.table_specs import ArchiveTableSpec
 
 logger = logging.getLogger(__name__)
 
 TABLE_SPEC = {
-    "download_job": {
-        "destination_database": "arc",
-        "destination_table": "download_job",
-        "archive_date_field": "update_date",
-        "source_table": "download_job",
-        "source_database": "public",
-        "delta_table_create_sql": download_job_create_sql_string,
-    }
+    "download_job": ArchiveTableSpec(
+        **{
+            "destination_database": "arc",
+            "destination_table": "download_job",
+            "archive_date_field": "update_date",
+            "source_table": "download_job",
+            "source_database": "public",
+            "delta_table_create_sql": download_job_create_sql_string,
+        }
+    )
 }
 
 
@@ -86,12 +89,12 @@ class Command(BaseCommand):
         archive_period = options["archive_period"]
 
         table_spec = TABLE_SPEC[destination_table]
-        destination_database = options["alt_db"] or table_spec["destination_database"]
+        destination_database = options["alt_db"] or table_spec.destination_database
         destination_table_name = options["alt_name"] or destination_table
-        source_table = table_spec["source_table"]
-        source_database = table_spec["source_database"]
+        source_table = table_spec.source_table
+        source_database = table_spec.source_database
         qualified_source_table = f"{source_database}.{source_table}"
-        archive_date_field = table_spec["archive_date_field"]
+        archive_date_field = table_spec.archive_date_field
 
         archive_date = datetime.now() - timedelta(days=archive_period)
         archive_date_string = archive_date.strftime("%Y-%m-%d")

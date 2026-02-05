@@ -21,7 +21,7 @@ def _verify_delta_table_creation(
     delta_table_spec = TABLE_SPEC[delta_table_name]
 
     cmd_args = [f"--destination-table={delta_table_name}", f"--spark-s3-bucket={s3_bucket}"]
-    expected_db_name = delta_table_spec["destination_database"]
+    expected_db_name = delta_table_spec.destination_database
     if alt_db:
         cmd_args += [f"--alt-db={alt_db}"]
         expected_db_name = alt_db

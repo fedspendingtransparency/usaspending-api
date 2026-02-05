@@ -169,18 +169,18 @@ class Command(BaseCommand):
         table_spec = TABLE_SPEC[delta_table]
 
         # Delta side
-        destination_database = options["alt_delta_db"] or table_spec["destination_database"]
+        destination_database = options["alt_delta_db"] or table_spec.destination_database
         delta_table_name = options["alt_delta_name"] or delta_table
         delta_table = f"{destination_database}.{delta_table_name}" if destination_database else delta_table_name
 
         # Postgres side - source
         postgres_table = None
-        postgres_model = table_spec["model"]
-        postgres_schema = table_spec["source_database"] or table_spec["swap_schema"]
-        postgres_table_name = table_spec["source_table"] or table_spec["swap_table"]
-        postgres_cols = table_spec["source_schema"]
-        column_names = table_spec.get("column_names")
-        tsvectors = table_spec.get("tsvectors") or {}
+        postgres_model = table_spec.model
+        postgres_schema = table_spec.source_database or table_spec.swap_schema
+        postgres_table_name = table_spec.source_table or table_spec.swap_table
+        postgres_cols = table_spec.source_schema
+        column_names = table_spec.column_names
+        tsvectors = table_spec.tsvectors or {}
         if postgres_table_name:
             postgres_table = f"{postgres_schema}.{postgres_table_name}" if postgres_schema else postgres_table_name
 
@@ -222,7 +222,7 @@ class Command(BaseCommand):
             temp_dest_table_exists = False
         make_new_table = not temp_dest_table_exists
 
-        is_postgres_table_partitioned = table_spec.get("postgres_partition_spec") is not None
+        is_postgres_table_partitioned = table_spec.postgres_partition_spec is not None
 
         if postgres_table or postgres_cols:
             # Recreate the table if it doesn't exist. Spark's df.write automatically does this but doesn't account for
@@ -234,8 +234,8 @@ class Command(BaseCommand):
                 partitions_sql = []
                 if is_postgres_table_partitioned:
                     partition_clause = (
-                        f"PARTITION BY {table_spec['postgres_partition_spec']['partitioning_form']}"
-                        f"({', '.join(table_spec['postgres_partition_spec']['partition_keys'])})"
+                        f"PARTITION BY {table_spec.postgres_partition_spec['partitioning_form']}"
+                        f"({', '.join(table_spec.postgres_partition_spec['partition_keys'])})"
                     )
                     storage_parameters = ""
                     partitions_sql = [
@@ -246,7 +246,7 @@ class Command(BaseCommand):
                             f"PARTITION OF {temp_table} {pt['partitioning_clause']} "
                             f"{storage_parameters}"
                         )
-                        for pt in table_spec["postgres_partition_spec"]["partitions"]
+                        for pt in table_spec.postgres_partition_spec["partitions"]
                     ]
                 if postgres_table:
                     create_temp_sql = f"""
@@ -317,8 +317,8 @@ class Command(BaseCommand):
                 logger.info(f"{temp_table} truncated.")
 
         # Reset the sequence before load for a table if it exists
-        if options["reset_sequence"] and table_spec.get("postgres_seq_name"):
-            postgres_seq_last_value = self._set_sequence_value(table_spec["postgres_seq_name"])
+        if options["reset_sequence"] and table_spec.postgres_seq_name:
+            postgres_seq_last_value = self._set_sequence_value(table_spec.postgres_seq_name)
         else:
             postgres_seq_last_value = None
 
@@ -359,7 +359,7 @@ class Command(BaseCommand):
                 logger.error(
                     f"Command failed unexpectedly; resetting the sequence to previous value: {postgres_seq_last_value}"
                 )
-                self._set_sequence_value(table_spec["postgres_seq_name"], postgres_seq_last_value)
+                self._set_sequence_value(table_spec.postgres_seq_name, postgres_seq_last_value)
             raise Exception(exc)
 
         logger.info(
