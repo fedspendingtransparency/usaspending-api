@@ -11,7 +11,6 @@ import os
 import shutil
 import time
 from itertools import chain
-from typing import List
 
 import duckdb
 from duckdb.experimental.spark.sql import SparkSession as DuckDBSparkSession
@@ -623,10 +622,10 @@ def build_ref_table_name_list() -> list[str]:
     return [rds_ref_table._meta.db_table for rds_ref_table in _USAS_RDS_REF_TABLES]
 
 
-def _generate_global_view_sql_strings(tables: List[str], jdbc_url: str) -> List[str]:
+def _generate_global_view_sql_strings(tables: list[str], jdbc_url: str) -> list[str]:
     """Generates the CREATE OR REPLACE SQL strings for each of the given tables and JDBC URL"""
 
-    sql_strings: List[str] = []
+    sql_strings: list[str] = []
     jdbc_conn_props = get_jdbc_connection_properties()
 
     for table_name in tables:
@@ -668,7 +667,6 @@ def create_ref_temp_views(  # noqa: PLR0912
     match isinstance(spark, DuckDBSparkSession):
         case True:
             logger.info("Creating ref temp views using DuckDB")
-
             if IS_LOCAL:
                 spark.sql(
                     f"""
@@ -721,11 +719,11 @@ def create_ref_temp_views(  # noqa: PLR0912
                     logger.info(
                         f"Successfully created table {table['schema']}.{table['table_name']}"
                     )
-                except duckdb.IOException:
+                except duckdb.IOException as exc:
                     logger.exception(f"Failed to create table {table['table_name']}")
                     raise RuntimeError(
                         f"Failed to create table {table['table_name']}"
-                    ) from None
+                    ) from exc
 
             # The DuckDB Postgres extension is needed to connect to the USAS Postgres DB
             spark.sql("LOAD postgres; CREATE SCHEMA IF NOT EXISTS global_temp;")
@@ -738,11 +736,11 @@ def create_ref_temp_views(  # noqa: PLR0912
                     spark.sql(
                         f"CREATE OR REPLACE VIEW global_temp.{table} AS SELECT * FROM usas.public.{table};"
                     )
-                except duckdb.CatalogException:
+                except duckdb.CatalogException as exc:
                     logger.exception(f"Failed to create view {table} for {table}")
                     raise RuntimeError(
                         f"Failed to create view {table} for {table}"
-                    ) from None
+                    ) from exc
 
             if create_broker_views:
                 spark.sql(
@@ -758,11 +756,11 @@ def create_ref_temp_views(  # noqa: PLR0912
                         spark.sql(
                             f"CREATE OR REPLACE VIEW global_temp.{table} AS SELECT * FROM broker.public.{table};"
                         )
-                    except duckdb.CatalogException:
+                    except duckdb.CatalogException as exc:
                         logger.exception(f"Failed to create view {table} for {table}")
                         raise RuntimeError(
                             f"Failed to create view {table} for {table}"
-                        ) from None
+                        ) from exc
         case False:
             logger.info("Creating ref temp views using Spark")
 
@@ -788,7 +786,7 @@ def create_ref_temp_views(  # noqa: PLR0912
     logger.info("Created the reference views in the global_temp database")
 
 
-def write_csv_file(
+def write_csv_file(  # noqa: PLR0913
     spark: SparkSession,
     df: DataFrame,
     parts_dir: str,
