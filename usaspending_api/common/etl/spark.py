@@ -10,9 +10,7 @@ import math
 import os
 import shutil
 import time
-from collections import namedtuple
 from itertools import chain
-from typing import Generator
 
 import duckdb
 from duckdb.experimental.spark.sql import SparkSession as DuckDBSparkSession
