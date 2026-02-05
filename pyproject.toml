@@ -13,7 +13,7 @@ readme = 'README.md'
 license = "CC0-1.0"
 license-files = ["LICENSE"]
 requires-python = '>=3.10'
-classifiers=[
+classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
@@ -137,14 +137,13 @@ DJANGO_SETTINGS_MODULE = "usaspending_api.settings"
 addopts = "--cov=usaspending_api"
 markers = [
     "signal_handling: Mark all tests that import the signal library and invoke signals. This MUST be done on the main thread, and can cause errors if pytest-xdist subordinates parellel test sessions to background threads.",
-
     # These are "auto" marked based on fixture usage. See conftest.py pytest_collection_modifyitems
     "spark: Mark all tests using the spark fixture. Can be selected with -m spark or deselected with -m (not spark)",
     "database: Mark all integration tests using a database. Can be selected with -m database or deselected with -m (not database)",
     "elasticsearch: Mark all integration tests using Elasticsearch. Can be selected with -m database or deselected with -m (not elasticsearch)",
 ]
 pythonpath = [
-  "."
+    "."
 ]
 
 [tool.coverage.run]
@@ -174,25 +173,25 @@ exclude = [
 ]
 
 select = [
-    "PLR0913",  # max arguments in function
-    "PLR0904",  # max number of public methods
-    "PLR0911",  # max number of return statements
-    "PLR0916",  # max number of boolean expressions
-    "PLR0915",  # max number of lines in a function
-    "PLR0912",  # max number of logical branches in a function
-    "PLR1702",  # max number of nested blocks
-    "C901",  # cognitive complexity (functions)
-    "I001",  # unsorted imports
-    "B",  # flake8 bugbear
-    "E",  # pycodestyle errors
-    "F",  # pyflakes
-    "W",  # pycodestyle warnings
-    "ANN001",  # missing type annotation for function argument
-    "ANN201",  # missing return type annotation for public function or method
-    "ANN202",  # missing return type annotation for private function or method
+    "PLR0913", # max arguments in function
+    "PLR0904", # max number of public methods
+    "PLR0911", # max number of return statements
+    "PLR0916", # max number of boolean expressions
+    "PLR0915", # max number of lines in a function
+    "PLR0912", # max number of logical branches in a function
+    "PLR1702", # max number of nested blocks
+    "C901", # cognitive complexity (functions)
+    "I001", # unsorted imports
+    "B", # flake8 bugbear
+    "E", # pycodestyle errors
+    "F", # pyflakes
+    "W", # pycodestyle warnings
+    "ANN001", # missing type annotation for function argument
+    "ANN201", # missing return type annotation for public function or method
+    "ANN202", # missing return type annotation for private function or method
 ]
 ignore = [
-    "E203",  # whitespace before punctuation
+    "E203", # whitespace before punctuation
 ]
 
 pylint.max-args = 6
@@ -207,16 +206,23 @@ pycodestyle.max-line-length = 120
 
 [tool.ruff.lint.per-file-ignores]
 "**/tests/**/test*.py" = [
-    "ANN001",  # missing-type-function-argument; avoid conflict with fixtures
-    "ANN201",  # missing-return-type-undocumented-public-function; avoid conflict with test case return values
-    "ANN202",  # missing-return-type-undocumented-private-function; avoid conflict with test case return values
+    "ANN001", # missing-type-function-argument; avoid conflict with fixtures
+    "ANN201", # missing-return-type-undocumented-public-function; avoid conflict with test case return values
+    "ANN202", # missing-return-type-undocumented-private-function; avoid conflict with test case return values
     "PLR0913", # too-many-arguments; avoid conflict with too many fixtures
-    "PLR0915",  # too-many-statements; avoid conflict with long fixtures
+    "PLR0915", # too-many-statements; avoid conflict with long fixtures
 ]
 "**/conftest*.py" = [
-    "ANN001",  # missing-type-function-argument; avoid conflict with fixtures
-    "ANN201",  # missing-return-type-undocumented-public-function; avoid conflict with test case return values
-    "ANN202",  # missing-return-type-undocumented-private-function; avoid conflict with test case return values
+    "ANN001", # missing-type-function-argument; avoid conflict with fixtures
+    "ANN201", # missing-return-type-undocumented-public-function; avoid conflict with test case return values
+    "ANN202", # missing-return-type-undocumented-private-function; avoid conflict with test case return values
     "PLR0913", # too-many-arguments; avoid conflict with too many fixtures
-    "PLR0915",  # too-many-statements; avoid conflict with long fixtures
+    "PLR0915", # too-many-statements; avoid conflict with long fixtures
+]
+"**/tests/**/data/**.py" = [
+    "ANN001", # missing-type-function-argument; avoid conflict with fixtures
+    "ANN201", # missing-return-type-undocumented-public-function; avoid conflict with test case return values
+    "ANN202", # missing-return-type-undocumented-private-function; avoid conflict with test case return values
+    "PLR0913", # too-many-arguments; avoid conflict with too many fixtures
+    "PLR0915", # too-many-statements; avoid conflict with long fixtures
 ]
