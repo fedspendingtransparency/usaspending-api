@@ -14,8 +14,13 @@ from usaspending_api.download.delta_downloads.abstract_downloads.account_downloa
 from usaspending_api.download.delta_downloads.abstract_factories.account_download_factory import (
     AbstractAccountDownloadFactory,
 )
-from usaspending_api.download.delta_downloads.filters.account_filters import AccountDownloadFilters
-from usaspending_api.download.download_utils import construct_data_date_range, obtain_filename_prefix_from_agency_id
+from usaspending_api.download.delta_downloads.filters.account_filters import (
+    AccountDownloadFilters,
+)
+from usaspending_api.download.download_utils import (
+    construct_data_date_range,
+    obtain_filename_prefix_from_agency_id,
+)
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 
 
