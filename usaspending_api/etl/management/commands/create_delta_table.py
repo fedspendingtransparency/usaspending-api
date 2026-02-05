@@ -1,6 +1,6 @@
 import logging
 
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandParser
 from pyspark.sql.types import StructType
 
 from usaspending_api.awards.delta_models.award_id_lookup import AWARD_ID_LOOKUP_SCHEMA
@@ -50,7 +50,7 @@ class Command(BaseCommand):
     This command creates an empty Delta Table based on the provided --destination-table argument.
     """
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: CommandParser) -> None:
         parser.add_argument(
             "--destination-table",
             type=str,
@@ -79,7 +79,7 @@ class Command(BaseCommand):
             "name",
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         spark = get_active_spark_session()
         spark_created_by_command = False
         if not spark:

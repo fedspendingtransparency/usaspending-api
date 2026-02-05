@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Literal, Any, Callable
+from typing import Any, Callable, Literal
 
 from django.db import models
 from pyspark.sql import SparkSession
