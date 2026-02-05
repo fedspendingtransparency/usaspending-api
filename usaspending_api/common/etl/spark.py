@@ -10,7 +10,9 @@ import math
 import os
 import shutil
 import time
+from collections import namedtuple
 from itertools import chain
+from typing import Generator
 
 import duckdb
 from duckdb.experimental.spark.sql import SparkSession as DuckDBSparkSession
@@ -390,17 +392,17 @@ def load_es_index(
     )
 
 
-# def merge_delta_table(spark: SparkSession, source_df: DataFrame, delta_table_name: str, merge_column: str):
-#     source_df.create_or_replace_temporary_view("temp_table")
-#
-#     spark.sql(
-#         rf"""
-#         MERGE INTO {delta_table_name} USING temp_table
-#             ON {delta_table_name}.{merge_column} = temp_table.{merge_column}
-#         WHEN MATCHED THEN UPDATE SET *
-#         WHEN NOT MATCHED THEN INSERT *
-#     """
-#     )
+def merge_delta_table(spark: SparkSession, source_df: DataFrame, delta_table_name: str, merge_column: str) -> None:
+    source_df.create_or_replace_temporary_view("temp_table")
+
+    spark.sql(
+        rf"""
+        MERGE INTO {delta_table_name} USING temp_table
+            ON {delta_table_name}.{merge_column} = temp_table.{merge_column}
+        WHEN MATCHED THEN UPDATE SET *
+        WHEN NOT MATCHED THEN INSERT *
+    """
+    )
 
 
 def diff(
@@ -901,35 +903,6 @@ def write_csv_file_duckdb(
         f"Wrote source data DataFrame to {len(full_file_paths)} CSV files in {(time.time() - start):3f}s"
     )
     return df_record_count, full_file_paths
-
-
-# def _merge_file_parts(
-#     fs, out_stream, conf, hadoop, partial_merged_file_path, part_file_list: list[str] | set[str] | tuple[str]
-# ) -> None:
-#     """Read-in files in alphabetical order and append them one by one to the merged file"""
-#
-#     for part_file in part_file_list:
-#         in_stream = None
-#         try:
-#             in_stream = fs.open(part_file)
-#             # Write bytes of each file read and keep out_stream open after write for next file
-#             hadoop.io.IOUtils.copyBytes(in_stream, out_stream, conf, False)
-#         finally:
-#             if in_stream:
-#                 in_stream.close()
-#             if fs.exists(partial_merged_file_path):
-#                 fs.delete(partial_merged_file_path, True)
-
-
-# def _merge_grouper(items: list | set | tuple, group_size: int) -> Generator[namedtuple, None, None]:
-#     """Helper to chunk up files into mergeable groups"""
-#     FileMergeGroup = namedtuple("FileMergeGroup", ["part", "file_list"])
-#     if len(items) <= group_size:
-#         yield FileMergeGroup(None, items)
-#         return
-#     group_generator = (items[i : i + group_size] for i in range(0, len(items), group_size))
-#     for i, group in enumerate(group_generator, start=1):
-#         yield FileMergeGroup(i, group)
 
 
 def rename_part_files(
