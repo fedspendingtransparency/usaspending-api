@@ -5,22 +5,34 @@ NOTE: Uses Pytest Fixtures from immediate parent conftest.py: usaspending_api/et
 
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
+
 from django.core.management import call_command
 from model_bakery import baker
 from pytest import mark
 
-from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
-from usaspending_api.etl.tests.integration.test_load_to_from_delta import load_delta_table_from_postgres, equal_datasets
+from usaspending_api.broker.helpers.last_load_date import (
+    get_last_load_date,
+    update_last_load_date,
+)
+from usaspending_api.config import CONFIG
+from usaspending_api.etl.management.commands.load_table_to_delta import TABLE_SPEC
+from usaspending_api.etl.tests.integration.test_load_to_from_delta import (
+    equal_datasets,
+    load_delta_table_from_postgres,
+)
 from usaspending_api.etl.tests.integration.test_load_transactions_in_delta_lookups import (
     _BEGINNING_OF_TIME,
     _INITIAL_SOURCE_TABLE_LOAD_DATETIME,
     _InitialRunWithPostgresLoader,
     _TableLoadInfo,
-    TestInitialRun as InitialRun,  # Remove 'test' prefix to avoid pytest running these tests twice
-    TestInitialRunNoPostgresLoader as InitialRunNoPostgresLoader,  # Remove 'test' prefix to avoid pytest running these tests twice
 )
-from usaspending_api.config import CONFIG
-from usaspending_api.etl.management.commands.load_table_to_delta import TABLE_SPEC
+from usaspending_api.etl.tests.integration.test_load_transactions_in_delta_lookups import (
+    TestInitialRun as InitialRun,  # Remove 'test' prefix to avoid pytest running these tests twice
+)
+from usaspending_api.etl.tests.integration.test_load_transactions_in_delta_lookups import (
+    # Remove 'test' prefix to avoid pytest running these tests twice
+    TestInitialRunNoPostgresLoader as InitialRunNoPostgresLoader,
+)
 
 
 class _TransactionFabsFpdsCore:
@@ -60,7 +72,7 @@ class _TransactionFabsFpdsCore:
         self.spark.sql(f"create database if not exists {raw_db};")
         self.spark.sql(f"use {raw_db};")
         self.spark.sql(
-            TABLE_SPEC["published_fabs"]["delta_table_create_sql"].format(
+            TABLE_SPEC["published_fabs"].delta_table_create_sql.format(
                 DESTINATION_TABLE="published_fabs",
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=self.s3_data_bucket,
@@ -68,7 +80,7 @@ class _TransactionFabsFpdsCore:
             )
         )
         self.spark.sql(
-            TABLE_SPEC["detached_award_procurement"]["delta_table_create_sql"].format(
+            TABLE_SPEC["detached_award_procurement"].delta_table_create_sql.format(
                 DESTINATION_TABLE="detached_award_procurement",
                 DESTINATION_DATABASE=raw_db,
                 SPARK_S3_BUCKET=self.s3_data_bucket,
@@ -92,7 +104,9 @@ class _TransactionFabsFpdsCore:
         }
         # Even though nothing will have been loaded to that table, the table whose etl_level has been called will
         # have its last load date set to the date of the source tables' load.
-        kwargs[f"expected_last_load_{self.etl_level}"] = _INITIAL_SOURCE_TABLE_LOAD_DATETIME
+        kwargs[f"expected_last_load_{self.etl_level}"] = (
+            _INITIAL_SOURCE_TABLE_LOAD_DATETIME
+        )
         InitialRun.verify(self.spark, [], [], **kwargs)
 
         # 2. With raw.transaction_normalized and raw.awards still not created, call load_transactions_in_delta
@@ -102,18 +116,26 @@ class _TransactionFabsFpdsCore:
         # need to reset the last load date on transaction_fabs
         update_last_load_date(self.etl_level, _BEGINNING_OF_TIME)
 
-        call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
+        call_command(
+            "load_transactions_in_delta", "--etl-level", "transaction_id_lookup"
+        )
         call_command("load_transactions_in_delta", "--etl-level", self.etl_level)
 
         # The expected transaction_id_lookup table should be the same as in _InitialRunWithPostgresLoader,
         # but all of the transaction ids should be 1 larger than expected there.
-        expected_transaction_id_lookup = deepcopy(_InitialRunWithPostgresLoader.expected_initial_transaction_id_lookup)
+        expected_transaction_id_lookup = deepcopy(
+            _InitialRunWithPostgresLoader.expected_initial_transaction_id_lookup
+        )
         for item in expected_transaction_id_lookup:
             item["transaction_id"] += 1
         # Also, the last load date of the transaction_id_lookup table and of the table whose etl_level is being
         # called should be updated to the load time of the source tables
-        kwargs["expected_last_load_transaction_id_lookup"] = _INITIAL_SOURCE_TABLE_LOAD_DATETIME
-        kwargs[f"expected_last_load_{self.etl_level}"] = _INITIAL_SOURCE_TABLE_LOAD_DATETIME
+        kwargs["expected_last_load_transaction_id_lookup"] = (
+            _INITIAL_SOURCE_TABLE_LOAD_DATETIME
+        )
+        kwargs[f"expected_last_load_{self.etl_level}"] = (
+            _INITIAL_SOURCE_TABLE_LOAD_DATETIME
+        )
         InitialRun.verify(
             self.spark,
             expected_transaction_id_lookup,
@@ -130,20 +152,31 @@ class _TransactionFabsFpdsCore:
         delta_data = [row.asDict() for row in self.spark.sql(query).collect()]
 
         if len(self.expected_initial_transaction_fabs) > 0:
-            expected_transaction_fabs_fpds = deepcopy(self.expected_initial_transaction_fabs)
+            expected_transaction_fabs_fpds = deepcopy(
+                self.expected_initial_transaction_fabs
+            )
         else:
-            expected_transaction_fabs_fpds = deepcopy(self.expected_initial_transaction_fpds)
+            expected_transaction_fabs_fpds = deepcopy(
+                self.expected_initial_transaction_fpds
+            )
         for item in expected_transaction_fabs_fpds:
             item["transaction_id"] += 1
         assert equal_datasets(expected_transaction_fabs_fpds, delta_data, "")
 
     def unexpected_paths_test_core(
-        self, load_other_raw_tables, expected_initial_transaction_id_lookup, expected_initial_award_id_lookup
+        self,
+        load_other_raw_tables,
+        expected_initial_transaction_id_lookup,
+        expected_initial_award_id_lookup,
     ):
         # 1. Call load_transactions_in_delta with etl-level of initial_run first, making sure to load
         # raw.transaction_normalized along with the source tables, but don't copy the raw tables to int.
         # Then immediately call load_transactions_in_delta with etl-level of transaction_f[ab|pd]s.
-        InitialRun.initial_run(self.s3_data_bucket, load_other_raw_tables=load_other_raw_tables, initial_copy=False)
+        InitialRun.initial_run(
+            self.s3_data_bucket,
+            load_other_raw_tables=load_other_raw_tables,
+            initial_copy=False,
+        )
         call_command("load_transactions_in_delta", "--etl-level", self.etl_level)
 
         # Even without the call to load_transactions_in_delta with etl-level of transaction_id_lookup, the appropriate
@@ -157,7 +190,9 @@ class _TransactionFabsFpdsCore:
             "expected_last_load_transaction_fabs": _BEGINNING_OF_TIME,
             "expected_last_load_transaction_fpds": _BEGINNING_OF_TIME,
         }
-        kwargs[f"expected_last_load_{self.etl_level}"] = _INITIAL_SOURCE_TABLE_LOAD_DATETIME
+        kwargs[f"expected_last_load_{self.etl_level}"] = (
+            _INITIAL_SOURCE_TABLE_LOAD_DATETIME
+        )
         InitialRun.verify(
             self.spark,
             expected_initial_transaction_id_lookup,
@@ -172,9 +207,13 @@ class _TransactionFabsFpdsCore:
         query = f"SELECT {', '.join(self.compare_fields)} FROM int.{self.etl_level} ORDER BY {self.pk_field}"
         delta_data = [row.asDict() for row in self.spark.sql(query).collect()]
         if len(self.expected_initial_transaction_fabs) > 0:
-            assert equal_datasets(self.expected_initial_transaction_fabs, delta_data, "")
+            assert equal_datasets(
+                self.expected_initial_transaction_fabs, delta_data, ""
+            )
         else:
-            assert equal_datasets(self.expected_initial_transaction_fpds, delta_data, "")
+            assert equal_datasets(
+                self.expected_initial_transaction_fpds, delta_data, ""
+            )
 
         # 2. Test inserting, updating, and deleting without calling load_transactions_in_delta with etl-level
         # of transaction_id_lookup before calling load_transactions_in_delta with etl-level of transaction_f[ab|pd]s.
@@ -233,9 +272,13 @@ class _TransactionFabsFpdsCore:
         # However, this call should *NOT* pick up the inserts or deletes, since those transactions will not
         # have changed in the transaction_id_lookup table.
         if len(self.expected_initial_transaction_fabs) > 0:
-            expected_transaction_fabs_fpds = deepcopy(self.expected_initial_transaction_fabs)
+            expected_transaction_fabs_fpds = deepcopy(
+                self.expected_initial_transaction_fabs
+            )
         else:
-            expected_transaction_fabs_fpds = deepcopy(self.expected_initial_transaction_fpds)
+            expected_transaction_fabs_fpds = deepcopy(
+                self.expected_initial_transaction_fpds
+            )
         expected_transaction_fabs_fpds[-2]["updated_at"] = insert_update_datetime
         expected_transaction_fabs_fpds[-1]["updated_at"] = insert_update_datetime
         assert equal_datasets(expected_transaction_fabs_fpds, delta_data, "")
@@ -264,8 +307,12 @@ class _TransactionFabsFpdsCore:
     ):
         # 1, Test calling load_transactions_in_delta with etl-level of transaction_f[ab|pd]s after calling with
         # etl-levels of initial_run and transaction_id_lookup.
-        InitialRun.initial_run(self.s3_data_bucket, load_other_raw_tables=load_other_raw_tables)
-        call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
+        InitialRun.initial_run(
+            self.s3_data_bucket, load_other_raw_tables=load_other_raw_tables
+        )
+        call_command(
+            "load_transactions_in_delta", "--etl-level", "transaction_id_lookup"
+        )
         call_command("load_transactions_in_delta", "--etl-level", self.etl_level)
 
         # Verify the tables.  The transaction and award id lookup tables should be the same as during the initial run.
@@ -277,7 +324,9 @@ class _TransactionFabsFpdsCore:
             "expected_last_load_transaction_fabs": _BEGINNING_OF_TIME,
             "expected_last_load_transaction_fpds": _BEGINNING_OF_TIME,
         }
-        kwargs[f"expected_last_load_{self.etl_level}"] = _INITIAL_SOURCE_TABLE_LOAD_DATETIME
+        kwargs[f"expected_last_load_{self.etl_level}"] = (
+            _INITIAL_SOURCE_TABLE_LOAD_DATETIME
+        )
         InitialRun.verify(
             self.spark,
             expected_initial_transaction_id_lookup,
@@ -289,14 +338,23 @@ class _TransactionFabsFpdsCore:
         )
 
         # Verify key fields in transaction_fabs table
-        transaction_fabs_fpds_query = (
-            f"SELECT {', '.join(self.compare_fields)} FROM int.{self.etl_level} ORDER BY {self.pk_field}"
-        )
-        delta_data = [row.asDict() for row in self.spark.sql(transaction_fabs_fpds_query).collect()]
+        transaction_fabs_fpds_query = f"""
+            SELECT {', '.join(self.compare_fields)}
+            FROM int.{self.etl_level}
+            ORDER BY {self.pk_field}
+        """
+        delta_data = [
+            row.asDict()
+            for row in self.spark.sql(transaction_fabs_fpds_query).collect()
+        ]
         if len(self.expected_initial_transaction_fabs) > 0:
-            assert equal_datasets(self.expected_initial_transaction_fabs, delta_data, "")
+            assert equal_datasets(
+                self.expected_initial_transaction_fabs, delta_data, ""
+            )
         else:
-            assert equal_datasets(self.expected_initial_transaction_fpds, delta_data, "")
+            assert equal_datasets(
+                self.expected_initial_transaction_fpds, delta_data, ""
+            )
 
         # 2. Test inserting, updating, and deleting records followed by calling load_transactions_in_delta with
         # etl-levels of transaction_id_lookup and then transaction_f[ab|pd]s.
@@ -364,14 +422,18 @@ class _TransactionFabsFpdsCore:
         )
 
         # Need to load changes into the transaction_id_lookup table.
-        call_command("load_transactions_in_delta", "--etl-level", "transaction_id_lookup")
+        call_command(
+            "load_transactions_in_delta", "--etl-level", "transaction_id_lookup"
+        )
         call_command("load_transactions_in_delta", "--etl-level", self.etl_level)
 
         # Verify transaction_id_lookup table
         query = "SELECT * FROM int.transaction_id_lookup ORDER BY transaction_id"
         delta_data = [row.asDict() for row in self.spark.sql(query).collect()]
 
-        expected_transaction_id_lookup = deepcopy(expected_initial_transaction_id_lookup)
+        expected_transaction_id_lookup = deepcopy(
+            expected_initial_transaction_id_lookup
+        )
         for pop_index in expected_transaction_id_lookup_pops:
             expected_transaction_id_lookup.pop(pop_index)
         expected_transaction_id_lookup_append.update(
@@ -383,26 +445,41 @@ class _TransactionFabsFpdsCore:
         assert equal_datasets(expected_transaction_id_lookup, delta_data, "")
 
         # Verify country code scalar transformation
-        query = f"SELECT DISTINCT legal_entity_country_code, place_of_perform_country_c FROM int.{self.etl_level} WHERE {self.pk_field} = 4 OR {self.pk_field} = 5"
+        query = f"""
+            SELECT DISTINCT legal_entity_country_code, place_of_perform_country_c
+            FROM int.{self.etl_level}
+            WHERE {self.pk_field} = 4 OR {self.pk_field} = 5
+        """
         delta_data = [row.asDict() for row in self.spark.sql(query).collect()]
         assert len(delta_data) == 1
         assert delta_data[0]["legal_entity_country_code"] == "USA"
         assert delta_data[0]["place_of_perform_country_c"] == "USA"
 
         # Verify country name scalar transformation
-        query = f"SELECT DISTINCT legal_entity_country_name, place_of_perform_country_n FROM int.{self.etl_level} WHERE {self.pk_field} = 4 OR {self.pk_field} = 5"
+        query = f"""
+            SELECT DISTINCT legal_entity_country_name, place_of_perform_country_n
+            FROM int.{self.etl_level}
+            WHERE {self.pk_field} = 4 OR {self.pk_field} = 5
+        """
         delta_data = [row.asDict() for row in self.spark.sql(query).collect()]
         assert len(delta_data) == 1
         assert delta_data[0]["legal_entity_country_name"] == "UNITED STATES"
         assert delta_data[0]["place_of_perform_country_n"] == "UNITED STATES"
 
         # Verify key fields in transaction_f[ab|pd]s table
-        delta_data = [row.asDict() for row in self.spark.sql(transaction_fabs_fpds_query).collect()]
+        delta_data = [
+            row.asDict()
+            for row in self.spark.sql(transaction_fabs_fpds_query).collect()
+        ]
 
         if len(self.expected_initial_transaction_fabs) > 0:
-            expected_transaction_fabs_fpds = deepcopy(self.expected_initial_transaction_fabs)
+            expected_transaction_fabs_fpds = deepcopy(
+                self.expected_initial_transaction_fabs
+            )
         else:
-            expected_transaction_fabs_fpds = deepcopy(self.expected_initial_transaction_fpds)
+            expected_transaction_fabs_fpds = deepcopy(
+                self.expected_initial_transaction_fpds
+            )
         expected_transaction_fabs_fpds.pop(1)
         expected_transaction_fabs_fpds.pop(1)
         expected_transaction_fabs_fpds[-2]["updated_at"] = insert_update_datetime
@@ -420,7 +497,10 @@ class _TransactionFabsFpdsCore:
 
         # Verify that the last_load_dates of the transaction_id_lookup table and the table whose etl_level has been
         # called did NOT change, since only one of the broker source tables' last load date was changed.
-        assert get_last_load_date("transaction_id_lookup") == _INITIAL_SOURCE_TABLE_LOAD_DATETIME
+        assert (
+            get_last_load_date("transaction_id_lookup")
+            == _INITIAL_SOURCE_TABLE_LOAD_DATETIME
+        )
         assert get_last_load_date(self.etl_level) == _INITIAL_SOURCE_TABLE_LOAD_DATETIME
 
     def happy_paths_no_pg_loader_test_core(
@@ -442,7 +522,9 @@ class _TransactionFabsFpdsCore:
                     self.etl_level,
                     initial_transaction_fabs_fpds,
                 ),
-                _TableLoadInfo(self.spark, "awards", InitialRunNoPostgresLoader.initial_awards),
+                _TableLoadInfo(
+                    self.spark, "awards", InitialRunNoPostgresLoader.initial_awards
+                ),
             ),
             InitialRunNoPostgresLoader.expected_initial_transaction_id_lookup,
             InitialRunNoPostgresLoader.expected_initial_award_id_lookup,
@@ -459,7 +541,9 @@ class TestTransactionFabs:
     usas_source_table_name = "published_fabs"
     broker_source_table_name = "source_assistance_transaction"
     baker_table = "transactions.SourceAssistanceTransaction"
-    compare_fields = _InitialRunWithPostgresLoader.expected_initial_transaction_fabs[0].keys()
+    compare_fields = _InitialRunWithPostgresLoader.expected_initial_transaction_fabs[
+        0
+    ].keys()
     new_afa_generated_unique = "award_assist_0004_trans_0001"
     new_unique_award_key = "award_assist_0004"
     baker_kwargs = {
@@ -479,7 +563,9 @@ class TestTransactionFabs:
         "unique_award_key": new_unique_award_key.upper(),
     }
 
-    def _generate_transaction_fabs_fpds_core(self, spark, s3_data_bucket, expected_initial_transaction_fabs):
+    def _generate_transaction_fabs_fpds_core(
+        self, spark, s3_data_bucket, expected_initial_transaction_fabs
+    ):
         return _TransactionFabsFpdsCore(
             spark,
             s3_data_bucket,
@@ -496,28 +582,46 @@ class TestTransactionFabs:
 
     @mark.django_db(transaction=True)
     def test_unexpected_paths_source_tables_only(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
+        self,
+        spark,
+        s3_unittest_data_bucket,
+        hive_unittest_metastore_db,
+        _populate_initial_source_tables_pg,
     ):
         transaction_fabs_fpds_core = self._generate_transaction_fabs_fpds_core(
-            spark, s3_unittest_data_bucket, _InitialRunWithPostgresLoader.expected_initial_transaction_fabs
+            spark,
+            s3_unittest_data_bucket,
+            _InitialRunWithPostgresLoader.expected_initial_transaction_fabs,
         )
         transaction_fabs_fpds_core.unexpected_paths_source_tables_only_test_core()
 
     @mark.django_db(transaction=True)
     def test_unexpected_paths_no_pg_loader(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
+        self,
+        spark,
+        s3_unittest_data_bucket,
+        hive_unittest_metastore_db,
+        _populate_initial_source_tables_pg,
     ):
         transaction_fabs_fpds_core = self._generate_transaction_fabs_fpds_core(
-            spark, s3_unittest_data_bucket, InitialRunNoPostgresLoader.initial_transaction_fabs
+            spark,
+            s3_unittest_data_bucket,
+            InitialRunNoPostgresLoader.initial_transaction_fabs,
         )
         transaction_fabs_fpds_core.unexpected_paths_no_pg_loader_test_core()
 
     @mark.django_db(transaction=True)
     def test_happy_paths_no_pg_loader(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
+        self,
+        spark,
+        s3_unittest_data_bucket,
+        hive_unittest_metastore_db,
+        _populate_initial_source_tables_pg,
     ):
         transaction_fabs_fpds_core = self._generate_transaction_fabs_fpds_core(
-            spark, s3_unittest_data_bucket, InitialRunNoPostgresLoader.initial_transaction_fabs
+            spark,
+            s3_unittest_data_bucket,
+            InitialRunNoPostgresLoader.initial_transaction_fabs,
         )
         transaction_fabs_fpds_core.happy_paths_no_pg_loader_test_core(
             InitialRunNoPostgresLoader.initial_transaction_fabs,
@@ -534,7 +638,9 @@ class TestTransactionFpds:
     usas_source_table_name = "detached_award_procurement"
     broker_source_table_name = "source_procurement_transaction"
     baker_table = "transactions.SourceProcurementTransaction"
-    compare_fields = _InitialRunWithPostgresLoader.expected_initial_transaction_fpds[0].keys()
+    compare_fields = _InitialRunWithPostgresLoader.expected_initial_transaction_fpds[
+        0
+    ].keys()
     new_detached_award_proc_unique = "award_procure_0004_trans_0001"
     new_unique_award_key = "award_procure_0004"
     baker_kwargs = {
@@ -552,7 +658,9 @@ class TestTransactionFpds:
         "unique_award_key": new_unique_award_key.upper(),
     }
 
-    def _generate_transaction_fabs_fpds_core(self, spark, s3_data_bucket, expected_initial_transaction_fpds):
+    def _generate_transaction_fabs_fpds_core(
+        self, spark, s3_data_bucket, expected_initial_transaction_fpds
+    ):
         return _TransactionFabsFpdsCore(
             spark,
             s3_data_bucket,
@@ -569,28 +677,46 @@ class TestTransactionFpds:
 
     @mark.django_db(transaction=True)
     def test_unexpected_paths_source_tables_only(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
+        self,
+        spark,
+        s3_unittest_data_bucket,
+        hive_unittest_metastore_db,
+        _populate_initial_source_tables_pg,
     ):
         transaction_fabs_fpds_core = self._generate_transaction_fabs_fpds_core(
-            spark, s3_unittest_data_bucket, _InitialRunWithPostgresLoader.expected_initial_transaction_fpds
+            spark,
+            s3_unittest_data_bucket,
+            _InitialRunWithPostgresLoader.expected_initial_transaction_fpds,
         )
         transaction_fabs_fpds_core.unexpected_paths_source_tables_only_test_core()
 
     @mark.django_db(transaction=True)
     def test_unexpected_paths_no_pg_loader(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
+        self,
+        spark,
+        s3_unittest_data_bucket,
+        hive_unittest_metastore_db,
+        _populate_initial_source_tables_pg,
     ):
         transaction_fabs_fpds_core = self._generate_transaction_fabs_fpds_core(
-            spark, s3_unittest_data_bucket, InitialRunNoPostgresLoader.initial_transaction_fpds
+            spark,
+            s3_unittest_data_bucket,
+            InitialRunNoPostgresLoader.initial_transaction_fpds,
         )
         transaction_fabs_fpds_core.unexpected_paths_no_pg_loader_test_core()
 
     @mark.django_db(transaction=True)
     def test_happy_paths_no_pg_loader(
-        self, spark, s3_unittest_data_bucket, hive_unittest_metastore_db, _populate_initial_source_tables_pg
+        self,
+        spark,
+        s3_unittest_data_bucket,
+        hive_unittest_metastore_db,
+        _populate_initial_source_tables_pg,
     ):
         transaction_fabs_fpds_core = self._generate_transaction_fabs_fpds_core(
-            spark, s3_unittest_data_bucket, InitialRunNoPostgresLoader.initial_transaction_fpds
+            spark,
+            s3_unittest_data_bucket,
+            InitialRunNoPostgresLoader.initial_transaction_fpds,
         )
         transaction_fabs_fpds_core.happy_paths_no_pg_loader_test_core(
             InitialRunNoPostgresLoader.initial_transaction_fpds,
