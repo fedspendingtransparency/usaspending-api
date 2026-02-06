@@ -636,14 +636,16 @@ class Command(BaseCommand):
         # into the mapped function, its module, or an arg of it ... that is not pickle-able, this will throw an error.
         # One way to help is to resolve all arguments to primitive types (int, string) that can be passed
         # to the mapped function
+        temp_table = self.temp_table
+        ordered_col_names = self.column_names
         rdd.mapPartitionsWithIndex(
             lambda partition_idx, s3_obj_keys: copy_csvs_from_s3_to_pg(
                 batch_num=partition_idx,
                 s3_bucket_name=s3_bucket_name,
                 s3_obj_keys=s3_obj_keys,
                 db_dsn=db_dsn,
-                target_pg_table=self.temp_table,
-                ordered_col_names=self.column_names,
+                target_pg_table=temp_table,
+                ordered_col_names=ordered_col_names,
                 gzipped=True,
                 work_mem_override=_PG_WORK_MEM_FOR_LARGE_CSV_COPY,
             ),
