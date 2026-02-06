@@ -4,7 +4,6 @@ from duckdb.experimental.spark.sql.dataframe import DataFrame as DuckDBSparkData
 from pyspark.sql import Column, DataFrame, SparkSession
 
 from usaspending_api.common.spark.utils import collect_concat, filter_submission_and_sum
-from usaspending_api.config import CONFIG
 from usaspending_api.download.delta_downloads.abstract_downloads.account_download import (
     AbstractAccountDownload,
     AccountLevel,
@@ -13,7 +12,9 @@ from usaspending_api.download.delta_downloads.abstract_downloads.account_downloa
 from usaspending_api.download.delta_downloads.abstract_factories.account_download_factory import (
     AbstractAccountDownloadFactory,
 )
-from usaspending_api.download.delta_downloads.filters.account_filters import AccountDownloadFilters
+from usaspending_api.download.delta_downloads.filters.account_filters import (
+    AccountDownloadFilters,
+)
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 from usaspending_api.submissions.helpers import get_submission_ids_for_periods
 
@@ -33,7 +34,7 @@ class ObjectClassProgramActivityMixin:
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        if type(self.spark) is DuckDBSparkSession:
+        if isinstance(self.spark, DuckDBSparkSession):
             from duckdb.experimental.spark.sql import functions
         else:
             from pyspark.sql import functions
@@ -42,13 +43,7 @@ class ObjectClassProgramActivityMixin:
 
     @property
     def download_table(self) -> DataFrame | DuckDBSparkDataFrame:
-        if isinstance(self.spark, DuckDBSparkSession):
-            return self.spark.table("rpt.object_class_program_activity_download")
-        else:
-            # TODO: This should be reverted back after Spark downloads are migrated to EMR
-            return self.spark.read.format("delta").load(
-                f"s3a://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.DELTA_LAKE_S3_PATH}/rpt/object_class_program_activity_download"
-            )
+        return self.spark.table("rpt.object_class_program_activity_download")
 
     def _build_dataframes(self) -> list[DataFrame | DuckDBSparkDataFrame]:
         return [
@@ -64,7 +59,12 @@ class ObjectClassProgramActivityMixin:
             .filter(self.dynamic_filters)
             .groupby(self.group_by_cols)
             .agg(*[agg_func(col) for col, agg_func in self.agg_cols.items()])
-            .drop(*[self.sf.col(f"object_class_program_activity_download.{col}") for col in self.agg_cols])
+            .drop(
+                *[
+                    self.sf.col(f"object_class_program_activity_download.{col}")
+                    for col in self.agg_cols
+                ]
+            )
             .select(*self.select_cols)
             # Sorting by a value that is repeated often will help improve compression during the zipping step
             .sort(self.sort_by_cols),
@@ -104,51 +104,109 @@ class FederalAccountDownload(ObjectClassProgramActivityMixin, AbstractAccountDow
             "budget_function": lambda col: collect_concat(col, spark=self.spark),
             "budget_subfunction": lambda col: collect_concat(col, spark=self.spark),
             "obligations_incurred": lambda col: self.sf.sum(col).alias(col),
-            "obligations_undelivered_orders_unpaid_total": lambda col: self.sf.sum(col).alias(col),
-            "obligations_undelivered_orders_unpaid_total_FYB": lambda col: self.sf.sum(col).alias(col),
-            "USSGL480100_undelivered_orders_obligations_unpaid": lambda col: self.sf.sum(col).alias(col),
-            "USSGL480100_undelivered_orders_obligations_unpaid_FYB": lambda col: self.sf.sum(col).alias(col),
-            "USSGL488100_upward_adj_prior_year_undeliv_orders_oblig_unpaid": lambda col: self.sf.sum(col).alias(col),
-            "obligations_delivered_orders_unpaid_total": lambda col: self.sf.sum(col).alias(col),
-            "obligations_delivered_orders_unpaid_total_FYB": lambda col: self.sf.sum(col).alias(col),
-            "USSGL490100_delivered_orders_obligations_unpaid": lambda col: self.sf.sum(col).alias(col),
-            "USSGL490100_delivered_orders_obligations_unpaid_FYB": lambda col: self.sf.sum(col).alias(col),
-            "USSGL498100_upward_adj_of_prior_year_deliv_orders_oblig_unpaid": lambda col: self.sf.sum(col).alias(col),
+            "obligations_undelivered_orders_unpaid_total": lambda col: self.sf.sum(
+                col
+            ).alias(col),
+            "obligations_undelivered_orders_unpaid_total_FYB": lambda col: self.sf.sum(
+                col
+            ).alias(col),
+            "USSGL480100_undelivered_orders_obligations_unpaid": lambda col: self.sf.sum(
+                col
+            ).alias(col),
+            "USSGL480100_undelivered_orders_obligations_unpaid_FYB": lambda col: self.sf.sum(
+                col
+            ).alias(col),
+            "USSGL488100_upward_adj_prior_year_undeliv_orders_oblig_unpaid": lambda col: self.sf.sum(
+                col
+            ).alias(col),
+            "obligations_delivered_orders_unpaid_total": lambda col: self.sf.sum(
+                col
+            ).alias(col),
+            "obligations_delivered_orders_unpaid_total_FYB": lambda col: self.sf.sum(
+                col
+            ).alias(col),
+            "USSGL490100_delivered_orders_obligations_unpaid": lambda col: self.sf.sum(
+                col
+            ).alias(col),
+            "USSGL490100_delivered_orders_obligations_unpaid_FYB": lambda col: self.sf.sum(
+                col
+            ).alias(col),
+            "USSGL498100_upward_adj_of_prior_year_deliv_orders_oblig_unpaid": lambda col: self.sf.sum(
+                col
+            ).alias(col),
             "gross_outlay_amount_FYB_to_period_end": lambda col: filter_submission_and_sum(
                 col, self.filters, spark=self.spark
             ),
             "gross_outlay_amount_FYB": lambda col: self.sf.sum(col).alias(col),
-            "gross_outlays_undelivered_orders_prepaid_total": lambda col: self.sf.sum(col).alias(col),
-            "gross_outlays_undelivered_orders_prepaid_total_FYB": lambda col: self.sf.sum(col).alias(col),
-            "USSGL480200_undelivered_orders_obligations_prepaid_advanced": lambda col: self.sf.sum(col).alias(col),
-            "USSGL480200_undelivered_orders_obligations_prepaid_advanced_FYB": lambda col: self.sf.sum(col).alias(col),
-            "USSGL488200_upward_adj_prior_year_undeliv_orders_oblig_prepaid": lambda col: self.sf.sum(col).alias(col),
-            "gross_outlays_delivered_orders_paid_total": lambda col: self.sf.sum(col).alias(col),
-            "gross_outlays_delivered_orders_paid_total_FYB": lambda col: self.sf.sum(col).alias(col),
-            "USSGL490200_delivered_orders_obligations_paid": lambda col: self.sf.sum(col).alias(col),
-            "USSGL490800_authority_outlayed_not_yet_disbursed": lambda col: self.sf.sum(col).alias(col),
-            "USSGL490800_authority_outlayed_not_yet_disbursed_FYB": lambda col: self.sf.sum(col).alias(col),
-            "USSGL498200_upward_adj_of_prior_year_deliv_orders_oblig_paid": lambda col: self.sf.sum(col).alias(col),
-            "deobligations_or_recoveries_or_refunds_from_prior_year": lambda col: self.sf.sum(col).alias(col),
-            "USSGL487100_downward_adj_prior_year_unpaid_undeliv_orders_oblig": lambda col: self.sf.sum(col).alias(col),
-            "USSGL497100_downward_adj_prior_year_unpaid_deliv_orders_oblig": lambda col: self.sf.sum(col).alias(col),
+            "gross_outlays_undelivered_orders_prepaid_total": lambda col: self.sf.sum(
+                col
+            ).alias(col),
+            "gross_outlays_undelivered_orders_prepaid_total_FYB": lambda col: self.sf.sum(
+                col
+            ).alias(col),
+            "USSGL480200_undelivered_orders_obligations_prepaid_advanced": lambda col: self.sf.sum(
+                col
+            ).alias(col),
+            "USSGL480200_undelivered_orders_obligations_prepaid_advanced_FYB": lambda col: self.sf.sum(
+                col
+            ).alias(col),
+            "USSGL488200_upward_adj_prior_year_undeliv_orders_oblig_prepaid": lambda col: self.sf.sum(
+                col
+            ).alias(col),
+            "gross_outlays_delivered_orders_paid_total": lambda col: self.sf.sum(
+                col
+            ).alias(col),
+            "gross_outlays_delivered_orders_paid_total_FYB": lambda col: self.sf.sum(
+                col
+            ).alias(col),
+            "USSGL490200_delivered_orders_obligations_paid": lambda col: self.sf.sum(
+                col
+            ).alias(col),
+            "USSGL490800_authority_outlayed_not_yet_disbursed": lambda col: self.sf.sum(
+                col
+            ).alias(col),
+            "USSGL490800_authority_outlayed_not_yet_disbursed_FYB": lambda col: self.sf.sum(
+                col
+            ).alias(col),
+            "USSGL498200_upward_adj_of_prior_year_deliv_orders_oblig_paid": lambda col: self.sf.sum(
+                col
+            ).alias(col),
+            "deobligations_or_recoveries_or_refunds_from_prior_year": lambda col: self.sf.sum(
+                col
+            ).alias(col),
+            "USSGL487100_downward_adj_prior_year_unpaid_undeliv_orders_oblig": lambda col: self.sf.sum(
+                col
+            ).alias(col),
+            "USSGL497100_downward_adj_prior_year_unpaid_deliv_orders_oblig": lambda col: self.sf.sum(
+                col
+            ).alias(col),
             "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig": lambda col: filter_submission_and_sum(
                 col, self.filters, spark=self.spark
             ),
             "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig": lambda col: filter_submission_and_sum(
                 col, self.filters, spark=self.spark
             ),
-            "USSGL483100_undelivered_orders_obligations_transferred_unpaid": lambda col: self.sf.sum(col).alias(col),
-            "USSGL493100_delivered_orders_obligations_transferred_unpaid": lambda col: self.sf.sum(col).alias(col),
-            "USSGL483200_undeliv_orders_oblig_transferred_prepaid_advanced": lambda col: self.sf.sum(col).alias(col),
-            "last_modified_date": lambda col: self.sf.max(col).alias("max_last_modified_date"),
+            "USSGL483100_undelivered_orders_obligations_transferred_unpaid": lambda col: self.sf.sum(
+                col
+            ).alias(col),
+            "USSGL493100_delivered_orders_obligations_transferred_unpaid": lambda col: self.sf.sum(
+                col
+            ).alias(col),
+            "USSGL483200_undeliv_orders_oblig_transferred_prepaid_advanced": lambda col: self.sf.sum(
+                col
+            ).alias(col),
+            "last_modified_date": lambda col: self.sf.max(col).alias(
+                "max_last_modified_date"
+            ),
         }
 
     @property
     def select_cols(self) -> list[Column | DuckDBSparkColumn]:
         return [
             self.sf.col(col)
-            for col in query_paths["object_class_program_activity"]["federal_account"].keys()
+            for col in query_paths["object_class_program_activity"][
+                "federal_account"
+            ].keys()
             if not col.startswith("last_modified_date")
         ] + [self.sf.col("max_last_modified_date").alias("last_modified_date")]
 
@@ -267,7 +325,9 @@ class TreasuryAccountDownload(ObjectClassProgramActivityMixin, AbstractAccountDo
     def select_cols(self) -> list[Column | DuckDBSparkColumn]:
         return [
             self.sf.col(col)
-            for col in query_paths["object_class_program_activity"]["treasury_account"].keys()
+            for col in query_paths["object_class_program_activity"][
+                "treasury_account"
+            ].keys()
             if not col.startswith("last_modified_date")
         ] + [self.sf.col("max_last_modified_date").alias("last_modified_date")]
 

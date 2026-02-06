@@ -2,9 +2,13 @@
 
 from django.db import models
 
+from usaspending_api.etl.table_specs import TableSpec
+
 
 class TestModel(models.Model):
-    id = models.IntegerField(primary_key=True, help_text="surrogate primary key defined in Broker")
+    id = models.IntegerField(
+        primary_key=True, help_text="surrogate primary key defined in Broker"
+    )
     test_timestamp = models.DateTimeField(null=True, blank=True)
 
     class Meta:
@@ -26,22 +30,17 @@ TEST_TABLE_DELTA = rf"""
 """
 
 TEST_TABLE_SPEC = {
-    "test_table": {
-        "model": TestModel,
-        "is_from_broker": False,
-        "source_table": "test_table",
-        "source_database": "temp",
-        "destination_database": "temp",
-        "swap_table": None,
-        "swap_schema": None,
-        "partition_column": "id",
-        "partition_column_type": "numeric",
-        "is_partition_column_unique": True,
-        "delta_table_create_sql": TEST_TABLE_DELTA,
-        "source_schema": None,
-        "custom_schema": "",
-        "column_names": ["id", "test_timestamp"],
-        "tsvectors": None,
-        "add_hash_field": False,
-    }
+    "test_table": TableSpec(
+        **{
+            "model": TestModel,
+            "source_table": "test_table",
+            "source_database": "temp",
+            "destination_database": "temp",
+            "partition_column": "id",
+            "partition_column_type": "numeric",
+            "is_partition_column_unique": True,
+            "delta_table_create_sql": TEST_TABLE_DELTA,
+            "column_names": ["id", "test_timestamp"],
+        }
+    )
 }
