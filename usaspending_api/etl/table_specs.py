@@ -21,7 +21,7 @@ class TableSpec:
     partition_column_type: Literal["date", "numeric"] | None = None
     is_partition_column_unique: bool = False
     source_schema: dict[str, str] | None = None
-    custom_schema: str | None = None
+    custom_schema: str = ""
     delta_table_create_options: dict[str, str | bool] | None = None
     delta_table_create_partitions: list[str] | None = None
     tsvectors: dict[str, list[str]] | None = None
