@@ -89,6 +89,7 @@ class PostgresToCSVStrategy(AbstractToCSVStrategy):
     ) -> CSVDownloadMetadata:
         start_time = time.perf_counter()
         self._logger.info(f"Downloading data to {destination_path}")
+        row_count = 0
         temp_data_file_name = destination_path.parent / (
             destination_path.name + "_temp"
         )
