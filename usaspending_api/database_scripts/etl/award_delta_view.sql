@@ -128,7 +128,20 @@ SELECT
   CAST("program_activities" AS VARCHAR(65535)) AS program_activities,
   "subaward_count",
   "total_subaward_amount",
-  "transaction_count"
+  "transaction_count",
 
+  CAST("total_obligation" * 100 AS BIGINT) AS total_obligation_sort,
+  CAST("total_outlays" * 100 AS BIGINT) AS total_outlays_sort,
+  CAST("award_amount" * 100 AS BIGINT) AS award_amount_sort,
+  CAST("total_subsidy_cost" * 100 AS BIGINT) AS total_subsidy_cost_sort,
+  CAST("total_loan_value" * 100 AS BIGINT) AS total_loan_value_sort,
+  CAST("original_loan_subsidy_cost" * 100 AS BIGINT) AS original_loan_subsidy_cost_sort,
+  CAST("face_value_loan_guarantee" * 100 AS BIGINT) AS face_value_loan_guarantee_sort,
+  CAST("total_covid_obligation" * 100 AS BIGINT) AS total_covid_obligation_sort,
+  CAST("total_covid_outlay" * 100 AS BIGINT) AS total_covid_outlay_sort,
+  CAST("total_iija_obligation" * 100 AS BIGINT) AS total_iija_obligation_sort,
+  CAST("total_iija_outlay" * 100 AS BIGINT) AS total_iija_outlay_sort,
+  CAST("generated_pragmatic_obligation" * 100 AS BIGINT) AS generated_pragmatic_obligation_sort,
+  CAST("total_subaward_amount" * 100 AS BIGINT) AS total_subaward_amount_sort
 FROM "award_search"
 WHERE "action_date" >= '2007-10-01';

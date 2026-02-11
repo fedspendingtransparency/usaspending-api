@@ -125,7 +125,9 @@ SELECT
     s.subaward_recipient_hash,
     s.subaward_recipient_level,
     s.awarding_toptier_agency_code,
-    s.funding_toptier_agency_code
+    s.funding_toptier_agency_code,
+    CAST(s.award_amount * 100 AS BIGINT) AS award_amount_sort,
+    CAST(s.subaward_amount * 100 AS BIGINT) AS subaward_amount_sort
 FROM
 	rpt.subaward_search s
 LEFT JOIN rpt.award_search a

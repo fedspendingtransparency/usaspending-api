@@ -126,6 +126,11 @@ SELECT
   "tas_components",
   CAST("federal_accounts" AS VARCHAR(65535)) AS federal_accounts,
   "disaster_emergency_fund_codes",
-  CAST("program_activities" AS VARCHAR(65535)) AS program_activities
+  CAST("program_activities" AS VARCHAR(65535)) AS program_activities,
+  CAST("award_amount" * 100 AS BIGINT) AS award_amount_sort,
+  CAST("generated_pragmatic_obligation" * 100 AS BIGINT) AS generated_pragmatic_obligation_sort,
+  CAST("federal_action_obligation" * 100 AS BIGINT) AS federal_action_obligation_sort,
+  CAST("original_loan_subsidy_cost" * 100 AS BIGINT) AS original_loan_subsidy_cost_sort,
+  CAST("face_value_loan_guarantee" * 100 AS BIGINT) AS face_value_loan_guarantee_sort
 FROM "transaction_search"
 WHERE "action_date" >= '2007-10-01';
