@@ -1,8 +1,9 @@
 from datetime import datetime
 
-
-from pyspark.sql import functions as sf, Column, DataFrame, SparkSession
-from usaspending_api.config import CONFIG
+from duckdb.experimental.spark.sql import SparkSession as DuckDBSparkSession
+from duckdb.experimental.spark.sql.column import Column as DuckDBSparkColumn
+from duckdb.experimental.spark.sql.dataframe import DataFrame as DuckDBSparkDataFrame
+from pyspark.sql import Column, DataFrame, SparkSession
 
 from usaspending_api.common.spark.utils import collect_concat, filter_submission_and_sum
 from usaspending_api.download.delta_downloads.abstract_downloads.account_download import (
@@ -13,45 +14,56 @@ from usaspending_api.download.delta_downloads.abstract_downloads.account_downloa
 from usaspending_api.download.delta_downloads.abstract_factories.account_download_factory import (
     AbstractAccountDownloadFactory,
 )
-from usaspending_api.download.delta_downloads.filters.account_filters import AccountDownloadFilters
-from usaspending_api.download.download_utils import construct_data_date_range, obtain_filename_prefix_from_agency_id
+from usaspending_api.download.delta_downloads.filters.account_filters import (
+    AccountDownloadFilters,
+)
+from usaspending_api.download.download_utils import (
+    construct_data_date_range,
+    obtain_filename_prefix_from_agency_id,
+)
 from usaspending_api.download.v2.download_column_historical_lookups import query_paths
 
 
 class AwardFinancialMixin:
     """Shared code between concrete implementations of the AbstractAccountDownload"""
 
-    spark: SparkSession
+    spark: SparkSession | DuckDBSparkSession
 
     filters: AccountDownloadFilters
-    dynamic_filters: Column
+    dynamic_filters: Column | DuckDBSparkColumn
     account_level: AccountLevel
     submission_type: SubmissionType
     start_time: datetime
 
-    @property
-    def download_table(self) -> DataFrame:
-        # TODO: This should be reverted back after Spark downloads are migrated to EMR
-        # return self.spark.table("rpt.award_financial_download")
-        return self.spark.read.format("delta").load(
-            f"s3a://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.DELTA_LAKE_S3_PATH}/rpt/award_financial_download"
-        )
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if isinstance(self.spark, DuckDBSparkSession):
+            from duckdb.experimental.spark.sql import functions
+        else:
+            from pyspark.sql import functions
+
+        self.sf = functions
 
     @property
-    def non_zero_filters(self) -> Column:
+    def download_table(self) -> DataFrame | DuckDBSparkDataFrame:
+        return self.spark.table("rpt.award_financial_download")
+
+    @property
+    def non_zero_filters(self) -> Column | DuckDBSparkColumn:
         return (
-            (sf.col("gross_outlay_amount_FYB_to_period_end") != 0)
-            | (sf.col("USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig") != 0)
-            | (sf.col("USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig") != 0)
-            | (sf.col("transaction_obligated_amount") != 0)
+            (self.sf.col("gross_outlay_amount_FYB_to_period_end") != 0)
+            | (self.sf.col("USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig") != 0)
+            | (self.sf.col("USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig") != 0)
+            | (self.sf.col("transaction_obligated_amount") != 0)
         )
 
     @property
-    def award_categories(self) -> dict[str, Column]:
+    def award_categories(self) -> dict[str, Column | DuckDBSparkColumn]:
         return {
-            "Assistance": (sf.isnotnull(sf.col("is_fpds")) & ~sf.col("is_fpds")),
-            "Contracts": sf.col("is_fpds"),
-            "Unlinked": sf.isnull(sf.col("is_fpds")),
+            "Assistance": (~self.sf.isnull(self.sf.col("is_fpds")) & ~self.sf.col("is_fpds")),
+            "Contracts": self.sf.col("is_fpds"),
+            "Unlinked": self.sf.isnull(self.sf.col("is_fpds")),
         }
 
     def _build_file_names(self) -> list[str]:
@@ -159,7 +171,7 @@ class FederalAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
             "reporting_agency_name": lambda col: collect_concat(col, spark=self.spark),
             "budget_function": lambda col: collect_concat(col, spark=self.spark),
             "budget_subfunction": lambda col: collect_concat(col, spark=self.spark),
-            "transaction_obligated_amount": lambda col: sf.sum(col).alias(col),
+            "transaction_obligated_amount": lambda col: self.sf.sum(col).alias(col),
             "gross_outlay_amount_FYB_to_period_end": lambda col: filter_submission_and_sum(
                 col, self.filters, spark=self.spark
             ),
@@ -169,23 +181,23 @@ class FederalAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
             "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig": lambda col: filter_submission_and_sum(
                 col, self.filters, spark=self.spark
             ),
-            "last_modified_date": lambda col: sf.max(sf.date_format(col, "yyyy-MM-dd")).alias(col),
+            "last_modified_date": lambda col: self.sf.max(col).alias("max_last_modified_date"),
         }
 
     @property
-    def select_cols(self) -> list[Column]:
+    def select_cols(self) -> list[Column | DuckDBSparkColumn]:
         # TODO: As we move more to dataframes we should replace the "query_paths" implementation
         return (
-            [sf.col("federal_owning_agency_name").alias("owning_agency_name")]
+            [self.sf.col("federal_owning_agency_name").alias("owning_agency_name")]
             + [
                 col
                 for col in query_paths["award_financial"]["federal_account"].keys()
                 if col != "owning_agency_name" and not col.startswith("last_modified_date")
             ]
-            + ["last_modified_date"]
+            + [self.sf.col("max_last_modified_date").alias("last_modified_date")]
         )
 
-    def _build_dataframes(self) -> list[DataFrame]:
+    def _build_dataframes(self) -> list[DataFrame | DuckDBSparkDataFrame]:
         # TODO: Should handle the aggregate columns via a new name instead of relying on drops. If the Delta tables are
         #       referenced by their location then the ability to use the table identifier is lost as it doesn't
         #       appear to use the metastore for the Delta tables.
@@ -194,7 +206,7 @@ class FederalAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
             .groupBy(self.group_by_cols)
             .agg(*[agg_func(col) for col, agg_func in self.agg_cols.items()])
             # drop original agg columns from the dataframe to avoid ambiguous column names
-            .drop(*[sf.col(f"award_financial_download.{col}") for col in self.agg_cols])
+            .drop(*[self.sf.col(f"award_financial_download.{col}") for col in self.agg_cols])
             .filter(self.non_zero_filters)
         )
         return [
@@ -213,15 +225,15 @@ class TreasuryAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
     def submission_type(self) -> SubmissionType:
         return SubmissionType.AWARD_FINANCIAL
 
-    def _build_dataframes(self) -> list[DataFrame]:
+    def _build_dataframes(self) -> list[DataFrame | DuckDBSparkDataFrame]:
         select_cols = (
-            [sf.col("treasury_owning_agency_name").alias("owning_agency_name")]
+            [self.sf.col("treasury_owning_agency_name").alias("owning_agency_name")]
             + [
                 col
                 for col in query_paths["award_financial"]["treasury_account"].keys()
                 if col != "owning_agency_name" and not col.startswith("last_modified_date")
             ]
-            + [sf.date_format("last_modified_date", "yyyy-MM-dd").alias("last_modified_date")]
+            + [self.sf.col("last_modified_date")]
         )
         combined_download = self.download_table.filter(self.dynamic_filters & self.non_zero_filters)
         return [
