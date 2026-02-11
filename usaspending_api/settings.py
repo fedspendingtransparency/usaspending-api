@@ -12,6 +12,7 @@ from django.db import DEFAULT_DB_ALIAS
 from django.utils.crypto import get_random_string
 
 from usaspending_api.config import CONFIG
+from usaspending_api.config.utils import convert_json_conf_to_url
 
 # All paths inside the project should be additive to REPO_DIR or APP_DIR
 APP_DIR = Path(__file__).resolve().parent
@@ -135,7 +136,12 @@ if not STATE_DATA_BUCKET:
 FILES_SERVER_BASE_URL = os.environ.get("FILES_SERVER_BASE_URL", "")
 SERVER_BASE_URL = os.environ.get("SERVER_BASE_URL", "")
 # used to determine the API server url based on the frontend URL. To simplify we can now just use the API server url directly.
-USE_LEGACY_SERVER_URL = os.environ.get("USE_LEGACY_SERVER_URL", "True") == "True"
+USE_LEGACY_SERVER_URL = os.environ.get("USE_LEGACY_SERVER_URL", "true").lower() in [
+    "true",
+    "1",
+    "yes",
+]
+
 
 if not FILES_SERVER_BASE_URL:
     # This logic should be re-worked following DNS change for lower environments
@@ -296,17 +302,12 @@ def _configure_database_connection(environment_variable, test_options=None):
     """
     connection_string = os.environ.get(environment_variable)
     try:
-        parts = json.loads(connection_string)
-        host = parts["host"]
-        port = parts["port"]
-        username = parts["username"]
-        password = parts["password"]
-        dbname = parts["dbname"]
-        connection_string = f"postgres://{username}:{password}@{host}:{port}/{dbname}"
-    except KeyError:
-        raise EnvironmentError(f"{environment_variable} is valid JSON, but one or more parts is missing: host, port, username, password, dbname")
+        db_conf = json.loads(connection_string)
+        connection_string = convert_json_conf_to_url(db_conf)
     except json.JSONDecodeError:
-        pass 
+        # If it fails to decode the JSON then proceed expecting the URL formatted connection string
+        pass
+
     if test_options is None:
         test_options = {}
     default_options = {"options": "-c statement_timeout={0}".format(DEFAULT_DB_TIMEOUT_IN_SECONDS * 1000)}
@@ -418,7 +419,10 @@ LOGGING = {
             "format": "%(timestamp)s %(status)s %(method)s %(path)s %(status_code)s %(remote_addr)s %(host)s "
             + "%(response_ms)d %(message)s %(request)s %(traceback)s %(error_msg)s",
         },
-        "detailed": {"format": "[%(asctime)s] [%(levelname)s] - %(message)s", "datefmt": "%Y/%m/%d %H:%M:%S (%Z)"},
+        "detailed": {
+            "format": "[%(asctime)s] [%(levelname)s] - %(message)s",
+            "datefmt": "%Y/%m/%d %H:%M:%S (%Z)",
+        },
         # tracing is used for some spark jobs' logs indirectly
         "tracing": {
             "format": "%(asctime)s.%(msecs)03dZ %(levelname)s %(name)s:%(lineno)s: %(message)s",
@@ -438,22 +442,46 @@ LOGGING = {
             "filename": str(APP_DIR / "logs" / "console.log"),
             "formatter": "specifics",
         },
-        "console": {"level": "DEBUG", "class": "logging.StreamHandler", "formatter": "simpletime"},
-        "script": {"level": "DEBUG", "class": "logging.StreamHandler", "formatter": "detailed"},
+        "console": {
+            "level": "DEBUG",
+            "class": "logging.StreamHandler",
+            "formatter": "simpletime",
+        },
+        "script": {
+            "level": "DEBUG",
+            "class": "logging.StreamHandler",
+            "formatter": "detailed",
+        },
     },
     "loggers": {
         # The root logger; i.e. "all modules"
-        "": {"handlers": ["console", "console_file"], "level": "WARNING", "propagate": False},
+        "": {
+            "handlers": ["console", "console_file"],
+            "level": "WARNING",
+            "propagate": False,
+        },
         # The "root" logger for all usaspending_api modules
-        "usaspending_api": {"handlers": ["console", "console_file"], "level": "DEBUG", "propagate": False},
+        "usaspending_api": {
+            "handlers": ["console", "console_file"],
+            "level": "DEBUG",
+            "propagate": False,
+        },
         # Logger for Django API requests via middleware. See logging.py
         "server": {"handlers": ["server"], "level": "DEBUG", "propagate": False},
         # Catch-all logger (over)used for non-Django-API commands that output to the console
-        "console": {"handlers": ["console", "console_file"], "level": "DEBUG", "propagate": False},
+        "console": {
+            "handlers": ["console", "console_file"],
+            "level": "DEBUG",
+            "propagate": False,
+        },
         # More-verbose logger for ETL scripts
         "script": {"handlers": ["script"], "level": "DEBUG", "propagate": False},
         # Logger used to specifically record exceptions
-        "exceptions": {"handlers": ["console", "console_file"], "level": "ERROR", "propagate": False},
+        "exceptions": {
+            "handlers": ["console", "console_file"],
+            "level": "ERROR",
+            "propagate": False,
+        },
     },
 }
 
@@ -464,13 +492,23 @@ if DEBUG:
             LOGGING["loggers"][logger]["handlers"] += ["console"]
 
     LOGGING["handlers"]["console"]["level"] = "DEBUG"
-    LOGGING["loggers"]["django.db.backends"] = {"handlers": ["console"], "level": "DEBUG", "propagate": False}
+    LOGGING["loggers"]["django.db.backends"] = {
+        "handlers": ["console"],
+        "level": "DEBUG",
+        "propagate": False,
+    }
 
 
 # If caches added or renamed, edit clear_caches in usaspending_api/etl/helpers.py
 CACHES = {
-    "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache", "LOCATION": "default-loc-mem-cache"},
-    "locations": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache", "LOCATION": "locations-loc-mem-cache"},
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "default-loc-mem-cache",
+    },
+    "locations": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "locations-loc-mem-cache",
+    },
 }
 
 # Cache environment - 'local', 'disabled', or 'elasticache'
@@ -489,7 +527,10 @@ CACHE_ENVIRONMENTS = {
             "MASTER_CACHE": os.environ.get("ELASTICACHE_MASTER_STRING", "ELASTICACHE-MASTER-STRING"),
         },
     },
-    "local": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache", "LOCATION": "locations-loc-mem-cache"},
+    "local": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "locations-loc-mem-cache",
+    },
     "disabled": {"BACKEND": "django.core.cache.backends.dummy.DummyCache"},
 }
 
@@ -507,7 +548,14 @@ REST_FRAMEWORK_EXTENSIONS = {
 
 # Django spaghetti-and-meatballs (entity relationship diagram) settings
 SPAGHETTI_SAUCE = {
-    "apps": ["accounts", "awards", "financial_activities", "references", "submissions", "recipient"],
+    "apps": [
+        "accounts",
+        "awards",
+        "financial_activities",
+        "references",
+        "submissions",
+        "recipient",
+    ],
     "show_fields": False,
     "exclude": {},
     "show_proxy": False,

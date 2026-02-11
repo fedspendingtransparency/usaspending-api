@@ -9,15 +9,15 @@
 # - Values will be overridden by ENVIRONMENT variables declared in a user's .env file if present at ../.env
 # - See https://pydantic-docs.helpmanual.io/usage/settings/#field-value-priority for precedence of overrides
 ########################################################################################################################
-import pathlib
-from typing import ClassVar
 import os
-import json
+import pathlib
+
+from typing import ClassVar, Union
 
 from usaspending_api.config.utils import (
     ENV_SPECIFIC_OVERRIDE,
     eval_default_factory_from_root_validator,
-    check_for_full_url_config,
+    check_conf_exists,
     validate_url_and_parts,
     check_required_url_parts,
     backfill_url_parts_config,
@@ -97,29 +97,25 @@ class DefaultConfig(BaseSettings):
 
     # noinspection PyMethodParameters
     # Pydantic returns a classmethod for its validators, so the cls param is correct
-    def _validate_database_url(cls, values, url_conf_name, resource_conf_prefix, required=True):
+    def _validate_database_conf(
+        cls,
+        values: dict[str, Union[str, SecretStr, None]],
+        url_conf_name: str,
+        resource_conf_prefix: str,
+        required: bool = True,
+    ) -> None:
         """Helper function to validate both DATABASE_URLs and their parts"""
 
-        # if JSON formatted connection string from RDS: use exactly that value and skip this validation step
-        try:
-            _ = json.loads(values[url_conf_name])
-            print(f"{url_conf_name} is JSON-formatted connection string")
-            return
-        except:
-            print(f"{url_conf_name} is NOT a JSON-formatted connection string")
-            pass
+        is_full_conf_provided = check_conf_exists(url_conf_name, values)
 
-        # First determine if full URL config was provided.
-        is_full_url_provided = check_for_full_url_config(url_conf_name, values)
-
-        # If the full URL config was provided
+        # If the full URL or JSON config was provided
         # - it should take precedence
         # - its values will be used to backfill any missing URL parts stored as separate config vars
-        if is_full_url_provided:
+        if is_full_conf_provided:
             values = backfill_url_parts_config(cls, url_conf_name, resource_conf_prefix, values)
 
         # If the full URL config is not provided, try to build-it-up from provided parts, then set the full URL
-        if not is_full_url_provided:
+        if not is_full_conf_provided:
             # First validate that we have enough parts to provide it
             enough_parts = check_required_url_parts(
                 error_if_missing=required,
@@ -160,8 +156,12 @@ class DefaultConfig(BaseSettings):
         be inconsistent, which will in turn raise a ``pydantic.ValidationError`` at configuration time.
         """
         # noinspection PyArgumentList
-        cls._validate_database_url(
-            cls=cls, values=values, url_conf_name="DATABASE_URL", resource_conf_prefix="USASPENDING_DB", required=True
+        cls._validate_database_conf(
+            cls=cls,
+            values=values,
+            url_conf_name="DATABASE_URL",
+            resource_conf_prefix="USASPENDING_DB",
+            required=True,
         )
         return values
 
@@ -178,7 +178,7 @@ class DefaultConfig(BaseSettings):
         be inconsistent, which will in turn raise a ``pydantic.ValidationError`` at configuration time.
         """
         # noinspection PyArgumentList
-        cls._validate_database_url(
+        cls._validate_database_conf(
             cls=cls,
             values=values,
             url_conf_name="BROKER_DB",
@@ -211,7 +211,11 @@ class DefaultConfig(BaseSettings):
         """
         # noinspection PyArgumentList
         cls._validate_http_url(
-            cls=cls, values=values, url_conf_name="ES_HOSTNAME", resource_conf_prefix="ES", required=False
+            cls=cls,
+            values=values,
+            url_conf_name="ES_HOSTNAME",
+            resource_conf_prefix="ES",
+            required=False,
         )
         return values
 
@@ -221,7 +225,7 @@ class DefaultConfig(BaseSettings):
         """Helper function to validate complete URLs and their individual parts when either/both are provided"""
 
         # First determine if full URL config was provided.
-        is_full_url_provided = check_for_full_url_config(url_conf_name, values)
+        is_full_url_provided = check_conf_exists(url_conf_name, values)
 
         # If the full URL config was provided
         # - it should take precedence

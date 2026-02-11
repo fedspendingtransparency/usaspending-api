@@ -10,12 +10,18 @@ from rest_framework.views import APIView
 
 from usaspending_api.broker.lookups import EXTERNAL_DATA_TYPE_DICT
 from usaspending_api.broker.models import ExternalDataLoadDate
-from usaspending_api.common.api_versioning import API_TRANSFORM_FUNCTIONS, api_transformations
+from usaspending_api.common.api_versioning import (
+    API_TRANSFORM_FUNCTIONS,
+    api_transformations,
+)
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.dict_helpers import order_nested_object
 from usaspending_api.common.spark.jobs import LocalStrategy, SparkJobs
 from usaspending_api.common.sqs.sqs_handler import DownloadLogic, get_sqs_queue
-from usaspending_api.download.download_utils import create_unique_filename, log_new_download_job
+from usaspending_api.download.download_utils import (
+    create_unique_filename,
+    log_new_download_job,
+)
 from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.download.filestreaming.s3_handler import S3Handler
 from usaspending_api.download.helpers import write_to_download_log as write_to_log
@@ -129,7 +135,10 @@ class BaseDownloadViewSet(APIView):
             else:
                 queue_name = settings.BULK_DOWNLOAD_SQS_QUEUE_NAME
                 message_body = json.dumps(
-                    {"download_job_id": download_job.download_job_id, "download_logic": DownloadLogic.POSTGRES}
+                    {
+                        "download_job_id": download_job.download_job_id,
+                        "download_logic": DownloadLogic.POSTGRES,
+                    }
                 )
 
             # Send a SQS message that will be processed by another server which will eventually run
@@ -185,7 +194,12 @@ class BaseDownloadViewSet(APIView):
         elif download_types and "elasticsearch_transactions" in download_types:
             external_data_type_name_list = ["es_transactions"]
         else:
-            external_data_type_name_list = ["fpds", "fabs", "es_transactions", "es_awards"]
+            external_data_type_name_list = [
+                "fpds",
+                "fabs",
+                "es_transactions",
+                "es_awards",
+            ]
 
         external_data_type_id_list = [
             id for name, id in EXTERNAL_DATA_TYPE_DICT.items() if name in external_data_type_name_list
@@ -219,7 +233,8 @@ def get_file_path(file_name: str) -> str:
         file_path = settings.CSV_LOCAL_PATH + file_name
     else:
         s3_handler = S3Handler(
-            bucket_name=settings.BULK_DOWNLOAD_S3_BUCKET_NAME, redirect_dir=settings.BULK_DOWNLOAD_S3_REDIRECT_DIR
+            bucket_name=settings.BULK_DOWNLOAD_S3_BUCKET_NAME,
+            redirect_dir=settings.BULK_DOWNLOAD_S3_REDIRECT_DIR,
         )
         file_path = s3_handler.get_simple_url(file_name=file_name)
 

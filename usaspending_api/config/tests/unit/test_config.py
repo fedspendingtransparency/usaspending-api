@@ -1,3 +1,4 @@
+import json
 import shutil
 import sys
 from unittest.mock import patch
@@ -469,8 +470,8 @@ def test_database_urls_only_backfills_none_parts():
 
 
 def test_database_url_only_backfills_placeholder_parts():
-    """Test that only providing a value for DATABASE_URL backfills the CONFIG.USASPENDING_DB_* parts and keeps them
-    consistent. Similarly with BROKER_DB and CONFIG.BROKER_DB_* parts.
+    """Test that only providing a URL value for DATABASE_URL backfills the CONFIG.USASPENDING_DB_* parts and
+    keeps them consistent. Similarly with BROKER_DB and CONFIG.BROKER_DB_* parts.
 
     - Use a FRESH (empty) set of environment variables
     - Use NO .env file
@@ -513,6 +514,86 @@ def test_database_url_only_backfills_placeholder_parts():
         assert cfg.BROKER_DB_NAME == "fresh_new_db_name_broker"
         assert cfg.BROKER_DB_USER == "broker"
         assert cfg.BROKER_DB_PASSWORD.get_secret_value() == "pass"
+
+
+def test_database_json_string_only_backfills_placeholder_parts():
+    """Test that only providing a JSON value for DATABASE_URL backfills the CONFIG.USASPENDING_DB_* parts and
+    keeps them consistent. Similarly with BROKER_DB and CONFIG.BROKER_DB_* parts.
+
+    - Use a FRESH (empty) set of environment variables
+    - Use NO .env file
+    - Build-out a new subclass of DefaultConfig, which overrides the part values to ENV_SPECIFIC_PLACEHOLDERs
+    - Instantiate the config with a DATABASE_URL and BROKER_DB env vars (ONLY) set
+    """
+    with mock.patch.dict(
+        os.environ,
+        {
+            ENV_CODE_VAR: _UnitTestDbPartsPlaceholderConfig.ENV_CODE,
+            "DATABASE_URL": json.dumps(
+                {
+                    "username": "dummy",
+                    "password": "pwd",
+                    "host": "foobar",
+                    "port": "12345",
+                    "dbname": "fresh_new_db_name",
+                }
+            ),
+            "BROKER_DB": json.dumps(
+                {
+                    "username": "broker",
+                    "password": "pass",
+                    "host": "broker-foobar",
+                    "port": 54321,
+                    "dbname": "fresh_new_db_name_broker",
+                }
+            ),
+        },
+        clear=True,
+    ):
+        cfg = _UnitTestDbPartsPlaceholderConfig(_env_file=None)
+
+        assert cfg.DATABASE_URL is not None
+        assert cfg.USASPENDING_DB_HOST is not None
+        assert cfg.USASPENDING_DB_PORT is not None
+        assert cfg.USASPENDING_DB_NAME is not None
+        assert cfg.USASPENDING_DB_USER is not None
+        assert cfg.USASPENDING_DB_PASSWORD is not None
+
+        assert cfg.USASPENDING_DB_HOST == "foobar"
+        assert cfg.USASPENDING_DB_PORT == "12345"
+        assert cfg.USASPENDING_DB_NAME == "fresh_new_db_name"
+        assert cfg.USASPENDING_DB_USER == "dummy"
+        assert cfg.USASPENDING_DB_PASSWORD.get_secret_value() == "pwd"
+
+        assert cfg.BROKER_DB is not None
+        assert cfg.BROKER_DB_HOST is not None
+        assert cfg.BROKER_DB_PORT is not None
+        assert cfg.BROKER_DB_NAME is not None
+        assert cfg.BROKER_DB_USER is not None
+        assert cfg.BROKER_DB_PASSWORD is not None
+
+        assert cfg.BROKER_DB_HOST == "broker-foobar"
+        assert cfg.BROKER_DB_PORT == "54321"
+        assert cfg.BROKER_DB_NAME == "fresh_new_db_name_broker"
+        assert cfg.BROKER_DB_USER == "broker"
+        assert cfg.BROKER_DB_PASSWORD.get_secret_value() == "pass"
+
+
+def test_database_json_string_checks_conf_values():
+    """Test that when providing a JSON formatted string all expected components are found"""
+    with mock.patch.dict(
+        os.environ,
+        {
+            ENV_CODE_VAR: _UnitTestDbPartsPlaceholderConfig.ENV_CODE,
+            "DATABASE_URL": json.dumps({"username": "dummy", "port": "12345", "dbname": "fresh_new_db_name"}),
+        },
+        clear=True,
+    ):
+        expected_error = "The JSON provided for the DB CONF is missing values: {'host', 'password'}"
+        try:
+            _UnitTestDbPartsPlaceholderConfig(_env_file=None)
+        except ValidationError as exc:
+            assert expected_error in str(exc)
 
 
 def test_database_url_none_parts_will_build_database_url_with_only_parts_set():
@@ -1107,7 +1188,7 @@ def test_override_with_dotenv_file_for_subclass_overridden_var(tmpdir):
         if Path(_PROJECT_ROOT_DIR / ".env").exists():
             shutil.copy(str(_PROJECT_ROOT_DIR / ".env"), dotenv_file)
         with open(dotenv_file, "w"):
-            dotenv_file.write(f"COMPONENT_NAME={dotenv_val}\n" f"UNITTEST_CFG_A={dotenv_val_a}", "w")
+            dotenv_file.write(f"COMPONENT_NAME={dotenv_val}\nUNITTEST_CFG_A={dotenv_val_a}", "w")
         dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
 
         _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
@@ -1350,7 +1431,11 @@ def test_override_with_constructor_kwargs():
 
 def test_override_with_command_line_args():
     assert CONFIG.COMPONENT_NAME == "USAspending API"
-    test_args = ["dummy_program", "--config", "COMPONENT_NAME=test_override_with_command_line_args"]
+    test_args = [
+        "dummy_program",
+        "--config",
+        "COMPONENT_NAME=test_override_with_command_line_args",
+    ]
     with patch.object(sys, "argv", test_args):
         _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
         app_cfg_copy = _load_config()

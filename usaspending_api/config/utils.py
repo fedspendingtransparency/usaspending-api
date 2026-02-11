@@ -1,3 +1,4 @@
+import json
 from typing import Any, Dict, Callable, TypeVar, Union
 from urllib.parse import ParseResult, urlparse, parse_qs
 
@@ -17,7 +18,11 @@ USER_SPECIFIC_OVERRIDE = "__USER_SPECIFIC_OVERRIDE__"
 # is provided by a factory function (likely one provided within a function annotated with @pydantic.validator)
 FACTORY_PROVIDED_VALUE = "__FACTORY_PROVIDED_VALUE__"
 
-CONFIG_VAR_PLACEHOLDERS = [ENV_SPECIFIC_OVERRIDE, USER_SPECIFIC_OVERRIDE, FACTORY_PROVIDED_VALUE]
+CONFIG_VAR_PLACEHOLDERS = [
+    ENV_SPECIFIC_OVERRIDE,
+    USER_SPECIFIC_OVERRIDE,
+    FACTORY_PROVIDED_VALUE,
+]
 
 TBaseSettings = TypeVar("TBaseSettings", bound=BaseSettings)
 
@@ -146,7 +151,11 @@ def eval_default_factory_from_root_validator(
     assigned_or_sourced_value = configured_vars[config_var_name] if config_var_name in configured_vars else None
     config_var = config_class.__fields__[config_var_name]
     produced_value = eval_default_factory(
-        config_class, assigned_or_sourced_value, configured_vars, config_var, factory_func
+        config_class,
+        assigned_or_sourced_value,
+        configured_vars,
+        config_var,
+        factory_func,
     )
     configured_vars[config_var_name] = produced_value
     return configured_vars
@@ -181,11 +190,17 @@ def parse_pg_uri(pg_uri) -> (ParseResult, str, str):
     return parse_http_url(pg_uri)
 
 
-def check_for_full_url_config(url_conf_name, values):
+def check_conf_exists(url_conf_name: str, values: dict[str, Union[str, SecretStr, None]]) -> bool:
     return values[url_conf_name] and values[url_conf_name] not in CONFIG_VAR_PLACEHOLDERS
 
 
 def backfill_url_parts_config(cls, url_conf_name, resource_conf_prefix, values):
+    try:
+        conf_value = json.loads(values[url_conf_name])
+        values[url_conf_name] = convert_json_conf_to_url(conf_value)
+    except json.JSONDecodeError:
+        # If it fails to decode the JSON then proceed expecting the URL formatted connection string
+        pass
     url_parts, username, password = parse_http_url(values[url_conf_name])
     backfill_configs = {
         f"{resource_conf_prefix}_SCHEME": lambda: url_parts.scheme,
@@ -257,7 +272,10 @@ def validate_url_and_parts(url_conf_name, resource_conf_prefix, values):
         or url_parts.port is None
         and values[f"{resource_conf_prefix}_PORT"] is not None
     ):
-        url_config_errors[f"{resource_conf_prefix}_PORT"] = (values[f"{resource_conf_prefix}_PORT"], url_parts.port)
+        url_config_errors[f"{resource_conf_prefix}_PORT"] = (
+            values[f"{resource_conf_prefix}_PORT"],
+            url_parts.port,
+        )
     # Validate resource name (path)
     if (
         (
@@ -274,7 +292,10 @@ def validate_url_and_parts(url_conf_name, resource_conf_prefix, values):
         )
     # Validate username
     if url_username != values[f"{resource_conf_prefix}_USER"]:
-        url_config_errors[f"{resource_conf_prefix}_USER"] = (values[f"{resource_conf_prefix}_USER"], url_username)
+        url_config_errors[f"{resource_conf_prefix}_USER"] = (
+            values[f"{resource_conf_prefix}_USER"],
+            url_username,
+        )
     # Validate password
     if url_password != unveil(values[f"{resource_conf_prefix}_PASSWORD"]):
         # NOTE: Keeping password text obfuscated in the error output
@@ -294,3 +315,11 @@ def validate_url_and_parts(url_conf_name, resource_conf_prefix, values):
         for k, v in url_config_errors.items():
             err_msg += f"\tPart: {k}, Part Value Provided: {v[0]}, Value found in {url_conf_name}: {v[1]}\n"
         raise ValueError(err_msg)
+
+
+def convert_json_conf_to_url(db_conf: dict[str, str]) -> str:
+    expected_keys = {"host", "port", "username", "password", "dbname"}
+    actual_keys = set(db_conf)
+    if len(expected_keys - actual_keys) > 0:
+        raise ValueError(f"The JSON provided for the DB CONF is missing values: {expected_keys - actual_keys}")
+    return "postgres://{username}:{password}@{host}:{port}/{dbname}".format(**db_conf)
