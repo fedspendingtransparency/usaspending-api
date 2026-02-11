@@ -390,9 +390,7 @@ def load_es_index(
     )
 
 
-def merge_delta_table(
-    spark: SparkSession, source_df: DataFrame, delta_table_name: str, merge_column: str
-) -> None:
+def merge_delta_table(spark: SparkSession, source_df: DataFrame, delta_table_name: str, merge_column: str) -> None:
     source_df.create_or_replace_temporary_view("temp_table")
 
     spark.sql(
@@ -409,7 +407,7 @@ def diff(
     left: DataFrame,
     right: DataFrame,
     unique_key_col: str = "id",
-    compare_cols: list[str] | None = None,
+    compare_cols: list[str] = None,
     include_unchanged_rows: bool = False,
 ) -> DataFrame:
     """Compares two Spark DataFrames that share a schema and returns row-level differences in a DataFrame
@@ -563,8 +561,7 @@ def convert_array_cols_to_string(
               2. Escape any quotes inside the array element with backslash.
               - A case that involves all of this will yield CSV field value like this when viewed in a text editor,
                 assuming Spark CSV options are: quote='"', escape='"' (the default is for it to match quote)
-                ...,"{""{\""simple\"": \""elem1\"", \""other\"": \""elem1\""}"",
-                    ""{\""simple\"": \""elem2\"", \""other\"": \""elem2\""}""}",...
+                ...,"{""{\""simple\"": \""elem1\"", \""other\"": \""elem1\""}"",...
     """
     arr_open_bracket = "["
     arr_close_bracket = "]"
@@ -599,7 +596,8 @@ def convert_array_cols_to_string(
                                     # Special handling in case of data that already has either a quote " or backslash \
                                     # inside an array element
                                     # First replace any single backslash character \ with TWO \\ (an escaped backslash)
-                                    # Then replace quote " character with \" (escaped quote, inside a quoted array elem)
+                                    # Then replace any quote " character with \"
+                                    #   (escaped quote, inside a quoted array elem)
                                     # NOTE: these regexp_replace get sent down to a Java replaceAll, which will require
                                     #       FOUR backslashes to represent ONE
                                     regexp_replace(
@@ -649,7 +647,7 @@ def _generate_global_view_sql_strings(tables: list[str], jdbc_url: str) -> list[
 
 def create_ref_temp_views(  # noqa: PLR0912
     spark: SparkSession | DuckDBSparkSession, create_broker_views: bool = False
-) -> None:
+) -> None:  # noqa: PLR0912
     """Create global temporary Spark reference views that sit atop remote PostgreSQL RDS tables
     Setting create_broker_views to True will create views for all tables list in _BROKER_REF_TABLES
     Note: They will all be listed under global_temp.{table_name}
@@ -792,9 +790,8 @@ def write_csv_file(  # noqa: PLR0913
     spark: SparkSession,
     df: DataFrame,
     parts_dir: str,
-    max_records_per_file: int = EXCEL_ROW_LIMIT,
     overwrite: bool = True,
-    logger: logging.Logger | None = None,
+    logger: logging.Logger = None,
     delimiter: str = ",",
 ) -> int:
     """Write DataFrame data to CSV file parts.
@@ -804,8 +801,6 @@ def write_csv_file(  # noqa: PLR0913
         parts_dir: Path to dir that will contain the outputted parts files from partitions
         num_partitions: Indicates the number of partitions to use when writing the Dataframe
         overwrite: Whether to replace the file CSV files if they already exist by that name
-        max_records_per_file: Suggestion to Spark of how many records to put in each written CSV file part,
-            if it will end up writing multiple files.
         logger: The logger to use. If one note provided (e.g. to log to console or stdout) the underlying JVM-based
             Logger will be extracted from the ``spark`` ``SparkSession`` and used as the logger.
         delimiter: Charactor used to separate columns in the CSV
@@ -822,10 +817,10 @@ def write_csv_file(  # noqa: PLR0913
         f"Writing source data DataFrame to csv part files for file {parts_dir}..."
     )
     df_record_count = df.count()
-    num_partitions = math.ceil(df_record_count / max_records_per_file) or 1
+    num_partitions = math.ceil(df_record_count / EXCEL_ROW_LIMIT) or 1
     df.repartition(num_partitions).write.options(
         # NOTE: this is a suggestion, to be used by Spark if partitions yield multiple files
-        maxRecordsPerFile=max_records_per_file,
+        maxRecordsPerFile=EXCEL_ROW_LIMIT,
     ).csv(
         path=parts_dir,
         header=True,
@@ -848,7 +843,6 @@ def write_csv_file_duckdb(
     df: DuckDBDataFrame,
     download_file_name: str,
     temp_csv_directory_path: str = CSV_LOCAL_PATH,
-    max_records_per_file: int = EXCEL_ROW_LIMIT,
     logger: logging.Logger | None = None,
     delimiter: str = ",",
 ) -> tuple[int, list[str] | list]:
@@ -858,8 +852,6 @@ def write_csv_file_duckdb(
         download_file_name: Name of the download being generated.
         temp_csv_directory_path: Directory that will contain the individual CSV files before zipping.
             Defaults to CSV_LOCAL_PATH
-        max_records_per_file: Max number of records to put in each written CSV file.
-            Defaults to EXCEL_ROW_LIMIT
         logger: Logging instance to use.
             Defaults to None
         delimiter: Charactor used to separate columns in the CSV
@@ -870,7 +862,7 @@ def write_csv_file_duckdb(
     """
     start = time.time()
     _pandas_df = df.toPandas()
-    _pandas_df["file_number"] = (_pandas_df.index // max_records_per_file) + 1
+    _pandas_df["file_number"] = (_pandas_df.index // EXCEL_ROW_LIMIT) + 1
     df_record_count = len(_pandas_df)
     rel = duckdb.from_df(_pandas_df)
 
@@ -894,15 +886,13 @@ def write_csv_file_duckdb(
         f"{temp_csv_directory_path}{download_file_name}/{d}"
         for d in os.listdir(f"{temp_csv_directory_path}{download_file_name}")
     ]
-    for dir in _partition_dirs:
-        _old_csv_path = f"{dir}/{os.listdir(dir)[0]}"
-        _new_csv_path = (
-            f"{temp_csv_directory_path}{download_file_name}"
-            f"/{download_file_name}_{dir.split('=')[1].zfill(2)}.csv"
-        )
+    for _dir in _partition_dirs:
+        _file_number = _dir.split("=")[1].zfill(2)
+        _old_csv_path = f"{_dir}/{os.listdir(_dir)[0]}"
+        _new_csv_path = f"{temp_csv_directory_path}{download_file_name}/{download_file_name}_{_file_number}.csv"
         shutil.move(_old_csv_path, _new_csv_path)
         full_file_paths.append(_new_csv_path)
-        os.rmdir(dir)
+        os.rmdir(_dir)
 
     logger.info(
         f"{temp_csv_directory_path}{download_file_name} contains {df_record_count:,} rows of data"
