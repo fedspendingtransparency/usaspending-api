@@ -72,7 +72,11 @@ award_assistance_mapping = {
     **direct_payment_award_mapping,
     **other_award_mapping,
 }
-non_loan_assistance_award_mapping = {**grant_award_mapping, **direct_payment_award_mapping, **other_award_mapping}
+non_loan_assistance_award_mapping = {
+    **grant_award_mapping,
+    **direct_payment_award_mapping,
+    **other_award_mapping,
+}
 
 # TODO: include IDV mappings in the award_type_mapping and update award_filter.py
 award_type_mapping = {
@@ -105,9 +109,24 @@ award_type_mapping = {
     # 'F': 'Cooperative Agreement',
     # 'G': 'Grant for Research',
     # 'S': 'Funded Space Act Agreement',
-    # 'T': 'Training Grant'
+    # 'T': 'Training Grant',
+    "F001": "Grant",
+    "F002": "Cooperative Agreement",
+    "F003": "Direct Loan",
+    "F004": "Loan Guarantee",
+    "F005": "Indemnity / Insurance (non-loan)",
+    "F006": "Direct Payment for Specified Use",
+    "F007": "Direct Payment with Unrestricted Use",
+    "F008": "Asset Forfeiture / Equitable Sharing",
+    "F009": "Sale, Exchange, or Donation of Property and Goods",
+    "F010": "Other Financial Assistance",
 }
-contract_type_mapping = {"A": "BPA Call", "B": "Purchase Order", "C": "Delivery Order", "D": "Definitive Contract"}
+contract_type_mapping = {
+    "A": "BPA Call",
+    "B": "Purchase Order",
+    "C": "Delivery Order",
+    "D": "Definitive Contract",
+}
 idv_type_mapping = {
     "IDV_A": "GWAC Government Wide Acquisition Contract",
     "IDV_B": "IDC Multi-Agency Contract, Other Indefinite Delivery Contract",
@@ -118,18 +137,47 @@ idv_type_mapping = {
     "IDV_D": "BOA Basic Ordering Agreement",
     "IDV_E": "BPA Blanket Purchase Agreement",
 }
-grant_type_mapping = {"02": "Block Grant", "03": "Formula Grant", "04": "Project Grant", "05": "Cooperative Agreement"}
-direct_payment_type_mapping = {"06": "Direct Payment for Specified Use", "10": "Direct Payment with Unrestricted Use"}
-loan_type_mapping = {"07": "Direct Loan", "08": "Guaranteed/Insured Loan"}
+grant_type_mapping = {
+    "02": "Block Grant",
+    "03": "Formula Grant",
+    "04": "Project Grant",
+    "05": "Cooperative Agreement",
+    "F001": "Grant",
+    "F002": "Cooperative Agreement",
+}
+direct_payment_type_mapping = {
+    "06": "Direct Payment for Specified Use",
+    "10": "Direct Payment with Unrestricted Use",
+    "F006": "Direct Payment for Specified Use",
+    "F007": "Direct Payment with Unrestricted Use",
+}
+loan_type_mapping = {
+    "07": "Direct Loan",
+    "08": "Guaranteed/Insured Loan",
+    "F003": "Direct Loan",
+    "F004": "Loan Guarantee",
+}
 # -1 is a derived type that we added as a "catch-all" for any invalid `type` values
-other_type_mapping = {"09": "Insurance", "11": "Other Financial Assistance", "-1": "Not Specified"}
+other_type_mapping = {
+    "09": "Insurance",
+    "11": "Other Financial Assistance",
+    "-1": "Not Specified",
+    "F005": "Indemnity / Insurance (non-loan)",
+    "F008": "Asset Forfeiture / Equitable Sharing",
+    "F009": "Sale, Exchange, or Donation of Property and Goods",
+    "F010": "Other Financial Assistance",
+}
 assistance_type_mapping = {
     **grant_type_mapping,
     **direct_payment_type_mapping,
     **loan_type_mapping,
     **other_type_mapping,
 }
-non_loan_assistance_type_mapping = {**grant_type_mapping, **direct_payment_type_mapping, **other_type_mapping}
+non_loan_assistance_type_mapping = {
+    **grant_type_mapping,
+    **direct_payment_type_mapping,
+    **other_type_mapping,
+}
 procurement_type_mapping = {**contract_type_mapping, **idv_type_mapping}
 all_award_types_mappings = {
     "contracts": list(contract_type_mapping),
@@ -141,9 +189,13 @@ all_award_types_mappings = {
 }
 
 all_awards_types_to_category = {
-    type_code: category for category, type_codes in all_award_types_mappings.items() for type_code in type_codes
+    type_code: category
+    for category, type_codes in all_award_types_mappings.items()
+    for type_code in type_codes
 }
 
 all_subaward_types = ["grant", "procurement"]
 
-SUBAWARD_MAPPING_LOOKUP = {key: value.replace(".keyword", "") for key, value in subaward_mapping.items()}
+SUBAWARD_MAPPING_LOOKUP = {
+    key: value.replace(".keyword", "") for key, value in subaward_mapping.items()
+}

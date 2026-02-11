@@ -1,4 +1,7 @@
-from pyspark.sql import functions as sf, Column, DataFrame, SparkSession
+from duckdb.experimental.spark.sql import SparkSession as DuckDBSparkSession
+from duckdb.experimental.spark.sql.column import Column as DuckDBSparkColumn
+from duckdb.experimental.spark.sql.dataframe import DataFrame as DuckDBSparkDataFrame
+from pyspark.sql import Column, DataFrame, SparkSession
 
 from usaspending_api.common.spark.utils import collect_concat
 from usaspending_api.download.delta_downloads.abstract_downloads.account_download import (
@@ -10,30 +13,42 @@ from usaspending_api.download.delta_downloads.abstract_factories.account_downloa
     AbstractAccountDownloadFactory,
     AccountDownloadConditionName,
 )
-from usaspending_api.download.delta_downloads.filters.account_filters import AccountDownloadFilters
+from usaspending_api.download.delta_downloads.filters.account_filters import (
+    AccountDownloadFilters,
+)
 from usaspending_api.submissions.helpers import get_submission_ids_for_periods
 
 
 class AccountBalancesMixin:
     """Shared code between concrete implementations of the AbstractAccountDownload"""
 
-    spark: SparkSession
+    spark: SparkSession | DuckDBSparkSession
 
     filters: AccountDownloadFilters
-    dynamic_filters: Column
+    dynamic_filters: Column | DuckDBSparkColumn
 
     group_by_cols: list[str]
-    agg_cols: list[Column]
-    select_cols: list[Column]
+    agg_cols: list[Column | DuckDBSparkColumn]
+    select_cols: list[Column | DuckDBSparkColumn]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if isinstance(self.spark, DuckDBSparkSession):
+            from duckdb.experimental.spark.sql import functions
+        else:
+            from pyspark.sql import functions
+
+        self.sf = functions
 
     @property
-    def download_table(self) -> DataFrame:
+    def download_table(self) -> DataFrame | DuckDBSparkDataFrame:
         return self.spark.table("rpt.account_balances_download")
 
-    def _build_dataframes(self) -> list[DataFrame]:
+    def _build_dataframes(self) -> list[DataFrame | DuckDBSparkDataFrame]:
         return [
             self.download_table.filter(
-                sf.col("submission_id").isin(
+                self.sf.col("submission_id").isin(
                     get_submission_ids_for_periods(
                         self.filters.reporting_fiscal_year,
                         self.filters.reporting_fiscal_quarter,
@@ -49,7 +64,6 @@ class AccountBalancesMixin:
 
 
 class FederalAccountDownload(AccountBalancesMixin, AbstractAccountDownload):
-
     @property
     def account_level(self) -> AccountLevel:
         return AccountLevel.FEDERAL_ACCOUNT
@@ -60,84 +74,115 @@ class FederalAccountDownload(AccountBalancesMixin, AbstractAccountDownload):
 
     @property
     def group_by_cols(self) -> list[str]:
-        return ["federal_account_symbol", "owning_agency_name", "federal_account_name", "submission_period"]
+        return [
+            "federal_account_symbol",
+            "owning_agency_name",
+            "federal_account_name",
+            "submission_period",
+        ]
 
     @property
-    def agg_cols(self) -> list[Column]:
+    def agg_cols(self) -> list[Column | DuckDBSparkColumn]:
         return [
             collect_concat("reporting_agency_name", spark=self.spark),
             collect_concat("agency_identifier_name", spark=self.spark),
             collect_concat("budget_function", spark=self.spark),
             collect_concat("budget_subfunction", spark=self.spark),
-            sf.sum(sf.col("budget_authority_unobligated_balance_brought_forward")).alias(
-                "budget_authority_unobligated_balance_brought_forward"
+            self.sf.sum(
+                self.sf.col("budget_authority_unobligated_balance_brought_forward")
+            ).alias("budget_authority_unobligated_balance_brought_forward"),
+            self.sf.sum(
+                self.sf.col("adjustments_to_unobligated_balance_brought_forward_cpe")
+            ).alias("adjustments_to_unobligated_balance_brought_forward_cpe"),
+            self.sf.sum(self.sf.col("budget_authority_appropriated_amount")).alias(
+                "budget_authority_appropriated_amount"
             ),
-            sf.sum(sf.col("adjustments_to_unobligated_balance_brought_forward_cpe")).alias(
-                "adjustments_to_unobligated_balance_brought_forward_cpe"
+            self.sf.sum(self.sf.col("borrowing_authority_amount")).alias(
+                "borrowing_authority_amount"
             ),
-            sf.sum(sf.col("budget_authority_appropriated_amount")).alias("budget_authority_appropriated_amount"),
-            sf.sum(sf.col("borrowing_authority_amount")).alias("borrowing_authority_amount"),
-            sf.sum(sf.col("contract_authority_amount")).alias("contract_authority_amount"),
-            sf.sum(sf.col("spending_authority_from_offsetting_collections_amount")).alias(
-                "spending_authority_from_offsetting_collections_amount"
+            self.sf.sum(self.sf.col("contract_authority_amount")).alias(
+                "contract_authority_amount"
             ),
-            sf.sum(sf.col("total_other_budgetary_resources_amount")).alias("total_other_budgetary_resources_amount"),
-            sf.sum(sf.col("total_budgetary_resources")).alias("total_budgetary_resources"),
-            sf.sum(sf.col("obligations_incurred")).alias("obligations_incurred"),
-            sf.sum(sf.col("deobligations_or_recoveries_or_refunds_from_prior_year")).alias(
-                "deobligations_or_recoveries_or_refunds_from_prior_year"
+            self.sf.sum(
+                self.sf.col("spending_authority_from_offsetting_collections_amount")
+            ).alias("spending_authority_from_offsetting_collections_amount"),
+            self.sf.sum(self.sf.col("total_other_budgetary_resources_amount")).alias(
+                "total_other_budgetary_resources_amount"
             ),
-            sf.sum(sf.col("unobligated_balance")).alias("unobligated_balance"),
-            sf.sum(
-                sf.when(
+            self.sf.sum(self.sf.col("total_budgetary_resources")).alias(
+                "total_budgetary_resources"
+            ),
+            self.sf.sum(self.sf.col("obligations_incurred")).alias(
+                "obligations_incurred"
+            ),
+            self.sf.sum(
+                self.sf.col("deobligations_or_recoveries_or_refunds_from_prior_year")
+            ).alias("deobligations_or_recoveries_or_refunds_from_prior_year"),
+            self.sf.sum(self.sf.col("unobligated_balance")).alias(
+                "unobligated_balance"
+            ),
+            self.sf.sum(
+                self.sf.when(
                     (
                         (
-                            sf.col("quarter_format_flag")
-                            & (sf.col("reporting_fiscal_quarter") == self.filters.reporting_fiscal_quarter)
+                            self.sf.col("quarter_format_flag")
+                            & (
+                                self.sf.col("reporting_fiscal_quarter")
+                                == self.filters.reporting_fiscal_quarter
+                            )
                         )
                         | (
-                            ~sf.col("quarter_format_flag")
-                            & (sf.col("reporting_fiscal_period") == self.filters.reporting_fiscal_period)
+                            ~self.sf.col("quarter_format_flag")
+                            & (
+                                self.sf.col("reporting_fiscal_period")
+                                == self.filters.reporting_fiscal_period
+                            )
                         )
                     )
-                    & (sf.col("reporting_fiscal_year") == self.filters.reporting_fiscal_year),
-                    sf.col("gross_outlay_amount"),
+                    & (
+                        self.sf.col("reporting_fiscal_year")
+                        == self.filters.reporting_fiscal_year
+                    ),
+                    self.sf.col("gross_outlay_amount"),
                 ).otherwise(0)
             ).alias("gross_outlay_amount"),
-            sf.sum(sf.col("status_of_budgetary_resources_total")).alias("status_of_budgetary_resources_total"),
-            sf.max(sf.date_format("last_modified_date", "yyyy-MM-dd")).alias("last_modified_date"),
+            self.sf.sum(self.sf.col("status_of_budgetary_resources_total")).alias(
+                "status_of_budgetary_resources_total"
+            ),
+            self.sf.max(self.sf.col("last_modified_date")).alias(
+                "max_last_modified_date"
+            ),
         ]
 
     @property
     def select_cols(self) -> list[Column]:
         return [
-            sf.col("owning_agency_name"),
-            sf.col("reporting_agency_name"),
-            sf.col("submission_period"),
-            sf.col("federal_account_symbol"),
-            sf.col("federal_account_name"),
-            sf.col("agency_identifier_name"),
-            sf.col("budget_function"),
-            sf.col("budget_subfunction"),
-            sf.col("budget_authority_unobligated_balance_brought_forward"),
-            sf.col("adjustments_to_unobligated_balance_brought_forward_cpe"),
-            sf.col("budget_authority_appropriated_amount"),
-            sf.col("borrowing_authority_amount"),
-            sf.col("contract_authority_amount"),
-            sf.col("spending_authority_from_offsetting_collections_amount"),
-            sf.col("total_other_budgetary_resources_amount"),
-            sf.col("total_budgetary_resources"),
-            sf.col("obligations_incurred"),
-            sf.col("deobligations_or_recoveries_or_refunds_from_prior_year"),
-            sf.col("unobligated_balance"),
-            sf.col("gross_outlay_amount"),
-            sf.col("status_of_budgetary_resources_total"),
-            sf.col("last_modified_date"),
+            self.sf.col("owning_agency_name"),
+            self.sf.col("reporting_agency_name"),
+            self.sf.col("submission_period"),
+            self.sf.col("federal_account_symbol"),
+            self.sf.col("federal_account_name"),
+            self.sf.col("agency_identifier_name"),
+            self.sf.col("budget_function"),
+            self.sf.col("budget_subfunction"),
+            self.sf.col("budget_authority_unobligated_balance_brought_forward"),
+            self.sf.col("adjustments_to_unobligated_balance_brought_forward_cpe"),
+            self.sf.col("budget_authority_appropriated_amount"),
+            self.sf.col("borrowing_authority_amount"),
+            self.sf.col("contract_authority_amount"),
+            self.sf.col("spending_authority_from_offsetting_collections_amount"),
+            self.sf.col("total_other_budgetary_resources_amount"),
+            self.sf.col("total_budgetary_resources"),
+            self.sf.col("obligations_incurred"),
+            self.sf.col("deobligations_or_recoveries_or_refunds_from_prior_year"),
+            self.sf.col("unobligated_balance"),
+            self.sf.col("gross_outlay_amount"),
+            self.sf.col("status_of_budgetary_resources_total"),
+            self.sf.col("max_last_modified_date").alias("last_modified_date"),
         ]
 
 
 class TreasuryAccountDownload(AccountBalancesMixin, AbstractAccountDownload):
-
     @property
     def account_level(self) -> AccountLevel:
         return AccountLevel.TREASURY_ACCOUNT
@@ -147,98 +192,100 @@ class TreasuryAccountDownload(AccountBalancesMixin, AbstractAccountDownload):
         return SubmissionType.ACCOUNT_BALANCES
 
     @property
-    def group_by_cols(self) -> list[Column]:
+    def group_by_cols(self) -> list[Column | DuckDBSparkColumn]:
         return [
-            sf.col("data_source"),
-            sf.col("appropriation_account_balances_id"),
-            sf.col("budget_authority_unobligated_balance_brought_forward"),
-            sf.col("adjustments_to_unobligated_balance_brought_forward_cpe"),
-            sf.col("budget_authority_appropriated_amount"),
-            sf.col("borrowing_authority_amount"),
-            sf.col("contract_authority_amount"),
-            sf.col("spending_authority_from_offsetting_collections_amount"),
-            sf.col("total_other_budgetary_resources_amount"),
-            sf.col("total_budgetary_resources"),
-            sf.col("gross_outlay_amount"),
-            sf.col("deobligations_or_recoveries_or_refunds_from_prior_year"),
-            sf.col("unobligated_balance"),
-            sf.col("status_of_budgetary_resources_total"),
-            sf.col("obligations_incurred"),
-            sf.col("drv_appropriation_availability_period_start_date"),
-            sf.col("drv_appropriation_availability_period_end_date"),
-            sf.col("drv_appropriation_account_expired_status"),
-            sf.col("drv_obligations_unpaid_amount"),
-            sf.col("drv_other_obligated_amount"),
-            sf.col("reporting_period_start"),
-            sf.col("reporting_period_end"),
-            sf.col("appropriation_account_last_modified"),
-            sf.col("certified_date"),
-            sf.col("create_date"),
-            sf.col("update_date"),
-            sf.col("final_of_fy"),
-            sf.col("submission_id"),
-            sf.col("treasury_account_identifier"),
-            sf.col("owning_agency_name"),
-            sf.col("reporting_agency_name"),
-            sf.col("allocation_transfer_agency_identifier_code"),
-            sf.col("agency_identifier_code"),
-            sf.col("beginning_period_of_availability"),
-            sf.col("ending_period_of_availability"),
-            sf.col("availability_type_code"),
-            sf.col("main_account_code"),
-            sf.col("sub_account_code"),
-            sf.col("treasury_account_symbol"),
-            sf.col("treasury_account_name"),
-            sf.col("budget_function"),
-            sf.col("budget_subfunction"),
-            sf.col("federal_account_symbol"),
-            sf.col("federal_account_name"),
-            sf.col("agency_identifier_name"),
-            sf.col("allocation_transfer_agency_identifier_name"),
-            sf.col("submission_period"),
+            self.sf.col("data_source"),
+            self.sf.col("appropriation_account_balances_id"),
+            self.sf.col("budget_authority_unobligated_balance_brought_forward"),
+            self.sf.col("adjustments_to_unobligated_balance_brought_forward_cpe"),
+            self.sf.col("budget_authority_appropriated_amount"),
+            self.sf.col("borrowing_authority_amount"),
+            self.sf.col("contract_authority_amount"),
+            self.sf.col("spending_authority_from_offsetting_collections_amount"),
+            self.sf.col("total_other_budgetary_resources_amount"),
+            self.sf.col("total_budgetary_resources"),
+            self.sf.col("gross_outlay_amount"),
+            self.sf.col("deobligations_or_recoveries_or_refunds_from_prior_year"),
+            self.sf.col("unobligated_balance"),
+            self.sf.col("status_of_budgetary_resources_total"),
+            self.sf.col("obligations_incurred"),
+            self.sf.col("drv_appropriation_availability_period_start_date"),
+            self.sf.col("drv_appropriation_availability_period_end_date"),
+            self.sf.col("drv_appropriation_account_expired_status"),
+            self.sf.col("drv_obligations_unpaid_amount"),
+            self.sf.col("drv_other_obligated_amount"),
+            self.sf.col("reporting_period_start"),
+            self.sf.col("reporting_period_end"),
+            self.sf.col("appropriation_account_last_modified"),
+            self.sf.col("certified_date"),
+            self.sf.col("create_date"),
+            self.sf.col("update_date"),
+            self.sf.col("final_of_fy"),
+            self.sf.col("submission_id"),
+            self.sf.col("treasury_account_identifier"),
+            self.sf.col("owning_agency_name"),
+            self.sf.col("reporting_agency_name"),
+            self.sf.col("allocation_transfer_agency_identifier_code"),
+            self.sf.col("agency_identifier_code"),
+            self.sf.col("beginning_period_of_availability"),
+            self.sf.col("ending_period_of_availability"),
+            self.sf.col("availability_type_code"),
+            self.sf.col("main_account_code"),
+            self.sf.col("sub_account_code"),
+            self.sf.col("treasury_account_symbol"),
+            self.sf.col("treasury_account_name"),
+            self.sf.col("budget_function"),
+            self.sf.col("budget_subfunction"),
+            self.sf.col("federal_account_symbol"),
+            self.sf.col("federal_account_name"),
+            self.sf.col("agency_identifier_name"),
+            self.sf.col("allocation_transfer_agency_identifier_name"),
+            self.sf.col("submission_period"),
         ]
 
     @property
-    def agg_cols(self) -> list[Column]:
+    def agg_cols(self) -> list[Column | DuckDBSparkColumn]:
         return [
-            sf.max(sf.date_format("last_modified_date", "yyyy-MM-dd")).alias("max_last_modified_date"),
+            self.sf.max(self.sf.col("last_modified_date")).alias(
+                "max_last_modified_date"
+            ),
         ]
 
     @property
-    def select_cols(self) -> list[Column]:
+    def select_cols(self) -> list[Column | DuckDBSparkColumn]:
         return [
-            sf.col("owning_agency_name"),
-            sf.col("reporting_agency_name"),
-            sf.col("submission_period"),
-            sf.col("allocation_transfer_agency_identifier_code"),
-            sf.col("agency_identifier_code"),
-            sf.col("beginning_period_of_availability"),
-            sf.col("ending_period_of_availability"),
-            sf.col("availability_type_code"),
-            sf.col("main_account_code"),
-            sf.col("sub_account_code"),
-            sf.col("treasury_account_symbol"),
-            sf.col("treasury_account_name"),
-            sf.col("agency_identifier_name"),
-            sf.col("allocation_transfer_agency_identifier_name"),
-            sf.col("budget_function"),
-            sf.col("budget_subfunction"),
-            sf.col("federal_account_symbol"),
-            sf.col("federal_account_name"),
-            sf.col("budget_authority_unobligated_balance_brought_forward"),
-            sf.col("adjustments_to_unobligated_balance_brought_forward_cpe"),
-            sf.col("budget_authority_appropriated_amount"),
-            sf.col("borrowing_authority_amount"),
-            sf.col("contract_authority_amount"),
-            sf.col("spending_authority_from_offsetting_collections_amount"),
-            sf.col("total_other_budgetary_resources_amount"),
-            sf.col("total_budgetary_resources"),
-            sf.col("obligations_incurred"),
-            sf.col("deobligations_or_recoveries_or_refunds_from_prior_year"),
-            sf.col("unobligated_balance"),
-            sf.col("gross_outlay_amount"),
-            sf.col("status_of_budgetary_resources_total"),
-            sf.col("max_last_modified_date").alias("last_modified_date"),
+            self.sf.col("owning_agency_name"),
+            self.sf.col("reporting_agency_name"),
+            self.sf.col("submission_period"),
+            self.sf.col("allocation_transfer_agency_identifier_code"),
+            self.sf.col("agency_identifier_code"),
+            self.sf.col("beginning_period_of_availability"),
+            self.sf.col("ending_period_of_availability"),
+            self.sf.col("availability_type_code"),
+            self.sf.col("main_account_code"),
+            self.sf.col("sub_account_code"),
+            self.sf.col("treasury_account_symbol"),
+            self.sf.col("treasury_account_name"),
+            self.sf.col("agency_identifier_name"),
+            self.sf.col("allocation_transfer_agency_identifier_name"),
+            self.sf.col("budget_function"),
+            self.sf.col("budget_subfunction"),
+            self.sf.col("federal_account_symbol"),
+            self.sf.col("federal_account_name"),
+            self.sf.col("budget_authority_unobligated_balance_brought_forward"),
+            self.sf.col("adjustments_to_unobligated_balance_brought_forward_cpe"),
+            self.sf.col("budget_authority_appropriated_amount"),
+            self.sf.col("borrowing_authority_amount"),
+            self.sf.col("contract_authority_amount"),
+            self.sf.col("spending_authority_from_offsetting_collections_amount"),
+            self.sf.col("total_other_budgetary_resources_amount"),
+            self.sf.col("total_budgetary_resources"),
+            self.sf.col("obligations_incurred"),
+            self.sf.col("deobligations_or_recoveries_or_refunds_from_prior_year"),
+            self.sf.col("unobligated_balance"),
+            self.sf.col("gross_outlay_amount"),
+            self.sf.col("status_of_budgetary_resources_total"),
+            self.sf.col("max_last_modified_date").alias("last_modified_date"),
         ]
 
 
