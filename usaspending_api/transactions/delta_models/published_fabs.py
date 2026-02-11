@@ -26,9 +26,15 @@ PUBLISHED_FABS_COLUMNS = {
     "correction_delete_ind_desc": {"delta": "STRING", "postgres": "TEXT"},
     "correction_delete_indicatr": {"delta": "STRING", "postgres": "TEXT"},
     "created_at": {"delta": "TIMESTAMP", "postgres": "TIMESTAMP"},
-    "face_value_loan_guarantee": {"delta": "NUMERIC(38,18)", "postgres": "NUMERIC(38,18"},
+    "face_value_loan_guarantee": {
+        "delta": "NUMERIC(38,18)",
+        "postgres": "NUMERIC(38,18",
+    },
     "fain": {"delta": "STRING", "postgres": "TEXT"},
-    "federal_action_obligation": {"delta": "NUMERIC(38,18)", "postgres": "NUMERIC(38,18"},
+    "federal_action_obligation": {
+        "delta": "NUMERIC(38,18)",
+        "postgres": "NUMERIC(38,18",
+    },
     "fiscal_year_and_quarter_co": {"delta": "STRING", "postgres": "TEXT"},
     "funding_agency_code": {"delta": "STRING", "postgres": "TEXT"},
     "funding_agency_name": {"delta": "STRING", "postgres": "TEXT"},
@@ -48,7 +54,10 @@ PUBLISHED_FABS_COLUMNS = {
     "high_comp_officer4_full_na": {"delta": "STRING", "postgres": "TEXT"},
     "high_comp_officer5_amount": {"delta": "STRING", "postgres": "TEXT"},
     "high_comp_officer5_full_na": {"delta": "STRING", "postgres": "TEXT"},
-    "indirect_federal_sharing": {"delta": "NUMERIC(38,18)", "postgres": "NUMERIC(38,18)"},
+    "indirect_federal_sharing": {
+        "delta": "NUMERIC(38,18)",
+        "postgres": "NUMERIC(38,18)",
+    },
     "is_active": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
     "is_historical": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
     "legal_entity_address_line1": {"delta": "STRING", "postgres": "TEXT"},
@@ -70,8 +79,14 @@ PUBLISHED_FABS_COLUMNS = {
     "legal_entity_zip5": {"delta": "STRING", "postgres": "TEXT"},
     "legal_entity_zip_last4": {"delta": "STRING", "postgres": "TEXT"},
     "modified_at": {"delta": "TIMESTAMP", "postgres": "TIMESTAMP"},
-    "non_federal_funding_amount": {"delta": "NUMERIC(38,18)", "postgres": "NUMERIC(38,18)"},
-    "original_loan_subsidy_cost": {"delta": "NUMERIC(38,18)", "postgres": "NUMERIC(38,18)"},
+    "non_federal_funding_amount": {
+        "delta": "NUMERIC(38,18)",
+        "postgres": "NUMERIC(38,18)",
+    },
+    "original_loan_subsidy_cost": {
+        "delta": "NUMERIC(38,18)",
+        "postgres": "NUMERIC(38,18)",
+    },
     "period_of_performance_curr": {"delta": "STRING", "postgres": "TEXT"},
     "period_of_performance_star": {"delta": "STRING", "postgres": "TEXT"},
     "place_of_perfor_state_code": {"delta": "STRING", "postgres": "TEXT"},
@@ -103,12 +118,16 @@ PUBLISHED_FABS_COLUMNS = {
 }
 DELTA_ONLY_COLUMNS = {
     "hash": "LONG",
+    "action_year": "INTEGER",
+    "action_month": "INTEGER",
 }
 PUBLISHED_FABS_DELTA_COLUMNS = {
     **{k: v["delta"] for k, v in PUBLISHED_FABS_COLUMNS.items()},
     **DELTA_ONLY_COLUMNS,
 }
-PUBLISHED_FABS_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in PUBLISHED_FABS_COLUMNS.items()}
+PUBLISHED_FABS_POSTGRES_COLUMNS = {
+    k: v["postgres"] for k, v in PUBLISHED_FABS_COLUMNS.items()
+}
 
 published_fabs_create_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (

@@ -93,7 +93,10 @@ DETACHED_AWARD_PROCUREMENT_COLUMNS = {
     "fair_opportunity_limited_s": {"delta": "STRING", "postgres": "TEXT"},
     "fed_biz_opps": {"delta": "STRING", "postgres": "TEXT"},
     "fed_biz_opps_description": {"delta": "STRING", "postgres": "TEXT"},
-    "federal_action_obligation": {"delta": "NUMERIC(38, 18)", "postgres": "NUMERIC(38,18"},
+    "federal_action_obligation": {
+        "delta": "NUMERIC(38, 18)",
+        "postgres": "NUMERIC(38,18",
+    },
     "federal_agency": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
     "federally_funded_research": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
     "for_profit_organization": {"delta": "BOOLEAN", "postgres": "BOOLEAN"},
@@ -311,6 +314,8 @@ DETACHED_AWARD_PROCUREMENT_COLUMNS = {
 }
 DELTA_ONLY_COLUMNS = {
     "hash": "LONG",
+    "action_year": "INTEGER",
+    "action_month": "INTEGER",
 }
 DETACHED_AWARD_PROCUREMENT_DELTA_COLUMNS = {
     **{k: v["delta"] for k, v in DETACHED_AWARD_PROCUREMENT_COLUMNS.items()},
@@ -323,5 +328,7 @@ detached_award_procurement_create_sql_string = rf"""
         {", ".join([f"{key} {val}" for key, val in DETACHED_AWARD_PROCUREMENT_DELTA_COLUMNS.items()])}
     )
     USING DELTA
+    PARTITIONED BY (action_year, action_month)
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
+    TBLPROPERTIES (delta.enableChangeDataFeed = true)
 """

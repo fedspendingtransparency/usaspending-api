@@ -29,6 +29,8 @@ TRANSACTION_NORMALIZED_COLUMNS = {
     "update_date": "TIMESTAMP",
     "usaspending_unique_transaction_id": "STRING",
     "hash": "LONG",
+    "action_year": "INTEGER",
+    "action_month": "INTEGER",
 }
 
 transaction_normalized_sql_string = rf"""
@@ -36,5 +38,7 @@ transaction_normalized_sql_string = rf"""
         {", ".join([f"{key} {val}" for key, val in TRANSACTION_NORMALIZED_COLUMNS.items()])}
     )
     USING DELTA
+    PARTITIONED BY (is_fpds, action_year, action_month)
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
+    TBLPROPERTIES (delta.enableChangeDataFeed = true)
     """

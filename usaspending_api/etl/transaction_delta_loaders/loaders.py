@@ -5,14 +5,16 @@ from datetime import datetime, timezone
 from typing import Callable, Literal
 
 from delta import DeltaTable
-from pyspark.sql import functions as sf, SparkSession, Window
+from pyspark.sql import DataFrame, functions as sf, SparkSession, Window
 
 
 from usaspending_api.broker.helpers.build_business_categories_boolean_dict import fpds_boolean_columns
 
 from usaspending_api.broker.helpers.last_load_date import (
     get_earliest_load_date,
+    get_latest_load_date,
     update_last_load_date,
+    get_last_load_date,
 )
 from usaspending_api.common.data_classes import TransactionColumn
 from usaspending_api.common.etl.spark import create_ref_temp_views
@@ -37,17 +39,20 @@ class AbstractDeltaTransactionLoader(ABC):
     id_col: str
     source_table: str
     col_info = list[TransactionColumn]
+    last_etl_load_date: datetime
 
     def __init__(self, spark, etl_level: Literal["fabs", "fpds", "normalized"], spark_s3_bucket: str) -> None:
         self.etl_level = etl_level
+        self.last_etl_load_date = get_last_load_date(f"transaction_{self.etl_level}")
         self.spark_s3_bucket: spark_s3_bucket
         self.spark = spark
 
     def load_transactions(self) -> None:
+        logger.info(f"LOADING TRANSACTIONS -- level: {self.etl_level}, last load date: {self.last_etl_load_date}")
         if not self.spark._jsparkSession.catalog().tableExists(f"int.transaction_{self.etl_level}"):
             raise Exception(f"Table: int.transaction_{self.etl_level} does not exist.")
         logger.info(f"Running UPSERT SQL for transaction_{self.etl_level} ETL")
-        self.spark.sql(self.transaction_merge_into_sql())
+        self.transaction_merge()
         next_last_load = get_earliest_load_date(
             ("source_procurement_transaction", "source_assistance_transaction"), datetime.utcfromtimestamp(0)
         )
@@ -59,44 +64,37 @@ class AbstractDeltaTransactionLoader(ABC):
         regexp_mmddYYYY = r"(\\d{2})(?<sep>[-/])(\\d{2})(\\k<sep>)(\\d{4})(.\\d{2}:\\d{2}:\\d{2}([+-]\\d{2}:\\d{2})?)?"
         regexp_YYYYmmdd = r"(\\d{4})(?<sep>[-/]?)(\\d{2})(\\k<sep>)(\\d{2})(.\\d{2}:\\d{2}:\\d{2}([+-]\\d{2}:\\d{2})?)?"
 
-        mmddYYYY_fmt = f"""
-            (regexp_extract({self.source_table}.{col.source}, '{regexp_mmddYYYY}', 5)
-            || '-' ||
-            regexp_extract({self.source_table}.{col.source}, '{regexp_mmddYYYY}', 1)
-            || '-' ||
-            regexp_extract({self.source_table}.{col.source}, '{regexp_mmddYYYY}', 3))
-        """
-        YYYYmmdd_fmt = f"""
-            (regexp_extract({self.source_table}.{col.source}, '{regexp_YYYYmmdd}', 1)
-            || '-' ||
-            regexp_extract({self.source_table}.{col.source}, '{regexp_YYYYmmdd}', 3)
-            || '-' ||
-            regexp_extract({self.source_table}.{col.source}, '{regexp_YYYYmmdd}', 5))
-        """
+        mmddYYYY_fmt = sf.concat(
+            sf.regexp_extract(sf.col(f"{self.source_table}.{col.source}"), regexp_mmddYYYY, 5),
+            sf.lit("-"),
+            sf.regexp_extract(sf.col(f"{self.source_table}.{col.source}"), regexp_mmddYYYY, 1),
+            sf.lit("-"),
+            sf.regexp_extract(sf.col(f"{self.source_table}.{col.source}"), regexp_mmddYYYY, 3),
+        )
+        YYYYmmdd_fmt = sf.concat(
+            sf.regexp_extract(sf.col(f"{self.source_table}.{col.source}"), regexp_YYYYmmdd, 1),
+            sf.lit("-"),
+            sf.regexp_extract(sf.col(f"{self.source_table}.{col.source}"), regexp_YYYYmmdd, 3),
+            sf.lit("-"),
+            sf.regexp_extract(sf.col(f"{self.source_table}.{col.source}"), regexp_YYYYmmdd, 5),
+        )
 
         if is_casted_to_date:
-            mmddYYYY_fmt = f"""CAST({mmddYYYY_fmt}
-                        AS DATE)
-            """
-            YYYYmmdd_fmt = f"""CAST({YYYYmmdd_fmt}
-                        AS DATE)
-            """
+            mmddYYYY_fmt = mmddYYYY_fmt.cast("date")
+            YYYYmmdd_fmt = YYYYmmdd_fmt.cast("date")
 
-        sql_snippet = f"""
-            CASE WHEN regexp({self.source_table}.{col.source}, '{regexp_mmddYYYY}')
-                      THEN {mmddYYYY_fmt}
-                 ELSE {YYYYmmdd_fmt}
-            END
-        """
+        snippet = sf.when(
+            sf.regexp(f"{self.source_table}.{col.source}", sf.lit(regexp_mmddYYYY)), mmddYYYY_fmt
+        ).otherwise(YYYYmmdd_fmt)
 
-        return sql_snippet
+        return snippet
 
     def handle_column(self, col: TransactionColumn, is_result_aliased=True) -> str:
         if col.handling == "cast":
-            retval = f"CAST({self.source_table}.{col.source} AS {col.delta_type})"
+            retval = sf.col(f"{self.source_table}.{col.source}").cast(col.delta_type)
         elif col.handling == "literal":
             # Use col.source directly as the value
-            retval = f"{col.source}"
+            retval = sf.lit(col.source)
         elif col.handling == "parse_string_datetime_to_date":
             # These are string fields that actually hold DATES/TIMESTAMPS and need to be cast as dates.
             # However, they may not be properly parsed when calling CAST(... AS DATE).
@@ -107,54 +105,54 @@ class AbstractDeltaTransactionLoader(ABC):
             retval = self.build_date_format_sql(col, is_casted_to_date=False)
         elif col.delta_type.upper() == "STRING":
             # Capitalize and remove leading & trailing whitespace from all string values
-            retval = f"ucase(trim({self.source_table}.{col.source}))"
+            retval = sf.ucase(sf.trim(sf.col(f"{self.source_table}.{col.source}")))
         elif col.delta_type.upper() == "BOOLEAN" and not col.handling == "leave_null":
             # Unless specified, convert any nulls to false for boolean columns
-            retval = f"COALESCE({self.source_table}.{col.source}, FALSE)"
+            retval = sf.coalesce(sf.col(f"{self.source_table}.{col.source}"), sf.lit(False))
         else:
-            retval = f"{self.source_table}.{col.source}"
+            retval = sf.col(f"{self.source_table}.{col.source}")
 
         # Handle scalar transformations if the column requires it
         if col.scalar_transformation is not None:
-            retval = col.scalar_transformation.format(input=retval)
+            retval = col.scalar_transformation(retval)
 
-        retval = f"{retval}{' AS ' + col.dest_name if is_result_aliased else ''}"
+        retval = retval.alias(col.dest_name) if is_result_aliased else retval
         return retval
 
     @property
     def select_columns(self) -> list[str]:
-        return ["CAST(NULL AS LONG) AS transaction_id"] + [
+        return [sf.lit(None).cast("LONG").alias("transaction_id")] + [
             self.handle_column(col) for col in self.col_info if col.dest_name != "transaction_id"
         ]
 
-    def source_subquery_sql(self) -> str:
-        select_columns_str = ",\n    ".join(self.select_columns)
-        sql = f"""
-            SELECT
-                {select_columns_str}
-            FROM {self.source_table}
-        """
-        return sql
+    def source_subquery_df(self) -> DataFrame:
+        return (
+            self.spark.read.format("delta")
+            .option("readChangeFeed", "true")
+            .option("startingTimestamp", self.last_etl_load_date.strftime("%Y-%m-%d %H:%M:%S"))
+            .table(self.source_table)
+            .select(self.select_columns)
+        )
 
-    def transaction_merge_into_sql(self) -> str:
-        silver_table_cols = ", ".join([col.dest_name for col in self.col_info if col.dest_name != "transaction_id"])
-        sql = f"""
-            MERGE INTO int.transaction_{self.etl_level} AS silver_table
-            USING (
-                {self.source_subquery_sql()}
-            ) AS source_subquery
-            ON
-                silver_table.{self.id_col} = source_subquery.{self.id_col}
-                AND silver_table.hash = source_subquery.hash
-            WHEN NOT MATCHED
-                THEN INSERT
-                    ({silver_table_cols})
-                    VALUES ({silver_table_cols})
-            WHEN NOT MATCHED BY SOURCE
-                THEN DELETE
-        """
-
-        return sql
+    def transaction_merge(self) -> None:
+        source = self.source_subquery_df().alias("s")
+        target = DeltaTable.forName(self.spark, f"int.transaction_{self.etl_level}").alias("t")
+        id_match_condition = f"t.{self.id_col} == s.{self.id_col}"
+        row_not_updated_condition = "t.hash == s.hash"
+        partition_pruning_conditions = "t.action_year == s.action_year AND t.action_month == s.action_month"
+        (
+            target.merge(
+                source, " AND ".join([id_match_condition, row_not_updated_condition, partition_pruning_conditions])
+            )
+            .whenNotMatchedInsert(
+                values={
+                    col.dest_name: sf.col(f"s.{col.dest_name}")
+                    for col in self.col_info
+                    if col.dest_name != "transaction_id"
+                },
+            )
+            .execute()
+        )
 
 
 class FPDSDeltaTransactionLoader(AbstractDeltaTransactionLoader):
@@ -181,39 +179,51 @@ class NormalizedMixin:
     handle_column: Callable
     source_table: str
     etl_level: str
+    last_etl_load_date: datetime
     select_columns: list[str]
     to_normalized_col_info: list[TransactionColumn]
     normalization_type: Literal["fabs", "fpds"]
-    prepare_spark: Callable
 
-    def source_subquery_sql(self) -> str:
-        additional_joins = f"""
-            LEFT OUTER JOIN global_temp.subtier_agency AS funding_subtier_agency ON (
-                funding_subtier_agency.subtier_code = {self.source_table}.funding_sub_tier_agency_co
+    def source_subquery_df(self) -> DataFrame:
+        funding_subtier_agency = self.spark.table("global_temp.subtier_agency").alias("funding_subtier_agency")
+        funding_agency = self.spark.table("global_temp.agency").alias("funding_agency")
+        awarding_subtier_agency = (
+            self.spark.table("global_temp.subtier_agency")
+            .withColumn("awarding_subtier_agency_id", sf.col("subtier_agency_id"))
+            .alias("awarding_subtier_agency")
+        )
+        awarding_agency = self.spark.table("global_temp.agency").alias("awarding_agency")
+        df = (
+            self.spark.read.format("delta")
+            .option("readChangeFeed", "true")
+            .option("startingTimestamp", self.last_etl_load_date.strftime("%Y-%m-%d %H:%M:%S"))
+            .table(self.source_table)
+        )
+        return (
+            df.join(
+                funding_subtier_agency,
+                funding_subtier_agency.subtier_code == df.funding_sub_tier_agency_co,
+                how="leftouter",
             )
-            LEFT OUTER JOIN global_temp.agency AS funding_agency ON (
-                funding_agency.subtier_agency_id = funding_subtier_agency.subtier_agency_id
+            .join(
+                funding_agency,
+                funding_agency.subtier_agency_id == funding_subtier_agency.subtier_agency_id,
+                how="leftouter",
             )
-            LEFT OUTER JOIN global_temp.subtier_agency AS awarding_subtier_agency ON (
-                awarding_subtier_agency.subtier_code = {self.source_table}.awarding_sub_tier_agency_c
+            .join(
+                awarding_subtier_agency,
+                awarding_subtier_agency.subtier_code == df.awarding_sub_tier_agency_c,
+                how="leftouter",
             )
-            LEFT OUTER JOIN global_temp.agency AS awarding_agency ON (
-                awarding_agency.subtier_agency_id = awarding_subtier_agency.subtier_agency_id
+            .join(
+                awarding_agency,
+                awarding_agency.subtier_agency_id == awarding_subtier_agency.awarding_subtier_agency_id,
+                how="leftouter",
             )
-        """
+            .select(self.select_columns)
+        )
 
-        # Since the select columns may have complicated logic, put them on separate lines for debugging.
-        # However, strings inside {} expressions in f-strings can't contain backslashes, so will join them first
-        # before inserting into overall sql statement.
-        select_columns_str = ",\n    ".join(self.select_columns)
-        return f"""
-            SELECT
-                {select_columns_str}
-            FROM {self.source_table}
-            {additional_joins}
-        """
-
-    def transaction_merge_into_sql(self) -> str:
+    def transaction_merge(self) -> None:
         create_ref_temp_views(self.spark)
         load_datetime = datetime.now(timezone.utc)
         special_columns = ["create_date", "update_date"]
@@ -227,33 +237,29 @@ class NormalizedMixin:
         set_cols.append(f"""int.transaction_normalized.update_date = '{load_datetime.isoformat(" ")}'""")
         # Move create_date and update_date to the end of the list of column names for ease of handling
         # during record insert
-        insert_col_name_list = [
-            col_name for col_name in TRANSACTION_NORMALIZED_COLUMNS if col_name not in special_columns
-        ]
-        insert_col_name_list.extend(special_columns)
-        insert_col_names = ", ".join([col_name for col_name in insert_col_name_list])
+        insert_col_names = [col_name for col_name in TRANSACTION_NORMALIZED_COLUMNS if col_name not in special_columns]
+        insert_col_names.extend(special_columns)
 
         # On insert, all values except for create_date and update_date will come from the subquery
-        insert_value_list = insert_col_name_list[:-2]
-        insert_value_list.extend([f"""'{load_datetime.isoformat(" ")}'"""] * 2)
-        insert_values = ", ".join([value for value in insert_value_list])
+        insert_values = [sf.col(col) for col in insert_col_names[:-2]]
+        insert_values.extend([sf.lit(f"""'{load_datetime.isoformat(" ")}'""")] * 2)
 
-        sql = f"""
-            MERGE INTO int.transaction_normalized
-            USING (
-                {self.source_subquery_sql()}
-            ) AS source_subquery
-            ON transaction_normalized.transaction_unique_id = source_subquery.transaction_unique_id
-                AND transaction_normalized.hash = source_subquery.hash
-            WHEN NOT MATCHED
-                THEN INSERT
-                    ({insert_col_names})
-                    VALUES ({insert_values})
-            WHEN NOT MATCHED BY SOURCE AND {'NOT' if self.normalization_type== 'fabs' else ''} transaction_normalized.is_fpds
-                THEN DELETE
-        """
-
-        return sql
+        target = DeltaTable.forName(self.spark, "int.transaction_normalized").alias("t")
+        id_condition = "t.transaction_unique_id = s.transaction_unique_id"
+        row_not_updated_condition = "t.hash == s.hash"
+        type_partition_condition = f"{'NOT' if self.normalization_type == 'fabs' else ''} t.is_fpds"
+        date_partition_conditions = "t.action_year == s.action_year AND t.action_month == s.action_month"
+        (
+            target.merge(
+                self.source_subquery_df().alias("s"),
+                " AND ".join(
+                    [id_condition, row_not_updated_condition, type_partition_condition, date_partition_conditions]
+                ),
+            )
+            .whenNotMatchedInsert(dict(zip(insert_col_names, insert_values)))
+            .whenNotMatchedBySourceDelete(f"{'NOT' if self.normalization_type== 'fabs' else ''} t.is_fpds")
+            .execute()
+        )
 
     def populate_transaction_normalized_ids(self) -> None:
         target = DeltaTable.forName(self.spark, "int.transaction_normalized").alias("t")
@@ -382,27 +388,27 @@ class FPDSNormalizedDeltaTransactionLoader(NormalizedMixin, AbstractDeltaTransac
         action_date_col = next(
             filter(lambda c: c.dest_name == "action_date" and c.source == "action_date", DAP_TO_NORMALIZED_COLUMN_INFO)
         )
-        parse_action_date_sql_snippet = self.handle_column(action_date_col, is_result_aliased=False)
+        parse_action_date_snippet = self.handle_column(action_date_col, is_result_aliased=False)
         select_cols = [
-            "CAST(NULL AS LONG) AS id",
-            "CAST(NULL AS LONG) AS award_id",
-            "awarding_agency.id AS awarding_agency_id",
-            f"""CASE WHEN month({parse_action_date_sql_snippet}) > 9
-                    THEN year({parse_action_date_sql_snippet}) + 1
-                    ELSE year({parse_action_date_sql_snippet})
-                END AS fiscal_year""",
-            "funding_agency.id AS funding_agency_id",
+            sf.lit(None).cast("LONG").alias("id"),
+            sf.lit(None).cast("LONG").alias("award_id"),
+            sf.col("awarding_agency.id").alias("awarding_agency_id"),
+            sf.when(sf.month(parse_action_date_snippet) > sf.lit(9), sf.year(parse_action_date_snippet) + sf.lit(1))
+            .otherwise(sf.year(parse_action_date_snippet))
+            .alias("fiscal_year"),
+            sf.col("funding_agency.id").alias("funding_agency_id"),
         ]
-        fpds_business_category_columns = copy.copy(fpds_boolean_columns)
-        # Add a couple of non-boolean columns that are needed in the business category logic
-        fpds_business_category_columns.extend(["contracting_officers_deter", "domestic_or_foreign_entity"])
+        fpds_business_category_columns = [
+            sf.col(col) for col in fpds_boolean_columns + ["contracting_officers_deter", "domestic_or_foreign_entity"]
+        ]
         named_struct_text = ", ".join([f"'{col}', {self.source_table}.{col}" for col in fpds_business_category_columns])
         select_cols.extend(
             [
                 # business_categories
-                f"get_business_categories_fpds(named_struct({named_struct_text})) AS business_categories",
+                sf.expr(f"get_business_categories_fpds(named_struct({named_struct_text})) AS business_categories"),
                 # type
-                f"""
+                sf.expr(
+                    f"""
                     CASE WHEN {self.source_table}.pulled_from <> 'IDV' THEN {self.source_table}.contract_award_type
                          WHEN {self.source_table}.idv_type = 'B' AND {self.source_table}.type_of_idc IS NOT NULL
                            THEN 'IDV_B_' || {self.source_table}.type_of_idc
@@ -419,9 +425,11 @@ class FPDSNormalizedDeltaTransactionLoader(NormalizedMixin, AbstractDeltaTransac
                            THEN 'IDV_B_C'
                          ELSE 'IDV_' || {self.source_table}.idv_type
                     END AS type
-                    """,
+                    """
+                ),
                 # type_description
-                f"""
+                sf.expr(
+                    f"""
                     CASE WHEN {self.source_table}.pulled_from <> 'IDV'
                            THEN {self.source_table}.contract_award_type_desc
                          WHEN {self.source_table}.idv_type = 'B'
@@ -432,7 +440,8 @@ class FPDSNormalizedDeltaTransactionLoader(NormalizedMixin, AbstractDeltaTransac
                            THEN 'INDEFINITE DELIVERY CONTRACT'
                          ELSE {self.source_table}.idv_type_description
                     END AS type_description
-                    """,
+                    """
+                ),
             ]
         )
         for col in DAP_TO_NORMALIZED_COLUMN_INFO:

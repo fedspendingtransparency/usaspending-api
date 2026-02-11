@@ -52,7 +52,6 @@ from usaspending_api.search.delta_models.award_search import (
 from usaspending_api.search.models import AwardSearch, TransactionSearch
 from usaspending_api.transactions.delta_models import (
     DETACHED_AWARD_PROCUREMENT_DELTA_COLUMNS,
-    PUBLISHED_FABS_COLUMNS,
     PUBLISHED_FABS_DELTA_COLUMNS,
     TRANSACTION_FABS_VIEW_COLUMNS,
     TRANSACTION_FPDS_VIEW_COLUMNS,
@@ -74,88 +73,89 @@ logger = logging.getLogger(__name__)
 
 TABLE_SPEC = {
     "awards": TableSpec(
-        **{
-            "model": Award,
-            "source_table": "vw_awards",
-            "source_database": "rpt",
-            "destination_database": "raw",
-            "partition_column": "id",
-            "partition_column_type": "numeric",
-            "is_partition_column_unique": True,
-            "delta_table_create_sql": awards_sql_string,
-            "column_names": list(AWARDS_COLUMNS),
-        }
+        model=Award,
+        source_table="vw_awards",
+        source_database="rpt",
+        destination_database="raw",
+        partition_column="id",
+        partition_column_type="numeric",
+        is_partition_column_unique=True,
+        delta_table_create_sql=awards_sql_string,
+        column_names=list(AWARDS_COLUMNS),
+        # delta_table_create_partitions=["fiscal_year"],
     ),
     "detached_award_procurement": TableSpec(
-        **{
-            "model": SourceProcurementTransaction,
-            "source_table": "source_procurement_transaction",
-            "source_database": "raw",
-            "destination_database": "raw",
-            "partition_column": "detached_award_procurement_id",
-            "partition_column_type": "numeric",
-            "is_partition_column_unique": True,
-            "delta_table_create_sql": detached_award_procurement_create_sql_string,
-            "column_names": list(DETACHED_AWARD_PROCUREMENT_DELTA_COLUMNS),
-            "add_hash_field": True,
-        }
+        model=SourceProcurementTransaction,
+        source_table="source_procurement_transaction",
+        source_database="raw",
+        destination_database="raw",
+        partition_column="detached_award_procurement_id",
+        partition_column_type="numeric",
+        is_partition_column_unique=True,
+        delta_table_create_sql=detached_award_procurement_create_sql_string,
+        column_names=list(DETACHED_AWARD_PROCUREMENT_DELTA_COLUMNS),
+        extra_columns={
+            "hash": lambda: sf.xxhash64("*"),
+            "action_year": lambda: sf.year(sf.to_date("action_date")),
+            "action_month": lambda: sf.month(sf.to_date("action_date")),
+        },
+        save_mode="merge",
+        merge_condition="s.detached_award_procurement_id = t.detached_award_procurement_id and s.hash = t.hash",
     ),
     "financial_accounts_by_awards": TableSpec(
-        **{
-            "model": FinancialAccountsByAwards,
-            "source_table": "financial_accounts_by_awards",
-            "source_database": "public",
-            "destination_database": "raw",
-            "partition_column": "financial_accounts_by_awards_id",
-            "partition_column_type": "numeric",
-            "is_partition_column_unique": True,
-            "delta_table_create_sql": financial_accounts_by_awards_sql_string,
-            "custom_schema": "award_id LONG",
-            "column_names": list(FINANCIAL_ACCOUNTS_BY_AWARDS_COLUMNS),
-        }
+        model=FinancialAccountsByAwards,
+        source_table="financial_accounts_by_awards",
+        source_database="public",
+        destination_database="raw",
+        partition_column="financial_accounts_by_awards_id",
+        partition_column_type="numeric",
+        is_partition_column_unique=True,
+        delta_table_create_sql=financial_accounts_by_awards_sql_string,
+        custom_schema="award_id LONG",
+        column_names=list(FINANCIAL_ACCOUNTS_BY_AWARDS_COLUMNS),
     ),
     "transaction_fabs": TableSpec(
-        **{
-            "model": TransactionFABS,
-            "source_table": "vw_transaction_fabs",
-            "source_database": "int",
-            "destination_database": "raw",
-            "partition_column": "transaction_id",
-            "partition_column_type": "numeric",
-            "is_partition_column_unique": True,
-            "delta_table_create_sql": transaction_fabs_sql_string,
-            "column_names": TRANSACTION_FABS_VIEW_COLUMNS,
-            "add_hash_field": True,
-        }
+        model=TransactionFABS,
+        source_table="vw_transaction_fabs",
+        source_database="int",
+        destination_database="raw",
+        partition_column="transaction_id",
+        partition_column_type="numeric",
+        is_partition_column_unique=True,
+        delta_table_create_sql=transaction_fabs_sql_string,
+        column_names=TRANSACTION_FABS_VIEW_COLUMNS,
+        # add_hash_field=True,
+        # delta_table_create_partitions=["action_year", "action_month"],
     ),
     "published_fabs": TableSpec(
-        **{
-            "model": SourceAssistanceTransaction,
-            "source_table": "source_assistance_transaction",
-            "source_database": "raw",
-            "destination_database": "raw",
-            "partition_column": "published_fabs_id",
-            "partition_column_type": "numeric",
-            "is_partition_column_unique": True,
-            "delta_table_create_sql": published_fabs_create_sql_string,
-            "column_names": list(PUBLISHED_FABS_COLUMNS),
-            "add_hash_field": True,
-        }
+        model=SourceAssistanceTransaction,
+        source_table="source_assistance_transaction",
+        source_database="raw",
+        destination_database="raw",
+        partition_column="published_fabs_id",
+        partition_column_type="numeric",
+        is_partition_column_unique=True,
+        delta_table_create_sql=published_fabs_create_sql_string,
+        column_names=list(PUBLISHED_FABS_DELTA_COLUMNS),
+        extra_columns={
+            "hash": lambda: sf.xxhash64("*"),
+            "action_year": lambda: sf.year(sf.to_date("action_date")),
+            "action_month": lambda: sf.month(sf.to_date("action_date")),
+        },
+        # add_hash_field=True,
+        # delta_table_create_partitions=["action_year", "action_month"],
     ),
     "transaction_fpds": TableSpec(
-        **{
-            "model": TransactionFPDS,
-            "source_table": "vw_transaction_fpds",
-            "source_database": "int",
-            "destination_database": "raw",
-            "partition_column": "transaction_id",
-            "partition_column_type": "numeric",
-            "is_partition_column_unique": True,
-            "delta_table_create_sql": transaction_fpds_sql_string,
-            "custom_schema": "",
-            "column_names": TRANSACTION_FPDS_VIEW_COLUMNS,
-            "add_hash_field": True,
-        }
+        model=TransactionFPDS,
+        source_table="vw_transaction_fpds",
+        source_database="int",
+        destination_database="raw",
+        partition_column="transaction_id",
+        partition_column_type="numeric",
+        is_partition_column_unique=True,
+        delta_table_create_sql=transaction_fpds_sql_string,
+        custom_schema="",
+        column_names=TRANSACTION_FPDS_VIEW_COLUMNS,
     ),
     "transaction_normalized": TableSpec(
         **{
@@ -168,7 +168,7 @@ TABLE_SPEC = {
             "is_partition_column_unique": True,
             "delta_table_create_sql": transaction_normalized_sql_string,
             "column_names": list(TRANSACTION_NORMALIZED_COLUMNS),
-            "add_hash_field": True,
+            # "add_hash_field": True,
         }
     ),
     # Tables loaded in from the Broker
@@ -330,7 +330,8 @@ class Command(BaseCommand):
         partition_column_type = table_spec.partition_column_type
         is_partition_column_unique = table_spec.is_partition_column_unique
         custom_schema = table_spec.custom_schema
-        add_hash_field = table_spec.add_hash_field
+        save_mode = table_spec.save_mode
+        merge_condition = table_spec.merge_condition
 
         # Set the database that will be interacted with for all Delta Lake table Spark-based activity
         logger.info(f"Using Spark Database: {destination_database}")
@@ -339,13 +340,9 @@ class Command(BaseCommand):
         # Resolve JDBC URL for Source Database
         jdbc_url = get_usas_jdbc_url() if not is_from_broker else get_broker_jdbc_url()
         if not jdbc_url:
-            raise RuntimeError(
-                "Couldn't find JDBC url, please properly configure your CONFIG."
-            )
+            raise RuntimeError("Couldn't find JDBC url, please properly configure your CONFIG.")
         if not jdbc_url.startswith("jdbc:postgresql://"):
-            raise ValueError(
-                "JDBC URL given is not in postgres JDBC URL format (e.g. jdbc:postgresql://..."
-            )
+            raise ValueError("JDBC URL given is not in postgres JDBC URL format (e.g. jdbc:postgresql://...")
 
         # If a partition_column is present, read from jdbc using partitioning
         if partition_column:
@@ -356,9 +353,7 @@ class Command(BaseCommand):
                 is_numeric_partitioning_col = False
                 is_date_partitioning_col = True
             else:
-                raise ValueError(
-                    "partition_column_type should be either 'numeric' or 'date'"
-                )
+                raise ValueError("partition_column_type should be either 'numeric' or 'date'")
 
             # Read from table or view
             df = extract_db_data_frame(
@@ -385,8 +380,9 @@ class Command(BaseCommand):
                 properties=get_jdbc_connection_properties(),
             )
 
-        if add_hash_field:
-            df = df.withColumn("hash", sf.xxhash64("*"))
+        extra_columns = table_spec.extra_columns if table_spec.extra_columns else {}
+        for name, column in extra_columns.items():
+            df = df.withColumn(name, column())
 
         # Make sure that the column order defined in the Delta table schema matches
         # that of the Spark dataframe used to pull from the Postgres table. While not
@@ -395,6 +391,6 @@ class Command(BaseCommand):
             df = df.select(table_spec.column_names)
 
         # Write to S3
-        load_delta_table(spark, df, destination_table_name, True)
+        load_delta_table(spark, df, destination_table_name, save_mode=save_mode, merge_condition=merge_condition)
         if spark_created_by_command:
             spark.stop()

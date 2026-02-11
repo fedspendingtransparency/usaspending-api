@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Callable, Optional
 from typing_extensions import Literal
 
 
@@ -47,4 +47,4 @@ class TransactionColumn:
     #   calling code to format the string with a input. You should expect the scalar transformation
     #   to be applied on this input. For example, a valid scalar_transformation string is
     #   "CASE {input} WHEN 'UNITED STATES' THEN 'USA' ELSE {input} END"
-    scalar_transformation: str = None
+    scalar_transformation: Callable | None= None
