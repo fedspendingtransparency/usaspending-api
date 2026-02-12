@@ -5,7 +5,9 @@ from django.db import migrations, models
 from usaspending_api.awards.models.award import vw_awards_sql
 from usaspending_api.awards.models.transaction_fabs import vw_transaction_fabs_sql
 from usaspending_api.awards.models.transaction_fpds import vw_transaction_fpds_sql
-from usaspending_api.awards.models.transaction_normalized import vw_transaction_normalized_sql
+from usaspending_api.awards.models.transaction_normalized import (
+    vw_transaction_normalized_sql,
+)
 
 transaction_delta_view_file = (
     "usaspending_api/database_scripts/etl/transaction_delta_view.sql"
@@ -13,6 +15,7 @@ transaction_delta_view_file = (
 
 with open(transaction_delta_view_file, "r") as f:
     transaction_delta_view = f.read()
+
 
 class Migration(migrations.Migration):
     dependencies = [
