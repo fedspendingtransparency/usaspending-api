@@ -632,8 +632,8 @@ class Command(BaseCommand):
             )
 
     @staticmethod
-    def get_additional_column_names(options: dict[str, Any]) -> list[str] | None:
+    def get_additional_column_names(options: dict[str, Any]) -> list[str]:
         column_names = options.get("additional_columns")
         if column_names:
             column_names = [name.strip() for name in column_names.split(",")]
-        return column_names
+        return column_names or []
