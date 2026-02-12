@@ -1,31 +1,29 @@
 import itertools
 import logging
+from datetime import datetime
+from math import ceil
+from typing import Any, Dict, List, Optional
 
 import boto3
 import numpy as np
 import psycopg2
-
 from django import db
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandParser
 from django.db.models import Model
-from math import ceil
-from pyspark.sql import SparkSession, DataFrame
-from typing import Dict, Optional, List
-from datetime import datetime
+from pyspark.sql import DataFrame, SparkSession
 
 from usaspending_api.common.csv_stream_s3_to_pg import copy_csvs_from_s3_to_pg
 from usaspending_api.common.etl.spark import convert_array_cols_to_string
-from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
     get_jdbc_connection_properties,
     get_usas_jdbc_url,
 )
+from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.config import CONFIG
-from usaspending_api.settings import DEFAULT_TEXT_SEARCH_CONFIG
-
 from usaspending_api.etl.management.commands.create_delta_table import TABLE_SPEC
+from usaspending_api.settings import DEFAULT_TEXT_SEARCH_CONFIG
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +53,7 @@ class Command(BaseCommand):
     if a new table has been made.
     """
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: CommandParser) -> None:
         parser.add_argument(
             "--delta-table",
             type=str,
@@ -110,8 +108,15 @@ class Command(BaseCommand):
             help="In the case of a Postgres sequence for the provided 'delta-table' the sequence will be reset to 1. "
             "If the job fails for some unexpected reason then the sequence will be reset to the previous value.",
         )
+        parser.add_argument(
+            "--additional-columns",
+            type=str,
+            required=False,
+            help="A comma delimited list of column names that should be loaded in addition to the columns required "
+            "by the Delta tables schema. Useful for loading temporary columns from Delta to Postgres to swap in place."
+        )
 
-    def _split_dfs(self, df, special_columns):
+    def _split_dfs(self, df: DataFrame, special_columns: list[str]) -> list[DataFrame]:
         """Split a DataFrame into DataFrame subsets based on presence of NULL values in certain special columns
 
         Unfortunately, pySpark with the JDBC doesn't handle UUIDs/JSON well.
@@ -145,7 +150,7 @@ class Command(BaseCommand):
             split_dfs.append(split_df)
         return split_dfs
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:  # noqa: C901,PLR0912,PLR0915
         extra_conf = {
             # Config for Delta Lake tables and SQL. Need these to keep Dela table metadata in the metastore
             "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension",
@@ -186,12 +191,11 @@ class Command(BaseCommand):
 
         # Postgres side - temp
         temp_schema = "temp"
-        temp_table_suffix = "temp"
-        temp_table_suffix_appendage = f"_{temp_table_suffix}" if {temp_table_suffix} else ""
+        temp_table_suffix = "_temp"
         if postgres_table:
-            temp_table_name = f"{postgres_table_name}{temp_table_suffix_appendage}"
+            temp_table_name = f"{postgres_table_name}{temp_table_suffix}"
         else:
-            temp_table_name = f"{delta_table_name}{temp_table_suffix_appendage}"
+            temp_table_name = f"{delta_table_name}{temp_table_suffix}"
         temp_table = f"{temp_schema}.{temp_table_name}"
 
         summary_msg = f"Copying delta table {delta_table} to a Postgres temp table {temp_table}."
@@ -242,7 +246,7 @@ class Command(BaseCommand):
                         (
                             f"CREATE TABLE "
                             # Below: e.g. my_tbl_temp -> my_tbl_part_temp
-                            f"{temp_table[:-len(temp_table_suffix_appendage)]}{pt['table_suffix']}{temp_table_suffix_appendage} "
+                            f"{temp_table[:-len(temp_table_suffix)]}{pt['table_suffix']}{temp_table_suffix} "
                             f"PARTITION OF {temp_table} {pt['partitioning_clause']} "
                             f"{storage_parameters}"
                         )
@@ -307,6 +311,7 @@ class Command(BaseCommand):
         # that of the Spark dataframe used to pull from the Postgres table. While not
         # always needed, this should help to prevent any future mismatch between the two.
         if column_names:
+            column_names = column_names + self.get_additional_column_names(options)
             df = df.select(column_names)
 
         # If we're working off an existing table, truncate before loading in all the data
@@ -360,7 +365,7 @@ class Command(BaseCommand):
                     f"Command failed unexpectedly; resetting the sequence to previous value: {postgres_seq_last_value}"
                 )
                 self._set_sequence_value(table_spec["postgres_seq_name"], postgres_seq_last_value)
-            raise Exception(exc)
+            raise Exception(exc) from exc
 
         logger.info(
             f"LOAD (FINISH): Loaded data from Delta table {delta_table} to {temp_table} using {strategy} " f"strategy"
@@ -394,7 +399,7 @@ class Command(BaseCommand):
             cursor.execute(f"ALTER SEQUENCE IF EXISTS {seq_name} RESTART WITH {new_seq_val}")
         return last_value
 
-    def _write_with_sql_bulk_copy_csv(
+    def _write_with_sql_bulk_copy_csv(  # noqa: PLR0913
         self,
         spark: SparkSession,
         df: DataFrame,
@@ -403,8 +408,8 @@ class Command(BaseCommand):
         temp_table: str,
         ordered_col_names: List[str],
         spark_s3_bucket_name: str,
-        keep_csv_files=False,
-    ):
+        keep_csv_files: bool = False,
+    ) -> None:
         """
         Write-from-delta-to-postgres strategy that relies on SQL bulk COPY of CSV files to Postgres. It uses the SQL
         COPY command on CSV files, which are created from the Delta table's underlying parquet files.
@@ -549,7 +554,7 @@ class Command(BaseCommand):
 
         logger.info(f"LOAD: Finished SQL bulk COPY of {file_count} CSV files to Postgres {temp_table} table")
 
-    def _write_with_jdbc_inserts(
+    def _write_with_jdbc_inserts(  # noqa: PLR0913
         self,
         spark: SparkSession,
         df: DataFrame,
@@ -558,7 +563,7 @@ class Command(BaseCommand):
         postgres_model: Optional[Model] = None,
         postgres_cols: Optional[Dict[str, str]] = None,
         overwrite: bool = False,
-    ):
+    ) -> None:
         """
         Write-from-delta-to-postgres strategy that leverages the native Spark ``DataFrame.write.jdbc`` approach.
         This will issue a series of individual INSERT statements over a JDBC connection-per-executor.
@@ -625,3 +630,10 @@ class Command(BaseCommand):
                 mode=save_mode,
                 properties=get_jdbc_connection_properties(),
             )
+
+    @staticmethod
+    def get_additional_column_names(options: dict[str, Any]) -> list[str] | None:
+        column_names = options.get("additional_columns")
+        if column_names:
+            column_names = [name.strip() for name in column_names.split(",")]
+        return column_names

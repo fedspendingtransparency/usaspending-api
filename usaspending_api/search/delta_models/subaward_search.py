@@ -157,7 +157,7 @@ SUBAWARD_SEARCH_COLUMNS = {
     "piid": {"delta": "STRING", "postgres": "TEXT"},
     "fain": {"delta": "STRING", "postgres": "TEXT"},
     "latest_transaction_id": {"delta": "LONG", "postgres": "BIGINT"},
-    "last_modified_date": {"delta": "DATE", "postgres": "DATE"},
+    "last_modified_date": {"delta": "TIMESTAMP", "postgres": "TIMESTAMP"},
     "awarding_agency_id": {"delta": "INTEGER", "postgres": "INTEGER"},
     "awarding_toptier_agency_name": {"delta": "STRING", "postgres": "TEXT"},
     "awarding_toptier_agency_abbreviation": {"delta": "STRING", "postgres": "TEXT"},
@@ -241,7 +241,15 @@ subaward_search_load_sql_string = rf"""
             county_numeric,
             UPPER(county_name) as county_name,
             census_code,
-            ROW_NUMBER() OVER (PARTITION BY UPPER(feature_name), state_alpha ORDER BY UPPER(feature_name), state_alpha, county_sequence, coalesce(date_edited, date_created) DESC, id DESC) as row_num
+            ROW_NUMBER() OVER (
+                PARTITION BY UPPER(feature_name), state_alpha
+                ORDER BY
+                    UPPER(feature_name),
+                    state_alpha,
+                    county_sequence,
+                    coalesce(date_edited, date_created) DESC,
+                    id DESC
+            ) as row_num
         FROM
             global_temp.ref_city_county_state_code
         WHERE
@@ -314,7 +322,10 @@ subaward_search_load_sql_string = rf"""
     cd_city_grouped_rownum AS (
       SELECT
         *,
-        ROW_NUMBER() OVER (PARTITION BY(city_name, state_abbreviation) ORDER BY city_name, state_abbreviation ASC) AS row_num
+        ROW_NUMBER() OVER (
+            PARTITION BY(city_name, state_abbreviation)
+            ORDER BY city_name, state_abbreviation ASC
+        ) AS row_num
       FROM global_temp.cd_city_grouped
     ),
     cd_city_grouped_distinct AS (
@@ -521,19 +532,49 @@ subaward_search_load_sql_string = rf"""
         -- USAS Derived Fields
         YEAR(CAST(bs.sub_action_date AS DATE) + interval '3 months') AS sub_fiscal_year,
         CASE
-              WHEN CAST(bs.subaward_amount AS NUMERIC(23,2)) IS NULL THEN NULL
-              WHEN COALESCE(CAST(bs.subaward_amount AS NUMERIC(23,2)), 0.00) < 1000000.0 THEN '<1M'         -- under $1 million
-              WHEN COALESCE(CAST(bs.subaward_amount AS NUMERIC(23,2)), 0.00) = 1000000.0 THEN '1M'          -- $1 million
-              WHEN COALESCE(CAST(bs.subaward_amount AS NUMERIC(23,2)), 0.00) < 25000000.0 THEN '1M..25M'     -- under $25 million
-              WHEN COALESCE(CAST(bs.subaward_amount AS NUMERIC(23,2)), 0.00) = 25000000.0 THEN '25M'         -- $25 million
-              WHEN COALESCE(CAST(bs.subaward_amount AS NUMERIC(23,2)), 0.00) < 100000000.0 THEN '25M..100M'   -- under $100 million
-              WHEN COALESCE(CAST(bs.subaward_amount AS NUMERIC(23,2)), 0.00) = 100000000.0 THEN '100M'        -- $100 million
-              WHEN COALESCE(CAST(bs.subaward_amount AS NUMERIC(23,2)), 0.00) < 500000000.0 THEN '100M..500M'  -- under $500 million
-              WHEN COALESCE(CAST(bs.subaward_amount AS NUMERIC(23,2)), 0.00) = 500000000.0 THEN '500M'        -- $500 million
-              ELSE '>500M'                               --  over $500 million
+            WHEN CAST(bs.subaward_amount AS NUMERIC(23,2)) IS NULL THEN NULL
+            WHEN COALESCE(
+                CAST(bs.subaward_amount AS NUMERIC(23,2)),
+                0.00
+            ) < 1000000.0 THEN '<1M'           -- under $1 million
+            WHEN COALESCE(
+                CAST(bs.subaward_amount AS NUMERIC(23,2)),
+                0.00
+            ) = 1000000.0 THEN '1M'            -- $1 million
+            WHEN COALESCE(
+                CAST(bs.subaward_amount AS NUMERIC(23,2)),
+                0.00
+            ) < 25000000.0 THEN '1M..25M'      -- under $25 million
+            WHEN COALESCE(
+                CAST(bs.subaward_amount AS NUMERIC(23,2)),
+                0.00
+            ) = 25000000.0 THEN '25M'          -- $25 million
+            WHEN COALESCE(
+                CAST(bs.subaward_amount AS NUMERIC(23,2)),
+                0.00
+            ) < 100000000.0 THEN '25M..100M'   -- under $100 million
+            WHEN COALESCE(
+                CAST(bs.subaward_amount AS NUMERIC(23,2)),
+                0.00
+            ) = 100000000.0 THEN '100M'        -- $100 million
+            WHEN COALESCE(
+                CAST(bs.subaward_amount AS NUMERIC(23,2)),
+                0.00
+            ) < 500000000.0 THEN '100M..500M'  -- under $500 million
+            WHEN COALESCE(
+                CAST(bs.subaward_amount AS NUMERIC(23,2)),
+                0.00
+            ) = 500000000.0 THEN '500M'        -- $500 million
+            ELSE '>500M'                       --  over $500 million
         END AS sub_total_obl_bin,
-        UPPER(COALESCE(recipient_lookup.recipient_name, bs.sub_awardee_or_recipient_legal)) AS sub_awardee_or_recipient_legal,
-        UPPER(COALESCE(parent_recipient_lookup.recipient_name, bs.sub_ultimate_parent_legal_enti)) AS sub_ultimate_parent_legal_enti,
+        UPPER(COALESCE(
+            recipient_lookup.recipient_name,
+            bs.sub_awardee_or_recipient_legal
+        )) AS sub_awardee_or_recipient_legal,
+        UPPER(COALESCE(
+            parent_recipient_lookup.recipient_name,
+            bs.sub_ultimate_parent_legal_enti
+        )) AS sub_ultimate_parent_legal_enti,
         NULL AS business_type_code,
         COALESCE(tn.business_categories, array()) AS business_categories,
         tas.treasury_account_identifiers,
@@ -549,12 +590,28 @@ subaward_search_load_sql_string = rf"""
         rcc.country_name AS sub_legal_entity_country_name,
         LEFT(COALESCE(bs.sub_legal_entity_zip, ''), 5) AS sub_legal_entity_zip5,
         rec.census_code AS sub_legal_entity_city_code,
-        LPAD(CAST(CAST(REGEXP_EXTRACT(UPPER(bs.sub_legal_entity_congressional), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0') AS sub_legal_entity_congressional,
+        LPAD(
+            CAST(
+                CAST(
+                    REGEXP_EXTRACT(UPPER(bs.sub_legal_entity_congressional), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1)
+                    AS SHORT
+                )
+                AS STRING
+            ),
+            2,
+            '0'
+        ) AS sub_legal_entity_congressional,
         (CASE
             WHEN (
                 UPPER(bs.sub_legal_entity_country_code) <> 'USA'
             ) THEN NULL
-            ELSE COALESCE(rl_cd_state_grouped.congressional_district_no, rl_zips.congressional_district_no, rl_cd_zips_grouped.congressional_district_no, rl_cd_city_grouped.congressional_district_no, rl_cd_county_grouped.congressional_district_no)
+            ELSE COALESCE(
+                rl_cd_state_grouped.congressional_district_no,
+                rl_zips.congressional_district_no,
+                rl_cd_zips_grouped.congressional_district_no,
+                rl_cd_city_grouped.congressional_district_no,
+                rl_cd_county_grouped.congressional_district_no
+            )
         END) AS sub_legal_entity_congressional_current,
 
         LATEST_CURRENT_CD.pop_congressional_code_current AS place_of_performance_congressional_current,
@@ -563,12 +620,28 @@ subaward_search_load_sql_string = rf"""
         pcc.country_name AS sub_place_of_perform_country_name,
         LEFT(COALESCE(sub_place_of_performance_zip, ''), 5) AS sub_place_of_perform_zip5,
         pop.census_code AS sub_place_of_perform_city_code,
-        LPAD(CAST(CAST(REGEXP_EXTRACT(UPPER(bs.sub_place_of_perform_congressio), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 2, '0') AS sub_place_of_perform_congressio,
+        LPAD(
+            CAST(
+                CAST(
+                    REGEXP_EXTRACT(UPPER(bs.sub_place_of_perform_congressio), '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1)
+                    AS SHORT
+                )
+                AS STRING
+            ),
+            2,
+            '0'
+        ) AS sub_place_of_perform_congressio,
         (CASE
             WHEN (
                 UPPER(bs.sub_place_of_perform_country_co) <> 'USA'
             ) THEN NULL
-            ELSE COALESCE(pop_cd_state_grouped.congressional_district_no, pop_zips.congressional_district_no, pop_cd_zips_grouped.congressional_district_no, pop_cd_city_grouped.congressional_district_no, pop_cd_county_grouped.congressional_district_no)
+            ELSE COALESCE(
+                pop_cd_state_grouped.congressional_district_no,
+                pop_zips.congressional_district_no,
+                pop_cd_zips_grouped.congressional_district_no,
+                pop_cd_city_grouped.congressional_district_no,
+                pop_cd_county_grouped.congressional_district_no
+            )
         END) AS sub_place_of_performance_congressional_current,
         rl_state_fips.fips AS legal_entity_state_fips,
         pop_state_fips.fips AS place_of_perform_state_fips,
@@ -688,12 +761,20 @@ subaward_search_load_sql_string = rf"""
         )
     LEFT OUTER JOIN
         global_temp.cd_county_grouped pop_cd_county_grouped ON (
-            pop_cd_county_grouped.county_number=LPAD(CAST(CAST(REGEXP_EXTRACT(pop.county_numeric, '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 3, '0')
+            pop_cd_county_grouped.county_number=LPAD(
+                CAST(CAST(REGEXP_EXTRACT(pop.county_numeric, '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING),
+                3,
+                '0'
+            )
             AND pop_cd_county_grouped.state_abbreviation=UPPER(bs.sub_place_of_perform_state_code)
         )
     LEFT OUTER JOIN
         global_temp.cd_county_grouped rl_cd_county_grouped ON (
-            rl_cd_county_grouped.county_number=LPAD(CAST(CAST(REGEXP_EXTRACT(rec.county_numeric, '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING), 3, '0')
+            rl_cd_county_grouped.county_number=LPAD(
+                CAST(CAST(REGEXP_EXTRACT(rec.county_numeric, '^[A-Z]*(\\d+)(?:\\.\\d+)?$', 1) AS SHORT) AS STRING),
+                3,
+                '0'
+            )
             AND rl_cd_county_grouped.state_abbreviation=UPPER(bs.sub_legal_entity_state_code)
         )
     LEFT OUTER JOIN
@@ -707,10 +788,14 @@ subaward_search_load_sql_string = rf"""
     LEFT OUTER JOIN state_fips AS rl_state_fips
         ON rl_state_fips.state_code = bs.legal_entity_state_code
     LEFT OUTER JOIN county_fips AS pop_county_fips
-        ON UPPER(pop_county_fips.county_name) = UPPER(COALESCE(fpds.place_of_perform_county_na, fabs.place_of_perform_county_na))
+        ON UPPER(pop_county_fips.county_name) = UPPER(COALESCE(
+            fpds.place_of_perform_county_na, fabs.place_of_perform_county_na
+        ))
             AND pop_county_fips.state_alpha = bs.place_of_perform_state_code
     LEFT OUTER JOIN county_fips AS rl_county_fips
-        ON UPPER(rl_county_fips.county_name) = UPPER(COALESCE(fpds.legal_entity_county_name, fabs.legal_entity_county_name))
+        ON UPPER(rl_county_fips.county_name) = UPPER(COALESCE(
+            fpds.legal_entity_county_name, fabs.legal_entity_county_name
+        ))
             AND rl_county_fips.state_alpha = bs.legal_entity_state_code
     LEFT OUTER JOIN (
         SELECT
