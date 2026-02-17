@@ -7,6 +7,7 @@ from pyspark.sql.types import (
     StringType,
     StructField,
     StructType,
+    TimestampType,
 )
 
 _common_schema = StructType(
@@ -37,8 +38,8 @@ _common_schema = StructType(
         # Dates
         StructField("action_date", DateType()),
         StructField("action_date_fiscal_year", IntegerType()),
-        StructField("initial_report_date", DateType()),
-        StructField("last_modified_date", DateType()),
+        StructField("initial_report_date", TimestampType()),
+        StructField("last_modified_date", TimestampType()),
         StructField("period_of_performance_current_end_date", DateType()),
         StructField("period_of_performance_start_date", DateType()),
         # Offices
