@@ -390,7 +390,9 @@ def load_es_index(
     )
 
 
-def merge_delta_table(spark: SparkSession, source_df: DataFrame, delta_table_name: str, merge_column: str) -> None:
+def merge_delta_table(
+    spark: SparkSession, source_df: DataFrame, delta_table_name: str, merge_column: str
+) -> None:
     source_df.create_or_replace_temporary_view("temp_table")
 
     spark.sql(
@@ -703,6 +705,7 @@ def create_ref_temp_views(  # noqa: PLR0912
                     "schema": "rpt",
                     "table_name": "object_class_program_activity_download",
                 },
+                {"schema": "rpt", "table_name": "award_financial_download"},
             ]
 
             # The DuckDB Delta extension is needed to interact with DeltaLake tables

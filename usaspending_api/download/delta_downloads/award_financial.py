@@ -53,15 +53,27 @@ class AwardFinancialMixin:
     def non_zero_filters(self) -> Column | DuckDBSparkColumn:
         return (
             (self.sf.col("gross_outlay_amount_FYB_to_period_end") != 0)
-            | (self.sf.col("USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig") != 0)
-            | (self.sf.col("USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig") != 0)
+            | (
+                self.sf.col(
+                    "USSGL487200_downward_adj_prior_year_prepaid_undeliv_order_oblig"
+                )
+                != 0
+            )
+            | (
+                self.sf.col(
+                    "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig"
+                )
+                != 0
+            )
             | (self.sf.col("transaction_obligated_amount") != 0)
         )
 
     @property
     def award_categories(self) -> dict[str, Column | DuckDBSparkColumn]:
         return {
-            "Assistance": (~self.sf.isnull(self.sf.col("is_fpds")) & ~self.sf.col("is_fpds")),
+            "Assistance": (
+                ~self.sf.isnull(self.sf.col("is_fpds")) & ~self.sf.col("is_fpds")
+            ),
             "Contracts": self.sf.col("is_fpds"),
             "Unlinked": self.sf.isnull(self.sf.col("is_fpds")),
         }
@@ -79,7 +91,6 @@ class AwardFinancialMixin:
 
 
 class FederalAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
-
     @property
     def account_level(self) -> AccountLevel:
         return AccountLevel.FEDERAL_ACCOUNT
@@ -181,7 +192,9 @@ class FederalAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
             "USSGL497200_downward_adj_of_prior_year_paid_deliv_orders_oblig": lambda col: filter_submission_and_sum(
                 col, self.filters, spark=self.spark
             ),
-            "last_modified_date": lambda col: self.sf.max(col).alias("max_last_modified_date"),
+            "last_modified_date": lambda col: self.sf.max(col).alias(
+                "max_last_modified_date"
+            ),
         }
 
     @property
@@ -192,7 +205,8 @@ class FederalAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
             + [
                 col
                 for col in query_paths["award_financial"]["federal_account"].keys()
-                if col != "owning_agency_name" and not col.startswith("last_modified_date")
+                if col != "owning_agency_name"
+                and not col.startswith("last_modified_date")
             ]
             + [self.sf.col("max_last_modified_date").alias("last_modified_date")]
         )
@@ -202,12 +216,17 @@ class FederalAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
         #       referenced by their location then the ability to use the table identifier is lost as it doesn't
         #       appear to use the metastore for the Delta tables.
         combined_download = (
-            self.download_table.filter(self.dynamic_filters)
+            self.download_table.filter(self.non_zero_filters)
+            .filter(self.dynamic_filters)
             .groupBy(self.group_by_cols)
             .agg(*[agg_func(col) for col, agg_func in self.agg_cols.items()])
             # drop original agg columns from the dataframe to avoid ambiguous column names
-            .drop(*[self.sf.col(f"award_financial_download.{col}") for col in self.agg_cols])
-            .filter(self.non_zero_filters)
+            .drop(
+                *[
+                    self.sf.col(f"award_financial_download.{col}")
+                    for col in self.agg_cols
+                ]
+            )
         )
         return [
             combined_download.filter(award_category_filter).select(self.select_cols)
@@ -216,7 +235,6 @@ class FederalAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
 
 
 class TreasuryAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
-
     @property
     def account_level(self) -> AccountLevel:
         return AccountLevel.TREASURY_ACCOUNT
@@ -231,11 +249,14 @@ class TreasuryAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
             + [
                 col
                 for col in query_paths["award_financial"]["treasury_account"].keys()
-                if col != "owning_agency_name" and not col.startswith("last_modified_date")
+                if col != "owning_agency_name"
+                and not col.startswith("last_modified_date")
             ]
             + [self.sf.col("last_modified_date")]
         )
-        combined_download = self.download_table.filter(self.dynamic_filters & self.non_zero_filters)
+        combined_download = self.download_table.filter(
+            self.dynamic_filters & self.non_zero_filters
+        )
         return [
             combined_download.filter(award_category_filter).select(select_cols)
             for award_category_filter in self.award_categories.values()
@@ -243,7 +264,6 @@ class TreasuryAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
 
 
 class AwardFinancialDownloadFactory(AbstractAccountDownloadFactory):
-
     def create_federal_account_download(self) -> FederalAccountDownload:
         return FederalAccountDownload(self.spark, self.filters, self.dynamic_filters)
 
