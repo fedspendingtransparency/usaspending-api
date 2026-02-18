@@ -127,6 +127,10 @@ SELECT
   CAST("federal_accounts" AS VARCHAR(65535)) AS federal_accounts,
   "disaster_emergency_fund_codes",
   CAST("program_activities" AS VARCHAR(65535)) AS program_activities,
+  /*
+  Sort fields are added because sorting in OpenSearch on a `scaled_float` field can be inaccurate. Instead, we've created
+    new fields that are stored as integers and can be used for sorting instead.
+  */
   CAST("award_amount" * 100 AS BIGINT) AS award_amount_sort,
   CAST("generated_pragmatic_obligation" * 100 AS BIGINT) AS generated_pragmatic_obligation_sort,
   CAST("federal_action_obligation" * 100 AS BIGINT) AS federal_action_obligation_sort,

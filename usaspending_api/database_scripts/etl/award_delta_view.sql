@@ -130,6 +130,10 @@ SELECT
   "total_subaward_amount",
   "transaction_count",
 
+  /*
+  Sort fields are added because sorting in OpenSearch on a `scaled_float` field can be inaccurate. Instead, we've created
+    new fields that are stored as integers and can be used for sorting instead.
+  */
   CAST("total_obligation" * 100 AS BIGINT) AS total_obligation_sort,
   CAST("total_outlays" * 100 AS BIGINT) AS total_outlays_sort,
   CAST("award_amount" * 100 AS BIGINT) AS award_amount_sort,
