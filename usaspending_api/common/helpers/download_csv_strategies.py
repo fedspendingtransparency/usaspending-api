@@ -292,13 +292,17 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
             s3_bucket_sub_path: The path to the s3 files in the bucket, exluding s3a:// + bucket name
             destination_path_dir: The location to move those files from s3 to, must not include the
                 file name in the path. This path should be a directory.
+            max_threads: The maximum number of threads to use when moving files from s3 to the local machine
+                Default: 15
 
         Returns:
             A list of the final location on the local machine that the
             files were moved to from s3.
         """
         start_time = time.time()
-        self._logger.info("Moving data files from S3 to local machine using threading...")
+        self._logger.info(
+            "Moving data files from S3 to local machine using threading..."
+        )
         local_csv_file_paths = []
 
         with ThreadPoolExecutor(max_workers=max_threads) as executor:
@@ -317,7 +321,9 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
             for future in as_completed(futures):
                 local_csv_file_paths.append(future.result())
 
-        self._logger.info(f"Copied data files from S3 to local machine in {(time.time() - start_time):3f}s")
+        self._logger.info(
+            f"Copied data files from S3 to local machine in {(time.time() - start_time):3f}s"
+        )
         return local_csv_file_paths
 
 
