@@ -1,5 +1,6 @@
 import logging
 import multiprocessing
+import threading
 import time
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -263,6 +264,7 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
             A list of the final location on the local machine that the
             files were moved to from s3.
         """
+        self._logger.info(f"Starting thread {threading.get_ident()}")
         s3_key = s3_file_path.replace(f"{s3_bucket_path}/", "")
         file_name_only = s3_key.replace(f"{s3_bucket_sub_path}/", "")
         final_path = f"{destination_path_dir}/{file_name_only}"
@@ -271,6 +273,7 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
             s3_key,
             final_path,
         )
+        self._logger.info(f"Ending thread {threading.get_ident()}")
         return final_path
 
     def _move_data_csv_s3_to_local_threading(
@@ -305,7 +308,9 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
         )
         local_csv_file_paths = []
 
-        with ThreadPoolExecutor(max_workers=max_threads) as executor:
+        with ThreadPoolExecutor(
+            max_workers=max_threads, thread_name_prefix="spark-downloader-worker"
+        ) as executor:
             futures = [
                 executor.submit(
                     self._move_data_csv_s3_to_local,
