@@ -611,6 +611,7 @@ class TransactionDownload:
             )
             .select(*self.common_cols, *faba_cols, *self.fabs_cols, *self.fpds_cols)
             .withColumn("merge_hash_key", sf.xxhash64("*"))
+            .repartition()
         )
         return df
 
