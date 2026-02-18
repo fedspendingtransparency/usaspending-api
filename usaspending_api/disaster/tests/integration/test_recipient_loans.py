@@ -287,7 +287,7 @@ def test_invalid_award_type_codes(client, monkeypatch, helpers, elasticsearch_aw
 
     resp = helpers.post_for_spending_endpoint(client, url, award_type_codes=["ZZ", "08"], def_codes=["L", "M"])
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
-    assert resp.data["detail"] == "Field 'filter|award_type_codes' is outside valid values ['07', '08']"
+    assert resp.data["detail"] == "Field 'filter|award_type_codes' is outside valid values ['07', '08', 'F003', 'F004']"
 
 
 @pytest.mark.django_db
