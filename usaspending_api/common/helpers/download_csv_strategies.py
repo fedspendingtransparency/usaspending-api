@@ -307,20 +307,24 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
             "Moving data files from S3 to local machine using threading..."
         )
         local_csv_file_paths = []
+        _download_s3_object_args = []
+        for file_name in s3_file_paths:
+            _s3_key = file_name.replace(f"{s3_bucket_path}/", "")
+            _file_name_only = _s3_key.replace(f"{s3_bucket_sub_path}/", "")
+            _download_s3_object_args.append(
+                {
+                    "bucket_name": bucket_name,
+                    "key": _s3_key,
+                    "file_path": f"{destination_path_dir}/{_file_name_only}",
+                }
+            )
 
         with ThreadPoolExecutor(
             max_workers=max_threads, thread_name_prefix="spark-downloader-worker"
         ) as executor:
             futures = [
-                executor.submit(
-                    self._move_data_csv_s3_to_local,
-                    bucket_name,
-                    file_name,
-                    s3_bucket_path,
-                    s3_bucket_sub_path,
-                    destination_path_dir,
-                )
-                for file_name in s3_file_paths
+                executor.submit(download_s3_object, **download_args)
+                for download_args in _download_s3_object_args
             ]
 
             for future in as_completed(futures):
