@@ -5,10 +5,16 @@ from enum import Enum
 
 from django.conf import settings
 from django.utils.text import slugify
+from elasticsearch_dsl.response import Response as ESResponse
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from usaspending_api.common.api_versioning import api_transformations, API_TRANSFORM_FUNCTIONS
+from usaspending_api.awards.v2.lookups.elasticsearch_lookups import TransactionField
+from usaspending_api.common.api_versioning import (
+    API_TRANSFORM_FUNCTIONS,
+    api_transformations,
+)
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import TransactionSearch
 from usaspending_api.common.exceptions import (
@@ -16,15 +22,19 @@ from usaspending_api.common.exceptions import (
     UnprocessableEntityException,
 )
 from usaspending_api.common.helpers.data_constants import state_name_from_code
-from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata, get_generic_filters_message
+from usaspending_api.common.helpers.generic_helper import (
+    get_generic_filters_message,
+    get_simple_pagination_metadata,
+)
 from usaspending_api.common.query_with_filters import QueryWithFilters
-from usaspending_api.search.filters.elasticsearch.filter import QueryType
 from usaspending_api.common.validator.award_filter import AWARD_FILTER_W_FILTERS
-from usaspending_api.common.validator.pagination import customize_pagination_with_sort_columns
+from usaspending_api.common.validator.pagination import (
+    customize_pagination_with_sort_columns,
+)
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.references.models import ToptierAgencyPublishedDABSView
+from usaspending_api.search.filters.elasticsearch.filter import QueryType
 from usaspending_api.search.v2.es_sanitization import es_minimal_sanitize
-from usaspending_api.awards.v2.lookups.elasticsearch_lookups import TransactionField
 
 logger = logging.getLogger(__name__)
 
@@ -37,16 +47,40 @@ class DerivedField(str, Enum):
     RECIPIENT_LOCATION = "Recipient Location"
 
 
-@api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
+# scaled_float fields have a sibling field of type `long` that should be used for sorting instead
+ES_ALTERNATIVE_SORT_FIELDS = {
+    "generated_pragmatic_obligation": "generated_pragmatic_obligation_sort",
+    "federal_action_obligation": "federal_action_obligation_sort",
+    "total_subsidy_cost": "total_subsidy_cost_sort",
+    "total_loan_value": "total_loan_value_sort",
+    "total_covid_obligation": "total_covid_obligation_sort",
+    "total_covid_outlay": "total_covid_outlay_sort",
+    "award_amount": "award_amount_sort",
+    "original_loan_subsidy_cost": "original_loan_subsidy_cost_sort",
+    "total_iija_obligation": "total_iija_obligation_sort",
+    "subaward_amount": "subaward_amount_sort",
+    "face_value_loan_guarantee": "face_value_loan_guarantee_sort",
+    "total_subaward_amount": "total_subaward_amount_sort",
+    "total_outlays": "total_outlays_sort",
+    "total_obligation": "total_obligation_sort",
+    "total_iija_outlay": "total_iija_outlay_sort",
+}
+
+
+@api_transformations(
+    api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS
+)
 class SpendingByTransactionVisualizationViewSet(APIView):
     """
     This route takes keyword search fields, and returns the fields of the searched term.
     """
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/search/spending_by_transaction.md"
+    endpoint_doc = (
+        "usaspending_api/api_contracts/contracts/v2/search/spending_by_transaction.md"
+    )
 
     @cache_response()
-    def post(self, request):
+    def post(self, request: Request) -> Response:  # noqa: PLR0912, PLR0915
         all_fields = [
             *[enum_val.value for enum_val in TransactionField],
             *[enum_val.value for enum_val in DerivedField],
@@ -79,7 +113,8 @@ class SpendingByTransactionVisualizationViewSet(APIView):
         models.extend(copy.deepcopy(AWARD_FILTER_W_FILTERS))
         models.extend(
             customize_pagination_with_sort_columns(
-                all_fields, default_sort_column=TransactionField.TRANSACTION_AMOUNT.value
+                all_fields,
+                default_sort_column=TransactionField.TRANSACTION_AMOUNT.value,
             )
         )
         models.extend(copy.deepcopy(program_activities_rule))
@@ -89,13 +124,21 @@ class SpendingByTransactionVisualizationViewSet(APIView):
                 m["optional"] = False
         tiny_shield = TinyShield(models)
         validated_payload = tiny_shield.block(request.data)
-        if "filters" in validated_payload and "program_activities" in validated_payload["filters"]:
-            tiny_shield.enforce_object_keys_min(validated_payload, program_activities_rule[0])
+        if (
+            "filters" in validated_payload
+            and "program_activities" in validated_payload["filters"]
+        ):
+            tiny_shield.enforce_object_keys_min(
+                validated_payload, program_activities_rule[0]
+            )
 
         record_num = (validated_payload["page"] - 1) * validated_payload["limit"]
         if record_num >= settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW:
             raise UnprocessableEntityException(
-                "Page #{page} of size {limit} is over the maximum result limit ({es_limit}). Consider using custom data downloads to obtain large data sets.".format(
+                (
+                    "Page #{page} of size {limit} is over the maximum result limit ({es_limit}). "
+                    "Consider using custom data downloads to obtain large data sets."
+                ).format(
                     page=validated_payload["page"],
                     limit=validated_payload["limit"],
                     es_limit=settings.ES_TRANSACTIONS_MAX_RESULT_WINDOW,
@@ -104,9 +147,14 @@ class SpendingByTransactionVisualizationViewSet(APIView):
 
         payload_sort_key = validated_payload["sort"]
         if payload_sort_key not in validated_payload["fields"]:
-            raise InvalidParameterException(f"Sort value not found in fields: {payload_sort_key}")
+            raise InvalidParameterException(
+                f"Sort value not found in fields: {payload_sort_key}"
+            )
 
-        if "filters" in validated_payload and "no intersection" in validated_payload["filters"]["award_type_codes"]:
+        if (
+            "filters" in validated_payload
+            and "no intersection" in validated_payload["filters"]["award_type_codes"]
+        ):
             # "Special case": there will never be results when the website provides this value
             return Response(
                 {
@@ -155,6 +203,10 @@ class SpendingByTransactionVisualizationViewSet(APIView):
             case _:
                 sort_by_fields = [TransactionField(payload_sort_key).full_path]
         sorts = [{field: validated_payload["order"] for field in sort_by_fields}]
+        for sort_dict in sorts:
+            key = next(iter(sort_dict))
+            if key in ES_ALTERNATIVE_SORT_FIELDS:
+                sort_dict[ES_ALTERNATIVE_SORT_FIELDS[key]] = sort_dict.pop(key)
 
         lower_limit = (validated_payload["page"] - 1) * validated_payload["limit"]
         upper_limit = (validated_payload["page"]) * validated_payload["limit"] + 1
@@ -164,12 +216,18 @@ class SpendingByTransactionVisualizationViewSet(APIView):
             ]
             validated_payload["filters"].pop("keywords")
         query_with_filters = QueryWithFilters(QueryType.TRANSACTIONS)
-        filter_query = query_with_filters.generate_elasticsearch_query(validated_payload["filters"])
-        search = TransactionSearch().filter(filter_query).sort(*sorts)[lower_limit:upper_limit]
+        filter_query = query_with_filters.generate_elasticsearch_query(
+            validated_payload["filters"]
+        )
+        search = (
+            TransactionSearch()
+            .filter(filter_query)
+            .sort(*sorts)[lower_limit:upper_limit]
+        )
         response = search.handle_execute()
         return Response(self.build_elasticsearch_result(validated_payload, response))
 
-    def build_elasticsearch_result(self, request, response) -> dict:
+    def build_elasticsearch_result(self, request: dict, response: ESResponse) -> dict:
         results = []
         for res in response:
             hit = res.to_dict()
@@ -186,20 +244,28 @@ class SpendingByTransactionVisualizationViewSet(APIView):
                         }
                     case DerivedField.RECIPIENT_LOCATION:
                         row[DerivedField.RECIPIENT_LOCATION.value] = {
-                            "location_country_code": hit.get("recipient_location_country_code"),
+                            "location_country_code": hit.get(
+                                "recipient_location_country_code"
+                            ),
                             "country_name": hit.get("recipient_location_country_name"),
                             "state_code": hit.get("recipient_location_state_code"),
-                            "state_name": state_name_from_code(hit.get("recipient_location_state_code")),
+                            "state_name": state_name_from_code(
+                                hit.get("recipient_location_state_code")
+                            ),
                             "city_name": hit.get("recipient_location_city_name"),
                             "county_code": hit.get("recipient_location_county_code"),
                             "county_name": hit.get("recipient_location_county_name"),
                             "address_line1": hit.get("legal_entity_address_line1"),
                             "address_line2": hit.get("legal_entity_address_line2"),
                             "address_line3": hit.get("legal_entity_address_line3"),
-                            "congressional_code": hit.get("recipient_location_congressional_code"),
+                            "congressional_code": hit.get(
+                                "recipient_location_congressional_code"
+                            ),
                             "zip4": hit.get("legal_entity_zip_last4"),
                             "zip5": hit.get("recipient_location_zip5"),
-                            "foreign_postal_code": hit.get("legal_entity_foreign_posta"),
+                            "foreign_postal_code": hit.get(
+                                "legal_entity_foreign_posta"
+                            ),
                             "foreign_province": hit.get("legal_entity_foreign_provi"),
                         }
                     case DerivedField.PRIMARY_PLACE_OF_PERFORMANCE:
@@ -207,7 +273,9 @@ class SpendingByTransactionVisualizationViewSet(APIView):
                             "location_country_code": hit.get("pop_country_code"),
                             "country_name": hit.get("pop_country_name"),
                             "state_code": hit.get("pop_state_code"),
-                            "state_name": state_name_from_code(hit.get("pop_state_code")),
+                            "state_name": state_name_from_code(
+                                hit.get("pop_state_code")
+                            ),
                             "city_name": hit.get("pop_city_name"),
                             "county_code": hit.get("pop_county_code"),
                             "county_name": hit.get("pop_county_name"),
@@ -225,12 +293,21 @@ class SpendingByTransactionVisualizationViewSet(APIView):
                             "code": hit.get("product_or_service_code"),
                             "description": hit.get("product_or_service_description"),
                         }
-                    case TransactionField.AWARDING_AGENCY_SLUG | TransactionField.FUNDING_AGENCY_SLUG:
-                        row[field] = slugify(hit.get(TransactionField(field).short_path))
+                    case (
+                        TransactionField.AWARDING_AGENCY_SLUG
+                        | TransactionField.FUNDING_AGENCY_SLUG
+                    ):
+                        row[field] = slugify(
+                            hit.get(TransactionField(field).short_path)
+                        )
                     case TransactionField.RECIPIENT_ID:
                         raw_value = hit.get(TransactionField.RECIPIENT_ID.short_path)
                         match_value = re.fullmatch(r"^(.*)/([CPR]{1})$", raw_value)
-                        row[field] = f"{match_value[1]}-{match_value[2]}" if match_value else None
+                        row[field] = (
+                            f"{match_value[1]}-{match_value[2]}"
+                            if match_value
+                            else None
+                        )
                     case _:
                         row[field] = hit.get(TransactionField(field).short_path)
 
@@ -239,18 +316,24 @@ class SpendingByTransactionVisualizationViewSet(APIView):
 
             results.append(row)
 
-        metadata = get_simple_pagination_metadata(len(response), request["limit"], request["page"])
+        metadata = get_simple_pagination_metadata(
+            len(response), request["limit"], request["page"]
+        )
 
         return {
             "limit": request["limit"],
             "results": results[: request["limit"]],
             "page_metadata": metadata,
-            "messages": get_generic_filters_message(request["filters"].keys(), [elem["name"] for elem in self.models]),
+            "messages": get_generic_filters_message(
+                request["filters"].keys(), [elem["name"] for elem in self.models]
+            ),
         }
 
-    def get_agency_slug(self, code):
+    def get_agency_slug(self, code: int) -> str | None:
         code = str(code).zfill(3)
-        submission = ToptierAgencyPublishedDABSView.objects.filter(toptier_code=code).first()
+        submission = ToptierAgencyPublishedDABSView.objects.filter(
+            toptier_code=code
+        ).first()
         if submission is None:
             return None
         return slugify(submission.name)
