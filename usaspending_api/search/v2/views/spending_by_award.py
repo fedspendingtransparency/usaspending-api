@@ -9,10 +9,11 @@ from typing import (
 )
 
 from django.conf import settings
-from django.db.models import F
+from django.db.models import F, QuerySet
 from django.utils.text import slugify
 from elasticsearch_dsl import Q as ES_Q
 from elasticsearch_dsl.response import Response as ES_Response
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -150,7 +151,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
     )
 
     @cache_response()
-    def post(self, request):
+    def post(self, request: Request) -> Response:
         """Return all awards matching the provided filters and limits"""
         self.original_filters = request.data.get("filters")
         json_request, models = self.validate_request_data(request.data)
@@ -245,7 +246,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
             )
 
     @staticmethod
-    def validate_request_data(request_data):
+    def validate_request_data(request_data: dict) -> dict:
         spending_type_models = [
             {
                 "name": "subawards",
@@ -344,11 +345,13 @@ class SpendingByAwardVisualizationViewSet(APIView):
             tiny_shield.enforce_object_keys_min(request_data, program_activities_rule)
         return tiny_shield.block(request_data), models
 
-    def if_no_intersection(self):
+    def if_no_intersection(self) -> bool:
         # "Special case" behavior: there will never be results when the website provides this value
         return "no intersection" in self.filters["award_type_codes"]
 
-    def create_response_for_subawards(self, queryset, models):
+    def create_response_for_subawards(
+        self, queryset: QuerySet, models: list[dict]
+    ) -> dict:
         results = []
         rows = list(queryset)
         for record in rows[: self.pagination["limit"]]:
@@ -378,7 +381,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
             models=models,
         )
 
-    def add_award_generated_id_field(self, records):
+    def add_award_generated_id_field(self, records: dict[str, any]) -> dict[str, any]:
         """Obtain the generated_unique_award_id and add to response"""
         dest, source = self.constants["generated_award_field"]
         internal_ids = [record[source] for record in records]
@@ -392,7 +395,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
             )  # defensive, in case there is a discrepancy
         return records
 
-    def get_elastic_sort_by_fields(self):
+    def get_elastic_sort_by_fields(self) -> list[str]:  # noqa: PLR0912, C901
         match self.pagination["sort_key"]:
             case "Award ID":
                 sort_by_fields = ["display_award_id"]
@@ -475,7 +478,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         return sort_by_fields
 
-    def get_database_fields(self):
+    def get_database_fields(self) -> set[str]:
         values = copy.copy(self.constants["minimum_db_fields"])
         for field in self.fields:
             for mapping in self.constants["api_to_db_mapping_list"]:
@@ -483,12 +486,14 @@ class SpendingByAwardVisualizationViewSet(APIView):
                     values.add(mapping.get(field))
         return values
 
-    def annotate_queryset(self, queryset):
+    def annotate_queryset(self, queryset: QuerySet) -> QuerySet:
         for field, function in self.constants["annotations"].items():
             queryset = function(field, queryset)
         return queryset
 
-    def custom_queryset_order_by(self, queryset, sort_field_names, order):
+    def custom_queryset_order_by(
+        self, queryset: QuerySet, sort_field_names: list[str], order: str
+    ) -> QuerySet:
         """Explicitly set NULLS LAST in the ordering to encourage the usage of the indexes."""
         if order == "desc":
             order_by_list = [
@@ -519,19 +524,10 @@ class SpendingByAwardVisualizationViewSet(APIView):
         filter_query: ES_Q,
         sorts: list[dict[str, str]],
     ) -> ES_Response:
-        _temp_sorts = sorts.copy()
-
-        for sort_dict in _temp_sorts:
-            for scaled_float_key, value in sort_dict.items():
-                if scaled_float_key in ES_ALTERNATIVE_SORT_FIELDS.keys():
-                    sorts.append(
-                        {
-                            ES_ALTERNATIVE_SORT_FIELDS[scaled_float_key]: sort_dict.get(
-                                scaled_float_key
-                            )
-                        }
-                    )
-                    sorts.remove({scaled_float_key: value})
+        for sort_dict in sorts:
+            key = next(iter(sort_dict))
+            if key in ES_ALTERNATIVE_SORT_FIELDS:
+                sort_dict[ES_ALTERNATIVE_SORT_FIELDS[key]] = sort_dict.pop(key)
 
         record_num = (self.pagination["page"] - 1) * self.pagination["limit"]
         # random page jumping was removed due to performance concerns
@@ -687,7 +683,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         return agency_lookup
 
-    def construct_es_response_for_prime_awards(self, response: ES_Response) -> dict:
+    def construct_es_response_for_prime_awards(self, response: ES_Response) -> dict:  # noqa: PLR0912, C901
         results = []
 
         if len(response) == 0:
@@ -830,7 +826,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
 
         return self.construct_es_response(results, response)
 
-    def calculate_complex_fields(self, row, hit):
+    def calculate_complex_fields(  # noqa: PLR0912
+        self, row: dict[str, str], hit: dict[str, any]
+    ) -> dict[str, any]:
         if row.get("Sub-Award Amount"):
             row["Sub-Award Amount"] = float(row["Sub-Award Amount"])
 
@@ -959,7 +957,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
             ),
         }
 
-    def get_recipient_hash_with_level(self, award_doc):
+    def get_recipient_hash_with_level(self, award_doc: dict[str, any]) -> str | None:
         recipient_info = award_doc.get("recipient_agg_key").split("/")
         recipient_hash = recipient_info[0] if recipient_info else None
         if len(recipient_info) > 1 and recipient_info[1].upper() != "NONE":
