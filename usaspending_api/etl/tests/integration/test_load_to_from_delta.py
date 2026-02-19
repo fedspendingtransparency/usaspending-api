@@ -225,11 +225,11 @@ def verify_delta_table_loaded_to_delta(  # noqa: PLR0912
     else:
         expected_table_name = delta_table_name.split(".")[-1]
 
-    partition_col = TABLE_SPEC[delta_table_name].get("partition_column")
+    partition_col = TABLE_SPEC[delta_table_name].partition_column
     if dummy_data is None:
         # get the postgres data to compare
-        model = TABLE_SPEC[delta_table_name]["model"]
-        is_from_broker = TABLE_SPEC[delta_table_name]["is_from_broker"]
+        model = TABLE_SPEC[delta_table_name].model
+        is_from_broker = TABLE_SPEC[delta_table_name].is_from_broker
         if delta_table_name == "summary_state_view":
             dummy_query = f"SELECT * from {expected_table_name}"
             if partition_col is not None:
@@ -243,7 +243,7 @@ def verify_delta_table_loaded_to_delta(  # noqa: PLR0912
         elif is_from_broker:
             # model can be None if loading from the Broker
             broker_connection = connections[settings.BROKER_DB_ALIAS]
-            source_broker_name = TABLE_SPEC[delta_table_name]["source_table"]
+            source_broker_name = TABLE_SPEC[delta_table_name].source_table
             with broker_connection.cursor() as cursor:
                 dummy_query = f"SELECT * from {source_broker_name}"
                 if partition_col is not None:
@@ -266,7 +266,7 @@ def verify_delta_table_loaded_to_delta(  # noqa: PLR0912
     assert equal_datasets(
         dummy_data,
         received_data,
-        TABLE_SPEC[delta_table_name]["custom_schema"],
+        TABLE_SPEC[delta_table_name].custom_schema,
         ignore_fields,
     )
 
@@ -304,9 +304,10 @@ def verify_delta_table_loaded_from_delta(
     call_command(load_command, *cmd_args)
 
     # get the postgres data to compare
+
     source_table = (
-        TABLE_SPEC[delta_table_name]["source_table"]
-        or TABLE_SPEC[delta_table_name]["swap_table"]
+        TABLE_SPEC[delta_table_name].source_table
+        or TABLE_SPEC[delta_table_name].swap_table
     )
     temp_schema = "temp"
     if source_table:
@@ -314,7 +315,7 @@ def verify_delta_table_loaded_from_delta(
     else:
         tmp_table_name = f"{temp_schema}.{expected_table_name}_temp"
     postgres_query = f"SELECT * FROM {tmp_table_name}"
-    partition_col = TABLE_SPEC[delta_table_name]["partition_column"]
+    partition_col = TABLE_SPEC[delta_table_name].partition_column
     if partition_col is not None:
         postgres_query = f"{postgres_query} ORDER BY {partition_col}"
     with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
@@ -331,7 +332,7 @@ def verify_delta_table_loaded_from_delta(
     assert equal_datasets(
         postgres_data,
         delta_data,
-        TABLE_SPEC[delta_table_name]["custom_schema"],
+        TABLE_SPEC[delta_table_name].custom_schema,
         ignore_fields=ignore_fields,
     )
 
