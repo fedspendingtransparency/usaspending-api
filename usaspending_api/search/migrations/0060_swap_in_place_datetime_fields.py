@@ -92,36 +92,48 @@ class Migration(migrations.Migration):
             new_name="last_modified_date",
         ),
 
-        # Rename the new indexes to take the expected name
-        migrations.RenameIndex(
-            model_name='subawardsearch',
-            old_name='ss_idx_last_modified_date_new',
-            new_name='ss_idx_last_modified_date',
-        ),
-        migrations.RenameIndex(
-            model_name='transactionsearch',
-            old_name='ts_idx_last_modified_date_new',
-            new_name='ts_idx_last_modified_date',
-        ),
-
-        # Prevent Django from trying to create additional migrations that would recreate the indexes
-        # that we have renamed for the purpose of the swap in place.
         migrations.RunSQL(
-            sql="",
-            reverse_sql="",
+            sql="""
+                -- Renaming indexes manually because Django will try to recreate the indexes otherwise
+                ALTER INDEX rpt.ss_idx_last_modified_date_new
+                    RENAME TO ss_idx_last_modified_date;
+                ALTER INDEX rpt.ts_idx_last_modified_date_new
+                    RENAME TO ts_idx_last_modified_date;
+
+                -- Renaming the auto-named indexes on the partitioned tables
+                ALTER INDEX rpt.transaction_search_fabs_last_modified_date_new_idx
+                    RENAME TO ts_idx_last_modified_date_fabs;
+                ALTER INDEX rpt.transaction_search_fpds_last_modified_date_new_idx
+                    RENAME TO ts_idx_last_modified_date_fpds;
+            """,
+            reverse_sql="""
+                ALTER INDEX rpt.ss_idx_last_modified_date
+                    RENAME TO ss_idx_last_modified_date_new;
+                ALTER INDEX rpt.ts_idx_last_modified_date
+                    RENAME TO ts_idx_last_modified_date_new;
+                ALTER INDEX rpt.ts_idx_last_modified_date_fabs
+                    RENAME TO transaction_search_fabs_last_modified_date_new_idx;
+                ALTER INDEX rpt.ts_idx_last_modified_date_fpds
+                   RENAME TO transaction_search_fpds_last_modified_date_new_idx;
+            """,
             state_operations=[
                 migrations.RemoveIndex(
                     model_name='subawardsearch',
-                    name='ss_idx_last_modified_date',
+                    name='ss_idx_last_modified_date_new',
                 ),
                 migrations.RemoveIndex(
                     model_name='transactionsearch',
-                    name='ts_idx_last_modified_date',
+                    name='ts_idx_last_modified_date_new',
                 ),
                 migrations.AddIndex(
                     model_name='subawardsearch',
-                    index=models.Index(models.OrderBy(models.F('last_modified_date'), descending=True, nulls_last=True),
-                                       name='ss_idx_last_modified_date'),
+                    index=models.Index(
+                        models.OrderBy(
+                            models.F('last_modified_date'),
+                            descending=True,
+                            nulls_last=True
+                        ),
+                        name='ss_idx_last_modified_date'),
                 ),
                 migrations.AddIndex(
                     model_name='transactionsearch',
