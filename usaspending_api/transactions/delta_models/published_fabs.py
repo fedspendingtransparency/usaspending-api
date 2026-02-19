@@ -125,14 +125,14 @@ PUBLISHED_FABS_DELTA_COLUMNS = {
     **{k: v["delta"] for k, v in PUBLISHED_FABS_COLUMNS.items()},
     **DELTA_ONLY_COLUMNS,
 }
-PUBLISHED_FABS_POSTGRES_COLUMNS = {
-    k: v["postgres"] for k, v in PUBLISHED_FABS_COLUMNS.items()
-}
+PUBLISHED_FABS_POSTGRES_COLUMNS = {k: v["postgres"] for k, v in PUBLISHED_FABS_COLUMNS.items()}
 
 published_fabs_create_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
         {", ".join([f'{key} {val}' for key, val in PUBLISHED_FABS_DELTA_COLUMNS.items()])}
     )
     USING DELTA
+    PARTITIONED BY (action_year, action_month)
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
+    TBLPROPERTIES (delta.enableChangeDataFeed = true)
 """

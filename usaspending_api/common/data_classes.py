@@ -35,7 +35,7 @@ class Pagination:
 @dataclass
 class TransactionColumn:
     dest_name: str
-    source: Optional[str]
+    source: str | bool | None
     delta_type: str
     handling: Literal[
         "cast", "leave_null", "literal", "normal", "parse_string_datetime_to_date", "string_datetime_remove_timestamp"

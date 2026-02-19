@@ -30,7 +30,7 @@ class Command(BaseCommand):
     @staticmethod
     def handle(*args, **options):
         with prepare_spark() as spark:
-            # fabs_loader = FABSNormalizedDeltaTransactionLoader(spark=spark, spark_s3_bucket=options["spark_s3_bucket"])
+            fabs_loader = FABSNormalizedDeltaTransactionLoader(spark=spark, spark_s3_bucket=options["spark_s3_bucket"])
             fpds_loader = FPDSNormalizedDeltaTransactionLoader(spark=spark, spark_s3_bucket=options["spark_s3_bucket"])
-            # fabs_loader.load_transactions()
+            fabs_loader.load_transactions()
             fpds_loader.load_transactions()

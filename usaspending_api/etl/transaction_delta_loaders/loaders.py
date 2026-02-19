@@ -1,29 +1,33 @@
-import copy
 import logging
 from abc import ABC
 from datetime import datetime, timezone
 from typing import Callable, Literal
 
 from delta import DeltaTable
-from pyspark.sql import DataFrame, functions as sf, SparkSession, Window
+from pyspark.sql import Column, DataFrame, functions as sf, SparkSession, Window
+from pyspark.sql.types import ArrayType, StringType
 
 
 from usaspending_api.broker.helpers.build_business_categories_boolean_dict import fpds_boolean_columns
+from usaspending_api.broker.helpers.get_business_categories import (
+    get_business_categories_fabs,
+    get_business_categories_fpds,
+)
 
 from usaspending_api.broker.helpers.last_load_date import (
     get_earliest_load_date,
-    get_latest_load_date,
-    update_last_load_date,
     get_last_load_date,
+    update_last_load_date,
 )
 from usaspending_api.common.data_classes import TransactionColumn
 from usaspending_api.common.etl.spark import create_ref_temp_views
-
+from usaspending_api.etl.transaction_delta_loaders.utils import parse_date_column
 
 from usaspending_api.transactions.delta_models.transaction_fabs import (
     FABS_TO_NORMALIZED_COLUMN_INFO,
     TRANSACTION_FABS_COLUMN_INFO,
 )
+
 from usaspending_api.transactions.delta_models.transaction_fpds import (
     DAP_TO_NORMALIZED_COLUMN_INFO,
     TRANSACTION_FPDS_COLUMN_INFO,
@@ -58,51 +62,20 @@ class AbstractDeltaTransactionLoader(ABC):
         )
         update_last_load_date(f"transaction_{self.etl_level}", next_last_load)
 
-    def build_date_format_sql(self, col: TransactionColumn, is_casted_to_date: bool = True) -> str:
-        # Each of these regexps allows for an optional timestamp portion, separated from the date by some character,
-        #   and the timestamp allows for an optional UTC offset.  In any case, the timestamp is ignored, though.
-        regexp_mmddYYYY = r"(\\d{2})(?<sep>[-/])(\\d{2})(\\k<sep>)(\\d{4})(.\\d{2}:\\d{2}:\\d{2}([+-]\\d{2}:\\d{2})?)?"
-        regexp_YYYYmmdd = r"(\\d{4})(?<sep>[-/]?)(\\d{2})(\\k<sep>)(\\d{2})(.\\d{2}:\\d{2}:\\d{2}([+-]\\d{2}:\\d{2})?)?"
-
-        mmddYYYY_fmt = sf.concat(
-            sf.regexp_extract(sf.col(f"{self.source_table}.{col.source}"), regexp_mmddYYYY, 5),
-            sf.lit("-"),
-            sf.regexp_extract(sf.col(f"{self.source_table}.{col.source}"), regexp_mmddYYYY, 1),
-            sf.lit("-"),
-            sf.regexp_extract(sf.col(f"{self.source_table}.{col.source}"), regexp_mmddYYYY, 3),
-        )
-        YYYYmmdd_fmt = sf.concat(
-            sf.regexp_extract(sf.col(f"{self.source_table}.{col.source}"), regexp_YYYYmmdd, 1),
-            sf.lit("-"),
-            sf.regexp_extract(sf.col(f"{self.source_table}.{col.source}"), regexp_YYYYmmdd, 3),
-            sf.lit("-"),
-            sf.regexp_extract(sf.col(f"{self.source_table}.{col.source}"), regexp_YYYYmmdd, 5),
-        )
-
-        if is_casted_to_date:
-            mmddYYYY_fmt = mmddYYYY_fmt.cast("date")
-            YYYYmmdd_fmt = YYYYmmdd_fmt.cast("date")
-
-        snippet = sf.when(
-            sf.regexp(f"{self.source_table}.{col.source}", sf.lit(regexp_mmddYYYY)), mmddYYYY_fmt
-        ).otherwise(YYYYmmdd_fmt)
-
-        return snippet
-
-    def handle_column(self, col: TransactionColumn, is_result_aliased=True) -> str:
+    def handle_column(self, col: TransactionColumn, is_result_aliased=True) -> Column:
         if col.handling == "cast":
             retval = sf.col(f"{self.source_table}.{col.source}").cast(col.delta_type)
         elif col.handling == "literal":
             # Use col.source directly as the value
-            retval = sf.lit(col.source)
+            retval = sf.lit(col.source).cast(col.delta_type)
         elif col.handling == "parse_string_datetime_to_date":
             # These are string fields that actually hold DATES/TIMESTAMPS and need to be cast as dates.
             # However, they may not be properly parsed when calling CAST(... AS DATE).
-            retval = self.build_date_format_sql(col, is_casted_to_date=True)
+            retval = parse_date_column(col.source, table=self.source_table, is_casted_to_date=True)
         elif col.handling == "string_datetime_remove_timestamp":
             # These are string fields that actually hold DATES/TIMESTAMPS, but need the non-DATE part discarded,
             # even though they remain as strings
-            retval = self.build_date_format_sql(col, is_casted_to_date=False)
+            retval = parse_date_column(col.source, table=self.source_table, is_casted_to_date=False)
         elif col.delta_type.upper() == "STRING":
             # Capitalize and remove leading & trailing whitespace from all string values
             retval = sf.ucase(sf.trim(sf.col(f"{self.source_table}.{col.source}")))
@@ -120,30 +93,53 @@ class AbstractDeltaTransactionLoader(ABC):
         return retval
 
     @property
-    def select_columns(self) -> list[str]:
+    def select_columns(self) -> list[Column]:
         return [sf.lit(None).cast("LONG").alias("transaction_id")] + [
             self.handle_column(col) for col in self.col_info if col.dest_name != "transaction_id"
         ]
 
-    def source_subquery_df(self) -> DataFrame:
+    def to_insert_df(self) -> DataFrame:
+        window_spec = Window.partitionBy(self.id_col)
         return (
             self.spark.read.format("delta")
             .option("readChangeFeed", "true")
             .option("startingTimestamp", self.last_etl_load_date.strftime("%Y-%m-%d %H:%M:%S"))
             .table(self.source_table)
+            .withColumn("latest_version", sf.max("_commit_version").over(window_spec))
+            .filter(
+                sf.col("_change_type").isin(["insert", "update_postimage"])
+                & (sf.col("_commit_version") == sf.col("latest_version"))
+            )
             .select(self.select_columns)
         )
 
+    def to_delete_df(self) -> DataFrame:
+        version_window = Window.partitionBy(self.id_col, "hash", "_commit_version")
+        transaction_window = Window.partitionBy(self.id_col, "hash")
+        return (
+            self.spark.read.format("delta")
+            .option("readChangeFeed", "true")
+            .option("startingTimestamp", self.last_etl_load_date.strftime("%Y-%m-%d %H:%M:%S"))
+            .table(self.source_table)
+            .withColumn("latest_version", sf.max(sf.col("_commit_version")).over(transaction_window))
+            .withColumn("has_insert", sf.max(sf.col("_change_type") == "insert").over(version_window))
+            .filter(
+                (sf.col("_change_type") == sf.lit("delete"))
+                & (sf.col("_commit_version") == sf.col("latest_version"))
+                & ~sf.col("has_insert")
+            )
+            .select(self.id_col, "hash", "action_year", "action_month")
+        )
+
     def transaction_merge(self) -> None:
-        source = self.source_subquery_df().alias("s")
+        source = self.to_insert_df().alias("s")
+        logger.info(f"number of rows: {source.count()}")
         target = DeltaTable.forName(self.spark, f"int.transaction_{self.etl_level}").alias("t")
-        id_match_condition = f"t.{self.id_col} == s.{self.id_col}"
-        row_not_updated_condition = "t.hash == s.hash"
+        id_condition = f"t.{self.id_col} == s.{self.id_col}"
+        hash_condition = "t.hash == s.hash"
         partition_pruning_conditions = "t.action_year == s.action_year AND t.action_month == s.action_month"
         (
-            target.merge(
-                source, " AND ".join([id_match_condition, row_not_updated_condition, partition_pruning_conditions])
-            )
+            target.merge(source, " AND ".join([id_condition, hash_condition, partition_pruning_conditions]))
             .whenNotMatchedInsert(
                 values={
                     col.dest_name: sf.col(f"s.{col.dest_name}")
@@ -151,6 +147,14 @@ class AbstractDeltaTransactionLoader(ABC):
                     if col.dest_name != "transaction_id"
                 },
             )
+            .execute()
+        )
+        (
+            target.merge(
+                self.to_delete_df().alias("s"),
+                " AND ".join([id_condition, hash_condition, partition_pruning_conditions]),
+            )
+            .whenMatchedDelete()
             .execute()
         )
 
@@ -178,6 +182,8 @@ class NormalizedMixin:
     spark: SparkSession
     handle_column: Callable
     source_table: str
+    id_col: str
+    source_id_col: str
     etl_level: str
     last_etl_load_date: datetime
     select_columns: list[str]
@@ -193,13 +199,19 @@ class NormalizedMixin:
             .alias("awarding_subtier_agency")
         )
         awarding_agency = self.spark.table("global_temp.agency").alias("awarding_agency")
+        window_spec = Window.partitionBy(self.source_id_col)
         df = (
             self.spark.read.format("delta")
             .option("readChangeFeed", "true")
             .option("startingTimestamp", self.last_etl_load_date.strftime("%Y-%m-%d %H:%M:%S"))
             .table(self.source_table)
+            .withColumn("latest_version", sf.max("_commit_version").over(window_spec))
+            .filter(
+                sf.col("_change_type").isin(["insert", "update_postimage"])
+                & (sf.col("_commit_version") == sf.col("latest_version"))
+            )
         )
-        return (
+        result = (
             df.join(
                 funding_subtier_agency,
                 funding_subtier_agency.subtier_code == df.funding_sub_tier_agency_co,
@@ -222,6 +234,7 @@ class NormalizedMixin:
             )
             .select(self.select_columns)
         )
+        return result
 
     def transaction_merge(self) -> None:
         create_ref_temp_views(self.spark)
@@ -242,7 +255,7 @@ class NormalizedMixin:
 
         # On insert, all values except for create_date and update_date will come from the subquery
         insert_values = [sf.col(col) for col in insert_col_names[:-2]]
-        insert_values.extend([sf.lit(f"""'{load_datetime.isoformat(" ")}'""")] * 2)
+        insert_values.extend([sf.lit(f"{load_datetime.isoformat(sep=' ')}")] * 2)
 
         target = DeltaTable.forName(self.spark, "int.transaction_normalized").alias("t")
         id_condition = "t.transaction_unique_id = s.transaction_unique_id"
@@ -256,8 +269,7 @@ class NormalizedMixin:
                     [id_condition, row_not_updated_condition, type_partition_condition, date_partition_conditions]
                 ),
             )
-            .whenNotMatchedInsert(dict(zip(insert_col_names, insert_values)))
-            .whenNotMatchedBySourceDelete(f"{'NOT' if self.normalization_type== 'fabs' else ''} t.is_fpds")
+            .whenNotMatchedInsert(values=dict(zip(insert_col_names, insert_values)))
             .execute()
         )
 
@@ -333,6 +345,7 @@ class FABSNormalizedDeltaTransactionLoader(NormalizedMixin, AbstractDeltaTransac
     def __init__(self, spark: SparkSession, spark_s3_bucket: str) -> None:
         super().__init__(spark=spark, etl_level="normalized", spark_s3_bucket=spark_s3_bucket)
         self.id_col = "transaction_unique_id"
+        self.source_id_col = "afa_generated_unique"
         self.source_table = "raw.published_fabs"
         self.to_normalized_col_info = FABS_TO_NORMALIZED_COLUMN_INFO
         self.normalization_type = "fabs"
@@ -342,32 +355,26 @@ class FABSNormalizedDeltaTransactionLoader(NormalizedMixin, AbstractDeltaTransac
         action_date_col = next(
             filter(lambda c: c.dest_name == "action_date" and c.source == "action_date", FABS_TO_NORMALIZED_COLUMN_INFO)
         )
-        parse_action_date_sql_snippet = self.handle_column(action_date_col, is_result_aliased=False)
+        parse_action_date_snippet = self.handle_column(action_date_col, is_result_aliased=False)
         select_cols = [
-            "CAST(NULL AS LONG) AS id",
-            "CAST(NULL AS LONG) AS award_id",
-            "awarding_agency.id AS awarding_agency_id",
-            f"""CASE WHEN month({parse_action_date_sql_snippet}) > 9
-                    THEN year({parse_action_date_sql_snippet}) + 1
-                    ELSE year({parse_action_date_sql_snippet})
-                END AS fiscal_year""",
-            "funding_agency.id AS funding_agency_id",
+            sf.lit(None).cast("LONG").alias("id"),
+            sf.lit(None).cast("LONG").alias("award_id"),
+            sf.col("awarding_agency.id").alias("awarding_agency_id"),
+            sf.when(sf.month(parse_action_date_snippet) > sf.lit(9), sf.year(parse_action_date_snippet) + sf.lit(1))
+            .otherwise(sf.year(parse_action_date_snippet))
+            .alias("fiscal_year"),
+            sf.col("funding_agency.id").alias("funding_agency_id"),
         ]
-        select_cols.extend(
-            [
-                # business_categories
-                f"get_business_categories_fabs({self.source_table}.business_types) AS business_categories",
-                # funding_amount
-                # In theory, this should be equal to
-                #   CAST(COALESCE({bronze_table_name}.federal_action_obligation, 0)
-                #        + COALESCE({bronze_table_name}.non_federal_funding_amount, 0)
-                #        AS NUMERIC(23, 2))
-                #   However, for some historical records, this isn't true.
-                f"""
-                    CAST({self.source_table}.total_funding_amount AS NUMERIC(23, 2)) AS funding_amount
-                    """,
-            ]
+        get_business_categories_fabs_udf = sf.udf(
+            lambda x: get_business_categories_fabs(x),
+            ArrayType(StringType()),
         )
+        select_cols = select_cols + [
+            get_business_categories_fabs_udf(sf.col(f"{self.source_table}.business_types")).alias(
+                "business_categories"
+            ),
+            sf.expr(f"CAST({self.source_table}.total_funding_amount AS NUMERIC(23, 2)) AS funding_amount"),
+        ]
 
         for col in FABS_TO_NORMALIZED_COLUMN_INFO:
             select_cols.append(self.handle_column(col))
@@ -379,6 +386,7 @@ class FPDSNormalizedDeltaTransactionLoader(NormalizedMixin, AbstractDeltaTransac
     def __init__(self, spark, spark_s3_bucket: str) -> None:
         super().__init__(spark=spark, etl_level="normalized", spark_s3_bucket=spark_s3_bucket)
         self.id_col = "transaction_unique_id"
+        self.source_id_col = "detached_award_proc_unique"
         self.source_table = "raw.detached_award_procurement"
         self.to_normalized_col_info = DAP_TO_NORMALIZED_COLUMN_INFO
         self.normalization_type = "fpds"
@@ -401,11 +409,12 @@ class FPDSNormalizedDeltaTransactionLoader(NormalizedMixin, AbstractDeltaTransac
         fpds_business_category_columns = [
             sf.col(col) for col in fpds_boolean_columns + ["contracting_officers_deter", "domestic_or_foreign_entity"]
         ]
-        named_struct_text = ", ".join([f"'{col}', {self.source_table}.{col}" for col in fpds_business_category_columns])
+        get_business_categories_fpds_udf = sf.udf(lambda x: get_business_categories_fpds(x), ArrayType(StringType()))
         select_cols.extend(
             [
-                # business_categories
-                sf.expr(f"get_business_categories_fpds(named_struct({named_struct_text})) AS business_categories"),
+                get_business_categories_fpds_udf(sf.struct(*fpds_business_category_columns)).alias(
+                    "business_categories"
+                ),
                 # type
                 sf.expr(
                     f"""
