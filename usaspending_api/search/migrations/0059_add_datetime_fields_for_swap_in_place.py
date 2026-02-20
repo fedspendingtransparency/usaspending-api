@@ -41,4 +41,19 @@ class Migration(migrations.Migration):
                 fields=["-last_modified_date_new"], name="ts_idx_last_modified_date_new"
             ),
         ),
+        migrations.RunSQL(
+            sql="""
+                -- Renaming the auto-named indexes on the partitioned tables
+                ALTER INDEX rpt.transaction_search_fabs_last_modified_date_new_idx
+                    RENAME TO ts_idx_last_modified_date_new_fabs;
+                ALTER INDEX rpt.transaction_search_fpds_last_modified_date_new_idx
+                    RENAME TO ts_idx_last_modified_date_new_fpds;
+            """,
+            reverse_sql="""
+                ALTER INDEX rpt.ts_idx_last_modified_date_new_fabs
+                    RENAME TO transaction_search_fabs_last_modified_date_new_idx;
+                ALTER INDEX rpt.ts_idx_last_modified_date_new_fpds
+                    RENAME TO transaction_search_fpds_last_modified_date_new_idx;
+            """
+        )
     ]
