@@ -115,6 +115,9 @@ class Command(mixins.ETLMixin, BaseCommand):
         agencies = read_csv_file_as_list_of_dictionaries(self.agency_file)
         if len(agencies) < 1:
             raise RuntimeError(f"Agency file '{self.agency_file}' appears to be empty")
+        
+        logger.info("DANNY TEST: ")
+        logger.info(agencies)
 
         self.agencies = [
             Agency(
