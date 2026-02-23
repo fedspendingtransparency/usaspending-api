@@ -22,4 +22,4 @@ def parse_date_column(column: str, table: str | None = None, is_casted_to_date: 
     if is_casted_to_date:
         mmddYYYY_fmt = mmddYYYY_fmt.cast("date")
         YYYYmmdd_fmt = YYYYmmdd_fmt.cast("date")
-    return sf.when(sf.regexp(column_ref, sf.lit(regexp_mmddYYYY)), mmddYYYY_fmt).otherwise(YYYYmmdd_fmt)
+    return sf.when(sf.regexp_extract(column_ref, sf.lit(regexp_mmddYYYY)), mmddYYYY_fmt).otherwise(YYYYmmdd_fmt)
