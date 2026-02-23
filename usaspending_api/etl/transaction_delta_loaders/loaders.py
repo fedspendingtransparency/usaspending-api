@@ -113,9 +113,9 @@ class AbstractDeltaTransactionLoader(ABC):
             .select(self.select_columns)
         )
 
-    def to_delete_df(self) -> DataFrame:
-        version_window = Window.partitionBy(self.id_col, "hash", "_commit_version")
-        transaction_window = Window.partitionBy(self.id_col, "hash")
+    def to_delete_df(self, id_col) -> DataFrame:
+        version_window = Window.partitionBy(id_col, "hash", "_commit_version")
+        transaction_window = Window.partitionBy(id_col, "hash")
         return (
             self.spark.read.format("delta")
             .option("readChangeFeed", "true")
@@ -128,7 +128,7 @@ class AbstractDeltaTransactionLoader(ABC):
                 & (sf.col("_commit_version") == sf.col("latest_version"))
                 & ~sf.col("has_insert")
             )
-            .select(self.id_col, "hash", "action_year", "action_month")
+            .select(id_col, "hash", "action_year", "action_month")
         )
 
     def transaction_merge(self) -> None:
@@ -151,7 +151,7 @@ class AbstractDeltaTransactionLoader(ABC):
         )
         (
             target.merge(
-                self.to_delete_df().alias("s"),
+                self.to_delete_df(self.id_col).alias("s"),
                 " AND ".join([id_condition, hash_condition, partition_pruning_conditions]),
             )
             .whenMatchedDelete()
@@ -181,6 +181,7 @@ class NormalizedMixin:
 
     spark: SparkSession
     handle_column: Callable
+    to_delete_df: Callable
     source_table: str
     id_col: str
     source_id_col: str
@@ -190,7 +191,7 @@ class NormalizedMixin:
     to_normalized_col_info: list[TransactionColumn]
     normalization_type: Literal["fabs", "fpds"]
 
-    def source_subquery_df(self) -> DataFrame:
+    def to_insert_df(self) -> DataFrame:
         funding_subtier_agency = self.spark.table("global_temp.subtier_agency").alias("funding_subtier_agency")
         funding_agency = self.spark.table("global_temp.agency").alias("funding_agency")
         awarding_subtier_agency = (
@@ -259,17 +260,24 @@ class NormalizedMixin:
 
         target = DeltaTable.forName(self.spark, "int.transaction_normalized").alias("t")
         id_condition = "t.transaction_unique_id = s.transaction_unique_id"
-        row_not_updated_condition = "t.hash == s.hash"
+        hash_condition = "t.hash == s.hash"
         type_partition_condition = f"{'NOT' if self.normalization_type == 'fabs' else ''} t.is_fpds"
-        date_partition_conditions = "t.action_year == s.action_year AND t.action_month == s.action_month"
+        partition_pruning_conditions = "t.action_year == s.action_year AND t.action_month == s.action_month"
         (
             target.merge(
-                self.source_subquery_df().alias("s"),
-                " AND ".join(
-                    [id_condition, row_not_updated_condition, type_partition_condition, date_partition_conditions]
-                ),
+                self.to_insert_df().alias("s"),
+                " AND ".join([id_condition, hash_condition, type_partition_condition, partition_pruning_conditions]),
             )
             .whenNotMatchedInsert(values=dict(zip(insert_col_names, insert_values)))
+            .execute()
+        )
+        delete_id_condition = f"t.transaction_unique_id = s.{self.source_id_col}"
+        (
+            target.merge(
+                self.to_delete_df(self.source_id_col).alias("s"),
+                " AND ".join([delete_id_condition, hash_condition, partition_pruning_conditions]),
+            )
+            .whenMatchedDelete()
             .execute()
         )
 
