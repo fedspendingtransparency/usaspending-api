@@ -125,7 +125,13 @@ SELECT
     s.subaward_recipient_hash,
     s.subaward_recipient_level,
     s.awarding_toptier_agency_code,
-    s.funding_toptier_agency_code
+    s.funding_toptier_agency_code,
+    /*
+    Sort fields are added because sorting in OpenSearch on a `scaled_float` field can be inaccurate. Instead, we've created
+      new fields that are stored as integers and can be used for sorting instead.
+    */
+    CAST(s.award_amount * 100 AS BIGINT) AS award_amount_sort,
+    CAST(s.subaward_amount * 100 AS BIGINT) AS subaward_amount_sort
 FROM
 	rpt.subaward_search s
 LEFT JOIN rpt.award_search a
