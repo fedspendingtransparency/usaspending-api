@@ -5,7 +5,7 @@ from usaspending_api.common.models import DataSourceTrackedModel
 
 
 class AwardManager(models.Manager):
-    def get_queryset(self):
+    def get_queryset(self) -> models.QuerySet:
         """
         A generated award will have these set to null, but will also receive no
         transactions. Thus, these will remain null. This finds those awards and
@@ -141,7 +141,7 @@ class Award(DataSourceTrackedModel):
         verbose_name="Combined Base and Exercised Options",
         help_text="The sum of the base_exercised_options_val from associated transactions",
     )
-    last_modified_date = models.DateField(blank=True, null=True, help_text="The date this award was last modified")
+    last_modified_date = models.DateTimeField(blank=True, null=True, help_text="The date this award was last modified")
     certified_date = models.DateField(blank=True, null=True, help_text="The date this record was certified")
     create_date = models.DateTimeField(
         auto_now_add=True, blank=True, null=True, help_text="The date this record was created in the API"
