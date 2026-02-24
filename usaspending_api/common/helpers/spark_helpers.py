@@ -5,33 +5,35 @@ NOTE: This is distinguished from the usaspending_api.common.etl.spark module, wh
 could be used as stages or steps of an ETL job (aka "data pipeline")
 """
 
-import inspect
 import logging
 import os
-import sys
 import re
-
+import sys
 from datetime import date, datetime
-from typing import Dict, List, Optional, Sequence, Set, Union
+from typing import Any, Dict, List, Optional, Sequence, Set, Union
 
 from django.core.management import call_command
 from py4j.java_gateway import (
     JavaGateway,
 )
-from py4j.protocol import Py4JJavaError
 from pyspark.conf import SparkConf
 from pyspark.context import SparkContext
 from pyspark.find_spark_home import _find_spark_home
 from pyspark.java_gateway import launch_gateway
-from pyspark.serializers import read_int, UTF8Deserializer
+from pyspark.serializers import UTF8Deserializer, read_int
 from pyspark.sql import SparkSession
 
 from usaspending_api.awards.delta_models.awards import AWARDS_COLUMNS
-from usaspending_api.awards.delta_models.financial_accounts_by_awards import FINANCIAL_ACCOUNTS_BY_AWARDS_COLUMNS
-from usaspending_api.common.helpers.aws_helpers import is_aws, get_aws_credentials
+from usaspending_api.awards.delta_models.financial_accounts_by_awards import (
+    FINANCIAL_ACCOUNTS_BY_AWARDS_COLUMNS,
+)
+from usaspending_api.common.helpers.aws_helpers import get_aws_credentials, is_aws
 from usaspending_api.config import CONFIG
-from usaspending_api.config.utils import parse_pg_uri, parse_http_url
-from usaspending_api.transactions.delta_models import DETACHED_AWARD_PROCUREMENT_DELTA_COLUMNS, PUBLISHED_FABS_COLUMNS
+from usaspending_api.config.utils import parse_http_url, parse_pg_uri
+from usaspending_api.transactions.delta_models import (
+    DETACHED_AWARD_PROCUREMENT_DELTA_COLUMNS,
+    PUBLISHED_FABS_COLUMNS,
+)
 from usaspending_api.transactions.delta_models.transaction_fabs import (
     TRANSACTION_FABS_COLUMN_INFO,
     TRANSACTION_FABS_COLUMNS,
@@ -40,7 +42,9 @@ from usaspending_api.transactions.delta_models.transaction_fpds import (
     TRANSACTION_FPDS_COLUMN_INFO,
     TRANSACTION_FPDS_COLUMNS,
 )
-from usaspending_api.transactions.delta_models.transaction_normalized import TRANSACTION_NORMALIZED_COLUMNS
+from usaspending_api.transactions.delta_models.transaction_normalized import (
+    TRANSACTION_NORMALIZED_COLUMNS,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +69,13 @@ def is_spark_context_stopped() -> bool:
         # Check the Singleton instance populated if there's an active SparkContext
         if SparkContext._active_spark_context is not None:
             sc = SparkContext._active_spark_context
-            is_stopped = not (sc._jvm and not sc._jvm.SparkSession.getDefaultSession().get().sparkContext().isStopped())
+            is_stopped = not (
+                sc._jvm
+                and not sc._jvm.SparkSession.getDefaultSession()
+                .get()
+                .sparkContext()
+                .isStopped()
+            )
     return is_stopped
 
 
@@ -79,7 +89,10 @@ def stop_spark_context() -> bool:
                 sc._jvm
                 and hasattr(sc._jvm, "SparkSession")
                 and sc._jvm.SparkSession
-                and not sc._jvm.SparkSession.getDefaultSession().get().sparkContext().isStopped()
+                and not sc._jvm.SparkSession.getDefaultSession()
+                .get()
+                .sparkContext()
+                .isStopped()
             ):
                 try:
                     sc.stop()
@@ -89,11 +102,11 @@ def stop_spark_context() -> bool:
     return stopped_without_error
 
 
-def configure_spark_session(
+def configure_spark_session(  # noqa: C901,PLR0912,PLR0913,PLR0915
     java_gateway: JavaGateway = None,
     spark_context: Union[SparkContext, SparkSession] = None,
-    master=None,
-    app_name="Spark App",
+    master: str | None = None,
+    app_name: str = "Spark App",
     log_level: int = None,
     log_spark_config_vals: bool = False,
     log_hadoop_config_vals: bool = False,
@@ -144,9 +157,15 @@ def configure_spark_session(
             property, otherwise an error will be thrown.
     """
     if spark_context and (
-        not spark_context._jvm or spark_context._jvm.SparkSession.getDefaultSession().get().sparkContext().isStopped()
+        not spark_context._jvm
+        or spark_context._jvm.SparkSession.getDefaultSession()
+        .get()
+        .sparkContext()
+        .isStopped()
     ):
-        raise ValueError("The provided spark_context arg is a stopped SparkContext. It must be active.")
+        raise ValueError(
+            "The provided spark_context arg is a stopped SparkContext. It must be active."
+        )
     if spark_context and java_gateway:
         raise Exception(
             "Cannot provide BOTH spark_context and java_gateway args. The active spark_context supplies its own gateway"
@@ -252,7 +271,9 @@ def configure_spark_session(
     if spark_context:
         built_conf = spark.conf
         provided_conf_keys = [item[0] for item in conf.getAll()]
-        non_modifiable_conf = [k for k in provided_conf_keys if not built_conf.isModifiable(k)]
+        non_modifiable_conf = [
+            k for k in provided_conf_keys if not built_conf.isModifiable(k)
+        ]
         if non_modifiable_conf:
             raise ValueError(
                 "An active SparkContext was given along with NEW spark config values. The following "
@@ -301,7 +322,9 @@ def configure_spark_session(
     return spark
 
 
-def read_java_gateway_connection_info(gateway_conn_info_path):  # pragma: no cover -- useful development util
+def read_java_gateway_connection_info(
+    gateway_conn_info_path: str,
+) -> (int, str):  # pragma: no cover -- useful development util
     """Read the port and auth token from a file holding connection info to a running spark-submit process
 
     Args:
@@ -317,8 +340,8 @@ def read_java_gateway_connection_info(gateway_conn_info_path):  # pragma: no cov
 
 
 def attach_java_gateway(
-    gateway_port,
-    gateway_auth_token,
+    gateway_port: int,
+    gateway_auth_token: str,
 ) -> JavaGateway:  # pragma: no cover -- useful development util
     """Create a new JavaGateway that latches onto the port of a running spark-submit process
 
@@ -365,8 +388,13 @@ def attach_java_gateway(
     return gateway
 
 
-def get_jdbc_connection_properties(fix_strings: bool = True, truncate: bool = False) -> dict:
-    jdbc_props = {"driver": "org.postgresql.Driver", "fetchsize": str(CONFIG.SPARK_PARTITION_ROWS)}
+def get_jdbc_connection_properties(
+    fix_strings: bool = True, truncate: bool = False
+) -> dict:
+    jdbc_props = {
+        "driver": "org.postgresql.Driver",
+        "fetchsize": str(CONFIG.SPARK_PARTITION_ROWS),
+    }
     if fix_strings:
         # This setting basically tells the JDBC driver how to process the strings, which could be a special type casted
         # as a string (ex. UUID, JSONB). By default, it assumes they are actually strings. Setting this to "unspecified"
@@ -382,14 +410,16 @@ def get_jdbc_url_from_pg_uri(pg_uri: str) -> str:
     """Converts the passed-in Postgres DB connection URI to a JDBC-compliant Postgres DB connection string"""
     url_parts, user, password = parse_pg_uri(pg_uri)
     if user is None or password is None:
-        raise ValueError("pg_uri provided must have username and password with host or in query string")
+        raise ValueError(
+            "pg_uri provided must have username and password with host or in query string"
+        )
     # JDBC URLs only support postgresql://
     pg_uri = f"postgresql://{url_parts.hostname}:{url_parts.port}{url_parts.path}?user={user}&password={password}"
 
     return f"jdbc:{pg_uri}"
 
 
-def get_usas_jdbc_url():
+def get_usas_jdbc_url() -> str:
     """Getting a JDBC-compliant Postgres DB connection string hard-wired to the POSTGRES vars set in CONFIG"""
     if not CONFIG.DATABASE_URL:
         raise ValueError("DATABASE_URL config val must provided")
@@ -397,7 +427,7 @@ def get_usas_jdbc_url():
     return get_jdbc_url_from_pg_uri(CONFIG.DATABASE_URL)
 
 
-def get_broker_jdbc_url():
+def get_broker_jdbc_url() -> str:
     """Getting a JDBC-compliant Broker Postgres DB connection string hard-wired to the POSTGRES vars set in CONFIG"""
     if not CONFIG.BROKER_DB:
         raise ValueError("BROKER_DB config val must provided")
@@ -405,7 +435,7 @@ def get_broker_jdbc_url():
     return get_jdbc_url_from_pg_uri(CONFIG.BROKER_DB)
 
 
-def get_es_config():  # pragma: no cover -- will be used eventually
+def get_es_config() -> dict[str, Any]:  # pragma: no cover -- will be used eventually
     """
     Get a base template of Elasticsearch configuration settings tailored to the specific environment setup being
     used
@@ -442,7 +472,9 @@ def get_es_config():  # pragma: no cover -- will be used eventually
         "es.net.ssl": str(ssl).lower(),  # default false
         "es.net.ssl.cert.allow.self.signed": "true",  # default false
         "es.batch.size.entries": str(CONFIG.ES_BATCH_ENTRIES),  # default 1000
-        "es.batch.size.bytes": str(CONFIG.ES_MAX_BATCH_BYTES),  # default 1024*1024 (1mb)
+        "es.batch.size.bytes": str(
+            CONFIG.ES_MAX_BATCH_BYTES
+        ),  # default 1024*1024 (1mb)
         "es.batch.write.refresh": "false",  # default true, to refresh after configured batch size completes
     }
 
@@ -454,48 +486,13 @@ def get_es_config():  # pragma: no cover -- will be used eventually
     return config
 
 
-def get_jvm_logger(spark: SparkSession, logger_name=None):
-    """
-    Get a JVM log4j Logger object instance to log through Java
-
-    WARNING about Logging: This is NOT python's `logging` module
-    This is a python proxy to a java Log4J Logger object
-    As such, you can't do everything with it you'd do in Python, NOTABLY: passing
-    keyword args, like `logger.error("msg here", exc_info=exc)`. Instead do e.g.:
-    `logger.error("msg here", exc)`
-    Also, errors may not be loggable in the traditional way. See: https://www.py4j.org/py4j_java_protocol.html#
-    `logger.error("msg here", exc)` should probably just format the stack track from Java:
-    `logger.error("msg here:\n {str(exc)}")`
-    """
-    if not logger_name:
-        try:
-            calling_function_name = inspect.stack()[1][3]
-            logger_name = calling_function_name
-        except Exception:
-            logger_name = "pyspark_job"
-    logger = spark._jvm.org.apache.log4j.LogManager.getLogger(logger_name)
-    return logger
-
-
-def log_java_exception(logger, exc, err_msg=""):
-    if exc and (isinstance(exc, Py4JJavaError) or hasattr(exc, "java_exception")):
-        logger.error(f"{err_msg}\n{str(exc.java_exception)}")
-    elif exc and hasattr(exc, "printStackTrace"):
-        logger.error(f"{err_msg}\n{str(exc.printStackTrace)}")
-    else:
-        try:
-            logger.error(err_msg, exc)
-        except Exception:
-            logger.error(f"{err_msg}\n{str(exc)}")
-
-
 def configure_s3_credentials(
     conf: SparkConf,
     access_key: str = None,
     secret_key: str = None,
     profile: str = None,
     temporary_creds: bool = False,
-):
+) -> None:
     """Set Spark config values allowing authentication to S3 for bucket data
 
     See Also:
@@ -526,14 +523,19 @@ def configure_s3_credentials(
     conf.set("spark.hadoop.fs.s3a.secret.key", aws_creds.secret_key)
     if temporary_creds:
         conf.set(
-            "spark.hadoop.fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.TemporaryAWSCredentialsProvider"
+            "spark.hadoop.fs.s3a.aws.credentials.provider",
+            "org.apache.hadoop.fs.s3a.TemporaryAWSCredentialsProvider",
         )
         conf.set("spark.hadoop.fs.s3a.session.token", aws_creds.token)
-        conf.set("spark.hadoop.fs.s3a.assumed.role.sts.endpoint", CONFIG.AWS_STS_ENDPOINT)
-        conf.set("spark.hadoop.fs.s3a.assumed.role.sts.endpoint.region", CONFIG.AWS_REGION)
+        conf.set(
+            "spark.hadoop.fs.s3a.assumed.role.sts.endpoint", CONFIG.AWS_STS_ENDPOINT
+        )
+        conf.set(
+            "spark.hadoop.fs.s3a.assumed.role.sts.endpoint.region", CONFIG.AWS_REGION
+        )
 
 
-def log_spark_config(spark: SparkSession, config_key_contains=""):
+def log_spark_config(spark: SparkSession, config_key_contains: str = "") -> None:
     """Log at log4j INFO the values of the SparkConf object in the current SparkSession"""
     [
         logger.info(f"{item[0]}={item[1]}")
@@ -542,19 +544,28 @@ def log_spark_config(spark: SparkSession, config_key_contains=""):
     ]
 
 
-def log_hadoop_config(spark: SparkSession, config_key_contains=""):
+def log_hadoop_config(spark: SparkSession, config_key_contains: str = "") -> None:
     """Print out to the log the current config values for hadoop. Limit to only those whose key contains the string
     provided to narrow in on a particular subset of config values.
     """
     conf = spark.sparkContext._jsc.hadoopConfiguration()
     [
         logger.info(f"{k}={v}")
-        for (k, v) in {str(_).split("=")[0]: str(_).split("=")[1] for _ in conf.iterator()}.items()
+        for (k, v) in {
+            str(_).split("=")[0]: str(_).split("=")[1] for _ in conf.iterator()
+        }.items()
         if config_key_contains in k
     ]
 
 
-def load_dict_to_delta_table(spark, s3_data_bucket, table_schema, table_name, data, overwrite=False):
+def load_dict_to_delta_table(  # noqa: PLR0912
+    spark: SparkSession,
+    s3_data_bucket: str,
+    table_schema: str,
+    table_name: str,
+    data: list[dict],
+    overwrite: bool = False,
+) -> None:
     """Create a table in Delta and populate it with the contents of a provided dicationary (data). This should
     primarily be used for unit testing.
 
@@ -571,15 +582,23 @@ def load_dict_to_delta_table(spark, s3_data_bucket, table_schema, table_name, da
     table_to_col_names_dict = {}
     table_to_col_names_dict["transaction_fabs"] = TRANSACTION_FABS_COLUMNS
     table_to_col_names_dict["transaction_fpds"] = TRANSACTION_FPDS_COLUMNS
-    table_to_col_names_dict["transaction_normalized"] = list(TRANSACTION_NORMALIZED_COLUMNS)
+    table_to_col_names_dict["transaction_normalized"] = list(
+        TRANSACTION_NORMALIZED_COLUMNS
+    )
     table_to_col_names_dict["awards"] = list(AWARDS_COLUMNS)
-    table_to_col_names_dict["financial_accounts_by_awards"] = list(FINANCIAL_ACCOUNTS_BY_AWARDS_COLUMNS)
-    table_to_col_names_dict["detached_award_procurement"] = list(DETACHED_AWARD_PROCUREMENT_DELTA_COLUMNS)
+    table_to_col_names_dict["financial_accounts_by_awards"] = list(
+        FINANCIAL_ACCOUNTS_BY_AWARDS_COLUMNS
+    )
+    table_to_col_names_dict["detached_award_procurement"] = list(
+        DETACHED_AWARD_PROCUREMENT_DELTA_COLUMNS
+    )
     table_to_col_names_dict["published_fabs"] = list(PUBLISHED_FABS_COLUMNS)
 
     table_to_col_info_dict = {}
     for tbl_name, col_info in zip(
-        ("transaction_fabs", "transaction_fpds"), (TRANSACTION_FABS_COLUMN_INFO, TRANSACTION_FPDS_COLUMN_INFO)
+        ("transaction_fabs", "transaction_fpds"),
+        (TRANSACTION_FABS_COLUMN_INFO, TRANSACTION_FPDS_COLUMN_INFO),
+        strict=False,
     ):
         table_to_col_info_dict[tbl_name] = {}
         for col in col_info:
@@ -636,8 +655,10 @@ def load_dict_to_delta_table(spark, s3_data_bucket, table_schema, table_name, da
 
 
 def clean_postgres_sql_for_spark_sql(
-    postgres_sql_str: str, global_temp_view_proxies: List[str] = None, identifier_replacements: Dict[str, str] = None
-):
+    postgres_sql_str: str,
+    global_temp_view_proxies: List[str] = None,
+    identifier_replacements: Dict[str, str] = None,
+) -> str:
     """Convert some of the known-to-be-problematic PostgreSQL syntax, which is not compliant with Spark SQL,
     to an acceptable and compliant Spark SQL alternative.
 
@@ -655,25 +676,42 @@ def clean_postgres_sql_for_spark_sql(
     """
     # Spark SQL does not like double-quoted identifiers
     spark_sql = postgres_sql_str.replace('"', "")
-    spark_sql = re.sub(rf"CREATE VIEW", rf"CREATE OR REPLACE TEMP VIEW", spark_sql, flags=re.IGNORECASE | re.MULTILINE)
+    spark_sql = re.sub(
+        r"CREATE VIEW",
+        r"CREATE OR REPLACE TEMP VIEW",
+        spark_sql,
+        flags=re.IGNORECASE | re.MULTILINE,
+    )
 
     # Treat these type casts as string in Spark SQL
     # NOTE: If replacing a ::JSON cast, be sure that the string data coming from delta is treated as needed (e.g. as
     # JSON or converted to JSON or a dict) on the receiving side, and not just left as a string
-    spark_sql = re.sub(rf"::text|::json", rf"::string", spark_sql, flags=re.IGNORECASE | re.MULTILINE)
+    spark_sql = re.sub(
+        r"::text|::json", r"::string", spark_sql, flags=re.IGNORECASE | re.MULTILINE
+    )
 
     if global_temp_view_proxies:
         for vw in global_temp_view_proxies:
             spark_sql = re.sub(
-                rf"FROM\s+{vw}", rf"FROM global_temp.{vw}", spark_sql, flags=re.IGNORECASE | re.MULTILINE
+                rf"FROM\s+{vw}",
+                rf"FROM global_temp.{vw}",
+                spark_sql,
+                flags=re.IGNORECASE | re.MULTILINE,
             )
             spark_sql = re.sub(
-                rf"JOIN\s+{vw}", rf"JOIN global_temp.{vw}", spark_sql, flags=re.IGNORECASE | re.MULTILINE
+                rf"JOIN\s+{vw}",
+                rf"JOIN global_temp.{vw}",
+                spark_sql,
+                flags=re.IGNORECASE | re.MULTILINE,
             )
 
     if identifier_replacements:
         for old, new in identifier_replacements.items():
-            matches = re.finditer(rf"(\s+|^|\(){old}(\s+|$|\()", spark_sql, flags=re.IGNORECASE | re.MULTILINE)
+            matches = re.finditer(
+                rf"(\s+|^|\(){old}(\s+|$|\()",
+                spark_sql,
+                flags=re.IGNORECASE | re.MULTILINE,
+            )
             for match in matches:
                 spark_sql = re.sub(
                     re.escape(rf"{match[0]}"),
