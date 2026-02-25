@@ -99,8 +99,6 @@ TABLE_SPEC = {
             "action_year": lambda: sf.year(sf.to_date("action_date")),
             "action_month": lambda: sf.month(sf.to_date("action_date")),
         },
-        save_mode="merge",
-        merge_condition="s.detached_award_procurement_id = t.detached_award_procurement_id and s.hash = t.hash",
     ),
     "financial_accounts_by_awards": TableSpec(
         model=FinancialAccountsByAwards,
