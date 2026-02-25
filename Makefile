@@ -193,7 +193,7 @@ docker-compose-spark-submit: ## Run spark-submit from within local docker contai
 		-e DATABASE_URL=${DATABASE_URL} \
 	spark-submit \
 	--driver-memory "2g" \
-	--packages org.postgresql:postgresql:42.2.23,io.delta:delta-spark_2.12:3.1.0,org.apache.hadoop:hadoop-aws:3.3.4,org.apache.spark:spark-hive_2.12:3.5.0 \
+	--packages org.postgresql:postgresql:42.7.8,io.delta:delta-spark_2.13:3.3.2,org.apache.hadoop:hadoop-aws:3.4.1,org.apache.spark:spark-hive_2.13:3.5.6 \
 	${if ${python_script}, \
 		${python_script}, \
 		/project/manage.py ${django_command} \
@@ -204,7 +204,7 @@ localhost-spark-submit: ## Run spark-submit from with localhost as the driver an
 	SPARK_LOCAL_IP=127.0.0.1 \
 	spark-submit \
 	--driver-memory "2g" \
-	--packages org.postgresql:postgresql:42.2.23,io.delta:delta-spark_2.12:3.1.0,org.apache.hadoop:hadoop-aws:3.3.4,org.apache.spark:spark-hive_2.12:3.5.0 \
+	--packages org.postgresql:postgresql:42.7.8,io.delta:delta-spark_2.13:3.3.2,org.apache.hadoop:hadoop-aws:3.4.1,org.apache.spark:spark-hive_2.13:3.5.6 \
 	${if ${python_script}, \
 		${python_script}, \
 		manage.py ${django_command} \
@@ -213,7 +213,7 @@ localhost-spark-submit: ## Run spark-submit from with localhost as the driver an
 .PHONY: pyspark-shell
 pyspark-shell: ## Launch a local pyspark REPL shell with all of the packages and spark config pre-set
 	SPARK_LOCAL_IP=127.0.0.1 pyspark \
-	--packages org.postgresql:postgresql:42.2.23,io.delta:delta-spark_2.12:3.1.0,org.apache.hadoop:hadoop-aws:3.3.4 \
+	--packages org.postgresql:postgresql:42.7.8,io.delta:delta-spark_2.13:3.3.2,org.apache.hadoop:hadoop-aws:3.4.1 \
 	--conf spark.sql.extensions=io.delta.sql.DeltaSparkSessionExtension \
 	--conf spark.sql.catalog.spark_catalog=org.apache.spark.sql.delta.catalog.DeltaCatalog \
 	--conf spark.hadoop.fs.s3a.endpoint=localhost:${MINIO_PORT} \

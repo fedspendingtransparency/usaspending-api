@@ -3,8 +3,8 @@ FROM python:3.10.12-slim-bullseye
 COPY --from=ghcr.io/astral-sh/uv:0.7.19 /uv /uvx /bin/
 
 # Build ARGs
-ARG HADOOP_VERSION=3.3.4
-ARG SPARK_VERSION=3.5.0
+ARG HADOOP_VERSION=3.4.1
+ARG SPARK_VERSION=3.5.6
 ARG PROJECT_LOG_DIR=/logs
 
 # Install dependencies
@@ -24,8 +24,8 @@ RUN apt update && apt install -y \
 RUN wget -qO - https://apt.corretto.aws/corretto.key | gpg --dearmor -o /usr/share/keyrings/corretto-keyring.gpg && \
     echo "deb [signed-by=/usr/share/keyrings/corretto-keyring.gpg] https://apt.corretto.aws stable main" | tee /etc/apt/sources.list.d/corretto.list
 RUN apt update && \
-    apt install -y java-1.8.0-amazon-corretto-jdk
-ENV JAVA_HOME=/usr/lib/jvm/java-1.8.0-amazon-corretto
+    apt install -y java-17-amazon-corretto-jdk
+ENV JAVA_HOME=/usr/lib/jvm/java-17-amazon-corretto
 
 # Install Hadoop and Spark
 WORKDIR /usr/local
@@ -49,7 +49,8 @@ RUN echo "Installed Spark" && echo "$(${SPARK_HOME}/bin/pyspark --version)"
 # It allows job-run event logs to be monitored (e.g. at /tmp/spark-events)
 # NOTE: The specified eventlog dir and its path does not exist. It is assumed that a host dir will be bind-mounted at /project
 #       so that all containers that do the same can share the events.
-RUN cp $SPARK_HOME/conf/spark-defaults.conf.template $SPARK_HOME/conf/spark-defaults.conf \
+RUN mkdir -p /project/$PROJECT_LOG_DIR/spark-events \
+    && cp $SPARK_HOME/conf/spark-defaults.conf.template $SPARK_HOME/conf/spark-defaults.conf \
     && sed -i "s|^# spark.eventLog.dir.*$|spark.eventLog.dir                 file:///project/$PROJECT_LOG_DIR/spark-events|g" $SPARK_HOME/conf/spark-defaults.conf \
     && sed -i '/spark.eventLog.enabled/s/^# //g' $SPARK_HOME/conf/spark-defaults.conf \
     && echo "spark.history.fs.logDirectory      file:///project/$PROJECT_LOG_DIR/spark-events" >> $SPARK_HOME/conf/spark-defaults.conf
