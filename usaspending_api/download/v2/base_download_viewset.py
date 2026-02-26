@@ -86,7 +86,7 @@ class BaseDownloadViewSet(APIView):
 
     @staticmethod
     def is_spark_download(json_request: dict) -> bool:
-        return (json_request["request_type"] == "account" and "award_financial" in json_request["download_types"])
+        return json_request["request_type"] == "account" and "award_financial" in json_request["download_types"]
 
     @staticmethod
     def validate_columns(json_request: dict):
@@ -124,7 +124,7 @@ class BaseDownloadViewSet(APIView):
             # The keys used in the message bodies below are specific values expected by the SQS handlers
             if self.is_spark_download(json_request):
                 # Fallback to the non-priority queue if the priority queue isn't setup
-                queue_name = (settings.PRIORITY_DOWNLOAD_SQS_QUEUE_NAME or settings.BULK_DOWNLOAD_SQS_QUEUE_NAME)
+                queue_name = settings.PRIORITY_DOWNLOAD_SQS_QUEUE_NAME or settings.BULK_DOWNLOAD_SQS_QUEUE_NAME
                 message_body = json.dumps(
                     {
                         "download_job_id": download_job.download_job_id,
@@ -224,7 +224,7 @@ def get_file_path(file_name: str) -> str:
         file_path = settings.CSV_LOCAL_PATH + file_name
     else:
         s3_handler = S3Handler(
-            bucket_name=settings.BULK_DOWNLOAD_S3_BUCKET_NAME, redirect_dir=settings.BULK_DOWNLOAD_S3_REDIRECT_DIR,
+            bucket_name=settings.BULK_DOWNLOAD_S3_BUCKET_NAME, redirect_dir=settings.BULK_DOWNLOAD_S3_REDIRECT_DIR
         )
         file_path = s3_handler.get_simple_url(file_name=file_name)
 
