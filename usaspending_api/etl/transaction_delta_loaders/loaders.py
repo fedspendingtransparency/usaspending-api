@@ -78,7 +78,7 @@ class AbstractDeltaTransactionLoader(ABC):
             retval = parse_date_column(col.source, table=self.source_table, is_casted_to_date=False)
         elif col.delta_type.upper() == "STRING":
             # Capitalize and remove leading & trailing whitespace from all string values
-            retval = sf.ucase(sf.trim(sf.col(f"{self.source_table}.{col.source}")))
+            retval = sf.upper(sf.trim(sf.col(f"{self.source_table}.{col.source}")))
         elif col.delta_type.upper() == "BOOLEAN" and not col.handling == "leave_null":
             # Unless specified, convert any nulls to false for boolean columns
             retval = sf.coalesce(sf.col(f"{self.source_table}.{col.source}"), sf.lit(False))
