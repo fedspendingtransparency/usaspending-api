@@ -173,7 +173,7 @@ FABS_TO_NORMALIZED_COLUMN_INFO = [
     TransactionColumn("federal_action_obligation", "federal_action_obligation", "NUMERIC(23,2)"),
     TransactionColumn("indirect_federal_sharing", "indirect_federal_sharing", "NUMERIC(23, 2)", "cast"),
     TransactionColumn("is_fpds", "FALSE", "BOOLEAN", "literal"),
-    TransactionColumn("last_modified_date", "modified_at", "DATE", "cast"),
+    TransactionColumn("last_modified_date", "modified_at", "TIMESTAMP"),
     TransactionColumn("modification_number", "award_modification_amendme", "STRING"),
     TransactionColumn("non_federal_funding_amount", "non_federal_funding_amount", "NUMERIC(23,2)"),
     TransactionColumn("original_loan_subsidy_cost", "original_loan_subsidy_cost", "NUMERIC(23,2)"),

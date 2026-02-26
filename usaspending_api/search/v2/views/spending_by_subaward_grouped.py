@@ -10,7 +10,10 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from usaspending_api.common.api_versioning import API_TRANSFORM_FUNCTIONS, api_transformations
+from usaspending_api.common.api_versioning import (
+    API_TRANSFORM_FUNCTIONS,
+    api_transformations,
+)
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch
 from usaspending_api.common.helpers.generic_helper import (
@@ -22,12 +25,16 @@ from usaspending_api.common.validator.award_filter import AWARD_FILTER_NO_RECIPI
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.search.filters.elasticsearch.filter import QueryType
-from usaspending_api.search.filters.time_period.query_types import SubawardSearchTimePeriod
+from usaspending_api.search.filters.time_period.query_types import (
+    SubawardSearchTimePeriod,
+)
 
 logger = logging.getLogger(__name__)
 
 
-@api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
+@api_transformations(
+    api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS
+)
 class SpendingBySubawardGroupedVisualizationViewSet(APIView):
     """
     This route takes award filters and returns the filtered awards ids, number of subawards for each award, \
@@ -42,7 +49,13 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
         self.pagination: dict[str, Any] = {}
         self.models = [
             {"name": "limits", "key": "limit", "type": "integer", "default": 10},
-            {"name": "ordered", "key": "order", "type": "text", "text_type": "search", "default": "desc"},
+            {
+                "name": "ordered",
+                "key": "order",
+                "type": "text",
+                "text_type": "search",
+                "default": "desc",
+            },
             {
                 "name": "object_class",
                 "key": "filters|object class",
@@ -55,7 +68,12 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
                 "name": "sorted",
                 "key": "sort",
                 "type": "enum",
-                "enum_values": ["award_id", "subaward_count", "award_generated_internal_id", "subaward_obligation"],
+                "enum_values": [
+                    "award_id",
+                    "subaward_count",
+                    "award_generated_internal_id",
+                    "subaward_obligation",
+                ],
                 "text_type": "search",
                 "default": "award_id",
             },
@@ -63,7 +81,9 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
 
         # Accepts the same filters as spending_by_award
         self.models.extend(copy.deepcopy(AWARD_FILTER_NO_RECIPIENT_ID))
-        self.models.extend(copy.deepcopy([model for model in PAGINATION if model["name"] != "sort"]))
+        self.models.extend(
+            copy.deepcopy([model for model in PAGINATION if model["name"] != "sort"])
+        )
 
     @cache_response()
     def post(self, request: Request) -> Response:
@@ -81,11 +101,14 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
         }
 
         time_period_obj = SubawardSearchTimePeriod(
-            default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
+            default_end_date=settings.API_MAX_DATE,
+            default_start_date=settings.API_SEARCH_MIN_DATE,
         )
 
         query_with_filters = QueryWithFilters(QueryType.AWARDS)
-        filter_query = query_with_filters.generate_elasticsearch_query(filters=filters, options=time_period_obj)
+        filter_query = query_with_filters.generate_elasticsearch_query(
+            filters=filters, options=time_period_obj
+        )
         results = self.build_elasticsearch_search(filter_query)
 
         return Response(self.construct_es_response(results))
@@ -104,7 +127,9 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
             },
             "messages": [
                 under_development_message(),
-                *get_generic_filters_message(self.original_filters.keys(), [elem["name"] for elem in self.models]),
+                *get_generic_filters_message(
+                    self.original_filters.keys(), [elem["name"] for elem in self.models]
+                ),
             ],
         }
 
@@ -117,6 +142,8 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
             "award_id": "display_award_id",
             "subaward_count": "subaward_count",
             "subaward_obligation": "total_subaward_amount",
+            "award_amount": "award_amount_sort",
+            "subaward_amount": "subaward_amount_sort",
         }
 
         search = (
@@ -126,7 +153,9 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
             .sort(
                 {
                     api_request_field_to_es_field_mapper[self.pagination["sort_key"]]: {
-                        "order": "asc" if self.pagination["sort_order"] == "asc" else "desc"
+                        "order": "asc"
+                        if self.pagination["sort_order"] == "asc"
+                        else "desc"
                     }
                 }
             )
@@ -142,11 +171,15 @@ class SpendingBySubawardGroupedVisualizationViewSet(APIView):
                 "award_id": source["_source"]["display_award_id"],
                 "subaward_count": source["_source"]["subaward_count"],
                 "subaward_obligation": (
-                    Decimal(source["_source"]["total_subaward_amount"]).quantize(Decimal(".01"))
+                    Decimal(source["_source"]["total_subaward_amount"]).quantize(
+                        Decimal(".01")
+                    )
                     if source["_source"]["total_subaward_amount"]
                     else 0.0
                 ),
-                "award_generated_internal_id": source["_source"]["generated_unique_award_id"],
+                "award_generated_internal_id": source["_source"][
+                    "generated_unique_award_id"
+                ],
             }
             for source in es_response["hits"]["hits"]
         ]
