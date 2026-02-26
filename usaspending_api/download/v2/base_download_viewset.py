@@ -126,7 +126,6 @@ class BaseDownloadViewSet(APIView):
                     command_options=[
                         f"--download-job-id={download_job.download_job_id}",
                         "--skip-local-cleanup",
-                        "--use-duckdb",  # TODO remove
                     ],
                     run_as_container=False,
                 )
