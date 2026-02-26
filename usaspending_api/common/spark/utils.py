@@ -23,9 +23,7 @@ def collect_concat(
             alias = col_name
         elif alias is None and not isinstance(col_name, str):
             # DuckDB doesn't have a "._jc" property like PySpark does so we need a string for the alias
-            raise TypeError(
-                f"`col_name` must be a string for DuckDB, but got {type(col_name)}"
-            )
+            raise TypeError(f"`col_name` must be a string for DuckDB, but got {type(col_name)}")
 
         # collect_set() is not implemented in DuckDB's Spark API, but the `list_distinct` SQL method should work
         return sf.concat_ws(
@@ -42,9 +40,7 @@ def collect_concat(
         if alias is None:
             alias = col_name if isinstance(col_name, str) else str(col_name._jc)
 
-        return sf.concat_ws(concat_str, sf.sort_array(sf.collect_set(col_name))).alias(
-            alias
-        )
+        return sf.concat_ws(concat_str, sf.sort_array(sf.collect_set(col_name))).alias(alias)
 
 
 def filter_submission_and_sum(

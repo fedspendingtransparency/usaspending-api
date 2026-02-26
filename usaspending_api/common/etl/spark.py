@@ -390,9 +390,7 @@ def load_es_index(
     )
 
 
-def merge_delta_table(
-    spark: SparkSession, source_df: DataFrame, delta_table_name: str, merge_column: str
-) -> None:
+def merge_delta_table(spark: SparkSession, source_df: DataFrame, delta_table_name: str, merge_column: str) -> None:
     source_df.create_or_replace_temporary_view("temp_table")
 
     spark.sql(
