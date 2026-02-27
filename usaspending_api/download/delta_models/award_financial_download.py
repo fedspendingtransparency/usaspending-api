@@ -1,5 +1,5 @@
 from delta.tables import DeltaTable
-from pyspark.sql import SparkSession
+from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as sf
 from pyspark.sql.functions import expr
 from pyspark.sql.types import (
@@ -124,7 +124,7 @@ award_financial_schema = StructType(
 )
 
 
-def award_financial_df(spark: SparkSession):
+def award_financial_df(spark: SparkSession) -> DataFrame:
     faba = spark.table("int.financial_accounts_by_awards").alias("faba")
     sa = spark.table("global_temp.submission_attributes").alias("sa")
     taa = spark.table("global_temp.treasury_appropriation_account").alias("taa")
@@ -169,6 +169,7 @@ def award_financial_df(spark: SparkSession):
             how="left",
         )
         .withColumn("submission_period", fy_quarter_period())
+        # TODO: Update to use url_encode Spark SQL function
         .withColumn(
             "usaspending_permalink",
             sf.when(
@@ -347,7 +348,8 @@ def load_award_financial_incremental(
     (
         target.merge(
             source,
-            "s.financial_accounts_by_awards_id = t.financial_accounts_by_awards_id and s.merge_hash_key = t.merge_hash_key",
+            "s.financial_accounts_by_awards_id = t.financial_accounts_by_awards_id"
+            " and s.merge_hash_key = t.merge_hash_key",
         )
         .whenNotMatchedInsertAll()
         .whenNotMatchedBySourceDelete()
