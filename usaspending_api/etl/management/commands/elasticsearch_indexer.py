@@ -204,7 +204,7 @@ def parse_cli_args(options: dict, es_client) -> dict:
         raise SystemExit("Fatal error: '--create-new-index' requires '--index-name'.")
     elif config["create_new_index"]:
         # Add the date prefix in the script instead of external run location (jenkins or state machine)
-        config["index_name"] = f"{datetime.now(timezone.utc).strftime("%Y-%m-%d-%H-%M-%S")}-{config["index_name"].lower()}" 
+        config["index_name"] = f"{datetime.now(timezone.utc):%Y-%m-%d-%H-%M-%S}-{config['index_name'].lower()}"
         config["starting_date"] = config["initial_datetime"]
         check_new_index_name_is_ok(config["index_name"], config["required_index_name"])
         if not config["skip_date_check"]:
