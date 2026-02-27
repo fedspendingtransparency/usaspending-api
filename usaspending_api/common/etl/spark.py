@@ -703,6 +703,7 @@ def create_ref_temp_views(  # noqa: PLR0912
                     "schema": "rpt",
                     "table_name": "object_class_program_activity_download",
                 },
+                {"schema": "rpt", "table_name": "award_financial_download"},
             ]
 
             # The DuckDB Delta extension is needed to interact with DeltaLake tables
