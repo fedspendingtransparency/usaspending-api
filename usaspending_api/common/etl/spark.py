@@ -10,6 +10,8 @@ import math
 import os
 import shutil
 import time
+from collections import namedtuple
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from itertools import chain
 
 import duckdb
@@ -940,10 +942,77 @@ def rename_part_files(
     full_file_paths = []
 
     for index, part_file in enumerate(list_of_part_files):
-        new_key = f"{temp_download_dir_name}/{destination_file_name}_{str(index + 1).zfill(2)}.{file_format}"
+        new_key = f"{temp_download_dir_name}/{destination_file_name}_{index + 1:02d}.{file_format}"
         logger.info(f"Renaming {bucket_name}/{part_file} to {bucket_name}/{new_key}")
 
         rename_s3_object(bucket_name=bucket_name, old_key=part_file, new_key=new_key)
         full_file_paths.append(f"s3a://{bucket_name}/{new_key}")
+
+    return full_file_paths
+
+
+def rename_part_files_threaded(
+    bucket_name: str,
+    destination_file_name: str,
+    logger: logging.Logger,
+    temp_download_dir_name: str = "temp_download",
+    file_format: str = "csv",
+    max_threads: int = 15,
+) -> list[str] | list:
+    start_time = time.perf_counter()
+
+    list_of_part_files = sorted(
+        file.key
+        for file in retrieve_s3_bucket_object_list(
+            bucket_name, key_prefix=f"{temp_download_dir_name}/{destination_file_name}/part-"
+        )
+        if file.key.endswith(file_format)
+    )
+
+    if not list_of_part_files:
+        return []
+
+    total_files = len(list_of_part_files)
+    logger.info(f"Starting concurrent rename of {total_files} part files")
+
+    def rename_single_file(index: int, part_file: str) -> tuple[str | None, bool]:
+        """Rename a single S3 part file.
+
+        Returns:
+            The new path or None and if the process was successful.
+        """
+
+        new_key = f"{temp_download_dir_name}/{destination_file_name}_{index + 1:02d}.{file_format}"
+        try:
+            rename_s3_object(bucket_name=bucket_name, old_key=part_file, new_key=new_key)
+            logger.info(f"Successfully renamed {part_file} to {new_key}")
+            return f"s3a://{bucket_name}/{new_key}", True
+        except Exception as e:
+            logger.error(f"Failed to rename {part_file} to {new_key}: {e}", exc_info=True)
+            return None, False
+
+    full_file_paths = []
+    failed_count = 0
+    completed_count = 0
+
+    with ThreadPoolExecutor(max_workers=max_threads) as executor:
+        futures = [
+            executor.submit(rename_single_file, idx, part_file) for idx, part_file in enumerate(list_of_part_files)
+        ]
+
+        for future in as_completed(futures):
+            new_path, success = future.result()
+            completed_count += 1
+
+            if success:
+                full_file_paths.append(new_path)
+
+    if failed_count > 0:
+        logger.info(
+            f"Renamed completed with errors: {len(full_file_paths)} succeeded, {failed_count} failed out of {total_files} total"
+        )
+        raise Exception(f"Failed to rename {failed_count} part files")
+    else:
+        logger.info(f"Renamed all part files in {(time.perf_counter() - start_time):3f}s")
 
     return full_file_paths
