@@ -1,6 +1,7 @@
 import logging
 from abc import ABC
 from datetime import datetime, timezone
+from time import perf_counter
 from typing import Callable, Literal
 
 from delta import DeltaTable
@@ -336,16 +337,30 @@ class NormalizedMixin:
         w = Window.orderBy(needs_ids.unique_award_key)
         with_ids = needs_ids.withColumn("award_id", (max_id + sf.row_number().over(w)).cast("LONG")).alias("s")
         (
-            target.merge(with_ids, f"t.unique_award_key = s.unique_award_key")
+            target.merge(with_ids, "t.unique_award_key = s.unique_award_key")
             .whenMatchedUpdate(set={"t.award_id": "s.award_id"})
             .execute()
         )
 
     def load_transactions(self) -> None:
+        start = perf_counter()
+        logger.info("Loading transactions...")
         super().load_transactions()
+        s1 = perf_counter()
+        logger.info(f"Loading transactions took {s1 - start:.2f} seconds.")
+        logger.info(f"populating award ids...")
         self.populate_award_ids()
+        s2 = perf_counter()
+        logger.info(f"Populating awards took {s2 - s1:.2f} seconds.")
+        logger.info("populating transaction normalized ids...")
         self.populate_transaction_normalized_ids()
+        s3 = perf_counter()
+        logger.info(f"Populating normalized ids took {s3 - s2:.2f} seconds.")
+        logger.info("linking transactions to normalized...")
         self.link_transactions_to_normalized()
+        s4 = perf_counter()
+        logger.info(f"Linking took {s4 - s3:.2f} seconds.")
+        logger.info(f"total time {s2 - start:.2f} seconds.")
 
 
 class FABSNormalizedDeltaTransactionLoader(NormalizedMixin, AbstractDeltaTransactionLoader):
