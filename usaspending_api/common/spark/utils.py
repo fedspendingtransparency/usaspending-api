@@ -2,7 +2,9 @@ from duckdb.experimental.spark.sql import SparkSession as DuckDBSparkSession
 from duckdb.experimental.spark.sql.column import Column as DuckDBSparkColumn
 from pyspark.sql import Column, SparkSession
 
-from usaspending_api.download.delta_downloads.filters.account_filters import AccountDownloadFilters
+from usaspending_api.download.delta_downloads.filters.account_filters import (
+    AccountDownloadFilters,
+)
 from usaspending_api.submissions.helpers import get_submission_ids_for_periods
 
 
@@ -24,7 +26,14 @@ def collect_concat(
             raise TypeError(f"`col_name` must be a string for DuckDB, but got {type(col_name)}")
 
         # collect_set() is not implemented in DuckDB's Spark API, but the `list_distinct` SQL method should work
-        return sf.concat_ws(concat_str, sf.sort_array(sf.call_function("list_distinct", col_name))).alias(alias)
+        return sf.concat_ws(
+            concat_str,
+            sf.sort_array(
+                sf.call_function(
+                    "list_distinct", sf.call_function("array_agg", col_name)
+                )
+            ),
+        ).alias(alias)
     else:
         from pyspark.sql import functions as sf
 
@@ -35,7 +44,9 @@ def collect_concat(
 
 
 def filter_submission_and_sum(
-    col_name: str, filters: AccountDownloadFilters, spark: SparkSession | DuckDBSparkSession
+    col_name: str,
+    filters: AccountDownloadFilters,
+    spark: SparkSession | DuckDBSparkSession,
 ) -> Column:
     if isinstance(spark, DuckDBSparkSession):
         from duckdb.experimental.spark.sql import functions as sf

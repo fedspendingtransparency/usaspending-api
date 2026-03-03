@@ -1,9 +1,11 @@
+import asyncio
 import logging
 import re
-import asyncio
 from pprint import pformat
+
+import psycopg2
+from django.core.management.base import BaseCommand, CommandParser
 from django.db import connection
-from django.core.management.base import BaseCommand
 
 from usaspending_api.common.data_connectors.async_sql_query import async_run_creates
 from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
@@ -14,12 +16,20 @@ logger = logging.getLogger("script")
 # copied from usaspending_api/database_scripts/matview_generator/shared_sql_generator.py
 # since that script uses relative imports which do not work well with the rest of the repo code
 TEMPLATE = {
-    "read_indexes": "SELECT indexname, indexdef FROM pg_indexes WHERE schemaname = '{}' AND tablename = '{}';",
-    "read_constraints": "select conname, pg_get_constraintdef(oid) from pg_constraint where contype IN ('p', 'f', 'u') and conrelid = '{}'::regclass;",
+    "read_indexes": (
+        "SELECT indexname, indexdef FROM pg_indexes"
+        " WHERE schemaname = '{}' AND tablename = '{}'"
+        " ORDER BY indexname;"
+    ),
+    "read_constraints": (
+        "SELECT conname, pg_get_constraintdef(oid) FROM pg_constraint"
+        " WHERE contype IN ('p', 'f', 'u') AND conrelid = '{}'::regclass"
+        " ORDER BY conname;"
+    ),
 }
 
 
-def make_read_indexes(table_name):
+def make_read_indexes(table_name: str) -> list[str]:
     if "." in table_name:
         schema_name, table_name = table_name[: table_name.index(".")], table_name[table_name.index(".") + 1 :]
     else:
@@ -28,21 +38,21 @@ def make_read_indexes(table_name):
     return [TEMPLATE["read_indexes"].format(schema_name, table_name)]
 
 
-def make_read_constraints(table_name):
+def make_read_constraints(table_name: str) -> list[str]:
     return [TEMPLATE["read_constraints"].format(table_name)]
 
 
-def create_indexes(index_definitions, index_concurrency):
+def create_indexes(index_definitions: list[str], index_concurrency: int) -> None:
     loop = asyncio.new_event_loop()
     loop.run_until_complete(index_with_concurrency(index_definitions, index_concurrency))
     loop.close()
 
 
-async def index_with_concurrency(index_definitions, index_concurrency):
+async def index_with_concurrency(index_definitions: list[str], index_concurrency: int) -> list:
     semaphore = asyncio.Semaphore(index_concurrency)
     tasks = []
 
-    async def create_with_sem(sql, index):
+    async def create_with_sem(sql: str, index: int) -> None:
         async with semaphore:
             return await async_run_creates(
                 sql,
@@ -56,15 +66,15 @@ async def index_with_concurrency(index_definitions, index_concurrency):
     return await asyncio.gather(*tasks)
 
 
-def make_copy_constraints(
-    cursor,
-    source_table,
-    dest_table,
-    drop_foreign_keys=False,
-    source_suffix="",
-    dest_suffix="temp",
-    only_parent_partitioned_table=False,
-):
+def make_copy_constraints(  # noqa: PLR0913
+    cursor: psycopg2.extensions.cursor,
+    source_table: str,
+    dest_table: str,
+    drop_foreign_keys: bool = False,
+    source_suffix: str = "",
+    dest_suffix: str = "temp",
+    only_parent_partitioned_table: bool = False,
+) -> str:
     # read the existing indexes
     cursor.execute(make_read_constraints(source_table)[0])
     src_constrs = dictfetchall(cursor)
@@ -88,8 +98,13 @@ def make_copy_constraints(
 
 
 def make_copy_indexes(
-    cursor, source_table, dest_table, source_suffix="", dest_suffix="temp", only_parent_partitioned_table=False
-):
+    cursor: psycopg2.extensions.cursor,
+    source_table: str,
+    dest_table: str,
+    source_suffix: str = "",
+    dest_suffix: str = "temp",
+    only_parent_partitioned_table: bool = False
+) -> list[str]:
     # read the existing indexes of source table
     cursor.execute(make_read_indexes(source_table)[0])
     src_indexes = dictfetchall(cursor)
@@ -114,7 +129,7 @@ def make_copy_indexes(
         # for example, a table 'x' in the public schema could be provided and the string will include `public.x'
         # Depending on whether the source table is a paritioned table or not, it may or may not already have the ONLY
         # clause in its index definition(s)
-        ix_regex = rf"CREATE\s+.*INDEX\s+\S+\s+ON\s+(ONLY\s+)?(\S+)\s+.*"
+        ix_regex = r"CREATE\s+.*INDEX\s+\S+\s+ON\s+(ONLY\s+)?(\S+)\s+.*"
         regex_groups = re.findall(ix_regex, create_ix_sql)[0]
         contains_only = regex_groups[0]
         src_table = regex_groups[1]
@@ -129,8 +144,12 @@ def make_copy_indexes(
     return dest_ix_sql
 
 
-def attach_child_partition_metadata(parent_partitioned_table, child_partition_name, dest_suffix="temp"):
-    # e.g. parent_parititioned_table=temp.transaction_search_temp
+def attach_child_partition_metadata(
+        parent_partitioned_table: str,
+        child_partition_name: str,
+        dest_suffix: str = "temp"
+) -> None:
+    # e.g. parent_partitioned_table=temp.transaction_search_temp
     # child_partition_name=temp.transaction_search_fabs_temp
 
     # The parent-child partitions must follow the convention of partition names just adding a suffix to parent tables
@@ -138,11 +157,11 @@ def attach_child_partition_metadata(parent_partitioned_table, child_partition_na
     # child partition name suffix
     dest_suffix_appendage = "" if not dest_suffix else f"_{dest_suffix}"
     dest_suffix_chop_len = len(dest_suffix_appendage)
-    parent_table_without_schema = re.sub(rf"^.*?\.(.*?)$", rf"\g<1>", parent_partitioned_table)
-    child_partition_without_schema = re.sub(rf"^.*?\.(.*?)$", rf"\g<1>", child_partition_name)
+    parent_table_without_schema = re.sub(r"^.*?\.(.*?)$", r"\g<1>", parent_partitioned_table)
+    child_partition_without_schema = re.sub(r"^.*?\.(.*?)$", r"\g<1>", child_partition_name)
     child_partition_suffix = re.sub(
         rf"^.*?{parent_table_without_schema[:-dest_suffix_chop_len]}(.*?)$",
-        rf"\g<1>",
+        r"\g<1>",
         child_partition_without_schema[:-dest_suffix_chop_len],
     )
 
@@ -184,7 +203,7 @@ class Command(BaseCommand):
     This command simply copies the constraints and indexes from one table to another in postgres
     """
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: CommandParser) -> None:
         parser.add_argument(
             "--source-table",
             type=str,
@@ -269,7 +288,7 @@ class Command(BaseCommand):
             "child suffix and then optional --dest-suffix",
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         # Resolve Parameters
         source_table = options["source_table"]
         source_suffix = options["source_suffix"]

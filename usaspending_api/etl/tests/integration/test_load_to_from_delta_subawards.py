@@ -433,7 +433,7 @@ def test_load_table_to_from_delta_for_subawards(
             "piid": None,
             "fain": "asdfasdfasdfs",
             "latest_transaction_id": 434,
-            "last_modified_date": date(2020, 1, 1),
+            "last_modified_date": datetime(2020, 1, 1, 0, 0),
             "awarding_agency_id": 32,
             "awarding_toptier_agency_name": "toptier",
             "awarding_toptier_agency_abbreviation": "tt",
@@ -516,7 +516,10 @@ def test_load_table_to_from_delta_for_subawards(
             "legal_entity_foreign_posta": None,
             "legal_entity_city_name": "TIGARD",
             "legal_entity_address_line1": "an address",
-            "business_types": "Architecture and Engineering (A&E),Contracts,For-Profit Organization,SBA Certified Small Disadvantaged Business,Woman-Owned Business",
+            "business_types": (
+                "Architecture and Engineering (A&E),Contracts,For-Profit Organization,"
+                "SBA Certified Small Disadvantaged Business,Woman-Owned Business"
+            ),
             "place_of_perform_country_co": "USA",
             "place_of_perform_country_na": "UNITED STATES",
             "place_of_perform_state_code": "CA",
@@ -627,7 +630,7 @@ def test_load_table_to_from_delta_for_subawards(
             "piid": "0000",
             "fain": None,
             "latest_transaction_id": 434,
-            "last_modified_date": date(2020, 1, 1),
+            "last_modified_date": datetime(2020, 1, 1, 0, 0),
             "awarding_agency_id": 32,
             "awarding_toptier_agency_name": "toptier",
             "awarding_toptier_agency_abbreviation": "tt",

@@ -273,8 +273,8 @@ TRANSACTION_FPDS_COLUMN_INFO = [
     TransactionColumn(
         "initial_report_date",
         "initial_report_date",
-        "STRING",
-        "string_datetime_remove_timestamp",
+        "TIMESTAMP",
+        "cast",
     ),
     TransactionColumn(
         "inter_municipal_local_gove", "inter_municipal_local_gove", "BOOLEAN"
@@ -298,7 +298,7 @@ TRANSACTION_FPDS_COLUMN_INFO = [
     TransactionColumn("labor_standards", "labor_standards", "STRING"),
     TransactionColumn("labor_standards_descrip", "labor_standards_descrip", "STRING"),
     TransactionColumn("labor_surplus_area_firm", "labor_surplus_area_firm", "BOOLEAN"),
-    TransactionColumn("last_modified", "last_modified", "STRING"),
+    TransactionColumn("last_modified", "last_modified", "TIMESTAMP", "cast"),
     TransactionColumn(
         "legal_entity_address_line1", "legal_entity_address_line1", "STRING"
     ),
@@ -735,7 +735,7 @@ DAP_TO_NORMALIZED_COLUMN_INFO = [
     TransactionColumn("funding_amount", "NULL", "NUMERIC(23, 2)", "literal"),
     TransactionColumn("indirect_federal_sharing", "NULL", "NUMERIC(23, 2)", "literal"),
     TransactionColumn("is_fpds", "TRUE", "BOOLEAN", "literal"),
-    TransactionColumn("last_modified_date", "last_modified", "TIMESTAMP", "cast"),
+    TransactionColumn("last_modified_date", "last_modified", "TIMESTAMP"),
     TransactionColumn("modification_number", "award_modification_amendme", "STRING"),
     TransactionColumn(
         "non_federal_funding_amount", "NULL", "NUMERIC(23, 2)", "literal"

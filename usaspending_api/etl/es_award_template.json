@@ -828,6 +828,45 @@
       },
       "transaction_count": {
         "type": "integer"
+      },
+      "total_obligation_sort": {
+        "type": "long"
+      },
+      "total_outlays_sort": {
+        "type": "long"
+      },
+      "award_amount_sort": {
+        "type": "long"
+      },
+      "total_subsidy_cost_sort": {
+        "type": "long"
+      },
+      "total_loan_value_sort": {
+        "type": "long"
+      },
+      "original_loan_subsidy_cost_sort": {
+        "type": "long"
+      },
+      "face_value_loan_guarantee_sort": {
+        "type": "long"
+      },
+      "total_covid_obligation_sort": {
+        "type": "long"
+      },
+      "total_covid_outlay_sort": {
+        "type": "long"
+      },
+      "total_iija_obligation_sort": {
+        "type": "long"
+      },
+      "total_iija_outlay_sort": {
+        "type": "long"
+      },
+      "generated_pragmatic_obligation_sort": {
+        "type": "long"
+      },
+      "total_subaward_amount_sort": {
+        "type": "long"
       }
     }
   }
