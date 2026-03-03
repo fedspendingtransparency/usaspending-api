@@ -34,6 +34,11 @@ class GTASSF133Balances(models.Model):
         related_name="gtas",
     )
     tas_rendering_label = models.TextField(null=True, db_index=True)
+    budget_object_class = models.TextField(blank=True, null=True)
+    program_activity_reporting_key = models.TextField(blank=True, null=True)
+    prior_year_adjustment = models.TextField(blank=True, null=True)
+    by_direct_reimbursable_fun = models.TextField(blank=True, null=True)
+    bea_category = models.TextField(blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True)
     update_date = models.DateTimeField(auto_now=True)
     anticipated_prior_year_obligation_recoveries = models.DecimalField(max_digits=23, decimal_places=2)

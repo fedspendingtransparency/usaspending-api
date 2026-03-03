@@ -90,14 +90,24 @@ class Command(mixins.ETLMixin, BaseCommand):
                     sf.agency_identifier, '-',
                     CASE WHEN sf.beginning_period_of_availa is not null THEN CONCAT(sf.beginning_period_of_availa, '/', sf.ending_period_of_availabil) ELSE sf.availability_type_code END,
                     '-', sf.main_account_code, '-', sf.sub_account_code)
-                AS tas_rendering_label
+                AS tas_rendering_label,
+                budget_object_class,
+                program_activity_reporting_key,
+                prior_year_adjustment,
+                by_direct_reimbursable_fun,
+                bea_category
             FROM
                 sf_133 sf
             GROUP BY
                 fiscal_year,
                 fiscal_period,
                 disaster_emergency_fund_code,
-                tas_rendering_label
+                tas_rendering_label,
+                budget_object_class,
+                program_activity_reporting_key,
+                prior_year_adjustment,
+                by_direct_reimbursable_fun,
+                bea_category
             ORDER BY
                 fiscal_year,
                 fiscal_period;
