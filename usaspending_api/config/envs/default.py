@@ -15,11 +15,9 @@ from typing import Any, ClassVar, Union
 
 from pydantic import (
     AnyHttpUrl,
-    BaseSettings,
     PostgresDsn,
     SecretStr,
-    root_validator,
-)
+    root_validator)
 
 from usaspending_api.config.utils import (
     ENV_SPECIFIC_OVERRIDE,
@@ -29,6 +27,7 @@ from usaspending_api.config.utils import (
     eval_default_factory_from_root_validator,
     validate_url_and_parts,
 )
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _PROJECT_NAME = "usaspending-api"
 # WARNING: This is relative to THIS file's location. If it is moved/refactored, this needs to be confirmed to point
@@ -380,9 +379,4 @@ class DefaultConfig(BaseSettings):
     COVID19_DOWNLOAD_README_OBJECT_KEY: str = (
         f"files/{COVID19_DOWNLOAD_README_FILE_NAME}"
     )
-
-    class Config:
-        pass
-        # supporting use of a user-provided (ang git-ignored) .env file for overrides
-        env_file = str(_PROJECT_ROOT_DIR / ".env")
-        env_file_encoding = "utf-8"
+    model_config = SettingsConfigDict(env_file=str(_PROJECT_ROOT_DIR / ".env"), env_file_encoding="utf-8")

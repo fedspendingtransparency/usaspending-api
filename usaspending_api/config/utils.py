@@ -2,8 +2,9 @@ import json
 from typing import Any, Callable, Dict, TypeVar, Union
 from urllib.parse import ParseResult, parse_qs, urlparse
 
-from pydantic import BaseSettings, SecretStr
+from pydantic import SecretStr
 from pydantic.fields import ModelField
+from pydantic_settings import BaseSettings
 
 # Placeholder sentinel value indicating a config var that is expected to be overridden in a runtime-env-specific
 # config declaration. If this value emerges, it has not yet been set in the runtime env config and must be.
