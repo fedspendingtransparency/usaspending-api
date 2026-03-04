@@ -47,13 +47,13 @@ GTAS_TABLE = GTASSF133Balances.objects.model._meta.db_table
 class Command(mixins.ETLMixin, BaseCommand):
     help = "Drop and recreate all GTAS reference data"
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         logger.info("Starting ETL script")
         self.process_data()
         logger.info("GTAS ETL finished successfully!")
 
     @transaction.atomic()
-    def process_data(self):
+    def process_data(self) -> None:
         broker_cursor = connections[settings.BROKER_DB_ALIAS].cursor()
 
         logger.info("Extracting data from Broker")
@@ -78,7 +78,7 @@ class Command(mixins.ETLMixin, BaseCommand):
         logger.info("Committing transaction to database")
 
     @property
-    def broker_fetch_sql(self):
+    def broker_fetch_sql(self) -> str:
         return f"""
             SELECT
                 fiscal_year,
@@ -86,9 +86,12 @@ class Command(mixins.ETLMixin, BaseCommand):
                 {self.column_statements}
                 disaster_emergency_fund_code AS disaster_emergency_fund_id,
                 CONCAT(
-                    CASE WHEN sf.allocation_transfer_agency is not null THEN CONCAT(sf.allocation_transfer_agency, '-') ELSE null END,
+                    CASE WHEN sf.allocation_transfer_agency is not null
+                    THEN CONCAT(sf.allocation_transfer_agency, '-') ELSE null END,
                     sf.agency_identifier, '-',
-                    CASE WHEN sf.beginning_period_of_availa is not null THEN CONCAT(sf.beginning_period_of_availa, '/', sf.ending_period_of_availabil) ELSE sf.availability_type_code END,
+                    CASE WHEN sf.beginning_period_of_availa is not null
+                    THEN CONCAT(sf.beginning_period_of_availa, '/', sf.ending_period_of_availabil)
+                    ELSE sf.availability_type_code END,
                     '-', sf.main_account_code, '-', sf.sub_account_code)
                 AS tas_rendering_label,
                 budget_object_class,
@@ -114,27 +117,38 @@ class Command(mixins.ETLMixin, BaseCommand):
         """
 
     @property
-    def column_statements(self):
+    def column_statements(self) -> str:
         simple_fields = [
-            f"COALESCE(SUM(CASE WHEN line IN ({','.join([str(elem) for elem in val])}) THEN sf.amount ELSE 0 END), 0.0) AS {key},"
+            f"""COALESCE(SUM(
+                CASE WHEN line IN ({','.join([str(elem) for elem in val])})
+                THEN sf.amount ELSE 0 END
+            ), 0.0) AS {key},"""
             for key, val in DERIVED_COLUMNS.items()
         ]
         inverted_fields = [
-            f"COALESCE(SUM(CASE WHEN line IN ({','.join([str(elem) for elem in val])}) THEN sf.amount * -1 ELSE 0 END), 0.0) AS {key},"
+            f"""COALESCE(SUM(
+                CASE WHEN line IN ({','.join([str(elem) for elem in val])})
+                THEN sf.amount * -1 ELSE 0 END
+            ), 0.0) AS {key},"""
             for key, val in INVERTED_DERIVED_COLUMNS.items()
         ]
         year_specific_fields = [
             f"""COALESCE(SUM(CASE
-                        WHEN line IN ({','.join([str(elem) for elem in val["before_year"]])}) AND fiscal_year < {val["change_year"]} THEN sf.amount * -1
-                        WHEN line IN ({','.join([str(elem) for elem in val["year_and_after"]])}) AND fiscal_year >= {val["change_year"]} THEN sf.amount * -1
-                        ELSE 0
-                    END), 0.0) AS {key},"""
+                    WHEN line IN ({','.join([str(elem) for elem in val["before_year"]])})
+                        AND fiscal_year < {val["change_year"]}
+                    THEN sf.amount * -1
+                    WHEN line IN ({','.join([str(elem) for elem in val["year_and_after"]])})
+                        AND fiscal_year >= {val["change_year"]}
+                    THEN sf.amount * -1
+                    ELSE 0
+                    END
+                ), 0.0) AS {key},"""
             for key, val in DERIVED_COLUMNS_DYNAMIC.items()
         ]
         return "\n".join(simple_fields + inverted_fields + year_specific_fields)
 
     @property
-    def tas_fk_sql(self):
+    def tas_fk_sql(self) -> str:
         return f"""
             UPDATE {GTAS_TABLE}
             SET treasury_account_identifier = tas.treasury_account_identifier
@@ -144,5 +158,5 @@ class Command(mixins.ETLMixin, BaseCommand):
                 AND {GTAS_TABLE}.treasury_account_identifier IS DISTINCT FROM tas.treasury_account_identifier"""
 
     @property
-    def financing_account_sql(self):
+    def financing_account_sql(self) -> str:
         return f"""DELETE FROM {GTAS_TABLE} WHERE treasury_account_identifier IS NULL"""
