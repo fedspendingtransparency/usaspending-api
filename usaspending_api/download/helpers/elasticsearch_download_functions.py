@@ -1,4 +1,3 @@
-import itertools
 import logging
 import time
 
@@ -8,7 +7,6 @@ from typing import Union
 
 from django.conf import settings
 from django.db.models import Model, QuerySet
-from elasticsearch_dsl import A
 
 from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, SubawardSearch, TransactionSearch
 from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
@@ -38,53 +36,17 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
     _query_with_filters = None
 
     @classmethod
-    def _get_download_ids_generator(cls, search: Union[AwardSearch, TransactionSearch, SubawardSearch], size: int):
-        """
-        Takes an AwardSearch or TransactionSearch object (that specifies the index, filter, and source) and returns
-        a generator that yields list of IDs in chunksize SIZE.
-        """
-        max_retries = 10
-        total = search.handle_count(retries=max_retries)
-        if total is None:
-            logger.error("Error retrieving total results. Max number of attempts reached.")
-            return
-        max_iterations = settings.MAX_DOWNLOAD_LIMIT // size
-        req_iterations = (total // size) + 1
-        num_iterations = min(max(1, req_iterations), max_iterations)
-
-        # Setting the shard_size below works in this case because we are aggregating on a unique field. Otherwise, this
-        # would not work due to the number of records. Other places this is set are in the different spending_by
-        # endpoints which are either routed or contain less than 10k unique values, both allowing for the shard
-        # size to be manually set to 10k.
-        for iteration in range(num_iterations):
-            aggregation = A(
-                "terms",
-                field=cls._source_field,
-                include={"partition": iteration, "num_partitions": num_iterations},
-                size=size,
-                shard_size=size,
-            )
-            search.aggs.bucket("results", aggregation)
-            response = search.handle_execute(retries=max_retries).to_dict()
-
-            if response is None:
-                raise Exception("Breaking generator, unable to reach cluster")
-            results = []
-            for bucket in response["aggregations"]["results"]["buckets"]:
-                results.append(bucket["key"])
-
-            yield results
+    def _get_download_ids(cls, search: Union[AwardSearch, TransactionSearch, SubawardSearch]) -> list[int]:
+        return [getattr(hit, cls._source_field) for hit in search.scan()]
 
     @classmethod
-    def _populate_download_lookups(
-        cls, filters: dict, download_job: DownloadJob, size: int = 10000, **filter_options
-    ) -> None:
+    def _populate_download_lookups(cls, filters: dict, download_job: DownloadJob, **filter_options) -> None:
         """
         Takes a dictionary of the different download filters and returns a flattened list of ids.
         """
         filter_query = cls._query_with_filters.generate_elasticsearch_query(filters, **filter_options)
         search = cls._search_type().filter(filter_query).source([cls._source_field])
-        ids = cls._get_download_ids_generator(search, size)
+        ids = cls._get_download_ids(search)
         lookup_id_type = cls._search_type.type_as_string()
         now = datetime.now(timezone.utc)
         download_lookup_obj_list = [
@@ -94,7 +56,7 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
                 lookup_id=es_id,
                 lookup_id_type=lookup_id_type,
             )
-            for es_id in itertools.chain.from_iterable(ids)
+            for es_id in ids
         ]
         write_to_log(
             message=f"Found {len(download_lookup_obj_list)} {cls._source_field} based on filters",
