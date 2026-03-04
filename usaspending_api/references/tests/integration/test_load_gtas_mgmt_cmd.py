@@ -52,6 +52,11 @@ def test_program_activity_fresh_load(monkeypatch):
                 -111,
                 -110,
                 -11.00,
+                "test",
+                "test",
+                "test",
+                "test",
+                "test",
             ),
             (
                 1600,
@@ -72,6 +77,11 @@ def test_program_activity_fresh_load(monkeypatch):
                 -121,
                 -120,
                 -12.00,
+                "test",
+                "test",
+                "test",
+                "test",
+                "test",
             ),
             (
                 1601,
@@ -92,6 +102,11 @@ def test_program_activity_fresh_load(monkeypatch):
                 -131,
                 -130,
                 -13.00,
+                "test",
+                "test",
+                "test",
+                "test",
+                "test",
             ),
         ],
     }
@@ -118,6 +133,11 @@ def test_program_activity_fresh_load(monkeypatch):
                 "anticipated_prior_year_obligation_recoveries",
                 "prior_year_paid_obligation_recoveries",
                 "adjustments_to_unobligated_balance_brought_forward_cpe",
+                "budget_object_class",
+                "program_activity_reporting_key",
+                "prior_year_adjustment",
+                "by_direct_reimbursable_fun",
+                "bea_category",
             ).order_by("-budget_authority_unobligated_balance_brought_forward_cpe")
         ),
     }
