@@ -1,6 +1,5 @@
 import logging
 import time
-
 from abc import ABCMeta, abstractmethod
 from datetime import datetime, timezone
 from typing import Union
@@ -8,23 +7,27 @@ from typing import Union
 from django.conf import settings
 from django.db.models import Model, QuerySet
 
-from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, SubawardSearch, TransactionSearch
-from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
+from usaspending_api.common.elasticsearch.search_wrappers import (
+    AwardSearch,
+    SubawardSearch,
+    TransactionSearch,
+)
 from usaspending_api.common.query_with_filters import QueryWithFilters
+from usaspending_api.download.helpers import write_to_download_log as write_to_log
 from usaspending_api.download.models import DownloadJob
 from usaspending_api.download.models.download_job_lookup import DownloadJobLookup
-from usaspending_api.download.helpers import write_to_download_log as write_to_log
 from usaspending_api.search.filters.elasticsearch.filter import QueryType
-from usaspending_api.search.models import (
-    AwardSearch as DBAwardSearch,
-    SubawardSearch as DBSubawardSearch,
-    TransactionSearch as DBTransactionSearch,
+from usaspending_api.search.filters.time_period.decorators import (
+    NewAwardsOnlyTimePeriod,
 )
 from usaspending_api.search.filters.time_period.query_types import (
     AwardSearchTimePeriod,
     SubawardSearchTimePeriod,
     TransactionSearchTimePeriod,
 )
+from usaspending_api.search.models import AwardSearch as DBAwardSearch
+from usaspending_api.search.models import SubawardSearch as DBSubawardSearch
+from usaspending_api.search.models import TransactionSearch as DBTransactionSearch
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +40,15 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
 
     @classmethod
     def _get_download_ids(cls, search: Union[AwardSearch, TransactionSearch, SubawardSearch]) -> list[int]:
-        return [getattr(hit, cls._source_field) for hit in search.scan()]
+        id_count = search.count()
+        ids = []
+        while True:
+            r = search.execute()
+            ids.extend([getattr(hit, cls._source_field) for hit in r.hits])
+            if len(r.hits) < id_count:
+                break
+            search = search.extra(search_after=r.hits[-1].meta.sort)
+        return ids
 
     @classmethod
     def _populate_download_lookups(cls, filters: dict, download_job: DownloadJob, **filter_options) -> None:
@@ -45,7 +56,7 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
         Takes a dictionary of the different download filters and returns a flattened list of ids.
         """
         filter_query = cls._query_with_filters.generate_elasticsearch_query(filters, **filter_options)
-        search = cls._search_type().filter(filter_query).source([cls._source_field])
+        search = cls._search_type().filter(filter_query).source([cls._source_field]).sort("action_date")
         ids = cls._get_download_ids(search)
         lookup_id_type = cls._search_type.type_as_string()
         now = datetime.now(timezone.utc)
@@ -88,7 +99,7 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
                     .filter(download_job_id=download_job.download_job_id)
                     .exists()
                 )
-                write_to_log(message=f"Waiting on replication for Download Lookup", download_job=download_job)
+                write_to_log(message="Waiting on replication for Download Lookup", download_job=download_job)
 
             if is_lookup_replicated:
                 write_to_log(
@@ -100,7 +111,7 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
                 raise TimeoutError(message)
 
     @classmethod
-    def download_lookup_queryset(cls, base_queryset: QuerySet, download_job: DownloadJob):
+    def download_lookup_queryset(cls, base_queryset: QuerySet, download_job: DownloadJob) -> QuerySet:
         """
         Adds onto a queryset the necessary filter in order to find IDs that are relevant to the specific
         Download type and job.
