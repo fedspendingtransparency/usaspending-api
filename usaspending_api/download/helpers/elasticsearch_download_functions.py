@@ -2,7 +2,6 @@ import logging
 import time
 from abc import ABCMeta, abstractmethod
 from datetime import datetime, timezone
-from typing import Union
 
 from django.conf import settings
 from django.db.models import Model, QuerySet
@@ -39,11 +38,16 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
     _query_with_filters = None
 
     @classmethod
-    def _get_download_ids(cls, search: Union[AwardSearch, TransactionSearch, SubawardSearch]) -> list[int]:
-        id_count = search.count()
+    def _get_download_ids(cls, search: AwardSearch | TransactionSearch | SubawardSearch) -> list[int] | None:
+        id_count = search.handle_count(retries=10)
+        if id_count is None:
+            logger.error("Error retrieving total results. Max number of attempts reached.")
+            return
         ids = []
         while True:
-            r = search.execute()
+            r = search.handle_execute(retries=10)
+            if r is None:
+                raise Exception("Unable to reach cluster.")
             ids.extend([getattr(hit, cls._source_field) for hit in r.hits])
             if len(r.hits) < id_count:
                 break
