@@ -13,11 +13,8 @@ import os
 import pathlib
 from typing import Any, ClassVar, Union
 
-from pydantic import (
-    AnyHttpUrl,
-    PostgresDsn,
-    SecretStr,
-    root_validator)
+from pydantic import AnyHttpUrl, PostgresDsn, SecretStr, model_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from usaspending_api.config.utils import (
     ENV_SPECIFIC_OVERRIDE,
@@ -27,7 +24,6 @@ from usaspending_api.config.utils import (
     eval_default_factory_from_root_validator,
     validate_url_and_parts,
 )
-from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _PROJECT_NAME = "usaspending-api"
 # WARNING: This is relative to THIS file's location. If it is moved/refactored, this needs to be confirmed to point
@@ -158,7 +154,7 @@ class DefaultConfig(BaseSettings):
 
     # noinspection PyMethodParameters
     # Pydantic returns a classmethod for its validators, so the cls param is correct
-    @root_validator
+    @model_validator(mode="before")
     def _DATABASE_URL_and_parts_factory(cls, values: dict[str, Any]) -> dict[str, Any]:
         """A root validator to backfill DATABASE_URL and USASPENDING_DB_* part config vars and validate that they are
         all consistent.
@@ -180,7 +176,7 @@ class DefaultConfig(BaseSettings):
 
     # noinspection PyMethodParameters
     # Pydantic returns a classmethod for its validators, so the cls param is correct
-    @root_validator
+    @model_validator(mode="before")
     def _BROKER_DB_and_parts_factory(cls, values: dict[str, Any]) -> dict[str, Any]:
         """A root validator to backfill BROKER_DB and BROKER_DB_* part config vars and validate
         that they are all consistent.
@@ -212,7 +208,7 @@ class DefaultConfig(BaseSettings):
 
     # noinspection PyMethodParameters
     # Pydantic returns a classmethod for its validators, so the cls param is correct
-    @root_validator
+    @model_validator(mode="before")
     def _ES_HOSTNAME_and_parts_factory(cls, values: dict[str, Any]) -> dict[str, Any]:
         """A root validator to backfill ES_HOSTNAME and ES_* part config vars and validate that they are
         all consistent.

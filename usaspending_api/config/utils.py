@@ -3,7 +3,7 @@ from typing import Any, Callable, Dict, TypeVar, Union
 from urllib.parse import ParseResult, parse_qs, urlparse
 
 from pydantic import SecretStr
-from pydantic.fields import ModelField
+from pydantic.v1.fields import FieldInfo
 from pydantic_settings import BaseSettings
 
 # Placeholder sentinel value indicating a config var that is expected to be overridden in a runtime-env-specific
@@ -39,7 +39,7 @@ def eval_default_factory(
     config_class: TBaseSettings,
     assigned_or_sourced_value: Any,
     configured_vars: Dict[str, Any],
-    config_var: ModelField,
+    config_var: FieldInfo,
     factory_func: Callable,
 ) -> Any:
     """A delegate function that acts as a default factory to produce/derive (or transform) a config var value
@@ -83,12 +83,12 @@ def eval_default_factory(
     overridable_config_base_classes = [
         bc
         for bc in config_class.__bases__
-        if issubclass(bc, BaseSettings) and "__fields__" in dir(bc)
+        if issubclass(bc, BaseSettings) and hasattr(bc, "model_fields")
     ]
     overridable_config_fields = {
-        k for bc in overridable_config_base_classes for k in bc.__fields__.keys()
+        k for bc in overridable_config_base_classes for k in bc.model_fields.keys()
     }
-    is_override = config_var.name in overridable_config_fields
+    is_override = config_var.title in overridable_config_fields
 
     if (
         not is_override
@@ -96,7 +96,7 @@ def eval_default_factory(
         and unveil(default_value) not in CONFIG_VAR_PLACEHOLDERS
     ):
         raise ValueError(
-            f'The "{config_var.name}" field, which is tied to a default-factory-based validator, must have its '
+            f'The "{config_var.title}" field, which is tied to a default-factory-based validator, must have its '
             f"default value set to None, "
             f"or to one of the CONFIG_VAR_PLACEHOLDERS. This is so that when a value is sourced or assigned "
             f"elsewhere for this field, it can easily be identified as a non-default value, and will take "
@@ -149,7 +149,7 @@ def eval_default_factory_from_root_validator(
     overridable_config_base_classes = [
         bc
         for bc in config_class.__bases__
-        if issubclass(bc, BaseSettings) and "__fields__" in dir(bc)
+        if issubclass(bc, BaseSettings) and hasattr(bc, "model_fields")
     ]
     base_class_validated_fields = {
         k for bc in overridable_config_base_classes for k in bc.__validators__.keys()
@@ -168,7 +168,7 @@ def eval_default_factory_from_root_validator(
     assigned_or_sourced_value = (
         configured_vars[config_var_name] if config_var_name in configured_vars else None
     )
-    config_var = config_class.__fields__[config_var_name]
+    config_var = config_class.model_fields[config_var_name]
     produced_value = eval_default_factory(
         config_class,
         assigned_or_sourced_value,
