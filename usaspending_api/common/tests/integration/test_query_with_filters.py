@@ -37,6 +37,13 @@ def es_test_data_fixture(db):
         recipient_name="SOME COMPANY INC.",
         action_date="2019-01-01",
     )
+    award_search5 = baker.make(
+        "search.AwardSearch",
+        award_id=5,
+        generated_unique_award_id="UNIQUE_AWARD_ID_5",
+        recipient_name="BOOZ ALLEN \& HAMILTON INC",
+        action_date="2007-10-01",
+    )
     baker.make(
         "search.SubawardSearch",
         broker_subaward_id=1,
@@ -240,6 +247,29 @@ def test_recipient_ending_with_special_character_transaction(
     query_with_filters = QueryWithFilters(QueryType.TRANSACTIONS)
     filter_query = query_with_filters.generate_elasticsearch_query(filters)
     search = TransactionSearch().filter(filter_query)
+    results = search.handle_execute()
+
+    assert len(results["hits"]["hits"]) == 1
+
+
+@pytest.mark.django_db
+def test_recipient_search_text_not_escaped(monkeypatch, elasticsearch_award_index, es_test_data_fixture):
+    """Ensure that special characters are no longer escaped in recipient search text filters"""
+
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+
+    filters = {"recipient_search_text": ["BOOZ ALLEN & HAMILTON INC"]}
+    query_with_filters = QueryWithFilters(QueryType.AWARDS)
+    filter_query = query_with_filters.generate_elasticsearch_query(filters)
+    search = AwardSearch().filter(filter_query)
+    results = search.handle_execute()
+
+    assert len(results["hits"]["hits"]) == 0
+
+    filters = {"recipient_search_text": ["BOOZ ALLEN \& HAMILTON INC"]}
+    query_with_filters = QueryWithFilters(QueryType.AWARDS)
+    filter_query = query_with_filters.generate_elasticsearch_query(filters)
+    search = AwardSearch().filter(filter_query)
     results = search.handle_execute()
 
     assert len(results["hits"]["hits"]) == 1
