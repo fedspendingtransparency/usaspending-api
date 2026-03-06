@@ -152,17 +152,17 @@ def eval_default_factory_from_root_validator(
         if issubclass(bc, BaseSettings) and hasattr(bc, "model_fields")
     ]
     base_class_validated_fields = {
-        k for bc in overridable_config_base_classes for k in bc.__validators__.keys()
+        k for bc in overridable_config_base_classes for k in bc.__pydantic_decorators__.validators.keys()
     }
     is_validated_in_base_class = config_var_name in base_class_validated_fields
 
     if is_validated_in_base_class:
         raise ValueError(
-            f'root_validators cannot override validators. The "{config_var_name}" field, which is tied to a '
-            f"default-factory-based root_validator, is not supported for root_validator in a subclass because its "
+            f'model_validators cannot override validators. The "{config_var_name}" field, which is tied to a '
+            f"default-factory-based model_validator, is not supported for model_validator in a subclass because its "
             f"value is produced from a parent class validator. Whether the assigned value comes from the "
             f"environment or from the parent validator cannot be distinguished. Consider making the parent validator "
-            f"into a root_validator and override that."
+            f"into a model_validator and override that."
         )
 
     assigned_or_sourced_value = (
