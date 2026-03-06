@@ -5,6 +5,7 @@ from pyspark.sql import DataFrame, SparkSession, column
 from pyspark.sql import functions as sf
 from pyspark.sql.types import DecimalType
 
+from usaspending_api.config import CONFIG
 from usaspending_api.download.helpers.download_annotation_functions import AWARD_URL
 from usaspending_api.references.models import DisasterEmergencyFundCode
 
@@ -25,6 +26,8 @@ class TransactionDownload:
             "award_id", "transaction_award_id"
         )
         self.treasury_appropriation_account = spark.table("global_temp.treasury_appropriation_account")
+
+        self.spark = spark
 
     @cached_property
     def defc_by_group(self) -> dict[str, list[str]]:
@@ -602,34 +605,33 @@ class TransactionDownload:
         # First we process the File C dataframe and save it as a table to reduce memory burden
         # TODO: May need to breakout the implementation of this grouped table when we go to implement
         #       the award download
-        # s3_bucket_and_prefix = f"s3a://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.DELTA_LAKE_S3_PATH}"
-        # faba_aggs_schema_name = "temp"
-        # faba_aggs_table_name = "file_c_grouped_by_award"
-        # self.faba_aggs_df.write.format("delta").mode("overwrite").options(
-        #     overwriteSchema=True,
-        #     path=f"{s3_bucket_and_prefix}/{faba_aggs_schema_name}/{faba_aggs_table_name}",
-        # ).saveAsTable(f"{faba_aggs_schema_name}.{faba_aggs_table_name}")
-        # faba_aggs_table = self.spark.table(f"{faba_aggs_schema_name}.{faba_aggs_table_name}")
-        # faba_aggs_table = faba_aggs_table.withColumn("faba_award_id", sf.col("faba_award_id").cast(LongType()))
+        s3_bucket_and_prefix = f"s3a://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.DELTA_LAKE_S3_PATH}"
+        faba_aggs_schema_name = "temp"
+        faba_aggs_table_name = "file_c_grouped_by_award"
+        self.faba_aggs_df.write.format("delta").mode("overwrite").options(
+            overwriteSchema=True,
+            path=f"{s3_bucket_and_prefix}/{faba_aggs_schema_name}/{faba_aggs_table_name}",
+        ).saveAsTable(f"{faba_aggs_schema_name}.{faba_aggs_table_name}")
+        faba_aggs_table = self.spark.table(f"{faba_aggs_schema_name}.{faba_aggs_table_name}")
 
         # Then we join the File C table with Transactions and Awards to create the download table
-        # faba_cols = faba_aggs_table.columns
-        faba_cols = self.faba_aggs_df.columns
+        faba_cols = faba_aggs_table.columns
+        # faba_cols = self.faba_aggs_df.columns
         faba_cols.remove("faba_award_id")
 
         df = self.transaction_search.join(
                 self.award_search, self.transaction_search.transaction_award_id == self.award_search.award_id
             )
-        # df = df.join(
-        #         faba_aggs_table,
-        #         self.transaction_search.transaction_award_id == faba_aggs_table.faba_award_id,
-        #         "left",
-        #     )
         df = df.join(
-            self.faba_aggs_df,
-            self.transaction_search.transaction_award_id == self.faba_aggs_df.faba_award_id,
-            "left",
-        )
+                faba_aggs_table,
+                self.transaction_search.transaction_award_id == faba_aggs_table.faba_award_id,
+                "left",
+            )
+        # df = df.join(
+        #     self.faba_aggs_df,
+        #     self.transaction_search.transaction_award_id == self.faba_aggs_df.faba_award_id,
+        #     "left",
+        # )
         df = df.select(*self.common_cols, *faba_cols, *self.fabs_cols, *self.fpds_cols)
         df = df.withColumn("merge_hash_key", sf.xxhash64("*"))
 
