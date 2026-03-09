@@ -745,7 +745,6 @@ class _DisasterEmergencyFundCodes(_Filter):
     @classmethod
     def generate_elasticsearch_query(cls, filter_values: List[str], query_type: QueryType, **options) -> ES_Q:
         nested_path = options.get("nested_path", "")
-        def_codes_query = []
         plural_code = 's' if query_type != QueryType.ACCOUNTS else ''
         def_code_field = f"{nested_path}{'.' if nested_path else ''}disaster_emergency_fund_code{plural_code}"
 
@@ -779,6 +778,21 @@ class _DisasterEmergencyFundCodes(_Filter):
         # Everything that isn't COVID or IIJA
         other_filters = list(set(filter_values) - set(all_covid_iija_defc.keys()))
         other_queries = [ES_Q("match", **{def_code_field: filter_value}) for filter_value in other_filters]
+
+        def_codes_query = cls._generate_defc_query_segment(cls, query_type, covid_filters,
+                                                           iija_filters, def_code_field, other_queries)
+
+        if len(def_codes_query) != 1:
+            final_query = ES_Q("bool", should=def_codes_query, minimum_should_match=1)
+        else:
+            final_query = def_codes_query[0]
+
+        return final_query
+
+    @classmethod
+    def _generate_defc_query_segment(cls, query_type: QueryType, covid_filters: dict,
+                                     iija_filters: dict, def_code_field: str, other_queries: list[ES_Q]) -> list[ES_Q]:
+        def_codes_query = []
 
         # Filter on the `disaster_emergency_fund_code` AND `action_date` values for transactions
         if query_type == QueryType.TRANSACTIONS:
@@ -853,12 +867,7 @@ class _DisasterEmergencyFundCodes(_Filter):
         if other_queries:
             def_codes_query.append(ES_Q("bool", should=other_queries, minimum_should_match=1))
 
-        if len(def_codes_query) != 1:
-            final_query = ES_Q("bool", should=def_codes_query, minimum_should_match=1)
-        else:
-            final_query = def_codes_query[0]
-
-        return final_query
+        return def_codes_query
 
 
 class _QueryText(_Filter):
