@@ -174,6 +174,11 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
         destination_path_dir = str(destination_path).replace(
             f"/{destination_file_name}", ""
         )
+
+        # TODO remove
+        self._logger.info(f"Destination path: {destination_path}")
+        self._logger.info(f"Destination path dir: {destination_path_dir}")
+
         # The place to write intermediate data files to in s3
         s3_bucket_name = settings.BULK_DOWNLOAD_S3_BUCKET_NAME
         s3_bucket_path = f"s3a://{s3_bucket_name}"
@@ -234,6 +239,13 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
             )
             if self.spark_created_by_command:
                 self.spark.stop()
+
+        # TODO remove this, it's just for testing
+        self._logger.info(f"Final CSV data file locations: {final_csv_data_file_locations}")
+        self._logger.info(f"Type: {type(final_csv_data_file_locations)}")
+        self._logger.info(f"Download zip path: {download_zip_path}")
+        self._logger.info(f"Type: {type(download_zip_path)}")
+
         append_files_to_zip_file(final_csv_data_file_locations, download_zip_path)
         self._logger.info(
             f"Generated the following data csv files {final_csv_data_file_locations}"
@@ -261,8 +273,7 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
                 file name in the path. This path should be a directory.
 
         Returns:
-            A list of the final location on the local machine that the
-            files were moved to from s3.
+            The final location on the local machine that the files were moved to from s3.
         """
         self._logger.info(f"Starting thread {threading.get_ident()}")
         s3_key = s3_file_path.replace(f"{s3_bucket_path}/", "")
@@ -329,6 +340,7 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
         self._logger.info(
             f"Copied data files from S3 to local machine in {(time.time() - start_time):3f}s"
         )
+        self._logger.info(f"Local CSV file paths: {local_csv_file_paths}")
         return local_csv_file_paths
 
 
