@@ -779,7 +779,7 @@ class _DisasterEmergencyFundCodes(_Filter):
         other_filters = list(set(filter_values) - set(all_covid_iija_defc.keys()))
         other_queries = [ES_Q("match", **{def_code_field: filter_value}) for filter_value in other_filters]
 
-        def_codes_query = cls._generate_defc_query_segment(cls, query_type, covid_filters,
+        def_codes_query = cls._generate_defc_query_segment(query_type, covid_filters,
                                                            iija_filters, def_code_field, other_queries)
 
         if len(def_codes_query) != 1:
