@@ -1,10 +1,14 @@
 import pytest
 from model_bakery import baker
 
-from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, SubawardSearch, TransactionSearch
+from usaspending_api.common.elasticsearch.search_wrappers import (
+    AwardSearch,
+    SubawardSearch,
+    TransactionSearch,
+)
 from usaspending_api.common.query_with_filters import QueryWithFilters
-from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 from usaspending_api.search.filters.elasticsearch.filter import QueryType
+from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
 
 
 @pytest.fixture
@@ -41,7 +45,7 @@ def es_test_data_fixture(db):
         "search.AwardSearch",
         award_id=5,
         generated_unique_award_id="UNIQUE_AWARD_ID_5",
-        recipient_name="BOOZ ALLEN \& HAMILTON INC",
+        recipient_name=r"BOOZ ALLEN \& HAMILTON INC",
         action_date="2007-10-01",
     )
     baker.make(
@@ -73,6 +77,13 @@ def es_test_data_fixture(db):
         action_date="2019-01-01",
     )
     baker.make(
+        "search.SubawardSearch",
+        broker_subaward_id=5,
+        sub_awardee_or_recipient_legal=r"BOOZ ALLEN \& HAMILTON INC",
+        award=award_search5,
+        action_date="2007-10-01",
+    )
+    baker.make(
         "search.TransactionSearch",
         transaction_id=1,
         award=award_search1,
@@ -101,6 +112,14 @@ def es_test_data_fixture(db):
         action_date="2019-01-01",
         recipient_name="SOME COMPANY INC.",
         transaction_description="Description for test_4 transaction.",
+    )
+    baker.make(
+        "search.TransactionSearch",
+        transaction_id=5,
+        award=award_search4,
+        action_date="2007-10-01",
+        recipient_name=r"BOOZ ALLEN \& HAMILTON INC",
+        transaction_description="Description for test_5 transaction.",
     )
 
 
@@ -266,7 +285,7 @@ def test_recipient_search_text_not_escaped(monkeypatch, elasticsearch_award_inde
 
     assert len(results["hits"]["hits"]) == 0
 
-    filters = {"recipient_search_text": ["BOOZ ALLEN \& HAMILTON INC"]}
+    filters = {"recipient_search_text": [r"BOOZ ALLEN \& HAMILTON INC"]}
     query_with_filters = QueryWithFilters(QueryType.AWARDS)
     filter_query = query_with_filters.generate_elasticsearch_query(filters)
     search = AwardSearch().filter(filter_query)

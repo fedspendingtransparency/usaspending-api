@@ -19,7 +19,9 @@ from usaspending_api.search.filters.elasticsearch.filter import QueryType, _Filt
 from usaspending_api.search.filters.elasticsearch.naics import NaicsCodes
 from usaspending_api.search.filters.elasticsearch.psc import PSCCodes
 from usaspending_api.search.filters.elasticsearch.tas import TasCodes, TreasuryAccounts
-from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
+from usaspending_api.search.filters.time_period.decorators import (
+     NewAwardsOnlyTimePeriod,
+)
 from usaspending_api.search.filters.time_period.query_types import (
     AwardSearchTimePeriod,
     SubawardSearchTimePeriod,
@@ -37,7 +39,7 @@ class _SubawardsKeywords(_Filter):
     def generate_elasticsearch_query(cls, filter_values: List[str], query_type: QueryType, **options) -> ES_Q:
         keyword_queries = []
 
-        def keyword_parse(keyword):
+        def keyword_parse(keyword: str) -> ES_Q:
             fields = [
                 "sub_awardee_or_recipient_legal",
                 "product_or_service_description",
@@ -368,7 +370,7 @@ class _RecipientSearchText(_Filter):
         for filter_value in filter_values:
 
             is_exact_match = re.match(r'^".*"nmn$', filter_value) is not None
-            search_text = filter_value.upper() # Recipient Search No longer escapes special characters
+            search_text = filter_value.upper()  # Recipient Search No longer escapes special characters
 
             if query_type == QueryType.SUBAWARDS:
                 recipient_name_fields = ["sub_awardee_or_recipient_legal"]
@@ -555,7 +557,8 @@ class _PlaceOfPerformanceLocations(_Filter):
         return ES_Q("bool", should=pop_locations_query, minimum_should_match=1)
 
     @staticmethod
-    def _validate_district(state, country, county, district_current, district_original):
+    def _validate_district(state: str | None, country: str | None, county: str | None,
+            district_current: str | None, district_original: str | None):
         if (state is None or country != "USA" or county is not None) and (
             district_current is not None or district_original is not None
         ):
@@ -703,7 +706,7 @@ class _DisasterEmergencyFundCodes(_Filter):
     underscore_name = "def_codes"
 
     @classmethod
-    def _generate_covid_iija_es_queries_transactions(cls, def_code_field, covid_filters, iija_filters):
+    def _generate_covid_iija_es_queries_transactions(cls, def_code_field: str, covid_filters: dict, iija_filters: dict):
         covid_es_queries = [
             ES_Q("match", **{def_code_field: def_code})
             & ES_Q("range", action_date={"gte": datetime.strftime(enactment_date, "%Y-%m-%d")})
@@ -718,7 +721,7 @@ class _DisasterEmergencyFundCodes(_Filter):
         return covid_es_queries, iija_es_queries
 
     @classmethod
-    def _generate_covid_iija_es_queries_subawards(cls, def_code_field, covid_filters, iija_filters):
+    def _generate_covid_iija_es_queries_transactions(cls, def_code_field: str, covid_filters: dict, iija_filters: dict):
         covid_es_queries = [
             ES_Q("match", **{def_code_field: def_code})
             & ES_Q("range", **{"sub_action_date": {"gte": datetime.strftime(enactment_date, "%Y-%m-%d")}})
@@ -733,7 +736,7 @@ class _DisasterEmergencyFundCodes(_Filter):
         return covid_es_queries, iija_es_queries
 
     @classmethod
-    def _generate_covid_iija_es_queries_other(cls, def_code_field, covid_filters, iija_filters):
+    def _generate_covid_iija_es_queries_transactions(cls, def_code_field: str, covid_filters: dict, iija_filters: dict):
         covid_es_queries = [ES_Q("match", **{def_code_field: def_code}) for def_code in covid_filters.keys()]
         iija_es_queries = [ES_Q("match", **{def_code_field: def_code}) for def_code in iija_filters.keys()]
 
@@ -743,7 +746,8 @@ class _DisasterEmergencyFundCodes(_Filter):
     def generate_elasticsearch_query(cls, filter_values: List[str], query_type: QueryType, **options) -> ES_Q:
         nested_path = options.get("nested_path", "")
         def_codes_query = []
-        def_code_field = f"{nested_path}{'.' if nested_path else ''}disaster_emergency_fund_code{'s' if query_type != QueryType.ACCOUNTS else ''}"
+        plural_code = 's' if query_type != QueryType.ACCOUNTS else ''
+        def_code_field = f"{nested_path}{'.' if nested_path else ''}disaster_emergency_fund_code{plural_code}"
 
         # Get all COVID and IIJA disaster codes from the database
         covid_disaster_codes = list(
