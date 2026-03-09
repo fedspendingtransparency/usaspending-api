@@ -7,7 +7,7 @@
 # - Set config variables to DefaultConfig.USER_SPECIFIC_OVERRIDE where there is expected to be a
 #   user-provided a config value for a variable (e.g. in the ../.env file)
 ########################################################################################################################
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from pydantic import model_validator
 from pydantic.types import SecretStr
@@ -102,7 +102,7 @@ class LocalConfig(DefaultConfig):
     AWS_S3_ENDPOINT: str = FACTORY_PROVIDED_VALUE  # See below validator-based factory
 
     @model_validator(mode="before")
-    def _AWS_S3_ENDPOINT_factory(cls, values):
+    def _AWS_S3_ENDPOINT_factory(cls, values: dict[str, Any]) -> dict[str, Any]:
         def factory_func():
             return values["MINIO_HOST"] + ":" + values["MINIO_PORT"]
 
