@@ -369,7 +369,7 @@ class _RecipientSearchText(_Filter):
 
         for filter_value in filter_values:
 
-            is_exact_match = re.match(r'^".*"nmn$', filter_value) is not None
+            is_exact_match = re.match(r'^".*"$', filter_value) is not None
             search_text = filter_value.upper()  # Recipient Search No longer escapes special characters
 
             if query_type == QueryType.SUBAWARDS:
