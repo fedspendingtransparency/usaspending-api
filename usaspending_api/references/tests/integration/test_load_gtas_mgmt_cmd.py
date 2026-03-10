@@ -17,6 +17,7 @@ def test_program_activity_fresh_load(monkeypatch):
 
     baker.make("references.DisasterEmergencyFundCode", code="A")
     baker.make("accounts.TreasuryAppropriationAccount", tas_rendering_label="999-X-111")
+    baker.make("references.ProgramActivityPark", code="test")
 
     data_broker_mock = MagicMock()
     data_broker_mock.cursor.return_value = PhonyCursor("usaspending_api/references/tests/data/broker_gtas.json")
@@ -133,7 +134,7 @@ def test_program_activity_fresh_load(monkeypatch):
                 "prior_year_paid_obligation_recoveries",
                 "adjustments_to_unobligated_balance_brought_forward_cpe",
                 "budget_object_class",
-                "program_activity_reporting_key",
+                "program_activity_reporting_key_id",
                 "prior_year_adjustment",
                 "by_direct_reimbursable_fun",
                 "bea_category",

@@ -36,6 +36,7 @@ class Migration(migrations.Migration):
             name="program_activity_reporting_key",
             field=models.ForeignKey(
                 blank=True,
+                db_column="program_activity_reporting_key_code",
                 null=True,
                 on_delete=django.db.models.deletion.DO_NOTHING,
                 related_name="gtas",

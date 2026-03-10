@@ -40,6 +40,7 @@ class GTASSF133Balances(models.Model):
         on_delete=models.DO_NOTHING,
         blank=True,
         null=True,
+        db_column="program_activity_reporting_key_code",
         related_name="gtas",
     )
     prior_year_adjustment = models.TextField(blank=True, null=True)

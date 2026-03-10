@@ -95,7 +95,7 @@ class Command(mixins.ETLMixin, BaseCommand):
                     '-', sf.main_account_code, '-', sf.sub_account_code)
                 AS tas_rendering_label,
                 budget_object_class,
-                program_activity_reporting_key,
+                program_activity_reporting_key AS program_activity_reporting_key_id,
                 prior_year_adjustment,
                 by_direct_reimbursable_fun,
                 bea_category
@@ -107,7 +107,7 @@ class Command(mixins.ETLMixin, BaseCommand):
                 disaster_emergency_fund_code,
                 tas_rendering_label,
                 budget_object_class,
-                program_activity_reporting_key,
+                program_activity_reporting_key_id,
                 prior_year_adjustment,
                 by_direct_reimbursable_fun,
                 bea_category
