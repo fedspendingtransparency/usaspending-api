@@ -79,7 +79,6 @@ class AwardFinancialMixin:
 
 
 class FederalAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
-
     @property
     def account_level(self) -> AccountLevel:
         return AccountLevel.FEDERAL_ACCOUNT
@@ -198,16 +197,11 @@ class FederalAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
         )
 
     def _build_dataframes(self) -> list[DataFrame | DuckDBSparkDataFrame]:
-        # TODO: Should handle the aggregate columns via a new name instead of relying on drops. If the Delta tables are
-        #       referenced by their location then the ability to use the table identifier is lost as it doesn't
-        #       appear to use the metastore for the Delta tables.
         combined_download = (
-            self.download_table.filter(self.dynamic_filters)
+            self.download_table.filter(self.non_zero_filters)
+            .filter(self.dynamic_filters)
             .groupBy(self.group_by_cols)
             .agg(*[agg_func(col) for col, agg_func in self.agg_cols.items()])
-            # drop original agg columns from the dataframe to avoid ambiguous column names
-            .drop(*[self.sf.col(f"award_financial_download.{col}") for col in self.agg_cols])
-            .filter(self.non_zero_filters)
         )
         return [
             combined_download.filter(award_category_filter).select(self.select_cols)
@@ -216,7 +210,6 @@ class FederalAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
 
 
 class TreasuryAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
-
     @property
     def account_level(self) -> AccountLevel:
         return AccountLevel.TREASURY_ACCOUNT
@@ -243,7 +236,6 @@ class TreasuryAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
 
 
 class AwardFinancialDownloadFactory(AbstractAccountDownloadFactory):
-
     def create_federal_account_download(self) -> FederalAccountDownload:
         return FederalAccountDownload(self.spark, self.filters, self.dynamic_filters)
 
