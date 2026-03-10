@@ -205,7 +205,7 @@ class TransactionsElasticsearchDownload(_ElasticsearchDownload):
         )
         filter_options["time_period_obj"] = new_awards_only_decorator
         base_queryset = DBTransactionSearch.objects.all()
-        cls._populate_download_lookups(filters, download_job, size**filter_options)
+        cls._populate_download_lookups(filters, download_job, size, **filter_options)
 
         return cls.download_lookup_queryset(base_queryset, download_job)
 
