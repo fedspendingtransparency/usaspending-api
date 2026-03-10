@@ -38,7 +38,9 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
     _query_with_filters = None
 
     @classmethod
-    def _get_download_ids(cls, search: AwardSearch | TransactionSearch | SubawardSearch) -> list[int] | None:
+    def _get_download_ids(
+        cls, search: AwardSearch | TransactionSearch | SubawardSearch, keep_alive_minutes: int = 5
+    ) -> list[int] | None:
         ids = []
         id_count = search.handle_count(retries=10)
         if id_count is None:
@@ -46,14 +48,17 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
             return
         if id_count == 0:
             return ids
-        while True:
+        start_time = time.time()
+        timeout = keep_alive_minutes * 60
+        while len(ids) < id_count:
             r = search.handle_execute(retries=10)
             if r is None:
                 raise Exception("Unable to reach cluster.")
             ids.extend([getattr(hit, cls._source_field) for hit in r.hits])
-            if len(ids) == id_count:
-                break
             search = search.extra(search_after=r.hits[-1].meta.sort)
+            if time.time() - start_time > timeout:
+                logger.warning("Timeout reached. Exiting _get_download_ids().  List of ids may not be complete.")
+                break
         return ids
 
     @classmethod
@@ -64,10 +69,22 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
         Takes a dictionary of the different download filters and returns a flattened list of ids.
         """
         filter_query = cls._query_with_filters.generate_elasticsearch_query(filters, **filter_options)
-        search = (
-            cls._search_type().filter(filter_query).source([cls._source_field]).sort("action_date").extra(size=size)
-        )
-        ids = cls._get_download_ids(search)
+        keep_alive_minutes = 5
+        pit = cls._search_type().client.open_point_in_time(cls._search_type._index_name, f"{keep_alive_minutes}m")
+        pt_id = pit.get("id")
+        try:
+            search = (
+                cls._search_type()
+                .filter(filter_query)
+                .source([cls._source_field])
+                .sort(cls._source_field)
+                .extra(size=size, pit={"id": pt_id, "keep_alive": f"{keep_alive_minutes}m"})
+            )
+            ids = cls._get_download_ids(search, keep_alive_minutes=keep_alive_minutes)
+        except Exception as e:
+            raise e
+        finally:
+            cls._search_type().client.close_point_in_time(body={"id": pt_id})
         lookup_id_type = cls._search_type.type_as_string()
         now = datetime.now(timezone.utc)
         download_lookup_obj_list = [
