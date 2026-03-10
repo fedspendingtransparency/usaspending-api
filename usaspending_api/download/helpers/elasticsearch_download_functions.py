@@ -39,15 +39,9 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
 
     @classmethod
     def _get_download_ids(
-        cls, search: AwardSearch | TransactionSearch | SubawardSearch, keep_alive_minutes: int = 5
+        cls, search: AwardSearch | TransactionSearch | SubawardSearch, id_count: int, keep_alive_minutes: int = 5
     ) -> list[int] | None:
         ids = []
-        id_count = search.handle_count(retries=10)
-        if id_count is None:
-            logger.error("Error retrieving total results. Max number of attempts reached.")
-            return
-        if id_count == 0:
-            return ids
         start_time = time.time()
         timeout = keep_alive_minutes * 60
         while len(ids) < id_count:
@@ -70,21 +64,31 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
         """
         filter_query = cls._query_with_filters.generate_elasticsearch_query(filters, **filter_options)
         keep_alive_minutes = 5
-        pit = cls._search_type().client.open_point_in_time(cls._search_type._index_name, f"{keep_alive_minutes}m")
-        pt_id = pit.get("id")
+        pit = cls._search_type().client.transport.perform_request(
+            "POST",
+            f"/{cls._search_type._index_name}/_search/point_in_time",
+            params={"keep_alive": f"{keep_alive_minutes}m"},
+        )
+        pit_id = pit.get("pit_id")
+        index_name = cls._search_type._index_name
         try:
+            id_count = cls._search_type().filter(filter_query).source([cls._source_field]).handle_count()
+            cls._search_type._index_name = None  # When using a PIT, index name must be None
             search = (
                 cls._search_type()
                 .filter(filter_query)
                 .source([cls._source_field])
                 .sort(cls._source_field)
-                .extra(size=size, pit={"id": pt_id, "keep_alive": f"{keep_alive_minutes}m"})
+                .extra(size=size, pit={"id": pit_id, "keep_alive": f"{keep_alive_minutes}m"})
             )
-            ids = cls._get_download_ids(search, keep_alive_minutes=keep_alive_minutes)
+            ids = cls._get_download_ids(search, id_count, keep_alive_minutes=keep_alive_minutes)
         except Exception as e:
             raise e
         finally:
-            cls._search_type().client.close_point_in_time(body={"id": pt_id})
+            cls._search_type._index_name = index_name  # Reset the index name
+            cls._search_type().client.transport.perform_request(
+                "DELETE", "/_search/point_in_time", body={"pit_id": [pit_id]}
+            )
         lookup_id_type = cls._search_type.type_as_string()
         now = datetime.now(timezone.utc)
         download_lookup_obj_list = [
