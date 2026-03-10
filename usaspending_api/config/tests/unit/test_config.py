@@ -1,28 +1,28 @@
+import json
+import os
+import re
 import shutil
 import sys
-from unittest.mock import patch
-
-import re
-import os
-import pytest
 from pathlib import Path
 from pprint import pprint
-from pydantic import validator, root_validator, PostgresDsn, SecretStr
-from pydantic.fields import ModelField
+from unittest import mock
+from unittest.mock import patch
+
+import pytest
+from pydantic import PostgresDsn, SecretStr, root_validator, validator
 from pydantic.error_wrappers import ValidationError
+from pydantic.fields import ModelField
 
 from usaspending_api.config import CONFIG, _load_config
 from usaspending_api.config.envs import ENV_CODE_VAR
-from usaspending_api.config.envs.default import _PROJECT_ROOT_DIR
-from usaspending_api.config.utils import (
-    eval_default_factory,
-    FACTORY_PROVIDED_VALUE,
-    eval_default_factory_from_root_validator,
-    ENV_SPECIFIC_OVERRIDE,
-)
-from usaspending_api.config.envs.default import DefaultConfig
+from usaspending_api.config.envs.default import _PROJECT_ROOT_DIR, DefaultConfig
 from usaspending_api.config.envs.local import LocalConfig
-from unittest import mock
+from usaspending_api.config.utils import (
+    ENV_SPECIFIC_OVERRIDE,
+    FACTORY_PROVIDED_VALUE,
+    eval_default_factory,
+    eval_default_factory_from_root_validator,
+)
 
 _ENV_VAL = "component_name_set_in_env"
 
@@ -43,7 +43,9 @@ class _UnitTestBaseConfig(DefaultConfig):
     # See if these are stuck with defaults (eagerly evaluated) or late-bind to the values if the values are replaced
     # by env vars
     UNITTEST_CFG_K = UNITTEST_CFG_I + ":" + UNITTEST_CFG_J
-    UNITTEST_CFG_L = lambda _: _UnitTestBaseConfig.UNITTEST_CFG_I + ":" + _UnitTestBaseConfig.UNITTEST_CFG_J  # noqa
+    UNITTEST_CFG_L = (  # noqa: E731
+        lambda _: _UnitTestBaseConfig.UNITTEST_CFG_I + ":" + _UnitTestBaseConfig.UNITTEST_CFG_J
+    )
 
     # Start trying to use validators (aka pre/post processors)
     UNITTEST_CFG_M: str = "UNITTEST_CFG_M"
@@ -469,8 +471,8 @@ def test_database_urls_only_backfills_none_parts():
 
 
 def test_database_url_only_backfills_placeholder_parts():
-    """Test that only providing a value for DATABASE_URL backfills the CONFIG.USASPENDING_DB_* parts and keeps them
-    consistent. Similarly with BROKER_DB and CONFIG.BROKER_DB_* parts.
+    """Test that only providing a URL value for DATABASE_URL backfills the CONFIG.USASPENDING_DB_* parts and
+    keeps them consistent. Similarly with BROKER_DB and CONFIG.BROKER_DB_* parts.
 
     - Use a FRESH (empty) set of environment variables
     - Use NO .env file
@@ -513,6 +515,86 @@ def test_database_url_only_backfills_placeholder_parts():
         assert cfg.BROKER_DB_NAME == "fresh_new_db_name_broker"
         assert cfg.BROKER_DB_USER == "broker"
         assert cfg.BROKER_DB_PASSWORD.get_secret_value() == "pass"
+
+
+def test_database_json_string_only_backfills_placeholder_parts():
+    """Test that only providing a JSON value for DATABASE_URL backfills the CONFIG.USASPENDING_DB_* parts and
+    keeps them consistent. Similarly with BROKER_DB and CONFIG.BROKER_DB_* parts.
+
+    - Use a FRESH (empty) set of environment variables
+    - Use NO .env file
+    - Build-out a new subclass of DefaultConfig, which overrides the part values to ENV_SPECIFIC_PLACEHOLDERs
+    - Instantiate the config with a DATABASE_URL and BROKER_DB env vars (ONLY) set
+    """
+    with mock.patch.dict(
+        os.environ,
+        {
+            ENV_CODE_VAR: _UnitTestDbPartsPlaceholderConfig.ENV_CODE,
+            "DATABASE_URL": json.dumps(
+                {
+                    "username": "dummy",
+                    "password": "pwd",
+                    "host": "foobar",
+                    "port": "12345",
+                    "dbname": "fresh_new_db_name",
+                }
+            ),
+            "BROKER_DB": json.dumps(
+                {
+                    "username": "broker",
+                    "password": "pass",
+                    "host": "broker-foobar",
+                    "port": 54321,
+                    "dbname": "fresh_new_db_name_broker",
+                }
+            ),
+        },
+        clear=True,
+    ):
+        cfg = _UnitTestDbPartsPlaceholderConfig(_env_file=None)
+
+        assert cfg.DATABASE_URL is not None
+        assert cfg.USASPENDING_DB_HOST is not None
+        assert cfg.USASPENDING_DB_PORT is not None
+        assert cfg.USASPENDING_DB_NAME is not None
+        assert cfg.USASPENDING_DB_USER is not None
+        assert cfg.USASPENDING_DB_PASSWORD is not None
+
+        assert cfg.USASPENDING_DB_HOST == "foobar"
+        assert cfg.USASPENDING_DB_PORT == "12345"
+        assert cfg.USASPENDING_DB_NAME == "fresh_new_db_name"
+        assert cfg.USASPENDING_DB_USER == "dummy"
+        assert cfg.USASPENDING_DB_PASSWORD.get_secret_value() == "pwd"
+
+        assert cfg.BROKER_DB is not None
+        assert cfg.BROKER_DB_HOST is not None
+        assert cfg.BROKER_DB_PORT is not None
+        assert cfg.BROKER_DB_NAME is not None
+        assert cfg.BROKER_DB_USER is not None
+        assert cfg.BROKER_DB_PASSWORD is not None
+
+        assert cfg.BROKER_DB_HOST == "broker-foobar"
+        assert cfg.BROKER_DB_PORT == "54321"
+        assert cfg.BROKER_DB_NAME == "fresh_new_db_name_broker"
+        assert cfg.BROKER_DB_USER == "broker"
+        assert cfg.BROKER_DB_PASSWORD.get_secret_value() == "pass"
+
+
+def test_database_json_string_checks_conf_values():
+    """Test that when providing a JSON formatted string all expected components are found"""
+    with mock.patch.dict(
+        os.environ,
+        {
+            ENV_CODE_VAR: _UnitTestDbPartsPlaceholderConfig.ENV_CODE,
+            "DATABASE_URL": json.dumps({"username": "dummy", "port": "12345", "dbname": "fresh_new_db_name"}),
+        },
+        clear=True,
+    ):
+        expected_errors = ("The JSON provided for the DB CONF is missing values:", "'host'", "'password'")
+        try:
+            _UnitTestDbPartsPlaceholderConfig(_env_file=None)
+        except ValidationError as exc:
+            assert all(expected_error in str(exc) for expected_error in expected_errors)
 
 
 def test_database_url_none_parts_will_build_database_url_with_only_parts_set():
@@ -1102,12 +1184,12 @@ def test_override_with_dotenv_file_for_subclass_overridden_var(tmpdir):
 
         tmp_config_dir = tmpdir.mkdir("config_dir")
         dotenv_file = tmp_config_dir.join(".env")
-        # Must use some of the default overrides from .env, like USASPENDING_DB_*. Fallback to .env.template if not existing
+        # Must use some of the default overrides from .env, like USASPENDING_DB_*; fallback to .env.template
         shutil.copy(str(_PROJECT_ROOT_DIR / ".env.template"), dotenv_file)
         if Path(_PROJECT_ROOT_DIR / ".env").exists():
             shutil.copy(str(_PROJECT_ROOT_DIR / ".env"), dotenv_file)
         with open(dotenv_file, "w"):
-            dotenv_file.write(f"COMPONENT_NAME={dotenv_val}\n" f"UNITTEST_CFG_A={dotenv_val_a}", "w")
+            dotenv_file.write(f"COMPONENT_NAME={dotenv_val}\nUNITTEST_CFG_A={dotenv_val_a}", "w")
         dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
 
         _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
@@ -1139,7 +1221,7 @@ def test_override_with_dotenv_file_for_subclass_only_var(tmpdir):
 
         tmp_config_dir = tmpdir.mkdir("config_dir")
         dotenv_file = tmp_config_dir.join(".env")
-        # Must use some of the default overrides from .env, like USASPENDING_DB_*. Fallback to .env.template if not existing
+        # Must use some of the default overrides from .env, like USASPENDING_DB_*; fallback to .env.template
         shutil.copy(str(_PROJECT_ROOT_DIR / ".env.template"), dotenv_file)
         if Path(_PROJECT_ROOT_DIR / ".env").exists():
             shutil.copy(str(_PROJECT_ROOT_DIR / ".env"), dotenv_file)
@@ -1176,7 +1258,7 @@ def test_override_with_dotenv_file_for_validated_var(tmpdir):
 
         tmp_config_dir = tmpdir.mkdir("config_dir")
         dotenv_file = tmp_config_dir.join(".env")
-        # Must use some of the default overrides from .env, like USASPENDING_DB_*. Fallback to .env.template if not existing
+        # Must use some of the default overrides from .env, like USASPENDING_DB_*; fallback to .env.template
         shutil.copy(str(_PROJECT_ROOT_DIR / ".env.template"), dotenv_file)
         if Path(_PROJECT_ROOT_DIR / ".env").exists():
             shutil.copy(str(_PROJECT_ROOT_DIR / ".env"), dotenv_file)
@@ -1214,7 +1296,7 @@ def test_override_with_dotenv_file_for_root_validated_var(tmpdir):
 
         tmp_config_dir = tmpdir.mkdir("config_dir")
         dotenv_file = tmp_config_dir.join(".env")
-        # Must use some of the default overrides from .env, like USASPENDING_DB_*. Fallback to .env.template if not existing
+        # Must use some of the default overrides from .env, like USASPENDING_DB_*; fallback to .env.template
         shutil.copy(str(_PROJECT_ROOT_DIR / ".env.template"), dotenv_file)
         if Path(_PROJECT_ROOT_DIR / ".env").exists():
             shutil.copy(str(_PROJECT_ROOT_DIR / ".env"), dotenv_file)
@@ -1252,7 +1334,7 @@ def test_override_with_dotenv_file_for_subclass_overriding_validated_var(tmpdir)
 
         tmp_config_dir = tmpdir.mkdir("config_dir")
         dotenv_file = tmp_config_dir.join(".env")
-        # Must use some of the default overrides from .env, like USASPENDING_DB_*. Fallback to .env.template if not existing
+        # Must use some of the default overrides from .env, like USASPENDING_DB_*; fallback to .env.template
         shutil.copy(str(_PROJECT_ROOT_DIR / ".env.template"), dotenv_file)
         if Path(_PROJECT_ROOT_DIR / ".env").exists():
             shutil.copy(str(_PROJECT_ROOT_DIR / ".env"), dotenv_file)
@@ -1290,7 +1372,7 @@ def test_override_with_dotenv_file_for_subclass_overriding_root_validated_var(tm
 
         tmp_config_dir = tmpdir.mkdir("config_dir")
         dotenv_file = tmp_config_dir.join(".env")
-        # Must use some of the default overrides from .env, like USASPENDING_DB_*. Fallback to .env.template if not existing
+        # Must use some of the default overrides from .env, like USASPENDING_DB_*; fallback to .env.template
         shutil.copy(str(_PROJECT_ROOT_DIR / ".env.template"), dotenv_file)
         if Path(_PROJECT_ROOT_DIR / ".env").exists():
             shutil.copy(str(_PROJECT_ROOT_DIR / ".env"), dotenv_file)
@@ -1350,7 +1432,11 @@ def test_override_with_constructor_kwargs():
 
 def test_override_with_command_line_args():
     assert CONFIG.COMPONENT_NAME == "USAspending API"
-    test_args = ["dummy_program", "--config", "COMPONENT_NAME=test_override_with_command_line_args"]
+    test_args = [
+        "dummy_program",
+        "--config",
+        "COMPONENT_NAME=test_override_with_command_line_args",
+    ]
     with patch.object(sys, "argv", test_args):
         _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
         app_cfg_copy = _load_config()
@@ -1469,7 +1555,7 @@ def test_new_runtime_env_overrides_config():
         # 3. Child prop composing 2 values from parent config is late-evaluated (at call time), not evaluated as the
         # class is read-in from a module import, or construction
         assert cfg.SUB_UNITTEST_1 == "SUB_UNITTEST_CFG_A:SUB_UNITTEST_CFG_D"
-        # 4. Child prop composing 2 values from parent, one of which is overridden in child, does get the overridden part
+        # 4. Child prop composing 2 values from parent, one of which is overridden in child, gets the overridden part
         assert cfg.SUB_UNITTEST_2 == "SUB_UNITTEST_CFG_A:UNITTEST_CFG_B"
         # 5. Child property value DOES NOT override parent var if parent is NOT ALSO declared as a property
         assert cfg.UNITTEST_CFG_C == "UNITTEST_CFG_C"
@@ -1690,8 +1776,8 @@ def test_new_runtime_env_overrides_config_with_env_vars_in_play_and_subclasses()
         _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
         cfg = _load_config()
 
-        # 1. Env var takes priority over Config vars like COMPONENT_NAME still override even if originally defined at the
-        # grandparent config level
+        # 1. Env var takes priority over Config vars like COMPONENT_NAME still override even if originally defined
+        # at the grandparent config level
         assert cfg.COMPONENT_NAME == _ENV_VAL
         # 2. Env var still takes priority when Same-named config vars in the subclass replace the parent value
         assert cfg.UNITTEST_CFG_A == "ENVVAR_UNITTEST_CFG_A"

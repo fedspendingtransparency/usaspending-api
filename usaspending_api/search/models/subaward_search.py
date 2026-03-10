@@ -175,7 +175,7 @@ class SubawardSearch(models.Model):
         help_text="The latest transaction for the prime award by action_date and mod",
         db_constraint=False,
     )
-    last_modified_date = models.DateField(null=True, blank=True)
+    last_modified_date = models.DateTimeField(null=True, blank=True)
 
     awarding_agency = models.ForeignKey(
         "references.Agency", models.DO_NOTHING, related_name="awarding_subawardsearch", null=True

@@ -9,18 +9,10 @@
 # - Values will be overridden by ENVIRONMENT variables declared in a user's .env file if present at ../.env
 # - See https://pydantic-docs.helpmanual.io/usage/settings/#field-value-priority for precedence of overrides
 ########################################################################################################################
-import pathlib
-from typing import ClassVar
 import os
+import pathlib
+from typing import Any, ClassVar, Union
 
-from usaspending_api.config.utils import (
-    ENV_SPECIFIC_OVERRIDE,
-    eval_default_factory_from_root_validator,
-    check_for_full_url_config,
-    validate_url_and_parts,
-    check_required_url_parts,
-    backfill_url_parts_config,
-)
 from pydantic import (
     AnyHttpUrl,
     BaseSettings,
@@ -29,10 +21,21 @@ from pydantic import (
     root_validator,
 )
 
+from usaspending_api.config.utils import (
+    ENV_SPECIFIC_OVERRIDE,
+    backfill_url_parts_config,
+    check_conf_exists,
+    check_required_url_parts,
+    eval_default_factory_from_root_validator,
+    validate_url_and_parts,
+)
+
 _PROJECT_NAME = "usaspending-api"
 # WARNING: This is relative to THIS file's location. If it is moved/refactored, this needs to be confirmed to point
 # to the project root dir (i.e. usaspending-api/)
-_PROJECT_ROOT_DIR: pathlib.Path = pathlib.Path(__file__).parent.parent.parent.parent.resolve()
+_PROJECT_ROOT_DIR: pathlib.Path = pathlib.Path(
+    __file__
+).parent.parent.parent.parent.resolve()
 _SRC_ROOT_DIR: pathlib.Path = _PROJECT_ROOT_DIR / _PROJECT_NAME.replace("-", "_")
 
 
@@ -78,7 +81,9 @@ class DefaultConfig(BaseSettings):
     PROJECT_LOG_DIR: str = str(_SRC_ROOT_DIR / "logs")
 
     # ==== [Postgres] ====
-    DATABASE_URL: str = None  # FACTORY_PROVIDED_VALUE. See its root validator-factory below
+    DATABASE_URL: str = (
+        None  # FACTORY_PROVIDED_VALUE. See its root validator-factory below
+    )
     USASPENDING_DB_SCHEME: str = "postgres"
     USASPENDING_DB_NAME: str = "data_store_api"
     USASPENDING_DB_USER: str = ENV_SPECIFIC_OVERRIDE
@@ -86,7 +91,9 @@ class DefaultConfig(BaseSettings):
     USASPENDING_DB_HOST: str = ENV_SPECIFIC_OVERRIDE
     USASPENDING_DB_PORT: str = ENV_SPECIFIC_OVERRIDE
 
-    BROKER_DB: str = None  # FACTORY_PROVIDED_VALUE. See its root validator-factory below
+    BROKER_DB: str = (
+        None  # FACTORY_PROVIDED_VALUE. See its root validator-factory below
+    )
     BROKER_DB_SCHEME: str = "postgres"
     BROKER_DB_NAME: str = "data_broker"
     BROKER_DB_USER: str = ENV_SPECIFIC_OVERRIDE
@@ -96,20 +103,27 @@ class DefaultConfig(BaseSettings):
 
     # noinspection PyMethodParameters
     # Pydantic returns a classmethod for its validators, so the cls param is correct
-    def _validate_database_url(cls, values, url_conf_name, resource_conf_prefix, required=True):
+    def _validate_database_conf(
+        cls,
+        values: dict[str, Union[str, SecretStr, None]],
+        url_conf_name: str,
+        resource_conf_prefix: str,
+        required: bool = True,
+    ) -> None:
         """Helper function to validate both DATABASE_URLs and their parts"""
 
-        # First determine if full URL config was provided.
-        is_full_url_provided = check_for_full_url_config(url_conf_name, values)
+        is_full_conf_provided = check_conf_exists(url_conf_name, values)
 
-        # If the full URL config was provided
+        # If the full URL or JSON config was provided
         # - it should take precedence
         # - its values will be used to backfill any missing URL parts stored as separate config vars
-        if is_full_url_provided:
-            values = backfill_url_parts_config(cls, url_conf_name, resource_conf_prefix, values)
+        if is_full_conf_provided:
+            values = backfill_url_parts_config(
+                cls, url_conf_name, resource_conf_prefix, values
+            )
 
         # If the full URL config is not provided, try to build-it-up from provided parts, then set the full URL
-        if not is_full_url_provided:
+        if not is_full_conf_provided:
             # First validate that we have enough parts to provide it
             enough_parts = check_required_url_parts(
                 error_if_missing=required,
@@ -124,14 +138,20 @@ class DefaultConfig(BaseSettings):
                     url=None,
                     scheme=values[f"{resource_conf_prefix}_SCHEME"],
                     user=values[f"{resource_conf_prefix}_USER"],
-                    password=values[f"{resource_conf_prefix}_PASSWORD"].get_secret_value(),
+                    password=values[
+                        f"{resource_conf_prefix}_PASSWORD"
+                    ].get_secret_value(),
                     host=values[f"{resource_conf_prefix}_HOST"],
                     port=values[f"{resource_conf_prefix}_PORT"],
                     path=(
-                        "/" + values[f"{resource_conf_prefix}_NAME"] if values[f"{resource_conf_prefix}_NAME"] else None
+                        "/" + values[f"{resource_conf_prefix}_NAME"]
+                        if values[f"{resource_conf_prefix}_NAME"]
+                        else None
                     ),
                 )
-                values = eval_default_factory_from_root_validator(cls, values, url_conf_name, lambda: str(pg_dsn))
+                values = eval_default_factory_from_root_validator(
+                    cls, values, url_conf_name, lambda: str(pg_dsn)
+                )
 
         # if the fully configured URL is now available, check for consistency with the URL-part config values
         if values.get(url_conf_name, None):
@@ -140,7 +160,7 @@ class DefaultConfig(BaseSettings):
     # noinspection PyMethodParameters
     # Pydantic returns a classmethod for its validators, so the cls param is correct
     @root_validator
-    def _DATABASE_URL_and_parts_factory(cls, values):
+    def _DATABASE_URL_and_parts_factory(cls, values: dict[str, Any]) -> dict[str, Any]:
         """A root validator to backfill DATABASE_URL and USASPENDING_DB_* part config vars and validate that they are
         all consistent.
 
@@ -150,15 +170,19 @@ class DefaultConfig(BaseSettings):
         be inconsistent, which will in turn raise a ``pydantic.ValidationError`` at configuration time.
         """
         # noinspection PyArgumentList
-        cls._validate_database_url(
-            cls=cls, values=values, url_conf_name="DATABASE_URL", resource_conf_prefix="USASPENDING_DB", required=True
+        cls._validate_database_conf(
+            cls=cls,
+            values=values,
+            url_conf_name="DATABASE_URL",
+            resource_conf_prefix="USASPENDING_DB",
+            required=True,
         )
         return values
 
     # noinspection PyMethodParameters
     # Pydantic returns a classmethod for its validators, so the cls param is correct
     @root_validator
-    def _BROKER_DB_and_parts_factory(cls, values):
+    def _BROKER_DB_and_parts_factory(cls, values: dict[str, Any]) -> dict[str, Any]:
         """A root validator to backfill BROKER_DB and BROKER_DB_* part config vars and validate
         that they are all consistent.
 
@@ -168,7 +192,7 @@ class DefaultConfig(BaseSettings):
         be inconsistent, which will in turn raise a ``pydantic.ValidationError`` at configuration time.
         """
         # noinspection PyArgumentList
-        cls._validate_database_url(
+        cls._validate_database_conf(
             cls=cls,
             values=values,
             url_conf_name="BROKER_DB",
@@ -190,7 +214,7 @@ class DefaultConfig(BaseSettings):
     # noinspection PyMethodParameters
     # Pydantic returns a classmethod for its validators, so the cls param is correct
     @root_validator
-    def _ES_HOSTNAME_and_parts_factory(cls, values):
+    def _ES_HOSTNAME_and_parts_factory(cls, values: dict[str, Any]) -> dict[str, Any]:
         """A root validator to backfill ES_HOSTNAME and ES_* part config vars and validate that they are
         all consistent.
 
@@ -201,23 +225,35 @@ class DefaultConfig(BaseSettings):
         """
         # noinspection PyArgumentList
         cls._validate_http_url(
-            cls=cls, values=values, url_conf_name="ES_HOSTNAME", resource_conf_prefix="ES", required=False
+            cls=cls,
+            values=values,
+            url_conf_name="ES_HOSTNAME",
+            resource_conf_prefix="ES",
+            required=False,
         )
         return values
 
     # noinspection PyMethodParameters
     # Pydantic returns a classmethod for its validators, so the cls param is correct
-    def _validate_http_url(cls, values, url_conf_name, resource_conf_prefix, required=True):
+    def _validate_http_url(
+        cls,
+        values: dict[str, Any],
+        url_conf_name: str,
+        resource_conf_prefix: str,
+        required: bool = True,
+    ) -> None:
         """Helper function to validate complete URLs and their individual parts when either/both are provided"""
 
         # First determine if full URL config was provided.
-        is_full_url_provided = check_for_full_url_config(url_conf_name, values)
+        is_full_url_provided = check_conf_exists(url_conf_name, values)
 
         # If the full URL config was provided
         # - it should take precedence
         # - its values will be used to backfill any missing URL parts stored as separate config vars
         if is_full_url_provided:
-            values = backfill_url_parts_config(cls, url_conf_name, resource_conf_prefix, values)
+            values = backfill_url_parts_config(
+                cls, url_conf_name, resource_conf_prefix, values
+            )
 
         # If the full URL config is not provided, try to build-it-up from provided parts, then set the full URL
         if not is_full_url_provided:
@@ -243,10 +279,14 @@ class DefaultConfig(BaseSettings):
                     host=values[f"{resource_conf_prefix}_HOST"],
                     port=values[f"{resource_conf_prefix}_PORT"],
                     path=(
-                        "/" + values[f"{resource_conf_prefix}_NAME"] if values[f"{resource_conf_prefix}_NAME"] else None
+                        "/" + values[f"{resource_conf_prefix}_NAME"]
+                        if values[f"{resource_conf_prefix}_NAME"]
+                        else None
                     ),
                 )
-                values = eval_default_factory_from_root_validator(cls, values, url_conf_name, lambda: str(http_url))
+                values = eval_default_factory_from_root_validator(
+                    cls, values, url_conf_name, lambda: str(http_url)
+                )
 
         # if the fully configured URL is now available, check for consistency with the URL-part config values
         if values.get(url_conf_name, None):
@@ -322,17 +362,24 @@ class DefaultConfig(BaseSettings):
     AWS_SECRET_KEY: SecretStr = ENV_SPECIFIC_OVERRIDE
     # Setting AWS_PROFILE to None so boto3 doesn't try to pick up the placeholder string as an actual profile to find
     AWS_PROFILE: str = None  # USER_SPECIFIC_OVERRIDE
-    SPARK_S3_BUCKET: str = ENV_SPECIFIC_OVERRIDE
-    BULK_DOWNLOAD_S3_BUCKET_NAME: str = ENV_SPECIFIC_OVERRIDE
+    SPARK_S3_BUCKET: str = os.environ.get("SPARK_S3_BUCKET")
+    BULK_DOWNLOAD_S3_BUCKET_NAME: str = os.environ.get("BULK_DOWNLOAD_S3_BUCKET_NAME")
+    DATABASE_DOWNLOAD_S3_BUCKET_NAME: str = os.environ.get(
+        "DATABASE_DOWNLOAD_S3_BUCKET_NAME"
+    )
     DELTA_LAKE_S3_PATH: str = "data/delta"  # path within SPARK_S3_BUCKET where Delta output data will accumulate
-    SPARK_CSV_S3_PATH: str = "data/csv"  # path within SPARK_S3_BUCKET where CSV output data will accumulate
+    SPARK_CSV_S3_PATH: str = (
+        "data/csv"  # path within SPARK_S3_BUCKET where CSV output data will accumulate
+    )
     AWS_S3_ENDPOINT: str = "s3.us-gov-west-1.amazonaws.com"
     AWS_STS_ENDPOINT: str = "sts.us-gov-west-1.amazonaws.com"
 
     # ==== [MISC] ====
     # Miscellaneous configs that are used through the codebase but don't fall into one of the categories above
     COVID19_DOWNLOAD_README_FILE_NAME: str = "COVID-19_download_readme.txt"
-    COVID19_DOWNLOAD_README_OBJECT_KEY: str = f"files/{COVID19_DOWNLOAD_README_FILE_NAME}"
+    COVID19_DOWNLOAD_README_OBJECT_KEY: str = (
+        f"files/{COVID19_DOWNLOAD_README_FILE_NAME}"
+    )
 
     class Config:
         pass

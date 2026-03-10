@@ -10,12 +10,18 @@ from rest_framework.views import APIView
 
 from usaspending_api.broker.lookups import EXTERNAL_DATA_TYPE_DICT
 from usaspending_api.broker.models import ExternalDataLoadDate
-from usaspending_api.common.api_versioning import API_TRANSFORM_FUNCTIONS, api_transformations
+from usaspending_api.common.api_versioning import (
+    API_TRANSFORM_FUNCTIONS,
+    api_transformations,
+)
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.dict_helpers import order_nested_object
 from usaspending_api.common.spark.jobs import LocalStrategy, SparkJobs
 from usaspending_api.common.sqs.sqs_handler import DownloadLogic, get_sqs_queue
-from usaspending_api.download.download_utils import create_unique_filename, log_new_download_job
+from usaspending_api.download.download_utils import (
+    create_unique_filename,
+    log_new_download_job,
+)
 from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.download.filestreaming.s3_handler import S3Handler
 from usaspending_api.download.helpers import write_to_download_log as write_to_log
@@ -26,14 +32,16 @@ from usaspending_api.download.v2.request_validations import DownloadValidatorBas
 from usaspending_api.submissions.models import DABSSubmissionWindowSchedule
 
 
-@api_transformations(api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS)
+@api_transformations(
+    api_version=settings.API_VERSION, function_list=API_TRANSFORM_FUNCTIONS
+)
 class BaseDownloadViewSet(APIView):
     def post(
         self,
         request: Request,
         validator_type: Type[DownloadValidatorBase],
         origination: Optional[str] = None,
-    ):
+    ) -> Response:
         validator = validator_type(request.data)
         json_request = validator.json_request
 
@@ -59,14 +67,20 @@ class BaseDownloadViewSet(APIView):
 
         # Check if the same request has been called today
         ordered_json_request = json.dumps(sorted_json_request)
-        cached_download = self._get_cached_download(ordered_json_request, sorted_json_request.get("download_types", []))
+        cached_download = self._get_cached_download(
+            ordered_json_request, sorted_json_request.get("download_types", [])
+        )
 
         if cached_download and not settings.IS_LOCAL:
             # By returning the cached files, there should be no duplicates on a daily basis
-            write_to_log(message=f"Generating file from cached download job ID: {cached_download.download_job_id}")
+            write_to_log(
+                message=f"Generating file from cached download job ID: {cached_download.download_job_id}"
+            )
             return self.build_download_response(cached_download)
 
-        final_output_zip_name = create_unique_filename(sorted_json_request, origination=origination)
+        final_output_zip_name = create_unique_filename(
+            sorted_json_request, origination=origination
+        )
         download_job = DownloadJob.objects.create(
             job_status_id=JOB_STATUS_DICT["ready"],
             file_name=final_output_zip_name,
@@ -80,7 +94,10 @@ class BaseDownloadViewSet(APIView):
 
     @staticmethod
     def is_spark_download(json_request: dict) -> bool:
-        return json_request["request_type"] == "account" and "award_financial" in json_request["download_types"]
+        return (
+            json_request["request_type"] == "account"
+            and "award_financial" in json_request["download_types"]
+        )
 
     @staticmethod
     def validate_columns(json_request: dict):
@@ -91,7 +108,7 @@ class BaseDownloadViewSet(APIView):
         if invalid_columns:
             raise InvalidParameterException(f"Unknown columns: {list(invalid_columns)}")
 
-    def process_request(self, download_job: DownloadJob, json_request: dict):
+    def process_request(self, download_job: DownloadJob, json_request: dict) -> None:
         job_name = f"{settings.BULK_DOWNLOAD_SPARK_JOB_NAME_PREFIX}-{json_request['request_type']}"
 
         if self.is_spark_download(json_request) and "columns" in json_request:
@@ -118,7 +135,10 @@ class BaseDownloadViewSet(APIView):
             # The keys used in the message bodies below are specific values expected by the SQS handlers
             if self.is_spark_download(json_request):
                 # Fallback to the non-priority queue if the priority queue isn't setup
-                queue_name = settings.PRIORITY_DOWNLOAD_SQS_QUEUE_NAME or settings.BULK_DOWNLOAD_SQS_QUEUE_NAME
+                queue_name = (
+                    settings.PRIORITY_DOWNLOAD_SQS_QUEUE_NAME
+                    or settings.BULK_DOWNLOAD_SQS_QUEUE_NAME
+                )
                 message_body = json.dumps(
                     {
                         "download_job_id": download_job.download_job_id,
@@ -129,7 +149,10 @@ class BaseDownloadViewSet(APIView):
             else:
                 queue_name = settings.BULK_DOWNLOAD_SQS_QUEUE_NAME
                 message_body = json.dumps(
-                    {"download_job_id": download_job.download_job_id, "download_logic": DownloadLogic.POSTGRES}
+                    {
+                        "download_job_id": download_job.download_job_id,
+                        "download_logic": DownloadLogic.POSTGRES,
+                    }
                 )
 
             # Send a SQS message that will be processed by another server which will eventually run
@@ -163,11 +186,12 @@ class BaseDownloadViewSet(APIView):
         return Response(response)
 
     def _get_status_url(self, file_name: str) -> str:
+        protocol = "https"
+        host = settings.SERVER_BASE_URL
         if settings.IS_LOCAL:
             protocol = "http"
             host = "localhost:8000"
-        else:
-            protocol = "https"
+        elif settings.USE_LEGACY_SERVER_URL:
             host = f"api.{settings.SERVER_BASE_URL}"
             if settings.DOWNLOAD_ENV != "production":
                 host = f"{settings.DOWNLOAD_ENV}-{host}"
@@ -184,10 +208,17 @@ class BaseDownloadViewSet(APIView):
         elif download_types and "elasticsearch_transactions" in download_types:
             external_data_type_name_list = ["es_transactions"]
         else:
-            external_data_type_name_list = ["fpds", "fabs", "es_transactions", "es_awards"]
+            external_data_type_name_list = [
+                "fpds",
+                "fabs",
+                "es_transactions",
+                "es_awards",
+            ]
 
         external_data_type_id_list = [
-            id for name, id in EXTERNAL_DATA_TYPE_DICT.items() if name in external_data_type_name_list
+            id
+            for name, id in EXTERNAL_DATA_TYPE_DICT.items()
+            if name in external_data_type_name_list
         ]
 
         # Clear the download "cache" based on most recent date in the list of relevant ExternalDataLoadDate objects
@@ -204,7 +235,9 @@ class BaseDownloadViewSet(APIView):
             cached_download = (
                 DownloadJob.objects.filter(
                     json_request=ordered_json_request,
-                    update_date__gte=max(updated_date_timestamp, recent_submission_window_date),
+                    update_date__gte=max(
+                        updated_date_timestamp, recent_submission_window_date
+                    ),
                 )
                 .order_by("-update_date")
                 .exclude(job_status_id=JOB_STATUS_DICT["failed"])
@@ -218,7 +251,8 @@ def get_file_path(file_name: str) -> str:
         file_path = settings.CSV_LOCAL_PATH + file_name
     else:
         s3_handler = S3Handler(
-            bucket_name=settings.BULK_DOWNLOAD_S3_BUCKET_NAME, redirect_dir=settings.BULK_DOWNLOAD_S3_REDIRECT_DIR
+            bucket_name=settings.BULK_DOWNLOAD_S3_BUCKET_NAME,
+            redirect_dir=settings.BULK_DOWNLOAD_S3_REDIRECT_DIR,
         )
         file_path = s3_handler.get_simple_url(file_name=file_name)
 

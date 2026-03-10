@@ -25,6 +25,3 @@ class StagingConfig(DefaultConfig):
 
     # ==== [AWS] ====
     AWS_PROFILE: Union[str, None] = None
-    SPARK_S3_BUCKET = "dti-usaspending-emr-staging"
-    BULK_DOWNLOAD_S3_BUCKET_NAME: str = "dti-usaspending-bulk-download-staging"
-    DATABASE_DOWNLOAD_S3_BUCKET_NAME: str = "dti-usaspending-db-prod"

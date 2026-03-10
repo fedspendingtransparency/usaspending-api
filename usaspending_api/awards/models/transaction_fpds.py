@@ -286,7 +286,7 @@ class TransactionFPDS(models.Model):
     domestic_or_foreign_entity = models.TextField(blank=True, null=True)
     domestic_or_foreign_e_desc = models.TextField(blank=True, null=True)
     pulled_from = models.TextField(blank=True, null=True)
-    last_modified = models.TextField(blank=True, null=True)
+    last_modified = models.DateTimeField(blank=True, null=True)
     cage_code = models.TextField(blank=True, null=True)
     inherently_government_func = models.TextField(blank=True, null=True)
     inherently_government_desc = models.TextField(blank=True, null=True)
@@ -352,7 +352,6 @@ FPDS_ALT_COL_NAMES_IN_TRANSACTION_SEARCH = {
 FPDS_CASTED_COL_MAP = {
     # transaction_fpds col name : type casting search -> fpds
     "action_date": "TEXT",
-    "last_modified": "TEXT",
     "period_of_performance_star": "TEXT",
     "period_of_performance_curr": "TEXT",
 }
@@ -364,8 +363,10 @@ FPDS_TO_TRANSACTION_SEARCH_COL_MAP = {
 vw_transaction_fpds_sql = f"""
     CREATE OR REPLACE VIEW rpt.vw_transaction_fpds AS
         SELECT
-            {(','+os.linesep+' '*12).join([
-                (v+(f'::{FPDS_CASTED_COL_MAP[k]}' if k in FPDS_CASTED_COL_MAP else '')).ljust(62)+' AS '+k.ljust(48)
+            {(',' + os.linesep + ' ' * 12).join([
+                (
+                    v + (f'::{FPDS_CASTED_COL_MAP[k]}' if k in FPDS_CASTED_COL_MAP else '')
+                ).ljust(62) + ' AS ' + k.ljust(48)
                 for k, v in FPDS_TO_TRANSACTION_SEARCH_COL_MAP.items()])}
         FROM
             rpt.transaction_search

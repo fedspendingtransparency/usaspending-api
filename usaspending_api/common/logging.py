@@ -6,13 +6,11 @@ import threading
 import time  # time.perf_counter Matches response time browsers return more accurately than now()
 import traceback
 from time import time_ns
-from typing import Callable, Optional, List, Tuple
+from typing import Any, Callable, List, Optional, Tuple
 
-# Django imports
 from django.utils.deprecation import MiddlewareMixin
 from django.utils.timezone import now
-
-# OpenTelemetry imports
+from opentelemetry import context as context_api
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.instrumentation.logging import LoggingInstrumentor
@@ -20,14 +18,17 @@ from opentelemetry.instrumentation.urllib import URLLibInstrumentor
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import ReadableSpan, SpanProcessor, TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
+from opentelemetry.trace import Span
+from rest_framework.request import Request
+from rest_framework.response import Response
 
 # Local application imports
-from usaspending_api.settings import TRACE_ENV, DATABASES, IS_LOCAL
+from usaspending_api.settings import DATABASES, IS_LOCAL, TRACE_ENV
 
 logger = logging.getLogger(__name__)
 
 
-def get_remote_addr(request):
+def get_remote_addr(request: Request) -> str:
     """Get IP address of user making request can be used for other logging"""
     ip_address = request.META.get("HTTP_X_FORWARDED_FOR", None)
     if ip_address:
@@ -77,7 +78,7 @@ class LoggingMiddleware(MiddlewareMixin):
     start = None
     log = None
 
-    def process_request(self, request):
+    def process_request(self, request: Request) -> None:
         """Func called when a request is called on server, function stores request fields for logging"""
         self.start = time.perf_counter()
 
@@ -91,11 +92,13 @@ class LoggingMiddleware(MiddlewareMixin):
 
         try:
             # When request body is returned  as <class 'bytes'>
-            self.log["request"] = getattr(request, "_body", request.body).decode("ASCII")
+            self.log["request"] = getattr(request, "_body", request.body).decode(
+                "ASCII"
+            )
         except UnicodeDecodeError:
             self.log["request"] = getattr(request, "_body", request.body)
 
-    def process_response(self, request, response):
+    def process_response(self, request: Request, response: Response) -> Response:
         """
         Func gets called before response is returned from server, stores response fields and logs
         request and response to server.log
@@ -109,7 +112,10 @@ class LoggingMiddleware(MiddlewareMixin):
         if response.headers:
             if "key" in response.headers and len(response.headers["key"]) >= 2:
                 self.log["cache_key"] = response.headers["key"][1]
-            if "cache-trace" in response.headers and len(response.headers["cache-trace"]) >= 2:
+            if (
+                "cache-trace" in response.headers
+                and len(response.headers["cache-trace"]) >= 2
+            ):
                 self.log["cache_trace"] = response.headers["cache-trace"][1]
 
         if 100 <= status_code < 400:
@@ -131,28 +137,32 @@ class LoggingMiddleware(MiddlewareMixin):
             # Adding separate error message to message field for user to view error on Kibana default view
             error_msg_str = "[" + self.log["error_msg"] + "]"
 
-            self.server_logger.warning("{} {}".format(self.get_message_string(), error_msg_str), extra=self.log)
+            self.server_logger.warning(
+                "{} {}".format(self.get_message_string(), error_msg_str), extra=self.log
+            )
         else:
             # 500 or greater messages will be processed by the process_exception function
             pass
 
         return response
 
-    def get_message_string(self):
+    def get_message_string(self) -> str:
         """Returns logging info as string for message"""
         return (
             "[{timestamp}] [{status}] [{method}] [{path} : {status_code}]"
             " [{remote_addr}] [{host}] [{response_ms}]".format(**self.log)
         )
 
-    def process_exception(self, request, exception):
+    def process_exception(self, request: Request, exception: Exception) -> None:
         """
         Get the exception info now, in case another exception is thrown later.
         Logs exception as an error when a request cannot return a response.
         400 errors return a response whether either defined by the user or as a default HTTP404 response by Django
         """
 
-        self.log["status_code"] = 500  # Unable to get status code from exception server return 500 as default
+        self.log["status_code"] = (
+            500  # Unable to get status code from exception server return 500 as default
+        )
         self.log["response_ms"] = self.get_response_ms()
         self.log["status"] = "ERROR"
         self.log["timestamp"] = now().strftime("%d/%m/%y %H:%M:%S")
@@ -160,7 +170,7 @@ class LoggingMiddleware(MiddlewareMixin):
 
         self.server_logger.error("%s", self.get_message_string(), extra=self.log)
 
-    def get_response_ms(self):
+    def get_response_ms(self) -> int:
         """Returns time elapsed from request to response/exception"""
         duration = time.perf_counter() - self.start
         return int(duration * 1000)
@@ -181,40 +191,51 @@ class AbbrevNamespaceUTCFormatter(logging.Formatter):
         saved_name = record.name  # save and restore for other formatters if desired
         parts = saved_name.split(".")
         if len(parts) > 1:
-            record.name = ".".join(p[: self.pkg_chars] for p in parts[:-1]) + "." + parts[-1]
+            record.name = (
+                ".".join(p[: self.pkg_chars] for p in parts[:-1]) + "." + parts[-1]
+            )
         result = super().format(record)
         record.name = saved_name
         return result
 
 
-def ensure_logging(
+def ensure_logging(  # noqa: PLR0913
     logging_config_dict: dict,
     cfg_formatter_name: str = "tracing",
-    cfg_logger_name="usaspending_api",
-    cfg_handler_name="console",
+    cfg_logger_name: str = "usaspending_api",
+    cfg_handler_name: str = "console",
     formatter_class: Callable = logging.Formatter,
     log_record_name: Optional[str] = None,
     logger_to_use: Optional[logging.Logger] = None,
-):
+) -> logging.Logger:
     """Ensure that logging is configured as specified by the params on either the ``logger_to_use`` given,
     or on a new logger built wrapping the given ``log_record_name``"""
     if not logger_to_use and not log_record_name:
-        raise RuntimeError("One of logger_to_use or log_record_name must be provided to build and configure a logger")
+        raise RuntimeError(
+            "One of logger_to_use or log_record_name must be provided to build and configure a logger"
+        )
     if logger_to_use and log_record_name:
         raise RuntimeError(
-            "Either provide a logger with logger_to_use, or a name from which to build a logger, " "not both."
+            "Either provide a logger with logger_to_use, or a name from which to build a logger, "
+            "not both."
         )
     if not logger_to_use:
         logger_to_use = logging.getLogger(log_record_name)
     logger_to_use.setLevel(logging_config_dict["loggers"][cfg_logger_name]["level"])
     if logger_to_use.handlers:
-        logger_to_use.debug("Logging already configured with handlers. Will continue using as configured.")
+        logger_to_use.debug(
+            "Logging already configured with handlers. Will continue using as configured."
+        )
     else:
         handler = logging.StreamHandler(sys.stderr)
         handler.setLevel(logging_config_dict["handlers"][cfg_handler_name]["level"])
-        formatter = formatter_class(logging_config_dict["formatters"][cfg_formatter_name]["format"])
+        formatter = formatter_class(
+            logging_config_dict["formatters"][cfg_formatter_name]["format"]
+        )
         if logging_config_dict["formatters"][cfg_formatter_name].get("datefmt"):
-            formatter.datefmt = logging_config_dict["formatters"][cfg_formatter_name]["datefmt"]
+            formatter.datefmt = logging_config_dict["formatters"][cfg_formatter_name][
+                "datefmt"
+            ]
         handler.setFormatter(formatter)
         logger_to_use.addHandler(handler)
         logger_to_use.debug(
@@ -233,7 +254,9 @@ class LoggingSpanProcessor(SpanProcessor):
     def on_end(self, span: ReadableSpan) -> None:
         trace_id = span.context.trace_id
         span_id = span.context.span_id
-        logger.debug(f"Span ended: trace_id={trace_id}, span_id={span_id}, {span.name}_attributes={span.attributes}")
+        logger.debug(
+            f"Span ended: trace_id={trace_id}, span_id={span_id}, {span.name}_attributes={span.attributes}"
+        )
 
     def force_flush(self, timeout_millis: int = 30000) -> bool:
         """Simulates flushing all spans within the given timeout."""
@@ -241,7 +264,9 @@ class LoggingSpanProcessor(SpanProcessor):
         with self._lock:
             # Simulate some processing delay for flushing
             while not self._flushed:
-                elapsed_time = (time_ns() - start_time) / 1_000_000  # Convert to milliseconds
+                elapsed_time = (
+                    time_ns() - start_time
+                ) / 1_000_000  # Convert to milliseconds
                 if elapsed_time > timeout_millis:
                     logger.warning("force_flush timed out.")
                     return False
@@ -253,22 +278,26 @@ class LoggingSpanProcessor(SpanProcessor):
 
 
 class CustomAttributeSpanProcessor(SpanProcessor):
-    def __init__(self, attribute_key, attribute_value):
+    def __init__(self, attribute_key: str, attribute_value: Any):
         self.attribute_key = attribute_key
         self.attribute_value = attribute_value
 
-    def on_start(self, span, parent_context):
+    def on_start(
+        self, span: Span, parent_context: context_api.Context | None = None
+    ) -> None:
         # Add the custom attribute when the span starts
         span.set_attribute(self.attribute_key, self.attribute_value)
 
 
-def add_custom_attribute_span_processors(tracerProvider: TracerProvider, attribute_pairs: List[Tuple[str, str]]):
+def add_custom_attribute_span_processors(
+    tracerProvider: TracerProvider, attribute_pairs: List[Tuple[str, str]]
+) -> None:
     for key, value in attribute_pairs:
         custom_attribute_span_processor = CustomAttributeSpanProcessor(key, value)
         tracerProvider.add_span_processor(custom_attribute_span_processor)
 
 
-def configure_logging(service_name="usaspending-api"):
+def configure_logging(service_name: str = "usaspending-api") -> None:
     # Set up the OpenTelemetry tracer provider
     resource = Resource.create(attributes={"service.name": service_name})
     provider = TracerProvider(resource=resource)
@@ -287,13 +316,17 @@ def configure_logging(service_name="usaspending-api"):
     # Check out https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/
     exporter = None
     if IS_LOCAL and os.getenv("TOGGLE_OTEL_CONSOLE_LOGGING") == "True":
-        logger.info(f"\nOTEL Console logging enabled: {os.getenv('TOGGLE_OTEL_CONSOLE_LOGGING')}\n")
+        logger.info(
+            f"\nOTEL Console logging enabled: {os.getenv('TOGGLE_OTEL_CONSOLE_LOGGING')}\n"
+        )
         # #custom debug information
         logging_span_processor = LoggingSpanProcessor()
         trace.get_tracer_provider().add_span_processor(logging_span_processor)
         exporter = ConsoleSpanExporter()
     elif IS_LOCAL and os.getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"):
-        logger.info(f"\nOTEL exporting logs to: {os.getenv('OTEL_EXPORTER_OTLP_TRACES_ENDPOINT')}\n")
+        logger.info(
+            f"\nOTEL exporting logs to: {os.getenv('OTEL_EXPORTER_OTLP_TRACES_ENDPOINT')}\n"
+        )
         exporter = OTLPSpanExporter(
             endpoint=os.getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"),
         )
@@ -306,7 +339,9 @@ def configure_logging(service_name="usaspending-api"):
         trace.get_tracer_provider().add_span_processor(BatchSpanProcessor(exporter))
 
     LoggingInstrumentor(logging_format=os.getenv("OTEL_PYTHON_LOG_FORMAT"))
-    LoggingInstrumentor().instrument(tracer_provider=trace.get_tracer_provider(), set_logging_format=True)
+    LoggingInstrumentor().instrument(
+        tracer_provider=trace.get_tracer_provider(), set_logging_format=True
+    )
     URLLibInstrumentor().instrument(tracer_provider=trace.get_tracer_provider())
 
     logging.getLogger("boto3").setLevel(logging.CRITICAL)

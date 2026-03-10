@@ -260,6 +260,9 @@
         "type": "scaled_float",
         "scaling_factor": 100
       },
+      "award_amount_sort": {
+        "type": "long"
+      },
       "federal_action_obligation": {
         "type": "scaled_float",
         "scaling_factor": 100,
@@ -269,17 +272,29 @@
           }
         }
       },
+      "federal_action_obligation_sort": {
+        "type": "long"
+      },
       "face_value_loan_guarantee": {
         "type": "scaled_float",
         "scaling_factor": 100
+      },
+      "face_value_loan_guarantee_sort": {
+        "type": "long"
       },
       "original_loan_subsidy_cost": {
         "type": "scaled_float",
         "scaling_factor": 100
       },
+      "original_loan_subsidy_cost_sort": {
+        "type": "long"
+      },
       "generated_pragmatic_obligation": {
         "type": "scaled_float",
         "scaling_factor": 100
+      },
+      "generated_pragmatic_obligation_sort": {
+        "type": "long"
       },
       "awarding_toptier_agency_id": {
         "type": "integer"

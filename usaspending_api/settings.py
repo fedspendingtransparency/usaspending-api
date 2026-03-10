@@ -3,6 +3,7 @@ For more information on this file: https://docs.djangoproject.com/en/3.2/topics/
 For the full list of settings and their values: https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
+import json
 import os
 from pathlib import Path
 
@@ -11,6 +12,7 @@ from django.db import DEFAULT_DB_ALIAS
 from django.utils.crypto import get_random_string
 
 from usaspending_api.config import CONFIG
+from usaspending_api.config.utils import convert_json_conf_to_url
 
 # All paths inside the project should be additive to REPO_DIR or APP_DIR
 APP_DIR = Path(__file__).resolve().parent
@@ -54,20 +56,22 @@ SECRET_KEY = get_random_string(length=12)
 # Defaults to False, unless DJANGO_DEBUG env var is set to a truthy value
 DEBUG = os.environ.get("DJANGO_DEBUG", "").lower() in ["true", "1", "yes"]
 
-HOST = "localhost:3000"
-ALLOWED_HOSTS = ["*"]
+HOST = os.environ.get("HOST", "localhost:3000")
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "*").split(",")
 
 # Define local flag to affect location of downloads
 IS_LOCAL = os.environ.get("IS_LOCAL", "").lower() in ["true", "1", "yes"]
 
 # Indicates which environment is sending traces to Grafana.
 # This will be overwritten by Ansible
-TRACE_ENV = "unspecified"
+TRACE_ENV = os.environ.get("TRACE_ENV", "unspecified")
 
 # How to handle downloads locally
 # True: process it right away by the API;
 # False: leave the message in the local file-backed queue to be picked up and processed by the bulk-download container
-RUN_LOCAL_DOWNLOAD_IN_PROCESS = os.environ.get("RUN_LOCAL_DOWNLOAD_IN_PROCESS", "").lower() not in ["false", "0", "no"]
+RUN_LOCAL_DOWNLOAD_IN_PROCESS = os.environ.get(
+    "RUN_LOCAL_DOWNLOAD_IN_PROCESS", ""
+).lower() not in ["false", "0", "no"]
 
 # AWS Region for USAspending Infrastructure
 USASPENDING_AWS_REGION = ""
@@ -76,17 +80,19 @@ if not USASPENDING_AWS_REGION:
 
 # AWS locations for CSV files
 CSV_LOCAL_PATH = str(REPO_DIR / "csv_downloads") + "/"
-DOWNLOAD_ENV = ""
+DOWNLOAD_ENV = os.environ.get("DOWNLOAD_ENV", "")
 BULK_DOWNLOAD_LOCAL_PATH = str(REPO_DIR / "bulk_downloads") + "/"
 
 DATABASE_DOWNLOAD_S3_BUCKET_NAME = CONFIG.DATABASE_DOWNLOAD_S3_BUCKET_NAME
 BULK_DOWNLOAD_S3_BUCKET_NAME = CONFIG.BULK_DOWNLOAD_S3_BUCKET_NAME
 BULK_DOWNLOAD_S3_REDIRECT_DIR = "generated_downloads"
-BULK_DOWNLOAD_SQS_QUEUE_NAME = ""
-PRIORITY_DOWNLOAD_SQS_QUEUE_NAME = ""
+BULK_DOWNLOAD_SQS_QUEUE_NAME = os.environ.get("BULK_DOWNLOAD_SQS_QUEUE_NAME", "")
+PRIORITY_DOWNLOAD_SQS_QUEUE_NAME = os.environ.get(
+    "PRIORITY_DOWNLOAD_SQS_QUEUE_NAME", ""
+)
 BULK_DOWNLOAD_SPARK_JOB_NAME_PREFIX = "api_download"
 DATABASE_DOWNLOAD_S3_REDIRECT_DIR = "database_download"
-MONTHLY_DOWNLOAD_S3_BUCKET_NAME = ""
+MONTHLY_DOWNLOAD_S3_BUCKET_NAME = os.environ.get("MONTHLY_DOWNLOAD_S3_BUCKET_NAME", "")
 MONTHLY_DOWNLOAD_S3_REDIRECT_DIR = "award_data_archive"
 BROKER_AGENCY_BUCKET_NAME = ""
 UNLINKED_AWARDS_DOWNLOAD_REDIRECT_DIR = "unlinked_awards_downloads"
@@ -118,10 +124,14 @@ DELETED_TRANSACTION_JOURNAL_FILES = ""
 if not FPDS_BUCKET_NAME:
     FPDS_BUCKET_NAME = os.environ.get("FPDS_BUCKET_NAME")
 if not DELETED_TRANSACTIONS_S3_BUCKET_NAME:
-    DELETED_TRANSACTIONS_S3_BUCKET_NAME = os.environ.get("DELETED_TRANSACTIONS_S3_BUCKET_NAME")
+    DELETED_TRANSACTIONS_S3_BUCKET_NAME = os.environ.get(
+        "DELETED_TRANSACTIONS_S3_BUCKET_NAME"
+    )
 if not DELETED_TRANSACTION_JOURNAL_FILES:
     DELETED_TRANSACTION_JOURNAL_FILES = (
-        os.environ.get("DELETED_TRANSACTION_JOURNAL_FILES") or FPDS_BUCKET_NAME or DELETED_TRANSACTIONS_S3_BUCKET_NAME
+        os.environ.get("DELETED_TRANSACTION_JOURNAL_FILES")
+        or FPDS_BUCKET_NAME
+        or DELETED_TRANSACTIONS_S3_BUCKET_NAME
     )
 
 ############################################################
@@ -131,8 +141,16 @@ if not STATE_DATA_BUCKET:
     STATE_DATA_BUCKET = os.environ.get("STATE_DATA_BUCKET")
 
 # Download URLs
-FILES_SERVER_BASE_URL = ""
-SERVER_BASE_URL = ""
+FILES_SERVER_BASE_URL = os.environ.get("FILES_SERVER_BASE_URL", "")
+SERVER_BASE_URL = os.environ.get("SERVER_BASE_URL", "")
+# Used to determine the API server url based on the frontend URL.
+# To simplify we can now just use the API server url directly.
+USE_LEGACY_SERVER_URL = os.environ.get("USE_LEGACY_SERVER_URL", "true").lower() in [
+    "true",
+    "1",
+    "yes",
+]
+
 
 if not FILES_SERVER_BASE_URL:
     # This logic should be re-worked following DNS change for lower environments
@@ -145,7 +163,9 @@ if not FILES_SERVER_BASE_URL:
 DATA_DICTIONARY_FILE_NAME = "Data_Dictionary_Crosswalk.xlsx"
 
 AGENCY_DOWNLOAD_URL = f"{FILES_SERVER_BASE_URL}/reference_data/agency_codes.csv"
-DATA_DICTIONARY_DOWNLOAD_URL = f"{FILES_SERVER_BASE_URL}/docs/{DATA_DICTIONARY_FILE_NAME}"
+DATA_DICTIONARY_DOWNLOAD_URL = (
+    f"{FILES_SERVER_BASE_URL}/docs/{DATA_DICTIONARY_FILE_NAME}"
+)
 
 # S3 Bucket and Key to retrieve the Data Dictionary
 DATA_DICTIONARY_S3_BUCKET_NAME = f"dti-da-public-files-{'nonprod' if CONFIG.ENV_CODE not in ('prd', 'stg') else 'prod'}"
@@ -153,16 +173,22 @@ DATA_DICTIONARY_S3_KEY = f"user_reference_docs/{DATA_DICTIONARY_FILE_NAME}"
 
 # Local download files
 IDV_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "idv_download_readme.txt")
-ASSISTANCE_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "AssistanceSummary_download_readme.txt")
-CONTRACT_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "ContractSummary_download_readme.txt")
-COVID19_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "COVID-19_download_readme.txt")
-UNLINKED_AWARDS_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "unlinked_awards_instructions_readme.txt")
+ASSISTANCE_DOWNLOAD_README_FILE_PATH = str(
+    APP_DIR / "data" / "AssistanceSummary_download_readme.txt"
+)
+CONTRACT_DOWNLOAD_README_FILE_PATH = str(
+    APP_DIR / "data" / "ContractSummary_download_readme.txt"
+)
+COVID19_DOWNLOAD_README_FILE_PATH = str(
+    APP_DIR / "data" / "COVID-19_download_readme.txt"
+)
+UNLINKED_AWARDS_DOWNLOAD_README_FILE_PATH = str(
+    APP_DIR / "data" / "unlinked_awards_instructions_readme.txt"
+)
 COVID19_DOWNLOAD_FILENAME_PREFIX = "COVID-19_Profile"
 
 # Elasticsearch
-ES_HOSTNAME = ""
-if not ES_HOSTNAME:
-    ES_HOSTNAME = os.environ.get("ES_HOSTNAME")
+ES_HOSTNAME = os.environ.get("ES_HOSTNAME", "")
 
 ES_AWARDS_ETL_VIEW_NAME = "award_delta_view"
 ES_AWARDS_MAX_RESULT_WINDOW = 50000
@@ -288,15 +314,31 @@ CORS_ORIGIN_ALLOW_ALL = True  # Temporary while in development
 # see https://github.com/kennethreitz/dj-database-url for more info
 
 
-def _configure_database_connection(environment_variable, test_options=None):
+def _configure_database_connection(
+    environment_variable: str, test_options: dict | None = None
+) -> dict:
     """
     Configure a Django database connection... configuration.  environment_variable is the name of
     the operating system environment variable that contains the database connection string or DSN
     """
+    connection_string = os.environ.get(environment_variable)
+    try:
+        db_conf = json.loads(connection_string)
+        connection_string = convert_json_conf_to_url(db_conf)
+    except json.JSONDecodeError:
+        # If it fails to decode the JSON then proceed expecting the URL formatted connection string
+        pass
+
     if test_options is None:
         test_options = {}
-    default_options = {"options": "-c statement_timeout={0}".format(DEFAULT_DB_TIMEOUT_IN_SECONDS * 1000)}
-    config = dj_database_url.parse(os.environ.get(environment_variable), conn_max_age=CONNECTION_MAX_SECONDS)
+    default_options = {
+        "options": "-c statement_timeout={0}".format(
+            DEFAULT_DB_TIMEOUT_IN_SECONDS * 1000
+        )
+    }
+    config = dj_database_url.parse(
+        connection_string, conn_max_age=CONNECTION_MAX_SECONDS
+    )
     config["OPTIONS"] = {**config.setdefault("OPTIONS", {}), **default_options}
     config["TEST"] = {**test_options, "SERIALIZE": False}
     return config
@@ -322,7 +364,9 @@ elif os.environ.get(dj_database_url.DEFAULT_ENV):
     DATABASE_ROUTERS = ["usaspending_api.routers.replicas.DefaultOnlyRouter"]
 else:
     raise EnvironmentError(
-        "Either {} or DB_SOURCE/DB_R1 environment variable must be defined".format(dj_database_url.DEFAULT_ENV)
+        "Either {} or DB_SOURCE/DB_R1 environment variable must be defined".format(
+            dj_database_url.DEFAULT_ENV
+        )
     )
 
 # Initializing download DB as connection string (DOWNLOAD_DATABASE_URL) for PSQL command and
@@ -346,7 +390,9 @@ BROKER_DBLINK_NAME = "broker_server"
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
+    },
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
@@ -379,7 +425,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
-STATIC_URL = "/static/"
+STATIC_URL = os.environ.get("STATIC_URL", "/static/")
 STATIC_ROOT = str(APP_DIR / "static/") + "/"
 STATICFILES_DIRS = (str(APP_DIR / "static_doc_files") + "/",)
 
@@ -404,7 +450,10 @@ LOGGING = {
             "format": "%(timestamp)s %(status)s %(method)s %(path)s %(status_code)s %(remote_addr)s %(host)s "
             + "%(response_ms)d %(message)s %(request)s %(traceback)s %(error_msg)s",
         },
-        "detailed": {"format": "[%(asctime)s] [%(levelname)s] - %(message)s", "datefmt": "%Y/%m/%d %H:%M:%S (%Z)"},
+        "detailed": {
+            "format": "[%(asctime)s] [%(levelname)s] - %(message)s",
+            "datefmt": "%Y/%m/%d %H:%M:%S (%Z)",
+        },
         # tracing is used for some spark jobs' logs indirectly
         "tracing": {
             "format": "%(asctime)s.%(msecs)03dZ %(levelname)s %(name)s:%(lineno)s: %(message)s",
@@ -424,22 +473,46 @@ LOGGING = {
             "filename": str(APP_DIR / "logs" / "console.log"),
             "formatter": "specifics",
         },
-        "console": {"level": "DEBUG", "class": "logging.StreamHandler", "formatter": "simpletime"},
-        "script": {"level": "DEBUG", "class": "logging.StreamHandler", "formatter": "detailed"},
+        "console": {
+            "level": "DEBUG",
+            "class": "logging.StreamHandler",
+            "formatter": "simpletime",
+        },
+        "script": {
+            "level": "DEBUG",
+            "class": "logging.StreamHandler",
+            "formatter": "detailed",
+        },
     },
     "loggers": {
         # The root logger; i.e. "all modules"
-        "": {"handlers": ["console", "console_file"], "level": "WARNING", "propagate": False},
+        "": {
+            "handlers": ["console", "console_file"],
+            "level": "WARNING",
+            "propagate": False,
+        },
         # The "root" logger for all usaspending_api modules
-        "usaspending_api": {"handlers": ["console", "console_file"], "level": "DEBUG", "propagate": False},
+        "usaspending_api": {
+            "handlers": ["console", "console_file"],
+            "level": "DEBUG",
+            "propagate": False,
+        },
         # Logger for Django API requests via middleware. See logging.py
         "server": {"handlers": ["server"], "level": "DEBUG", "propagate": False},
         # Catch-all logger (over)used for non-Django-API commands that output to the console
-        "console": {"handlers": ["console", "console_file"], "level": "DEBUG", "propagate": False},
+        "console": {
+            "handlers": ["console", "console_file"],
+            "level": "DEBUG",
+            "propagate": False,
+        },
         # More-verbose logger for ETL scripts
         "script": {"handlers": ["script"], "level": "DEBUG", "propagate": False},
         # Logger used to specifically record exceptions
-        "exceptions": {"handlers": ["console", "console_file"], "level": "ERROR", "propagate": False},
+        "exceptions": {
+            "handlers": ["console", "console_file"],
+            "level": "ERROR",
+            "propagate": False,
+        },
     },
 }
 
@@ -450,32 +523,51 @@ if DEBUG:
             LOGGING["loggers"][logger]["handlers"] += ["console"]
 
     LOGGING["handlers"]["console"]["level"] = "DEBUG"
-    LOGGING["loggers"]["django.db.backends"] = {"handlers": ["console"], "level": "DEBUG", "propagate": False}
+    LOGGING["loggers"]["django.db.backends"] = {
+        "handlers": ["console"],
+        "level": "DEBUG",
+        "propagate": False,
+    }
 
 
 # If caches added or renamed, edit clear_caches in usaspending_api/etl/helpers.py
 CACHES = {
-    "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache", "LOCATION": "default-loc-mem-cache"},
-    "locations": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache", "LOCATION": "locations-loc-mem-cache"},
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "default-loc-mem-cache",
+    },
+    "locations": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "locations-loc-mem-cache",
+    },
 }
 
 # Cache environment - 'local', 'disabled', or 'elasticache'
-CACHE_ENVIRONMENT = "disabled"
+CACHE_ENVIRONMENT = os.environ.get("CACHE_ENVIRONMENT", "disabled")
 
 # Set up the appropriate elasticache for our environment
 CACHE_ENVIRONMENTS = {
     # Elasticache settings are changed during deployment, or can be set manually
     "elasticache": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "ELASTICACHE-CONNECTION-STRING",
-        "TIMEOUT": "TIMEOUT-IN-SECONDS",
+        "LOCATION": os.environ.get(
+            "ELASTICACHE_CONNECTION_STRING", "ELASTICACHE-CONNECTION-STRING"
+        ),
+        "TIMEOUT": os.environ.get(
+            "ELASTICACHE_TIMEOUT_IN_SECONDS", "TIMEOUT-IN-SECONDS"
+        ),
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
             # Note: ELASTICACHE-MASTER-STRING is currently only used by Prod and will be removed in other environments.
-            "MASTER_CACHE": "ELASTICACHE-MASTER-STRING",
+            "MASTER_CACHE": os.environ.get(
+                "ELASTICACHE_MASTER_STRING", "ELASTICACHE-MASTER-STRING"
+            ),
         },
     },
-    "local": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache", "LOCATION": "locations-loc-mem-cache"},
+    "local": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "locations-loc-mem-cache",
+    },
     "disabled": {"BACKEND": "django.core.cache.backends.dummy.DummyCache"},
 }
 
@@ -493,7 +585,14 @@ REST_FRAMEWORK_EXTENSIONS = {
 
 # Django spaghetti-and-meatballs (entity relationship diagram) settings
 SPAGHETTI_SAUCE = {
-    "apps": ["accounts", "awards", "financial_activities", "references", "submissions", "recipient"],
+    "apps": [
+        "accounts",
+        "awards",
+        "financial_activities",
+        "references",
+        "submissions",
+        "recipient",
+    ],
     "show_fields": False,
     "exclude": {},
     "show_proxy": False,
