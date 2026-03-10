@@ -721,7 +721,7 @@ class _DisasterEmergencyFundCodes(_Filter):
         return covid_es_queries, iija_es_queries
 
     @classmethod
-    def _generate_covid_iija_es_queries_transactions(cls, def_code_field: str, covid_filters: dict, iija_filters: dict):
+    def _generate_covid_iija_es_queries_subawards(cls, def_code_field: str, covid_filters: dict, iija_filters: dict):
         covid_es_queries = [
             ES_Q("match", **{def_code_field: def_code})
             & ES_Q("range", **{"sub_action_date": {"gte": datetime.strftime(enactment_date, "%Y-%m-%d")}})
@@ -736,7 +736,7 @@ class _DisasterEmergencyFundCodes(_Filter):
         return covid_es_queries, iija_es_queries
 
     @classmethod
-    def _generate_covid_iija_es_queries_transactions(cls, def_code_field: str, covid_filters: dict, iija_filters: dict):
+    def _generate_covid_iija_es_queries_other(cls, def_code_field: str, covid_filters: dict, iija_filters: dict):
         covid_es_queries = [ES_Q("match", **{def_code_field: def_code}) for def_code in covid_filters.keys()]
         iija_es_queries = [ES_Q("match", **{def_code_field: def_code}) for def_code in iija_filters.keys()]
 
