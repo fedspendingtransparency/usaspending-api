@@ -10,7 +10,6 @@ import math
 import os
 import shutil
 import time
-from collections import namedtuple
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from itertools import chain
 
@@ -973,6 +972,8 @@ def rename_part_files_threaded(
         return []
 
     total_files = len(list_of_part_files)
+    max_threads = max(max_threads, total_files)
+    logger.info(f"Max threads: {max_threads}")
     logger.info(f"Starting concurrent rename of {total_files} part files")
 
     def rename_single_file(index: int, part_file: str) -> tuple[str | None, bool]:

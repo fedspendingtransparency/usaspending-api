@@ -228,6 +228,7 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
                 s3_bucket_path,
                 s3_bucket_sub_path,
                 destination_path_dir,
+                max_threads=len(merged_file_paths),
             )
         except Exception:
             self._logger.exception("Exception encountered. See logs")
@@ -239,12 +240,6 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
             )
             if self.spark_created_by_command:
                 self.spark.stop()
-
-        # TODO remove this, it's just for testing
-        self._logger.info(f"Final CSV data file locations: {final_csv_data_file_locations}")
-        self._logger.info(f"Type: {type(final_csv_data_file_locations)}")
-        self._logger.info(f"Download zip path: {download_zip_path}")
-        self._logger.info(f"Type: {type(download_zip_path)}")
 
         append_files_to_zip_file(final_csv_data_file_locations, download_zip_path)
         self._logger.info(
@@ -317,6 +312,7 @@ class SparkToCSVStrategy(AbstractToCSVStrategy):
         self._logger.info(
             "Moving data files from S3 to local machine using threading..."
         )
+        self._logger.info(f"Max threads: {max_threads}")
         local_csv_file_paths = []
 
         with ThreadPoolExecutor(
