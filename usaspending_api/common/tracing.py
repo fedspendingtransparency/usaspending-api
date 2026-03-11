@@ -45,21 +45,13 @@ class OpenTelemetryEagerlyDropTraceFilter:
     EAGERLY_DROP_TRACE_KEY = "EAGERLY_DROP_TRACE"
 
     @classmethod
-    def activate(cls):
+    def activate(cls) -> None:
         _activate_trace_filter(cls)
 
     @classmethod
-    def drop(cls, span: trace.Span):
+    def drop(cls, span: trace.Span) -> None:
         span.set_status(Status(StatusCode.ERROR))
         span.set_attribute(cls.EAGERLY_DROP_TRACE_KEY, True)
-
-    def process_trace(self, trace_to_process: trace) -> Optional[trace]:
-        """Drop trace if any span attribute has tag with key 'EAGERLY_DROP_TRACE'"""
-        return (
-            None
-            if any(span.get_attribute(self.EAGERLY_DROP_TRACE_KEY) for span in trace_to_process)
-            else trace_to_process
-        )
 
 
 class SubprocessTrace:
@@ -119,17 +111,3 @@ class OpenTelemetryLoggingTraceFilter:
     @classmethod
     def activate(cls) -> None:
         _activate_trace_filter(cls)
-
-    def process_trace(self, trace_to_process: trace) -> trace:
-        logged = False
-        trace_id = "???"
-        for span in trace_to_process:
-            trace_id = span.context.trace_id or "???"
-            if not span.get_attribute(
-                OpenTelemetryEagerlyDropTraceFilter.EAGERLY_DROP_TRACE_KEY
-            ):
-                logged = True
-                self._log.info(f"----[SPAN#{trace_id}]" + "-" * 40 + f"\n{span}")
-        if logged:
-            self._log.info(f"====[END TRACE#{trace_id}]" + "=" * 35)
-        return trace_to_process
