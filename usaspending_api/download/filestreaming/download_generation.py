@@ -803,6 +803,12 @@ def wait_for_process(
         and (not download_job.monthly_download and over_time)
         or process.exitcode != 0
     ):
+        logger.info("**********")
+        logger.info(f"DownloadJob error: {download_job.error_message}")
+        logger.info(f"Is overtime: {over_time}")
+        logger.info(f"Process Exitcode: {process.exitcode}")
+        logger.info(f"Process repr: {repr(process)}")
+        logger.info("**********")
         if process.is_alive():
             # Process is running for longer than MAX_VISIBILITY_TIMEOUT, kill it
             write_to_log(
