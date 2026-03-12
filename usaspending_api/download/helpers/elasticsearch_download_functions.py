@@ -1,32 +1,32 @@
-import itertools
 import logging
 import time
-
 from abc import ABCMeta, abstractmethod
 from datetime import datetime, timezone
-from typing import Union
 
 from django.conf import settings
 from django.db.models import Model, QuerySet
-from elasticsearch_dsl import A
 
-from usaspending_api.common.elasticsearch.search_wrappers import AwardSearch, SubawardSearch, TransactionSearch
-from usaspending_api.search.filters.time_period.decorators import NewAwardsOnlyTimePeriod
+from usaspending_api.common.elasticsearch.search_wrappers import (
+    AwardSearch,
+    SubawardSearch,
+    TransactionSearch,
+)
 from usaspending_api.common.query_with_filters import QueryWithFilters
+from usaspending_api.download.helpers import write_to_download_log as write_to_log
 from usaspending_api.download.models import DownloadJob
 from usaspending_api.download.models.download_job_lookup import DownloadJobLookup
-from usaspending_api.download.helpers import write_to_download_log as write_to_log
 from usaspending_api.search.filters.elasticsearch.filter import QueryType
-from usaspending_api.search.models import (
-    AwardSearch as DBAwardSearch,
-    SubawardSearch as DBSubawardSearch,
-    TransactionSearch as DBTransactionSearch,
+from usaspending_api.search.filters.time_period.decorators import (
+    NewAwardsOnlyTimePeriod,
 )
 from usaspending_api.search.filters.time_period.query_types import (
     AwardSearchTimePeriod,
     SubawardSearchTimePeriod,
     TransactionSearchTimePeriod,
 )
+from usaspending_api.search.models import AwardSearch as DBAwardSearch
+from usaspending_api.search.models import SubawardSearch as DBSubawardSearch
+from usaspending_api.search.models import TransactionSearch as DBTransactionSearch
 
 logger = logging.getLogger(__name__)
 
@@ -38,53 +38,57 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
     _query_with_filters = None
 
     @classmethod
-    def _get_download_ids_generator(cls, search: Union[AwardSearch, TransactionSearch, SubawardSearch], size: int):
-        """
-        Takes an AwardSearch or TransactionSearch object (that specifies the index, filter, and source) and returns
-        a generator that yields list of IDs in chunksize SIZE.
-        """
-        max_retries = 10
-        total = search.handle_count(retries=max_retries)
-        if total is None:
-            logger.error("Error retrieving total results. Max number of attempts reached.")
-            return
-        max_iterations = settings.MAX_DOWNLOAD_LIMIT // size
-        req_iterations = (total // size) + 1
-        num_iterations = min(max(1, req_iterations), max_iterations)
-
-        # Setting the shard_size below works in this case because we are aggregating on a unique field. Otherwise, this
-        # would not work due to the number of records. Other places this is set are in the different spending_by
-        # endpoints which are either routed or contain less than 10k unique values, both allowing for the shard
-        # size to be manually set to 10k.
-        for iteration in range(num_iterations):
-            aggregation = A(
-                "terms",
-                field=cls._source_field,
-                include={"partition": iteration, "num_partitions": num_iterations},
-                size=size,
-                shard_size=size,
-            )
-            search.aggs.bucket("results", aggregation)
-            response = search.handle_execute(retries=max_retries).to_dict()
-
-            if response is None:
-                raise Exception("Breaking generator, unable to reach cluster")
-            results = []
-            for bucket in response["aggregations"]["results"]["buckets"]:
-                results.append(bucket["key"])
-
-            yield results
+    def _get_download_ids(
+        cls, search: AwardSearch | TransactionSearch | SubawardSearch, id_count: int, keep_alive_minutes: int = 5
+    ) -> list[int] | None:
+        ids = []
+        start_time = time.time()
+        timeout = keep_alive_minutes * 60
+        while len(ids) < id_count:
+            r = search.handle_execute(retries=10)
+            if r is None:
+                raise Exception("Unable to reach cluster.")
+            ids.extend([getattr(hit, cls._source_field) for hit in r.hits])
+            search = search.extra(search_after=r.hits[-1].meta.sort)
+            if time.time() - start_time > timeout:
+                logger.warning("Timeout reached. Exiting _get_download_ids().  List of ids may not be complete.")
+                break
+        return ids
 
     @classmethod
     def _populate_download_lookups(
-        cls, filters: dict, download_job: DownloadJob, size: int = 10000, **filter_options
+        cls, filters: dict, download_job: DownloadJob, size: int = 10_000, **filter_options
     ) -> None:
         """
         Takes a dictionary of the different download filters and returns a flattened list of ids.
         """
         filter_query = cls._query_with_filters.generate_elasticsearch_query(filters, **filter_options)
-        search = cls._search_type().filter(filter_query).source([cls._source_field])
-        ids = cls._get_download_ids_generator(search, size)
+        keep_alive_minutes = 5
+        pit = cls._search_type().client.transport.perform_request(
+            "POST",
+            f"/{cls._search_type._index_name}/_search/point_in_time",
+            params={"keep_alive": f"{keep_alive_minutes}m"},
+        )
+        pit_id = pit.get("pit_id")
+        index_name = cls._search_type._index_name
+        try:
+            id_count = cls._search_type().filter(filter_query).source([cls._source_field]).handle_count()
+            cls._search_type._index_name = None  # When using a PIT, index name must be None
+            search = (
+                cls._search_type()
+                .filter(filter_query)
+                .source([cls._source_field])
+                .sort(cls._source_field)
+                .extra(size=size, pit={"id": pit_id, "keep_alive": f"{keep_alive_minutes}m"})
+            )
+            ids = cls._get_download_ids(search, id_count, keep_alive_minutes=keep_alive_minutes)
+        except Exception as e:
+            raise e
+        finally:
+            cls._search_type._index_name = index_name  # Reset the index name
+            cls._search_type().client.transport.perform_request(
+                "DELETE", "/_search/point_in_time", body={"pit_id": [pit_id]}
+            )
         lookup_id_type = cls._search_type.type_as_string()
         now = datetime.now(timezone.utc)
         download_lookup_obj_list = [
@@ -94,7 +98,7 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
                 lookup_id=es_id,
                 lookup_id_type=lookup_id_type,
             )
-            for es_id in itertools.chain.from_iterable(ids)
+            for es_id in ids
         ]
         write_to_log(
             message=f"Found {len(download_lookup_obj_list)} {cls._source_field} based on filters",
@@ -126,7 +130,7 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
                     .filter(download_job_id=download_job.download_job_id)
                     .exists()
                 )
-                write_to_log(message=f"Waiting on replication for Download Lookup", download_job=download_job)
+                write_to_log(message="Waiting on replication for Download Lookup", download_job=download_job)
 
             if is_lookup_replicated:
                 write_to_log(
@@ -138,7 +142,7 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
                 raise TimeoutError(message)
 
     @classmethod
-    def download_lookup_queryset(cls, base_queryset: QuerySet, download_job: DownloadJob):
+    def download_lookup_queryset(cls, base_queryset: QuerySet, download_job: DownloadJob) -> QuerySet:
         """
         Adds onto a queryset the necessary filter in order to find IDs that are relevant to the specific
         Download type and job.
@@ -158,7 +162,7 @@ class _ElasticsearchDownload(metaclass=ABCMeta):
 
     @classmethod
     @abstractmethod
-    def query(cls, filters: dict, download_job: DownloadJob) -> QuerySet:
+    def query(cls, filters: dict, download_job: DownloadJob, size: int) -> QuerySet:
         pass
 
 
@@ -169,7 +173,7 @@ class AwardsElasticsearchDownload(_ElasticsearchDownload):
     _base_model = DBAwardSearch
 
     @classmethod
-    def query(cls, filters: dict, download_job: DownloadJob) -> QuerySet:
+    def query(cls, filters: dict, download_job: DownloadJob, size: int = 10_000) -> QuerySet:
         filter_options = {}
         time_period_obj = AwardSearchTimePeriod(
             default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
@@ -179,7 +183,7 @@ class AwardsElasticsearchDownload(_ElasticsearchDownload):
         )
         filter_options["time_period_obj"] = new_awards_only_decorator
         base_queryset = DBAwardSearch.objects.all()
-        cls._populate_download_lookups(filters, download_job, **filter_options)
+        cls._populate_download_lookups(filters, download_job, size, **filter_options)
 
         return cls.download_lookup_queryset(base_queryset, download_job)
 
@@ -191,7 +195,7 @@ class TransactionsElasticsearchDownload(_ElasticsearchDownload):
     _base_model = DBTransactionSearch
 
     @classmethod
-    def query(cls, filters: dict, download_job: DownloadJob) -> QuerySet:
+    def query(cls, filters: dict, download_job: DownloadJob, size: int = 10_000) -> QuerySet:
         filter_options = {}
         time_period_obj = TransactionSearchTimePeriod(
             default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_SEARCH_MIN_DATE
@@ -201,7 +205,7 @@ class TransactionsElasticsearchDownload(_ElasticsearchDownload):
         )
         filter_options["time_period_obj"] = new_awards_only_decorator
         base_queryset = DBTransactionSearch.objects.all()
-        cls._populate_download_lookups(filters, download_job, **filter_options)
+        cls._populate_download_lookups(filters, download_job, size, **filter_options)
 
         return cls.download_lookup_queryset(base_queryset, download_job)
 
@@ -213,13 +217,13 @@ class SubawardsElasticsearchDownload(_ElasticsearchDownload):
     _base_model = DBSubawardSearch
 
     @classmethod
-    def query(cls, filters: dict, download_job: DownloadJob) -> QuerySet:
+    def query(cls, filters: dict, download_job: DownloadJob, size: int = 10_000) -> QuerySet:
         filter_options = {}
         time_period_obj = SubawardSearchTimePeriod(
             default_end_date=settings.API_MAX_DATE, default_start_date=settings.API_MIN_DATE
         )
         filter_options["time_period_obj"] = time_period_obj
         base_queryset = DBSubawardSearch.objects.all()
-        cls._populate_download_lookups(filters, download_job, **filter_options)
+        cls._populate_download_lookups(filters, download_job, size, **filter_options)
 
         return cls.download_lookup_queryset(base_queryset, download_job)
