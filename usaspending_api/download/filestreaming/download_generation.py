@@ -816,9 +816,7 @@ def wait_for_process(
             )
         else:
             # An error occurred in the process
-            e = Exception(
-                "Command failed. Please see the logs for details."
-            )
+            e = Exception("Command failed. Please see the logs for details.")
 
         raise e
 
@@ -1166,7 +1164,8 @@ def add_data_dictionary_to_zip(working_dir: str, zip_file_path: str) -> None:
 def _kill_spawned_processes(download_job: DownloadJob) -> None:
     """Cleanup (kill) any spawned child processes during this job run"""
     job = ps.Process(os.getpid())
-    for spawn_of_job in job.children(recursive=True):
+    child_processes = job.children(recursive=True)
+    for spawn_of_job in child_processes:
         write_to_log(
             message=f"Attempting to terminate child process with PID [{spawn_of_job.pid}], name "
             f"[{spawn_of_job.name()}], and status [{spawn_of_job.status()}]",
@@ -1175,20 +1174,17 @@ def _kill_spawned_processes(download_job: DownloadJob) -> None:
         )
         try:
             spawn_of_job.kill()
-            write_to_log(
-                message=f"Successfully terminated child process with PID[{spawn_of_job.pid}]",
-                download_job=download_job,
-                is_error=True
-            )
         except ps.NoSuchProcess:
             pass
-        except Exception as e:
-            write_to_log(
-                message=f"Failed to terminate child process with PID[{spawn_of_job.pid}]",
-                download_job=download_job,
-                is_error=True
-            )
-            raise e
+
+    ps.wait_procs(
+        child_processes,
+        callback=lambda proc: write_to_log(
+            message=f"Terminated child process with PID[{proc.pid}]",
+            download_job=download_job,
+            is_error=True,
+        ),
+    )
 
 
 def create_empty_data_file(  # noqa: PLR0913
