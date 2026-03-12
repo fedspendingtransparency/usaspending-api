@@ -797,7 +797,7 @@ def wait_for_process(
         sleep_count += 1
 
     over_time = (time.perf_counter() - start_time) >= MAX_VISIBILITY_TIMEOUT
-    process_error = None
+
     if (
         download_job
         and (not download_job.monthly_download and over_time)
@@ -811,19 +811,16 @@ def wait_for_process(
                 is_error=True,
             )
             process.terminate()
-            process_error = TimeoutError(
+            e = TimeoutError(
                 f"DownloadJob {download_job.download_job_id} lasted longer than {MAX_VISIBILITY_TIMEOUT / 3600} hours"
             )
         else:
             # An error occurred in the process
-            process_error = Exception(
+            e = Exception(
                 "Command failed. Please see the logs for details."
             )
 
-    process.join()
-
-    if process_error:
-        raise process_error
+        raise e
 
     return time.perf_counter() - log_time
 
@@ -1166,20 +1163,32 @@ def add_data_dictionary_to_zip(working_dir: str, zip_file_path: str) -> None:
     append_files_to_zip_file([data_dictionary_file_path], zip_file_path)
 
 
-def _kill_spawned_processes(download_job: DownloadJob = None) -> None:
+def _kill_spawned_processes(download_job: DownloadJob) -> None:
     """Cleanup (kill) any spawned child processes during this job run"""
     job = ps.Process(os.getpid())
     for spawn_of_job in job.children(recursive=True):
         write_to_log(
-            message=f"Attempting to terminate child process with PID [{spawn_of_job.pid}] and name "
-            f"[{spawn_of_job.name}]",
+            message=f"Attempting to terminate child process with PID [{spawn_of_job.pid}], name "
+            f"[{spawn_of_job.name()}], and status [{spawn_of_job.status()}]",
             download_job=download_job,
             is_error=True,
         )
         try:
             spawn_of_job.kill()
+            write_to_log(
+                message=f"Successfully terminated child process with PID[{spawn_of_job.pid}]",
+                download_job=download_job,
+                is_error=True
+            )
         except ps.NoSuchProcess:
             pass
+        except Exception as e:
+            write_to_log(
+                message=f"Failed to terminate child process with PID[{spawn_of_job.pid}]",
+                download_job=download_job,
+                is_error=True
+            )
+            raise e
 
 
 def create_empty_data_file(  # noqa: PLR0913
