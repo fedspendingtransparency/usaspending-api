@@ -1100,6 +1100,10 @@ def execute_psql(
                 env=temp_env,
             )
 
+            # Wait for initial process to close and terminate to free up resources
+            cat_command.stdout.close()
+            cat_command.wait()
+
             duration = time.perf_counter() - log_time
             write_to_log(
                 message=f"Wrote {os.path.basename(source_path)}, took {duration:.4f} seconds",
