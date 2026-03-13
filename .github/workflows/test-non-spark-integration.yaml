@@ -33,16 +33,6 @@ jobs:
     name: Run
     runs-on: ${{ vars.RUNNER_VERSION }}
     steps:
-      - name: Check memory output
-        shell: bash
-        working-directory: ./usaspending-api
-        if: always()
-        run: |
-          echo "Memory Usage:"
-          free -h
-          echo "Disk Usage:"
-          df -h
-
       - name: Checkout Source Repository
         uses: actions/checkout@v4
         with:
@@ -54,6 +44,16 @@ jobs:
           repository: fedspendingtransparency/data-act-broker-backend
           path: data-act-broker-backend
           ref: ${{ needs.Setup-Broker-Branch.outputs.branch }}
+
+      - name: Check memory output
+        shell: bash
+        working-directory: ./usaspending-api
+        if: always()
+        run: |
+          echo "Memory Usage:"
+          free -h
+          echo "Disk Usage:"
+          df -h
 
       - name: Init Python Environment
         uses: ./usaspending-api/.github/actions/init-python-environment
