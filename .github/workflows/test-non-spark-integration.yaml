@@ -33,6 +33,14 @@ jobs:
     name: Run
     runs-on: ${{ vars.RUNNER_VERSION }}
     steps:
+      - name: Check memory output
+        if: always()
+        run: |
+          echo "Memory Usage:"
+          free -h
+          echo "Disk Usage:"
+          df -h
+
       - name: Checkout Source Repository
         uses: actions/checkout@v4
         with:
@@ -64,3 +72,11 @@ jobs:
           include-glob: '**/tests/integration/*'
           marker: '(not signal_handling and not spark)'
           working-directory: ./usaspending-api
+
+      - name: Check memory output
+        if: always()
+        run: |
+          echo "Memory Usage:"
+          free -h
+          echo "Disk Usage:"
+          df -h
