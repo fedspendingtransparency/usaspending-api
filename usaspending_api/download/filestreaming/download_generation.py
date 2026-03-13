@@ -1136,7 +1136,11 @@ def execute_psql(
                 )
                 raise e
     except Exception as e:
-        write_to_log(message=e, is_error=True, download_job=download_job)
+        write_to_log(
+            message=f"Failed in subprocess with error: {e}",
+            is_error=True,
+            download_job=download_job,
+        )
         raise e
 
 
