@@ -60,12 +60,32 @@ jobs:
         with:
           working-directory: ./usaspending-api
 
+      - name: Check memory output
+        shell: bash
+        working-directory: ./usaspending-api
+        if: always()
+        run: |
+          echo "Memory Usage:"
+          free -h
+          echo "Disk Usage:"
+          df -h
+
       - name: Init Test Environment
         uses: ./usaspending-api/.github/actions/init-test-environment
         with:
           is-integration-test: true
           is-spark-test: false
           working-directory: ./usaspending-api
+
+      - name: Check memory output
+        shell: bash
+        working-directory: ./usaspending-api
+        if: always()
+        run: |
+          echo "Memory Usage:"
+          free -h
+          echo "Disk Usage:"
+          df -h
 
       - name: Run Test Cases
         uses: ./usaspending-api/.github/actions/run-pytest
