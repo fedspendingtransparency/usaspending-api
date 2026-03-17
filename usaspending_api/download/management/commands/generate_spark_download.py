@@ -3,6 +3,7 @@ import logging
 import os
 import time
 import traceback
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
@@ -19,7 +20,10 @@ from pyspark.sql import SparkSession
 
 from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers.download_csv_strategies import DuckDBToCSVStrategy, SparkToCSVStrategy
+from usaspending_api.common.helpers.download_csv_strategies import (
+    DuckDBToCSVStrategy,
+    SparkToCSVStrategy,
+)
 from usaspending_api.common.helpers.s3_helpers import upload_download_file_to_s3
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
@@ -28,14 +32,26 @@ from usaspending_api.common.helpers.spark_helpers import (
 from usaspending_api.common.logging import configure_logging
 from usaspending_api.common.spark.configs import DEFAULT_EXTRA_CONF
 from usaspending_api.common.tracing import SubprocessTrace
-from usaspending_api.download.delta_downloads.abstract_downloads.base_download import AbstractDownload
-from usaspending_api.download.delta_downloads.account_balances import AccountBalancesDownloadFactory
-from usaspending_api.download.delta_downloads.award_financial import AwardFinancialDownloadFactory
-from usaspending_api.download.delta_downloads.filters.account_filters import AccountDownloadFilters
+from usaspending_api.download.delta_downloads.abstract_downloads.base_download import (
+    AbstractDownload,
+)
+from usaspending_api.download.delta_downloads.account_balances import (
+    AccountBalancesDownloadFactory,
+)
+from usaspending_api.download.delta_downloads.award_financial import (
+    AwardFinancialDownloadFactory,
+)
+from usaspending_api.download.delta_downloads.filters.account_filters import (
+    AccountDownloadFilters,
+)
 from usaspending_api.download.delta_downloads.object_class_program_activity import (
     ObjectClassProgramActivityDownloadFactory,
 )
-from usaspending_api.download.lookups import FILE_FORMATS, JOB_STATUS_DICT, JOB_STATUS_DICT_BY_ID
+from usaspending_api.download.lookups import (
+    FILE_FORMATS,
+    JOB_STATUS_DICT,
+    JOB_STATUS_DICT_BY_ID,
+)
 from usaspending_api.download.models import DownloadJob
 from usaspending_api.settings import TRACE_ENV
 
@@ -86,10 +102,16 @@ class Command(BaseCommand):
         self.download_json_request = json.loads(self.download_job.json_request)
         self.request_type = self.download_json_request["request_type"]
         self.working_dir_path = Path(settings.CSV_LOCAL_PATH)
-        self.columns = self.download_json_request["columns"] if "columns" in self.download_json_request else None
+        self.columns = (
+            self.download_json_request["columns"]
+            if "columns" in self.download_json_request
+            else None
+        )
 
         self.use_duckdb = options["use_duckdb"]
-        self.spark, spark_created_by_command = self.setup_spark_session(options["use_duckdb"])
+        self.spark, spark_created_by_command = self.setup_spark_session(
+            options["use_duckdb"]
+        )
 
         if not self.working_dir_path.exists():
             self.working_dir_path.mkdir()
@@ -99,7 +121,9 @@ class Command(BaseCommand):
             self.spark.stop()
 
     @staticmethod
-    def setup_spark_session(use_duckdb: bool = False) -> tuple[SparkSession | DuckDBSparkSession, bool]:
+    def setup_spark_session(
+        use_duckdb: bool = False,
+    ) -> tuple[SparkSession | DuckDBSparkSession, bool]:
         if use_duckdb:
             spark: DuckDBSparkSession = DuckDBSparkSession.builder.getOrCreate()
             spark_created_by_command = True
@@ -120,7 +144,9 @@ class Command(BaseCommand):
             spark_created_by_command = False
             if not spark:
                 spark_created_by_command = True
-                spark = configure_spark_session(**DEFAULT_EXTRA_CONF, spark_context=spark)
+                spark = configure_spark_session(
+                    **DEFAULT_EXTRA_CONF, spark_context=spark
+                )
 
         return spark, spark_created_by_command
 
@@ -131,7 +157,10 @@ class Command(BaseCommand):
     @staticmethod
     def get_download_job(download_job_id) -> DownloadJob:
         download_job = DownloadJob.objects.get(download_job_id=download_job_id)
-        if download_job.job_status_id not in (JOB_STATUS_DICT["ready"], JOB_STATUS_DICT["failed"]):
+        if download_job.job_status_id not in (
+            JOB_STATUS_DICT["ready"],
+            JOB_STATUS_DICT["failed"],
+        ):
             # Handles both new downloads and retries of failed downloads
             with SubprocessTrace(
                 name=f"job.{JOB_TYPE}.download.download_job_id-{download_job_id}",
@@ -141,11 +170,15 @@ class Command(BaseCommand):
                 get_download_job_error.set_attributes(
                     {
                         "download_job_id": download_job_id,
-                        "download_job_status": JOB_STATUS_DICT_BY_ID[download_job.job_status_id],
+                        "download_job_status": JOB_STATUS_DICT_BY_ID[
+                            download_job.job_status_id
+                        ],
                         "message": f"Download Job {download_job_id} is not ready,",
                     }
                 )
-            raise InvalidParameterException(f"Download Job {download_job_id} is not ready.")
+            raise InvalidParameterException(
+                f"Download Job {download_job_id} is not ready."
+            )
         return download_job
 
     def process_download(self):
@@ -164,16 +197,26 @@ class Command(BaseCommand):
                     "download_job_id": str(self.download_job.download_job_id),
                     "download_job_status": str(self.download_job.job_status.name),
                     "download_file_name": str(self.download_job.file_name),
-                    "download_file_size": self.download_job.file_size if self.download_job.file_size is not None else 0,
+                    "download_file_size": self.download_job.file_size
+                    if self.download_job.file_size is not None
+                    else 0,
                     "number_of_rows": (
-                        self.download_job.number_of_rows if self.download_job.number_of_rows is not None else 0
+                        self.download_job.number_of_rows
+                        if self.download_job.number_of_rows is not None
+                        else 0
                     ),
                     "number_of_columns": (
-                        self.download_job.number_of_columns if self.download_job.number_of_columns is not None else 0
+                        self.download_job.number_of_columns
+                        if self.download_job.number_of_columns is not None
+                        else 0
                     ),
-                    "error_message": self.download_job.error_message if self.download_job.error_message else "",
+                    "error_message": self.download_job.error_message
+                    if self.download_job.error_message
+                    else "",
                     "monthly_download": str(self.download_job.monthly_download),
-                    "json_request": str(self.download_job.json_request) if self.download_job.json_request else "",
+                    "json_request": str(self.download_job.json_request)
+                    if self.download_job.json_request
+                    else "",
                     "file_name": str(self.download_job.file_name),
                 }
             )
@@ -181,13 +224,26 @@ class Command(BaseCommand):
         files_to_cleanup = []
         try:
             spark_to_csv_strategy = (
-                DuckDBToCSVStrategy(logger, self.spark) if self.use_duckdb else SparkToCSVStrategy(logger)
+                DuckDBToCSVStrategy(logger, self.spark)
+                if self.use_duckdb
+                else SparkToCSVStrategy(logger)
             )
             zip_file_path = self.working_dir_path / f"{self.download_zip_file_name}.zip"
             download_request = self.get_download_request()
             if self.columns is not None:
                 for download in download_request.download_list:
-                    download.dataframes = [df.select(*self.columns) for df in download.dataframes]
+                    download.dataframes = [
+                        df.select(*self.columns) for df in download.dataframes
+                    ]
+
+            csvs_metadata = []
+            _downloads_to_run = {
+            for download in download_request.download_list
+            for file_name, df in zip(download.file_names, download.dataframes)
+            }
+            for download in download_request.download_list:
+                for file_name, df in zip(download.file_names, download.dataframes):
+
 
             csvs_metadata = [
                 spark_to_csv_strategy.download_to_csv(
@@ -206,7 +262,9 @@ class Command(BaseCommand):
             for csv_metadata in csvs_metadata:
                 files_to_cleanup.extend(csv_metadata.filepaths)
             self.download_job.file_size = os.stat(zip_file_path).st_size
-            self.download_job.number_of_rows = sum([csv_metadata.number_of_rows for csv_metadata in csvs_metadata])
+            self.download_job.number_of_rows = sum(
+                [csv_metadata.number_of_rows for csv_metadata in csvs_metadata]
+            )
             self.download_job.number_of_columns = sum(
                 [csv_metadata.number_of_columns for csv_metadata in csvs_metadata]
             )
@@ -230,7 +288,9 @@ class Command(BaseCommand):
             self.fail_download(exc_msg, e)
             raise
         except Exception as e:
-            exc_msg = "An exception was raised while attempting to process the DownloadJob"
+            exc_msg = (
+                "An exception was raised while attempting to process the DownloadJob"
+            )
             self.fail_download(exc_msg, e)
             raise
         finally:
@@ -246,10 +306,14 @@ class Command(BaseCommand):
         }
         match self.request_type:
             case DownloadType.ACCOUNT:
-                filters = AccountDownloadFilters(**self.download_json_request["filters"])
+                filters = AccountDownloadFilters(
+                    **self.download_json_request["filters"]
+                )
                 account_level = self.download_json_request.get("account_level")
                 download_list: list[Download] = [
-                    download_factories[submission_type](self.spark, filters).get_download(account_level)
+                    download_factories[submission_type](
+                        self.spark, filters
+                    ).get_download(account_level)
                     for submission_type in filters.submission_types
                 ]
                 download_type = DownloadType.ACCOUNT
@@ -272,7 +336,9 @@ class Command(BaseCommand):
 
     def fail_download(self, msg: str, e: Optional[Exception] = None) -> None:
         if e:
-            stack_trace = "".join(traceback.format_exception(type(e), value=e, tb=e.__traceback__))
+            stack_trace = "".join(
+                traceback.format_exception(type(e), value=e, tb=e.__traceback__)
+            )
             self.download_job.error_message = f"{msg}:\n{stack_trace}"
         else:
             self.download_job.error_message = msg
@@ -296,8 +362,12 @@ class Command(BaseCommand):
     def finish_download(self) -> None:
         self.download_job.job_status_id = JOB_STATUS_DICT["finished"]
         self.download_job.save()
-        logger.info(f"Finished processing DownloadJob {self.download_job.download_job_id}")
-        logger.info(f"Download generation took {(time.time() - self.start_time):3f} seconds")
+        logger.info(
+            f"Finished processing DownloadJob {self.download_job.download_job_id}"
+        )
+        logger.info(
+            f"Download generation took {(time.time() - self.start_time):3f} seconds"
+        )
 
     def cleanup(self, path_list: list[Union[Path, str]]) -> None:
         for path in path_list:
