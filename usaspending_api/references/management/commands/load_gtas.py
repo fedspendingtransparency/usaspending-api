@@ -94,23 +94,48 @@ class Command(mixins.ETLMixin, BaseCommand):
                     ELSE sf.availability_type_code END,
                     '-', sf.main_account_code, '-', sf.sub_account_code)
                 AS tas_rendering_label,
-                budget_object_class,
-                program_activity_reporting_key AS program_activity_reporting_key_id,
-                prior_year_adjustment,
-                by_direct_reimbursable_fun,
-                bea_category
+                STRING_AGG(COALESCE(budget_object_class, 'null'), ',' ORDER BY
+                    budget_object_class,
+                    program_activity_reporting_key,
+                    prior_year_adjustment,
+                    by_direct_reimbursable_fun,
+                    bea_category
+                ) AS budget_object_class,
+                STRING_AGG(COALESCE(program_activity_reporting_key, 'null'), ',' ORDER BY
+                    budget_object_class,
+                    program_activity_reporting_key,
+                    prior_year_adjustment,
+                    by_direct_reimbursable_fun,
+                    bea_category
+                ) AS program_activity_reporting_key_id,
+                STRING_AGG(COALESCE(prior_year_adjustment, 'null'), ',' ORDER BY
+                    budget_object_class,
+                    program_activity_reporting_key,
+                    prior_year_adjustment,
+                    by_direct_reimbursable_fun,
+                    bea_category
+                ) AS prior_year_adjustment,
+                STRING_AGG(COALESCE(by_direct_reimbursable_fun, 'null'), ',' ORDER BY
+                    budget_object_class,
+                    program_activity_reporting_key,
+                    prior_year_adjustment,
+                    by_direct_reimbursable_fun,
+                    bea_category
+                ) AS by_direct_reimbursable_fun,
+                STRING_AGG(COALESCE(bea_category, 'null'), ',' ORDER BY
+                    budget_object_class,
+                    program_activity_reporting_key,
+                    prior_year_adjustment,
+                    by_direct_reimbursable_fun,
+                    bea_category
+                ) AS bea_category
             FROM
                 sf_133 sf
             GROUP BY
                 fiscal_year,
                 fiscal_period,
                 disaster_emergency_fund_code,
-                tas_rendering_label,
-                budget_object_class,
-                program_activity_reporting_key_id,
-                prior_year_adjustment,
-                by_direct_reimbursable_fun,
-                bea_category
+                tas_rendering_label
             ORDER BY
                 fiscal_year,
                 fiscal_period;
