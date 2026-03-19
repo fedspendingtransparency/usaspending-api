@@ -18,6 +18,13 @@ class Command(BaseCommand):
     @staticmethod
     def add_arguments(parser):
         parser.add_argument(
+            "--alt-last-load-date",
+            type=str,
+            required=False,
+            default=None,
+            help="Alternative last load datetime in %Y-%m-%d %H:%M:%S (e.g. 2026-03-19 14:00:00) format.",
+        )
+        parser.add_argument(
             "--spark-s3-bucket",
             type=str,
             required=False,
@@ -28,5 +35,9 @@ class Command(BaseCommand):
     @staticmethod
     def handle(*args, **options):
         with prepare_spark() as spark:
-            loader = FABSDeltaTransactionLoader(spark=spark, spark_s3_bucket=options["spark_s3_bucket"])
+            loader = FABSDeltaTransactionLoader(
+                spark=spark,
+                alt_last_load_date=options["alt_last_load_date"],
+                spark_s3_bucket=options["spark_s3_bucket"],
+            )
             loader.load_transactions()

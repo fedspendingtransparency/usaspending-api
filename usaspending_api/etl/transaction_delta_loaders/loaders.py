@@ -46,9 +46,18 @@ class AbstractDeltaTransactionLoader(ABC):
     col_info = list[TransactionColumn]
     last_etl_load_date: datetime
 
-    def __init__(self, spark, etl_level: Literal["fabs", "fpds", "normalized"], spark_s3_bucket: str) -> None:
+    def __init__(
+        self,
+        spark,
+        etl_level: Literal["fabs", "fpds", "normalized"],
+        alt_last_load_date: str | None,
+        spark_s3_bucket: str,
+    ) -> None:
         self.etl_level = etl_level
-        self.last_etl_load_date = get_last_load_date(f"transaction_{self.etl_level}")
+        if alt_last_load_date is not None:
+            self.last_etl_load_date = datetime.strptime(alt_last_load_date, "%Y-%m-%d %H:%M:%S")
+        else:
+            self.last_etl_load_date = get_last_load_date(f"transaction_{self.etl_level}")
         self.spark_s3_bucket: spark_s3_bucket
         self.spark = spark
 
@@ -100,37 +109,37 @@ class AbstractDeltaTransactionLoader(ABC):
         ]
 
     def to_insert_df(self) -> DataFrame:
-        window_spec = Window.partitionBy(self.id_col)
-        return (
+        df = (
             self.spark.read.format("delta")
             .option("readChangeFeed", "true")
-            .option("startingTimestamp", self.last_etl_load_date.strftime("%Y-%m-%d %H:%M:%S"))
+            .option("startingVersion", 0)
             .table(self.source_table)
-            .withColumn("latest_version", sf.max("_commit_version").over(window_spec))
             .filter(
                 sf.col("_change_type").isin(["insert", "update_postimage"])
-                & (sf.col("_commit_version") == sf.col("latest_version"))
+                & (sf.col("_commit_timestamp") > self.last_etl_load_date)
             )
             .select(self.select_columns)
         )
+        logger.info(f"Inserting {df.count()} rows.")
+        return df
 
     def to_delete_df(self, id_col) -> DataFrame:
         version_window = Window.partitionBy(id_col, "hash", "_commit_version")
-        transaction_window = Window.partitionBy(id_col, "hash")
-        return (
+        df = (
             self.spark.read.format("delta")
             .option("readChangeFeed", "true")
-            .option("startingTimestamp", self.last_etl_load_date.strftime("%Y-%m-%d %H:%M:%S"))
+            .option("startingVersion", 0)
             .table(self.source_table)
-            .withColumn("latest_version", sf.max(sf.col("_commit_version")).over(transaction_window))
             .withColumn("has_insert", sf.max(sf.col("_change_type") == "insert").over(version_window))
             .filter(
                 (sf.col("_change_type") == sf.lit("delete"))
-                & (sf.col("_commit_version") == sf.col("latest_version"))
+                & (sf.col("_commit_timestamp") > self.last_etl_load_date)
                 & ~sf.col("has_insert")
             )
             .select(id_col, "hash", "action_year", "action_month")
         )
+        logger.info(f"Deleting {df.count()} rows.")
+        return df
 
     def transaction_merge(self) -> None:
         source = self.to_insert_df().alias("s")
@@ -162,8 +171,10 @@ class AbstractDeltaTransactionLoader(ABC):
 
 class FPDSDeltaTransactionLoader(AbstractDeltaTransactionLoader):
 
-    def __init__(self, spark: SparkSession, spark_s3_bucket: str) -> None:
-        super().__init__(spark=spark, etl_level="fpds", spark_s3_bucket=spark_s3_bucket)
+    def __init__(self, spark: SparkSession, alt_last_load_date: str | None, spark_s3_bucket: str) -> None:
+        super().__init__(
+            spark=spark, etl_level="fpds", alt_last_load_date=alt_last_load_date, spark_s3_bucket=spark_s3_bucket
+        )
         self.id_col = "detached_award_proc_unique"
         self.source_table = "raw.detached_award_procurement"
         self.col_info = TRANSACTION_FPDS_COLUMN_INFO
@@ -171,8 +182,10 @@ class FPDSDeltaTransactionLoader(AbstractDeltaTransactionLoader):
 
 class FABSDeltaTransactionLoader(AbstractDeltaTransactionLoader):
 
-    def __init__(self, spark: SparkSession, spark_s3_bucket: str) -> None:
-        super().__init__(spark=spark, etl_level="fabs", spark_s3_bucket=spark_s3_bucket)
+    def __init__(self, spark: SparkSession, alt_last_load_date: str | None, spark_s3_bucket: str) -> None:
+        super().__init__(
+            spark=spark, etl_level="fabs", alt_last_load_date=alt_last_load_date, spark_s3_bucket=spark_s3_bucket
+        )
         self.id_col = "afa_generated_unique"
         self.source_table = "raw.published_fabs"
         self.col_info = TRANSACTION_FABS_COLUMN_INFO
@@ -201,16 +214,14 @@ class NormalizedMixin:
             .alias("awarding_subtier_agency")
         )
         awarding_agency = self.spark.table("global_temp.agency").alias("awarding_agency")
-        window_spec = Window.partitionBy(self.source_id_col)
         df = (
             self.spark.read.format("delta")
             .option("readChangeFeed", "true")
-            .option("startingTimestamp", self.last_etl_load_date.strftime("%Y-%m-%d %H:%M:%S"))
+            .option("startingVersion", 0)
             .table(self.source_table)
-            .withColumn("latest_version", sf.max("_commit_version").over(window_spec))
             .filter(
                 sf.col("_change_type").isin(["insert", "update_postimage"])
-                & (sf.col("_commit_version") == sf.col("latest_version"))
+                & (sf.col("_commit_timestamp") > self.last_etl_load_date)
             )
         )
         result = (
@@ -365,8 +376,10 @@ class NormalizedMixin:
 
 class FABSNormalizedDeltaTransactionLoader(NormalizedMixin, AbstractDeltaTransactionLoader):
 
-    def __init__(self, spark: SparkSession, spark_s3_bucket: str) -> None:
-        super().__init__(spark=spark, etl_level="normalized", spark_s3_bucket=spark_s3_bucket)
+    def __init__(self, spark: SparkSession, alt_last_load_date: str | None, spark_s3_bucket: str) -> None:
+        super().__init__(
+            spark=spark, etl_level="normalized", alt_last_load_date=alt_last_load_date, spark_s3_bucket=spark_s3_bucket
+        )
         self.id_col = "transaction_unique_id"
         self.source_id_col = "afa_generated_unique"
         self.source_table = "raw.published_fabs"
@@ -406,8 +419,10 @@ class FABSNormalizedDeltaTransactionLoader(NormalizedMixin, AbstractDeltaTransac
 
 class FPDSNormalizedDeltaTransactionLoader(NormalizedMixin, AbstractDeltaTransactionLoader):
 
-    def __init__(self, spark, spark_s3_bucket: str) -> None:
-        super().__init__(spark=spark, etl_level="normalized", spark_s3_bucket=spark_s3_bucket)
+    def __init__(self, spark, alt_last_load_date: str | None, spark_s3_bucket: str) -> None:
+        super().__init__(
+            spark=spark, etl_level="normalized", alt_last_load_date=alt_last_load_date, spark_s3_bucket=spark_s3_bucket
+        )
         self.id_col = "transaction_unique_id"
         self.source_id_col = "detached_award_proc_unique"
         self.source_table = "raw.detached_award_procurement"

@@ -86,6 +86,8 @@ TABLE_SPEC = {
     ),
     "detached_award_procurement": TableSpec(
         model=SourceProcurementTransaction,
+        save_mode="merge",
+        merge_condition="t.detached_award_procurement_id == s.detached_award_procurement_id and t.hash == s.hash",
         source_table="source_procurement_transaction",
         source_database="raw",
         destination_database="raw",
@@ -126,6 +128,8 @@ TABLE_SPEC = {
     "published_fabs": TableSpec(
         model=SourceAssistanceTransaction,
         source_table="source_assistance_transaction",
+        save_mode="merge",
+        merge_condition="t.published_fabs_id == s.published_fabs_id and t.hash == s.hash",
         source_database="raw",
         destination_database="raw",
         partition_column="published_fabs_id",
