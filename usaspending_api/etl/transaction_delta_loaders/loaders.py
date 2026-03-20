@@ -120,7 +120,6 @@ class AbstractDeltaTransactionLoader(ABC):
             )
             .select(self.select_columns)
         )
-        logger.info(f"Inserting {df.count()} rows.")
         return df
 
     def to_delete_df(self, id_col) -> DataFrame:
@@ -138,12 +137,10 @@ class AbstractDeltaTransactionLoader(ABC):
             )
             .select(id_col, "hash", "action_year", "action_month")
         )
-        logger.info(f"Deleting {df.count()} rows.")
         return df
 
     def transaction_merge(self) -> None:
         source = self.to_insert_df().alias("s")
-        logger.info(f"number of rows: {source.count()}")
         target = DeltaTable.forName(self.spark, f"int.transaction_{self.etl_level}").alias("t")
         id_condition = f"t.{self.id_col} == s.{self.id_col}"
         hash_condition = "t.hash == s.hash"
