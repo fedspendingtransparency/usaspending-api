@@ -51,12 +51,12 @@
       },
       "update_date": {
         "type": "date",
-        "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis",
+        "format": "date_hour_minute_second_fraction||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis",
         "index": false
       },
       "etl_update_date": {
         "type": "date",
-        "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis",
+        "format": "date_hour_minute_second_fraction||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis",
         "index": false
       },
       "modification_number": {
