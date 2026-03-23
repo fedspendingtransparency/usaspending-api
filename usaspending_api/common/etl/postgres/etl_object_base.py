@@ -1,6 +1,6 @@
 from abc import abstractmethod, ABCMeta
 from django.utils.functional import cached_property
-from psycopg2.sql import Composed
+from psycopg.sql import Composed
 from typing import List
 
 

@@ -1,7 +1,7 @@
 # TODO: Remove this script and use update_delta_award_with_subaward_counts when rpt.award_search includes the columns
 
 import logging
-import psycopg2
+import psycopg
 
 from django.core.management.base import BaseCommand
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
@@ -45,7 +45,7 @@ class Command(BaseCommand):
                     OR COALESCE(st.subaward_count, 0) IS DISTINCT FROM a1.subaward_count
                 );
         """
-        with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
+        with psycopg.connect(dsn=get_database_dsn_string()) as connection:
             with connection.cursor() as cursor:
                 logger.info("Updating rpt.awards based on rpt.subaward_search.")
                 cursor.execute(update_award_query)

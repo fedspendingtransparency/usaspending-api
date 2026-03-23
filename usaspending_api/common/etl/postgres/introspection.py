@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from psycopg2.sql import SQL
+from psycopg.sql import SQL
 from typing import List, Optional
 from usaspending_api.common.etl.postgres.primatives import (
     ColumnDefinition,

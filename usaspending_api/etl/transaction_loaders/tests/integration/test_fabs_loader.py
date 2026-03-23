@@ -12,7 +12,7 @@ from usaspending_api.transactions.models import SourceAssistanceTransaction
 
 
 def _assemble_source_assistance_records(id_list):
-    """Return a list of dictionaries, in the same structure as `fetchall` when using psycopg2.extras.DictCursor"""
+    """Return a list of dictionaries, in the same structure as `fetchall` when using psycopg"""
     for trx_id in id_list:
         dummy_row = {
             "published_fabs_id": trx_id,

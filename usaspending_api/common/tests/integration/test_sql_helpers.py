@@ -6,7 +6,7 @@ from django.contrib.auth.models import User  # A table that should always exist.
 from django.test import TestCase
 
 from model_bakery import baker
-from psycopg2.sql import SQL
+from psycopg.sql import SQL
 
 from usaspending_api.common.helpers.sql_helpers import (
     build_composable_order_by,

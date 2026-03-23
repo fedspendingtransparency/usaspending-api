@@ -29,7 +29,7 @@ Purpose:
 """
 
 import math
-import psycopg2
+import psycopg
 import time
 
 from datetime import timedelta
@@ -186,7 +186,7 @@ class Timer:
 
 
 def execute_sql(sql):
-    with psycopg2.connect(dsn=CONNECTION_STRING) as connection:
+    with psycopg.connect(dsn=CONNECTION_STRING) as connection:
         connection.autocommit = True
         with connection.cursor() as cursor:
             cursor.execute(sql)
@@ -202,7 +202,7 @@ def log_execute_sql(sql):
 
 
 def get_min_max_ids():
-    with psycopg2.connect(dsn=CONNECTION_STRING) as connection:
+    with psycopg.connect(dsn=CONNECTION_STRING) as connection:
         with connection.cursor() as cursor:
             cursor.execute(GET_MIN_MAX_SQL)
             return cursor.fetchall()[0]

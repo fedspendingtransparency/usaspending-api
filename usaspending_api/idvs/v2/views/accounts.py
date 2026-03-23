@@ -1,6 +1,6 @@
 from collections import OrderedDict
 
-from psycopg2.sql import Identifier, Literal, SQL
+from psycopg.sql import Identifier, Literal, SQL
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView

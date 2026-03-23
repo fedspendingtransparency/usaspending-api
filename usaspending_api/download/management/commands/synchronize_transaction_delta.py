@@ -16,7 +16,7 @@ with a created_at date <= the max(created_at) from the snapshot database.
 
 import logging
 import os
-import psycopg2
+import psycopg
 
 from django.core.management.base import BaseCommand
 from usaspending_api.awards.models import TransactionDelta
@@ -31,7 +31,7 @@ class Command(BaseCommand):
 
     @staticmethod
     def get_max_created_at(snapshot_db):
-        with psycopg2.connect(dsn=snapshot_db) as connection:
+        with psycopg.connect(dsn=snapshot_db) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("select max(created_at) from transaction_delta")
                 return cursor.fetchall()[0][0]

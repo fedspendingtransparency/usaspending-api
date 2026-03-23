@@ -1,5 +1,5 @@
 import logging
-import psycopg2
+import psycopg
 
 from datetime import datetime, timedelta
 from django.core.management.base import BaseCommand
@@ -125,7 +125,7 @@ class Command(BaseCommand):
         logger.info(f"Archived {archived_count} records from the {qualified_source_table}")
 
         # Delete data from
-        with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
+        with psycopg.connect(dsn=get_database_dsn_string()) as connection:
             with connection.cursor() as cursor:
                 cursor.execute(
                     f"DELETE FROM {qualified_source_table} WHERE {archive_date_field} < '{archive_date_string}'"

@@ -9,7 +9,7 @@ from django.conf import settings
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search
 from elasticsearch_dsl.mapping import Mapping
-from psycopg2 import sql as psycopg2_sql
+from psycopg import sql as psycopg_sql
 
 
 from usaspending_api.broker.helpers.last_load_date import (
@@ -624,7 +624,7 @@ def _check_awards_for_deletes(
         results = [row.asDict() for row in spark.sql(sql, from_sql=df).collect()]
     else:
         sql = pre_format_sql.format(awards_table=awards_table).format(from_sql="(values ({ids}))")
-        sql = psycopg2_sql.SQL(sql).format(ids=psycopg2_sql.SQL("), (").join(map(psycopg2_sql.Literal, id_list)))
+        sql = psycopg_sql.SQL(sql).format(ids=psycopg_sql.SQL("), (").join(map(psycopg_sql.Literal, id_list)))
         results = execute_sql_statement(sql, results=True)
 
     award_ids = [list(record.values())[0] for record in results]

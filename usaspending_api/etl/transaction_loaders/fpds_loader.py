@@ -1,7 +1,7 @@
 import logging
-from psycopg2.extras import DictCursor
-from psycopg2 import Error
+
 from django.db import connection
+from psycopg import Error
 
 from usaspending_api.etl.transaction_loaders.field_mappings_fpds import (
     transaction_fpds_nonboolean_columns,
@@ -104,7 +104,7 @@ def load_fpds_transactions(chunk):
 def _extract_broker_objects(id_list):
 
     connection.ensure_connection()
-    with connection.connection.cursor(cursor_factory=DictCursor) as cursor:
+    with connection.connection.cursor() as cursor:
         sql = "SELECT {} from source_procurement_transaction where detached_award_procurement_id in %s".format(
             ",".join(all_broker_columns())
         )
@@ -157,7 +157,7 @@ def _load_transactions(load_objects):
     """returns ids for each award touched"""
     ids_of_awards_created_or_updated = set()
     connection.ensure_connection()
-    with connection.connection.cursor(cursor_factory=DictCursor) as cursor:
+    with connection.connection.cursor() as cursor:
 
         # Handle transaction-to-award relationship for each transaction to be loaded
         for load_object in load_objects:

@@ -21,7 +21,7 @@ import asyncio
 import asyncpg
 import logging
 import math
-import psycopg2
+import psycopg
 import re
 import signal
 import sys
@@ -168,7 +168,7 @@ def run_update_query(fabs_awards, fpds_awards):
 def main():
     global TOTAL_UPDATES
     global ITERATION_ESTIMATED_SECONDS
-    with psycopg2.connect(dsn=CONNECTION_STRING) as connection:
+    with psycopg.connect(dsn=CONNECTION_STRING) as connection:
         connection.autocommit = True
         connection.readonly = True
 
@@ -252,7 +252,7 @@ def rolling_average(current_avg: float, new_value: float, total_count: int) -> f
 
 
 def setup():
-    with psycopg2.connect(dsn=CONNECTION_STRING) as connection:
+    with psycopg.connect(dsn=CONNECTION_STRING) as connection:
         connection.autocommit = True
         with connection.cursor() as cursor:
             logging.info("### Disabling autovacuum ###")
@@ -265,7 +265,7 @@ def teardown(successful_run=False):
     if CLEANUP:
         return
     logging.info("Cleaning up table and restoring autovacuum")
-    with psycopg2.connect(dsn=CONNECTION_STRING) as connection:
+    with psycopg.connect(dsn=CONNECTION_STRING) as connection:
         connection.autocommit = True
         with connection.cursor() as cursor:
             with Timer("teardown", pipe_output=logging.info):

@@ -23,7 +23,7 @@ from os import environ
 from pathlib import Path
 from typing import Iterator, Tuple
 
-import psycopg2
+import psycopg
 
 # Import our USAspending Timer component.  This will not work if we ever add
 # any Django specific stuff to the timing_helpers.py file.
@@ -46,7 +46,7 @@ def id_ranges(min_id: int, max_id: int) -> Iterator[Tuple[int, int]]:
         yield n, min(n + chunk_size, max_id)
 
 
-def get_min_max_ids(conn: psycopg2.extensions.connection, table_name: str, primary_key: str) -> Tuple[int, int]:
+def get_min_max_ids(conn: psycopg.Connection, table_name: str, primary_key: str) -> Tuple[int, int]:
     with Timer(f'collecting MIN and MAX values for "{table_name}"."{primary_key}"') as t:
         with conn.cursor() as cursor:
             sql = f"""
@@ -67,9 +67,7 @@ def get_min_max_ids(conn: psycopg2.extensions.connection, table_name: str, prima
     return min_id, max_id
 
 
-def run_update(
-    conn: psycopg2.extensions.connection, table_name: str, primary_key: str, min_id: int, max_id: int
-) -> None:
+def run_update(conn: psycopg.Connection, table_name: str, primary_key: str, min_id: int, max_id: int) -> None:
     total_row_count = 0
     estimated_id_count = max_id - min_id + 1
     with Timer(f'updating PARK values for "{table_name}"."{primary_key}"') as t:
@@ -102,7 +100,7 @@ if __name__ == "__main__":
     # In psycopg2 v2.9 it was changed such that connections created as a context manager will utilize
     # a transaction regardless of the "autocommit" setting. To avoid transactions we instead instantiate
     # the connection and then make sure to close it.
-    connection = psycopg2.connect(dsn=environ["DATABASE_URL"])
+    connection = psycopg.connect(dsn=environ["DATABASE_URL"])
     connection.autocommit = True
 
     try:

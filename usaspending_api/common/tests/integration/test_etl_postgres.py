@@ -2,7 +2,7 @@ import pytest
 
 from collections import OrderedDict
 from pathlib import Path
-from psycopg2.sql import Identifier, Literal, SQL
+from psycopg.sql import Identifier, Literal, SQL
 from usaspending_api.common.etl.postgres import (
     ETLDBLinkTable,
     ETLTable,

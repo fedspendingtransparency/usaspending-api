@@ -19,7 +19,7 @@ Purpose:
 
 import logging
 import math
-import psycopg2
+import psycopg
 import time
 
 from datetime import datetime, timezone
@@ -247,8 +247,8 @@ if __name__ == "__main__":
 
     with Timer() as overall_timer:
         with (
-            psycopg2.connect(dsn=SPENDING_CONNECTION_STRING) as spending_connection,
-            psycopg2.connect(dsn=BROKER_CONNECTION_STRING) as broker_connection,
+            psycopg.connect(dsn=SPENDING_CONNECTION_STRING) as spending_connection,
+            psycopg.connect(dsn=BROKER_CONNECTION_STRING) as broker_connection,
         ):
             spending_connection.autocommit = True
 

@@ -4,7 +4,7 @@ of this module.
 """
 
 from collections import namedtuple
-from psycopg2.sql import Composable, Composed, Identifier, Literal, SQL
+from psycopg.sql import Composable, Composed, Identifier, Literal, SQL
 from typing import List, MutableMapping, Optional, Union
 from usaspending_api.common.helpers.sql_helpers import convert_composable_query_to_string
 

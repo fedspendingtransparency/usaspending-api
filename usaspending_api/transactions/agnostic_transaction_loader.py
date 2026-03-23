@@ -1,5 +1,5 @@
 import logging
-import psycopg2
+import psycopg
 
 from datetime import datetime, timezone
 from django.conf import settings
@@ -153,7 +153,7 @@ class AgnosticTransactionLoader:
     def generate_ids_from_broker(self):
         sql = self.combine_sql()
 
-        with psycopg2.connect(dsn=get_broker_dsn_string()) as connection:
+        with psycopg.connect(dsn=get_broker_dsn_string()) as connection:
             with connection.cursor("usaspending_data_transfer") as cursor:
                 cursor.execute(sql.strip("\n"))
                 while True:

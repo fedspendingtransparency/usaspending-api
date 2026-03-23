@@ -3,7 +3,7 @@ import os
 from collections import namedtuple, OrderedDict
 from django.conf import settings
 from django.db import connection, connections, router, DEFAULT_DB_ALIAS
-from psycopg2.sql import Composable, Identifier, SQL
+from psycopg.sql import Composable, Identifier, SQL
 from usaspending_api.awards.models import Award
 from usaspending_api.common.exceptions import InvalidParameterException
 from pathlib import Path
@@ -152,12 +152,12 @@ def build_composable_order_by(sort_columns, sort_orders=None, sort_nulls=None):
 
 def convert_composable_query_to_string(sql, model=Award, cursor=None):
     """
-    A composable query is one built using psycopg2 Identifier, Literal, and SQL
+    A composable query is one built using psycopg Identifier, Literal, and SQL
     helper objects.  While Django itself seems to have no problem understanding
     composable queries, the django-debug-toolbar chokes on them so we need to
     convert them to string queries before running them.
 
-    sql    - Can be either a sql string statement or a psycopg2 Composable
+    sql    - Can be either a sql string statement or a psycopg Composable
              object (Identifier, Literal, SQL, etc).
     model  - A Django model that represents a database table germane to your
              query.  If one is not supplied, Award will be used since it is
@@ -238,7 +238,7 @@ def execute_sql(sql, model=Award, fetcher=fetchall_fetcher, read_only=True):
     """
     Executes a sql query against a database.
 
-    sql         - Can be either a sql string statement or a psycopg2 Composable
+    sql         - Can be either a sql string statement or a psycopg Composable
                   object (Identifier, Literal, SQL, etc).
     model       - A Django model that represents a database table germane to your
                   query.  If one is not supplied, Award will be used since it is

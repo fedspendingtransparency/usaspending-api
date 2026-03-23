@@ -1,5 +1,5 @@
 from pathlib import Path
-from psycopg2.sql import Composed
+from psycopg.sql import Composed
 from typing import Any, Callable, Optional, Union
 from usaspending_api.common.etl.postgres import ETLObjectBase
 from usaspending_api.common.etl.postgres.operations import (

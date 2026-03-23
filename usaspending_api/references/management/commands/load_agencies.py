@@ -5,8 +5,7 @@ from distutils.util import strtobool
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from pathlib import Path
-from psycopg2.extras import execute_values
-from psycopg2.sql import SQL
+from psycopg.sql import SQL
 from usaspending_api.common.csv_helpers import read_csv_file_as_list_of_dictionaries
 from usaspending_api.common.etl.postgres import ETLQueryFile, ETLTable
 from usaspending_api.common.etl.postgres import mixins
@@ -155,7 +154,7 @@ class Command(mixins.ETLMixin, BaseCommand):
     def _import_raw_agencies(self):
         sql = (Path(self.etl_dml_sql_directory) / "insert_into.sql").read_text().format(temp_table=TEMP_TABLE_NAME)
         with get_connection(read_only=False).cursor() as cursor:
-            execute_values(cursor.cursor, sql, self.agencies, page_size=len(self.agencies))
+            cursor.copy(cursor.cursor, sql, self.agencies, page_size=len(self.agencies))
             return cursor.rowcount
 
     def _perform_load(self):

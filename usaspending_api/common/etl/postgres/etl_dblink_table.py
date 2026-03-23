@@ -1,4 +1,4 @@
-from psycopg2.sql import Composed, Identifier, SQL, Literal
+from psycopg.sql import Composed, Identifier, SQL, Literal
 from typing import List
 from usaspending_api.common.etl.postgres import primatives
 from usaspending_api.common.etl.postgres.etl_object_base import ETLObjectBase

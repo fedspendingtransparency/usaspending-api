@@ -15,7 +15,7 @@ Purpose:
 """
 
 import math
-import psycopg2
+import psycopg
 import time
 
 from os import environ
@@ -80,7 +80,7 @@ class Timer:
 
 
 with Timer() as overall_timer:
-    with psycopg2.connect(dsn=CONNECTION_STRING) as connection:
+    with psycopg.connect(dsn=CONNECTION_STRING) as connection:
         connection.autocommit = True
         with connection.cursor() as cursor:
             with Timer() as t:

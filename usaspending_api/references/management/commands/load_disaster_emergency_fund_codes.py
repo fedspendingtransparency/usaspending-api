@@ -6,8 +6,7 @@ from typing import Union
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from psycopg2.extras import execute_values
-from psycopg2.sql import SQL
+from psycopg.sql import SQL
 
 from usaspending_api.common.csv_helpers import read_csv_file_as_list_of_dictionaries
 from usaspending_api.common.etl.postgres import ETLTable, ETLTemporaryTable, mixins
@@ -151,8 +150,7 @@ class Command(mixins.ETLMixin, BaseCommand):
 
     def _import_def_codes(self):
         with get_connection(read_only=False).cursor() as cursor:
-            execute_values(
-                cursor.cursor,
+            cursor.copy(
                 """
                     insert into temp_load_disaster_emergency_fund_codes (
                         row_number,
@@ -165,7 +163,6 @@ class Command(mixins.ETLMixin, BaseCommand):
                     ) values %s
                 """,
                 self.def_codes,
-                page_size=len(self.def_codes),
             )
             return cursor.rowcount
 

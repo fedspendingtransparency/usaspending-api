@@ -16,7 +16,7 @@ As it stands, even if new imports are added to the modules it already imports, i
 import boto3
 import gzip
 import logging
-import psycopg2
+import psycopg
 import tempfile
 import time
 
@@ -55,7 +55,7 @@ def _get_boto3_s3_client() -> BaseClient:
 
 def _download_and_copy(
     configured_logger: logging.Logger,
-    cursor: psycopg2._psycopg.cursor,
+    cursor: psycopg.Connection.cursor,
     s3_client: BaseClient,
     s3_bucket_name: str,
     s3_obj_key: str,
@@ -116,7 +116,7 @@ def copy_csv_from_s3_to_pg(
     """
     ensure_logging(logging_config_dict=LOGGING, formatter_class=AbbrevNamespaceUTCFormatter, logger_to_use=logger)
     try:
-        with psycopg2.connect(dsn=db_dsn) as connection:
+        with psycopg.connect(dsn=db_dsn) as connection:
             connection.autocommit = True
             with connection.cursor() as cursor:
                 if work_mem_override:
@@ -149,7 +149,7 @@ def copy_csvs_from_s3_to_pg(
     gzipped: bool = True,
     work_mem_override: int = None,
 ):
-    """An optimized form of ``copy_csv_from_s3_to_pg`` that can save on runtime by instantiating the psycopg2 DB
+    """An optimized form of ``copy_csv_from_s3_to_pg`` that can save on runtime by instantiating the psycopg DB
     connection and s3_client only once per partition, where a partition could represent processing several files
     """
     ensure_logging(logging_config_dict=LOGGING, formatter_class=AbbrevNamespaceUTCFormatter, logger_to_use=logger)
@@ -159,7 +159,7 @@ def copy_csvs_from_s3_to_pg(
     partition_prefix = f"Partition#{batch_num}: "
     logger.info(f"{partition_prefix}Starting write of a batch of {batch_size} on partition {batch_num}")
     try:
-        with psycopg2.connect(dsn=db_dsn) as connection:
+        with psycopg.connect(dsn=db_dsn) as connection:
             connection.autocommit = True
             with connection.cursor() as cursor:
                 if work_mem_override:

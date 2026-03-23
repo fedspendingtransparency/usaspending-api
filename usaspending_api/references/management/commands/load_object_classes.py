@@ -4,7 +4,6 @@ import re
 from collections import namedtuple
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from psycopg2.extras import execute_values
 from psycopg2.sql import SQL
 from usaspending_api.common.csv_helpers import read_csv_file_as_list_of_dictionaries
 from usaspending_api.common.etl.postgres import ETLTable, ETLTemporaryTable
@@ -192,8 +191,7 @@ class Command(mixins.ETLMixin, BaseCommand):
     def _import_object_classes(self):
 
         with get_connection(read_only=False).cursor() as cursor:
-            execute_values(
-                cursor.cursor,
+            cursor.copy(
                 """
                     insert into temp_load_object_classes (
                         row_number,
@@ -206,7 +204,6 @@ class Command(mixins.ETLMixin, BaseCommand):
                     ) values %s
                 """,
                 self.full_object_classes,
-                page_size=len(self.full_object_classes),
             )
             return cursor.rowcount
 

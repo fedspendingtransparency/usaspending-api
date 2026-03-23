@@ -1,5 +1,5 @@
 import logging
-import psycopg2
+import psycopg
 
 from datetime import timedelta
 from django.db.models import Q
@@ -112,7 +112,7 @@ def update_heartbeat(submission_id: int, processor_id: str) -> int:
         set     heartbeat = %s::timestamptz
         where   submission_id = %s and processor_id = %s and state = %s
     """
-    with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
+    with psycopg.connect(dsn=get_database_dsn_string()) as connection:
         with connection.cursor() as cursor:
             cursor.execute(sql, [now(), submission_id, processor_id, DABSLoaderQueue.IN_PROGRESS])
             return cursor.rowcount

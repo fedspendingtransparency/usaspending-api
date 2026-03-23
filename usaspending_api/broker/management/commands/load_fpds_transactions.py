@@ -1,5 +1,5 @@
 import logging
-import psycopg2
+import psycopg
 import re
 
 from datetime import datetime, timezone
@@ -29,11 +29,10 @@ class Command(BaseCommand):
 
     @staticmethod
     def get_cursor_for_date_query(connection, date, count=False):
+        db_cursor = connection.cursor()
         if count:
-            db_cursor = connection.cursor()
             db_query = ALL_FPDS_QUERY.format("COUNT(*)")
         else:
-            db_cursor = connection.cursor("fpds_load", cursor_factory=psycopg2.extras.DictCursor)
             db_query = ALL_FPDS_QUERY.format("detached_award_procurement_id")
 
         if date:
@@ -54,7 +53,7 @@ class Command(BaseCommand):
             stale_awards = delete_stale_fpds(detached_award_procurement_ids)
             self.modified_award_ids.extend(stale_awards)
 
-        with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
+        with psycopg.connect(dsn=get_database_dsn_string()) as connection:
             logger.info("Fetching records to update")
             total_records = self.get_cursor_for_date_query(connection, date, True).fetchall()[0][0]
             records_processed = 0

@@ -1,6 +1,6 @@
 import asyncio
 import logging
-import psycopg2
+import psycopg
 import subprocess
 
 from django.core.management import call_command
@@ -173,7 +173,7 @@ def create_dependencies():
 
 
 def run_sql(sql, name):
-    with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
+    with psycopg.connect(dsn=get_database_dsn_string()) as connection:
         with connection.cursor() as cursor:
             with Timer(name):
                 cursor.execute(sql)

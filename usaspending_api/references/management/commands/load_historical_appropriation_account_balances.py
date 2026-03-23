@@ -29,7 +29,7 @@ Note that this loader ALWAYS performs a full reload.
 
 import logging
 import os
-import psycopg2
+import psycopg
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
@@ -108,7 +108,7 @@ class Command(BaseCommand):
         source_location = options["source_location"]
         logger.info(f"SOURCE CSV LOCATION: {source_location}")
 
-        with psycopg2.connect(get_database_dsn_string()) as connection:
+        with psycopg.connect(get_database_dsn_string()) as connection:
             with connection.cursor() as cursor:
                 self.connection = connection
                 self.cursor = cursor

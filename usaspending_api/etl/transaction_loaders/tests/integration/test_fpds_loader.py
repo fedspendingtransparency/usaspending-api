@@ -30,7 +30,7 @@ def _assemble_dummy_source_data():
 
 
 def _assemble_source_procurement_records(id_list):
-    """Return a list of dictionaries, in the same structure as `fetchall` when using psycopg2.extras.DictCursor"""
+    """Return a list of dictionaries, in the same structure as `fetchall` when using psycopg"""
     for trx_id in id_list:
         dummy_row = _assemble_dummy_source_data()
         dummy_row["detached_award_procurement_id"] = trx_id
