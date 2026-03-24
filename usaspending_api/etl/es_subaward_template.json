@@ -618,7 +618,7 @@
       },
       "last_modified_date": {
         "type": "date",
-        "format": "date_hour_minute_second_fraction||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+        "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
       },
       "awarding_toptier_agency_name": {
         "type": "text",
