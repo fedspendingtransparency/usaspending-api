@@ -142,7 +142,7 @@ def execute_sql_statement(cmd: str | Composed, results: bool = False, verbose: b
     if verbose:
         print(cmd)
 
-    with psycopg.connect(dsn=get_database_dsn_string()) as connection:
+    with psycopg.connect(get_database_dsn_string()) as connection:
         connection.autocommit = True
         with connection.cursor() as cursor:
             cursor.execute(cmd)

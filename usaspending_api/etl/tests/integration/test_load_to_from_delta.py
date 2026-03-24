@@ -307,7 +307,7 @@ def verify_delta_table_loaded_from_delta(
     partition_col = TABLE_SPEC[delta_table_name]["partition_column"]
     if partition_col is not None:
         postgres_query = f"{postgres_query} ORDER BY {partition_col}"
-    with psycopg.connect(dsn=get_database_dsn_string()) as connection:
+    with psycopg.connect(get_database_dsn_string()) as connection:
         with connection.cursor() as cursor:
             cursor.execute(postgres_query)
             postgres_data = dictfetchall(cursor)

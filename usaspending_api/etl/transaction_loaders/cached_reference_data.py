@@ -1,4 +1,6 @@
 import psycopg
+from psycopg.rows import dict_row
+
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 
 
@@ -7,8 +9,8 @@ SUBTIER_AGENCY_LIST_CACHE = {}
 
 def _fetch_reference_data():
     global SUBTIER_AGENCY_LIST_CACHE
-    with psycopg.connect(dsn=get_database_dsn_string()) as connection:
-        with connection.cursor() as cursor:
+    with psycopg.connect(get_database_dsn_string()) as connection:
+        with connection.cursor(row_factory=dict_row) as cursor:
             sql = (
                 "SELECT * FROM subtier_agency "
                 "JOIN agency "

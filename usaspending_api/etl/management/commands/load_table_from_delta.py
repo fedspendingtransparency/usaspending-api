@@ -512,7 +512,7 @@ class Command(BaseCommand):
         logger.info(f"LOAD: Starting SQL bulk COPY of {file_count} CSV files to Postgres {temp_table} table")
 
         db_dsn = get_database_dsn_string()
-        with psycopg.connect(dsn=db_dsn) as connection:
+        with psycopg.connect(db_dsn) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("SHOW max_parallel_workers")
                 max_parallel_workers = int(cursor.fetchone()[0])

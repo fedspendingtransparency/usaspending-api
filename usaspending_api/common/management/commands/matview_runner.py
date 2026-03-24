@@ -173,7 +173,7 @@ def create_dependencies():
 
 
 def run_sql(sql, name):
-    with psycopg.connect(dsn=get_database_dsn_string()) as connection:
+    with psycopg.connect(get_database_dsn_string()) as connection:
         with connection.cursor() as cursor:
             with Timer(name):
                 cursor.execute(sql)

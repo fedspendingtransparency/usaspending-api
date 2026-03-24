@@ -45,7 +45,7 @@ class Command(BaseCommand):
                     OR COALESCE(st.subaward_count, 0) IS DISTINCT FROM a1.subaward_count
                 );
         """
-        with psycopg.connect(dsn=get_database_dsn_string()) as connection:
+        with psycopg.connect(get_database_dsn_string()) as connection:
             with connection.cursor() as cursor:
                 logger.info("Updating rpt.awards based on rpt.subaward_search.")
                 cursor.execute(update_award_query)

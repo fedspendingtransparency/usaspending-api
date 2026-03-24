@@ -890,7 +890,7 @@ def test_load_table_to_from_delta_for_subawards(
         FROM temp.subaward_search_temp
         ORDER BY broker_subaward_id
     """
-    with psycopg.connect(dsn=get_database_dsn_string()) as connection:
+    with psycopg.connect(get_database_dsn_string()) as connection:
         with connection.cursor() as cursor:
             cursor.execute(postgres_query)
             postgres_data = dictfetchall(cursor)

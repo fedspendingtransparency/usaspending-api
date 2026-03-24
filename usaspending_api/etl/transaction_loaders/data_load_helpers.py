@@ -37,7 +37,7 @@ def truncate_timestamp(val):
 
 
 def format_value_for_sql(val, cur):
-    return str(cur.mogrify("%s", (val,)), "utf-8")
+    return cur.mogrify("%s", (val,))
 
 
 def format_bulk_insert_list_column_sql(cursor, load_objects, type):

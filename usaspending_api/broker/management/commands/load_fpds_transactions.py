@@ -53,7 +53,7 @@ class Command(BaseCommand):
             stale_awards = delete_stale_fpds(detached_award_procurement_ids)
             self.modified_award_ids.extend(stale_awards)
 
-        with psycopg.connect(dsn=get_database_dsn_string()) as connection:
+        with psycopg.connect(get_database_dsn_string()) as connection:
             logger.info("Fetching records to update")
             total_records = self.get_cursor_for_date_query(connection, date, True).fetchall()[0][0]
             records_processed = 0

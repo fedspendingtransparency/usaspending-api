@@ -31,7 +31,7 @@ class Command(BaseCommand):
 
     @staticmethod
     def get_max_created_at(snapshot_db):
-        with psycopg.connect(dsn=snapshot_db) as connection:
+        with psycopg.connect(snapshot_db) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("select max(created_at) from transaction_delta")
                 return cursor.fetchall()[0][0]

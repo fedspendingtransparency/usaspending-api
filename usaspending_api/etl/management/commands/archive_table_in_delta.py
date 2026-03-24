@@ -125,7 +125,7 @@ class Command(BaseCommand):
         logger.info(f"Archived {archived_count} records from the {qualified_source_table}")
 
         # Delete data from
-        with psycopg.connect(dsn=get_database_dsn_string()) as connection:
+        with psycopg.connect(get_database_dsn_string()) as connection:
             with connection.cursor() as cursor:
                 cursor.execute(
                     f"DELETE FROM {qualified_source_table} WHERE {archive_date_field} < '{archive_date_string}'"

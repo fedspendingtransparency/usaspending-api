@@ -116,7 +116,7 @@ def copy_csv_from_s3_to_pg(
     """
     ensure_logging(logging_config_dict=LOGGING, formatter_class=AbbrevNamespaceUTCFormatter, logger_to_use=logger)
     try:
-        with psycopg.connect(dsn=db_dsn) as connection:
+        with psycopg.connect(db_dsn) as connection:
             connection.autocommit = True
             with connection.cursor() as cursor:
                 if work_mem_override:
@@ -159,7 +159,7 @@ def copy_csvs_from_s3_to_pg(
     partition_prefix = f"Partition#{batch_num}: "
     logger.info(f"{partition_prefix}Starting write of a batch of {batch_size} on partition {batch_num}")
     try:
-        with psycopg.connect(dsn=db_dsn) as connection:
+        with psycopg.connect(db_dsn) as connection:
             connection.autocommit = True
             with connection.cursor() as cursor:
                 if work_mem_override:

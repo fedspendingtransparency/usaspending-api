@@ -316,6 +316,9 @@ def delete_awards(
 
     Returns: Number of ES docs deleted in the index
     """
+    import ipdb
+
+    ipdb.set_trace()
     delete_window_start = get_last_load_date(
         "es_deletes", format_func=(lambda log_msg: format_log(log_msg, action="Delete"))
     )
