@@ -153,7 +153,7 @@ class AgnosticTransactionLoader:
     def generate_ids_from_broker(self):
         sql = self.combine_sql()
 
-        with psycopg.connect(dsn=get_broker_dsn_string()) as connection:
+        with psycopg.connect(get_broker_dsn_string()) as connection:
             with connection.cursor("usaspending_data_transfer") as cursor:
                 cursor.execute(sql.strip("\n"))
                 while True:
