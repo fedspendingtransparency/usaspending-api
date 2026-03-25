@@ -100,7 +100,7 @@ SELECT
 	s.prime_award_group,
 	s.prime_award_type,
 	s.latest_transaction_id,
-	TO_CHAR(s.last_modified_date, 'yyyy-MM-dd HH24:MI:SS') AS last_modified_date,
+	CAST(TO_CHAR(s.last_modified_date, 'yyyy-MM-dd HH24:MI:SS') AS TIMESTAMP) AS last_modified_date,
 	s.awarding_toptier_agency_name,
 	s.awarding_toptier_agency_abbreviation,
 	s.funding_toptier_agency_name,

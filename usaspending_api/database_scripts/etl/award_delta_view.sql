@@ -20,7 +20,7 @@ SELECT
   "award_amount",
   "total_subsidy_cost",
   "total_loan_value",
-  TO_CHAR(update_date, 'yyyy-MM-dd HH24:MI:SS') AS update_date,
+  CAST(TO_CHAR(update_date, 'yyyy-MM-dd HH24:MI:SS') AS TIMESTAMP) AS update_date,
 
   "recipient_name",
   "recipient_unique_id",
@@ -34,7 +34,7 @@ SELECT
 
   "action_date",
   "fiscal_year",
-  TO_CHAR(last_modified_date, 'yyyy-MM-dd HH24:MI:SS') AS last_modified_date,
+  CAST(TO_CHAR(last_modified_date, 'yyyy-MM-dd HH24:MI:SS') AS TIMESTAMP) AS last_modified_date,
   "period_of_performance_start_date",
   "period_of_performance_current_end_date",
   "date_signed",
