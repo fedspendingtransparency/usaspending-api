@@ -80,7 +80,7 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
         # Replacements to supports converting timestamp to a formatted string in both Postgres and Spark
         datetime_replacements = {
             "TO_CHAR": "DATE_FORMAT",
-            "yyyy-MM-dd HH24:mm:ss": "yyyy-MM-dd HH:mm:ss",  # different formats to support 24-hour time
+            "yyyy-MM-dd HH24:MI:SS": "yyyy-MM-dd HH:mm:ss",  # different formats to support 24-hour time
         }
 
         identifier_replacements = {}
