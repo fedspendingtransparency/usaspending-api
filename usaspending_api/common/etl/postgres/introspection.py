@@ -1,6 +1,8 @@
 from collections import OrderedDict
+from typing import Any, List, Optional
+
 from psycopg.sql import SQL
-from typing import List, Optional
+
 from usaspending_api.common.etl.postgres.primatives import (
     ColumnDefinition,
     DataTypes,
@@ -8,7 +10,6 @@ from usaspending_api.common.etl.postgres.primatives import (
     wrap_dblink_query,
 )
 from usaspending_api.common.helpers import sql_helpers
-
 
 _columns = OrderedDict([("column_name", ColumnDefinition("column_name", "text", False))])
 
@@ -21,7 +22,7 @@ _data_types = OrderedDict(
 )
 
 
-def _get_whatever(table_name: str, schema_name: str, dblink_name: str, sql: str, data_types: DataTypes):
+def _get_whatever(table_name: str, schema_name: str, dblink_name: str, sql: str, data_types: DataTypes) -> Any:
     """The common bits of subsequent functions."""
     table = make_composed_qualified_table_name(table_name, schema_name)
     sql = SQL(sql).format(table=table)

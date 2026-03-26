@@ -11,7 +11,6 @@ from elasticsearch_dsl import Search
 from elasticsearch_dsl.mapping import Mapping
 from psycopg import sql as psycopg_sql
 
-
 from usaspending_api.broker.helpers.last_load_date import (
     get_last_load_date,
     get_latest_load_date,
@@ -33,12 +32,12 @@ from usaspending_api.etl.elasticsearch_loader_helpers.utilities import (
 logger = logging.getLogger("script")
 
 
-def delete_docs_by_unique_key(
+def delete_docs_by_unique_key(  # noqa: PLR0913, PLR0912, PLR0915
     client: Elasticsearch,
     key: str,
     value_list: list,
     task_id: str,
-    index,
+    index: str,
     refresh_after: bool = True,
     delete_chunk_size: int = 1000,
     slices: int | str = "auto",
@@ -130,7 +129,7 @@ def delete_docs_by_unique_key(
             response = q.delete()
             # Some subtle errors come back on the response
             if response["timed_out"]:
-                msg = f"Delete request timed out on cluster after {int(response['took'])/1000:.2f}s"
+                msg = f"Delete request timed out on cluster after {int(response['took']) / 1000:.2f}s"
                 logger.error(format_log(msg=msg, action="Delete", name=task_id))
                 raise RuntimeError(msg)
             if response["failures"]:
@@ -141,7 +140,7 @@ def delete_docs_by_unique_key(
             logger.info(
                 format_log(
                     f"Deleted {response['deleted']:,} docs in ES from chunk of size {len(chunk_of_values):,} "
-                    f"in {int(response['took'])/1000:.2f}s, "
+                    f"in {int(response['took']) / 1000:.2f}s, "
                     f"and ignored {response['version_conflicts']:,} version conflicts",
                     action="Delete",
                     name=task_id,
@@ -309,16 +308,13 @@ def delete_awards(
         task_id (str): label for this sub-step of the ETL
         fabs_external_data_load_date_key (str): the key used to lookup the ``ExternalDataLoadDate`` model entry for fabs
         fpds_external_data_load_date_key: str = the key used to lookup the ``ExternalDataLoadDate`` model entry for fpds
-        spark (pyspark.sql.SparkSession): provided SparkSession to be used in a Spark Cluster runtime to interact with Delta Lake
-            tables as the basis of discovering award records that are no longer in the table and should be deleted.
-            Presence of this variable is a marker for whether the Postgres awards table or Delta awards table should
-            be interrogated.
+        spark (pyspark.sql.SparkSession): provided SparkSession to be used in a Spark Cluster runtime to interact with
+            Delta Lake tables as the basis of discovering award records that are no longer in the table and should be
+            deleted. Presence of this variable is a marker for whether the Postgres awards table or Delta awards table
+            should be interrogated.
 
     Returns: Number of ES docs deleted in the index
     """
-    import ipdb
-
-    ipdb.set_trace()
     delete_window_start = get_last_load_date(
         "es_deletes", format_func=(lambda log_msg: format_log(log_msg, action="Delete"))
     )
@@ -420,7 +416,7 @@ def delete_transactions(
     )
 
 
-def _gather_deleted_transaction_keys(
+def _gather_deleted_transaction_keys(  # noqa: PLR0912
     config: dict,
     delete_window_start: datetime,
     fabs_external_data_load_date_key: str = "fabs",

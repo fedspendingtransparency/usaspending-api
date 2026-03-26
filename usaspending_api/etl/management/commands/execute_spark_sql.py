@@ -1,4 +1,4 @@
-import logging
+git import logging
 import sqlparse
 
 from django.core.management.base import BaseCommand, CommandError

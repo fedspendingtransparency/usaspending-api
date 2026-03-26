@@ -1,15 +1,16 @@
 from collections import OrderedDict
 
-from psycopg.sql import Identifier, Literal, SQL
+from psycopg.sql import SQL, Identifier, Literal
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
-from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model
+from usaspending_api.common.validator.award import (
+    get_internal_or_generated_award_id_model,
+)
 from usaspending_api.common.validator.tinyshield import validate_post_request
-
 
 ROLLUP_SQL = SQL(
     """
@@ -21,7 +22,8 @@ ROLLUP_SQL = SQL(
         from    vw_awards a
                 inner join financial_accounts_by_awards faba on faba.award_id = a.id
                 INNER JOIN submission_attributes sa ON faba.submission_id = sa.submission_id
-                INNER JOIN dabs_submission_window_schedule dabs ON sa.submission_window_id = dabs.id and dabs.submission_reveal_date <= now()
+                INNER JOIN dabs_submission_window_schedule dabs
+                ON sa.submission_window_id = dabs.id and dabs.submission_reveal_date <= now()
         where   {award_id_column} = {award_id}
     )
     select

@@ -1,19 +1,35 @@
 import logging
-import psycopg
 import re
-
 from datetime import datetime, timezone
-from django.core.management.base import BaseCommand
-from typing import IO, List, AnyStr, Optional
+from typing import IO, AnyStr, List, Optional
 
-from usaspending_api.broker.helpers.last_load_date import get_last_load_date, update_last_load_date
-from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
+import psycopg
+from django.core.management import CommandParser
+from django.core.management.base import BaseCommand
+
+from usaspending_api.broker.helpers.last_load_date import (
+    get_last_load_date,
+    update_last_load_date,
+)
+from usaspending_api.common.helpers.date_helper import (
+    datetime_command_line_argument_type,
+)
 from usaspending_api.common.helpers.etl_helpers import update_c_to_d_linkages
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
-from usaspending_api.etl.award_helpers import update_awards, update_procurement_awards, prune_empty_awards
-from usaspending_api.etl.transaction_loaders.fpds_loader import load_fpds_transactions, failed_ids, delete_stale_fpds
-from usaspending_api.transactions.transaction_delete_journal_helpers import retrieve_deleted_fpds_transactions
+from usaspending_api.etl.award_helpers import (
+    prune_empty_awards,
+    update_awards,
+    update_procurement_awards,
+)
+from usaspending_api.etl.transaction_loaders.fpds_loader import (
+    delete_stale_fpds,
+    failed_ids,
+    load_fpds_transactions,
+)
+from usaspending_api.transactions.transaction_delete_journal_helpers import (
+    retrieve_deleted_fpds_transactions,
+)
 
 logger = logging.getLogger("script")
 
@@ -28,7 +44,9 @@ class Command(BaseCommand):
     modified_award_ids = []
 
     @staticmethod
-    def get_cursor_for_date_query(connection, date, count=False):
+    def get_cursor_for_date_query(
+        connection: psycopg.Connection, date: datetime, count: bool = False
+    ) -> psycopg.Cursor:
         db_cursor = connection.cursor()
         if count:
             db_query = ALL_FPDS_QUERY.format("COUNT(*)")
@@ -92,7 +110,7 @@ class Command(BaseCommand):
         logger.info(f"Total transaction IDs in file: {total_count}")
 
     @staticmethod
-    def update_award_records(awards, skip_cd_linkage=True):
+    def update_award_records(awards: list, skip_cd_linkage: bool = True) -> None:
         if awards:
             unique_awards = set(awards)
             logger.info(f"{len(unique_awards)} award records impacted by transaction DML operations")
@@ -106,7 +124,7 @@ class Command(BaseCommand):
         else:
             logger.info("No award records to update")
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: CommandParser) -> None:
         mutually_exclusive_group = parser.add_mutually_exclusive_group(required=True)
 
         mutually_exclusive_group.add_argument(
@@ -130,16 +148,17 @@ class Command(BaseCommand):
             "--file",
             metavar="FILEPATH",
             type=str,
-            help="Load/Reload transactions using the detached_award_procurement_id list stored at this file path (one ID per line)"
-            "to reload, one ID per line. Nonexistent IDs will be ignored.",
+            help="Load/Reload transactions using the detached_award_procurement_id list stored at this file path "
+            "(one ID per line) to reload, one ID per line. Nonexistent IDs will be ignored.",
         )
         mutually_exclusive_group.add_argument(
             "--reload-all",
             action="store_true",
-            help="Script will load or reload all FPDS records in source tables, from all time. This does NOT clear the USAspending database first",
+            help="Script will load or reload all FPDS records in source tables, from all time. "
+            "This does NOT clear the USAspending database first",
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
 
         # Record script execution start time to update the FPDS last updated date in DB as appropriate
         update_time = datetime.now(timezone.utc)
@@ -172,7 +191,8 @@ class Command(BaseCommand):
             raise SystemExit(1)
 
         if options["reload_all"] or options["since_last_load"]:
-            # we wait until after the load finishes to update the load date because if this crashes we'll need to load again
+            # we wait until after the load finishes to update the load date
+            # because if this crashes we'll need to load again
             update_last_load_date("fpds", update_time)
 
-        logger.info(f"Successfully Completed")
+        logger.info("Successfully Completed")

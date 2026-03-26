@@ -13,15 +13,14 @@ Adding new imports to this module may inadvertently introduce a dependency that 
 As it stands, even if new imports are added to the modules it already imports, it could lead to a problem.
 """
 
-import boto3
 import gzip
 import logging
-import psycopg
 import tempfile
 import time
+from typing import Generator, Iterable, List
 
-from typing import Iterable, List
-
+import boto3
+import psycopg
 from botocore.client import BaseClient
 
 from usaspending_api.common.helpers.s3_helpers import download_s3_object
@@ -53,7 +52,7 @@ def _get_boto3_s3_client() -> BaseClient:
     return s3_client
 
 
-def _download_and_copy(
+def _download_and_copy(  # noqa: PLR0913
     configured_logger: logging.Logger,
     cursor: psycopg.Connection.cursor,
     s3_client: BaseClient,
@@ -63,7 +62,7 @@ def _download_and_copy(
     ordered_col_names: List[str],
     gzipped: bool,
     partition_prefix: str = "",
-):
+) -> Generator[int, None, None]:
     """Download a CSV file from S3 then COPY it into a Postgres table using the SQL bulk COPY command. The CSV should
     not include a header row with column names
     """
@@ -100,7 +99,7 @@ def _download_and_copy(
             raise exc
 
 
-def copy_csv_from_s3_to_pg(
+def copy_csv_from_s3_to_pg(  # noqa: PLR0913
     s3_bucket_name: str,
     s3_obj_key: str,
     db_dsn: str,
@@ -108,7 +107,7 @@ def copy_csv_from_s3_to_pg(
     ordered_col_names: List[str],
     gzipped: bool = True,
     work_mem_override: int = None,
-):
+) -> int:
     """Download a CSV file from S3 then stream it into a Postgres table using the SQL bulk COPY command
 
     WARNING: See note above in module docstring about this function being pickle-able, and maintaining a lean set of
@@ -139,7 +138,7 @@ def copy_csv_from_s3_to_pg(
         raise exc
 
 
-def copy_csvs_from_s3_to_pg(
+def copy_csvs_from_s3_to_pg(  # noqa: PLR0913
     batch_num: int,
     s3_bucket_name: str,
     s3_obj_keys: Iterable[str],
@@ -148,7 +147,7 @@ def copy_csvs_from_s3_to_pg(
     ordered_col_names: List[str],
     gzipped: bool = True,
     work_mem_override: int = None,
-):
+) -> Generator[int, None, None]:
     """An optimized form of ``copy_csv_from_s3_to_pg`` that can save on runtime by instantiating the psycopg DB
     connection and s3_client only once per partition, where a partition could represent processing several files
     """

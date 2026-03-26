@@ -1,25 +1,26 @@
+import argparse
 import asyncio
 import logging
-import psycopg
 import subprocess
-
-from django.core.management import call_command
-from django.core.management.base import BaseCommand
 from pathlib import Path
 
+import psycopg
+from django.core.management import call_command
+from django.core.management.base import BaseCommand
+
 from usaspending_api.common.data_connectors.async_sql_query import async_run_creates
+from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
 from usaspending_api.common.matview_manager import (
     CHUNKED_MATERIALIZED_VIEWS,
-    DEFAULT_MATIVEW_DIR,
+    CHUNKED_MATVIEW_GENERATOR_FILE,
     DEFAULT_CHUNKED_MATIVEW_DIR,
+    DEFAULT_MATIVEW_DIR,
     DEPENDENCY_FILEPATH,
     DROP_OLD_MATVIEWS,
     MATERIALIZED_VIEWS,
     MATVIEW_GENERATOR_FILE,
-    CHUNKED_MATVIEW_GENERATOR_FILE,
 )
-from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 
 logger = logging.getLogger("script")
 
@@ -27,7 +28,7 @@ logger = logging.getLogger("script")
 class Command(BaseCommand):
     help = "Create, Run, Verify Materialized View SQL"
 
-    def faux_init(self, args):
+    def faux_init(self, args: argparse.Namespace | dict) -> None:
         self.matviews = MATERIALIZED_VIEWS
         self.chunked_matviews = CHUNKED_MATERIALIZED_VIEWS
         if args["only"]:
@@ -44,11 +45,12 @@ class Command(BaseCommand):
         self.include_chunked_matviews = args["include_chunked_matviews"]
         self.index_concurrency = args["index_concurrency"]
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         parser.add_argument(
             "--only",
             choices=list(MATERIALIZED_VIEWS.keys()) + ["none"],
-            help="If matviews are listed with this option, only those matviews will be run. 'none' will result in no matviews being run",
+            help="If matviews are listed with this option, only those matviews will be run. 'none' will result in no "
+            "matviews being run",
         )
         parser.add_argument(
             "--leave-sql",
@@ -85,7 +87,7 @@ class Command(BaseCommand):
         )
         parser.add_argument("--index-concurrency", default=20, help="Number of indexes to be created at once", type=int)
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         """Overloaded Command Entrypoint"""
         with Timer(__name__):
             self.faux_init(options)
@@ -97,13 +99,13 @@ class Command(BaseCommand):
                 self.cleanup()
 
     @staticmethod
-    def clean_or_create_dir(dir_path):
+    def clean_or_create_dir(dir_path: Path) -> None:
         if dir_path.exists():
             logger.warning(f"Clearing dir {dir_path}")
             recursive_delete(dir_path)
         dir_path.mkdir()
 
-    def generate_matview_sql(self):
+    def generate_matview_sql(self) -> None:
         """Convert JSON definition files to SQL"""
         self.clean_or_create_dir(self.matview_dir)
         self.clean_or_create_dir(self.matview_chunked_dir)
@@ -115,7 +117,7 @@ class Command(BaseCommand):
 
         if self.include_chunked_matviews:
             # Create SQL files for Chunked Universal Transaction Matviews
-            for matview, config in self.chunked_matviews.items():
+            for _matview, config in self.chunked_matviews.items():
                 exec_str = (
                     f"python3 {CHUNKED_MATVIEW_GENERATOR_FILE} --quiet"
                     f" --file {config['json_filepath']}"
@@ -124,12 +126,12 @@ class Command(BaseCommand):
                 )
                 subprocess.call(exec_str, shell=True)
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         """Cleanup files after run"""
         recursive_delete(self.matview_dir)
         recursive_delete(self.matview_chunked_dir)
 
-    def create_views(self):
+    def create_views(self) -> None:
         loop = asyncio.new_event_loop()
         tasks = []
 
@@ -141,7 +143,7 @@ class Command(BaseCommand):
 
         # Create Chunked Matviews
         if self.include_chunked_matviews:
-            for matview, config in self.chunked_matviews.items():
+            for matview, _config in self.chunked_matviews.items():
                 for current_chunk in range(self.chunk_count):
                     chunked_matview = f"{matview}_{current_chunk}"
                     logger.info(f"Creating Future for chunked matview {chunked_matview}")
@@ -168,18 +170,18 @@ class Command(BaseCommand):
             run_sql(DROP_OLD_MATVIEWS.read_text(), "Drop Old Materialized Views")
 
 
-def create_dependencies():
+def create_dependencies() -> None:
     run_sql(DEPENDENCY_FILEPATH.read_text(), "dependencies")
 
 
-def run_sql(sql, name):
+def run_sql(sql: psycopg.sql.Composable, name: str) -> None:
     with psycopg.connect(get_database_dsn_string()) as connection:
         with connection.cursor() as cursor:
             with Timer(name):
                 cursor.execute(sql)
 
 
-def recursive_delete(path):
+def recursive_delete(path: Path) -> None:
     """Remove file or directory (clear entire dir structure)"""
     path = Path(str(path)).resolve()  # ensure it is an absolute path
     if not path.exists() and len(str(path)) < 6:  # don't delete the entire dir

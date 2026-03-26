@@ -1,9 +1,15 @@
 """Functions to generate SQL for several higher level ETL operations."""
 
-from psycopg.sql import SQL, Identifier
 from typing import List
-from usaspending_api.common.etl.postgres import ETLObjectBase, ETLWritableObjectBase, ETLTemporaryTable
-from usaspending_api.common.etl.postgres import primatives
+
+from psycopg.sql import SQL, Identifier
+
+from usaspending_api.common.etl.postgres import (
+    ETLObjectBase,
+    ETLTemporaryTable,
+    ETLWritableObjectBase,
+    primatives,
+)
 from usaspending_api.common.helpers import sql_helpers
 
 
@@ -16,7 +22,7 @@ def _get_shared_columns(source_columns: List[str], destination_columns: List[str
     return shared_columns
 
 
-def _get_changeable_columns(source: ETLObjectBase, destination: ETLWritableObjectBase):
+def _get_changeable_columns(source: ETLObjectBase, destination: ETLWritableObjectBase) -> list[str]:
     """Destination columns that are in source that are not overridden and are not keys."""
     changeable_columns = [
         c
@@ -28,7 +34,7 @@ def _get_changeable_columns(source: ETLObjectBase, destination: ETLWritableObjec
     return changeable_columns
 
 
-def _get_settable_columns(source: ETLObjectBase, destination: ETLWritableObjectBase):
+def _get_settable_columns(source: ETLObjectBase, destination: ETLWritableObjectBase) -> list[str]:
     """Destination columns that are in source or are overridden but are not keys."""
     settable_columns = [
         c

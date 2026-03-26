@@ -1,20 +1,19 @@
-import pytest
-
 from collections import OrderedDict, namedtuple
 
-from django.contrib.auth.models import User  # A table that should always exist.  Doesn't really matter what it is.
+import pytest
+from django.contrib.auth.models import (
+    User,  # A table that should always exist.  Doesn't really matter what it is.
+)
 from django.test import TestCase
-
 from model_bakery import baker
 from psycopg.sql import SQL
 
 from usaspending_api.common.helpers.sql_helpers import (
     build_composable_order_by,
     execute_sql_to_ordered_dictionary,
-    ordered_dictionary_fetcher,
     get_connection,
+    ordered_dictionary_fetcher,
 )
-
 
 AWARD_COUNT = 5
 

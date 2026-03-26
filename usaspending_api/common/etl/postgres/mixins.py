@@ -1,6 +1,8 @@
 from pathlib import Path
-from psycopg.sql import Composed
 from typing import Any, Callable, Optional, Union
+
+from psycopg.sql import Composed
+
 from usaspending_api.common.etl.postgres import ETLObjectBase
 from usaspending_api.common.etl.postgres.operations import (
     delete_obsolete_rows,
@@ -19,7 +21,7 @@ class ETLMixin:
     etl_rows_affected_template = "{:,} rows affected"
     etl_timer = Timer
 
-    def _delete_update_insert_rows(self, what: str, source: ETLObjectBase, destination: ETLObjectBase):
+    def _delete_update_insert_rows(self, what: str, source: ETLObjectBase, destination: ETLObjectBase) -> int:
         """Convenience function to run delete, update, and create ETL operations."""
         rows_affected = 0
         rows_affected += self._execute_function_and_log(
