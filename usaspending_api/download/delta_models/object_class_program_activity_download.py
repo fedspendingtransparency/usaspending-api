@@ -1,7 +1,6 @@
 from delta.tables import DeltaTable
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as sf
-from pyspark.sql import Row
 from pyspark.sql.types import (
     BooleanType,
     DateType,
@@ -104,9 +103,6 @@ object_class_program_activity_schema = StructType(
     ]
 )
 
-# def inverse_park(row: Row):
-#     return
-
 def object_class_program_activity_df(spark: SparkSession):
     fabpaoc = spark.table("global_temp.financial_accounts_by_program_activity_object_class")
     taa = spark.table("global_temp.treasury_appropriation_account")
@@ -119,15 +115,6 @@ def object_class_program_activity_df(spark: SparkSession):
     cgac_aid = spark.table("global_temp.cgac")
     cgac_ata = spark.table("global_temp.cgac")
     park = spark.table("global_temp.program_activity_park")
-
-    # rearange PARK table such that program keys with the same program names are concatenated
-    
-    # invpark = spark.createDataFrame()
-    # park.foreach(inverse_park)
-
-    # how much can be done with spark functions
-    # really need to use concat function from sparksql or postgresql
-    # issue is that PARK.code is the primary_key
 
     return (
         fabpaoc.join(sa, on="submission_id", how="inner")
@@ -148,7 +135,7 @@ def object_class_program_activity_df(spark: SparkSession):
             how="left",
         )
         .join(
-            park.select(),
+            park,
             on=rpa.program_activity_name == park.name,
             how="left"
         )

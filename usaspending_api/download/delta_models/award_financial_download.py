@@ -171,7 +171,7 @@ def award_financial_df(spark: SparkSession) -> DataFrame:
             how="left",
         )
         .join(
-            park.withColumnRenamed("name", "park_name"),
+            park,
             on=rpa.program_activity_name == sf.col("park_name"),
             how="left"
         )
