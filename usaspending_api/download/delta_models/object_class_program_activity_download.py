@@ -114,7 +114,6 @@ def object_class_program_activity_df(spark: SparkSession):
     defc = spark.table("global_temp.disaster_emergency_fund_code")
     cgac_aid = spark.table("global_temp.cgac")
     cgac_ata = spark.table("global_temp.cgac")
-    park = spark.table("global_temp.program_activity_park")
 
     return (
         fabpaoc.join(sa, on="submission_id", how="inner")
@@ -134,11 +133,6 @@ def object_class_program_activity_df(spark: SparkSession):
             on=cgac_ata.cgac_code == taa.allocation_transfer_agency_id,
             how="left",
         )
-        .join(
-            park,
-            on=rpa.program_activity_name == park.name,
-            how="left"
-        )
         .withColumn("submission_period", fy_quarter_period())
         .select(
             fabpaoc.financial_accounts_by_program_activity_object_class_id,
@@ -147,7 +141,7 @@ def object_class_program_activity_df(spark: SparkSession):
             ta.name.alias("owning_agency_name"),
             fa.federal_account_code.alias("federal_account_symbol"),
             fa.account_title.alias("federal_account_name"),
-            park.code.alias("program_activity_reporting_key"),
+            fabpaoc.program_activity_reporting_key,
             sf.col("agency_identifier_name"),
             sf.col("allocation_transfer_agency_identifier_name"),
             rpa.program_activity_code,

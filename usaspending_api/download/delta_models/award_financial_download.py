@@ -139,7 +139,6 @@ def award_financial_df(spark: SparkSession) -> DataFrame:
     tta = spark.table("global_temp.toptier_agency").alias("tta")
     cgac_aid = spark.table("global_temp.cgac").alias("cgac_aid")
     cgac_ata = spark.table("global_temp.cgac").alias("cgac_ata")
-    park = spark.table("global_temp.program_activity_park").alias("park")
 
     return (
         faba.join(sa, on="submission_id", how="inner")
@@ -170,11 +169,6 @@ def award_financial_df(spark: SparkSession) -> DataFrame:
             on=cgac_ata.cgac_code == taa.allocation_transfer_agency_id,
             how="left",
         )
-        .join(
-            park,
-            on=rpa.program_activity_name == sf.col("park_name"),
-            how="left"
-        )
         .withColumn("submission_period", fy_quarter_period())
         # TODO: Update to use url_encode Spark SQL function
         .withColumn(
@@ -198,7 +192,7 @@ def award_financial_df(spark: SparkSession) -> DataFrame:
             sf.col("treasury_owning_agency_name"),
             fa.federal_account_code.alias("federal_account_symbol"),
             fa.account_title.alias("federal_account_name"),
-            park.code.alias("program_activity_reporting_key"),
+            faba.program_activity_reporting_key,
             sf.col("agency_identifier_name"),
             sf.col("allocation_transfer_agency_identifier_name"),
             rpa.program_activity_code,
