@@ -20,6 +20,8 @@ def test_program_activity_fresh_load(monkeypatch):
     baker.make("references.ProgramActivityPark", code="test")
 
     data_broker_mock = MagicMock()
+    # TODO this mock results in the broker query essentially going untested.  We should instead use fixtures
+    # for the broker data and test that the query works as expected.
     data_broker_mock.cursor.return_value = PhonyCursor("usaspending_api/references/tests/data/broker_gtas.json")
     mock_connections = {
         settings.DEFAULT_DB_ALIAS: MagicMock(),
