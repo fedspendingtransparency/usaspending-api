@@ -1,10 +1,10 @@
+import argparse
 import logging
-import psycopg
-
 from datetime import datetime, timedelta
+
+import psycopg
 from django.core.management.base import BaseCommand
 
-from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.common.etl.spark import load_delta_table
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
@@ -12,7 +12,10 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_jdbc_connection_properties,
     get_usas_jdbc_url,
 )
-from usaspending_api.download.delta_models.download_job import download_job_create_sql_string
+from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
+from usaspending_api.download.delta_models.download_job import (
+    download_job_create_sql_string,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +38,7 @@ class Command(BaseCommand):
     those records from Postgres.
     """
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         parser.add_argument(
             "--destination-table",
             type=str,
@@ -54,7 +57,8 @@ class Command(BaseCommand):
             "--alt-db",
             type=str,
             required=False,
-            help="An alternate Delta Database (aka schema) in which to archive this table, overriding the TABLE_SPEC's destination_database",
+            help="An alternate Delta Database (aka schema) in which to archive this table, overriding the TABLE_SPEC's "
+            "destination_database",
         )
         parser.add_argument(
             "--alt-name",
@@ -63,7 +67,7 @@ class Command(BaseCommand):
             help="An alternate Delta Table name which to archive this table, overriding the destination_table",
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         extra_conf = {
             # Config for Delta Lake tables and SQL. Need these to keep Dela table metadata in the metastore
             "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension",
@@ -104,7 +108,7 @@ class Command(BaseCommand):
         # Resolve JDBC URL for Source Database
         jdbc_url = get_usas_jdbc_url()
         if not jdbc_url:
-            raise RuntimeError(f"Couldn't find JDBC url, please properly configure your CONFIG.")
+            raise RuntimeError("Couldn't find JDBC url, please properly configure your CONFIG.")
         if not jdbc_url.startswith("jdbc:postgresql://"):
             raise ValueError("JDBC URL given is not in postgres JDBC URL format (e.g. jdbc:postgresql://...")
 

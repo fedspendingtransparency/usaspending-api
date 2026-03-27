@@ -1,19 +1,21 @@
-import usaspending_api.etl.transaction_loaders.fpds_loader as fpds_loader
-import random
 import datetime
-from usaspending_api.etl.transaction_loaders.fpds_loader import (
-    _create_load_object,
-    _transform_objects,
-    _load_transactions,
+import random
+from unittest.mock import MagicMock, patch
+
+import usaspending_api.etl.transaction_loaders.fpds_loader as fpds_loader
+from usaspending_api.etl.transaction_loaders.data_load_helpers import (
+    format_insert_or_update_column_sql,
 )
 from usaspending_api.etl.transaction_loaders.field_mappings_fpds import (
+    transaction_fpds_boolean_columns,
     transaction_fpds_nonboolean_columns,
     transaction_normalized_nonboolean_columns,
-    transaction_fpds_boolean_columns,
 )
-from usaspending_api.etl.transaction_loaders.data_load_helpers import format_insert_or_update_column_sql
-
-from unittest.mock import MagicMock, patch
+from usaspending_api.etl.transaction_loaders.fpds_loader import (
+    _create_load_object,
+    _load_transactions,
+    _transform_objects,
+)
 
 
 def mock_cursor(monkeypatch, result_value):
@@ -87,7 +89,8 @@ def test_load_ids_empty():
     fpds_loader.load_fpds_transactions([])
 
 
-# These are patched in opposite order from when they're listed in the function params, because that's how the fixture works
+# These are patched in opposite order from when they're listed in the function params,
+# because that's how the fixture works
 @patch("usaspending_api.etl.transaction_loaders.fpds_loader.connection")
 @patch("usaspending_api.etl.transaction_loaders.derived_field_functions_fpds._fetch_subtier_agency_id", return_value=1)
 @patch("usaspending_api.etl.transaction_loaders.fpds_loader._extract_broker_objects")
@@ -137,8 +140,8 @@ def test_load_ids_dummy_id(
     fpds_loader.load_fpds_transactions(dummy_broker_ids)
 
     # Since the mocks will return "data" always when called, if not told to return "None", the branching logic in
-    # load_fpds_transactions like: "lookup award, if not exists, create ... lookup transaction, if not exists, create", will
-    # always "find" a *mock* award and transaction.
+    # load_fpds_transactions like: "lookup award, if not exists, create ... lookup transaction, if not exists, create",
+    # will always "find" a *mock* award and transaction.
     # So, assert this baseline run followed that logic. That is:
     # - for each broker transaction extracted,
     # - an existing award that it belongs to was found in usaspending

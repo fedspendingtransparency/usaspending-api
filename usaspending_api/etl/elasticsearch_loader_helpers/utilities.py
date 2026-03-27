@@ -3,13 +3,13 @@ import logging
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from psycopg.sql import Composed
 from random import choice
 from typing import Any, Generator, List, Optional, Union
 
 import psycopg
 from django.conf import settings
 from elasticsearch import Elasticsearch
+from psycopg.sql import Composed
 
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 

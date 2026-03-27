@@ -1,15 +1,18 @@
 import logging
-import psycopg
-
-from datetime import timedelta
-from django.db.models import Q
+from datetime import datetime, timedelta
 from threading import Timer
 from traceback import format_exception
 from typing import List, Optional, Tuple
-from usaspending_api.common.helpers.date_helper import now
-from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string, execute_dml_sql
-from usaspending_api.submissions.models import DABSLoaderQueue
 
+import psycopg
+from django.db.models import Q
+
+from usaspending_api.common.helpers.date_helper import now
+from usaspending_api.common.helpers.sql_helpers import (
+    execute_dml_sql,
+    get_database_dsn_string,
+)
+from usaspending_api.submissions.models import DABSLoaderQueue
 
 logger = logging.getLogger("script")
 
@@ -22,7 +25,7 @@ ABANDONED_LOCK_MINUTES = 2 * 60  # 2 hours obvs.
 REFRESH_HEARTBEAT_MINUTES = 10
 
 
-def get_abandoned_heartbeat_cutoff():
+def get_abandoned_heartbeat_cutoff() -> datetime:
     return now() - timedelta(minutes=ABANDONED_LOCK_MINUTES)
 
 
@@ -204,20 +207,20 @@ class HeartbeatTimer(Timer):
     exists in the queue.
     """
 
-    def __init__(self, submission_id, processor_id):
+    def __init__(self, submission_id: int, processor_id: int) -> None:
         super().__init__(
             REFRESH_HEARTBEAT_MINUTES * 60,
             update_heartbeat,
             kwargs={"submission_id": submission_id, "processor_id": processor_id},
         )
 
-    def run(self):
+    def run(self) -> None:
         self.finished.wait(self.interval)
         while not self.finished.is_set():
-            logger.info(f"Updating heartbeat.")
+            logger.info("Updating heartbeat.")
             count = self.function(*self.args, **self.kwargs)
             if count != 1:
-                logger.info(f"No heartbeat updated.  Processing has completed.")
+                logger.info("No heartbeat updated.  Processing has completed.")
                 break
             self.finished.wait(self.interval)
-        logger.info(f"Heartbeat timer ending.")
+        logger.info("Heartbeat timer ending.")

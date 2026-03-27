@@ -1,13 +1,13 @@
 import datetime
-import pytest
 
+import pytest
 from django.core.management import call_command
 from model_bakery import baker
 
-from usaspending_api.awards.models import TransactionFABS, TransactionNormalized, Award
+from usaspending_api.awards.models import Award, TransactionFABS, TransactionNormalized
 from usaspending_api.broker.models import ExternalDataLoadDate, ExternalDataType
 from usaspending_api.etl.award_helpers import update_awards
-from usaspending_api.search.models import TransactionSearch, AwardSearch
+from usaspending_api.search.models import AwardSearch, TransactionSearch
 from usaspending_api.transactions.models import SourceAssistanceTransaction
 
 
@@ -20,7 +20,7 @@ def _assemble_source_assistance_records(id_list):
             "submission_id": trx_id,
             "fain": "FAIN",
             "uri": "URI",
-            "unique_award_key": f"UNIQUE_AWARD_KEY",
+            "unique_award_key": "UNIQUE_AWARD_KEY",
             "action_date": "2010-01-01 00:00:00",
             "created_at": datetime.datetime.fromtimestamp(0),
             "updated_at": datetime.datetime.fromtimestamp(0),

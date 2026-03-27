@@ -1,18 +1,21 @@
+import argparse
 import logging
 import re
-
 from collections import namedtuple
+
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from psycopg2.sql import SQL
+
 from usaspending_api.common.csv_helpers import read_csv_file_as_list_of_dictionaries
-from usaspending_api.common.etl.postgres import ETLTable, ETLTemporaryTable
-from usaspending_api.common.etl.postgres import mixins
-from usaspending_api.common.etl.postgres.operations import insert_missing_rows, update_changed_rows
+from usaspending_api.common.etl.postgres import ETLTable, ETLTemporaryTable, mixins
+from usaspending_api.common.etl.postgres.operations import (
+    insert_missing_rows,
+    update_changed_rows,
+)
 from usaspending_api.common.helpers.sql_helpers import get_connection
 from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
 from usaspending_api.references.models import ObjectClass
-
 
 OBJECT_CLASS_PATTERN = re.compile("^[0-9]{3}0?$")
 
@@ -54,7 +57,7 @@ class Command(mixins.ETLMixin, BaseCommand):
     object_class_file = None
     etl_logger_function = logger.info
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: argparse.ArgumentParser) -> None:
 
         parser.add_argument(
             "--object_class_file",
@@ -63,7 +66,7 @@ class Command(mixins.ETLMixin, BaseCommand):
             default="https://files.usaspending.gov/reference_data/object_class.csv",
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
 
         self.object_class_file = options["object_class_file"]
 
@@ -88,7 +91,7 @@ class Command(mixins.ETLMixin, BaseCommand):
                 raise
 
     @staticmethod
-    def _prep(text):
+    def _prep(text: str) -> str:
         """
         A semi-common problem with CSV files that have been edited by third party tools is the
         introduction of leading and/or trailing spaces.  Strip them.
@@ -97,7 +100,7 @@ class Command(mixins.ETLMixin, BaseCommand):
             return text.strip()
         return text
 
-    def _read_raw_object_classes_csv(self):
+    def _read_raw_object_classes_csv(self) -> int:
 
         object_classes = read_csv_file_as_list_of_dictionaries(self.object_class_file)
         if len(object_classes) < 1:
@@ -117,7 +120,7 @@ class Command(mixins.ETLMixin, BaseCommand):
         return len(self.raw_object_classes)
 
     @staticmethod
-    def _validate_raw_object_class(raw_object_class):
+    def _validate_raw_object_class(raw_object_class: RawObjectClass) -> list[str]:
 
         messages = []
 
@@ -133,7 +136,7 @@ class Command(mixins.ETLMixin, BaseCommand):
 
         return messages
 
-    def _validate_raw_object_classes(self):
+    def _validate_raw_object_classes(self) -> None:
 
         messages = []
 
@@ -147,13 +150,13 @@ class Command(mixins.ETLMixin, BaseCommand):
                 f"{len(messages):,} problem(s) have been found with the raw object class file.  See log for details."
             )
 
-    def _keep_only_3_digit_object_classes(self):
+    def _keep_only_3_digit_object_classes(self) -> None:
         """While the file and users can provide both versions, this loader only needs the 3-digits when processing"""
         self.raw_object_classes = [
             raw_object_class for raw_object_class in self.raw_object_classes if len(raw_object_class.object_class) == 3
         ]
 
-    def _add_unknown_object_classes(self):
+    def _add_unknown_object_classes(self) -> None:
         """These are not officially sanctioned object classes but we use them on the website."""
 
         unknown = ObjectClass.MAJOR_OBJECT_CLASS.UNKNOWN_NAME
@@ -161,7 +164,7 @@ class Command(mixins.ETLMixin, BaseCommand):
             RawObjectClass(row_number=None, object_class="000", object_class_name=unknown),
         ] + self.raw_object_classes
 
-    def _derive_remaining_fields(self):
+    def _derive_remaining_fields(self) -> None:
         """The remaining object class data are derived."""
 
         # Alias to cut down on line lengths below.
@@ -188,7 +191,7 @@ class Command(mixins.ETLMixin, BaseCommand):
             for dr in [ocdr.UNKNOWN, ocdr.DIRECT, ocdr.REIMBURSABLE]:
                 self.full_object_classes.append(derive_remaining_fields(roc, dr))
 
-    def _import_object_classes(self):
+    def _import_object_classes(self) -> int:
 
         with get_connection(read_only=False).cursor() as cursor:
             cursor.copy(
@@ -207,7 +210,7 @@ class Command(mixins.ETLMixin, BaseCommand):
             )
             return cursor.rowcount
 
-    def _perform_load(self):
+    def _perform_load(self) -> None:
 
         overrides = {
             "insert_overrides": {"create_date": SQL("now()"), "update_date": SQL("now()")},
@@ -234,5 +237,5 @@ class Command(mixins.ETLMixin, BaseCommand):
             insert_missing_rows, "Insert missing object classes", temp_object_class_table, object_class_table
         )
 
-    def _vacuum_tables(self):
+    def _vacuum_tables(self) -> None:
         self._execute_dml_sql("vacuum (full, analyze) object_class", "Vacuum object_class table")

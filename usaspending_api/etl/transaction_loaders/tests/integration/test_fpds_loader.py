@@ -1,7 +1,7 @@
-import random
 import datetime
-import pytest
+import random
 
+import pytest
 from django.core.management import call_command
 from model_bakery import baker
 

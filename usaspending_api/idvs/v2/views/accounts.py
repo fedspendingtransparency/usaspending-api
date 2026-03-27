@@ -1,6 +1,6 @@
 from collections import OrderedDict
 
-from psycopg.sql import Identifier, Literal, SQL
+from psycopg.sql import SQL, Identifier, Literal
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -8,8 +8,12 @@ from rest_framework.views import APIView
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_pagination
 from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
-from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model
-from usaspending_api.common.validator.pagination import customize_pagination_with_sort_columns
+from usaspending_api.common.validator.award import (
+    get_internal_or_generated_award_id_model,
+)
+from usaspending_api.common.validator.pagination import (
+    customize_pagination_with_sort_columns,
+)
 from usaspending_api.common.validator.tinyshield import validate_post_request
 from usaspending_api.references.helpers import generate_agency_slugs_for_agency_list
 

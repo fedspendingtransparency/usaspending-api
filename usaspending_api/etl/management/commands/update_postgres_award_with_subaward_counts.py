@@ -1,9 +1,10 @@
 # TODO: Remove this script and use update_delta_award_with_subaward_counts when rpt.award_search includes the columns
 
 import logging
-import psycopg
 
+import psycopg
 from django.core.management.base import BaseCommand
+
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 
 logger = logging.getLogger("script")
@@ -15,8 +16,8 @@ class Command(BaseCommand):
     This command simply updates the awards data on postgres with subaward counts based on rpt.subaward_search
     """
 
-    def handle(self, *args, **options):
-        update_award_query = f"""
+    def handle(self, *args, **options) -> None:
+        update_award_query = """
             WITH subaward_totals AS (
                 SELECT
                     award_id,
