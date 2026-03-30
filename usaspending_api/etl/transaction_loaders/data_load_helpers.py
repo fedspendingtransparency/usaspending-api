@@ -8,7 +8,7 @@ from typing import Any
 import boto3
 import dateutil
 from django.conf import settings
-from psycopg3 import Cursor
+from psycopg import Cursor
 
 logger = logging.getLogger("script")
 
