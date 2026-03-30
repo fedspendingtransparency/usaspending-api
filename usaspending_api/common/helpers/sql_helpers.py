@@ -5,7 +5,8 @@ from pathlib import Path
 from typing import Any, Callable, Literal
 
 from django.conf import settings
-from django.db import DEFAULT_DB_ALIAS, connection, connections, model, router
+from django.db import DEFAULT_DB_ALIAS, connection, connections, router
+from django.db.models import Model
 from psycopg import Cursor
 from psycopg.sql import SQL, Composable, Identifier
 
@@ -159,7 +160,7 @@ def build_composable_order_by(
     return SQL("order by ") + SQL(", ").join(order_bys)
 
 
-def convert_composable_query_to_string(sql: Composable, model: model = Award, cursor: Cursor | None = None) -> str:
+def convert_composable_query_to_string(sql: Composable, model: Model = Award, cursor: Cursor | None = None) -> str:
     """
     A composable query is one built using psycopg Identifier, Literal, and SQL
     helper objects.  While Django itself seems to have no problem understanding
@@ -244,7 +245,7 @@ def single_value_fetcher(cursor: Cursor) -> Any:
 
 
 def execute_sql(
-    sql: str | Composable, model: model = Award, fetcher: Callable = fetchall_fetcher, read_only: bool = True
+    sql: str | Composable, model: Model = Award, fetcher: Callable = fetchall_fetcher, read_only: bool = True
 ) -> Any:
     """
     Executes a sql query against a database.
@@ -275,7 +276,7 @@ def execute_sql_simple(sql: Composable | str) -> Cursor:
         cursor.execute(sql)
 
 
-def execute_dml_sql(sql: Composable | str, model: model = Award) -> Any:
+def execute_dml_sql(sql: Composable | str, model: Model = Award) -> Any:
     """
     Convenience function to execute a sql query against a database that performs
     some sort of data manipulation (INSERT, UPDATE, DELETE, etc).  Returns the number
@@ -284,22 +285,22 @@ def execute_dml_sql(sql: Composable | str, model: model = Award) -> Any:
     return execute_sql(sql=sql, model=model, fetcher=rowcount_fetcher, read_only=False)
 
 
-def execute_sql_to_ordered_dictionary(sql: Composable | str, model: model = Award, read_only: bool = True) -> Any:
+def execute_sql_to_ordered_dictionary(sql: Composable | str, model: Model = Award, read_only: bool = True) -> Any:
     """Convenience function to return execute_sql results as a list of ordered dictionaries."""
     return execute_sql(sql, model=model, fetcher=ordered_dictionary_fetcher, read_only=read_only)
 
 
-def execute_sql_to_named_tuple(sql: Composable | str, model: model = Award, read_only: bool = True) -> Any:
+def execute_sql_to_named_tuple(sql: Composable | str, model: Model = Award, read_only: bool = True) -> Any:
     """Convenience function to return execute_sql results as a list of named tuples."""
     return execute_sql(sql, model=model, fetcher=named_tuple_fetcher, read_only=read_only)
 
 
-def execute_sql_return_single_value(sql: Composable | str, model: model = Award, read_only: bool = True) -> Any:
+def execute_sql_return_single_value(sql: Composable | str, model: Model = Award, read_only: bool = True) -> Any:
     """Convenience function to return execute_sql results as a list of named tuples."""
     return execute_sql(sql, model=model, fetcher=single_value_fetcher, read_only=read_only)
 
 
-def get_connection(model: model = Award, read_only: bool = True) -> connection:
+def get_connection(model: Model = Award, read_only: bool = True) -> connection:
     """
     As of this writing, USAspending alternates database reads between multiple
     databases using usaspending_api.routers.replicas.ReadReplicaRouter.  Django

@@ -1,5 +1,5 @@
-from django.db import Queryset, connection
-from django.db.models import CharField, Expression
+from django.db import connection
+from django.db.models import CharField, Expression, QuerySet
 from django.db.models.sql.compiler import SQLCompiler
 from psycopg.sql import SQL, Identifier, Literal
 
@@ -106,7 +106,7 @@ def combine_recipient_hash_and_level(recipient_hash: str, recipient_level: str) 
     return f"{recipient_hash}-{recipient_level.upper()}"
 
 
-def _annotate_recipient_id(field_name: str, queryset: Queryset, annotation_sql: str) -> Queryset:
+def _annotate_recipient_id(field_name: str, queryset: QuerySet, annotation_sql: str) -> QuerySet:
     """
     Add recipient id (recipient hash + recipient level) to a queryset.  The assumption here is that
     the queryset is based on a data source that contains recipient_unique_id and
@@ -149,7 +149,7 @@ def _annotate_recipient_id(field_name: str, queryset: Queryset, annotation_sql: 
     return queryset.annotate(**{field_name: RecipientId()})
 
 
-def annotate_prime_award_recipient_id(field_name: str, queryset: Queryset) -> Queryset:
+def annotate_prime_award_recipient_id(field_name: str, queryset: QuerySet) -> QuerySet:
     return _annotate_recipient_id(
         field_name,
         queryset,
