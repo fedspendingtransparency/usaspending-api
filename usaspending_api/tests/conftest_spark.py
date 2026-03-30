@@ -10,6 +10,7 @@ import pytest
 from django.core.management import call_command
 from django.db import connections
 from model_bakery import baker
+from psycopg import sql
 
 from usaspending_api import settings
 from usaspending_api.common.etl.spark import create_ref_temp_views
@@ -239,26 +240,25 @@ def populate_broker_data(broker_server_dblink_setup):
             Path("usaspending_api/transactions/tests/data/cd_county_grouped.json").read_text()
         ),
     }
-    insert_statement = "INSERT INTO %(table_name)s (%(columns)s) VALUES %(values)s"
+    insert_statement = sql.SQL("INSERT INTO {table_name} ({columns}) VALUES ({values})")
     with connections[settings.BROKER_DB_ALIAS].cursor() as cursor:
         for table_name, rows in broker_data.items():
-            # An assumption is made that each set of rows have the same columns in the same order
             columns = list(rows[0])
-            values = [str(tuple(r.values())).replace("None", "null") for r in rows]
-            sql_string = cursor.mogrify(
-                insert_statement,
-                {
-                    "table_name": table_name,
-                    "columns": ",".join(columns),
-                    "values": ",".join(values),
-                },
-            )
-            cursor.execute(sql_string)
+            for row in rows:
+                values = list(row.values())
+                sql_string = insert_statement.format(
+                    table_name=sql.Identifier(table_name),
+                    columns=sql.SQL(", ").join(map(sql.Identifier, columns)),
+                    values=sql.SQL(", ").join(sql.Placeholder() * len(values)),
+                )
+                cursor.execute(sql_string, values)
     yield
     # Cleanup test data for each Broker test table
     with connections[settings.BROKER_DB_ALIAS].cursor() as cursor:
         for table in broker_data:
-            cursor.execute(f"TRUNCATE TABLE {table} RESTART IDENTITY CASCADE")
+            cursor.execute(
+                sql.SQL("TRUNCATE TABLE {table} RESTART IDENTITY CASCADE").format(table=sql.Identifier(table))
+            )
 
 
 def _build_usas_data_for_spark():
