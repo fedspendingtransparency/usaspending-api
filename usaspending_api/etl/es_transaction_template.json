@@ -234,6 +234,10 @@
         "type": "date",
         "format": "yyyy-MM-dd"
       },
+      "last_modified_date": {
+        "type": "date",
+        "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+      },
       "award_date_signed": {
         "type": "date",
         "format": "yyyy-MM-dd"
