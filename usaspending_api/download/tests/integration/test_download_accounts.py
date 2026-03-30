@@ -1,11 +1,10 @@
 import json
-import pytest
 import random
 import zipfile
-import pandas as pd
-
 from unittest.mock import Mock
 
+import pandas as pd
+import pytest
 from django.conf import settings
 from django.core.management import call_command
 from model_bakery import baker
@@ -26,19 +25,19 @@ def create_download_delta_tables(spark, s3_unittest_data_bucket, hive_unittest_m
     call_command(
         "create_delta_table",
         f"--spark-s3-bucket={s3_unittest_data_bucket}",
-        f"--destination-table=award_financial_download",
+        "--destination-table=award_financial_download",
     )
 
     call_command(
         "create_delta_table",
         f"--spark-s3-bucket={s3_unittest_data_bucket}",
-        f"--destination-table=object_class_program_activity_download",
+        "--destination-table=object_class_program_activity_download",
     )
 
     call_command(
         "create_delta_table",
         f"--spark-s3-bucket={s3_unittest_data_bucket}",
-        f"--destination-table=account_balances_download",
+        "--destination-table=account_balances_download",
     )
     yield
 
@@ -237,8 +236,8 @@ def test_agency_filter_success(client, download_test_data):
             }
         ),
     )
-
     assert resp.status_code == status.HTTP_200_OK
+    assert "FY2017Q1-Q4_100_FA_AccountBalances" in resp.json()["file_name"]
 
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
