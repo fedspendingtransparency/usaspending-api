@@ -171,7 +171,7 @@ class AbstractElasticsearchIndexer(ABC, BaseCommand):
         pass
 
 
-class c(AbstractElasticsearchIndexer):
+class Command(AbstractElasticsearchIndexer):
     """Parallelized ETL script for indexing PostgreSQL data into Elasticsearch
 
     1. DB extraction should be very fast if the query is straightforward.
