@@ -164,6 +164,8 @@ class DefaultConfig(BaseSettings):
         - ALSO validates that the parts and whole string are consistent. A ``ValueError`` is thrown if found to
         be inconsistent, which will in turn raise a ``pydantic.ValidationError`` at configuration time.
         """
+        default_fields = {name: field.default for name, field in cls.model_fields.items()}
+        values = {**default_fields, **values}
         # noinspection PyArgumentList
         cls._validate_database_conf(
             cls=cls,
@@ -186,6 +188,8 @@ class DefaultConfig(BaseSettings):
         - ALSO validates that the parts and whole string are consistent. A ``ValueError`` is thrown if found to
         be inconsistent, which will in turn raise a ``pydantic.ValidationError`` at configuration time.
         """
+        default_fields = {name: field.default for name, field in cls.model_fields.items()}
+        values = {**default_fields, **values}
         # noinspection PyArgumentList
         cls._validate_database_conf(
             cls=cls,
@@ -218,6 +222,8 @@ class DefaultConfig(BaseSettings):
         - ALSO validates that the parts and whole string are consistent. A ``ValueError`` is thrown if found to
         be inconsistent, which will in turn raise a ``pydantic.ValidationError`` at configuration time.
         """
+        default_fields = {name: field.default for name, field in cls.model_fields.items()}
+        values = {**default_fields, **values}
         # noinspection PyArgumentList
         cls._validate_http_url(
             cls=cls,
@@ -262,6 +268,8 @@ class DefaultConfig(BaseSettings):
             )
 
             if enough_parts:
+                # TODO: Need to make correct this; when running without ES_HOSTNAME provided it should build the value
+                #       from the parts (e.g., ES_SCHEME, _HOST, _PORT) that are provided
                 http_url = AnyHttpUrl(
                     url=None,
                     scheme=values[f"{resource_conf_prefix}_SCHEME"],
@@ -375,4 +383,8 @@ class DefaultConfig(BaseSettings):
     COVID19_DOWNLOAD_README_OBJECT_KEY: str = (
         f"files/{COVID19_DOWNLOAD_README_FILE_NAME}"
     )
-    model_config = SettingsConfigDict(env_file=str(_PROJECT_ROOT_DIR / ".env"), env_file_encoding="utf-8")
+    model_config = SettingsConfigDict(
+        env_file=str(_PROJECT_ROOT_DIR / ".env"),
+        env_file_encoding="utf-8",
+        extra="allow"
+    )
