@@ -1,4 +1,3 @@
-import argparse
 import logging
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
@@ -7,7 +6,6 @@ from time import perf_counter
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandParser
 from elasticsearch.client import Elasticsearch
-
 
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
@@ -43,7 +41,6 @@ class AbstractElasticsearchIndexer(ABC, BaseCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.valid_load_types = {"transaction", "award", "recipient", "subaward"}
-
 
     def add_arguments(self, parser: CommandParser) -> None:
         parser.add_argument(
