@@ -522,8 +522,6 @@ def test_file_c_spark_download_unknown_columns(client, download_test_data):
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
     assert resp.json()["detail"] == "Unknown columns: ['test']"
 
-#may need to move to test_account_download_factories
-
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
 def test_file_b_park_with_c(client, download_test_data, create_download_delta_tables):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
