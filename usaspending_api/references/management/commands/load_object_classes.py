@@ -5,7 +5,7 @@ from collections import namedtuple
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from psycopg2.sql import SQL
+from psycopg.sql import SQL, Placeholder
 
 from usaspending_api.common.csv_helpers import read_csv_file_as_list_of_dictionaries
 from usaspending_api.common.etl.postgres import ETLTable, ETLTemporaryTable, mixins
@@ -194,24 +194,27 @@ class Command(mixins.ETLMixin, BaseCommand):
     def _import_object_classes(self) -> int:
 
         with get_connection(read_only=False).cursor() as cursor:
-            cursor.copy(
+            num_columns = 7
+            num_rows = 0
+            query = SQL(
                 """
-                    insert into temp_load_object_classes (
-                        row_number,
-                        major_object_class,
-                        major_object_class_name,
-                        object_class,
-                        object_class_name,
-                        direct_reimbursable,
-                        direct_reimbursable_name
-                    ) values %s
-                """,
-                self.full_object_classes,
-            )
-            return cursor.rowcount
+                insert into temp_load_object_classes (
+                    row_number,
+                    major_object_class,
+                    major_object_class_name,
+                    object_class,
+                    object_class_name,
+                    direct_reimbursable,
+                    direct_reimbursable_name
+                ) values ({})
+            """
+            ).format(SQL(", ").join(Placeholder() * num_columns))
+            for object_class in self.full_object_classes:
+                cursor.execute(query, object_class)
+                num_rows += cursor.rowcount
+            return num_rows
 
     def _perform_load(self) -> None:
-
         overrides = {
             "insert_overrides": {"create_date": SQL("now()"), "update_date": SQL("now()")},
             "update_overrides": {"update_date": SQL("now()")},

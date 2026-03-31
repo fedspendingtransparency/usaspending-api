@@ -219,6 +219,10 @@ def named_tuple_fetcher(cursor: Cursor) -> list:
     return [columns(*row) for row in cursor.fetchall()]
 
 
+def column_fetcher(cursor: Cursor) -> list:
+    return [col[0] for col in cursor.description]
+
+
 def ordered_dictionary_fetcher(cursor: Cursor) -> list:
     """
     Return all rows from a cursor as a list of ordered dictionaries.  Return

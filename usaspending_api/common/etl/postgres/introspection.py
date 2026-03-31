@@ -89,8 +89,7 @@ def get_query_columns(sql: str) -> List[str]:
     # IMPORTANT:  Even though this is a read only operation, since this is being run in support of
     # a writable operation, we need to run it against the writable connection else we will be
     # unable to see objects living in our transaction if there is one.
-    cursor = sql_helpers.execute_sql(sql, fetcher=sql_helpers.cursor_fetcher, read_only=False)
-    return [col[0] for col in cursor.description]
+    return sql_helpers.execute_sql(sql, fetcher=sql_helpers.column_fetcher, read_only=False)
 
 
 __all__ = ["get_columns", "get_data_types", "get_primary_key_columns", "get_query_columns"]
