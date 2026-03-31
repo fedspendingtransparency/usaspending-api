@@ -569,9 +569,8 @@ def test_file_b_park_with_c(client, download_test_data, create_download_delta_ta
 
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
-def test_file_b_park_without_c(client, download_test_data, create_download_delta_tables):
+def test_file_b_park_without_c(client, download_test_data):
     download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
-
     col_list = ["federal_account_name", "program_activity_reporting_key", "program_activity_name"]
 
     resp = client.post(
