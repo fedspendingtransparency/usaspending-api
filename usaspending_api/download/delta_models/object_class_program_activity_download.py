@@ -1,5 +1,5 @@
 from delta.tables import DeltaTable
-from pyspark.sql import SparkSession
+from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as sf
 from pyspark.sql.types import (
     BooleanType,
@@ -103,7 +103,8 @@ object_class_program_activity_schema = StructType(
     ]
 )
 
-def object_class_program_activity_df(spark: SparkSession):
+
+def object_class_program_activity_df(spark: SparkSession) -> DataFrame:
     fabpaoc = spark.table("global_temp.financial_accounts_by_program_activity_object_class")
     taa = spark.table("global_temp.treasury_appropriation_account")
     sa = spark.table("global_temp.submission_attributes")
@@ -292,7 +293,9 @@ def load_object_class_program_activity_incremental(
     (
         target.merge(
             source,
-            "s.financial_accounts_by_program_activity_object_class_id = t.financial_accounts_by_program_activity_object_class_id and s.merge_hash_key = t.merge_hash_key",
+            "s.financial_accounts_by_program_activity_object_class_id = " +
+            "t.financial_accounts_by_program_activity_object_class_id and s.merge_hash_key = " +
+            "t.merge_hash_key",
         )
         .whenNotMatchedInsertAll()
         .whenNotMatchedBySourceDelete()

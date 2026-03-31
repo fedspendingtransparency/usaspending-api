@@ -8,11 +8,16 @@ for the column is made, but it can be removed to avoid being used as a query pat
 import copy
 from collections import OrderedDict
 
-from usaspending_api.awards.models.transaction_fabs import FABS_TO_TRANSACTION_SEARCH_COL_MAP
-from usaspending_api.awards.models.transaction_fpds import FPDS_TO_TRANSACTION_SEARCH_COL_MAP
-from usaspending_api.awards.models.transaction_normalized import NORM_TO_TRANSACTION_SEARCH_COL_MAP
+from usaspending_api.awards.models.transaction_fabs import (
+    FABS_TO_TRANSACTION_SEARCH_COL_MAP,
+)
+from usaspending_api.awards.models.transaction_fpds import (
+    FPDS_TO_TRANSACTION_SEARCH_COL_MAP,
+)
+from usaspending_api.awards.models.transaction_normalized import (
+    NORM_TO_TRANSACTION_SEARCH_COL_MAP,
+)
 from usaspending_api.download.filestreaming import NAMING_CONFLICT_DISCRIMINATOR
-
 
 query_paths = {
     "award": {
