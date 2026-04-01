@@ -129,17 +129,16 @@ class DefaultConfig(BaseSettings):
             )
 
             if enough_parts:
-                pg_dsn = PostgresDsn(
-                    url=None,
+                pg_dsn = PostgresDsn.build(
                     scheme=values[f"{resource_conf_prefix}_SCHEME"],
-                    user=values[f"{resource_conf_prefix}_USER"],
+                    username=values[f"{resource_conf_prefix}_USER"],
                     password=(
                         values[f"{resource_conf_prefix}_PASSWORD"].get_secret_value()
                         if isinstance(values[f"{resource_conf_prefix}_PASSWORD"], SecretStr)
                         else values[f"{resource_conf_prefix}_PASSWORD"]
                     ),
                     host=values[f"{resource_conf_prefix}_HOST"],
-                    port=values[f"{resource_conf_prefix}_PORT"],
+                    port=int(values[f"{resource_conf_prefix}_PORT"]),
                     path=(
                         "/" + values[f"{resource_conf_prefix}_NAME"]
                         if values[f"{resource_conf_prefix}_NAME"]
@@ -271,9 +270,8 @@ class DefaultConfig(BaseSettings):
                 # TODO: Need to make correct this; when running without ES_HOSTNAME provided it should build the value
                 #       from the parts (e.g., ES_SCHEME, _HOST, _PORT) that are provided
                 http_url = AnyHttpUrl(
-                    url=None,
                     scheme=values[f"{resource_conf_prefix}_SCHEME"],
-                    user=values[f"{resource_conf_prefix}_USER"],
+                    username=values[f"{resource_conf_prefix}_USER"],
                     password=(
                         values[f"{resource_conf_prefix}_PASSWORD"].get_secret_value()
                         if values[f"{resource_conf_prefix}_PASSWORD"]
