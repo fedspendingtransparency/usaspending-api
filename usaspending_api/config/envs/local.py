@@ -99,11 +99,11 @@ class LocalConfig(DefaultConfig):
 
     # Since this config values is built by composing others, we want to late/lazily-evaluate their values,
     # in case the declared value is overridden by a shell env var or .env file value
-    AWS_S3_ENDPOINT: str = FACTORY_PROVIDED_VALUE  # See below validator-based factory
+    AWS_S3_ENDPOINT: str | None = FACTORY_PROVIDED_VALUE  # See below validator-based factory
 
     @model_validator(mode="before")
     def _AWS_S3_ENDPOINT_factory(cls, values: dict[str, Any]) -> dict[str, Any]:
-        def factory_func():
+        def factory_func() -> str:
             return values["MINIO_HOST"] + ":" + values["MINIO_PORT"]
 
         return eval_default_factory_from_root_validator(cls, values, "AWS_S3_ENDPOINT", factory_func)

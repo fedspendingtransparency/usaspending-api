@@ -205,10 +205,10 @@ class DefaultConfig(BaseSettings):
     ES_HOSTNAME: str = None  # FACTORY_PROVIDED_VALUE. See below validator-factory
     ES_SCHEME: str = "https"
     ES_HOST: str = ENV_SPECIFIC_OVERRIDE
-    ES_PORT: str = None
-    ES_USER: str = None
-    ES_PASSWORD: SecretStr = None
-    ES_NAME: str = None
+    ES_PORT: str | None = None
+    ES_USER: str | None = None
+    ES_PASSWORD: SecretStr | None = None
+    ES_NAME: str | None = None
 
     # noinspection PyMethodParameters
     # Pydantic returns a classmethod for its validators, so the cls param is correct
@@ -252,9 +252,7 @@ class DefaultConfig(BaseSettings):
         # - it should take precedence
         # - its values will be used to backfill any missing URL parts stored as separate config vars
         if is_full_url_provided:
-            values = backfill_url_parts_config(
-                cls, url_conf_name, resource_conf_prefix, values
-            )
+            values = backfill_url_parts_config(cls, url_conf_name, resource_conf_prefix, values)
 
         # If the full URL config is not provided, try to build-it-up from provided parts, then set the full URL
         if not is_full_url_provided:
@@ -301,7 +299,7 @@ class DefaultConfig(BaseSettings):
     # Those clusters are the only place we currently need this variable,
     # If you write code that depends on this config, make sure you
     # set BRANCH as an environment variable on your machine
-    BRANCH: str = os.environ.get("BRANCH")
+    BRANCH: str | None = os.environ.get("BRANCH")
 
     # SPARK_SCHEDULER_MODE = "FAIR"  # if used with weighted pools, could allow round-robin tasking of simultaneous jobs
     # TODO: have to deal with this if really wanting balanced (FAIR) task execution
@@ -386,5 +384,5 @@ class DefaultConfig(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=str(_PROJECT_ROOT_DIR / ".env"),
         env_file_encoding="utf-8",
-        extra="allow"
+        extra="allow",
     )
