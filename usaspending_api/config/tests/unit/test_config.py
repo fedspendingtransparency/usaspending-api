@@ -144,9 +144,7 @@ class _UnitTestBaseConfig(DefaultConfig):
         def factory_func():
             return values["UNITTEST_CFG_AE"] + ":" + values["UNITTEST_CFG_AF"]
 
-        return eval_default_factory_from_model_validator(
-            cls, values, "UNITTEST_CFG_AJ", factory_func
-        )
+        return eval_default_factory_from_model_validator(cls, values, "UNITTEST_CFG_AJ", factory_func)
 
     # Use model_validator for UNITTEST_CFG_AK on parent, and overriding model_validator for same field on child
     @model_validator
@@ -154,9 +152,7 @@ class _UnitTestBaseConfig(DefaultConfig):
         def factory_func():
             return values["UNITTEST_CFG_AE"] + ":" + values["UNITTEST_CFG_AF"]
 
-        return eval_default_factory_from_model_validator(
-            cls, values, "UNITTEST_CFG_AK", factory_func
-        )
+        return eval_default_factory_from_model_validator(cls, values, "UNITTEST_CFG_AK", factory_func)
 
     # Use regular validator for UNITTEST_CFG_AL on parent, and model_validator for same field on child
     @field_validator("UNITTEST_CFG_AL")
@@ -268,9 +264,7 @@ class _UnitTestSubConfig(_UnitTestBaseConfig):
         def factory_func():
             return values["SUB_UNITTEST_6"] + ":" + values["SUB_UNITTEST_7"]
 
-        return eval_default_factory_from_model_validator(
-            cls, values, "UNITTEST_CFG_AI", factory_func
-        )
+        return eval_default_factory_from_model_validator(cls, values, "UNITTEST_CFG_AI", factory_func)
 
     # See if validator overriding the same validator in super class works fine to compose subclass field values
     @model_validator
@@ -278,9 +272,7 @@ class _UnitTestSubConfig(_UnitTestBaseConfig):
         def factory_func():
             return values["SUB_UNITTEST_6"] + ":" + values["SUB_UNITTEST_7"]
 
-        return eval_default_factory_from_model_validator(
-            cls, values, "UNITTEST_CFG_AK", factory_func
-        )
+        return eval_default_factory_from_model_validator(cls, values, "UNITTEST_CFG_AK", factory_func)
 
 
 class _UnitTestSubConfigFailFindingSubclassFieldsInValidator1(_UnitTestBaseConfig):
@@ -335,9 +327,7 @@ class _UnitTestSubConfigFailFindingSubclassFieldsInValidator3(_UnitTestBaseConfi
         def factory_func():
             return values["SUB_UNITTEST_6"] + ":" + values["SUB_UNITTEST_7"]
 
-        return eval_default_factory_from_model_validator(
-            cls, values, "UNITTEST_CFG_AL", factory_func
-        )
+        return eval_default_factory_from_model_validator(cls, values, "UNITTEST_CFG_AL", factory_func)
 
 
 class _UnitTestDbPartsNoneConfig(DefaultConfig):
