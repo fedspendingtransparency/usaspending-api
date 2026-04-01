@@ -13,13 +13,8 @@ import os
 import pathlib
 from typing import Any, ClassVar, Union
 
-from pydantic import (
-    AnyHttpUrl,
-    BaseSettings,
-    PostgresDsn,
-    SecretStr,
-    root_validator,
-)
+from pydantic import AnyHttpUrl, PostgresDsn, SecretStr, model_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from usaspending_api.config.utils import (
     ENV_SPECIFIC_OVERRIDE,
@@ -134,15 +129,16 @@ class DefaultConfig(BaseSettings):
             )
 
             if enough_parts:
-                pg_dsn = PostgresDsn(
-                    url=None,
+                pg_dsn = PostgresDsn.build(
                     scheme=values[f"{resource_conf_prefix}_SCHEME"],
-                    user=values[f"{resource_conf_prefix}_USER"],
-                    password=values[
-                        f"{resource_conf_prefix}_PASSWORD"
-                    ].get_secret_value(),
+                    username=values[f"{resource_conf_prefix}_USER"],
+                    password=(
+                        values[f"{resource_conf_prefix}_PASSWORD"].get_secret_value()
+                        if isinstance(values[f"{resource_conf_prefix}_PASSWORD"], SecretStr)
+                        else values[f"{resource_conf_prefix}_PASSWORD"]
+                    ),
                     host=values[f"{resource_conf_prefix}_HOST"],
-                    port=values[f"{resource_conf_prefix}_PORT"],
+                    port=int(values[f"{resource_conf_prefix}_PORT"]),
                     path=(
                         "/" + values[f"{resource_conf_prefix}_NAME"]
                         if values[f"{resource_conf_prefix}_NAME"]
@@ -159,7 +155,7 @@ class DefaultConfig(BaseSettings):
 
     # noinspection PyMethodParameters
     # Pydantic returns a classmethod for its validators, so the cls param is correct
-    @root_validator
+    @model_validator(mode="before")
     def _DATABASE_URL_and_parts_factory(cls, values: dict[str, Any]) -> dict[str, Any]:
         """A root validator to backfill DATABASE_URL and USASPENDING_DB_* part config vars and validate that they are
         all consistent.
@@ -169,6 +165,8 @@ class DefaultConfig(BaseSettings):
         - ALSO validates that the parts and whole string are consistent. A ``ValueError`` is thrown if found to
         be inconsistent, which will in turn raise a ``pydantic.ValidationError`` at configuration time.
         """
+        default_fields = {name: field.default for name, field in cls.model_fields.items()}
+        values = {**default_fields, **values}
         # noinspection PyArgumentList
         cls._validate_database_conf(
             cls=cls,
@@ -181,7 +179,7 @@ class DefaultConfig(BaseSettings):
 
     # noinspection PyMethodParameters
     # Pydantic returns a classmethod for its validators, so the cls param is correct
-    @root_validator
+    @model_validator(mode="before")
     def _BROKER_DB_and_parts_factory(cls, values: dict[str, Any]) -> dict[str, Any]:
         """A root validator to backfill BROKER_DB and BROKER_DB_* part config vars and validate
         that they are all consistent.
@@ -191,6 +189,8 @@ class DefaultConfig(BaseSettings):
         - ALSO validates that the parts and whole string are consistent. A ``ValueError`` is thrown if found to
         be inconsistent, which will in turn raise a ``pydantic.ValidationError`` at configuration time.
         """
+        default_fields = {name: field.default for name, field in cls.model_fields.items()}
+        values = {**default_fields, **values}
         # noinspection PyArgumentList
         cls._validate_database_conf(
             cls=cls,
@@ -206,14 +206,14 @@ class DefaultConfig(BaseSettings):
     ES_HOSTNAME: str = None  # FACTORY_PROVIDED_VALUE. See below validator-factory
     ES_SCHEME: str = "https"
     ES_HOST: str = ENV_SPECIFIC_OVERRIDE
-    ES_PORT: str = None
-    ES_USER: str = None
-    ES_PASSWORD: SecretStr = None
-    ES_NAME: str = None
+    ES_PORT: str | None = None
+    ES_USER: str | None = None
+    ES_PASSWORD: SecretStr | None = None
+    ES_NAME: str | None = None
 
     # noinspection PyMethodParameters
     # Pydantic returns a classmethod for its validators, so the cls param is correct
-    @root_validator
+    @model_validator(mode="before")
     def _ES_HOSTNAME_and_parts_factory(cls, values: dict[str, Any]) -> dict[str, Any]:
         """A root validator to backfill ES_HOSTNAME and ES_* part config vars and validate that they are
         all consistent.
@@ -223,6 +223,8 @@ class DefaultConfig(BaseSettings):
         - ALSO validates that the parts and whole string are consistent. A ``ValueError`` is thrown if found to
         be inconsistent, which will in turn raise a ``pydantic.ValidationError`` at configuration time.
         """
+        default_fields = {name: field.default for name, field in cls.model_fields.items()}
+        values = {**default_fields, **values}
         # noinspection PyArgumentList
         cls._validate_http_url(
             cls=cls,
@@ -251,9 +253,7 @@ class DefaultConfig(BaseSettings):
         # - it should take precedence
         # - its values will be used to backfill any missing URL parts stored as separate config vars
         if is_full_url_provided:
-            values = backfill_url_parts_config(
-                cls, url_conf_name, resource_conf_prefix, values
-            )
+            values = backfill_url_parts_config(cls, url_conf_name, resource_conf_prefix, values)
 
         # If the full URL config is not provided, try to build-it-up from provided parts, then set the full URL
         if not is_full_url_provided:
@@ -267,10 +267,11 @@ class DefaultConfig(BaseSettings):
             )
 
             if enough_parts:
+                # TODO: Need to make correct this; when running without ES_HOSTNAME provided it should build the value
+                #       from the parts (e.g., ES_SCHEME, _HOST, _PORT) that are provided
                 http_url = AnyHttpUrl(
-                    url=None,
                     scheme=values[f"{resource_conf_prefix}_SCHEME"],
-                    user=values[f"{resource_conf_prefix}_USER"],
+                    username=values[f"{resource_conf_prefix}_USER"],
                     password=(
                         values[f"{resource_conf_prefix}_PASSWORD"].get_secret_value()
                         if values[f"{resource_conf_prefix}_PASSWORD"]
@@ -298,7 +299,7 @@ class DefaultConfig(BaseSettings):
     # Those clusters are the only place we currently need this variable,
     # If you write code that depends on this config, make sure you
     # set BRANCH as an environment variable on your machine
-    BRANCH: str = os.environ.get("BRANCH")
+    BRANCH: str | None = os.environ.get("BRANCH")
 
     # SPARK_SCHEDULER_MODE = "FAIR"  # if used with weighted pools, could allow round-robin tasking of simultaneous jobs
     # TODO: have to deal with this if really wanting balanced (FAIR) task execution
@@ -361,7 +362,7 @@ class DefaultConfig(BaseSettings):
     AWS_ACCESS_KEY: SecretStr = ENV_SPECIFIC_OVERRIDE
     AWS_SECRET_KEY: SecretStr = ENV_SPECIFIC_OVERRIDE
     # Setting AWS_PROFILE to None so boto3 doesn't try to pick up the placeholder string as an actual profile to find
-    AWS_PROFILE: str = None  # USER_SPECIFIC_OVERRIDE
+    AWS_PROFILE: str | None = None  # USER_SPECIFIC_OVERRIDE
     SPARK_S3_BUCKET: str = os.environ.get("SPARK_S3_BUCKET")
     BULK_DOWNLOAD_S3_BUCKET_NAME: str = os.environ.get("BULK_DOWNLOAD_S3_BUCKET_NAME")
     DATABASE_DOWNLOAD_S3_BUCKET_NAME: str = os.environ.get(
@@ -380,9 +381,8 @@ class DefaultConfig(BaseSettings):
     COVID19_DOWNLOAD_README_OBJECT_KEY: str = (
         f"files/{COVID19_DOWNLOAD_README_FILE_NAME}"
     )
-
-    class Config:
-        pass
-        # supporting use of a user-provided (ang git-ignored) .env file for overrides
-        env_file = str(_PROJECT_ROOT_DIR / ".env")
-        env_file_encoding = "utf-8"
+    model_config = SettingsConfigDict(
+        env_file=str(_PROJECT_ROOT_DIR / ".env"),
+        env_file_encoding="utf-8",
+        extra="allow",
+    )
