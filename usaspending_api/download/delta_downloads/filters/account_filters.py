@@ -47,7 +47,7 @@ class AccountDownloadFilters(BaseModel):
             try:
                 result = int(value)
             except ValueError:
-                raise InvalidParameterException(f"{field.name} must be an integer.")
+                raise InvalidParameterException(f"{field.name} must be an integer.") from None
         else:
             result = value
         return result
@@ -89,7 +89,7 @@ class AccountDownloadFilters(BaseModel):
             raise InvalidParameterException("Must define period or quarter.")
         if period is not None and quarter is not None:
             values["quarter"] = quarter = None
-            warnings.warn("Both quarter and period are set.  Only using period.")
+            warnings.warn("Both quarter and period are set.  Only using period.", stacklevel=2)
         if period is not None and period not in range(2, 13):
             raise InvalidParameterException("Period must be between 2 and 12")
         if quarter is not None and quarter not in range(1, 5):
@@ -103,6 +103,7 @@ class AccountDownloadFilters(BaseModel):
         has_defc = bool(values.get("def_codes"))
         if includes_account_balances and has_defc:
             warnings.warn(
-                "Account balances can not be filtered by def code; this filter will be ignored for account balances."
+                "Account balances can not be filtered by def code; this filter will be ignored for account balances.",
+                stacklevel=2,
             )
         return values
