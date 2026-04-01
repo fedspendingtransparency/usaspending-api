@@ -14,14 +14,11 @@ logger = logging.getLogger(__name__)
 
 
 class TransactionDownload:
-
     def __init__(self, spark: SparkSession):
         self.award_search = spark.table("rpt.award_search")
         self.disaster_emergency_fund_code = spark.table("global_temp.disaster_emergency_fund_code")
         self.federal_account = spark.table("global_temp.federal_account")
-        self.faba = spark.table("int.financial_accounts_by_awards").withColumnRenamed(
-            "award_id", "faba_award_id"
-        )
+        self.faba = spark.table("int.financial_accounts_by_awards").withColumnRenamed("award_id", "faba_award_id")
         self.object_class = spark.table("global_temp.object_class")
         self.ref_program_activity = spark.table("global_temp.ref_program_activity")
         self.submission_attributes = spark.table("global_temp.submission_attributes")
@@ -170,14 +167,12 @@ class TransactionDownload:
             .join(self.submission_attributes, "submission_id")
             .join(
                 self.disaster_emergency_fund_code,
-                self.faba.disaster_emergency_fund_code
-                == self.disaster_emergency_fund_code.code,
+                self.faba.disaster_emergency_fund_code == self.disaster_emergency_fund_code.code,
                 "left",
             )
             .join(
                 self.treasury_appropriation_account,
-                self.faba.treasury_account_id
-                == self.treasury_appropriation_account.treasury_account_identifier,
+                self.faba.treasury_account_id == self.treasury_appropriation_account.treasury_account_identifier,
             )
             .join(
                 self.federal_account, self.treasury_appropriation_account.federal_account_id == self.federal_account.id
@@ -346,6 +341,7 @@ class TransactionDownload:
             self.transaction_search.place_of_performance_forei,
             self.transaction_search.place_of_performance_scope,
             # Recipient Location
+            self.transaction_search.legal_entity_city_code,
             self.transaction_search.legal_entity_foreign_city,
             self.transaction_search.legal_entity_foreign_posta,
             self.transaction_search.legal_entity_foreign_provi,
@@ -375,6 +371,7 @@ class TransactionDownload:
             self.transaction_search.transaction_number,
             # Dates
             self.transaction_search.ordering_period_end_date,
+            self.transaction_search.period_of_perf_potential_e,
             self.transaction_search.solicitation_date,
             # Officer Amounts
             self.transaction_search.officer_1_name,
@@ -555,6 +552,7 @@ class TransactionDownload:
             self.transaction_search.product_or_service_description,
             self.transaction_search.purchase_card_as_payment_m,
             self.transaction_search.purchase_card_as_paym_desc,
+            self.transaction_search.receives_contracts_and_gra,
             self.transaction_search.recovered_materials_sustai,
             self.transaction_search.recovered_materials_s_desc,
             self.transaction_search.research,
@@ -573,6 +571,8 @@ class TransactionDownload:
             self.transaction_search.small_disadvantaged_busine,
             self.transaction_search.sole_proprietorship,
             self.transaction_search.solicitation_identifier,
+            self.transaction_search.solicitation_procedures,
+            self.transaction_search.solicitation_procedur_desc,
             self.transaction_search.state_controlled_instituti,
             self.transaction_search.subchapter_s_corporation,
             self.transaction_search.subcontinent_asian_asian_i,
@@ -607,16 +607,14 @@ class TransactionDownload:
     def dataframe(self) -> DataFrame:
         # Capturing number of processes to repartition dataframes for help with memory limits
         num_partitions = self.spark.sparkContext.defaultParallelism
-        logger.info(
-            f"Repartitioning dataframe to {num_partitions} partitions"
-        )
+        logger.info(f"Repartitioning dataframe to {num_partitions} partitions")
 
         faba_cols = self.faba_aggs_df.columns
         faba_cols.remove("faba_award_id")
 
         df = self.transaction_search.join(
-                self.award_search, self.transaction_search.transaction_award_id == self.award_search.award_id
-            )
+            self.award_search, self.transaction_search.transaction_award_id == self.award_search.award_id
+        )
         df = df.join(
             self.faba_aggs_df,
             self.transaction_search.transaction_award_id == self.faba_aggs_df.faba_award_id,
