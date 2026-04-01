@@ -133,9 +133,11 @@ class DefaultConfig(BaseSettings):
                     url=None,
                     scheme=values[f"{resource_conf_prefix}_SCHEME"],
                     user=values[f"{resource_conf_prefix}_USER"],
-                    password=values[
-                        f"{resource_conf_prefix}_PASSWORD"
-                    ].get_secret_value(),
+                    password=(
+                        values[f"{resource_conf_prefix}_PASSWORD"].get_secret_value()
+                        if isinstance(values[f"{resource_conf_prefix}_PASSWORD"], SecretStr)
+                        else values[f"{resource_conf_prefix}_PASSWORD"]
+                    ),
                     host=values[f"{resource_conf_prefix}_HOST"],
                     port=values[f"{resource_conf_prefix}_PORT"],
                     path=(
