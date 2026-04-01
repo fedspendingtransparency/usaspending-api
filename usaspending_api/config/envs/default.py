@@ -362,7 +362,7 @@ class DefaultConfig(BaseSettings):
     AWS_ACCESS_KEY: SecretStr = ENV_SPECIFIC_OVERRIDE
     AWS_SECRET_KEY: SecretStr = ENV_SPECIFIC_OVERRIDE
     # Setting AWS_PROFILE to None so boto3 doesn't try to pick up the placeholder string as an actual profile to find
-    AWS_PROFILE: str = None  # USER_SPECIFIC_OVERRIDE
+    AWS_PROFILE: str | None = None  # USER_SPECIFIC_OVERRIDE
     SPARK_S3_BUCKET: str = os.environ.get("SPARK_S3_BUCKET")
     BULK_DOWNLOAD_S3_BUCKET_NAME: str = os.environ.get("BULK_DOWNLOAD_S3_BUCKET_NAME")
     DATABASE_DOWNLOAD_S3_BUCKET_NAME: str = os.environ.get(
