@@ -33,14 +33,10 @@ class _UnitTestBaseConfig(DefaultConfig):
     UNITTEST_CFG_B = "UNITTEST_CFG_B"
     UNITTEST_CFG_C = "UNITTEST_CFG_C"
     UNITTEST_CFG_D = "UNITTEST_CFG_D"
-    UNITTEST_CFG_E = property(
-        lambda self: self.UNITTEST_CFG_A + ":" + self.UNITTEST_CFG_B
-    )
+    UNITTEST_CFG_E = property(lambda self: self.UNITTEST_CFG_A + ":" + self.UNITTEST_CFG_B)
     UNITTEST_CFG_F = property(lambda self: "UNITTEST_CFG_F")
     UNITTEST_CFG_G = property(lambda self: "UNITTEST_CFG_G")
-    UNITTEST_CFG_H = property(
-        lambda self: os.environ.get("UNITTEST_CFG_H", "UNITTEST_CFG_H")
-    )
+    UNITTEST_CFG_H = property(lambda self: os.environ.get("UNITTEST_CFG_H", "UNITTEST_CFG_H"))
 
     UNITTEST_CFG_I = "UNITTEST_CFG_I"
     UNITTEST_CFG_J = "UNITTEST_CFG_J"
@@ -48,9 +44,7 @@ class _UnitTestBaseConfig(DefaultConfig):
     # by env vars
     UNITTEST_CFG_K = UNITTEST_CFG_I + ":" + UNITTEST_CFG_J
     UNITTEST_CFG_L = (  # noqa: E731
-        lambda _: _UnitTestBaseConfig.UNITTEST_CFG_I
-        + ":"
-        + _UnitTestBaseConfig.UNITTEST_CFG_J
+        lambda _: _UnitTestBaseConfig.UNITTEST_CFG_I + ":" + _UnitTestBaseConfig.UNITTEST_CFG_J
     )
 
     # Start trying to use validators (aka pre/post processors)
@@ -166,9 +160,7 @@ class _UnitTestBaseConfig(DefaultConfig):
     # model_validators
     @model_validator
     def _UNITTEST_CFG_AM(cls, values):
-        values["UNITTEST_CFG_AM"] = (
-            values["UNITTEST_CFG_AE"] + ":" + values["UNITTEST_CFG_AF"]
-        )
+        values["UNITTEST_CFG_AM"] = values["UNITTEST_CFG_AE"] + ":" + values["UNITTEST_CFG_AF"]
         return values
 
 
@@ -179,29 +171,19 @@ class _UnitTestSubConfig(_UnitTestBaseConfig):
     # Also, will UNITTEST_CFG_E show the original A value or the SUB A value?
 
     # prop evaluated as read when module loading class? Or late-eval when called?
-    SUB_UNITTEST_1 = property(
-        lambda self: self.UNITTEST_CFG_A + ":" + self.UNITTEST_CFG_D
-    )
+    SUB_UNITTEST_1 = property(lambda self: self.UNITTEST_CFG_A + ":" + self.UNITTEST_CFG_D)
     UNITTEST_CFG_D = "SUB_UNITTEST_CFG_D"
-    SUB_UNITTEST_2 = property(
-        lambda self: self.UNITTEST_CFG_A + ":" + self.UNITTEST_CFG_B
-    )
+    SUB_UNITTEST_2 = property(lambda self: self.UNITTEST_CFG_A + ":" + self.UNITTEST_CFG_B)
 
-    UNITTEST_CFG_C = property(
-        lambda self: "SUB_UNITTEST_CFG_C"
-    )  # parent not a prop, child a prop
+    UNITTEST_CFG_C = property(lambda self: "SUB_UNITTEST_CFG_C")  # parent not a prop, child a prop
     # Can't do the below: It throws a NameError because this name, not defined as a property, shadows the base class
     # name
     # UNITTEST_CFG_F = "SUB_UNITTEST_CFG_F"  # parent a prop, child not a prop
-    UNITTEST_CFG_G = property(
-        lambda self: "SUB_UNITTEST_CFG_G"
-    )  # parent and child both props
+    UNITTEST_CFG_G = property(lambda self: "SUB_UNITTEST_CFG_G")  # parent and child both props
 
     SUB_UNITTEST_3 = "SUB_UNITTEST_3"
     SUB_UNITTEST_4 = "SUB_UNITTEST_4"
-    SUB_UNITTEST_5 = property(
-        lambda self: self.SUB_UNITTEST_3 + ":" + self.SUB_UNITTEST_4
-    )
+    SUB_UNITTEST_5 = property(lambda self: self.SUB_UNITTEST_3 + ":" + self.SUB_UNITTEST_4)
 
     # See if this will override the validator's factory default
     UNITTEST_CFG_X = "SUB_UNITTEST_CFG_X"
@@ -277,9 +259,7 @@ class _UnitTestSubConfig(_UnitTestBaseConfig):
 
 class _UnitTestSubConfigFailFindingSubclassFieldsInValidator1(_UnitTestBaseConfig):
     ENV_CODE = "utsf1"
-    COMPONENT_NAME = (
-        "Unit Test SubConfig Component - Fail finding subclass fields in Validator (1)"
-    )
+    COMPONENT_NAME = "Unit Test SubConfig Component - Fail finding subclass fields in Validator (1)"
 
     UNITTEST_CFG_AG: str = FACTORY_PROVIDED_VALUE
     UNITTEST_CFG_AH: str = FACTORY_PROVIDED_VALUE
@@ -295,9 +275,7 @@ class _UnitTestSubConfigFailFindingSubclassFieldsInValidator1(_UnitTestBaseConfi
 
 class _UnitTestSubConfigFailFindingSubclassFieldsInValidator2(_UnitTestBaseConfig):
     ENV_CODE = "utsf2"
-    COMPONENT_NAME = (
-        "Unit Test SubConfig Component - Fail finding subclass fields in Validator (2)"
-    )
+    COMPONENT_NAME = "Unit Test SubConfig Component - Fail finding subclass fields in Validator (2)"
 
     UNITTEST_CFG_AG: str = FACTORY_PROVIDED_VALUE
     UNITTEST_CFG_AH: str = FACTORY_PROVIDED_VALUE
@@ -313,9 +291,7 @@ class _UnitTestSubConfigFailFindingSubclassFieldsInValidator2(_UnitTestBaseConfi
 
 class _UnitTestSubConfigFailFindingSubclassFieldsInValidator3(_UnitTestBaseConfig):
     ENV_CODE = "utsf3"
-    COMPONENT_NAME = (
-        "Unit Test SubConfig Component - Fail finding subclass fields in Validator (3)"
-    )
+    COMPONENT_NAME = "Unit Test SubConfig Component - Fail finding subclass fields in Validator (3)"
 
     UNITTEST_CFG_AG: str = FACTORY_PROVIDED_VALUE
     UNITTEST_CFG_AH: str = FACTORY_PROVIDED_VALUE
@@ -610,19 +586,15 @@ def test_database_json_string_checks_conf_values():
         os.environ,
         {
             ENV_CODE_VAR: _UnitTestDbPartsPlaceholderConfig.ENV_CODE,
-            "DATABASE_URL": json.dumps(
-                {"username": "dummy", "port": "12345", "dbname": "fresh_new_db_name"}
-            ),
+            "DATABASE_URL": json.dumps({"username": "dummy", "port": "12345", "dbname": "fresh_new_db_name"}),
         },
         clear=True,
     ):
-        expected_error = (
-            "The JSON provided for the DB CONF is missing values: {'host', 'password'}"
-        )
+        expected_errors = ("The JSON provided for the DB CONF is missing values:", "'host'", "'password'")
         try:
             _UnitTestDbPartsPlaceholderConfig(_env_file=None)
         except ValidationError as exc:
-            assert expected_error in str(exc)
+            assert all(expected_error in str(exc) for expected_error in expected_errors)
 
 
 def test_database_url_none_parts_will_build_database_url_with_only_parts_set():
@@ -681,10 +653,7 @@ def test_database_url_none_parts_will_build_database_url_with_only_parts_set():
         assert cfg.BROKER_DB_NAME == "fresh_new_db_name_broker"
         assert cfg.BROKER_DB_USER == "broker"
         assert cfg.BROKER_DB_PASSWORD.get_secret_value() == "pass"
-        assert (
-            cfg.BROKER_DB
-            == "postgres://broker:pass@broker-foobar:54321/fresh_new_db_name_broker"
-        )
+        assert cfg.BROKER_DB == "postgres://broker:pass@broker-foobar:54321/fresh_new_db_name_broker"
 
 
 def test_database_url_placeholder_parts_will_build_database_url_with_only_parts_set():
@@ -743,10 +712,7 @@ def test_database_url_placeholder_parts_will_build_database_url_with_only_parts_
         assert cfg.BROKER_DB_NAME == "fresh_new_db_name_broker"
         assert cfg.BROKER_DB_USER == "broker"
         assert cfg.BROKER_DB_PASSWORD.get_secret_value() == "pass"
-        assert (
-            cfg.BROKER_DB
-            == "postgres://broker:pass@broker-foobar:54321/fresh_new_db_name_broker"
-        )
+        assert cfg.BROKER_DB == "postgres://broker:pass@broker-foobar:54321/fresh_new_db_name_broker"
 
 
 def test_database_url_and_parts_defined_ok_if_consistent_none_parts():
@@ -808,10 +774,7 @@ def test_database_url_and_parts_defined_ok_if_consistent_none_parts():
         assert cfg.BROKER_DB_NAME == "fresh_new_db_name_broker"
         assert cfg.BROKER_DB_USER == "broker"
         assert cfg.BROKER_DB_PASSWORD.get_secret_value() == "pass"
-        assert (
-            cfg.BROKER_DB
-            == "postgres://broker:pass@broker-foobar:54321/fresh_new_db_name_broker"
-        )
+        assert cfg.BROKER_DB == "postgres://broker:pass@broker-foobar:54321/fresh_new_db_name_broker"
 
 
 def test_database_url_and_parts_defined_ok_if_consistent_placeholder_parts():
@@ -873,10 +836,7 @@ def test_database_url_and_parts_defined_ok_if_consistent_placeholder_parts():
         assert cfg.BROKER_DB_NAME == "fresh_new_db_name_broker"
         assert cfg.BROKER_DB_USER == "broker"
         assert cfg.BROKER_DB_PASSWORD.get_secret_value() == "pass"
-        assert (
-            cfg.BROKER_DB
-            == "postgres://broker:pass@broker-foobar:54321/fresh_new_db_name_broker"
-        )
+        assert cfg.BROKER_DB == "postgres://broker:pass@broker-foobar:54321/fresh_new_db_name_broker"
 
 
 def test_database_url_and_parts_error_if_inconsistent_none_parts():
@@ -922,8 +882,7 @@ def test_database_url_and_parts_error_if_inconsistent_none_parts():
                 provided = SecretStr(provided)
                 expected = "*" * len(expected) if expected else None
             expected_error = (
-                f"Part: {part}, Part Value Provided: {provided}, "
-                f"Value found in DATABASE_URL: {expected}"
+                f"Part: {part}, Part Value Provided: {provided}, " f"Value found in DATABASE_URL: {expected}"
             )
             assert exc_info.match(re.escape(expected_error))
 
@@ -971,8 +930,7 @@ def test_database_url_and_parts_error_if_inconsistent_placeholder_parts():
                 provided = SecretStr(provided)
                 expected = "*" * len(expected) if expected else None
             expected_error = (
-                f"Part: {part}, Part Value Provided: {provided}, "
-                f"Value found in DATABASE_URL: {expected}"
+                f"Part: {part}, Part Value Provided: {provided}, " f"Value found in DATABASE_URL: {expected}"
             )
             assert exc_info.match(re.escape(expected_error))
 
@@ -1231,9 +1189,7 @@ def test_override_with_dotenv_file_for_subclass_overridden_var(tmpdir):
         if Path(_PROJECT_ROOT_DIR / ".env").exists():
             shutil.copy(str(_PROJECT_ROOT_DIR / ".env"), dotenv_file)
         with open(dotenv_file, "w"):
-            dotenv_file.write(
-                f"COMPONENT_NAME={dotenv_val}\nUNITTEST_CFG_A={dotenv_val_a}", "w"
-            )
+            dotenv_file.write(f"COMPONENT_NAME={dotenv_val}\nUNITTEST_CFG_A={dotenv_val_a}", "w")
         dotenv_path = os.path.join(dotenv_file.dirname, dotenv_file.basename)
 
         _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
@@ -1500,10 +1456,7 @@ def test_override_multiple_with_command_line_args():
     with patch.object(sys, "argv", test_args):
         _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
         app_cfg_copy = _load_config()
-        assert (
-            app_cfg_copy.COMPONENT_NAME
-            == "test_override_multiple_with_command_line_args"
-        )
+        assert app_cfg_copy.COMPONENT_NAME == "test_override_multiple_with_command_line_args"
         assert app_cfg_copy.AWS_REGION == "a-new-region"
     # Ensure the official CONFIG is unchanged
     assert CONFIG.COMPONENT_NAME == "USAspending API"

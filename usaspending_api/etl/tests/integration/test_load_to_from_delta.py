@@ -19,6 +19,9 @@ from model_bakery import baker
 from pyspark.sql import SparkSession
 
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
+from usaspending_api.download.delta_models.dataframes.transaction_download import (
+    TransactionDownload,
+)
 from usaspending_api.etl.award_helpers import update_awards
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
 from usaspending_api.etl.management.commands.create_delta_table import (
@@ -1487,4 +1490,171 @@ def test_load_account_balances_download(
         s3_unittest_data_bucket,
         load_command="load_query_to_delta",
         dummy_data=[],
+    )
+
+
+@pytest.mark.django_db(
+    databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True
+)
+def test_load_transaction_download(
+    spark,
+    s3_unittest_data_bucket,
+    populate_usas_data_and_recipients_from_broker,
+    hive_unittest_metastore_db,
+):
+    load_delta_table_from_postgres("published_fabs", s3_unittest_data_bucket)
+    load_delta_table_from_postgres(
+        "detached_award_procurement", s3_unittest_data_bucket
+    )
+
+    tables_to_load = [
+        "awards",
+        "financial_accounts_by_awards",
+        "recipient_lookup",
+        "recipient_profile",
+        "sam_recipient",
+        "transaction_current_cd_lookup",
+        "transaction_fabs",
+        "transaction_fpds",
+        "transaction_normalized",
+        "zips",
+    ]
+
+    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
+    verify_delta_table_loaded_to_delta(
+        spark,
+        "award_search",
+        s3_unittest_data_bucket,
+        load_command="load_query_to_delta",
+    )
+    verify_delta_table_loaded_to_delta(
+        spark,
+        "transaction_search",
+        s3_unittest_data_bucket,
+        load_command="load_query_to_delta",
+        ignore_fields=["award_update_date", "etl_update_date"],
+    )
+
+    tables_to_load = [
+        "award_search",
+        "transaction_search",
+    ]
+    create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
+
+    call_command(
+        "create_delta_table",
+        "--destination-table=transaction_download",
+        f"--spark-s3-bucket={s3_unittest_data_bucket}",
+    )
+
+    expected_data = [
+        {
+            "transaction_id": 1,
+            "award_id": 1,
+            "covid_19_obligated_amount": 2.0,
+            "covid_19_outlayed_amount": 2.0,
+            "defc_for_overall_award": "L: DEFC L Public Law;M: DEFC M Public Law",
+            "federal_accounts_funding_this_award": "123-4567",
+            "iija_obligated_amount": None,
+            "iija_outlayed_amount": None,
+            "object_classes_funding_this_award": "",
+            "program_activities_funding_this_award": "0001: OFFICE OF THE SECRETARY;0002: OPERATIONS AND MAINTENANCE",
+            "total_outlayed_amount_for_overall_award": 2.0,
+            "treasury_accounts_funding_this_award": "123-X-4567-000",
+        },
+        {
+            "transaction_id": 2,
+            "award_id": 1,
+            "covid_19_obligated_amount": 2.0,
+            "covid_19_outlayed_amount": 2.0,
+            "defc_for_overall_award": "L: DEFC L Public Law;M: DEFC M Public Law",
+            "federal_accounts_funding_this_award": "123-4567",
+            "iija_obligated_amount": None,
+            "iija_outlayed_amount": None,
+            "object_classes_funding_this_award": "",
+            "program_activities_funding_this_award": "0001: OFFICE OF THE SECRETARY;0002: OPERATIONS AND MAINTENANCE",
+            "total_outlayed_amount_for_overall_award": 2.0,
+            "treasury_accounts_funding_this_award": "123-X-4567-000",
+        },
+        {
+            "transaction_id": 3,
+            "award_id": 2,
+            "covid_19_obligated_amount": None,
+            "covid_19_outlayed_amount": None,
+            "defc_for_overall_award": "Q: DEFC Q Public Law",
+            "federal_accounts_funding_this_award": "123-4567",
+            "iija_obligated_amount": None,
+            "iija_outlayed_amount": None,
+            "object_classes_funding_this_award": "",
+            "program_activities_funding_this_award": "0003: TRAINING AND RECRUITING",
+            "total_outlayed_amount_for_overall_award": 3.0,
+            "treasury_accounts_funding_this_award": "123-X-4567-000",
+        },
+        {
+            "transaction_id": 4,
+            "award_id": 2,
+            "covid_19_obligated_amount": None,
+            "covid_19_outlayed_amount": None,
+            "defc_for_overall_award": "Q: DEFC Q Public Law",
+            "federal_accounts_funding_this_award": "123-4567",
+            "iija_obligated_amount": None,
+            "iija_outlayed_amount": None,
+            "object_classes_funding_this_award": "",
+            "program_activities_funding_this_award": "0003: TRAINING AND RECRUITING",
+            "total_outlayed_amount_for_overall_award": 3.0,
+            "treasury_accounts_funding_this_award": "123-X-4567-000",
+        },
+        {
+            "transaction_id": 5,
+            "award_id": 4,
+            "covid_19_obligated_amount": None,
+            "covid_19_outlayed_amount": None,
+            "defc_for_overall_award": None,
+            "federal_accounts_funding_this_award": None,
+            "iija_obligated_amount": None,
+            "iija_outlayed_amount": None,
+            "object_classes_funding_this_award": None,
+            "program_activities_funding_this_award": None,
+            "total_outlayed_amount_for_overall_award": None,
+            "treasury_accounts_funding_this_award": None,
+        },
+        {
+            "transaction_id": 434,
+            "award_id": 3,
+            "covid_19_obligated_amount": None,
+            "covid_19_outlayed_amount": None,
+            "defc_for_overall_award": None,
+            "federal_accounts_funding_this_award": None,
+            "iija_obligated_amount": None,
+            "iija_outlayed_amount": None,
+            "object_classes_funding_this_award": None,
+            "program_activities_funding_this_award": None,
+            "total_outlayed_amount_for_overall_award": None,
+            "treasury_accounts_funding_this_award": None,
+        },
+    ]
+
+    all_columns = set(TransactionDownload(spark).dataframe.columns)
+    expected_columns = {
+        "transaction_id",
+        "award_id",
+        "covid_19_obligated_amount",
+        "covid_19_outlayed_amount",
+        "defc_for_overall_award",
+        "federal_accounts_funding_this_award",
+        "iija_obligated_amount",
+        "iija_outlayed_amount",
+        "object_classes_funding_this_award",
+        "program_activities_funding_this_award",
+        "total_outlayed_amount_for_overall_award",
+        "treasury_accounts_funding_this_award",
+    }
+
+    verify_delta_table_loaded_to_delta(
+        spark,
+        "transaction_download",
+        s3_unittest_data_bucket,
+        load_command="load_query_to_delta",
+        dummy_data=expected_data,
+        ignore_fields=list(all_columns - expected_columns),
     )
