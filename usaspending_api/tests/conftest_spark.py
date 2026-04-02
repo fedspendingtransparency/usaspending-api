@@ -11,6 +11,7 @@ from django.core.management import call_command
 from django.db import connections
 from model_bakery import baker
 from psycopg2.extensions import AsIs
+
 from usaspending_api import settings
 from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.helpers.spark_helpers import (
@@ -21,7 +22,10 @@ from usaspending_api.common.helpers.spark_helpers import (
 from usaspending_api.common.spark.configs import LOCAL_BASIC_EXTRA_CONF
 from usaspending_api.config import CONFIG
 from usaspending_api.etl.award_helpers import update_awards
-from usaspending_api.etl.management.commands.create_delta_table import LOAD_QUERY_TABLE_SPEC, LOAD_TABLE_TABLE_SPEC
+from usaspending_api.etl.management.commands.create_delta_table import (
+    LOAD_QUERY_TABLE_SPEC,
+    LOAD_TABLE_TABLE_SPEC,
+)
 
 if TYPE_CHECKING:
     from pyspark.sql import SparkSession
@@ -59,7 +63,7 @@ def s3_unittest_data_bucket_setup_and_teardown(worker_id: str) -> str:
     unittest_data_bucket = "unittest-data-{}".format(worker_prefix + str(uuid.uuid4()))
 
     logging.warning(
-        f"Attempting to create unit test data bucket {unittest_data_bucket } "
+        f"Attempting to create unit test data bucket {unittest_data_bucket} "
         f"at: http://{CONFIG.AWS_S3_ENDPOINT} using CONFIG.AWS_ACCESS_KEY and CONFIG.AWS_SECRET_KEY"
     )
     s3_client = boto3.client(
@@ -140,11 +144,13 @@ def spark(tmp_path_factory) -> Generator["SparkSession", None, None]:
     # So as not to have interfering schemas and tables in the metastore_db from individual test run to run,
     # another test-scoped fixture should be created, pulling this in, and blowing away all schemas and tables as part
     # of each run
-    spark_sql_warehouse_dir = str(tmp_path_factory.mktemp(basename="spark-warehouse", numbered=False))
+    spark_sql_warehouse_dir = str(
+        tmp_path_factory.mktemp(basename="spark-warehouse", numbered=False)
+    )
     extra_conf = {
         **LOCAL_BASIC_EXTRA_CONF,
         "spark.sql.warehouse.dir": spark_sql_warehouse_dir,
-        "spark.hadoop.javax.jdo.option.ConnectionURL": f"jdbc:derby:;databaseName={spark_sql_warehouse_dir}/metastore_db;create=true",
+        "spark.hadoop.javax.jdo.option.ConnectionURL": f"jdbc:derby:;databaseName={spark_sql_warehouse_dir}/metastore_db;create=true",  # noqa: E501
     }
     spark = configure_spark_session(
         app_name="Unit Test Session",
@@ -224,16 +230,36 @@ def populate_broker_data(broker_server_dblink_setup):
             USAspending test DB and broker test DB
     """
     broker_data = {
-        "sam_recipient": json.loads(Path("usaspending_api/recipient/tests/data/broker_sam_recipient.json").read_text()),
-        "subaward": json.loads(Path("usaspending_api/awards/tests/data/subaward.json").read_text()),
-        "cd_state_grouped": json.loads(
-            Path("usaspending_api/transactions/tests/data/cd_state_grouped.json").read_text()
+        "sam_recipient": json.loads(
+            Path(
+                "usaspending_api/recipient/tests/data/broker_sam_recipient.json"
+            ).read_text()
         ),
-        "zips": json.loads(Path("usaspending_api/transactions/tests/data/zips.json").read_text()),
-        "cd_zips_grouped": json.loads(Path("usaspending_api/transactions/tests/data/cd_zips_grouped.json").read_text()),
-        "cd_city_grouped": json.loads(Path("usaspending_api/transactions/tests/data/cd_city_grouped.json").read_text()),
+        "subaward": json.loads(
+            Path("usaspending_api/awards/tests/data/subaward.json").read_text()
+        ),
+        "cd_state_grouped": json.loads(
+            Path(
+                "usaspending_api/transactions/tests/data/cd_state_grouped.json"
+            ).read_text()
+        ),
+        "zips": json.loads(
+            Path("usaspending_api/transactions/tests/data/zips.json").read_text()
+        ),
+        "cd_zips_grouped": json.loads(
+            Path(
+                "usaspending_api/transactions/tests/data/cd_zips_grouped.json"
+            ).read_text()
+        ),
+        "cd_city_grouped": json.loads(
+            Path(
+                "usaspending_api/transactions/tests/data/cd_city_grouped.json"
+            ).read_text()
+        ),
         "cd_county_grouped": json.loads(
-            Path("usaspending_api/transactions/tests/data/cd_county_grouped.json").read_text()
+            Path(
+                "usaspending_api/transactions/tests/data/cd_county_grouped.json"
+            ).read_text()
         ),
     }
     insert_statement = "INSERT INTO %(table_name)s (%(columns)s) VALUES %(values)s"
@@ -244,7 +270,11 @@ def populate_broker_data(broker_server_dblink_setup):
             values = [str(tuple(r.values())).replace("None", "null") for r in rows]
             sql_string = cursor.mogrify(
                 insert_statement,
-                {"table_name": AsIs(table_name), "columns": AsIs(",".join(columns)), "values": AsIs(",".join(values))},
+                {
+                    "table_name": AsIs(table_name),
+                    "columns": AsIs(",".join(columns)),
+                    "values": AsIs(",".join(values)),
+                },
             )
             cursor.execute(sql_string)
     yield
@@ -330,10 +360,16 @@ def _build_usas_data_for_spark():
 
     # Create agency data
     funding_toptier_agency = baker.make(
-        "references.ToptierAgency", name="TEST AGENCY 1", abbreviation="TA1", _fill_optional=True
+        "references.ToptierAgency",
+        name="TEST AGENCY 1",
+        abbreviation="TA1",
+        _fill_optional=True,
     )
     funding_subtier_agency = baker.make(
-        "references.SubtierAgency", name="TEST SUBTIER 1", abbreviation="SA1", _fill_optional=True
+        "references.SubtierAgency",
+        name="TEST SUBTIER 1",
+        abbreviation="SA1",
+        _fill_optional=True,
     )
     funding_agency = baker.make(
         "references.Agency",
@@ -343,8 +379,18 @@ def _build_usas_data_for_spark():
         _fill_optional=True,
     )
 
-    toptier = baker.make("references.ToptierAgency", name="toptier", abbreviation="tt", _fill_optional=True)
-    subtier = baker.make("references.SubtierAgency", name="subtier", abbreviation="st", _fill_optional=True)
+    toptier = baker.make(
+        "references.ToptierAgency",
+        name="toptier",
+        abbreviation="tt",
+        _fill_optional=True,
+    )
+    subtier = baker.make(
+        "references.SubtierAgency",
+        name="subtier",
+        abbreviation="st",
+        _fill_optional=True,
+    )
     agency = baker.make(
         "references.Agency",
         toptier_agency=toptier,
@@ -355,10 +401,17 @@ def _build_usas_data_for_spark():
     )
 
     awarding_toptier_agency = baker.make(
-        "references.ToptierAgency", name="TEST AGENCY 2", abbreviation="TA2", _fill_optional=True
+        "references.ToptierAgency",
+        name="TEST AGENCY 2",
+        abbreviation="TA2",
+        _fill_optional=True,
     )
     awarding_subtier_agency = baker.make(
-        "references.SubtierAgency", name="TEST SUBTIER 2", abbreviation="SA2", subtier_code="789", _fill_optional=True
+        "references.SubtierAgency",
+        name="TEST SUBTIER 2",
+        abbreviation="SA2",
+        subtier_code="789",
+        _fill_optional=True,
     )
     awarding_agency = baker.make(
         "references.Agency",
@@ -379,14 +432,57 @@ def _build_usas_data_for_spark():
         county_name="County Name",
         _fill_optional=True,
     )
-    baker.make("references.RefCountryCode", country_code="USA", country_name="UNITED STATES", _fill_optional=True)
-    baker.make("recipient.StateData", code="VA", name="Virginia", fips="51", _fill_optional=True)
-    baker.make("references.PopCounty", state_code="51", county_number="000", latest_population=1, _fill_optional=True)
-    baker.make("references.PopCounty", state_code="51", county_number="001", latest_population=1, _fill_optional=True)
-    baker.make("references.PopCongressionalDistrict", state_code="51", latest_population=1, congressional_district="01")
-    defc_l = baker.make("references.DisasterEmergencyFundCode", code="L", group_name="covid_19", _fill_optional=True)
-    defc_m = baker.make("references.DisasterEmergencyFundCode", code="M", group_name="covid_19", _fill_optional=True)
-    defc_q = baker.make("references.DisasterEmergencyFundCode", code="Q", group_name=None, _fill_optional=True)
+    baker.make(
+        "references.RefCountryCode",
+        country_code="USA",
+        country_name="UNITED STATES",
+        _fill_optional=True,
+    )
+    baker.make(
+        "recipient.StateData",
+        code="VA",
+        name="Virginia",
+        fips="51",
+        _fill_optional=True,
+    )
+    baker.make(
+        "references.PopCounty",
+        state_code="51",
+        county_number="000",
+        latest_population=1,
+        _fill_optional=True,
+    )
+    baker.make(
+        "references.PopCounty",
+        state_code="51",
+        county_number="001",
+        latest_population=1,
+        _fill_optional=True,
+    )
+    baker.make(
+        "references.PopCongressionalDistrict",
+        state_code="51",
+        latest_population=1,
+        congressional_district="01",
+    )
+    defc_l = baker.make(
+        "references.DisasterEmergencyFundCode",
+        code="L",
+        group_name="covid_19",
+        _fill_optional=True,
+    )
+    defc_m = baker.make(
+        "references.DisasterEmergencyFundCode",
+        code="M",
+        group_name="covid_19",
+        _fill_optional=True,
+    )
+    defc_q = baker.make(
+        "references.DisasterEmergencyFundCode",
+        code="Q",
+        group_name=None,
+        _fill_optional=True,
+    )
     rpa_1 = baker.make(
         "references.RefProgramActivity",
         id=1,
@@ -408,7 +504,9 @@ def _build_usas_data_for_spark():
 
     # Create account data
     federal_account = baker.make(
-        "accounts.FederalAccount", parent_toptier_agency=funding_toptier_agency, _fill_optional=True
+        "accounts.FederalAccount",
+        parent_toptier_agency=funding_toptier_agency,
+        _fill_optional=True,
     )
     tas = baker.make(
         "accounts.TreasuryAppropriationAccount",
@@ -502,10 +600,16 @@ def _build_usas_data_for_spark():
         recipient_location_congressional_population=1,
         pop_congressional_population=1,
         tas_paths=[
-            f"agency={funding_toptier_agency.toptier_code}faaid={federal_account.agency_identifier}famain={federal_account.main_account_code}aid={tas.agency_id}main={tas.main_account_code}ata={tas.allocation_transfer_agency_id or ''}sub={tas.sub_account_code}bpoa={tas.beginning_period_of_availability or ''}epoa={tas.ending_period_of_availability or ''}a={tas.availability_type_code}"
+            f"agency={funding_toptier_agency.toptier_code}faaid={federal_account.agency_identifier}"
+            f"famain={federal_account.main_account_code}aid={tas.agency_id}main={tas.main_account_code}"
+            f"ata={tas.allocation_transfer_agency_id or ''}sub={tas.sub_account_code}"
+            f"bpoa={tas.beginning_period_of_availability or ''}epoa={tas.ending_period_of_availability or ''}"
+            f"a={tas.availability_type_code}"
         ],
         tas_components=[
-            f"aid={tas.agency_id}main={tas.main_account_code}ata={tas.allocation_transfer_agency_id or ''}sub={tas.sub_account_code}bpoa={tas.beginning_period_of_availability or ''}epoa={tas.ending_period_of_availability or ''}a={tas.availability_type_code}"
+            f"aid={tas.agency_id}main={tas.main_account_code}ata={tas.allocation_transfer_agency_id or ''}"
+            f"sub={tas.sub_account_code}bpoa={tas.beginning_period_of_availability or ''}"
+            f"epoa={tas.ending_period_of_availability or ''}a={tas.availability_type_code}"
         ],
         disaster_emergency_fund_codes=["L", "M"],
         total_covid_outlay=2.0,
@@ -702,10 +806,16 @@ def _build_usas_data_for_spark():
         recipient_location_state_population=1,
         pop_state_population=1,
         tas_paths=[
-            f"agency={funding_toptier_agency.toptier_code}faaid={federal_account.agency_identifier}famain={federal_account.main_account_code}aid={tas.agency_id}main={tas.main_account_code}ata={tas.allocation_transfer_agency_id or ''}sub={tas.sub_account_code}bpoa={tas.beginning_period_of_availability or ''}epoa={tas.ending_period_of_availability or ''}a={tas.availability_type_code}"
+            f"agency={funding_toptier_agency.toptier_code}faaid={federal_account.agency_identifier}"
+            f"famain={federal_account.main_account_code}aid={tas.agency_id}main={tas.main_account_code}"
+            f"ata={tas.allocation_transfer_agency_id or ''}sub={tas.sub_account_code}"
+            f"bpoa={tas.beginning_period_of_availability or ''}epoa={tas.ending_period_of_availability or ''}"
+            f"a={tas.availability_type_code}"
         ],
         tas_components=[
-            f"aid={tas.agency_id}main={tas.main_account_code}ata={tas.allocation_transfer_agency_id or ''}sub={tas.sub_account_code}bpoa={tas.beginning_period_of_availability or ''}epoa={tas.ending_period_of_availability or ''}a={tas.availability_type_code}"
+            f"aid={tas.agency_id}main={tas.main_account_code}ata={tas.allocation_transfer_agency_id or ''}"
+            f"sub={tas.sub_account_code}bpoa={tas.beginning_period_of_availability or ''}"
+            f"epoa={tas.ending_period_of_availability or ''}a={tas.availability_type_code}"
         ],
         disaster_emergency_fund_codes=["Q"],
         spending_by_defc=[{"defc": "Q", "outlay": 1.00, "obligation": 1.00}],
@@ -719,7 +829,9 @@ def _build_usas_data_for_spark():
         recipient_location_county_fips=None,
         pop_county_fips=None,
         generated_pragmatic_obligation=0.00,
-        program_activities=[{"name": "TRAINING AND RECRUITING", "code": "0003", "type": "PAC/PAN"}],
+        program_activities=[
+            {"name": "TRAINING AND RECRUITING", "code": "0003", "type": "PAC/PAN"}
+        ],
         federal_accounts=[
             {
                 "id": federal_account.id,
@@ -747,7 +859,7 @@ def _build_usas_data_for_spark():
         total_obligation=0.00,
         total_subsidy_cost=0.00,
         total_obl_bin="<1M",
-        last_modified_date="2020-01-01",
+        last_modified_date="2020-01-01 00:00:00",
         update_date="2020-01-01",
         awarding_agency_id=32,
         funding_agency_id=32,
@@ -840,7 +952,7 @@ def _build_usas_data_for_spark():
         funding_subtier_agency_name_raw="TEST SUBTIER 1",
         awarding_toptier_agency_id=awarding_agency.id,
         funding_toptier_agency_id=funding_agency.id,
-        last_modified_date="2020-01-01",
+        last_modified_date="2020-01-01 00:00:00",
         federal_action_obligation=0,
         cfda_number="12.456",
         cfda_id=cfda.id,
@@ -889,10 +1001,16 @@ def _build_usas_data_for_spark():
         non_federal_funding_amount=0.00,
         treasury_account_identifiers=[tas.treasury_account_identifier],
         tas_paths=[
-            f"agency={funding_toptier_agency.toptier_code}faaid={federal_account.agency_identifier}famain={federal_account.main_account_code}aid={tas.agency_id}main={tas.main_account_code}ata={tas.allocation_transfer_agency_id or ''}sub={tas.sub_account_code}bpoa={tas.beginning_period_of_availability or ''}epoa={tas.ending_period_of_availability or ''}a={tas.availability_type_code}"
+            f"agency={funding_toptier_agency.toptier_code}faaid={federal_account.agency_identifier}"
+            f"famain={federal_account.main_account_code}aid={tas.agency_id}main={tas.main_account_code}"
+            f"ata={tas.allocation_transfer_agency_id or ''}sub={tas.sub_account_code}"
+            f"bpoa={tas.beginning_period_of_availability or ''}epoa={tas.ending_period_of_availability or ''}"
+            f"a={tas.availability_type_code}"
         ],
         tas_components=[
-            f"aid={tas.agency_id}main={tas.main_account_code}ata={tas.allocation_transfer_agency_id or ''}sub={tas.sub_account_code}bpoa={tas.beginning_period_of_availability or ''}epoa={tas.ending_period_of_availability or ''}a={tas.availability_type_code}"
+            f"aid={tas.agency_id}main={tas.main_account_code}ata={tas.allocation_transfer_agency_id or ''}"
+            f"sub={tas.sub_account_code}bpoa={tas.beginning_period_of_availability or ''}"
+            f"epoa={tas.ending_period_of_availability or ''}a={tas.availability_type_code}"
         ],
         federal_accounts=[
             {
@@ -948,7 +1066,7 @@ def _build_usas_data_for_spark():
         funding_subtier_agency_abbreviation=funding_subtier_agency.abbreviation,
         awarding_toptier_agency_id=awarding_agency.id,
         funding_toptier_agency_id=funding_agency.id,
-        last_modified_date="2020-01-01",
+        last_modified_date="2020-01-01 00:00:00",
         federal_action_obligation=0,
         published_fabs_id=2,
         cfda_number="12.456",
@@ -998,10 +1116,16 @@ def _build_usas_data_for_spark():
         non_federal_funding_amount=0.00,
         treasury_account_identifiers=[tas.treasury_account_identifier],
         tas_paths=[
-            f"agency={funding_toptier_agency.toptier_code}faaid={federal_account.agency_identifier}famain={federal_account.main_account_code}aid={tas.agency_id}main={tas.main_account_code}ata={tas.allocation_transfer_agency_id or ''}sub={tas.sub_account_code}bpoa={tas.beginning_period_of_availability or ''}epoa={tas.ending_period_of_availability or ''}a={tas.availability_type_code}"
+            f"agency={funding_toptier_agency.toptier_code}faaid={federal_account.agency_identifier}"
+            f"famain={federal_account.main_account_code}aid={tas.agency_id}main={tas.main_account_code}"
+            f"ata={tas.allocation_transfer_agency_id or ''}sub={tas.sub_account_code}"
+            f"bpoa={tas.beginning_period_of_availability or ''}epoa={tas.ending_period_of_availability or ''}"
+            f"a={tas.availability_type_code}"
         ],
         tas_components=[
-            f"aid={tas.agency_id}main={tas.main_account_code}ata={tas.allocation_transfer_agency_id or ''}sub={tas.sub_account_code}bpoa={tas.beginning_period_of_availability or ''}epoa={tas.ending_period_of_availability or ''}a={tas.availability_type_code}"
+            f"aid={tas.agency_id}main={tas.main_account_code}ata={tas.allocation_transfer_agency_id or ''}"
+            f"sub={tas.sub_account_code}bpoa={tas.beginning_period_of_availability or ''}"
+            f"epoa={tas.ending_period_of_availability or ''}a={tas.availability_type_code}"
         ],
         federal_accounts=[
             {
@@ -1057,7 +1181,7 @@ def _build_usas_data_for_spark():
         funding_subtier_agency_name_raw="TEST SUBTIER 1",
         awarding_toptier_agency_id=awarding_agency.id,
         funding_toptier_agency_id=funding_agency.id,
-        last_modified_date="2020-01-01",
+        last_modified_date="2020-01-01 00:00:00",
         federal_action_obligation=0,
         cfda_number="12.456",
         cfda_id=cfda.id,
@@ -1151,7 +1275,7 @@ def _build_usas_data_for_spark():
         funding_toptier_agency_abbreviation=funding_toptier_agency.abbreviation,
         awarding_subtier_agency_abbreviation=awarding_subtier_agency.abbreviation,
         funding_subtier_agency_abbreviation=funding_subtier_agency.abbreviation,
-        last_modified_date="2020-01-01",
+        last_modified_date="2020-01-01 00:00:00",
         federal_action_obligation=0,
         naics_code="123456",
         product_or_service_code="12",
@@ -1191,10 +1315,16 @@ def _build_usas_data_for_spark():
         total_funding_amount=0.00,
         treasury_account_identifiers=[tas.treasury_account_identifier],
         tas_paths=[
-            f"agency={funding_toptier_agency.toptier_code}faaid={federal_account.agency_identifier}famain={federal_account.main_account_code}aid={tas.agency_id}main={tas.main_account_code}ata={tas.allocation_transfer_agency_id or ''}sub={tas.sub_account_code}bpoa={tas.beginning_period_of_availability or ''}epoa={tas.ending_period_of_availability or ''}a={tas.availability_type_code}"
+            f"agency={funding_toptier_agency.toptier_code}faaid={federal_account.agency_identifier}"
+            f"famain={federal_account.main_account_code}aid={tas.agency_id}main={tas.main_account_code}"
+            f"ata={tas.allocation_transfer_agency_id or ''}sub={tas.sub_account_code}"
+            f"bpoa={tas.beginning_period_of_availability or ''}epoa={tas.ending_period_of_availability or ''}"
+            f"a={tas.availability_type_code}"
         ],
         tas_components=[
-            f"aid={tas.agency_id}main={tas.main_account_code}ata={tas.allocation_transfer_agency_id or ''}sub={tas.sub_account_code}bpoa={tas.beginning_period_of_availability or ''}epoa={tas.ending_period_of_availability or ''}a={tas.availability_type_code}"
+            f"aid={tas.agency_id}main={tas.main_account_code}ata={tas.allocation_transfer_agency_id or ''}"
+            f"sub={tas.sub_account_code}bpoa={tas.beginning_period_of_availability or ''}"
+            f"epoa={tas.ending_period_of_availability or ''}a={tas.availability_type_code}"
         ],
         federal_accounts=[
             {
@@ -1206,7 +1336,9 @@ def _build_usas_data_for_spark():
         disaster_emergency_fund_codes=["Q"],
         recipient_location_county_fips=None,
         pop_county_fips=None,
-        program_activities=[{"code": "0003", "name": "TRAINING AND RECRUITING", "type": "PAC/PAN"}],
+        program_activities=[
+            {"code": "0003", "name": "TRAINING AND RECRUITING", "type": "PAC/PAN"}
+        ],
     )
 
     pap1 = baker.make("references.ProgramActivityPark", code="1000", name="PAP name")
@@ -1249,7 +1381,7 @@ def _build_usas_data_for_spark():
         funding_toptier_agency_abbreviation=funding_toptier_agency.abbreviation,
         awarding_subtier_agency_abbreviation=awarding_subtier_agency.abbreviation,
         funding_subtier_agency_abbreviation=funding_subtier_agency.abbreviation,
-        last_modified_date="2020-01-01",
+        last_modified_date="2020-01-01 00:00:00",
         federal_action_obligation=0,
         naics_code="123456",
         product_or_service_code="12",
@@ -1289,10 +1421,16 @@ def _build_usas_data_for_spark():
         total_funding_amount=0.00,
         treasury_account_identifiers=[tas.treasury_account_identifier],
         tas_paths=[
-            f"agency={funding_toptier_agency.toptier_code}faaid={federal_account.agency_identifier}famain={federal_account.main_account_code}aid={tas.agency_id}main={tas.main_account_code}ata={tas.allocation_transfer_agency_id or ''}sub={tas.sub_account_code}bpoa={tas.beginning_period_of_availability or ''}epoa={tas.ending_period_of_availability or ''}a={tas.availability_type_code}"
+            f"agency={funding_toptier_agency.toptier_code}faaid={federal_account.agency_identifier}"
+            f"famain={federal_account.main_account_code}aid={tas.agency_id}main={tas.main_account_code}"
+            f"ata={tas.allocation_transfer_agency_id or ''}sub={tas.sub_account_code}"
+            f"bpoa={tas.beginning_period_of_availability or ''}epoa={tas.ending_period_of_availability or ''}"
+            f"a={tas.availability_type_code}"
         ],
         tas_components=[
-            f"aid={tas.agency_id}main={tas.main_account_code}ata={tas.allocation_transfer_agency_id or ''}sub={tas.sub_account_code}bpoa={tas.beginning_period_of_availability or ''}epoa={tas.ending_period_of_availability or ''}a={tas.availability_type_code}"
+            f"aid={tas.agency_id}main={tas.main_account_code}ata={tas.allocation_transfer_agency_id or ''}"
+            f"sub={tas.sub_account_code}bpoa={tas.beginning_period_of_availability or ''}"
+            f"epoa={tas.ending_period_of_availability or ''}a={tas.availability_type_code}"
         ],
         federal_accounts=[
             {
@@ -1304,7 +1442,9 @@ def _build_usas_data_for_spark():
         disaster_emergency_fund_codes=["Q"],
         recipient_location_county_fips=None,
         pop_county_fips=None,
-        program_activities=[{"code": "0003", "name": "TRAINING AND RECRUITING", "type": "PAC/PAN"}],
+        program_activities=[
+            {"code": "0003", "name": "TRAINING AND RECRUITING", "type": "PAC/PAN"}
+        ],
     )
     baker.make(
         "search.TransactionSearch",
@@ -1339,7 +1479,7 @@ def _build_usas_data_for_spark():
         funding_subtier_agency_abbreviation=subtier.abbreviation,
         awarding_toptier_agency_id=agency.id,
         funding_toptier_agency_id=agency.id,
-        last_modified_date="2020-01-01",
+        last_modified_date="2020-01-01 00:00:00",
         award_update_date=cont_award2.update_date,
         generated_pragmatic_obligation=0.00,
         original_loan_subsidy_cost=0.00,
@@ -1415,7 +1555,9 @@ def _build_usas_data_for_spark():
         _fill_optional=True,
     )
 
-    dabs = baker.make("submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2020-05-01")
+    dabs = baker.make(
+        "submissions.DABSSubmissionWindowSchedule", submission_reveal_date="2020-05-01"
+    )
     sa = baker.make(
         "submissions.SubmissionAttributes",
         reporting_period_start="2020-04-02",
@@ -1487,21 +1629,28 @@ def populate_usas_data(db):
 
 
 @pytest.fixture
-def populate_usas_data_and_recipients_from_broker(db, populate_usas_data, populate_broker_data):
+def populate_usas_data_and_recipients_from_broker(
+    db, populate_usas_data, populate_broker_data
+):
     with connections[settings.DEFAULT_DB_ALIAS].cursor() as cursor:
-        restock_duns_sql = open("usaspending_api/broker/management/sql/restock_duns.sql", "r").read()
+        restock_duns_sql = open(
+            "usaspending_api/broker/management/sql/restock_duns.sql", "r"
+        ).read()
         restock_duns_sql = restock_duns_sql.replace("VACUUM ANALYZE int.duns;", "")
         cursor.execute(restock_duns_sql)
     call_command("update_recipient_lookup")
     with connections[settings.DEFAULT_DB_ALIAS].cursor() as cursor:
         restock_recipient_profile_sql = open(
-            "usaspending_api/recipient/management/sql/restock_recipient_profile.sql", "r"
+            "usaspending_api/recipient/management/sql/restock_recipient_profile.sql",
+            "r",
         ).read()
         cursor.execute(restock_recipient_profile_sql)
     yield
 
 
-def create_all_delta_tables(spark: "SparkSession", s3_bucket: str, tables_to_load: list):
+def create_all_delta_tables(
+    spark: "SparkSession", s3_bucket: str, tables_to_load: list
+):
     load_query_tables = [val for val in tables_to_load if val in LOAD_QUERY_TABLE_SPEC]
     load_table_tables = [val for val in tables_to_load if val in LOAD_TABLE_TABLE_SPEC]
     for dest_table in load_table_tables + load_query_tables:
@@ -1519,10 +1668,16 @@ def create_all_delta_tables(spark: "SparkSession", s3_bucket: str, tables_to_loa
                 f"--spark-s3-bucket={s3_bucket}",
             )
         else:
-            call_command("create_delta_table", f"--destination-table={dest_table}", f"--spark-s3-bucket={s3_bucket}")
+            call_command(
+                "create_delta_table",
+                f"--destination-table={dest_table}",
+                f"--spark-s3-bucket={s3_bucket}",
+            )
 
 
-def create_and_load_all_delta_tables(spark: "SparkSession", s3_bucket: str, tables_to_load: list):
+def create_and_load_all_delta_tables(
+    spark: "SparkSession", s3_bucket: str, tables_to_load: list
+):
     create_all_delta_tables(spark, s3_bucket, tables_to_load)
 
     load_query_tables = [val for val in tables_to_load if val in LOAD_QUERY_TABLE_SPEC]

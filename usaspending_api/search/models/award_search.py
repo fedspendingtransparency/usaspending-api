@@ -9,8 +9,12 @@ from usaspending_api.awards.models import Award
 
 
 class AwardSearch(models.Model):
-    treasury_account_identifiers = ArrayField(models.IntegerField(), default=list, null=True)
-    award = models.OneToOneField(Award, on_delete=models.DO_NOTHING, primary_key=True, related_name="%(class)s")
+    treasury_account_identifiers = ArrayField(
+        models.IntegerField(), default=list, null=True
+    )
+    award = models.OneToOneField(
+        Award, on_delete=models.DO_NOTHING, primary_key=True, related_name="%(class)s"
+    )
     category = models.TextField(null=True, db_index=True)
     type_raw = models.TextField(null=True, db_index=True)
     type_description_raw = models.TextField(null=True)
@@ -18,19 +22,31 @@ class AwardSearch(models.Model):
     type_description = models.TextField(null=True)
     generated_unique_award_id = models.TextField(null=False, unique=True)
     generated_unique_award_id_legacy = models.TextField(
-        null=True, unique=True, help_text="Legacy generated unique award ID built using subtier awarding agency code"
+        null=True,
+        unique=True,
+        help_text="Legacy generated unique award ID built using subtier awarding agency code",
     )
     display_award_id = models.TextField(null=True)
     update_date = models.DateTimeField(auto_now=True, null=True)
     piid = models.TextField(null=True, db_index=True)
     fain = models.TextField(null=True, db_index=True)
     uri = models.TextField(null=True, db_index=True)
-    award_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
-    total_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True, db_index=True)
-    total_outlays = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True, db_index=True)
+    award_amount = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True
+    )
+    total_obligation = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True, db_index=True
+    )
+    total_outlays = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True, db_index=True
+    )
     description = models.TextField(null=True)
-    total_subsidy_cost = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
-    total_loan_value = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    total_subsidy_cost = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True
+    )
+    total_loan_value = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True
+    )
     total_obl_bin = models.TextField(null=True)
 
     recipient_hash = models.UUIDField(null=True)
@@ -45,15 +61,19 @@ class AwardSearch(models.Model):
 
     action_date = models.DateField(null=True)
     fiscal_year = models.IntegerField(null=True)
-    last_modified_date = models.DateField(blank=True, null=True)
+    last_modified_date = models.DateTimeField(blank=True, null=True)
 
     period_of_performance_start_date = models.DateField(null=True, db_index=True)
     period_of_performance_current_end_date = models.DateField(null=True, db_index=True)
     date_signed = models.DateField(null=True)
     ordering_period_end_date = models.DateField(null=True)
 
-    original_loan_subsidy_cost = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
-    face_value_loan_guarantee = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    original_loan_subsidy_cost = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True
+    )
+    face_value_loan_guarantee = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True
+    )
 
     awarding_agency_id = models.IntegerField(null=True, db_index=True)
     funding_agency_id = models.IntegerField(null=True, db_index=True)
@@ -137,34 +157,64 @@ class AwardSearch(models.Model):
     tas_paths = ArrayField(models.TextField(), default=list, null=True)
     tas_components = ArrayField(models.TextField(), default=list, null=True)
 
-    disaster_emergency_fund_codes = ArrayField(models.TextField(), default=list, null=True)
+    disaster_emergency_fund_codes = ArrayField(
+        models.TextField(), default=list, null=True
+    )
     spending_by_defc = models.JSONField(null=True)
-    total_covid_outlay = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
-    total_covid_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
-    total_iija_outlay = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
-    total_iija_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
-    officer_1_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    total_covid_outlay = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True
+    )
+    total_covid_obligation = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True
+    )
+    total_iija_outlay = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True
+    )
+    total_iija_obligation = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True
+    )
+    officer_1_amount = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True
+    )
     officer_1_name = models.TextField(null=True)
-    officer_2_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    officer_2_amount = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True
+    )
     officer_2_name = models.TextField(null=True)
-    officer_3_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    officer_3_amount = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True
+    )
     officer_3_name = models.TextField(null=True)
-    officer_4_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    officer_4_amount = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True
+    )
     officer_4_name = models.TextField(null=True)
-    officer_5_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    officer_5_amount = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True
+    )
     officer_5_name = models.TextField(null=True)
     is_fpds = models.BooleanField(default=False)
     fpds_agency_id = models.TextField(null=True)
     fpds_parent_agency_id = models.TextField(null=True)
-    base_and_all_options_value = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
-    non_federal_funding_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
-    total_subaward_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    base_and_all_options_value = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True
+    )
+    non_federal_funding_amount = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True
+    )
+    total_subaward_amount = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True
+    )
     subaward_count = models.IntegerField(null=True)
-    base_exercised_options_val = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    base_exercised_options_val = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True
+    )
     parent_award_piid = models.TextField(null=True, db_index=True)
     certified_date = models.DateField(blank=True, null=True)
     create_date = models.DateTimeField(null=True, auto_now_add=True)
-    total_funding_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    total_funding_amount = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True
+    )
     latest_transaction = models.ForeignKey(
         "awards.TransactionNormalized",
         on_delete=models.DO_NOTHING,
@@ -199,11 +249,15 @@ class AwardSearch(models.Model):
         "award",
         db_constraint=False,
     )
-    total_indirect_federal_sharing = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    total_indirect_federal_sharing = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True
+    )
     transaction_unique_id = models.TextField(null=True)
     raw_recipient_name = models.TextField(null=True)
     data_source = models.TextField(null=True)
-    generated_pragmatic_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    generated_pragmatic_obligation = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True
+    )
     program_activities = models.JSONField(null=True)
     transaction_count = models.IntegerField(null=True)
 
@@ -219,12 +273,15 @@ class AwardSearch(models.Model):
         ]
         indexes = [
             models.Index(
-                fields=["recipient_hash"], name="as_idx_recipient_hash", condition=Q(action_date__gte="2007-10-01")
+                fields=["recipient_hash"],
+                name="as_idx_recipient_hash",
+                condition=Q(action_date__gte="2007-10-01"),
             ),
             models.Index(
                 fields=["recipient_unique_id"],
                 name="as_idx_recipient_unique_id",
-                condition=Q(recipient_unique_id__isnull=False) & Q(action_date__gte="2007-10-01"),
+                condition=Q(recipient_unique_id__isnull=False)
+                & Q(action_date__gte="2007-10-01"),
             ),
             models.Index(
                 F("action_date").desc(nulls_last=True),
@@ -258,8 +315,12 @@ class AwardSearch(models.Model):
                 condition=Q(action_date__lt="2007-10-01"),
             ),
             models.Index(Upper("piid"), name="as_idx_piid_upper"),
-            models.Index(Upper("parent_award_piid"), name="as_idx_parent_award_piid_upper"),
+            models.Index(
+                Upper("parent_award_piid"), name="as_idx_parent_award_piid_upper"
+            ),
             models.Index(Upper("fain"), name="as_idx_fain_upper"),
             models.Index(Upper("uri"), name="as_idx_uri_upper"),
-            models.Index(F("update_date").desc(nulls_last=True), name="as_idx_update_date_desc"),
+            models.Index(
+                F("update_date").desc(nulls_last=True), name="as_idx_update_date_desc"
+            ),
         ]

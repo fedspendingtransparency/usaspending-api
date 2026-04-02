@@ -1,3 +1,5 @@
+from pyspark.sql import functions as sf
+
 from usaspending_api.common.data_classes import TransactionColumn
 
 TRANSACTION_FABS_COLUMN_INFO = [
@@ -51,20 +53,21 @@ TRANSACTION_FABS_COLUMN_INFO = [
         "legal_entity_country_code",
         "legal_entity_country_code",
         "STRING",
-        scalar_transformation="CASE {input} \
-            WHEN 'UNITED STATES' THEN 'USA' \
-            ELSE {input} \
-            END",
+        scalar_transformation=lambda col: sf.when(col == sf.lit("UNITED STATES"), sf.lit("USA")).otherwise(col),
     ),
     TransactionColumn(
         "legal_entity_country_name",
         "legal_entity_country_name",
         "STRING",
-        scalar_transformation="CASE \
-            WHEN {input} = 'USA' THEN 'UNITED STATES' \
-            WHEN COALESCE({input}, '') = '' AND legal_entity_country_code = 'UNITED STATES' THEN 'UNITED STATES' \
-            ELSE {input} \
-            END",
+        scalar_transformation=lambda col: (
+            sf.when(col == sf.lit("USA"), sf.lit("UNITED STATES"))
+            .when(
+                (sf.coalesce(col, sf.lit("")) == sf.lit(""))
+                & (sf.col("legal_entity_country_code") == sf.lit("UNITED STATES")),
+                sf.lit("UNITED STATES"),
+            )
+            .otherwise(col)
+        ),
     ),
     TransactionColumn("legal_entity_county_code", "legal_entity_county_code", "STRING"),
     TransactionColumn("legal_entity_county_name", "legal_entity_county_name", "STRING"),
@@ -96,20 +99,21 @@ TRANSACTION_FABS_COLUMN_INFO = [
         "place_of_perform_country_c",
         "place_of_perform_country_c",
         "STRING",
-        scalar_transformation="CASE {input} \
-            WHEN 'UNITED STATES' THEN 'USA' \
-            ELSE {input} \
-            END",
+        scalar_transformation=lambda col: sf.when(col == sf.lit("UNITED STATES"), sf.lit("USA")).otherwise(col),
     ),
     TransactionColumn(
         "place_of_perform_country_n",
         "place_of_perform_country_n",
         "STRING",
-        scalar_transformation="CASE \
-            WHEN {input} = 'USA' THEN 'UNITED STATES' \
-            WHEN COALESCE({input}, '') = '' AND place_of_perform_country_c = 'UNITED STATES' THEN 'UNITED STATES' \
-            ELSE {input} \
-            END",
+        scalar_transformation=lambda col: (
+            sf.when(col == sf.lit("USA"), sf.lit("UNITED STATES"))
+            .when(
+                (sf.coalesce(col, sf.lit("")) == sf.lit(""))
+                & (sf.col("place_of_perform_country_c") == sf.lit("UNITED STATES")),
+                sf.lit("UNITED STATES"),
+            )
+            .otherwise(col)
+        ),
     ),
     TransactionColumn("place_of_perform_county_co", "place_of_perform_county_co", "STRING"),
     TransactionColumn("place_of_perform_county_na", "place_of_perform_county_na", "STRING"),
@@ -137,6 +141,8 @@ TRANSACTION_FABS_COLUMN_INFO = [
     TransactionColumn("updated_at", "updated_at", "TIMESTAMP"),
     TransactionColumn("uri", "uri", "STRING"),
     TransactionColumn("hash", "hash", "LONG"),
+    TransactionColumn("action_year", "action_year", "INTEGER"),
+    TransactionColumn("action_month", "action_month", "INTEGER"),
 ]
 
 TRANSACTION_FABS_COLUMNS = [col.dest_name for col in TRANSACTION_FABS_COLUMN_INFO]
@@ -159,7 +165,9 @@ transaction_fabs_sql_string = rf"""
         {", ".join([f'{col.dest_name} {col.delta_type}' for col in TRANSACTION_FABS_COLUMN_INFO])}
     )
     USING DELTA
+    PARTITIONED BY (action_year, action_month)
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
+    TBLPROPERTIES (delta.enableChangeDataFeed = true)
     """
 
 # Mapping from raw.published_fabs to int.transaction_normalized columns, where a simple mapping exists
@@ -168,12 +176,12 @@ FABS_TO_NORMALIZED_COLUMN_INFO = [
     TransactionColumn("action_date", "action_date", "DATE", "parse_string_datetime_to_date"),
     TransactionColumn("action_type", "action_type", "STRING"),
     TransactionColumn("action_type_description", "action_type_description", "STRING"),
-    TransactionColumn("certified_date", "NULL", "DATE", "literal"),
+    TransactionColumn("certified_date", None, "DATE", "literal"),
     TransactionColumn("description", "award_description", "STRING"),
     TransactionColumn("face_value_loan_guarantee", "face_value_loan_guarantee", "NUMERIC(23,2)"),
     TransactionColumn("federal_action_obligation", "federal_action_obligation", "NUMERIC(23,2)"),
     TransactionColumn("indirect_federal_sharing", "indirect_federal_sharing", "NUMERIC(23, 2)", "cast"),
-    TransactionColumn("is_fpds", "FALSE", "BOOLEAN", "literal"),
+    TransactionColumn("is_fpds", False, "BOOLEAN", "literal"),
     TransactionColumn("last_modified_date", "modified_at", "DATE", "cast"),
     TransactionColumn("modification_number", "award_modification_amendme", "STRING"),
     TransactionColumn("non_federal_funding_amount", "non_federal_funding_amount", "NUMERIC(23,2)"),
@@ -189,6 +197,8 @@ FABS_TO_NORMALIZED_COLUMN_INFO = [
     TransactionColumn("type", "assistance_type", "STRING"),
     TransactionColumn("type_description", "assistance_type_desc", "STRING"),
     TransactionColumn("unique_award_key", "unique_award_key", "STRING"),
-    TransactionColumn("usaspending_unique_transaction_id", "NULL", "STRING", "literal"),
+    TransactionColumn("usaspending_unique_transaction_id", None, "STRING", "literal"),
     TransactionColumn("hash", "hash", "LONG"),
+    TransactionColumn("action_year", "action_year", "INTEGER"),
+    TransactionColumn("action_month", "action_month", "INTEGER"),
 ]

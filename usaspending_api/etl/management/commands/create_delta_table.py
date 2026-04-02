@@ -1,6 +1,6 @@
 import logging
 
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandParser
 from pyspark.sql.types import StructType
 
 from usaspending_api.awards.delta_models.award_id_lookup import AWARD_ID_LOOKUP_SCHEMA
@@ -10,23 +10,36 @@ from usaspending_api.common.helpers.spark_helpers import (
 )
 from usaspending_api.common.spark.configs import DEFAULT_EXTRA_CONF
 from usaspending_api.config import CONFIG
-from usaspending_api.etl.management.commands.archive_table_in_delta import TABLE_SPEC as ARCHIVE_TABLE_SPEC
-from usaspending_api.etl.management.commands.load_query_to_delta import TABLE_SPEC as LOAD_QUERY_TABLE_SPEC
-from usaspending_api.etl.management.commands.load_table_to_delta import TABLE_SPEC as LOAD_TABLE_TABLE_SPEC
-from usaspending_api.transactions.delta_models.transaction_id_lookup import TRANSACTION_ID_LOOKUP_SCHEMA
+from usaspending_api.etl.management.commands.archive_table_in_delta import (
+    TABLE_SPEC as ARCHIVE_TABLE_SPEC,
+)
+from usaspending_api.etl.management.commands.load_query_to_delta import (
+    TABLE_SPEC as LOAD_QUERY_TABLE_SPEC,
+)
+from usaspending_api.etl.management.commands.load_table_to_delta import (
+    TABLE_SPEC as LOAD_TABLE_TABLE_SPEC,
+)
+from usaspending_api.etl.table_specs import TableSpec
+from usaspending_api.transactions.delta_models.transaction_id_lookup import (
+    TRANSACTION_ID_LOOKUP_SCHEMA,
+)
 
 TABLE_SPEC = {
     **ARCHIVE_TABLE_SPEC,
     **LOAD_TABLE_TABLE_SPEC,
     **LOAD_QUERY_TABLE_SPEC,
-    "award_id_lookup": {
-        "destination_database": "int",
-        "delta_table_create_sql": AWARD_ID_LOOKUP_SCHEMA,
-    },
-    "transaction_id_lookup": {
-        "destination_database": "int",
-        "delta_table_create_sql": TRANSACTION_ID_LOOKUP_SCHEMA,
-    },
+    "award_id_lookup": TableSpec(
+        **{
+            "destination_database": "int",
+            "delta_table_create_sql": AWARD_ID_LOOKUP_SCHEMA,
+        }
+    ),
+    "transaction_id_lookup": TableSpec(
+        **{
+            "destination_database": "int",
+            "delta_table_create_sql": TRANSACTION_ID_LOOKUP_SCHEMA,
+        }
+    ),
 }
 
 logger = logging.getLogger(__name__)
@@ -37,7 +50,7 @@ class Command(BaseCommand):
     This command creates an empty Delta Table based on the provided --destination-table argument.
     """
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: CommandParser) -> None:
         parser.add_argument(
             "--destination-table",
             type=str,
@@ -66,7 +79,7 @@ class Command(BaseCommand):
             "name",
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         spark = get_active_spark_session()
         spark_created_by_command = False
         if not spark:
@@ -78,27 +91,27 @@ class Command(BaseCommand):
         spark_s3_bucket = options["spark_s3_bucket"]
 
         table_spec = TABLE_SPEC[destination_table]
-        destination_database = options["alt_db"] or table_spec["destination_database"]
+        destination_database = options["alt_db"] or table_spec.destination_database
         destination_table_name = options["alt_name"] or destination_table
 
         # Set the database that will be interacted with for all Delta Lake table Spark-based activity
         logger.info(f"Using Spark Database: {destination_database}")
         spark.sql(f"create database if not exists {destination_database};")
         spark.sql(f"use {destination_database};")
-        if isinstance(table_spec["delta_table_create_sql"], str):
+        if isinstance(table_spec.delta_table_create_sql, str):
             # Define Schema Using CREATE TABLE AS command
             spark.sql(
-                TABLE_SPEC[destination_table]["delta_table_create_sql"].format(
+                table_spec.delta_table_create_sql.format(
                     DESTINATION_TABLE=destination_table_name,
                     DESTINATION_DATABASE=destination_database,
                     SPARK_S3_BUCKET=spark_s3_bucket,
                     DELTA_LAKE_S3_PATH=CONFIG.DELTA_LAKE_S3_PATH,
                 )
             )
-        elif isinstance(table_spec["delta_table_create_sql"], StructType):
-            schema = table_spec["delta_table_create_sql"]
-            additional_options = table_spec.get("delta_table_create_options") or {}
-            partition_cols = table_spec.get("delta_table_create_partitions") or []
+        elif isinstance(table_spec.delta_table_create_sql, StructType):
+            schema = table_spec.delta_table_create_sql
+            additional_options = table_spec.delta_table_create_options or {}
+            partition_cols = table_spec.delta_table_create_partitions or []
             df = spark.createDataFrame([], schema)
 
             default_options = {

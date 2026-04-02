@@ -5,6 +5,8 @@ import time
 import traceback
 from typing import Callable
 
+import boto3
+
 # Third-party library imports
 from opentelemetry.trace import SpanKind, Status, StatusCode
 
@@ -14,7 +16,7 @@ from django.core.management.base import BaseCommand
 
 # Application imports
 from usaspending_api.common.logging import configure_logging
-from usaspending_api.common.spark.jobs import SparkJobs, LocalStrategy, DatabricksStrategy
+from usaspending_api.common.spark.jobs import SparkJobs, LocalStrategy, EmrServerlessStrategy
 from usaspending_api.common.sqs.sqs_handler import DownloadLogic, get_sqs_queue
 from usaspending_api.common.sqs.sqs_job_logging import log_job_message
 from usaspending_api.common.sqs.sqs_work_dispatcher import (
@@ -165,9 +167,23 @@ def _run_spark_download(download_job_id: int, job_name: str) -> None:
         command_options = [f"--skip-local-cleanup"]
         extra_options = {"run_as_container": True}
     else:
-        strategy = DatabricksStrategy()
+        strategy = EmrServerlessStrategy()
         command_options = []
-        extra_options = {}
+
+        ssm_client = boto3.client("ssm", settings.USASPENDING_AWS_REGION)
+        param_resp = ssm_client.get_parameters(
+            Names=[settings.EMR_DOWNLOAD_APP_PARAM_NAME, settings.EMR_DOWNLOAD_ROLE_PARAM_NAME], WithDecryption=True
+        )
+        if param_resp.get("InvalidParameters"):
+            logger.error(f"Invalid parameters: {param_resp['InvalidParameters']}")
+            raise ValueError("Invalid parameters")
+        param_values = {param["Name"]: param["Value"] for param in param_resp["Parameters"]}
+
+        extra_options = {
+            "application_id": param_values[settings.EMR_DOWNLOAD_APP_PARAM_NAME],
+            "execution_role_arn": param_values[settings.EMR_DOWNLOAD_ROLE_PARAM_NAME],
+        }
+
     spark_jobs = SparkJobs(strategy)
     spark_jobs.start(
         job_name=job_name,

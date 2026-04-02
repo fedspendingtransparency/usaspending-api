@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Callable, Optional
 from typing_extensions import Literal
 
 
@@ -35,7 +35,7 @@ class Pagination:
 @dataclass
 class TransactionColumn:
     dest_name: str
-    source: Optional[str]
+    source: str | bool | None
     delta_type: str
     handling: Literal[
         "cast", "leave_null", "literal", "normal", "parse_string_datetime_to_date", "string_datetime_remove_timestamp"
@@ -47,4 +47,4 @@ class TransactionColumn:
     #   calling code to format the string with a input. You should expect the scalar transformation
     #   to be applied on this input. For example, a valid scalar_transformation string is
     #   "CASE {input} WHEN 'UNITED STATES' THEN 'USA' ELSE {input} END"
-    scalar_transformation: str = None
+    scalar_transformation: Callable | None= None

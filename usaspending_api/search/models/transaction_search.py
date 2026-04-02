@@ -18,8 +18,12 @@ class TransactionSearch(models.Model):
     # Also, this table has been physically partitioned by partition key: is_fpds. We can no longer have a UNIQUE key
     # or UNIQUE INDEX on transaction_id (the primary_key) anymore, it must include the partition key. So setting
     # primary_key=False and adding a UniqueConstraint (is_fpds, transaction)
-    transaction = models.OneToOneField("awards.TransactionNormalized", on_delete=models.DO_NOTHING, primary_key=True)
-    award = models.ForeignKey("search.AwardSearch", on_delete=models.DO_NOTHING, null=True)
+    transaction = models.OneToOneField(
+        "awards.TransactionNormalized", on_delete=models.DO_NOTHING, primary_key=True
+    )
+    award = models.ForeignKey(
+        "search.AwardSearch", on_delete=models.DO_NOTHING, null=True
+    )
     transaction_unique_id = models.TextField(blank=False, null=False, default="NONE")
     usaspending_unique_transaction_id = models.TextField(null=True)
     modification_number = models.TextField(null=True)
@@ -28,7 +32,7 @@ class TransactionSearch(models.Model):
     # Dates
     action_date = models.DateField(null=True)
     fiscal_action_date = models.DateField(null=True)
-    last_modified_date = models.DateField(null=True)
+    last_modified_date = models.DateTimeField(null=True)
     fiscal_year = models.IntegerField(null=True)
     award_certified_date = models.DateField(null=True)
     award_fiscal_year = models.IntegerField(null=True)
@@ -39,7 +43,7 @@ class TransactionSearch(models.Model):
     etl_update_date = models.DateTimeField(null=True)
     period_of_performance_start_date = models.DateField(null=True)
     period_of_performance_current_end_date = models.DateField(null=True)
-    initial_report_date = models.DateField(null=True)
+    initial_report_date = models.DateTimeField(null=True)
 
     # Agencies
     awarding_agency_code = models.TextField(null=True)
@@ -80,15 +84,31 @@ class TransactionSearch(models.Model):
     business_categories = ArrayField(models.TextField(), null=True)
 
     # Amounts
-    award_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
-    generated_pragmatic_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
-    federal_action_obligation = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
-    original_loan_subsidy_cost = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
-    face_value_loan_guarantee = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    award_amount = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True
+    )
+    generated_pragmatic_obligation = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True
+    )
+    federal_action_obligation = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True
+    )
+    original_loan_subsidy_cost = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True
+    )
+    face_value_loan_guarantee = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True
+    )
     indirect_federal_sharing = NumericField(blank=True, null=True)
-    funding_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
-    total_funding_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
-    non_federal_funding_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    funding_amount = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True
+    )
+    total_funding_amount = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True
+    )
+    non_federal_funding_amount = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True
+    )
 
     # Recipient
     recipient_hash = models.UUIDField(null=True)
@@ -161,15 +181,25 @@ class TransactionSearch(models.Model):
 
     # Officer Amounts
     officer_1_name = models.TextField(null=True)
-    officer_1_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    officer_1_amount = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True
+    )
     officer_2_name = models.TextField(null=True)
-    officer_2_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    officer_2_amount = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True
+    )
     officer_3_name = models.TextField(null=True)
-    officer_3_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    officer_3_amount = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True
+    )
     officer_4_name = models.TextField(null=True)
-    officer_4_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    officer_4_amount = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True
+    )
     officer_5_name = models.TextField(null=True)
-    officer_5_amount = models.DecimalField(max_digits=23, decimal_places=2, blank=True, null=True)
+    officer_5_amount = models.DecimalField(
+        max_digits=23, decimal_places=2, blank=True, null=True
+    )
 
     # Exclusively FABS
     published_fabs_id = models.IntegerField(blank=True, null=True)
@@ -417,7 +447,11 @@ class TransactionSearch(models.Model):
 
     class Meta:
         db_table = "transaction_search"
-        constraints = [models.UniqueConstraint(fields=["is_fpds", "transaction"], name="ts_idx_is_fpds_transaction_id")]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["is_fpds", "transaction"], name="ts_idx_is_fpds_transaction_id"
+            )
+        ]
         indexes = [
             models.Index(fields=["transaction"], name="ts_idx_transaction_id"),
             models.Index(fields=["generated_unique_award_id"], name="ts_idx_award_key"),
@@ -431,26 +465,50 @@ class TransactionSearch(models.Model):
                 name="ts_idx_fpds_key_pre2008",
                 condition=Q(action_date__lt="2007-10-01"),
             ),
-            models.Index(fields=["piid"], name="ts_idx_piid_pre2008", condition=Q(action_date__lt="2007-10-01")),
+            models.Index(
+                fields=["piid"],
+                name="ts_idx_piid_pre2008",
+                condition=Q(action_date__lt="2007-10-01"),
+            ),
             models.Index(
                 fields=["parent_award_id"],
                 name="ts_idx_parent_award_id_pre2008",
                 condition=Q(action_date__lt="2007-10-01"),
             ),
-            models.Index(fields=["fain"], name="ts_idx_fain_pre2008", condition=Q(action_date__lt="2007-10-01")),
-            models.Index(fields=["uri"], name="ts_idx_uri_pre2008", condition=Q(action_date__lt="2007-10-01")),
+            models.Index(
+                fields=["fain"],
+                name="ts_idx_fain_pre2008",
+                condition=Q(action_date__lt="2007-10-01"),
+            ),
+            models.Index(
+                fields=["uri"],
+                name="ts_idx_uri_pre2008",
+                condition=Q(action_date__lt="2007-10-01"),
+            ),
             models.Index(fields=["is_fpds"], name="ts_idx_is_fpds"),
             models.Index(
-                fields=["-action_date"], name="ts_idx_action_date", condition=Q(action_date__gte="2007-10-01")
-            ),
-            models.Index(fields=["-last_modified_date"], name="ts_idx_last_modified_date"),
-            models.Index(
-                fields=["-fiscal_year"], name="ts_idx_fiscal_year", condition=Q(action_date__gte="2007-10-01")
+                fields=["-action_date"],
+                name="ts_idx_action_date",
+                condition=Q(action_date__gte="2007-10-01"),
             ),
             models.Index(
-                fields=["type"], name="ts_idx_type", condition=Q(type__isnull=False) & Q(action_date__gte="2007-10-01")
+                fields=["-last_modified_date"], name="ts_idx_last_modified_date"
             ),
-            models.Index(fields=["award"], name="ts_idx_award_id", condition=Q(action_date__gte="2007-10-01")),
+            models.Index(
+                fields=["-fiscal_year"],
+                name="ts_idx_fiscal_year",
+                condition=Q(action_date__gte="2007-10-01"),
+            ),
+            models.Index(
+                fields=["type"],
+                name="ts_idx_type",
+                condition=Q(type__isnull=False) & Q(action_date__gte="2007-10-01"),
+            ),
+            models.Index(
+                fields=["award"],
+                name="ts_idx_award_id",
+                condition=Q(action_date__gte="2007-10-01"),
+            ),
             models.Index(
                 fields=["pop_zip5"],
                 name="ts_idx_pop_zip5",
@@ -459,12 +517,14 @@ class TransactionSearch(models.Model):
             models.Index(
                 fields=["recipient_unique_id"],
                 name="ts_idx_recipient_unique_id",
-                condition=Q(recipient_unique_id__isnull=False) & Q(action_date__gte="2007-10-01"),
+                condition=Q(recipient_unique_id__isnull=False)
+                & Q(action_date__gte="2007-10-01"),
             ),
             models.Index(
                 fields=["parent_recipient_unique_id"],
                 name="ts_idx_parent_recipient_unique",
-                condition=Q(parent_recipient_unique_id__isnull=False) & Q(action_date__gte="2007-10-01"),
+                condition=Q(parent_recipient_unique_id__isnull=False)
+                & Q(action_date__gte="2007-10-01"),
             ),
             models.Index(
                 fields=["pop_state_code", "action_date"],
@@ -474,10 +534,14 @@ class TransactionSearch(models.Model):
                 & Q(action_date__gte="2007-10-01"),
             ),
             models.Index(
-                fields=["recipient_hash"], name="ts_idx_recipient_hash", condition=Q(action_date__gte="2007-10-01")
+                fields=["recipient_hash"],
+                name="ts_idx_recipient_hash",
+                condition=Q(action_date__gte="2007-10-01"),
             ),
             models.Index(
-                fields=["action_date"], name="ts_idx_action_date_pre2008", condition=Q(action_date__lt="2007-10-01")
+                fields=["action_date"],
+                name="ts_idx_action_date_pre2008",
+                condition=Q(action_date__lt="2007-10-01"),
             ),
             models.Index(fields=["etl_update_date"], name="ts_idx_etl_update_date"),
             models.Index(
@@ -485,12 +549,20 @@ class TransactionSearch(models.Model):
                 name="ts_idx_tocp_pre2008",
                 condition=Q(action_date__lt="2007-10-01"),
             ),
-            models.Index(fields=["naics_code"], name="ts_idx_naics_pre2008", condition=Q(action_date__lt="2007-10-01")),
             models.Index(
-                fields=["extent_competed"], name="ts_idx_ext_com_pre2008", condition=Q(action_date__lt="2007-10-01")
+                fields=["naics_code"],
+                name="ts_idx_naics_pre2008",
+                condition=Q(action_date__lt="2007-10-01"),
             ),
             models.Index(
-                fields=["product_or_service_code"], name="ts_idx_psc_pre2008", condition=Q(action_date__lt="2007-10-01")
+                fields=["extent_competed"],
+                name="ts_idx_ext_com_pre2008",
+                condition=Q(action_date__lt="2007-10-01"),
+            ),
+            models.Index(
+                fields=["product_or_service_code"],
+                name="ts_idx_psc_pre2008",
+                condition=Q(action_date__lt="2007-10-01"),
             ),
             models.Index(
                 fields=["type_set_aside"],
@@ -498,8 +570,12 @@ class TransactionSearch(models.Model):
                 condition=Q(action_date__lt="2007-10-01"),
             ),
             models.Index(
-                fields=["cfda_number"], name="ts_idx_cfda_aside_pre2008", condition=Q(action_date__lt="2007-10-01")
+                fields=["cfda_number"],
+                name="ts_idx_cfda_aside_pre2008",
+                condition=Q(action_date__lt="2007-10-01"),
             ),
-            models.Index(fields=["awarding_agency_id"], name="ts_idx_awarding_agency_id"),
+            models.Index(
+                fields=["awarding_agency_id"], name="ts_idx_awarding_agency_id"
+            ),
             models.Index(fields=["funding_agency_id"], name="ts_idx_funding_agency_id"),
         ]

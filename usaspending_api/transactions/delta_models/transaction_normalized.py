@@ -16,7 +16,7 @@ TRANSACTION_NORMALIZED_COLUMNS = {
     "id": "LONG",
     "indirect_federal_sharing": "NUMERIC(23, 2)",
     "is_fpds": "BOOLEAN NOT NULL",
-    "last_modified_date": "DATE",
+    "last_modified_date": "TIMESTAMP",
     "modification_number": "STRING",
     "non_federal_funding_amount": "NUMERIC(23, 2)",
     "original_loan_subsidy_cost": "NUMERIC(23, 2)",
@@ -29,12 +29,16 @@ TRANSACTION_NORMALIZED_COLUMNS = {
     "update_date": "TIMESTAMP",
     "usaspending_unique_transaction_id": "STRING",
     "hash": "LONG",
+    "action_year": "INTEGER",
+    "action_month": "INTEGER",
 }
 
 transaction_normalized_sql_string = rf"""
     CREATE OR REPLACE TABLE {{DESTINATION_TABLE}} (
-        {", ".join([f'{key} {val}' for key, val in TRANSACTION_NORMALIZED_COLUMNS.items()])}
+        {", ".join([f"{key} {val}" for key, val in TRANSACTION_NORMALIZED_COLUMNS.items()])}
     )
     USING DELTA
+    PARTITIONED BY (is_fpds, action_year, action_month)
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
+    TBLPROPERTIES (delta.enableChangeDataFeed = true)
     """

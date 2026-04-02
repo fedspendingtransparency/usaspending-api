@@ -31,6 +31,18 @@ jobs:
       - name: Checkout Source Repository
         uses: actions/checkout@v4
 
+      - name: Get Changed Python Files
+        id: changed-python-files
+        uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62
+        with:
+          files: |
+            **.py
+          separator: " "
+
+      - name: Check If `changed-python-files` Is An Empty String
+        if: steps.changed-python-files.outputs.all_changed_files == ''
+        run: echo "No changed files detected"
+
       - name: Set Combined ENV
         run: |
           echo "DATA_BROKER_DATABASE_URL=postgres://$BROKER_DB_USER:$BROKER_DB_PASSWORD@$BROKER_DB_HOST:$BROKER_DB_PORT/$BROKER_DB_NAME" >> $GITHUB_ENV
@@ -52,11 +64,10 @@ jobs:
       - name: Init Python Environment
         uses: ./.github/actions/init-python-environment
 
-      - name: Run Flake8
-        run: flake8
-
-      - name: Run Black
-        run: black --check --diff .
+      # changed-python-files could be an empty string, which would cause `ruff check` to be run against the entire project.
+      - name: Run Ruff Linter
+        if: steps.changed-python-files.outputs.all_changed_files != ''
+        run: ruff check ${{ steps.changed-python-files.outputs.all_changed_files }}
 
       - name: Run Check For Endpoint Documentation
         run: python manage.py check_for_endpoint_documentation

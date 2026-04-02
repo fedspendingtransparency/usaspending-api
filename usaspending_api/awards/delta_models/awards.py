@@ -17,7 +17,7 @@ AWARDS_COLUMNS = {
     "generated_unique_award_id": "STRING NOT NULL",
     "id": "LONG",
     "is_fpds": "BOOLEAN NOT NULL",
-    "last_modified_date": "DATE",
+    "last_modified_date": "TIMESTAMP",
     "latest_transaction_id": "LONG",
     "non_federal_funding_amount": "NUMERIC(23,2)",
     "officer_1_amount": "NUMERIC(23,2)",
@@ -55,4 +55,5 @@ awards_sql_string = rf"""
     )
     USING DELTA
     LOCATION 's3a://{{SPARK_S3_BUCKET}}/{{DELTA_LAKE_S3_PATH}}/{{DESTINATION_DATABASE}}/{{DESTINATION_TABLE}}'
+    TBLPROPERTIES (delta.enableChangeDataFeed = true)
 """

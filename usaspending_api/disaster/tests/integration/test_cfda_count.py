@@ -91,5 +91,5 @@ def test_invalid_award_type_codes(
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
     assert (
         resp.data["detail"]
-        == "Field 'filter|award_type_codes' is outside valid values ['-1', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11']"
+        == "Field 'filter|award_type_codes' is outside valid values ['-1', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', 'F001', 'F002', 'F003', 'F004', 'F005', 'F006', 'F007', 'F008', 'F009', 'F010']"  # noqa: E501
     )

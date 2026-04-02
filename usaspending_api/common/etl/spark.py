@@ -10,19 +10,36 @@ import math
 import os
 import shutil
 import time
-from collections import namedtuple
 from itertools import chain
-from typing import List
+from typing import Literal
 
 import duckdb
+from delta import DeltaTable
 from duckdb.experimental.spark.sql import SparkSession as DuckDBSparkSession
 from duckdb.experimental.spark.sql.dataframe import DataFrame as DuckDBDataFrame
-from pyspark.sql import DataFrame, SparkSession
-from pyspark.sql.functions import col, concat, concat_ws, expr, lit, regexp_replace, to_date, transform, when
+from pyspark.sql import Column, DataFrame, SparkSession
+from pyspark.sql.functions import (
+    col,
+    concat,
+    concat_ws,
+    expr,
+    lit,
+    regexp_replace,
+    to_date,
+    transform,
+    when,
+)
 from pyspark.sql.types import ArrayType, DecimalType, StringType, StructType
 
-from usaspending_api.accounts.models import AppropriationAccountBalances, FederalAccount, TreasuryAppropriationAccount
-from usaspending_api.common.helpers.s3_helpers import rename_s3_object, retrieve_s3_bucket_object_list
+from usaspending_api.accounts.models import (
+    AppropriationAccountBalances,
+    FederalAccount,
+    TreasuryAppropriationAccount,
+)
+from usaspending_api.common.helpers.s3_helpers import (
+    rename_s3_object,
+    retrieve_s3_bucket_object_list,
+)
 from usaspending_api.common.helpers.spark_helpers import (
     get_broker_jdbc_url,
     get_jdbc_connection_properties,
@@ -30,7 +47,9 @@ from usaspending_api.common.helpers.spark_helpers import (
 )
 from usaspending_api.config import CONFIG
 from usaspending_api.download.filestreaming.download_generation import EXCEL_ROW_LIMIT
-from usaspending_api.financial_activities.models import FinancialAccountsByProgramActivityObjectClass
+from usaspending_api.financial_activities.models import (
+    FinancialAccountsByProgramActivityObjectClass,
+)
 from usaspending_api.recipient.models import StateData
 from usaspending_api.references.models import (
     CGAC,
@@ -52,9 +71,15 @@ from usaspending_api.references.models import (
     ToptierAgency,
     ZipsGrouped,
 )
-from usaspending_api.reporting.models import ReportingAgencyMissingTas, ReportingAgencyOverview
+from usaspending_api.reporting.models import (
+    ReportingAgencyMissingTas,
+    ReportingAgencyOverview,
+)
 from usaspending_api.settings import CSV_LOCAL_PATH, IS_LOCAL, USASPENDING_AWS_REGION
-from usaspending_api.submissions.models import DABSSubmissionWindowSchedule, SubmissionAttributes
+from usaspending_api.submissions.models import (
+    DABSSubmissionWindowSchedule,
+    SubmissionAttributes,
+)
 
 MAX_PARTITIONS = CONFIG.SPARK_MAX_PARTITIONS
 _USAS_RDS_REF_TABLES = [
@@ -87,12 +112,17 @@ _USAS_RDS_REF_TABLES = [
     ZipsGrouped,
 ]
 
-_BROKER_REF_TABLES = ["cd_state_grouped", "cd_zips_grouped", "cd_county_grouped", "cd_city_grouped"]
+_BROKER_REF_TABLES = [
+    "cd_state_grouped",
+    "cd_zips_grouped",
+    "cd_county_grouped",
+    "cd_city_grouped",
+]
 
 logger = logging.getLogger(__name__)
 
 
-def extract_db_data_frame(
+def extract_db_data_frame(  # noqa: PLR0912, PLR0913, PLR0915
     spark: SparkSession,
     conn_props: dict,
     jdbc_url: str,
@@ -293,28 +323,48 @@ def load_delta_table(
     spark: SparkSession,
     source_df: DataFrame,
     delta_table_name: str,
-    overwrite: bool = False,
+    save_mode: Literal["append", "merge", "overwrite"] = "append",
+    merge_condition: str | Column | None = None,
+    partition_columns: list[str] | None = None,
 ) -> None:
     """
     Write DataFrame data to a table in Delta format.
     Args:
         spark: the SparkSession
         source_df: DataFrame with data to write
-        delta_table_name: table to write into. Currently this function requires the table to already exist.
-        overwrite: If True, will replace all existing data with that of the DataFrame, while append will add new data.
-            If left False (the default), the DataFrame data will be appended to existing data.
+        delta_table_name: table to write into. Currently, this function requires the table to already exist.
+        save_mode: one of "append", "merge", "overwrite"
+        merge_condition: merge_condition must be provided if save_mode is "merge"
+        partition_columns: list of column names to partition by
     Returns: None
     """
+    start = time.perf_counter()
     logger.info(f"LOAD (START): Loading data into Delta table {delta_table_name}")
     # NOTE: Best to (only?) use .saveAsTable(name=<delta_table>) rather than .insertInto(tableName=<delta_table>)
     # ... The insertInto does not seem to align/merge columns from DataFrame to table columns (defaults to column order)
-    save_mode = "overwrite" if overwrite else "append"
-    source_df.write.format(source="delta").mode(saveMode=save_mode).saveAsTable(name=delta_table_name)
-    logger.info(f"LOAD (FINISH): Loaded data into Delta table {delta_table_name}")
+    if save_mode == "merge":
+        if merge_condition is None:
+            raise ValueError("merge_condition cannot be None when save_mode is 'merge'")
+        target = DeltaTable.forName(spark, delta_table_name).alias("t")
+        (
+            target.merge(source_df.alias("s"), merge_condition)
+            .whenNotMatchedInsertAll()
+            .whenNotMatchedBySourceDelete()
+            .execute()
+        )
+    else:
+        source_df.write.format(source="delta").mode(saveMode=save_mode).saveAsTable(name=delta_table_name)
+    end = time.perf_counter()
+    logger.info(f"LOAD (FINISH): Loaded data into Delta table {delta_table_name} in {end - start:.2f} seconds.")
 
 
 def load_es_index(
-    spark: SparkSession, source_df: DataFrame, base_config: dict, index_name: str, routing: str, doc_id: str
+    spark: SparkSession,
+    source_df: DataFrame,
+    base_config: dict,
+    index_name: str,
+    routing: str,
+    doc_id: str,
 ) -> None:  # pragma: no cover -- will be used and tested eventually
     index_config = base_config.copy()
     index_config["es.resource.write"] = index_name
@@ -331,7 +381,7 @@ def load_es_index(
     spark.sparkContext._jvm.org.elasticsearch.spark.sql.EsSparkSQL.saveToEs(jvm_data_df, jvm_es_config_map)
 
 
-def merge_delta_table(spark: SparkSession, source_df: DataFrame, delta_table_name: str, merge_column: str):
+def merge_delta_table(spark: SparkSession, source_df: DataFrame, delta_table_name: str, merge_column: str) -> None:
     source_df.create_or_replace_temporary_view("temp_table")
 
     spark.sql(
@@ -345,7 +395,11 @@ def merge_delta_table(spark: SparkSession, source_df: DataFrame, delta_table_nam
 
 
 def diff(
-    left: DataFrame, right: DataFrame, unique_key_col="id", compare_cols=None, include_unchanged_rows=False
+    left: DataFrame,
+    right: DataFrame,
+    unique_key_col: str = "id",
+    compare_cols: list[str] | None = None,
+    include_unchanged_rows: bool = False,
 ) -> DataFrame:
     """Compares two Spark DataFrames that share a schema and returns row-level differences in a DataFrame
 
@@ -426,14 +480,26 @@ def diff(
     differences = (
         left.withColumn("exists", lit(1))
         .alias("l")
-        .join(right.withColumn("exists", lit(1)).alias("r"), left[unique_key_col] == right[unique_key_col], "fullouter")
+        .join(
+            right.withColumn("exists", lit(1)).alias("r"),
+            left[unique_key_col] == right[unique_key_col],
+            "fullouter",
+        )
         .withColumn("diff", expr(compare_expr))
     )
     # Put "diff" col first, then follow by the l and r value for each column, for all columns compared
     cols_to_show = (
         ["diff"]
         + [f"l.{unique_key_col}", f"r.{unique_key_col}"]
-        + list(chain(*zip([f"l.{c}" for c in compare_cols], [f"r.{c}" for c in compare_cols], strict=False)))
+        + list(
+            chain(
+                *zip(
+                    [f"l.{c}" for c in compare_cols],
+                    [f"r.{c}" for c in compare_cols],
+                    strict=False,
+                )
+            )
+        )
     )
     differences = differences.select(*cols_to_show)
     if not include_unchanged_rows:
@@ -452,8 +518,8 @@ def convert_decimal_cols_to_string(df: DataFrame) -> DataFrame:
 
 def convert_array_cols_to_string(
     df: DataFrame,
-    is_postgres_array_format=False,
-    is_for_csv_export=False,
+    is_postgres_array_format: bool = False,
+    is_for_csv_export: bool = False,
 ) -> DataFrame:
     """For each column that is an Array of ANYTHING, transform it to a string-ified representation of that Array.
 
@@ -482,7 +548,8 @@ def convert_array_cols_to_string(
               2. Escape any quotes inside the array element with backslash.
               - A case that involves all of this will yield CSV field value like this when viewed in a text editor,
                 assuming Spark CSV options are: quote='"', escape='"' (the default is for it to match quote)
-                ...,"{""{\""simple\"": \""elem1\"", \""other\"": \""elem1\""}"", ""{\""simple\"": \""elem2\"", \""other\"": \""elem2\""}""}",...
+                ...,"{""{\""simple\"": \""elem1\"", \""other\"": \""elem1\""}"",
+                    ""{\""simple\"": \""elem2\"", \""other\"": \""elem2\""}""}",...
     """
     arr_open_bracket = "["
     arr_close_bracket = "]"
@@ -517,10 +584,14 @@ def convert_array_cols_to_string(
                                     # Special handling in case of data that already has either a quote " or backslash \
                                     # inside an array element
                                     # First replace any single backslash character \ with TWO \\ (an escaped backslash)
-                                    # Then replace any quote " character with \" (escaped quote, inside a quoted array elem)
+                                    # Then replace quote " character with \" (escaped quote, inside a quoted array elem)
                                     # NOTE: these regexp_replace get sent down to a Java replaceAll, which will require
                                     #       FOUR backslashes to represent ONE
-                                    regexp_replace(regexp_replace(c, "\\\\", "\\\\\\\\"), '"', '\\\\"'),
+                                    regexp_replace(
+                                        regexp_replace(c, "\\\\", "\\\\\\\\"),
+                                        '"',
+                                        '\\\\"',
+                                    ),
                                     lit('"'),
                                 ),
                             )
@@ -534,14 +605,14 @@ def convert_array_cols_to_string(
     return df_no_arrays
 
 
-def build_ref_table_name_list():
+def build_ref_table_name_list() -> list[str]:
     return [rds_ref_table._meta.db_table for rds_ref_table in _USAS_RDS_REF_TABLES]
 
 
-def _generate_global_view_sql_strings(tables: List[str], jdbc_url: str) -> List[str]:
+def _generate_global_view_sql_strings(tables: list[str], jdbc_url: str) -> list[str]:
     """Generates the CREATE OR REPLACE SQL strings for each of the given tables and JDBC URL"""
 
-    sql_strings: List[str] = []
+    sql_strings: list[str] = []
     jdbc_conn_props = get_jdbc_connection_properties()
 
     for table_name in tables:
@@ -561,7 +632,9 @@ def _generate_global_view_sql_strings(tables: List[str], jdbc_url: str) -> List[
     return sql_strings
 
 
-def create_ref_temp_views(spark: SparkSession | DuckDBSparkSession, create_broker_views: bool = False):
+def create_ref_temp_views(  # noqa: PLR0912
+    spark: SparkSession | DuckDBSparkSession, create_broker_views: bool = False
+) -> None:
     """Create global temporary Spark reference views that sit atop remote PostgreSQL RDS tables
     Setting create_broker_views to True will create views for all tables list in _BROKER_REF_TABLES
     Note: They will all be listed under global_temp.{table_name}
@@ -579,15 +652,14 @@ def create_ref_temp_views(spark: SparkSession | DuckDBSparkSession, create_broke
     match isinstance(spark, DuckDBSparkSession):
         case True:
             logger.info("Creating ref temp views using DuckDB")
-
             if IS_LOCAL:
                 spark.sql(
                     f"""
                     CREATE OR REPLACE SECRET (
                         TYPE s3,
                         PROVIDER config,
-                        KEY_ID '{CONFIG.AWS_ACCESS_KEY}',
-                        SECRET '{CONFIG.AWS_SECRET_KEY}',
+                        KEY_ID '{CONFIG.AWS_ACCESS_KEY.get_secret_value()}',
+                        SECRET '{CONFIG.AWS_SECRET_KEY.get_secret_value()}',
                         ENDPOINT '{CONFIG.AWS_S3_ENDPOINT}',
                         URL_STYLE 'path',
                         USE_SSL 'false'
@@ -610,7 +682,10 @@ def create_ref_temp_views(spark: SparkSession | DuckDBSparkSession, create_broke
 
             _download_delta_tables = [
                 {"schema": "rpt", "table_name": "account_balances_download"},
-                {"schema": "rpt", "table_name": "object_class_program_activity_download"},
+                {
+                    "schema": "rpt",
+                    "table_name": "object_class_program_activity_download",
+                },
             ]
 
             # The DuckDB Delta extension is needed to interact with DeltaLake tables
@@ -627,9 +702,9 @@ def create_ref_temp_views(spark: SparkSession | DuckDBSparkSession, create_broke
                     """
                     )
                     logger.info(f"Successfully created table {table['schema']}.{table['table_name']}")
-                except duckdb.IOException:
+                except duckdb.IOException as exc:
                     logger.exception(f"Failed to create table {table['table_name']}")
-                    raise RuntimeError(f"Failed to create table {table['table_name']}")
+                    raise RuntimeError(f"Failed to create table {table['table_name']}") from exc
 
             # The DuckDB Postgres extension is needed to connect to the USAS Postgres DB
             spark.sql("LOAD postgres; CREATE SCHEMA IF NOT EXISTS global_temp;")
@@ -638,9 +713,9 @@ def create_ref_temp_views(spark: SparkSession | DuckDBSparkSession, create_broke
             for table in rds_ref_tables:
                 try:
                     spark.sql(f"CREATE OR REPLACE VIEW global_temp.{table} AS SELECT * FROM usas.public.{table};")
-                except duckdb.CatalogException:
+                except duckdb.CatalogException as exc:
                     logger.exception(f"Failed to create view {table} for {table}")
-                    raise RuntimeError(f"Failed to create view {table} for {table}")
+                    raise RuntimeError(f"Failed to create view {table} for {table}") from exc
 
             if create_broker_views:
                 spark.sql(
@@ -654,9 +729,9 @@ def create_ref_temp_views(spark: SparkSession | DuckDBSparkSession, create_broke
                 for table in _BROKER_REF_TABLES:
                     try:
                         spark.sql(f"CREATE OR REPLACE VIEW global_temp.{table} AS SELECT * FROM broker.public.{table};")
-                    except duckdb.CatalogException:
+                    except duckdb.CatalogException as exc:
                         logger.exception(f"Failed to create view {table} for {table}")
-                        raise RuntimeError(f"Failed to create view {table} for {table}")
+                        raise RuntimeError(f"Failed to create view {table} for {table}") from exc
         case False:
             logger.info("Creating ref temp views using Spark")
 
@@ -682,14 +757,14 @@ def create_ref_temp_views(spark: SparkSession | DuckDBSparkSession, create_broke
     logger.info("Created the reference views in the global_temp database")
 
 
-def write_csv_file(
+def write_csv_file(  # noqa: PLR0913
     spark: SparkSession,
     df: DataFrame,
     parts_dir: str,
-    max_records_per_file=EXCEL_ROW_LIMIT,
-    overwrite=True,
-    logger=None,
-    delimiter=",",
+    max_records_per_file: int = EXCEL_ROW_LIMIT,
+    overwrite: bool = True,
+    logger: logging.Logger | None = None,
+    delimiter: str = ",",
 ) -> int:
     """Write DataFrame data to CSV file parts.
     Args:
@@ -785,7 +860,7 @@ def write_csv_file_duckdb(
     for dir in _partition_dirs:
         _old_csv_path = f"{dir}/{os.listdir(dir)[0]}"
         _new_csv_path = (
-            f"{temp_csv_directory_path}{download_file_name}/{download_file_name}_{dir.split('=')[1].zfill(2)}.csv"
+            f"{temp_csv_directory_path}{download_file_name}" f"/{download_file_name}_{dir.split('=')[1].zfill(2)}.csv"
         )
         shutil.move(_old_csv_path, _new_csv_path)
         full_file_paths.append(_new_csv_path)
@@ -794,33 +869,6 @@ def write_csv_file_duckdb(
     logger.info(f"{temp_csv_directory_path}{download_file_name} contains {df_record_count:,} rows of data")
     logger.info(f"Wrote source data DataFrame to {len(full_file_paths)} CSV files in {(time.time() - start):3f}s")
     return df_record_count, full_file_paths
-
-
-def _merge_file_parts(fs, out_stream, conf, hadoop, partial_merged_file_path, part_file_list):
-    """Read-in files in alphabetical order and append them one by one to the merged file"""
-
-    for part_file in part_file_list:
-        in_stream = None
-        try:
-            in_stream = fs.open(part_file)
-            # Write bytes of each file read and keep out_stream open after write for next file
-            hadoop.io.IOUtils.copyBytes(in_stream, out_stream, conf, False)
-        finally:
-            if in_stream:
-                in_stream.close()
-            if fs.exists(partial_merged_file_path):
-                fs.delete(partial_merged_file_path, True)
-
-
-def _merge_grouper(items, group_size):
-    """Helper to chunk up files into mergeable groups"""
-    FileMergeGroup = namedtuple("FileMergeGroup", ["part", "file_list"])
-    if len(items) <= group_size:
-        yield FileMergeGroup(None, items)
-        return
-    group_generator = (items[i : i + group_size] for i in range(0, len(items), group_size))
-    for i, group in enumerate(group_generator, start=1):
-        yield FileMergeGroup(i, group)
 
 
 def rename_part_files(
@@ -849,7 +897,8 @@ def rename_part_files(
         [
             file.key
             for file in retrieve_s3_bucket_object_list(
-                bucket_name, key_prefix=f"{temp_download_dir_name}/{destination_file_name}/part-"
+                bucket_name,
+                key_prefix=f"{temp_download_dir_name}/{destination_file_name}/part-",
             )
             if file.key.endswith(file_format)
         ]

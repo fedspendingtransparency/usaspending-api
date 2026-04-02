@@ -2,7 +2,7 @@ import logging
 from argparse import ArgumentTypeError
 from typing import Callable
 
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandParser
 from pyspark.sql import SparkSession
 
 from usaspending_api.common.etl.spark import create_ref_temp_views
@@ -35,7 +35,10 @@ from usaspending_api.download.delta_models.object_class_program_activity_downloa
     load_object_class_program_activity_incremental,
     object_class_program_activity_schema,
 )
-from usaspending_api.download.delta_models.transaction_download import transaction_download_schema
+from usaspending_api.download.delta_models.transaction_download import (
+    transaction_download_schema,
+)
+from usaspending_api.etl.table_specs import QueryTableSpec
 from usaspending_api.recipient.delta_models import (
     RECIPIENT_LOOKUP_POSTGRES_COLUMNS,
     RECIPIENT_PROFILE_POSTGRES_COLUMNS,
@@ -57,7 +60,10 @@ from usaspending_api.search.delta_models.award_search import (
     AWARD_SEARCH_POSTGRES_GOLD_COLUMNS,
     award_search_create_sql_string,
 )
-from usaspending_api.search.delta_models.dataframes.award_search import load_award_search, load_award_search_incremental
+from usaspending_api.search.delta_models.dataframes.award_search import (
+    load_award_search,
+    load_award_search_incremental,
+)
 from usaspending_api.search.delta_models.dataframes.transaction_search import (
     load_transaction_search,
     load_transaction_search_incremental,
@@ -69,7 +75,12 @@ from usaspending_api.search.delta_models.subaward_search import (
     subaward_search_create_sql_string,
     subaward_search_load_sql_string,
 )
-from usaspending_api.search.models import AwardSearch, SubawardSearch, SummaryStateView, TransactionSearch
+from usaspending_api.search.models import (
+    AwardSearch,
+    SubawardSearch,
+    SummaryStateView,
+    TransactionSearch,
+)
 from usaspending_api.settings import HOST
 from usaspending_api.transactions.delta_models import (
     SUMMARY_STATE_VIEW_COLUMNS,
@@ -89,360 +100,262 @@ AWARD_URL = f"{HOST}/award/" if "localhost" in HOST else f"https://{HOST}/award/
 logger = logging.getLogger(__name__)
 
 TABLE_SPEC = {
-    "award_search": {
-        "model": AwardSearch,
-        "is_from_broker": False,
-        "source_query": load_award_search,
-        "source_query_incremental": load_award_search_incremental,
-        "source_database": None,
-        "source_table": None,
-        "destination_database": "rpt",
-        "swap_table": "award_search",
-        "swap_schema": "rpt",
-        "partition_column": "award_id",
-        "partition_column_type": "numeric",
-        "is_partition_column_unique": True,
-        "delta_table_create_sql": award_search_create_sql_string,
-        "delta_table_create_options": None,
-        "source_schema": AWARD_SEARCH_POSTGRES_COLUMNS,
-        "custom_schema": "recipient_hash STRING, federal_accounts STRING, cfdas ARRAY<STRING>,"
-        " tas_components ARRAY<STRING>",
-        "column_names": list(AWARD_SEARCH_COLUMNS),
-        "postgres_seq_name": None,
-        "tsvectors": None,
-        "postgres_partition_spec": None,
-        "delta_table_create_partitions": None,
-    },
-    "award_search_gold": {
-        "model": AwardSearch,
-        "is_from_broker": False,
-        "source_query": load_award_search,
-        "source_query_incremental": load_award_search_incremental,
-        "source_database": None,
-        "source_table": None,
-        "destination_database": "rpt",
-        "swap_table": "award_search",
-        "swap_schema": "rpt",
-        "partition_column": "award_id",
-        "partition_column_type": "numeric",
-        "is_partition_column_unique": True,
-        "delta_table_create_sql": award_search_create_sql_string,
-        "delta_table_create_options": None,
-        "source_schema": AWARD_SEARCH_POSTGRES_GOLD_COLUMNS,
-        "custom_schema": "recipient_hash STRING, federal_accounts STRING, cfdas ARRAY<STRING>,"
-        " tas_components ARRAY<STRING>",
-        "column_names": list(AWARD_SEARCH_POSTGRES_GOLD_COLUMNS),
-        "postgres_seq_name": None,
-        "tsvectors": None,
-        "postgres_partition_spec": None,
-        "delta_table_create_partitions": None,
-    },
-    "recipient_lookup": {
-        "model": RecipientLookup,
-        "is_from_broker": False,
-        "source_query": recipient_lookup_load_sql_string_list,
-        "source_query_incremental": None,
-        "source_database": None,
-        "source_table": None,
-        "destination_database": "rpt",
-        "swap_table": "recipient_lookup",
-        "swap_schema": "rpt",
-        "partition_column": "recipient_hash",
-        "partition_column_type": "string",
-        "is_partition_column_unique": True,
-        "delta_table_create_sql": rpt_recipient_lookup_create_sql_string,
-        "delta_table_create_options": None,
-        "source_schema": RECIPIENT_LOOKUP_POSTGRES_COLUMNS,
-        "custom_schema": "recipient_hash STRING",
-        "column_names": list(RPT_RECIPIENT_LOOKUP_DELTA_COLUMNS),
-        "postgres_seq_name": "recipient_lookup_id_seq",
-        "tsvectors": None,
-        "postgres_partition_spec": None,
-        "delta_table_create_partitions": None,
-    },
-    "recipient_profile": {
-        "model": RecipientProfile,
-        "is_from_broker": False,
-        "source_query": recipient_profile_load_sql_strings,
-        "source_query_incremental": None,
-        "source_database": None,
-        "source_table": None,
-        "destination_database": "rpt",
-        "swap_table": "recipient_profile",
-        "swap_schema": "rpt",
-        "partition_column": "recipient_hash",  # This isn't used for anything
-        "partition_column_type": "string",
-        "is_partition_column_unique": False,
-        "delta_table_create_sql": recipient_profile_create_sql_string,
-        "delta_table_create_options": None,
-        "source_schema": RECIPIENT_PROFILE_POSTGRES_COLUMNS,
-        "custom_schema": "recipient_hash STRING",
-        "column_names": list(RPT_RECIPIENT_PROFILE_DELTA_COLUMNS),
-        "postgres_seq_name": "recipient_profile_id_seq",
-        "tsvectors": None,
-        "postgres_partition_spec": None,
-        "delta_table_create_partitions": None,
-    },
-    "summary_state_view": {
-        "model": SummaryStateView,
-        "is_from_broker": False,
-        "source_query": summary_state_view_load_sql_string,
-        "source_query_incremental": None,
-        "source_database": None,
-        "source_table": None,
-        "destination_database": "rpt",
-        "swap_table": "summary_state_view",
-        "swap_schema": "rpt",
-        "partition_column": "duh",
-        "partition_column_type": "string",
-        "is_partition_column_unique": True,
-        "delta_table_create_sql": summary_state_view_create_sql_string,
-        "delta_table_create_options": None,
-        "source_schema": SUMMARY_STATE_VIEW_POSTGRES_COLUMNS,
-        "custom_schema": "duh STRING",
-        "column_names": list(SUMMARY_STATE_VIEW_COLUMNS),
-        "postgres_seq_name": None,
-        "tsvectors": None,
-        "postgres_partition_spec": None,
-        "delta_table_create_partitions": None,
-    },
-    "sam_recipient": {
-        "model": None,
-        "is_from_broker": True,
-        "source_query": sam_recipient_load_sql_string,
-        "source_query_incremental": None,
-        "source_database": None,
-        "source_table": None,
-        "destination_database": "int",
-        "swap_table": "duns",
-        "swap_schema": "int",
-        "partition_column": "broker_duns_id",
-        "partition_column_type": "string",
-        "is_partition_column_unique": True,
-        "delta_table_create_sql": sam_recipient_create_sql_string,
-        "delta_table_create_options": None,
-        "source_schema": SAM_RECIPIENT_POSTGRES_COLUMNS,
-        "custom_schema": None,
-        "column_names": list(SAM_RECIPIENT_COLUMNS),
-        "postgres_seq_name": None,
-        "tsvectors": None,
-        "postgres_partition_spec": None,
-        "delta_table_create_partitions": None,
-    },
-    "transaction_search": {
-        "model": TransactionSearch,
-        "is_from_broker": False,
-        "source_query": load_transaction_search,
-        "source_query_incremental": load_transaction_search_incremental,
-        "source_database": None,
-        "source_table": None,
-        "destination_database": "rpt",
-        "swap_table": "transaction_search",
-        "swap_schema": "rpt",
-        "partition_column": "transaction_id",
-        "partition_column_type": "numeric",
-        "is_partition_column_unique": True,
-        "delta_table_create_sql": transaction_search_create_sql_string,
-        "delta_table_create_options": None,
-        "source_schema": TRANSACTION_SEARCH_POSTGRES_COLUMNS,
-        "custom_schema": "recipient_hash STRING, federal_accounts STRING, parent_recipient_hash STRING",
-        "column_names": list(TRANSACTION_SEARCH_POSTGRES_COLUMNS),
-        "postgres_seq_name": None,
-        "tsvectors": None,
-        "postgres_partition_spec": None,
-        "delta_table_create_partitions": None,
-    },
-    "transaction_search_gold": {
-        "model": TransactionSearch,
-        "is_from_broker": False,
-        "source_query": load_transaction_search,
-        "source_query_incremental": load_transaction_search_incremental,
-        "source_database": None,
-        "source_table": None,
-        "destination_database": "rpt",
-        "swap_table": "transaction_search",
-        "swap_schema": "rpt",
-        "partition_column": "transaction_id",
-        "partition_column_type": "numeric",
-        "is_partition_column_unique": True,
-        "delta_table_create_sql": transaction_search_create_sql_string,
-        "delta_table_create_options": None,
-        "source_schema": TRANSACTION_SEARCH_POSTGRES_GOLD_COLUMNS,
-        "custom_schema": "recipient_hash STRING, federal_accounts STRING, parent_recipient_hash STRING",
-        "column_names": list(TRANSACTION_SEARCH_POSTGRES_GOLD_COLUMNS),
-        "postgres_seq_name": None,
-        "tsvectors": None,
-        "postgres_partition_spec": {
-            "partition_keys": ["is_fpds"],
-            "partitioning_form": "LIST",
-            "partitions": [
-                {"table_suffix": "_fpds", "partitioning_clause": "FOR VALUES IN (TRUE)"},
-                {"table_suffix": "_fabs", "partitioning_clause": "FOR VALUES IN (FALSE)"},
+    "award_search": QueryTableSpec(
+        **{
+            "model": AwardSearch,
+            "source_query": load_award_search,
+            "source_query_incremental": load_award_search_incremental,
+            "destination_database": "rpt",
+            "swap_table": "award_search",
+            "swap_schema": "rpt",
+            "partition_column": "award_id",
+            "partition_column_type": "numeric",
+            "is_partition_column_unique": True,
+            "delta_table_create_sql": award_search_create_sql_string,
+            "source_schema": AWARD_SEARCH_POSTGRES_COLUMNS,
+            "custom_schema": "recipient_hash STRING, federal_accounts STRING, cfdas ARRAY<STRING>,"
+            " tas_components ARRAY<STRING>",
+            "column_names": list(AWARD_SEARCH_COLUMNS),
+        }
+    ),
+    "award_search_gold": QueryTableSpec(
+        **{
+            "model": AwardSearch,
+            "source_query": load_award_search,
+            "source_query_incremental": load_award_search_incremental,
+            "destination_database": "rpt",
+            "swap_table": "award_search",
+            "swap_schema": "rpt",
+            "partition_column": "award_id",
+            "partition_column_type": "numeric",
+            "is_partition_column_unique": True,
+            "delta_table_create_sql": award_search_create_sql_string,
+            "source_schema": AWARD_SEARCH_POSTGRES_GOLD_COLUMNS,
+            "custom_schema": "recipient_hash STRING, federal_accounts STRING, cfdas ARRAY<STRING>,"
+            " tas_components ARRAY<STRING>",
+            "column_names": list(AWARD_SEARCH_POSTGRES_GOLD_COLUMNS),
+        }
+    ),
+    "recipient_lookup": QueryTableSpec(
+        **{
+            "model": RecipientLookup,
+            "source_query": recipient_lookup_load_sql_string_list,
+            "destination_database": "rpt",
+            "swap_table": "recipient_lookup",
+            "swap_schema": "rpt",
+            "partition_column": "recipient_hash",
+            "partition_column_type": "string",
+            "is_partition_column_unique": True,
+            "delta_table_create_sql": rpt_recipient_lookup_create_sql_string,
+            "source_schema": RECIPIENT_LOOKUP_POSTGRES_COLUMNS,
+            "custom_schema": "recipient_hash STRING",
+            "column_names": list(RPT_RECIPIENT_LOOKUP_DELTA_COLUMNS),
+            "postgres_seq_name": "recipient_lookup_id_seq",
+        }
+    ),
+    "recipient_profile": QueryTableSpec(
+        **{
+            "model": RecipientProfile,
+            "source_query": recipient_profile_load_sql_strings,
+            "destination_database": "rpt",
+            "swap_table": "recipient_profile",
+            "swap_schema": "rpt",
+            "partition_column": "recipient_hash",  # This isn't used for anything
+            "partition_column_type": "string",
+            "delta_table_create_sql": recipient_profile_create_sql_string,
+            "source_schema": RECIPIENT_PROFILE_POSTGRES_COLUMNS,
+            "custom_schema": "recipient_hash STRING",
+            "column_names": list(RPT_RECIPIENT_PROFILE_DELTA_COLUMNS),
+            "postgres_seq_name": "recipient_profile_id_seq",
+        }
+    ),
+    "summary_state_view": QueryTableSpec(
+        **{
+            "model": SummaryStateView,
+            "source_query": summary_state_view_load_sql_string,
+            "destination_database": "rpt",
+            "swap_table": "summary_state_view",
+            "swap_schema": "rpt",
+            "partition_column": "duh",
+            "partition_column_type": "string",
+            "is_partition_column_unique": True,
+            "delta_table_create_sql": summary_state_view_create_sql_string,
+            "source_schema": SUMMARY_STATE_VIEW_POSTGRES_COLUMNS,
+            "custom_schema": "duh STRING",
+            "column_names": list(SUMMARY_STATE_VIEW_COLUMNS),
+        }
+    ),
+    "sam_recipient": QueryTableSpec(
+        **{
+            "is_from_broker": True,
+            "source_query": sam_recipient_load_sql_string,
+            "destination_database": "int",
+            "swap_table": "duns",
+            "swap_schema": "int",
+            "partition_column": "broker_duns_id",
+            "partition_column_type": "string",
+            "is_partition_column_unique": True,
+            "delta_table_create_sql": sam_recipient_create_sql_string,
+            "source_schema": SAM_RECIPIENT_POSTGRES_COLUMNS,
+            "column_names": list(SAM_RECIPIENT_COLUMNS),
+        }
+    ),
+    "transaction_search": QueryTableSpec(
+        **{
+            "model": TransactionSearch,
+            "source_query": load_transaction_search,
+            "source_query_incremental": load_transaction_search_incremental,
+            "destination_database": "rpt",
+            "swap_table": "transaction_search",
+            "swap_schema": "rpt",
+            "partition_column": "transaction_id",
+            "partition_column_type": "numeric",
+            "is_partition_column_unique": True,
+            "delta_table_create_sql": transaction_search_create_sql_string,
+            "source_schema": TRANSACTION_SEARCH_POSTGRES_COLUMNS,
+            "custom_schema": "recipient_hash STRING, federal_accounts STRING, parent_recipient_hash STRING",
+            "column_names": list(TRANSACTION_SEARCH_POSTGRES_COLUMNS),
+        }
+    ),
+    "transaction_search_gold": QueryTableSpec(
+        **{
+            "model": TransactionSearch,
+            "source_query": load_transaction_search,
+            "source_query_incremental": load_transaction_search_incremental,
+            "destination_database": "rpt",
+            "swap_table": "transaction_search",
+            "swap_schema": "rpt",
+            "partition_column": "transaction_id",
+            "partition_column_type": "numeric",
+            "is_partition_column_unique": True,
+            "delta_table_create_sql": transaction_search_create_sql_string,
+            "source_schema": TRANSACTION_SEARCH_POSTGRES_GOLD_COLUMNS,
+            "custom_schema": "recipient_hash STRING, federal_accounts STRING, parent_recipient_hash STRING",
+            "column_names": list(TRANSACTION_SEARCH_POSTGRES_GOLD_COLUMNS),
+            "postgres_partition_spec": {
+                "partition_keys": ["is_fpds"],
+                "partitioning_form": "LIST",
+                "partitions": [
+                    {
+                        "table_suffix": "_fpds",
+                        "partitioning_clause": "FOR VALUES IN (TRUE)",
+                    },
+                    {
+                        "table_suffix": "_fabs",
+                        "partitioning_clause": "FOR VALUES IN (FALSE)",
+                    },
+                ],
+            },
+        }
+    ),
+    "transaction_current_cd_lookup": QueryTableSpec(
+        **{
+            "source_query": transaction_current_cd_lookup_load_sql_string,
+            "destination_database": "int",
+            "swap_table": "transaction_current_cd_lookup",
+            "swap_schema": "int",
+            "partition_column": "transaction_id",
+            "partition_column_type": "numeric",
+            "is_partition_column_unique": True,
+            "delta_table_create_sql": transaction_current_cd_lookup_create_sql_string,
+            "source_schema": TRANSACTION_CURRENT_CD_LOOKUP_COLUMNS,
+            "column_names": list(TRANSACTION_CURRENT_CD_LOOKUP_COLUMNS),
+        }
+    ),
+    "subaward_search": QueryTableSpec(
+        **{
+            "model": SubawardSearch,
+            "source_query": subaward_search_load_sql_string,
+            "destination_database": "rpt",
+            "swap_table": "subaward_search",
+            "swap_schema": "rpt",
+            "partition_column": "broker_subaward_id",
+            "partition_column_type": "numeric",
+            "is_partition_column_unique": True,
+            "delta_table_create_sql": subaward_search_create_sql_string,
+            "source_schema": SUBAWARD_SEARCH_POSTGRES_COLUMNS,
+            "custom_schema": "treasury_account_identifiers ARRAY<INTEGER>",
+            "column_names": list(SUBAWARD_SEARCH_COLUMNS),
+            "tsvectors": SUBAWARD_SEARCH_POSTGRES_VECTORS,
+        }
+    ),
+    "covid_faba_spending": QueryTableSpec(
+        **{
+            "model": CovidFABASpending,
+            "source_query": covid_faba_spending_load_sql_strings,
+            "destination_database": "rpt",
+            "swap_table": "covid_faba_spending",
+            "swap_schema": "rpt",
+            "partition_column": "id",
+            "partition_column_type": "numeric",
+            "delta_table_create_sql": covid_faba_spending_create_sql_string,
+            "source_schema": COVID_FABA_SPENDING_POSTGRES_COLUMNS,
+            "column_names": list(COVID_FABA_SPENDING_DELTA_COLUMNS),
+        }
+    ),
+    "account_balances_download": QueryTableSpec(
+        **{
+            "source_query": load_account_balances,
+            "source_query_incremental": load_account_balances_incremental,
+            "destination_database": "rpt",
+            "partition_column": "appropriation_account_balances_id",
+            "partition_column_type": "numeric",
+            "delta_table_create_sql": account_balances_schema,
+            "delta_table_create_options": {"delta.enableChangeDataFeed": True},
+            "column_names": [],
+            "delta_table_create_partitions": [
+                "reporting_fiscal_year",
+                "funding_toptier_agency_id",
             ],
-        },
-        "delta_table_create_partitions": None,
-    },
-    "transaction_current_cd_lookup": {
-        "model": None,
-        "is_from_broker": False,
-        "source_query": transaction_current_cd_lookup_load_sql_string,
-        "source_query_incremental": None,
-        "source_database": None,
-        "source_table": None,
-        "destination_database": "int",
-        "swap_table": "transaction_current_cd_lookup",
-        "swap_schema": "int",
-        "partition_column": "transaction_id",
-        "partition_column_type": "numeric",
-        "is_partition_column_unique": True,
-        "delta_table_create_sql": transaction_current_cd_lookup_create_sql_string,
-        "delta_table_create_options": None,
-        "source_schema": TRANSACTION_CURRENT_CD_LOOKUP_COLUMNS,
-        "custom_schema": "",
-        "column_names": list(TRANSACTION_CURRENT_CD_LOOKUP_COLUMNS),
-        "postgres_seq_name": None,
-        "tsvectors": None,
-        "postgres_partition_spec": None,
-        "delta_table_create_partitions": None,
-    },
-    "subaward_search": {
-        "model": SubawardSearch,
-        "is_from_broker": False,
-        "source_query": subaward_search_load_sql_string,
-        "source_query_incremental": None,
-        "source_database": None,
-        "source_table": None,
-        "destination_database": "rpt",
-        "swap_table": "subaward_search",
-        "swap_schema": "rpt",
-        "partition_column": "broker_subaward_id",
-        "partition_column_type": "numeric",
-        "is_partition_column_unique": True,
-        "delta_table_create_sql": subaward_search_create_sql_string,
-        "delta_table_create_options": None,
-        "source_schema": SUBAWARD_SEARCH_POSTGRES_COLUMNS,
-        "custom_schema": "treasury_account_identifiers ARRAY<INTEGER>",
-        "column_names": list(SUBAWARD_SEARCH_COLUMNS),
-        "postgres_seq_name": None,
-        "tsvectors": SUBAWARD_SEARCH_POSTGRES_VECTORS,
-        "postgres_partition_spec": None,
-        "delta_table_create_partitions": None,
-    },
-    "covid_faba_spending": {
-        "model": CovidFABASpending,
-        "is_from_broker": False,
-        "source_query": covid_faba_spending_load_sql_strings,
-        "source_query_incremental": None,
-        "source_database": None,
-        "source_table": None,
-        "destination_database": "rpt",
-        "swap_table": "covid_faba_spending",
-        "swap_schema": "rpt",
-        "partition_column": "id",
-        "partition_column_type": "numeric",
-        "is_partition_column_unique": False,
-        "delta_table_create_sql": covid_faba_spending_create_sql_string,
-        "delta_table_create_options": None,
-        "source_schema": COVID_FABA_SPENDING_POSTGRES_COLUMNS,
-        "custom_schema": None,
-        "column_names": list(COVID_FABA_SPENDING_DELTA_COLUMNS),
-        "postgres_seq_name": None,
-        "tsvectors": None,
-        "postgres_partition_spec": None,
-        "delta_table_create_partitions": None,
-    },
-    "account_balances_download": {
-        "model": None,
-        "is_from_broker": False,
-        "source_query": load_account_balances,
-        "source_query_incremental": load_account_balances_incremental,
-        "source_database": None,
-        "source_table": None,
-        "destination_database": "rpt",
-        "swap_table": None,
-        "swap_schema": None,
-        "partition_column": "appropriation_account_balances_id",
-        "partition_column_type": "numeric",
-        "is_partition_column_unique": False,
-        "delta_table_create_sql": account_balances_schema,
-        "delta_table_create_options": {"delta.enableChangeDataFeed": True},
-        "source_schema": None,
-        "custom_schema": None,
-        "column_names": list(),
-        "postgres_seq_name": None,
-        "tsvectors": None,
-        "postgres_partition_spec": None,
-        "delta_table_create_partitions": ["reporting_fiscal_year", "funding_toptier_agency_id"],
-    },
-    "award_financial_download": {
-        "model": None,
-        "is_from_broker": False,
-        "source_query": load_award_financial,
-        "source_query_incremental": load_award_financial_incremental,
-        "source_database": None,
-        "source_table": None,
-        "destination_database": "rpt",
-        "swap_table": None,
-        "swap_schema": None,
-        "partition_column": "financial_accounts_by_awards_id",
-        "partition_column_type": "numeric",
-        "is_partition_column_unique": False,
-        "delta_table_create_sql": award_financial_schema,
-        "delta_table_create_options": {"delta.enableChangeDataFeed": True},
-        "source_schema": None,
-        "custom_schema": None,
-        "column_names": list(),
-        "postgres_seq_name": None,
-        "tsvectors": None,
-        "postgres_partition_spec": None,
-        "delta_table_create_partitions": ["reporting_fiscal_year", "funding_toptier_agency_id"],
-    },
-    "object_class_program_activity_download": {
-        "model": None,
-        "is_from_broker": False,
-        "source_query": load_object_class_program_activity,
-        "source_query_incremental": load_object_class_program_activity_incremental,
-        "source_database": None,
-        "source_table": None,
-        "destination_database": "rpt",
-        "swap_table": None,
-        "swap_schema": None,
-        "partition_column": "financial_accounts_by_program_activity_object_class_id",
-        "partition_column_type": "numeric",
-        "is_partition_column_unique": False,
-        "delta_table_create_sql": object_class_program_activity_schema,
-        "delta_table_create_options": {"delta.enableChangeDataFeed": True},
-        "source_schema": None,
-        "custom_schema": None,
-        "column_names": list(),
-        "postgres_seq_name": None,
-        "tsvectors": None,
-        "postgres_partition_spec": None,
-        "delta_table_create_partitions": ["reporting_fiscal_year", "funding_toptier_agency_id"],
-    },
-    "transaction_download": {
-        "model": None,
-        "is_from_broker": False,
-        "source_query": None,
-        "source_query_incremental": None,
-        "source_database": None,
-        "source_table": None,
-        "destination_database": "rpt",
-        "swap_table": None,
-        "swap_schema": None,
-        "partition_column": "transaction_id",
-        "partition_column_type": "numeric",
-        "is_partition_column_unique": False,
-        "delta_table_create_sql": transaction_download_schema,
-        "delta_table_create_options": {"delta.enableChangeDataFeed": True},
-        "source_schema": None,
-        "custom_schema": None,
-        "column_names": list(),
-        "postgres_seq_name": None,
-        "tsvectors": None,
-        "postgres_partition_spec": None,
-        "delta_table_create_partitions": ["awarding_agency_code", "is_fpds", "action_date_fiscal_year"],
-    },
+        }
+    ),
+    "award_financial_download": QueryTableSpec(
+        **{
+            "source_query": load_award_financial,
+            "source_query_incremental": load_award_financial_incremental,
+            "destination_database": "rpt",
+            "partition_column": "financial_accounts_by_awards_id",
+            "partition_column_type": "numeric",
+            "delta_table_create_sql": award_financial_schema,
+            "delta_table_create_options": {"delta.enableChangeDataFeed": True},
+            "column_names": [],
+            "delta_table_create_partitions": [
+                "reporting_fiscal_year",
+                "funding_toptier_agency_id",
+            ],
+        }
+    ),
+    "object_class_program_activity_download": QueryTableSpec(
+        **{
+            "source_query": load_object_class_program_activity,
+            "source_query_incremental": load_object_class_program_activity_incremental,
+            "destination_database": "rpt",
+            "partition_column": "financial_accounts_by_program_activity_object_class_id",
+            "partition_column_type": "numeric",
+            "delta_table_create_sql": object_class_program_activity_schema,
+            "delta_table_create_options": {"delta.enableChangeDataFeed": True},
+            "column_names": [],
+            "delta_table_create_partitions": [
+                "reporting_fiscal_year",
+                "funding_toptier_agency_id",
+            ],
+        }
+    ),
+    "transaction_download": QueryTableSpec(
+        **{
+            "destination_database": "rpt",
+            "partition_column": "transaction_id",
+            "partition_column_type": "numeric",
+            "delta_table_create_sql": transaction_download_schema,
+            "delta_table_create_options": {"delta.enableChangeDataFeed": True},
+            "column_names": [],
+            "delta_table_create_partitions": [
+                "awarding_agency_code",
+                "is_fpds",
+                "action_date_fiscal_year",
+            ],
+        }
+    ),
 }
 
 
@@ -458,7 +371,8 @@ class Command(BaseCommand):
     destination_table_name: str
     spark: SparkSession
 
-    def add_arguments(self, parser):
+    @staticmethod
+    def add_arguments(parser: CommandParser) -> None:
         parser.add_argument(
             "--destination-table",
             type=str,
@@ -486,7 +400,7 @@ class Command(BaseCommand):
             help="Whether or not the table will be updated incrementally",
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         extra_conf = {
             # Config for Delta Lake tables and SQL. Need these to keep Dela table metadata in the metastore
             "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension",
@@ -501,32 +415,37 @@ class Command(BaseCommand):
         spark_created_by_command = False
         if not self.spark:
             spark_created_by_command = True
-            self.spark = configure_spark_session(**extra_conf, spark_context=self.spark)  # type: SparkSession
+            self.spark = configure_spark_session(
+                **extra_conf, spark_context=self.spark
+            )  # type: SparkSession
 
         # Resolve Parameters
         destination_table = options["destination_table"]
         table_spec = TABLE_SPEC[destination_table]
-        self.destination_database = options["alt_db"] or table_spec["destination_database"]
-        self.destination_table_name = options["alt_name"] or destination_table.split(".")[-1]
-        source_query_key = "source_query_incremental" if options["incremental"] else "source_query"
-        load_query = table_spec.get(source_query_key)
+        self.destination_database = options["alt_db"] or table_spec.destination_database
+        self.destination_table_name = (
+            options["alt_name"] or destination_table.split(".")[-1]
+        )
+        source_query_key = (
+            "source_query_incremental" if options["incremental"] else "source_query"
+        )
+        load_query = getattr(table_spec, source_query_key)
         if load_query is None:
-            raise ArgumentTypeError(f"Invalid source query. `{source_query_key}` must be specified in the TABLE_SPEC.")
+            raise ArgumentTypeError(
+                f"Invalid source query. `{source_query_key}` must be specified in the TABLE_SPEC."
+            )
 
         # Set the database that will be interacted with for all Delta Lake table Spark-based activity
         logger.info(f"Using Spark Database: {self.destination_database}")
         self.spark.sql(f"use {self.destination_database};")
 
-        # Create User Defined Functions if needed
-        if table_spec.get("user_defined_functions"):
-            for udf_args in table_spec["user_defined_functions"]:
-                self.spark.udf.register(**udf_args)
-
         create_ref_temp_views(self.spark, create_broker_views=True)
 
         if isinstance(load_query, list):
             for index, query in enumerate(load_query):
-                logger.info(f"Running query number: {index + 1}\nPreview of query: {query[:100]}")
+                logger.info(
+                    f"Running query number: {index + 1}\nPreview of query: {query[:100]}"
+                )
                 self.run_spark_sql(query)
         else:
             self.run_spark_sql(load_query)
@@ -534,7 +453,9 @@ class Command(BaseCommand):
         if spark_created_by_command:
             self.spark.stop()
 
-    def run_spark_sql(self, query: str | Callable[[SparkSession, str, str], None]):
+    def run_spark_sql(
+        self, query: str | Callable[[SparkSession, str, str], None]
+    ) -> None:
         if isinstance(query, str):
             jdbc_conn_props = get_jdbc_connection_properties()
             self.spark.sql(
@@ -551,4 +472,6 @@ class Command(BaseCommand):
         elif isinstance(query, Callable):
             query(self.spark, self.destination_database, self.destination_table_name)
         else:
-            raise ArgumentTypeError(f"Invalid query. `{query}` must be a string or a Callable.")
+            raise ArgumentTypeError(
+                f"Invalid query. `{query}` must be a string or a Callable."
+            )
