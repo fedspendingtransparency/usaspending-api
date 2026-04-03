@@ -797,7 +797,7 @@ def wait_for_process(
         sleep_count += 1
 
     over_time = (time.perf_counter() - start_time) >= MAX_VISIBILITY_TIMEOUT
-
+    err = None
     if (
         download_job
         and (not download_job.monthly_download and over_time)
@@ -817,14 +817,16 @@ def wait_for_process(
                 is_error=True,
             )
             process.terminate()
-            e = TimeoutError(
+            err = TimeoutError(
                 f"DownloadJob {download_job.download_job_id} lasted longer than {MAX_VISIBILITY_TIMEOUT / 3600} hours"
             )
         else:
             # An error occurred in the process
-            e = Exception("Command failed. Please see the logs for details.")
+            err = Exception("Command failed. Please see the logs for details.")
 
-        raise e
+    process.join()
+    if err:
+        raise err
 
     return time.perf_counter() - log_time
 
