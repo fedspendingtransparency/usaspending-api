@@ -125,6 +125,7 @@ _fabs_specific_schema = StructType(
         StructField("place_of_performance_forei", StringType()),
         StructField("place_of_performance_scope", StringType()),
         # Recipient Location
+        StructField("legal_entity_city_code", StringType()),
         StructField("legal_entity_foreign_city", StringType()),
         StructField("legal_entity_foreign_posta", StringType()),
         StructField("legal_entity_foreign_provi", StringType()),
@@ -154,6 +155,7 @@ _fpds_specific_schema = StructType(
         StructField("transaction_number", StringType()),
         # Dates
         StructField("ordering_period_end_date", StringType()),
+        StructField("period_of_perf_potential_e", StringType()),
         StructField("solicitation_date", DateType()),
         # Officer Amounts
         StructField("officer_1_name", StringType()),
@@ -334,6 +336,7 @@ _fpds_specific_schema = StructType(
         StructField("product_or_service_description", StringType()),
         StructField("purchase_card_as_payment_m", StringType()),
         StructField("purchase_card_as_paym_desc", StringType()),
+        StructField("receives_contracts_and_gra", BooleanType()),
         StructField("recovered_materials_sustai", StringType()),
         StructField("recovered_materials_s_desc", StringType()),
         StructField("research", StringType()),
@@ -352,6 +355,8 @@ _fpds_specific_schema = StructType(
         StructField("small_disadvantaged_busine", BooleanType()),
         StructField("sole_proprietorship", BooleanType()),
         StructField("solicitation_identifier", StringType()),
+        StructField("solicitation_procedures", StringType()),
+        StructField("solicitation_procedur_desc", StringType()),
         StructField("state_controlled_instituti", BooleanType()),
         StructField("subchapter_s_corporation", BooleanType()),
         StructField("subcontinent_asian_asian_i", BooleanType()),
