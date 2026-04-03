@@ -1,13 +1,14 @@
+from psycopg import Cursor
+
 from usaspending_api.accounts.models import TreasuryAppropriationAccount
 from usaspending_api.etl.broker_etl_helpers import dictfetchall
-
 
 # This dictionary will hold a map of account_num -> treasury_account to ensure we don't keep hitting the
 # Broker DB for account data.
 TREASURY_ACCOUNT_LOOKUP = {}
 
 
-def bulk_treasury_appropriation_account_tas_lookup(rows, db_cursor):
+def bulk_treasury_appropriation_account_tas_lookup(rows: list, db_cursor: Cursor) -> None:
 
     # Eliminate nulls, 'account_num's we already know about, and remove duplicates.
     tas_lookup_ids = tuple(
@@ -59,7 +60,7 @@ def bulk_treasury_appropriation_account_tas_lookup(rows, db_cursor):
     )
 
 
-def get_treasury_appropriation_account_tas_lookup(account_num):
+def get_treasury_appropriation_account_tas_lookup(account_num: str) -> tuple:
     tas = TREASURY_ACCOUNT_LOOKUP.get(account_num)
     if not tas or not tas[1]:
         return None, f"TAS Account Number (tas_lookup.account_num) '{account_num}' not found in Broker"
