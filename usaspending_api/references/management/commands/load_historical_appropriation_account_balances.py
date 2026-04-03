@@ -147,5 +147,5 @@ class Command(BaseCommand):
     def _import_file(self, file_path: Path, table_name: str) -> int:
         sql = f"copy {table_name} from stdin with (format csv, header)"
         with open(file_path) as f:
-            self.cursor.copy_expert(sql, f, READ_BUFFER_SIZE_BYTES)
+            self.cursor.copy(sql, f)
         return self.cursor.rowcount

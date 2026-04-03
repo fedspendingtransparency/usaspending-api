@@ -17,7 +17,8 @@ import gzip
 import logging
 import tempfile
 import time
-from typing import Generator, Iterable, List
+from gzip import GzipFile
+from typing import Generator, Iterable, List, TextIO
 
 import boto3
 import psycopg
@@ -71,20 +72,14 @@ def _download_and_copy(  # noqa: PLR0913
 
     with tempfile.NamedTemporaryFile(delete=True) as temp_file:
         download_s3_object(s3_bucket_name, s3_obj_key, temp_file.name, s3_client=s3_client)
-
+        sql = f"COPY {target_pg_table} ({','.join(ordered_col_names)}) FROM STDIN (FORMAT CSV)"
         try:
             if gzipped:
                 with gzip.open(temp_file.name, "rb") as csv_file:
-                    cursor.copy_expert(
-                        sql=f"COPY {target_pg_table} ({','.join(ordered_col_names)}) FROM STDIN (FORMAT CSV)",
-                        file=csv_file,
-                    )
+                    _copy_csv(sql, csv_file, cursor)
             else:
                 with open(temp_file.name, "r", encoding="utf-8") as csv_file:
-                    cursor.copy_expert(
-                        sql=f"COPY {target_pg_table} ({','.join(ordered_col_names)}) FROM STDIN (FORMAT CSV)",
-                        file=csv_file,
-                    )
+                    _copy_csv(sql, csv_file, cursor)
 
             elapsed = time.time() - start
             rows_copied = cursor.rowcount
@@ -97,6 +92,12 @@ def _download_and_copy(  # noqa: PLR0913
             configured_logger.error(f"{partition_prefix}ERROR writing {s3_obj_key}")
             configured_logger.exception(exc)
             raise exc
+
+
+def _copy_csv(sql: str, csv_file: TextIO | GzipFile, cursor: psycopg.Connection.cursor) -> None:
+    with cursor.copy(sql) as copy:
+        for row in csv_file:
+            copy.write(row)
 
 
 def copy_csv_from_s3_to_pg(  # noqa: PLR0913

@@ -157,7 +157,7 @@ class Command(mixins.ETLMixin, BaseCommand):
     def _import_raw_agencies(self) -> int:
         sql = (Path(self.etl_dml_sql_directory) / "insert_into.sql").read_text().format(temp_table=TEMP_TABLE_NAME)
         with get_connection(read_only=False).cursor() as cursor:
-            cursor.copy(sql, self.agencies)
+            cursor.executemany(sql, self.agencies)
             return cursor.rowcount
 
     def _perform_load(self) -> None:

@@ -201,7 +201,10 @@ def fetchall_fetcher(cursor: Cursor) -> list:
         ]
 
     """
-    return cursor.fetchall()
+    results = []
+    if cursor.description:
+        results = cursor.fetchall()
+    return results
 
 
 def named_tuple_fetcher(cursor: Cursor) -> list:

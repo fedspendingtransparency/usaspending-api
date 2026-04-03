@@ -154,7 +154,7 @@ class Command(mixins.ETLMixin, BaseCommand):
 
     def _import_def_codes(self) -> int:
         with get_connection(read_only=False).cursor() as cursor:
-            cursor.copy(
+            cursor.executemany(
                 """
                     insert into temp_load_disaster_emergency_fund_codes (
                         row_number,
@@ -164,7 +164,7 @@ class Command(mixins.ETLMixin, BaseCommand):
                         group_name,
                         urls,
                         earliest_public_law_enactment_date
-                    ) values %s
+                    ) values (%s, %s, %s, %s, %s, %s, %s)
                 """,
                 self.def_codes,
             )
