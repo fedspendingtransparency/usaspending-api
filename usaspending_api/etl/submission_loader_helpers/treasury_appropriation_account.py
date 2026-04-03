@@ -17,7 +17,7 @@ def bulk_treasury_appropriation_account_tas_lookup(rows, db_cursor):
     if not tas_lookup_ids:
         return
 
-    db_cursor.execute(
+    db_cursor.cursor.execute(
         """
             select  distinct
                     account_num,
@@ -29,10 +29,10 @@ def bulk_treasury_appropriation_account_tas_lookup(rows, db_cursor):
                     main_account_code,
                     sub_account_code
             from    tas_lookup
-            where   account_num in %s
+            where   account_num = ANY(%s)
                     and financial_indicator2 IS DISTINCT FROM 'F'
         """,
-        [tas_lookup_ids],
+        [list(tas_lookup_ids)],
     )
     tas_data = dictfetchall(db_cursor)
 

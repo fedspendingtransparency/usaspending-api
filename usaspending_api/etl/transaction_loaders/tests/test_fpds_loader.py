@@ -52,7 +52,7 @@ def mock_cursor(monkeypatch, result_value):
         return mock_context
 
     def mogrify(val1, val2):
-        return str(val2[0]).encode()
+        return str(val2[0])
 
     # I don't think it works this way...
     result.mogrify = mogrify
