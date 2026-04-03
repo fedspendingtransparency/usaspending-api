@@ -23,6 +23,7 @@ from typing import Generator, Iterable, List, TextIO
 import boto3
 import psycopg
 from botocore.client import BaseClient
+from psycopg import sql
 
 from usaspending_api.common.helpers.s3_helpers import download_s3_object
 from usaspending_api.common.logging import AbbrevNamespaceUTCFormatter, ensure_logging
@@ -120,7 +121,7 @@ def copy_csv_from_s3_to_pg(  # noqa: PLR0913
             connection.autocommit = True
             with connection.cursor() as cursor:
                 if work_mem_override:
-                    cursor.execute("SET work_mem TO %s", (work_mem_override,))
+                    cursor.execute(sql.SQL("SET work_mem TO {}").format(sql.Literal(work_mem_override)))
                 s3_client = _get_boto3_s3_client()
                 results_generator = _download_and_copy(
                     configured_logger=logger,
@@ -163,7 +164,7 @@ def copy_csvs_from_s3_to_pg(  # noqa: PLR0913
             connection.autocommit = True
             with connection.cursor() as cursor:
                 if work_mem_override:
-                    cursor.execute("SET work_mem TO %s", (work_mem_override,))
+                    cursor.execute(sql.SQL("SET work_mem TO {}").format(sql.Literal(work_mem_override)))
                 s3_client = _get_boto3_s3_client()
                 for s3_obj_key in s3_obj_keys:
                     yield from _download_and_copy(

@@ -40,7 +40,7 @@ def truncate_timestamp(val: datetime | str | None) -> date | None:
 
 
 def format_value_for_sql(val: str, cur: Cursor) -> str:
-    return cur.mogrify("%s", (val,)).decode("utf-8")
+    return cur.mogrify("%s", (val,))
 
 
 def format_bulk_insert_list_column_sql(cursor: Cursor, load_objects: dict, type: str) -> tuple[str, str]:

@@ -1,5 +1,5 @@
 import logging
-from unittest.mock import Mock, mock_open, patch
+from unittest.mock import MagicMock, Mock, mock_open, patch
 
 import pytest
 
@@ -24,8 +24,14 @@ def mock_dependencies():
     ):
 
         mock_tempfile.return_value.__enter__.return_value.name = "temp_file_name"
+
+        mock_copy_context = MagicMock()
+        mock_copy_context.__enter__ = MagicMock(return_value=mock_copy_context)
+        mock_copy_context.__exit__ = MagicMock(return_value=False)
+        mock_copy_context.write_row = MagicMock()
+
         mock_cursor = Mock()
-        mock_cursor.copy.return_value = None
+        mock_cursor.copy = MagicMock(return_value=mock_copy_context)
         mock_cursor.rowcount = 5
 
         mock_gzip_open.return_value.__enter__.return_value = mock_open(read_data="data").return_value
