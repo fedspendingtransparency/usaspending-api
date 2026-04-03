@@ -1,6 +1,7 @@
 from typing import Optional
 
 from django.db import connection
+from psycopg.sql import SQL, Placeholder
 
 general_award_update_sql_string = """
 WITH
@@ -289,10 +290,10 @@ def execute_database_statement(sql: str, values: Optional[list] = None) -> int:
 
 def convert_award_id_to_guai(award_tuple: tuple) -> tuple:
     """Scafolding code between award PK ids and unique award ids"""
-    sql = "SELECT generated_unique_award_id FROM vw_awards WHERE id IN %s"
-    values = [award_tuple]
+    placeholders = SQL(",").join(Placeholder() * len(award_tuple))
+    sql = SQL("SELECT generated_unique_award_id FROM vw_awards WHERE id IN ({})").format(placeholders)
     with connection.cursor() as cursor:
-        cursor.execute(sql, values)
+        cursor.execute(sql, award_tuple)
         return tuple([row[0] for row in cursor.fetchall()])
 
 
@@ -300,8 +301,9 @@ def update_awards(award_tuple: Optional[tuple] = None) -> int:
     """Update Award records using transaction data"""
 
     if award_tuple:
-        values = [award_tuple, award_tuple, award_tuple]
-        predicate = "WHERE tn.award_id IN %s"
+        award_list = list(award_tuple)
+        values = [award_list, award_list, award_list]
+        predicate = "WHERE tn.award_id = ANY(%s)"
     else:
         values = None
         predicate = ""
@@ -310,13 +312,21 @@ def update_awards(award_tuple: Optional[tuple] = None) -> int:
 
 
 def prune_empty_awards(award_tuple: Optional[tuple] = None) -> int:
+    if award_tuple:
+        award_list = list(award_tuple)
+        inner_predicate = "AND a.id = ANY(%s)"
+        values = [award_list, award_list, award_list, award_list]
+    else:
+        inner_predicate = ""
+        values = None
+
     _find_empty_awards_sql = """
         SELECT a.id
         FROM vw_awards a
         LEFT JOIN vw_transaction_normalized tn ON tn.award_id = a.id
         WHERE tn IS NULL {}
     """.format(
-        "AND a.id IN %s" if award_tuple else ""
+        inner_predicate
     )
 
     _modify_subawards_sql = "UPDATE subaward_search SET award_id = null WHERE award_id IN ({});".format(
@@ -339,15 +349,16 @@ def prune_empty_awards(award_tuple: Optional[tuple] = None) -> int:
 
     return execute_database_statement(
         _modify_subawards_sql + _modify_financial_accounts_sql + _delete_parent_award_sql + _prune_empty_awards_sql,
-        [award_tuple, award_tuple, award_tuple, award_tuple],
+        values,
     )
 
 
 def update_assistance_awards(award_tuple: Optional[tuple] = None) -> int:
     """Update assistance-specific award data based on the info in child transactions."""
     if award_tuple:
-        values = [award_tuple]
-        predicate = "WHERE tn.award_id IN %s"
+        award_list = list(award_tuple)
+        values = [award_list]
+        predicate = "WHERE tn.award_id = ANY(%s)"
     else:
         values = None
         predicate = ""
@@ -358,8 +369,9 @@ def update_assistance_awards(award_tuple: Optional[tuple] = None) -> int:
 def update_procurement_awards(award_tuple: Optional[tuple] = None) -> int:
     """Update procurement-specific award data based on the info in child transactions."""
     if award_tuple:
-        values = [award_tuple, award_tuple, award_tuple]
-        predicate = "WHERE tn.award_id IN %s"
+        award_list = list(award_tuple)
+        values = [award_list] * 3
+        predicate = "WHERE tn.award_id = ANY(%s)"
     else:
         values = None
         predicate = ""
@@ -371,8 +383,9 @@ def update_award_subawards(award_tuple: Optional[tuple] = None) -> int:
     """Updates awards' subaward counts and totals"""
 
     if award_tuple:
-        values = [award_tuple]
-        predicate = "WHERE award_id IN %s"
+        award_list = list(award_tuple)
+        values = [award_list]
+        predicate = "WHERE award_id = ANY(%s)"
     else:
         values = None
         predicate = ""

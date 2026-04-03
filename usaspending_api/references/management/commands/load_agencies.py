@@ -1,17 +1,19 @@
+import argparse
 import logging
-
 from collections import namedtuple
 from distutils.util import strtobool
+from pathlib import Path
+
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from pathlib import Path
-from psycopg2.extras import execute_values
-from psycopg2.sql import SQL
+from psycopg.sql import SQL
+
 from usaspending_api.common.csv_helpers import read_csv_file_as_list_of_dictionaries
-from usaspending_api.common.etl.postgres import ETLQueryFile, ETLTable
-from usaspending_api.common.etl.postgres import mixins
-from usaspending_api.common.helpers.sql_helpers import get_connection, execute_sql
-from usaspending_api.common.helpers.text_helpers import standardize_nullable_whitespace as prep
+from usaspending_api.common.etl.postgres import ETLQueryFile, ETLTable, mixins
+from usaspending_api.common.helpers.sql_helpers import execute_sql, get_connection
+from usaspending_api.common.helpers.text_helpers import (
+    standardize_nullable_whitespace as prep,
+)
 from usaspending_api.common.helpers.timing_helpers import ScriptTimer as Timer
 from usaspending_api.etl.operations.federal_account.update_agency import (
     DOD_SUBSUMED_AIDS,
@@ -66,7 +68,7 @@ class Command(mixins.ETLMixin, BaseCommand):
     etl_dml_sql_directory = Path(__file__).resolve().parent / "load_agencies_sql"
     etl_timer = Timer
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: argparse.ArgumentParser) -> None:
 
         parser.add_argument(
             "agency_file",
@@ -85,7 +87,7 @@ class Command(mixins.ETLMixin, BaseCommand):
             ),
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
 
         self.agency_file = options["agency_file"]
         self.force = options["force"]
@@ -111,7 +113,7 @@ class Command(mixins.ETLMixin, BaseCommand):
                 logger.error("CHANGES WERE SUCCESSFULLY COMMITTED EVEN THOUGH VACUUMS FAILED")
                 raise
 
-    def _read_raw_agencies_csv(self):
+    def _read_raw_agencies_csv(self) -> int:
         agencies = read_csv_file_as_list_of_dictionaries(self.agency_file)
         if len(agencies) < 1:
             raise RuntimeError(f"Agency file '{self.agency_file}' appears to be empty")
@@ -143,7 +145,7 @@ class Command(mixins.ETLMixin, BaseCommand):
 
         return len(self.agencies)
 
-    def _perform_validations(self):
+    def _perform_validations(self) -> None:
 
         sql = (Path(self.etl_dml_sql_directory) / "validations.sql").read_text().format(temp_table=TEMP_TABLE_NAME)
         messages = [result[0] for result in execute_sql(sql, read_only=False)]
@@ -152,13 +154,13 @@ class Command(mixins.ETLMixin, BaseCommand):
             m = "\n".join(messages)
             raise RuntimeError(f"The following {len(messages):,} problem(s) have been found with the agency file:\n{m}")
 
-    def _import_raw_agencies(self):
+    def _import_raw_agencies(self) -> int:
         sql = (Path(self.etl_dml_sql_directory) / "insert_into.sql").read_text().format(temp_table=TEMP_TABLE_NAME)
         with get_connection(read_only=False).cursor() as cursor:
-            execute_values(cursor.cursor, sql, self.agencies, page_size=len(self.agencies))
+            cursor.executemany(sql, self.agencies)
             return cursor.rowcount
 
-    def _perform_load(self):
+    def _perform_load(self) -> None:
 
         overrides = {
             "insert_overrides": {"create_date": SQL("now()"), "update_date": SQL("now()")},
@@ -220,7 +222,7 @@ class Command(mixins.ETLMixin, BaseCommand):
                 "awards, and subaward updates since there were no agency changes."
             )
 
-    def _vacuum_tables(self):
+    def _vacuum_tables(self) -> None:
         self._execute_dml_sql("vacuum (full, analyze) agency", "Vacuum agency table")
         self._execute_dml_sql("vacuum (full, analyze) cgac", "Vacuum cgac table")
         self._execute_dml_sql("vacuum (full, analyze) frec", "Vacuum frec table")

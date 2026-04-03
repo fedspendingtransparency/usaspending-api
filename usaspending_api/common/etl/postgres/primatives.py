@@ -4,10 +4,13 @@ of this module.
 """
 
 from collections import namedtuple
-from psycopg2.sql import Composable, Composed, Identifier, Literal, SQL
 from typing import List, MutableMapping, Optional, Union
-from usaspending_api.common.helpers.sql_helpers import convert_composable_query_to_string
 
+from psycopg.sql import SQL, Composable, Composed, Identifier, Literal
+
+from usaspending_api.common.helpers.sql_helpers import (
+    convert_composable_query_to_string,
+)
 
 ColumnOverrides = MutableMapping[str, Composable]  # e.g. {"updated_at": SQL("now()")}
 ColumnDefinition = namedtuple("DataType", ["name", "data_type", "not_nullable"])

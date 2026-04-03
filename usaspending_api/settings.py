@@ -254,7 +254,6 @@ INSTALLED_APPS = [
     "usaspending_api.broker",
     "usaspending_api.bulk_download",
     "usaspending_api.common",
-    "usaspending_api.database_scripts.job_archive",
     "usaspending_api.disaster",
     "usaspending_api.download",
     "usaspending_api.etl",
