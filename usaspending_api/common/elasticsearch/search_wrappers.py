@@ -3,7 +3,13 @@ from ssl import CERT_NONE
 from typing import Callable, Optional, Union
 
 from django.conf import settings
-from elasticsearch import ConnectionError, ConnectionTimeout, Elasticsearch, NotFoundError, TransportError
+from elasticsearch import (
+    ConnectionError,
+    ConnectionTimeout,
+    Elasticsearch,
+    NotFoundError,
+    TransportError,
+)
 from elasticsearch.connection import create_ssl_context
 from elasticsearch_dsl import Search as SearchBase
 from elasticsearch_dsl.response import Response
@@ -15,8 +21,8 @@ class Search(SearchBase):
     _index_name = None
 
     def __init__(self, **kwargs) -> None:
-        client = self._create_es_client()
-        kwargs.update({"index": self._index_name, "using": client})
+        self.client: Elasticsearch = self._create_es_client()
+        kwargs.update({"index": self._index_name, "using": self.client})
         super().__init__(**kwargs)
 
     @staticmethod
@@ -42,10 +48,10 @@ class Search(SearchBase):
         except Exception as e:
             logger.error("Error creating the elasticsearch client: {}".format(e))
 
-    def _execute(self, timeout: str):
+    def _execute(self, timeout: str) -> Response:
         return self.params(timeout=timeout).execute()
 
-    def _count(self, timeout: str):
+    def _count(self, timeout: str) -> int:
         return self.count()
 
     def _handle_retry(self, func: Callable, retries: int, timeout: str) -> Optional[Union[Response, int]]:
@@ -53,7 +59,7 @@ class Search(SearchBase):
             retries = 20
         elif retries < 1:
             retries = 1
-        for attempt in range(retries):
+        for _attempt in range(retries):
             response = func(timeout)
             if response is None:
                 logger.info(f"Failure using these: Index='{self._index_name}', Body={self.to_dict()}")

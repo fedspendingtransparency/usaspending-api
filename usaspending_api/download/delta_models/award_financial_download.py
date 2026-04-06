@@ -1,5 +1,5 @@
 from delta.tables import DeltaTable
-from pyspark.sql import SparkSession
+from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as sf
 from pyspark.sql.functions import expr
 from pyspark.sql.types import (
@@ -24,6 +24,7 @@ award_financial_schema = StructType(
         StructField("treasury_owning_agency_name", StringType()),
         StructField("federal_account_symbol", StringType()),
         StructField("federal_account_name", StringType()),
+        StructField("program_activity_reporting_key", StringType()),
         StructField("agency_identifier_name", StringType()),
         StructField("allocation_transfer_agency_identifier_name", StringType()),
         StructField("program_activity_code", StringType()),
@@ -124,7 +125,7 @@ award_financial_schema = StructType(
 )
 
 
-def award_financial_df(spark: SparkSession):
+def award_financial_df(spark: SparkSession) -> DataFrame:
     faba = spark.table("int.financial_accounts_by_awards").alias("faba")
     sa = spark.table("global_temp.submission_attributes").alias("sa")
     taa = spark.table("global_temp.treasury_appropriation_account").alias("taa")
@@ -169,6 +170,7 @@ def award_financial_df(spark: SparkSession):
             how="left",
         )
         .withColumn("submission_period", fy_quarter_period())
+        # TODO: Update to use url_encode Spark SQL function
         .withColumn(
             "usaspending_permalink",
             sf.when(
@@ -190,6 +192,7 @@ def award_financial_df(spark: SparkSession):
             sf.col("treasury_owning_agency_name"),
             fa.federal_account_code.alias("federal_account_symbol"),
             fa.account_title.alias("federal_account_name"),
+            faba.program_activity_reporting_key,
             sf.col("agency_identifier_name"),
             sf.col("allocation_transfer_agency_identifier_name"),
             rpa.program_activity_code,
@@ -347,7 +350,8 @@ def load_award_financial_incremental(
     (
         target.merge(
             source,
-            "s.financial_accounts_by_awards_id = t.financial_accounts_by_awards_id and s.merge_hash_key = t.merge_hash_key",
+            "s.financial_accounts_by_awards_id = t.financial_accounts_by_awards_id"
+            " and s.merge_hash_key = t.merge_hash_key",
         )
         .whenNotMatchedInsertAll()
         .whenNotMatchedBySourceDelete()
