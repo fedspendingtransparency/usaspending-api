@@ -77,22 +77,13 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
             f"DROP VIEW IF EXISTS {sql_view_name};", ""
         )
 
-        # Replacements to supports converting timestamp to a formatted string in both Postgres and Spark
-        datetime_replacements = {
-            "TO_CHAR": "DATE_FORMAT",
-            "yyyy-MM-dd HH24:MI:SS": "yyyy-MM-dd HH:mm:ss",  # different formats to support 24-hour time
-        }
-
         identifier_replacements = {}
         if self.config["load_type"] == "transaction":
             identifier_replacements["transaction_search"] = "rpt.transaction_search"
-            identifier_replacements.update(datetime_replacements)
         elif self.config["load_type"] == "award":
             identifier_replacements["award_search"] = "rpt.award_search"
-            identifier_replacements.update(datetime_replacements)
         elif self.config["load_type"] == "subaward":
             identifier_replacements["toptier_agency"] = "global_temp.toptier_agency"
-            identifier_replacements.update(datetime_replacements)
         elif self.config["load_type"] == "recipient":
             identifier_replacements = None
         else:
