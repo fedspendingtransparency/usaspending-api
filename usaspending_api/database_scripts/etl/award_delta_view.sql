@@ -20,7 +20,7 @@ SELECT
   "award_amount",
   "total_subsidy_cost",
   "total_loan_value",
-  update_date,
+  "update_date",
 
   "recipient_name",
   "recipient_unique_id",
@@ -34,7 +34,7 @@ SELECT
 
   "action_date",
   "fiscal_year",
-  last_modified_date,
+  "last_modified_date",
   "period_of_performance_start_date",
   "period_of_performance_current_end_date",
   "date_signed",
