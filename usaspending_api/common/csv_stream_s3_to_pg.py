@@ -13,16 +13,17 @@ Adding new imports to this module may inadvertently introduce a dependency that 
 As it stands, even if new imports are added to the modules it already imports, it could lead to a problem.
 """
 
-import boto3
 import gzip
 import logging
-import psycopg2
 import tempfile
 import time
+from gzip import GzipFile
+from typing import Generator, Iterable, List, TextIO
 
-from typing import Iterable, List
-
+import boto3
+import psycopg
 from botocore.client import BaseClient
+from psycopg import sql
 
 from usaspending_api.common.helpers.s3_helpers import download_s3_object
 from usaspending_api.common.logging import AbbrevNamespaceUTCFormatter, ensure_logging
@@ -53,9 +54,9 @@ def _get_boto3_s3_client() -> BaseClient:
     return s3_client
 
 
-def _download_and_copy(
+def _download_and_copy(  # noqa: PLR0913
     configured_logger: logging.Logger,
-    cursor: psycopg2._psycopg.cursor,
+    cursor: psycopg.Connection.cursor,
     s3_client: BaseClient,
     s3_bucket_name: str,
     s3_obj_key: str,
@@ -63,7 +64,7 @@ def _download_and_copy(
     ordered_col_names: List[str],
     gzipped: bool,
     partition_prefix: str = "",
-):
+) -> Generator[int, None, None]:
     """Download a CSV file from S3 then COPY it into a Postgres table using the SQL bulk COPY command. The CSV should
     not include a header row with column names
     """
@@ -72,20 +73,14 @@ def _download_and_copy(
 
     with tempfile.NamedTemporaryFile(delete=True) as temp_file:
         download_s3_object(s3_bucket_name, s3_obj_key, temp_file.name, s3_client=s3_client)
-
+        sql = f"COPY {target_pg_table} ({','.join(ordered_col_names)}) FROM STDIN (FORMAT CSV)"
         try:
             if gzipped:
                 with gzip.open(temp_file.name, "rb") as csv_file:
-                    cursor.copy_expert(
-                        sql=f"COPY {target_pg_table} ({','.join(ordered_col_names)}) FROM STDIN (FORMAT CSV)",
-                        file=csv_file,
-                    )
+                    _copy_csv(sql, csv_file, cursor)
             else:
                 with open(temp_file.name, "r", encoding="utf-8") as csv_file:
-                    cursor.copy_expert(
-                        sql=f"COPY {target_pg_table} ({','.join(ordered_col_names)}) FROM STDIN (FORMAT CSV)",
-                        file=csv_file,
-                    )
+                    _copy_csv(sql, csv_file, cursor)
 
             elapsed = time.time() - start
             rows_copied = cursor.rowcount
@@ -100,7 +95,13 @@ def _download_and_copy(
             raise exc
 
 
-def copy_csv_from_s3_to_pg(
+def _copy_csv(sql: str, csv_file: TextIO | GzipFile, cursor: psycopg.Connection.cursor) -> None:
+    with cursor.copy(sql) as copy:
+        for row in csv_file:
+            copy.write(row)
+
+
+def copy_csv_from_s3_to_pg(  # noqa: PLR0913
     s3_bucket_name: str,
     s3_obj_key: str,
     db_dsn: str,
@@ -108,7 +109,7 @@ def copy_csv_from_s3_to_pg(
     ordered_col_names: List[str],
     gzipped: bool = True,
     work_mem_override: int = None,
-):
+) -> int:
     """Download a CSV file from S3 then stream it into a Postgres table using the SQL bulk COPY command
 
     WARNING: See note above in module docstring about this function being pickle-able, and maintaining a lean set of
@@ -116,11 +117,11 @@ def copy_csv_from_s3_to_pg(
     """
     ensure_logging(logging_config_dict=LOGGING, formatter_class=AbbrevNamespaceUTCFormatter, logger_to_use=logger)
     try:
-        with psycopg2.connect(dsn=db_dsn) as connection:
+        with psycopg.connect(db_dsn) as connection:
             connection.autocommit = True
             with connection.cursor() as cursor:
                 if work_mem_override:
-                    cursor.execute("SET work_mem TO %s", (work_mem_override,))
+                    cursor.execute(sql.SQL("SET work_mem TO {}").format(sql.Literal(work_mem_override)))
                 s3_client = _get_boto3_s3_client()
                 results_generator = _download_and_copy(
                     configured_logger=logger,
@@ -139,7 +140,7 @@ def copy_csv_from_s3_to_pg(
         raise exc
 
 
-def copy_csvs_from_s3_to_pg(
+def copy_csvs_from_s3_to_pg(  # noqa: PLR0913
     batch_num: int,
     s3_bucket_name: str,
     s3_obj_keys: Iterable[str],
@@ -148,8 +149,8 @@ def copy_csvs_from_s3_to_pg(
     ordered_col_names: List[str],
     gzipped: bool = True,
     work_mem_override: int = None,
-):
-    """An optimized form of ``copy_csv_from_s3_to_pg`` that can save on runtime by instantiating the psycopg2 DB
+) -> Generator[int, None, None]:
+    """An optimized form of ``copy_csv_from_s3_to_pg`` that can save on runtime by instantiating the psycopg DB
     connection and s3_client only once per partition, where a partition could represent processing several files
     """
     ensure_logging(logging_config_dict=LOGGING, formatter_class=AbbrevNamespaceUTCFormatter, logger_to_use=logger)
@@ -159,11 +160,11 @@ def copy_csvs_from_s3_to_pg(
     partition_prefix = f"Partition#{batch_num}: "
     logger.info(f"{partition_prefix}Starting write of a batch of {batch_size} on partition {batch_num}")
     try:
-        with psycopg2.connect(dsn=db_dsn) as connection:
+        with psycopg.connect(db_dsn) as connection:
             connection.autocommit = True
             with connection.cursor() as cursor:
                 if work_mem_override:
-                    cursor.execute("SET work_mem TO %s", (work_mem_override,))
+                    cursor.execute(sql.SQL("SET work_mem TO {}").format(sql.Literal(work_mem_override)))
                 s3_client = _get_boto3_s3_client()
                 for s3_obj_key in s3_obj_keys:
                     yield from _download_and_copy(

@@ -3,7 +3,7 @@ import logging
 import re
 from pprint import pformat
 
-import psycopg2
+import psycopg
 from django.core.management.base import BaseCommand, CommandParser
 from django.db import connection
 
@@ -67,7 +67,7 @@ async def index_with_concurrency(index_definitions: list[str], index_concurrency
 
 
 def make_copy_constraints(  # noqa: PLR0913
-    cursor: psycopg2.extensions.cursor,
+    cursor: psycopg.Cursor,
     source_table: str,
     dest_table: str,
     drop_foreign_keys: bool = False,
@@ -98,12 +98,12 @@ def make_copy_constraints(  # noqa: PLR0913
 
 
 def make_copy_indexes(
-    cursor: psycopg2.extensions.cursor,
+    cursor: psycopg.Cursor,
     source_table: str,
     dest_table: str,
     source_suffix: str = "",
     dest_suffix: str = "temp",
-    only_parent_partitioned_table: bool = False
+    only_parent_partitioned_table: bool = False,
 ) -> list[str]:
     # read the existing indexes of source table
     cursor.execute(make_read_indexes(source_table)[0])
@@ -145,9 +145,7 @@ def make_copy_indexes(
 
 
 def attach_child_partition_metadata(
-        parent_partitioned_table: str,
-        child_partition_name: str,
-        dest_suffix: str = "temp"
+    parent_partitioned_table: str, child_partition_name: str, dest_suffix: str = "temp"
 ) -> None:
     # e.g. parent_partitioned_table=temp.transaction_search_temp
     # child_partition_name=temp.transaction_search_fabs_temp
