@@ -1,5 +1,7 @@
-from psycopg2.sql import Composed, SQL
 from typing import List
+
+from psycopg.sql import SQL, Composed
+
 from usaspending_api.common.etl.postgres import ETLObjectBase
 from usaspending_api.common.etl.postgres.introspection import get_query_columns
 

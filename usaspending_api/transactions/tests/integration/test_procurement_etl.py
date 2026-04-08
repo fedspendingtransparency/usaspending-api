@@ -1,3 +1,4 @@
+# ruff: noqa
 import datetime
 from decimal import Decimal
 
@@ -494,7 +495,9 @@ def test_delete(monkeypatch, load_broker_data):
 
     # Validate that the specific delete records exist in USAspending
     with connections[settings.DEFAULT_DB_ALIAS].cursor() as cursor:
-        cursor.execute(f"SELECT COUNT(*) FROM {table} WHERE {transaction_unique_field} IN %s", (deleted_transactions,))
+        cursor.cursor.execute(
+            f"SELECT COUNT(*) FROM {table} WHERE {transaction_unique_field} = ANY(%s)", [list(deleted_transactions)]
+        )
         assert cursor.fetchall()[0][0] == len(deleted_transactions), "Transactions under test don't exist"
 
     # Run deletions
@@ -502,7 +505,9 @@ def test_delete(monkeypatch, load_broker_data):
 
     with connections[settings.DEFAULT_DB_ALIAS].cursor() as cursor:
         # Validate that the deleted records have been removed
-        cursor.execute(f"SELECT COUNT(*) FROM {table} WHERE {transaction_unique_field} IN %s", (deleted_transactions,))
+        cursor.cursor.execute(
+            f"SELECT COUNT(*) FROM {table} WHERE {transaction_unique_field} = ANY(%s)", [list(deleted_transactions)]
+        )
         assert cursor.fetchall()[0][0] == 0, "Failed to delete transactions"
 
         # Validate that only those transactions were deleted

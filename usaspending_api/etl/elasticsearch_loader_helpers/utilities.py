@@ -7,10 +7,10 @@ from pathlib import Path
 from random import choice
 from typing import Any, Generator, List, Optional, Union
 
-import psycopg2
+import psycopg
 from django.conf import settings
 from elasticsearch import Elasticsearch
-from psycopg2.sql import Composed
+from psycopg.sql import Composed
 
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 
@@ -142,12 +142,12 @@ def format_timestamp_as_string(value_to_format: datetime, datetime_format: str =
 
 
 def execute_sql_statement(cmd: str | Composed, results: bool = False, verbose: bool = False) -> Optional[List[dict]]:
-    """Simple function to execute SQL using a single-use psycopg2 connection"""
+    """Simple function to execute SQL using a single-use psycopg connection"""
     rows = None
     if verbose:
         print(cmd)
 
-    with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
+    with psycopg.connect(get_database_dsn_string()) as connection:
         connection.autocommit = True
         with connection.cursor() as cursor:
             cursor.execute(cmd)
@@ -156,7 +156,7 @@ def execute_sql_statement(cmd: str | Composed, results: bool = False, verbose: b
     return rows
 
 
-def db_rows_to_dict(cursor: psycopg2.extensions.cursor) -> List[dict]:
+def db_rows_to_dict(cursor: psycopg.Cursor) -> List[dict]:
     """Return a dictionary of all row results from a database connection cursor"""
     columns = [col[0] for col in cursor.description]
     return [dict(zip(columns, row, strict=False)) for row in cursor.fetchall()]
