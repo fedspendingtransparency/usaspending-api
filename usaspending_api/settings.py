@@ -259,6 +259,7 @@ INSTALLED_APPS = [
     "usaspending_api.download",
     "usaspending_api.etl",
     "usaspending_api.financial_activities",
+    "usaspending_api.llm",
     "usaspending_api.recipient",
     "usaspending_api.references",
     "usaspending_api.reporting",

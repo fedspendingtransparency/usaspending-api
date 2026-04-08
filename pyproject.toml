@@ -161,6 +161,9 @@ exclude_lines = [
     "pragma: no cover"
 ]
 
+[tool.ruff]
+line-length = 120  # allow line length to reach the maximum
+
 [tool.ruff.lint]
 preview = true  # enable new rules
 exclude = [
