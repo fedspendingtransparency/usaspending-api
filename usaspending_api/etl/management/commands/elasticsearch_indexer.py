@@ -241,10 +241,6 @@ def parse_cli_args(options: dict, es_client: Elasticsearch) -> dict:  # noqa: PL
         logger.error(f"--start-datetime is too early. Set no earlier than {config['initial_datetime']}")
         raise SystemExit(1)
 
-    # Format to include timezone, but remove milliseconds to allow proper comparison with datetime values
-    # that are captured on the documents
-    config["starting_date"] = datetime.strftime(config["starting_date"], "%Y-%m-%d %H:%M:%S%z")
-
     return config
 
 

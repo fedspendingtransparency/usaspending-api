@@ -2,6 +2,7 @@ import json
 import logging
 import re
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from random import choice
 from typing import Any, Generator, List, Optional, Union
@@ -134,6 +135,10 @@ def convert_json_array_to_list_of_str(json_data: Union[list, str]) -> Optional[L
     for j in json_data:
         result.append(json.dumps(j, sort_keys=True))
     return result
+
+
+def format_timestamp_as_string(value_to_format: datetime, datetime_format: str = "%Y-%m-%d %H:%M:%S") -> str:
+    return datetime.strftime(value_to_format, datetime_format) if value_to_format else value_to_format
 
 
 def execute_sql_statement(cmd: str | Composed, results: bool = False, verbose: bool = False) -> Optional[List[dict]]:
