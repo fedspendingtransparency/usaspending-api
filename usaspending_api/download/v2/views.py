@@ -9,6 +9,7 @@ from usaspending_api.download.v2.request_validations import (
     DisasterDownloadValidator,
     DisasterRecipientDownloadValidator,
     IdvDownloadValidator,
+    SearchDownloadValidator
 )
 
 logger = logging.getLogger(__name__)
@@ -113,3 +114,15 @@ class DisasterRecipientDownloadViewSet(BaseDownloadViewSet):
 
     def post(self, request):
         return BaseDownloadViewSet.post(self, request, validator_type=DisasterRecipientDownloadValidator)
+
+
+class SearchDownloadViewSet(BaseDownloadViewSet):
+    """
+    This route sends a request to begin generating a zip file that combines award and transaction data
+    """
+
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/download/search.md"
+
+    def post(self, request):
+        request.data["constraint_type"] = "row_count"
+        return BaseDownloadViewSet.post(self, request, validator_type=SearchDownloadValidator)

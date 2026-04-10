@@ -189,10 +189,11 @@ class BaseDownloadViewSet(APIView):
         ordered_json_request: str, download_types: Optional[List[str]] = None
     ) -> Optional[DownloadJob]:
         # External data types that directly affect download results
+        external_data_type_name_list = []
         if download_types and "elasticsearch_awards" in download_types:
-            external_data_type_name_list = ["es_awards"]
-        elif download_types and "elasticsearch_transactions" in download_types:
-            external_data_type_name_list = ["es_transactions"]
+            external_data_type_name_list.append("es_awards")
+        if download_types and "elasticsearch_transactions" in download_types:
+            external_data_type_name_list.append("es_transactions")
         else:
             external_data_type_name_list = [
                 "fpds",

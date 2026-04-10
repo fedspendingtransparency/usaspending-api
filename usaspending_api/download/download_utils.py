@@ -39,6 +39,9 @@ def create_unique_filename(json_request: dict[str, Any], origination: str | None
             level=level,
             timestamp=timestamp,
         )
+    elif json_request["request_type"] == "search": 
+        # Search Endpoint uses Award download_types, but has set filename
+        download_name = f"PrimeAwardsTransactionsAndSubawards_{timestamp}.zip"
     else:  # "award" downloads
         agency = ""
 
