@@ -129,6 +129,7 @@ class DefaultConfig(BaseSettings):
             )
 
             if enough_parts:
+                print(values.keys())
                 pg_dsn = PostgresDsn.build(
                     scheme=values[f"{resource_conf_prefix}_SCHEME"],
                     username=values[f"{resource_conf_prefix}_USER"],
@@ -139,11 +140,7 @@ class DefaultConfig(BaseSettings):
                     ),
                     host=values[f"{resource_conf_prefix}_HOST"],
                     port=int(values[f"{resource_conf_prefix}_PORT"]),
-                    path=(
-                        "/" + values[f"{resource_conf_prefix}_NAME"]
-                        if values[f"{resource_conf_prefix}_NAME"]
-                        else None
-                    ),
+                    path=values.get(f"{resource_conf_prefix}_NAME"),
                 )
                 values = eval_default_factory_from_root_validator(
                     cls, values, url_conf_name, lambda: str(pg_dsn)
@@ -203,7 +200,7 @@ class DefaultConfig(BaseSettings):
 
     # ==== [Elasticsearch] ====
     # Where to connect to elasticsearch.
-    ES_HOSTNAME: str = None  # FACTORY_PROVIDED_VALUE. See below validator-factory
+    ES_HOSTNAME: str | None = None  # FACTORY_PROVIDED_VALUE. See below validator-factory
     ES_SCHEME: str = "https"
     ES_HOST: str = ENV_SPECIFIC_OVERRIDE
     ES_PORT: str | None = None
@@ -279,11 +276,7 @@ class DefaultConfig(BaseSettings):
                     ),
                     host=values[f"{resource_conf_prefix}_HOST"],
                     port=values[f"{resource_conf_prefix}_PORT"],
-                    path=(
-                        "/" + values[f"{resource_conf_prefix}_NAME"]
-                        if values[f"{resource_conf_prefix}_NAME"]
-                        else None
-                    ),
+                    path=values.get(f"{resource_conf_prefix}_NAME"),
                 )
                 values = eval_default_factory_from_root_validator(
                     cls, values, url_conf_name, lambda: str(http_url)
@@ -363,9 +356,9 @@ class DefaultConfig(BaseSettings):
     AWS_SECRET_KEY: SecretStr = ENV_SPECIFIC_OVERRIDE
     # Setting AWS_PROFILE to None so boto3 doesn't try to pick up the placeholder string as an actual profile to find
     AWS_PROFILE: str | None = None  # USER_SPECIFIC_OVERRIDE
-    SPARK_S3_BUCKET: str = os.environ.get("SPARK_S3_BUCKET")
-    BULK_DOWNLOAD_S3_BUCKET_NAME: str = os.environ.get("BULK_DOWNLOAD_S3_BUCKET_NAME")
-    DATABASE_DOWNLOAD_S3_BUCKET_NAME: str = os.environ.get(
+    SPARK_S3_BUCKET: str | None = os.environ.get("SPARK_S3_BUCKET")
+    BULK_DOWNLOAD_S3_BUCKET_NAME: str | None = os.environ.get("BULK_DOWNLOAD_S3_BUCKET_NAME")
+    DATABASE_DOWNLOAD_S3_BUCKET_NAME: str | None = os.environ.get(
         "DATABASE_DOWNLOAD_S3_BUCKET_NAME"
     )
     DELTA_LAKE_S3_PATH: str = "data/delta"  # path within SPARK_S3_BUCKET where Delta output data will accumulate

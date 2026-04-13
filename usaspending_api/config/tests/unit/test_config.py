@@ -5,13 +5,15 @@ import shutil
 import sys
 from pathlib import Path
 from pprint import pprint
+from typing import Any
 from unittest import mock
 from unittest.mock import patch
+from urllib.parse import urlparse
 
 import pytest
 from pydantic import PostgresDsn, SecretStr, field_validator, model_validator
+from pydantic_core.core_schema import ValidationInfo
 from pydantic.error_wrappers import ValidationError
-from pydantic.v1.fields import ModelField
 
 from usaspending_api.config import CONFIG, _load_config
 from usaspending_api.config.envs import ENV_CODE_VAR
@@ -29,20 +31,20 @@ _ENV_VAL = "component_name_set_in_env"
 
 class _UnitTestBaseConfig(DefaultConfig):
     ENV_CODE = "utb"
-    UNITTEST_CFG_A = "UNITTEST_CFG_A"
-    UNITTEST_CFG_B = "UNITTEST_CFG_B"
-    UNITTEST_CFG_C = "UNITTEST_CFG_C"
-    UNITTEST_CFG_D = "UNITTEST_CFG_D"
+    UNITTEST_CFG_A: str = "UNITTEST_CFG_A"
+    UNITTEST_CFG_B: str = "UNITTEST_CFG_B"
+    UNITTEST_CFG_C: str = "UNITTEST_CFG_C"
+    UNITTEST_CFG_D: str = "UNITTEST_CFG_D"
     UNITTEST_CFG_E = property(lambda self: self.UNITTEST_CFG_A + ":" + self.UNITTEST_CFG_B)
     UNITTEST_CFG_F = property(lambda self: "UNITTEST_CFG_F")
     UNITTEST_CFG_G = property(lambda self: "UNITTEST_CFG_G")
     UNITTEST_CFG_H = property(lambda self: os.environ.get("UNITTEST_CFG_H", "UNITTEST_CFG_H"))
 
-    UNITTEST_CFG_I = "UNITTEST_CFG_I"
-    UNITTEST_CFG_J = "UNITTEST_CFG_J"
+    UNITTEST_CFG_I: str = "UNITTEST_CFG_I"
+    UNITTEST_CFG_J: str = "UNITTEST_CFG_J"
     # See if these are stuck with defaults (eagerly evaluated) or late-bind to the values if the values are replaced
     # by env vars
-    UNITTEST_CFG_K = UNITTEST_CFG_I + ":" + UNITTEST_CFG_J
+    UNITTEST_CFG_K: str = UNITTEST_CFG_I + ":" + UNITTEST_CFG_J
     UNITTEST_CFG_L = (  # noqa: E731
         lambda _: _UnitTestBaseConfig.UNITTEST_CFG_I + ":" + _UnitTestBaseConfig.UNITTEST_CFG_J
     )
@@ -53,49 +55,52 @@ class _UnitTestBaseConfig(DefaultConfig):
     # See if these are now replaced with the values of the result of the validator that references this field
     UNITTEST_CFG_O: str = UNITTEST_CFG_M + ":" + UNITTEST_CFG_N
 
-    @field_validator("UNITTEST_CFG_O")
-    def _UNITTEST_CFG_O(cls, v, values):
-        return values["UNITTEST_CFG_M"] + ":" + values["UNITTEST_CFG_N"]
+    @field_validator("UNITTEST_CFG_O", mode='before')
+    @classmethod
+    def _UNITTEST_CFG_O(cls, v, info: ValidationInfo):
+        return info.data["UNITTEST_CFG_M"] + ":" + info.data["UNITTEST_CFG_N"]
 
     UNITTEST_CFG_P: str = "UNITTEST_CFG_P"
     UNITTEST_CFG_Q: str = "UNITTEST_CFG_Q"
     UNITTEST_CFG_R: str = UNITTEST_CFG_P + ":" + UNITTEST_CFG_Q
 
-    @field_validator("UNITTEST_CFG_R")
-    def _UNITTEST_CFG_R(cls, v, values):
-        return values["UNITTEST_CFG_P"] + ":" + values["UNITTEST_CFG_Q"]
+    @field_validator("UNITTEST_CFG_R", mode="before")
+    @classmethod
+    def _UNITTEST_CFG_R(cls, v, info: ValidationInfo):
+        return info.data["UNITTEST_CFG_P"] + ":" + info.data["UNITTEST_CFG_Q"]
 
     UNITTEST_CFG_S: str = "UNITTEST_CFG_S"
     UNITTEST_CFG_T: str = "UNITTEST_CFG_T"
-    UNITTEST_CFG_U: str = None  # DO NOT SET. Value derived from validator (aka pre/post-processor) func below or env
+    UNITTEST_CFG_U: str | None = None
 
-    @field_validator("UNITTEST_CFG_U")
-    def _UNITTEST_CFG_U(cls, v, values, field: ModelField):
+    @field_validator("UNITTEST_CFG_U", mode='before')
+    @classmethod
+    def _UNITTEST_CFG_U(cls, v, info: ValidationInfo):
         def factory_func():
-            return values["UNITTEST_CFG_S"] + ":" + values["UNITTEST_CFG_T"]
+            return info.data["UNITTEST_CFG_S"] + ":" + info.data["UNITTEST_CFG_T"]
 
-        return eval_default_factory(cls, v, values, field, factory_func)
+        return eval_default_factory(cls, v, info, factory_func)
 
     UNITTEST_CFG_V: str = "UNITTEST_CFG_V"
     UNITTEST_CFG_W: str = "UNITTEST_CFG_W"
-    UNITTEST_CFG_X: str = None  # DO NOT SET. Value derived from validator (aka pre/post-processor) func below or env
+    UNITTEST_CFG_X: str | None = None  # DO NOT SET. Value derived from validator (aka pre/post-processor) func below or env
 
-    @field_validator("UNITTEST_CFG_X")
-    def _UNITTEST_CFG_X(cls, v, values, field: ModelField):
+    @field_validator("UNITTEST_CFG_X", mode='before')
+    def _UNITTEST_CFG_X(cls, v, info: ValidationInfo):
         def factory_func():
-            return values["UNITTEST_CFG_V"] + ":" + values["UNITTEST_CFG_W"]
+            return info.data["UNITTEST_CFG_V"] + ":" + info.data["UNITTEST_CFG_W"]
 
-        return eval_default_factory(cls, v, values, field, factory_func)
+        return eval_default_factory(cls, v, info, factory_func)
 
     # Value derived from validator (aka pre/post-processor) func below or overridden by env or subclass
     UNITTEST_CFG_Y: str = FACTORY_PROVIDED_VALUE
 
-    @field_validator("UNITTEST_CFG_Y")
-    def _UNITTEST_CFG_Y(cls, v, values, field: ModelField):
+    @field_validator("UNITTEST_CFG_Y", mode='before')
+    def _UNITTEST_CFG_Y(cls, v, info: ValidationInfo):
         def factory_func():
-            return values["UNITTEST_CFG_V"] + ":" + values["UNITTEST_CFG_W"]
+            return info.data["UNITTEST_CFG_V"] + ":" + info.data["UNITTEST_CFG_W"]
 
-        return eval_default_factory(cls, v, values, field, factory_func)
+        return eval_default_factory(cls, v, info, factory_func)
 
     # Value derived from validator (aka pre/post-processor) func below or overridden by env or subclass
     UNITTEST_CFG_Z: str = FACTORY_PROVIDED_VALUE
@@ -105,12 +110,12 @@ class _UnitTestBaseConfig(DefaultConfig):
     UNITTEST_CFG_AC: str = "UNITTEST_CFG_AC"
     UNITTEST_CFG_AD: str = "UNITTEST_CFG_AD"
 
-    @field_validator("UNITTEST_CFG_Z")
-    def _UNITTEST_CFG_Z(cls, v, values, field: ModelField):
+    @field_validator("UNITTEST_CFG_Z", mode='before')
+    def _UNITTEST_CFG_Z(cls, v, info: ValidationInfo):
         def factory_func():
-            return values["UNITTEST_CFG_V"] + ":" + values["UNITTEST_CFG_W"]
+            return info.data["UNITTEST_CFG_V"] + ":" + info.data["UNITTEST_CFG_W"]
 
-        return eval_default_factory(cls, v, values, field, factory_func)
+        return eval_default_factory(cls, v, info, factory_func)
 
     UNITTEST_CFG_AE: str = "UNITTEST_CFG_AE"
     UNITTEST_CFG_AF: str = "UNITTEST_CFG_AF"
@@ -122,116 +127,118 @@ class _UnitTestBaseConfig(DefaultConfig):
     UNITTEST_CFG_AL: str = FACTORY_PROVIDED_VALUE
     UNITTEST_CFG_AM: str = FACTORY_PROVIDED_VALUE
 
-    @field_validator("UNITTEST_CFG_AH")
-    def _UNITTEST_CFG_AH(cls, v, values, field: ModelField):
+    @field_validator("UNITTEST_CFG_AH", mode='before')
+    def _UNITTEST_CFG_AH(cls, v, info: ValidationInfo):
         def factory_func():
-            return values["UNITTEST_CFG_AE"] + ":" + values["UNITTEST_CFG_AF"]
+            return info.data["UNITTEST_CFG_AE"] + ":" + info.data["UNITTEST_CFG_AF"]
 
-        return eval_default_factory(cls, v, values, field, factory_func)
+        return eval_default_factory(cls, v, info, factory_func)
 
     # Leave NO validator for UNITTEST_CFG_AI, and create a model_validator on the subclass
     # --EMPTY--
 
     # Use model_validator for UNITTEST_CFG_AJ on parent, and NO model_validator or overrides on child
-    @model_validator
-    def _UNITTEST_CFG_AJ(cls, values):
+    @model_validator(mode='before')
+    def _UNITTEST_CFG_AJ(cls, values: dict[str, Any]) -> dict[str, Any]:
         def factory_func():
             return values["UNITTEST_CFG_AE"] + ":" + values["UNITTEST_CFG_AF"]
 
         return eval_default_factory_from_root_validator(cls, values, "UNITTEST_CFG_AJ", factory_func)
 
     # Use model_validator for UNITTEST_CFG_AK on parent, and overriding model_validator for same field on child
-    @model_validator
-    def _UNITTEST_CFG_AK(cls, values):
+    @model_validator(mode='before')
+    @classmethod
+    def _UNITTEST_CFG_AK(cls, values: dict[str, Any]) -> dict[str, Any]:
         def factory_func():
             return values["UNITTEST_CFG_AE"] + ":" + values["UNITTEST_CFG_AF"]
 
         return eval_default_factory_from_root_validator(cls, values, "UNITTEST_CFG_AK", factory_func)
 
     # Use regular validator for UNITTEST_CFG_AL on parent, and model_validator for same field on child
-    @field_validator("UNITTEST_CFG_AL")
-    def _UNITTEST_CFG_AL(cls, v, values, field: ModelField):
+    @field_validator("UNITTEST_CFG_AL", mode='before')
+    def _UNITTEST_CFG_AL(cls, v, values):
         def factory_func():
             return values["UNITTEST_CFG_AE"] + ":" + values["UNITTEST_CFG_AF"]
 
-        return eval_default_factory(cls, v, values, field, factory_func)
+        return eval_default_factory(cls, v, values, factory_func)
 
     # Show that env vars can't be honored if not using the helper eval function. They don't take precedence over
     # model_validators
-    @model_validator
+    @model_validator(mode='before')
+    @classmethod
     def _UNITTEST_CFG_AM(cls, values):
         values["UNITTEST_CFG_AM"] = values["UNITTEST_CFG_AE"] + ":" + values["UNITTEST_CFG_AF"]
         return values
 
 
 class _UnitTestSubConfig(_UnitTestBaseConfig):
-    ENV_CODE = "uts"
-    COMPONENT_NAME = "Unit Test SubConfig Component"  # grandparent value override
-    UNITTEST_CFG_A = "SUB_UNITTEST_CFG_A"  # parent and child regular strings
+    ENV_CODE: str = "uts"
+    COMPONENT_NAME: str = "Unit Test SubConfig Component"  # grandparent value override
+    UNITTEST_CFG_A: str = "SUB_UNITTEST_CFG_A"  # parent and child regular strings
     # Also, will UNITTEST_CFG_E show the original A value or the SUB A value?
 
     # prop evaluated as read when module loading class? Or late-eval when called?
-    SUB_UNITTEST_1 = property(lambda self: self.UNITTEST_CFG_A + ":" + self.UNITTEST_CFG_D)
-    UNITTEST_CFG_D = "SUB_UNITTEST_CFG_D"
-    SUB_UNITTEST_2 = property(lambda self: self.UNITTEST_CFG_A + ":" + self.UNITTEST_CFG_B)
+    SUB_UNITTEST_1: str = property(lambda self: self.UNITTEST_CFG_A + ":" + self.UNITTEST_CFG_D)
+    UNITTEST_CFG_D: str = "SUB_UNITTEST_CFG_D"
+    SUB_UNITTEST_2: str = property(lambda self: self.UNITTEST_CFG_A + ":" + self.UNITTEST_CFG_B)
 
-    UNITTEST_CFG_C = property(lambda self: "SUB_UNITTEST_CFG_C")  # parent not a prop, child a prop
+    UNITTEST_CFG_C: str = property(lambda self: "SUB_UNITTEST_CFG_C")  # parent not a prop, child a prop
     # Can't do the below: It throws a NameError because this name, not defined as a property, shadows the base class
     # name
     # UNITTEST_CFG_F = "SUB_UNITTEST_CFG_F"  # parent a prop, child not a prop
-    UNITTEST_CFG_G = property(lambda self: "SUB_UNITTEST_CFG_G")  # parent and child both props
+    UNITTEST_CFG_G: str = property(lambda self: "SUB_UNITTEST_CFG_G")  # parent and child both props
 
-    SUB_UNITTEST_3 = "SUB_UNITTEST_3"
-    SUB_UNITTEST_4 = "SUB_UNITTEST_4"
-    SUB_UNITTEST_5 = property(lambda self: self.SUB_UNITTEST_3 + ":" + self.SUB_UNITTEST_4)
+    SUB_UNITTEST_3: str = "SUB_UNITTEST_3"
+    SUB_UNITTEST_4: str = "SUB_UNITTEST_4"
+    SUB_UNITTEST_5: str = property(lambda self: self.SUB_UNITTEST_3 + ":" + self.SUB_UNITTEST_4)
 
     # See if this will override the validator's factory default
-    UNITTEST_CFG_X = "SUB_UNITTEST_CFG_X"
+    UNITTEST_CFG_X: str = "SUB_UNITTEST_CFG_X"
 
     # See if this will override the parent class's validator and take precedence over it
-    @field_validator("UNITTEST_CFG_Y")
-    def _UNITTEST_CFG_Y(cls, v, values, field: ModelField):
+    @field_validator("UNITTEST_CFG_Y", mode='before')
+    def _UNITTEST_CFG_Y(cls, v, info: ValidationInfo):
         def factory_func():
             return "SUB_UNITTEST_CFG_Y"
 
-        return eval_default_factory(cls, v, values, field, factory_func)
+        return eval_default_factory(cls, v, info, factory_func)
 
     # See if this will override the parent class's validator, even when a different name is used (spoiler: no it won't)
-    @field_validator("UNITTEST_CFG_Z")
-    def _SUB_UNITTEST_CFG_Z(cls, v, values, field: ModelField):
+    @field_validator("UNITTEST_CFG_Z", mode='before')
+    def _SUB_UNITTEST_CFG_Z(cls, v, info: ValidationInfo):
         def factory_func():
             return "SUB_UNITTEST_CFG_Z"
 
-        return eval_default_factory(cls, v, values, field, factory_func)
+        return eval_default_factory(cls, v, info, factory_func)
 
     # See if this will override parent field default value, even if field it is validating is not redeclared on subclass
-    @field_validator("UNITTEST_CFG_AC")
-    def _UNITTEST_CFG_AC(cls, v, values, field: ModelField):
+    @field_validator("UNITTEST_CFG_AC", mode='before')
+    def _UNITTEST_CFG_AC(cls, v, info: ValidationInfo):
         def factory_func():
-            return values["UNITTEST_CFG_AA"] + ":" + values["UNITTEST_CFG_AB"]
+            return info.data["UNITTEST_CFG_AA"] + ":" + info.data["UNITTEST_CFG_AB"]
 
-        return eval_default_factory(cls, v, values, field, factory_func)
+        return eval_default_factory(cls, v, info, factory_func)
 
     UNITTEST_CFG_AD: str = FACTORY_PROVIDED_VALUE
 
-    @field_validator("UNITTEST_CFG_AD")
-    def _UNITTEST_CFG_AD(cls, v, values, field: ModelField):
+    @field_validator("UNITTEST_CFG_AD", mode='before')
+    def _UNITTEST_CFG_AD(cls, v, info: ValidationInfo):
         def factory_func():
-            return values["UNITTEST_CFG_AA"] + ":" + values["UNITTEST_CFG_AB"]
+            return info.data["UNITTEST_CFG_AA"] + ":" + info.data["UNITTEST_CFG_AB"]
 
-        return eval_default_factory(cls, v, values, field, factory_func)
+        return eval_default_factory(cls, v, info, factory_func)
 
-    SUB_UNITTEST_6 = "SUB_UNITTEST_6"
-    SUB_UNITTEST_7 = "SUB_UNITTEST_7"
-    SUB_UNITTEST_8 = FACTORY_PROVIDED_VALUE
+    SUB_UNITTEST_6: str = "SUB_UNITTEST_6"
+    SUB_UNITTEST_7: str = "SUB_UNITTEST_7"
+    SUB_UNITTEST_8: str = FACTORY_PROVIDED_VALUE
 
     # See if validator for field not defined in super class works fine to compose subclass field values
-    @field_validator("SUB_UNITTEST_8")
-    def _SUB_UNITTEST_8(cls, v, values, field: ModelField):
+    @field_validator("SUB_UNITTEST_8", mode='before')
+    def _SUB_UNITTEST_8(cls, v, info: ValidationInfo):
         def factory_func():
-            return values["SUB_UNITTEST_6"] + ":" + values["SUB_UNITTEST_7"]
+            return info.data["SUB_UNITTEST_6"] + ":" + info.data["SUB_UNITTEST_7"]
 
-        return eval_default_factory(cls, v, values, field, factory_func)
+        return eval_default_factory(cls, v, info, factory_func)
 
     UNITTEST_CFG_AG: str = FACTORY_PROVIDED_VALUE
     UNITTEST_CFG_AH: str = FACTORY_PROVIDED_VALUE
@@ -241,16 +248,18 @@ class _UnitTestSubConfig(_UnitTestBaseConfig):
     UNITTEST_CFG_AL: str = FACTORY_PROVIDED_VALUE
 
     # Use model_validator for UNITTEST_CFG_AK on parent, and overriding model_validator for same field on child
-    @model_validator
-    def _UNITTEST_CFG_AI(cls, values):
+    @model_validator(mode='before')
+    @classmethod
+    def _UNITTEST_CFG_AI(cls, values: dict[str, Any]) -> dict[str, Any]:
         def factory_func():
             return values["SUB_UNITTEST_6"] + ":" + values["SUB_UNITTEST_7"]
 
         return eval_default_factory_from_root_validator(cls, values, "UNITTEST_CFG_AI", factory_func)
 
     # See if validator overriding the same validator in super class works fine to compose subclass field values
-    @model_validator
-    def _UNITTEST_CFG_AK(cls, values):
+    @model_validator(mode='before')
+    @classmethod
+    def _UNITTEST_CFG_AK(cls, values: dict[str, Any]) -> dict[str, Any]:
         def factory_func():
             return values["SUB_UNITTEST_6"] + ":" + values["SUB_UNITTEST_7"]
 
@@ -258,48 +267,49 @@ class _UnitTestSubConfig(_UnitTestBaseConfig):
 
 
 class _UnitTestSubConfigFailFindingSubclassFieldsInValidator1(_UnitTestBaseConfig):
-    ENV_CODE = "utsf1"
-    COMPONENT_NAME = "Unit Test SubConfig Component - Fail finding subclass fields in Validator (1)"
+    ENV_CODE: str = "utsf1"
+    COMPONENT_NAME: str = "Unit Test SubConfig Component - Fail finding subclass fields in Validator (1)"
 
     UNITTEST_CFG_AG: str = FACTORY_PROVIDED_VALUE
     UNITTEST_CFG_AH: str = FACTORY_PROVIDED_VALUE
 
     # See if validator not overriding the same validator in super class works fine to compose subclass field values
     @field_validator("UNITTEST_CFG_AG", check_fields=False)
-    def _UNITTEST_CFG_AG(cls, v, values, field: ModelField):
+    def _UNITTEST_CFG_AG(cls, v, info: ValidationInfo):
         def factory_func():
-            return values["SUB_UNITTEST_6"] + ":" + values["SUB_UNITTEST_7"]
+            return info.data["SUB_UNITTEST_6"] + ":" + info.data["SUB_UNITTEST_7"]
 
-        return eval_default_factory(cls, v, values, field, factory_func)
+        return eval_default_factory(cls, v, info, factory_func)
 
 
 class _UnitTestSubConfigFailFindingSubclassFieldsInValidator2(_UnitTestBaseConfig):
-    ENV_CODE = "utsf2"
-    COMPONENT_NAME = "Unit Test SubConfig Component - Fail finding subclass fields in Validator (2)"
+    ENV_CODE: str = "utsf2"
+    COMPONENT_NAME: str = "Unit Test SubConfig Component - Fail finding subclass fields in Validator (2)"
 
     UNITTEST_CFG_AG: str = FACTORY_PROVIDED_VALUE
     UNITTEST_CFG_AH: str = FACTORY_PROVIDED_VALUE
 
     # See if validator overriding the same validator in super class works fine to compose subclass field values
     @field_validator("UNITTEST_CFG_AH")
-    def _UNITTEST_CFG_AH(cls, v, values, field: ModelField):
+    def _UNITTEST_CFG_AH(cls, v, info: ValidationInfo):
         def factory_func():
-            return values["SUB_UNITTEST_6"] + ":" + values["SUB_UNITTEST_7"]
+            return info.data["SUB_UNITTEST_6"] + ":" + info.data["SUB_UNITTEST_7"]
 
-        return eval_default_factory(cls, v, values, field, factory_func)
+        return eval_default_factory(cls, v, info, factory_func)
 
 
 class _UnitTestSubConfigFailFindingSubclassFieldsInValidator3(_UnitTestBaseConfig):
-    ENV_CODE = "utsf3"
-    COMPONENT_NAME = "Unit Test SubConfig Component - Fail finding subclass fields in Validator (3)"
+    ENV_CODE: str = "utsf3"
+    COMPONENT_NAME: str = "Unit Test SubConfig Component - Fail finding subclass fields in Validator (3)"
 
     UNITTEST_CFG_AG: str = FACTORY_PROVIDED_VALUE
     UNITTEST_CFG_AH: str = FACTORY_PROVIDED_VALUE
 
     # See if model_validator overriding the same function annotated as a validator in super class works fine to compose
     # subclass field values
-    @model_validator
-    def _UNITTEST_CFG_AL(cls, values):
+    @model_validator(mode='before')
+    @classmethod
+    def _UNITTEST_CFG_AL(cls, values: dict[str, Any]) -> dict[str, Any]:
         def factory_func():
             return values["SUB_UNITTEST_6"] + ":" + values["SUB_UNITTEST_7"]
 
@@ -307,17 +317,17 @@ class _UnitTestSubConfigFailFindingSubclassFieldsInValidator3(_UnitTestBaseConfi
 
 
 class _UnitTestDbPartsNoneConfig(DefaultConfig):
-    ENV_CODE = "utdbpn"
-    USASPENDING_DB_HOST: str = None
-    USASPENDING_DB_PORT: str = None
-    USASPENDING_DB_NAME: str = None
-    USASPENDING_DB_USER: str = None
-    USASPENDING_DB_PASSWORD: SecretStr = None
+    ENV_CODE: str = "utdbpn"
+    USASPENDING_DB_HOST: str | None = None
+    USASPENDING_DB_PORT: str | None = None
+    USASPENDING_DB_NAME: str | None = None
+    USASPENDING_DB_USER: str | None = None
+    USASPENDING_DB_PASSWORD: SecretStr | None = None
 
-    BROKER_DB_HOST: str = None
-    BROKER_DB_PORT: str = None
-    BROKER_DB_NAME: str = None
-    BROKER_DB_USER: str = None
+    BROKER_DB_HOST: str | None = None
+    BROKER_DB_PORT: str | None = None
+    BROKER_DB_NAME: str | None = None
+    BROKER_DB_USER: str | None = None
     BROKER_DB_PASSWORD: SecretStr = None
 
 
@@ -336,7 +346,7 @@ class _UnitTestDbPartsPlaceholderConfig(DefaultConfig):
     BROKER_DB_PASSWORD: SecretStr = ENV_SPECIFIC_OVERRIDE
 
 
-_UNITTEST_ENVS_DICTS = [
+_UNITTEST_ENVS_DICTS: list[dict[str, Any]] = [
     {
         "env_type": "unittest",
         "code": _UnitTestBaseConfig.ENV_CODE,
@@ -484,7 +494,7 @@ def test_database_url_only_backfills_placeholder_parts():
         {
             ENV_CODE_VAR: _UnitTestDbPartsPlaceholderConfig.ENV_CODE,
             "DATABASE_URL": "postgres://dummy:pwd@foobar:12345/fresh_new_db_name",
-            "BROKER_DB": "postgres://broker:pass@broker-foobar:54321/fresh_new_db_name_broker",
+            "BROKER_DB": "postgres://broker:pass@broker-foobar:54321/fresh_new_db_name_broker"
         },
         clear=True,
     ):
@@ -1034,16 +1044,16 @@ def test_data_act_database_url_and_parts_error_if_inconsistent_placeholder_parts
 def test_postgres_dsn_constructed_with_only_url_leaves_none_parts():
     """Validate assumptions about parts of the PostgresDsn object getting populated when constructed with only a URL.
     Assumption is that the DSN can be used as string, but the "parts" will all be ``None``"""
-    pg_dsn = PostgresDsn(str(CONFIG.DATABASE_URL), scheme="postgres")
+    pg_dsn = PostgresDsn(str(CONFIG.DATABASE_URL))
 
-    assert pg_dsn.host is None
+    assert pg_dsn.hostname is None
     assert pg_dsn.port is None
-    assert pg_dsn.user is None
+    assert pg_dsn.username is None
     assert pg_dsn.password is None
     assert pg_dsn.path is None
     assert pg_dsn.scheme is not None
 
-    pg_dsn = PostgresDsn(str(CONFIG.BROKER_DB), scheme="postgres")
+    pg_dsn = PostgresDsn(str(CONFIG.BROKER_DB))
 
     assert pg_dsn.host is None
     assert pg_dsn.port is None
@@ -1056,28 +1066,27 @@ def test_postgres_dsn_constructed_with_only_url_leaves_none_parts():
 def test_postgres_dsn_constructed_with_only_parts_is_complete_and_consistent():
     """Validate assumptions about parts of the PostgresDsn object getting populated when constructed with only a parts.
     Assumption is that the DSN used as a string is composed of the parts"""
-    pg_dsn = PostgresDsn(
-        url=None,
+    pg_dsn = PostgresDsn.build(
         scheme="postgres",
         host="injected_host",
-        port="0000",
-        user="injected_user",
+        port=0000,
+        username="injected_user",
         password="injected_password",
-        path="/injected_db",
+        path="injected_db",
     )
 
     assert str(pg_dsn) is not None
-    assert pg_dsn.host is not None
-    assert pg_dsn.port is not None
-    assert pg_dsn.user is not None
-    assert pg_dsn.password is not None
+    assert pg_dsn.hosts()[0].get("host") is not None
+    assert pg_dsn.hosts()[0].get("port") is not None
+    assert pg_dsn.hosts()[0].get("username") is not None
+    assert pg_dsn.hosts()[0].get("password") is not None
     assert pg_dsn.path is not None
     assert pg_dsn.scheme is not None
 
-    assert pg_dsn.host in str(pg_dsn)
-    assert pg_dsn.port in str(pg_dsn)
-    assert pg_dsn.user in str(pg_dsn)
-    assert pg_dsn.password in str(pg_dsn)
+    assert pg_dsn.hosts()[0].get("host") in str(pg_dsn)
+    assert str(pg_dsn.hosts()[0].get("port")) in str(pg_dsn)
+    assert pg_dsn.hosts()[0].get("username") in str(pg_dsn)
+    assert pg_dsn.hosts()[0].get("password") in str(pg_dsn)
     assert pg_dsn.path in str(pg_dsn)
 
 
