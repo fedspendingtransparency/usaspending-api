@@ -180,7 +180,6 @@ def eval_default_factory_from_root_validator(
     assigned_or_sourced_value = (
         configured_vars[config_var_name] if config_var_name in configured_vars else None
     )
-    config_var = config_class.model_fields[config_var_name]
     info = MockValidationInfo(config_var_name, configured_vars)
 
     produced_value = eval_default_factory(

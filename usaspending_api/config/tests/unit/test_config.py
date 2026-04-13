@@ -8,12 +8,11 @@ from pprint import pprint
 from typing import Any
 from unittest import mock
 from unittest.mock import patch
-from urllib.parse import urlparse
 
 import pytest
 from pydantic import PostgresDsn, SecretStr, field_validator, model_validator
-from pydantic_core.core_schema import ValidationInfo
 from pydantic.error_wrappers import ValidationError
+from pydantic_core.core_schema import ValidationInfo
 
 from usaspending_api.config import CONFIG, _load_config
 from usaspending_api.config.envs import ENV_CODE_VAR
@@ -83,7 +82,9 @@ class _UnitTestBaseConfig(DefaultConfig):
 
     UNITTEST_CFG_V: str = "UNITTEST_CFG_V"
     UNITTEST_CFG_W: str = "UNITTEST_CFG_W"
-    UNITTEST_CFG_X: str | None = None  # DO NOT SET. Value derived from validator (aka pre/post-processor) func below or env
+
+    # DO NOT SET. Value derived from validator (aka pre/post-processor) func below or env
+    UNITTEST_CFG_X: str | None = None
 
     @field_validator("UNITTEST_CFG_X", mode='before')
     def _UNITTEST_CFG_X(cls, v, info: ValidationInfo):
