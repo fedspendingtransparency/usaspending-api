@@ -456,7 +456,7 @@ def test_config_values():
     """Test that config values are picked up. Also convenient for eyeballing the parsed config vals when
     pytest is configurd with flags to output printed statements. Note: unlike DATABASE_URL, BROKER_DB
     is not required, and so it is not included in this test as it can vary depending on the local settings."""
-    config_values: dict = CONFIG.dict()
+    config_values: dict = CONFIG.model_dump()
     assert len(config_values) > 0
     pprint(config_values)
     pg_uri = CONFIG.DATABASE_URL
@@ -471,7 +471,7 @@ def test_config_loading():
     with mock.patch.dict(os.environ, {ENV_CODE_VAR: LocalConfig.ENV_CODE}):
         _load_config.cache_clear()  # wipes the @lru_cache for fresh run on next call
         cfg = _load_config()
-        pprint(cfg.dict())
+        pprint(cfg.model_dump())
 
 
 def test_database_urls_and_parts_config_populated():
@@ -1725,11 +1725,11 @@ def test_new_runtime_env_overrides_config_with_env_vars_in_play():
         assert cfg.UNITTEST_CFG_G == "UNITTEST_CFG_G"
         assert cfg.UNITTEST_CFG_H == "ENVVAR_UNITTEST_CFG_H"
 
-        assert "UNITTEST_CFG_A" in cfg.__fields__.keys()
+        assert "UNITTEST_CFG_A" in cfg.model_fields.keys()
         # These two are excluded / ignored, because they are properties (or functions or lambdas)
-        assert "UNITTEST_CFG_G" not in cfg.__fields__.keys()
-        assert "UNITTEST_CFG_H" not in cfg.__fields__.keys()
-        assert "UNITTEST_CFG_L" not in cfg.__fields__.keys()
+        assert "UNITTEST_CFG_G" not in cfg.model_fields.keys()
+        assert "UNITTEST_CFG_H" not in cfg.model_fields.keys()
+        assert "UNITTEST_CFG_L" not in cfg.model_fields.keys()
 
         # 3. If a var that is composed in the default value of another var gets replaced by an env var, it happens
         # too "late" and the composing var hangs on to the default value rather than the replaced env var value
@@ -1738,31 +1738,31 @@ def test_new_runtime_env_overrides_config_with_env_vars_in_play():
         assert cfg.UNITTEST_CFG_K == "UNITTEST_CFG_I:UNITTEST_CFG_J"
 
         # 4. If validators are used as pre/post-processors, late-binding can be achieved
-        assert "UNITTEST_CFG_O" in cfg.__fields__.keys()
+        assert "UNITTEST_CFG_O" in cfg.model_fields.keys()
         assert cfg.UNITTEST_CFG_O == "ENVVAR_UNITTEST_CFG_M:UNITTEST_CFG_N"
 
         # 5. By default in pydantic, if validators are used as pre/post-processors, late-binding can be achieved,
         # AND that late-bound (validated) value will take precedence over an overriding env var for the validated field
-        assert "UNITTEST_CFG_R" in cfg.__fields__.keys()
+        assert "UNITTEST_CFG_R" in cfg.model_fields.keys()
         assert cfg.UNITTEST_CFG_R == "ENVVAR_UNITTEST_CFG_P:UNITTEST_CFG_Q"
 
         # 6. Circumvent the above default behavior of pydantic, to allow an assigned or (env)
         # sourced value of a field to take precedence over the
         # late-bound result of a validator, by having the validator delegate to our
         # usaspending_api.config.utils.eval_default_factory function
-        assert "UNITTEST_CFG_U" in cfg.__fields__.keys()
+        assert "UNITTEST_CFG_U" in cfg.model_fields.keys()
         assert cfg.UNITTEST_CFG_U == "ENVVAR_UNITTEST_CFG_U"
 
         # 7. Circumvent the below default behavior of pydantic, to allow an assigned or (env)
         # sourced value of a field to take precedence over the
         # late-bound result of a model_validator, by having the model_validator delegate to our
         # usaspending_api.config.utils.eval_default_factory_from_root_validator function
-        assert "UNITTEST_CFG_AJ" in cfg.__fields__.keys()
+        assert "UNITTEST_CFG_AJ" in cfg.model_fields.keys()
         assert cfg.UNITTEST_CFG_AJ == "ENVVAR_UNITTEST_CFG_AJ"
 
         # 8. By default in pydantic, if model_validators are used as pre/post-processors, late-binding can be achieved,
         # AND that late-bound (validated) value will take precedence over an overriding env var for the validated field
-        assert "UNITTEST_CFG_AM" in cfg.__fields__.keys()
+        assert "UNITTEST_CFG_AM" in cfg.model_fields.keys()
         assert cfg.UNITTEST_CFG_AM == "UNITTEST_CFG_AE:UNITTEST_CFG_AF"
 
 
