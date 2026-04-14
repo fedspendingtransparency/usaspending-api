@@ -13,11 +13,11 @@ import pytest
 from pydantic import (
     PostgresDsn,
     SecretStr,
+    ValidationError,
     computed_field,
     field_validator,
     model_validator,
 )
-from pydantic import ValidationError
 from pydantic_core.core_schema import ValidationInfo
 
 from usaspending_api.config import CONFIG, _load_config

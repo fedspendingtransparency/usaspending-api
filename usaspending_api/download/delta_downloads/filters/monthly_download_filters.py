@@ -2,7 +2,7 @@ from datetime import date, datetime
 from typing import Any
 
 from django.utils.functional import cached_property
-from pydantic import BaseModel,ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 from pydantic.v1.fields import ModelField
 
 from usaspending_api.references.models import ToptierAgency
@@ -16,7 +16,6 @@ class MonthlyDownloadFilters(BaseModel):
     model_config = ConfigDict(
         ignored_types=(cached_property,)
     )
-
 
     @field_validator("as_of_date", mode='before')
     @classmethod
