@@ -13,7 +13,8 @@ import os
 import pathlib
 from typing import Any, ClassVar, Union
 
-from pydantic import AnyHttpUrl, PostgresDsn, SecretStr, model_validator
+from pydantic import SecretStr, model_validator
+from pydantic.networks import AnyHttpUrl, PostgresDsn
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from usaspending_api.config.utils import (
@@ -129,7 +130,11 @@ class DefaultConfig(BaseSettings):
             )
 
             if enough_parts:
-                print(values.keys())
+                try:
+                    _port = int(values[f"{resource_conf_prefix}_PORT"])
+                except (ValueError, TypeError):
+                    _port = None
+
                 pg_dsn = PostgresDsn.build(
                     scheme=values[f"{resource_conf_prefix}_SCHEME"],
                     username=values[f"{resource_conf_prefix}_USER"],
@@ -139,7 +144,7 @@ class DefaultConfig(BaseSettings):
                         else values[f"{resource_conf_prefix}_PASSWORD"]
                     ),
                     host=values[f"{resource_conf_prefix}_HOST"],
-                    port=int(values[f"{resource_conf_prefix}_PORT"]),
+                    port=_port,
                     path=values.get(f"{resource_conf_prefix}_NAME"),
                 )
                 values = eval_default_factory_from_root_validator(

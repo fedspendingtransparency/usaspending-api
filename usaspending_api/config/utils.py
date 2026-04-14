@@ -114,6 +114,7 @@ def eval_default_factory(
     if (
         unveil(assigned_or_sourced_value) != unveil(default_value)
         and unveil(assigned_or_sourced_value) not in CONFIG_VAR_PLACEHOLDERS
+        and assigned_or_sourced_value is not None
     ):
         # The value of this field is being explicitly set DIFFERENT than its default value
         # in some source (initializer param, env var, etc.)
@@ -153,6 +154,7 @@ def eval_default_factory_from_root_validator(
 
     See Also: eval_default_factory
     """
+
     # Get any parent config class validators
     overridable_config_base_classes = [
         bc
@@ -166,7 +168,10 @@ def eval_default_factory_from_root_validator(
             if hasattr(bc.__pydantic_decorators__, "field_validators"):
                 base_class_validated_fields.update(bc.__pydantic_decorators__.field_validators.keys())
 
-    is_validated_in_base_class = config_var_name in base_class_validated_fields
+    is_validated_in_base_class = (
+        config_var_name in base_class_validated_fields
+        or f"_{config_var_name}" in base_class_validated_fields
+    )
 
     if is_validated_in_base_class:
         raise ValueError(
@@ -371,7 +376,17 @@ def validate_url_and_parts(
             "Parts not matching:\n"
         )
         for k, v in url_config_errors.items():
-            err_msg += f"\tPart: {k}, Part Value Provided: {v[0]}, Value found in {url_conf_name}: {v[1]}\n"
+            # Obfuscate password in display
+            if 'PASSWORD' in k:
+                if isinstance(v[0], SecretStr):
+                    _actual_password = v[0].get_secret_value()
+                    display_provided = '*' * len(_actual_password) if _actual_password else None
+                else:
+                    display_provided = '*' * len(v[0]) if v[0] else None
+            else:
+                display_provided = v[0]
+
+            err_msg += f"\tPart: {k}, Part Value Provided: {display_provided}, Value found in {url_conf_name}: {v[1]}\n"
         raise ValueError(err_msg)
 
 
