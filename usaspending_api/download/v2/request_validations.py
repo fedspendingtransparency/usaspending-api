@@ -792,13 +792,15 @@ class SearchDownloadValidator(DownloadValidatorBase):
         )
 
         dltypes = []
-        for dltype in request_data["spending_level"]:
-            if dltype == "subawards":
-                dltypes.append("elasticsearch_sub_awards")
-            else:
-                dltypes.append("elasticsearch_" + dltype)
+        if request_data.get("spending_level"):
+            for dltype in request_data["spending_level"]:
+                if dltype == "subawards":
+                    dltypes.append("elasticsearch_sub_awards")
+                else:
+                    dltypes.append("elasticsearch_" + dltype)
 
-        self._json_request["download_types"] = dltypes
+            self._json_request["download_types"] = dltypes
+            
         self._json_request["limit"] = self.request_data.get("limit", settings.MAX_DOWNLOAD_LIMIT)
         self._json_request = self.get_validated_request()
 
