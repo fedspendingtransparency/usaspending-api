@@ -5,7 +5,6 @@ For the full list of settings and their values: https://docs.djangoproject.com/e
 
 import json
 import os
-import sys
 from pathlib import Path
 
 import dj_database_url
@@ -169,8 +168,14 @@ DATA_DICTIONARY_DOWNLOAD_URL = (
 )
 
 # S3 Bucket and Key to retrieve the Data Dictionary
-DATA_DICTIONARY_S3_BUCKET_NAME = os.environ.get("DATA_DICTIONARY_S3_BUCKET_NAME", f"dti-da-public-files-{'nonprod' if CONFIG.ENV_CODE not in ('prd', 'stg') else 'prod'}")
-DATA_DICTIONARY_S3_KEY = os.environ.get("DATA_DICTIONARY_S3_BUCKET_NAME", f"user_reference_docs/{DATA_DICTIONARY_FILE_NAME}")
+DATA_DICTIONARY_S3_BUCKET_NAME = os.environ.get(
+    "DATA_DICTIONARY_S3_BUCKET_NAME",
+    f"dti-da-public-files-{'nonprod' if CONFIG.ENV_CODE not in ('prd', 'stg') else 'prod'}"
+)
+DATA_DICTIONARY_S3_KEY = os.environ.get(
+    "DATA_DICTIONARY_S3_BUCKET_NAME",
+    f"user_reference_docs/{DATA_DICTIONARY_FILE_NAME}"
+)
 
 # Local download files
 IDV_DOWNLOAD_README_FILE_PATH = str(APP_DIR / "data" / "idv_download_readme.txt")
@@ -437,7 +442,7 @@ console_log_file_path = logs_dir / "console.log"
 logs_dir.mkdir(parents=True, exist_ok=True)
 console_log_file_path.touch(exist_ok=True)
 
-## Logging settings adjusted based on env
+# Logging settings adjusted based on env
 fapc = os.environ.get("FAPC", "")
 
 if fapc:
