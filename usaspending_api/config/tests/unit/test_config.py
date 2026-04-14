@@ -17,7 +17,7 @@ from pydantic import (
     field_validator,
     model_validator,
 )
-from pydantic.error_wrappers import ValidationError
+from pydantic import ValidationError
 from pydantic_core.core_schema import ValidationInfo
 
 from usaspending_api.config import CONFIG, _load_config

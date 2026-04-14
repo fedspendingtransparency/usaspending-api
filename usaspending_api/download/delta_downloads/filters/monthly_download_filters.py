@@ -2,7 +2,7 @@ from datetime import date, datetime
 from typing import Any
 
 from django.utils.functional import cached_property
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel,ConfigDict, field_validator
 from pydantic.v1.fields import ModelField
 
 from usaspending_api.references.models import ToptierAgency
@@ -13,12 +13,12 @@ class MonthlyDownloadFilters(BaseModel):
     awarding_toptier_agency_abbreviation: str | None = None
     fiscal_year: int | None = None
 
-    class Config:
-        # TODO: Will need to update to use ConfigDict's "ignored_types" after Pydantic upgrade
-        #       https://docs.pydantic.dev/latest/api/config/?query=ignore_types#pydantic.config.ConfigDict.ignored_types
-        keep_untouched = (cached_property,)
+    model_config = ConfigDict(
+        ignored_types=(cached_property,)
+    )
 
-    @field_validator("as_of_date", pre=True, always=True)
+
+    @field_validator("as_of_date", mode='before')
     @classmethod
     def validate_as_of_date_and_set_default(cls, value: Any) -> str:
         if isinstance(value, str):
