@@ -2,7 +2,7 @@ from datetime import date, datetime
 from typing import Any
 
 from django.utils.functional import cached_property
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 from pydantic.v1.fields import ModelField
 
 from usaspending_api.references.models import ToptierAgency
@@ -18,7 +18,7 @@ class MonthlyDownloadFilters(BaseModel):
         #       https://docs.pydantic.dev/latest/api/config/?query=ignore_types#pydantic.config.ConfigDict.ignored_types
         keep_untouched = (cached_property,)
 
-    @validator("as_of_date", pre=True, always=True)
+    @field_validator("as_of_date", pre=True, always=True)
     @classmethod
     def validate_as_of_date_and_set_default(cls, value: Any) -> str:
         if isinstance(value, str):
@@ -47,7 +47,7 @@ class MonthlyDownloadFilters(BaseModel):
             )
         return result
 
-    @validator("awarding_toptier_agency_abbreviation")
+    @field_validator("awarding_toptier_agency_abbreviation")
     @classmethod
     def check_valid_toptier_agency_abbreviation(cls, abbreviation: str, field: ModelField) -> str:
         abbreviation = abbreviation.upper()
@@ -56,7 +56,7 @@ class MonthlyDownloadFilters(BaseModel):
 
         return abbreviation
 
-    @validator("fiscal_year")
+    @field_validator("fiscal_year")
     @classmethod
     def check_valid_fiscal_year(cls, fiscal_year: int) -> int:
         if fiscal_year < 2008:
