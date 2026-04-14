@@ -1,4 +1,3 @@
-import copy
 import json
 from copy import deepcopy
 from datetime import MAXYEAR, MINYEAR, datetime
@@ -19,7 +18,7 @@ from usaspending_api.awards.v2.lookups.lookups import (
     other_type_mapping,
 )
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.validator.award_filter import AWARD_FILTER, AWARD_FILTER_NO_RECIPIENT_ID
+from usaspending_api.common.validator.award_filter import AWARD_FILTER_NO_RECIPIENT_ID
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.download.helpers import get_date_range_length
 from usaspending_api.download.lookups import (
