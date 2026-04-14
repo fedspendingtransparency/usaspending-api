@@ -800,7 +800,7 @@ class SearchDownloadValidator(DownloadValidatorBase):
                     dltypes.append("elasticsearch_" + dltype)
 
             self._json_request["download_types"] = dltypes
-            
+
         self._json_request["limit"] = self.request_data.get("limit", settings.MAX_DOWNLOAD_LIMIT)
         self._json_request = self.get_validated_request()
 
