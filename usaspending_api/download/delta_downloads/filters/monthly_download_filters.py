@@ -2,14 +2,13 @@ from datetime import date, datetime
 from typing import Any
 
 from django.utils.functional import cached_property
-from pydantic import BaseModel, ConfigDict, field_validator
-from pydantic.v1.fields import ModelField
+from pydantic import BaseModel, ConfigDict, ValidationInfo, field_validator
 
 from usaspending_api.references.models import ToptierAgency
 
 
 class MonthlyDownloadFilters(BaseModel):
-    as_of_date: str | None
+    as_of_date: str | None = None
     awarding_toptier_agency_abbreviation: str | None = None
     fiscal_year: int | None = None
 
@@ -48,10 +47,10 @@ class MonthlyDownloadFilters(BaseModel):
 
     @field_validator("awarding_toptier_agency_abbreviation")
     @classmethod
-    def check_valid_toptier_agency_abbreviation(cls, abbreviation: str, field: ModelField) -> str:
+    def check_valid_toptier_agency_abbreviation(cls, abbreviation: str, info: ValidationInfo) -> str:
         abbreviation = abbreviation.upper()
         if not ToptierAgency.objects.filter(abbreviation=abbreviation).exists():
-            raise ValueError(f"Invalid abbreviation for '{field.name}': {abbreviation}")
+            raise ValueError(f"Invalid abbreviation for '{info.field_name}': {abbreviation}")
 
         return abbreviation
 
