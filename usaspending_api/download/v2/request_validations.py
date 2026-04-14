@@ -115,7 +115,6 @@ class AwardDownloadValidator(DownloadValidatorBase):
                     "array_type": "enum",
                     "enum_values": ["prime_awards"],
                 },
-                copy.deepcopy(AWARD_FILTER)
             ]
         )
 
@@ -791,6 +790,9 @@ class SearchDownloadValidator(DownloadValidatorBase):
             ]
         )
 
+        self._json_request["limit"] = self.request_data.get("limit", settings.MAX_DOWNLOAD_LIMIT)
+        self._json_request = self.get_validated_request()
+
         dltypes = []
         if request_data.get("spending_level"):
             for dltype in request_data["spending_level"]:
@@ -800,9 +802,6 @@ class SearchDownloadValidator(DownloadValidatorBase):
                     dltypes.append("elasticsearch_" + dltype)
 
             self._json_request["download_types"] = dltypes
-
-        self._json_request["limit"] = self.request_data.get("limit", settings.MAX_DOWNLOAD_LIMIT)
-        self._json_request = self.get_validated_request()
 
 
 def _validate_award_id(award_id: Any) -> Any:
