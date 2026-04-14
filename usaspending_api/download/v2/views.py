@@ -123,7 +123,7 @@ class SearchDownloadViewSet(BaseDownloadViewSet):
     This route sends a request to begin generating a zip file that combines award and transaction data
     """
 
-    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/download/search.md"
+    endpoint_doc = "usaspending_api/api_contracts/contracts/v2/download/disaster/search.md"
 
     def post(self, request: dict) -> Response:
         request.data["constraint_type"] = "row_count"
