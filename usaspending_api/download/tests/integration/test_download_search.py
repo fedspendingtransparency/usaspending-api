@@ -9,11 +9,7 @@ from rest_framework import status
 
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.download.filestreaming import download_generation
-from usaspending_api.download.helpers.elasticsearch_download_functions import (
-    AwardsElasticsearchDownload,
-)
 from usaspending_api.download.lookups import JOB_STATUS
-from usaspending_api.download.models import DownloadJob
 from usaspending_api.etl.award_helpers import update_awards
 from usaspending_api.search.models import TransactionSearch
 from usaspending_api.search.tests.data.utilities import setup_elasticsearch_test
@@ -126,10 +122,10 @@ def download_test_data():
     update_awards()
 
 
-
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_search_without_columns(
-    client, monkeypatch, download_test_data, elasticsearch_award_index, elasticsearch_transaction_index, elasticsearch_subaward_index
+    client, monkeypatch, download_test_data,
+    elasticsearch_award_index, elasticsearch_transaction_index, elasticsearch_subaward_index
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
@@ -148,8 +144,14 @@ def test_download_search_without_columns(
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_search_with_columns(
-    client, monkeypatch, download_test_data, elasticsearch_award_index, elasticsearch_transaction_index, elasticsearch_subaward_index
+    client, monkeypatch, download_test_data,
+    elasticsearch_award_index, elasticsearch_transaction_index, elasticsearch_subaward_index
 ):
+    """
+    Columns that don't exist in a given table just aren't fetched, so they dont error out
+    behavior regarding potential invalid column headers between awards & transactions should not be necessary
+    """
+
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
@@ -175,6 +177,7 @@ def test_download_search_with_columns(
     assert resp.status_code == status.HTTP_200_OK
     assert ".zip" in resp.json()["file_url"]
 
+
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_search_bad_filter_type_raises(
     client, monkeypatch, download_test_data, elasticsearch_award_index, elasticsearch_transaction_index
@@ -188,9 +191,11 @@ def test_download_search_bad_filter_type_raises(
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
     assert resp.json()["detail"] == "Filters parameter not provided as a dict"
 
+
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_search_with_date_type(
-    client, monkeypatch, download_test_data, elasticsearch_award_index, elasticsearch_transaction_index, elasticsearch_subaward_index
+    client, monkeypatch, download_test_data,
+    elasticsearch_award_index, elasticsearch_transaction_index, elasticsearch_subaward_index
 ):
     setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
     setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
