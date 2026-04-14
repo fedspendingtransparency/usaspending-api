@@ -377,12 +377,11 @@ def validate_url_and_parts(
         )
         for k, v in url_config_errors.items():
             # Obfuscate password in display
-            if 'PASSWORD' in k:
-                if isinstance(v[0], SecretStr):
-                    _actual_password = v[0].get_secret_value()
-                    display_provided = '*' * len(_actual_password) if _actual_password else None
-                else:
-                    display_provided = '*' * len(v[0]) if v[0] else None
+            if 'PASSWORD' in k and isinstance(v[0], SecretStr):
+                _actual_password = v[0].get_secret_value()
+                display_provided = '*' * len(_actual_password) if _actual_password else None
+            elif 'PASSWORD' in k and not isinstance(v[0], SecretStr):
+                display_provided = '*' * len(v[0]) if v[0] else None
             else:
                 display_provided = v[0]
 
