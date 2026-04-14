@@ -1,17 +1,20 @@
+import argparse
 import logging
 import re
 from collections import namedtuple
 from datetime import datetime
-from typing import Union
+from typing import Any, Union
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from psycopg2.extras import execute_values
-from psycopg2.sql import SQL
+from psycopg.sql import SQL
 
 from usaspending_api.common.csv_helpers import read_csv_file_as_list_of_dictionaries
 from usaspending_api.common.etl.postgres import ETLTable, ETLTemporaryTable, mixins
-from usaspending_api.common.etl.postgres.operations import insert_missing_rows, update_changed_rows
+from usaspending_api.common.etl.postgres.operations import (
+    insert_missing_rows,
+    update_changed_rows,
+)
 from usaspending_api.common.helpers.sql_helpers import get_connection
 from usaspending_api.common.helpers.timing_helpers import ConsoleTimer as Timer
 
@@ -46,7 +49,7 @@ class Command(mixins.ETLMixin, BaseCommand):
     def_code_file = None
     etl_logger_function = logger.info
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         parser.add_argument(
             "--def-code-file",
             metavar="FILE",
@@ -54,7 +57,7 @@ class Command(mixins.ETLMixin, BaseCommand):
             default="https://files.usaspending.gov/reference_data/def_codes.csv",
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         self.def_code_file = options["def_code_file"]
         logger.info(f"Attempting to load from file: {self.def_code_file}")
 
@@ -76,7 +79,7 @@ class Command(mixins.ETLMixin, BaseCommand):
                 raise
 
     @staticmethod
-    def _prep(text):
+    def _prep(text: Any) -> Any:
         """
         A semi-common problem with CSV files that have been edited by third party tools is the
         introduction of leading and/or trailing spaces. Strip them.
@@ -102,7 +105,7 @@ class Command(mixins.ETLMixin, BaseCommand):
         else:
             return None
 
-    def _read_raw_def_code_csv(self):
+    def _read_raw_def_code_csv(self) -> int:
         raw_def_codes = read_csv_file_as_list_of_dictionaries(self.def_code_file)
         if len(raw_def_codes) < 1:
             raise RuntimeError(f"File '{self.def_code_file}' appears to be empty")
@@ -122,7 +125,7 @@ class Command(mixins.ETLMixin, BaseCommand):
         return len(self.def_codes)
 
     @staticmethod
-    def _validate_raw_def_code(raw_def_codes):
+    def _validate_raw_def_code(raw_def_codes: DisasterEmergencyFundCode) -> list[str]:
         messages = []
 
         if not DEF_CODE_PATTERN.fullmatch(raw_def_codes.code):
@@ -136,7 +139,7 @@ class Command(mixins.ETLMixin, BaseCommand):
 
         return messages
 
-    def _validate_raw_def_codes(self):
+    def _validate_raw_def_codes(self) -> None:
         messages = []
 
         for raw_def_code in self.def_codes:
@@ -149,10 +152,9 @@ class Command(mixins.ETLMixin, BaseCommand):
                 f"{len(messages):,} problem(s) have been found with the raw DEF Code file.  See log for details."
             )
 
-    def _import_def_codes(self):
+    def _import_def_codes(self) -> int:
         with get_connection(read_only=False).cursor() as cursor:
-            execute_values(
-                cursor.cursor,
+            cursor.executemany(
                 """
                     insert into temp_load_disaster_emergency_fund_codes (
                         row_number,
@@ -162,14 +164,13 @@ class Command(mixins.ETLMixin, BaseCommand):
                         group_name,
                         urls,
                         earliest_public_law_enactment_date
-                    ) values %s
+                    ) values (%s, %s, %s, %s, %s, %s, %s)
                 """,
                 self.def_codes,
-                page_size=len(self.def_codes),
             )
             return cursor.rowcount
 
-    def _perform_load(self):
+    def _perform_load(self) -> None:
         overrides = {
             "insert_overrides": {"create_date": SQL("now()"), "update_date": SQL("now()")},
             "update_overrides": {"update_date": SQL("now()")},
@@ -190,7 +191,7 @@ class Command(mixins.ETLMixin, BaseCommand):
             insert_missing_rows, "Insert missing DEF Codes", temp_def_code_table, def_code_table
         )
 
-    def _vacuum_tables(self):
+    def _vacuum_tables(self) -> None:
         self._execute_dml_sql(
             "vacuum (analyze) disaster_emergency_fund_code", "Vacuum disaster_emergency_fund_code table"
         )

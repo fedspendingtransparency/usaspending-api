@@ -1,19 +1,23 @@
 from django.db import connection
-from django.db.models import CharField, Expression
-from psycopg2.sql import Identifier, Literal, SQL
-from usaspending_api.common.helpers.sql_helpers import convert_composable_query_to_string
+from django.db.models import CharField, Expression, QuerySet
+from django.db.models.sql.compiler import SQLCompiler
+from psycopg.sql import SQL, Identifier, Literal
+
+from usaspending_api.common.helpers.sql_helpers import (
+    convert_composable_query_to_string,
+)
 from usaspending_api.recipient.models import RecipientLookup, RecipientProfile
 from usaspending_api.recipient.v2.lookups import SPECIAL_CASES
 
 
 def obtain_recipient_uri(
-    recipient_name,
-    recipient_uei,
-    parent_recipient_uei,
-    recipient_unique_id,
-    parent_recipient_unique_id,
-    is_parent_recipient=False,
-):
+    recipient_name: str | None,
+    recipient_uei: str | None,
+    parent_recipient_uei: str | None,
+    recipient_unique_id: str | None,
+    parent_recipient_unique_id: str | None,
+    is_parent_recipient: bool = False,
+) -> str | None:
     """Return a valid string to be used for api/v2/recipient/duns/<recipient-hash>/ (or None)
 
     Keyword Arguments:
@@ -65,7 +69,11 @@ def obtain_recipient_uri(
     return None
 
 
-def generate_missing_recipient_hash(recipient_uei, recipient_unique_id, recipient_name):
+def generate_missing_recipient_hash(
+    recipient_uei: str | None,
+    recipient_unique_id: str | None,
+    recipient_name: str | None,
+) -> str | None:
     if recipient_uei is not None:
         prefix = "uei"
         value = recipient_uei
@@ -94,11 +102,11 @@ def obtain_recipient_level(recipient_record: dict) -> str:
     return level
 
 
-def combine_recipient_hash_and_level(recipient_hash, recipient_level):
+def combine_recipient_hash_and_level(recipient_hash: str, recipient_level: str) -> str:
     return f"{recipient_hash}-{recipient_level.upper()}"
 
 
-def _annotate_recipient_id(field_name, queryset, annotation_sql):
+def _annotate_recipient_id(field_name: str, queryset: QuerySet, annotation_sql: str) -> QuerySet:
     """
     Add recipient id (recipient hash + recipient level) to a queryset.  The assumption here is that
     the queryset is based on a data source that contains recipient_unique_id and
@@ -127,7 +135,7 @@ def _annotate_recipient_id(field_name, queryset, annotation_sql):
         def __init__(self):
             super(RecipientId, self).__init__(CharField())
 
-        def as_sql(self, compiler, connection):
+        def as_sql(self, compiler: SQLCompiler, connection: connection) -> tuple:
             return (
                 convert_composable_query_to_string(
                     SQL(annotation_sql).format(
@@ -141,7 +149,7 @@ def _annotate_recipient_id(field_name, queryset, annotation_sql):
     return queryset.annotate(**{field_name: RecipientId()})
 
 
-def annotate_prime_award_recipient_id(field_name, queryset):
+def annotate_prime_award_recipient_id(field_name: str, queryset: QuerySet) -> QuerySet:
     return _annotate_recipient_id(
         field_name,
         queryset,
@@ -150,7 +158,8 @@ def annotate_prime_award_recipient_id(field_name, queryset):
                 rp.recipient_hash || '-' ||  rp.recipient_level
             from
                 rpt.subaward_search bs
-                inner join recipient_lookup rl on (rl.uei = bs.awardee_or_recipient_uei OR rl.duns = bs.awardee_or_recipient_uniqu)
+                inner join recipient_lookup rl
+                on (rl.uei = bs.awardee_or_recipient_uei OR rl.duns = bs.awardee_or_recipient_uniqu)
                 inner join recipient_profile rp on rp.recipient_hash = rl.recipient_hash
             where
                 bs.broker_subaward_id = {outer_table}.broker_subaward_id and

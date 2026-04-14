@@ -50,7 +50,7 @@ dependencies = [
     "openpyxl==3.1.*",
     "pandas==2.2.*",
     "psutil==5.9.*",
-    "psycopg2==2.9.9", # Pinning exact version because this package will drop support for Python versions in patches
+    "psycopg>=3.3.3",
     "py-gfm==2.0.0",
     "pydantic==2.12",
     "pydantic-settings>=2.13.1",
@@ -161,6 +161,9 @@ exclude_lines = [
     # Have to re-enable the standard pragma
     "pragma: no cover"
 ]
+
+[tool.ruff]
+line-length = 120  # allow line length to reach the maximum
 
 [tool.ruff.lint]
 preview = true  # enable new rules

@@ -1,7 +1,7 @@
 from collections import OrderedDict
 from copy import deepcopy
 
-from psycopg2.sql import Identifier, Literal, SQL
+from psycopg.sql import SQL, Identifier, Literal
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -9,11 +9,14 @@ from rest_framework.views import APIView
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_simple_pagination_metadata
 from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
-from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model
-from usaspending_api.common.validator.pagination import customize_pagination_with_sort_columns
+from usaspending_api.common.validator.award import (
+    get_internal_or_generated_award_id_model,
+)
+from usaspending_api.common.validator.pagination import (
+    customize_pagination_with_sort_columns,
+)
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.references.helpers import generate_agency_slugs_for_agency_list
-
 
 # Columns upon which the client is allowed to sort.
 SORTABLE_COLUMNS = (
@@ -157,7 +160,7 @@ TYPE_TO_SQL_MAPPING = {
 }
 
 
-def _prepare_tiny_shield_models():
+def _prepare_tiny_shield_models() -> list:
     models = customize_pagination_with_sort_columns(SORTABLE_COLUMNS, DEFAULT_SORT_COLUMN)
     models.extend(
         [

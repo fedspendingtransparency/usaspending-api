@@ -27,18 +27,19 @@ The process:
 Note that this loader ALWAYS performs a full reload.
 """
 
+import argparse
 import logging
 import os
-import psycopg2
+from pathlib import Path
 
+import psycopg
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from pathlib import Path
+
 from usaspending_api.accounts.models import HistoricalAppropriationAccountBalances
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.common.helpers.timing_helpers import ScriptTimer
 from usaspending_api.common.retrieve_file_from_uri import RetrieveFileFromUri
-
 
 logger = logging.getLogger("script")
 
@@ -80,7 +81,7 @@ READ_BUFFER_SIZE_BYTES = 1024 * 1024
 class Timer(ScriptTimer):
     """Make logging a little less verbose."""
 
-    def log_starting_message(self):
+    def log_starting_message(self) -> None:
         pass
 
 
@@ -90,7 +91,7 @@ class Command(BaseCommand):
         "product owner.  Performs a full replace every run."
     )
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: argparse.ArgumentParser) -> None:
 
         parser.add_argument(
             "source_location",
@@ -103,12 +104,12 @@ class Command(BaseCommand):
             ),
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
 
         source_location = options["source_location"]
         logger.info(f"SOURCE CSV LOCATION: {source_location}")
 
-        with psycopg2.connect(get_database_dsn_string()) as connection:
+        with psycopg.connect(get_database_dsn_string()) as connection:
             with connection.cursor() as cursor:
                 self.connection = connection
                 self.cursor = cursor
@@ -130,21 +131,21 @@ class Command(BaseCommand):
                 with Timer(f"Import into {destination_table_name}"):
                     self._import_data()
 
-    def _create_temporary_table(self, table_name, headers):
+    def _create_temporary_table(self, table_name: str, headers: list[str]) -> None:
         columns = ", ".join(f"{h} {DATA_TYPE_MAPPING[h]}" for h in headers)
         sql = f"create temporary table {table_name} ({columns})"
         self.cursor.execute(sql)
 
-    def _get_headers(self, file_path):
+    def _get_headers(self, file_path: Path) -> list[str]:
         with open(file_path) as f:
             return next(f).strip().split(",")
 
-    def _import_data(self):
+    def _import_data(self) -> psycopg.Cursor:
         sql = (Path(__file__).resolve().parent / "load_historical_appropriation_account_balances.sql").read_text()
         self.cursor.execute(sql)
 
-    def _import_file(self, file_path, table_name):
+    def _import_file(self, file_path: Path, table_name: str) -> int:
         sql = f"copy {table_name} from stdin with (format csv, header)"
         with open(file_path) as f:
-            self.cursor.copy_expert(sql, f, READ_BUFFER_SIZE_BYTES)
+            self.cursor.copy(sql, f)
         return self.cursor.rowcount

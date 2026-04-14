@@ -708,7 +708,7 @@ def clean_postgres_sql_for_spark_sql(
     if identifier_replacements:
         for old, new in identifier_replacements.items():
             matches = re.finditer(
-                rf"(\s+|^|\(|'){old}(\s+|$|\(|')",
+                rf"(\s+|^|\(){old}(\s+|$|\()",
                 spark_sql,
                 flags=re.IGNORECASE | re.MULTILINE,
             )
