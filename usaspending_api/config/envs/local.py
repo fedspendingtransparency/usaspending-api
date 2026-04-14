@@ -103,8 +103,12 @@ class LocalConfig(DefaultConfig):
 
     @model_validator(mode="before")
     def _AWS_S3_ENDPOINT_factory(cls, values: dict[str, Any]) -> dict[str, Any]:
+        # Merge defaults into values
+        default_fields = {name: field.default for name, field in cls.model_fields.items()}
+        merged_values = {**default_fields, **values}
+
         def factory_func() -> str:
-            return values["MINIO_HOST"] + ":" + values["MINIO_PORT"]
+            return merged_values["MINIO_HOST"] + ":" + merged_values["MINIO_PORT"]
 
         return eval_default_factory_from_root_validator(cls, values, "AWS_S3_ENDPOINT", factory_func)
 
