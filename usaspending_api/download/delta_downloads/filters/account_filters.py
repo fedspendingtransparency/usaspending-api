@@ -85,15 +85,31 @@ class AccountDownloadFilters(BaseModel):
     @classmethod
     def check_period_quarter(cls, values: dict[str, Any]) -> dict[str, Any]:
         period, quarter = values.get("period"), values.get("quarter")
+
+        # Convert string values to int if needed
+        if isinstance(period, str):
+            try:
+                period = int(period)
+                values["period"] = period
+            except ValueError:
+                raise InvalidParameterException(f"Period must be a valid integer, got: {period}") from None
+
+        if isinstance(quarter, str):
+            try:
+                quarter = int(quarter)
+                values["quarter"] = quarter
+            except ValueError:
+                raise InvalidParameterException(f"Quarter must be a valid integer, got: {quarter}") from None
+
         if period is None and quarter is None:
             raise InvalidParameterException("Must define period or quarter.")
         if period is not None and quarter is not None:
             values["quarter"] = quarter = None
             warnings.warn("Both quarter and period are set.  Only using period.", stacklevel=2)
         if period is not None and period not in range(2, 13):
-            raise InvalidParameterException("Period must be between 2 and 12")
+            raise InvalidParameterException("Period must be between 2 and 12") from None
         if quarter is not None and quarter not in range(1, 5):
-            raise InvalidParameterException("Quarter must be between 1 and 4")
+            raise InvalidParameterException("Quarter must be between 1 and 4") from None
         return values
 
     @model_validator(mode="before")
