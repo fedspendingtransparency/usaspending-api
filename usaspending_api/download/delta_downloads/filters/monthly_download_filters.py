@@ -3,7 +3,7 @@ from typing import Any
 
 from django.utils.functional import cached_property
 from pydantic import BaseModel, validator
-from pydantic.fields import ModelField
+from pydantic.v1.fields import ModelField
 
 from usaspending_api.references.models import ToptierAgency
 
