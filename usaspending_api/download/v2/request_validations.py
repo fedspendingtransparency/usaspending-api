@@ -245,6 +245,12 @@ class AwardDownloadValidator(DownloadValidatorBase):
             ]
         )
 
+        filter_all_agencies = False
+        if str(self._json_request["filters"].get("agency", "")).lower() == "all":
+            filter_all_agencies = True
+            self._json_request["filters"].pop("agency")
+
+        self._json_request = self.get_validated_request()
         custom_award_filters = self._json_request["filters"]
         final_award_filters = {}
 
@@ -287,16 +293,13 @@ class AwardDownloadValidator(DownloadValidatorBase):
             ]
 
         if "agency" in custom_award_filters or "agencies" in custom_award_filters:
-            final_award_filters["agencies"] = self._update_custom_award_filters(custom_award_filters)
+            final_award_filters["agencies"] = self._update_custom_award_filters(custom_award_filters, filter_all_agencies)
 
-        self._json_request["filters"] = self._update_custom_award_filters()
+        self._json_request["filters"] = final_award_filters
 
-    def _update_custom_award_filters(self, custom_award_filters: dict) -> list:
+    def _update_custom_award_filters(self, custom_award_filters: dict, filter_all_agencies: bool) -> list:
         agency_output = []
-        filter_all_agencies = False
-        if str(self._json_request["filters"].get("agency", "")).lower() == "all":
-            filter_all_agencies = True
-            self._json_request["filters"].pop("agency")
+        
 
         if "agency" in custom_award_filters:
             if filter_all_agencies:
@@ -793,14 +796,13 @@ class SearchDownloadValidator(DownloadValidatorBase):
         self._json_request = self.get_validated_request()
 
         dltypes = []
-        if request_data.get("spending_level"):
-            for dltype in request_data["spending_level"]:
-                if dltype == "subawards":
-                    dltypes.append("elasticsearch_sub_awards")
-                else:
-                    dltypes.append("elasticsearch_" + dltype)
+        for dltype in self.request_data.get("spending_level", ["awards", "transactions", "subawards"]):
+            if dltype == "subawards":
+                dltypes.append("elasticsearch_sub_awards")
+            else:
+                dltypes.append("elasticsearch_" + dltype)
 
-            self._json_request["download_types"] = dltypes
+        self._json_request["download_types"] = dltypes
 
 
 def _validate_award_id(award_id: Any) -> Any:

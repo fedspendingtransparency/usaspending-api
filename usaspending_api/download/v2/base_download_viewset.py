@@ -190,11 +190,11 @@ class BaseDownloadViewSet(APIView):
     ) -> Optional[DownloadJob]:
         # External data types that directly affect download results
         external_data_type_name_list = []
-        if download_types and "elasticsearch_awards" in download_types:
-            external_data_type_name_list.append("es_awards")
         if download_types and "elasticsearch_transactions" in download_types:
             external_data_type_name_list.append("es_transactions")
-        else:
+        if download_types and "elasticsearch_awards" in download_types:
+            external_data_type_name_list.append("es_awards")
+        if external_data_type_name_list == []:
             external_data_type_name_list = [
                 "fpds",
                 "fabs",
