@@ -6,6 +6,7 @@ from sys import maxsize
 from typing import (
     Any,
     List,
+    Literal,
 )
 
 from django.conf import settings
@@ -13,6 +14,7 @@ from django.db.models import F, QuerySet
 from django.utils.text import slugify
 from elasticsearch_dsl import Q as ES_Q
 from elasticsearch_dsl.response import Response as ES_Response
+from pydantic import BaseModel, field_validator
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -41,6 +43,17 @@ from usaspending_api.common.api_versioning import (
     API_TRANSFORM_FUNCTIONS,
     api_transformations,
 )
+from usaspending_api.common.pydantic_base_models import (
+    PSCCodeObject,
+    AgencyObject,
+    AwardAmount,
+    NAICSCodeObject,
+    ProgramActivityObject,
+    StandardLocationObject,
+    TASCodeObject,
+    TimePeriod,
+    TreasuryAccountComponentsObject
+)
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import (
     AwardSearch,
@@ -58,6 +71,7 @@ from usaspending_api.common.helpers.generic_helper import (
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.recipient_lookups import annotate_prime_award_recipient_id
 from usaspending_api.common.validator.award_filter import AWARD_FILTER_NO_RECIPIENT_ID
+from usaspending_api.common.validator.request_validations import is_valid_def_code
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.recipient.models import RecipientProfile
@@ -136,6 +150,39 @@ ES_ALTERNATIVE_SORT_FIELDS = {
     "total_obligation": "total_obligation_sort",
     "total_iija_outlay": "total_iija_outlay_sort",
 }
+
+
+class Filters(BaseModel):
+    keywords: list[str] | None = None
+    description: str | None = None
+    time_period: list[TimePeriod] | None = None
+    place_of_performance_scope: Literal["domestic", "foreign"] | None = None
+    place_of_performance_locations: list[StandardLocationObject] | None = None
+    agencies: list[AgencyObject] | None = None
+    recipient_search_text: list[str] | None = None
+    recipient_scope: Literal["domestic", "foreign"] | None = None
+    recipient_locations: list[StandardLocationObject] | None = None
+    recipient_type_names: list[str] | None = None
+    award_type_code: list[str] | None = None
+    award_ids: list[str] | None = None
+    award_amounts: list[AwardAmount] | None = None
+    program_numbers: list[str] | None = None
+    naics_codes: NAICSCodeObject | None = None
+    tas_codes: list[TASCodeObject] | None = None
+    psc_codes: PSCCodeObject | list[str] | None = None
+    contract_pricing_type_codes: list[str] | None = None
+    set_aside_type_codes: list[str] | None = None
+    extent_competed_type_codes: list[str] | None = None
+    treasury_account_components: list[TreasuryAccountComponentsObject] | None = None
+    program_activity: list[int] | None = None
+    program_activities: list[ProgramActivityObject] | None = None
+    def_codes: list[str] | None = None
+    award_unique_id: str | None = None
+
+    @field_validator('def_codes')
+    @classmethod
+    def check_def_code(cls, v: list[str] | None) -> list[str] | None:
+        return is_valid_def_code(v)
 
 
 @api_transformations(
