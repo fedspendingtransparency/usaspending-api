@@ -269,8 +269,6 @@ class DefaultConfig(BaseSettings):
             )
 
             if enough_parts:
-                # TODO: Need to make correct this; when running without ES_HOSTNAME provided it should build the value
-                #       from the parts (e.g., ES_SCHEME, _HOST, _PORT) that are provided
                 http_url = AnyHttpUrl(
                     scheme=values[f"{resource_conf_prefix}_SCHEME"],
                     username=values[f"{resource_conf_prefix}_USER"],
