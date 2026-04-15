@@ -72,8 +72,8 @@ class TableSpec:
     source_schema: Optional[Union[List, dict]]
     custom_schema: Optional[str] = None
     column_names: Optional[List[str]] = None
-    source_query: Optional[Union[str, List[str], callable]]
-    source_query_incremental: Optional[List[dict]] = None
+    source_query: Optional[Union[str, List[str], Callable]] = None
+    source_query_incremental: Optional[Union[str, Callable]] = None
     user_defined_functions: Optional[List[dict]] = None
     postgres_seq_name: Optional[str] = None
     postgres_partition_spec: Optional[dict] = None
