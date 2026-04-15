@@ -364,7 +364,7 @@ def validate_url_and_parts(
         # NOTE: Keeping password text obfuscated in the error output
         url_config_errors[f"{resource_conf_prefix}_PASSWORD"] = (
             values[f"{resource_conf_prefix}_PASSWORD"],
-            "*" * len(url_password) if url_password is not None else None,
+            "*" * 5 if url_password is not None else None,
         )
     if len(url_config_errors) > 0:
         err_msg = (
@@ -377,11 +377,8 @@ def validate_url_and_parts(
         )
         for k, v in url_config_errors.items():
             # Obfuscate password in display
-            if 'PASSWORD' in k and isinstance(v[0], SecretStr):
-                _actual_password = v[0].get_secret_value()
-                display_provided = '*' * len(_actual_password) if _actual_password else None
-            elif 'PASSWORD' in k and not isinstance(v[0], SecretStr):
-                display_provided = '*' * len(v[0]) if v[0] else None
+            if 'PASSWORD' in k:
+                display_provided = '*' * 5 if v[0] else None
             else:
                 display_provided = v[0]
 

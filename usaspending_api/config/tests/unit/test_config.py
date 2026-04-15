@@ -944,8 +944,8 @@ def test_database_url_and_parts_error_if_inconsistent_none_parts():
             expected = consistent_dict[part]
             if part == "USASPENDING_DB_PASSWORD":
                 # The error keeps the provided password obfuscated as a SecretStr
-                provided = "*" * len(provided)
-                expected = "*" * len(expected) if expected else None
+                provided = "*" * 5
+                expected = "*" * 5 if expected else None
             expected_error = (
                 f"Part: {part}, Part Value Provided: {provided}, " f"Value found in DATABASE_URL: {expected}"
             )
@@ -992,8 +992,8 @@ def test_database_url_and_parts_error_if_inconsistent_placeholder_parts():
             expected = consistent_dict[part]
             if part == "USASPENDING_DB_PASSWORD":
                 # The error keeps the provided password obfuscated as a SecretStr
-                provided = "*" * len(provided)
-                expected = "*" * len(expected) if expected else None
+                provided = "*" * 5
+                expected = "*" * 5 if expected else None
             expected_error = (
                 f"Part: {part}, Part Value Provided: {provided}, " f"Value found in DATABASE_URL: {expected}"
             )
@@ -1042,8 +1042,8 @@ def test_data_act_database_url_and_parts_error_if_inconsistent_none_parts():
             expected = consistent_dict[part]
             if part == "BROKER_DB_PASSWORD":
                 # The error keeps the provided password obfuscated as a SecretStr
-                provided = "*" * len(provided)
-                expected = "*" * len(expected) if expected else None
+                provided = "*" * 5
+                expected = "*" * 5 if expected else None
             expected_error = f"Part: {part}, Part Value Provided: {provided}, Value found in BROKER_DB: {expected}"
             assert exc_info.match(re.escape(expected_error))
 
@@ -1090,8 +1090,8 @@ def test_data_act_database_url_and_parts_error_if_inconsistent_placeholder_parts
             expected = consistent_dict[part]
             if part == "BROKER_DB_PASSWORD":
                 # The error keeps the provided password obfuscated as a SecretStr
-                provided = "*" * len(provided)
-                expected = "*" * len(expected) if expected else None
+                provided = "*" * 5
+                expected = "*" * 5 if expected else None
             expected_error = f"Part: {part}, Part Value Provided: {provided}, Value found in BROKER_DB: {expected}"
             assert exc_info.match(re.escape(expected_error))
 
