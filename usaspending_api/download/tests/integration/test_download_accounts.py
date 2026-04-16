@@ -1,11 +1,10 @@
 import json
-import pytest
 import random
 import zipfile
-import pandas as pd
-
 from unittest.mock import Mock
 
+import pandas as pd
+import pytest
 from django.conf import settings
 from django.core.management import call_command
 from model_bakery import baker
@@ -18,6 +17,9 @@ from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.download.filestreaming import download_generation
 from usaspending_api.download.lookups import JOB_STATUS
 from usaspending_api.etl.award_helpers import update_awards
+from usaspending_api.financial_activities.models import (
+    FinancialAccountsByProgramActivityObjectClass,
+)
 from usaspending_api.search.models import TransactionSearch
 
 
@@ -26,19 +28,19 @@ def create_download_delta_tables(spark, s3_unittest_data_bucket, hive_unittest_m
     call_command(
         "create_delta_table",
         f"--spark-s3-bucket={s3_unittest_data_bucket}",
-        f"--destination-table=award_financial_download",
+        "--destination-table=award_financial_download",
     )
 
     call_command(
         "create_delta_table",
         f"--spark-s3-bucket={s3_unittest_data_bucket}",
-        f"--destination-table=object_class_program_activity_download",
+        "--destination-table=object_class_program_activity_download",
     )
 
     call_command(
         "create_delta_table",
         f"--spark-s3-bucket={s3_unittest_data_bucket}",
-        f"--destination-table=account_balances_download",
+        "--destination-table=account_balances_download",
     )
     yield
 
@@ -134,14 +136,30 @@ def download_test_data(db):
         fain="ta1fain",
     )
 
+    # Create Program Activity Reporting Keys
+    park1 = baker.make("references.ProgramActivityPark", code="TESTPARK001", name="TESTPROGRAM1")
+
     # Create FederalAccount
-    fa1 = baker.make(FederalAccount, id=10)
+    fa1 = baker.make(FederalAccount, id=10, account_title="TEST_FED_ACCOUNT")
 
     # Create TreasuryAppropriationAccount
     taa1 = baker.make(TreasuryAppropriationAccount, treasury_account_identifier=100, federal_account=fa1)
 
     # Create FinancialAccountsByAwards
-    baker.make(FinancialAccountsByAwards, financial_accounts_by_awards_id=1000, award=award1, treasury_account=taa1)
+    baker.make(
+        FinancialAccountsByAwards,
+        financial_accounts_by_awards_id=1000,
+        award=award1, treasury_account=taa1,
+        program_activity_reporting_key=park1,
+    )
+
+    # Create FinancialAccountsByProgramActivityObjectClass
+    baker.make(
+        FinancialAccountsByProgramActivityObjectClass,
+        financial_accounts_by_program_activity_object_class_id=1000,
+        treasury_account=taa1,
+        program_activity_reporting_key=park1,
+    )
 
     # Set latest_award for each award
     update_awards()
@@ -237,8 +255,8 @@ def test_agency_filter_success(client, download_test_data):
             }
         ),
     )
-
     assert resp.status_code == status.HTTP_200_OK
+    assert "FY2017Q1-Q4_100_FA_AccountBalances" in resp.json()["file_name"]
 
 
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
@@ -513,3 +531,72 @@ def test_file_c_spark_download_unknown_columns(client, download_test_data):
 
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
     assert resp.json()["detail"] == "Unknown columns: ['test']"
+
+
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
+def test_file_b_park_with_c(client, download_test_data, create_download_delta_tables):
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
+
+    col_list = ["federal_account_name", "program_activity_reporting_key", "program_activity_name"]
+
+    resp = client.post(
+        "/api/v2/download/accounts/",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "account_level": "federal_account",
+                "filters": {
+                    "budget_function": "all",
+                    "agency": "all",
+                    "submission_types": ["object_class_program_activity", "award_financial"],
+                    "fy": "2021",
+                    "period": 12,
+                },
+                "columns": col_list,
+                "file_format": "csv",
+            }
+        ),
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    zip_path = resp.data["file_url"]
+    with zipfile.ZipFile(zip_path, "r") as zip_ref:
+        assert len(zip_ref.namelist()) == 4
+        for file in zip_ref.namelist():
+            with zip_ref.open(file) as zip_ref_file:
+                df = pd.read_csv(zip_ref_file)
+                assert list(df.columns) == col_list
+
+
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS])
+def test_file_b_park_without_c(client, download_test_data):
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string())
+    col_list = ["federal_account_name", "program_activity_reporting_key", "program_activity_name"]
+
+    resp = client.post(
+        "/api/v2/download/accounts/",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "account_level": "federal_account",
+                "filters": {
+                    "budget_function": "all",
+                    "agency": "all",
+                    "submission_types": ["object_class_program_activity"],
+                    "fy": "2021",
+                    "period": 12,
+                },
+                "columns": col_list,
+                "file_format": "csv",
+            }
+        ),
+    )
+
+    assert resp.status_code == status.HTTP_200_OK
+    zip_path = resp.data["file_url"]
+    with zipfile.ZipFile(zip_path, "r") as zip_ref:
+        assert len(zip_ref.namelist()) == 1
+        for file in zip_ref.namelist():
+            with zip_ref.open(file) as zip_ref_file:
+                df = pd.read_csv(zip_ref_file)
+                assert list(df.columns) == col_list

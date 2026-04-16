@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 
 import boto3
 import numpy as np
-import psycopg2
+import psycopg
 from django import db
 from django.core.management.base import BaseCommand, CommandParser
 from django.db.models import Model
@@ -113,7 +113,7 @@ class Command(BaseCommand):
             type=str,
             required=False,
             help="A comma delimited list of column names that should be loaded in addition to the columns required "
-            "by the Delta tables schema. Useful for loading temporary columns from Delta to Postgres to swap in place."
+            "by the Delta tables schema. Useful for loading temporary columns from Delta to Postgres to swap in place.",
         )
 
     def _split_dfs(self, df: DataFrame, special_columns: list[str]) -> list[DataFrame]:
@@ -415,7 +415,7 @@ class Command(BaseCommand):
         COPY command on CSV files, which are created from the Delta table's underlying parquet files.
 
         Since Spark DataFrameWriters for JDBC don't support the COPY command, this custom function streams
-        the data from S3 and uses psycopg2 to do the COPY. The file paths of S3 gzipped CSV files to process are
+        the data from S3 and uses psycopg to do the COPY. The file paths of S3 gzipped CSV files to process are
         distributed across the cluster to executors, and the custom function is invoked by each executor,
         using ``rdd.mapPartitionWithIndex``, to then stream the file at that path and send it to Postgres.
 
@@ -512,7 +512,7 @@ class Command(BaseCommand):
         logger.info(f"LOAD: Starting SQL bulk COPY of {file_count} CSV files to Postgres {temp_table} table")
 
         db_dsn = get_database_dsn_string()
-        with psycopg2.connect(dsn=db_dsn) as connection:
+        with psycopg.connect(db_dsn) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("SHOW max_parallel_workers")
                 max_parallel_workers = int(cursor.fetchone()[0])

@@ -9,7 +9,7 @@ from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Union
 
 import pandas as pd
-import psycopg2
+import psycopg
 import pytest
 import pytz
 from django.conf import settings
@@ -59,18 +59,12 @@ def _handle_string_cast(val: str) -> Union[str, dict, list]:
     """
     if isinstance(val, list):
         try:
-            casted = [
-                json.loads(element) if isinstance(element, str) else element
-                for element in val
-            ]
+            casted = [json.loads(element) if isinstance(element, str) else element for element in val]
         except (TypeError, json.decoder.JSONDecodeError):
             casted = [str(element) for element in val]
     elif isinstance(val, dict):
         try:
-            casted = {
-                k: json.loads(element) if isinstance(element, str) else element
-                for k, element in val.items()
-            }
+            casted = {k: json.loads(element) if isinstance(element, str) else element for k, element in val.items()}
         except (TypeError, json.decoder.JSONDecodeError):
             casted = {k: str(element) for k, element in val.items()}
     else:
@@ -157,9 +151,7 @@ def equal_datasets(
             if isinstance(psql_val, list):
                 psql_val = sorted_deep(psql_val)
                 if isinstance(spark_val, str):
-                    spark_val = [
-                        json.loads(idx.replace("'", '"')) for idx in [spark_val]
-                    ][0]
+                    spark_val = [json.loads(idx.replace("'", '"')) for idx in [spark_val]][0]
                 spark_val = sorted_deep(spark_val)
 
             if psql_val != spark_val:
@@ -219,9 +211,7 @@ def verify_delta_table_loaded_to_delta(  # noqa: PLR0912
         call_command("create_delta_table", f"--spark-s3-bucket={s3_bucket}", *cmd_args)
         call_command(load_command, *cmd_args)
     else:
-        load_delta_table_from_postgres(
-            delta_table_name, s3_bucket, alt_db, alt_name, load_command
-        )
+        load_delta_table_from_postgres(delta_table_name, s3_bucket, alt_db, alt_name, load_command)
 
     if alt_name:
         expected_table_name = alt_name
@@ -307,10 +297,7 @@ def verify_delta_table_loaded_from_delta(
     call_command(load_command, *cmd_args)
 
     # get the postgres data to compare
-    source_table = (
-        TABLE_SPEC[delta_table_name]["source_table"]
-        or TABLE_SPEC[delta_table_name]["swap_table"]
-    )
+    source_table = TABLE_SPEC[delta_table_name]["source_table"] or TABLE_SPEC[delta_table_name]["swap_table"]
     temp_schema = "temp"
     if source_table:
         tmp_table_name = f"{temp_schema}.{source_table}_temp"
@@ -320,7 +307,7 @@ def verify_delta_table_loaded_from_delta(
     partition_col = TABLE_SPEC[delta_table_name]["partition_column"]
     if partition_col is not None:
         postgres_query = f"{postgres_query} ORDER BY {partition_col}"
-    with psycopg2.connect(dsn=get_database_dsn_string()) as connection:
+    with psycopg.connect(get_database_dsn_string()) as connection:
         with connection.cursor() as cursor:
             cursor.execute(postgres_query)
             postgres_data = dictfetchall(cursor)
@@ -339,9 +326,7 @@ def verify_delta_table_loaded_from_delta(
     )
 
 
-@pytest.mark.django_db(
-    databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True
-)
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_load_table_to_from_delta_for_recipient_lookup(
     spark,
     s3_unittest_data_bucket,
@@ -372,9 +357,7 @@ def test_load_table_to_from_delta_for_recipient_lookup(
         }
     )
     baker.make("transactions.SourceProcurementTransaction", **procure)
-    load_delta_table_from_postgres(
-        "detached_award_procurement", s3_unittest_data_bucket
-    )
+    load_delta_table_from_postgres("detached_award_procurement", s3_unittest_data_bucket)
 
     ignore_fields = ["id", "update_date"]
     tables_to_load = [
@@ -450,12 +433,7 @@ def test_load_table_to_from_delta_for_recipient_lookup(
 
     # Verify that the update alternate name exists
     expected_result = ["FABS RECIPIENT 12345"]
-    assert (
-        sorted(
-            RecipientLookup.objects.filter(uei="FABSUEI12345").first().alternate_names
-        )
-        == expected_result
-    )
+    assert sorted(RecipientLookup.objects.filter(uei="FABSUEI12345").first().alternate_names) == expected_result
 
     tables_to_load = ["transaction_fabs", "transaction_normalized"]
     create_and_load_all_delta_tables(spark, s3_unittest_data_bucket, tables_to_load)
@@ -478,9 +456,7 @@ def test_load_table_to_from_delta_for_recipient_lookup(
 
 
 @pytest.mark.django_db(transaction=True)
-def test_load_table_to_delta_for_published_fabs(
-    spark, s3_unittest_data_bucket, hive_unittest_metastore_db
-):
+def test_load_table_to_delta_for_published_fabs(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
     baker.make(
         "transactions.SourceAssistanceTransaction",
         published_fabs_id=7,
@@ -499,9 +475,7 @@ def test_load_table_to_delta_for_published_fabs(
     verify_delta_table_loaded_to_delta(spark, "published_fabs", s3_unittest_data_bucket)
 
 
-@pytest.mark.django_db(
-    databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True
-)
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_load_table_to_from_delta_for_recipient_profile(
     spark,
     s3_unittest_data_bucket,
@@ -532,9 +506,7 @@ def test_load_table_to_from_delta_for_recipient_profile(
         }
     )
     baker.make("transactions.SourceProcurementTransaction", **procure)
-    load_delta_table_from_postgres(
-        "detached_award_procurement", s3_unittest_data_bucket
-    )
+    load_delta_table_from_postgres("detached_award_procurement", s3_unittest_data_bucket)
 
     tables_to_load = [
         "awards",
@@ -553,15 +525,11 @@ def test_load_table_to_from_delta_for_recipient_profile(
         load_command="load_query_to_delta",
         ignore_fields=["id"],
     )
-    verify_delta_table_loaded_from_delta(
-        spark, "recipient_profile", jdbc_inserts=True, ignore_fields=["id"]
-    )
+    verify_delta_table_loaded_from_delta(spark, "recipient_profile", jdbc_inserts=True, ignore_fields=["id"])
 
 
 @pytest.mark.django_db(transaction=True)
-def test_load_table_to_delta_timezone_aware(
-    spark, monkeypatch, s3_unittest_data_bucket, hive_unittest_metastore_db
-):
+def test_load_table_to_delta_timezone_aware(spark, monkeypatch, s3_unittest_data_bucket, hive_unittest_metastore_db):
     """Test that timestamps are not inadvertently shifted due to loss of timezone during reads and writes.
 
     The big takeaways from this are:
@@ -595,8 +563,8 @@ def test_load_table_to_delta_timezone_aware(
     assert dt_with_utc.timestamp() < dt_with_tz.timestamp()
 
     # Setting up an agnostic TestModel and updating the TABLE_SPEC
-    with psycopg2.connect(get_database_dsn_string()) as new_psycopg2_conn:
-        with new_psycopg2_conn.cursor() as cursor:
+    with psycopg.connect(get_database_dsn_string()) as new_psycopg_conn:
+        with new_psycopg_conn.cursor() as cursor:
             cursor.execute(TEST_TABLE_POSTGRES)
     TABLE_SPEC.update(TEST_TABLE_SPEC)
     monkeypatch.setattr(
@@ -617,36 +585,26 @@ def test_load_table_to_delta_timezone_aware(
     populated_columns = ("id", "test_timestamp")
 
     def _get_sql_insert_from_model(model, populated_columns):
-        values = [
-            value
-            for value in model._meta.local_fields
-            if value.column in populated_columns
-        ]
+        values = [value for value in model._meta.local_fields if value.column in populated_columns]
         q = models.sql.InsertQuery(model)
         q.insert_values(values, [model])
         compiler = q.get_compiler("default")
         compiler.return_id = False
         stmts = compiler.as_sql()
         stmt = [
-            stmt
-            % tuple(
-                f"'{param}'" if type(param) in [str, date, datetime] else param
-                for param in params
-            )
+            stmt % tuple(f"'{param}'" if type(param) in [str, date, datetime] else param for param in params)
             for stmt, params in stmts
         ]
         return stmt[0]
 
     # Now save it to the test DB using a new connection, that establishes its own time zone during it session
-    with psycopg2.connect(get_database_dsn_string()) as new_psycopg2_conn:
-        with new_psycopg2_conn.cursor() as cursor:
+    with psycopg.connect(get_database_dsn_string()) as new_psycopg_conn:
+        with new_psycopg_conn.cursor() as cursor:
             cursor.execute("set session time zone 'HST'")
-            fabs_insert_sql = _get_sql_insert_from_model(
-                model_with_tz, populated_columns
-            )
+            fabs_insert_sql = _get_sql_insert_from_model(model_with_tz, populated_columns)
             cursor.execute(fabs_insert_sql)
             assert cursor.rowcount == 1
-            new_psycopg2_conn.commit()
+            new_psycopg_conn.commit()
 
     # See how things look from Django's perspective
     with transaction.atomic():
@@ -666,24 +624,14 @@ def test_load_table_to_delta_timezone_aware(
         # or with raw SQL), it will apply those time zone settings
         assert model_datetime.tzname() != "HST"
         assert model_datetime.tzname() == "UTC"
-        assert (
-            model_datetime.hour == 21
-        )  # shifted +10 to counteract the UTC offset by django upon saving it
-        assert (
-            model_datetime.utctimetuple().tm_hour == 21
-        )  # already shifted to UTC, so this just matches .hour (== 21)
-        assert (
-            dt_naive.utctimetuple().tm_hour == dt_naive.hour
-        )  # naive, so stays the same
-        assert (
-            dt_with_utc.utctimetuple().tm_hour == dt_with_utc.hour
-        )  # already UTC, so stays the same
+        assert model_datetime.hour == 21  # shifted +10 to counteract the UTC offset by django upon saving it
+        assert model_datetime.utctimetuple().tm_hour == 21  # already shifted to UTC, so this just matches .hour (== 21)
+        assert dt_naive.utctimetuple().tm_hour == dt_naive.hour  # naive, so stays the same
+        assert dt_with_utc.utctimetuple().tm_hour == dt_with_utc.hour  # already UTC, so stays the same
 
         # Confirm also that this is the case in the DB (i.e. it was at write-time that UTC was set, not read-time
         with connection.cursor() as cursor:
-            cursor.execute(
-                "select test_table.test_timestamp from test_table where id = 3"
-            )
+            cursor.execute("select test_table.test_timestamp from test_table where id = 3")
             dt_from_db = [row[0] for row in cursor.fetchall()][0]  # type: datetime
             assert dt_from_db.tzinfo is not None
             assert dt_from_db.tzname() == "UTC"
@@ -696,17 +644,15 @@ def test_load_table_to_delta_timezone_aware(
             assert db_tz is not None
             assert db_tz == "UTC"
 
-    with psycopg2.connect(get_database_dsn_string()) as new_psycopg2_conn:
-        with new_psycopg2_conn.cursor() as cursor:
+    with psycopg.connect(get_database_dsn_string()) as new_psycopg_conn:
+        with new_psycopg_conn.cursor() as cursor:
             cursor.execute("set session time zone 'HST'")
-            cursor.execute(
-                "select test_table.test_timestamp from test_table where id = 3"
-            )
+            cursor.execute("select test_table.test_timestamp from test_table where id = 3")
             dt_from_db = [row[0] for row in cursor.fetchall()][0]  # type: datetime
             assert dt_from_db.tzinfo is not None
-            # Can't use traditional time zone names with tzname() since pyscopg2 uses its own time zone infos.
-            # Use psycopg2 tzinfo name and then compare their delta
-            assert dt_from_db.tzname() == "UTC-10:00"
+            # Can't use traditional time zone names with tzname() since psycopg uses its own time zone infos.
+            # Use psycopg tzinfo name and then compare their delta
+            assert dt_from_db.tzname() == "HST"
             assert dt_from_db.utcoffset().total_seconds() == -36000.0
 
     # Now with that DB data committed, and with the DB set to HST TIME ZONE, do a Spark read
@@ -719,15 +665,13 @@ def test_load_table_to_delta_timezone_aware(
         verify_delta_table_loaded_to_delta(spark, "test_table", s3_unittest_data_bucket)
     finally:
         spark.conf.set("spark.sql.session.timeZone", original_spark_tz)
-        with psycopg2.connect(get_database_dsn_string()) as new_psycopg2_conn:
-            with new_psycopg2_conn.cursor() as cursor:
+        with psycopg.connect(get_database_dsn_string()) as new_psycopg_conn:
+            with new_psycopg_conn.cursor() as cursor:
                 cursor.execute("DROP TABLE test_table")
 
 
 @pytest.mark.django_db(transaction=True)
-def test_load_table_to_delta_for_detached_award_procurement(
-    spark, s3_unittest_data_bucket, hive_unittest_metastore_db
-):
+def test_load_table_to_delta_for_detached_award_procurement(spark, s3_unittest_data_bucket, hive_unittest_metastore_db):
     baker.make(
         "transactions.SourceProcurementTransaction",
         detached_award_procurement_id="4",
@@ -745,15 +689,11 @@ def test_load_table_to_delta_for_detached_award_procurement(
         _fill_optional=True,
     )
 
-    verify_delta_table_loaded_to_delta(
-        spark, "detached_award_procurement", s3_unittest_data_bucket
-    )
+    verify_delta_table_loaded_to_delta(spark, "detached_award_procurement", s3_unittest_data_bucket)
 
 
 @pytest.mark.django_db(transaction=True)
-@pytest.mark.skip(
-    reason="Due to the nature of the views with all the transformations, this will be out of date"
-)
+@pytest.mark.skip(reason="Due to the nature of the views with all the transformations, this will be out of date")
 def test_load_table_to_from_delta_for_recipient_profile_testing(
     spark,
     s3_unittest_data_bucket,
@@ -776,9 +716,7 @@ def test_load_table_to_from_delta_for_recipient_profile_testing(
     )
 
 
-@pytest.mark.django_db(
-    databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True
-)
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_load_table_to_from_delta_for_transaction_search(
     spark,
     s3_unittest_data_bucket,
@@ -809,9 +747,7 @@ def test_load_table_to_from_delta_for_transaction_search(
         }
     )
     baker.make("transactions.SourceProcurementTransaction", **procure)
-    load_delta_table_from_postgres(
-        "detached_award_procurement", s3_unittest_data_bucket
-    )
+    load_delta_table_from_postgres("detached_award_procurement", s3_unittest_data_bucket)
 
     tables_to_load = [
         "awards",
@@ -864,12 +800,8 @@ def test_load_table_to_from_delta_for_transaction_search_testing(
 def test_load_table_to_delta_for_transaction_normalized_alt_db_and_name(
     spark, s3_unittest_data_bucket, hive_unittest_metastore_db
 ):
-    baker.make(
-        "search.TransactionSearch", transaction_id="1", award_id=1, _fill_optional=True
-    )
-    baker.make(
-        "search.TransactionSearch", transaction_id="2", award_id=2, _fill_optional=True
-    )
+    baker.make("search.TransactionSearch", transaction_id="1", award_id=1, _fill_optional=True)
+    baker.make("search.TransactionSearch", transaction_id="2", award_id=2, _fill_optional=True)
     verify_delta_table_loaded_to_delta(
         spark,
         "transaction_normalized",
@@ -880,9 +812,7 @@ def test_load_table_to_delta_for_transaction_normalized_alt_db_and_name(
 
 
 @pytest.mark.django_db(transaction=True)
-@pytest.mark.skip(
-    reason="Due to the nature of the views with all the transformations, this will be out of date"
-)
+@pytest.mark.skip(reason="Due to the nature of the views with all the transformations, this will be out of date")
 def test_load_table_to_from_delta_for_transaction_search_alt_db_and_name(
     spark,
     s3_unittest_data_bucket,
@@ -921,9 +851,7 @@ def test_load_table_to_from_delta_for_transaction_search_alt_db_and_name(
     # )
 
 
-@pytest.mark.django_db(
-    databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True
-)
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_load_table_to_from_delta_for_award_search(
     spark,
     s3_unittest_data_bucket,
@@ -954,9 +882,7 @@ def test_load_table_to_from_delta_for_award_search(
         }
     )
     baker.make("transactions.SourceProcurementTransaction", **procure)
-    load_delta_table_from_postgres(
-        "detached_award_procurement", s3_unittest_data_bucket
-    )
+    load_delta_table_from_postgres("detached_award_procurement", s3_unittest_data_bucket)
 
     tables_to_load = [
         "awards",
@@ -977,17 +903,11 @@ def test_load_table_to_from_delta_for_award_search(
         s3_unittest_data_bucket,
         load_command="load_query_to_delta",
     )
-    verify_delta_table_loaded_from_delta(
-        spark, "award_search", spark_s3_bucket=s3_unittest_data_bucket
-    )
-    verify_delta_table_loaded_from_delta(
-        spark, "award_search", jdbc_inserts=True
-    )  # test alt write strategy
+    verify_delta_table_loaded_from_delta(spark, "award_search", spark_s3_bucket=s3_unittest_data_bucket)
+    verify_delta_table_loaded_from_delta(spark, "award_search", jdbc_inserts=True)  # test alt write strategy
 
 
-@pytest.mark.django_db(
-    databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True
-)
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_incremental_load_table_to_delta_for_award_search(
     spark,
     s3_unittest_data_bucket,
@@ -1017,9 +937,7 @@ def test_incremental_load_table_to_delta_for_award_search(
         }
     )
     baker.make("transactions.SourceProcurementTransaction", **procure)
-    load_delta_table_from_postgres(
-        "detached_award_procurement", s3_unittest_data_bucket
-    )
+    load_delta_table_from_postgres("detached_award_procurement", s3_unittest_data_bucket)
 
     tables_to_load = [
         "awards",
@@ -1087,9 +1005,7 @@ def test_incremental_load_table_to_delta_for_award_search(
     pd.testing.assert_frame_equal(result, expected)
 
 
-@pytest.mark.django_db(
-    databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True
-)
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_incremental_load_table_to_delta_for_transaction_search(
     spark,
     s3_unittest_data_bucket,
@@ -1119,9 +1035,7 @@ def test_incremental_load_table_to_delta_for_transaction_search(
         }
     )
     baker.make("transactions.SourceProcurementTransaction", **procure)
-    load_delta_table_from_postgres(
-        "detached_award_procurement", s3_unittest_data_bucket
-    )
+    load_delta_table_from_postgres("detached_award_procurement", s3_unittest_data_bucket)
 
     tables_to_load = [
         "awards",
@@ -1191,9 +1105,7 @@ def test_incremental_load_table_to_delta_for_transaction_search(
     pd.testing.assert_frame_equal(result, expected)
 
 
-@pytest.mark.django_db(
-    databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True
-)
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_load_table_to_delta_for_sam_recipient(
     spark, s3_unittest_data_bucket, populate_broker_data, hive_unittest_metastore_db
 ):
@@ -1233,9 +1145,7 @@ def test_load_table_to_delta_for_sam_recipient(
     settings.BROKER_DB_ALIAS not in settings.DATABASES,
     reason="'data_broker' database not configured in django settings.DATABASES.",
 )
-@pytest.mark.django_db(
-    databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True
-)
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_load_table_to_delta_for_summary_state_view(
     spark,
     s3_unittest_data_bucket,
@@ -1245,9 +1155,7 @@ def test_load_table_to_delta_for_summary_state_view(
     # We need the award_search table to create the summary_state_view in delta
     # And in order to create the award_search table, we need the following
     load_delta_table_from_postgres("published_fabs", s3_unittest_data_bucket)
-    load_delta_table_from_postgres(
-        "detached_award_procurement", s3_unittest_data_bucket
-    )
+    load_delta_table_from_postgres("detached_award_procurement", s3_unittest_data_bucket)
 
     tables_to_load = [
         "awards",
@@ -1285,14 +1193,10 @@ def test_load_table_to_delta_for_summary_state_view(
         load_command="load_query_to_delta",
     )
     # Lastly, check using verify_delta_table_loaded_from_delta function which will run the load_table_from_delta command
-    verify_delta_table_loaded_from_delta(
-        spark, "summary_state_view", spark_s3_bucket=s3_unittest_data_bucket
-    )
+    verify_delta_table_loaded_from_delta(spark, "summary_state_view", spark_s3_bucket=s3_unittest_data_bucket)
 
 
-@pytest.mark.django_db(
-    databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True
-)
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_load_object_class_program_activity_class(
     spark,
     s3_unittest_data_bucket,
@@ -1314,9 +1218,7 @@ def test_load_object_class_program_activity_class(
     )
 
 
-@pytest.mark.django_db(
-    databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True
-)
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_load_award_financial_download(
     spark,
     s3_unittest_data_bucket,
@@ -1324,9 +1226,7 @@ def test_load_award_financial_download(
     hive_unittest_metastore_db,
 ):
     load_delta_table_from_postgres("published_fabs", s3_unittest_data_bucket)
-    load_delta_table_from_postgres(
-        "detached_award_procurement", s3_unittest_data_bucket
-    )
+    load_delta_table_from_postgres("detached_award_procurement", s3_unittest_data_bucket)
 
     tables_to_load = [
         "awards",
@@ -1469,9 +1369,7 @@ def test_load_award_financial_download(
     )
 
 
-@pytest.mark.django_db(
-    databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True
-)
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_load_account_balances_download(
     spark,
     s3_unittest_data_bucket,
@@ -1493,9 +1391,7 @@ def test_load_account_balances_download(
     )
 
 
-@pytest.mark.django_db(
-    databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True
-)
+@pytest.mark.django_db(databases=[settings.BROKER_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_load_transaction_download(
     spark,
     s3_unittest_data_bucket,
@@ -1503,9 +1399,7 @@ def test_load_transaction_download(
     hive_unittest_metastore_db,
 ):
     load_delta_table_from_postgres("published_fabs", s3_unittest_data_bucket)
-    load_delta_table_from_postgres(
-        "detached_award_procurement", s3_unittest_data_bucket
-    )
+    load_delta_table_from_postgres("detached_award_procurement", s3_unittest_data_bucket)
 
     tables_to_load = [
         "awards",

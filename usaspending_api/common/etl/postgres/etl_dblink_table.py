@@ -1,5 +1,7 @@
-from psycopg2.sql import Composed, Identifier, SQL, Literal
 from typing import List
+
+from psycopg.sql import SQL, Composed, Identifier, Literal
+
 from usaspending_api.common.etl.postgres import primatives
 from usaspending_api.common.etl.postgres.etl_object_base import ETLObjectBase
 from usaspending_api.common.etl.postgres.introspection import get_columns
@@ -37,7 +39,9 @@ class ETLDBLinkTable(ETLObjectBase):
         predicate = []
         for item in custom_predicate:
             if item.get("op", "") == "IN":
-                predicate.append(Identifier(item["field"]) + SQL(f" {item['op']} ") + Literal(item["values"]))
+                values = item["values"]
+                value_list = SQL(", ").join(Literal(v) for v in values)
+                predicate.append(Identifier(item["field"]) + SQL(" IN (") + value_list + SQL(")"))
             elif item.get("op", "") == "EQUAL":
                 predicate.append(Identifier(item["field"]) + SQL(" = ") + Literal(item["value"]))
             else:

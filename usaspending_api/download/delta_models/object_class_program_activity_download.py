@@ -1,5 +1,5 @@
 from delta.tables import DeltaTable
-from pyspark.sql import SparkSession
+from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as sf
 from pyspark.sql.types import (
     BooleanType,
@@ -21,6 +21,7 @@ object_class_program_activity_schema = StructType(
         StructField("owning_agency_name", StringType()),
         StructField("federal_account_symbol", StringType()),
         StructField("federal_account_name", StringType()),
+        StructField("program_activity_reporting_key", StringType()),
         StructField("agency_identifier_name", StringType()),
         StructField("allocation_transfer_agency_identifier_name", StringType()),
         StructField("program_activity_code", StringType()),
@@ -103,7 +104,7 @@ object_class_program_activity_schema = StructType(
 )
 
 
-def object_class_program_activity_df(spark: SparkSession):
+def object_class_program_activity_df(spark: SparkSession) -> DataFrame:
     fabpaoc = spark.table("global_temp.financial_accounts_by_program_activity_object_class")
     taa = spark.table("global_temp.treasury_appropriation_account")
     sa = spark.table("global_temp.submission_attributes")
@@ -141,6 +142,7 @@ def object_class_program_activity_df(spark: SparkSession):
             ta.name.alias("owning_agency_name"),
             fa.federal_account_code.alias("federal_account_symbol"),
             fa.account_title.alias("federal_account_name"),
+            fabpaoc.program_activity_reporting_key,
             sf.col("agency_identifier_name"),
             sf.col("allocation_transfer_agency_identifier_name"),
             rpa.program_activity_code,
@@ -291,7 +293,9 @@ def load_object_class_program_activity_incremental(
     (
         target.merge(
             source,
-            "s.financial_accounts_by_program_activity_object_class_id = t.financial_accounts_by_program_activity_object_class_id and s.merge_hash_key = t.merge_hash_key",
+            "s.financial_accounts_by_program_activity_object_class_id = " +
+            "t.financial_accounts_by_program_activity_object_class_id and s.merge_hash_key = " +
+            "t.merge_hash_key",
         )
         .whenNotMatchedInsertAll()
         .whenNotMatchedBySourceDelete()

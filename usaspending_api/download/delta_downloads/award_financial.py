@@ -93,6 +93,7 @@ class FederalAccountDownload(AwardFinancialMixin, AbstractAccountDownload):
             "federal_owning_agency_name",
             "federal_account_symbol",
             "federal_account_name",
+            "program_activity_reporting_key",
             "agency_identifier_name",
             "program_activity_code",
             "program_activity_name",

@@ -1,15 +1,23 @@
 import logging
 from math import ceil
 from time import perf_counter
-from typing import List, Tuple
+from typing import Iterable, List, Tuple
 
 from django.conf import settings
 from pyspark.sql import SparkSession
 
-from usaspending_api.broker.helpers.last_load_date import get_earliest_load_date, update_last_load_date
+from usaspending_api.broker.helpers.last_load_date import (
+    get_earliest_load_date,
+    update_last_load_date,
+)
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
-from usaspending_api.common.etl.spark import build_ref_table_name_list, create_ref_temp_views
-from usaspending_api.common.helpers.spark_helpers import clean_postgres_sql_for_spark_sql
+from usaspending_api.common.etl.spark import (
+    build_ref_table_name_list,
+    create_ref_temp_views,
+)
+from usaspending_api.common.helpers.spark_helpers import (
+    clean_postgres_sql_for_spark_sql,
+)
 from usaspending_api.etl.elasticsearch_loader_helpers import (
     TaskSpec,
     count_of_records_to_process_in_delta,
@@ -19,8 +27,12 @@ from usaspending_api.etl.elasticsearch_loader_helpers import (
     load_data,
     obtain_extract_all_partitions_sql,
 )
-from usaspending_api.etl.elasticsearch_loader_helpers.location_dataframe import LocationDataFrame
-from usaspending_api.etl.elasticsearch_loader_helpers.controller import AbstractElasticsearchIndexerController
+from usaspending_api.etl.elasticsearch_loader_helpers.controller import (
+    AbstractElasticsearchIndexerController,
+)
+from usaspending_api.etl.elasticsearch_loader_helpers.location_dataframe import (
+    LocationDataFrame,
+)
 
 logger = logging.getLogger("script")
 
@@ -28,13 +40,20 @@ logger = logging.getLogger("script")
 class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerController):
     """Controller for Spark-based Elasticsearch ETL that extracts data from Delta Lake"""
 
-    def __init__(self, config: dict, spark: SparkSession, spark_created_by_command: bool = False):
+    def __init__(
+        self, config: dict, spark: SparkSession, spark_created_by_command: bool = False
+    ):
         super(DeltaLakeElasticsearchIndexerController, self).__init__(config)
         self.spark = spark
         self.spark_created_by_command = spark_created_by_command
 
-    def ensure_view_exists(self, sql_view_name: str, force_recreate=True) -> None:
-        view_exists = len(list(self.spark.sql(f"show views like '{sql_view_name}'").collect())) == 1
+    def ensure_view_exists(
+        self, sql_view_name: str, force_recreate: bool = True
+    ) -> None:
+        view_exists = (
+            len(list(self.spark.sql(f"show views like '{sql_view_name}'").collect()))
+            == 1
+        )
         if view_exists and not force_recreate:
             return
 
@@ -46,13 +65,17 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
             df.createOrReplaceTempView(sql_view_name)
             return
 
-        view_file_path = settings.APP_DIR / "database_scripts" / "etl" / f"{sql_view_name}.sql"
+        view_file_path = (
+            settings.APP_DIR / "database_scripts" / "etl" / f"{sql_view_name}.sql"
+        )
 
         view_sql = view_file_path.read_text()
 
         # Find/replace SQL strings in Postgres-based SQL to make it Spark SQL compliant
         # WARNING: If the SQL changes, it must be tested to still be Spark SQL compliant, and changes here may be needed
-        temp_view_select_sql = view_sql.replace(f"DROP VIEW IF EXISTS {sql_view_name};", "")
+        temp_view_select_sql = view_sql.replace(
+            f"DROP VIEW IF EXISTS {sql_view_name};", ""
+        )
 
         identifier_replacements = {}
         if self.config["load_type"] == "transaction":
@@ -78,7 +101,7 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
         """
         )
 
-    def _count_of_records_to_process(self, config) -> Tuple[int, int, int]:
+    def _count_of_records_to_process(self, config: dict) -> Tuple[int, int, int]:
         return count_of_records_to_process_in_delta(config, self.spark)
 
     def determine_partitions(self) -> int:
@@ -102,17 +125,23 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
         self.config["processes"] = self.spark.sparkContext.defaultParallelism
         super().prepare_for_etl()
 
-    def configure_task(self, partition_number: int, task_name: str, is_null_partition: bool = False) -> TaskSpec:
+    def configure_task(
+        self, partition_number: int, task_name: str, is_null_partition: bool = False
+    ) -> TaskSpec:
         # Spark-based approach maps indexing functions to partitions of data, rather than extracting and processing
         # the data, so extract sql is not used
-        return self._construct_task_spec(partition_number, task_name, extract_sql_str=None)
+        return self._construct_task_spec(
+            partition_number, task_name, extract_sql_str=None
+        )
 
     def dispatch_tasks(self) -> None:
         extract_sql = obtain_extract_all_partitions_sql(self.config)
         extract_sql = clean_postgres_sql_for_spark_sql(extract_sql)
         logger.info(format_log(f"Using extract_sql:\n{extract_sql}", action="Extract"))
         df = self.spark.sql(extract_sql)
-        df_record_count = df.count()  # safe to doublecheck the count of the *actual* data being processed
+        df_record_count = (
+            df.count()
+        )  # safe to doublecheck the count of the *actual* data being processed
         if not df_record_count:
             logger.info(format_log("No records found. Index will not be updated."))
             return
@@ -178,7 +207,7 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
         msg = f"Total documents indexed: {successes}, total document fails: {failures}"
         logger.info(format_log(msg))
 
-    def _run_award_deletes(self):
+    def _run_award_deletes(self) -> None:
         client = instantiate_elasticsearch_client()
         delete_awards(
             client=client,
@@ -188,7 +217,7 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
             spark=self.spark,
         )
 
-    def _run_transaction_deletes(self):
+    def _run_transaction_deletes(self) -> None:
         client = instantiate_elasticsearch_client()
         delete_transactions(
             client=client,
@@ -200,7 +229,9 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
         # Use the lesser of the fabs/fpds load dates as the es_deletes load date. This
         # ensures all records deleted since either job was run are taken into account
         # Using the loaded-from-DELTA-tables dates here, not the postgres table load dates
-        last_db_delete_time = get_earliest_load_date(["transaction_fabs", "transaction_fpds"])
+        last_db_delete_time = get_earliest_load_date(
+            ["transaction_fabs", "transaction_fpds"]
+        )
         update_last_load_date("es_deletes", last_db_delete_time)
 
     def cleanup(self) -> None:
@@ -208,7 +239,9 @@ class DeltaLakeElasticsearchIndexerController(AbstractElasticsearchIndexerContro
             self.spark.stop()
 
 
-def transform_and_load_partition(task: TaskSpec, partition_data) -> List[Tuple[int, int]]:
+def transform_and_load_partition(
+    task: TaskSpec, partition_data: Iterable
+) -> List[Tuple[int, int]]:
     start = perf_counter()
     msg = f"Started processing on partition #{task.partition_number}: {task.name}"
     logger.info(format_log(msg, name=task.name))

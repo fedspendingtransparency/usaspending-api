@@ -4,12 +4,15 @@ from datetime import datetime, timezone
 from time import perf_counter
 
 from django.conf import settings
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandParser
+from elasticsearch.client import Elasticsearch
 
 from usaspending_api.broker.helpers.last_load_date import get_last_load_date
 from usaspending_api.common.elasticsearch.client import instantiate_elasticsearch_client
 from usaspending_api.common.elasticsearch.elasticsearch_sql_helpers import drop_etl_view
-from usaspending_api.common.helpers.date_helper import datetime_command_line_argument_type
+from usaspending_api.common.helpers.date_helper import (
+    datetime_command_line_argument_type,
+)
 from usaspending_api.etl.elasticsearch_loader_helpers import (
     check_new_index_name_is_ok,
     check_pipeline_dates,
@@ -35,12 +38,11 @@ logger = logging.getLogger("script")
 
 
 class AbstractElasticsearchIndexer(ABC, BaseCommand):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.valid_load_types = {"transaction", "award", "recipient", "subaward"}
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: CommandParser) -> None:
         parser.add_argument(
             "--process-deletes",
             action="store_true",
@@ -87,7 +89,7 @@ class AbstractElasticsearchIndexer(ABC, BaseCommand):
         parser.add_argument(
             "--processes",
             type=int,
-            help="Number of parallel processes to operate. psycopg2 kicked the bucket with 100. If running on Spark, "
+            help="Number of parallel processes to operate. psycopg kicked the bucket with 100. If running on Spark, "
             "this will be replaced by the number of executors on the configured Spark cluster",
             default=10,
             choices=range(1, 101),
@@ -115,7 +117,7 @@ class AbstractElasticsearchIndexer(ABC, BaseCommand):
             ),
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         elasticsearch_client = instantiate_elasticsearch_client()
         config = parse_cli_args(options, elasticsearch_client)
 
@@ -143,7 +145,8 @@ class AbstractElasticsearchIndexer(ABC, BaseCommand):
         except Exception as e:
             logger.error(f"{str(e)}")
             error_addition = "before encountering a problem during execution.... "
-            raise SystemExit(1)
+            raise SystemExit(1) from e
+
         else:
             controller.complete_process()
             if config["drop_db_view"]:
@@ -184,7 +187,7 @@ class Command(AbstractElasticsearchIndexer):
         return PostgresElasticsearchIndexerController(config)
 
 
-def parse_cli_args(options: dict, es_client) -> dict:
+def parse_cli_args(options: dict, es_client: Elasticsearch) -> dict:  # noqa: PLR0912
     passthrough_values = [
         "create_new_index",
         "drop_db_view",
