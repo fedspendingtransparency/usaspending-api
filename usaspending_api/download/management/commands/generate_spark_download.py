@@ -19,7 +19,10 @@ from pyspark.sql import SparkSession
 
 from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers.download_csv_strategies import DuckDBToCSVStrategy, SparkToCSVStrategy
+from usaspending_api.common.helpers.download_csv_strategies import (
+    DuckDBToCSVStrategy,
+    SparkToCSVStrategy,
+)
 from usaspending_api.common.helpers.s3_helpers import upload_download_file_to_s3
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
@@ -28,14 +31,26 @@ from usaspending_api.common.helpers.spark_helpers import (
 from usaspending_api.common.logging import configure_logging
 from usaspending_api.common.spark.configs import DEFAULT_EXTRA_CONF
 from usaspending_api.common.tracing import SubprocessTrace
-from usaspending_api.download.delta_downloads.abstract_downloads.base_download import AbstractDownload
-from usaspending_api.download.delta_downloads.account_balances import AccountBalancesDownloadFactory
-from usaspending_api.download.delta_downloads.award_financial import AwardFinancialDownloadFactory
-from usaspending_api.download.delta_downloads.filters.account_filters import AccountDownloadFilters
+from usaspending_api.download.delta_downloads.abstract_downloads.base_download import (
+    AbstractDownload,
+)
+from usaspending_api.download.delta_downloads.account_balances import (
+    AccountBalancesDownloadFactory,
+)
+from usaspending_api.download.delta_downloads.award_financial import (
+    AwardFinancialDownloadFactory,
+)
+from usaspending_api.download.delta_downloads.filters.account_filters import (
+    AccountDownloadFilters,
+)
 from usaspending_api.download.delta_downloads.object_class_program_activity import (
     ObjectClassProgramActivityDownloadFactory,
 )
-from usaspending_api.download.lookups import FILE_FORMATS, JOB_STATUS_DICT, JOB_STATUS_DICT_BY_ID
+from usaspending_api.download.lookups import (
+    FILE_FORMATS,
+    JOB_STATUS_DICT,
+    JOB_STATUS_DICT_BY_ID,
+)
 from usaspending_api.download.models import DownloadJob
 from usaspending_api.settings import TRACE_ENV
 
@@ -93,7 +108,7 @@ class Command(BaseCommand):
 
         if not self.working_dir_path.exists():
             self.working_dir_path.mkdir()
-        create_ref_temp_views(self.spark)
+        create_ref_temp_views(self.spark, download_job=self.download_job)
         self.process_download()
         if spark_created_by_command:
             self.spark.stop()
@@ -129,7 +144,7 @@ class Command(BaseCommand):
         return self.download_job.file_name.replace(".zip", "")
 
     @staticmethod
-    def get_download_job(download_job_id) -> DownloadJob:
+    def get_download_job(download_job_id: int) -> DownloadJob:
         download_job = DownloadJob.objects.get(download_job_id=download_job_id)
         if download_job.job_status_id not in (JOB_STATUS_DICT["ready"], JOB_STATUS_DICT["failed"]):
             # Handles both new downloads and retries of failed downloads
@@ -148,7 +163,7 @@ class Command(BaseCommand):
             raise InvalidParameterException(f"Download Job {download_job_id} is not ready.")
         return download_job
 
-    def process_download(self):
+    def process_download(self) -> None:
         with SubprocessTrace(
             name=f"job.{JOB_TYPE}.download.spark.{self.request_type}",
             kind=SpanKind.INTERNAL,

@@ -5,6 +5,7 @@ NOTE: This is distinguished from the usaspending_api.common.helpers.spark_helper
 functions for setup and configuration of the spark environment
 """
 
+import json
 import logging
 import math
 import os
@@ -45,6 +46,7 @@ from usaspending_api.common.helpers.spark_helpers import (
 )
 from usaspending_api.config import CONFIG
 from usaspending_api.download.filestreaming.download_generation import EXCEL_ROW_LIMIT
+from usaspending_api.download.models import DownloadJob
 from usaspending_api.financial_activities.models import (
     FinancialAccountsByProgramActivityObjectClass,
 )
@@ -646,7 +648,7 @@ def _generate_global_view_sql_strings(tables: list[str], jdbc_url: str) -> list[
 
 
 def create_ref_temp_views(  # noqa: PLR0912
-    spark: SparkSession | DuckDBSparkSession, create_broker_views: bool = False
+    spark: SparkSession | DuckDBSparkSession, create_broker_views: bool = False, download_job: DownloadJob | None = None
 ) -> None:  # noqa: PLR0912
     """Create global temporary Spark reference views that sit atop remote PostgreSQL RDS tables
     Setting create_broker_views to True will create views for all tables list in _BROKER_REF_TABLES
@@ -701,29 +703,38 @@ def create_ref_temp_views(  # noqa: PLR0912
                 {"schema": "rpt", "table_name": "account_balances_download"},
                 {
                     "schema": "rpt",
-                    "table_name": "object_class_program_activity_download",
+                    "table_name": "object_class_program_activity_download"
                 },
                 {"schema": "rpt", "table_name": "award_financial_download"},
             ]
 
+            # Save resources by only creating the tables required for this particular download, in DuckDB
+            # Key: table name | Value: table schema
+            _tables_to_create = {
+                table["table_name"]: table['schema']
+                for table in _download_delta_tables
+                if table["table_name"].replace("_download", "")
+                in json.loads(download_job.json_request).get("download_types", [])
+            } if hasattr(download_job, "json_request") else {}
+
             # The DuckDB Delta extension is needed to interact with DeltaLake tables
             spark.sql("LOAD delta; CREATE SCHEMA IF NOT EXISTS rpt;")
-            for table in _download_delta_tables:
-                s3_path = f"s3://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.DELTA_LAKE_S3_PATH}/{table['schema']}/{table['table_name']}"
+            for table_name, table_schema in _tables_to_create.items():
+                s3_path = f"s3://{CONFIG.SPARK_S3_BUCKET}/{CONFIG.DELTA_LAKE_S3_PATH}/{table_schema}/{table_name}"
                 try:
                     spark.sql(
                         f"""
-                        CREATE OR REPLACE TABLE {table["schema"]}.{table["table_name"]} AS
+                        CREATE OR REPLACE TABLE {table_schema}.{table_name} AS
                         SELECT * FROM delta_scan('{s3_path}');
                     """
                     )
                     logger.info(
-                        f"Successfully created table {table['schema']}.{table['table_name']}"
+                        f"Successfully created table {table_schema}.{table_name}"
                     )
                 except duckdb.IOException as exc:
-                    logger.exception(f"Failed to create table {table['table_name']}")
+                    logger.exception(f"Failed to create table {table_name}")
                     raise RuntimeError(
-                        f"Failed to create table {table['table_name']}"
+                        f"Failed to create table {table_name}"
                     ) from exc
 
             # The DuckDB Postgres extension is needed to connect to the USAS Postgres DB
