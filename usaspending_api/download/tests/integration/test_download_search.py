@@ -217,6 +217,7 @@ def test_download_search_with_date_type(
     assert resp.status_code == status.HTTP_200_OK
     assert ".zip" in resp.json()["file_url"]
 
+
 @pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
 def test_download_search_with_invalid_spending_level(
     client, monkeypatch, download_test_data,

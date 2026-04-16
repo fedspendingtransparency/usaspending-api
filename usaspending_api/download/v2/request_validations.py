@@ -800,7 +800,7 @@ class SearchDownloadValidator(DownloadValidatorBase):
             else:
                 raise InvalidParameterException(
                     'Invalid parameter: spending_level must be "awards", "subawards", or "transactions"'
-                ) 
+                )
 
         self._json_request["download_types"] = dltypes
 

@@ -66,6 +66,7 @@ def test_get_sub_awards_csv_sources(db):
     assert csv_sources[1].file_type == "d2"
     assert csv_sources[1].source_type == "sub_awards"
 
+
 def test_get_search_csv_sources(db):
     # checks to see if search is able to fetch all 3 data types
 
@@ -88,9 +89,9 @@ def test_get_search_csv_sources(db):
     VALUE_MAPPINGS["elasticsearch_sub_awards"]["filter_function"] = original_subawards
     assert csv_sources[0].file_type == csv_sources[2].file_type == csv_sources[4].file_type == "d1"
     assert csv_sources[1].file_type == csv_sources[1].file_type == csv_sources[1].file_type
-    assert csv_sources[0].source_type == csv_sources[1].source_type =="elasticsearch_awards"
-    assert csv_sources[2].source_type == csv_sources[3].source_type =="elasticsearch_transactions"
-    assert csv_sources[4].source_type == csv_sources[5].source_type =="elasticsearch_sub_awards"
+    assert csv_sources[0].source_type == csv_sources[1].source_type == "elasticsearch_awards"
+    assert csv_sources[2].source_type == csv_sources[3].source_type == "elasticsearch_transactions"
+    assert csv_sources[4].source_type == csv_sources[5].source_type == "elasticsearch_sub_awards"
 
 
 def test_idv_orders_csv_sources(db):
