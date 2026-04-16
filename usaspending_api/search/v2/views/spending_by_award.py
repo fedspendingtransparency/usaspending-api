@@ -14,7 +14,7 @@ from django.db.models import F, QuerySet
 from django.utils.text import slugify
 from elasticsearch_dsl import Q as ES_Q
 from elasticsearch_dsl.response import Response as ES_Response
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -71,7 +71,6 @@ from usaspending_api.common.helpers.generic_helper import (
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.recipient_lookups import annotate_prime_award_recipient_id
 from usaspending_api.common.validator.award_filter import AWARD_FILTER_NO_RECIPIENT_ID
-from usaspending_api.common.validator.request_validations import is_valid_def_code
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.recipient.models import RecipientProfile
@@ -163,7 +162,7 @@ class Filters(BaseModel):
     recipient_scope: Literal["domestic", "foreign"] | None = None
     recipient_locations: list[StandardLocationObject] | None = None
     recipient_type_names: list[str] | None = None
-    award_type_code: list[str] | None = None
+    award_type_codes: list[str] | None = None
     award_ids: list[str] | None = None
     award_amounts: list[AwardAmount] | None = None
     program_numbers: list[str] | None = None
@@ -179,10 +178,18 @@ class Filters(BaseModel):
     def_codes: list[str] | None = None
     award_unique_id: str | None = None
 
-    @field_validator('def_codes')
-    @classmethod
-    def check_def_code(cls, v: list[str] | None) -> list[str] | None:
-        return is_valid_def_code(v)
+
+class SpendingByAwardRequest(BaseModel):
+    filters: Filters
+    fields: list[str]
+    limit: int = 10
+    order: Literal["asc", "desc"] = "desc"
+    page: int | None = None
+    sort: str | None = None
+    subawards: bool = False
+    last_record_unique_id: int | None = None
+    last_record_sort_value: str | None = None
+    spending_level: Literal["awards", "subawards"] = "awards"
 
 
 @api_transformations(
@@ -201,11 +208,15 @@ class SpendingByAwardVisualizationViewSet(APIView):
     def post(self, request: Request) -> Response:
         """Return all awards matching the provided filters and limits"""
         self.original_filters = request.data.get("filters")
+
+        validated_request = SpendingByAwardRequest(**request.data)
+        self.filters = validated_request.filters.dict()
+        self.spending_level = SpendingLevel(validated_request.spending_level)
+
         json_request, models = self.validate_request_data(request.data)
         self.spending_level = SpendingLevel(json_request["spending_level"])
         self.constants = GLOBAL_MAP[self.spending_level.value]
-        filters = json_request.get("filters", {})
-        self.filters = filters
+
         self.fields = json_request["fields"]
         self.pagination = {
             "limit": json_request["limit"],
