@@ -187,9 +187,9 @@ A list of current DEFC can be found [here.](https://files.usaspending.gov/refere
 + `date_type` (optional, enum[string])
 
 While accepting the same format, time period filters are interpreted slightly differently between awards, transactions, and subawards.  
-+ [Award Time Period](../../../search_filters.md#award-search-time-period-Object)
-+ [Transaction Time Period](../../../search_filters.md#transaction-search-time-period-Object)
-+ [Subawards Time Period](../../../search_filters.md#subaward-search-time-period-Object)
+* [Award Time Period](../../../search_filters.md#award-search-time-period-Object)
+* [Transaction Time Period](../../../search_filters.md#transaction-search-time-period-Object)
+* [Subawards Time Period](../../../search_filters.md#subaward-search-time-period-Object)
 
 ### TreasuryAccountComponentsObject (object)
 + `ata` (optional, string, nullable)
