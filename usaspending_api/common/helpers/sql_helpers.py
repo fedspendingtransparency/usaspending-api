@@ -1,16 +1,20 @@
 import os
+import re
+from collections import OrderedDict, namedtuple
+from pathlib import Path
+from typing import Any, Callable, Literal
 
-from collections import namedtuple, OrderedDict
 from django.conf import settings
-from django.db import connection, connections, router, DEFAULT_DB_ALIAS
-from psycopg2.sql import Composable, Identifier, SQL
+from django.db import DEFAULT_DB_ALIAS, connection, connections, router
+from django.db.models import Model
+from psycopg import Cursor
+from psycopg.sql import SQL, Composable, Identifier
+
 from usaspending_api.awards.models import Award
 from usaspending_api.common.exceptions import InvalidParameterException
-from pathlib import Path
-import re
 
 
-def build_dsn_string(db_settings):
+def build_dsn_string(db_settings: dict) -> str:
     """
     This function parses the Django database configuration in settings.py and
     returns a string DSN (https://en.wikipedia.org/wiki/Data_source_name) for
@@ -19,7 +23,7 @@ def build_dsn_string(db_settings):
     return "postgres://{USER}:{PASSWORD}@{HOST}:{PORT}/{NAME}".format(**db_settings)
 
 
-def get_database_dsn_string(db_alias: str = DEFAULT_DB_ALIAS):
+def get_database_dsn_string(db_alias: str = DEFAULT_DB_ALIAS) -> str:
     if not db_alias:
         raise ValueError("Parameter 'db_alias' must have a value, but was None or empty")
     if db_alias in settings.DATABASES:
@@ -28,7 +32,7 @@ def get_database_dsn_string(db_alias: str = DEFAULT_DB_ALIAS):
         raise Exception(f'No valid database connection is configured with alias "{db_alias}"')
 
 
-def get_broker_dsn_string():
+def get_broker_dsn_string() -> str:
     if settings.BROKER_DB_ALIAS in settings.DATABASES:  # Primary DB connection in a deployed environment
         return build_dsn_string(settings.DATABASES[settings.BROKER_DB_ALIAS])
     else:
@@ -41,7 +45,7 @@ def read_sql_file_to_text(file_path: Path) -> str:
     return p.sub(" ", str(file_path.read_text().replace("\n", "  ")))
 
 
-def read_sql_file(file_path):
+def read_sql_file(file_path: Path) -> list[str]:
     # Read in SQL file and extract commands into a list
     _, file_extension = os.path.splitext(file_path)
 
@@ -56,7 +60,11 @@ def read_sql_file(file_path):
     return [command.strip() for command in sql_file.split(";") if command.strip()]
 
 
-def _build_order_by_column(sort_column, sort_order=None, sort_null=None):
+def _build_order_by_column(
+    sort_column: str,
+    sort_order: Literal["asc", "desc"] | None = None,
+    sort_null: Literal["first", "last"] | None = None,
+) -> Composable:
     """
     Build a single column of the order by clause.  This takes one column and
     turns it into something like:
@@ -90,7 +98,9 @@ def _build_order_by_column(sort_column, sort_order=None, sort_null=None):
     return SQL(" ").join(bits)
 
 
-def build_composable_order_by(sort_columns, sort_orders=None, sort_nulls=None):
+def build_composable_order_by(
+    sort_columns: str | list[str] | None, sort_orders: str | None = None, sort_nulls: str | None = None
+) -> Composable:
     """
     Given columns, sort orders, and null ordering directives, build a SQL
     "order by" clause as a Composable object.
@@ -144,20 +154,20 @@ def build_composable_order_by(sort_columns, sort_orders=None, sort_nulls=None):
         )
 
     order_bys = []
-    for column, order, null in zip(sort_columns, sort_orders, sort_nulls):
+    for column, order, null in zip(sort_columns, sort_orders, sort_nulls, strict=False):
         order_bys.append(_build_order_by_column(column, order, null))
 
     return SQL("order by ") + SQL(", ").join(order_bys)
 
 
-def convert_composable_query_to_string(sql, model=Award, cursor=None):
+def convert_composable_query_to_string(sql: Composable, model: Model = Award, cursor: Cursor | None = None) -> str:
     """
-    A composable query is one built using psycopg2 Identifier, Literal, and SQL
+    A composable query is one built using psycopg Identifier, Literal, and SQL
     helper objects.  While Django itself seems to have no problem understanding
     composable queries, the django-debug-toolbar chokes on them so we need to
     convert them to string queries before running them.
 
-    sql    - Can be either a sql string statement or a psycopg2 Composable
+    sql    - Can be either a sql string statement or a psycopg Composable
              object (Identifier, Literal, SQL, etc).
     model  - A Django model that represents a database table germane to your
              query.  If one is not supplied, Award will be used since it is
@@ -175,12 +185,12 @@ def convert_composable_query_to_string(sql, model=Award, cursor=None):
     return sql
 
 
-def cursor_fetcher(cursor):
+def cursor_fetcher(cursor: Cursor) -> Cursor:
     """Fetcher that simply returns the cursor."""
     return cursor
 
 
-def fetchall_fetcher(cursor):
+def fetchall_fetcher(cursor: Cursor) -> list:
     """
     Fetcher that returns the default fetchall().  Return value will be
     roughly equivalent to:
@@ -191,10 +201,13 @@ def fetchall_fetcher(cursor):
         ]
 
     """
-    return cursor.fetchall()
+    results = []
+    if cursor.description:
+        results = cursor.fetchall()
+    return results
 
 
-def named_tuple_fetcher(cursor):
+def named_tuple_fetcher(cursor: Cursor) -> list:
     """
     Return all rows from a cursor as a list of named tuples.  Return
     value will be roughly equivalent to:
@@ -209,7 +222,11 @@ def named_tuple_fetcher(cursor):
     return [columns(*row) for row in cursor.fetchall()]
 
 
-def ordered_dictionary_fetcher(cursor):
+def column_fetcher(cursor: Cursor) -> list:
+    return [col[0] for col in cursor.description]
+
+
+def ordered_dictionary_fetcher(cursor: Cursor) -> list:
     """
     Return all rows from a cursor as a list of ordered dictionaries.  Return
     value will be roughly equivalent to:
@@ -221,24 +238,26 @@ def ordered_dictionary_fetcher(cursor):
 
     """
     columns = [col[0] for col in cursor.description]
-    return [OrderedDict(zip(columns, row)) for row in cursor.fetchall()]
+    return [OrderedDict(zip(columns, row, strict=False)) for row in cursor.fetchall()]
 
 
-def rowcount_fetcher(cursor):
+def rowcount_fetcher(cursor: Cursor) -> int:
     """Return the rowcount returned by the cursor."""
     return cursor.rowcount
 
 
-def single_value_fetcher(cursor):
+def single_value_fetcher(cursor: Cursor) -> Any:
     """Return the first value in the first row of the cursor."""
     return cursor.fetchall()[0][0]
 
 
-def execute_sql(sql, model=Award, fetcher=fetchall_fetcher, read_only=True):
+def execute_sql(
+    sql: str | Composable, model: Model = Award, fetcher: Callable = fetchall_fetcher, read_only: bool = True
+) -> Any:
     """
     Executes a sql query against a database.
 
-    sql         - Can be either a sql string statement or a psycopg2 Composable
+    sql         - Can be either a sql string statement or a psycopg Composable
                   object (Identifier, Literal, SQL, etc).
     model       - A Django model that represents a database table germane to your
                   query.  If one is not supplied, Award will be used since it is
@@ -259,12 +278,12 @@ def execute_sql(sql, model=Award, fetcher=fetchall_fetcher, read_only=True):
         return fetcher(cursor)
 
 
-def execute_sql_simple(sql):
+def execute_sql_simple(sql: Composable | str) -> Cursor:
     with connection.cursor() as cursor:
         cursor.execute(sql)
 
 
-def execute_dml_sql(sql, model=Award):
+def execute_dml_sql(sql: Composable | str, model: Model = Award) -> Any:
     """
     Convenience function to execute a sql query against a database that performs
     some sort of data manipulation (INSERT, UPDATE, DELETE, etc).  Returns the number
@@ -273,22 +292,22 @@ def execute_dml_sql(sql, model=Award):
     return execute_sql(sql=sql, model=model, fetcher=rowcount_fetcher, read_only=False)
 
 
-def execute_sql_to_ordered_dictionary(sql, model=Award, read_only=True):
+def execute_sql_to_ordered_dictionary(sql: Composable | str, model: Model = Award, read_only: bool = True) -> Any:
     """Convenience function to return execute_sql results as a list of ordered dictionaries."""
     return execute_sql(sql, model=model, fetcher=ordered_dictionary_fetcher, read_only=read_only)
 
 
-def execute_sql_to_named_tuple(sql, model=Award, read_only=True):
+def execute_sql_to_named_tuple(sql: Composable | str, model: Model = Award, read_only: bool = True) -> Any:
     """Convenience function to return execute_sql results as a list of named tuples."""
     return execute_sql(sql, model=model, fetcher=named_tuple_fetcher, read_only=read_only)
 
 
-def execute_sql_return_single_value(sql, model=Award, read_only=True):
+def execute_sql_return_single_value(sql: Composable | str, model: Model = Award, read_only: bool = True) -> Any:
     """Convenience function to return execute_sql results as a list of named tuples."""
     return execute_sql(sql, model=model, fetcher=single_value_fetcher, read_only=read_only)
 
 
-def get_connection(model=Award, read_only=True):
+def get_connection(model: Model = Award, read_only: bool = True) -> connection:
     """
     As of this writing, USAspending alternates database reads between multiple
     databases using usaspending_api.routers.replicas.ReadReplicaRouter.  Django
@@ -332,7 +351,7 @@ def close_all_django_db_conns() -> None:
     connections.close_all()
 
 
-def is_table_partitioned(table, cursor):
+def is_table_partitioned(table: str, cursor: Cursor) -> bool:
     if "." in table:
         schema, table = table.split(".")[0], table.split(".")[1]
     else:
@@ -347,7 +366,7 @@ def is_table_partitioned(table, cursor):
     return cursor.fetchone() is not None
 
 
-def get_parent_partitioned_table(table, cursor):
+def get_parent_partitioned_table(table: str, cursor: Cursor) -> Any | None:
     """Return the parent partitioned table if the provided table is a partition, otherwise None"""
     if "." in table:
         schema, table = table.split(".")[0], table.split(".")[1]

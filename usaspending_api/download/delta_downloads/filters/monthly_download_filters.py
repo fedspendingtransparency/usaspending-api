@@ -2,23 +2,21 @@ from datetime import date, datetime
 from typing import Any
 
 from django.utils.functional import cached_property
-from pydantic import BaseModel, validator
-from pydantic.fields import ModelField
+from pydantic import BaseModel, ConfigDict, ValidationInfo, field_validator
 
 from usaspending_api.references.models import ToptierAgency
 
 
 class MonthlyDownloadFilters(BaseModel):
-    as_of_date: str | None
+    as_of_date: str | None = None
     awarding_toptier_agency_abbreviation: str | None = None
     fiscal_year: int | None = None
 
-    class Config:
-        # TODO: Will need to update to use ConfigDict's "ignored_types" after Pydantic upgrade
-        #       https://docs.pydantic.dev/latest/api/config/?query=ignore_types#pydantic.config.ConfigDict.ignored_types
-        keep_untouched = (cached_property,)
+    model_config = ConfigDict(
+        ignored_types=(cached_property,)
+    )
 
-    @validator("as_of_date", pre=True, always=True)
+    @field_validator("as_of_date", mode='before')
     @classmethod
     def validate_as_of_date_and_set_default(cls, value: Any) -> str:
         if isinstance(value, str):
@@ -47,16 +45,16 @@ class MonthlyDownloadFilters(BaseModel):
             )
         return result
 
-    @validator("awarding_toptier_agency_abbreviation")
+    @field_validator("awarding_toptier_agency_abbreviation")
     @classmethod
-    def check_valid_toptier_agency_abbreviation(cls, abbreviation: str, field: ModelField) -> str:
+    def check_valid_toptier_agency_abbreviation(cls, abbreviation: str, info: ValidationInfo) -> str:
         abbreviation = abbreviation.upper()
         if not ToptierAgency.objects.filter(abbreviation=abbreviation).exists():
-            raise ValueError(f"Invalid abbreviation for '{field.name}': {abbreviation}")
+            raise ValueError(f"Invalid abbreviation for '{info.field_name}': {abbreviation}")
 
         return abbreviation
 
-    @validator("fiscal_year")
+    @field_validator("fiscal_year")
     @classmethod
     def check_valid_fiscal_year(cls, fiscal_year: int) -> int:
         if fiscal_year < 2008:

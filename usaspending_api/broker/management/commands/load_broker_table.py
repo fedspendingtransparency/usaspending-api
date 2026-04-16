@@ -1,10 +1,11 @@
+import argparse
 import csv
 import logging
+from io import StringIO
 
 from django.conf import settings
 from django.core.management import BaseCommand
 from django.db import connections
-from io import StringIO
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +16,7 @@ class Command(BaseCommand):
 
     CHUNK_SIZE = 50_000
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: argparse.ArgumentParser) -> None:
 
         broker_group = parser.add_argument_group(
             title="broker",
@@ -37,7 +38,8 @@ class Command(BaseCommand):
 
         usaspending_group = parser.add_argument_group(
             title="usaspending",
-            description="Optional fields that reference components of the USAspending DB.  Defaults to Broker DB counterpart",
+            description="Optional fields that reference components of the USAspending DB. "
+            "Defaults to Broker DB counterpart",
         )
         usaspending_group.add_argument(
             "--usaspending-table-name",
@@ -52,7 +54,7 @@ class Command(BaseCommand):
             help="Schema name in the USAspending DB to load data into",
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
 
         broker_table_name = options["table_name"]
         broker_schema_name = options["schema_name"]
@@ -101,8 +103,10 @@ class Command(BaseCommand):
                     writer = csv.writer(f)
                     writer.writerows(rows)
                     f.seek(0)
-                    usas_cursor.copy_expert(
-                        f"COPY {usas_schema_name}.{usas_table_name} ({usas_table_columns}) FROM STDIN WITH (DELIMITER ',', FORMAT CSV)",
-                        f,
-                    )
+                    with usas_cursor.copy(
+                        f"COPY {usas_schema_name}.{usas_table_name} ({usas_table_columns}) FROM STDIN "
+                        "WITH (DELIMITER ',', FORMAT CSV)",
+                    ) as copy:
+                        for row in f:
+                            copy.write(row)
                     usas_conn.commit()

@@ -10,6 +10,7 @@ from usaspending_api.etl.elasticsearch_loader_helpers.utilities import (
     convert_json_array_to_list_of_str,
     convert_json_data_to_dict,
     format_log,
+    format_timestamp_as_string,
 )
 
 logger = logging.getLogger("script")
@@ -19,7 +20,9 @@ def transform_award_data(worker: TaskSpec, records: List[dict]) -> List[dict]:
     replace_fields = {
         "spending_by_defc": convert_json_data_to_dict,
         "federal_accounts": convert_json_array_to_list_of_str,
+        "last_modified_date": format_timestamp_as_string,
         "program_activities": convert_json_data_to_dict,
+        "update_date": format_timestamp_as_string,
     }
     # TODO: Move some of the 1:1 agg_keys that match a field already on Elasticsearch
     insert_fields = {
@@ -64,8 +67,11 @@ def transform_award_data(worker: TaskSpec, records: List[dict]) -> List[dict]:
 
 def transform_transaction_data(worker: TaskSpec, records: List[dict]) -> List[dict]:
     replace_fields = {
+        "etl_update_date": format_timestamp_as_string,
         "federal_accounts": convert_json_array_to_list_of_str,
+        "last_modified_date": format_timestamp_as_string,
         "program_activities": convert_json_data_to_dict,
+        "update_date": format_timestamp_as_string,
     }
     # TODO: Move some of the 1:1 agg_keys that match a field already on Elasticsearch
     insert_fields = {
@@ -108,6 +114,7 @@ def transform_transaction_data(worker: TaskSpec, records: List[dict]) -> List[di
 
 def transform_subaward_data(worker: TaskSpec, records: List[dict]) -> List[dict]:
     replace_fields = {
+        "last_modified_date": format_timestamp_as_string,
         "program_activities": convert_json_data_to_dict,
     }
     insert_fields = {
