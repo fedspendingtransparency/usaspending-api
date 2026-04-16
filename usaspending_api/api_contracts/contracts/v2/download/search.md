@@ -128,8 +128,81 @@ A more detailed explanation of the available filters can be found [here.](../../
     Filter awards by keywords in the award's transactions.
 + `treasury_account_components` (optional, array[TreasuryAccountComponentsObject], fixed-type)
 
+### Agency (object)
++ `name` (required, string)
++ `tier` (required, enum[string])
+    + Members
+        + `toptier`
+        + `subtier`
++ `type` (required, enum[string])
+    + Members
+        + `funding`
+        + `awarding`
++ `toptier_name` (optional, string)
+    Provided when the `name` belongs to a subtier agency
+
+### AwardAmount (object)
++ `lower_bound` (optional, number)
++ `upper_bound` (optional, number)
+
+### DEFC (enum[string])
+List of Disaster Emergency Fund (DEF) Codes (DEFC) defined by legislation at the time of writing.
+A list of current DEFC can be found [here.](https://files.usaspending.gov/reference_data/def_codes.csv)
+
+
+### Location (object)
++ `country`(required, string)
++ `state` (optional, string)
++ `county` (optional, string)
++ `city` (optional, string)
++ `district_original` (optional, string)
+    A 2 character code indicating the congressional district
+    * When provided, a `state` must always be provided as well.
+    * When provided, a `county` *must never* be provided.
+    * When provided, `country` must always be "USA".
+    * When provided, `district_current` *must never* be provided.
++ `district_current` (optional, string)
+    A 2 character code indicating the current congressional district
+    * When provided, a `state` must always be provided as well.
+    * When provided, a `county` *must never* be provided.
+    * When provided, `country` must always be "USA".
+    * When provided, `district_original` *must never* be provided.
++ `zip` (optional, string)
+
+### NAICSCodeObject (object)
++ `require`: [`33`] (optional, array[string], fixed-type)
++ `exclude`: [`3333`] (optional, array[string], fixed-type)
+
+### PSCCodeObject (object)
++ `require`: [[`Service`, `B`, `B5`]] (optional, array[array[string]], fixed-type)
++ `exclude`: [[`Service`, `B`, `B5`, `B502`]] (optional, array[array[string]], fixed-type)
+
+### TASCodeObject (object)
++ `require`: [[`091`]] (optional, array[array[string]], fixed-type)
++ `exclude`: [[`091`, `091-0800`]] (optional, array[array[string]], fixed-type)
+
 ### TimePeriod (object)
-While accepting the same format, time period filters are interpreted slightly differently between awards, transactions, and subawards.  Relevant information is attached below.
++ `start_date` (required, string)
++ `end_date` (required, string)
++ `date_type` (optional, enum[string])
+
+While accepting the same format, time period filters are interpreted slightly differently between awards, transactions, and subawards.  
 + [Award Time Period](../../../search_filters.md#award-search-time-period-Object)
 + [Transaction Time Period](../../../search_filters.md#transaction-search-time-period-Object)
 + [Subawards Time Period](../../../search_filters.md#subaward-search-time-period-Object)
+
+### TreasuryAccountComponentsObject (object)
++ `ata` (optional, string, nullable)
+    Allocation Transfer Agency Identifier - three characters
++ `aid` (required, string)
+    Agency Identifier - three characters
++ `bpoa` (optional, string, nullable)
+    Beginning Period of Availability - four digits
++ `epoa` (optional, string, nullable)
+    Ending Period of Availability - four digits
++ `a` (optional, string, nullable)
+    Availability Type Code - X or null
++ `main` (required, string)
+    Main Account Code - four digits
++ `sub` (optional, string, nullable)
+    Sub-Account Code - three digits
