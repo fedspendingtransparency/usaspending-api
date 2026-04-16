@@ -33,7 +33,9 @@ This endpoint takes award filters and fields, and returns the fields of the filt
         + `sort` (optional, string)
             Optional parameter indicating what value results should be sorted by. Valid options are any of the fields in the JSON objects in the response. Defaults to the first field provided.
         + `subawards` (optional, boolean)
-            True when you want to group by Subawards instead of Awards. Defaulted to False.
+            True when you want to group by Subawards instead of Awards. 
+            + Default
+              + `False`
         + `last_record_unique_id` (optional, number)
             The unique id of the last record in the results set. Used in the experimental Elasticsearch API functionality.
         + `last_record_sort_value` (optional, string)
