@@ -216,3 +216,27 @@ def test_download_search_with_date_type(
 
     assert resp.status_code == status.HTTP_200_OK
     assert ".zip" in resp.json()["file_url"]
+
+@pytest.mark.django_db(databases=[settings.DOWNLOAD_DB_ALIAS, settings.DEFAULT_DB_ALIAS], transaction=True)
+def test_download_search_with_invalid_spending_level(
+    client, monkeypatch, download_test_data,
+    elasticsearch_award_index, elasticsearch_transaction_index, elasticsearch_subaward_index
+):
+    setup_elasticsearch_test(monkeypatch, elasticsearch_award_index)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_transaction_index)
+    setup_elasticsearch_test(monkeypatch, elasticsearch_subaward_index)
+    download_generation.retrieve_db_string = Mock(return_value=get_database_dsn_string(settings.DOWNLOAD_DB_ALIAS))
+
+    resp = client.post(
+        "/api/v2/download/search/",
+        content_type="application/json",
+        data=json.dumps(
+            {
+                "filters": {"award_type_codes": ["A"]},
+                "spending_level": ["sans"]
+            }
+        ),
+    )
+
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+    assert resp.json()["detail"] == 'Invalid parameter: spending_level must be "awards", "subawards", or "transactions"'

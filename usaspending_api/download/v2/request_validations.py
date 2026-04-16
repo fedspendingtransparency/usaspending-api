@@ -743,10 +743,6 @@ class DisasterDownloadValidator(DownloadValidatorBase):
 
 
 class SearchDownloadValidator(DownloadValidatorBase):
-    # Implements spending_level pattern used in the /api/v2/download/count endpoint
-    # Borrows rest of tinyshield model from AwardDownloadValidator._handle_advanced_search_download
-    # Both Transaction and Award Search uses AwardDownloadValidator
-    # Constraint_type and award_levels defined in views.py
     name = "search"
 
     def __init__(self, request_data: dict):
@@ -797,10 +793,14 @@ class SearchDownloadValidator(DownloadValidatorBase):
 
         dltypes = []
         for dltype in self.request_data.get("spending_level", ["awards", "transactions", "subawards"]):
-            if dltype == "subawards":
+            if dltype.lower() == "subawards":
                 dltypes.append("elasticsearch_sub_awards")
-            else:
+            elif dltype.lower() in ["awards", "transactions"]:
                 dltypes.append("elasticsearch_" + dltype)
+            else:
+                raise InvalidParameterException(
+                    'Invalid parameter: spending_level must be "awards", "subawards", or "transactions"'
+                ) 
 
         self._json_request["download_types"] = dltypes
 

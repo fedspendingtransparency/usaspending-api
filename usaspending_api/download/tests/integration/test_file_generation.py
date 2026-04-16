@@ -66,6 +66,32 @@ def test_get_sub_awards_csv_sources(db):
     assert csv_sources[1].file_type == "d2"
     assert csv_sources[1].source_type == "sub_awards"
 
+def test_get_search_csv_sources(db):
+    # checks to see if search is able to fetch all 3 data types
+
+    original_awards = VALUE_MAPPINGS["elasticsearch_awards"]["filter_function"]
+    original_transactions = VALUE_MAPPINGS["elasticsearch_transactions"]["filter_function"]
+    original_subawards = VALUE_MAPPINGS["elasticsearch_sub_awards"]["filter_function"]
+
+    VALUE_MAPPINGS["elasticsearch_awards"]["filter_function"] = MagicMock(returned_value="")
+    VALUE_MAPPINGS["elasticsearch_transactions"]["filter_function"] = MagicMock(returned_value="")
+    VALUE_MAPPINGS["elasticsearch_sub_awards"]["filter_function"] = MagicMock(returned_value="")
+    csv_sources = download_generation.get_download_sources(
+        {
+            "download_types": ["elasticsearch_awards", "elasticsearch_transactions", "elasticsearch_sub_awards"],
+            "filters": {"award_type_codes": list(award_type_mapping.keys())},
+        }
+    )
+    assert len(csv_sources) == 6
+    VALUE_MAPPINGS["elasticsearch_awards"]["filter_function"] = original_awards
+    VALUE_MAPPINGS["elasticsearch_transactions"]["filter_function"] = original_transactions
+    VALUE_MAPPINGS["elasticsearch_sub_awards"]["filter_function"] = original_subawards
+    assert csv_sources[0].file_type == csv_sources[2].file_type == csv_sources[4].file_type == "d1"
+    assert csv_sources[1].file_type == csv_sources[1].file_type == csv_sources[1].file_type
+    assert csv_sources[0].source_type == csv_sources[1].source_type =="elasticsearch_awards"
+    assert csv_sources[2].source_type == csv_sources[3].source_type =="elasticsearch_transactions"
+    assert csv_sources[4].source_type == csv_sources[5].source_type =="elasticsearch_sub_awards"
+
 
 def test_idv_orders_csv_sources(db):
     original = VALUE_MAPPINGS["idv_orders"]["filter_function"]
