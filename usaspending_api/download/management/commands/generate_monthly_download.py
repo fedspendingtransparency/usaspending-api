@@ -72,7 +72,6 @@ class Command(BaseCommand):
             self.abbreviation_to_toptier_lookup[abbreviation] = toptier_code
             self.toptier_to_abbreviation_lookup[toptier_code] = abbreviation
 
-        # TODO: Determine what the start date should be; we generate starting in 2007 but only show starting in FY 2008
         self.fiscal_year_choices = create_fiscal_year_list(
             start_year=generate_fiscal_year(datetime.strptime(settings.API_SEARCH_MIN_DATE, "%Y-%m-%d").date()),
         )
