@@ -120,7 +120,8 @@ class DisasterRecipientDownloadViewSet(BaseDownloadViewSet):
 
 class SearchDownloadViewSet(BaseDownloadViewSet):
     """
-    This route sends a request to begin generating a zip file that combines award and transaction data
+    This route sends a request to begin generating a zip file,
+    combining award, transaction, and subaward data
     """
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/download/search.md"

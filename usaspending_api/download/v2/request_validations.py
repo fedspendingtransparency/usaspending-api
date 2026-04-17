@@ -293,12 +293,12 @@ class AwardDownloadValidator(DownloadValidatorBase):
             ]
 
         if "agency" in custom_award_filters or "agencies" in custom_award_filters:
-            final_award_filters["agencies"] = self._update_custom_award_filters(custom_award_filters,
+            final_award_filters["agencies"] = self._update_custom_award_agencies(custom_award_filters,
                                                                                 filter_all_agencies)
 
         self._json_request["filters"] = final_award_filters
 
-    def _update_custom_award_filters(self, custom_award_filters: dict, filter_all_agencies: bool) -> list:
+    def _update_custom_award_agencies(self, custom_award_filters: dict, filter_all_agencies: bool) -> list:
         agency_output = []
 
         if "agency" in custom_award_filters:

@@ -111,8 +111,8 @@ The currently available endpoints are listed in the following table.
 |[/api/v2/download/disaster/](/api/v2/download/disaster/)|POST| Returns a zipped file containing Account and Award data for the Disaster Funding |
 |[/api/v2/download/disaster/recipients/](/api/v2/download/disaster/recipients/)|POST| Returns a zipped file containing Disaster Recipient Funding data |
 |[/api/v2/download/idv/](/api/v2/download/idv/)|POST| Returns a zipped file containing IDV data |
-|[/api/v2/download/status/](/api/v2/download/status/)|GET| gets the current status of a download job that that has been requested with the `v2/download/awards/` or `v2/download/transaction/` endpoint that same day |
 |[/api/v2/download/search/](/api/v2/download/search/)|POST|Generates zip file for download of award data in CSV format, both awards and transactions |
+|[/api/v2/download/status/](/api/v2/download/status/)|GET| gets the current status of a download job that that has been requested with the `v2/download/awards/` or `v2/download/transaction/` endpoint that same day |
 |[/api/v2/download/transactions/](/api/v2/download/transactions/)|POST|Generates zip file for download of award data in CSV format |
 |[/api/v2/federal_accounts/<ACCOUNT_CODE\>/](/api/v2/federal_accounts/020-0550/)|GET| Returns a federal account based on its federal account code |
 |[/api/v2/federal_accounts/<ACCOUNT_CODE\>/available_object_classes/](/api/v2/federal_accounts/4324/available_object_classes/)|GET| Returns financial spending data by object class based on account's internal ID |

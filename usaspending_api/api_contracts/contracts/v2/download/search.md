@@ -77,17 +77,32 @@ This route sends a request to the backend to begin generating a zipfile of award
                 "file_url": "/csv_downloads/PrimeAwardsTransactionsAndSubawards_2020-01-13_H21M05S48397603.zip",
                 "download_request": {
                     "columns": [
-                      
+                      "assistance_award_unique_key",
+                        "assistance_transaction_unique_key",
+                        "award_id_fain",
+                        "award_id_uri",
+                        "modification_number",
+                        "sai_number",
+                        "total_funding_amount"
                     ],
                     "download_types": [
-                        
+                        "elasticsearch_awards",
+                        "elasticsearch_transactions",
+                        "elasticsearch_sub_awards"
                     ],
                     "file_format": "csv",
                     "filters": {
-
-                    },
-                    "limit": 0,
-                    "request_type": "search"
+                        "agencies": [
+                            {
+                                "type": "awarding",
+                                "tier": "toptier",
+                                "name": "Department of Agriculture"
+                            }
+                        ],
+                        "keywords": ["Defense"]
+                        },
+                        "limit": 0,
+                        "request_type": "search"
                 }
             }
 
