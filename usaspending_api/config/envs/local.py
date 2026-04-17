@@ -11,10 +11,11 @@ from typing import ClassVar
 
 from pydantic import root_validator
 from pydantic.types import SecretStr
-from usaspending_api.config.envs.default import DefaultConfig, _PROJECT_ROOT_DIR
+
+from usaspending_api.config.envs.default import _PROJECT_ROOT_DIR, DefaultConfig
 from usaspending_api.config.utils import (
-    USER_SPECIFIC_OVERRIDE,
     FACTORY_PROVIDED_VALUE,
+    USER_SPECIFIC_OVERRIDE,
     eval_default_factory_from_root_validator,
 )
 
@@ -94,6 +95,7 @@ class LocalConfig(DefaultConfig):
     AWS_REGION: str = ""
     SPARK_S3_BUCKET: str = "data"
     BULK_DOWNLOAD_S3_BUCKET_NAME: str = "bulk-download"
+    MONTHLY_DOWNLOAD_S3_BUCKET_NAME: str = "monthly-download"
     DATABASE_DOWNLOAD_S3_BUCKET_NAME = "dti-usaspending-db"
 
     # Since this config values is built by composing others, we want to late/lazily-evaluate their values,
@@ -101,8 +103,8 @@ class LocalConfig(DefaultConfig):
     AWS_S3_ENDPOINT: str = FACTORY_PROVIDED_VALUE  # See below validator-based factory
 
     @root_validator
-    def _AWS_S3_ENDPOINT_factory(cls, values):
-        def factory_func():
+    def _AWS_S3_ENDPOINT_factory(cls, values: dict) -> dict:
+        def factory_func() -> str:
             return values["MINIO_HOST"] + ":" + values["MINIO_PORT"]
 
         return eval_default_factory_from_root_validator(cls, values, "AWS_S3_ENDPOINT", factory_func)
