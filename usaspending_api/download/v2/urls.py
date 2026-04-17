@@ -14,5 +14,6 @@ urlpatterns = [
     re_path(r"^disaster", views.DisasterDownloadViewSet.as_view()),
     re_path(r"^idv", views.RowLimitedIDVDownloadViewSet.as_view()),
     re_path(r"^status", DownloadStatusViewSet.as_view()),
-    re_path(r"^transactions", views.RowLimitedTransactionDownloadViewSet.as_view()),
+    re_path(r"^search", views.SearchDownloadViewSet.as_view()),
+    re_path(r"^transactions", views.RowLimitedTransactionDownloadViewSet.as_view())
 ]
