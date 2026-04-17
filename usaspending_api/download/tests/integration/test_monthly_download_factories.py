@@ -66,6 +66,7 @@ def test_assistance_delta_monthly_download_factory(mock_date, spark, transaction
     mock_date.today.return_value.strftime.return_value = "20210130"
     download_filters = MonthlyDownloadFilters(
         awarding_toptier_agency_code="097",
+        as_of_date=None
     )
     factory = TransactionAssistanceMonthlyDownloadFactory(spark, download_filters)
     result = factory.get_download(MonthlyType.DELTA)
@@ -88,7 +89,11 @@ def test_assistance_delta_monthly_download_factory(mock_date, spark, transaction
 @patch("usaspending_api.download.delta_downloads.filters.monthly_download_filters.date")
 def test_assistance_full_monthly_download_factory(mock_date, spark, transaction_download_table, agency_models):
     mock_date.today.return_value.strftime.return_value = "20210130"
-    download_filters = MonthlyDownloadFilters(awarding_toptier_agency_code="097", fiscal_year="2020")
+    download_filters = MonthlyDownloadFilters(
+        awarding_toptier_agency_code="097",
+        fiscal_year="2020",
+        as_of_date=None
+    )
     factory = TransactionAssistanceMonthlyDownloadFactory(spark, download_filters)
     result = factory.get_download(MonthlyType.FULL)
     result_df = result.dataframes[0].toPandas()
@@ -112,6 +117,7 @@ def test_contract_delta_monthly_download_factory(mock_date, spark, transaction_d
     mock_date.today.return_value.strftime.return_value = "20210130"
     download_filters = MonthlyDownloadFilters(
         awarding_toptier_agency_code="012",
+        as_of_date=None
     )
     factory = TransactionContractMonthlyDownloadFactory(spark, download_filters)
     result = factory.get_download(MonthlyType.DELTA)
@@ -134,7 +140,11 @@ def test_contract_delta_monthly_download_factory(mock_date, spark, transaction_d
 @patch("usaspending_api.download.delta_downloads.filters.monthly_download_filters.date")
 def test_contract_full_monthly_download_factory(mock_date, spark, transaction_download_table, agency_models):
     mock_date.today.return_value.strftime.return_value = "20210130"
-    download_filters = MonthlyDownloadFilters(awarding_toptier_agency_code="012", fiscal_year="2020")
+    download_filters = MonthlyDownloadFilters(
+        awarding_toptier_agency_code="012",
+        fiscal_year="2020",
+        as_of_date=None
+    )
     factory = TransactionContractMonthlyDownloadFactory(spark, download_filters)
     result = factory.get_download(MonthlyType.FULL)
     result_df = result.dataframes[0].toPandas()
