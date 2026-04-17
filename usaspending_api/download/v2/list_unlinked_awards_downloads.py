@@ -1,13 +1,15 @@
 from django.conf import settings
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from usaspending_api.common.cache_decorator import cache_response
+from usaspending_api.common.exceptions import InvalidParameterException
+from usaspending_api.config import CONFIG
 from usaspending_api.download.helpers.download_file_helpers import (
     get_last_modified_download_file,
     remove_file_prefix_if_exists,
 )
-from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.references.models import ToptierAgency
 
 
@@ -19,7 +21,7 @@ class ListUnlinkedAwardsDownloadsViewSet(APIView):
     redirect_dir = settings.UNLINKED_AWARDS_DOWNLOAD_REDIRECT_DIR
 
     @cache_response()
-    def post(self, request):
+    def post(self, request: Request) -> Response:
         """Return list of downloads that match the requested params."""
         toptier_code = request.data.get("toptier_code", None)
 
@@ -42,7 +44,7 @@ class ListUnlinkedAwardsDownloadsViewSet(APIView):
             agency_name = agency_name.replace(char, "_")
 
         download_prefix = f"{self.redirect_dir}/{agency_name}_UnlinkedAwards_"
-        latest_download_name = get_last_modified_download_file(download_prefix, settings.BULK_DOWNLOAD_S3_BUCKET_NAME)
+        latest_download_name = get_last_modified_download_file(download_prefix, CONFIG.BULK_DOWNLOAD_S3_BUCKET_NAME)
         latest_download_file_name = remove_file_prefix_if_exists(latest_download_name, f"{self.redirect_dir}/")
 
         identified_download = {

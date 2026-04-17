@@ -1,6 +1,8 @@
-from django.db.models import Exists, F, OuterRef, Q
+from django.db.models import Exists, F, OuterRef, Q, QuerySet
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
 from usaspending_api.common.exceptions import InvalidParameterException
 from usaspending_api.common.helpers.business_logic_helpers import cfo_presentation_order
 from usaspending_api.references.models import Agency, SubtierAgency, ToptierAgency
@@ -21,7 +23,7 @@ class DownloadListAgenciesViewSet(APIView):
 
     endpoint_doc = "usaspending_api/api_contracts/contracts/v2/bulk_download/list_agencies.md"
 
-    def post(self, request):
+    def post(self, request: Request) -> Response:
 
         post_data = request.data or {}
         toptier_agency_id = post_data.get("agency")
@@ -29,24 +31,10 @@ class DownloadListAgenciesViewSet(APIView):
         if list_type not in AGENCY_LIST_TYPES:
             raise InvalidParameterException(f"type must be one of: {AGENCY_LIST_TYPES}")
 
-        if list_type == ACCOUNT_AGENCIES:
-            # Get toptier agencies that have DABS submissions.  As per discussion with PO, these are not
-            # subject to user selectable flag.
-            toptier_agencies = ToptierAgency.objects.filter(
-                toptier_code__in=SubmissionAttributes.objects.filter(toptier_code__isnull=False)
-                .distinct()
-                .values("toptier_code")
-            )
-
-        else:  # AWARD_AGENCIES
-            # Get toptier agencies that have a subtier and for which the user_selectable flag is True.
-            toptier_agencies = ToptierAgency.objects.annotate(
-                include_agency=Exists(
-                    Agency.objects.filter(
-                        user_selectable=True, subtier_agency_id__isnull=False, toptier_agency_id=OuterRef("pk")
-                    ).values("pk")
-                )
-            ).filter(include_agency=True)
+        toptier_agencies = (
+            self.get_account_agencies_queryset()
+            if list_type == ACCOUNT_AGENCIES else self.get_award_agencies_queryset()
+        )
 
         toptier_agencies = toptier_agencies.values("name", "toptier_agency_id", "toptier_code")
         response_data = {"agencies": [], "sub_agencies": []}
@@ -84,3 +72,26 @@ class DownloadListAgenciesViewSet(APIView):
             )
 
         return Response(response_data)
+
+    @staticmethod
+    def get_account_agencies_queryset() -> QuerySet:
+        """
+            Get toptier agencies that have DABS submissions.  As per discussion with PO, these are not
+            subject to user selectable flag.
+        """
+        return ToptierAgency.objects.filter(
+            toptier_code__in=SubmissionAttributes.objects.filter(toptier_code__isnull=False)
+            .distinct()
+            .values("toptier_code")
+        )
+
+    @staticmethod
+    def get_award_agencies_queryset() -> QuerySet:
+        """Get toptier agencies that have a subtier and for which the user_selectable flag is True"""
+        return ToptierAgency.objects.annotate(
+            include_agency=Exists(
+                Agency.objects.filter(
+                    user_selectable=True, subtier_agency_id__isnull=False, toptier_agency_id=OuterRef("pk")
+                ).values("pk")
+            )
+        ).filter(include_agency=True)
