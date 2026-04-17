@@ -1,7 +1,7 @@
 FORMAT: 1A
 HOST: https://api.usaspending.gov
 
-# Award Download [/api/v2/download/search/]
+# Search Download [/api/v2/download/search/]
 
 This endpoint is used to search for awards and transactions in the same file.
 
@@ -182,13 +182,10 @@ A list of current DEFC can be found [here.](https://files.usaspending.gov/refere
 + `exclude`: [[`091`, `091-0800`]] (optional, array[array[string]], fixed-type)
 
 ### TimePeriod (object)
-+ `start_date` (required, string)
-+ `end_date` (required, string)
-+ `date_type` (optional, enum[string])
-While accepting the same format, time period filters are interpreted slightly differently between awards, transactions, and subawards.  
-+ [Award Time Period](../../../search_filters.md#award-search-time-period-Object)
-+ [Transaction Time Period](../../../search_filters.md#transaction-search-time-period-Object)
-+ [Subawards Time Period](../../../search_filters.md#subaward-search-time-period-Object)
+While accepting the same format, time period filters are interpreted slightly differently between awards, transactions, and subawards.
+- [Award Time Period](../../../search_filters.md#award-search-time-period-Object)
+- [Transaction Time Period](../../../search_filters.md#transaction-search-time-period-Object)
+- [Subawards Time Period](../../../search_filters.md#subaward-search-time-period-Object)
 
 
 ### TreasuryAccountComponentsObject (object)
