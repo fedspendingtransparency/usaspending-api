@@ -115,7 +115,8 @@ class Command(BaseCommand):
             help="Specific award categories",
         )
         parser.add_argument(
-            "-fy--fiscal-years",
+            "-fy",
+            "--fiscal-years",
             dest="fiscal_years",
             nargs="+",
             default=self.fiscal_year_choices,
@@ -124,7 +125,8 @@ class Command(BaseCommand):
             help="Specific fiscal years",
         )
         parser.add_argument(
-            "-e--empty-files",
+            "-e",
+            "--empty-files",
             dest="empty_files",
             nargs="*",
             default=[],
@@ -180,7 +182,7 @@ class Command(BaseCommand):
             self.working_dir_path.mkdir()
 
         self.monthly_type = MonthlyType(validated_options["monthly_type"])
-        self.bucket = get_s3_bucket(CONFIG.MONTHLY_DOWNLOAD_S3_BUCKET_NAME)
+        self.bucket = get_s3_bucket(CONFIG.BULK_DOWNLOAD_S3_BUCKET_NAME)
         self.spark, spark_created_by_command = self.setup_spark_session()
 
         self.empty_file_dfs = {

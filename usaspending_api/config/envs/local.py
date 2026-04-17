@@ -92,7 +92,6 @@ class LocalConfig(DefaultConfig):
     AWS_ACCESS_KEY: SecretStr = MINIO_ACCESS_KEY
     AWS_SECRET_KEY: SecretStr = MINIO_SECRET_KEY
     AWS_PROFILE: str = None
-    AWS_REGION: str = ""
     SPARK_S3_BUCKET: str = "data"
     BULK_DOWNLOAD_S3_BUCKET_NAME: str = "bulk-download"
     MONTHLY_DOWNLOAD_S3_BUCKET_NAME: str = "monthly-download"
