@@ -2,7 +2,7 @@ import os
 import zipfile
 
 
-def append_files_to_zip_file(file_paths, zip_file_path):
+def append_files_to_zip_file(file_paths: list[str], zip_file_path: str) -> None:
     """
     Create zip archive at the specified zip_file_path if it does not exist, and add all the files at provided
     file_paths to it.
