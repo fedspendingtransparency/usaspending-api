@@ -235,7 +235,7 @@ services:
         # Create the bucket within MinIO used for endpoints that list generated downloads
         mkdir -p data/bulk-download
         # Create the bucket within MinIO used for monthly downloads
-        mkdir -p data/${MONTHLY_DOWNLOAD_S3_BUCKET_NAME:-monthly-download}
+        mkdir -p data/monthly-download
         # Create the bucket for MinIO used for Spark
         mkdir -p data/data/files
         # Populate initial files in buckets
