@@ -152,31 +152,31 @@ ES_ALTERNATIVE_SORT_FIELDS = {
 
 
 class Filters(BaseModel):
-    keywords: list[str] | None = None
-    description: str | None = None
-    time_period: list[TimePeriod] | None = None
-    place_of_performance_scope: Literal["domestic", "foreign"] | None = None
-    place_of_performance_locations: list[StandardLocationObject] | None = None
     agencies: list[AgencyObject] | None = None
-    recipient_search_text: list[str] | None = None
-    recipient_scope: Literal["domestic", "foreign"] | None = None
-    recipient_locations: list[StandardLocationObject] | None = None
-    recipient_type_names: list[str] | None = None
-    award_type_codes: list[str] | None = None
-    award_ids: list[str] | None = None
     award_amounts: list[AwardAmount] | None = None
-    program_numbers: list[str] | None = None
-    naics_codes: NAICSCodeObject | None = None
-    tas_codes: list[TASCodeObject] | None = None
-    psc_codes: PSCCodeObject | list[str] | None = None
-    contract_pricing_type_codes: list[str] | None = None
-    set_aside_type_codes: list[str] | None = None
-    extent_competed_type_codes: list[str] | None = None
-    treasury_account_components: list[TreasuryAccountComponentsObject] | None = None
-    program_activity: list[int] | None = None
-    program_activities: list[ProgramActivityObject] | None = None
-    def_codes: list[str] | None = None
+    award_ids: list[str] | None = None
+    award_type_codes: list[str] | None = None
     award_unique_id: str | None = None
+    contract_pricing_type_codes: list[str] | None = None
+    def_codes: list[str] | None = None
+    description: str | None = None
+    extent_competed_type_codes: list[str] | None = None
+    keywords: list[str] | None = None
+    naics_codes: NAICSCodeObject | None = None
+    place_of_performance_locations: list[StandardLocationObject] | None = None
+    place_of_performance_scope: Literal["domestic", "foreign"] | None = None
+    program_activities: list[ProgramActivityObject] | None = None
+    program_activity: list[int] | None = None
+    program_numbers: list[str] | None = None
+    psc_codes: PSCCodeObject | list[str] | None = None
+    recipient_locations: list[StandardLocationObject] | None = None
+    recipient_scope: Literal["domestic", "foreign"] | None = None
+    recipient_search_text: list[str] | None = None
+    recipient_type_names: list[str] | None = None
+    set_aside_type_codes: list[str] | None = None
+    tas_codes: list[TASCodeObject] | None = None
+    time_period: list[TimePeriod] | None = None
+    treasury_account_components: list[TreasuryAccountComponentsObject] | None = None
 
 
 class SpendingByAwardRequest(BaseModel):
@@ -210,11 +210,15 @@ class SpendingByAwardVisualizationViewSet(APIView):
         self.original_filters = request.data.get("filters")
 
         validated_request = SpendingByAwardRequest(**request.data)
-        self.filters = validated_request.filters.dict()
-        self.spending_level = SpendingLevel(validated_request.spending_level)
 
+        # By default, Pydantic will include an entry for every field defined in the base class with it's default value.
+        # When we convert this to a dict this means we have a lot of `None` values that query_with_filters
+        #   doesn't expect so we can remove those them here.
+        self.filters = validated_request.filters.model_dump(exclude_none=True)
+
+        self.spending_level = SpendingLevel(validated_request.spending_level)
         json_request, models = self.validate_request_data(request.data)
-        self.spending_level = SpendingLevel(json_request["spending_level"])
+
         self.constants = GLOBAL_MAP[self.spending_level.value]
 
         self.fields = json_request["fields"]
