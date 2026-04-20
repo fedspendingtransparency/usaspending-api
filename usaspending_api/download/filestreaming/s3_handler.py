@@ -30,5 +30,5 @@ class S3Handler:
         Gets URL for read
         """
         bucket_url = f"{settings.FILES_SERVER_BASE_URL}/{self.redirect_dir}/"
-        generated = f"{bucket_url}/{file_name}"
+        generated = f"{bucket_url}{file_name}"
         return generated
