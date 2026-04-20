@@ -220,6 +220,7 @@ pycodestyle.max-line-length = 120
     "ANN001", # missing-type-function-argument; avoid conflict with fixtures
     "ANN201", # missing-return-type-undocumented-public-function; avoid conflict with test case return values
     "ANN202", # missing-return-type-undocumented-private-function; avoid conflict with test case return values
+    "PLR0912", # too-many-branches; avoid conflict with too many fixtures
     "PLR0913", # too-many-arguments; avoid conflict with too many fixtures
     "PLR0915", # too-many-statements; avoid conflict with long fixtures
 ]
