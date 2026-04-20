@@ -134,7 +134,8 @@ class Command(BaseCommand):
             help="Which download should include an empty file",
         )
         parser.add_argument(
-            "-s--skip-local-cleanup",
+            "-s",
+            "--skip-local-cleanup",
             dest="cleanup",
             action="store_true",
             default=False,
@@ -142,7 +143,8 @@ class Command(BaseCommand):
             " (only applies if --local is also provided).",
         )
         parser.add_argument(
-            "-n--num-threads",
+            "-n",
+            "--num-threads",
             dest="num_threads",
             default=1,
             type=int,
