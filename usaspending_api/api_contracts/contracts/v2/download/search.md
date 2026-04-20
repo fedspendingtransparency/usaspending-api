@@ -28,12 +28,12 @@ This route sends a request to the backend to begin generating a zipfile of award
                 + `tsv`
                 + `pstxt`
         + `limit` (optional, number)
-        + `spending_level` (optional, enum[string])
+        + `spending_level` (optional, array[enum[string]])
             + Members
                 + `subawards`
                 + `transactions`
                 + `awards`
-            + Default: `transactions`
+            + Default: [`awards`, `transactions`, `subawards`]
     + Body
 
             {
