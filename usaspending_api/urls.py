@@ -16,10 +16,10 @@ Including another URLconf
 
 from django.conf.urls.static import static
 from django.urls import include, re_path
+
 from usaspending_api import settings
 from usaspending_api import views as views
 from usaspending_api.common.views import MarkdownView
-
 
 urlpatterns = [
     re_path(r"^$", MarkdownView.as_view(markdown="landing_page.md")),
@@ -46,6 +46,7 @@ urlpatterns = [
     re_path(r"^api/v2/financial_balances/", include("usaspending_api.accounts.urls_financial_balances")),
     re_path(r"^api/v2/financial_spending/", include("usaspending_api.accounts.urls_financial_spending")),
     re_path(r"^api/v2/idvs/", include("usaspending_api.idvs.v2.urls_idvs")),
+    re_path(r"^api/v2/llm/", include("usaspending_api.llm.v2.urls")),
     re_path(r"^api/v2/recipient/", include("usaspending_api.recipient.v2.urls")),
     re_path(r"^api/v2/references/", include("usaspending_api.references.v2.urls")),
     re_path(r"^api/v2/reporting/", include("usaspending_api.reporting.v2.urls")),

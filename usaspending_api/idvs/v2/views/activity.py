@@ -1,7 +1,7 @@
 from collections import OrderedDict
 from copy import copy, deepcopy
 
-from psycopg2.sql import Identifier, Literal, SQL
+from psycopg.sql import SQL, Identifier, Literal
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -9,11 +9,12 @@ from rest_framework.views import APIView
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.helpers.generic_helper import get_pagination_metadata
 from usaspending_api.common.helpers.sql_helpers import execute_sql_to_ordered_dictionary
-from usaspending_api.common.validator.award import get_internal_or_generated_award_id_model
+from usaspending_api.common.validator.award import (
+    get_internal_or_generated_award_id_model,
+)
 from usaspending_api.common.validator.pagination import PAGINATION
 from usaspending_api.common.validator.tinyshield import TinyShield
 from usaspending_api.references.helpers import generate_agency_slugs_for_agency_list
-
 
 # In gather_award_ids, if any awards are found for IDVs in the second half of
 # the union, by definition, they have to be grandchildren so even though the
@@ -124,7 +125,7 @@ COUNT_ACTIVITY_HIDDEN_SQL = SQL(
 )
 
 
-def _prepare_tiny_shield_models():
+def _prepare_tiny_shield_models() -> list:
     # This endpoint has a fixed sort.  No need for "sort" or "order".
     models = [copy(p) for p in PAGINATION if p["name"] in ("page", "limit")]
     models.extend([get_internal_or_generated_award_id_model()])

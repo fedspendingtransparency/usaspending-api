@@ -89,7 +89,7 @@ class AbstractElasticsearchIndexer(ABC, BaseCommand):
         parser.add_argument(
             "--processes",
             type=int,
-            help="Number of parallel processes to operate. psycopg2 kicked the bucket with 100. If running on Spark, "
+            help="Number of parallel processes to operate. psycopg kicked the bucket with 100. If running on Spark, "
             "this will be replaced by the number of executors on the configured Spark cluster",
             default=10,
             choices=range(1, 101),
@@ -133,9 +133,7 @@ class AbstractElasticsearchIndexer(ABC, BaseCommand):
         controller.set_slice_count()
 
         if config["is_incremental_load"]:
-            toggle_refresh_off(
-                elasticsearch_client, config["index_name"]
-            )  # Turned back on at end.
+            toggle_refresh_off(elasticsearch_client, config["index_name"])  # Turned back on at end.
 
         try:
             if config["process_deletes"]:
@@ -148,6 +146,7 @@ class AbstractElasticsearchIndexer(ABC, BaseCommand):
             logger.error(f"{str(e)}")
             error_addition = "before encountering a problem during execution.... "
             raise SystemExit(1) from e
+
         else:
             controller.complete_process()
             if config["drop_db_view"]:
@@ -221,44 +220,27 @@ def parse_cli_args(options: dict, es_client: Elasticsearch) -> dict:  # noqa: PL
         #      - The earliest records in S3.
         #      - When all transaction records in the USAspending SQL database were updated.
         #   And keep it timezone-aware for S3
-        config["starting_date"] = get_last_load_date(
-            config["stored_date_key"], default=config["initial_datetime"]
-        )
+        config["starting_date"] = get_last_load_date(config["stored_date_key"], default=config["initial_datetime"])
 
     config["is_incremental_load"] = not bool(config["create_new_index"]) and (
-        config["starting_date"] != config["initial_datetime"]
-        and not config["deletes_only"]
+        config["starting_date"] != config["initial_datetime"] and not config["deletes_only"]
     )
 
     if config["is_incremental_load"] or config["deletes_only"]:
         if config["index_name"]:
-            logger.info(
-                format_log(
-                    f"Ignoring provided index name, using alias '{config['write_alias']}' for safety"
-                )
-            )
+            logger.info(format_log(f"Ignoring provided index name, using alias '{config['write_alias']}' for safety"))
         config["index_name"] = config["write_alias"]
         if not es_client.cat.aliases(name=config["write_alias"]):
             logger.error(f"Write alias '{config['write_alias']}' is missing")
             raise SystemExit(1)
     else:
         if config["index_name"] and es_client.indices.exists(config["index_name"]):
-            logger.error(
-                "Data load into existing index. Change index name or run an incremental load"
-            )
+            logger.error("Data load into existing index. Change index name or run an incremental load")
             raise SystemExit(1)
 
     if config["starting_date"] < config["initial_datetime"]:
-        logger.error(
-            f"--start-datetime is too early. Set no earlier than {config['initial_datetime']}"
-        )
+        logger.error(f"--start-datetime is too early. Set no earlier than {config['initial_datetime']}")
         raise SystemExit(1)
-
-    # Format to include timezone, but remove milliseconds to allow proper comparison with datetime values
-    # that are captured on the documents
-    config["starting_date"] = datetime.strftime(
-        config["starting_date"], "%Y-%m-%d %H:%M:%S%z"
-    )
 
     return config
 
@@ -321,9 +303,7 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
     """
 
     # Set values based on env vars and when the script started
-    default_datetime = datetime.strptime(
-        f"{settings.API_SEARCH_MIN_DATE}+0000", "%Y-%m-%d%z"
-    )
+    default_datetime = datetime.strptime(f"{settings.API_SEARCH_MIN_DATE}+0000", "%Y-%m-%d%z")
     if arg_parse_options["load_type"] == "award":
         config = {
             "base_table": "awards",
@@ -430,20 +410,15 @@ def set_config(passthrough_values: list, arg_parse_options: dict) -> dict:
             "write_alias": settings.ES_LOCATIONS_WRITE_ALIAS,
         }
     else:
-        raise RuntimeError(
-            f"Configuration is not configured for --load-type={arg_parse_options['load_type']}"
-        )
+        raise RuntimeError(f"Configuration is not configured for --load-type={arg_parse_options['load_type']}")
 
-    config.update(
-        {k: v for k, v in arg_parse_options.items() if k in passthrough_values}
-    )
+    config.update({k: v for k, v in arg_parse_options.items() if k in passthrough_values})
     config.update(
         {
             "aws_region": settings.USASPENDING_AWS_REGION,
             "s3_bucket": settings.DELETED_TRANSACTION_JOURNAL_FILES,
             "processing_start_datetime": datetime.now(timezone.utc),
-            "verbose": arg_parse_options["verbosity"]
-            > 1,  # convert command's levels of verbosity to a bool
+            "verbose": arg_parse_options["verbosity"] > 1,  # convert command's levels of verbosity to a bool
             "raise_status_code_3": False,
         }
     )

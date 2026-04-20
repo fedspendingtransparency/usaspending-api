@@ -18,4 +18,6 @@ insert into "{temp_table}" (
     website,
     congressional_justification,
     icon_filename
-) values %s
+) values (
+    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+)
