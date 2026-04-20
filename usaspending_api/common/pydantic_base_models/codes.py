@@ -2,8 +2,8 @@ from pydantic import BaseModel
 
 
 class NAICSCodeObject(BaseModel):
-    require: list[str] | None = None
-    exclude: list[str] | None = None
+    require: list[str | int] | None = None
+    exclude: list[str | int] | None = None
 
 
 class PSCCodeObject(BaseModel):

@@ -74,4 +74,9 @@ class StandardLocationObject(BaseModel):
             if self.country.upper() != "USA":
                 raise ValueError("When 'district_current' is provided, 'country' must be 'USA'")
 
+        # city requires state and country or country
+        if self.city is not None:
+            if self.state is None and self.country is None:
+                raise ValueError("When 'city' is provided, either 'state' AND 'country' must be provided or 'country' must be provided")
+
         return self
