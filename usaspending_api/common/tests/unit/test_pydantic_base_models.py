@@ -371,4 +371,4 @@ def test_location_rules_validation():
     with pytest.raises(ValidationError) as exc_info:
         StandardLocationObject(country=None, state="CA", city="Los Angeles")
         errors = exc_info.value.errors()
-        assert errors[0]["msg"] == "Value error, When 'city' is provided, either 'state' AND 'country' must be provided or 'country' must be provided"
+        assert errors[0]["msg"] == "When 'city' is provided, 'state' AND 'country' or 'country' must be provided"
