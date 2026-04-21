@@ -19,7 +19,9 @@ class TimePeriod(BaseModel):
         return v
 
     @model_validator(mode="after")
-    def validate_end_date_is_after_start_date(self):
-        if self.end_date < self.start_date:
-            raise ValueError("end_date must be greater than or equal to start_date")
+    def validate_date_are_after_fy2008(self):
+        if self.start_date < '2007-10-01':
+            raise ValueError("start_date cannot be earlier than '2007-10-01'")
+        if self.end_date < '2007-10-01':
+            raise ValueError("end_date cannot be earlier than '2007-10-01'")
         return self
