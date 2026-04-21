@@ -121,7 +121,7 @@ server = [
     "django-redis==5.4.*",
     "packaging==22.0",
     "pyparsing==3.2.1",
-    "setuptools>=68.1.2",
+    "setuptools<81",
     "supervisor==4.1.0",
     "uwsgi==2.0.23",
 ]
