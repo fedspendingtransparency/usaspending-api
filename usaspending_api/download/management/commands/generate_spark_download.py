@@ -11,6 +11,7 @@ from typing import Literal, Optional, TypeVar, Union
 import duckdb
 import psutil
 from django.conf import settings
+from django.core.management import CommandParser
 from django.core.management.base import BaseCommand
 from django.utils.functional import cached_property
 from duckdb.experimental.spark.sql import SparkSession as DuckDBSparkSession
@@ -19,7 +20,10 @@ from pyspark.sql import SparkSession
 
 from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.exceptions import InvalidParameterException
-from usaspending_api.common.helpers.download_csv_strategies import DuckDBToCSVStrategy, SparkToCSVStrategy
+from usaspending_api.common.helpers.download_csv_strategies import (
+    DuckDBToCSVStrategy,
+    SparkToCSVStrategy,
+)
 from usaspending_api.common.helpers.s3_helpers import upload_download_file_to_s3
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
@@ -28,6 +32,7 @@ from usaspending_api.common.helpers.spark_helpers import (
 from usaspending_api.common.logging import configure_logging
 from usaspending_api.common.spark.configs import DEFAULT_EXTRA_CONF
 from usaspending_api.common.tracing import SubprocessTrace
+from usaspending_api.config import CONFIG
 from usaspending_api.download.delta_downloads.abstract_downloads.base_download import AbstractDownload
 from usaspending_api.download.delta_downloads.account_balances import AccountBalancesDownloadFactory
 from usaspending_api.download.delta_downloads.award_financial import AwardFinancialDownloadFactory
@@ -72,12 +77,12 @@ class Command(BaseCommand):
     use_duckdb: bool
     start_time: time.time
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: CommandParser) -> None:
         parser.add_argument("--download-job-id", type=int, required=True)
         parser.add_argument("--skip-local-cleanup", action="store_true")
         parser.add_argument("--use-duckdb", action="store_true")
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         self.start_time = time.time()
 
         configure_logging(service_name="usaspending-downloader-" + TRACE_ENV)
@@ -129,7 +134,7 @@ class Command(BaseCommand):
         return self.download_job.file_name.replace(".zip", "")
 
     @staticmethod
-    def get_download_job(download_job_id) -> DownloadJob:
+    def get_download_job(download_job_id: int) -> DownloadJob:
         download_job = DownloadJob.objects.get(download_job_id=download_job_id)
         if download_job.job_status_id not in (JOB_STATUS_DICT["ready"], JOB_STATUS_DICT["failed"]):
             # Handles both new downloads and retries of failed downloads
@@ -148,7 +153,7 @@ class Command(BaseCommand):
             raise InvalidParameterException(f"Download Job {download_job_id} is not ready.")
         return download_job
 
-    def process_download(self):
+    def process_download(self) -> None:
         with SubprocessTrace(
             name=f"job.{JOB_TYPE}.download.spark.{self.request_type}",
             kind=SpanKind.INTERNAL,
@@ -201,7 +206,7 @@ class Command(BaseCommand):
                     file_format=download_request.file_extension,
                 )
                 for download in download_request.download_list
-                for file_name, df in zip(download.file_names, download.dataframes)
+                for file_name, df in zip(download.file_names, download.dataframes, strict=True)
             ]
             for csv_metadata in csvs_metadata:
                 files_to_cleanup.extend(csv_metadata.filepaths)
@@ -220,7 +225,7 @@ class Command(BaseCommand):
                         {
                             "service": "spark",
                             "span_type": "Internal",
-                            "resource": f"s3://{settings.BULK_DOWNLOAD_S3_BUCKET_NAME}",
+                            "resource": f"s3://{CONFIG.BULK_DOWNLOAD_S3_BUCKET_NAME}",
                             "message": "Push file to S3 bucket, if not local",
                         }
                     )
