@@ -14,7 +14,7 @@ from django.db.models import F, QuerySet
 from django.utils.text import slugify
 from elasticsearch_dsl import Q as ES_Q
 from elasticsearch_dsl.response import Response as ES_Response
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -209,7 +209,16 @@ class SpendingByAwardVisualizationViewSet(APIView):
         """Return all awards matching the provided filters and limits"""
         self.original_filters = request.data.get("filters")
 
-        validated_request = SpendingByAwardRequest(**request.data)
+        try:
+            validated_request = SpendingByAwardRequest(**request.data)
+        except ValidationError as e:
+            error = e.errors()[0]
+            location = f"{error['loc'][0]}|{error['loc'][1]}" if len(error['loc']) > 2 else error['loc'][0]
+            value = error['input']
+            expected_type = error['type'].strip("_type") if "_type" in error['type'] else None
+
+            message = f"Invalid value in '{location}'. '{value}' is not a valid type ({expected_type})"
+            return Response({"detail": message}, status=400)
 
         # By default, Pydantic will include an entry for every field defined in the base class with it's default value.
         # When we convert this to a dict this means we have a lot of `None` values that query_with_filters
@@ -361,7 +370,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
             },
             {
                 "name": "program_activity",
-                "key": "filter|program_activity",
+                "key": "filters|program_activity",
                 "type": "array",
                 "array_type": "integer",
                 "array_max": maxsize,
