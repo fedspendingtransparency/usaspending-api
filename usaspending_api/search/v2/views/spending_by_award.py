@@ -42,17 +42,6 @@ from usaspending_api.common.api_versioning import (
     API_TRANSFORM_FUNCTIONS,
     api_transformations,
 )
-from usaspending_api.common.pydantic_base_models import (
-    PSCCodeObject,
-    AgencyObject,
-    AwardAmount,
-    NAICSCodeObject,
-    ProgramActivityObject,
-    StandardLocationObject,
-    TASCodeObject,
-    TimePeriod,
-    TreasuryAccountComponentsObject
-)
 from usaspending_api.common.cache_decorator import cache_response
 from usaspending_api.common.elasticsearch.search_wrappers import (
     AwardSearch,
@@ -68,6 +57,17 @@ from usaspending_api.common.helpers.generic_helper import (
     get_generic_filters_message,
 )
 from usaspending_api.common.helpers.pydantic_error_formatter import error_formatter
+from usaspending_api.common.pydantic_base_models import (
+    AgencyObject,
+    AwardAmount,
+    NAICSCodeObject,
+    ProgramActivityObject,
+    PSCCodeObject,
+    StandardLocationObject,
+    TASCodeObject,
+    TimePeriod,
+    TreasuryAccountComponentsObject,
+)
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.recipient_lookups import annotate_prime_award_recipient_id
 from usaspending_api.common.validator.award_filter import AWARD_FILTER_NO_RECIPIENT_ID
@@ -204,7 +204,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
     )
 
     @cache_response()
-    def post(self, request: Request) -> Response:
+    def post(self, request: Request) -> Response:  # noqa: PLR0911
         """Return all awards matching the provided filters and limits"""
         self.original_filters = request.data.get("filters")
 

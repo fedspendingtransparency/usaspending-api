@@ -1,4 +1,5 @@
 from pydantic import BaseModel, field_validator, model_validator
+from typing_extensions import Self
 
 
 class StandardLocationObject(BaseModel):
@@ -12,41 +13,41 @@ class StandardLocationObject(BaseModel):
 
     @field_validator('country')
     @classmethod
-    def validate_country(cls, v):
+    def validate_country(cls, v: str) -> str:
         if len(v) != 3:
             raise ValueError("Country code must be exactly 3 characters")
         return v.upper()
 
     @field_validator('state')
     @classmethod
-    def validate_state(cls, v):
+    def validate_state(cls, v: str) -> str | None:
         if v is not None and len(v) != 2:
             raise ValueError("State code must be exactly 2 characters")
         return v.upper() if v else None
 
     @field_validator('county')
     @classmethod
-    def validate_county(cls, v):
+    def validate_county(cls, v: str) -> str | None:
         if v is not None and len(v) != 3:
             raise ValueError("County code must be exactly 3 digits")
         return v
 
     @field_validator('district_original', 'district_current')
     @classmethod
-    def validate_district(cls, v):
+    def validate_district(cls, v: str) -> str | None:
         if v is not None and len(v) != 2:
             raise ValueError("District code must be exactly 2 characters")
         return v
 
     @field_validator('zip')
     @classmethod
-    def validate_zip(cls, v):
+    def validate_zip(cls, v: str) -> str | None:
         if v is not None and len(v) != 5:
             raise ValueError("ZIP code must be exactly 5 digits")
         return v
 
     @model_validator(mode='after')
-    def validate_location_rules(self):
+    def validate_location_rules(self) -> Self:  # noqa: PLR0912
         # If county is provided, state must be provided
         if self.county is not None and self.state is None:
             raise ValueError("When 'county' is provided, 'state' must also be provided")
@@ -77,6 +78,6 @@ class StandardLocationObject(BaseModel):
         # city requires state and country or country
         if self.city is not None:
             if self.state is None and self.country is None:
-                raise ValueError("When 'city' is provided, either 'state' AND 'country' must be provided or 'country' must be provided")
+                raise ValueError("When 'city' is provided, 'state' AND 'country' or 'country' must be provided")
 
         return self
