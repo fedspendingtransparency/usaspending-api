@@ -2,7 +2,6 @@ import copy
 import json
 import logging
 from ast import literal_eval
-from sys import maxsize
 from typing import (
     Any,
     List,
@@ -68,6 +67,7 @@ from usaspending_api.common.helpers.data_constants import state_name_from_code
 from usaspending_api.common.helpers.generic_helper import (
     get_generic_filters_message,
 )
+from usaspending_api.common.helpers.pydantic_error_formatter import error_formatter
 from usaspending_api.common.query_with_filters import QueryWithFilters
 from usaspending_api.common.recipient_lookups import annotate_prime_award_recipient_id
 from usaspending_api.common.validator.award_filter import AWARD_FILTER_NO_RECIPIENT_ID
@@ -166,7 +166,6 @@ class Filters(BaseModel):
     place_of_performance_locations: list[StandardLocationObject] | None = None
     place_of_performance_scope: Literal["domestic", "foreign"] | None = None
     program_activities: list[ProgramActivityObject] | None = None
-    program_activity: list[int] | None = None
     program_numbers: list[str] | None = None
     psc_codes: PSCCodeObject | list[str] | None = None
     recipient_locations: list[StandardLocationObject] | None = None
@@ -180,8 +179,8 @@ class Filters(BaseModel):
 
 
 class SpendingByAwardRequest(BaseModel):
-    filters: Filters
     fields: list[str]
+    filters: Filters
     limit: int = 10
     order: Literal["asc", "desc"] = "desc"
     page: int | None = None
@@ -212,13 +211,9 @@ class SpendingByAwardVisualizationViewSet(APIView):
         try:
             validated_request = SpendingByAwardRequest(**request.data)
         except ValidationError as e:
-            error = e.errors()[0]
-            location = f"{error['loc'][0]}|{error['loc'][1]}" if len(error['loc']) > 2 else error['loc'][0]
-            value = error['input']
-            expected_type = error['type'].strip("_type") if "_type" in error['type'] else None
-
-            message = f"Invalid value in '{location}'. '{value}' is not a valid type ({expected_type})"
-            return Response({"detail": message}, status=400)
+            message = error_formatter(e)
+            status_code = 422 if message.startswith("Missing") else 400
+            return Response({"detail": message}, status=status_code)
 
         # By default, Pydantic will include an entry for every field defined in the base class with it's default value.
         # When we convert this to a dict this means we have a lot of `None` values that query_with_filters
@@ -367,13 +362,6 @@ class SpendingByAwardVisualizationViewSet(APIView):
                 "array_type": "text",
                 "text_type": "search",
                 "min": 1,
-            },
-            {
-                "name": "program_activity",
-                "key": "filters|program_activity",
-                "type": "array",
-                "array_type": "integer",
-                "array_max": maxsize,
             },
             {
                 "name": "last_record_unique_id",

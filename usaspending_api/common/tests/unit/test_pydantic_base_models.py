@@ -158,9 +158,14 @@ def test_time_period_validation_fail():
     assert errors[0]["msg"] == "Input should be 'action_date', 'date_signed', 'last_modified_date' or 'new_awards_only'"
 
     with pytest.raises(ValidationError) as exc_info:
-        TimePeriod(start_date="2026-01-01", end_date="2025-06-01", date_type="action_date")
+        TimePeriod(start_date="2006-01-01", end_date="2026-01-01")
     errors = exc_info.value.errors()
-    assert errors[0]["msg"] == "Value error, end_date must be greater than or equal to start_date"
+    assert errors[0]["msg"] == "Value error, start_date cannot be earlier than '2007-10-01'"
+
+    with pytest.raises(ValidationError) as exc_info:
+        TimePeriod(start_date="2026-01-01", end_date="2006-01-01")
+    errors = exc_info.value.errors()
+    assert errors[0]["msg"] == "Value error, end_date cannot be earlier than '2007-10-01'"
 
     with pytest.raises(ValidationError) as exc_info:
         TimePeriod(start_date="2026-01-01", end_date="06/01/2026", date_type="action_date")
