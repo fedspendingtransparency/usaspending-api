@@ -1,20 +1,16 @@
 from datetime import date, datetime
 from typing import Any
 
-from django.utils.functional import cached_property
-from pydantic import BaseModel, ConfigDict, ValidationInfo, field_validator
+from pydantic import BaseModel, ValidationInfo, field_validator
 
 from usaspending_api.references.models import ToptierAgency
 
 
 class MonthlyDownloadFilters(BaseModel):
-    as_of_date: str | None = None
-    awarding_toptier_agency_abbreviation: str | None = None
-    fiscal_year: int | None = None
 
-    model_config = ConfigDict(
-        ignored_types=(cached_property,)
-    )
+    as_of_date: str | None = None
+    awarding_toptier_agency_code: str | None = None
+    fiscal_year: int | None = None
 
     @field_validator("as_of_date", mode='before')
     @classmethod
@@ -34,25 +30,13 @@ class MonthlyDownloadFilters(BaseModel):
             raise ValueError(f"Received unsupported type of '{type(value)}'; expected 'str'")
         return value
 
-    @cached_property
-    def awarding_toptier_agency_code(self) -> str:
-        result = self.awarding_toptier_agency_abbreviation
-        if result is not None:
-            result = (
-                ToptierAgency.objects.filter(abbreviation=self.awarding_toptier_agency_abbreviation)
-                .values_list("toptier_code", flat=True)
-                .first()
-            )
-        return result
-
-    @field_validator("awarding_toptier_agency_abbreviation")
+    @field_validator("awarding_toptier_agency_code")
     @classmethod
-    def check_valid_toptier_agency_abbreviation(cls, abbreviation: str, info: ValidationInfo) -> str:
-        abbreviation = abbreviation.upper()
-        if not ToptierAgency.objects.filter(abbreviation=abbreviation).exists():
-            raise ValueError(f"Invalid abbreviation for '{info.field_name}': {abbreviation}")
+    def check_valid_toptier_agency_code(cls, toptier_code: str, info: ValidationInfo) -> str:
+        if not ToptierAgency.objects.filter(toptier_code=toptier_code).exists():
+            raise ValueError(f"Invalid toptier code for '{info.field_name}': {toptier_code}")
 
-        return abbreviation
+        return toptier_code
 
     @field_validator("fiscal_year")
     @classmethod
