@@ -1,7 +1,7 @@
 from pydantic import ValidationError
 
 
-def error_formatter(error: ValidationError) -> str:
+def pydantic_error_formatter(error: ValidationError) -> str:
     errors: list[dict] = error.errors()
 
     for error in errors:
@@ -13,17 +13,14 @@ def error_formatter(error: ValidationError) -> str:
 
         # Incorrect type for a filter
         else:
-            # Error with a filter field
-            if error.get("loc")[0] == "filters" and len(error["loc"]) > 1:
-                key_name = error["loc"][0] + "|" + error["loc"][1]
-                bad_value = error['input']
+            key_name = error["loc"][0] + "|" + error["loc"][1] if len(error['loc']) > 1 else error['loc'][0]
+            bad_value = error['input']
+
+            if error['type'].endswith('_type'):
                 expected_type = error['type'].strip("_type")
-
-                return f"Invalid value in '{key_name}'. '{bad_value}' is not a valid type ({expected_type})."
-            # Error in top-level field
+            elif error.get('ctx'):
+                expected_type = error['ctx']['expected_type']
             else:
-                key_name = error["loc"][0]
-                bad_value = error["input"]
-                expected_type = error["type"].strip("_type")
+                expected_type = "dictionary"
 
-                return f"Invalid value in '{key_name}'. '{bad_value}' is not a valid type ({expected_type})."
+            return f"Invalid value in '{key_name}'. '{bad_value}' is not a valid type ({expected_type})."
