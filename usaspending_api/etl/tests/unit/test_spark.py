@@ -1,7 +1,7 @@
+from dataclasses import asdict
+
 from usaspending_api.etl.management.commands.load_query_to_delta import TABLE_SPEC as LOAD_QUERY_TABLE_SPEC
 from usaspending_api.etl.management.commands.load_table_to_delta import TABLE_SPEC as LOAD_TABLE_TABLE_SPEC
-
-from dataclasses import asdict
 
 
 def test_table_spec_consistency():

@@ -82,4 +82,3 @@ class TableSpec:
     tsvectors: Optional[Union[List[str], dict]] = None
     swap_table: Optional[str] = None
     swap_schema: Optional[str] = None
-    

@@ -1,11 +1,9 @@
-import logging
 from argparse import ArgumentTypeError
 from typing import Callable
 
 from django.core.management.base import BaseCommand, CommandParser
 from pyspark.sql import SparkSession
 
-from usaspending_api.common.helpers.sql_helpers import TableSpec
 from usaspending_api.common.etl.spark import create_ref_temp_views
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
@@ -13,6 +11,7 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_broker_jdbc_url,
     get_jdbc_connection_properties,
 )
+from usaspending_api.common.helpers.sql_helpers import TableSpec
 from usaspending_api.config import CONFIG
 from usaspending_api.disaster.delta_models import (
     COVID_FABA_SPENDING_DELTA_COLUMNS,
@@ -98,6 +97,8 @@ from usaspending_api.transactions.delta_models import (
     transaction_current_cd_lookup_load_sql_string,
     transaction_search_create_sql_string,
 )
+import logging
+
 
 AWARD_URL = f"{HOST}/award/" if "localhost" in HOST else f"https://{HOST}/award/"
 
