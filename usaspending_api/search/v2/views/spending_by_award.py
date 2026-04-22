@@ -56,7 +56,7 @@ from usaspending_api.common.helpers.data_constants import state_name_from_code
 from usaspending_api.common.helpers.generic_helper import (
     get_generic_filters_message,
 )
-from usaspending_api.common.helpers.pydantic_error_formatter import error_formatter
+from usaspending_api.common.helpers.pydantic_error_formatter import pydantic_error_formatter
 from usaspending_api.common.pydantic_base_models import (
     AgencyObject,
     AwardAmount,
@@ -173,7 +173,7 @@ class Filters(BaseModel):
     recipient_search_text: list[str] | None = None
     recipient_type_names: list[str] | None = None
     set_aside_type_codes: list[str] | None = None
-    tas_codes: list[TASCodeObject] | None = None
+    tas_codes: TASCodeObject | None = None
     time_period: list[TimePeriod] | None = None
     treasury_account_components: list[TreasuryAccountComponentsObject] | None = None
 
@@ -211,9 +211,8 @@ class SpendingByAwardVisualizationViewSet(APIView):
         try:
             validated_request = SpendingByAwardRequest(**request.data)
         except ValidationError as e:
-            message = error_formatter(e)
-            status_code = 422 if message.startswith("Missing") else 400
-            return Response({"detail": message}, status=status_code)
+            message = pydantic_error_formatter(e)
+            return Response({"detail": message}, status=422)
 
         # By default, Pydantic will include an entry for every field defined in the base class with it's default value.
         # When we convert this to a dict this means we have a lot of `None` values that query_with_filters
