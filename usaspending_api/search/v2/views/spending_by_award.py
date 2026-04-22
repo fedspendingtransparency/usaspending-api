@@ -475,9 +475,7 @@ class SpendingByAwardVisualizationViewSet(APIView):
                     ]
         if sort_by_fields[0] == "type_description":
             sort_by_fields[0] = "type_description.keyword"
-            
         sort_by_fields.append("award_id")
-
         return sort_by_fields
 
     def get_database_fields(self) -> set[str]:
