@@ -55,7 +55,6 @@ from usaspending_api.transactions.delta_models import (
 )
 from usaspending_api.transactions.models import SourceAssistanceTransaction, SourceProcurementTransaction
 
-
 logger = logging.getLogger(__name__)
 
 TABLE_SPEC = {
