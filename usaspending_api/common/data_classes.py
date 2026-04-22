@@ -69,7 +69,7 @@ class TableSpec:
     is_partition_column_unique: bool = False
     delta_table_create_options: Optional[dict] = None
     delta_table_create_partitions: Optional[List[str]] = None
-    source_schema: Optional[Union[List, dict]]
+    source_schema: Optional[Union[List, dict]] = None
     custom_schema: Optional[str] = None
     column_names: Optional[List[str]] = None
     is_from_broker: bool = False
