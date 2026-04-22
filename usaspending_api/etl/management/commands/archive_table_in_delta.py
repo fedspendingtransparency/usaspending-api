@@ -5,8 +5,6 @@ from datetime import datetime, timedelta
 import psycopg
 from django.core.management.base import BaseCommand
 
-from usaspending_api.common.helpers.sql_helpers import TableSpec
-from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.common.etl.spark import load_delta_table
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
@@ -14,6 +12,7 @@ from usaspending_api.common.helpers.spark_helpers import (
     get_jdbc_connection_properties,
     get_usas_jdbc_url,
 )
+from usaspending_api.common.helpers.sql_helpers import TableSpec
 from usaspending_api.common.helpers.sql_helpers import get_database_dsn_string
 from usaspending_api.download.delta_models.download_job import (
     download_job_create_sql_string,

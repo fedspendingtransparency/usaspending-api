@@ -1,53 +1,13 @@
-import logging
-
 from django.core.management import BaseCommand
 
 from usaspending_api.awards.delta_models import (
     AWARDS_COLUMNS,
-    awards_sql_string,
-    FINANCIAL_ACCOUNTS_BY_AWARDS_COLUMNS,
-    financial_accounts_by_awards_sql_string,
     BROKER_SUBAWARDS_COLUMNS,
+    FINANCIAL_ACCOUNTS_BY_AWARDS_COLUMNS,
+    awards_sql_string,
     broker_subawards_sql_string,
+    financial_accounts_by_awards_sql_string,
 )
-from usaspending_api.broker.delta_models.broker_zips import ZIPS_COLUMNS, zips_sql_string
-from usaspending_api.common.etl.spark import extract_db_data_frame, get_partition_bounds_sql, load_delta_table
-from usaspending_api.common.helpers.spark_helpers import (
-    configure_spark_session,
-    get_active_spark_session,
-    get_jdbc_connection_properties,
-    get_usas_jdbc_url,
-    get_broker_jdbc_url,
-)
-from usaspending_api.config import CONFIG
-from usaspending_api.recipient.delta_models import (
-    RECIPIENT_LOOKUP_COLUMNS,
-    recipient_lookup_create_sql_string,
-    recipient_profile_create_sql_string,
-    RECIPIENT_PROFILE_DELTA_COLUMNS,
-    SAM_RECIPIENT_COLUMNS,
-    sam_recipient_create_sql_string,
-)
-from usaspending_api.search.models import TransactionSearch, AwardSearch
-from usaspending_api.transactions.delta_models import (
-    DETACHED_AWARD_PROCUREMENT_DELTA_COLUMNS,
-    detached_award_procurement_create_sql_string,
-    TRANSACTION_FABS_VIEW_COLUMNS,
-    transaction_fabs_sql_string,
-    TRANSACTION_FPDS_VIEW_COLUMNS,
-    transaction_fpds_sql_string,
-    TRANSACTION_NORMALIZED_COLUMNS,
-    transaction_normalized_sql_string,
-    TRANSACTION_SEARCH_POSTGRES_COLUMNS,
-    transaction_search_create_sql_string,
-    PUBLISHED_FABS_COLUMNS,
-    published_fabs_create_sql_string,
-)
-from usaspending_api.transactions.models import SourceAssistanceTransaction
-from usaspending_api.transactions.models import SourceProcurementTransaction
-from usaspending_api.search.delta_models.award_search import award_search_create_sql_string, AWARD_SEARCH_COLUMNS
-
-from usaspending_api.recipient.models import DUNS, RecipientLookup, RecipientProfile
 from usaspending_api.awards.models import (
     Award,
     FinancialAccountsByAwards,
@@ -55,8 +15,45 @@ from usaspending_api.awards.models import (
     TransactionFPDS,
     TransactionNormalized,
 )
-
+from usaspending_api.broker.delta_models.broker_zips import ZIPS_COLUMNS, zips_sql_string
 from usaspending_api.common.data_classes import TableSpec
+from usaspending_api.common.etl.spark import extract_db_data_frame, get_partition_bounds_sql, load_delta_table
+from usaspending_api.common.helpers.spark_helpers import (
+    configure_spark_session,
+    get_active_spark_session,
+    get_broker_jdbc_url,
+    get_jdbc_connection_properties,
+    get_usas_jdbc_url,
+)
+from usaspending_api.config import CONFIG
+from usaspending_api.recipient.delta_models import (
+    RECIPIENT_LOOKUP_COLUMNS,
+    RECIPIENT_PROFILE_DELTA_COLUMNS,
+    SAM_RECIPIENT_COLUMNS,
+    recipient_lookup_create_sql_string,
+    recipient_profile_create_sql_string,
+    sam_recipient_create_sql_string,
+)
+from usaspending_api.recipient.models import DUNS, RecipientLookup, RecipientProfile
+from usaspending_api.search.delta_models.award_search import AWARD_SEARCH_COLUMNS, award_search_create_sql_string
+from usaspending_api.search.models import AwardSearch, TransactionSearch
+from usaspending_api.transactions.delta_models import (
+    DETACHED_AWARD_PROCUREMENT_DELTA_COLUMNS,
+    PUBLISHED_FABS_COLUMNS,
+    TRANSACTION_FABS_VIEW_COLUMNS,
+    TRANSACTION_FPDS_VIEW_COLUMNS,
+    TRANSACTION_NORMALIZED_COLUMNS,
+    TRANSACTION_SEARCH_POSTGRES_COLUMNS,
+    detached_award_procurement_create_sql_string,
+    published_fabs_create_sql_string,
+    transaction_fabs_sql_string,
+    transaction_fpds_sql_string,
+    transaction_normalized_sql_string,
+    transaction_search_create_sql_string,
+)
+from usaspending_api.transactions.models import SourceAssistanceTransaction, SourceProcurementTransaction
+
+import logging
 
 logger = logging.getLogger(__name__)
 
@@ -319,7 +316,7 @@ class Command(BaseCommand):
     before new data is written.
     """
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser) -> None:
         parser.add_argument(
             "--destination-table",
             type=str,
@@ -341,7 +338,7 @@ class Command(BaseCommand):
             "name",
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         extra_conf = {
             # Config for Delta Lake tables and SQL. Need these to keep Dela table metadata in the metastore
             "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension",
@@ -378,7 +375,7 @@ class Command(BaseCommand):
         # Resolve JDBC URL for Source Database
         jdbc_url = get_usas_jdbc_url() if not is_from_broker else get_broker_jdbc_url()
         if not jdbc_url:
-            raise RuntimeError(f"Couldn't find JDBC url, please properly configure your CONFIG.")
+            raise RuntimeError("Couldn't find JDBC url, please properly configure your CONFIG.")
         if not jdbc_url.startswith("jdbc:postgresql://"):
             raise ValueError("JDBC URL given is not in postgres JDBC URL format (e.g. jdbc:postgresql://...")
 

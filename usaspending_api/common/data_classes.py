@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Any, Callable, List, Optional, Union
+
 from typing_extensions import Literal
 
 
@@ -49,6 +50,7 @@ class TransactionColumn:
     #   "CASE {input} WHEN 'UNITED STATES' THEN 'USA' ELSE {input} END"
     scalar_transformation: str = None
 
+
 @dataclass(slots=True)
 class TableSpec:
     """
@@ -56,7 +58,7 @@ class TableSpec:
     """
 
     destination_database: str
-    delta_table_create_sql: Union[str, Any] # pyspark.sql.types.StructType
+    delta_table_create_sql: Union[str, Any]   # pyspark.sql.types.StructType
     archive_data_field: str = "update_date"
     is_from_broker: bool = False
     is_partition_column_unique: bool = False
@@ -80,3 +82,4 @@ class TableSpec:
     tsvectors: Optional[Union[List[str], dict]] = None
     swap_table: Optional[str] = None
     swap_schema: Optional[str] = None
+    

@@ -1,9 +1,8 @@
-import logging
-
 from django.core.management.base import BaseCommand
 from pyspark.sql.types import StructType
 
 from usaspending_api.awards.delta_models.award_id_lookup import AWARD_ID_LOOKUP_SCHEMA
+from usaspending_api.common.data_classes import TableSpec
 from usaspending_api.common.helpers.spark_helpers import (
     configure_spark_session,
     get_active_spark_session,
@@ -15,7 +14,8 @@ from usaspending_api.etl.management.commands.load_query_to_delta import TABLE_SP
 from usaspending_api.etl.management.commands.load_table_to_delta import TABLE_SPEC as LOAD_TABLE_TABLE_SPEC
 from usaspending_api.transactions.delta_models.transaction_id_lookup import TRANSACTION_ID_LOOKUP_SCHEMA
 
-from usaspending_api.common.data_classes import TableSpec
+import logging
+
 
 TABLE_SPEC = {
     **ARCHIVE_TABLE_SPEC,
@@ -39,7 +39,7 @@ class Command(BaseCommand):
     This command creates an empty Delta Table based on the provided --destination-table argument.
     """
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser) -> None:
         parser.add_argument(
             "--destination-table",
             type=str,
@@ -68,7 +68,7 @@ class Command(BaseCommand):
             "name",
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options) -> None:
         spark = get_active_spark_session()
         spark_created_by_command = False
         if not spark:
