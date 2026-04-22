@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version >= '3.14' and sys_platform == 'win32'",
@@ -1483,7 +1483,7 @@ wheels = [
 ]
 
 [[package]]
-name = "opentelemetry-instrumentation-psycopg2"
+name = "opentelemetry-instrumentation-psycopg"
 version = "0.49b2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
@@ -1491,9 +1491,9 @@ dependencies = [
     { name = "opentelemetry-instrumentation" },
     { name = "opentelemetry-instrumentation-dbapi" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ab/6e/07d0ef4761cc3af342cb3bf47e3e69c1e7d4e8f107df0aa9e53acdf28e64/opentelemetry_instrumentation_psycopg2-0.49b2.tar.gz", hash = "sha256:4116a7f3f8fdef5759a087bc46bcf2370ad5d41f2e2110b8ebee90eadf7153ac", size = 9159, upload-time = "2024-11-18T18:40:14.994Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/7a/d7/51cc9f966c4bac548914cc4fba39fe006d724b936f98725cfc89ac99b27c/opentelemetry_instrumentation_psycopg-0.49b2.tar.gz", hash = "sha256:961ae1c7667eb4f13f21812499ef846a437b3bd9ad985ecbbef385ab7d1f369e", size = 9982, upload-time = "2024-11-18T18:40:13.95Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/0e/28/959a2050936396ec4067f66d0036a423c02106816302e9975b48689720b1/opentelemetry_instrumentation_psycopg2-0.49b2-py3-none-any.whl", hash = "sha256:7bcf9a689f2a2df8e85e0dad79c7be8fe4f1688f73c61acfef69798103bb46df", size = 10063, upload-time = "2024-11-18T18:39:11.966Z" },
+    { url = "https://files.pythonhosted.org/packages/36/e2/8055f93727a5f4a24aaf4ebe26eb5862b1a5899ec8e0a6b201f594568646/opentelemetry_instrumentation_psycopg-0.49b2-py3-none-any.whl", hash = "sha256:7355fcfce9505368906368ae0ce12c19cbb7da540e863c595340ab0d28e3ea49", size = 10276, upload-time = "2024-11-18T18:39:10.187Z" },
 ]
 
 [[package]]
@@ -2531,7 +2531,7 @@ dependencies = [
     { name = "opentelemetry-instrumentation-elasticsearch" },
     { name = "opentelemetry-instrumentation-grpc" },
     { name = "opentelemetry-instrumentation-logging" },
-    { name = "opentelemetry-instrumentation-psycopg2" },
+    { name = "opentelemetry-instrumentation-psycopg" },
     { name = "opentelemetry-instrumentation-redis" },
     { name = "opentelemetry-instrumentation-requests" },
     { name = "opentelemetry-instrumentation-sqlite3" },
@@ -2652,7 +2652,7 @@ requires-dist = [
     { name = "opentelemetry-instrumentation-elasticsearch", specifier = "==0.49b2" },
     { name = "opentelemetry-instrumentation-grpc", specifier = "==0.49b2" },
     { name = "opentelemetry-instrumentation-logging", specifier = "==0.49b2" },
-    { name = "opentelemetry-instrumentation-psycopg2", specifier = "==0.49b2" },
+    { name = "opentelemetry-instrumentation-psycopg", specifier = "==0.49b2" },
     { name = "opentelemetry-instrumentation-redis", specifier = "==0.49b2" },
     { name = "opentelemetry-instrumentation-requests", specifier = "==0.49b2" },
     { name = "opentelemetry-instrumentation-sqlite3", specifier = "==0.49b2" },

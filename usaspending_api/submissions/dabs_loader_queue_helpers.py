@@ -106,7 +106,7 @@ def update_heartbeat(submission_id: int, processor_id: str) -> int:
     We maintain a heartbeat on in-progress submissions so processing can be restarted in the event
     of a silent failure.  Returns the count of updated heartbeats.  Should always return 1.  If it
     doesn't then your submission no longer exists in the queue or someone else has claimed it and
-    that's probably a problem.  This uses psycopg2 instead of Django because we need a connection
+    that's probably a problem.  This uses psycopg instead of Django because we need a connection
     outside of those managed by Django to ensure the heartbeat is outside of any outstanding
     transactions.
     """
