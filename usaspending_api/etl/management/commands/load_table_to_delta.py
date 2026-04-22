@@ -1,3 +1,5 @@
+import logging
+
 from django.core.management import BaseCommand
 
 from usaspending_api.awards.delta_models import (
@@ -52,8 +54,6 @@ from usaspending_api.transactions.delta_models import (
     transaction_search_create_sql_string,
 )
 from usaspending_api.transactions.models import SourceAssistanceTransaction, SourceProcurementTransaction
-
-import logging
 
 logger = logging.getLogger(__name__)
 

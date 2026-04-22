@@ -1,3 +1,4 @@
+import logging
 from argparse import ArgumentTypeError
 from typing import Callable
 
@@ -97,8 +98,6 @@ from usaspending_api.transactions.delta_models import (
     transaction_current_cd_lookup_load_sql_string,
     transaction_search_create_sql_string,
 )
-import logging
-
 
 AWARD_URL = f"{HOST}/award/" if "localhost" in HOST else f"https://{HOST}/award/"
 
